@@ -1,0 +1,45 @@
+# Unity generated — regenerated on open; committing them causes merge noise and stale caches
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/Assets/Plugins/Editor/JetBrains*
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+.vs/
+.idea/
+.vscode/
+crashlytics-build.properties
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Offline-baked geodata intermediates (P3-02); only the final template packs are committed
+/tools/geodata/_cache/
+
+# AI batch staging is reviewed before promotion; raw batches can be large
+/Data/_incoming/**/raw/
+
+# Local AI tool state
+.ai_working
+.claude/settings.local.json

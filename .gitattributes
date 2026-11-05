@@ -1,0 +1,37 @@
+* text=auto
+
+# Unity YAML: force LF and let Unity's smart merge handle it (see docs: UnityYAMLMerge)
+*.unity    text eol=lf merge=unityyamlmerge linguist-generated
+*.prefab   text eol=lf merge=unityyamlmerge linguist-generated
+*.asset    text eol=lf merge=unityyamlmerge linguist-generated
+*.mat      text eol=lf merge=unityyamlmerge linguist-generated
+*.anim     text eol=lf merge=unityyamlmerge linguist-generated
+*.controller text eol=lf merge=unityyamlmerge linguist-generated
+*.meta     text eol=lf
+*.cs       text eol=lf diff=csharp
+*.shader   text eol=lf
+*.hlsl     text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+
+# Binary assets via LFS
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+# Baked geodata template packs (P3-02)
+*.geotpl filter=lfs diff=lfs merge=lfs -text
+*.raw filter=lfs diff=lfs merge=lfs -text
