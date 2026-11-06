@@ -89,9 +89,14 @@ namespace Cosmimera.Planet.Tests
                 var terrain = go.AddComponent<PlanetTerrain>();
                 Vector3 before = go.transform.position;
                 PlanetHeight height = PlanetHeight.ForPlanet(Planet640, 42UL);
-                Assert.Throws<ContractException>(() =>
+                Assert.IsTrue(terrain.IsUntouchedByConfigure);
+                var e = Assert.Throws<ContractException>(() =>
                     terrain.Configure(new PlanetConfig(640f, new float3(5f, 0f, 0f)), height, viewer.transform, null, 128f, 2));
                 Assert.AreEqual(before, go.transform.position, "Configure moved the transform before rejecting");
+                // sol r4 N3: deleting Configure's own Supports check (the quadtree constructor then throws) or moving it
+                // below `_config = config` both left the transform alone; field state and the message tell them apart.
+                Assert.IsTrue(terrain.IsUntouchedByConfigure, "Configure wrote fields before rejecting");
+                StringAssert.Contains("ChunkQuadtree.Supports", e.Message, "rejected by Configure's own check");
             }
             finally
             {

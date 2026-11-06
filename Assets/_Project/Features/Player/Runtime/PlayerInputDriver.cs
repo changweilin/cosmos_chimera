@@ -26,17 +26,19 @@ namespace Cosmimera.Player
         /// <summary>Binds actions and targets.</summary>
         /// <remarks>
         /// Pre: actions, character, rig non-null; actions contains Player/Move, Player/Look, Player/Jump, Player/Sprint.
-        /// Post: actions enabled. Side effects: enables input actions; throws if an action is missing.
+        /// Post: actions enabled. Side effects: enables input actions.
         /// </remarks>
         public void Configure(InputActionAsset actions, SphericalCharacter character, PlayerCameraRig rig)
         {
             Contract.Requires(actions != null && character != null && rig != null, "all references are required");
             _character = character;
             _rig = rig;
-            _move = actions.FindAction("Player/Move", throwIfNotFound: true);
-            _look = actions.FindAction("Player/Look", throwIfNotFound: true);
-            _jump = actions.FindAction("Player/Jump", throwIfNotFound: true);
-            _sprint = actions.FindAction("Player/Sprint", throwIfNotFound: true);
+            _move = actions.FindAction("Player/Move");
+            _look = actions.FindAction("Player/Look");
+            _jump = actions.FindAction("Player/Jump");
+            _sprint = actions.FindAction("Player/Sprint");
+            Contract.Requires(_move != null && _look != null && _jump != null && _sprint != null,
+                "actions must contain Player/Move, Player/Look, Player/Jump and Player/Sprint");
             if (_toggleView.bindings.Count == 1)
             {
                 _toggleView.AddBinding("<Gamepad>/rightStickPress");

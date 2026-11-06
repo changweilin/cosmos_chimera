@@ -91,6 +91,16 @@ namespace Cosmimera.Planet
         /// <remarks>Pre: none. Post: &gt; 0 after Configure. Side effects: none.</remarks>
         public float ColliderRange => _colliderRange;
 
+        /// <summary>True while no field set by Configure has been written (test hook for "rejects before any state changes").</summary>
+        /// <remarks>
+        /// Pre: none. Post: true from construction until Configure passes its preconditions. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r4-sol.md#N3 — the transform alone is written last, so it could not show a
+        /// precondition that was deleted or moved after the first field assignment.
+        /// </remarks>
+        internal bool IsUntouchedByConfigure =>
+            !_config.IsValid && !_height.IsValid && _viewer == null && _material == null && _colliderRange == 0f
+            && _stitching == null && _tree == null;
+
         /// <summary>Injects the planet and viewer; must be called once.</summary>
         /// <remarks>
         /// Pre: not configured yet; config.IsValid; height.IsValid; viewer non-null; colliderRange finite and &gt; 0;

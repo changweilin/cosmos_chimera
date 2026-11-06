@@ -1,6 +1,6 @@
 """P2-02 integer reference; Python 3.13, stdlib only.
 
-REQ: docs/design/derived-stats.md (proposal, pending human approval).
+REQ: docs/design/derived-stats.md (approved 2026-11-06; coefficients in Data/balance.json).
 All divisions are on non-negative integers: // floors, ceil_div rounds up.
 Permille is a wire unit fixed at 1000, not a balance coefficient. Quantize each
 formula in the documented order; do not fuse divisions in a C# port. Promote
@@ -16,7 +16,7 @@ from pathlib import Path
 PERMILLE = 1000
 INT32_MAX = (1 << 31) - 1
 REPO = Path(__file__).resolve().parents[2]
-PROPOSAL = REPO / "Data/_incoming/p2-02-balance/balance.proposal.json"
+PROPOSAL = REPO / "Data/balance.json"  # name kept: plot_curves imports it
 GOLDEN = Path(__file__).with_name("golden_derived_stats.json")
 
 

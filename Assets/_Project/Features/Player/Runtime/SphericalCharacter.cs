@@ -54,7 +54,14 @@ namespace Cosmimera.Player
 
         /// <summary>Current body forward, tangent to the planet.</summary>
         /// <remarks>Pre: Configure called. Post: unit, ⟂ local up. Side effects: none.</remarks>
-        public Vector3 Facing => _state.Facing;
+        public Vector3 Facing
+        {
+            get
+            {
+                Cosmimera.Core.Contracts.Contract.Requires(_configured, "Configure has not been called");
+                return _state.Facing;
+            }
+        }
 
         /// <summary>Binds the character to <paramref name="planet"/> and resets motion, keeping the current position.</summary>
         /// <remarks>
@@ -127,7 +134,9 @@ namespace Cosmimera.Player
             {
                 // Feed back what physics actually did vertically: a ceiling stops a jump, a steep slope holds the body,
                 // and without this the motor's own integration would keep accelerating a body that is not falling.
-                _state.VerticalSpeed = math.dot((float3)_body.linearVelocity, _state.Up);
+                // Clamped into the motor's state domain (sol r4 N4); only a broken physics step gets near 1e4 m/s.
+                _state.VerticalSpeed = math.clamp(math.dot((float3)_body.linearVelocity, _state.Up),
+                    -SphericalMotor.MaxStateSpeed, SphericalMotor.MaxStateSpeed);
             }
 
             // Expiry is decided before the step, so a stale press can never reach the motor (sol P1-05 F1).

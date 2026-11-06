@@ -13,6 +13,7 @@ P0-06 要求「改 JSON 後重新匯入，registry 可依 id 查詢」。資料�
    - 允許引用它的組件：WorldGen、Creatures、Combat、Capture、Lobby、Codex、Net、Save。**Planet 和 Player 不允許**，以維持「Planet 不知道宙獸存在」這條規則。白名單寫在 `ArchitectureTests`。
    - 所有 setter 都是 `internal`，只對 `Cosmimera.GameData.Editor`（importer）和測試開 `InternalsVisibleTo`。執行期程式碼只能讀，不能改。
    - trait／effect 的 `params` 先以壓縮 JSON 字串存放（`RuleDef.ParamsJson`）。P2 收斂 enum 時，再由擁有該型別的 feature 轉成具型別的資料。
+     - **2026-11-06 修訂（P2-01）**：改為在 GameData 內直接型別化（`TriggerDef`／`EffectDef` + `TriggerType`／`EffectType`），`RuleDef` 移除。原因：參數錯誤必須在匯入時擋下（和其他引用檢查一起列出），放到 feature 裡解析就只能在戰鬥中才發現；而 trigger／effect 同時被 Creatures（特性）與 Combat（招式效果）使用，放在任一 feature 都會造成同層互相引用。
 2. **Importer** 是 `Cosmimera.GameData.Editor.DataImporter`，有選單（`Cosmimera/Data/Import All`）和 batchmode 入口（`-executeMethod Cosmimera.GameData.Editor.DataImporter.ImportAllBatch [-dataRoot DIR]`）。
    - 分兩階段：先解析並解析所有引用，任何錯誤都會**在寫入任何資產前**中止，並一次列出所有錯誤。
    - 每個 id 對應一個資產，路徑為 `Assets/_Project/Data/<Kind>/<id>.asset`。已存在的資產直接覆寫內容，**GUID 不變**，所以場景和 prefab 的引用不會斷。id 從來源資料消失時，刪除對應資產。

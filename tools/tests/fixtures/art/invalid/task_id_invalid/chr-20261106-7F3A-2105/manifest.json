@@ -1,0 +1,11 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=1.0.0 catalog=1.0.0 template=character-concept@1.0.0 task_id=chr-20261106-7F3A-2105 seed=7F3A]",
+  "task_id": "chr-20261106-7F3A-2105",
+  "task_type": "character-concept",
+  "subject_id": "chr_7f3a",
+  "produced_by": "ChatGPT",
+  "files": [],
+  "missing": [],
+  "notes": ""
+}

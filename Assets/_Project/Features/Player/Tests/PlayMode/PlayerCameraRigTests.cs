@@ -65,9 +65,10 @@ namespace Cosmimera.Player.Tests
                         _rig.ToggleView();
                     }
 
-                    // Stick at the default 180°/s for 1 s. Pin the pitch at MinPitch first, then step up by the offset
-                    // from MinPitch, so the orbit lands exactly on the target whatever the previous iteration left.
-                    _rig.AddLook(Vector2.zero, new Vector2(0f, -1000f), 1f);
+                    // Stick at the default 180°/s for 1 s. Pin the pitch at MinPitch first (full stick down = −180°, more
+                    // than the 160° range), then step up by the offset from MinPitch, so the orbit lands exactly on the
+                    // target whatever the previous iteration left.
+                    _rig.AddLook(Vector2.zero, new Vector2(0f, -1f), 1f);
                     yield return null;
                     _rig.AddLook(Vector2.zero, new Vector2(0f, (pitch - ViewOrbit.MinPitch) / 180f), 1f);
                     yield return null;

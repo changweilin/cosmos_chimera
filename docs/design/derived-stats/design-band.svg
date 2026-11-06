@@ -4,7 +4,7 @@
 <style>text{font:13px sans-serif;fill:#243247}.heading{font-weight:700;font-size:16px}.grid{stroke:#dce3ed;stroke-width:1}.axis{stroke:#738198;fill:none}</style>
 <rect width="1020" height="1180" fill="#fff"/>
 <text x="30" y="32" class="heading">P2-02 derived stats / design-band</text>
-<text x="30" y="55">PROPOSAL - pending human approval. Fixed-point outputs; plateaus are intentional.</text>
+<text x="30" y="55">Data/balance.json (approved 2026-11-06). Fixed-point outputs; plateaus are intentional.</text>
 <text x="35" y="100" class="heading">CON / maximum HP</text>
 <text x="85" y="135">HP</text>
 <path d="M 85 327.00 h 390" class="grid"/>

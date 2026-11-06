@@ -57,6 +57,7 @@
 - **Gemini 4 Argon**：Google 定位為複雜軟工/除錯/遷移/資安的前沿模型（內部回報 rollback −30%）；但 Terminal-Bench 4.0 57%，低於 Opus/Sonnet 5.5，評論標題「贏 12/18 項，寫碼不是其中之一」。分數為 Google 自算。
 - **Gemini 3.8 Flash**：DeepSWE ~74%、飽和的 Terminal-Bench 2.1 89%，但 Terminal-Bench 4.0 僅 ~19%；AA-Omniscience 不幻覺率約 45%；評論一致指出「品質依賴 harness」。本專案 agy headless 不能跑 shell（見 phase-5 P5-05 交接）。
 - **agy 內的 Claude Sonnet**：Antigravity 付費方案提供 Claude Sonnet/Opus 5.5；可用模型以 `agy models` 為準。
+- **agy headless 實務（2026-11-06）**：`--mode accept-edits` 單獨使用時，模型一嘗試 shell 就整個回合中止（"no output produced"）；加 `--settings '{"permissions":{"deny":["command(*)"]}}'` 讓 shell 被明確拒絕，模型會改用讀寫檔工具繼續。個人額度約可支撐兩個中型唯寫檔任務並行跑到一半，派工時把任務切小、讓每個段落都能獨立驗收。
 
 來源：[OpenAI GPT-5.6](https://openai.com/index/gpt-5-6/) · [Vellum: Sol vs Terra vs Luna](https://www.vellum.ai/blog/gpt-5-6-sol-terra-luna-explained) · [Codex GPT-6.1 Sol tracker](https://marginlab.ai/trackers/codex/) · [Antigravity: Gemini 4 Argon](https://antigravity.google/blog/gemini-4-argon-in-google-antigravity/) · [DEV: Argon wins 12 of 18](https://dev.to/max_quimby/gemini-4-argon-wins-12-of-18-benchmarks-code-isnt-one-2h70) · [Vellum: Gemini 3.8 Flash](https://www.vellum.ai/blog/gemini-3-8-flash-benchmarks-explained) · [MindStudio: Flash harness-dependent](https://www.mindstudio.ai/blog/gemini-3-8-flash-harness-demos) · [CodeRabbit: Sonnet 5.5 vs Opus 5.5](https://www.coderabbit.ai/blog/sonnet-5-5-model-review) · [Antigravity CLI models](https://www.codeagentswarm.com/en/guides/how-to-use-antigravity-cli)
 

@@ -4,6 +4,7 @@ Run: python -m unittest discover -s tools/tests
 Each invalid fixture is overlaid onto a copy of the valid set so cross-file checks
 (dangling refs, edge endpoints) have real context, mirroring how a batch lands in Data/.
 """
+import json
 import shutil
 import sys
 import tempfile
@@ -24,9 +25,13 @@ EXPECTED = {
     "creatures/mastery_too_many.json": ("schema", "/0/mastery"),
     "creatures/missing_resist_key.json": ("schema", "/0/resist"),
     "moves/bad_id_case.json": ("schema", "/0/id"),
+    "moves/field_missing_duration.json": ("schema", "/0"),
     "moves/float_number.json": ("float_literal", ""),
     "moves/unknown_element.json": ("schema", "/0/element"),
     "relations/edge_wrong_order.json": ("edge_order", "/0"),
+    "traits/unknown_trigger.json": ("schema", "/0/trigger/type"),
+    "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
+    "traits/heal_max_stacks.json": ("schema", "/0/effects/0"),
 }
 
 
@@ -110,16 +115,90 @@ class CrossFileRules(unittest.TestCase):
 
     def test_effect_move_requires_effect(self):
         move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
-                '"accuracy":100,"range_class":"mid","shape":"aoe"}]')
+                '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
         self.assertIn("schema", self.codes(self._with_valid({"moves/buff.json": move})))
 
-    def test_material_outside_mastery_is_warning_only(self):
+    def test_target_burst_must_not_be_melee(self):
+        move = ('{"id":"sample_blast","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,'
+                '"accuracy":100,"range_class":"%s","shape":"burst","origin":"%s","base_range_mm":3000}')
+        for rc, origin, valid in [("melee", "target", False), ("mid", "target", True), ("melee", "caster", True)]:
+            with self.subTest(rc=rc, origin=origin):
+                errors = [f for f in self._with_valid({"moves/blast.json": "[" + move % (rc, origin) + "]"})
+                          if f.level == "error"]
+                self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_effect_duration_required_iff_timed_effect(self):
+        base = ('{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
+                '"accuracy":100,"range_class":"melee","shape":"self","base_range_mm":0')
+        haste = ',"effect":{"type":"move_speed_mod_percent","params":{"delta":20}}'
+        heal = ',"effect":{"type":"heal_percent_max_hp","params":{"percent":20}}'
+        cases = [
+            (haste + ',"effect_duration_ms":5000', True),
+            (haste, False),
+            (haste + ',"effect_duration_ms":0', False),
+            (heal, True),
+            (heal + ',"effect_duration_ms":5000', False),
+        ]
+        for extra, valid in cases:
+            with self.subTest(extra=extra):
+                errors = [f for f in self._with_valid({"moves/buff.json": "[" + base + extra + "}]"})
+                          if f.level == "error"]
+                self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+        damage = json.loads((SAMPLES / "valid" / "moves/moves.json").read_text(encoding="utf-8"))
+        damage[0]["effect_duration_ms"] = 5000
+        errors = [str(f) for f in self._with_valid({"moves/moves.json": json.dumps(damage)}) if f.level == "error"]
+        self.assertTrue(any("must be omitted" in e for e in errors), errors)
+
+    def test_numeric_representation_boundaries(self):
+        cases = [
+            ("moves", ("power",), 100000),
+            ("moves", ("cooldown_ms",), 2147483647),
+            ("moves", ("base_range_mm",), 2147483647),
+            ("creatures", ("mastery", "fire"), 1000),
+            ("creatures", ("stats", "con"), 2147483647),
+            ("creatures", ("evolution", "exp"), 2147483647),
+            ("creatures", ("evolution", "materials", 0, "tier"), 2147483647),
+            ("creatures", ("evolution", "materials", 0, "qty"), 2147483647),
+        ]
+        for kind, path, maximum in cases:
+            for value, valid in [(maximum, True), (maximum + 1, False), (-1, False)]:
+                with self.subTest(kind=kind, path=path, value=value):
+                    relative = f"{kind}/{kind}.json"
+                    records = json.loads((SAMPLES / "valid" / relative).read_text(encoding="utf-8"))
+                    parent = records[0]
+                    for key in path[:-1]:
+                        parent = parent[key]
+                    parent[path[-1]] = value
+                    errors = [f for f in self._with_valid({relative: json.dumps(records)}) if f.level == "error"]
+                    self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_move_geometry_contracts(self):
+        source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]
+        for shape in ("front", "sweep", "burst", "line", "cone", "arc", "self", "ally", "field"):
+            with self.subTest(shape=shape):
+                move = {**source, "id": "review_move", "shape": shape, "movement": "none"}
+                if shape == "burst":
+                    move["origin"] = "target"
+                    move["range_class"] = "mid"  # a target-point burst cannot be melee
+                if shape == "field":
+                    move["field_duration_ms"] = 6000  # Q-C17: required iff field
+                self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
+        for changes in [
+            {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},
+            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0},
+        ]:
+            with self.subTest(changes=changes):
+                move = {**source, "id": "review_move", **changes}
+                findings = self._with_valid({"moves/review.json": json.dumps([move])})
+                self.assertIn("schema", self.codes(findings))
+
+    def test_material_outside_mastery_is_an_error(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")
         mutated = src.replace('"element": "fire",\n          "tier": 1', '"element": "ice",\n          "tier": 1', 1)
         self.assertNotEqual(src, mutated)
         findings = self._with_valid({"creatures/creatures.json": mutated})
         self.assertEqual({"material_not_mastery"}, self.codes(findings))
-        self.assertTrue(all(f.level == "warning" for f in findings))
+        self.assertTrue(all(f.level == "error" for f in findings))
 
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))

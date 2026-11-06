@@ -42,7 +42,7 @@ def _document(title, panels, xmax, footer):
              '<style>text{font:13px sans-serif;fill:#243247}.heading{font-weight:700;font-size:16px}.grid{stroke:#dce3ed;stroke-width:1}.axis{stroke:#738198;fill:none}</style>',
              '<rect width="1020" height="1180" fill="#fff"/>',
              f'<text x="30" y="32" class="heading">{escape(title)}</text>',
-             '<text x="30" y="55">PROPOSAL - pending human approval. Fixed-point outputs; plateaus are intentional.</text>']
+             '<text x="30" y="55">Data/balance.json (approved 2026-11-06). Fixed-point outputs; plateaus are intentional.</text>']
     for i, (heading, unit, ymax, series) in enumerate(panels):
         _panel(parts, 20 + (i % 2) * 500, 75 + (i // 2) * 355,
                heading, unit, xmax, ymax, series)

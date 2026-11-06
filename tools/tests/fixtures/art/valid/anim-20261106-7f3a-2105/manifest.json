@@ -1,0 +1,17 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=1.0.0 catalog=1.0.0 template=animation-set@1.0.0 task_id=anim-20261106-7f3a-2105 seed=7f3a]",
+  "task_id": "anim-20261106-7f3a-2105",
+  "task_type": "animation-set",
+  "subject_id": "line_7f3a",
+  "produced_by": "Gemini Argon",
+  "files": [
+    {"path": "anims/anim_spec.json", "kind": "spec", "level": "L1"},
+    {"path": "anims/keyframes.py", "kind": "script", "level": "L1"},
+    {"path": "images/cr_line_7f3a_adult_anim_sheet_01.png", "kind": "sheet", "level": "L1"}
+  ],
+  "missing": [
+    {"item": "anims/cr_adult_idle.fbx", "level": "L2", "reason": "no FBX export on this platform"}
+  ],
+  "notes": ""
+}

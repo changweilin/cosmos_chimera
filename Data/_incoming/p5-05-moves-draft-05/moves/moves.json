@@ -1,0 +1,553 @@
+[
+  {
+    "id": "metal_ferro_temper",
+    "element": "metal",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 8500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "metal",
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 10000
+  },
+  {
+    "id": "metal_alloy_polish",
+    "element": "metal",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 7000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "metal",
+        "delta": 20
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "metal_magnet_strike",
+    "element": "metal",
+    "kind": "both",
+    "power": 45,
+    "cooldown_ms": 2600,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "front",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "wood_photosynthesis",
+    "element": "wood",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 11000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "heal_percent_max_hp",
+      "params": {
+        "percent": 25
+      }
+    }
+  },
+  {
+    "id": "wood_verdant_infusion",
+    "element": "wood",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 9000,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "any",
+        "delta": -15
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "wood_thorn_snare",
+    "element": "wood",
+    "kind": "both",
+    "power": 50,
+    "cooldown_ms": 3000,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "line",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "water_healing_spring",
+    "element": "water",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 13000,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "heal_percent_max_hp",
+      "params": {
+        "percent": 30
+      }
+    }
+  },
+  {
+    "id": "water_vapor_veil",
+    "element": "water",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 7500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "water_drenching_surge",
+    "element": "water",
+    "kind": "both",
+    "power": 55,
+    "cooldown_ms": 3400,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "cone",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "water",
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 7000
+  },
+  {
+    "id": "fire_kindle_ward",
+    "element": "fire",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 8000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "fire",
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 9000
+  },
+  {
+    "id": "fire_thermal_sprint",
+    "element": "fire",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 6500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 7000
+  },
+  {
+    "id": "fire_cinder_slash",
+    "element": "fire",
+    "kind": "both",
+    "power": 60,
+    "cooldown_ms": 3800,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "sweep",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "earth_mineral_communion",
+    "element": "earth",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 9500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "heal_percent_max_hp",
+      "params": {
+        "percent": 20
+      }
+    }
+  },
+  {
+    "id": "earth_granite_stance",
+    "element": "earth",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 10500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "earth",
+        "delta": 30
+      }
+    },
+    "effect_duration_ms": 12000
+  },
+  {
+    "id": "earth_tremor_stomp",
+    "element": "earth",
+    "kind": "both",
+    "power": 50,
+    "cooldown_ms": 3200,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "burst",
+    "base_range_mm": 2000,
+    "origin": "caster",
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "any",
+        "delta": 20
+      }
+    },
+    "effect_duration_ms": 7000
+  },
+  {
+    "id": "ice_glacial_mirror",
+    "element": "ice",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 6500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": 20
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "ice_numbing_haze",
+    "element": "ice",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 9000,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "cone",
+    "base_range_mm": 24000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": -25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "ice_brittle_strike",
+    "element": "ice",
+    "kind": "both",
+    "power": 40,
+    "cooldown_ms": 2400,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "front",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "ice",
+        "delta": -25
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "wind_tailwind_boon",
+    "element": "wind",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 7000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "wind_haste_current",
+    "element": "wind",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 8500,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": 30
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "wind_turbulent_arc",
+    "element": "wind",
+    "kind": "both",
+    "power": 45,
+    "cooldown_ms": 2800,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "arc",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "thunder_overclock_charge",
+    "element": "thunder",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 9000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "thunder",
+        "delta": -25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "thunder_amplifying_spark",
+    "element": "thunder",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 8500,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "thunder_draining_bolt",
+    "element": "thunder",
+    "kind": "both",
+    "power": 65,
+    "cooldown_ms": 4200,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line",
+    "base_range_mm": 24000,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "any",
+        "delta": 20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "light_radiant_benediction",
+    "element": "light",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 15000,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "heal_percent_max_hp",
+      "params": {
+        "percent": 35
+      }
+    }
+  },
+  {
+    "id": "light_aureole_halo",
+    "element": "light",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 8000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "light",
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 9000
+  },
+  {
+    "id": "light_dazzling_crescent",
+    "element": "light",
+    "kind": "both",
+    "power": 45,
+    "cooldown_ms": 2600,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "sweep",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "light",
+        "delta": -20
+      }
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "shadow_veiling_mist",
+    "element": "shadow",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 7500,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "ally",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": 25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "shadow_enervating_mire",
+    "element": "shadow",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 9500,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "burst",
+    "base_range_mm": 12000,
+    "origin": "target",
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "shadow",
+        "delta": -25
+      }
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "shadow_umbra_curse",
+    "element": "shadow",
+    "kind": "both",
+    "power": 55,
+    "cooldown_ms": 3600,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "arc",
+    "base_range_mm": 24000,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": -25
+      }
+    },
+    "effect_duration_ms": 7000
+  }
+]

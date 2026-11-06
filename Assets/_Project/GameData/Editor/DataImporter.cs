@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -54,6 +55,7 @@ namespace Cosmimera.GameData.Editor
 
         // Source folder (tools/validate-data KINDS) → asset subfolder.
         private const string MovesSrc = "moves";
+        private const int MaxDurationMs = 600000; // common.schema.json#/$defs/durationMs
         private const string TraitsSrc = "traits";
         private const string PlanetTypesSrc = "planet-types";
         private const string CreaturesSrc = "creatures";
@@ -271,15 +273,72 @@ namespace Cosmimera.GameData.Editor
                 RequireEnum<MoveKind>(m.Where, "kind", m.Dto.Kind);
                 RequireEnum<RangeClass>(m.Where, "range_class", m.Dto.RangeClass);
                 RequireEnum<MoveShape>(m.Where, "shape", m.Dto.Shape);
+                RequireEnum<MoveMovement>(m.Where, "movement", m.Dto.Movement ?? "none");
+                if (m.Dto.Shape == "burst")
+                {
+                    RequireEnum<BurstOrigin>(m.Where, "origin", m.Dto.Origin);
+                    if (m.Dto.Origin == "target" && m.Dto.RangeClass == "melee")
+                    {
+                        errors.Add($"{m.Where}: a target-point burst must be mid or long range (combat.md 目標點爆發)");
+                    }
+                }
+                else if (m.Dto.Origin != null)
+                {
+                    errors.Add($"{m.Where}: origin is only allowed for burst moves");
+                }
+
+                if (m.Dto.BaseRangeMm < 0 || (m.Dto.Movement == "dash"
+                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0)))
+                {
+                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and positive range");
+                }
                 if ((m.Dto.Kind == "damage") != (m.Dto.Effect == null))
                 {
                     errors.Add($"{m.Where}: effect must be present iff kind is not 'damage'");
+                }
+
+                if (m.Dto.Effect != null)
+                {
+                    CheckRule(m.Where, "effect", m.Dto.Effect, EffectParams, errors);
+                }
+
+                // REQ: docs/design/combat.md#招式效果 — heal is instant, every other effect is a timed window.
+                bool needsDuration = m.Dto.Effect != null && m.Dto.Effect.Type != "heal_percent_max_hp";
+                if (needsDuration != m.Dto.EffectDurationMs.HasValue)
+                {
+                    errors.Add($"{m.Where}: effect_duration_ms is required iff the move has a non-heal effect");
+                }
+                else if (needsDuration && (m.Dto.EffectDurationMs < 1 || m.Dto.EffectDurationMs > MaxDurationMs))
+                {
+                    errors.Add($"{m.Where}: effect_duration_ms must be 1..{MaxDurationMs}");
+                }
+
+                // REQ: docs/design/combat.md#場地 (Q-C17) — a field's lifetime is its own field, not effect_duration_ms.
+                bool isField = m.Dto.Shape == "field";
+                if (isField != m.Dto.FieldDurationMs.HasValue)
+                {
+                    errors.Add($"{m.Where}: field_duration_ms is required iff shape is 'field'");
+                }
+                else if (isField && (m.Dto.FieldDurationMs < 1 || m.Dto.FieldDurationMs > MaxDurationMs))
+                {
+                    errors.Add($"{m.Where}: field_duration_ms must be 1..{MaxDurationMs}");
                 }
             }
 
             foreach (Sourced<TraitDto> t in traits)
             {
                 Claim(t.Where, t.Dto.Id, "trait");
+                CheckRule(t.Where, "trigger", t.Dto.Trigger, TriggerParams, errors);
+                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0)
+                {
+                    errors.Add($"{t.Where}: effects must have at least one entry");
+                    continue;
+                }
+
+                for (int i = 0; i < t.Dto.Effects.Count; i++)
+                {
+                    CheckRule(t.Where, $"effects[{i}]", t.Dto.Effects[i], EffectParams, errors);
+                }
             }
 
             foreach (Sourced<PlanetTypeDto> p in planets)
@@ -301,6 +360,10 @@ namespace Cosmimera.GameData.Editor
             {
                 CreatureDto d = c.Dto;
                 RequireEnum<CreatureStage>(c.Where, "stage", d.Stage);
+                if (!TryParseSizeClass(d.SizeClass, out _))
+                {
+                    errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be S, M, L or XL");
+                }
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
@@ -386,13 +449,15 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<MoveDto> s in moves)
             {
                 MoveDto d = s.Dto;
-                moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToRule(d.Effect),
-                    d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape));
+                moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
+                    d.EffectDurationMs ?? 0, d.FieldDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
+                    d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
+                    d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
             }
 
             foreach (Sourced<TraitDto> s in traits)
             {
-                traitDefs[s.Dto.Id].Set(ToRule(s.Dto.Trigger), s.Dto.Effects.Select(ToRule).ToList());
+                traitDefs[s.Dto.Id].Set(ToTrigger(s.Dto.Trigger), s.Dto.Effects.Select(ToEffect).ToList());
             }
 
             foreach (Sourced<PlanetTypeDto> s in planets)
@@ -421,7 +486,8 @@ namespace Cosmimera.GameData.Editor
                     .ToList() ?? new List<EvolutionMaterial>();
                 string sensitivity = (string)d.Concept["sensitivity"];
 
-                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage),
+                TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
+                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass,
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Exp ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),
@@ -509,14 +575,136 @@ namespace Cosmimera.GameData.Editor
             AssetDatabase.CreateFolder(parent, folder.Substring(slash + 1));
         }
 
-        private static RuleDef ToRule(RuleDto dto)
+        private enum ParamKind
+        {
+            Percent, DurationMs, Delta, Element, ElementOrAny,
+        }
+
+        // Mirrors common.schema.json#/$defs/trigger and #/$defs/effect. Re-checked here because a wrong param
+        // would otherwise import as 0 and only surface when P2-09 reads it mid-battle.
+        private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> TriggerParams =
+            new Dictionary<string, (string Key, ParamKind Kind)[]>(StringComparer.Ordinal)
+            {
+                ["always"] = new (string Key, ParamKind Kind)[0],
+                ["on_hp_below"] = new[] { ("percent", ParamKind.Percent) },
+                ["on_hp_above"] = new[] { ("percent", ParamKind.Percent) },
+                ["on_summon"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+                ["on_hit_taken"] = new[] { ("element", ParamKind.ElementOrAny), ("duration_ms", ParamKind.DurationMs) },
+                ["on_move_used"] = new[] { ("element", ParamKind.Element), ("duration_ms", ParamKind.DurationMs) },
+                ["on_ally_swap"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+            };
+
+        private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> EffectParams =
+            new Dictionary<string, (string Key, ParamKind Kind)[]>(StringComparer.Ordinal)
+            {
+                ["mastery_mod"] = new[] { ("element", ParamKind.Element), ("delta", ParamKind.Delta) },
+                ["resist_mod"] = new[] { ("element", ParamKind.Element), ("delta", ParamKind.Delta) },
+                ["cd_mod_percent"] = new[] { ("element", ParamKind.ElementOrAny), ("delta", ParamKind.Delta) },
+                ["evasion_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["move_speed_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["range_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["heal_percent_max_hp"] = new[] { ("percent", ParamKind.Percent) },
+            };
+
+        private static void CheckRule(string where, string field, RuleDto dto,
+            Dictionary<string, (string Key, ParamKind Kind)[]> vocabulary, List<string> errors)
+        {
+            if (dto == null || dto.Type == null || !vocabulary.TryGetValue(dto.Type, out (string Key, ParamKind Kind)[] spec))
+            {
+                errors.Add($"{where}: {field} type '{dto?.Type}' is not in the closed vocabulary");
+                return;
+            }
+
+            // REQ: docs/design/combat.md#效果疊加 — stacking is an effect property; a heal is instant and never stacks.
+            if (dto.MaxStacks.HasValue)
+            {
+                if (vocabulary != EffectParams || dto.Type == "heal_percent_max_hp")
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' does not accept max_stacks");
+                }
+                else if (dto.MaxStacks < 1 || dto.MaxStacks > EffectDef.MaxStacksLimit)
+                {
+                    errors.Add($"{where}: {field} max_stacks must be 1..{EffectDef.MaxStacksLimit}");
+                }
+            }
+
+            JObject ps = dto.Params ?? new JObject();
+            foreach (JProperty p in ps.Properties())
+            {
+                if (Array.FindIndex(spec, s => s.Key == p.Name) < 0)
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' has unknown param '{p.Name}'");
+                }
+            }
+
+            foreach ((string key, ParamKind kind) in spec)
+            {
+                JToken token = ps[key];
+                if (token == null)
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' is missing param '{key}'");
+                }
+                else if (!ParamValid(token, kind))
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' param '{key}' = {token.ToString(Formatting.None)} is not a valid {kind}");
+                }
+            }
+        }
+
+        private static bool ParamValid(JToken token, ParamKind kind)
+        {
+            switch (kind)
+            {
+                case ParamKind.Percent:
+                    return IsIntegerInRange(token, 1, 100);
+                case ParamKind.DurationMs:
+                    return IsIntegerInRange(token, 1, MaxDurationMs);
+                case ParamKind.Delta:
+                    return IsIntegerInRange(token, -100, 100);
+                case ParamKind.Element:
+                    return token.Type == JTokenType.String && TryParseEnum((string)token, out Element _);
+                case ParamKind.ElementOrAny:
+                    return token.Type == JTokenType.String
+                        && ((string)token == "any" || TryParseEnum((string)token, out Element _));
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsIntegerInRange(JToken token, int minimum, int maximum)
+        {
+            return token.Type == JTokenType.Integer
+                && long.TryParse(token.ToString(Formatting.None), NumberStyles.Integer, CultureInfo.InvariantCulture, out long value)
+                && value >= minimum && value <= maximum;
+        }
+
+        // Pre (all three readers): CheckRule passed for dto, so present params are in range.
+        private static void ReadElement(JObject ps, out bool any, out Element element)
+        {
+            string raw = (string)ps["element"];
+            any = raw == "any";
+            element = raw == null || any ? default : ParseEnum<Element>(raw);
+        }
+
+        private static TriggerDef ToTrigger(RuleDto dto)
+        {
+            JObject ps = dto.Params ?? new JObject();
+            ReadElement(ps, out bool any, out Element element);
+            return new TriggerDef(ParseEnum<TriggerType>(dto.Type), any, element,
+                (int?)ps["percent"] ?? 0, (int?)ps["duration_ms"] ?? 0);
+        }
+
+        private static EffectDef ToEffect(RuleDto dto)
         {
             if (dto == null)
             {
                 return null;
             }
 
-            return new RuleDef(dto.Type, (dto.Params ?? new JObject()).ToString(Formatting.None));
+            JObject ps = dto.Params ?? new JObject();
+            ReadElement(ps, out bool any, out Element element);
+            return new EffectDef(ParseEnum<EffectType>(dto.Type), any, element,
+                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0, dto.MaxStacks ?? 1);
         }
 
         private static T ParseEnum<T>(string snake) where T : struct, Enum
@@ -524,6 +712,13 @@ namespace Cosmimera.GameData.Editor
             bool ok = TryParseEnum(snake, out T value);
             Contract.Requires(ok, $"'{snake}' was not checked in Resolve");
             return value;
+        }
+
+        private static bool TryParseSizeClass(string value, out CreatureSizeClass sizeClass)
+        {
+            sizeClass = default;
+            return (value == "S" || value == "M" || value == "L" || value == "XL")
+                && Enum.TryParse(value, out sizeClass);
         }
 
         private static bool TryParseEnum<T>(string snake, out T value) where T : struct, Enum

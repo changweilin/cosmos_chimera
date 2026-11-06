@@ -1,0 +1,7 @@
+[
+  {
+    "id": "sample_trait_heal_stacks",
+    "trigger": { "type": "on_hp_below", "params": { "percent": 30 } },
+    "effects": [{ "type": "heal_percent_max_hp", "params": { "percent": 10 }, "max_stacks": 2 }]
+  }
+]

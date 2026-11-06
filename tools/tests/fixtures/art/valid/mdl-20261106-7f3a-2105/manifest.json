@@ -1,0 +1,20 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=1.0.0 catalog=1.0.0 template=model-rig@1.0.0 task_id=mdl-20261106-7f3a-2105 seed=7f3a]",
+  "task_id": "mdl-20261106-7f3a-2105",
+  "task_type": "model-rig",
+  "subject_id": "line_7f3a",
+  "produced_by": "Gemini Argon",
+  "files": [
+    {"path": "images/cr_line_7f3a_adult_model_front.png", "kind": "view", "level": "L1"},
+    {"path": "images/cr_line_7f3a_adult_model_side.png", "kind": "view", "level": "L1"},
+    {"path": "images/cr_line_7f3a_adult_model_back.png", "kind": "view", "level": "L1"},
+    {"path": "rig/rig_spec.json", "kind": "spec", "level": "L1"},
+    {"path": "rig/build_rig.py", "kind": "script", "level": "L1"},
+    {"path": "rig/README.md", "kind": "report", "level": "L1"}
+  ],
+  "missing": [
+    {"item": "models/cr_line_7f3a_adult.glb", "level": "L2", "reason": "no 3D generation on this platform"}
+  ],
+  "notes": ""
+}

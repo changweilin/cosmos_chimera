@@ -1,0 +1,593 @@
+[
+  {
+    "id": "trait_metal_scrap_overdrive",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 30
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "metal",
+          "delta": 25
+        }
+      },
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_metal_ballistic_pivot",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_metal_conductive_plating",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "thunder",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "metal",
+          "delta": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_overgrowth_surge",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 75
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "fire",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_thorn_lash",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 35
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_sap_absorption",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "water",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 6
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_torrential_deluge",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "water",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      },
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_revitalizing_spring",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 8
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_rippling_counter",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "water",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "water",
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_smoldering_core",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "fire",
+          "delta": -10
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "water",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_scorching_momentum",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 80
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_cinder_screen",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "fire",
+        "duration_ms": 3000
+      }
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 8
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_shattered_carapace",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 30
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "earth",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_grounding_mantle",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 6000
+      }
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "thunder",
+          "delta": 30
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_faultline_shift",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_hoarfrost_tread",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "ice",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "fire",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_mirror_frost",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "any",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_subzero_focus",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 80
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "ice",
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_tempest_headway",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "wind",
+          "delta": -20
+        }
+      },
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -6
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_slipstream_dodge",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "wind",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_desperation_updraft",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 35
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_plasma_charge",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 8
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "earth",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_arc_discharge",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 30
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "thunder",
+          "delta": 25
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_supercharged_stride",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 80
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_luminous_barrier",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "light",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "shadow",
+          "delta": 25
+        }
+      },
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_saving_grace",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 25
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 12
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_guiding_beam",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_umbral_cloak",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 5
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "light",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_fade_step",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "shadow",
+        "duration_ms": 3000
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_dark_retaliation",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "shadow",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "shadow",
+          "delta": 20
+        }
+      }
+    ]
+  }
+]

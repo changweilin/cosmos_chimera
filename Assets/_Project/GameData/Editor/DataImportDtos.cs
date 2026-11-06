@@ -12,7 +12,9 @@ namespace Cosmimera.GameData.Editor
     internal sealed class RuleDto
     {
         [JsonProperty("type", Required = Required.Always)] public string Type;
-        [JsonProperty("params")] public JObject Params;
+        [JsonProperty("params", Required = Required.DisallowNull)] public JObject Params;
+        // Effects only (common.schema.json#/$defs/effect); the importer rejects it on triggers.
+        [JsonProperty("max_stacks", Required = Required.DisallowNull)] public int? MaxStacks;
     }
 
     internal sealed class MoveDto
@@ -22,10 +24,15 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("kind", Required = Required.Always)] public string Kind;
         [JsonProperty("power", Required = Required.Always)] public int Power;
         [JsonProperty("effect")] public RuleDto Effect;
+        [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
+        [JsonProperty("field_duration_ms", Required = Required.DisallowNull)] public int? FieldDurationMs;
         [JsonProperty("cooldown_ms", Required = Required.Always)] public int CooldownMs;
         [JsonProperty("accuracy", Required = Required.Always)] public int Accuracy;
         [JsonProperty("range_class", Required = Required.Always)] public string RangeClass;
         [JsonProperty("shape", Required = Required.Always)] public string Shape;
+        [JsonProperty("base_range_mm", Required = Required.Always)] public int BaseRangeMm;
+        [JsonProperty("movement", Required = Required.DisallowNull)] public string Movement;
+        [JsonProperty("origin", Required = Required.DisallowNull)] public string Origin;
     }
 
     internal sealed class TraitDto
@@ -69,6 +76,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("id", Required = Required.Always)] public string Id;
         [JsonProperty("line_id", Required = Required.Always)] public string LineId;
         [JsonProperty("stage", Required = Required.Always)] public string Stage;
+        [JsonProperty("size_class", Required = Required.Always)] public string SizeClass;
         [JsonProperty("evolves_to", Required = Required.AllowNull)] public string EvolvesTo;
         [JsonProperty("evolution", Required = Required.AllowNull)] public EvolutionDto Evolution;
         [JsonProperty("resist", Required = Required.Always)] public Dictionary<string, int> Resist;

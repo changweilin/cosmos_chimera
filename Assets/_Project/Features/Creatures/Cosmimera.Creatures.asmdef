@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Creatures",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.GameData",
         "Cosmimera.WorldGen",
         "Cosmimera.Planet"
     ],
