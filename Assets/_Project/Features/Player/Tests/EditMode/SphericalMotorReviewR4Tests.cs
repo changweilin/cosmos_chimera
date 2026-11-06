@@ -64,7 +64,8 @@ namespace Cosmimera.Player.Tests
 
             MotorState next = SphericalMotor.Step(settings, s, new MotorInput(), default, to, Dt);
 
-            // MotorState Post: PlanarVelocity ⟂ Up within 1e-4. Without the correction this witness measured 5.2e-4.
+            // Regression precision for this witness (stricter than the relative MotorState Post at 1000 m/s).
+            // Without the correction it measured 5.2e-4.
             Assert.LessOrEqual(math.abs(math.dot(next.PlanarVelocity, next.Up)), 1e-4f);
         }
 

@@ -50,7 +50,7 @@ namespace Cosmimera.Player
         /// <summary>Wires the rig.</summary>
         /// <remarks>
         /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; pivot is not a child of target (the
-        ///      orbit, not the body, owns its rotation).
+        ///      orbit, not the body, owns its rotation); serialized look multipliers in range (see AddLook).
         /// Post: third person live; orbit heading == target forward; brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
         /// </remarks>
@@ -61,6 +61,7 @@ namespace Cosmimera.Player
             Contract.Requires(target != null && pivot != null && thirdPerson != null && firstPerson != null && brain != null,
                 "all rig references are required");
             Contract.Requires(!pivot.IsChildOf(target), "pivot must not be parented to the target");
+            RequireMultipliers();
 
             _planet = planet;
             _target = target;
@@ -92,9 +93,14 @@ namespace Cosmimera.Player
         /// <summary>Queues look input for the next LateUpdate.</summary>
         /// <remarks>
         /// Pre: each pointerDelta component finite with |·| ≤ MaxPointerDelta (pixels, mouse); each stick component in
-        ///      [-1, 1] (+1e-3), scaled by deltaTime here; deltaTime in [0, MaxLookDeltaTime].
-        /// Post: accumulated until consumed; pending yaw stays in (-360, 360) and pending pitch in [-180, 180], so the
-        ///       queued look is always finite for <see cref="ViewOrbit.Advance"/>.
+        ///      [-1, 1] (+1e-3), scaled by deltaTime here; deltaTime in [0, MaxLookDeltaTime] (the project's Maximum
+        ///      Allowed Timestep is 0.333 s, so Time.deltaTime satisfies it); the serialized multipliers are in range:
+        ///      |sensitivity| ≤ MaxSensitivityDegrees, 0 ≤ gamepad rate ≤ MaxGamepadDegreesPerSecond, both finite.
+        /// Post: yaw accumulates modulo 360, so pending yaw stays in (-360, 360). Pitch accumulates and **saturates**
+        ///       at ±180°: input that pushes past a half turn in one direction within one frame is dropped, and later
+        ///       opposite input starts from the saturated value. Any |pitch| ≥ 160 already drives the orbit to its
+        ///       ±80° limit from every starting pitch, so saturation only differs from exact summation when one frame
+        ///       mixes a > 180° swing with its partial reversal (SOL P1 r6 N10). The queued look is always finite.
         /// Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
@@ -105,16 +111,30 @@ namespace Cosmimera.Player
                 "pointer delta exceeds MaxPointerDelta");
             Contract.Requires(math.abs(stick.x) <= 1.001f && math.abs(stick.y) <= 1.001f, "stick components must be in [-1, 1]");
             Contract.Requires(deltaTime >= 0f && deltaTime <= MaxLookDeltaTime, "deltaTime must be in [0, MaxLookDeltaTime]");
+            RequireMultipliers();
             float2 look = _pendingLook + (float2)pointerDelta * _sensitivityDegrees
                 + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
             // Bound the queue (sol P1 r5 N8): finite inputs could still multiply/accumulate to ±Infinity and wedge
-            // LateUpdate, which only clears the queue after Advance succeeds. Yaw is periodic, and pitch beyond ±180°
-            // is clamped to ±MaxPitch by the orbit anyway, so neither bound changes the resulting view.
+            // LateUpdate, which only clears the queue after Advance succeeds. Yaw is periodic, so the wrap is exact;
+            // the pitch saturation is the documented Post, not a no-op (sol P1 r6 N10).
             look.x = math.fmod(look.x, 360f);
             look.y = math.clamp(look.y, -180f, 180f);
             Contract.Ensures(math.all(math.isfinite(look)), "pending look must stay finite");
             _pendingLook = look;
         }
+
+        /// <summary>Pending look queued for the next LateUpdate, (yaw, pitch) in degrees.</summary>
+        /// <remarks>Pre: none. Post: yaw in (-360, 360), pitch in [-180, 180]. Side effects: none.</remarks>
+        internal float2 PendingLook => _pendingLook;
+
+        /// <summary>Largest |mouse sensitivity| (degrees per pixel) the rig accepts.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. 10°/px is ~80× the default; with MaxPointerDelta it
+        /// keeps one call's contribution at 1e7°, far from float overflow (SOL P1 r6 N8-R6).</remarks>
+        public const float MaxSensitivityDegrees = 10f;
+
+        /// <summary>Largest gamepad look rate (degrees per second) the rig accepts.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Ten turns per second; 20× the default.</remarks>
+        public const float MaxGamepadDegreesPerSecond = 3600f;
 
         /// <summary>Largest per-call mouse delta accepted by <see cref="AddLook"/>, in pixels.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none. Far above any real frame's mouse motion; keeps
@@ -131,6 +151,16 @@ namespace Cosmimera.Player
         {
             Contract.Requires(_configured, "Configure has not been called");
             SetFirstPerson(!IsFirstPerson);
+        }
+
+        // Serialized fields can be edited in the inspector at any time, so they are checked where used, not only once.
+        private void RequireMultipliers()
+        {
+            Contract.Requires(math.isfinite(_sensitivityDegrees) && math.abs(_sensitivityDegrees) <= MaxSensitivityDegrees,
+                "sensitivity must be finite and within ±MaxSensitivityDegrees");
+            Contract.Requires(math.isfinite(_gamepadDegreesPerSecond) && _gamepadDegreesPerSecond >= 0f
+                && _gamepadDegreesPerSecond <= MaxGamepadDegreesPerSecond,
+                "gamepad look rate must be finite and within [0, MaxGamepadDegreesPerSecond]");
         }
 
         private void SetFirstPerson(bool firstPerson)

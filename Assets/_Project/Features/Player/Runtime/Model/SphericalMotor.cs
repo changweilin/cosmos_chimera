@@ -217,7 +217,8 @@ namespace Cosmimera.Player
         ///       Grounded ⇔ ground.Hit ∧ Distance ≤ SnapDistance ∧ slope ≤ MaxSlope ∧ prev.VerticalSpeed ≤ 0.5 ∧ no jump;
         ///       JumpStarted ⇔ a jump started this step;
         ///       |PlanarVelocity| ≤ min(MaxStateSpeed, max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding)); transport alone preserves
-        ///       |PlanarVelocity|; while grounded, Velocity runs along the
+        ///       |PlanarVelocity| except at the domain edge, where lengthsq ≥ MaxStateSpeed²·(1−2e-6) is rescaled to
+        ///       MaxStateSpeed·(1−1e-6) (≤ ~0.011 m/s at 1e4 m/s, sol P1 r6); while grounded, Velocity runs along the
         ///       ground plane at |PlanarVelocity| plus StickSpeed into the ground;
         ///       a jump starts only from Grounded and sets the vertical speed to sqrt(2·Gravity·JumpHeight).
         /// Side effects: none (pure).
