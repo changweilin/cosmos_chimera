@@ -1,7 +1,7 @@
 # Roadmap 索引
 
 只列階段與目前位置。項目細節、驗收條件、交接紀錄在各 `phase-N.md`。
-AI 代號（OPUS / SONNET / SOL / TERRA / ARGON / FLASH）定義在 `../ai-agents.md`。
+AI 代號（OPUS / SONNET / SONNET-AGY / SOL / TERRA / LUNA / ARGON / FLASH）與任務類型派工矩陣定義在 `../ai-agents.md`。
 狀態：⬜ 未開始 · 🟦 進行中 · 🟨 待審 · ✅ 完成 · ⛔ 阻塞
 
 | 階段 | 目標（出口條件） | 狀態 | 檔案 |

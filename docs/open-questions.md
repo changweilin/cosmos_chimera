@@ -33,7 +33,6 @@
 | ID | 問題 | 影響項目 | 暫定 |
 |---|---|---|---|
 | Q-T1 | 宙獸導航：區域局部 NavMesh 或自訂 steering？ | P1-06 | 原型兩者後決定 |
-| Q-T2 | 「ChatGPT Terra/Sol」「Gemini Flash/Argon」各自的能力層級假設是否正確？見 ai-agents.md | 全部 | 見該檔 |
 | Q-T3 | 概念圖/貼圖/3D 模型由哪個工具產出？ | P5-04 | 概念圖、三視圖、特效分鏡：ChatGPT（圖像生成）/ Gemini Argon 任務模式，經 `tools/prompt-forge`。**3D 網格/綁骨/動畫仍未定**：對話式 AI 只保證交付三視圖 + 骨架規格 + Blender 腳本，真正的 image-to-3D 工具待選 |
 | Q-T5 | `PlanetFrame` 規定 cross(East, North) == Up（右手公式），但 Unity 是左手系：面向 North 時 East 在**畫面左邊**，等於鏡像地圖。要 (a) 改成 cross(North, East) == Up 讓 East 在右邊（P1-01 契約破壞性變更，`LatLon` 經度方向一併翻轉），還是 (b) 維持數學慣例、由 P3 貼真實地圖模板時鏡像？ | P1-01、P3-03（真實地圖會左右顛倒）、HUD 指南針 | 建議 (a)；P1-05 移動與攝影機只用 cross(up, forward)，不受影響 |
 | Q-T6 | `PlanetHeight` 跨客戶端可重現要到什麼程度（Sol r2 B1）？同 seed 的 CLR 探針快照雜湊與 Unity 提交值不同，代表 float/sqrt/snoise 的末位在不同後端（Mono/IL2CPP/Burst、x64/ARM64）可能不同。(a) **逐位元一致**：高度改用定點數或自訂決定性數學，所有依高度做的內容決策都安全，但要重寫噪聲、成本高；(b) **容許幾何誤差**（例：≤ 1 mm）＋**內容決策不得讀浮點高度門檻**，改由權威內容資料（離散的區域/POI 表，以整數 seed 推導）決定，契約與快照改成「同後端逐位元、跨後端容差」 | P1-04、P3-05～P3-10（生成可重現性）、P6 連線 | 建議 (b)：P3-10 只要求 Windows x64 兩台機器一致，Burst 與 Mono 本來就差 0.5 mm（ADR-0006）；改契約前先在 P3-10 實測 IL2CPP x64 |
