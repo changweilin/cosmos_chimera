@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/relation.schema.json",
+  "title": "Relation edge file (array of undirected edges)",
+  "description": "REQ: docs/design/creatures.md#關係表. a < b ordering, duplicates and endpoint existence are cross-file checks in tools/validate-data.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/edge" },
+  "$defs": {
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["a", "b", "kind"],
+      "properties": {
+        "a": { "$ref": "common.schema.json#/$defs/id" },
+        "b": { "$ref": "common.schema.json#/$defs/id" },
+        "kind": {
+          "description": "Closed enum (user decision 2026-11-06). myth_kin=神話同源, rival_symbiosis=天敵共生, tool_kin=同工具系, mentor=師徒.",
+          "enum": ["evolution_family", "myth_kin", "rival_symbiosis", "tool_kin", "mentor"]
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

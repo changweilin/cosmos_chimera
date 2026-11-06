@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/planet-type.schema.json",
+  "title": "Planet type file (array of planet types)",
+  "description": "REQ: docs/design/planet-world.md#星球類型. Structure only; radius and drop weights belong to P3 (user decision 2026-11-06).",
+  "type": "array",
+  "items": { "$ref": "#/$defs/planetType" },
+  "$defs": {
+    "planetType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "size", "terrain_tags", "element_bias"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "size": { "enum": ["small", "medium", "large"] },
+        "terrain_tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/id" }
+        },
+        "element_bias": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/element" }
+        }
+      }
+    }
+  }
+}

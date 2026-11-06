@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/creature.schema.json",
+  "title": "Creature file (array of creatures)",
+  "description": "REQ: docs/design/creatures.md#資料模型. Cross-file refs (moves, traits, evolves_to chain) are checked by tools/validate-data.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/creature" },
+  "$defs": {
+    "creature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "line_id", "stage", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "line_id": { "$ref": "common.schema.json#/$defs/id" },
+        "stage": { "enum": ["juvenile", "adolescent", "adult"] },
+        "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
+        "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },
+        "resist": {
+          "description": "All ten keys required: a missing key would silently read as 0 and hide authoring mistakes.",
+          "type": "object",
+          "required": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"],
+          "propertyNames": { "$ref": "common.schema.json#/$defs/element" },
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/resistPercent" }
+        },
+        "mastery": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 3,
+          "propertyNames": { "$ref": "common.schema.json#/$defs/element" },
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
+        },
+        "stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["con", "str", "spi", "agi"],
+          "properties": {
+            "con": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "str": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "spi": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "agi": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
+          }
+        },
+        "signature_move": { "$ref": "common.schema.json#/$defs/id" },
+        "trait": { "$ref": "common.schema.json#/$defs/id" },
+        "concept": {
+          "description": "Open by design: shaped by creature-concept-pipeline.md, not consumed by game rules.",
+          "type": "object",
+          "properties": {
+            "sensitivity": { "enum": ["review"] }
+          }
+        }
+      },
+      "if": { "properties": { "stage": { "const": "adult" } } },
+      "then": { "properties": { "evolves_to": { "type": "null" }, "evolution": { "type": "null" } } },
+      "else": { "properties": { "evolves_to": { "type": "string" }, "evolution": { "type": "object" } } }
+    },
+    "evolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exp", "materials"],
+      "properties": {
+        "exp": { "type": "integer", "minimum": 1 },
+        "materials": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["element", "tier", "qty"],
+            "properties": {
+              "element": { "$ref": "common.schema.json#/$defs/element" },
+              "tier": { "type": "integer", "minimum": 1 },
+              "qty": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

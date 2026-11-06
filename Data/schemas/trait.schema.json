@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/trait.schema.json",
+  "title": "Trait file (array of traits)",
+  "description": "REQ: docs/design/creatures.md#特性 — passive = trigger + effects, data-driven.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/trait" },
+  "$defs": {
+    "trait": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "trigger", "effects"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "trigger": { "$ref": "common.schema.json#/$defs/rule" },
+        "effects": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/rule" } }
+      }
+    }
+  }
+}
