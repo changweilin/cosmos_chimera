@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) and r8 (N12-R8, N14, N16, N17). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -59,8 +59,35 @@ namespace Cosmimera.Player.Tests
         {
             SetField(field, value);
             Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        // sol P1 r8 N12-R8: TrackingTarget alone could not see an early write to the rig's own fields.
+        private void AssertNothingWritten()
+        {
             Assert.IsNull(_third.Target.TrackingTarget, "nothing was wired");
             Assert.Throws<ContractException>(() => _ = _rig.Heading, "still unconfigured");
+            var planet = (PlanetConfig)typeof(PlayerCameraRig).GetField("_planet", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_rig);
+            Assert.IsFalse(planet.IsValid, "_planet untouched");
+            foreach (string field in new[] { "_target", "_pivot", "_thirdPerson", "_firstPerson" })
+            {
+                Assert.IsNull(typeof(PlayerCameraRig).GetField(field, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_rig), field);
+            }
+        }
+
+        [Test]
+        public void N16_target_at_the_planet_centre_is_rejected_before_wiring()
+        {
+            _target.position = Vector3.zero;
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N17_the_same_camera_for_both_views_is_rejected_before_wiring()
+        {
+            Assert.Throws<ContractException>(() => _rig.Configure(_config, _target, _pivot, _third, _third, _brain));
+            AssertNothingWritten();
         }
 
         [Test]
@@ -78,6 +105,16 @@ namespace Cosmimera.Player.Tests
 
             Assert.AreEqual(float2.zero, _rig.PendingLook);
             Assert.Greater(math.dot((float3)_rig.Heading, new float3(0f, 0f, 1f)), 0.9999f, "heading == target forward");
+        }
+
+        [Test]
+        public void N14_pitch_queued_before_configure_is_discarded_too()
+        {
+            _rig.AddLook(new Vector2(0f, 750f), Vector2.zero, 0f);
+            Configure();
+
+            var orbit = (ViewOrbit)typeof(PlayerCameraRig).GetField("_orbit", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_rig);
+            Assert.AreEqual(0f, orbit.PitchDegrees);
         }
 
         [Test]

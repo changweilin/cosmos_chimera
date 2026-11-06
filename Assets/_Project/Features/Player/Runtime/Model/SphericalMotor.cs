@@ -274,7 +274,10 @@ namespace Cosmimera.Player
             // Unity is left-handed (Vector3.right == cross(up, forward) for up=Y, forward=Z), so screen-right is
             // cross(up, forward). Do not derive it from PlanetFrame.East: that frame is right-handed by formula.
             float3 viewRight = math.cross(up, viewForward);
-            float3 wishDir = viewRight * input.Move.x + viewForward * input.Move.y;
+            // The Pre tolerates |Move| up to ~1.001 (stick calibration); limit it to the unit disc so that tolerance
+            // cannot push speed past SprintSpeed and break the speed Post (sol P1 r8 N15: +0.09 m/s at 100 m/s).
+            float2 move = math.lengthsq(input.Move) > 1f ? math.normalize(input.Move) : input.Move;
+            float3 wishDir = viewRight * move.x + viewForward * move.y;
             float wishSpeed = input.Sprint ? settings.SprintSpeed : settings.WalkSpeed;
             float3 wishVelocity = wishDir * wishSpeed;
 

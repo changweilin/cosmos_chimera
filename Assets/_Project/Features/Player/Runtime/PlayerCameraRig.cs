@@ -50,7 +50,10 @@ namespace Cosmimera.Player
         /// <summary>Wires the rig.</summary>
         /// <remarks>
         /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; pivot is not a child of target (the
-        ///      orbit, not the body, owns its rotation); serialized look multipliers in range (see AddLook).
+        ///      orbit, not the body, owns its rotation); thirdPerson != firstPerson (ToggleView must leave exactly one
+        ///      live); target.position finite with some |component| of (position − planet.Center) > 1e-3 m (the
+        ///      PlanetConfig.ToDirection domain); serialized look multipliers in range (see AddLook). All checked
+        ///      before anything is written.
         /// Post: third person live; any look queued before Configure is discarded; orbit heading == target forward
         ///       (tangent part); brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
@@ -62,6 +65,10 @@ namespace Cosmimera.Player
             Contract.Requires(target != null && pivot != null && thirdPerson != null && firstPerson != null && brain != null,
                 "all rig references are required");
             Contract.Requires(!pivot.IsChildOf(target), "pivot must not be parented to the target");
+            Contract.Requires(thirdPerson != firstPerson, "third- and first-person cameras must be different objects");
+            float3 offset = (float3)target.position - planet.Center;
+            Contract.Requires(math.all(math.isfinite(offset)) && math.cmax(math.abs(offset)) > 1e-3f,
+                "target must be finite and away from the planet centre (sol P1 r8 N16)");
             RequireMultipliers();
 
             _planet = planet;

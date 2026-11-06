@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Counter-examples from docs/reviews/P1-review-r5-sol.md (N6–N9).
+    // Counter-examples from docs/reviews/P1-review-r5-sol.md (N6–N9) and r8 N15.
     public sealed class SphericalMotorReviewR5Tests
     {
         private const float Dt = 0.02f;
@@ -133,6 +133,25 @@ namespace Cosmimera.Player.Tests
             MotorState s = SphericalMotor.Initial(Y, Z);
             s.Velocity = new float3(x, 0f, z);
             Assert.Throws<ContractException>(() => SphericalMotor.Step(MotorSettings.Default, s, default, default, Y, Dt));
+        }
+
+        // ---- sol P1 r8 N15: the |Move| tolerance must not push speed past SprintSpeed.
+
+        [Test]
+        public void N15_move_within_the_tolerance_does_not_exceed_sprint_speed()
+        {
+            MotorSettings settings = MotorSettings.Default;
+            settings.WalkSpeed = settings.SprintSpeed = 100f;
+            settings.GroundAcceleration = 1000f;
+            var input = new MotorInput { Move = new float2(0f, 1.0009f), ViewForward = Z, Sprint = true };
+            var flat = new GroundContact { Hit = true, Normal = Y, Distance = 0f };
+
+            MotorState s = SphericalMotor.Initial(Y, Z);
+            for (int i = 0; i < 3; i++)
+            {
+                s = SphericalMotor.Step(settings, s, input, flat, Y, 0.1f);
+                Assert.LessOrEqual(math.length(s.PlanarVelocity), settings.SprintSpeed * (1f + 1e-6f));
+            }
         }
 
         // ---- N8: legal finite look input must not poison the pending look.
