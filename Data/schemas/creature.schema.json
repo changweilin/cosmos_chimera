@@ -9,11 +9,12 @@
     "creature": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "line_id", "stage", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
+      "required": ["id", "line_id", "stage", "size_class", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "line_id": { "$ref": "common.schema.json#/$defs/id" },
         "stage": { "enum": ["juvenile", "adolescent", "adult"] },
+        "size_class": { "enum": ["S", "M", "L", "XL"] },
         "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
         "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },
         "resist": {
@@ -28,7 +29,7 @@
           "minProperties": 1,
           "maxProperties": 3,
           "propertyNames": { "$ref": "common.schema.json#/$defs/element" },
-          "additionalProperties": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/masteryPercent" }
         },
         "stats": {
           "type": "object",
@@ -60,7 +61,7 @@
       "additionalProperties": false,
       "required": ["exp", "materials"],
       "properties": {
-        "exp": { "type": "integer", "minimum": 1 },
+        "exp": { "$ref": "common.schema.json#/$defs/positiveInt" },
         "materials": {
           "type": "array",
           "minItems": 1,
@@ -70,8 +71,8 @@
             "required": ["element", "tier", "qty"],
             "properties": {
               "element": { "$ref": "common.schema.json#/$defs/element" },
-              "tier": { "type": "integer", "minimum": 1 },
-              "qty": { "type": "integer", "minimum": 1 }
+              "tier": { "$ref": "common.schema.json#/$defs/positiveInt" },
+              "qty": { "$ref": "common.schema.json#/$defs/positiveInt" }
             }
           }
         }

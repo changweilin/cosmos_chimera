@@ -40,7 +40,8 @@
     "concept": {
       "base": "fennec fox with ember tail",
       "archetype": "trickster"
-    }
+    },
+    "size_class": "S"
   },
   {
     "id": "sample_fox_beast",
@@ -84,7 +85,8 @@
     "concept": {
       "base": "twin-tailed fire fox",
       "archetype": "magical beast"
-    }
+    },
+    "size_class": "M"
   },
   {
     "id": "sample_fox_lord",
@@ -119,6 +121,7 @@
     "concept": {
       "base": "nine-tailed celestial fox",
       "archetype": "solar guardian"
-    }
+    },
+    "size_class": "L"
   }
 ]

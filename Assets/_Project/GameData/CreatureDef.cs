@@ -104,6 +104,7 @@ namespace Cosmimera.GameData
 
         [SerializeField] private string lineId;
         [SerializeField] private CreatureStage stage;
+        [SerializeField] private CreatureSizeClass sizeClass;
         [SerializeField] private CreatureDef evolvesTo;
         [SerializeField] private int evolutionExp;
         [SerializeField] private List<EvolutionMaterial> evolutionMaterials = new List<EvolutionMaterial>();
@@ -122,6 +123,10 @@ namespace Cosmimera.GameData
         /// <summary>Stage of this form.</summary>
         /// <remarks>Pre: none. Post: a defined CreatureStage. Side effects: none.</remarks>
         public CreatureStage Stage => stage;
+
+        /// <summary>Size class for animation pairing and art budgets.</summary>
+        /// <remarks>Pre: none. Post: a defined CreatureSizeClass. Side effects: none.</remarks>
+        public CreatureSizeClass SizeClass => sizeClass;
 
         /// <summary>The next form, or null for an adult.</summary>
         /// <remarks>Pre: none. Post: null iff Stage == Adult; otherwise same LineId, next stage. Side effects: none.</remarks>
@@ -171,13 +176,14 @@ namespace Cosmimera.GameData
             return resist[(int)element];
         }
 
-        internal void Set(string lineId, CreatureStage stage, CreatureDef evolvesTo, int evolutionExp,
+        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, CreatureDef evolvesTo, int evolutionExp,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
         {
             Contract.Requires(resist != null && resist.Length == ElementCount, "resist must have one entry per element");
             this.lineId = lineId;
             this.stage = stage;
+            this.sizeClass = sizeClass;
             this.evolvesTo = evolvesTo;
             this.evolutionExp = evolutionExp;
             this.evolutionMaterials = evolutionMaterials;

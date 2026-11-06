@@ -4,6 +4,7 @@ Run: python -m unittest discover -s tools/tests
 Each invalid fixture is overlaid onto a copy of the valid set so cross-file checks
 (dangling refs, edge endpoints) have real context, mirroring how a batch lands in Data/.
 """
+import json
 import shutil
 import sys
 import tempfile
@@ -112,8 +113,48 @@ class CrossFileRules(unittest.TestCase):
 
     def test_effect_move_requires_effect(self):
         move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
-                '"accuracy":100,"range_class":"mid","shape":"aoe"}]')
+                '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
         self.assertIn("schema", self.codes(self._with_valid({"moves/buff.json": move})))
+
+    def test_numeric_representation_boundaries(self):
+        cases = [
+            ("moves", ("power",), 100000),
+            ("moves", ("cooldown_ms",), 2147483647),
+            ("moves", ("base_range_mm",), 2147483647),
+            ("creatures", ("mastery", "fire"), 1000),
+            ("creatures", ("stats", "con"), 2147483647),
+            ("creatures", ("evolution", "exp"), 2147483647),
+            ("creatures", ("evolution", "materials", 0, "tier"), 2147483647),
+            ("creatures", ("evolution", "materials", 0, "qty"), 2147483647),
+        ]
+        for kind, path, maximum in cases:
+            for value, valid in [(maximum, True), (maximum + 1, False), (-1, False)]:
+                with self.subTest(kind=kind, path=path, value=value):
+                    relative = f"{kind}/{kind}.json"
+                    records = json.loads((SAMPLES / "valid" / relative).read_text(encoding="utf-8"))
+                    parent = records[0]
+                    for key in path[:-1]:
+                        parent = parent[key]
+                    parent[path[-1]] = value
+                    errors = [f for f in self._with_valid({relative: json.dumps(records)}) if f.level == "error"]
+                    self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_move_geometry_contracts(self):
+        source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]
+        for shape in ("front", "sweep", "burst", "line", "cone", "arc", "self", "ally", "field"):
+            with self.subTest(shape=shape):
+                move = {**source, "id": "review_move", "shape": shape, "movement": "none"}
+                if shape == "burst":
+                    move["origin"] = "target"
+                self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
+        for changes in [
+            {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},
+            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0},
+        ]:
+            with self.subTest(changes=changes):
+                move = {**source, "id": "review_move", **changes}
+                findings = self._with_valid({"moves/review.json": json.dumps([move])})
+                self.assertIn("schema", self.codes(findings))
 
     def test_material_outside_mastery_is_warning_only(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")

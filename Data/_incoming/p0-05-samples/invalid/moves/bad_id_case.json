@@ -7,6 +7,8 @@
     "cooldown_ms": 1000,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   }
 ]

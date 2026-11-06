@@ -10,6 +10,7 @@ damage  = raw × (1 − clamp(target.resist[move.element], −100, 100) / 100)
 - `resist < 0` 表示弱點（受到更多傷害）；`resist = 100` 表示免疫。
 - 沒有攻擊/防禦數值，也沒有全域相剋表。成長來源只有：專精 %、進化後的招式威力、副手提供的招式與特性。
 - 力量不進入傷害公式，只影響範圍/射程。
+- 2026-11-06 使用者確認：以 Int64 計算中間值，只在最後四捨五入（half up）；威力非零且非免疫的命中至少 1 點。`power` 表示域為 0..100000，有效專精為 0..1000；這是資料／API 契約上限，非平衡目標。P2-09 必須保證修正後專精符合此域，負值先歸零；疊加規則另由 P2-09 定義。
 
 ## CD
 `effective_cd = max(cd_floor, move.cooldown_ms × f(SPI))`，`f` 為遞減函數，`cd_floor` 防止極端精神值打破節奏。
@@ -26,7 +27,9 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 - 玩家角色的翻滾閃避是無敵幀，不走擲骰。
 
 ## 力量 → 範圍/射程
-`range = move.base_range × g(STR)`；近戰招式放大判定體積，遠程招式延長射程。
+`range = move.base_range_mm × g(STR)`；每招必填非負 Int32 毫米值，不從 `range_class` 查表。近戰招式放大判定體積，遠程招式延長射程。
+
+2026-11-06 使用者確認的初稿值：melee=2000、mid=12000、long=24000 mm，已逐招寫入初稿，之後可個別調整。`burst` 的數值表示爆發半徑；`origin` 只指定中心來源，目標點的選擇與施法距離判定屬 P2-04。`movement=dash` 時，數值表示突進的直線路徑長度，必須 >0。
 
 ## 召喚與輪替
 - 上場池最多 4 隻，**同時最多 2 隻在場**（Q-C4 定案）；切換有共用冷卻（暫定 3 s），避免無限換手來躲傷害。
@@ -41,10 +44,15 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 |---|---|---|---|
 | 近戰 | melee | `front` / `sweep` / `burst` | 正前方 / 橫掃 / 以自身為中心擴散 |
 | 中遠距射擊 | mid, long | `line` / `cone` / `arc` | 直線 / 扇形 / 拋物線 |
+| 目標點爆發 | mid, long | `burst` | 以目標點為中心的瞬間爆發 |
 | 輔助 | — | `self` / `ally` | 對自身 / 對他者 |
 | 佈署 | — | `field` | 在地面佈署持續場地 |
 
 動作 clip 與特效以這個分類命名，見 `art-asset-pipeline.md`。
+
+2026-11-06 使用者確認：九種詞彙統一套用於 schema、GameData 與內容初稿。只有 `burst` 必須填 `origin=caster|target`，其他形狀不得填。位移獨立為可省略的 `movement=none|dash`（省略代表 none）；dash 只搭配 line，沿路徑突進並判定命中。幾何、移動、持續場地等處理器仍屬 P2-04，新增詞彙不代表這些處理器已完成。
+
+150 招初稿遷移：近戰 line→front（10）、近戰 cone→sweep（13）、中遠距 line/cone 保留（52）、aoe→burst（37，近戰 caster／其餘 target）、dash→line＋movement=dash（38）。保留 ID、威力、CD、準確率與 range_class。
 
 ## 屬性 × 環境互動（加分項，P5 以後）
 水 + 雷 → 導電範圍擴大；火 + 木 → 燃燒地形；冰 + 水 → 結冰路面。以資料表驅動。

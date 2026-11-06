@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -271,6 +272,21 @@ namespace Cosmimera.GameData.Editor
                 RequireEnum<MoveKind>(m.Where, "kind", m.Dto.Kind);
                 RequireEnum<RangeClass>(m.Where, "range_class", m.Dto.RangeClass);
                 RequireEnum<MoveShape>(m.Where, "shape", m.Dto.Shape);
+                RequireEnum<MoveMovement>(m.Where, "movement", m.Dto.Movement ?? "none");
+                if (m.Dto.Shape == "burst")
+                {
+                    RequireEnum<BurstOrigin>(m.Where, "origin", m.Dto.Origin);
+                }
+                else if (m.Dto.Origin != null)
+                {
+                    errors.Add($"{m.Where}: origin is only allowed for burst moves");
+                }
+
+                if (m.Dto.BaseRangeMm < 0 || (m.Dto.Movement == "dash"
+                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0)))
+                {
+                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and positive range");
+                }
                 if ((m.Dto.Kind == "damage") != (m.Dto.Effect == null))
                 {
                     errors.Add($"{m.Where}: effect must be present iff kind is not 'damage'");
@@ -317,6 +333,10 @@ namespace Cosmimera.GameData.Editor
             {
                 CreatureDto d = c.Dto;
                 RequireEnum<CreatureStage>(c.Where, "stage", d.Stage);
+                if (!TryParseSizeClass(d.SizeClass, out _))
+                {
+                    errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be S, M, L or XL");
+                }
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
@@ -403,7 +423,9 @@ namespace Cosmimera.GameData.Editor
             {
                 MoveDto d = s.Dto;
                 moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
-                    d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape));
+                    d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
+                    d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
+                    d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
             }
 
             foreach (Sourced<TraitDto> s in traits)
@@ -437,7 +459,8 @@ namespace Cosmimera.GameData.Editor
                     .ToList() ?? new List<EvolutionMaterial>();
                 string sensitivity = (string)d.Concept["sensitivity"];
 
-                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage),
+                TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
+                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass,
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Exp ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),
@@ -593,11 +616,11 @@ namespace Cosmimera.GameData.Editor
             switch (kind)
             {
                 case ParamKind.Percent:
-                    return token.Type == JTokenType.Integer && (long)token >= 1 && (long)token <= 100;
+                    return IsIntegerInRange(token, 1, 100);
                 case ParamKind.DurationMs:
-                    return token.Type == JTokenType.Integer && (long)token >= 1 && (long)token <= 600000;
+                    return IsIntegerInRange(token, 1, 600000);
                 case ParamKind.Delta:
-                    return token.Type == JTokenType.Integer && (long)token >= -100 && (long)token <= 100;
+                    return IsIntegerInRange(token, -100, 100);
                 case ParamKind.Element:
                     return token.Type == JTokenType.String && TryParseEnum((string)token, out Element _);
                 case ParamKind.ElementOrAny:
@@ -606,6 +629,13 @@ namespace Cosmimera.GameData.Editor
                 default:
                     return false;
             }
+        }
+
+        private static bool IsIntegerInRange(JToken token, int minimum, int maximum)
+        {
+            return token.Type == JTokenType.Integer
+                && long.TryParse(token.ToString(Formatting.None), NumberStyles.Integer, CultureInfo.InvariantCulture, out long value)
+                && value >= minimum && value <= maximum;
         }
 
         // Pre (all three readers): CheckRule passed for dto, so present params are in range.
@@ -642,6 +672,13 @@ namespace Cosmimera.GameData.Editor
             bool ok = TryParseEnum(snake, out T value);
             Contract.Requires(ok, $"'{snake}' was not checked in Resolve");
             return value;
+        }
+
+        private static bool TryParseSizeClass(string value, out CreatureSizeClass sizeClass)
+        {
+            sizeClass = default;
+            return (value == "S" || value == "M" || value == "L" || value == "XL")
+                && Enum.TryParse(value, out sizeClass);
         }
 
         private static bool TryParseEnum<T>(string snake, out T value) where T : struct, Enum

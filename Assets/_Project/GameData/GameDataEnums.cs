@@ -1,6 +1,6 @@
 namespace Cosmimera.GameData
 {
-    // Each enum mirrors a JSON enum in Data/schemas; the importer maps snake_case <-> PascalCase by name.
+    // Enums mirror Data/schemas; size classes retain uppercase labels, others use snake_case <-> PascalCase.
     // Values are explicit because CreatureDef stores resist as an array indexed by Element.
 
     /// <summary>The ten elements. REQ: docs/design/creatures.md#十大屬性 (order = common.schema.json).</summary>
@@ -28,9 +28,32 @@ namespace Cosmimera.GameData
     }
 
     /// <summary>Hit shape of a move. Extend together with move.schema.json.</summary>
+    /// <remarks>Pre: imported from the nine shape tokens. Post: stable serialized values. Side effects: none.</remarks>
     public enum MoveShape
     {
-        Line = 0, Cone = 1, Aoe = 2, Dash = 3,
+        // Retired Aoe=2 and Dash=3 cannot be reused by newly imported shapes.
+        Line = 0, Cone = 1, Front = 4, Sweep = 5, Burst = 6, Arc = 7, Self = 8, Ally = 9, Field = 10,
+    }
+
+    /// <summary>Movement accompanying a move, independent of its hit shape.</summary>
+    /// <remarks>Pre: imported from none|dash. Post: stable serialized values. Side effects: none.</remarks>
+    public enum MoveMovement
+    {
+        None = 0, Dash = 1,
+    }
+
+    /// <summary>Where a burst is centered.</summary>
+    /// <remarks>Pre: used only by burst moves. Post: stable serialized values. Side effects: none.</remarks>
+    public enum BurstOrigin
+    {
+        Caster = 0, Target = 1,
+    }
+
+    /// <summary>Creature size for animation pairing and art budgets.</summary>
+    /// <remarks>Pre: imported from S|M|L|XL. Post: stable serialized values. Side effects: none.</remarks>
+    public enum CreatureSizeClass
+    {
+        S = 0, M = 1, L = 2, XL = 3,
     }
 
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>

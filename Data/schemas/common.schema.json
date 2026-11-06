@@ -14,7 +14,16 @@
       "enum": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"]
     },
     "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
-    "nonNegativeInt": { "type": "integer", "minimum": 0 },
+    "nonNegativeInt": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "positiveInt": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "movePower": {
+      "description": "DamageModel.MaxPower representability bound; not a balance target.",
+      "type": "integer", "minimum": 0, "maximum": 100000
+    },
+    "masteryPercent": {
+      "description": "DamageModel.MaxMasteryPercent representability bound. P2-09 must keep effective mastery, including modifiers, in 0..1000.",
+      "type": "integer", "minimum": 0, "maximum": 1000
+    },
     "resistPercent": {
       "description": "Negative = weakness. combat.md clamps to ±100, so values beyond that are meaningless.",
       "type": "integer",

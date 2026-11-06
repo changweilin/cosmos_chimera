@@ -39,6 +39,7 @@
     "concept": {
       "base": "fennec fox with ember tail",
       "archetype": "trickster"
-    }
+    },
+    "size_class": "S"
   }
 ]

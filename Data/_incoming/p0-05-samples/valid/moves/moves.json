@@ -7,7 +7,9 @@
     "cooldown_ms": 1000,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "sample_flame_burst",
@@ -17,7 +19,8 @@
     "cooldown_ms": 3000,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "sample_solar_flare",
@@ -27,7 +30,8 @@
     "cooldown_ms": 8000,
     "accuracy": 85,
     "range_class": "long",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 24000
   },
   {
     "id": "sample_aqua_pulse",
@@ -37,7 +41,9 @@
     "cooldown_ms": 2000,
     "accuracy": 100,
     "range_class": "mid",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 12000,
+    "origin": "target"
   },
   {
     "id": "sample_gust_slash",
@@ -47,7 +53,8 @@
     "cooldown_ms": 1500,
     "accuracy": 90,
     "range_class": "melee",
-    "shape": "line"
+    "shape": "front",
+    "base_range_mm": 2000
   },
   {
     "id": "sample_thunder_jolt",
@@ -57,6 +64,8 @@
     "cooldown_ms": 1200,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 12000,
+    "movement": "dash"
   }
 ]

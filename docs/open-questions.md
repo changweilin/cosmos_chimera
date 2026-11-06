@@ -11,11 +11,9 @@
 | Q-C12 | 超載的觸發條件（指令？能量條？HP 門檻？）、持續時間、CD；只有成年可超載，還是各階段都有超載型態？ | P2-05、P5-04 | 僅成年；指令觸發；持續 15 s；每場戰鬥一次 |
 | Q-C13 | 收服道具類別轉換：「後期」何時解鎖、消耗哪些素材多少；蛋孵化的宙獸屬於哪個類別？ | P4-03 | 大廳執行；消耗專精屬性素材；孵化時玩家選類別 |
 | Q-A1 | 角色概念的用途：玩家可選的預設外觀、NPC，或兩者共用？玩家是否能捏臉？ | P4-01、P5-04 | 預設外觀與 NPC 共用；不捏臉 |
-| Q-C14 | 招式 `shape` 有兩套詞彙：`move.schema.json`、P5-05 的 150 招初稿與 P2-04 驗收用 `line/cone/aoe/dash`；`combat.md#招式形狀` 用 `front/sweep/burst`（近戰）+ `line/cone/arc`（射擊）+ `self/ally/field`。以哪套為準？ | P2-01、P2-04、動作 clip／特效命名、P5-05 | 建議 schema 改用 combat.md 那套（含輔助/佈署），初稿以對照表轉換（`dash`→`front`+突進旗標？`aoe`→`burst` 或 `field`）；轉換規則需使用者定 |
-| Q-C15 | `range = move.base_range × g(STR)` 的 `base_range` 從哪來：每招一個欄位（schema 新增 `base_range_mm`），還是由 `range_class`（melee/mid/long）查表？ | P2-01、P2-02 移植、P2-04 | 建議查表：150 招初稿不必重寫，平衡只調 3 個數 |
-| Q-C16 | `creatures.md#資料模型` 列了 `size_class`、`overload` 階段與 `overload_of`，但 schema 還沒有。現在就加（`size_class` 必填會讓既有樣本失效），還是等 P2-05／Q-C12 定案再加？ | P2-01、P2-05、P5-04 | 建議 `size_class` 現在加為必填並補樣本；`overload` 等 Q-C12 |
 
 > Q-C1～Q-C8、Q-T4 已於 2026-11-06 定案，內容寫入 `design/creatures.md`、`design/combat.md`、`design/vision.md`。
+> Q-C14～Q-C16 已於 2026-11-06 定案：九種形狀及遷移、每招 base_range_mm、必填體型／超載延後，見 `design/combat.md`、`design/creatures.md`。
 
 ## 世界 / Meta
 | ID | 問題 | 影響項目 | 暫定 |

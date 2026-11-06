@@ -1,7 +1,9 @@
 using System.IO;
+using Cosmimera.Combat;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData.Editor;
 using NUnit.Framework;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -46,7 +48,10 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(11, Db.All.Count);
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(30, move.Power);
-            Assert.AreEqual(MoveShape.Dash, move.Shape);
+            Assert.AreEqual(MoveShape.Line, move.Shape);
+            Assert.AreEqual(MoveMovement.Dash, move.Movement);
+            Assert.AreEqual(2000, move.BaseRangeMm);
+            Assert.Throws<ContractException>(() => _ = move.Origin);
             Assert.IsNull(move.Effect, "damage-only move has no effect");
             Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
             Assert.AreEqual(TriggerType.OnHpBelow, trait.Trigger.Type);
@@ -65,6 +70,9 @@ namespace Cosmimera.GameData.Tests
 
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(CreatureStage.Juvenile, cub.Stage);
+            Assert.AreEqual(CreatureSizeClass.S, cub.SizeClass);
+            Assert.AreEqual(CreatureSizeClass.M, cub.EvolvesTo.SizeClass);
+            Assert.AreEqual(CreatureSizeClass.L, cub.EvolvesTo.EvolvesTo.SizeClass);
             Assert.AreEqual("sample_ember_strike", cub.SignatureMove.Id);
             Assert.AreEqual("sample_trait_placeholder", cub.Trait.Id);
             Assert.AreEqual(25, cub.GetResist(Element.Fire));
@@ -170,7 +178,7 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Unknown_enum_value_is_rejected()
         {
-            ReplaceInFile("moves/moves.json", "\"shape\": \"dash\"", "\"shape\": \"spiral\"");
+            ReplaceInFile("moves/moves.json", "\"shape\": \"line\"", "\"shape\": \"spiral\"");
 
             var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
 
@@ -210,6 +218,174 @@ namespace Cosmimera.GameData.Tests
             Assert.Throws<ContractException>(() => _ = trait.Trigger.Element);
             Assert.Throws<ContractException>(() => _ = trait.Effects[0].Percent);
             Assert.IsFalse(trait.Effects[0].AnyElement);
+        }
+
+        [TestCase("percent", "9223372036854775808")]
+        [TestCase("percent", "-9223372036854775809")]
+        [TestCase("duration_ms", "9223372036854775808")]
+        [TestCase("duration_ms", "-9223372036854775809")]
+        [TestCase("delta", "9223372036854775808")]
+        [TestCase("delta", "-9223372036854775809")]
+        public void Huge_rule_integer_is_reported_without_writing(string parameter, string value)
+        {
+            string trigger = parameter == "duration_ms"
+                ? "{\"type\":\"on_summon\",\"params\":{\"duration_ms\":" + value + "}}"
+                : "{\"type\":\"on_hp_below\",\"params\":{\"percent\":" + (parameter == "percent" ? value : "30") + "}}";
+            string effect = "{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":"
+                + (parameter == "delta" ? value : "20") + "}}";
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger + ",\"effects\":[" + effect + "]}]");
+
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains(parameter, error.Message);
+            Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+        }
+
+        [TestCase("{\"type\":\"always\"}", true)]
+        [TestCase("{\"type\":\"always\",\"params\":{}}", true)]
+        [TestCase("{\"type\":\"always\",\"params\":null}", false)]
+        public void Always_trigger_accepts_omitted_or_empty_params_and_rejects_null(string trigger, bool valid)
+        {
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger
+                + ",\"effects\":[{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":20}}]}]");
+
+            if (!valid)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains("params", error.Message);
+                Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.AreEqual(TriggerType.Always, trait.Trigger.Type);
+        }
+
+        [Test]
+        public void Schema_damage_bounds_and_imported_maximum_values_agree()
+        {
+            string schemas = Path.Combine(Application.dataPath, "..", "Data", "schemas");
+            JObject common = JObject.Parse(File.ReadAllText(Path.Combine(schemas, "common.schema.json")));
+            JObject moves = JObject.Parse(File.ReadAllText(Path.Combine(schemas, "move.schema.json")));
+            JObject creatures = JObject.Parse(File.ReadAllText(Path.Combine(schemas, "creature.schema.json")));
+            Assert.AreEqual(DamageModel.MaxPower, (int)common["$defs"]["movePower"]["maximum"]);
+            Assert.AreEqual(DamageModel.MaxMasteryPercent, (int)common["$defs"]["masteryPercent"]["maximum"]);
+            Assert.AreEqual("common.schema.json#/$defs/movePower", (string)moves["$defs"]["move"]["properties"]["power"]["$ref"]);
+            Assert.AreEqual("common.schema.json#/$defs/masteryPercent", (string)creatures["$defs"]["creature"]["properties"]["mastery"]["additionalProperties"]["$ref"]);
+            ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": " + DamageModel.MaxPower + ",");
+            ReplaceInFile("creatures/creatures.json", "\"fire\": 15", "\"fire\": " + DamageModel.MaxMasteryPercent);
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(DamageModel.MaxPower, move.Power);
+            Assert.AreEqual(DamageModel.MaxMasteryPercent, cub.Mastery[0].Value);
+            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, -100), 0);
+            Assert.AreEqual(0, DamageModel.Compute(move.Power, cub.Mastery[0].Value, 100));
+        }
+
+        [TestCase("front", MoveShape.Front)]
+        [TestCase("sweep", MoveShape.Sweep)]
+        [TestCase("burst", MoveShape.Burst)]
+        [TestCase("line", MoveShape.Line)]
+        [TestCase("cone", MoveShape.Cone)]
+        [TestCase("arc", MoveShape.Arc)]
+        [TestCase("self", MoveShape.Self)]
+        [TestCase("ally", MoveShape.Ally)]
+        [TestCase("field", MoveShape.Field)]
+        public void Every_move_shape_survives_asset_reload(string shape, MoveShape expected)
+        {
+            JObject move = (JObject)JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")))[0];
+            move["shape"] = shape;
+            move["movement"] = "none";
+            if (shape == "burst") move["origin"] = "target";
+            JArray all = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
+            all[0] = move;
+            File.WriteAllText(Path.Combine(_src, "moves/moves.json"), all.ToString());
+
+            DataImporter.Import(_src, Output);
+            string path = Output + "/Moves/sample_ember_strike.asset";
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            var actual = AssetDatabase.LoadAssetAtPath<MoveDef>(path);
+
+            Assert.AreEqual(expected, actual.Shape);
+            Assert.AreEqual(2000, actual.BaseRangeMm);
+            Assert.AreEqual(MoveMovement.None, actual.Movement);
+            if (shape == "burst") Assert.AreEqual(BurstOrigin.Target, actual.Origin);
+            else Assert.Throws<ContractException>(() => _ = actual.Origin);
+        }
+
+        [TestCase("S", CreatureSizeClass.S)]
+        [TestCase("M", CreatureSizeClass.M)]
+        [TestCase("L", CreatureSizeClass.L)]
+        [TestCase("XL", CreatureSizeClass.XL)]
+        public void Every_creature_size_survives_import(string size, CreatureSizeClass expected)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"size_class\": \"S\"", "\"size_class\": \"" + size + "\"");
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(expected, cub.SizeClass);
+        }
+
+        [TestCase("s")]
+        [TestCase("3")]
+        [TestCase("XXL")]
+        public void Invalid_creature_size_aborts_without_writing(string size)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"size_class\": \"S\"", "\"size_class\": \"" + size + "\"");
+            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+        }
+
+        [TestCase("aoe", "none", 2000, null)]
+        [TestCase("dash", "none", 2000, null)]
+        [TestCase("cone", "dash", 2000, null)]
+        [TestCase("line", "dash", 0, null)]
+        [TestCase("line", "none", -1, null)]
+        [TestCase("line", "none", 2000, "caster")]
+        [TestCase("burst", "none", 2000, null)]
+        [TestCase("burst", "none", 2000, "unknown")]
+        [TestCase("line", "teleport", 2000, null)]
+        public void Invalid_move_contract_aborts_without_writing(string shape, string movement, int range, string origin)
+        {
+            JArray moves = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
+            moves[0]["shape"] = shape;
+            moves[0]["movement"] = movement;
+            moves[0]["base_range_mm"] = range;
+            if (origin != null) moves[0]["origin"] = origin;
+            File.WriteAllText(Path.Combine(_src, "moves/moves.json"), moves.ToString());
+
+            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+        }
+
+        [TestCase("p5-05-moves-draft-01", 40)]
+        [TestCase("p5-05-moves-draft-02", 40)]
+        [TestCase("p5-05-moves-draft-03", 40)]
+        [TestCase("p5-05-moves-draft-04", 30)]
+        public void Migrated_move_batches_round_trip_every_move(string batch, int expected)
+        {
+            string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Data", "_incoming", batch));
+            JArray source = JArray.Parse(File.ReadAllText(Path.Combine(root, "moves/moves.json")));
+
+            DataImporter.Import(root, Output);
+
+            Assert.AreEqual(expected, Db.All.Count);
+            foreach (JToken definition in source)
+            {
+                Assert.IsTrue(Db.TryGet((string)definition["id"], out MoveDef move));
+                Assert.AreEqual((string)definition["shape"], move.Shape.ToString().ToLowerInvariant());
+                Assert.AreEqual((int)definition["base_range_mm"], move.BaseRangeMm);
+                Assert.AreEqual((string)definition["movement"] ?? "none", move.Movement.ToString().ToLowerInvariant());
+                if (move.Shape == MoveShape.Burst)
+                {
+                    Assert.AreEqual((string)definition["origin"], move.Origin.ToString().ToLowerInvariant());
+                }
+            }
         }
 
         [Test]

@@ -8,8 +8,8 @@ namespace Cosmimera.Combat
     /// </summary>
     /// <remarks>
     /// Integer-only (Int64 intermediate, one rounding at the end) so host and clients agree bit-for-bit and the
-    /// result matches the P2-02 integer conventions. Rounding (half up, minimum 1 for a non-immune hit) is a
-    /// P2-03 proposal pending human sign-off: without the minimum, a 20-power move into 99% resist floors to 0
+    /// result matches the P2-02 integer conventions. Rounding (half up, minimum 1 for a non-immune hit) was
+    /// approved on 2026-11-06: without the minimum, a 20-power move into 99% resist rounds to 0
     /// and reads as immunity, which only resist 100 is supposed to mean.
     /// </remarks>
     public static class DamageModel

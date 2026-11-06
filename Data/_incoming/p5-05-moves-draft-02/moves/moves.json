@@ -7,7 +7,9 @@
     "cooldown_ms": 1000,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 2000,
+    "origin": "caster"
   },
   {
     "id": "metal_mercury_drift",
@@ -17,7 +19,9 @@
     "cooldown_ms": 2600,
     "accuracy": 95,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "metal_shrapnel_spray",
@@ -27,7 +31,8 @@
     "cooldown_ms": 4200,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "metal_rail_slug",
@@ -37,7 +42,8 @@
     "cooldown_ms": 8200,
     "accuracy": 75,
     "range_class": "long",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 24000
   },
   {
     "id": "wood_sap_splash",
@@ -47,7 +53,9 @@
     "cooldown_ms": 1050,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 2000,
+    "origin": "caster"
   },
   {
     "id": "wood_bamboo_surge",
@@ -57,7 +65,9 @@
     "cooldown_ms": 3000,
     "accuracy": 95,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "wood_acorn_bombard",
@@ -67,7 +77,8 @@
     "cooldown_ms": 4200,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "wood_thorn_ballista",
@@ -77,7 +88,8 @@
     "cooldown_ms": 8000,
     "accuracy": 80,
     "range_class": "long",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 24000
   },
   {
     "id": "water_bubble_pop",
@@ -87,7 +99,9 @@
     "cooldown_ms": 900,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 2000,
+    "origin": "caster"
   },
   {
     "id": "water_rip_current",
@@ -97,7 +111,9 @@
     "cooldown_ms": 2700,
     "accuracy": 95,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "water_brine_spray",
@@ -107,7 +123,8 @@
     "cooldown_ms": 4400,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "water_maelstrom_lance",
@@ -117,7 +134,8 @@
     "cooldown_ms": 8200,
     "accuracy": 75,
     "range_class": "long",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 24000
   },
   {
     "id": "fire_spark_jab",
@@ -127,7 +145,8 @@
     "cooldown_ms": 1000,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "line"
+    "shape": "front",
+    "base_range_mm": 2000
   },
   {
     "id": "fire_magma_wave",
@@ -137,7 +156,8 @@
     "cooldown_ms": 2600,
     "accuracy": 95,
     "range_class": "melee",
-    "shape": "cone"
+    "shape": "sweep",
+    "base_range_mm": 2000
   },
   {
     "id": "fire_cinder_slide",
@@ -147,7 +167,9 @@
     "cooldown_ms": 4500,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 12000,
+    "movement": "dash"
   },
   {
     "id": "fire_caldera_burst",
@@ -157,7 +179,9 @@
     "cooldown_ms": 8800,
     "accuracy": 75,
     "range_class": "long",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 24000,
+    "origin": "target"
   },
   {
     "id": "earth_fault_dash",
@@ -167,7 +191,9 @@
     "cooldown_ms": 4000,
     "accuracy": 95,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "earth_mud_sling",
@@ -177,7 +203,8 @@
     "cooldown_ms": 1100,
     "accuracy": 100,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "earth_boulder_roll",
@@ -187,7 +214,8 @@
     "cooldown_ms": 3200,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 12000
   },
   {
     "id": "earth_monolith_quarry",
@@ -197,7 +225,9 @@
     "cooldown_ms": 7800,
     "accuracy": 80,
     "range_class": "long",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 24000,
+    "origin": "target"
   },
   {
     "id": "ice_frost_tap",
@@ -207,7 +237,8 @@
     "cooldown_ms": 900,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "line"
+    "shape": "front",
+    "base_range_mm": 2000
   },
   {
     "id": "ice_hail_burst",
@@ -217,7 +248,9 @@
     "cooldown_ms": 2800,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 12000,
+    "origin": "target"
   },
   {
     "id": "ice_floe_crash",
@@ -227,7 +260,9 @@
     "cooldown_ms": 4400,
     "accuracy": 90,
     "range_class": "mid",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 12000,
+    "movement": "dash"
   },
   {
     "id": "ice_polar_sweep",
@@ -237,7 +272,8 @@
     "cooldown_ms": 7600,
     "accuracy": 80,
     "range_class": "long",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 24000
   },
   {
     "id": "wind_draft_step",
@@ -247,7 +283,9 @@
     "cooldown_ms": 850,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 2000,
+    "movement": "dash"
   },
   {
     "id": "wind_breeze_gust",
@@ -257,7 +295,8 @@
     "cooldown_ms": 2400,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "wind_squall_vortex",
@@ -267,7 +306,9 @@
     "cooldown_ms": 4200,
     "accuracy": 85,
     "range_class": "mid",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 12000,
+    "origin": "target"
   },
   {
     "id": "wind_typhoon_spire",
@@ -277,7 +318,8 @@
     "cooldown_ms": 8000,
     "accuracy": 80,
     "range_class": "long",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 24000
   },
   {
     "id": "thunder_static_prick",
@@ -287,7 +329,8 @@
     "cooldown_ms": 1000,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "cone"
+    "shape": "sweep",
+    "base_range_mm": 2000
   },
   {
     "id": "thunder_chain_needle",
@@ -297,7 +340,8 @@
     "cooldown_ms": 2600,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 12000
   },
   {
     "id": "thunder_fulgur_dive",
@@ -307,7 +351,9 @@
     "cooldown_ms": 5200,
     "accuracy": 85,
     "range_class": "long",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 24000,
+    "movement": "dash"
   },
   {
     "id": "thunder_megavolt_burst",
@@ -317,7 +363,9 @@
     "cooldown_ms": 8800,
     "accuracy": 75,
     "range_class": "long",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 24000,
+    "origin": "target"
   },
   {
     "id": "light_glint_jab",
@@ -327,7 +375,8 @@
     "cooldown_ms": 900,
     "accuracy": 100,
     "range_class": "melee",
-    "shape": "line"
+    "shape": "front",
+    "base_range_mm": 2000
   },
   {
     "id": "light_corona_sweep",
@@ -337,7 +386,8 @@
     "cooldown_ms": 2600,
     "accuracy": 95,
     "range_class": "mid",
-    "shape": "cone"
+    "shape": "cone",
+    "base_range_mm": 12000
   },
   {
     "id": "light_aurora_drift",
@@ -347,7 +397,9 @@
     "cooldown_ms": 4600,
     "accuracy": 90,
     "range_class": "long",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 24000,
+    "movement": "dash"
   },
   {
     "id": "light_stellar_nova",
@@ -357,7 +409,9 @@
     "cooldown_ms": 8400,
     "accuracy": 75,
     "range_class": "long",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 24000,
+    "origin": "target"
   },
   {
     "id": "shadow_nightmare_cleave",
@@ -367,7 +421,8 @@
     "cooldown_ms": 4000,
     "accuracy": 90,
     "range_class": "melee",
-    "shape": "cone"
+    "shape": "sweep",
+    "base_range_mm": 2000
   },
   {
     "id": "shadow_shade_dart",
@@ -377,7 +432,8 @@
     "cooldown_ms": 900,
     "accuracy": 100,
     "range_class": "mid",
-    "shape": "line"
+    "shape": "line",
+    "base_range_mm": 12000
   },
   {
     "id": "shadow_wraith_charge",
@@ -387,7 +443,9 @@
     "cooldown_ms": 5500,
     "accuracy": 85,
     "range_class": "long",
-    "shape": "dash"
+    "shape": "line",
+    "base_range_mm": 24000,
+    "movement": "dash"
   },
   {
     "id": "shadow_singularity_maw",
@@ -397,6 +455,8 @@
     "cooldown_ms": 9500,
     "accuracy": 70,
     "range_class": "long",
-    "shape": "aoe"
+    "shape": "burst",
+    "base_range_mm": 24000,
+    "origin": "target"
   }
 ]

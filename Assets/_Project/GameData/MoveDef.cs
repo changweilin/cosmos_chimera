@@ -1,3 +1,4 @@
+using Cosmimera.Core.Contracts;
 using UnityEngine;
 
 namespace Cosmimera.GameData
@@ -18,6 +19,9 @@ namespace Cosmimera.GameData
         [SerializeField] private int accuracy;
         [SerializeField] private RangeClass rangeClass;
         [SerializeField] private MoveShape shape;
+        [SerializeField] private int baseRangeMm;
+        [SerializeField] private MoveMovement movement;
+        [SerializeField] private BurstOrigin origin;
 
         /// <summary>Move element.</summary>
         /// <remarks>Pre: none. Post: a defined Element. Side effects: none.</remarks>
@@ -28,7 +32,7 @@ namespace Cosmimera.GameData
         public MoveKind Kind => kind;
 
         /// <summary>Base power.</summary>
-        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: 0..100000, matching DamageModel's representability bound. Side effects: none.</remarks>
         public int Power => power;
 
         /// <summary>The effect rule, or null for a pure damage move.</summary>
@@ -54,8 +58,27 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined MoveShape. Side effects: none.</remarks>
         public MoveShape Shape => shape;
 
+        /// <summary>Base geometric range in millimeters, before STR scaling; dash path length for a dash.</summary>
+        /// <remarks>Pre: none. Post: nonnegative; positive when Movement is Dash. Side effects: none.</remarks>
+        public int BaseRangeMm => baseRangeMm;
+
+        /// <summary>Movement accompanying this move.</summary>
+        /// <remarks>Pre: none. Post: a defined MoveMovement; Dash implies Shape is Line. Side effects: none.</remarks>
+        public MoveMovement Movement => movement;
+
+        /// <summary>Where the burst is centered.</summary>
+        /// <remarks>Pre: Shape is Burst. Post: a defined BurstOrigin. Side effects: none.</remarks>
+        public BurstOrigin Origin
+        {
+            get
+            {
+                Contract.Requires(shape == MoveShape.Burst, "only burst moves have an origin");
+                return origin;
+            }
+        }
+
         internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int cooldownMs, int accuracy,
-            RangeClass rangeClass, MoveShape shape)
+            RangeClass rangeClass, MoveShape shape, int baseRangeMm, MoveMovement movement, BurstOrigin origin)
         {
             this.element = element;
             this.kind = kind;
@@ -66,6 +89,9 @@ namespace Cosmimera.GameData
             this.accuracy = accuracy;
             this.rangeClass = rangeClass;
             this.shape = shape;
+            this.baseRangeMm = baseRangeMm;
+            this.movement = movement;
+            this.origin = origin;
         }
     }
 }

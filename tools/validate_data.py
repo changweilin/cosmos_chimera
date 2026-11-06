@@ -108,10 +108,14 @@ def _registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
 def _schema_message(err) -> str:
     # Conditional branches give bare type errors ("is not of type 'null'"); name the rule instead.
     branch = next((p for p in err.absolute_schema_path if p in ("then", "else")), None)
-    if branch is not None and "allOf" in err.absolute_schema_path:
+    if branch is not None and "allOf" in err.absolute_schema_path and any(
+        p in ("trigger", "effect", "effects") for p in err.absolute_path
+    ):
         # Per-type params of a trigger/effect (common.schema.json allOf of if/then).
         return f"{err.message} (params do not match this rule type)"
     if branch is not None:
+        if "allOf" in err.absolute_schema_path:
+            return err.message
         hint = "adult stage requires null" if branch == "then" else "non-adult stage requires a value"
         if err.validator == "not":
             hint = "'effect' must be omitted when kind is damage"

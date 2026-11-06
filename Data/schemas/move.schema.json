@@ -9,24 +9,42 @@
     "move": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "element", "kind", "power", "cooldown_ms", "accuracy", "range_class", "shape"],
+      "required": ["id", "element", "kind", "power", "cooldown_ms", "accuracy", "range_class", "shape", "base_range_mm"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "element": { "$ref": "common.schema.json#/$defs/element" },
         "kind": { "enum": ["damage", "effect", "both"] },
-        "power": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+        "power": { "$ref": "common.schema.json#/$defs/movePower" },
         "effect": { "$ref": "common.schema.json#/$defs/effect" },
         "cooldown_ms": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
         "accuracy": { "$ref": "common.schema.json#/$defs/percent" },
         "range_class": { "enum": ["melee", "mid", "long"] },
         "shape": {
-          "description": "creatures.md lists line|cone|aoe|dash|...; extend this enum when a new shape is implemented.",
-          "enum": ["line", "cone", "aoe", "dash"]
-        }
+          "enum": ["front", "sweep", "burst", "line", "cone", "arc", "self", "ally", "field"]
+        },
+        "base_range_mm": {
+          "description": "Per-move base geometric range before STR scaling; burst radius or dash path length. Not a range_class lookup.",
+          "$ref": "common.schema.json#/$defs/nonNegativeInt"
+        },
+        "movement": { "enum": ["none", "dash"], "default": "none" },
+        "origin": { "description": "Burst center only.", "enum": ["caster", "target"] }
       },
-      "if": { "properties": { "kind": { "const": "damage" } } },
-      "then": { "not": { "required": ["effect"] } },
-      "else": { "required": ["effect"] }
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "damage" } } },
+          "then": { "not": { "required": ["effect"] } },
+          "else": { "required": ["effect"] }
+        },
+        {
+          "if": { "properties": { "shape": { "const": "burst" } } },
+          "then": { "required": ["origin"] },
+          "else": { "not": { "required": ["origin"] } }
+        },
+        {
+          "if": { "required": ["movement"], "properties": { "movement": { "const": "dash" } } },
+          "then": { "properties": { "shape": { "const": "line" }, "base_range_mm": { "minimum": 1 } } }
+        }
+      ]
     }
   }
 }
