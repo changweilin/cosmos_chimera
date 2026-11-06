@@ -16,3 +16,4 @@
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | ⬜ |
 
 ## 交接紀錄
+- 2026-11-06 · Gemini Flash（agy，Claude Opus 驗收）· partial · P5-05 招式草稿 batch 01：`Data/_incoming/p5-05-moves-draft-01/`，共 40 招，全部是 `damage`（P2 之前 effect 詞彙未定），每個屬性 4 招，近／中／遠三種距離都有，四種形狀各 10 招。數值是佔位帶：威力 20–120、CD 800–10000 ms、命中率 70–100。`validate-data` 0 錯誤。Opus 已重新驗算數量、分佈與數值帶。README 列出 4 個待決問題（形狀幾何參數、哪些招式應改為 both、球面上的距離刻度、招牌招式的指派）。agy headless 模式不能執行 shell 指令，所以這批改為「只寫檔、驗證交給主 session」 · 下一步：P2 effect 詞彙定案後由人工審查；數值由 SOL 做平衡模型
