@@ -16,6 +16,10 @@
         "kind": { "enum": ["damage", "effect", "both"] },
         "power": { "$ref": "common.schema.json#/$defs/movePower" },
         "effect": { "$ref": "common.schema.json#/$defs/effect" },
+        "effect_duration_ms": {
+          "description": "How long a non-instant move effect lasts on its target. Omitted for damage moves and heal_percent_max_hp (instant).",
+          "$ref": "common.schema.json#/$defs/durationMs"
+        },
         "cooldown_ms": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
         "accuracy": { "$ref": "common.schema.json#/$defs/percent" },
         "range_class": { "enum": ["melee", "mid", "long"] },
@@ -36,8 +40,21 @@
           "else": { "required": ["effect"] }
         },
         {
+          "if": { "required": ["effect"], "properties": { "effect": { "properties": { "type": { "const": "heal_percent_max_hp" } } } } },
+          "then": { "not": { "required": ["effect_duration_ms"] } },
+          "else": {
+            "if": { "required": ["effect"] },
+            "then": { "required": ["effect_duration_ms"] },
+            "else": { "not": { "required": ["effect_duration_ms"] } }
+          }
+        },
+        {
           "if": { "properties": { "shape": { "const": "burst" } } },
-          "then": { "required": ["origin"] },
+          "then": {
+            "required": ["origin"],
+            "if": { "properties": { "origin": { "const": "target" } } },
+            "then": { "properties": { "range_class": { "enum": ["mid", "long"] } } }
+          },
           "else": { "not": { "required": ["origin"] } }
         },
         {

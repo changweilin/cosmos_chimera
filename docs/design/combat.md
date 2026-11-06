@@ -39,6 +39,26 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 - 副手不上場，只提供招式 / 特性 / 超載解鎖給主力（由副手的收服道具類別決定，見 `lobby-meta.md#收服道具`）。
 - 超載：已解鎖的主力可在戰鬥中短暫進化為超載型態，結束後回到原階段（觸發/持續/CD → Q-C12）。
 
+## 判定體（P2-04，2026-11-06 使用者確認「全域預設，之後可逐招覆寫」）
+尺寸預設在 `Data/balance.json#hit_volume`（鍵值見 [balance-keys.md](derived-stats/balance-keys.md)），目前 schema 沒有逐招覆寫欄位。實作：`Combat/Runtime/Model/HitVolume.cs`（`MoveGeometry`）。
+| shape | 判定體 | 位置 | 長度 / 半徑 | 其他尺寸 |
+|---|---|---|---|---|
+| front | 矩形 | 施放者前方 | base_range | `front_width_mm` |
+| line | 矩形 | 施放者前方 | base_range | `line_width_mm` |
+| sweep / cone | 扇形 | 施放者，朝 forward | base_range | `sweep_angle_deg` / `cone_angle_deg`（全角） |
+| burst caster | 圓 | 施放者 | base_range（半徑） | — |
+| burst target | 圓 | 瞄準點，限制在 g(STR)×`target_cast_{mid,long}_mm` 內 | base_range（半徑，不受 STR） | 只能 mid/long |
+| arc | 圓（落點） | 瞄準點，限制在射程 base_range 內 | `arc_landing_radius_mm` | 拋物線軌跡屬表現層 |
+| field | 圓 | 瞄準點，限制在射程 base_range 內 | `field_radius_mm` | 持續時間 / 結算頻率待定（Q-C17） |
+| self / ally | 無 / 隊友距離 ≤ 射程 | — | — | ally 不看高度 |
+
+- **STR 縮放**：melee 所有尺寸（長、寬、高、半徑）乘 `MeleeLinearPermille`；mid/long 只把長度 / 射程 / 施法距離換成 `RangedDistanceMm`（含 36 m 上限），寬度、角度、AoE 半徑不變；dash 的路徑長度與位移固定等於 base_range，不縮放。
+- **球面量測**：水平距離是以施放者半徑量的大圓距離（等距方位座標），高度是到球心距離的差（`height_mm/2` + 目標半徑內算命中）。R=640 時 36 m 外的地面比切平面低約 1 m，用平面判定會漏掉站在同一地面上的目標。
+- **兩段命中**：`HitResolver.Resolve`；只有幾何碰到、且目標不在翻滾無敵幀時才擲骰，並且只用掉戰鬥 stream 的一次抽樣，讓各端依相同碰撞順序重播時保持同步。
+
+## 招式效果
+2026-11-06 使用者確認：`kind` 為 effect/both 的招式，除 `heal_percent_max_hp`（瞬間）外必須填 `effect_duration_ms`（1..600000），表示效果在每個被命中目標上持續的時間；heal 與 damage 招式不得填。作用對象由 `shape` 決定：`self` → 施放者、`ally` → 指定隊友、其他形狀 → 判定體命中的敵方目標。同一效果重複施加時的刷新/疊加規則由 P2-09 定。
+
 ## 招式形狀（動畫與特效分類用）
 | 類別 | `range_class` | `shape` | 說明 |
 |---|---|---|---|

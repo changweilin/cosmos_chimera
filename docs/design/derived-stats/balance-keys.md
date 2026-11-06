@@ -1,7 +1,6 @@
-# P2-02 衍生值係數提案
+# `Data/balance.json` 鍵值說明
 
-**所有數值決策：提議中，待人工確認。** SOL 主責，OPUS 審查，人工最後定案。
-完整公式、曲線與原因見 [derived-stats.md](../../../docs/design/derived-stats.md)。此處沒有正式 schema，也不建立 `Data/balance.json`；由 C# owner 在核准後整合。
+2026-11-06 使用者定案（SOL 主責、OPUS 審查）。完整公式、曲線與原因見 [derived-stats.md](../derived-stats.md)。
 
 JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accuracy 保留整數百分比；距離 mm、速度 mm/s、時間 ms。版本與統計點數也為整數。
 
@@ -33,6 +32,14 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `stage_bands.<stage>.max_stat` | 該階段每項能力的軟製作上界，非 schema maximum |
 | `stage_bands.<stage>.total_stats` | 該階段四項總點數預算；不是單項上限 |
 
+| `hit_volume.height_mm` | 所有判定體的總高度（melee 乘線性倍率） |
+| `hit_volume.front_width_mm` / `line_width_mm` | front / line 矩形寬度 |
+| `hit_volume.sweep_angle_deg` / `cone_angle_deg` | 扇形全角（度） |
+| `hit_volume.arc_landing_radius_mm` / `field_radius_mm` | arc 落點與 field 的圓半徑 |
+| `hit_volume.target_cast_mid_mm` / `target_cast_long_mm` | 目標點爆發的基礎施法距離，再乘 g(STR) |
+
+`hit_volume` 為 P2-04 的全域預設（2026-11-06 使用者確認），規則見 [combat.md#判定體](../combat.md)。
+
 `stage` 為 `juvenile / adolescent / adult`。階段不參與衍生值計算，避免進化時再乘一次倍率。半飽和值不必與軟設計帶上界相等。
 `P=1000` 與百分比單位 `100` 是移植協定，非可調平衡係數。參考實作對可移植係數範圍與正下限有明確檢查，見設計文件。
 
@@ -40,4 +47,4 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 測試：`python -m unittest discover -s tools/balance -p "test_*.py"`。
 繪圖：`python tools/balance/plot_curves.py`（直接寫 SVG，僅標準函式庫）。
 
-`python tools/validate_data.py` 僅掃描已知內容資料夾，不驗證此尚無 schema 的提案；係數型別 / 算術限制由參考 loader 與不變式測試檢查。不得把資料驗證器 exit 0 解讀為係數已核准。
+`python tools/validate_data.py` 不掃描 `balance.json`；係數型別 / 算術包絡由參考 loader（`tools/balance` 測試）與 C# `DerivedStatsCoefficients` 建構子檢查。

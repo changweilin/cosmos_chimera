@@ -55,6 +55,7 @@ namespace Cosmimera.GameData.Editor
 
         // Source folder (tools/validate-data KINDS) → asset subfolder.
         private const string MovesSrc = "moves";
+        private const int MaxDurationMs = 600000; // common.schema.json#/$defs/durationMs
         private const string TraitsSrc = "traits";
         private const string PlanetTypesSrc = "planet-types";
         private const string CreaturesSrc = "creatures";
@@ -276,6 +277,10 @@ namespace Cosmimera.GameData.Editor
                 if (m.Dto.Shape == "burst")
                 {
                     RequireEnum<BurstOrigin>(m.Where, "origin", m.Dto.Origin);
+                    if (m.Dto.Origin == "target" && m.Dto.RangeClass == "melee")
+                    {
+                        errors.Add($"{m.Where}: a target-point burst must be mid or long range (combat.md 目標點爆發)");
+                    }
                 }
                 else if (m.Dto.Origin != null)
                 {
@@ -295,6 +300,17 @@ namespace Cosmimera.GameData.Editor
                 if (m.Dto.Effect != null)
                 {
                     CheckRule(m.Where, "effect", m.Dto.Effect, EffectParams, errors);
+                }
+
+                // REQ: docs/design/combat.md#招式效果 — heal is instant, every other effect is a timed window.
+                bool needsDuration = m.Dto.Effect != null && m.Dto.Effect.Type != "heal_percent_max_hp";
+                if (needsDuration != m.Dto.EffectDurationMs.HasValue)
+                {
+                    errors.Add($"{m.Where}: effect_duration_ms is required iff the move has a non-heal effect");
+                }
+                else if (needsDuration && (m.Dto.EffectDurationMs < 1 || m.Dto.EffectDurationMs > MaxDurationMs))
+                {
+                    errors.Add($"{m.Where}: effect_duration_ms must be 1..{MaxDurationMs}");
                 }
             }
 
@@ -423,7 +439,7 @@ namespace Cosmimera.GameData.Editor
             {
                 MoveDto d = s.Dto;
                 moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
-                    d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
+                    d.EffectDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
                     d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
                     d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
             }
@@ -618,7 +634,7 @@ namespace Cosmimera.GameData.Editor
                 case ParamKind.Percent:
                     return IsIntegerInRange(token, 1, 100);
                 case ParamKind.DurationMs:
-                    return IsIntegerInRange(token, 1, 600000);
+                    return IsIntegerInRange(token, 1, MaxDurationMs);
                 case ParamKind.Delta:
                     return IsIntegerInRange(token, -100, 100);
                 case ParamKind.Element:

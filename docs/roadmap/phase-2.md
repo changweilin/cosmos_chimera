@@ -7,9 +7,9 @@
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
 | P2-01 | 宙獸/招式/特性/關係 資料模型（Api + DbC）與 schema 細化 | OPUS | SOL | 契約審查通過；schema 與 C# 型別一致 | ✅ |
-| P2-02 | 能力值→衍生值函數（HP、範圍、CD、移速、閃避）+ 上下限 | SOL | OPUS | 曲線圖 + 不變式測試 | 🟨 |
+| P2-02 | 能力值→衍生值函數（HP、範圍、CD、移速、閃避）+ 上下限 | SOL | OPUS | 曲線圖 + 不變式測試 | ✅ |
 | P2-03 | 傷害計算（威力×專精×抗性，無相剋表、無攻防值） | SONNET | OPUS | EditMode 測試含邊界（免疫、弱點） | ✅ |
-| P2-04 | 兩段命中（幾何→擲骰，evasion 上限、hit_floor）、MISS 回饋、九種招式形狀與獨立突進位移（見 combat.md） | SONNET | OPUS | 固定 seed 下命中率統計誤差 < 1%；判定體與 STR 範圍縮放一致 | ⬜ |
+| P2-04 | 兩段命中（幾何→擲骰，evasion 上限、hit_floor）、MISS 回饋、九種招式形狀與獨立突進位移（見 combat.md） | SONNET | OPUS | 固定 seed 下命中率統計誤差 < 1%；判定體與 STR 範圍縮放一致 | 🟦 |
 | P2-05 | 進化系統：經驗門檻 + 屬性素材，三階段切換、模型替換 | SONNET | OPUS | 經驗或素材任一不足時拒絕並說明缺什麼 | ⬜ |
 | P2-06 | 隊伍：6 主力 / 4 上場池 / 同時 2 隻在場、切換冷卻、退場規則；玩家角色 HP 與翻滾無敵幀 | SONNET | OPUS | 規則層測試涵蓋所有上限 | ⬜ |
 | P2-07 | 副手：從倉庫挑選、關係表資格檢查、每隻副手招式/特性二選一 | SONNET | OPUS | 無關係邊時拒絕並給 UI 理由 | ⬜ |
@@ -27,3 +27,5 @@
 - 2026-11-06 · Codex（SOL 審查） · partial · P2-01／P2-03 審查完成：既有 EditMode 35/35、傷害 decimal oracle 100455 組通過；發現 schema 合法數值超出 Int32／DamageModel 域的 R1，另記兩項合約外輸入補強，詳見 [審查報告](../reviews/P2-data-model-damage-review-sol.md)；P2-01 維持 🟦、P2-03 維持 🟨 · 下一步：OPUS／SONNET 統一資料與傷害 API 表示域後交 SOL 複審；使用者確認 Q-C14～Q-C16、詞彙與最低傷害／取整提案
 - 2026-11-06 · Codex（SOL） · partial · P2-01／P2-03 已依使用者確認修正 R1／H1／H2、九種 shape、每招 base_range_mm、體型與 150 招遷移；完整 EditMode 250/250（含 3 個暫存探針）、語料 412/412、Python 15/15＋11/11，本機驗收通過，契約變更與證據見 [驗收報告](../reviews/P2-data-model-damage-review-sol.md) · 下一步：使用者授權將本次範圍透過 AGY 交 Claude OPUS 跨廠商複審，通過後更新為完成
 - 2026-11-06 · Codex（SOL） · done · P2-01／P2-03 驗收通過：正式 EditMode 247/247、契約語料 412/412、資料驗證測試 15/15、平衡不變式 11/11；使用者已確認 Q-C14～Q-C16、詞彙與傷害契約，並指定由本對話完成最後複審（未執行外部模型審查），兩項更新為 ✅ · 下一步：SONNET 依已定案資料契約執行 P2-04；P2-09 保證修正後有效專精符合傷害 API 表示域
+- 2026-11-06 · Claude Opus · done · P2-02：使用者定案係數（射程上限維持固定 36 m，**只支援 R≥640**）。提案搬為正式 `Data/balance.json`（鍵值說明移到 `docs/design/derived-stats/balance-keys.md`），`tools/balance` 改讀正式檔，黃金向量位元不變。C# `Combat/Runtime/Model/DerivedStats.cs`（`DerivedStatsCoefficients` 建構子檢查可移植包絡）以 40 組黃金向量逐位元比對，另測 0..10000 全域單調/上下限/飽和、Int32 極值、每個 Pre 違反、包絡外係數。**未做**：`balance.json` 尚未經 importer 進 ScriptableObject（目前只有測試讀 JSON），P2-06/P2-10 接執行期時補 · 下一步：SOL 對抗式審查 DerivedStats 移植
+- 2026-11-06 · Claude Opus · partial · P2-04 規則層：`HitResolver.Resolve`（只在幾何碰到且無無敵幀時用掉一次 `Pcg32.NextUInt(1000)`；6 種命中率在固定 seed、20 萬次下誤差 < 1%）、`MoveGeometry` 九種形狀判定體（使用者確認全域預設放 `Data/balance.json#hit_volume`，規則見 combat.md#判定體）：melee 全尺寸乘 L(STR)、遠程只延長射程/施法距離、dash 不縮放；用球面等距方位座標 + 半徑差判高度（R=640 時 35.9 m 外的平地用切平面會誤判 miss，有測試鎖住）。資料契約新增：`effect_duration_ms`（非 heal 效果必填，對象依 shape；schema/validator/importer/MoveDef 同步）與「目標點 burst 不可 melee」。驗證：EditMode 297/297、0 警告；Python 17/17 + 11/11；全部 `_incoming` 招式批次 0 錯誤；URP `PC_RPAsset` 遷移照例還原。**未做**：MISS 表現回饋（需場景/HUD）、field 壽命與結算（Q-C17）、dash 實際位移與 collider 同步（PlayMode）、逐招覆寫欄位 · 下一步：使用者回答 Q-C17；SOL 審 P2-04 幾何與擲骰；SONNET 接 PlayMode 表現層

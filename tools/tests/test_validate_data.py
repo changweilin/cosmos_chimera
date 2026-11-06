@@ -116,6 +116,37 @@ class CrossFileRules(unittest.TestCase):
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
         self.assertIn("schema", self.codes(self._with_valid({"moves/buff.json": move})))
 
+    def test_target_burst_must_not_be_melee(self):
+        move = ('{"id":"sample_blast","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,'
+                '"accuracy":100,"range_class":"%s","shape":"burst","origin":"%s","base_range_mm":3000}')
+        for rc, origin, valid in [("melee", "target", False), ("mid", "target", True), ("melee", "caster", True)]:
+            with self.subTest(rc=rc, origin=origin):
+                errors = [f for f in self._with_valid({"moves/blast.json": "[" + move % (rc, origin) + "]"})
+                          if f.level == "error"]
+                self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_effect_duration_required_iff_timed_effect(self):
+        base = ('{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
+                '"accuracy":100,"range_class":"melee","shape":"self","base_range_mm":0')
+        haste = ',"effect":{"type":"move_speed_mod_percent","params":{"delta":20}}'
+        heal = ',"effect":{"type":"heal_percent_max_hp","params":{"percent":20}}'
+        cases = [
+            (haste + ',"effect_duration_ms":5000', True),
+            (haste, False),
+            (haste + ',"effect_duration_ms":0', False),
+            (heal, True),
+            (heal + ',"effect_duration_ms":5000', False),
+        ]
+        for extra, valid in cases:
+            with self.subTest(extra=extra):
+                errors = [f for f in self._with_valid({"moves/buff.json": "[" + base + extra + "}]"})
+                          if f.level == "error"]
+                self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+        damage = json.loads((SAMPLES / "valid" / "moves/moves.json").read_text(encoding="utf-8"))
+        damage[0]["effect_duration_ms"] = 5000
+        errors = [str(f) for f in self._with_valid({"moves/moves.json": json.dumps(damage)}) if f.level == "error"]
+        self.assertTrue(any("must be omitted" in e for e in errors), errors)
+
     def test_numeric_representation_boundaries(self):
         cases = [
             ("moves", ("power",), 100000),
@@ -146,6 +177,7 @@ class CrossFileRules(unittest.TestCase):
                 move = {**source, "id": "review_move", "shape": shape, "movement": "none"}
                 if shape == "burst":
                     move["origin"] = "target"
+                    move["range_class"] = "mid"  # a target-point burst cannot be melee
                 self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
         for changes in [
             {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},

@@ -1,8 +1,8 @@
 # P2-02 能力值 → 衍生值提案
 
-狀態：**所有數值決策均為「提議中，待人工確認」**，包括下列係數、點數帶、上限、取整精度與參考招式；不是已核准的遊戲規則。OPUS 審查後仍須人工確認。
+狀態：**2026-11-06 使用者定案**（係數、點數帶、上限、取整規約）。下文殘留的「提議中」字樣指當時的提案原文；數值之後仍可調，但改動須重產黃金向量並重新審查。射程上限維持固定 36 m：**只支援 R≥640**（R=320 時地平線約 33 m，小星球另議）。
 需求來源：[四大能力值](creatures.md#四大能力值)、[戰鬥](combat.md)。傷害仍只由威力 × 專精 × 抗性決定；本提案不引入 ATK / DEF，不修改正式 schema 或 C#。
-係數唯一來源：[balance.proposal.json](../../Data/_incoming/p2-02-balance/balance.proposal.json)；定案後由 C# owner 整合至 `Data/balance.json`。
+係數唯一來源：[Data/balance.json](../../Data/balance.json)（鍵值說明：[balance-keys.md](derived-stats/balance-keys.md)）。C# 移植：`Combat/Runtime/Model/DerivedStats.cs`，以黃金向量逐位元比對。
 
 ## 能力值尺度與製作預算（提議中，待人工確認）
 

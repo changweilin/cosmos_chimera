@@ -8,6 +8,17 @@
   "speed": {"base_mm_s": 4000, "gain_mm_s": 2000, "half_stat": 100},
   "evasion": {"cap_permille": 400, "half_stat": 150},
   "hit": {"floor_permille": 50},
+  "hit_volume": {
+    "height_mm": 2000,
+    "front_width_mm": 1500,
+    "sweep_angle_deg": 180,
+    "cone_angle_deg": 60,
+    "line_width_mm": 1000,
+    "arc_landing_radius_mm": 2000,
+    "field_radius_mm": 3000,
+    "target_cast_mid_mm": 12000,
+    "target_cast_long_mm": 24000
+  },
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
   "stage_bands": {
     "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},

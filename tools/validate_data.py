@@ -115,6 +115,8 @@ def _schema_message(err) -> str:
         return f"{err.message} (params do not match this rule type)"
     if branch is not None:
         if "allOf" in err.absolute_schema_path:
+            if err.validator == "not" and "effect_duration_ms" in str(err.validator_value):
+                return "'effect_duration_ms' must be omitted for damage moves and instant heals"
             return err.message
         hint = "adult stage requires null" if branch == "then" else "non-adult stage requires a value"
         if err.validator == "not":

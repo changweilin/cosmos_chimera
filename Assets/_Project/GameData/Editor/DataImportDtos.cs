@@ -22,6 +22,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("kind", Required = Required.Always)] public string Kind;
         [JsonProperty("power", Required = Required.Always)] public int Power;
         [JsonProperty("effect")] public RuleDto Effect;
+        [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
         [JsonProperty("cooldown_ms", Required = Required.Always)] public int CooldownMs;
         [JsonProperty("accuracy", Required = Required.Always)] public int Accuracy;
         [JsonProperty("range_class", Required = Required.Always)] public string RangeClass;

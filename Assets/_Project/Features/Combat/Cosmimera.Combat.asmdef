@@ -4,7 +4,9 @@
     "references": [
         "Cosmimera.Core",
         "Cosmimera.WorldGen",
-        "Cosmimera.Planet"
+        "Cosmimera.Planet",
+        "Cosmimera.GameData",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

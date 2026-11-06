@@ -15,6 +15,7 @@ namespace Cosmimera.GameData
         [SerializeField] private int power;
         [SerializeField] private bool hasEffect;
         [SerializeField] private EffectDef effect;
+        [SerializeField] private int effectDurationMs;
         [SerializeField] private int cooldownMs;
         [SerializeField] private int accuracy;
         [SerializeField] private RangeClass rangeClass;
@@ -41,6 +42,23 @@ namespace Cosmimera.GameData
         /// is carried by a separate flag. Pre: none. Post: null iff Kind == Damage. Side effects: none.
         /// </remarks>
         public EffectDef Effect => hasEffect ? effect : null;
+
+        /// <summary>Whether <see cref="Effect"/> lasts for a window rather than resolving instantly.</summary>
+        /// <remarks>Pre: none. Post: true iff Effect is non-null and not HealPercentMaxHp. Side effects: none.</remarks>
+        public bool HasEffectDuration => hasEffect && effect.Type != EffectType.HealPercentMaxHp;
+
+        /// <summary>How long the effect lasts on each target it lands on, in milliseconds.</summary>
+        /// <remarks>
+        /// REQ: docs/design/combat.md#招式效果. Pre: HasEffectDuration. Post: 1..600000. Side effects: none.
+        /// </remarks>
+        public int EffectDurationMs
+        {
+            get
+            {
+                Contract.Requires(HasEffectDuration, "only timed (non-heal) move effects have a duration");
+                return effectDurationMs;
+            }
+        }
 
         /// <summary>Cooldown in milliseconds.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
@@ -77,7 +95,7 @@ namespace Cosmimera.GameData
             }
         }
 
-        internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int cooldownMs, int accuracy,
+        internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int effectDurationMs, int cooldownMs, int accuracy,
             RangeClass rangeClass, MoveShape shape, int baseRangeMm, MoveMovement movement, BurstOrigin origin)
         {
             this.element = element;
@@ -85,6 +103,7 @@ namespace Cosmimera.GameData
             this.power = power;
             hasEffect = effect != null;
             this.effect = effect;
+            this.effectDurationMs = effectDurationMs;
             this.cooldownMs = cooldownMs;
             this.accuracy = accuracy;
             this.rangeClass = rangeClass;

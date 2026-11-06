@@ -208,6 +208,64 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains(expected, e.Message);
         }
 
+        private const string BuffMoveHead = "[{\"id\":\"sample_buff\",\"element\":\"light\",\"kind\":\"effect\",\"power\":0,"
+            + "\"cooldown_ms\":1000,\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"self\",\"base_range_mm\":0";
+        private const string Haste = ",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20}}";
+        private const string Heal = ",\"effect\":{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":20}}";
+
+        [TestCase(Haste, ",\"effect_duration_ms\":5000", true)]
+        [TestCase(Haste, "", false)]
+        [TestCase(Haste, ",\"effect_duration_ms\":0", false)]
+        [TestCase(Haste, ",\"effect_duration_ms\":600001", false)]
+        [TestCase(Heal, "", true)]
+        [TestCase(Heal, ",\"effect_duration_ms\":5000", false)]
+        public void Effect_duration_is_required_iff_the_effect_is_timed(string effect, string duration, bool valid)
+        {
+            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
+
+            if (!valid)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains("effect_duration_ms", error.Message);
+                Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
+            Assert.AreEqual(effect == Haste, move.HasEffectDuration);
+            if (effect == Haste)
+            {
+                Assert.AreEqual(5000, move.EffectDurationMs);
+            }
+            else
+            {
+                Assert.Throws<ContractException>(() => _ = move.EffectDurationMs);
+            }
+        }
+
+        [Test]
+        public void Melee_target_point_burst_is_rejected()
+        {
+            File.WriteAllText(Path.Combine(_src, "moves/blast.json"),
+                "[{\"id\":\"sample_blast\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,"
+                + "\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"burst\",\"origin\":\"target\",\"base_range_mm\":3000}]");
+
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains("target-point burst", error.Message);
+        }
+
+        [Test]
+        public void Damage_move_has_no_effect_duration()
+        {
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+
+            Assert.IsFalse(move.HasEffectDuration);
+            Assert.Throws<ContractException>(() => _ = move.EffectDurationMs);
+        }
+
         [Test]
         public void Reading_a_param_the_rule_type_lacks_is_a_contract_violation()
         {
@@ -302,7 +360,12 @@ namespace Cosmimera.GameData.Tests
             JObject move = (JObject)JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")))[0];
             move["shape"] = shape;
             move["movement"] = "none";
-            if (shape == "burst") move["origin"] = "target";
+            if (shape == "burst")
+            {
+                move["origin"] = "target";
+                move["range_class"] = "mid"; // a target-point burst cannot be melee
+            }
+
             JArray all = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
             all[0] = move;
             File.WriteAllText(Path.Combine(_src, "moves/moves.json"), all.ToString());
