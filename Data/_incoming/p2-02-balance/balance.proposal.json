@@ -1,0 +1,17 @@
+{
+  "model_version": 1,
+  "stat_effective_cap": 10000,
+  "hp": {"base": 600, "gain": 900, "half_stat": 100},
+  "melee_volume": {"gain_permille": 1000, "half_stat": 100},
+  "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000},
+  "cd": {"min_permille": 400, "half_stat": 100, "floor_ms": 250},
+  "speed": {"base_mm_s": 4000, "gain_mm_s": 2000, "half_stat": 100},
+  "evasion": {"cap_permille": 400, "half_stat": 150},
+  "hit": {"floor_permille": 50},
+  "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
+  "stage_bands": {
+    "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},
+    "adolescent": {"min_stat": 25, "max_stat": 100, "total_stats": 200},
+    "adult": {"min_stat": 50, "max_stat": 200, "total_stats": 400}
+  }
+}

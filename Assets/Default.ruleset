@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unity passes this to csc for every assembly; it ignores .editorconfig for diagnostics (verified 2026-11-06,
+     no -analyzerconfig in Library/Bee/*.rsp). Severities live here; .editorconfig keeps formatting for IDEs. ADR-0003. -->
+<RuleSet Name="Cosmimera" ToolsVersion="16.0">
+  <Rules AnalyzerId="Microsoft.Unity.Analyzers" RuleNamespace="Microsoft.Unity.Analyzers">
+    <Rule Id="UNT0001" Action="Warning" />
+    <Rule Id="UNT0002" Action="Warning" />
+    <Rule Id="UNT0008" Action="Warning" />
+    <Rule Id="UNT0010" Action="Warning" />
+    <Rule Id="UNT0029" Action="Warning" />
+  </Rules>
+</RuleSet>

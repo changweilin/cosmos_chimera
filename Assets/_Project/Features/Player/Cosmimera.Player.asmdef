@@ -1,0 +1,17 @@
+{
+    "name": "Cosmimera.Player",
+    "rootNamespace": "Cosmimera.Player",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Planet"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

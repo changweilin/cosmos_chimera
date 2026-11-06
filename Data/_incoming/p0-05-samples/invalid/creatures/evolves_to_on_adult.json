@@ -1,0 +1,37 @@
+[
+  {
+    "id": "sample_fox_lord",
+    "line_id": "sample_line_a",
+    "stage": "adult",
+    "evolves_to": "sample_nonexistent_mega",
+    "evolution": null,
+    "resist": {
+      "metal": 15,
+      "wood": 30,
+      "water": -40,
+      "fire": 60,
+      "earth": 0,
+      "ice": -20,
+      "wind": 15,
+      "thunder": 0,
+      "light": 10,
+      "shadow": -10
+    },
+    "mastery": {
+      "fire": 40,
+      "wind": 20
+    },
+    "stats": {
+      "con": 75,
+      "str": 60,
+      "spi": 85,
+      "agi": 80
+    },
+    "signature_move": "sample_solar_flare",
+    "trait": "sample_trait_placeholder",
+    "concept": {
+      "base": "nine-tailed celestial fox",
+      "archetype": "solar guardian"
+    }
+  }
+]

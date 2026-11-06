@@ -1,0 +1,19 @@
+{
+    "name": "Cosmimera.Net",
+    "rootNamespace": "Cosmimera.Net",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Combat",
+        "Cosmimera.Creatures",
+        "Cosmimera.Planet"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/common.schema.json",
+  "title": "Shared definitions",
+  "$defs": {
+    "id": {
+      "description": "Globally unique, never reused (data-content.md). Saves and net packets reference it.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "element": {
+      "description": "The ten elements (creatures.md#十大屬性).",
+      "enum": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"]
+    },
+    "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "nonNegativeInt": { "type": "integer", "minimum": 0 },
+    "resistPercent": {
+      "description": "Negative = weakness. combat.md clamps to ±100, so values beyond that are meaningless.",
+      "type": "integer",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "rule": {
+      "description": "Trigger/effect shell. The type vocabulary is closed into an enum in P2 (user decision 2026-11-06).",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "$ref": "#/$defs/id" },
+        "params": { "type": "object" }
+      }
+    }
+  }
+}

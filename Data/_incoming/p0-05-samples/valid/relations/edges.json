@@ -1,0 +1,14 @@
+[
+  {
+    "a": "sample_fox_beast",
+    "b": "sample_fox_cub",
+    "kind": "evolution_family",
+    "note": "Lineage relationship between adolescent and juvenile."
+  },
+  {
+    "a": "sample_fox_beast",
+    "b": "sample_fox_lord",
+    "kind": "evolution_family",
+    "note": "Lineage relationship between adolescent and adult."
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "SampleMoveStrike",
+    "element": "fire",
+    "kind": "damage",
+    "power": 30,
+    "cooldown_ms": 1000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "dash"
+  }
+]
