@@ -21,6 +21,24 @@
   function list(items) { return items.map(s => "- " + s).join("\n"); }
 
   function deliverySection(ctx, tree) {
+    const isModelRig = ctx.task.id === "model-rig";
+    const manifestObj = {
+      spec: "cosmimera-art-task/1",
+      task_header: "<原樣抄回本 prompt 第一行>",
+      task_id: ctx.taskId,
+      task_type: ctx.task.id,
+      subject_id: ctx.subjectId,
+      produced_by: ctx.platformName,
+    };
+    if (isModelRig) {
+      manifestObj.source_pack = ctx.opts?.source_pack || "<來源立繪包 task_id，例 cr-20261106-7f3a-2105 或 chr-20261106-7f3a-2105>";
+    }
+    Object.assign(manifestObj, {
+      files: [{ path: "images/<檔名>.png", kind: "<main|turnaround|view|sheet|spec|script|model|anim|flipbook|storyboard|report>", level: "L1|L2" }],
+      missing: [{ item: "<路徑或項目>", level: "L2", reason: "<為何做不到>" }],
+      notes: "<設計取捨、文化替代、需要人工確認的點>"
+    });
+
     return [
       "## 交付格式（必須遵守）",
       "把所有檔案打包成 **`" + ctx.taskId + ".zip`**，zip 內頂層是同名資料夾：",
@@ -30,20 +48,11 @@
       tree,
       "```",
       "manifest.json：",
-      json({
-        spec: "cosmimera-art-task/1",
-        task_header: "<原樣抄回本 prompt 第一行>",
-        task_id: ctx.taskId,
-        task_type: ctx.task.id,
-        subject_id: ctx.subjectId,
-        produced_by: ctx.platformName,
-        files: [{ path: "images/<檔名>.png", kind: "<main|turnaround|view|sheet|spec|script|model|anim|flipbook|storyboard|report>", level: "L1|L2" }],
-        missing: [{ item: "<路徑或項目>", level: "L2", reason: "<為何做不到>" }],
-        notes: "<設計取捨、文化替代、需要人工確認的點>"
-      }),
+      json(manifestObj),
       "- **L1 = 必交**；**L2 = 平台能力允許才交**，做不到就列入 `missing`，**不要用佔位或假檔充數**。",
+      isModelRig ? "- **source_pack 必須如實填寫來源立繪包 task_id**，供技術美術與審查台 100% 雙向追溯。" : null,
       "- 所有檔名小寫 snake_case，完全照〈產出清單〉。"
-    ].join("\n");
+    ].filter(Boolean).join("\n");
   }
 
   function platformSection(ctx) {
@@ -235,6 +244,7 @@
       needs: "either", drop: "Art/_incoming", drive: true,
       options: [
         { key: "scope", type: "select", label: "範圍", items: () => [{ v: "single", zh: "單一立繪包（目前概念）" }, { v: "batch", zh: "批次：image_in 內所有立繪包" }], def: "single" },
+        { key: "source_pack", type: "text", label: "參照立繪包 ID (source_pack)", def: "", placeholder: "例：cr-20261106-7f3a-2105 或 chr-20261106-7f3a-2105", when: o => o.scope !== "batch" },
         { key: "subject", type: "select", label: "對象", items: () => [{ v: "character", zh: "目前角色概念" }, { v: "creature", zh: "目前宙獸概念" }], def: "creature", when: o => o.scope !== "batch" },
         { key: "stages", type: "checks", label: "宙獸型態", items: () => C.STAGES.map(s => ({ v: s.v, zh: s.zh })), def: ["juvenile", "adolescent", "adult", "overload"], when: o => o.scope === "batch" || o.subject === "creature" },
         { key: "actions_character", type: "checks", label: "角色動作", items: () => C.ACTIONS.character.map(a => ({ v: a.id, zh: a.zh })), def: "all", when: o => o.scope === "batch" || o.subject !== "creature" },

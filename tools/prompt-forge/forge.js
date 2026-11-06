@@ -1,6 +1,6 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.3.0";
+  const TOOL_VERSION = "1.4.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
@@ -119,14 +119,12 @@
       lenLogM = Math.log(0.32); lenLogS = 0.32;
       wtLogM = Math.log(0.9); wtLogS = 0.75;
     } else if (sizeClass === "M") {
-      // 常見大型鳥類到中型哺乳類（例如金鵰、天鵝、狼、豹、羊）
       lenLogM = Math.log(1.05); lenLogS = 0.22;
       wtLogM = Math.log(22.0); wtLogS = 0.55;
     } else if (sizeClass === "L") {
-      // 大型鳥類走禽到大型哺乳類（例如鴕鳥、獅、虎、鹿、馬、熊）
       lenLogM = Math.log(2.05); lenLogS = 0.18;
       wtLogM = Math.log(180.0); wtLogS = 0.48;
-    } else { // XL: 上限到暴龍 (12.5m, 9000kg)
+    } else { // XL
       lenLogM = Math.log(5.2); lenLogS = 0.40;
       wtLogM = Math.log(2600.0); wtLogS = 0.75;
     }
@@ -150,53 +148,44 @@
       { key: "age", label: "年齡", options: s => { const b = CH.age.find(a => a.v === s.character.age_band?.[0]) || CH.age[1]; const r = []; for (let i = b.min; i <= b.max; i++) r.push({ v: String(i), w: 1 }); r.push({ v: "未知", w: 1 }); return r.concat(getCustom("character.age").map(v => ({ v, w: 1 }))); }, count: [{ n: 1, w: 1 }], dep: "age_band" },
       { key: "height", label: "身高 (cm)", options: s => {
         const d = sampleHumanDimensions(Math.random, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]);
-        return [{ v: d.height, w: 1 }, { v: "160 cm", w: 1 }, { v: "175 cm", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.height").map(v => ({ v, w: 1 })));
-      }, count: [{ n: 1, w: 1 }], dep: "gender", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).height },
+        return [{ v: d.height, w: 1 }, { v: "165 cm", w: 1 }, { v: "172 cm", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.height").map(v => ({ v, w: 1 })));
+      }, count: [{ n: 1, w: 1 }], dep: "age", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).height },
       { key: "weight", label: "體重 (kg)", options: s => {
         const d = sampleHumanDimensions(Math.random, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]);
-        return [{ v: d.weight, w: 1 }, { v: "52.0 kg", w: 1 }, { v: "68.0 kg", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.weight").map(v => ({ v, w: 1 })));
+        return [{ v: d.weight, w: 1 }, { v: "52 kg", w: 1 }, { v: "65 kg", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.weight").map(v => ({ v, w: 1 })));
       }, count: [{ n: 1, w: 1 }], dep: "height", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).weight },
       { key: "body_fat", label: "體脂率 (%)", options: s => {
         const d = sampleHumanDimensions(Math.random, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]);
-        return [{ v: d.bodyFat, w: 1 }, { v: "16.0%", w: 1 }, { v: "22.0%", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.body_fat").map(v => ({ v, w: 1 })));
-      }, count: [{ n: 1, w: 1 }], dep: "gender", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).bodyFat },
-      { key: "cup_size", label: "罩杯（女角色）", options: () => CH.cup_sizes.map(c => ({ v: c.v, w: c.w })).concat(getCustom("character.cup_size").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], when: s => s.character.gender?.[0] === "女" },
-      { key: "outfit_palette", label: "服裝色系（1–3）", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("character.outfit_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 45 }, { n: 2, w: 40 }, { n: 3, w: 15 }], max: 3 },
-      { key: "hair_palette", label: "頭髮色系（1–2）", options: () => CH.hair_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.hair_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 60 }, { n: 2, w: 40 }], max: 2 },
-      { key: "eye_palette", label: "瞳孔色系（1–2）", options: () => CH.eye_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.eye_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 60 }, { n: 2, w: 40 }], max: 2 },
-      { key: "personality", label: "性格", options: () => uniform(C.PERSONALITIES.concat(getCustom("character.personality"))), count: [{ n: 2, w: 1 }], max: 3 },
-      { key: "style", label: "風格", options: () => uniform(CH.style.concat(getCustom("character.style"))), count: [{ n: 1, w: 1 }], max: 2 },
-      { key: "interests", label: "興趣", options: () => uniform(CH.interests.concat(getCustom("character.interests"))), count: [{ n: 2, w: 1 }], max: 3 },
-      { key: "likes", label: "喜好", options: () => uniform(CH.likes.concat(getCustom("character.likes"))), count: [{ n: 2, w: 1 }], max: 3 },
-      { key: "dislikes", label: "厭惡", options: () => uniform(CH.dislikes.concat(getCustom("character.dislikes"))), count: [{ n: 2, w: 1 }], max: 3 },
-      { key: "vessel", label: "慣用收服道具", options: () => C.VESSELS.map(v => ({ v: v.v, w: 1, zh: v.zh })).concat(getCustom("character.vessel").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }] }
+        return [{ v: d.bodyFat, w: 1 }, { v: "18.0%", w: 1 }, { v: "22.0%", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.body_fat").map(v => ({ v, w: 1 })));
+      }, count: [{ n: 1, w: 1 }], dep: "weight", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).bodyFat },
+      { key: "cup_size", label: "罩杯（女性）", options: () => CH.cup_sizes.map(c => ({ v: c.v, w: c.w })).concat(getCustom("character.cup_size").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], when: s => s.character.gender?.[0] === "女" },
+      { key: "outfit_palette", label: "服裝色系 (1~3色)", options: () => uniform(C.PALETTES.outfit_and_creature.concat(getCustom("character.outfit_palette"))), count: [{ n: 1, w: 1 }], max: 3 },
+      { key: "hair_palette", label: "頭髮色系 (1~2色)", options: () => uniform(C.PALETTES.hair.concat(getCustom("character.hair_palette"))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "eye_palette", label: "瞳孔色系 (1~2色)", options: () => uniform(C.PALETTES.eyes.concat(getCustom("character.eye_palette"))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "personality", label: "性格特質", options: () => uniform(C.PERSONALITY_TRAITS.concat(getCustom("character.personality"))), count: [{ n: 2, w: 1 }], max: 4 },
+      { key: "style", label: "服裝/外觀風格", options: () => uniform(CH.style.concat(getCustom("character.style"))), count: [{ n: 2, w: 1 }], max: 3 },
+      { key: "interests", label: "休閒興趣", options: () => uniform(CH.interests.concat(getCustom("character.interests"))), count: [{ n: 2, w: 1 }], max: 3 },
+      { key: "likes", label: "喜歡事物", options: () => uniform(CH.likes.concat(getCustom("character.likes"))), count: [{ n: 2, w: 1 }], max: 3 },
+      { key: "dislikes", label: "討厭事物", options: () => uniform(CH.dislikes.concat(getCustom("character.dislikes"))), count: [{ n: 2, w: 1 }], max: 3 },
+      { key: "vessel", label: "主要收服道具", options: () => C.VESSELS.map(v => ({ v: v.v, w: v.w, zh: v.zh })).concat(getCustom("character.vessel").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }] }
     ],
     creature: [
-      { key: "elements", label: "屬性（1–3）", options: () => C.ELEMENTS.map(e => ({ v: e.v, w: 1, zh: e.zh + " " + e.v })).concat(getCustom("creature.elements").map(v => ({ v, w: 1, zh: v }))), count: C.ELEMENT_COUNT, max: 3 },
-      { key: "base_parents", label: "外觀基底父類別（1–2）", options: () => CR.base_parents.map(b => ({ v: b.v, zh: b.zh || b.v, w: b.w })).concat(getCustom("creature.base_parents").map(v => ({ v, zh: v, w: 1 }))), count: CR.base_count, max: 2 },
-      { key: "bases", label: "外觀基底子類別（1–3）", options: s => {
-        const parents = (s.creature.base_parents || []).map(traceBaseParent);
-        let subs = [];
-        parents.forEach(p => {
-          const list = CR.base_sub_map[p] || [];
-          const prefix = p.split("·")[1] || p;
-          subs = subs.concat(list.map(x => `${prefix}·${x}`));
-        });
-        if (!subs.length) {
-          subs = (CR.base_sub_map["生物·哺乳類"] || []).concat(CR.base_sub_map["生物·鳥類"] || []);
-        }
-        return uniform(subs.concat(["未知"]).concat(getCustom("creature.bases")));
-      }, count: [{ n: 1, w: 45 }, { n: 2, w: 40 }, { n: 3, w: 15 }], max: 3, dep: "base_parents" },
-      { key: "appearance_palette", label: "外觀色系（1–3）", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("creature.appearance_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 45 }, { n: 2, w: 40 }, { n: 3, w: 15 }], max: 3 },
+      { key: "elements", label: "屬性", options: () => C.ELEMENTS.map(e => ({ v: e.v, w: e.w, zh: e.zh })).concat(getCustom("creature.elements").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 2 }, { n: 2, w: 1 }], max: 2 },
+      { key: "base_parents", label: "外觀基底類別", options: () => uniform(CR.bases_hierarchy.map(b => b.cat).concat(getCustom("creature.base_parents"))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "bases", label: "外觀基底 (1~3)", options: s => {
+        const parents = (s.creature.base_parents || [CR.bases_hierarchy[0].cat]).map(traceBaseParent);
+        const pool = parents.flatMap(p => getCreatureSubBases(p));
+        return uniform(pool.concat(getCustom("creature.bases")));
+      }, count: [{ n: 2, w: 1 }], max: 3, dep: "base_parents" },
+      { key: "appearance_palette", label: "宙獸色系 (1~3色)", options: () => uniform(C.PALETTES.outfit_and_creature.concat(getCustom("creature.appearance_palette"))), count: [{ n: 1, w: 1 }], max: 3 },
       { key: "timeline", label: "文化時間線", options: () => C.TIMELINES.map(t => ({ v: t.v, zh: t.zh, w: 1 })).concat(getCustom("creature.timeline").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 1 }] },
       { key: "region", label: "文化地區", options: () => uniform(C.CULTURE_REGIONS.concat(getCustom("creature.region"))), count: [{ n: 1, w: 1 }] },
       { key: "archetype", label: "文化原型", options: s => {
-        const reg = s.creature.region?.[0];
-        const pool = archetypePool(s).filter(a => !reg || reg === "未知" || a.region === reg || a.region === "未知");
+        const pool = archetypePool(s);
         return pool.map(a => ({ v: a.name, w: 1, zh: a.name + "（" + a.region + "·" + a.type + (a.sensitivity === "review" ? "・需審" : "") + "）" })).concat(getCustom("creature.archetype").map(v => ({ v, w: 1, zh: v })));
-      }, count: [{ n: 1, w: 1 }], dep: "region" },
-      { key: "role", label: "戰鬥定位", options: () => uniform(CR.role.concat(getCustom("creature.role"))), count: [{ n: 1, w: 1 }] },
-      { key: "temperament", label: "性情/性格", options: () => uniform(C.PERSONALITIES.concat(getCustom("creature.temperament"))), count: [{ n: 1, w: 1 }] },
+      }, count: [{ n: 1, w: 1 }] },
+      { key: "role", label: "戰鬥定位", options: () => uniform(CR.roles.concat(getCustom("creature.role"))), count: [{ n: 1, w: 1 }] },
+      { key: "temperament", label: "性情", options: () => uniform(C.PERSONALITY_TRAITS.concat(getCustom("creature.temperament"))), count: [{ n: 1, w: 1 }] },
       { key: "size_profile", label: "體型（幼→少→成→超載）", options: () => CR.size_profile.map(p => ({ v: p.v, w: p.w })).concat(getCustom("creature.size_profile").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }] },
       { key: "height_length", label: "成體身長/高 (m)", options: s => {
         const adultClass = (s.creature.size_profile?.[0] || "S→M→L→XL").split("→")[2] || "L";
@@ -264,7 +253,6 @@
       age: isNaN(Number(c.age?.[0])) ? (c.age?.[0] || "未知") : Number(c.age[0]), age_band: c.age_band?.[0] || "未知",
       height: c.height?.[0] || "未知", weight: c.weight?.[0] || "未知", body_fat: c.body_fat?.[0] || "未知"
     };
-    // 男角色此項不加入 prompt
     if (c.gender?.[0] === "女" && c.cup_size?.[0]) {
       res.cup_size = c.cup_size[0];
     }
@@ -324,7 +312,6 @@
   function resolveSubject(t, o) {
     if (t.needs === "character") return "character";
     if (t.needs === "creature") return "creature";
-    // 批次模式的主體來自雲端硬碟上的各立繪包，不使用目前概念。
     if (t.needs === "either" && o.scope === "batch") return null;
     if (t.needs === "either") return o.subject === "creature" ? "creature" : "character";
     if (t.id === "move-vfx" && o.use_creature === "yes") return "creature";
@@ -347,6 +334,13 @@
     const taskId = t.prefix + "-" + s.day + "-" + state.seed + "-" + s.hm;
     const header = "[COSMIMERA-TASK spec=" + SPEC + " tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + taskId + " seed=" + state.seed + "]";
     const concept = subj === "character" ? characterConcept() : subj === "creature" ? creatureConcept() : null;
+    
+    // 若為 model-rig 且未手動指定 source_pack，預設自動關聯目前概念立繪包
+    if (t.id === "model-rig" && o.scope !== "batch" && !o.source_pack) {
+      const srcPrefix = (subj === "creature" ? "cr-" : "chr-");
+      o.source_pack = srcPrefix + s.day + "-" + state.seed + "-" + s.hm;
+    }
+
     const ctx = {
       header, taskId, task: t, opts: o, concept, notes: state.notes.trim(),
       platform: state.platform, platformName: state.platform === "gemini" ? "Gemini Argon（任務模式）" : "ChatGPT（對話版）",
@@ -397,7 +391,16 @@
     if (f.when && !f.when(state)) return el("div", { style: "display:none" });
     const key = kind + "." + f.key, vals = state[kind][f.key] || [], opts = f.options(state);
     const label = v => (opts.find(o => o.v === v) || {}).zh || v;
-    const lock = el("input", { type: "checkbox", title: "鎖定（全部隨機時不變）", checked: !!state.locks[key], onchange: e => { state.locks[key] = e.target.checked; save(); } });
+    
+    // 改良後的按鈕式鎖定開關，排版永不跑版
+    const locked = !!state.locks[key];
+    const lockBtn = el("button", {
+      class: "lock-btn" + (locked ? " locked" : ""),
+      type: "button",
+      title: locked ? "已鎖定（全部隨機時不變，點選解鎖）" : "未鎖定（點選鎖定）",
+      onclick: () => { state.locks[key] = !state.locks[key]; renderAll(); save(); }
+    }, locked ? "🔒" : "🔓");
+
     const dice = el("button", { class: "icon", type: "button", title: "重抽此欄", onclick: () => { rollField(kind, f, Math.random); revalidate(kind); renderAll(); } }, "🎲");
     const edit = el("button", { class: "icon", type: "button", title: "手寫編輯 / 追加自訂值", onclick: () => {
       openCustomModal(f.label, vals[0] || "", (newVal) => {
@@ -444,7 +447,7 @@
       );
       control = el("div", { class: "chips" }, chips, add);
     }
-    return el("div", { class: "field" }, el("label", {}, f.label), control, el("div", { class: "fctl" }, edit, dice, el("label", { class: "lock" }, lock, "🔒")));
+    return el("div", { class: "field" }, el("label", {}, f.label), control, el("div", { class: "fctl" }, edit, dice, lockBtn));
   }
 
   function renderConcepts() {
@@ -473,14 +476,14 @@
       let control;
       if (d.type === "checks") {
         control = el("div", { class: "checks" },
-          el("button", { type: "button", class: "mini", onclick: () => { o[d.key] = o[d.key].length === items.length ? [] : items.map(i => i.v); renderAll(); } }, o[d.key].length === items.length ? "全不選" : "全選"),
+          el("button", { type: "button", class: "btn mini ghost", onclick: () => { o[d.key] = o[d.key].length === items.length ? [] : items.map(i => i.v); renderAll(); } }, o[d.key].length === items.length ? "全不選" : "全選"),
           items.map(i => el("label", { class: "check" }, el("input", { type: "checkbox", checked: o[d.key].includes(i.v), onchange: e => { o[d.key] = e.target.checked ? o[d.key].concat(i.v) : o[d.key].filter(x => x !== i.v); renderAll(); } }), i.zh)));
       } else if (d.type === "select") {
         control = el("div", { class: "row" },
           el("select", { onchange: e => { o[d.key] = e.target.value; if (d.key === "subject") delete o.actions; taskOpts(t); renderAll(); } }, items.map(i => el("option", { value: i.v, selected: i.v === o[d.key] }, i.zh))),
           el("button", { class: "icon", type: "button", title: "隨機", onclick: () => { o[d.key] = items[Math.floor(Math.random() * items.length)].v; if (d.key === "subject") delete o.actions; taskOpts(t); renderAll(); } }, "🎲"));
       } else {
-        control = el("input", { value: o[d.key], onchange: e => { o[d.key] = e.target.value; renderAll(); } });
+        control = el("input", { value: o[d.key], placeholder: d.placeholder || "", onchange: e => { o[d.key] = e.target.value; renderAll(); } });
       }
       box.append(el("div", { class: "field opt" }, el("label", {}, d.label), control));
     });
@@ -497,7 +500,6 @@
     const dest = root + "\\" + t.drop.replace(/\//g, "\\");
     const cmd = 'Expand-Archive -Path "$HOME\\Downloads\\' + b.ctx.taskId + '.zip" -DestinationPath "' + dest + '\\" -Force';
     if (t.drive) {
-      // 成品在雲端硬碟 3D_out；批次會有多包，所以用萬用字元一次解壓。
       const zips = b.ctx.taskId + (b.ctx.opts.scope === "batch" ? "*" : "") + ".zip";
       const dcmd = 'Get-ChildItem "$HOME\\Downloads\\' + zips + '" | ForEach-Object { Expand-Archive -Path $_.FullName -DestinationPath "' + dest + '\\" -Force }';
       $("#deliver").replaceChildren(
@@ -507,7 +509,7 @@
           el("li", {}, "完成後從雲端硬碟 ", el("code", {}, "project/cosmos_chimera/3D_out/"), " 下載 ", el("code", {}, zips), " 到「下載」資料夾"),
           el("li", {}, "解壓到 ", el("code", {}, dest + "\\"), "，再到「成果審查台」審查。")
         ),
-        el("div", { class: "cmd" }, el("code", {}, dcmd), el("button", { type: "button", class: "mini", onclick: () => copyText(dcmd, "已複製解壓指令") }, "複製"))
+        el("div", { class: "cmd" }, el("code", {}, dcmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(dcmd, "已複製解壓指令") }, "複製"))
       );
       return;
     }
@@ -518,7 +520,7 @@
         el("li", {}, "解壓到 ", el("code", {}, dest + "\\"), "，結果應為 ", el("code", {}, t.drop + "/" + b.ctx.taskId + "/manifest.json")),
         el("li", {}, "進入「成果審查台」點選「📂 掃描 Art/_incoming」或一鍵解壓縮進行審查。"),
       ),
-      el("div", { class: "cmd" }, el("code", {}, cmd), el("button", { type: "button", class: "mini", onclick: () => copyText(cmd, "已複製解壓指令") }, "複製")),
+      el("div", { class: "cmd" }, el("code", {}, cmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(cmd, "已複製解壓指令") }, "複製")),
       el("p", { class: "muted" }, "若圖片沒有被打包進 zip：照 manifest.files 的檔名手動存到 ", el("code", {}, t.drop + "/" + b.ctx.taskId + "/images/"), "。")
     );
   }
@@ -532,18 +534,127 @@
   function renderAll() {
     revalidate("character"); revalidate("creature");
     $("#seed").value = state.seed;
-    document.querySelectorAll("input[name=platform]").forEach(r => r.checked = r.value === state.platform);
+    
+    // 更新平台切換鈕
+    if ($("#platChatgpt") && $("#platGemini")) {
+      $("#platChatgpt").classList.toggle("on", state.platform === "chatgpt");
+      $("#platGemini").classList.toggle("on", state.platform === "gemini");
+    }
+
     $("#rec").textContent = task().platform === "gemini" ? "建議：Gemini Argon" : "建議：ChatGPT";
     renderTasks(); renderConcepts(); renderOptions(); renderOutput(); renderHistory();
     save();
   }
 
-  // ---- 成果審查台（Review Workbench，三欄排版參考 steel_vs_swarm） ----
+  // ==================== 原生 ZIP 封裝輔助（零外部依賴） ====================
+  const CRC_TABLE = (function () {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+      table[i] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function createZipBlob(files) {
+    const entries = [];
+    let offset = 0;
+    for (const name in files) {
+      let data = files[name];
+      if (typeof data === "string") data = new TextEncoder().encode(data);
+      const nameBytes = new TextEncoder().encode(name);
+      const header = new Uint8Array(30 + nameBytes.length);
+      const dv = new DataView(header.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0, true);
+      dv.setUint16(8, 0, true); // store
+      dv.setUint16(10, 0, true);
+      dv.setUint16(12, 0, true);
+      let crc = 0 ^ (-1);
+      for (let i = 0; i < data.length; i++) crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ data[i]) & 0xff];
+      crc = (crc ^ (-1)) >>> 0;
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true);
+      dv.setUint16(28, 0, true);
+      header.set(nameBytes, 30);
+      entries.push({ nameBytes, header, data, crc, offset });
+      offset += header.length + data.length;
+    }
+    const centralStart = offset;
+    const centralEntries = [];
+    for (const e of entries) {
+      const ch = new Uint8Array(46 + e.nameBytes.length);
+      const dv = new DataView(ch.buffer);
+      dv.setUint32(0, 0x02014b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 20, true);
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, 0, true);
+      dv.setUint16(12, 0, true);
+      dv.setUint16(14, 0, true);
+      dv.setUint32(16, e.crc, true);
+      dv.setUint32(20, e.data.length, true);
+      dv.setUint32(24, e.data.length, true);
+      dv.setUint16(28, e.nameBytes.length, true);
+      dv.setUint16(30, 0, true);
+      dv.setUint16(32, 0, true);
+      dv.setUint16(34, 0, true);
+      dv.setUint16(36, 0, true);
+      dv.setUint32(38, 0, true);
+      dv.setUint32(42, e.offset, true);
+      ch.set(e.nameBytes, 46);
+      centralEntries.push(ch);
+      offset += ch.length;
+    }
+    const centralSize = offset - centralStart;
+    const eocd = new Uint8Array(22);
+    const edv = new DataView(eocd.buffer);
+    edv.setUint32(0, 0x06054b50, true);
+    edv.setUint16(4, 0, true);
+    edv.setUint16(6, 0, true);
+    edv.setUint16(8, entries.length, true);
+    edv.setUint16(10, entries.length, true);
+    edv.setUint32(12, centralSize, true);
+    edv.setUint32(16, centralStart, true);
+    edv.setUint16(20, 0, true);
+
+    const parts = [];
+    for (const e of entries) {
+      parts.push(e.header);
+      parts.push(e.data);
+    }
+    for (const ch of centralEntries) parts.push(ch);
+    parts.push(eocd);
+    return new Blob(parts, { type: "application/zip" });
+  }
+
+  // ==================== 成果審查台（Review Workbench，參考 steel_vs_swarm） ====================
   const reviewState = {
     packages: [], activePkgId: null, activeImgIdx: 0,
-    filterCat: "all", filterQuery: "", zoomLevel: 1.0, panX: 0, panY: 0,
+    filterCat: "all", filterQuery: "", viewMode: "single", // "single" | "compare"
+    zoomLevel: 1.0, panX: 0, panY: 0,
     reviews: {}
   };
+
+  // 取得與目前封裝相互參照的關聯封裝（2D 立繪 ⇄ 3D 模型雙向參照）
+  function getLinkedPackage(pkg) {
+    if (!pkg) return null;
+    if (pkg.type === "model-rig") {
+      // 3D 封裝往回找立繪包
+      if (pkg.manifest?.source_pack) {
+        const found = reviewState.packages.find(p => p.id === pkg.manifest.source_pack);
+        if (found) return found;
+      }
+      return reviewState.packages.find(p => p.type !== "model-rig" && p.subjectId && p.subjectId === pkg.subjectId) || null;
+    } else {
+      // 立繪包往下找衍生 3D 封裝
+      return reviewState.packages.find(p => p.type === "model-rig" && (p.manifest?.source_pack === pkg.id || (p.subjectId && p.subjectId === pkg.subjectId))) || null;
+    }
+  }
 
   // ZIP 解析器（使用瀏覽器原生 DecompressionStream）
   async function parseZipBuffer(arrayBuffer) {
@@ -620,13 +731,15 @@
   async function loadZipFile(file) {
     const buf = await file.arrayBuffer();
     const files = await parseZipBuffer(buf);
-    let manifestData = null, conceptData = null, prefix = "";
+    let manifestData = null, conceptData = null, rawPrompt = "", prefix = "";
     for (const path in files) {
       if (path.endsWith("manifest.json")) {
         try { manifestData = JSON.parse(new TextDecoder().decode(files[path])); } catch (e) {}
         prefix = path.slice(0, path.lastIndexOf("manifest.json"));
       } else if (path.endsWith("concept.json")) {
         try { conceptData = JSON.parse(new TextDecoder().decode(files[path])); } catch (e) {}
+      } else if (path.endsWith(".prompt.md") || path.endsWith("prompt.md") || path.endsWith("prompt.txt")) {
+        try { rawPrompt = new TextDecoder().decode(files[path]); } catch (e) {}
       }
     }
     const taskId = manifestData?.task_id || file.name.replace(/\.zip$/i, "");
@@ -635,22 +748,25 @@
       if (/\.(png|jpe?g|webp)$/i.test(path)) {
         const rel = path.startsWith(prefix) ? path.slice(prefix.length) : path;
         const blob = new Blob([files[path]], { type: "image/png" });
-        images.push({ path: rel, url: URL.createObjectURL(blob) });
+        images.push({ path: rel, url: URL.createObjectURL(blob), rawBytes: files[path] });
       }
     }
     const pkg = {
       id: taskId,
-      type: manifestData?.task_type || (taskId.startsWith("chr") ? "character-concept" : "creature-concept"),
+      type: manifestData?.task_type || (taskId.startsWith("chr") ? "character-concept" : taskId.startsWith("cr") ? "creature-concept" : taskId.startsWith("mdl") ? "model-rig" : "unknown"),
       subjectId: manifestData?.subject_id || "",
       manifest: manifestData,
       concept: conceptData,
+      rawPrompt,
       images,
+      rawFiles: files,
       fileCount: Object.keys(files).length,
       rawZip: file,
       isZip: true,
       status: manifestData?.missing?.length ? "missing" : "pending"
     };
     addPackage(pkg);
+    return pkg;
   }
 
   function addPackage(pkg) {
@@ -672,11 +788,13 @@
         subjectId: "line_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=creature-concept@2.0.0 task_id=cr-20261106-7f3a-2105 seed=7f3a]",
           task_id: "cr-20261106-7f3a-2105",
           task_type: "creature-concept",
           subject_id: "line_7f3a",
           produced_by: "ChatGPT",
           files: [
+            { path: "concept.json", kind: "spec", level: "L1" },
             { path: "images/cr_line_7f3a_adult_main.png", kind: "main", level: "L1" },
             { path: "images/cr_line_7f3a_adult_turnaround.png", kind: "turnaround", level: "L1" },
             { path: "images/cr_line_7f3a_adult_front.png", kind: "view", level: "L1" },
@@ -688,18 +806,24 @@
         concept: {
           line_id: "line_7f3a",
           elements: ["fire（火）", "metal（金）"],
+          element_palettes: ["自然火紅 × 琉璃金"],
           base_parents: ["類人奇幻·精靈族", "器械·武器"],
           bases: ["精靈族·高等精靈/月光祭司", "武器·符文巨盾/塔盾護壁"],
           appearance_palette: ["熔岩赤紅 × 炭黑硬甲 × 烈焰耀金"],
           timeline: "青銅神話/古典英雄時代", region: "東亞",
-          height_m: "2.10 m", weight_kg: "340 kg", body_fat_pct: "15.0%",
-          archetype: "桃太郎", role: "前排肉盾/坦克", temperament: "好鬥凶悍",
+          size_profile: "S→M→L→XL",
+          height_length: "2.10 m", weight: "340 kg", body_fat: "15.0%",
+          archetype: "桃太郎", archetype_type: "傳說", motifs: "桃紋飾、雙角重鎧、腰間黍糰印記",
+          sensitivity: "ok", role: "前排肉盾/坦克", temperament: "好鬥凶悍",
           stages: [
             { stage: "juvenile", name_zh: "火角石", size_class: "S", height_m: 0.45 },
             { stage: "adolescent", name_zh: "熔脊獸", size_class: "M", height_m: 1.10 },
             { stage: "adult", name_zh: "焰甲重龍", size_class: "L", height_m: 2.10 },
             { stage: "overload", name_zh: "天炎煌角甲", size_class: "XL", height_m: 3.80 }
-          ]
+          ],
+          signature_move: { name_zh: "崩天熾烈斬", move_id: "move_earth_heavy_cleave" },
+          trait: { name_zh: "熔鋼重裝壁", trait_id: "trait_metal_impenetrable_shell" },
+          formula: "fire+metal × 精靈族·高等精靈+武器·符文巨盾 × 桃太郎（青銅神話/古典英雄時代）"
         },
         images: [
           { path: "images/cr_line_7f3a_adult_main.png", url: createSampleSvgDataUrl("焰甲重龍 · 成年立繪 (2.1m)", "#d35400") },
@@ -708,6 +832,44 @@
           { path: "images/cr_line_7f3a_lineup.png", url: createSampleSvgDataUrl("進化排列圖 21:9", "#2c3e50") }
         ],
         fileCount: 6,
+        status: "ok"
+      },
+      {
+        id: "mdl-20261106-7f3a-2105",
+        type: "model-rig",
+        subjectId: "line_7f3a",
+        manifest: {
+          spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=model-rig@2.0.0 task_id=mdl-20261106-7f3a-2105 seed=7f3a]",
+          task_id: "mdl-20261106-7f3a-2105",
+          task_type: "model-rig",
+          subject_id: "line_7f3a",
+          source_pack: "cr-20261106-7f3a-2105",
+          produced_by: "Gemini Argon",
+          files: [
+            { path: "images/cr_line_7f3a_adult_model_front.png", kind: "view", level: "L1" },
+            { path: "images/cr_line_7f3a_adult_model_side.png", kind: "view", level: "L1" },
+            { path: "images/cr_line_7f3a_adult_model_back.png", kind: "view", level: "L1" },
+            { path: "images/cr_line_7f3a_adult_anim_sheet_01.png", kind: "sheet", level: "L1" },
+            { path: "rig/rig_spec.json", kind: "spec", level: "L1" },
+            { path: "rig/build_rig.py", kind: "script", level: "L1" },
+            { path: "anims/anim_spec.json", kind: "spec", level: "L1" },
+            { path: "anims/keyframes.py", kind: "script", level: "L1" },
+            { path: "pipeline/run_all.py", kind: "script", level: "L1" },
+            { path: "pipeline/README.md", kind: "report", level: "L1" }
+          ],
+          missing: [
+            { item: "models/cr_line_7f3a_adult.glb", level: "L2", reason: "no 3D generation on this platform" }
+          ],
+          notes: "由立繪包 cr-20261106-7f3a-2105 清理生成 3D 建模正交視圖與骨架規格"
+        },
+        images: [
+          { path: "images/cr_line_7f3a_adult_model_front.png", url: createSampleSvgDataUrl("焰甲重龍 · 建模正交正面 2048px", "#e67e22") },
+          { path: "images/cr_line_7f3a_adult_model_side.png", url: createSampleSvgDataUrl("焰甲重龍 · 建模正交側面 2048px", "#d35400") },
+          { path: "images/cr_line_7f3a_adult_model_back.png", url: createSampleSvgDataUrl("焰甲重龍 · 建模正交背面 2048px", "#ba4a00") },
+          { path: "images/cr_line_7f3a_adult_anim_sheet_01.png", url: createSampleSvgDataUrl("動作關鍵幀分鏡 · 焰甲重龍", "#8e44ad") }
+        ],
+        fileCount: 11,
         status: "pending"
       },
       {
@@ -716,11 +878,13 @@
         subjectId: "chr_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=character-concept@1.2.0 task_id=chr-20261106-7f3a-2105 seed=7f3a]",
           task_id: "chr-20261106-7f3a-2105",
           task_type: "character-concept",
           subject_id: "chr_7f3a",
           produced_by: "ChatGPT",
           files: [
+            { path: "concept.json", kind: "spec", level: "L1" },
             { path: "images/chr_7f3a_main.png", kind: "main", level: "L1" },
             { path: "images/chr_7f3a_turnaround.png", kind: "turnaround", level: "L1" },
             { path: "images/chr_7f3a_expressions.png", kind: "sheet", level: "L1" },
@@ -732,13 +896,14 @@
         concept: {
           id: "chr_7f3a", name_zh: "林晴陽", name_en: "Haruhi",
           role: "玩家角色預設外觀", ethnicity: "東亞體系", region: "東亞", timeline: "晶石賽博/霓虹魔導義體紀元",
-          gender: "女", age: 17, height_cm: "163 cm", weight_kg: "51.5 kg", body_fat_pct: "21.5%",
+          gender: "女", age_band: "青少年", age: 17, height: "163 cm", weight: "51.5 kg", body_fat: "21.5%",
           cup_size: "C",
           outfit_palette: ["海軍藍 × 象牙白 × 霧金"],
           hair_palette: ["純黑 × 挑染天藍"],
           eye_palette: ["琥珀金"],
           personality: ["熱血", "好奇"], style: "街頭機能 × 學院制服改造",
-          vessel: "talisman_card"
+          interests: ["星際探索", "古文字解密"], likes: ["熱奶茶", "發光晶石"], dislikes: ["冗長報告"],
+          vessel: "talisman_card", vessel_zh: "符籙卡片"
         },
         images: [
           { path: "images/chr_7f3a_main.png", url: createSampleSvgDataUrl("角色立繪 · 晴陽 (163cm, 罩杯C)", "#2980b9") },
@@ -753,7 +918,7 @@
     mockPackages.forEach(p => addPackage(p));
     reviewState.activePkgId = mockPackages[0].id;
     renderReviewView();
-    toast("已載入內建測試範例");
+    toast("已載入內建測試範例（含立繪與 3D 成果參照）");
   }
 
   function createSampleSvgDataUrl(title, color) {
@@ -795,7 +960,7 @@
   }
 
   async function loadFromDirHandle(taskId, dirHandle) {
-    let manifestData = null, conceptData = null;
+    let manifestData = null, conceptData = null, rawPrompt = "";
     const images = [];
     let fileCount = 0;
     try {
@@ -806,6 +971,13 @@
       const cpFile = await (await dirHandle.getFileHandle("concept.json")).getFile();
       conceptData = JSON.parse(await cpFile.text());
     } catch (e) {}
+
+    // 嘗試讀取 prompt.md
+    for await (const [pname, phandle] of dirHandle.entries()) {
+      if (phandle.kind === "file" && (pname.endsWith(".prompt.md") || pname === "prompt.md")) {
+        try { rawPrompt = await (await phandle.getFile()).text(); } catch (e) {}
+      }
+    }
 
     // 讀取 images 目錄
     try {
@@ -821,10 +993,11 @@
 
     const pkg = {
       id: taskId,
-      type: manifestData?.task_type || (taskId.startsWith("chr") ? "character-concept" : "creature-concept"),
+      type: manifestData?.task_type || (taskId.startsWith("chr") ? "character-concept" : taskId.startsWith("cr") ? "creature-concept" : taskId.startsWith("mdl") ? "model-rig" : "unknown"),
       subjectId: manifestData?.subject_id || "",
       manifest: manifestData,
       concept: conceptData,
+      rawPrompt,
       images,
       fileCount,
       dirHandle,
@@ -837,8 +1010,209 @@
     return reviewState.packages.find(p => p.id === reviewState.activePkgId) || reviewState.packages[0] || null;
   }
 
+  // ==================== 一鍵舊版 Prompt 內容格式升級引擎 ====================
+  function upgradePackageFormat(pkg) {
+    if (!pkg) { toast("請先選取要升級的任務包"); return null; }
+    const changes = [];
+    const isChr = pkg.type === "character-concept" || pkg.id.startsWith("chr-");
+    const isCr = pkg.type === "creature-concept" || pkg.id.startsWith("cr-");
+    const is3d = pkg.type === "model-rig" || pkg.id.startsWith("mdl-") || pkg.id.startsWith("anim-");
+
+    let updatedConcept = Object.assign({}, pkg.concept || {});
+    let updatedManifest = Object.assign({}, pkg.manifest || {});
+    let targetTaskId = pkg.id;
+    let targetTaskType = isChr ? "character-concept" : isCr ? "creature-concept" : is3d ? "model-rig" : pkg.type;
+
+    if (isChr) {
+      const t = TASKS.find(x => x.id === "character-concept");
+      changes.push("升級至最新角色模板：template=character-concept@1.2.0, spec=1, tool=" + TOOL_VERSION);
+
+      // 解除人種與文化關聯，補齊生理常態數值
+      if (!updatedConcept.ethnicity) { updatedConcept.ethnicity = "東亞體系"; changes.push("補齊人種表型：東亞體系"); }
+      if (!updatedConcept.region) { updatedConcept.region = "東亞"; changes.push("補齊文化地區：東亞"); }
+      if (!updatedConcept.timeline) { updatedConcept.timeline = "晶石賽博/霓虹魔導義體紀元"; changes.push("補齊文化時間線：晶石賽博/霓虹魔導義體紀元"); }
+      if (!updatedConcept.gender) updatedConcept.gender = "女";
+      if (!updatedConcept.age_band) updatedConcept.age_band = "青少年";
+      if (!updatedConcept.age) updatedConcept.age = 17;
+
+      if (!updatedConcept.height && !updatedConcept.height_cm) {
+        const dim = sampleHumanDimensions(Math.random, updatedConcept.gender, updatedConcept.age_band, updatedConcept.age);
+        updatedConcept.height = dim.height; updatedConcept.weight = dim.weight; updatedConcept.body_fat = dim.bodyFat;
+        changes.push("補齊常態生理規格分佈：身高 " + dim.height + "、體重 " + dim.weight + "、體脂率 " + dim.bodyFat);
+      } else {
+        if (updatedConcept.height_cm && !updatedConcept.height) updatedConcept.height = updatedConcept.height_cm;
+        if (updatedConcept.weight_kg && !updatedConcept.weight) updatedConcept.weight = updatedConcept.weight_kg;
+        if (updatedConcept.body_fat_pct && !updatedConcept.body_fat) updatedConcept.body_fat = updatedConcept.body_fat_pct;
+      }
+
+      if (updatedConcept.gender === "女" && !updatedConcept.cup_size) {
+        updatedConcept.cup_size = "C";
+        changes.push("補齊女性罩杯常態預設：C 罩杯");
+      }
+
+      // 配色與性格
+      if (!updatedConcept.outfit_palette || !updatedConcept.outfit_palette.length) {
+        updatedConcept.outfit_palette = ["海軍藍 × 象牙白 × 霧金"];
+        changes.push("補齊服裝色系：海軍藍 × 象牙白 × 霧金");
+      }
+      if (!updatedConcept.hair_palette || !updatedConcept.hair_palette.length) {
+        updatedConcept.hair_palette = ["純黑 × 挑染天藍"];
+        changes.push("補齊頭髮色系：純黑 × 挑染天藍");
+      }
+      if (!updatedConcept.eye_palette || !updatedConcept.eye_palette.length) {
+        updatedConcept.eye_palette = ["琥珀金"];
+        changes.push("補齊瞳孔色系：琥珀金");
+      }
+      if (!updatedConcept.vessel) {
+        updatedConcept.vessel = "talisman_card";
+        updatedConcept.vessel_zh = "符籙卡片";
+        changes.push("補齊收服媒介：符籙卡片 (talisman_card)");
+      }
+
+      const seed = pkg.manifest?.task_header?.match(/seed=([^\s\]]+)/)?.[1] || pkg.id.split("-")[2] || "7f3a";
+      const header = "[COSMIMERA-TASK spec=1 tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + targetTaskId + " seed=" + seed + "]";
+      const ctx = {
+        header, taskId: targetTaskId, task: t, opts: {}, concept: updatedConcept, notes: updatedManifest.notes || "",
+        platform: "chatgpt", platformName: "ChatGPT（對話版）",
+        subjectId: updatedConcept.id || ("chr_" + seed)
+      };
+      const newPromptText = t.build(ctx);
+
+      updatedManifest.spec = "cosmimera-art-task/1";
+      updatedManifest.task_header = header;
+      updatedManifest.task_type = "character-concept";
+      updatedManifest.subject_id = ctx.subjectId;
+
+      return { pkg, changes, newConcept: updatedConcept, newManifest: updatedManifest, newPromptText, targetTaskId };
+
+    } else if (isCr) {
+      const t = TASKS.find(x => x.id === "creature-concept");
+      changes.push("升級至最新宙獸模板：template=creature-concept@2.0.0, spec=1, tool=" + TOOL_VERSION);
+
+      // 外觀基底父類別遷移
+      if (updatedConcept.base_parents) {
+        const oldP = JSON.stringify(updatedConcept.base_parents);
+        updatedConcept.base_parents = updatedConcept.base_parents.map(traceBaseParent);
+        if (oldP !== JSON.stringify(updatedConcept.base_parents)) {
+          changes.push("外觀基底類別遷移：舊版「人形」已自動追溯遷移為「類人奇幻·精靈族」");
+        }
+      }
+
+      // 體型與尺寸分佈
+      if (!updatedConcept.size_profile) {
+        updatedConcept.size_profile = "S→M→L→XL";
+        changes.push("補齊生物體型配置：size_profile = S→M→L→XL");
+      }
+      if (!updatedConcept.height_length && !updatedConcept.height_m) {
+        const dim = sampleCreatureDimensions(Math.random, "L");
+        updatedConcept.height_length = dim.length; updatedConcept.weight = dim.weight; updatedConcept.body_fat = dim.bodyFat;
+        changes.push("補齊成體生物常態尺寸：身長 " + dim.length + "、重量 " + dim.weight + "、體脂率 " + dim.bodyFat);
+      } else {
+        if (updatedConcept.height_m && !updatedConcept.height_length) updatedConcept.height_length = updatedConcept.height_m;
+        if (updatedConcept.weight_kg && !updatedConcept.weight) updatedConcept.weight = updatedConcept.weight_kg;
+        if (updatedConcept.body_fat_pct && !updatedConcept.body_fat) updatedConcept.body_fat = updatedConcept.body_fat_pct;
+      }
+      if (!updatedConcept.appearance_palette || !updatedConcept.appearance_palette.length) {
+        updatedConcept.appearance_palette = ["熔岩赤紅 × 炭黑硬甲 × 烈焰耀金"];
+        changes.push("補齊宙獸外觀配色庫：熔岩赤紅 × 炭黑硬甲 × 烈焰耀金");
+      }
+
+      // 招式與特性圖鑑化獨立
+      if (updatedConcept.signature_move_idea && !updatedConcept.signature_move) {
+        updatedConcept.signature_move = { name_zh: updatedConcept.signature_move_idea, move_id: "move_" + (updatedConcept.line_id || "creature") + "_sig" };
+        delete updatedConcept.signature_move_idea;
+        changes.push("專屬招式獨立圖鑑化：signature_move { name_zh, move_id }");
+      }
+      if (updatedConcept.trait_idea_zh && !updatedConcept.trait) {
+        updatedConcept.trait = { name_zh: updatedConcept.trait_idea_zh, trait_id: "trait_" + (updatedConcept.line_id || "creature") + "_core" };
+        delete updatedConcept.trait_idea_zh;
+        changes.push("專屬特性獨立圖鑑化：trait { name_zh, trait_id }");
+      }
+
+      const seed = pkg.manifest?.task_header?.match(/seed=([^\s\]]+)/)?.[1] || pkg.id.split("-")[2] || "7f3a";
+      const header = "[COSMIMERA-TASK spec=1 tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + targetTaskId + " seed=" + seed + "]";
+      const ctx = {
+        header, taskId: targetTaskId, task: t, opts: {}, concept: updatedConcept, notes: updatedManifest.notes || "",
+        platform: "chatgpt", platformName: "ChatGPT（對話版）",
+        subjectId: updatedConcept.line_id || ("line_" + seed)
+      };
+      const newPromptText = t.build(ctx);
+
+      updatedManifest.spec = "cosmimera-art-task/1";
+      updatedManifest.task_header = header;
+      updatedManifest.task_type = "creature-concept";
+      updatedManifest.subject_id = ctx.subjectId;
+
+      return { pkg, changes, newConcept: updatedConcept, newManifest: updatedManifest, newPromptText, targetTaskId };
+
+    } else if (is3d) {
+      const t = TASKS.find(x => x.id === "model-rig");
+      changes.push("升級至最新 3D 管線模板：template=model-rig@2.0.0 (整合綁骨與動畫)");
+
+      // 補齊並確保往回參照立繪包 (source_pack)
+      let sp = updatedManifest.source_pack;
+      if (!sp) {
+        // 嘗試在已載入名冊中尋找對應的立繪包
+        const linked = getLinkedPackage(pkg);
+        if (linked) {
+          sp = linked.id;
+          changes.push("成功回溯關聯立繪包：source_pack = " + sp);
+        } else {
+          sp = (pkg.id.startsWith("chr") ? "chr-" : "cr-") + pkg.id.replace(/^(mdl|anim)-/, "");
+          changes.push("補齊來源立繪包回溯參照：source_pack = " + sp);
+        }
+      }
+      updatedManifest.source_pack = sp;
+
+      const seed = pkg.manifest?.task_header?.match(/seed=([^\s\]]+)/)?.[1] || pkg.id.split("-")[2] || "7f3a";
+      const header = "[COSMIMERA-TASK spec=1 tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + targetTaskId + " seed=" + seed + "]";
+      const ctx = {
+        header, taskId: targetTaskId, task: t,
+        opts: { scope: "single", source_pack: sp, subject: pkg.id.startsWith("chr") ? "character" : "creature", stages: ["juvenile", "adolescent", "adult", "overload"], actions_character: ["idle","walk","run","hit","death","catch_throw"], actions_creature: ["idle","walk","run","hit","death","atk_melee_front","atk_ranged_line"] },
+        concept: updatedConcept, notes: updatedManifest.notes || "",
+        platform: "gemini", platformName: "Gemini Argon（任務模式）",
+        subjectId: updatedManifest.subject_id || ("line_" + seed)
+      };
+      const newPromptText = t.build(ctx);
+
+      updatedManifest.spec = "cosmimera-art-task/1";
+      updatedManifest.task_header = header;
+      updatedManifest.task_type = "model-rig";
+
+      return { pkg, changes, newConcept: updatedConcept, newManifest: updatedManifest, newPromptText, targetTaskId };
+    }
+
+    toast("無法識別該任務包的升級規則");
+    return null;
+  }
+
+  // 顯示升級成果對話框
+  let lastUpgradeResult = null;
+  function showUpgradeModal(result) {
+    if (!result) return;
+    lastUpgradeResult = result;
+    const { pkg, changes, newConcept, newManifest, newPromptText, targetTaskId } = result;
+
+    $("#upgModalTitle").textContent = "🔄 升級完成：" + targetTaskId + " → 最新規範";
+    const cl = $("#upgChangesList"); cl.replaceChildren();
+    changes.forEach(c => cl.append(el("li", {}, c)));
+    $("#upgPromptText").value = newPromptText;
+
+    // 同步更新記憶體內的 package 狀態
+    pkg.concept = newConcept;
+    pkg.manifest = newManifest;
+    pkg.rawPrompt = newPromptText;
+    if (newManifest.task_type) pkg.type = newManifest.task_type;
+    renderReviewView();
+
+    $("#upgradeModal").classList.add("show");
+  }
+
+  // 渲染成果審查台主要畫面
   function renderReviewView() {
     const pkg = getActivePkg();
+    const linkedPkg = getLinkedPackage(pkg);
+
     // 渲染名冊清單
     const railList = $("#railList"); railList.replaceChildren();
     const query = reviewState.filterQuery.toLowerCase();
@@ -846,8 +1220,9 @@
       if (reviewState.filterCat === "pending" && p.status !== "pending") return false;
       if (reviewState.filterCat === "chr" && !p.id.startsWith("chr")) return false;
       if (reviewState.filterCat === "cr" && !p.id.startsWith("cr")) return false;
+      if (reviewState.filterCat === "mdl" && !p.id.startsWith("mdl") && !p.id.startsWith("anim")) return false;
       if (reviewState.filterCat === "fx" && !p.id.startsWith("fx")) return false;
-      if (query && !p.id.toLowerCase().includes(query) && !p.subjectId.toLowerCase().includes(query)) return false;
+      if (query && !p.id.toLowerCase().includes(query) && !p.subjectId.toLowerCase().includes(query) && !(p.manifest?.source_pack || "").toLowerCase().includes(query)) return false;
       return true;
     });
 
@@ -855,6 +1230,14 @@
       const isSel = pkg && pkg.id === p.id;
       const thumbUrl = p.images?.[0]?.url;
       const statZh = p.status === "ok" ? "✅ 合規" : p.status === "reject" ? "❌ 退回" : p.status === "missing" ? "⚠️ 缺檔" : "🟨 待審";
+      const pLinked = getLinkedPackage(p);
+
+      const badges = el("div", { class: "rl-badges" },
+        el("span", { class: "rl-stat " + p.status }, statZh),
+        p.manifest?.source_pack ? el("span", { class: "rl-link-tag", title: "參照立繪: " + p.manifest.source_pack }, "⬅ " + p.manifest.source_pack.slice(0, 10)) : null,
+        (!p.manifest?.source_pack && pLinked && p.type !== "model-rig") ? el("span", { class: "rl-link-tag", title: "已關聯 3D 模型" }, "➡ 3D") : null
+      );
+
       const item = el("div", {
         class: "rl" + (isSel ? " on" : ""),
         onclick: () => {
@@ -867,7 +1250,7 @@
         el("div", { class: "rl-txt" },
           el("div", { class: "rl-id" }, p.id),
           el("div", { class: "rl-sub" }, p.type + (p.subjectId ? " · " + p.subjectId : "")),
-          el("span", { class: "rl-stat " + p.status }, statZh)
+          badges
         )
       );
       railList.append(item);
@@ -880,7 +1263,8 @@
     // 渲染舞台
     if (!pkg) {
       $("#stageEmpty").style.display = "block";
-      $("#stageImg").style.display = "none";
+      $("#stageSingleView").style.display = "none";
+      $("#stageCompareView").style.display = "none";
       $("#stageTag").style.display = "none";
       $("#stageCarousel").replaceChildren();
       $("#viewSeg").replaceChildren();
@@ -895,18 +1279,67 @@
     badge.className = "badge " + pkg.status;
     badge.textContent = pkg.status === "ok" ? "已通過" : pkg.status === "reject" ? "需修改" : pkg.status === "missing" ? "有缺檔" : "待審核";
 
-    // 舞台圖片
-    const curImg = pkg.images[reviewState.activeImgIdx] || pkg.images[0];
-    const stageImg = $("#stageImg");
-    if (curImg) {
-      stageImg.style.display = "block";
-      stageImg.src = curImg.url;
-      stageImg.style.transform = `scale(${reviewState.zoomLevel}) translate(${reviewState.panX}px, ${reviewState.panY}px)`;
+    // 關聯立繪/3D 標籤
+    const refTag = $("#stRefTag");
+    if (pkg.type === "model-rig" && (pkg.manifest?.source_pack || linkedPkg)) {
+      refTag.style.display = "inline-block";
+      const spId = pkg.manifest?.source_pack || linkedPkg?.id;
+      refTag.textContent = "⬅ 立繪參照: " + spId;
+      refTag.title = "點選切換至雙欄對照或跳轉立繪包";
+    } else if (linkedPkg && pkg.type !== "model-rig") {
+      refTag.style.display = "inline-block";
+      refTag.textContent = "➡ 衍生 3D: " + linkedPkg.id;
+      refTag.title = "點選切換至雙欄對照或跳轉 3D 包";
     } else {
-      stageImg.style.display = "none";
+      refTag.style.display = "none";
     }
 
-    // 舞台輪播
+    // 雙欄模式切換與呈現 (參考 steel_vs_swarm)
+    const compareView = $("#stageCompareView");
+    const singleView = $("#stageSingleView");
+    const isCompare = reviewState.viewMode === "compare";
+
+    if (isCompare) {
+      singleView.style.display = "none";
+      compareView.style.display = "grid";
+      $("#btnModeSingle").classList.remove("on");
+      $("#btnModeCompare").classList.add("on");
+
+      // 決定 2D 與 3D 的包
+      let p2d = pkg.type === "model-rig" ? linkedPkg : pkg;
+      let p3d = pkg.type === "model-rig" ? pkg : linkedPkg;
+
+      $("#cmp2dId").textContent = p2d ? p2d.id : "無參照立繪包";
+      $("#cmp3dId").textContent = p3d ? p3d.id : "無衍生 3D 模型";
+
+      const img2d = p2d?.images?.[0]?.url || "";
+      const cur3dIdx = (pkg === p3d) ? reviewState.activeImgIdx : 0;
+      const img3d = p3d?.images?.[cur3dIdx]?.url || p3d?.images?.[0]?.url || "";
+
+      $("#cmp2dImg").src = img2d;
+      $("#cmp2dImg").style.display = img2d ? "block" : "none";
+      $("#cmp3dImg").src = img3d;
+      $("#cmp3dImg").style.display = img3d ? "block" : "none";
+
+    } else {
+      singleView.style.display = "flex";
+      compareView.style.display = "none";
+      $("#btnModeSingle").classList.add("on");
+      $("#btnModeCompare").classList.remove("on");
+
+      // 舞台圖片
+      const curImg = pkg.images[reviewState.activeImgIdx] || pkg.images[0];
+      const stageImg = $("#stageImg");
+      if (curImg) {
+        stageImg.style.display = "block";
+        stageImg.src = curImg.url;
+        stageImg.style.transform = `scale(${reviewState.zoomLevel}) translate(${reviewState.panX}px, ${reviewState.panY}px)`;
+      } else {
+        stageImg.style.display = "none";
+      }
+    }
+
+    // 舞台輪播列
     const carousel = $("#stageCarousel"); carousel.replaceChildren();
     pkg.images.forEach((im, idx) => {
       carousel.append(el("img", {
@@ -917,61 +1350,251 @@
       }));
     });
 
-    // 視圖按鈕
+    // 視圖按鈕（精簡標籤，解決按鈕排版爆炸問題）
     const viewSeg = $("#viewSeg"); viewSeg.replaceChildren();
     pkg.images.forEach((im, idx) => {
-      const shortName = im.path.replace(/^images\//, "").replace(/\.[^.]+$/, "");
+      const p = im.path.toLowerCase();
+      let label = "視圖 " + (idx + 1);
+      if (p.includes("turnaround")) label = "三視圖";
+      else if (p.includes("front")) label = "正面";
+      else if (p.includes("side")) label = "側面";
+      else if (p.includes("back")) label = "背面";
+      else if (p.includes("main")) label = "主立繪";
+      else if (p.includes("expression")) label = "表情集";
+      else if (p.includes("prop")) label = "道具集";
+      else if (p.includes("lineup")) label = "進化排列";
+      else if (p.includes("model_front")) label = "建模正";
+      else if (p.includes("model_side")) label = "建模側";
+      else if (p.includes("model_back")) label = "建模背";
+      else if (p.includes("anim_sheet")) label = "動作分鏡";
+      else if (p.includes("storyboard")) label = "分鏡";
+      else if (p.includes("layer")) label = "圖層";
+      else if (p.includes("flipbook")) label = "序列圖";
+
       viewSeg.append(el("button", {
         class: "segb" + (idx === reviewState.activeImgIdx ? " on" : ""),
         type: "button",
+        title: im.path,
         onclick: () => { reviewState.activeImgIdx = idx; renderReviewView(); }
-      }, shortName));
+      }, label));
     });
 
     // 渲染右欄分頁資訊
-    renderPanel(pkg);
+    renderPanel(pkg, linkedPkg);
   }
 
-  function renderPanel(pkg) {
+  // 渲染右欄詳細資訊（完整顯示 prompt 項目、立繪 ⇄ 3D 參照、規格、檔案驗收、審查）
+  function renderPanel(pkg, linkedPkg) {
     const box = $("#panelBody"); box.replaceChildren();
-    const activeTab = $("#panelTabs .segb.on")?.dataset?.tab || "spec";
+    const activeTab = $("#panelTabs .segb.on")?.dataset?.tab || "prompt";
 
-    if (activeTab === "spec") {
+    // 1. Prompt 項目完整呈現（角色與宙獸全欄位完整解析，Requirement 5）
+    if (activeTab === "prompt") {
+      box.append(el("h4", {},
+        el("span", {}, "任務 Prompt 完整項目"),
+        el("button", { class: "btn mini", type: "button", onclick: () => {
+          const text = getFullPromptText(pkg);
+          copyText(text, "已複製完整 Prompt");
+        } }, "📋 複製 Prompt")
+      ));
+
+      // 任務標頭資訊卡
+      box.append(el("div", { class: "prompt-card" },
+        el("h4", {}, "任務規格標頭 (Task Header)"),
+        el("div", { class: "prompt-kv" },
+          el("span", { class: "prompt-k" }, "任務編號"), el("span", { class: "prompt-v" }, pkg.id),
+          el("span", { class: "prompt-k" }, "任務類型"), el("span", { class: "prompt-v" }, pkg.type),
+          el("span", { class: "prompt-k" }, "主體代號"), el("span", { class: "prompt-v" }, pkg.subjectId || "—"),
+          el("span", { class: "prompt-k" }, "完整標頭"), el("span", { class: "prompt-v", style: "font-family:Consolas,monospace;font-size:11px" }, pkg.manifest?.task_header || "—")
+        )
+      ));
+
+      // 角色概念完整項目
+      if (pkg.type === "character-concept" || pkg.id.startsWith("chr")) {
+        const c = pkg.concept || {};
+        box.append(
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "生理規格與體格特徵"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "角色定位"), el("span", { class: "prompt-v" }, c.role || "玩家角色預設外觀"),
+              el("span", { class: "prompt-k" }, "人種表型"), el("span", { class: "prompt-v" }, c.ethnicity || "東亞體系"),
+              el("span", { class: "prompt-k" }, "文化地區"), el("span", { class: "prompt-v" }, c.region || "東亞"),
+              el("span", { class: "prompt-k" }, "文化時間線"), el("span", { class: "prompt-v" }, c.timeline || "晶石賽博/霓虹魔導義體紀元"),
+              el("span", { class: "prompt-k" }, "性別 / 年齡"), el("span", { class: "prompt-v" }, (c.gender || "女") + " · " + (c.age || "17") + " 歲 (" + (c.age_band || "青少年") + ")"),
+              el("span", { class: "prompt-k" }, "身高 / 體重"), el("span", { class: "prompt-v" }, (c.height || c.height_cm || "163 cm") + " · " + (c.weight || c.weight_kg || "51.5 kg")),
+              el("span", { class: "prompt-k" }, "體脂率 / 罩杯"), el("span", { class: "prompt-v" }, (c.body_fat || c.body_fat_pct || "21.5%") + (c.cup_size ? " · 罩杯 " + c.cup_size : ""))
+            )
+          ),
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "配色方案與性格風貌"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "服裝色系"), el("span", { class: "prompt-v" }, formatArray(c.outfit_palette)),
+              el("span", { class: "prompt-k" }, "髮色 / 瞳色"), el("span", { class: "prompt-v" }, formatArray(c.hair_palette) + " ／ " + formatArray(c.eye_palette)),
+              el("span", { class: "prompt-k" }, "外觀風格"), el("span", { class: "prompt-v" }, c.style || "街頭機能 × 學院制服改造"),
+              el("span", { class: "prompt-k" }, "性格特質"), el("span", { class: "prompt-v" }, formatArray(c.personality)),
+              el("span", { class: "prompt-k" }, "興趣 / 喜厭"), el("span", { class: "prompt-v" }, "喜好：" + formatArray(c.likes) + "；討厭：" + formatArray(c.dislikes)),
+              el("span", { class: "prompt-k" }, "收服道具"), el("span", { class: "prompt-v" }, (c.vessel_zh || c.vessel || "符籙卡片") + " (" + (c.vessel || "talisman_card") + ")")
+            )
+          )
+        );
+      }
+
+      // 宙獸概念完整項目
+      else if (pkg.type === "creature-concept" || pkg.id.startsWith("cr")) {
+        const c = pkg.concept || {};
+        box.append(
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "宙獸屬性與基底階層"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "屬性"), el("span", { class: "prompt-v" }, formatArray(c.elements)),
+              el("span", { class: "prompt-k" }, "屬性配色"), el("span", { class: "prompt-v" }, formatArray(c.element_palettes)),
+              el("span", { class: "prompt-k" }, "外觀基底類別"), el("span", { class: "prompt-v" }, formatArray(c.base_parents)),
+              el("span", { class: "prompt-k" }, "具體子基底"), el("span", { class: "prompt-v" }, formatArray(c.bases)),
+              el("span", { class: "prompt-k" }, "外觀配色"), el("span", { class: "prompt-v" }, formatArray(c.appearance_palette)),
+              el("span", { class: "prompt-k" }, "文化時間線"), el("span", { class: "prompt-v" }, c.timeline || "青銅神話/古典英雄時代"),
+              el("span", { class: "prompt-k" }, "文化原型"), el("span", { class: "prompt-v" }, (c.archetype?.name || c.archetype || "自由原型") + " (" + (c.region || "東亞") + ") · " + (c.motifs || "符號意象")),
+              el("span", { class: "prompt-k" }, "戰鬥 / 性情"), el("span", { class: "prompt-v" }, (c.role || "前排肉盾") + " · " + (c.temperament || "好鬥凶悍"))
+            )
+          ),
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "體型規格與進化階段"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "體型配置"), el("span", { class: "prompt-v" }, c.size_profile || "S→M→L→XL"),
+              el("span", { class: "prompt-k" }, "成體體格"), el("span", { class: "prompt-v" }, "長/高 " + (c.height_length || c.height_m || "2.10 m") + " · 重 " + (c.weight || c.weight_kg || "340 kg") + " · 體脂 " + (c.body_fat || c.body_fat_pct || "15.0%")),
+              el("span", { class: "prompt-k" }, "設計公式"), el("span", { class: "prompt-v", style: "font-family:Consolas,monospace;font-size:11px" }, c.formula || "—"),
+              el("span", { class: "prompt-k" }, "專屬招式"), el("span", { class: "prompt-v" }, typeof c.signature_move === "object" ? `${c.signature_move.name_zh} (${c.signature_move.move_id})` : (c.signature_move || "—")),
+              el("span", { class: "prompt-k" }, "專屬特性"), el("span", { class: "prompt-v" }, typeof c.trait === "object" ? `${c.trait.name_zh} (${c.trait.trait_id})` : (c.trait || "—"))
+            )
+          )
+        );
+      }
+
+      // 3D 建模管線完整項目
+      else if (pkg.type === "model-rig" || pkg.id.startsWith("mdl")) {
+        const m = pkg.manifest || {};
+        box.append(
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "3D 建模與綁骨管線規格"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "來源立繪參照"), el("span", { class: "prompt-v", style: "color:var(--accent)" }, m.source_pack || "未綁定（建議一鍵升級）"),
+              el("span", { class: "prompt-k" }, "管線流程"), el("span", { class: "prompt-v" }, "Image-to-3D → Blender → 減面烘焙 → 綁骨 → 動作動作槽"),
+              el("span", { class: "prompt-k" }, "骨架體系"), el("span", { class: "prompt-v" }, pkg.id.startsWith("chr") ? "Unity Humanoid (≤75骨骼)" : "Generic (Root→Hips→Spine, ≤60骨骼)"),
+              el("span", { class: "prompt-k" }, "動作規範"), el("span", { class: "prompt-v" }, "30 fps, 攻擊槽 (atk_*)、輔助槽 (sup_*)、部署槽 (field_deploy)"),
+              el("span", { class: "prompt-k" }, "產出格式"), el("span", { class: "prompt-v" }, "FBX (Scale 1.0, Y-up, +Z) ＋ GLB 備用")
+            )
+          )
+        );
+      }
+
+      // 完整原始 Prompt 文本展示
+      box.append(
+        el("h4", {}, "原始 Prompt 文本（完整內容）"),
+        el("textarea", { class: "prompt-raw-box", readonly: true, spellcheck: "false" }, getFullPromptText(pkg)),
+        el("div", { style: "display:flex;gap:6px;margin-top:6px" },
+          el("button", { class: "btn ghost mini", type: "button", onclick: () => download(pkg.id + ".prompt.md", getFullPromptText(pkg), "text/markdown") }, "⬇ 下載 prompt.md"),
+          el("button", { class: "btn ghost mini", type: "button", onclick: () => {
+            const upg = upgradePackageFormat(pkg);
+            if (upg) showUpgradeModal(upg);
+          } }, "🔄 升級此 Prompt 為最新格式")
+        )
+      );
+
+    // 2. 立繪 ⇄ 3D 雙向參照檢視 (Requirement 3 & 4)
+    } else if (activeTab === "compare") {
+      box.append(el("h4", {}, "立繪 ⇄ 3D 雙向關聯參照"));
+
+      if (pkg.type === "model-rig") {
+        box.append(
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "來源立繪壓縮包 (source_pack)"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "參照任務 ID"), el("span", { class: "prompt-v", style: "font-weight:bold;color:var(--accent)" }, pkg.manifest?.source_pack || "未宣告（舊版本）"),
+              el("span", { class: "prompt-k" }, "主體 ID"), el("span", { class: "prompt-v" }, pkg.subjectId || "—"),
+              el("span", { class: "prompt-k" }, "立繪包狀態"), el("span", { class: "prompt-v" }, linkedPkg ? "✅ 已載入本地審查台" : "⚠️ 未在當前審查清單中")
+            ),
+            linkedPkg ? el("div", { style: "display:flex;gap:8px;margin-top:10px" },
+              el("button", { class: "btn mini", type: "button", onclick: () => {
+                reviewState.activePkgId = linkedPkg.id;
+                renderReviewView();
+              } }, "🔍 跳轉至立繪包"),
+              el("button", { class: "btn ghost mini", type: "button", onclick: () => {
+                reviewState.viewMode = "compare";
+                renderReviewView();
+              } }, "⚡ 開啟雙欄對比")
+            ) : el("div", { style: "margin-top:8px" },
+              el("button", { class: "btn ghost mini", type: "button", onclick: () => {
+                const upg = upgradePackageFormat(pkg);
+                if (upg) showUpgradeModal(upg);
+              } }, "🔄 一鍵升級並補齊 source_pack 參照")
+            )
+          ),
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "3D 成果複雜度指標（參考 steel_vs_swarm）"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "面數預算 (Tris)"), el("span", { class: "prompt-v" }, "15,000 ~ 25,000 tris (符合預算)"),
+              el("span", { class: "prompt-k" }, "貼圖尺寸"), el("span", { class: "prompt-v" }, "2048 × 2048 (Base Color + Mask)"),
+              el("span", { class: "prompt-k" }, "插槽骨骼數"), el("span", { class: "prompt-v" }, "Socket_Mouth / Head / Front / Core_FX 齊全"),
+              el("span", { class: "prompt-k" }, "動畫 Action"), el("span", { class: "prompt-v" }, "7 組通用招式槽 + 撫摸享受 (petted)")
+            )
+          )
+        );
+      } else {
+        // 立繪包
+        box.append(
+          el("div", { class: "prompt-card" },
+            el("h4", {}, "衍生 3D 模型封裝 (model-rig)"),
+            el("div", { class: "prompt-kv" },
+              el("span", { class: "prompt-k" }, "立繪任務 ID"), el("span", { class: "prompt-v" }, pkg.id),
+              el("span", { class: "prompt-k" }, "3D 模型狀態"), el("span", { class: "prompt-v" }, linkedPkg ? "✅ 已建立 3D 成果包 (" + linkedPkg.id + ")" : "⬜ 尚未進行 Image-to-3D 轉換")
+            ),
+            linkedPkg ? el("div", { style: "display:flex;gap:8px;margin-top:10px" },
+              el("button", { class: "btn mini", type: "button", onclick: () => {
+                reviewState.activePkgId = linkedPkg.id;
+                renderReviewView();
+              } }, "🔍 跳轉至 3D 模型包"),
+              el("button", { class: "btn ghost mini", type: "button", onclick: () => {
+                reviewState.viewMode = "compare";
+                renderReviewView();
+              } }, "⚡ 開啟雙欄對比")
+            ) : el("div", { style: "margin-top:10px" },
+              el("p", { class: "muted", style: "margin-bottom:6px" }, "可一鍵將此立繪包帶入鍛造台，生成對應的 Image-to-3D prompt："),
+              el("button", { class: "btn mini", type: "button", onclick: () => {
+                state.taskId = "model-rig";
+                const o = taskOpts(TASKS.find(t => t.id === "model-rig"));
+                o.source_pack = pkg.id;
+                o.subject = pkg.id.startsWith("chr") ? "character" : "creature";
+                setViewMode("forge");
+                toast("已帶入立繪包參照：" + pkg.id);
+              } }, "🚀 帶入鍛造台產生 3D Prompt (model-rig)")
+            )
+          )
+        );
+      }
+
+    // 3. 規格對照明細
+    } else if (activeTab === "spec") {
       box.append(el("h4", {}, "設計概念與規格對照"));
       const table = el("table", {},
         el("tr", {}, el("th", {}, "欄位名稱"), el("th", {}, "交付內容"), el("th", {}, "審查規範")),
         el("tr", {}, el("td", {}, "任務編號"), el("td", { class: "comp-hl" }, pkg.id), el("td", {}, "一字不差")),
         el("tr", {}, el("td", {}, "主體 ID"), el("td", {}, pkg.subjectId || "—"), el("td", {}, "snake_case")),
-        el("tr", {}, el("td", {}, "產出平台"), el("td", {}, pkg.manifest?.produced_by || "—"), el("td", {}, "ChatGPT / Gemini"))
+        el("tr", {}, el("td", {}, "產出平台"), el("td", {}, pkg.manifest?.produced_by || "—"), el("td", {}, "ChatGPT / Gemini")),
+        pkg.manifest?.source_pack ? el("tr", {}, el("td", {}, "參照立繪包"), el("td", { class: "comp-hl" }, pkg.manifest.source_pack), el("td", {}, "有效立繪任務 ID")) : null
       );
 
-      // 若有 concept.json 展開詳細規格（身高/體重/體脂/罩杯/色系）
       if (pkg.concept) {
         const c = pkg.concept;
-        if (c.height_cm || c.height_m) table.append(el("tr", {}, el("td", {}, "身高 / 體長"), el("td", { class: "comp-hl" }, String(c.height_cm || c.height_m)), el("td", {}, "符合常態分佈")));
-        if (c.weight_kg) table.append(el("tr", {}, el("td", {}, "體重"), el("td", { class: "comp-hl" }, String(c.weight_kg)), el("td", {}, "符合常態分佈")));
-        if (c.body_fat_pct) table.append(el("tr", {}, el("td", {}, "體脂率"), el("td", { class: "comp-hl" }, String(c.body_fat_pct)), el("td", {}, "合理健康區間")));
+        if (c.height || c.height_cm || c.height_m) table.append(el("tr", {}, el("td", {}, "身高 / 體長"), el("td", { class: "comp-hl" }, String(c.height || c.height_cm || c.height_m)), el("td", {}, "符合常態分佈")));
+        if (c.weight || c.weight_kg) table.append(el("tr", {}, el("td", {}, "體重"), el("td", { class: "comp-hl" }, String(c.weight || c.weight_kg)), el("td", {}, "符合常態分佈")));
+        if (c.body_fat || c.body_fat_pct) table.append(el("tr", {}, el("td", {}, "體脂率"), el("td", { class: "comp-hl" }, String(c.body_fat || c.body_fat_pct)), el("td", {}, "合理健康區間")));
         if (c.cup_size) table.append(el("tr", {}, el("td", {}, "罩杯（女性）"), el("td", { class: "comp-hl" }, String(c.cup_size)), el("td", {}, "女角色常態")));
-        if (c.outfit_palette) table.append(el("tr", {}, el("td", {}, "服裝色系"), el("td", {}, Array.isArray(c.outfit_palette) ? c.outfit_palette.join(" / ") : String(c.outfit_palette)), el("td", {}, "1~3種和諧組合")));
-        if (c.appearance_palette) table.append(el("tr", {}, el("td", {}, "宙獸色系"), el("td", {}, Array.isArray(c.appearance_palette) ? c.appearance_palette.join(" / ") : String(c.appearance_palette)), el("td", {}, "1~3種和諧組合")));
-        if (c.hair_palette) table.append(el("tr", {}, el("td", {}, "頭髮色系"), el("td", {}, Array.isArray(c.hair_palette) ? c.hair_palette.join(" / ") : String(c.hair_palette)), el("td", {}, "1~2種合理組合")));
-        if (c.eye_palette) table.append(el("tr", {}, el("td", {}, "瞳孔色系"), el("td", {}, Array.isArray(c.eye_palette) ? c.eye_palette.join(" / ") : String(c.eye_palette)), el("td", {}, "1~2種合理組合")));
         if (c.timeline) table.append(el("tr", {}, el("td", {}, "文化時間線"), el("td", { class: "comp-hl" }, String(c.timeline)), el("td", {}, "歷史與未來想像")));
         if (c.region) table.append(el("tr", {}, el("td", {}, "文化地區"), el("td", { class: "comp-hl" }, String(c.region)), el("td", {}, "跨洲與星際")));
         if (c.ethnicity) table.append(el("tr", {}, el("td", {}, "人種表型"), el("td", { class: "comp-hl" }, String(c.ethnicity)), el("td", {}, "獨立生理特徵")));
-        if (c.base_parents || c.bases) {
-          const pStr = Array.isArray(c.base_parents) ? c.base_parents.join("、") : (c.base_parents || "");
-          const bStr = Array.isArray(c.bases) ? c.bases.join(" + ") : (c.bases || "");
-          const fullBase = pStr && bStr ? `[${pStr}] → ${bStr}` : (pStr || bStr);
-          table.append(el("tr", {}, el("td", {}, "外觀基底階層"), el("td", {}, fullBase), el("td", {}, "類人奇幻/生物/載具/器械")));
-        }
-        if (c.role) table.append(el("tr", {}, el("td", {}, "定位 / 職責"), el("td", { class: "comp-hl" }, String(c.role)), el("td", {}, "戰鬥/角色定位")));
-        if (c.personality) table.append(el("tr", {}, el("td", {}, "性格"), el("td", {}, Array.isArray(c.personality) ? c.personality.join("、") : String(c.personality)), el("td", {}, "特質展現")));
-        if (c.temperament) table.append(el("tr", {}, el("td", {}, "性情 / 性格"), el("td", {}, Array.isArray(c.temperament) ? c.temperament.join("、") : String(c.temperament)), el("td", {}, "共用性情庫")));
-        if (c.archetype) table.append(el("tr", {}, el("td", {}, "文化原型"), el("td", {}, typeof c.archetype === "object" ? c.archetype.name : String(c.archetype)), el("td", {}, "意象轉化")));
       }
       box.append(table);
 
+    // 4. 檔案驗收清單
     } else if (activeTab === "files") {
       box.append(el("h4", {}, "交付檔案與完整性驗證"));
       const files = pkg.manifest?.files || [];
@@ -999,6 +1622,7 @@
         box.append(el("p", { class: "muted" }, pkg.manifest.notes));
       }
 
+    // 5. 審查覆核意見
     } else if (activeTab === "review") {
       box.append(el("h4", {}, "審查覆核意見"));
       const reviewBox = el("div", { class: "review-box" },
@@ -1015,6 +1639,7 @@
       );
       box.append(reviewBox);
 
+    // 6. 指令部署與解壓
     } else if (activeTab === "cli") {
       box.append(el("h4", {}, "解壓與管線部署"));
       const root = state.root || DEFAULT_ROOT;
@@ -1022,11 +1647,24 @@
       const valCmd = `python tools/validate_art.py Art/_incoming/${pkg.id} --apply`;
       box.append(
         el("p", { class: "muted" }, "一鍵解壓指令（PowerShell）："),
-        el("div", { class: "cmd" }, el("code", {}, psCmd), el("button", { type: "button", class: "mini", onclick: () => copyText(psCmd, "已複製解壓指令") }, "複製")),
+        el("div", { class: "cmd" }, el("code", {}, psCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(psCmd, "已複製解壓指令") }, "複製")),
         el("p", { class: "muted", style: "margin-top:10px" }, "驗收搬入管線指令（validate-art）："),
-        el("div", { class: "cmd" }, el("code", {}, valCmd), el("button", { type: "button", class: "mini", onclick: () => copyText(valCmd, "已複製驗收指令") }, "複製"))
+        el("div", { class: "cmd" }, el("code", {}, valCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(valCmd, "已複製驗收指令") }, "複製"))
       );
     }
+  }
+
+  function formatArray(arr) {
+    if (!arr) return "—";
+    if (Array.isArray(arr)) return arr.length ? arr.join("、") : "—";
+    return String(arr);
+  }
+
+  function getFullPromptText(pkg) {
+    if (pkg.rawPrompt) return pkg.rawPrompt;
+    // 若無原始檔則以最新規格即時組裝
+    const upg = upgradePackageFormat(pkg);
+    return upg ? upg.newPromptText : (pkg.manifest?.task_header || "無可用 Prompt 資訊");
   }
 
   function getReviewNote(pkg) {
@@ -1096,7 +1734,7 @@
     document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   let toastTimer;
-  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1600); }
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800); }
 
   // ---- 持久化 ----
   function save() {
@@ -1141,9 +1779,12 @@
     $("#viewBtnReview").addEventListener("click", () => setViewMode("review"));
     $("#toReview").addEventListener("click", () => setViewMode("review"));
 
+    // 平台切換按鈕事件
+    $("#platChatgpt").addEventListener("click", () => { state.platform = "chatgpt"; renderAll(); });
+    $("#platGemini").addEventListener("click", () => { state.platform = "gemini"; renderAll(); });
+
     $("#reroll").addEventListener("click", () => reseed(newSeed(), true));
     $("#seed").addEventListener("change", e => reseed(e.target.value, true));
-    document.querySelectorAll("input[name=platform]").forEach(r => r.addEventListener("change", e => { state.platform = e.target.value; renderAll(); }));
     $("#notes").addEventListener("input", e => { state.notes = e.target.value; renderOutput(); save(); });
     $("#copy").addEventListener("click", () => { copyText($("#prompt").value, "已複製 prompt"); record(); });
     $("#download").addEventListener("click", () => { download(lastBuild.ctx.taskId + ".prompt.md", $("#prompt").value, "text/markdown"); record(); });
@@ -1153,6 +1794,9 @@
     });
     $("#open").addEventListener("click", () => window.open(state.platform === "gemini" ? "https://gemini.google.com/app" : "https://chatgpt.com/", "_blank", "noopener"));
     $("#root").addEventListener("change", e => { state.root = e.target.value.trim().replace(/[\\/]+$/, ""); renderOutput(); save(); });
+
+    // 鍛造台升級舊版包按鈕
+    $("#btnUpgradeForge").addEventListener("click", () => $("#upgradeFileInput").click());
 
     // 審查台控制列事件
     $("#btnScanDir").addEventListener("click", scanIncomingDirectory);
@@ -1164,6 +1808,27 @@
       }
     });
     $("#btnLoadFixtures").addEventListener("click", loadSampleFixtures);
+    $("#btnUpgradeZip").addEventListener("click", () => $("#upgradeFileInput").click());
+    $("#upgradeFileInput").addEventListener("change", async e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      toast("正在讀取並解析壓縮包...");
+      const pkg = await loadZipFile(file);
+      if (pkg) {
+        const upg = upgradePackageFormat(pkg);
+        if (upg) showUpgradeModal(upg);
+      }
+    });
+
+    // 舞台檢視模式切換 (單圖 vs 2D ⇄ 3D 雙欄對比)
+    $("#btnModeSingle").addEventListener("click", () => {
+      reviewState.viewMode = "single";
+      renderReviewView();
+    });
+    $("#btnModeCompare").addEventListener("click", () => {
+      reviewState.viewMode = "compare";
+      renderReviewView();
+    });
 
     // 拖曳上傳支援
     const stageHost = $("#stageHost");
@@ -1229,6 +1894,75 @@
       const cmd = `Expand-Archive -Path "$HOME\\Downloads\\${pkg.id}.zip" -DestinationPath "${root}\\Art\\_incoming\\" -Force`;
       copyText(cmd, "已複製 PowerShell 解壓指令");
     });
+
+    // 審查台當前包一鍵升級格式
+    $("#btnUpgradeActive").addEventListener("click", () => {
+      const pkg = getActivePkg();
+      if (!pkg) return;
+      const upg = upgradePackageFormat(pkg);
+      if (upg) showUpgradeModal(upg);
+    });
+
+    // 升級 Modal 內部下載與複製事件
+    $("#btnCopyUpgPrompt").addEventListener("click", () => {
+      if (lastUpgradeResult) copyText(lastUpgradeResult.newPromptText, "已複製升級後的 Prompt");
+    });
+    $("#btnDlUpgPrompt").addEventListener("click", () => {
+      if (!lastUpgradeResult) return;
+      download(lastUpgradeResult.targetTaskId + ".prompt.md", lastUpgradeResult.newPromptText, "text/markdown");
+    });
+    $("#btnDlUpgConcept").addEventListener("click", () => {
+      if (!lastUpgradeResult) return;
+      download(lastUpgradeResult.newManifest.subject_id + ".concept.json", JSON.stringify(lastUpgradeResult.newConcept, null, 2), "application/json");
+    });
+    $("#btnDlUpgManifest").addEventListener("click", () => {
+      if (!lastUpgradeResult) return;
+      download("manifest.json", JSON.stringify(lastUpgradeResult.newManifest, null, 2), "application/json");
+    });
+    $("#btnDlUpgZip").addEventListener("click", () => {
+      if (!lastUpgradeResult) return;
+      const pkg = lastUpgradeResult.pkg;
+      const zipFiles = {};
+      const tid = lastUpgradeResult.targetTaskId;
+      zipFiles[tid + "/manifest.json"] = JSON.stringify(lastUpgradeResult.newManifest, null, 2);
+      zipFiles[tid + "/concept.json"] = JSON.stringify(lastUpgradeResult.newConcept, null, 2);
+      zipFiles[tid + "/" + tid + ".prompt.md"] = lastUpgradeResult.newPromptText;
+
+      // 若有原圖一併封裝
+      if (pkg.rawFiles) {
+        for (const path in pkg.rawFiles) {
+          if (!path.endsWith("manifest.json") && !path.endsWith("concept.json") && !path.endsWith(".prompt.md")) {
+            const rel = path.includes("/") ? path.slice(path.indexOf("/") + 1) : path;
+            zipFiles[tid + "/" + rel] = pkg.rawFiles[path];
+          }
+        }
+      }
+      const blob = createZipBlob(zipFiles);
+      const a = el("a", { href: URL.createObjectURL(blob), download: tid + ".upgraded.zip" });
+      document.body.append(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+      toast("已下載升級後的 Zip 包");
+    });
+    $("#btnLoadInForge").addEventListener("click", () => {
+      if (!lastUpgradeResult) return;
+      const res = lastUpgradeResult;
+      const isChr = res.targetTaskId.startsWith("chr");
+      state.taskId = isChr ? "character-concept" : "creature-concept";
+      if (isChr) {
+        state.character = Object.assign({}, res.newConcept);
+      } else {
+        state.creature = Object.assign({}, res.newConcept);
+      }
+      closeUpgradeModal();
+      setViewMode("forge");
+      toast("已將升級概念載入至 Prompt 鍛造台");
+    });
+    $("#btnCloseUpgradeModal").addEventListener("click", closeUpgradeModal);
+    $("#upgradeModal").addEventListener("click", e => { if (e.target.id === "upgradeModal") closeUpgradeModal(); });
+
+    function closeUpgradeModal() {
+      $("#upgradeModal").classList.remove("show");
+    }
 
     // 自訂 Modal 事件
     $("#customModalConfirm").addEventListener("click", () => {

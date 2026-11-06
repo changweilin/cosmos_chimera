@@ -352,6 +352,11 @@ def _check_header_fields(m: dict, folder: str, findings: list[Finding], result: 
     elif sid is not None:
         result.subject_id = sid
 
+    sp = m.get("source_pack")
+    if sp is not None:
+        if not isinstance(sp, str) or not _TASK_ID_RE.fullmatch(sp) or not (sp.startswith("cr-") or sp.startswith("chr-")):
+            add("source_pack_invalid", f"source_pack '{sp}' must be a valid concept task_id (cr-... or chr-...)")
+
 
 def _check_files(m: dict, disk: set[str], findings: list[Finding]) -> dict[str, Optional[str]]:
     listed: dict[str, Optional[str]] = {}
