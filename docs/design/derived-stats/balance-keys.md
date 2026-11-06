@@ -32,7 +32,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `stage_bands.<stage>.max_stat` | 該階段每項能力的軟製作上界，非 schema maximum |
 | `stage_bands.<stage>.total_stats` | 該階段四項總點數預算；不是單項上限 |
 
-| `hit_volume.height_mm` | 所有判定體的總高度（melee 乘線性倍率） |
+| `hit_volume.height_mm` | 所有判定體的總高度（melee 乘線性倍率）；下限 2，讓半高至少 1 mm |
 | `hit_volume.front_width_mm` / `line_width_mm` | front / line 矩形寬度 |
 | `hit_volume.sweep_angle_deg` / `cone_angle_deg` | 扇形全角（度） |
 | `hit_volume.arc_landing_radius_mm` / `field_radius_mm` | arc 落點與 field 的圓半徑 |
@@ -48,3 +48,8 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 繪圖：`python tools/balance/plot_curves.py`（直接寫 SVG，僅標準函式庫）。
 
 `python tools/validate_data.py` 不掃描 `balance.json`；係數型別 / 算術包絡由參考 loader（`tools/balance` 測試）與 C# `DerivedStatsCoefficients` 建構子檢查。
+| `team.switch_cooldown_ms` | P2-06 共用切換冷卻：換手或主動收回後開始；開場召喚與倒下後補位不觸發，但會等冷卻結束 |
+| `player.max_hp` | 玩家角色固定 HP，不由能力值推導（P2-06 暫定） |
+| `player.roll_duration_ms` | 一次翻滾全長 |
+| `player.roll_invulnerable_ms` | 從翻滾開始算的無敵幀長度，≤ 翻滾全長；區間 [開始, 開始+長度) |
+| `player.roll_cooldown_ms` | 兩次翻滾開始的最短間隔，≥ 翻滾全長（避免連滾得到永久無敵） |

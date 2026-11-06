@@ -37,13 +37,15 @@ namespace Cosmimera.Combat
     {
         /// <summary>Builds a validated default set.</summary>
         /// <remarks>
-        /// Pre: every length in 1..1,000,000 mm; sweepAngleDeg and coneAngleDeg in 1..360.
+        /// Pre: every length in 1..1,000,000 mm, except heightMm in 2..1,000,000 (so HalfHeightMm >= 1 after halving);
+        ///      sweepAngleDeg and coneAngleDeg in 1..360.
         /// Post: properties return the arguments. Side effects: allocates this instance.
         /// </remarks>
         public HitVolumeDefaults(int heightMm, int frontWidthMm, int sweepAngleDeg, int coneAngleDeg, int lineWidthMm,
             int arcLandingRadiusMm, int fieldRadiusMm, int targetCastMidMm, int targetCastLongMm)
         {
             RequireMm(heightMm, "height_mm");
+            Contract.Requires(heightMm >= 2, "height_mm must be >= 2 so the half height stays positive");
             RequireMm(frontWidthMm, "front_width_mm");
             Contract.Requires(sweepAngleDeg >= 1 && sweepAngleDeg <= 360, "sweep_angle_deg must be 1..360");
             Contract.Requires(coneAngleDeg >= 1 && coneAngleDeg <= 360, "cone_angle_deg must be 1..360");
@@ -175,6 +177,24 @@ namespace Cosmimera.Combat
         // Tolerance for caller-supplied unit vectors, matching PlanetFrame.FromUp.
         private const float UnitTolerance = 1e-3f;
 
+        // ResolveAnchor runs in double: at or below this sin(angle) on the far side, the caster→aim great circle is not
+        // determined even in double (cross of near-opposite unit vectors cancels to ~1e-16).
+        private const double DegenerateSin = 1e-9;
+
+        // Positions produced by ResolveAnchor are rounded to float world coordinates, an error that scales with the
+        // world coordinate (center + 2R), not with the shell radius: at a 16 km center the 320 m inner edge moved
+        // 0.07 mm, past a radius-relative slack (SOL r5 R1). Slack in meters = this × (max |center component| + 2R),
+        // ~10× the worst float rounding (≈1.8e-7 × largest component), so ResolveAnchor → Overlaps always composes.
+        private const double ShellSlack = 1e-6;
+
+        /// <summary>Smallest planet radius the combat geometry supports.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/design/derived-stats.md — ranged_distance.cap_mm is a fixed 36 m, approved for R >= 640 only
+        /// (at R = 320 the 1.7 m eye-height horizon is ~33 m, so the cap would reach past it).
+        /// </remarks>
+        public const float MinSupportedRadiusM = 640f;
+
         /// <summary>Hit volume of a move cast with attacker strength <paramref name="str"/>.</summary>
         /// <remarks>
         /// Pre: stats != null; defaults != null; baseRangeMm >= 0; str >= 0; movement == Dash implies shape == Line and
@@ -245,56 +265,85 @@ namespace Cosmimera.Combat
 
         /// <summary>Where an AimPoint-anchored volume lands for a caster aiming at <paramref name="aimPoint"/>.</summary>
         /// <remarks>
-        /// Pre: planet.IsValid; volume.Anchor == AimPoint; caster and aimPoint finite and not at the planet center.
-        /// Post: geodesic distance (at the caster's radius) from caster to result &lt;= CastDistanceMm (+1 mm float slack);
-        ///       result keeps the aim point's radius; result == aimPoint when already within range.
+        /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.Anchor == AimPoint; caster and aimPoint
+        ///      inside the combat shell (planet.Radius / 2 &lt;= |p − planet.Center| &lt;= 2 · planet.Radius, each bound
+        ///      widened by 1e-6 · (max |planet.Center component| + 2 · planet.Radius) m for float rounding).
+        /// Post: result is finite and inside the combat shell (same slack), so it can be passed to Overlaps as anchor;
+        ///       geodesic distance (at the caster's radius) from caster to result &lt;= CastDistanceMm + 1 mm +
+        ///       1e-6 · (largest |component| of result), the only error left being the float rounding of the returned
+        ///       world position; result keeps the aim point's radius (clamped into the strict shell) within the same
+        ///       slack and lies on the caster→aim great circle; result == aimPoint when already within range.
+        ///       Degenerate aim: when the aim is on the far side with sin(angle(caster, aim)) &lt;= 1e-9 (within ~6 µm
+        ///       of the caster's antipode at R = 640) the great circle is not determined, and the result heads towards
+        ///       PlanetFrame.FromUp(caster up).North instead — deterministic on every peer. Every tangent field on a
+        ///       sphere has a zero (hairy-ball theorem), so some jump at this threshold is unavoidable.
         /// Side effects: none.
         /// </remarks>
         public static float3 ResolveAnchor(in HitVolume volume, in PlanetConfig planet, float3 caster, float3 aimPoint)
         {
-            Contract.Requires(planet.IsValid, "planet must be valid");
+            RequirePlanet(planet);
             Contract.Requires(volume.Anchor == HitVolumeAnchor.AimPoint, "only aim-point volumes have a resolvable anchor");
-            float3 dc = caster - planet.Center;
-            float3 da = aimPoint - planet.Center;
-            float rc = math.length(dc);
-            float ra = math.length(da);
-            Contract.Requires(rc > 0f && ra > 0f && math.isfinite(rc) && math.isfinite(ra),
-                "caster and aimPoint must be finite and off the planet center");
+            // Double throughout: in float, the cross of two near-opposite unit vectors cancels to noise and turned a
+            // 12 m cast ~1 m off its great circle (SOL r4 Q4); subtracting a 16 km center in float also cost ~mm (Q1).
+            double3 center = planet.Center;
+            double3 dc = (double3)caster - center;
+            double3 da = (double3)aimPoint - center;
+            RequireInDomain(dc, planet, "caster");
+            RequireInDomain(da, planet, "aimPoint");
+            double rc = math.length(dc);
+            double ra = math.length(da);
 
-            float3 uc = dc / rc;
-            float3 ua = da / ra;
-            float angle = math.atan2(math.length(math.cross(uc, ua)), math.dot(uc, ua));
-            float maxAngle = volume.CastDistanceMm * MmToM / rc;
+            double3 uc = dc / rc;
+            double3 ua = da / ra;
+            double3 axis = math.cross(uc, ua);
+            double sinAngle = math.length(axis);
+            double cosAngle = math.dot(uc, ua);
+            double angle = math.atan2(sinAngle, cosAngle);
+            double maxAngle = volume.CastDistanceMm * 0.001 / rc;
             if (angle <= maxAngle)
             {
                 return aimPoint;
             }
 
-            // Slerp from the caster's direction towards the aim direction, stopping at the cast distance.
-            float3 tangent = math.normalize(ua - math.dot(ua, uc) * uc);
-            float3 dir = math.cos(maxAngle) * uc + math.sin(maxAngle) * tangent;
-            return planet.Center + dir * ra;
+            // Only the far side is degenerate: a same-side aim with tiny sin is barely farther than the cast distance,
+            // so its cross direction is still the right one (SOL r4 Q2 sent a near-same-direction aim North).
+            double3 tangent = cosAngle < 0.0 && sinAngle <= DegenerateSin
+                ? (double3)PlanetFrame.FromUp((float3)uc).North
+                : math.normalize(math.cross(axis / sinAngle, uc));
+            double3 dir = math.normalize(math.cos(maxAngle) * uc + math.sin(maxAngle) * tangent);
+            double radius = math.clamp(ra, planet.Radius * 0.5, planet.Radius * 2.0);
+            return (float3)(center + dir * radius);
         }
 
         /// <summary>Whether a target sphere overlaps the volume placed at <paramref name="anchor"/> facing <paramref name="forward"/>.</summary>
         /// <remarks>
-        /// Pre: planet.IsValid; volume.Kind != Caster; anchor and targetCenter finite and off the planet center;
+        /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.Kind != Caster; anchor and targetCenter
+        ///      inside the combat shell (planet.Radius / 2 &lt;= |p − planet.Center| &lt;= 2 · planet.Radius, same
+        ///      rounding slack as ResolveAnchor);
         ///      targetRadiusM >= 0 and finite; for Rect / Sector, forward is unit (±1e-3) and tangent at anchor
         ///      (|dot(forward, up)| &lt;= 1e-3). For Ally, anchor is the caster and the test is "ally within cast distance".
         /// Post: true iff the target sphere's geodesic footprint touches the volume's footprint and the radial height
-        ///       difference is within HalfHeightMm + targetRadius (Ally ignores height). Monotone: a larger volume (any
-        ///       dimension) never turns true into false.
+        ///       difference is within HalfHeightMm + targetRadius (Ally ignores height). Only forward's tangent
+        ///       direction matters, not its length within the tolerance. A target more than a quarter circumference
+        ///       (angle > π/2) from the anchor never overlaps, whatever the volume's size: the local projection is only
+        ///       used on the anchor's own hemisphere, where bearings are well conditioned (SOL r3 P3).
+        ///       Monotone: a larger volume (any dimension) never turns true into false.
         /// Side effects: none.
         /// </remarks>
         public static bool Overlaps(in HitVolume volume, in PlanetConfig planet, float3 anchor, float3 forward,
             float3 targetCenter, float targetRadiusM)
         {
-            Contract.Requires(planet.IsValid, "planet must be valid");
+            RequirePlanet(planet);
             Contract.Requires(volume.Kind != HitVolumeKind.Caster, "self moves have no geometric test");
             Contract.Requires(targetRadiusM >= 0f && math.isfinite(targetRadiusM), "targetRadiusM must be finite and >= 0");
 
-            Local(planet, anchor, forward, targetCenter, volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector,
-                out float x, out float z, out float height);
+            bool onAnchorHemisphere = Local(planet, anchor, forward, targetCenter,
+                volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector, out float x, out float z, out float height);
+            if (!onAnchorHemisphere)
+            {
+                return false;
+            }
+
             float r = targetRadiusM;
             if (volume.Kind == HitVolumeKind.Ally)
             {
@@ -358,16 +407,17 @@ namespace Cosmimera.Combat
 
         // Azimuthal-equidistant coordinates of `point` around `anchor` (meters at the anchor's radius) plus the radial
         // height difference. atan2(|cross|, dot) instead of acos: acos loses ~all precision for the sub-degree angles
-        // combat uses (1 mm at R = 640 m is 1.6e-6 rad).
-        private static void Local(in PlanetConfig planet, float3 anchor, float3 forward, float3 point, bool needsForward,
+        // combat uses (1 mm at R = 640 m is 1.6e-6 rad). Returns false (x = z = 0) when the point is on the far
+        // hemisphere: near the antipode every bearing is float noise, and no volume reaches a quarter circumference.
+        private static bool Local(in PlanetConfig planet, float3 anchor, float3 forward, float3 point, bool needsForward,
             out float x, out float z, out float height)
         {
             float3 da = anchor - planet.Center;
             float3 dp = point - planet.Center;
+            RequireInDomain((double3)anchor - (double3)planet.Center, planet, "anchor");
+            RequireInDomain((double3)point - (double3)planet.Center, planet, "target");
             float ra = math.length(da);
             float rp = math.length(dp);
-            Contract.Requires(ra > 0f && rp > 0f && math.isfinite(ra) && math.isfinite(rp),
-                "anchor and target must be finite and off the planet center");
             float3 up = da / ra;
             if (needsForward)
             {
@@ -379,27 +429,61 @@ namespace Cosmimera.Combat
             float3 cross = math.cross(up, up2);
             float angle = math.atan2(math.length(cross), math.dot(up, up2));
             height = rp - ra;
-            float3 planar = up2 - math.dot(up2, up) * up;
-            float planarLength = math.length(planar);
-            if (planarLength < 1e-12f)
+            x = 0f;
+            z = 0f;
+            if (angle > math.PI / 2f)
             {
-                x = 0f;
-                z = 0f;
-                return;
+                return false;
             }
 
             float distance = angle * ra;
-            float3 dir = planar / planarLength;
             if (!needsForward)
             {
                 x = distance;
-                z = 0f;
-                return;
+                return true;
             }
 
-            float3 right = math.cross(up, forward);
-            x = math.dot(dir, right) * distance;
-            z = math.dot(dir, forward) * distance;
+            // Re-orthonormalize: the Pre tolerance lets |forward| be 0.9995, which would otherwise shrink the measured
+            // forward distance by 0.05 % and let a target 24.005 m away into a 24 m line (SOL G5).
+            float3 f = math.normalize(forward - math.dot(forward, up) * up);
+            float3 right = math.cross(up, f);
+
+            // Bearing from components in the tangent basis, not from normalizing up2 − dot(up2, up)·up: near the
+            // antipode that difference is a pure radial float residue, which projected to (0, 0) and put a target
+            // 2010 m away at distance 0 (SOL r2 N1). On the near hemisphere |(px, pz)| = sin(angle), so the bearing
+            // is only ill-conditioned when the points (nearly) coincide, where distance ~0 makes it irrelevant.
+            float px = math.dot(up2, right);
+            float pz = math.dot(up2, f);
+            float bearingLength = math.sqrt(px * px + pz * pz);
+            if (bearingLength < 1e-12f)
+            {
+                return true;
+            }
+
+            x = px / bearingLength * distance;
+            z = pz / bearingLength * distance;
+            return true;
+        }
+
+        private static void RequirePlanet(in PlanetConfig planet)
+        {
+            Contract.Requires(planet.IsValid, "planet must be valid");
+            Contract.Requires(planet.Radius >= MinSupportedRadiusM, "combat geometry supports planets with R >= 640 m only");
+        }
+
+        // Combat happens near the ground, so positions must lie within R/2..2R of the center. The bounded radius ratio
+        // is what lets ResolveAnchor promise a landing precision at all: an aim point 2 m from the center seen from a
+        // caster on the surface amplified float quantization ~4000x (SOL r3 P1). Checked in double: any float3
+        // squared fits (3.4e38² ≪ 1.8e308), so neither overflow (SOL G6) nor underflow (r2 N4) can fool it, and NaN
+        // fails both comparisons.
+        private static void RequireInDomain(double3 fromCenter, in PlanetConfig planet, string name)
+        {
+            double r2 = math.lengthsq(fromCenter);
+            double slackM = ShellSlack * (math.cmax(math.abs((double3)planet.Center)) + 2.0 * planet.Radius);
+            double inner = planet.Radius * 0.5 - slackM;
+            double outer = planet.Radius * 2.0 + slackM;
+            Contract.Requires(r2 >= inner * inner && r2 <= outer * outer,
+                name + " must be within R/2..2R of the planet center (combat shell)");
         }
 
         private static int Lateral(int mm, bool melee, int linearPermille)

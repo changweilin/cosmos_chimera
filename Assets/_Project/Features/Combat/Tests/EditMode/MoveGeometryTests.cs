@@ -249,9 +249,9 @@ namespace Cosmimera.Combat.Tests
         public void Hit_volume_defaults_reject_out_of_range_values()
         {
             Assert.Throws<ContractException>(() => new HitVolumeDefaults(0, 1, 1, 1, 1, 1, 1, 1, 1));
-            Assert.Throws<ContractException>(() => new HitVolumeDefaults(1, 1, 361, 1, 1, 1, 1, 1, 1));
-            Assert.Throws<ContractException>(() => new HitVolumeDefaults(1, 1, 1, 0, 1, 1, 1, 1, 1));
-            Assert.Throws<ContractException>(() => new HitVolumeDefaults(1, 1, 1, 1, 1, 1, 1, 1, 1_000_001));
+            Assert.Throws<ContractException>(() => new HitVolumeDefaults(2, 1, 361, 1, 1, 1, 1, 1, 1));
+            Assert.Throws<ContractException>(() => new HitVolumeDefaults(2, 1, 1, 0, 1, 1, 1, 1, 1));
+            Assert.Throws<ContractException>(() => new HitVolumeDefaults(2, 1, 1, 1, 1, 1, 1, 1, 1_000_001));
         }
     }
 }
