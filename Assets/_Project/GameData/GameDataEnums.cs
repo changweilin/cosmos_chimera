@@ -39,6 +39,19 @@ namespace Cosmimera.GameData
         EvolutionFamily = 0, MythKin = 1, RivalSymbiosis = 2, ToolKin = 3, Mentor = 4,
     }
 
+    /// <summary>When a trait fires. REQ: common.schema.json#/$defs/trigger (closed in P2-01).</summary>
+    public enum TriggerType
+    {
+        Always = 0, OnHpBelow = 1, OnHpAbove = 2, OnSummon = 3, OnHitTaken = 4, OnMoveUsed = 5, OnAllySwap = 6,
+    }
+
+    /// <summary>What a trait effect or move effect does. REQ: common.schema.json#/$defs/effect (closed in P2-01).</summary>
+    public enum EffectType
+    {
+        MasteryMod = 0, ResistMod = 1, CdModPercent = 2, EvasionModPercent = 3, MoveSpeedModPercent = 4,
+        RangeModPercent = 5, HealPercentMaxHp = 6,
+    }
+
     /// <summary>Planet size class. Numeric radius belongs to P3 and is not stored here.</summary>
     public enum PlanetSize
     {

@@ -21,15 +21,55 @@
       "minimum": -100,
       "maximum": 100
     },
-    "rule": {
-      "description": "Trigger/effect shell. The type vocabulary is closed into an enum in P2 (user decision 2026-11-06).",
+    "elementOrAny": {
+      "description": "An element, or \"any\" to match every element.",
+      "anyOf": [{ "$ref": "#/$defs/element" }, { "const": "any" }]
+    },
+    "rulePercent": { "description": "Percent threshold or amount inside a rule.", "type": "integer", "minimum": 1, "maximum": 100 },
+    "durationMs": { "description": "Effect window. 10 min cap is representability, not balance.", "type": "integer", "minimum": 1, "maximum": 600000 },
+    "ruleDelta": {
+      "description": "Signed modifier in percent or percentage points. ±100 is representability; balance bands live in the batch prompts.",
+      "type": "integer",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "trigger": {
+      "description": "Closed trigger vocabulary (P2-01, adopted from the P5-05 provisional set). Adding a type = this enum + GameData TriggerType + a P2-09 handler.",
       "type": "object",
       "required": ["type"],
       "additionalProperties": false,
       "properties": {
-        "type": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["always", "on_hp_below", "on_hp_above", "on_summon", "on_hit_taken", "on_move_used", "on_ally_swap"] },
         "params": { "type": "object" }
-      }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "always" } } }, "then": { "properties": { "params": { "type": "object", "maxProperties": 0 } } } },
+        { "if": { "properties": { "type": { "const": "on_hp_below" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["percent"], "properties": { "percent": { "$ref": "#/$defs/rulePercent" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_hp_above" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["percent"], "properties": { "percent": { "$ref": "#/$defs/rulePercent" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_summon" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["duration_ms"], "properties": { "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_hit_taken" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "duration_ms"], "properties": { "element": { "$ref": "#/$defs/elementOrAny" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_move_used" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "duration_ms"], "properties": { "element": { "$ref": "#/$defs/element" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_ally_swap" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["duration_ms"], "properties": { "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } }
+      ]
+    },
+    "effect": {
+      "description": "Closed effect vocabulary shared by trait effects and move effects (P2-01). Adding a type = this enum + GameData EffectType + a P2-09 handler.",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["mastery_mod", "resist_mod", "cd_mod_percent", "evasion_mod_percent", "move_speed_mod_percent", "range_mod_percent", "heal_percent_max_hp"] },
+        "params": { "type": "object" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "mastery_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "resist_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "cd_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/elementOrAny" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "evasion_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "move_speed_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "range_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "heal_percent_max_hp" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["percent"], "properties": { "percent": { "$ref": "#/$defs/rulePercent" } } } } } }
+      ]
     }
   }
 }

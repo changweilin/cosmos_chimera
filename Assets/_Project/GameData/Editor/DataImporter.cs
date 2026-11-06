@@ -275,11 +275,27 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{m.Where}: effect must be present iff kind is not 'damage'");
                 }
+
+                if (m.Dto.Effect != null)
+                {
+                    CheckRule(m.Where, "effect", m.Dto.Effect, EffectParams, errors);
+                }
             }
 
             foreach (Sourced<TraitDto> t in traits)
             {
                 Claim(t.Where, t.Dto.Id, "trait");
+                CheckRule(t.Where, "trigger", t.Dto.Trigger, TriggerParams, errors);
+                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0)
+                {
+                    errors.Add($"{t.Where}: effects must have at least one entry");
+                    continue;
+                }
+
+                for (int i = 0; i < t.Dto.Effects.Count; i++)
+                {
+                    CheckRule(t.Where, $"effects[{i}]", t.Dto.Effects[i], EffectParams, errors);
+                }
             }
 
             foreach (Sourced<PlanetTypeDto> p in planets)
@@ -386,13 +402,13 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<MoveDto> s in moves)
             {
                 MoveDto d = s.Dto;
-                moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToRule(d.Effect),
+                moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
                     d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape));
             }
 
             foreach (Sourced<TraitDto> s in traits)
             {
-                traitDefs[s.Dto.Id].Set(ToRule(s.Dto.Trigger), s.Dto.Effects.Select(ToRule).ToList());
+                traitDefs[s.Dto.Id].Set(ToTrigger(s.Dto.Trigger), s.Dto.Effects.Select(ToEffect).ToList());
             }
 
             foreach (Sourced<PlanetTypeDto> s in planets)
@@ -509,14 +525,116 @@ namespace Cosmimera.GameData.Editor
             AssetDatabase.CreateFolder(parent, folder.Substring(slash + 1));
         }
 
-        private static RuleDef ToRule(RuleDto dto)
+        private enum ParamKind
+        {
+            Percent, DurationMs, Delta, Element, ElementOrAny,
+        }
+
+        // Mirrors common.schema.json#/$defs/trigger and #/$defs/effect. Re-checked here because a wrong param
+        // would otherwise import as 0 and only surface when P2-09 reads it mid-battle.
+        private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> TriggerParams =
+            new Dictionary<string, (string Key, ParamKind Kind)[]>(StringComparer.Ordinal)
+            {
+                ["always"] = new (string Key, ParamKind Kind)[0],
+                ["on_hp_below"] = new[] { ("percent", ParamKind.Percent) },
+                ["on_hp_above"] = new[] { ("percent", ParamKind.Percent) },
+                ["on_summon"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+                ["on_hit_taken"] = new[] { ("element", ParamKind.ElementOrAny), ("duration_ms", ParamKind.DurationMs) },
+                ["on_move_used"] = new[] { ("element", ParamKind.Element), ("duration_ms", ParamKind.DurationMs) },
+                ["on_ally_swap"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+            };
+
+        private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> EffectParams =
+            new Dictionary<string, (string Key, ParamKind Kind)[]>(StringComparer.Ordinal)
+            {
+                ["mastery_mod"] = new[] { ("element", ParamKind.Element), ("delta", ParamKind.Delta) },
+                ["resist_mod"] = new[] { ("element", ParamKind.Element), ("delta", ParamKind.Delta) },
+                ["cd_mod_percent"] = new[] { ("element", ParamKind.ElementOrAny), ("delta", ParamKind.Delta) },
+                ["evasion_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["move_speed_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["range_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["heal_percent_max_hp"] = new[] { ("percent", ParamKind.Percent) },
+            };
+
+        private static void CheckRule(string where, string field, RuleDto dto,
+            Dictionary<string, (string Key, ParamKind Kind)[]> vocabulary, List<string> errors)
+        {
+            if (dto == null || dto.Type == null || !vocabulary.TryGetValue(dto.Type, out (string Key, ParamKind Kind)[] spec))
+            {
+                errors.Add($"{where}: {field} type '{dto?.Type}' is not in the closed vocabulary");
+                return;
+            }
+
+            JObject ps = dto.Params ?? new JObject();
+            foreach (JProperty p in ps.Properties())
+            {
+                if (Array.FindIndex(spec, s => s.Key == p.Name) < 0)
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' has unknown param '{p.Name}'");
+                }
+            }
+
+            foreach ((string key, ParamKind kind) in spec)
+            {
+                JToken token = ps[key];
+                if (token == null)
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' is missing param '{key}'");
+                }
+                else if (!ParamValid(token, kind))
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' param '{key}' = {token.ToString(Formatting.None)} is not a valid {kind}");
+                }
+            }
+        }
+
+        private static bool ParamValid(JToken token, ParamKind kind)
+        {
+            switch (kind)
+            {
+                case ParamKind.Percent:
+                    return token.Type == JTokenType.Integer && (long)token >= 1 && (long)token <= 100;
+                case ParamKind.DurationMs:
+                    return token.Type == JTokenType.Integer && (long)token >= 1 && (long)token <= 600000;
+                case ParamKind.Delta:
+                    return token.Type == JTokenType.Integer && (long)token >= -100 && (long)token <= 100;
+                case ParamKind.Element:
+                    return token.Type == JTokenType.String && TryParseEnum((string)token, out Element _);
+                case ParamKind.ElementOrAny:
+                    return token.Type == JTokenType.String
+                        && ((string)token == "any" || TryParseEnum((string)token, out Element _));
+                default:
+                    return false;
+            }
+        }
+
+        // Pre (all three readers): CheckRule passed for dto, so present params are in range.
+        private static void ReadElement(JObject ps, out bool any, out Element element)
+        {
+            string raw = (string)ps["element"];
+            any = raw == "any";
+            element = raw == null || any ? default : ParseEnum<Element>(raw);
+        }
+
+        private static TriggerDef ToTrigger(RuleDto dto)
+        {
+            JObject ps = dto.Params ?? new JObject();
+            ReadElement(ps, out bool any, out Element element);
+            return new TriggerDef(ParseEnum<TriggerType>(dto.Type), any, element,
+                (int?)ps["percent"] ?? 0, (int?)ps["duration_ms"] ?? 0);
+        }
+
+        private static EffectDef ToEffect(RuleDto dto)
         {
             if (dto == null)
             {
                 return null;
             }
 
-            return new RuleDef(dto.Type, (dto.Params ?? new JObject()).ToString(Formatting.None));
+            JObject ps = dto.Params ?? new JObject();
+            ReadElement(ps, out bool any, out Element element);
+            return new EffectDef(ParseEnum<EffectType>(dto.Type), any, element,
+                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0);
         }
 
         private static T ParseEnum<T>(string snake) where T : struct, Enum

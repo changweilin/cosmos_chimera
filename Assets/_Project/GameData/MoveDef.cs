@@ -13,7 +13,7 @@ namespace Cosmimera.GameData
         [SerializeField] private MoveKind kind;
         [SerializeField] private int power;
         [SerializeField] private bool hasEffect;
-        [SerializeField] private RuleDef effect;
+        [SerializeField] private EffectDef effect;
         [SerializeField] private int cooldownMs;
         [SerializeField] private int accuracy;
         [SerializeField] private RangeClass rangeClass;
@@ -36,7 +36,7 @@ namespace Cosmimera.GameData
         /// Unity serializes a [Serializable] class field as an empty instance rather than null, so null-ness
         /// is carried by a separate flag. Pre: none. Post: null iff Kind == Damage. Side effects: none.
         /// </remarks>
-        public RuleDef Effect => hasEffect ? effect : null;
+        public EffectDef Effect => hasEffect ? effect : null;
 
         /// <summary>Cooldown in milliseconds.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
@@ -54,7 +54,7 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined MoveShape. Side effects: none.</remarks>
         public MoveShape Shape => shape;
 
-        internal void Set(Element element, MoveKind kind, int power, RuleDef effect, int cooldownMs, int accuracy,
+        internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int cooldownMs, int accuracy,
             RangeClass rangeClass, MoveShape shape)
         {
             this.element = element;

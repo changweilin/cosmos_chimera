@@ -27,6 +27,8 @@ EXPECTED = {
     "moves/float_number.json": ("float_literal", ""),
     "moves/unknown_element.json": ("schema", "/0/element"),
     "relations/edge_wrong_order.json": ("edge_order", "/0"),
+    "traits/unknown_trigger.json": ("schema", "/0/trigger/type"),
+    "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
 }
 
 

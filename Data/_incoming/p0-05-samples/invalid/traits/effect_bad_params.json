@@ -1,0 +1,7 @@
+[
+  {
+    "id": "sample_trait_bad_params",
+    "trigger": { "type": "on_hp_below", "params": { "percent": 30 } },
+    "effects": [{ "type": "mastery_mod", "params": { "element": "any", "delta": 20 } }]
+  }
+]

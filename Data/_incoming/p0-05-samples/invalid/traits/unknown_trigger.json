@@ -1,0 +1,7 @@
+[
+  {
+    "id": "sample_trait_unknown_trigger",
+    "trigger": { "type": "on_full_moon", "params": {} },
+    "effects": [{ "type": "resist_mod", "params": { "element": "fire", "delta": 10 } }]
+  }
+]

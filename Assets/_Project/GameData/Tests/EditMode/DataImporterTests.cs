@@ -49,8 +49,11 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(MoveShape.Dash, move.Shape);
             Assert.IsNull(move.Effect, "damage-only move has no effect");
             Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
-            Assert.AreEqual("on_hp_below", trait.Trigger.Type);
-            StringAssert.Contains("\"percent\":30", trait.Trigger.ParamsJson);
+            Assert.AreEqual(TriggerType.OnHpBelow, trait.Trigger.Type);
+            Assert.AreEqual(30, trait.Trigger.Percent);
+            Assert.AreEqual(EffectType.MasteryMod, trait.Effects[0].Type);
+            Assert.AreEqual(Element.Fire, trait.Effects[0].Element);
+            Assert.AreEqual(20, trait.Effects[0].Delta);
             Assert.IsTrue(Db.TryGet("sample_lava_planet", out PlanetTypeDef planet));
             CollectionAssert.AreEqual(new[] { Element.Fire, Element.Earth }, planet.ElementBias);
         }
@@ -172,6 +175,41 @@ namespace Cosmimera.GameData.Tests
             var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
 
             StringAssert.Contains("spiral", e.Message);
+        }
+
+        [Test]
+        public void Rule_type_outside_vocabulary_is_rejected()
+        {
+            ReplaceInFile("traits/traits.json", "\"type\": \"on_hp_below\"", "\"type\": \"on_full_moon\"");
+
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains("on_full_moon", e.Message);
+        }
+
+        [TestCase("{ \"element\": \"any\", \"delta\": 20 }", "element")]
+        [TestCase("{ \"element\": \"fire\", \"delta\": 101 }", "delta")]
+        [TestCase("{ \"element\": \"fire\" }", "missing param 'delta'")]
+        [TestCase("{ \"element\": \"fire\", \"delta\": 20, \"percent\": 5 }", "unknown param 'percent'")]
+        public void Effect_params_must_match_their_type(string effectParams, string expected)
+        {
+            ReplaceInFile("traits/traits.json", "{ \"element\": \"fire\", \"delta\": 20 }", effectParams);
+
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains(expected, e.Message);
+        }
+
+        [Test]
+        public void Reading_a_param_the_rule_type_lacks_is_a_contract_violation()
+        {
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+
+            Assert.Throws<ContractException>(() => _ = trait.Trigger.DurationMs);
+            Assert.Throws<ContractException>(() => _ = trait.Trigger.Element);
+            Assert.Throws<ContractException>(() => _ = trait.Effects[0].Percent);
+            Assert.IsFalse(trait.Effects[0].AnyElement);
         }
 
         [Test]

@@ -33,6 +33,7 @@
 ## 特性（`Data/traits/`）
 被動效果；以「觸發條件 + 效果」資料描述（例：`on_hp_below:30 → mastery.shadow +20`），不寫死在程式碼。
 資料形狀：`{id, trigger: {type, params}, effects: [{type, params}]}`；`type` 詞彙於 P2 收斂為 enum（2026-11-06 定案）。招式 `effect` 用同一形狀。
+P2-01 已封閉詞彙（採用 P5-05 初稿的暫定集合，**待人工確認**）：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{percent}` / `on_summon{duration_ms}` / `on_hit_taken{element|any, duration_ms}` / `on_move_used{element, duration_ms}` / `on_ally_swap{duration_ms}`；效果 `mastery_mod{element, delta}` / `resist_mod{element, delta}` / `cd_mod_percent{element|any, delta}` / `evasion_mod_percent{delta}` / `move_speed_mod_percent{delta}` / `range_mod_percent{delta}` / `heal_percent_max_hp{percent}`。正式定義在 `common.schema.json#/$defs/trigger`、`#/$defs/effect`；新增一種 = schema + `GameData` enum + P2-09 處理器。觸發是邊緣或持續判定、效果如何疊加，由 P2-09 定。
 
 ## 隊伍規則
 - 一場遊戲最多攜帶 **6 隻主力**；其中最多 **4 隻**組成上場池，**同時最多 2 隻在場**，其餘在池中輪替（Q-C4 定案）。
