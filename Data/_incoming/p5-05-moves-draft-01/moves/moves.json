@@ -1,0 +1,402 @@
+[
+  {
+    "id": "metal_needle_thrust",
+    "element": "metal",
+    "kind": "damage",
+    "power": 30,
+    "cooldown_ms": 900,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "line"
+  },
+  {
+    "id": "metal_iron_cleave",
+    "element": "metal",
+    "kind": "damage",
+    "power": 60,
+    "cooldown_ms": 2800,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "cone"
+  },
+  {
+    "id": "metal_scrap_barrage",
+    "element": "metal",
+    "kind": "damage",
+    "power": 80,
+    "cooldown_ms": 4800,
+    "accuracy": 85,
+    "range_class": "mid",
+    "shape": "aoe"
+  },
+  {
+    "id": "metal_lance_charge",
+    "element": "metal",
+    "kind": "damage",
+    "power": 110,
+    "cooldown_ms": 8500,
+    "accuracy": 75,
+    "range_class": "long",
+    "shape": "dash"
+  },
+  {
+    "id": "wood_briar_dash",
+    "element": "wood",
+    "kind": "damage",
+    "power": 35,
+    "cooldown_ms": 1100,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "dash"
+  },
+  {
+    "id": "wood_spore_scatter",
+    "element": "wood",
+    "kind": "damage",
+    "power": 55,
+    "cooldown_ms": 2400,
+    "accuracy": 95,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "wood_root_spear",
+    "element": "wood",
+    "kind": "damage",
+    "power": 85,
+    "cooldown_ms": 5200,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "wood_canopy_crush",
+    "element": "wood",
+    "kind": "damage",
+    "power": 105,
+    "cooldown_ms": 8000,
+    "accuracy": 80,
+    "range_class": "mid",
+    "shape": "aoe"
+  },
+  {
+    "id": "water_aqua_cutter",
+    "element": "water",
+    "kind": "damage",
+    "power": 40,
+    "cooldown_ms": 1400,
+    "accuracy": 95,
+    "range_class": "mid",
+    "shape": "line"
+  },
+  {
+    "id": "water_tidal_surge",
+    "element": "water",
+    "kind": "damage",
+    "power": 55,
+    "cooldown_ms": 2600,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "dash"
+  },
+  {
+    "id": "water_torrent_burst",
+    "element": "water",
+    "kind": "damage",
+    "power": 75,
+    "cooldown_ms": 4200,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "water_deluge_crater",
+    "element": "water",
+    "kind": "damage",
+    "power": 115,
+    "cooldown_ms": 9000,
+    "accuracy": 75,
+    "range_class": "long",
+    "shape": "aoe"
+  },
+  {
+    "id": "fire_ember_lash",
+    "element": "fire",
+    "kind": "damage",
+    "power": 35,
+    "cooldown_ms": 1200,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "cone"
+  },
+  {
+    "id": "fire_blaze_charge",
+    "element": "fire",
+    "kind": "damage",
+    "power": 65,
+    "cooldown_ms": 3200,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "dash"
+  },
+  {
+    "id": "fire_scorch_beam",
+    "element": "fire",
+    "kind": "damage",
+    "power": 80,
+    "cooldown_ms": 5000,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "fire_inferno_cataclysm",
+    "element": "fire",
+    "kind": "damage",
+    "power": 120,
+    "cooldown_ms": 9500,
+    "accuracy": 70,
+    "range_class": "long",
+    "shape": "aoe"
+  },
+  {
+    "id": "earth_pebble_shot",
+    "element": "earth",
+    "kind": "damage",
+    "power": 30,
+    "cooldown_ms": 1000,
+    "accuracy": 95,
+    "range_class": "mid",
+    "shape": "line"
+  },
+  {
+    "id": "earth_seismic_slam",
+    "element": "earth",
+    "kind": "damage",
+    "power": 60,
+    "cooldown_ms": 3000,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "aoe"
+  },
+  {
+    "id": "earth_sand_sweep",
+    "element": "earth",
+    "kind": "damage",
+    "power": 75,
+    "cooldown_ms": 4500,
+    "accuracy": 85,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "earth_rampart_rush",
+    "element": "earth",
+    "kind": "damage",
+    "power": 100,
+    "cooldown_ms": 8000,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "dash"
+  },
+  {
+    "id": "ice_shard_flurry",
+    "element": "ice",
+    "kind": "damage",
+    "power": 35,
+    "cooldown_ms": 1100,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "ice_rime_skate",
+    "element": "ice",
+    "kind": "damage",
+    "power": 50,
+    "cooldown_ms": 2200,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "dash"
+  },
+  {
+    "id": "ice_glacier_lance",
+    "element": "ice",
+    "kind": "damage",
+    "power": 85,
+    "cooldown_ms": 5500,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "ice_blizzard_vortex",
+    "element": "ice",
+    "kind": "damage",
+    "power": 110,
+    "cooldown_ms": 8500,
+    "accuracy": 75,
+    "range_class": "long",
+    "shape": "aoe"
+  },
+  {
+    "id": "wind_gale_claw",
+    "element": "wind",
+    "kind": "damage",
+    "power": 30,
+    "cooldown_ms": 800,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "cone"
+  },
+  {
+    "id": "wind_cyclone_dart",
+    "element": "wind",
+    "kind": "damage",
+    "power": 55,
+    "cooldown_ms": 2500,
+    "accuracy": 95,
+    "range_class": "mid",
+    "shape": "dash"
+  },
+  {
+    "id": "wind_vacuum_blade",
+    "element": "wind",
+    "kind": "damage",
+    "power": 80,
+    "cooldown_ms": 4800,
+    "accuracy": 90,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "wind_tempest_sphere",
+    "element": "wind",
+    "kind": "damage",
+    "power": 105,
+    "cooldown_ms": 7800,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "aoe"
+  },
+  {
+    "id": "thunder_spark_dash",
+    "element": "thunder",
+    "kind": "damage",
+    "power": 40,
+    "cooldown_ms": 1200,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "dash"
+  },
+  {
+    "id": "thunder_arc_discharge",
+    "element": "thunder",
+    "kind": "damage",
+    "power": 60,
+    "cooldown_ms": 2800,
+    "accuracy": 95,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "thunder_plasma_rail",
+    "element": "thunder",
+    "kind": "damage",
+    "power": 90,
+    "cooldown_ms": 6000,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "thunder_clap_nova",
+    "element": "thunder",
+    "kind": "damage",
+    "power": 110,
+    "cooldown_ms": 8000,
+    "accuracy": 75,
+    "range_class": "melee",
+    "shape": "aoe"
+  },
+  {
+    "id": "light_prism_beam",
+    "element": "light",
+    "kind": "damage",
+    "power": 45,
+    "cooldown_ms": 1500,
+    "accuracy": 100,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "light_dawn_flash",
+    "element": "light",
+    "kind": "damage",
+    "power": 50,
+    "cooldown_ms": 2000,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "aoe"
+  },
+  {
+    "id": "light_solar_burst",
+    "element": "light",
+    "kind": "damage",
+    "power": 75,
+    "cooldown_ms": 4200,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "cone"
+  },
+  {
+    "id": "light_radiant_step",
+    "element": "light",
+    "kind": "damage",
+    "power": 95,
+    "cooldown_ms": 7000,
+    "accuracy": 85,
+    "range_class": "mid",
+    "shape": "dash"
+  },
+  {
+    "id": "shadow_umbral_fang",
+    "element": "shadow",
+    "kind": "damage",
+    "power": 35,
+    "cooldown_ms": 1000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "cone"
+  },
+  {
+    "id": "shadow_void_step",
+    "element": "shadow",
+    "kind": "damage",
+    "power": 55,
+    "cooldown_ms": 2400,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "dash"
+  },
+  {
+    "id": "shadow_abyss_ray",
+    "element": "shadow",
+    "kind": "damage",
+    "power": 80,
+    "cooldown_ms": 5200,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line"
+  },
+  {
+    "id": "shadow_eclipse_collapse",
+    "element": "shadow",
+    "kind": "damage",
+    "power": 115,
+    "cooldown_ms": 9000,
+    "accuracy": 75,
+    "range_class": "mid",
+    "shape": "aoe"
+  }
+]
