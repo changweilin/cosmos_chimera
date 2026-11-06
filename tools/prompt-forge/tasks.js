@@ -109,11 +109,26 @@
 
   const TASKS = [
     {
-      id: "character-concept", version: "1.0.0", zh: "角色設計概念與立繪", prefix: "chr", platform: "chatgpt",
+      id: "character-concept", version: "1.2.0", zh: "角色設計概念與立繪", prefix: "chr", platform: "chatgpt",
       needs: "character", drop: "Art/_incoming",
       options: [],
       build(ctx) {
         const S = ctx.subjectId, c = ctx.concept;
+        const conceptJsonSchema = {
+          id: S, name_zh: "", name_en: "", role: c.role, ethnicity: c.ethnicity, region: c.region, timeline: c.timeline,
+          gender: c.gender, age: c.age, height_cm: c.height, weight_kg: c.weight, body_fat_pct: c.body_fat
+        };
+        if (c.gender === "女" && c.cup_size !== undefined) {
+          conceptJsonSchema.cup_size = c.cup_size;
+        }
+        Object.assign(conceptJsonSchema, {
+          outfit_palette: c.outfit_palette, hair_palette: c.hair_palette, eye_palette: c.eye_palette,
+          personality: c.personality, style: c.style, interests: c.interests, likes: c.likes, dislikes: c.dislikes,
+          vessel: c.vessel, palette_hex: ["#", "#", "#", "#", "#"], silhouette_keywords: [""],
+          outfit_breakdown: [{ part: "", material: "", color_hex: "" }],
+          backstory_zh: "≤120 字", voice_lines_zh: ["", "", ""], sensitivity: "ok|review", sensitivity_note: ""
+        });
+
         const body = [
           "## 輸入概念（已由企劃決定，可在不違背的前提下補完細節）",
           json(c),
@@ -129,29 +144,23 @@
           "| `images/" + S + "_props.png` | 道具板：背包、慣用收服道具（" + c.vessel_zh + "）、配件，各附尺寸感 | L1 |",
           "",
           "### concept.json 欄位",
-          json({
-            id: S, name_zh: "", name_en: "", role: c.role, ethnicity: c.ethnicity, region: c.region,
-            gender: c.gender, age: c.age, height_cm: 0, body_type: "",
-            personality: c.personality, style: c.style, interests: c.interests, likes: c.likes, dislikes: c.dislikes,
-            vessel: c.vessel, palette_hex: ["#", "#", "#", "#", "#"], silhouette_keywords: [""],
-            outfit_breakdown: [{ part: "", material: "", color_hex: "" }],
-            backstory_zh: "≤120 字", voice_lines_zh: ["", "", ""], sensitivity: "ok|review", sensitivity_note: ""
-          }),
+          json(conceptJsonSchema),
           "",
           "## 規格",
           list([
-            "身高依年齡合理推定（青少年約 150–175 cm），三視圖附身高刻度。",
+            "身高、體重、體脂率與服裝/髮/瞳配色請嚴格遵循輸入概念之比例及配色組合設定（三視圖附身高刻度）。",
+            (c.gender === "女" && c.cup_size && c.cup_size !== "未知") ? ("女性體態特徵：罩杯設定為 " + c.cup_size + "，立繪與三視圖請保持健康勻稱之卡通風格比例。") : null,
             "服裝要能做成 15–25k 三角面的遊戲模型：避免過多飄帶、半透明薄紗與細碎飾品；長髮/披風需可用少量骨骼驅動。",
             "雙手在 T-pose 時不可被服裝遮擋，腋下與跨下留出空間（方便自動綁骨）。",
             "背包與收服道具在模型上有固定掛點（背後、腰側、右手）。"
-          ])
+          ].filter(Boolean))
         ].join("\n");
         return common(ctx, body) + "\n\n" + deliverySection(ctx, "├── concept.json\n└── images/");
       }
     },
 
     {
-      id: "creature-concept", version: "1.0.0", zh: "宙獸設計概念與四型態立繪", prefix: "cr", platform: "chatgpt",
+      id: "creature-concept", version: "1.2.0", zh: "宙獸設計概念與四型態立繪", prefix: "cr", platform: "chatgpt",
       needs: "creature", drop: "Art/_incoming",
       options: [
         { key: "stages", type: "checks", label: "型態", items: () => C.STAGES.map(s => ({ v: s.v, zh: s.zh })), def: ["juvenile", "adolescent", "adult", "overload"] }
@@ -176,7 +185,10 @@
           "",
           "- 進化要**一眼看得出是同一條線**：保留 2–3 個貫穿特徵（花紋、角、核心發光點等）。",
           "- 幼年可愛圓潤；少年開始出現原型意象；成年完整呈現原型；**超載**＝成年在戰鬥中的短暫爆發型態（能量外溢、裝甲展開、光環），輪廓更具威脅但仍可辨識。",
-          "- 外觀基底組合（" + c.bases.join(" + ") + "）要融合成一個生物，不是拼貼。",
+          "- 文化時空與原型結合：時空設定為「" + (c.timeline || "架空") + "」，文化原型為「" + (c.archetype || "自由發揮") + "（" + (c.region || "未知") + "）」。",
+          "- 外觀基底階層（" + (c.base_parents ? c.base_parents.join(" + ") + " → " : "") + (c.bases ? c.bases.join(" + ") : "") + "）要融合成一個生物，不是拼貼。若包含類人奇幻種族，請融入該種族特徵與奇幻神韻。",
+          "- 外觀配色組合（" + (c.appearance_palette ? c.appearance_palette.join(" / ") : "屬性色系") + "）貫穿各型態（1~3 種和諧色系）。",
+          "- 成年體型基準：長/高約 " + c.height_length + "、重約 " + c.weight + "、體脂率約 " + c.body_fat + "（符合生物常態分佈，多數集中在常見大型鳥類至大型哺乳類體型，上限至暴龍級，排除小於老鼠之體型）。",
           "",
           "## 產出清單",
           "| 檔案 | 內容 | 層級 |",
@@ -188,8 +200,11 @@
           "",
           "### concept.json 欄位（不要填數值能力，數值另由平衡流程決定）",
           json({
-            line_id: S, elements: c.elements, bases: c.bases,
-            archetype: { name: c.archetype, region: c.region, motifs_used: [""], how_adapted: "" },
+            line_id: S, elements: c.elements, base_parents: c.base_parents, bases: c.bases,
+            appearance_palette: c.appearance_palette,
+            timeline: c.timeline, region: c.region,
+            height_m: c.height_length, weight_kg: c.weight, body_fat_pct: c.body_fat,
+            archetype: { name: c.archetype, region: c.region, timeline: c.timeline, motifs_used: [""], how_adapted: "" },
             sensitivity: c.sensitivity, role: c.role, temperament: c.temperament,
             stages: stages.map(s => ({
               stage: s.v, name_zh: "", name_en: "", size_class: s.size, height_m: 0,
