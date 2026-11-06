@@ -122,6 +122,12 @@ namespace Cosmimera.Planet
         public static float Warp(float s)
         {
             Contract.Requires(math.isfinite(s) && math.abs(s) <= 1f, "s must be finite and within [-1, 1]");
+            return WarpCore(s);
+        }
+
+        // Burst entry point (ADR-0006): no Contract calls, no managed statics. Callers validate inputs first.
+        internal static float WarpCore(float s)
+        {
             float a = math.abs(s);
             // FENCE: see type remarks — exact endpoints and mirrored evaluation make face seams bit-identical.
             float w = a >= 1f ? 1f : math.tan(a * (math.PI * 0.25f));
@@ -149,8 +155,54 @@ namespace Cosmimera.Planet
         public static float3 FaceToDirection(CubeFace face, float u, float v)
         {
             int f = CheckFace(face);
-            float3 cube = (float3)Normals[f] + (float3)AxesU[f] * Warp(u) + (float3)AxesV[f] * Warp(v);
+            Contract.Requires(math.isfinite(u) && math.abs(u) <= 1f && math.isfinite(v) && math.abs(v) <= 1f,
+                "u, v must be finite and within [-1, 1]");
+            return FaceToDirectionCore(f, u, v);
+        }
+
+        // Burst entry point shared with FaceToDirection, so the seam contract has one implementation (FENCE above).
+        // Axes come from switches, not the static arrays: touching CubeSphere's static fields would make Burst
+        // evaluate the whole static constructor, including BuildLinks, which it cannot.
+        internal static float3 FaceToDirectionCore(int face, float u, float v)
+        {
+            float3 cube = AxisNormalCore(face) + AxisUCore(face) * WarpCore(u) + AxisVCore(face) * WarpCore(v);
             return math.normalize(cube);
+        }
+
+        private static float3 AxisNormalCore(int f)
+        {
+            switch (f)
+            {
+                case 0: return new float3(1f, 0f, 0f);
+                case 1: return new float3(-1f, 0f, 0f);
+                case 2: return new float3(0f, 1f, 0f);
+                case 3: return new float3(0f, -1f, 0f);
+                case 4: return new float3(0f, 0f, 1f);
+                default: return new float3(0f, 0f, -1f);
+            }
+        }
+
+        private static float3 AxisUCore(int f)
+        {
+            switch (f)
+            {
+                case 0: return new float3(0f, 0f, -1f);
+                case 1: return new float3(0f, 0f, 1f);
+                case 2:
+                case 3:
+                case 4: return new float3(1f, 0f, 0f);
+                default: return new float3(-1f, 0f, 0f);
+            }
+        }
+
+        private static float3 AxisVCore(int f)
+        {
+            switch (f)
+            {
+                case 2: return new float3(0f, 0f, -1f);
+                case 3: return new float3(0f, 0f, 1f);
+                default: return new float3(0f, 1f, 0f);
+            }
         }
 
         /// <summary>Face and parameters (u, v) whose <see cref="FaceToDirection"/> is <paramref name="direction"/>.</summary>

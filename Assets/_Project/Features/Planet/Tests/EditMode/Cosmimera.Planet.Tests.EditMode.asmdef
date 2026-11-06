@@ -5,6 +5,8 @@
         "Cosmimera.Core",
         "Cosmimera.Planet",
         "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
