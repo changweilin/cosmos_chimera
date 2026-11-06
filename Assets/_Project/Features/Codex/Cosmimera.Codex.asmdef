@@ -1,0 +1,19 @@
+{
+    "name": "Cosmimera.Codex",
+    "rootNamespace": "Cosmimera.Codex",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Combat",
+        "Cosmimera.Capture",
+        "Cosmimera.Creatures"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
