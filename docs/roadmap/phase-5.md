@@ -14,7 +14,7 @@
 | P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | ⬜ |
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | ⬜ |
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | ⬜ |
-| P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | ⬜ |
+| P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | 🟨 |
 
 ## 交接紀錄
 - 2026-11-06 · Claude Opus · partial · P5-04：建立 `tools/prompt-forge`（7 種任務 prompt、版本標頭、交付規格），設計文件補上超載、體型級距、收服道具三類別 · 下一步：人工用工具試跑一輪 creature-concept；Q-T3 選定 3D 工具；Q-C12/Q-C13/Q-A1 待定
@@ -27,3 +27,4 @@
 - 2026-11-06 · Gemini Flash（agy，Claude Opus 驗收）· partial · P5-05 特性草稿 batch 03：`Data/_incoming/p5-05-traits-draft-03/`，30 個特性（每屬性 3 個），第一批直接對 P2-01 封閉後的 trigger/effect schema 產出。Opus 以腳本重驗：`validate-data --root` 0 錯誤、id 不與 batch 01/02／retired 衝突、與舊批無「同屬性＋同觸發＋同效果組合」近似重複、每個最多 2 效果、10 個帶副作用且每屬性 1 個（cd 正值算副作用）、所有參數在 batch 02 數值帶內、`always` 平均幅度 11 低於條件型 16。只補了 1 個先前未出現的（觸發, 效果）組合（兩批後大多已覆蓋）。累計 90 特性 · 下一步：人工審查；數值交 SOL
 - 2026-11-06 · Gemini Flash（agy，Claude Opus 驗收）· partial · P5-05 招式草稿 batch 05：`Data/_incoming/p5-05-moves-draft-05/`，30 招狀態/輔助招（每屬性 2 effect + 1 both），第一批用 `effect_duration_ms` 與九種形狀的 self/ally：self 12、ally 6、敵方 12（front/sweep/burst/line/cone/arc 各 2，無 field）；7 種效果各 4–5 次，heal 4。Opus 以腳本重驗：`validate-data --root` 0 錯誤、無浮點、id 不與 batch 01–04／retired 衝突、友方增益為正（cd 為負）、敵方減益為負（cd 為正）、heal 只對友方且不帶 duration、duration 3000–15000、射程與 origin 規則、CD 帶全部符合。累計 180 招 · 下一步：人工審查；P2-09 定疊加/刷新規則；數值交 SOL
 - 2026-11-06 · ChatGPT Terra（Codex CLI，唯讀；Claude Opus 驗收）· partial · moves batch 05／traits batch 03 第二審（與 Flash 不同源）：7 項，Opus 以腳本逐項核對屬實。支配：`trait_earth_shattered_carapace`（<30%、射程+20、土抗-15）全面劣於 `trait_wood_thorn_lash`（<35%、射程+20）；`trait_light_saving_grace`（<25% 回 12%）劣於 `trait_water_cleansing_tide`（<30% 回 12%）— 建議改 +25／15%，**待人工決定**（是否支配取決於 P2-09 的門檻觸發語意）。README 三處文案與數值不符（「blinding」實為射程-20%、「pins」實為減速、both 招的「guaranteed」debuff 仍需命中）已修正。命名：`wood_photosynthesis` 招與同名特性撞名、`light_aureole_halo` 語意重複。另指出這兩批沒有玩家顯示用的 name/description 欄位，文案審查無對象。報告：`docs/reviews/P5-05-batch05-traits03-terra.md` · 下一步：人工決定兩項數值與命名；正式顯示文案欄位待 schema 決定
+- 2026-11-06 · Claude Sonnet（agy）→ Claude Opus 完成與驗收 · partial（待人工）· P5-09：`tools/validate-art`（`validate_art.py`，僅標準函式庫）：manifest 欄位/標頭/task_id 前綴、files 與磁碟一致、missing 只能是 L2、依 spec＋tasks.js 的命名規則、PNG 標頭與 CRC、`kind: texture` 才強制 1024/2048 正方（使用者決定：其他圖只報告尺寸）、JSON 可解析；`--apply` 先算完整計畫、任何目的地已存在/被檔案擋住就整包不動，`--dry-run`、`--json`。agy 在額度用盡前寫完工具與 28 個 fixture；Opus 審查並寫 `tools/tests/test_validate_art.py`（22 項，PNG 由測試產生，不提交二進位）。`model-rig`/`animation-set`/`move-vfx` 與無階段宙獸總覽圖在 spec〈放置位置〉沒有可決定的資料夾，工具拒絕自動搬移（未猜） · 下一步：人工以一包真實交付試跑；決定上述三類與 lineup/scale 的放置規則

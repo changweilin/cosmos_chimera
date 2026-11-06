@@ -1,0 +1,13 @@
+[
+  {
+    "id": "sample_ember_field",
+    "element": "fire",
+    "kind": "damage",
+    "power": 10,
+    "cooldown_ms": 8000,
+    "accuracy": 100,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000
+  }
+]

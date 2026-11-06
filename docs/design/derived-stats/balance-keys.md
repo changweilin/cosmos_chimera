@@ -48,6 +48,8 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 繪圖：`python tools/balance/plot_curves.py`（直接寫 SVG，僅標準函式庫）。
 
 `python tools/validate_data.py` 不掃描 `balance.json`；係數型別 / 算術包絡由參考 loader（`tools/balance` 測試）與 C# `DerivedStatsCoefficients` 建構子檢查。
+| `field.tick_ms` | Q-C17：場地兩次結算的間隔；放置當下即結算第一次 |
+| `effects.multiplier_min_percent` / `multiplier_max_percent` | P2-09：相對百分比效果（cd/evasion/speed/range）加總後的倍率 100+Σ 夾在此區間（暫定 10–300） |
 | `team.switch_cooldown_ms` | P2-06 共用切換冷卻：換手或主動收回後開始；開場召喚與倒下後補位不觸發，但會等冷卻結束 |
 | `player.max_hp` | 玩家角色固定 HP，不由能力值推導（P2-06 暫定） |
 | `player.roll_duration_ms` | 一次翻滾全長 |

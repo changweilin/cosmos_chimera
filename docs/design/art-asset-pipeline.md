@@ -11,10 +11,12 @@ ChatGPT / Gemini Argon（產圖、規格、腳本 → 打包 <task_id>.zip）
    ▼
 下載 → 解壓到 Art/_incoming/  →  得到 Art/_incoming/<task_id>/manifest.json …
    ▼
-Claude Code：「驗收 Art/_incoming/<task_id>」→ 檢查 manifest、命名、尺寸
+Claude Code：「驗收 Art/_incoming/<task_id>」→ tools/validate-art 檢查 manifest、命名、尺寸
    ▼
 人工定稿 → 搬入 Assets/_Project/Art/…（概念 JSON 進 Data/_incoming/<task_id>/）
 ```
+
+驗收工具（P5-09）：`tools/validate-art Art/_incoming/<task_id>` 輸出報告（`--json` 給機器讀）；人工定稿後 `--apply` 一鍵搬移（先 `--dry-run` 看計畫）。只有完全合規才搬，任何目的地已存在就整包不動。圖片尺寸只報告，僅 `kind: texture` 強制正方 1024/2048（2026-11-06 使用者決定）。`model-rig`、`animation-set`、`move-vfx` 與無階段的宙獸總覽圖（lineup/scale）在〈放置位置〉沒有足以決定資料夾的規則，工具拒絕自動搬移、需手動放置。
 
 ## 任務類型
 | 任務 ID | 內容 | 建議平台 | 依賴 |

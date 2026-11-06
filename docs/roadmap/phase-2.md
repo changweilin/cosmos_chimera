@@ -2,7 +2,7 @@
 
 **出口條件**：攜帶御三家（各 3 階段）進場，可召喚、輪替、配副手、施放招式，對木樁與 2 種簡單敵人戰鬥；所有數值來自 `Data/`。
 讀：`../design/creatures.md`、`../design/combat.md`
-**已定案**：Q-C1～Q-C8（2026-11-06）。**仍待定**：Q-C9（影響 P2-05）、Q-C10（影響 P2-07）、Q-C11（影響 P2-10）
+**已定案**：Q-C1～Q-C8（2026-11-06）。**已定案**：Q-C9、Q-C10、Q-C17（2026-11-06）。**仍待定**：Q-C11（影響 P2-10）、Q-C12（超載，影響 P2-05 超載部分）
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
@@ -10,11 +10,11 @@
 | P2-02 | 能力值→衍生值函數（HP、範圍、CD、移速、閃避）+ 上下限 | SOL | OPUS | 曲線圖 + 不變式測試 | ✅ |
 | P2-03 | 傷害計算（威力×專精×抗性，無相剋表、無攻防值） | SONNET | OPUS | EditMode 測試含邊界（免疫、弱點） | ✅ |
 | P2-04 | 兩段命中（幾何→擲骰，evasion 上限、hit_floor）、MISS 回饋、九種招式形狀與獨立突進位移（見 combat.md） | SONNET | OPUS | 固定 seed 下命中率統計誤差 < 1%；判定體與 STR 範圍縮放一致 | 🟦 |
-| P2-05 | 進化系統：經驗門檻 + 屬性素材，三階段切換、模型替換 | SONNET | OPUS | 經驗或素材任一不足時拒絕並說明缺什麼 | ⬜ |
+| P2-05 | 進化系統：經驗門檻 + 屬性素材，三階段切換、模型替換 | SONNET | OPUS | 經驗或素材任一不足時拒絕並說明缺什麼 | 🟦 |
 | P2-06 | 隊伍：6 主力 / 4 上場池 / 同時 2 隻在場、切換冷卻、退場規則；玩家角色 HP 與翻滾無敵幀 | SONNET | OPUS | 規則層測試涵蓋所有上限 | ✅ |
-| P2-07 | 副手：從倉庫挑選、關係表資格檢查、每隻副手招式/特性二選一 | SONNET | OPUS | 無關係邊時拒絕並給 UI 理由 | ⬜ |
+| P2-07 | 副手：從倉庫挑選、關係表資格檢查、每隻副手招式/特性二選一 | SONNET | OPUS | 無關係邊時拒絕並給 UI 理由 | ✅ |
 | P2-08 | 御三家日月星概念與資料（9 隻） | OPUS（概念）+ TERRA（文案） | 人工 | 三條線定稿入 `Data/creatures/` | ⬜ |
-| P2-09 | 特性系統：觸發條件 + 效果資料驅動 | SONNET | OPUS | 新增特性只需改 JSON | ⬜ |
+| P2-09 | 特性系統：觸發條件 + 效果資料驅動 | SONNET | OPUS | 新增特性只需改 JSON | 🟨 |
 | P2-10 | 宙獸戰鬥 AI（行為樹或效用 AI）+ 玩家指令（2 隻在場的指令分派，依 Q-C11） | OPUS | SONNET | 日=保距、月=繞背、星=突進，行為可辨識；8 隻同時 AI 仍達幀率預算 | ⬜ |
 | P2-11 | 戰鬥 HUD（HP、CD、輪替列、副手提示） | SONNET | 人工 | 4 隻輪替狀態一眼可讀 | ⬜ |
 
@@ -39,3 +39,6 @@
 - 2026-11-06 · ChatGPT Sol（第四輪，唯讀）→ Claude Opus 修正 · partial · P2-04 r4 **fail**：r3 的遠半球誤命中、退化帶契約已修；剩 float32 精度問題 Q1（偏移中心下落點距離超 Post 0.4 mm）、Q2（近同向瞄準誤走 North 退化分支）、Q3（落點經 float 捨入後越出殼層，無法再交給 `Overlaps`）、Q4（退化帶外近對蹠瞄準因 float 叉積消去偏離 ~1 m）。Opus 改法：`ResolveAnchor` 全程 double（相對座標、叉積、slerp），結果半徑夾在殼層內；North 退化只限遠側且 sin ≤ 1e-9；殼層 Pre 改 double 檢查並給 1e-6 相對餘裕，讓 ResolveAnchor → Overlaps 可串接。以 Sol 的 4 組見證補回歸。驗證：EditMode 408/408、0 警告。報告：`docs/reviews/P2-02-P2-04-sol-r4.md` · 下一步：SOL 第五輪
 - 2026-11-06 · ChatGPT Sol（第五輪，唯讀）→ Claude Opus 修正 · partial · P2-04 r5 **fail（僅 R1, low）**：r4 Q1/Q2/Q4、G1、r2 N3、r3 P1 fixed，30 項變異 29 killed（MG15 照舊不計）；R1：殼層餘裕依半徑比例計，但 float 捨入依世界座標大小，中心 16 km、內半徑 320 m 時落點低於內界 0.07 mm、無法交給 `Overlaps`。Opus 改：殼層兩端各放寬 1e-6 ×（中心最大分量 + 2R）公尺（約為最壞捨入的 10 倍）。補 R1 內/外殼層回歸。驗證：EditMode 409/409、0 警告。報告：`docs/reviews/P2-02-P2-04-sol-r5.md` · 下一步：SOL 第六輪
 - 2026-11-06 · Claude Opus · partial · P2-04 r6：SOL 第六輪因 Codex 用量上限中斷（尚未產出判定），R1 修正**未經獨立複審**。Opus 自行補 20000 組決定性隨機探針（R 640–8000、中心分量 ±16000、殼層內含兩端各 10%）驗證 `ResolveAnchor` 結果有限、可交給 `Overlaps`、且符合距離 Post。驗證：EditMode 410/410、0 警告。P2-04 維持 🟦（另有 MISS 表現回饋、Q-C17 未做） · 下一步：Codex 額度恢復後 SOL 第六輪（`sol-p2-04-r6` 提示沿用）；使用者回答 Q-C17
+- 2026-11-06 · Claude Opus · partial（待審）· P2-09 規則層 + Q-C17：使用者定案疊加（每個效果資料欄 `max_stacks` 1..10，預設 1＝只刷新；疊加鍵＝來源 id＋效果序號，與施放者無關）、相對百分比（同類加總後倍率夾 10–300% 只乘一次，再套原上下限）、`on_ally_swap`＝換手上場者、場地壽命 `field_duration_ms`＋每 1 s 結算（放置當下第一次）。`Combat/Runtime/Model/Effects.cs`：`EffectSpec`/`TriggerSpec`（可由 GameData def 轉換）、`EffectBook`（計時效果、疊加、7 種觸發；持續觸發在查詢時測，治療回傳百分比）、`EffectMath`（有效專精 0..1000、抗性 ±100、CD 向上取整再套下限、閃避/射程上限、`ApplyRange` 只改長度與施法距離、dash 不變）、`FieldTimeline`（(上一步, 這一步] 計數，任何步長不重不漏）。資料契約：`common.schema.json` effect 加 `max_stacks`（heal 禁用、trigger 禁用）、`move.schema.json` 加 `field_duration_ms`（iff field），importer/`EffectDef.MaxStacks`/`MoveDef.FieldDurationMs` 同步，`balance.json` 加 `field.tick_ms`、`effects.multiplier_*`。驗證：EditMode 520/520、0 警告；Python 17/17＋22/22＋balance 11/11；全部 `_incoming` 批次 0 錯誤；URP `PC_RPAsset` 遷移照例還原。**未做**：特性/效果接到 `TeamState`/命中流程的整合（P2-10 戰鬥迴圈）；暫定「收回不清除計時效果」待確認 · 下一步：SOL 對抗式審查 P2-09（作者為 OPUS，需跨廠商）；P2-10 接整合
+- 2026-11-06 · Claude Sonnet（agy）→ Claude Opus 完成與驗收 · partial · P2-05 進化規則層：agy 在額度用盡前寫完 `Features/Creatures` Api（`OwnedCreature`、`VesselKind`、`MaterialKey`/`MaterialInventory`、`EvolutionRequirement`、`EvolutionCheck`）與 `EvolutionRules`（僅大廳、經驗為門檻不消耗、一次列出所有缺少項、成功才全有或全無扣素材、高階不代低階）及部分測試；Opus 審查程式並補 `EvolutionRulesTests`。`validate-data` 的 `material_not_mastery` 由警告升為錯誤（Q-C9 定案；現有資料 0 錯誤）。**未做**：模型替換（表現層）、超載（Q-C12） · 下一步：P4 大廳 UI 接 `EvolutionCheck`；Q-C12 定案後補超載
+- 2026-11-06 · Claude Sonnet（agy）→ Claude Opus 完成與驗收 · done · P2-07 副手規則層：`PartnerLoadout`（每主力 ≤4、需關係邊、Q-C10 不可重複/主力不可當副手，拒絕順序寫入契約並測試）、`Provision`（符籙→副手 `signature_move`、琉璃珠→特性、魔術方塊→解鎖主力超載）、`FindInvalidPairs`（進化後失效配對只回報不移除）、`GameDatabase` 轉接器。Opus 審查並補 `PartnerLoadoutTests`。驗證同上（Creatures 52 項）。roadmap 原文「招式/特性二選一」已由 lobby-meta.md 改為依收服道具決定 · 下一步：P4 大廳 UI；轉接器（`GameDatabaseRelationGraph`/`SpeciesLookup`）尚無測試，需 importer 產生的資料庫，P4 接 UI 時補整合測試

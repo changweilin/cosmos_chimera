@@ -312,6 +312,17 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{m.Where}: effect_duration_ms must be 1..{MaxDurationMs}");
                 }
+
+                // REQ: docs/design/combat.md#場地 (Q-C17) — a field's lifetime is its own field, not effect_duration_ms.
+                bool isField = m.Dto.Shape == "field";
+                if (isField != m.Dto.FieldDurationMs.HasValue)
+                {
+                    errors.Add($"{m.Where}: field_duration_ms is required iff shape is 'field'");
+                }
+                else if (isField && (m.Dto.FieldDurationMs < 1 || m.Dto.FieldDurationMs > MaxDurationMs))
+                {
+                    errors.Add($"{m.Where}: field_duration_ms must be 1..{MaxDurationMs}");
+                }
             }
 
             foreach (Sourced<TraitDto> t in traits)
@@ -439,7 +450,7 @@ namespace Cosmimera.GameData.Editor
             {
                 MoveDto d = s.Dto;
                 moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
-                    d.EffectDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
+                    d.EffectDurationMs ?? 0, d.FieldDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
                     d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
                     d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
             }
@@ -604,6 +615,19 @@ namespace Cosmimera.GameData.Editor
                 return;
             }
 
+            // REQ: docs/design/combat.md#效果疊加 — stacking is an effect property; a heal is instant and never stacks.
+            if (dto.MaxStacks.HasValue)
+            {
+                if (vocabulary != EffectParams || dto.Type == "heal_percent_max_hp")
+                {
+                    errors.Add($"{where}: {field} '{dto.Type}' does not accept max_stacks");
+                }
+                else if (dto.MaxStacks < 1 || dto.MaxStacks > EffectDef.MaxStacksLimit)
+                {
+                    errors.Add($"{where}: {field} max_stacks must be 1..{EffectDef.MaxStacksLimit}");
+                }
+            }
+
             JObject ps = dto.Params ?? new JObject();
             foreach (JProperty p in ps.Properties())
             {
@@ -680,7 +704,7 @@ namespace Cosmimera.GameData.Editor
             JObject ps = dto.Params ?? new JObject();
             ReadElement(ps, out bool any, out Element element);
             return new EffectDef(ParseEnum<EffectType>(dto.Type), any, element,
-                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0);
+                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0, dto.MaxStacks ?? 1);
         }
 
         private static T ParseEnum<T>(string snake) where T : struct, Enum

@@ -13,6 +13,8 @@ namespace Cosmimera.GameData.Editor
     {
         [JsonProperty("type", Required = Required.Always)] public string Type;
         [JsonProperty("params", Required = Required.DisallowNull)] public JObject Params;
+        // Effects only (common.schema.json#/$defs/effect); the importer rejects it on triggers.
+        [JsonProperty("max_stacks", Required = Required.DisallowNull)] public int? MaxStacks;
     }
 
     internal sealed class MoveDto
@@ -23,6 +25,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("power", Required = Required.Always)] public int Power;
         [JsonProperty("effect")] public RuleDto Effect;
         [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
+        [JsonProperty("field_duration_ms", Required = Required.DisallowNull)] public int? FieldDurationMs;
         [JsonProperty("cooldown_ms", Required = Required.Always)] public int CooldownMs;
         [JsonProperty("accuracy", Required = Required.Always)] public int Accuracy;
         [JsonProperty("range_class", Required = Required.Always)] public string RangeClass;

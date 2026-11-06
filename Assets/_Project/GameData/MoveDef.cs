@@ -16,6 +16,7 @@ namespace Cosmimera.GameData
         [SerializeField] private bool hasEffect;
         [SerializeField] private EffectDef effect;
         [SerializeField] private int effectDurationMs;
+        [SerializeField] private int fieldDurationMs;
         [SerializeField] private int cooldownMs;
         [SerializeField] private int accuracy;
         [SerializeField] private RangeClass rangeClass;
@@ -60,6 +61,19 @@ namespace Cosmimera.GameData
             }
         }
 
+        /// <summary>Lifetime of the placed field in milliseconds.</summary>
+        /// <remarks>
+        /// REQ: docs/design/combat.md#場地 (Q-C17). Pre: Shape == Field. Post: 1..600000. Side effects: none.
+        /// </remarks>
+        public int FieldDurationMs
+        {
+            get
+            {
+                Contract.Requires(shape == MoveShape.Field, "only field moves have a field duration");
+                return fieldDurationMs;
+            }
+        }
+
         /// <summary>Cooldown in milliseconds.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
         public int CooldownMs => cooldownMs;
@@ -95,7 +109,7 @@ namespace Cosmimera.GameData
             }
         }
 
-        internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int effectDurationMs, int cooldownMs, int accuracy,
+        internal void Set(Element element, MoveKind kind, int power, EffectDef effect, int effectDurationMs, int fieldDurationMs, int cooldownMs, int accuracy,
             RangeClass rangeClass, MoveShape shape, int baseRangeMm, MoveMovement movement, BurstOrigin origin)
         {
             this.element = element;
@@ -104,6 +118,7 @@ namespace Cosmimera.GameData
             hasEffect = effect != null;
             this.effect = effect;
             this.effectDurationMs = effectDurationMs;
+            this.fieldDurationMs = fieldDurationMs;
             this.cooldownMs = cooldownMs;
             this.accuracy = accuracy;
             this.rangeClass = rangeClass;

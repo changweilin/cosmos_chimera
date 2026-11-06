@@ -108,6 +108,8 @@ def _registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
 def _schema_message(err) -> str:
     # Conditional branches give bare type errors ("is not of type 'null'"); name the rule instead.
     branch = next((p for p in err.absolute_schema_path if p in ("then", "else")), None)
+    if branch is not None and err.validator == "not" and "max_stacks" in str(err.validator_value):
+        return "'max_stacks' is not allowed on instant heals (heal_percent_max_hp)"
     if branch is not None and "allOf" in err.absolute_schema_path and any(
         p in ("trigger", "effect", "effects") for p in err.absolute_path
     ):
@@ -117,6 +119,8 @@ def _schema_message(err) -> str:
         if "allOf" in err.absolute_schema_path:
             if err.validator == "not" and "effect_duration_ms" in str(err.validator_value):
                 return "'effect_duration_ms' must be omitted for damage moves and instant heals"
+            if "field_duration_ms" in str(err.validator_value):
+                return "'field_duration_ms' is required iff shape is field (Q-C17)"
             return err.message
         hint = "adult stage requires null" if branch == "then" else "non-adult stage requires a value"
         if err.validator == "not":
@@ -254,15 +258,15 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
 
 
 def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
-    # Q-C9 is provisional (material element == mastery element), so this warns instead of failing CI.
+    # REQ: docs/design/creatures.md#進化 — Q-C9 decided 2026-11-06: material element must be a mastery element.
     evo, mastery = r.data.get("evolution"), r.data.get("mastery")
     if not (isinstance(evo, dict) and isinstance(mastery, dict)):
         return
     for i, m in enumerate(evo.get("materials") or []):
         el = m.get("element") if isinstance(m, dict) else None
         if isinstance(el, str) and el not in mastery:
-            findings.append(Finding("warning", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
-                                    f"'{el}' is not one of this creature's mastery elements {sorted(mastery)} (Q-C9 provisional rule)"))
+            findings.append(Finding("error", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
+                                    f"'{el}' is not one of this creature's mastery elements {sorted(mastery)} (Q-C9)"))
 
 
 def main(argv: list[str] | None = None) -> int:

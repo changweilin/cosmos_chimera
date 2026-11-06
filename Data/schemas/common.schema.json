@@ -68,9 +68,14 @@
       "additionalProperties": false,
       "properties": {
         "type": { "enum": ["mastery_mod", "resist_mod", "cd_mod_percent", "evasion_mod_percent", "move_speed_mod_percent", "range_mod_percent", "heal_percent_max_hp"] },
-        "params": { "type": "object" }
+        "params": { "type": "object" },
+        "max_stacks": {
+          "description": "P2-09: how many times this effect can stack on one target from the same move/trait id. 1 (default) = re-application only refreshes the duration. Not allowed on instant heals.",
+          "type": "integer", "minimum": 1, "maximum": 10, "default": 1
+        }
       },
       "allOf": [
+        { "if": { "properties": { "type": { "const": "heal_percent_max_hp" } } }, "then": { "not": { "required": ["max_stacks"] } } },
         { "if": { "properties": { "type": { "const": "mastery_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "resist_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "cd_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/elementOrAny" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },

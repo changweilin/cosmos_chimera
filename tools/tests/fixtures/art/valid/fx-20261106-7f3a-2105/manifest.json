@@ -1,0 +1,19 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=1.0.0 catalog=1.0.0 template=move-vfx@1.0.0 task_id=fx-20261106-7f3a-2105 seed=7f3a]",
+  "task_id": "fx-20261106-7f3a-2105",
+  "task_type": "move-vfx",
+  "subject_id": "line_7f3a",
+  "produced_by": "ChatGPT",
+  "files": [
+    {"path": "vfx/fx_fire_ranged_cone_heavy_spec.json", "kind": "spec", "level": "L1"},
+    {"path": "images/fx_fire_ranged_cone_heavy_storyboard.png", "kind": "storyboard", "level": "L1"},
+    {"path": "images/fx_fire_ranged_cone_heavy_layers.png", "kind": "sheet", "level": "L1"},
+    {"path": "vfx/fx_common_hit_spark_spec.json", "kind": "spec", "level": "L1"},
+    {"path": "images/fx_common_hit_spark_storyboard.png", "kind": "storyboard", "level": "L1"}
+  ],
+  "missing": [
+    {"item": "vfx/fx_fire_ranged_cone_heavy_flipbook.png", "level": "L2", "reason": "cannot render a 2048 flipbook"}
+  ],
+  "notes": ""
+}

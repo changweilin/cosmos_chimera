@@ -25,6 +25,13 @@ namespace Cosmimera.Combat.Tests
                 (int)h["field_radius_mm"], (int)h["target_cast_mid_mm"], (int)h["target_cast_long_mm"]);
         }
 
+        public static EffectRulesConfig EffectConfig()
+        {
+            JObject b = BalanceJson();
+            return new EffectRulesConfig((int)b["effects"]["multiplier_min_percent"],
+                (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"]);
+        }
+
         public static int SwitchCooldownMs() => (int)BalanceJson()["team"]["switch_cooldown_ms"];
 
         public static PlayerVitalsConfig PlayerConfig()

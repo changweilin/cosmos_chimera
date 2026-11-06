@@ -55,7 +55,7 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 | burst caster | 圓 | 施放者 | base_range（半徑） | — |
 | burst target | 圓 | 瞄準點，限制在 g(STR)×`target_cast_{mid,long}_mm` 內 | base_range（半徑，不受 STR） | 只能 mid/long |
 | arc | 圓（落點） | 瞄準點，限制在射程 base_range 內 | `arc_landing_radius_mm` | 拋物線軌跡屬表現層 |
-| field | 圓 | 瞄準點，限制在射程 base_range 內 | `field_radius_mm` | 持續時間 / 結算頻率待定（Q-C17） |
+| field | 圓 | 瞄準點，限制在射程 base_range 內 | `field_radius_mm` | 壽命＝招式 `field_duration_ms`，結算見〈場地〉 |
 | self / ally | 無 / 隊友距離 ≤ 射程 | — | — | ally 不看高度 |
 
 - **STR 縮放**：melee 所有尺寸（長、寬、高、半徑）乘 `MeleeLinearPermille`；mid/long 只把長度 / 射程 / 施法距離換成 `RangedDistanceMm`（含 36 m 上限），寬度、角度、AoE 半徑不變；dash 的路徑長度與位移固定等於 base_range，不縮放。
@@ -64,6 +64,25 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 
 ## 招式效果
 2026-11-06 使用者確認：`kind` 為 effect/both 的招式，除 `heal_percent_max_hp`（瞬間）外必須填 `effect_duration_ms`（1..600000），表示效果在每個被命中目標上持續的時間；heal 與 damage 招式不得填。作用對象由 `shape` 決定：`self` → 施放者、`ally` → 指定隊友、其他形狀 → 判定體命中的敵方目標。同一效果重複施加時的刷新/疊加規則由 P2-09 定。
+
+## 場地（Q-C17 定案 2026-11-06）
+- `shape: field` 的招式必填 `field_duration_ms`（1..600000），其他形狀不得填。場地存在於 [放置, 放置+壽命)。
+- 放置當下結算第一次，之後每 `Data/balance.json#field.tick_ms`（1000 ms）結算一次，共 ceil(壽命/間隔) 次；每次結算對判定體內每個目標各做一次完整招式結算（命中擲骰＋傷害/效果），所以同一目標每次結算最多被作用一次。
+- 規則層：`FieldTimeline`（`Combat/Runtime/Model/Effects.cs`）；模擬步進以 (上一步, 這一步] 計數，任何步長都不重複、不漏算。
+
+## 效果疊加（P2-09，2026-11-06 使用者確認）
+- 疊加鍵＝（來源招式/特性 id, 效果序號），**與施放者無關**：兩隻同招的隊友不會讓同一增益翻倍；不同來源一律相加。
+- 每個效果可在資料填 `max_stacks`（1..10，預設 1）。1＝重複施加只刷新時間；>1＝每次 +1 層直到上限，之後只刷新。刷新會重置整疊的剩餘時間（整疊一起消失）。治療是瞬間效果，不可填 `max_stacks`。
+- 單位：`mastery_mod` / `resist_mod` 是百分點（直接加到專精/抗性）；`cd_mod_percent` / `evasion_mod_percent` / `move_speed_mod_percent` / `range_mod_percent` 是衍生值的**相對**百分比：同類全部先加總，倍率 100+Σ 夾在 `Data/balance.json#effects` 的 [10%, 300%]，只乘一次，再套回原本的上下限（閃避上限、射程 36 m 上限、CD 下限 250 ms）。先加總再乘，讓結果與施加順序無關（各端施加順序不保證一致）。
+- 有效專精夾在 0..1000（傷害 API 域）；有效抗性夾在 ±100。CD 乘完後向上取整（與 P2-02 相同：CD 不得提早轉好）。
+- `range_mod_percent` 只改「打多遠」：front/line/sweep/cone 的長度，以及瞄準點/友方招式的施法距離；AoE 半徑、寬度、角度不變；dash 不受影響。
+- 規則層：`EffectBook`（每個戰鬥單位一份）、`EffectMath`。
+
+## 特性觸發（P2-09）
+- 持續判定（查詢當下測試，不存計時）：`always`；`on_hp_below{p}` 在 HP×100 < p×最大HP 時成立；`on_hp_above{p}` 在 HP×100 > p×最大HP 時成立（皆為嚴格不等式）。
+- 事件觸發（開啟 `duration_ms` 視窗，依效果的 `max_stacks` 疊加/刷新）：`on_summon`＝每次上場（開場召喚與換手上場都算）；`on_ally_swap`＝**換手上場的那一隻**（使用者確認）；`on_hit_taken{element|any}`＝命中確定（幾何＋擲骰）後，依招式屬性比對；`on_move_used{element}`＝自己使用該屬性的招式。
+- 事件觸發的治療效果立即回傳治療百分比給呼叫端；治療不可掛在持續觸發上。
+- 暫定（未定案，待 P2-10/P3 戰鬥流程確認）：收回宙獸時不清除身上的計時效果（以絕對時間到期）；戰鬥結束呼叫 `Clear`。
 
 ## 招式形狀（動畫與特效分類用）
 | 類別 | `range_class` | `shape` | 說明 |

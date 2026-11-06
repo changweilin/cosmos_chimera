@@ -1,0 +1,19 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=1.0.0 catalog=1.0.0 template=capture-vessel@1.0.0 task_id=vsl-20261106-7f3a-2105 seed=7f3a]",
+  "task_id": "vsl-20261106-7f3a-2105",
+  "task_type": "capture-vessel",
+  "subject_id": "vessels",
+  "produced_by": "ChatGPT",
+  "files": [
+    {"path": "concept.json", "kind": "spec", "level": "L1"},
+    {"path": "images/vsl_glass_bead_concept.png", "kind": "main", "level": "L1"},
+    {"path": "images/vsl_glass_bead_icon.png", "kind": "view", "level": "L1"},
+    {"path": "images/vsl_talisman_card_capture_storyboard.png", "kind": "storyboard", "level": "L1"},
+    {"path": "vfx/vsl_glass_bead_capture_spec.json", "kind": "spec", "level": "L1"}
+  ],
+  "missing": [
+    {"item": "models/vsl_glass_bead.glb", "level": "L2", "reason": "no 3D generation on this platform"}
+  ],
+  "notes": ""
+}

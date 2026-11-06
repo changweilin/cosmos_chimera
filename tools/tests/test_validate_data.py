@@ -25,11 +25,13 @@ EXPECTED = {
     "creatures/mastery_too_many.json": ("schema", "/0/mastery"),
     "creatures/missing_resist_key.json": ("schema", "/0/resist"),
     "moves/bad_id_case.json": ("schema", "/0/id"),
+    "moves/field_missing_duration.json": ("schema", "/0"),
     "moves/float_number.json": ("float_literal", ""),
     "moves/unknown_element.json": ("schema", "/0/element"),
     "relations/edge_wrong_order.json": ("edge_order", "/0"),
     "traits/unknown_trigger.json": ("schema", "/0/trigger/type"),
     "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
+    "traits/heal_max_stacks.json": ("schema", "/0/effects/0"),
 }
 
 
@@ -178,6 +180,8 @@ class CrossFileRules(unittest.TestCase):
                 if shape == "burst":
                     move["origin"] = "target"
                     move["range_class"] = "mid"  # a target-point burst cannot be melee
+                if shape == "field":
+                    move["field_duration_ms"] = 6000  # Q-C17: required iff field
                 self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
         for changes in [
             {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},
@@ -188,13 +192,13 @@ class CrossFileRules(unittest.TestCase):
                 findings = self._with_valid({"moves/review.json": json.dumps([move])})
                 self.assertIn("schema", self.codes(findings))
 
-    def test_material_outside_mastery_is_warning_only(self):
+    def test_material_outside_mastery_is_an_error(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")
         mutated = src.replace('"element": "fire",\n          "tier": 1', '"element": "ice",\n          "tier": 1', 1)
         self.assertNotEqual(src, mutated)
         findings = self._with_valid({"creatures/creatures.json": mutated})
         self.assertEqual({"material_not_mastery"}, self.codes(findings))
-        self.assertTrue(all(f.level == "warning" for f in findings))
+        self.assertTrue(all(f.level == "error" for f in findings))
 
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))

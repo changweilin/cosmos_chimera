@@ -244,6 +244,73 @@ namespace Cosmimera.GameData.Tests
             }
         }
 
+        private const string FieldMoveHead = "[{\"id\":\"sample_field\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":10,"
+            + "\"cooldown_ms\":8000,\"accuracy\":100,\"range_class\":\"mid\",\"base_range_mm\":12000";
+
+        [TestCase(",\"shape\":\"field\",\"field_duration_ms\":6000", true)]
+        [TestCase(",\"shape\":\"field\",\"field_duration_ms\":600000", true)]
+        [TestCase(",\"shape\":\"field\"", false)]
+        [TestCase(",\"shape\":\"field\",\"field_duration_ms\":0", false)]
+        [TestCase(",\"shape\":\"field\",\"field_duration_ms\":600001", false)]
+        [TestCase(",\"shape\":\"line\",\"field_duration_ms\":6000", false)]
+        public void Field_duration_is_required_iff_the_shape_is_field(string tail, bool valid)
+        {
+            File.WriteAllText(Path.Combine(_src, "moves/field.json"), FieldMoveHead + tail + "}]");
+
+            if (!valid)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains("field_duration_ms", error.Message);
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_field", out MoveDef move));
+            Assert.Greater(move.FieldDurationMs, 0);
+        }
+
+        [Test]
+        public void Non_field_move_has_no_field_duration()
+        {
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+
+            Assert.Throws<ContractException>(() => _ = move.FieldDurationMs);
+        }
+
+        [TestCase(Haste, "", 1)]
+        [TestCase(",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20},\"max_stacks\":1}", "", 1)]
+        [TestCase(",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20},\"max_stacks\":10}", "", 10)]
+        [TestCase(",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20},\"max_stacks\":0}", "max_stacks", 0)]
+        [TestCase(",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20},\"max_stacks\":11}", "max_stacks", 0)]
+        [TestCase(",\"effect\":{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":20},\"max_stacks\":2}", "max_stacks", 0)]
+        public void Max_stacks_defaults_to_one_and_is_bounded(string effect, string expectedError, int expectedStacks)
+        {
+            string duration = effect.Contains("heal_percent") ? "" : ",\"effect_duration_ms\":5000";
+            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
+
+            if (expectedError.Length > 0)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains(expectedError, error.Message);
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
+            Assert.AreEqual(expectedStacks, move.Effect.MaxStacks);
+        }
+
+        [Test]
+        public void Max_stacks_on_a_trigger_is_rejected()
+        {
+            ReplaceInFile("traits/traits.json", "\"type\": \"on_hp_below\"", "\"max_stacks\": 2, \"type\": \"on_hp_below\"");
+
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains("does not accept max_stacks", error.Message);
+        }
+
         [Test]
         public void Melee_target_point_burst_is_rejected()
         {
@@ -366,6 +433,11 @@ namespace Cosmimera.GameData.Tests
                 move["range_class"] = "mid"; // a target-point burst cannot be melee
             }
 
+            if (shape == "field")
+            {
+                move["field_duration_ms"] = 6000; // Q-C17: required iff field
+            }
+
             JArray all = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
             all[0] = move;
             File.WriteAllText(Path.Combine(_src, "moves/moves.json"), all.ToString());
@@ -380,6 +452,8 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(MoveMovement.None, actual.Movement);
             if (shape == "burst") Assert.AreEqual(BurstOrigin.Target, actual.Origin);
             else Assert.Throws<ContractException>(() => _ = actual.Origin);
+            if (shape == "field") Assert.AreEqual(6000, actual.FieldDurationMs);
+            else Assert.Throws<ContractException>(() => _ = actual.FieldDurationMs);
         }
 
         [TestCase("S", CreatureSizeClass.S)]
