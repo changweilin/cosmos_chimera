@@ -110,6 +110,8 @@ def _schema_message(err) -> str:
     branch = next((p for p in err.absolute_schema_path if p in ("then", "else")), None)
     if branch is not None and err.validator == "not" and "max_stacks" in str(err.validator_value):
         return "'max_stacks' is not allowed on instant heals (heal_percent_max_hp)"
+    if branch is not None and err.validator == "not" and "heal_percent_max_hp" in str(err.validator_value)             and "effects" in err.absolute_path:
+        return "heal_percent_max_hp needs an event trigger; always/on_hp_below/on_hp_above are continuous"
     if branch is not None and "allOf" in err.absolute_schema_path and any(
         p in ("trigger", "effect", "effects") for p in err.absolute_path
     ):

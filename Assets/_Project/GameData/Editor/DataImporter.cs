@@ -329,15 +329,23 @@ namespace Cosmimera.GameData.Editor
             {
                 Claim(t.Where, t.Dto.Id, "trait");
                 CheckRule(t.Where, "trigger", t.Dto.Trigger, TriggerParams, errors);
-                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0)
+                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0 || t.Dto.Effects.Count > TraitDef.MaxEffects)
                 {
-                    errors.Add($"{t.Where}: effects must have at least one entry");
+                    errors.Add($"{t.Where}: effects must have 1..{TraitDef.MaxEffects} entries");
                     continue;
                 }
 
+                // REQ: docs/design/combat.md#特性觸發 — a heal is instant; a continuous trigger has no moment to fire it
+                // (SOL P2-09 E4: the schema accepted it and EffectBook then rejected the imported trait).
+                bool continuous = t.Dto.Trigger != null
+                    && (t.Dto.Trigger.Type == "always" || t.Dto.Trigger.Type == "on_hp_below" || t.Dto.Trigger.Type == "on_hp_above");
                 for (int i = 0; i < t.Dto.Effects.Count; i++)
                 {
                     CheckRule(t.Where, $"effects[{i}]", t.Dto.Effects[i], EffectParams, errors);
+                    if (continuous && t.Dto.Effects[i]?.Type == "heal_percent_max_hp")
+                    {
+                        errors.Add($"{t.Where}: effects[{i}] heal_percent_max_hp needs an event trigger, not '{t.Dto.Trigger.Type}'");
+                    }
                 }
             }
 

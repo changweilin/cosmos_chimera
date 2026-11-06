@@ -367,6 +367,41 @@ namespace Cosmimera.GameData.Tests
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
+        // SOL P2-09 E4: schema-valid data that EffectBook rejected must already fail at import.
+        [TestCase("{\"type\":\"always\"}", 1, false, "")]
+        [TestCase("{\"type\":\"on_hp_below\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"on_hp_above\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"always\"}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 1, true, "")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 8, false, "")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 9, false, "effects must have")]
+        public void Trait_effects_are_bounded_and_heals_need_an_event_trigger(string trigger, int count, bool heal, string expectedError)
+        {
+            string effect = heal
+                ? "{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":10}}"
+                : "{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":20}}";
+            var effects = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < count; i++)
+            {
+                effects.Add(effect);
+            }
+
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger + ",\"effects\":[" + string.Join(",", effects) + "]}]");
+
+            if (expectedError.Length > 0)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains(expectedError, error.Message);
+                Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.AreEqual(count, trait.Effects.Count);
+        }
+
         [TestCase("{\"type\":\"always\"}", true)]
         [TestCase("{\"type\":\"always\",\"params\":{}}", true)]
         [TestCase("{\"type\":\"always\",\"params\":null}", false)]

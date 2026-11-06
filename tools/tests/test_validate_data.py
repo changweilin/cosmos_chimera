@@ -113,6 +113,23 @@ class CrossFileRules(unittest.TestCase):
         edge = '[{"a":"sample_fox_cub","b":"sample_fox_lord","kind":"friends"}]'
         self.assertIn("schema", self.codes(self._with_valid({"relations/more.json": edge})))
 
+    def test_trait_heal_needs_event_trigger_and_effects_are_bounded(self):
+        # SOL P2-09 E4: these were schema-valid but rejected by EffectBook.
+        heal = '{"type":"heal_percent_max_hp","params":{"percent":10}}'
+        mod = '{"type":"mastery_mod","params":{"element":"fire","delta":5}}'
+
+        def trait(trigger, effects):
+            return '[{"id":"sample_extra_trait","trigger":' + trigger + ',"effects":[' + ",".join(effects) + ']}]'
+
+        for trigger in ('{"type":"always"}', '{"type":"on_hp_below","params":{"percent":30}}',
+                        '{"type":"on_hp_above","params":{"percent":30}}'):
+            findings = self._with_valid({"traits/extra.json": trait(trigger, [heal])})
+            self.assertTrue(any("event trigger" in f.message for f in findings), trigger)
+        summon = '{"type":"on_summon","params":{"duration_ms":1000}}'
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait(summon, [heal])}))
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait(summon, [mod] * 8)}))
+        self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(summon, [mod] * 9)})))
+
     def test_effect_move_requires_effect(self):
         move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')

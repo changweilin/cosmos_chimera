@@ -14,7 +14,8 @@ namespace Cosmimera.Combat
     {
         /// <summary>Creates a validated effect.</summary>
         /// <remarks>
-        /// Pre: type is a defined EffectType; for HealPercentMaxHp: 1 &lt;= percent &lt;= 100, delta == 0, maxStacks == 1;
+        /// Pre: type is a defined EffectType; element is a defined Element even where it is meaningless (pass default);
+        ///      for HealPercentMaxHp: 1 &lt;= percent &lt;= 100, delta == 0, maxStacks == 1;
         ///      otherwise: -100 &lt;= delta &lt;= 100, percent == 0, 1 &lt;= maxStacks &lt;= EffectDef.MaxStacksLimit;
         ///      anyElement only for CdModPercent.
         /// Post: properties equal the arguments. Side effects: none.
@@ -97,7 +98,8 @@ namespace Cosmimera.Combat
     {
         /// <summary>Creates a validated trigger.</summary>
         /// <remarks>
-        /// Pre: type defined; OnHpBelow/OnHpAbove: 1 &lt;= percent &lt;= 100 and durationMs == 0; OnSummon/OnHitTaken/
+        /// Pre: type defined; element is a defined Element even where it is meaningless (pass default);
+        ///      OnHpBelow/OnHpAbove: 1 &lt;= percent &lt;= 100 and durationMs == 0; OnSummon/OnHitTaken/
         ///      OnMoveUsed/OnAllySwap: 1 &lt;= durationMs &lt;= 600000 and percent == 0; Always: both 0;
         ///      anyElement only for OnHitTaken.
         /// Post: properties equal the arguments. Side effects: none.
@@ -297,13 +299,17 @@ namespace Cosmimera.Combat
     }
 
     /// <summary>Outcome of an <see cref="EffectBook.Apply"/>.</summary>
+    /// <remarks>Pre: none. Post: values are stable (part of the replay/net contract). Side effects: none.</remarks>
     public enum ApplyOutcome
     {
         /// <summary>No live slot existed (or it had expired); the effect starts at 1 stack.</summary>
+        /// <remarks>Pre: none. Post: constant 0. Side effects: none.</remarks>
         Started = 0,
         /// <summary>A live slot gained a stack and its window was refreshed.</summary>
+        /// <remarks>Pre: none. Post: constant 1. Side effects: none.</remarks>
         Stacked = 1,
         /// <summary>A live slot was already at MaxStacks; only its window was refreshed.</summary>
+        /// <remarks>Pre: none. Post: constant 2. Side effects: none.</remarks>
         Refreshed = 2,
     }
 
@@ -350,15 +356,15 @@ namespace Cosmimera.Combat
 
         /// <summary>Creates a book for a combatant whose trait is <paramref name="traitId"/>.</summary>
         /// <remarks>
-        /// Pre: traitId non-empty; traitEffects non-null with 1..8 entries, none instant unless the trigger is an event
+        /// Pre: traitId non-empty; traitEffects non-null with 1..TraitDef.MaxEffects entries, none instant unless the trigger is an event
         ///      trigger (a heal on a continuous trigger would have to fire every query).
         /// Post: HasTrait true; no active effects. Side effects: copies traitEffects.
         /// </remarks>
         public EffectBook(string traitId, in TriggerSpec trigger, IReadOnlyList<EffectSpec> traitEffects)
         {
             Contract.Requires(!string.IsNullOrEmpty(traitId), "traitId must be non-empty");
-            Contract.Requires(traitEffects != null && traitEffects.Count >= 1 && traitEffects.Count <= 8,
-                "a trait has 1..8 effects");
+            Contract.Requires(traitEffects != null && traitEffects.Count >= 1 && traitEffects.Count <= TraitDef.MaxEffects,
+                "a trait has 1..TraitDef.MaxEffects effects");
             _traitId = traitId;
             _trigger = trigger;
             _traitEffects = new EffectSpec[traitEffects.Count];
@@ -466,6 +472,8 @@ namespace Cosmimera.Combat
         /// </remarks>
         public void NotifyHitTaken(Element moveElement, long nowMs, out int healPercent)
         {
+            // Checked before matching: an 'any' trait would otherwise fire for an undefined element (SOL P2-09 E3).
+            Contract.Requires(moveElement >= Element.Metal && moveElement <= Element.Shadow, "undefined Element");
             bool match = _traitId != null && _trigger.Type == TriggerType.OnHitTaken
                 && (_trigger.AnyElement || _trigger.Element == moveElement);
             Fire(TriggerType.OnHitTaken, match, nowMs, out healPercent);
@@ -475,6 +483,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre/Post/Side effects: as NotifyHitTaken (no 'any' scope).</remarks>
         public void NotifyMoveUsed(Element moveElement, long nowMs, out int healPercent)
         {
+            Contract.Requires(moveElement >= Element.Metal && moveElement <= Element.Shadow, "undefined Element");
             bool match = _traitId != null && _trigger.Type == TriggerType.OnMoveUsed && _trigger.Element == moveElement;
             Fire(TriggerType.OnMoveUsed, match, nowMs, out healPercent);
         }
@@ -581,14 +590,14 @@ namespace Cosmimera.Combat
         public static int EffectiveMastery(int baseMastery, long delta)
         {
             Contract.Requires(baseMastery >= 0, "baseMastery must be nonnegative");
-            return (int)Clamp(baseMastery + delta, 0, DamageModel.MaxMasteryPercent);
+            return SaturatingAdd(baseMastery, delta, 0, DamageModel.MaxMasteryPercent);
         }
 
         /// <summary>Effective resist percent for DamageModel.</summary>
         /// <remarks>Pre: none. Post: -ResistClamp &lt;= result &lt;= ResistClamp (DamageModel saturates there). Side effects: none.</remarks>
         public static int EffectiveResist(int baseResist, long delta)
         {
-            return (int)Clamp(baseResist + delta, -DamageModel.ResistClamp, DamageModel.ResistClamp);
+            return SaturatingAdd(baseResist, delta, -DamageModel.ResistClamp, DamageModel.ResistClamp);
         }
 
         /// <summary>The clamped multiplier percent for a relative-percent sum.</summary>
@@ -653,21 +662,30 @@ namespace Cosmimera.Combat
         /// <summary>A hit volume with range_mod_percent applied to its reach and cast distance.</summary>
         /// <remarks>
         /// "Range" = how far the move reaches: Rect/Sector length and the cast distance of aim-point / ally moves. AoE
-        /// radii, widths and angles keep their values, and a dash never scales (derived-stats.md). Results are capped at
-        /// RangedCapMm (horizon bound) unless the unmodified value already exceeded it, which a buff then cannot grow.
-        /// Pre: stats, config non-null. Post: equals volume when percentSum == 0; Kind/Anchor/Width/Angle/Height/Dash unchanged.
+        /// radii, widths and angles keep their values, and a dash never scales (derived-stats.md). The result gets the
+        /// same bound <see cref="MoveGeometry.Build"/> gave the unmodified value (combat.md: re-apply the original
+        /// limits): mid/long ranges are capped at RangedCapMm (horizon bound), melee ranges are not (SOL P2-09 E2).
+        /// Pre: stats, config non-null; rangeClass defined; volume came from MoveGeometry.Build with that rangeClass,
+        ///      so for mid/long its range dimensions are &lt;= RangedCapMm.
+        /// Post: equals volume when percentSum == 0; Kind/Anchor/Width/Angle/Height/Dash unchanged; range dimensions
+        ///       non-decreasing in percentSum and, for mid/long, &lt;= RangedCapMm.
         /// Side effects: none.
         /// </remarks>
-        public static HitVolume ApplyRange(in HitVolume volume, long percentSum, DerivedStats stats, EffectRulesConfig config)
+        public static HitVolume ApplyRange(in HitVolume volume, RangeClass rangeClass, long percentSum, DerivedStats stats,
+            EffectRulesConfig config)
         {
-            Contract.Requires(stats != null, "stats must not be null");
-            if (percentSum == 0 || volume.DashDistanceMm > 0)
+            Contract.Requires(stats != null && config != null, "stats and config must not be null");
+            Contract.Requires(rangeClass >= RangeClass.Melee && rangeClass <= RangeClass.Long, "undefined RangeClass");
+            bool reachIsRange = volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector;
+            bool dash = volume.DashDistanceMm > 0;
+            int cap = rangeClass == RangeClass.Melee ? int.MaxValue : stats.Coefficients.RangedCapMm;
+            Contract.Requires(volume.CastDistanceMm <= cap && (!reachIsRange || dash || volume.ReachMm <= cap),
+                "a mid/long volume's range exceeds RangedCapMm; build it with MoveGeometry.Build");
+            if (percentSum == 0 || dash)
             {
                 return volume;
             }
 
-            int cap = stats.Coefficients.RangedCapMm;
-            bool reachIsRange = volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector;
             int reach = reachIsRange ? Capped(volume.ReachMm, percentSum, cap, config) : volume.ReachMm;
             int cast = Capped(volume.CastDistanceMm, percentSum, cap, config);
             return new HitVolume(volume.Kind, volume.Anchor, reach, volume.WidthMm, volume.HalfAngleDeciDeg,
@@ -694,8 +712,24 @@ namespace Cosmimera.Combat
         private static int Capped(int value, long percentSum, int cap, EffectRulesConfig config)
         {
             int scaled = ApplyPercent(value, percentSum, config);
-            int limit = value > cap ? value : cap;
-            return scaled > limit ? limit : scaled;
+            return scaled > cap ? cap : scaled;
+        }
+
+        // Compare against the headroom instead of adding first: base + long.MaxValue wraps negative and saturated the
+        // wrong way (SOL P2-09 E1). value is an int, so lo - value and hi - value cannot overflow a long.
+        private static int SaturatingAdd(int value, long delta, int lo, int hi)
+        {
+            if (delta >= (long)hi - value)
+            {
+                return hi;
+            }
+
+            if (delta <= (long)lo - value)
+            {
+                return lo;
+            }
+
+            return (int)(value + delta);
         }
 
         private static long Clamp(long v, long lo, long hi)

@@ -423,28 +423,28 @@ namespace Cosmimera.Combat.Tests
         {
             HitVolumeDefaults d = BalanceFixture.HitDefaults();
             HitVolume line = MoveGeometry.Build(MoveShape.Line, MoveMovement.None, RangeClass.Mid, default, 12000, 0, _stats, d);
-            HitVolume shorter = EffectMath.ApplyRange(line, -25, _stats, _cfg);
+            HitVolume shorter = EffectMath.ApplyRange(line, RangeClass.Mid, -25, _stats, _cfg);
             Assert.AreEqual((line.ReachMm * 75 + 50) / 100, shorter.ReachMm);
             Assert.AreEqual(line.WidthMm, shorter.WidthMm);
             Assert.AreEqual(line.HalfHeightMm, shorter.HalfHeightMm);
 
             HitVolume field = MoveGeometry.Build(MoveShape.Field, MoveMovement.None, RangeClass.Mid, default, 12000, 0, _stats, d);
-            HitVolume farField = EffectMath.ApplyRange(field, 50, _stats, _cfg);
+            HitVolume farField = EffectMath.ApplyRange(field, RangeClass.Mid, 50, _stats, _cfg);
             Assert.AreEqual(field.ReachMm, farField.ReachMm, "a field's radius is not range");
             Assert.Greater(farField.CastDistanceMm, field.CastDistanceMm);
 
             int cap = _stats.Coefficients.RangedCapMm;
             HitVolume longLine = MoveGeometry.Build(MoveShape.Line, MoveMovement.None, RangeClass.Long, default, cap, 0, _stats, d);
-            Assert.AreEqual(cap, EffectMath.ApplyRange(longLine, 100, _stats, _cfg).ReachMm, "horizon cap");
+            Assert.AreEqual(cap, EffectMath.ApplyRange(longLine, RangeClass.Long, 100, _stats, _cfg).ReachMm, "horizon cap");
 
             HitVolume dash = MoveGeometry.Build(MoveShape.Line, MoveMovement.Dash, RangeClass.Melee, default, 5000, 0, _stats, d);
-            HitVolume dashMod = EffectMath.ApplyRange(dash, 100, _stats, _cfg);
+            HitVolume dashMod = EffectMath.ApplyRange(dash, RangeClass.Melee, 100, _stats, _cfg);
             Assert.AreEqual(dash.ReachMm, dashMod.ReachMm);
             Assert.AreEqual(dash.DashDistanceMm, dashMod.DashDistanceMm);
 
-            HitVolume same = EffectMath.ApplyRange(line, 0, _stats, _cfg);
+            HitVolume same = EffectMath.ApplyRange(line, RangeClass.Mid, 0, _stats, _cfg);
             Assert.AreEqual(line.ReachMm, same.ReachMm);
-            Assert.Throws<ContractException>(() => EffectMath.ApplyRange(line, 10, null, _cfg));
+            Assert.Throws<ContractException>(() => EffectMath.ApplyRange(line, RangeClass.Mid, 10, null, _cfg));
         }
 
         [Test]

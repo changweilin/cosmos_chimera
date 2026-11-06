@@ -172,7 +172,7 @@ namespace Cosmimera.Combat
     /// </remarks>
     public static class MoveGeometry
     {
-        private const float MmToM = 0.001f;
+        private const double MmToMd = 0.001;
 
         // Tolerance for caller-supplied unit vectors, matching PlanetFrame.FromUp.
         private const float UnitTolerance = 1e-3f;
@@ -337,44 +337,47 @@ namespace Cosmimera.Combat
             Contract.Requires(volume.Kind != HitVolumeKind.Caster, "self moves have no geometric test");
             Contract.Requires(targetRadiusM >= 0f && math.isfinite(targetRadiusM), "targetRadiusM must be finite and >= 0");
 
+            // Double throughout: float relative coordinates misplaced exactly collinear targets behind a Rect (SOL r6 R2)
+            // and moved radial height across its limit by up to ~2 mm at a 16 km center offset (SOL r6 R3).
             bool onAnchorHemisphere = Local(planet, anchor, forward, targetCenter,
-                volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector, out float x, out float z, out float height);
+                volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector, out double x, out double z, out double height);
             if (!onAnchorHemisphere)
             {
                 return false;
             }
 
-            float r = targetRadiusM;
+            double r = targetRadiusM;
             if (volume.Kind == HitVolumeKind.Ally)
             {
-                return x * x + z * z <= Sq(volume.CastDistanceMm * MmToM + r);
+                double allyReach = volume.CastDistanceMm * MmToMd + r;
+                return x * x + z * z <= allyReach * allyReach;
             }
 
-            if (math.abs(height) > volume.HalfHeightMm * MmToM + r)
+            if (math.abs(height) > volume.HalfHeightMm * MmToMd + r)
             {
                 return false;
             }
 
-            float reach = volume.ReachMm * MmToM;
+            double reach = volume.ReachMm * MmToMd;
             switch (volume.Kind)
             {
                 case HitVolumeKind.Rect:
                 {
-                    float halfWidth = volume.WidthMm * MmToM * 0.5f;
-                    float dx = math.max(math.abs(x) - halfWidth, 0f);
-                    float dz = z < 0f ? -z : math.max(z - reach, 0f);
+                    double halfWidth = volume.WidthMm * MmToMd * 0.5;
+                    double dx = math.max(math.abs(x) - halfWidth, 0.0);
+                    double dz = z < 0.0 ? -z : math.max(z - reach, 0.0);
                     return dx * dx + dz * dz <= r * r;
                 }
                 case HitVolumeKind.Sector:
-                    return SectorOverlaps(x, z, reach, math.radians(volume.HalfAngleDeciDeg * 0.1f), r);
+                    return SectorOverlaps(x, z, reach, math.radians(volume.HalfAngleDeciDeg * 0.1), r);
                 default:
-                    return x * x + z * z <= Sq(reach + r);
+                    return x * x + z * z <= (reach + r) * (reach + r);
             }
         }
 
-        private static bool SectorOverlaps(float x, float z, float radius, float halfAngle, float r)
+        private static bool SectorOverlaps(double x, double z, double radius, double halfAngle, double r)
         {
-            float d = math.sqrt(x * x + z * z);
+            double d = math.sqrt(x * x + z * z);
             if (d <= r)
             {
                 return true;
@@ -392,16 +395,16 @@ namespace Cosmimera.Combat
             }
 
             // Otherwise the nearest point lies on one of the two straight edges (segments from the apex).
-            float s = math.sin(halfAngle);
-            float c = math.cos(halfAngle);
+            double s = math.sin(halfAngle);
+            double c = math.cos(halfAngle);
             return SegmentDistanceSq(x, z, s, c, radius) <= r * r || SegmentDistanceSq(x, z, -s, c, radius) <= r * r;
         }
 
-        private static float SegmentDistanceSq(float x, float z, float ex, float ez, float length)
+        private static double SegmentDistanceSq(double x, double z, double ex, double ez, double length)
         {
-            float t = math.clamp(x * ex + z * ez, 0f, length);
-            float px = x - t * ex;
-            float pz = z - t * ez;
+            double t = math.clamp(x * ex + z * ez, 0.0, length);
+            double px = x - t * ex;
+            double pz = z - t * ez;
             return px * px + pz * pz;
         }
 
@@ -410,33 +413,34 @@ namespace Cosmimera.Combat
         // combat uses (1 mm at R = 640 m is 1.6e-6 rad). Returns false (x = z = 0) when the point is on the far
         // hemisphere: near the antipode every bearing is float noise, and no volume reaches a quarter circumference.
         private static bool Local(in PlanetConfig planet, float3 anchor, float3 forward, float3 point, bool needsForward,
-            out float x, out float z, out float height)
+            out double x, out double z, out double height)
         {
-            float3 da = anchor - planet.Center;
-            float3 dp = point - planet.Center;
-            RequireInDomain((double3)anchor - (double3)planet.Center, planet, "anchor");
-            RequireInDomain((double3)point - (double3)planet.Center, planet, "target");
-            float ra = math.length(da);
-            float rp = math.length(dp);
-            float3 up = da / ra;
+            // Every float3 coordinate is exact in double, and so is each product of two of them (24 + 24 bits < 53):
+            // cross(da, dp) of exactly collinear inputs is exactly zero, so they really sit at distance 0 (SOL r6 R2).
+            double3 da = (double3)anchor - (double3)planet.Center;
+            double3 dp = (double3)point - (double3)planet.Center;
+            RequireInDomain(da, planet, "anchor");
+            RequireInDomain(dp, planet, "target");
+            double ra = math.length(da);
+            double rp = math.length(dp);
+            double3 up = da / ra;
+            double3 forwardD = forward;
             if (needsForward)
             {
-                Contract.Requires(math.abs(math.length(forward) - 1f) <= UnitTolerance
-                    && math.abs(math.dot(forward, up)) <= UnitTolerance, "forward must be a unit tangent at the anchor");
+                Contract.Requires(math.abs(math.length(forwardD) - 1.0) <= UnitTolerance
+                    && math.abs(math.dot(forwardD, up)) <= UnitTolerance, "forward must be a unit tangent at the anchor");
             }
 
-            float3 up2 = dp / rp;
-            float3 cross = math.cross(up, up2);
-            float angle = math.atan2(math.length(cross), math.dot(up, up2));
+            double angle = math.atan2(math.length(math.cross(da, dp)), math.dot(da, dp));
             height = rp - ra;
-            x = 0f;
-            z = 0f;
-            if (angle > math.PI / 2f)
+            x = 0.0;
+            z = 0.0;
+            if (angle > math.PI_DBL / 2.0)
             {
                 return false;
             }
 
-            float distance = angle * ra;
+            double distance = angle * ra;
             if (!needsForward)
             {
                 x = distance;
@@ -445,17 +449,17 @@ namespace Cosmimera.Combat
 
             // Re-orthonormalize: the Pre tolerance lets |forward| be 0.9995, which would otherwise shrink the measured
             // forward distance by 0.05 % and let a target 24.005 m away into a 24 m line (SOL G5).
-            float3 f = math.normalize(forward - math.dot(forward, up) * up);
-            float3 right = math.cross(up, f);
+            double3 f = math.normalize(forwardD - math.dot(forwardD, up) * up);
+            double3 right = math.cross(up, f);
 
             // Bearing from components in the tangent basis, not from normalizing up2 − dot(up2, up)·up: near the
-            // antipode that difference is a pure radial float residue, which projected to (0, 0) and put a target
-            // 2010 m away at distance 0 (SOL r2 N1). On the near hemisphere |(px, pz)| = sin(angle), so the bearing
+            // antipode that difference is a pure radial residue, which projected to (0, 0) and put a target
+            // 2010 m away at distance 0 (SOL r2 N1). On the near hemisphere |(px, pz)| = rp·sin(angle), so the bearing
             // is only ill-conditioned when the points (nearly) coincide, where distance ~0 makes it irrelevant.
-            float px = math.dot(up2, right);
-            float pz = math.dot(up2, f);
-            float bearingLength = math.sqrt(px * px + pz * pz);
-            if (bearingLength < 1e-12f)
+            double px = math.dot(dp, right);
+            double pz = math.dot(dp, f);
+            double bearingLength = math.sqrt(px * px + pz * pz);
+            if (bearingLength < 1e-12 * rp || distance == 0.0)
             {
                 return true;
             }
@@ -498,6 +502,5 @@ namespace Cosmimera.Combat
             return scaled > int.MaxValue ? int.MaxValue : (int)scaled;
         }
 
-        private static float Sq(float v) => v * v;
     }
 }
