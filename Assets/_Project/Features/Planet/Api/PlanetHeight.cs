@@ -20,7 +20,8 @@ namespace Cosmimera.Planet
     {
         /// <summary>Version of the height algorithm; bump whenever the same inputs would produce different heights.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none. REQ: docs/design/multiplayer.md (版本不符拒絕加入).</remarks>
-        public const int GeneratorVersion = 1;
+        // v2 (2026-11-06): Sample normalises its input (sol review F2); SampleCore and meshes are unchanged.
+        public const int GeneratorVersion = 2;
 
         /// <summary>Largest supported octave count.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -103,7 +104,8 @@ namespace Cosmimera.Planet
         /// <summary>Height in metres above sea level at <paramref name="direction"/>.</summary>
         /// <remarks>
         /// Pre: IsValid; direction finite and unit length (±1e-3).
-        /// Post: |result| ≤ MaxAbsHeight; depends only on direction and this value.
+        /// Post: |result| ≤ MaxAbsHeight; equals the field at normalize(direction) (the tolerance is for the caller's
+        ///       input, not a 0.1 % shift of the sample point — same rule as PlanetFrame.FromUp, sol review F2).
         /// Side effects: none.
         /// </remarks>
         public float Sample(float3 direction)
@@ -111,7 +113,7 @@ namespace Cosmimera.Planet
             Contract.Requires(IsValid, "PlanetHeight is default/uninitialised");
             Contract.Requires(math.all(math.isfinite(direction)) && math.abs(math.lengthsq(direction) - 1f) <= 2e-3f,
                 "direction must be a finite unit vector");
-            return SampleCore(direction);
+            return SampleCore(math.normalize(direction));
         }
 
         // Burst entry point (ADR-0006): no Contract calls. Callers validate this value once before scheduling.

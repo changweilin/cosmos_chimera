@@ -10,8 +10,13 @@ namespace Cosmimera.Planet.Model
     /// - Coverage: the leaves tile all six faces exactly once (no gaps, no overlaps).
     /// - 2:1 balance: two leaves sharing an edge — including across cube faces — differ by at most one level, so a
     ///   leaf's edge needs at most one stitching pattern (<see cref="TryGetLeaf"/> mask) to close T-junction cracks.
-    /// - Determinism: the result depends only on the camera position and the previous leaf set, never on timing,
-    ///   so every client in a session converges on the same chunk ids for the same camera path.
+    /// - Determinism: the result depends only on the camera position and the previous leaf set, never on timing or
+    ///   hash/iteration order. That is a same-process, same-backend guarantee only: split tests compare floats
+    ///   (tan, sqrt), and a camera one float ulp away can flip a split (sol review F5). LOD is per-client
+    ///   presentation — each client follows its own camera — and is NOT part of the world-generation
+    ///   reproducibility contract (seed + GeneratorVersion); never derive gameplay or network state from leaf ids.
+    /// - Cost: every Update rebuilds the leaf set from the six roots, O(leaves · MaxLevel). The constructor's
+    ///   preconditions keep leaves local to the camera (≈ 450 at R = 640 m with defaults).
     /// Not thread-safe; owned by the main thread (mesh building is the job system's part, P1-03).
     /// REQ: docs/architecture/planet-tech.md#幾何：Cube-sphere 四叉樹
     /// </remarks>
@@ -21,8 +26,9 @@ namespace Cosmimera.Planet.Model
         private readonly ChunkLodSettings _settings;
 
         // Leaf key → coarser-neighbour mask (bit (int)CubeEdge set when the leaf across that edge is one level up).
-        private Dictionary<ulong, byte> _leaves = new Dictionary<ulong, byte>();
-        private Dictionary<ulong, byte> _target = new Dictionary<ulong, byte>();
+        // Explicit comparer: the default ulong hash (hi ^ lo) collides systematically for packed keys (sol review F4).
+        private Dictionary<ulong, byte> _leaves = new Dictionary<ulong, byte>(KeyEquality.Instance);
+        private Dictionary<ulong, byte> _target = new Dictionary<ulong, byte>(KeyEquality.Instance);
         private readonly List<ulong> _work = new List<ulong>();
         private readonly List<ulong> _scratch = new List<ulong>();
 
@@ -30,17 +36,27 @@ namespace Cosmimera.Planet.Model
 
         /// <summary>Creates an empty tree; the first <see cref="Update"/> populates it.</summary>
         /// <remarks>
-        /// Pre: config.IsValid; settings.IsValid.
+        /// Pre: config.IsValid; settings.IsValid; settings.HeightMargin &lt; 0.5 · config.Radius;
+        ///      settings.SplitDistanceFactor ≤ MaxSplitDistanceFactor.
         /// Post: LeafCount == 0.
         /// Side effects: allocates the leaf buffers.
+        /// REQ: sol review F4 — HeightMargin ≥ Radius makes every node's distance bound 0, so the whole sphere splits
+        /// to MaxLevel (6·4^MaxLevel leaves). With the margin below R/2, a node can only be near the camera if it is
+        /// near the camera on the sphere, which keeps refinement local; the factor cap bounds the refined radius.
         /// </remarks>
         public ChunkQuadtree(in PlanetConfig config, in ChunkLodSettings settings)
         {
             Contract.Requires(config.IsValid, "PlanetConfig is default/uninitialised");
             Contract.Requires(settings.IsValid, "ChunkLodSettings is default/uninitialised");
+            Contract.Requires(settings.HeightMargin < 0.5f * config.Radius, "HeightMargin must be below Radius / 2");
+            Contract.Requires(settings.SplitDistanceFactor <= MaxSplitDistanceFactor, "SplitDistanceFactor must be <= MaxSplitDistanceFactor");
             _config = config;
             _settings = settings;
         }
+
+        /// <summary>Largest accepted <see cref="ChunkLodSettings.SplitDistanceFactor"/>.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Leaves per level grow ≈ with factor², so 8 is 16× the default 2.</remarks>
+        public const float MaxSplitDistanceFactor = 8f;
 
         /// <summary>Number of current leaves.</summary>
         /// <remarks>Pre: none. Post: 0 before the first Update, ≥ 6 after. Side effects: none.</remarks>
@@ -326,6 +342,15 @@ namespace Cosmimera.Planet.Model
 
                 _target[key] = mask;
             }
+        }
+
+        private sealed class KeyEquality : IEqualityComparer<ulong>
+        {
+            public static readonly KeyEquality Instance = new KeyEquality();
+
+            public bool Equals(ulong a, ulong b) => a == b;
+
+            public int GetHashCode(ulong key) => ChunkId.MixHash(key);
         }
 
         private sealed class KeyComparer : IComparer<ChunkId>

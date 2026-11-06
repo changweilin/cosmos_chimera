@@ -76,8 +76,9 @@ namespace Cosmimera.Planet.Tests
                         float2 b = EdgeParams(link.Edge, link.Reversed ? -s : s);
                         float3 da = CubeSphere.FaceToDirection(f, a.x, a.y);
                         float3 db = CubeSphere.FaceToDirection(link.Face, b.x, b.y);
-                        // Exact equality on purpose: any 1-ulp difference is a visible crack in the mesh.
-                        Assert.IsTrue(da.x == db.x && da.y == db.y && da.z == db.z, $"{f}/{edge} s={s}: {da} vs {db}");
+                        // Bit equality on purpose: any 1-ulp difference is a visible crack in the mesh, and `==`
+                        // would also accept +0 vs −0 (sol review F6).
+                        Assert.IsTrue(math.all(math.asuint(da) == math.asuint(db)), $"{f}/{edge} s={s}: {da} vs {db}");
                     }
                 }
             }

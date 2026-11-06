@@ -39,7 +39,7 @@ namespace Cosmimera.Planet
         /// <summary>Coordinate of a unit direction.</summary>
         /// <remarks>
         /// Pre: direction is unit length (±1e-3).
-        /// Post: ToDirection(result) ≈ direction (except longitude at the poles).
+        /// Post: ToDirection(result) ≈ normalize(direction) (except longitude at the poles); −π &lt; Longitude ≤ π.
         /// Side effects: none.
         /// </remarks>
         public static LatLon FromDirection(float3 direction)
@@ -49,6 +49,13 @@ namespace Cosmimera.Planet
             float horizontal = math.sqrt(direction.x * direction.x + direction.z * direction.z);
             float latitude = math.atan2(direction.y, horizontal);
             float longitude = horizontal > 0f ? math.atan2(-direction.z, direction.x) : 0f;
+            // atan2(+0, −x) is +π but atan2(−0, −x) is −π; fold the antimeridian onto +π so the documented range
+            // (−π, π] holds for both signed zeros (sol review F7).
+            if (longitude <= -math.PI)
+            {
+                longitude = math.PI;
+            }
+
             return new LatLon(latitude, longitude);
         }
 

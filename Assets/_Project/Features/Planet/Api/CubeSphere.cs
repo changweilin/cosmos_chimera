@@ -4,22 +4,50 @@ using Unity.Mathematics;
 namespace Cosmimera.Planet
 {
     /// <summary>One of the six cube faces, named by its outward normal in planet-local axes.</summary>
+    /// <remarks>
+    /// Pre: only the six named values are defined; APIs taking a CubeFace reject others with ContractException.
+    /// Post: the numeric values are part of <see cref="ChunkId.Key"/> (save data, packets) and must never change.
+    /// Side effects: none.
+    /// </remarks>
     public enum CubeFace : byte
     {
+        /// <summary>Normal +X.</summary>
         PosX = 0,
+
+        /// <summary>Normal −X.</summary>
         NegX = 1,
+
+        /// <summary>Normal +Y (contains <see cref="PlanetFrame.NorthPole"/>).</summary>
         PosY = 2,
+
+        /// <summary>Normal −Y.</summary>
         NegY = 3,
+
+        /// <summary>Normal +Z.</summary>
         PosZ = 4,
+
+        /// <summary>Normal −Z.</summary>
         NegZ = 5,
     }
 
     /// <summary>One side of a square region in face (u, v) parameters.</summary>
+    /// <remarks>
+    /// Pre: only the four named values are defined; APIs taking a CubeEdge reject others with ContractException.
+    /// Post: (int)edge is the bit index in coarser-neighbour masks (ChunkQuadtree, ChunkStitching); never renumber.
+    /// Side effects: none.
+    /// </remarks>
     public enum CubeEdge : byte
     {
+        /// <summary>u == min.</summary>
         UMin = 0,
+
+        /// <summary>u == max.</summary>
         UMax = 1,
+
+        /// <summary>v == min.</summary>
         VMin = 2,
+
+        /// <summary>v == max.</summary>
         VMax = 3,
     }
 
@@ -70,6 +98,11 @@ namespace Cosmimera.Planet
     ///        and the CRT tan is odd), so the guard is for Burst / reduced FloatPrecision, whose tan gives neither
     ///        guarantee; verify in P1-03 by running the seam test against the Burst-compiled path · ref: ADR-0005.
     ///        Mesh code in Burst must call this same function, not a copy.
+    ///        Verified 2026-11-06 (P1-03): ChunkMeshTests.Face_seams_are_bit_identical_in_burst passes under Burst
+    ///        FloatMode.Default / FloatPrecision.Standard on x64 with a runtime face index; Fast mode and ARM64 untested.
+    ///
+    /// Pre: none (static, stateless). Post: every member is a pure function of its arguments.
+    /// Side effects: none; the axis/link tables are built once by the static initialiser.
     /// </remarks>
     public static class CubeSphere
     {
@@ -116,7 +149,9 @@ namespace Cosmimera.Planet
         /// <summary>Equi-angular warp: face parameter → cube-plane coordinate, tan(s·π/4).</summary>
         /// <remarks>
         /// Pre: s is finite and |s| ≤ 1.
-        /// Post: Warp(±1) == ±1 exactly; Warp(0) == 0; Warp(−s) == −Warp(s) exactly; strictly increasing.
+        /// Post: Warp(±1) == ±1 exactly; Warp(0) == 0; Warp(−s) == −Warp(s) exactly; non-decreasing. (Strictly
+        ///       increasing in exact arithmetic, but adjacent floats near |s| = 1 can share a result, e.g. 0.983702f
+        ///       and its successor — sol review F7. The grid s = −1 + k/2^19 is tested strictly increasing.)
         /// Side effects: none.
         /// </remarks>
         public static float Warp(float s)
@@ -214,8 +249,10 @@ namespace Cosmimera.Planet
         /// </remarks>
         public static CubeFace DirectionToFace(float3 direction, out float u, out float v)
         {
-            Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
+            Contract.Requires(math.all(math.isfinite(direction)) && math.any(direction != 0f),
                 "direction must be finite and non-zero");
+            // REQ: sol review F3 — (1e-30, 0, 0) is finite and non-zero but its lengthsq underflows to 0.
+            direction = VectorMath.Rescale(direction);
             float3 a = math.abs(direction);
             CubeFace face;
             if (a.x >= a.y && a.x >= a.z)
@@ -253,7 +290,11 @@ namespace Cosmimera.Planet
 
         /// <summary>True when the along-edge coordinate of <paramref name="edge"/> is u (V edges) rather than v (U edges).</summary>
         /// <remarks>Pre: edge is defined. Post: true for VMin/VMax. Side effects: none.</remarks>
-        public static bool RunsAlongU(CubeEdge edge) => edge == CubeEdge.VMin || edge == CubeEdge.VMax;
+        public static bool RunsAlongU(CubeEdge edge)
+        {
+            Contract.Requires((uint)edge < 4u, "edge must be a defined CubeEdge");
+            return edge == CubeEdge.VMin || edge == CubeEdge.VMax;
+        }
 
         private static int CheckFace(CubeFace face)
         {

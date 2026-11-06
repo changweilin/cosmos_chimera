@@ -218,14 +218,36 @@ namespace Cosmimera.Planet
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>Value equality on <see cref="Key"/>.</summary>
+        /// <remarks>Pre: none. Post: true iff Key == other.Key. Side effects: none.</remarks>
         public bool Equals(ChunkId other) => Key == other.Key;
 
-        /// <inheritdoc/>
+        /// <summary>Value equality with a boxed ChunkId.</summary>
+        /// <remarks>Pre: none. Post: true iff obj is a ChunkId with the same Key. Side effects: none.</remarks>
         public override bool Equals(object obj) => obj is ChunkId other && Equals(other);
 
-        /// <inheritdoc/>
-        public override int GetHashCode() => Key.GetHashCode();
+        /// <summary>Well-mixed hash of <see cref="Key"/>.</summary>
+        /// <remarks>Pre: none. Post: equal ids hash equally; same value on every run and platform. Side effects: none.</remarks>
+        public override int GetHashCode() => MixHash(Key);
+
+        /// <summary>splitmix64 finaliser folded to 32 bits.</summary>
+        /// <remarks>
+        /// Pre: none. Post: pure function of key. Side effects: none.
+        /// REQ: docs/reviews/P1-01-P1-02-sol.md#F4 — ulong.GetHashCode is hi ^ lo, and in this layout the face/level/x
+        /// bits of the high word cancel the y bits of the low word: one level-8 sweep had 96 keys per hash and
+        /// Update took ~1 s. Every bit of the result depends on every bit of the key.
+        /// </remarks>
+        internal static int MixHash(ulong key)
+        {
+            unchecked
+            {
+                ulong z = key;
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+                z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+                z ^= z >> 31;
+                return (int)z ^ (int)(z >> 32);
+            }
+        }
 
         /// <summary>Value equality on <see cref="Key"/>.</summary>
         /// <remarks>Pre: none. Post: a == b iff a.Key == b.Key. Side effects: none.</remarks>
@@ -235,7 +257,8 @@ namespace Cosmimera.Planet
         /// <remarks>Pre: none. Post: a != b iff a.Key != b.Key. Side effects: none.</remarks>
         public static bool operator !=(ChunkId a, ChunkId b) => a.Key != b.Key;
 
-        /// <inheritdoc/>
+        /// <summary>Human-readable form, e.g. <c>PosX/L5/16,3</c>, for logs and the hierarchy.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: allocates a string — keep it out of per-frame paths.</remarks>
         public override string ToString() => $"{Face}/L{Level}/{X},{Y}";
     }
 }

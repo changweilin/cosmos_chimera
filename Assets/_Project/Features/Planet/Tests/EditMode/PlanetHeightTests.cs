@@ -118,8 +118,8 @@ namespace Cosmimera.Planet.Tests
         [Test]
         public void Snapshot_matches_GeneratorVersion()
         {
-            Assert.AreEqual(1, PlanetHeight.GeneratorVersion, "GeneratorVersion changed: update the snapshot file and note it in the handoff log");
-            string path = Path.Combine(Application.dataPath, "_Project/Features/Planet/Tests/Snapshots/planet-height-v1.txt");
+            Assert.AreEqual(2, PlanetHeight.GeneratorVersion, "GeneratorVersion changed: update the snapshot file and note it in the handoff log");
+            string path = Path.Combine(Application.dataPath, "_Project/Features/Planet/Tests/Snapshots/planet-height-v2.txt");
             ulong actual = SnapshotHash(PlanetHeight.ForPlanet(Planet640, 42UL));
             Assert.IsTrue(File.Exists(path), $"missing snapshot {path}; computed 0x{actual:X16}");
             string expected = File.ReadAllText(path).Trim();
