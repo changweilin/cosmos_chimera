@@ -1,6 +1,9 @@
 # Prompt Forge
 
-離線單頁工具：產生交給 ChatGPT 對話版 / Gemini Argon 任務模式的美術任務 prompt。直接用瀏覽器開 `index.html`（不需伺服器）。
+產生交給 ChatGPT 對話版 / Gemini Argon 任務模式的美術任務 prompt。
+- **線上版（GitHub Pages）**：`https://changweilin.github.io/cosmos_chimera/`
+- **離線單頁**：直接用瀏覽器開 `index.html`（不需伺服器）。
+
 規格與交付流程：`docs/design/art-asset-pipeline.md`。
 
 | 檔案 | 內容 | 何時改 |
