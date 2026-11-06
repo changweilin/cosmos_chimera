@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COSMIMERA Prompt Forge</title>
+<style>
+  :root {
+    --bg: #f5f4f0; --panel: #ffffff; --ink: #1d1f24; --muted: #6b6f78; --line: #dcdad3;
+    --accent: #3b5bdb; --accent-ink: #ffffff; --chip: #eef1fb; --warn: #b54708; --code: #f0efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161b; --panel: #1c1f26; --ink: #e6e7ea; --muted: #9096a3; --line: #2e323c;
+      --accent: #7b93ff; --accent-ink: #0e1220; --chip: #262c3d; --warn: #f5a35b; --code: #232731;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161b; --panel: #1c1f26; --ink: #e6e7ea; --muted: #9096a3; --line: #2e323c;
+    --accent: #7b93ff; --accent-ink: #0e1220; --chip: #262c3d; --warn: #f5a35b; --code: #232731;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .02em; }
+  header h1 small { color: var(--muted); font-weight: 400; margin-left: 8px; font-size: 12px; }
+  .grow { flex: 1; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg label { padding: 5px 10px; cursor: pointer; }
+  .seg input { display: none; }
+  .seg label:has(input:checked) { background: var(--accent); color: var(--accent-ink); }
+  main { display: grid; grid-template-columns: 220px minmax(320px, 1fr) minmax(360px, 1.1fr); gap: 16px; padding: 16px; max-width: 1600px; margin: 0 auto; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #tasks { display: flex; flex-wrap: wrap; gap: 6px; } .task { flex: 1 1 160px; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  h3 { font-size: 15px; margin: 0; }
+  .task { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: transparent; color: inherit; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; }
+  .task.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .tname { display: block; font-weight: 600; }
+  .tmeta { display: block; color: var(--muted); font-size: 12px; }
+  .subhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .field { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .field.opt { grid-template-columns: 110px 1fr; }
+  .field > label { color: var(--muted); font-size: 13px; }
+  .fctl { display: flex; gap: 4px; align-items: center; }
+  select, input:not([type]), input[type=text], textarea { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; max-width: 100%; }
+  select { min-width: 0; width: 100%; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chips select { width: auto; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 4px 2px 10px; display: inline-flex; align-items: center; gap: 2px; }
+  .chip button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; }
+  button { font: inherit; cursor: pointer; }
+  .icon { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 2px 6px; }
+  .lock { font-size: 12px; display: inline-flex; align-items: center; gap: 2px; color: var(--muted); }
+  .btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 7px 14px; font-weight: 600; }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .mini { border: 1px solid var(--line); background: transparent; color: inherit; border-radius: 6px; padding: 1px 8px; font-size: 12px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+  .check { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; }
+  .row { display: flex; gap: 6px; }
+  .inline { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .sid { width: 150px; font-family: Consolas, monospace; }
+  .review { margin-top: 10px; color: var(--warn); }
+  .muted { color: var(--muted); font-size: 13px; }
+  textarea#notes { width: 100%; min-height: 70px; resize: vertical; }
+  textarea#prompt { width: 100%; height: 46vh; min-height: 280px; font: 12.5px/1.5 Consolas, "Noto Sans Mono CJK TC", monospace; resize: vertical; white-space: pre; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; align-items: center; }
+  #header { font: 11.5px Consolas, monospace; color: var(--muted); word-break: break-all; }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font: 12px Consolas, monospace; word-break: break-all; }
+  .cmd { display: flex; gap: 8px; align-items: flex-start; background: var(--code); padding: 8px; border-radius: 8px; margin: 6px 0; }
+  .cmd code { background: transparent; padding: 0; flex: 1; }
+  #deliver ol { padding-left: 20px; margin: 0 0 6px; }
+  #deliver li { margin-bottom: 4px; }
+  #history { padding-left: 18px; margin: 0; font-size: 12.5px; }
+  .stack > section + section { margin-top: 16px; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; transition: .2s; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%); }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>宙獸紀 · Prompt Forge<small id="ver"></small></h1>
+  <span class="grow"></span>
+  <div class="seg" role="radiogroup" aria-label="執行平台">
+    <label><input type="radio" name="platform" value="chatgpt">ChatGPT 對話版</label>
+    <label><input type="radio" name="platform" value="gemini">Gemini Argon 任務模式</label>
+  </div>
+  <span class="muted" id="rec"></span>
+  <label class="inline">seed <input id="seed" style="width:80px;font-family:Consolas,monospace" spellcheck="false"></label>
+  <button class="btn" id="reroll" type="button">🎲 全部隨機</button>
+</header>
+
+<main>
+  <section>
+    <h2>任務</h2>
+    <div id="tasks"></div>
+    <details style="margin-top:12px">
+      <summary>專案路徑（解壓指令用）</summary>
+      <input id="root" style="width:100%;margin-top:6px;font-family:Consolas,monospace" spellcheck="false">
+    </details>
+  </section>
+
+  <div class="stack">
+    <section>
+      <h2>設計概念</h2>
+      <div id="concept"></div>
+    </section>
+    <section>
+      <h2>任務選項</h2>
+      <div id="options"></div>
+      <div class="field opt" style="border-top:0;margin-top:6px">
+        <label>補充 / 修改</label>
+        <textarea id="notes" placeholder="例：改成雙馬尾、配色偏暖；超載型態要有翅膀展開；招式拖尾加長。寫在這裡的內容優先於預設。"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section>
+      <h2>Prompt</h2>
+      <div id="header"></div>
+      <div class="actions">
+        <button class="btn" id="copy" type="button">📋 複製 prompt</button>
+        <button class="btn ghost" id="open" type="button">↗ 開啟平台</button>
+        <button class="btn ghost" id="download" type="button">⬇ prompt.md</button>
+        <button class="btn ghost" id="export" type="button">⬇ 概念 JSON</button>
+        <span class="muted" id="chars"></span>
+      </div>
+      <textarea id="prompt" spellcheck="false" aria-label="產生的 prompt（可直接修改後複製）"></textarea>
+    </section>
+    <section>
+      <h2>完成後放哪裡</h2>
+      <div id="deliver"></div>
+    </section>
+    <section>
+      <h2>最近任務</h2>
+      <ul id="history"></ul>
+    </section>
+  </div>
+</main>
+<div id="toast" role="status"></div>
+
+<script src="catalog.js"></script>
+<script src="tasks.js"></script>
+<script src="forge.js"></script>
+</body>
+</html>

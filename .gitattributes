@@ -35,3 +35,6 @@
 # Baked geodata template packs (P3-02)
 *.geotpl filter=lfs diff=lfs merge=lfs -text
 *.raw filter=lfs diff=lfs merge=lfs -text
+# AI art deliveries (docs/design/art-asset-pipeline.md)
+*.glb filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text

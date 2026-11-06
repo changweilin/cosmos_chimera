@@ -43,3 +43,7 @@ sysinfo.txt
 # Local AI tool state
 .ai_working
 .claude/settings.local.json
+
+# Unreviewed AI art deliveries (tools/prompt-forge); only promoted assets under Assets/ are committed
+/Art/_incoming/*
+!/Art/_incoming/README.md

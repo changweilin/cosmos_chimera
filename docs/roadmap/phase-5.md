@@ -9,10 +9,12 @@
 | P5-01 | 批次 prompt 模板 `tools/prompts/*.md` + 配額矩陣 | SONNET | OPUS | 模板產出可直接通過 schema | ⬜ |
 | P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | ⬜ |
 | P5-03 | 宙獸批次初稿（每批 20–50） | FLASH / TERRA | SONNET | 每批通過驗證工具 | ⬜ |
-| P5-04 | 概念圖 prompt 與美術生產（依 Q-T3） | TERRA | 人工 | 每線 3 階段概念圖 | ⬜ |
+| P5-04 | 概念圖 prompt 與美術生產（依 Q-T3），經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟦 |
 | P5-05 | 招式/特性批次 | FLASH | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
 | P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | ⬜ |
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | ⬜ |
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | ⬜ |
+| P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | ⬜ |
 
 ## 交接紀錄
+- 2026-11-06 · Claude Opus · partial · P5-04：建立 `tools/prompt-forge`（7 種任務 prompt、版本標頭、交付規格），設計文件補上超載、體型級距、收服道具三類別 · 下一步：人工用工具試跑一輪 creature-concept；Q-T3 選定 3D 工具；Q-C12/Q-C13/Q-A1 待定

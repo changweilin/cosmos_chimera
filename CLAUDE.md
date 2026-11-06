@@ -32,6 +32,8 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 大廳、星海選星、圖鑑、收服/取蛋 | `docs/design/lobby-meta.md` |
 | 連線、同步、存檔 | `docs/design/multiplayer.md` + `docs/architecture/netcode.md` |
 | AI 批次設計宙獸概念 | `docs/design/creature-concept-pipeline.md` |
+| 角色設計概念、角色動作 | `docs/design/characters.md` |
+| 美術外包 prompt、驗收 `Art/_incoming/<task_id>` | `docs/design/art-asset-pipeline.md` + `tools/prompt-forge/README.md` |
 | 畫風、渲染、沉浸感 | `docs/design/vision.md` |
 | 需求有歧義 | `docs/open-questions.md`（先查，沒有就新增並停下來問） |
 
