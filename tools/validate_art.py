@@ -81,7 +81,7 @@ VFX_TIERS = ("light", "medium", "heavy", "overload")
 VESSEL_IMAGE_SUFFIXES = ("concept", "variants", "icon", "model_front", "model_side", "capture_storyboard")
 
 # tasks.js 240 asks for `rig/README.md`; it is the only legal non-lowercase name.
-UPPERCASE_EXEMPT = ("rig/README.md",)
+UPPERCASE_EXEMPT = ("rig/README.md", "pipeline/README.md")
 NON_PNG_IMAGE_EXTS = ("jpg", "jpeg", "webp", "gif", "bmp")
 TEXTURE_SIZES = (1024, 2048)
 
@@ -192,12 +192,14 @@ def _name_rule(task_type: Optional[str], sid: Optional[str], rel: str) -> Option
                     f"cr_{sid}_<{stages}>_<{_alt(CREATURE_VIEWS)}>.png "
                     f"or cr_{sid}_<{_alt(STAGELESS_CREATURE_VIEWS)}>.png")
         if task_type == "model-rig" and s:
+            # REQ: tasks.js model-rig@2 — rigging and animation are one pipeline, so anim sheets live here too.
+            tail = rf"(?:model_(?:{_alt(MODEL_VIEWS)})|anim_sheet_\d{{2}})"
             if name.startswith("cr_"):
-                return (rf"cr_{s}_(?:{stages})_model_(?:{_alt(MODEL_VIEWS)})\.png",
-                        f"cr_{sid}_<stage>_model_<{_alt(MODEL_VIEWS)}>.png")
+                return (rf"cr_{s}_(?:{stages})_{tail}\.png",
+                        f"cr_{sid}_<stage>_<model_<{_alt(MODEL_VIEWS)}>|anim_sheet_NN>.png")
             if name.startswith("chr_"):
-                return (rf"{s}_model_(?:{_alt(MODEL_VIEWS)})\.png",
-                        f"{sid}_model_<{_alt(MODEL_VIEWS)}>.png")
+                return (rf"{s}_{tail}\.png",
+                        f"{sid}_<model_<{_alt(MODEL_VIEWS)}>|anim_sheet_NN>.png")
         if task_type == "animation-set" and s:
             if name.startswith("cr_"):
                 return (rf"cr_{s}_(?:{stages})_anim_sheet_\d{{2}}\.png",
@@ -220,7 +222,7 @@ def _name_rule(task_type: Optional[str], sid: Optional[str], rel: str) -> Option
             return (rf"vsl_(?P<vessel>{_SNAKE})\.glb", "vsl_<vessel>.glb")
     if task_type == "model-rig" and s and top == "models" and ext in ("glb", "fbx"):
         return (rf"(?:cr_{s}_(?:{stages})|{s})\.(?:glb|fbx)", f"cr_{sid}_<stage>.<glb|fbx> or {sid}.<glb|fbx>")
-    if task_type == "animation-set" and top == "anims" and ext == "fbx":
+    if task_type in ("model-rig", "animation-set") and top == "anims" and ext == "fbx":
         # REQ: art-asset-pipeline.md 〈命名〉 clip names `chr_<action>` / `cr_<stage>_<action>`.
         return (rf"(?:chr_{_SNAKE}|cr_(?:{stages})_{_SNAKE})\.fbx", "chr_<action>.fbx or cr_<stage>_<action>.fbx")
     return None
@@ -329,7 +331,12 @@ def _check_header_fields(m: dict, folder: str, findings: list[Finding], result: 
             add("header_malformed", "task_header must match [COSMIMERA-TASK spec=… tool=… catalog=… "
                                     "template=<id>@<ver> task_id=… seed=…]")
         else:
-            if task_id is not None and hm["task_id"] != task_id:
+            # REQ: tasks.js model-rig@2 batch — one prompt yields one package per source pack, each with
+            # task_id "<batch task_id>-<subject-id>" and batch_id echoing the header's task_id.
+            batch_id = m.get("batch_id")
+            batched = (isinstance(batch_id, str) and task_id is not None and hm["task_id"] == batch_id
+                       and task_id.startswith(batch_id + "-"))
+            if task_id is not None and hm["task_id"] != task_id and not batched:
                 add("header_mismatch", f"header task_id '{hm['task_id']}' != manifest task_id '{task_id}'")
             if task_type is not None and hm["template"] != task_type:
                 add("header_mismatch", f"header template '{hm['template']}' != manifest task_type '{task_type}'")

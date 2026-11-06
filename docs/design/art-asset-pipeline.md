@@ -23,11 +23,13 @@ Claude Code：「驗收 Art/_incoming/<task_id>」→ tools/validate-art 檢查 
 |---|---|---|---|
 | `character-concept` | 角色概念、立繪、T-pose 三視圖、表情集、道具 | ChatGPT | — |
 | `creature-concept` | 宙獸四型態（幼/少/成/超載）立繪、三視圖、進化排列、體型對照 | ChatGPT | — |
-| `model-rig` | 建模用正交視圖、骨架規格、Blender 綁骨腳本（L2：GLB/FBX） | Gemini Argon | 概念 JSON |
-| `animation-set` | 動作規格（幀數/事件）、關鍵姿勢分鏡、Blender 關鍵幀腳本（L2：FBX 動畫） | Gemini Argon | 概念 + 骨架規格 |
-| `move-vfx` | 招式特效分鏡、flipbook 序列圖、Unity 參數表 | ChatGPT | 可選宙獸概念 |
+| `model-rig` | 單一管線：image-to-3D → Blender 清理 → 綁骨 → 骨架動作（建模參考圖、骨架/動作規格、Blender 腳本；L2：GLB/FBX 模型與動畫）。輸入/輸出走雲端硬碟，可批次（見下） | Gemini Argon | 雲端硬碟上的立繪包 |
+| ~~`animation-set`~~ | 2026-11-07 併入 `model-rig@2`，forge 不再產生；驗收工具仍接受舊包 | — | — |
+| `move-vfx` | 招式特效分鏡、flipbook 序列圖、Unity 參數表；招式是獨立圖鑑條目（`move_id`），宙獸只作示範施放者 | ChatGPT | 可選示範宙獸 |
 | `capture-vessel` | 三類收服道具外觀、圖示、投擲/收服分鏡與特效 | ChatGPT | — |
 | `culture-research` | 文化原型考據（意象、敏感度、來源） | Gemini Argon | — |
+
+**3D 管線（`model-rig@2`，2026-11-07 使用者決定）**：角色/宙獸立繪包（`chr-*.zip` / `cr-*.zip`）放在 Google 雲端硬碟 `project/cosmos_chimera/image_in/`；Gemini Argon 任務模式讀取後在同一個 prompt 內做完 image-to-3D、Blender、綁骨與動作，每包打包成一個 zip 上傳到 `project/cosmos_chimera/3D_out/`。批次模式處理 `image_in` 內所有包（跳過 `3D_out` 已有相同 `source_pack` 者），每包 `task_id = <批次 task_id>-<subject-id>`、manifest 帶 `batch_id`（= 標頭 task_id）與 `source_pack`。招式不在此管線：宙獸只做依形狀的通用招式動作槽（`atk_*`／`sup_*`／`field_deploy`）。
 
 **交付層級**：`L1` 對話式 AI 必定做得到（圖、JSON、腳本），未交付即任務失敗；`L2` 視平台能力（3D 網格、FBX 動畫），做不到時列入 `manifest.missing`，不得以假檔充數。3D 工具選型 → Q-T3。
 

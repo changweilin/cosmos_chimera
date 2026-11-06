@@ -263,6 +263,48 @@ class Apply(unittest.TestCase):
             pkg.close()
 
 
+class ModelRigPipeline(unittest.TestCase):
+    """model-rig@2: image-to-3D, rig and animation in one package; batch packages carry batch_id."""
+
+    BATCH = "mdl-20261106-7f3a-2105"
+
+    def batch_package(self, folder: str, batch_id) -> Package:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        src = Path(tmp.name) / folder
+        shutil.copytree(valid("mdl"), src)
+        m = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
+        m["task_id"] = folder
+        if batch_id is not None:
+            m["batch_id"] = batch_id
+        (src / "manifest.json").write_text(json.dumps(m), encoding="utf-8")
+        pkg = Package(src)
+        self.addCleanup(pkg.close)
+        return pkg
+
+    def test_anim_outputs_are_accepted(self):
+        pkg = Package(valid("mdl"))
+        try:
+            pkg.add_listed("images/cr_line_7f3a_adult_anim_sheet_01.png", png_bytes(64, 32), kind="storyboard")
+            pkg.add_listed("anims/cr_adult_idle.fbx", b"fbx", kind="anim")
+            pkg.add_listed("pipeline/README.md", b"# run", kind="report")
+            self.assertEqual([], [str(f) for f in validate_art.validate(pkg.dir).findings])
+        finally:
+            pkg.close()
+
+    def test_batch_package_matches_header_through_batch_id(self):
+        pkg = self.batch_package(self.BATCH + "-line-7f3a", self.BATCH)
+        self.assertNotIn("header_mismatch", pkg.codes())
+
+    def test_batch_package_without_batch_id_is_mismatch(self):
+        pkg = self.batch_package(self.BATCH + "-line-7f3a", None)
+        self.assertIn("header_mismatch", pkg.codes())
+
+    def test_batch_id_must_prefix_task_id(self):
+        pkg = self.batch_package("mdl-20261106-0000-0000-line-7f3a", self.BATCH)
+        self.assertIn("header_mismatch", pkg.codes())
+
+
 class Cli(unittest.TestCase):
     def test_json_output_is_a_list_of_findings(self):
         pkg = Package((FIXTURES / "invalid" / "spec_mismatch").iterdir().__next__())

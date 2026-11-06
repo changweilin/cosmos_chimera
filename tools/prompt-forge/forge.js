@@ -1,6 +1,6 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.2.0";
+  const TOOL_VERSION = "1.3.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
@@ -324,6 +324,8 @@
   function resolveSubject(t, o) {
     if (t.needs === "character") return "character";
     if (t.needs === "creature") return "creature";
+    // 批次模式的主體來自雲端硬碟上的各立繪包，不使用目前概念。
+    if (t.needs === "either" && o.scope === "batch") return null;
     if (t.needs === "either") return o.subject === "creature" ? "creature" : "character";
     if (t.id === "move-vfx" && o.use_creature === "yes") return "creature";
     return null;
@@ -348,7 +350,7 @@
     const ctx = {
       header, taskId, task: t, opts: o, concept, notes: state.notes.trim(),
       platform: state.platform, platformName: state.platform === "gemini" ? "Gemini Argon（任務模式）" : "ChatGPT（對話版）",
-      subjectId: subj ? subjectId(subj) : t.id === "capture-vessel" ? "vessels" : t.id === "culture-research" ? "region_" + o.region : "fx_" + o.element + "_" + o.shape
+      subjectId: subj ? subjectId(subj) : t.id === "model-rig" ? "batch" : t.id === "capture-vessel" ? "vessels" : t.id === "culture-research" ? "region_" + o.region : "fx_" + o.element + "_" + o.shape
     };
     lastBuild = { ctx, errors, text: errors.length ? "" : t.build(ctx) };
     return lastBuild;
@@ -494,6 +496,21 @@
     const root = state.root || DEFAULT_ROOT;
     const dest = root + "\\" + t.drop.replace(/\//g, "\\");
     const cmd = 'Expand-Archive -Path "$HOME\\Downloads\\' + b.ctx.taskId + '.zip" -DestinationPath "' + dest + '\\" -Force';
+    if (t.drive) {
+      // 成品在雲端硬碟 3D_out；批次會有多包，所以用萬用字元一次解壓。
+      const zips = b.ctx.taskId + (b.ctx.opts.scope === "batch" ? "*" : "") + ".zip";
+      const dcmd = 'Get-ChildItem "$HOME\\Downloads\\' + zips + '" | ForEach-Object { Expand-Archive -Path $_.FullName -DestinationPath "' + dest + '\\" -Force }';
+      $("#deliver").replaceChildren(
+        el("ol", {},
+          el("li", {}, "先把角色/宙獸立繪包（", el("code", {}, "chr-*.zip / cr-*.zip"), "）放到雲端硬碟 ", el("code", {}, "project/cosmos_chimera/image_in/")),
+          el("li", {}, "按「複製 prompt」→「開啟 Gemini」切到任務模式貼上送出"),
+          el("li", {}, "完成後從雲端硬碟 ", el("code", {}, "project/cosmos_chimera/3D_out/"), " 下載 ", el("code", {}, zips), " 到「下載」資料夾"),
+          el("li", {}, "解壓到 ", el("code", {}, dest + "\\"), "，再到「成果審查台」審查。")
+        ),
+        el("div", { class: "cmd" }, el("code", {}, dcmd), el("button", { type: "button", class: "mini", onclick: () => copyText(dcmd, "已複製解壓指令") }, "複製"))
+      );
+      return;
+    }
     $("#deliver").replaceChildren(
       el("ol", {},
         el("li", {}, "按「複製 prompt」→「開啟 " + (state.platform === "gemini" ? "Gemini" : "ChatGPT") + "」貼上送出", state.platform === "gemini" ? "（先切到任務/Agent 模式）" : "", "。後續任務（3D/動作）可把前一包的概念圖、concept.json、rig_spec.json 一起附上。"),
