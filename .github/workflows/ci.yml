@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+      - name: Install dependencies
+        run: pip install -r tools/requirements.txt
+      - name: Validate production data
+        run: tools/validate-data
+      # unittest covers the valid set and overlays every invalid fixture onto it.
+      - name: Test validator and sample fixtures
+        run: python -m unittest discover -s tools/tests -v
+
+  unity-license:
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 5
+    outputs:
+      available: ${{ steps.license.outputs.available }}
+    steps:
+      # Secrets cannot be used directly in a job-level if expression.
+      - name: Check Unity credentials without checking out PR code
+        id: license
+        shell: bash
+        env:
+          TRUSTED: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [[ "$TRUSTED" == true && -n "$UNITY_LICENSE" && -n "$UNITY_EMAIL" && -n "$UNITY_PASSWORD" ]]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo '### Unity EditMode：未執行（skipped）' >> "$GITHUB_STEP_SUMMARY"
+            echo '此 PR 來自 fork／Dependabot，或缺少 UNITY_LICENSE、UNITY_EMAIL、UNITY_PASSWORD；未執行 Unity 測試，不能視為通過。ci-required 將失敗。處理方式見 docs/architecture/ci.md。' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  editmode-tests:
+    needs: unity-license
+    if: ${{ needs.unity-license.outputs.available == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+      - name: Read Unity version
+        id: version
+        shell: bash
+        run: |
+          version=$(awk '/^m_EditorVersion: / {gsub(/\r/, "", $2); print $2}' ProjectSettings/ProjectVersion.txt)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+[abfp][0-9]+$ ]] || exit 1
+          echo "unity=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ github.sha }}
+          restore-keys: |
+            Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
+      - name: Run EditMode tests
+        id: unity
+        uses: game-ci/unity-test-runner@v4.3.2
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          unityVersion: ${{ steps.version.outputs.unity }}
+          testMode: editmode
+          artifactsPath: artifacts/editmode
+      - name: Upload test results and logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: editmode-results
+          path: |
+            artifacts/editmode/
+            Logs/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # GitHub accepts a skipped required job; require this explicit success gate instead.
+  ci-required:
+    if: ${{ always() }}
+    needs: [validate-data, unity-license, editmode-tests]
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 5
+    steps:
+      - name: Require actual validation and Unity execution
+        shell: bash
+        env:
+          DATA_RESULT: ${{ needs.validate-data.result }}
+          LICENSE_RESULT: ${{ needs.unity-license.result }}
+          UNITY_RESULT: ${{ needs.editmode-tests.result }}
+        run: |
+          printf '### CI 合併閘門\n\nvalidate-data: %s\nunity-license: %s\neditmode-tests: %s\n' "$DATA_RESULT" "$LICENSE_RESULT" "$UNITY_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$DATA_RESULT" != success || "$LICENSE_RESULT" != success || "$UNITY_RESULT" != success ]]; then
+            echo '::error::資料驗證與 Unity 測試必須實際執行成功；skipped、failure、cancelled 都不滿足合併條件。'
+            exit 1
+          fi
