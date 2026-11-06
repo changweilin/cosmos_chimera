@@ -1,0 +1,8 @@
+[
+  {
+    "a": "sample_fox_cub",
+    "b": "sample_fox_beast",
+    "kind": "evolution_family",
+    "note": "Defective edge where 'sample_fox_cub' > 'sample_fox_beast' lexicographically."
+  }
+]

@@ -1,0 +1,17 @@
+{
+    "name": "Cosmimera.Planet",
+    "rootNamespace": "Cosmimera.Planet",
+    "references": [
+        "Cosmimera.Core",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

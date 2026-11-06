@@ -1,0 +1,26 @@
+{
+    "name": "Cosmimera.Bootstrap",
+    "rootNamespace": "Cosmimera.Bootstrap",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Planet",
+        "Cosmimera.WorldGen",
+        "Cosmimera.Player",
+        "Cosmimera.Creatures",
+        "Cosmimera.Combat",
+        "Cosmimera.Capture",
+        "Cosmimera.Lobby",
+        "Cosmimera.Codex",
+        "Cosmimera.Net",
+        "Cosmimera.Save"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

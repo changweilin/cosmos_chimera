@@ -1,0 +1,45 @@
+[
+  {
+    "id": "sample_dangling_move_creature",
+    "line_id": "sample_line_a",
+    "stage": "juvenile",
+    "evolves_to": "sample_fox_beast",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": -25,
+      "fire": 25,
+      "earth": 0,
+      "ice": -10,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 15
+    },
+    "stats": {
+      "con": 20,
+      "str": 15,
+      "spi": 25,
+      "agi": 30
+    },
+    "signature_move": "nonexistent_move_id",
+    "trait": "sample_trait_placeholder",
+    "concept": {
+      "base": "fennec fox with ember tail",
+      "archetype": "trickster"
+    }
+  }
+]

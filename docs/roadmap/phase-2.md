@@ -7,7 +7,7 @@
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
 | P2-01 | 宙獸/招式/特性/關係 資料模型（Api + DbC）與 schema 細化 | OPUS | SOL | 契約審查通過；schema 與 C# 型別一致 | ⬜ |
-| P2-02 | 能力值→衍生值函數（HP、範圍、CD、移速、閃避）+ 上下限 | SOL | OPUS | 曲線圖 + 不變式測試 | ⬜ |
+| P2-02 | 能力值→衍生值函數（HP、範圍、CD、移速、閃避）+ 上下限 | SOL | OPUS | 曲線圖 + 不變式測試 | 🟨 |
 | P2-03 | 傷害計算（威力×專精×抗性，無相剋表、無攻防值） | SONNET | OPUS | EditMode 測試含邊界（免疫、弱點） | ⬜ |
 | P2-04 | 兩段命中（幾何→擲骰，evasion 上限、hit_floor）、MISS 回饋、招式形狀（直線/錐形/範圍/突進） | SONNET | OPUS | 固定 seed 下命中率統計誤差 < 1%；判定體與 STR 範圍縮放一致 | ⬜ |
 | P2-05 | 進化系統：經驗門檻 + 屬性素材，三階段切換、模型替換 | SONNET | OPUS | 經驗或素材任一不足時拒絕並說明缺什麼 | ⬜ |
@@ -19,3 +19,6 @@
 | P2-11 | 戰鬥 HUD（HP、CD、輪替列、副手提示） | SONNET | 人工 | 4 隻輪替狀態一眼可讀 | ⬜ |
 
 ## 交接紀錄
+
+- 2026-11-06 · ChatGPT Sol（Codex CLI） · partial · 已提出整數衍生值模型、係數、兩張 SVG 與 40 組黃金向量，11 項不變式測試通過；資料驗證缺少 jsonschema，git add 因 worktree metadata 無寫入權限受阻，尚未提交 · 下一步：Claude Opus 審查公式與移植契約；具備依賴與 Git 寫入權限的環境重跑資料驗證並提交，人工確認數值
+- 2026-11-06 · Claude Opus（驗收 Sol）· partial · 代為提交（Codex 沙箱無法寫入 worktree 的 gitdir）。本機重跑：`tools/balance` 11/11 通過、`tools/validate-data` 0 錯誤（本機有 jsonschema）。審查意見：(1) `ranged_distance.cap_mm` 固定 36 m，但 R=320 時眼高 1.7 m 的地平線只有 33 m，違反「尺寸由 `PlanetConfig.Radius` 推導」— 建議改成地平線比例（例如 0.77×horizon），或明訂射程上限只適用 R≥640；(2) 球面路徑長度與直線距離的差異在 36 m 內 < 0.01%，可忽略；(3) 整數/Int64 移植契約與黃金向量可直接給 C# 使用 · 下一步：使用者確認數值與 (1)；SONNET 依黃金向量移植成 C#（P2-01 定好 `base_range` 之後）

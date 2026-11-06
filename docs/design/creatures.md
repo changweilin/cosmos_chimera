@@ -1,6 +1,6 @@
 # 宙獸系統
 
-## 資料模型（schema：`Data/schemas/creature.schema.json`，P2-01 建立）
+## 資料模型（schema：`Data/schemas/creature.schema.json`，P0-05 建立）
 | 欄位 | 說明 |
 |---|---|
 | `id` | 全域唯一 snake_case |
@@ -31,6 +31,7 @@
 
 ## 特性（`Data/traits/`）
 被動效果；以「觸發條件 + 效果」資料描述（例：`on_hp_below:30 → mastery.shadow +20`），不寫死在程式碼。
+資料形狀：`{id, trigger: {type, params}, effects: [{type, params}]}`；`type` 詞彙於 P2 收斂為 enum（2026-11-06 定案）。招式 `effect` 用同一形狀。
 
 ## 隊伍規則
 - 一場遊戲最多攜帶 **6 隻主力**；其中最多 **4 隻**組成上場池，**同時最多 2 隻在場**，其餘在池中輪替（Q-C4 定案）。
@@ -46,7 +47,7 @@
 - 進化在哪裡執行（大廳或場內）、素材規則是否如上 → Q-C9。
 
 ## 關係表（`Data/relations/edges.json`）
-無向圖：`{a, b, kind, note}`；`kind` 例：神話同源、天敵共生、同工具系、師徒。用途：副手資格、圖鑑關係網、劇情台詞。
+無向圖：`{a, b, kind, note}`；`kind` 為封閉 enum（2026-11-06 定案）：`evolution_family` 同進化線、`myth_kin` 神話同源、`rival_symbiosis` 天敵共生、`tool_kin` 同工具系、`mentor` 師徒；新增種類需改 `relation.schema.json`。用途：副手資格、圖鑑關係網、劇情台詞。
 
 ## 御三家「日月星」（Q-C6 定案）
 | 代號 | 專精 | 特長 | 戰鬥定位 |

@@ -1,0 +1,1 @@
+# Retired ids: never reuse (saves and net packets reference ids). One id per line; # starts a comment.

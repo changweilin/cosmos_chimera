@@ -1,0 +1,18 @@
+{
+    "name": "Cosmimera.Save",
+    "rootNamespace": "Cosmimera.Save",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Creatures",
+        "Cosmimera.Capture"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
