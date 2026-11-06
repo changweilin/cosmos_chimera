@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace Cosmimera.Combat.Tests
 {
-    // Regressions for docs/reviews/P2-02-P2-04-sol-r6.md (R2, R3, S1).
+    // Regressions for docs/reviews/P2-02-P2-04-sol-r6.md (R2, R3, S1) and r7 (R4).
     public sealed class CombatReviewSolR6Tests
     {
         private DerivedStats _stats;
@@ -58,6 +58,21 @@ namespace Cosmimera.Combat.Tests
             var target = new float3(-7310.12744140625f, 6905.16162109375f, 10301.609375f);
 
             Assert.IsTrue(MoveGeometry.Overlaps(burst, planet, anchor, float3.zero, target, 0.5f));
+        }
+
+        // SOL r7 R4: a nonzero nanometre offset straight behind must not be snapped to the volume's origin.
+        [TestCase(MoveShape.Front)]
+        [TestCase(MoveShape.Cone)]
+        public void R4_tiny_offset_behind_the_anchor_is_not_snapped_to_the_origin(MoveShape shape)
+        {
+            var planet = new PlanetConfig(640f, float3.zero);
+            RangeClass range = shape == MoveShape.Front ? RangeClass.Melee : RangeClass.Mid;
+            HitVolume volume = MoveGeometry.Build(shape, MoveMovement.None, range, BurstOrigin.Caster, 2000, 0, _stats, _d);
+            var anchor = new float3(0f, 640f, 0f);
+            var forward = new float3(0f, 0f, 1f);
+
+            Assert.IsFalse(MoveGeometry.Overlaps(volume, planet, anchor, forward, new float3(0f, 640f, -1e-10f), 1e-12f));
+            Assert.IsTrue(MoveGeometry.Overlaps(volume, planet, anchor, forward, new float3(0f, 640f, 1e-3f), 1e-12f));
         }
 
         // ShellSlack = 1e-6 × (max |center component| + 2R) = 0.01728 m here. The accepted aims below are outside a

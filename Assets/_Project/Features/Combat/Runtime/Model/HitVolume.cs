@@ -452,14 +452,17 @@ namespace Cosmimera.Combat
             double3 f = math.normalize(forwardD - math.dot(forwardD, up) * up);
             double3 right = math.cross(up, f);
 
-            // Bearing from components in the tangent basis, not from normalizing up2 − dot(up2, up)·up: near the
-            // antipode that difference is a pure radial residue, which projected to (0, 0) and put a target
-            // 2010 m away at distance 0 (SOL r2 N1). On the near hemisphere |(px, pz)| = rp·sin(angle), so the bearing
-            // is only ill-conditioned when the points (nearly) coincide, where distance ~0 makes it irrelevant.
-            double px = math.dot(dp, right);
-            double pz = math.dot(dp, f);
+            // Bearing from the tangent vector cross(cross(da, dp), up) = (dp − up·dot(up, dp))·|da|, built from the raw
+            // cross product instead of projecting dp: projecting leaves the full radial rounding of dp, which swamped
+            // tiny real offsets and was then snapped to the origin — a target 1e-10 m behind a Rect counted as inside
+            // (SOL r7 R4). The cross product is exactly zero only for exactly collinear inputs, where distance is 0.
+            // Not normalizing up2 − dot(up2, up)·up also keeps the antipode safe (SOL r2 N1): this branch only runs on
+            // the anchor's own hemisphere.
+            double3 tangent = math.cross(math.cross(da, dp), up);
+            double px = math.dot(tangent, right);
+            double pz = math.dot(tangent, f);
             double bearingLength = math.sqrt(px * px + pz * pz);
-            if (bearingLength < 1e-12 * rp || distance == 0.0)
+            if (bearingLength == 0.0 || distance == 0.0)
             {
                 return true;
             }

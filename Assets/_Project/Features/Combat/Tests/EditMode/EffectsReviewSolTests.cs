@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace Cosmimera.Combat.Tests
 {
-    // Regressions for docs/reviews/P2-09-sol.md (E1–E6). Each test is named after the finding or mutant it pins.
+    // Regressions for docs/reviews/P2-09-sol.md (E1–E6) and P2-02-P2-04-P2-09-sol-r7.md (E7, E8). Each test is named after the finding or mutant it pins.
     public sealed class EffectsReviewSolTests
     {
         private EffectRulesConfig _cfg;
@@ -137,6 +137,45 @@ namespace Cosmimera.Combat.Tests
             var high = new FieldTimeline(placed, 3000, 1000);
             Assert.AreEqual(1, high.TicksDue(placed - 1, placed));
             Assert.AreEqual(3, high.TicksDue(placed - 1, placed + 10_000));
+        }
+
+        // ---- E7 (r2): mutants of the E1–E3 fixes that the first regressions could not tell apart.
+
+        [Test]
+        public void E7_SA02_SA03_one_step_inside_the_saturation_bound_is_not_saturated()
+        {
+            Assert.AreEqual(DamageModel.MaxMasteryPercent - 1, EffectMath.EffectiveMastery(0, DamageModel.MaxMasteryPercent - 1));
+            Assert.AreEqual(-DamageModel.ResistClamp + 1, EffectMath.EffectiveResist(0, -DamageModel.ResistClamp + 1));
+        }
+
+        [Test]
+        public void E7_RC03_ranged_cast_distance_is_capped()
+        {
+            int cap = _stats.Coefficients.RangedCapMm;
+            HitVolume ally = MoveGeometry.Build(MoveShape.Ally, MoveMovement.None, RangeClass.Mid, default, 30000, 0, _stats, _d);
+            Assume.That(ally.CastDistanceMm * 3 / 2, Is.GreaterThan(cap), "witness must cross the cap");
+            Assert.AreEqual(cap, EffectMath.ApplyRange(ally, RangeClass.Mid, 50, _stats, _cfg).CastDistanceMm);
+        }
+
+        [Test]
+        public void E7_RC05_E8_a_ranged_dash_beyond_the_cap_is_legal_and_unchanged()
+        {
+            int cap = _stats.Coefficients.RangedCapMm;
+            HitVolume dash = MoveGeometry.Build(MoveShape.Line, MoveMovement.Dash, RangeClass.Mid, default, cap + 1000, 0, _stats, _d);
+            HitVolume result = EffectMath.ApplyRange(dash, RangeClass.Mid, 50, _stats, _cfg);
+            Assert.AreEqual(cap + 1000, result.ReachMm);
+            Assert.AreEqual(cap + 1000, result.DashDistanceMm);
+        }
+
+        [Test]
+        public void E7_PR02_PR03_preconditions_hold_even_without_a_modifier()
+        {
+            HitVolume line = MoveGeometry.Build(MoveShape.Line, MoveMovement.None, RangeClass.Mid, default, 12000, 0, _stats, _d);
+            Assert.Throws<ContractException>(() => EffectMath.ApplyRange(line, (RangeClass)9, 0, _stats, _cfg));
+
+            int cap = _stats.Coefficients.RangedCapMm;
+            HitVolume meleeLong = MoveGeometry.Build(MoveShape.Line, MoveMovement.None, RangeClass.Melee, default, cap + 1000, 0, _stats, _d);
+            Assert.Throws<ContractException>(() => EffectMath.ApplyRange(meleeLong, RangeClass.Long, 0, _stats, _cfg));
         }
 
         // ---- E6: element must be defined even where it is meaningless.

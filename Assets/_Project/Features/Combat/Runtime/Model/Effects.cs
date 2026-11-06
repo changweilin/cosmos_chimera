@@ -666,9 +666,10 @@ namespace Cosmimera.Combat
         /// same bound <see cref="MoveGeometry.Build"/> gave the unmodified value (combat.md: re-apply the original
         /// limits): mid/long ranges are capped at RangedCapMm (horizon bound), melee ranges are not (SOL P2-09 E2).
         /// Pre: stats, config non-null; rangeClass defined; volume came from MoveGeometry.Build with that rangeClass,
-        ///      so for mid/long its range dimensions are &lt;= RangedCapMm.
-        /// Post: equals volume when percentSum == 0; Kind/Anchor/Width/Angle/Height/Dash unchanged; range dimensions
-        ///       non-decreasing in percentSum and, for mid/long, &lt;= RangedCapMm.
+        ///      so for mid/long its range dimensions are &lt;= RangedCapMm — except a dash, whose path length is never
+        ///      capped or scaled (SOL P2-09 r2 E8). Checked before any early return.
+        /// Post: equals volume when percentSum == 0 or volume is a dash; Kind/Anchor/Width/Angle/Height/Dash unchanged;
+        ///       range dimensions non-decreasing in percentSum and, for a non-dash mid/long volume, &lt;= RangedCapMm.
         /// Side effects: none.
         /// </remarks>
         public static HitVolume ApplyRange(in HitVolume volume, RangeClass rangeClass, long percentSum, DerivedStats stats,
