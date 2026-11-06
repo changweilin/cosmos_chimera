@@ -11,8 +11,10 @@ namespace Cosmimera.Player
     /// Pre: <see cref="Configure"/> before the first LateUpdate; both cameras use the pivot as tracking target — third
     ///      person with CinemachineThirdPersonFollow, first person with HardLockToTarget + RotateWithFollowTarget — so
     ///      the camera inherits the pivot's planet-relative rotation instead of computing one against world Y.
-    /// Post: after each LateUpdate the pivot sits EyeHeight above the character along local up, rotated by the orbit.
-    /// Side effects: writes pivot transform, camera priorities and the brain's WorldUpOverride.
+    /// Post: after each LateUpdate the pivot sits EyeHeight above the character along local up, rotated by the orbit;
+    ///       the brain's world up equals the local planet up regardless of pitch.
+    /// Side effects: writes pivot transform, camera priorities and the brain's WorldUpOverride; owns one hidden
+    ///       world-up transform (destroyed with the rig).
     /// </remarks>
     public sealed class PlayerCameraRig : MonoBehaviour
     {
@@ -23,6 +25,7 @@ namespace Cosmimera.Player
         private PlanetConfig _planet;
         private Transform _target;
         private Transform _pivot;
+        private Transform _worldUp;
         private CinemachineCamera _thirdPerson;
         private CinemachineCamera _firstPerson;
         private ViewOrbit _orbit;
@@ -41,7 +44,7 @@ namespace Cosmimera.Player
         /// <remarks>
         /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; pivot is not a child of target (the
         ///      orbit, not the body, owns its rotation).
-        /// Post: third person live; orbit heading == target forward; brain.WorldUpOverride == pivot.
+        /// Post: third person live; orbit heading == target forward; brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
         /// </remarks>
         public void Configure(in PlanetConfig planet, Transform target, Transform pivot, CinemachineCamera thirdPerson,
@@ -59,8 +62,14 @@ namespace Cosmimera.Player
             _firstPerson = firstPerson;
             _thirdPerson.Target.TrackingTarget = pivot;
             _firstPerson.Target.TrackingTarget = pivot;
-            // Cinemachine blends and damps in the brain's up; the pivot's up is the local planet up.
-            brain.WorldUpOverride = pivot;
+            // Cinemachine blends and damps in WorldUpOverride.up. The pivot carries the look pitch, so it would tilt that
+            // up by up to 80° (sol P1-05 F2); a separate level transform keeps it at the local planet up.
+            if (_worldUp == null)
+            {
+                _worldUp = new GameObject("CameraWorldUp") { hideFlags = HideFlags.HideInHierarchy }.transform;
+            }
+
+            brain.WorldUpOverride = _worldUp;
 
             float3 up = PlanetFrame.At(planet, target.position).Up;
             _orbit = ViewOrbit.Create(up, SphericalMotor.TangentOr(target.forward, up, PlanetFrame.FromUp(up).North));
@@ -69,19 +78,31 @@ namespace Cosmimera.Player
             LateUpdate();
         }
 
+        /// <summary>Transform whose up is the level local planet up; assigned to the brain's WorldUpOverride.</summary>
+        /// <remarks>Pre: Configure called. Post: up == local up at the last LateUpdate. Side effects: none.</remarks>
+        internal Transform WorldUpReference => _worldUp;
+
         /// <summary>Queues look input for the next LateUpdate.</summary>
         /// <remarks>
-        /// Pre: delta finite. pointerDelta is in pixels (mouse); stick is in [-1, 1] and scaled by deltaTime here.
+        /// Pre: pointerDelta and stick components finite; deltaTime finite and ≥ 0. pointerDelta is in pixels (mouse);
+        ///      stick is in [-1, 1] and scaled by deltaTime here.
         /// Post: accumulated until consumed. Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
         {
+            Contract.Requires(math.all(math.isfinite(new float4(pointerDelta.x, pointerDelta.y, stick.x, stick.y))),
+                "look deltas must be finite");
+            Contract.Requires(deltaTime >= 0f && !float.IsInfinity(deltaTime), "deltaTime must be finite and >= 0");
             _pendingLook += (float2)pointerDelta * _sensitivityDegrees + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
         }
 
         /// <summary>Switches between third and first person.</summary>
         /// <remarks>Pre: Configure called. Post: IsFirstPerson toggled; exactly one camera has the higher priority. Side effects: priorities.</remarks>
-        public void ToggleView() => SetFirstPerson(!IsFirstPerson);
+        public void ToggleView()
+        {
+            Contract.Requires(_configured, "Configure has not been called");
+            SetFirstPerson(!IsFirstPerson);
+        }
 
         private void SetFirstPerson(bool firstPerson)
         {
@@ -102,6 +123,15 @@ namespace Cosmimera.Player
             _orbit.Advance(up, _pendingLook.x, _pendingLook.y);
             _pendingLook = float2.zero;
             _pivot.SetPositionAndRotation(position + up * _eyeHeight, _orbit.Rotation());
+            _worldUp.SetPositionAndRotation(position, _orbit.LevelRotation());
+        }
+
+        private void OnDestroy()
+        {
+            if (_worldUp != null)
+            {
+                Destroy(_worldUp.gameObject);
+            }
         }
     }
 }

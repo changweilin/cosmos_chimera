@@ -21,11 +21,29 @@ namespace Cosmimera.Planet
         /// <summary>Version of the height algorithm; bump whenever the same inputs would produce different heights.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none. REQ: docs/design/multiplayer.md (版本不符拒絕加入).</remarks>
         // v2 (2026-11-06): Sample normalises its input (sol review F2); SampleCore and meshes are unchanged.
-        public const int GeneratorVersion = 2;
+        // v3 (2026-11-06): SampleCore normalises too, so queries and meshes evaluate one graph (sol r2 B4).
+        public const int GeneratorVersion = 3;
 
         /// <summary>Largest supported octave count.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const int MaxOctaves = 8;
+
+        /// <summary>Largest accepted <see cref="Amplitude"/> in metres.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r2-sol.md#B2 — float.MaxValue was accepted and made MaxAbsHeight infinite.
+        /// 1e5 m is 1500× the default at R = 1280 m and keeps 2·Amplitude and every partial sum finite.
+        /// </remarks>
+        public const float MaxAmplitude = 1e5f;
+
+        /// <summary>Largest accepted frequency of the highest octave, BaseFrequency · 2^(Octaves − 1).</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r2-sol.md#B2 — an unbounded frequency overflowed to ∞ inside snoise and the
+        /// clamp hid the NaN as a peak. At 1024 the noise domain stays below ≈ 1300 cells, where a float still
+        /// resolves 1.2e-4 of a cell; the default top octave is 64.
+        /// </remarks>
+        public const float MaxTopFrequency = 1024f;
 
         // Per-octave noise-domain offsets decorrelate octaves and planets. Separate fields rather than an array
         // keep the struct blittable for Burst without pulling Collections into the Api.
@@ -47,24 +65,28 @@ namespace Cosmimera.Planet
         /// <remarks>Pre: none. Post: within [1, MaxOctaves] for a constructed value. Side effects: none.</remarks>
         public readonly int Octaves;
 
-        /// <summary>Bound on |height|: the geometric sum of octave amplitudes.</summary>
+        /// <summary>Bound on |Sample|: the geometric sum of octave amplitudes, enforced by clamping the output.</summary>
         /// <remarks>
-        /// Pre: none. Post: == Amplitude · (2 − 2^(1−Octaves)). Side effects: none.
+        /// Pre: none. Post: == Amplitude · (2 − 2^(1−Octaves)); finite. Side effects: none.
+        /// Not a bound on the raw fBm: snoise slightly exceeds 1 (≈ 1.028 found by sol r2 B3), and Sample clips there.
         /// Feed this into <c>ChunkLodSettings.HeightMargin</c> so displaced terrain is never under-refined.
         /// </remarks>
         public readonly float MaxAbsHeight;
 
         /// <summary>Creates a height field.</summary>
         /// <remarks>
-        /// Pre: amplitude finite and ≥ 0; baseFrequency finite and &gt; 0; 1 ≤ octaves ≤ MaxOctaves.
+        /// Pre: 0 ≤ amplitude ≤ MaxAmplitude; 1 ≤ octaves ≤ MaxOctaves;
+        ///      0 &lt; baseFrequency and baseFrequency · 2^(octaves − 1) ≤ MaxTopFrequency.
         /// Post: fields equal the arguments; offsets are a pure function of seed.
         /// Side effects: none.
         /// </remarks>
         public PlanetHeight(ulong seed, float amplitude, float baseFrequency, int octaves)
         {
-            Contract.Requires(math.isfinite(amplitude) && amplitude >= 0f, "amplitude must be finite and >= 0");
-            Contract.Requires(math.isfinite(baseFrequency) && baseFrequency > 0f, "baseFrequency must be finite and > 0");
+            Contract.Requires(amplitude >= 0f && amplitude <= MaxAmplitude, "amplitude must be within [0, MaxAmplitude]");
             Contract.Requires(octaves >= 1 && octaves <= MaxOctaves, "octaves must be within [1, MaxOctaves]");
+            // NaN fails both comparisons, so no separate isfinite check is needed.
+            Contract.Requires(baseFrequency > 0f && baseFrequency * (1 << (math.clamp(octaves, 1, MaxOctaves) - 1)) <= MaxTopFrequency,
+                "top-octave frequency must be within (0, MaxTopFrequency]");
             Seed = seed;
             Amplitude = amplitude;
             BaseFrequency = baseFrequency;
@@ -113,12 +135,16 @@ namespace Cosmimera.Planet
             Contract.Requires(IsValid, "PlanetHeight is default/uninitialised");
             Contract.Requires(math.all(math.isfinite(direction)) && math.abs(math.lengthsq(direction) - 1f) <= 2e-3f,
                 "direction must be a finite unit vector");
-            return SampleCore(math.normalize(direction));
+            return SampleCore(direction);
         }
 
         // Burst entry point (ADR-0006): no Contract calls. Callers validate this value once before scheduling.
+        // Normalises here rather than in Sample so the public query and the mesh evaluate the same operation graph
+        // (sol r2 B4: they differed by up to 1 mm on 1202/4096 directions). Mesh directions are already unit, so the
+        // extra normalize only re-rounds them; seams stay bit-identical because both faces pass the same bits.
         internal float SampleCore(float3 direction)
         {
+            direction = math.normalize(direction);
             float sum = 0f;
             float amp = Amplitude;
             float freq = BaseFrequency;

@@ -6,6 +6,7 @@
         "Cosmimera.Planet",
         "Cosmimera.Player",
         "Unity.Mathematics",
+        "Unity.Cinemachine",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

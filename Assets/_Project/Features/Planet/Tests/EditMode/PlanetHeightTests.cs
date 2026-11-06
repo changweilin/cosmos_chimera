@@ -118,9 +118,23 @@ namespace Cosmimera.Planet.Tests
         [Test]
         public void Snapshot_matches_GeneratorVersion()
         {
-            Assert.AreEqual(2, PlanetHeight.GeneratorVersion, "GeneratorVersion changed: update the snapshot file and note it in the handoff log");
-            string path = Path.Combine(Application.dataPath, "_Project/Features/Planet/Tests/Snapshots/planet-height-v2.txt");
-            ulong actual = SnapshotHash(PlanetHeight.ForPlanet(Planet640, 42UL));
+            Assert.AreEqual(3, PlanetHeight.GeneratorVersion, "GeneratorVersion changed: update the snapshot files and note it in the handoff log");
+            AssertSnapshot("planet-height-v3.txt", PlanetHeight.ForPlanet(Planet640, 42UL));
+        }
+
+        // The default config uses 6 octaves, so octaves 7–8 never reached the hash (sol r2 B3: corrupting the
+        // 8th offset survived).
+        [Test]
+        public void Snapshot_with_all_octaves_matches_GeneratorVersion()
+        {
+            Assert.AreEqual(3, PlanetHeight.GeneratorVersion, "GeneratorVersion changed: update the snapshot files and note it in the handoff log");
+            AssertSnapshot("planet-height-v3-oct8.txt", new PlanetHeight(7UL, 5f, 3f, PlanetHeight.MaxOctaves));
+        }
+
+        private static void AssertSnapshot(string file, in PlanetHeight height)
+        {
+            string path = Path.Combine(Application.dataPath, "_Project/Features/Planet/Tests/Snapshots", file);
+            ulong actual = SnapshotHash(height);
             Assert.IsTrue(File.Exists(path), $"missing snapshot {path}; computed 0x{actual:X16}");
             string expected = File.ReadAllText(path).Trim();
             Assert.AreEqual(expected, $"0x{actual:X16}", "height output changed without a GeneratorVersion bump");

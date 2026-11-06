@@ -5,33 +5,64 @@ namespace Cosmimera.Player
 {
     /// <summary>Tuning for <see cref="SphericalMotor"/>. Speeds in m/s, accelerations in m/s², angles in degrees.</summary>
     /// <remarks>
-    /// Pre: build through <see cref="Default"/> or set every field; all values finite; speeds, accelerations, gravity,
-    ///      jump height and turn rate &gt; 0; 0 &lt; MaxSlopeDegrees &lt; 90; SnapDistance &gt;= 0.
+    /// Pre: build through <see cref="Default"/> or set every field so that <see cref="IsValid"/> holds: every value
+    ///      within its Max* bound; speeds, accelerations, gravity, jump height and turn rate &gt; 0;
+    ///      WalkSpeed ≤ SprintSpeed; 0 &lt; MaxSlopeDegrees &lt; 90; SnapDistance, StickSpeed ≥ 0.
     /// Post: n/a (plain data). Side effects: none.
     /// Numbers are P1 placeholders (walk 5 m/s comes from planet-world.md's lap-time table), not design final.
     /// </remarks>
     internal struct MotorSettings
     {
         /// <summary>Target planar speed without sprint.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float WalkSpeed;
         /// <summary>Target planar speed while sprinting.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float SprintSpeed;
         /// <summary>Planar acceleration towards the target while grounded.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float GroundAcceleration;
         /// <summary>Planar acceleration towards the target while airborne (air control).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float AirAcceleration;
         /// <summary>Acceleration towards the planet centre.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float Gravity;
         /// <summary>Apex height of a standing jump (m).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float JumpHeight;
         /// <summary>Steepest walkable ground, measured from local up.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float MaxSlopeDegrees;
         /// <summary>Maximum body turn speed (degrees per second).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float TurnRateDegrees;
         /// <summary>Ground within this distance below the feet counts as standing (absorbs collider chord sag).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float SnapDistance;
         /// <summary>Downward speed held while grounded so the body follows convex ground instead of skipping off it.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float StickSpeed;
+
+        /// <summary>Largest accepted speed (Walk, Sprint, Stick), m/s.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-05-sol.md#F4 — Gravity = float.MaxValue passed IsValid and 2·g·h overflowed to a NaN
+        /// velocity. The Max* bounds are generous (20× the defaults or more) and keep every product in Step finite.
+        /// </remarks>
+        public const float MaxSpeed = 100f;
+        /// <summary>Largest accepted acceleration (Ground, Air, Gravity), m/s².</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxAcceleration = 1000f;
+        /// <summary>Largest accepted JumpHeight, m.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxJumpHeight = 100f;
+        /// <summary>Largest accepted TurnRateDegrees, degrees per second.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxTurnRateDegrees = 36000f;
+        /// <summary>Largest accepted SnapDistance, m.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxSnapDistance = 10f;
 
         /// <summary>P1 placeholder tuning.</summary>
         /// <remarks>Pre: none. Post: <see cref="IsValid"/>. Side effects: none.</remarks>
@@ -50,30 +81,37 @@ namespace Cosmimera.Player
         };
 
         /// <summary>True when every field satisfies the type precondition.</summary>
-        /// <remarks>Pre: none. Post: see type Pre. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: see type Pre (NaN fails every comparison, so it is rejected). Side effects: none.</remarks>
         public bool IsValid =>
-            WalkSpeed > 0f && SprintSpeed > 0f && GroundAcceleration > 0f && AirAcceleration > 0f &&
-            Gravity > 0f && JumpHeight > 0f && TurnRateDegrees > 0f && SnapDistance >= 0f && StickSpeed >= 0f &&
-            MaxSlopeDegrees > 0f && MaxSlopeDegrees < 90f &&
-            math.all(math.isfinite(new float4(WalkSpeed, SprintSpeed, GroundAcceleration, AirAcceleration))) &&
-            math.all(math.isfinite(new float4(Gravity, JumpHeight, TurnRateDegrees, SnapDistance))) &&
-            math.isfinite(StickSpeed);
+            InRange(WalkSpeed, MaxSpeed) && InRange(SprintSpeed, MaxSpeed) && WalkSpeed <= SprintSpeed &&
+            InRange(GroundAcceleration, MaxAcceleration) && InRange(AirAcceleration, MaxAcceleration) &&
+            InRange(Gravity, MaxAcceleration) && InRange(JumpHeight, MaxJumpHeight) &&
+            InRange(TurnRateDegrees, MaxTurnRateDegrees) &&
+            SnapDistance >= 0f && SnapDistance <= MaxSnapDistance && StickSpeed >= 0f && StickSpeed <= MaxSpeed &&
+            MaxSlopeDegrees > 0f && MaxSlopeDegrees < 90f;
+
+        private static bool InRange(float value, float max) => value > 0f && value <= max;
     }
 
     /// <summary>One fixed step of player intent.</summary>
     /// <remarks>
-    /// Pre: |Move| ≤ 1 (+1e-3); ViewForward finite (any length; projected onto the tangent plane, zero = "use facing").
+    /// Pre: |Move| ≤ 1 (+1e-3); ViewForward finite (any length, scale-invariant; projected onto the tangent plane;
+    ///      zero or within 1e-3 rad of ±up = "use facing").
     /// Post: n/a. Side effects: none.
     /// </remarks>
     internal struct MotorInput
     {
         /// <summary>x = right, y = forward, relative to <see cref="ViewForward"/>.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float2 Move;
         /// <summary>World-space camera heading.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 ViewForward;
         /// <summary>Jump requested this step (the glue latches presses between fixed steps).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public bool Jump;
         /// <summary>Sprint held.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public bool Sprint;
     }
 
@@ -85,10 +123,13 @@ namespace Cosmimera.Player
     internal struct GroundContact
     {
         /// <summary>Something was found below the feet within the probe range.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public bool Hit;
         /// <summary>Surface normal at the contact.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Normal;
         /// <summary>Gap between the feet and the contact (m).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float Distance;
     }
 
@@ -96,25 +137,35 @@ namespace Cosmimera.Player
     /// <remarks>
     /// Pre: create through <see cref="SphericalMotor.Initial"/>.
     /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing and PlanarVelocity ⟂ Up (±1e-4), Facing
-    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded.
+    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded.
     /// Side effects: none.
     /// </remarks>
     internal struct MotorState
     {
         /// <summary>Velocity to hand to the body this step (world, m/s).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Velocity;
         /// <summary>Controlled horizontal velocity, tangent to the sphere. Kept separately from Velocity because
         /// Velocity follows the ground slope: re-deriving the tangent part from it loses cos(slope) every step
         /// (measured: 2.5 m/s instead of 5 m/s on 25° slopes).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 PlanarVelocity;
         /// <summary>Speed along Up while airborne (positive = rising); the glue may overwrite it with the measured value.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float VerticalSpeed;
         /// <summary>Body forward, tangent to the sphere. Carried (not rebuilt from East/North) so it survives the poles.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Facing;
         /// <summary>Local up at the end of the previous step; the reference that PlanarVelocity and Facing are transported from.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Up;
         /// <summary>Standing on walkable ground after this step.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public bool Grounded;
+        /// <summary>A jump began during this step. The glue consumes its jump buffer on this, not on "left the ground",
+        /// which also fires when walking off a ledge and misses a jump on the landing step (sol P1-05 F1).</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
+        public bool JumpStarted;
     }
 
     /// <summary>Pure character kinematics on a sphere: walk, sprint, jump, slope limit and heading transport.</summary>
@@ -129,7 +180,7 @@ namespace Cosmimera.Player
 
         /// <summary>State at rest at local up <paramref name="up"/> facing <paramref name="facing"/>.</summary>
         /// <remarks>
-        /// Pre: up unit (±1e-3); facing finite and not parallel to up.
+        /// Pre: up unit (±1e-3); facing finite (any length), not zero and not within 1e-3 rad of ±up.
         /// Post: result satisfies the MotorState invariant; Velocity == 0; Grounded == false.
         /// Side effects: none.
         /// </remarks>
@@ -138,19 +189,22 @@ namespace Cosmimera.Player
             Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
             Contract.Requires(math.all(math.isfinite(facing)), "facing must be finite");
             up = math.normalize(up);
-            float3 tangent = facing - up * math.dot(facing, up);
-            Contract.Requires(math.lengthsq(tangent) > DegenerateSq * math.max(math.lengthsq(facing), 1e-30f),
-                "facing must not be parallel to up");
-            return new MotorState { Up = up, Facing = math.normalize(tangent), Grounded = false };
+            float3 tangent = TangentOr(facing, up, float3.zero);
+            Contract.Requires(math.any(tangent != 0f), "facing must not be zero or parallel to up");
+            return new MotorState { Up = up, Facing = tangent, Grounded = false };
         }
 
         /// <summary>Advances <paramref name="prev"/> by <paramref name="dt"/> seconds at the new local up <paramref name="up"/>.</summary>
         /// <remarks>
-        /// Pre: settings.IsValid; prev satisfies the MotorState invariant; up unit (±1e-3) and within 90° of prev.Up;
+        /// Pre: settings.IsValid; prev satisfies the MotorState invariant (checked with 1e-3 slack: Facing unit and
+        ///      ⟂ prev.Up, PlanarVelocity ⟂ prev.Up relative to its length, all fields finite); up unit (±1e-3) and
+        ///      strictly less than 90° from prev.Up;
         ///      0 &lt; dt ≤ 0.1; input satisfies the MotorInput precondition; ground satisfies GroundContact's.
         /// Post: MotorState invariant holds; result.Up == normalize(up);
         ///       Grounded ⇔ ground.Hit ∧ Distance ≤ SnapDistance ∧ slope ≤ MaxSlope ∧ prev.VerticalSpeed ≤ 0.5 ∧ no jump;
-        ///       |PlanarVelocity| ≤ max(|prev.PlanarVelocity|, SprintSpeed); while grounded, Velocity runs along the
+        ///       JumpStarted ⇔ a jump started this step;
+        ///       |PlanarVelocity| ≤ max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding); transport alone preserves
+        ///       |PlanarVelocity|; while grounded, Velocity runs along the
         ///       ground plane at |PlanarVelocity| plus StickSpeed into the ground;
         ///       a jump starts only from Grounded and sets the vertical speed to sqrt(2·Gravity·JumpHeight).
         /// Side effects: none (pure).
@@ -162,6 +216,13 @@ namespace Cosmimera.Player
             Contract.Requires(dt > 0f && dt <= 0.1f, "dt must be in (0, 0.1]");
             Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
             Contract.Requires(math.abs(math.lengthsq(prev.Up) - 1f) < 2e-3f, "prev is uninitialised (use Initial)");
+            Contract.Requires(math.abs(math.lengthsq(prev.Facing) - 1f) < 2e-3f && math.abs(math.dot(prev.Facing, prev.Up)) <= 1e-3f,
+                "prev.Facing must be a unit tangent");
+            Contract.Requires(math.all(math.isfinite(prev.PlanarVelocity))
+                && math.abs(math.dot(prev.PlanarVelocity, prev.Up)) <= 1e-3f * math.max(1f, math.length(prev.PlanarVelocity)),
+                "prev.PlanarVelocity must be a finite tangent");
+            Contract.Requires(math.all(math.isfinite(prev.Velocity)) && math.isfinite(prev.VerticalSpeed),
+                "prev velocities must be finite");
             Contract.Requires(math.dot(up, prev.Up) > 0f, "up moved more than 90° in one step");
             Contract.Requires(math.lengthsq(input.Move) <= 1.002f, "|Move| must be ≤ 1");
             Contract.Requires(math.all(math.isfinite(input.ViewForward)), "ViewForward must be finite");
@@ -175,6 +236,14 @@ namespace Cosmimera.Player
             quaternion transport = FromTo(prev.Up, up);
             float3 vTan = math.mul(transport, prev.PlanarVelocity);
             vTan -= up * math.dot(vTan, up);
+            // A rotation preserves length; restoring it stops rounding from compounding while nothing else corrects
+            // the speed (sol P1-05 F5: +0.28 % over 1e5 free-gliding steps).
+            float transportedLen = math.length(vTan);
+            if (transportedLen > 0f)
+            {
+                vTan *= math.length(prev.PlanarVelocity) / transportedLen;
+            }
+
             float3 facing = TangentOr(math.mul(transport, prev.Facing), up, prev.Facing);
             float vUp = prev.VerticalSpeed;
 
@@ -205,8 +274,10 @@ namespace Cosmimera.Player
             }
 
             float3 velocity;
+            bool jumpStarted = false;
             if (grounded && input.Jump)
             {
+                jumpStarted = true;
                 vUp = math.sqrt(2f * settings.Gravity * settings.JumpHeight);
                 velocity = vTan + up * vUp;
                 grounded = false;
@@ -238,6 +309,7 @@ namespace Cosmimera.Player
             return new MotorState
             {
                 Velocity = velocity, PlanarVelocity = vTan, VerticalSpeed = vUp, Facing = facing, Up = up, Grounded = grounded,
+                JumpStarted = jumpStarted,
             };
         }
 
@@ -251,16 +323,31 @@ namespace Cosmimera.Player
         }
 
         /// <summary>Unit tangent of <paramref name="v"/> at <paramref name="up"/>, or <paramref name="fallback"/> if degenerate.</summary>
-        /// <remarks>Pre: up unit. Post: result ⟂ up and unit, or == fallback. Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: up unit; v finite.
+        /// Post: result ⟂ up (≤ 1e-6) and unit, or == fallback when v is zero or within 1e-3 rad of ±up;
+        ///       independent of |v|.
+        /// Side effects: none.
+        /// </remarks>
         internal static float3 TangentOr(float3 v, float3 up, float3 fallback)
         {
-            float3 t = v - up * math.dot(v, up);
-            float lenSq = math.lengthsq(t);
-            if (lenSq <= DegenerateSq * math.max(math.lengthsq(v), 1e-30f) || lenSq < 1e-30f)
+            // Scale by the largest component first: lengthsq of 1e20 overflows and of 1e-20 underflows, which made
+            // a legal ViewForward turn 90° (sol P1-05 F3). The degeneracy test is then an angle, as in
+            // PlanetFrame.ProjectOnTangent (its helper is internal to Planet, hence a copy of the policy).
+            float m = math.cmax(math.abs(v));
+            if (!(m > 0f))
             {
                 return fallback;
             }
 
+            float3 d = math.normalize(v / m);
+            float3 t = d - up * math.dot(d, up);
+            if (math.lengthsq(t) <= DegenerateSq)
+            {
+                return fallback;
+            }
+
+            // Second Gram-Schmidt pass: near the 1e-3 rad cut-off one pass left |dot| ≈ 3.5e-4 (sol F3 repro B).
             t = math.normalize(t);
             return math.normalize(t - up * math.dot(t, up));
         }

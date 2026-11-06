@@ -14,18 +14,23 @@ namespace Cosmimera.Player
     internal struct ViewOrbit
     {
         /// <summary>Lowest allowed pitch (looking down), degrees.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float MinPitch = -80f;
 
         /// <summary>Highest allowed pitch (looking up), degrees.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float MaxPitch = 80f;
 
         /// <summary>Unit tangent the camera faces horizontally.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Heading;
 
         /// <summary>Local up the heading is tangent to.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float3 Up;
 
         /// <summary>Positive looks up, degrees.</summary>
+        /// <remarks>Pre: none. Post: see the declaring type's Pre/Post (validated where it is consumed). Side effects: none.</remarks>
         public float PitchDegrees;
 
         /// <summary>Orbit at <paramref name="up"/> looking along <paramref name="heading"/>, level.</summary>
@@ -41,13 +46,16 @@ namespace Cosmimera.Player
 
         /// <summary>Re-bases the orbit on a new local up and applies look input.</summary>
         /// <remarks>
-        /// Pre: Up unit (initialised); up unit (±1e-3) within 90° of Up; yaw/pitch deltas finite (degrees, yaw positive = turn right).
+        /// Pre: Up unit (initialised); Heading unit tangent of Up; up unit (±1e-3) strictly within 90° of Up;
+        ///      yawDeltaDegrees and pitchDeltaDegrees each finite (degrees, yaw positive = turn right).
         /// Post: type invariant; Up == normalize(up); with zero deltas the heading only changes by the transport rotation.
         /// Side effects: mutates this value.
         /// </remarks>
         public void Advance(float3 up, float yawDeltaDegrees, float pitchDeltaDegrees)
         {
             Contract.Requires(math.abs(math.lengthsq(Up) - 1f) < 2e-3f, "ViewOrbit is uninitialised (use Create)");
+            Contract.Requires(math.abs(math.lengthsq(Heading) - 1f) < 2e-3f && math.abs(math.dot(Heading, Up)) <= 1e-3f,
+                "Heading must be a unit tangent");
             Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
             Contract.Requires(math.dot(up, Up) > 0f, "up moved more than 90° in one step");
             Contract.Requires(math.isfinite(yawDeltaDegrees) && math.isfinite(pitchDeltaDegrees), "look deltas must be finite");
@@ -63,13 +71,31 @@ namespace Cosmimera.Player
         }
 
         /// <summary>World rotation of the camera: forward = heading pitched about the local right axis, up ≈ local up.</summary>
-        /// <remarks>Pre: initialised. Post: unit quaternion; mul(result, forward) has dot with Up == sin(pitch). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: initialised (Up unit).
+        /// Post: unit quaternion; mul(result, forward) has dot with Up == sin(pitch); mul(result, up) is tilted from
+        ///       Up by the pitch — use <see cref="LevelRotation"/> for anything that needs the local world up.
+        /// Side effects: none.
+        /// </remarks>
         public readonly quaternion Rotation()
         {
+            Contract.Requires(math.abs(math.lengthsq(Up) - 1f) < 2e-3f, "ViewOrbit is uninitialised (use Create)");
             float3 right = math.cross(Up, Heading);
             // A positive angle about right turns forward towards cross(right, heading) == −Up, so negate to look up.
             float3 forward = math.mul(quaternion.AxisAngle(right, -math.radians(PitchDegrees)), Heading);
             return quaternion.LookRotationSafe(forward, Up);
+        }
+
+        /// <summary>World rotation without pitch: forward = Heading, up = Up.</summary>
+        /// <remarks>
+        /// Pre: initialised (Up unit). Post: unit quaternion; mul(result, (0,1,0)) == Up (within rounding).
+        /// Side effects: none.
+        /// REQ: docs/reviews/P1-05-sol.md#F2 — Cinemachine reads WorldUpOverride.up; a pitched pivot tilted it by the pitch.
+        /// </remarks>
+        public readonly quaternion LevelRotation()
+        {
+            Contract.Requires(math.abs(math.lengthsq(Up) - 1f) < 2e-3f, "ViewOrbit is uninitialised (use Create)");
+            return quaternion.LookRotationSafe(Heading, Up);
         }
     }
 }

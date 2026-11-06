@@ -28,6 +28,15 @@ namespace Cosmimera.Planet
         // is dominated by the rounding error in `up`, so the fallback is used instead.
         private const float PoleThresholdSq = 1e-10f;
 
+        /// <summary>Largest |component| accepted by <see cref="WorldToLocal"/>.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r2-sol.md#A2 — "finite" was not enough: (MaxValue, MaxValue, 0) overflowed a
+        /// dot product to ∞. 1e18 m leaves 1e20× headroom for the 3-term dot product and is far beyond any world
+        /// coordinate (PlanetConfig.MaxCenterComponent is 16 km).
+        /// </remarks>
+        public const float MaxVectorComponent = 1e18f;
+
         /// <summary>Unit vector pointing east, tangent to the sphere.</summary>
         /// <remarks>Pre: none. Post: see type invariant. Side effects: none.</remarks>
         public readonly float3 East;
@@ -86,20 +95,27 @@ namespace Cosmimera.Planet
         }
 
         /// <summary>Converts a planet-local (east, north, up) vector into world space.</summary>
-        /// <remarks>Pre: IsValid; local is finite. Post: length preserved (orthonormal basis). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: IsValid; every |local component| ≤ 2 · MaxVectorComponent (and finite).
+        /// Post: length preserved (orthonormal basis); result finite. Side effects: none.
+        /// </remarks>
         public float3 LocalToWorld(float3 local)
         {
             Contract.Requires(IsValid, "PlanetFrame is default/uninitialised");
-            Contract.Requires(math.all(math.isfinite(local)), "local must be finite");
+            Contract.Requires(math.all(math.isfinite(local)) && math.cmax(math.abs(local)) <= 2f * MaxVectorComponent, "local must be within 2 * MaxVectorComponent per axis");
             return East * local.x + North * local.y + Up * local.z;
         }
 
         /// <summary>Converts a world-space vector into planet-local (east, north, up) components.</summary>
-        /// <remarks>Pre: IsValid; world is finite. Post: LocalToWorld(WorldToLocal(v)) == v (within rounding). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: IsValid; every |world component| ≤ MaxVectorComponent (and finite).
+        /// Post: every |result component| ≤ √3 · MaxVectorComponent, so LocalToWorld accepts it;
+        ///       LocalToWorld(WorldToLocal(v)) == v (within rounding). Side effects: none.
+        /// </remarks>
         public float3 WorldToLocal(float3 world)
         {
             Contract.Requires(IsValid, "PlanetFrame is default/uninitialised");
-            Contract.Requires(math.all(math.isfinite(world)), "world must be finite");
+            Contract.Requires(math.all(math.isfinite(world)) && math.cmax(math.abs(world)) <= MaxVectorComponent, "world must be within MaxVectorComponent per axis");
             return new float3(math.dot(world, East), math.dot(world, North), math.dot(world, Up));
         }
 

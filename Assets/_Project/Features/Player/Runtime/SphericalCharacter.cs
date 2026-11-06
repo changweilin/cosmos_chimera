@@ -16,9 +16,6 @@ namespace Cosmimera.Player
     [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
     public sealed class SphericalCharacter : MonoBehaviour
     {
-        // Covers a press up to ~9 fixed steps before landing; longer and a mashed jump fires again on touchdown.
-        private const float JumpBufferSeconds = 0.15f;
-
         [SerializeField] private float _walkSpeed = 5f;
         [SerializeField] private float _sprintSpeed = 8f;
         [SerializeField] private float _jumpHeight = 1.2f;
@@ -44,8 +41,7 @@ namespace Cosmimera.Player
         private MotorSettings _settings;
         private MotorState _state;
         private MotorInput _input;
-        private bool _jumpLatched;
-        private float _jumpLatchedAt;
+        private JumpBuffer _jump;
         private bool _configured;
 
         /// <summary>True while standing on walkable ground (updated each FixedUpdate).</summary>
@@ -87,6 +83,7 @@ namespace Cosmimera.Player
             _settings.SprintSpeed = _sprintSpeed;
             _settings.JumpHeight = _jumpHeight;
             _settings.MaxSlopeDegrees = _maxSlopeDegrees;
+            Cosmimera.Core.Contracts.Contract.Requires(_settings.IsValid, "serialized motor tuning is out of range (MotorSettings.IsValid)");
 
             float3 up = PlanetFrame.At(planet, transform.position).Up;
             float3 facing = SphericalMotor.TangentOr(transform.forward, up, PlanetFrame.FromUp(up).North);
@@ -97,20 +94,21 @@ namespace Cosmimera.Player
 
         /// <summary>Sets the intent used by the following fixed steps.</summary>
         /// <remarks>
-        /// Pre: |move| ≤ 1; viewForward finite.
-        /// Post: jumpPressed is latched for up to JumpBufferSeconds or until a jump starts, so a press in a frame without
-        ///       a fixed step (or just before landing) is kept.
+        /// Pre: move and viewForward finite (move longer than 1 is normalised; viewForward may have any length).
+        /// Post: jumpPressed is buffered for JumpBuffer.WindowSeconds or until a jump starts, so a press in a frame
+        ///       without a fixed step (or just before landing) is kept.
         /// Side effects: mutates pending input.
         /// </remarks>
         public void SetInput(Vector2 move, Vector3 viewForward, bool sprint, bool jumpPressed)
         {
+            Cosmimera.Core.Contracts.Contract.Requires(math.all(math.isfinite((float2)move)) && math.all(math.isfinite((float3)viewForward)),
+                "move and viewForward must be finite");
             _input.Move = math.lengthsq((float2)move) > 1f ? math.normalize((float2)move) : (float2)move;
             _input.ViewForward = viewForward;
             _input.Sprint = sprint;
             if (jumpPressed)
             {
-                _jumpLatched = true;
-                _jumpLatchedAt = Time.time;
+                _jump.Press(Time.time);
             }
         }
 
@@ -132,12 +130,12 @@ namespace Cosmimera.Player
                 _state.VerticalSpeed = math.dot((float3)_body.linearVelocity, _state.Up);
             }
 
-            _input.Jump = _jumpLatched;
-            bool wasGrounded = _state.Grounded;
+            // Expiry is decided before the step, so a stale press can never reach the motor (sol P1-05 F1).
+            _input.Jump = _jump.IsPending(Time.time);
             _state = SphericalMotor.Step(_settings, _state, _input, ground, up, Time.fixedDeltaTime);
-            if (_jumpLatched && ((wasGrounded && !_state.Grounded) || Time.time - _jumpLatchedAt > JumpBufferSeconds))
+            if (_state.JumpStarted)
             {
-                _jumpLatched = false;
+                _jump.Consume();
             }
 
             _body.linearVelocity = _state.Velocity;

@@ -6,7 +6,8 @@ namespace Cosmimera.Planet.Model
     /// <summary>Tunables for <see cref="ChunkQuadtree"/> split/merge decisions.</summary>
     /// <remarks>
     /// Pre: construct through the constructor or <see cref="ForPlanet"/>; <c>default</c> is invalid.
-    /// Post: 0 ≤ MaxLevel ≤ ChunkId.MaxLevel; QuadsPerEdge ≥ 1; SplitDistanceFactor &gt; 0; MergeHysteresis ≥ MinMergeHysteresis; HeightMargin ≥ 0.
+    /// Post: 0 ≤ MaxLevel ≤ ChunkId.MaxLevel; QuadsPerEdge ≥ 1; SplitDistanceFactor &gt; 0;
+    ///       MinMergeHysteresis ≤ MergeHysteresis ≤ MaxMergeHysteresis; HeightMargin ≥ 0.
     /// Side effects: none (immutable value).
     /// </remarks>
     internal readonly struct ChunkLodSettings
@@ -24,7 +25,7 @@ namespace Cosmimera.Planet.Model
         public readonly float SplitDistanceFactor;
 
         /// <summary>A split node merges only beyond (1 + MergeHysteresis) × the split distance.</summary>
-        /// <remarks>Pre: none. Post: finite and ≥ MinMergeHysteresis for a constructed value. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: within [MinMergeHysteresis, MaxMergeHysteresis] for a constructed value. Side effects: none.</remarks>
         public readonly float MergeHysteresis;
 
         /// <summary>Smallest accepted <see cref="MergeHysteresis"/>.</summary>
@@ -35,6 +36,15 @@ namespace Cosmimera.Planet.Model
         /// </remarks>
         public const float MinMergeHysteresis = 0.05f;
 
+        /// <summary>Largest accepted <see cref="MergeHysteresis"/>.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r3-sol.md#A1-R3 — with hysteresis 1e6 a split node never merged again, so
+        /// sweeping the camera over the planet accumulated all 6·4^MaxLevel finest leaves. At ≤ 1 a split node is kept
+        /// only within twice its split distance, so retained refinement stays local like fresh refinement.
+        /// </remarks>
+        public const float MaxMergeHysteresis = 1f;
+
         /// <summary>Largest |terrain height| in metres; inflates node bounds so displaced terrain is never under-refined.</summary>
         /// <remarks>Pre: none. Post: finite and ≥ 0 for a constructed value. Side effects: none.</remarks>
         public readonly float HeightMargin;
@@ -42,7 +52,7 @@ namespace Cosmimera.Planet.Model
         /// <summary>Creates settings.</summary>
         /// <remarks>
         /// Pre: 0 ≤ maxLevel ≤ ChunkId.MaxLevel; quadsPerEdge ≥ 1; splitDistanceFactor finite and &gt; 0;
-        ///      mergeHysteresis finite and ≥ MinMergeHysteresis; heightMargin finite and ≥ 0.
+        ///      MinMergeHysteresis ≤ mergeHysteresis ≤ MaxMergeHysteresis; heightMargin finite and ≥ 0.
         /// Post: fields equal the arguments.
         /// Side effects: none.
         /// </remarks>
@@ -51,7 +61,8 @@ namespace Cosmimera.Planet.Model
             Contract.Requires(maxLevel >= 0 && maxLevel <= ChunkId.MaxLevel, "maxLevel must be within [0, ChunkId.MaxLevel]");
             Contract.Requires(quadsPerEdge >= 1, "quadsPerEdge must be >= 1");
             Contract.Requires(math.isfinite(splitDistanceFactor) && splitDistanceFactor > 0f, "splitDistanceFactor must be > 0");
-            Contract.Requires(math.isfinite(mergeHysteresis) && mergeHysteresis >= MinMergeHysteresis, "mergeHysteresis must be >= MinMergeHysteresis");
+            Contract.Requires(mergeHysteresis >= MinMergeHysteresis && mergeHysteresis <= MaxMergeHysteresis,
+                "mergeHysteresis must be within [MinMergeHysteresis, MaxMergeHysteresis]");
             Contract.Requires(math.isfinite(heightMargin) && heightMargin >= 0f, "heightMargin must be >= 0");
             MaxLevel = maxLevel;
             QuadsPerEdge = quadsPerEdge;

@@ -94,7 +94,9 @@ namespace Cosmimera.Planet
         /// <summary>Injects the planet and viewer; must be called once.</summary>
         /// <remarks>
         /// Pre: not configured yet; config.IsValid; height.IsValid; viewer non-null; colliderRange finite and &gt; 0;
-        ///      quadsPerEdge a power of two within [2, 128].
+        ///      quadsPerEdge a power of two within [2, 128]; the derived LOD settings (1 m finest spacing, margin =
+        ///      height.MaxAbsHeight) satisfy ChunkQuadtree.Supports — false for small quadsPerEdge on large or tall
+        ///      planets (e.g. R = 640 with q = 2, R = 8000 with q = 32), which would need per-node height bounds.
         /// Post: this transform sits at config.Center with identity rotation/scale (leaf vertices are planet-local).
         /// Side effects: moves this transform; allocates the persistent index buffer holding all 16 variants.
         /// </remarks>
@@ -106,14 +108,18 @@ namespace Cosmimera.Planet
             Contract.Requires(height.IsValid, "PlanetHeight is default/uninitialised");
             Contract.Requires(viewer != null, "viewer must be non-null");
             Contract.Requires(math.isfinite(colliderRange) && colliderRange > 0f, "colliderRange must be > 0");
+            // Finest vertex spacing 1 m: planet-tech.md#幾何 (R=320/640/1280 → depth 4/5/6).
+            ChunkLodSettings lod = ChunkLodSettings.ForPlanet(config, 1f, height.MaxAbsHeight, quadsPerEdge);
+            // Checked before any state changes (sol r3 N1): the quadtree would otherwise throw half-way through Configure.
+            Contract.Requires(ChunkQuadtree.Supports(config, lod),
+                "terrain is too tall for this radius/quadsPerEdge without per-node height bounds (ChunkQuadtree.Supports)");
             _config = config;
             _height = height;
             _viewer = viewer;
             _material = material;
             _colliderRange = colliderRange;
             _stitching = new ChunkStitching(quadsPerEdge);
-            // Finest vertex spacing 1 m: planet-tech.md#幾何 (R=320/640/1280 → depth 4/5/6).
-            _tree = new ChunkQuadtree(config, ChunkLodSettings.ForPlanet(config, 1f, height.MaxAbsHeight, quadsPerEdge));
+            _tree = new ChunkQuadtree(config, lod);
             int total = 0;
             for (int m = 0; m < ChunkStitching.VariantCount; m++)
             {
