@@ -91,18 +91,39 @@ namespace Cosmimera.Player
 
         /// <summary>Queues look input for the next LateUpdate.</summary>
         /// <remarks>
-        /// Pre: pointerDelta finite (pixels, mouse); each stick component in [-1, 1] (+1e-3), scaled by deltaTime here;
-        ///      deltaTime finite and ≥ 0.
-        /// Post: accumulated until consumed. Side effects: mutates pending look.
+        /// Pre: each pointerDelta component finite with |·| ≤ MaxPointerDelta (pixels, mouse); each stick component in
+        ///      [-1, 1] (+1e-3), scaled by deltaTime here; deltaTime in [0, MaxLookDeltaTime].
+        /// Post: accumulated until consumed; pending yaw stays in (-360, 360) and pending pitch in [-180, 180], so the
+        ///       queued look is always finite for <see cref="ViewOrbit.Advance"/>.
+        /// Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
         {
             Contract.Requires(math.all(math.isfinite(new float4(pointerDelta.x, pointerDelta.y, stick.x, stick.y))),
                 "look deltas must be finite");
+            Contract.Requires(math.abs(pointerDelta.x) <= MaxPointerDelta && math.abs(pointerDelta.y) <= MaxPointerDelta,
+                "pointer delta exceeds MaxPointerDelta");
             Contract.Requires(math.abs(stick.x) <= 1.001f && math.abs(stick.y) <= 1.001f, "stick components must be in [-1, 1]");
-            Contract.Requires(deltaTime >= 0f && !float.IsInfinity(deltaTime), "deltaTime must be finite and >= 0");
-            _pendingLook += (float2)pointerDelta * _sensitivityDegrees + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
+            Contract.Requires(deltaTime >= 0f && deltaTime <= MaxLookDeltaTime, "deltaTime must be in [0, MaxLookDeltaTime]");
+            float2 look = _pendingLook + (float2)pointerDelta * _sensitivityDegrees
+                + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
+            // Bound the queue (sol P1 r5 N8): finite inputs could still multiply/accumulate to ±Infinity and wedge
+            // LateUpdate, which only clears the queue after Advance succeeds. Yaw is periodic, and pitch beyond ±180°
+            // is clamped to ±MaxPitch by the orbit anyway, so neither bound changes the resulting view.
+            look.x = math.fmod(look.x, 360f);
+            look.y = math.clamp(look.y, -180f, 180f);
+            Contract.Ensures(math.all(math.isfinite(look)), "pending look must stay finite");
+            _pendingLook = look;
         }
+
+        /// <summary>Largest per-call mouse delta accepted by <see cref="AddLook"/>, in pixels.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Far above any real frame's mouse motion; keeps
+        /// delta × sensitivity finite for any sensitivity below 1e30.</remarks>
+        public const float MaxPointerDelta = 1e6f;
+
+        /// <summary>Largest per-call deltaTime accepted by <see cref="AddLook"/>, in seconds.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. A frame longer than this is a stall, not input.</remarks>
+        public const float MaxLookDeltaTime = 1f;
 
         /// <summary>Switches between third and first person.</summary>
         /// <remarks>Pre: Configure called. Post: IsFirstPerson toggled; exactly one camera has the higher priority. Side effects: priorities.</remarks>

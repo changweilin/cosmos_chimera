@@ -136,9 +136,11 @@ namespace Cosmimera.Player
     /// <summary>Motor state carried between fixed steps.</summary>
     /// <remarks>
     /// Pre: create through <see cref="SphericalMotor.Initial"/>.
-    /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing and PlanarVelocity ⟂ Up (±1e-4), Facing
-    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded;
-    ///       |PlanarVelocity| ≤ MaxStateSpeed, |VerticalSpeed| ≤ MaxStateSpeed, |Velocity| ≤ 2·MaxStateSpeed.
+    /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing unit and ⟂ Up (±1e-4); PlanarVelocity ⟂ Up
+    ///       within 1e-4·max(1, |PlanarVelocity|) — relative, because at 1e4 m/s float spacing alone leaves ~1e-3 m/s
+    ///       of dot residual (sol P1 r5 N7); Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded;
+    ///       lengthsq(PlanarVelocity) ≤ MaxStateSpeed², |VerticalSpeed| ≤ MaxStateSpeed, |Velocity| ≤ 2·MaxStateSpeed
+    ///       (so every Step output is accepted by the next Step's Pre).
     /// Side effects: none.
     /// </remarks>
     internal struct MotorState
@@ -214,7 +216,7 @@ namespace Cosmimera.Player
         /// Post: MotorState invariant holds; result.Up == normalize(up);
         ///       Grounded ⇔ ground.Hit ∧ Distance ≤ SnapDistance ∧ slope ≤ MaxSlope ∧ prev.VerticalSpeed ≤ 0.5 ∧ no jump;
         ///       JumpStarted ⇔ a jump started this step;
-        ///       |PlanarVelocity| ≤ max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding); transport alone preserves
+        ///       |PlanarVelocity| ≤ min(MaxStateSpeed, max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding)); transport alone preserves
         ///       |PlanarVelocity|; while grounded, Velocity runs along the
         ///       ground plane at |PlanarVelocity| plus StickSpeed into the ground;
         ///       a jump starts only from Grounded and sets the vertical speed to sqrt(2·Gravity·JumpHeight).
@@ -291,6 +293,14 @@ namespace Cosmimera.Player
                 {
                     vTan -= wallOut * into;
                 }
+            }
+
+            // Close the speed domain over Step (sol P1 r5 N6): restoring the transported length can round
+            // lengthsq(vTan) a few ulp above MaxStateSpeed², and the next Step's Pre would then reject this output.
+            // The 1e-6 relative headroom is ~10 float ulp, enough for lengthsq of the rescaled vector to stay below.
+            if (math.lengthsq(vTan) > MaxStateSpeed * MaxStateSpeed * (1f - 2e-6f))
+            {
+                vTan *= MaxStateSpeed * (1f - 1e-6f) / math.length(vTan);
             }
 
             float3 velocity;
