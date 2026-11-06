@@ -2,6 +2,7 @@
 
 ## 1. Design by Contract — 所有 public 介面
 每個 `public` / `protected` 型別成員（以及 feature `Api/` 內所有型別）必須在 XML doc 中寫明：
+（`Tests/` 下的 test fixture 與 `[Test]` 方法豁免：它們的名稱就是規格。）
 
 | 標籤 | 內容 |
 |---|---|

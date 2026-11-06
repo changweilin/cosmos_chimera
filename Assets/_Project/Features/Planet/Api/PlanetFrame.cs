@@ -28,6 +28,15 @@ namespace Cosmimera.Planet
         // is dominated by the rounding error in `up`, so the fallback is used instead.
         private const float PoleThresholdSq = 1e-10f;
 
+        /// <summary>Largest |component| accepted by <see cref="WorldToLocal"/>.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r2-sol.md#A2 — "finite" was not enough: (MaxValue, MaxValue, 0) overflowed a
+        /// dot product to ∞. 1e18 m leaves 1e20× headroom for the 3-term dot product and is far beyond any world
+        /// coordinate (PlanetConfig.MaxCenterComponent is 16 km).
+        /// </remarks>
+        public const float MaxVectorComponent = 1e18f;
+
         /// <summary>Unit vector pointing east, tangent to the sphere.</summary>
         /// <remarks>Pre: none. Post: see type invariant. Side effects: none.</remarks>
         public readonly float3 East;
@@ -53,7 +62,7 @@ namespace Cosmimera.Planet
 
         /// <summary>Frame at <paramref name="worldPosition"/> on or around the planet described by <paramref name="config"/>.</summary>
         /// <remarks>
-        /// Pre: config.IsValid; worldPosition is finite and not within 1e-3 m of config.Center.
+        /// Pre: same as <see cref="PlanetConfig.ToDirection"/>.
         /// Post: Up == config.ToDirection(worldPosition); type invariant holds.
         /// Side effects: none.
         /// </remarks>
@@ -64,13 +73,17 @@ namespace Cosmimera.Planet
 
         /// <summary>Frame whose Up is <paramref name="up"/>.</summary>
         /// <remarks>
-        /// Pre: up is unit length (±1e-3).
-        /// Post: Up == up; type invariant holds; at the exact poles East == (0,0,−1).
+        /// Pre: up is finite and unit length (±1e-3).
+        /// Post: Up == normalize(up) — the tolerance applies to the caller's input, never to the output; type
+        ///       invariant holds; at the exact poles East == (0,0,−1).
         /// Side effects: none.
         /// </remarks>
         public static PlanetFrame FromUp(float3 up)
         {
             Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
+            // REQ: docs/reviews/P1-01-P1-02-sol.md#F2 — storing a 0.999-long up made North 0.999 long and skewed
+            // every LocalToWorld by 0.1 %.
+            up = math.normalize(up);
             float3 eastRaw = math.cross(NorthPole, up);
             float3 east = math.lengthsq(eastRaw) > PoleThresholdSq
                 ? math.normalize(eastRaw)
@@ -82,34 +95,61 @@ namespace Cosmimera.Planet
         }
 
         /// <summary>Converts a planet-local (east, north, up) vector into world space.</summary>
-        /// <remarks>Pre: IsValid. Post: length preserved (orthonormal basis). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: IsValid; every |local component| ≤ 2 · MaxVectorComponent (and finite).
+        /// Post: length preserved (orthonormal basis); result finite. Side effects: none.
+        /// </remarks>
         public float3 LocalToWorld(float3 local)
         {
             Contract.Requires(IsValid, "PlanetFrame is default/uninitialised");
+            Contract.Requires(math.all(math.isfinite(local)) && math.cmax(math.abs(local)) <= 2f * MaxVectorComponent, "local must be within 2 * MaxVectorComponent per axis");
             return East * local.x + North * local.y + Up * local.z;
         }
 
         /// <summary>Converts a world-space vector into planet-local (east, north, up) components.</summary>
-        /// <remarks>Pre: IsValid. Post: LocalToWorld(WorldToLocal(v)) == v (within rounding). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: IsValid; every |world component| ≤ MaxVectorComponent (and finite).
+        /// Post: every |result component| ≤ √3 · MaxVectorComponent, so LocalToWorld accepts it;
+        ///       LocalToWorld(WorldToLocal(v)) == v (within rounding). Side effects: none.
+        /// </remarks>
         public float3 WorldToLocal(float3 world)
         {
             Contract.Requires(IsValid, "PlanetFrame is default/uninitialised");
+            Contract.Requires(math.all(math.isfinite(world)) && math.cmax(math.abs(world)) <= MaxVectorComponent, "world must be within MaxVectorComponent per axis");
             return new float3(math.dot(world, East), math.dot(world, North), math.dot(world, Up));
         }
 
         /// <summary>Projects <paramref name="direction"/> onto the tangent plane and normalises it.</summary>
         /// <remarks>
         /// Pre: IsValid; direction is finite.
-        /// Post: result is unit length and orthogonal to Up. If direction is (nearly) parallel to Up, returns North
-        ///       — callers carrying a heading should treat that as "heading lost" and keep their previous value.
+        /// Post: result is unit length and |dot(result, Up)| ≤ 1e-6; it does not depend on the length of direction.
+        ///       If direction is zero or within 1e-3 rad of ±Up, returns North — callers carrying a heading should
+        ///       treat that as "heading lost" and keep their previous value.
         /// Side effects: none.
         /// </remarks>
         public float3 ProjectOnTangent(float3 direction)
         {
             Contract.Requires(IsValid, "PlanetFrame is default/uninitialised");
             Contract.Requires(math.all(math.isfinite(direction)), "direction must be finite");
-            float3 tangent = direction - Up * math.dot(direction, Up);
-            return math.lengthsq(tangent) > 1e-12f ? math.normalize(tangent) : North;
+            if (math.all(direction == 0f))
+            {
+                return North;
+            }
+
+            // Normalise first so the degeneracy test is an angle, not a length. REQ: docs/reviews/P1-01-P1-02-sol.md#F1
+            // — with an absolute 1e-12 threshold, Up*100 left a ~1e-5 rounding residue that passed and was returned
+            // as a "tangent" 7° from Up.
+            float3 d = math.normalize(VectorMath.Rescale(direction));
+            float3 tangent = d - Up * math.dot(d, Up);
+            // |tangent| == sin(angle to Up); below 1e-3 its direction is rounding noise (error ≈ ulp / sin).
+            if (math.lengthsq(tangent) < 1e-6f)
+            {
+                return North;
+            }
+
+            tangent = math.normalize(tangent);
+            // One Gram-Schmidt pass removes the Up component left by the first projection's rounding.
+            return math.normalize(tangent - Up * math.dot(tangent, Up));
         }
     }
 }
