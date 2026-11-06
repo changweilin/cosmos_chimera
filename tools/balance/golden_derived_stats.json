@@ -1,0 +1,820 @@
+{
+  "model_version": 1,
+  "vectors": [
+    {
+      "input": {
+        "con": 0,
+        "str": 0,
+        "spi": 0,
+        "agi": 0
+      },
+      "output": {
+        "max_hp": 600,
+        "melee_volume_permille": 1000,
+        "melee_linear_permille": 1000,
+        "ranged_multiplier_permille": 1000,
+        "ranged_distance_mm": 24000,
+        "cd_multiplier_permille": 1000,
+        "effective_cd_ms": 2000,
+        "move_speed_mm_s": 4000,
+        "evasion_permille": 0,
+        "hit_chance_permille": 1000
+      }
+    },
+    {
+      "input": {
+        "con": 1,
+        "str": 1,
+        "spi": 1,
+        "agi": 1
+      },
+      "output": {
+        "max_hp": 608,
+        "melee_volume_permille": 1009,
+        "melee_linear_permille": 1002,
+        "ranged_multiplier_permille": 1004,
+        "ranged_distance_mm": 24096,
+        "cd_multiplier_permille": 995,
+        "effective_cd_ms": 1990,
+        "move_speed_mm_s": 4019,
+        "evasion_permille": 2,
+        "hit_chance_permille": 998
+      }
+    },
+    {
+      "input": {
+        "con": 2,
+        "str": 2,
+        "spi": 2,
+        "agi": 2
+      },
+      "output": {
+        "max_hp": 617,
+        "melee_volume_permille": 1019,
+        "melee_linear_permille": 1006,
+        "ranged_multiplier_permille": 1009,
+        "ranged_distance_mm": 24216,
+        "cd_multiplier_permille": 989,
+        "effective_cd_ms": 1978,
+        "move_speed_mm_s": 4039,
+        "evasion_permille": 5,
+        "hit_chance_permille": 995
+      }
+    },
+    {
+      "input": {
+        "con": 9,
+        "str": 9,
+        "spi": 9,
+        "agi": 9
+      },
+      "output": {
+        "max_hp": 674,
+        "melee_volume_permille": 1082,
+        "melee_linear_permille": 1026,
+        "ranged_multiplier_permille": 1041,
+        "ranged_distance_mm": 24984,
+        "cd_multiplier_permille": 951,
+        "effective_cd_ms": 1902,
+        "move_speed_mm_s": 4165,
+        "evasion_permille": 22,
+        "hit_chance_permille": 978
+      }
+    },
+    {
+      "input": {
+        "con": 10,
+        "str": 10,
+        "spi": 10,
+        "agi": 10
+      },
+      "output": {
+        "max_hp": 681,
+        "melee_volume_permille": 1090,
+        "melee_linear_permille": 1029,
+        "ranged_multiplier_permille": 1045,
+        "ranged_distance_mm": 25080,
+        "cd_multiplier_permille": 946,
+        "effective_cd_ms": 1892,
+        "move_speed_mm_s": 4181,
+        "evasion_permille": 25,
+        "hit_chance_permille": 975
+      }
+    },
+    {
+      "input": {
+        "con": 24,
+        "str": 24,
+        "spi": 24,
+        "agi": 24
+      },
+      "output": {
+        "max_hp": 774,
+        "melee_volume_permille": 1193,
+        "melee_linear_permille": 1060,
+        "ranged_multiplier_permille": 1096,
+        "ranged_distance_mm": 26304,
+        "cd_multiplier_permille": 884,
+        "effective_cd_ms": 1768,
+        "move_speed_mm_s": 4387,
+        "evasion_permille": 55,
+        "hit_chance_permille": 945
+      }
+    },
+    {
+      "input": {
+        "con": 25,
+        "str": 25,
+        "spi": 25,
+        "agi": 25
+      },
+      "output": {
+        "max_hp": 780,
+        "melee_volume_permille": 1200,
+        "melee_linear_permille": 1062,
+        "ranged_multiplier_permille": 1100,
+        "ranged_distance_mm": 26400,
+        "cd_multiplier_permille": 880,
+        "effective_cd_ms": 1760,
+        "move_speed_mm_s": 4400,
+        "evasion_permille": 57,
+        "hit_chance_permille": 943
+      }
+    },
+    {
+      "input": {
+        "con": 26,
+        "str": 26,
+        "spi": 26,
+        "agi": 26
+      },
+      "output": {
+        "max_hp": 785,
+        "melee_volume_permille": 1206,
+        "melee_linear_permille": 1064,
+        "ranged_multiplier_permille": 1103,
+        "ranged_distance_mm": 26472,
+        "cd_multiplier_permille": 877,
+        "effective_cd_ms": 1754,
+        "move_speed_mm_s": 4412,
+        "evasion_permille": 59,
+        "hit_chance_permille": 941
+      }
+    },
+    {
+      "input": {
+        "con": 49,
+        "str": 49,
+        "spi": 49,
+        "agi": 49
+      },
+      "output": {
+        "max_hp": 895,
+        "melee_volume_permille": 1328,
+        "melee_linear_permille": 1099,
+        "ranged_multiplier_permille": 1164,
+        "ranged_distance_mm": 27936,
+        "cd_multiplier_permille": 803,
+        "effective_cd_ms": 1606,
+        "move_speed_mm_s": 4657,
+        "evasion_permille": 98,
+        "hit_chance_permille": 902
+      }
+    },
+    {
+      "input": {
+        "con": 50,
+        "str": 50,
+        "spi": 50,
+        "agi": 50
+      },
+      "output": {
+        "max_hp": 900,
+        "melee_volume_permille": 1333,
+        "melee_linear_permille": 1100,
+        "ranged_multiplier_permille": 1166,
+        "ranged_distance_mm": 27984,
+        "cd_multiplier_permille": 800,
+        "effective_cd_ms": 1600,
+        "move_speed_mm_s": 4666,
+        "evasion_permille": 100,
+        "hit_chance_permille": 900
+      }
+    },
+    {
+      "input": {
+        "con": 51,
+        "str": 51,
+        "spi": 51,
+        "agi": 51
+      },
+      "output": {
+        "max_hp": 903,
+        "melee_volume_permille": 1337,
+        "melee_linear_permille": 1101,
+        "ranged_multiplier_permille": 1168,
+        "ranged_distance_mm": 28032,
+        "cd_multiplier_permille": 798,
+        "effective_cd_ms": 1596,
+        "move_speed_mm_s": 4675,
+        "evasion_permille": 101,
+        "hit_chance_permille": 899
+      }
+    },
+    {
+      "input": {
+        "con": 99,
+        "str": 99,
+        "spi": 99,
+        "agi": 99
+      },
+      "output": {
+        "max_hp": 1047,
+        "melee_volume_permille": 1497,
+        "melee_linear_permille": 1143,
+        "ranged_multiplier_permille": 1248,
+        "ranged_distance_mm": 29952,
+        "cd_multiplier_permille": 702,
+        "effective_cd_ms": 1404,
+        "move_speed_mm_s": 4994,
+        "evasion_permille": 159,
+        "hit_chance_permille": 841
+      }
+    },
+    {
+      "input": {
+        "con": 100,
+        "str": 100,
+        "spi": 100,
+        "agi": 100
+      },
+      "output": {
+        "max_hp": 1050,
+        "melee_volume_permille": 1500,
+        "melee_linear_permille": 1144,
+        "ranged_multiplier_permille": 1250,
+        "ranged_distance_mm": 30000,
+        "cd_multiplier_permille": 700,
+        "effective_cd_ms": 1400,
+        "move_speed_mm_s": 5000,
+        "evasion_permille": 160,
+        "hit_chance_permille": 840
+      }
+    },
+    {
+      "input": {
+        "con": 101,
+        "str": 101,
+        "spi": 101,
+        "agi": 101
+      },
+      "output": {
+        "max_hp": 1052,
+        "melee_volume_permille": 1502,
+        "melee_linear_permille": 1145,
+        "ranged_multiplier_permille": 1251,
+        "ranged_distance_mm": 30024,
+        "cd_multiplier_permille": 699,
+        "effective_cd_ms": 1398,
+        "move_speed_mm_s": 5004,
+        "evasion_permille": 160,
+        "hit_chance_permille": 840
+      }
+    },
+    {
+      "input": {
+        "con": 149,
+        "str": 149,
+        "spi": 149,
+        "agi": 149
+      },
+      "output": {
+        "max_hp": 1138,
+        "melee_volume_permille": 1598,
+        "melee_linear_permille": 1169,
+        "ranged_multiplier_permille": 1299,
+        "ranged_distance_mm": 31176,
+        "cd_multiplier_permille": 641,
+        "effective_cd_ms": 1282,
+        "move_speed_mm_s": 5196,
+        "evasion_permille": 199,
+        "hit_chance_permille": 801
+      }
+    },
+    {
+      "input": {
+        "con": 150,
+        "str": 150,
+        "spi": 150,
+        "agi": 150
+      },
+      "output": {
+        "max_hp": 1140,
+        "melee_volume_permille": 1600,
+        "melee_linear_permille": 1169,
+        "ranged_multiplier_permille": 1300,
+        "ranged_distance_mm": 31200,
+        "cd_multiplier_permille": 640,
+        "effective_cd_ms": 1280,
+        "move_speed_mm_s": 5200,
+        "evasion_permille": 200,
+        "hit_chance_permille": 800
+      }
+    },
+    {
+      "input": {
+        "con": 151,
+        "str": 151,
+        "spi": 151,
+        "agi": 151
+      },
+      "output": {
+        "max_hp": 1141,
+        "melee_volume_permille": 1601,
+        "melee_linear_permille": 1169,
+        "ranged_multiplier_permille": 1300,
+        "ranged_distance_mm": 31200,
+        "cd_multiplier_permille": 640,
+        "effective_cd_ms": 1280,
+        "move_speed_mm_s": 5203,
+        "evasion_permille": 200,
+        "hit_chance_permille": 800
+      }
+    },
+    {
+      "input": {
+        "con": 199,
+        "str": 199,
+        "spi": 199,
+        "agi": 199
+      },
+      "output": {
+        "max_hp": 1198,
+        "melee_volume_permille": 1665,
+        "melee_linear_permille": 1185,
+        "ranged_multiplier_permille": 1332,
+        "ranged_distance_mm": 31968,
+        "cd_multiplier_permille": 601,
+        "effective_cd_ms": 1202,
+        "move_speed_mm_s": 5331,
+        "evasion_permille": 228,
+        "hit_chance_permille": 772
+      }
+    },
+    {
+      "input": {
+        "con": 200,
+        "str": 200,
+        "spi": 200,
+        "agi": 200
+      },
+      "output": {
+        "max_hp": 1200,
+        "melee_volume_permille": 1666,
+        "melee_linear_permille": 1185,
+        "ranged_multiplier_permille": 1333,
+        "ranged_distance_mm": 31992,
+        "cd_multiplier_permille": 600,
+        "effective_cd_ms": 1200,
+        "move_speed_mm_s": 5333,
+        "evasion_permille": 228,
+        "hit_chance_permille": 772
+      }
+    },
+    {
+      "input": {
+        "con": 201,
+        "str": 201,
+        "spi": 201,
+        "agi": 201
+      },
+      "output": {
+        "max_hp": 1200,
+        "melee_volume_permille": 1667,
+        "melee_linear_permille": 1185,
+        "ranged_multiplier_permille": 1333,
+        "ranged_distance_mm": 31992,
+        "cd_multiplier_permille": 600,
+        "effective_cd_ms": 1200,
+        "move_speed_mm_s": 5335,
+        "evasion_permille": 229,
+        "hit_chance_permille": 771
+      }
+    },
+    {
+      "input": {
+        "con": 999,
+        "str": 999,
+        "spi": 999,
+        "agi": 999
+      },
+      "output": {
+        "max_hp": 1418,
+        "melee_volume_permille": 1909,
+        "melee_linear_permille": 1240,
+        "ranged_multiplier_permille": 1454,
+        "ranged_distance_mm": 34896,
+        "cd_multiplier_permille": 455,
+        "effective_cd_ms": 910,
+        "move_speed_mm_s": 5818,
+        "evasion_permille": 347,
+        "hit_chance_permille": 653
+      }
+    },
+    {
+      "input": {
+        "con": 1000,
+        "str": 1000,
+        "spi": 1000,
+        "agi": 1000
+      },
+      "output": {
+        "max_hp": 1418,
+        "melee_volume_permille": 1909,
+        "melee_linear_permille": 1240,
+        "ranged_multiplier_permille": 1454,
+        "ranged_distance_mm": 34896,
+        "cd_multiplier_permille": 455,
+        "effective_cd_ms": 910,
+        "move_speed_mm_s": 5818,
+        "evasion_permille": 347,
+        "hit_chance_permille": 653
+      }
+    },
+    {
+      "input": {
+        "con": 9999,
+        "str": 9999,
+        "spi": 9999,
+        "agi": 9999
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 35880,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 812,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    },
+    {
+      "input": {
+        "con": 10000,
+        "str": 10000,
+        "spi": 10000,
+        "agi": 10000
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 35880,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 812,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    },
+    {
+      "input": {
+        "con": 10001,
+        "str": 10001,
+        "spi": 10001,
+        "agi": 10001
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 35880,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 812,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    },
+    {
+      "input": {
+        "con": 2147483646,
+        "str": 2147483646,
+        "spi": 2147483646,
+        "agi": 2147483646
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 35880,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 812,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    },
+    {
+      "input": {
+        "con": 2147483647,
+        "str": 2147483647,
+        "spi": 2147483647,
+        "agi": 2147483647
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 35880,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 812,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    },
+    {
+      "input": {
+        "con": 40,
+        "str": 20,
+        "spi": 20,
+        "agi": 20
+      },
+      "output": {
+        "max_hp": 857,
+        "melee_volume_permille": 1166,
+        "melee_linear_permille": 1052,
+        "ranged_multiplier_permille": 1083,
+        "ranged_distance_mm": 25992,
+        "cd_multiplier_permille": 900,
+        "effective_cd_ms": 1800,
+        "move_speed_mm_s": 4333,
+        "evasion_permille": 47,
+        "hit_chance_permille": 953
+      }
+    },
+    {
+      "input": {
+        "con": 20,
+        "str": 20,
+        "spi": 20,
+        "agi": 40
+      },
+      "output": {
+        "max_hp": 750,
+        "melee_volume_permille": 1166,
+        "melee_linear_permille": 1052,
+        "ranged_multiplier_permille": 1083,
+        "ranged_distance_mm": 25992,
+        "cd_multiplier_permille": 900,
+        "effective_cd_ms": 1800,
+        "move_speed_mm_s": 4571,
+        "evasion_permille": 84,
+        "hit_chance_permille": 916
+      }
+    },
+    {
+      "input": {
+        "con": 80,
+        "str": 40,
+        "spi": 40,
+        "agi": 40
+      },
+      "output": {
+        "max_hp": 1000,
+        "melee_volume_permille": 1285,
+        "melee_linear_permille": 1087,
+        "ranged_multiplier_permille": 1142,
+        "ranged_distance_mm": 27408,
+        "cd_multiplier_permille": 829,
+        "effective_cd_ms": 1658,
+        "move_speed_mm_s": 4571,
+        "evasion_permille": 84,
+        "hit_chance_permille": 916
+      }
+    },
+    {
+      "input": {
+        "con": 40,
+        "str": 40,
+        "spi": 40,
+        "agi": 80
+      },
+      "output": {
+        "max_hp": 857,
+        "melee_volume_permille": 1285,
+        "melee_linear_permille": 1087,
+        "ranged_multiplier_permille": 1142,
+        "ranged_distance_mm": 27408,
+        "cd_multiplier_permille": 829,
+        "effective_cd_ms": 1658,
+        "move_speed_mm_s": 4888,
+        "evasion_permille": 139,
+        "hit_chance_permille": 861
+      }
+    },
+    {
+      "input": {
+        "con": 160,
+        "str": 80,
+        "spi": 80,
+        "agi": 80
+      },
+      "output": {
+        "max_hp": 1153,
+        "melee_volume_permille": 1444,
+        "melee_linear_permille": 1130,
+        "ranged_multiplier_permille": 1222,
+        "ranged_distance_mm": 29328,
+        "cd_multiplier_permille": 734,
+        "effective_cd_ms": 1468,
+        "move_speed_mm_s": 4888,
+        "evasion_permille": 139,
+        "hit_chance_permille": 861
+      }
+    },
+    {
+      "input": {
+        "con": 80,
+        "str": 80,
+        "spi": 80,
+        "agi": 160
+      },
+      "output": {
+        "max_hp": 1000,
+        "melee_volume_permille": 1444,
+        "melee_linear_permille": 1130,
+        "ranged_multiplier_permille": 1222,
+        "ranged_distance_mm": 29328,
+        "cd_multiplier_permille": 734,
+        "effective_cd_ms": 1468,
+        "move_speed_mm_s": 5230,
+        "evasion_permille": 206,
+        "hit_chance_permille": 794
+      }
+    },
+    {
+      "input": {
+        "con": 80,
+        "str": 160,
+        "spi": 80,
+        "agi": 80
+      },
+      "output": {
+        "max_hp": 1000,
+        "melee_volume_permille": 1615,
+        "melee_linear_permille": 1173,
+        "ranged_multiplier_permille": 1307,
+        "ranged_distance_mm": 31368,
+        "cd_multiplier_permille": 734,
+        "effective_cd_ms": 1468,
+        "move_speed_mm_s": 4888,
+        "evasion_permille": 139,
+        "hit_chance_permille": 861
+      }
+    },
+    {
+      "input": {
+        "con": 80,
+        "str": 80,
+        "spi": 160,
+        "agi": 80
+      },
+      "output": {
+        "max_hp": 1000,
+        "melee_volume_permille": 1444,
+        "melee_linear_permille": 1130,
+        "ranged_multiplier_permille": 1222,
+        "ranged_distance_mm": 29328,
+        "cd_multiplier_permille": 631,
+        "effective_cd_ms": 1262,
+        "move_speed_mm_s": 4888,
+        "evasion_permille": 139,
+        "hit_chance_permille": 861
+      }
+    },
+    {
+      "input": {
+        "con": 1,
+        "str": 101,
+        "spi": 100,
+        "agi": 151,
+        "cooldown_ms": 1001,
+        "accuracy_percent": 73,
+        "base_range_mm": 10001
+      },
+      "output": {
+        "max_hp": 608,
+        "melee_volume_permille": 1502,
+        "melee_linear_permille": 1145,
+        "ranged_multiplier_permille": 1251,
+        "ranged_distance_mm": 12511,
+        "cd_multiplier_permille": 700,
+        "effective_cd_ms": 701,
+        "move_speed_mm_s": 5203,
+        "evasion_permille": 200,
+        "hit_chance_permille": 584
+      }
+    },
+    {
+      "input": {
+        "con": 2147483647,
+        "str": 2147483647,
+        "spi": 2147483647,
+        "agi": 2147483647,
+        "cooldown_ms": 0,
+        "accuracy_percent": 0,
+        "base_range_mm": 0
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 0,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 250,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 50
+      }
+    },
+    {
+      "input": {
+        "con": 2147483647,
+        "str": 2147483647,
+        "spi": 2147483647,
+        "agi": 2147483647,
+        "cooldown_ms": 1,
+        "accuracy_percent": 1,
+        "base_range_mm": 1
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 1,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 250,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 50
+      }
+    },
+    {
+      "input": {
+        "con": 2147483647,
+        "str": 2147483647,
+        "spi": 2147483647,
+        "agi": 2147483647,
+        "cooldown_ms": 251,
+        "accuracy_percent": 99,
+        "base_range_mm": 10000
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 14950,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 250,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 599
+      }
+    },
+    {
+      "input": {
+        "con": 2147483647,
+        "str": 2147483647,
+        "spi": 2147483647,
+        "agi": 2147483647,
+        "cooldown_ms": 2147483647,
+        "accuracy_percent": 100,
+        "base_range_mm": 2147483647
+      },
+      "output": {
+        "max_hp": 1491,
+        "melee_volume_permille": 1990,
+        "melee_linear_permille": 1257,
+        "ranged_multiplier_permille": 1495,
+        "ranged_distance_mm": 36000,
+        "cd_multiplier_permille": 406,
+        "effective_cd_ms": 871878361,
+        "move_speed_mm_s": 5980,
+        "evasion_permille": 394,
+        "hit_chance_permille": 606
+      }
+    }
+  ]
+}
