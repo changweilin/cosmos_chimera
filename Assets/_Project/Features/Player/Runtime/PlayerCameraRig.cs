@@ -51,7 +51,8 @@ namespace Cosmimera.Player
         /// <remarks>
         /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; pivot is not a child of target (the
         ///      orbit, not the body, owns its rotation); serialized look multipliers in range (see AddLook).
-        /// Post: third person live; orbit heading == target forward; brain.WorldUpOverride == WorldUpReference.
+        /// Post: third person live; any look queued before Configure is discarded; orbit heading == target forward
+        ///       (tangent part); brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
         /// </remarks>
         public void Configure(in PlanetConfig planet, Transform target, Transform pivot, CinemachineCamera thirdPerson,
@@ -82,6 +83,9 @@ namespace Cosmimera.Player
             float3 up = PlanetFrame.At(planet, target.position).Up;
             _orbit = ViewOrbit.Create(up, SphericalMotor.TangentOr(target.forward, up, PlanetFrame.FromUp(up).North));
             SetFirstPerson(false);
+            // Look queued before the rig had an orbit refers to no heading; consuming it here broke the Post above
+            // (SOL P1 r7 N13: +90° queued yaw turned the initial heading sideways).
+            _pendingLook = float2.zero;
             _configured = true;
             LateUpdate();
         }
@@ -99,8 +103,9 @@ namespace Cosmimera.Player
         /// Post: yaw accumulates modulo 360, so pending yaw stays in (-360, 360). Pitch accumulates and **saturates**
         ///       at ±180°: input that pushes past a half turn in one direction within one frame is dropped, and later
         ///       opposite input starts from the saturated value. Any |pitch| ≥ 160 already drives the orbit to its
-        ///       ±80° limit from every starting pitch, so saturation only differs from exact summation when one frame
-        ///       mixes a > 180° swing with its partial reversal (SOL P1 r6 N10). The queued look is always finite.
+        ///       ±80° limit from every starting pitch. Once saturated, later opposite input in the same consumption
+        ///       cycle — a partial or a full reversal — can end somewhere else than exact summation would (SOL P1 r6
+        ///       N10, r7 N10-R7). The queued look is always finite.
         /// Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
