@@ -2,7 +2,8 @@
     "name": "Cosmimera.Planet",
     "rootNamespace": "Cosmimera.Planet",
     "references": [
-        "Cosmimera.Core"
+        "Cosmimera.Core",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
