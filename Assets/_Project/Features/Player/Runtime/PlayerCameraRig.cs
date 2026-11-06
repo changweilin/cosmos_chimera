@@ -38,7 +38,14 @@ namespace Cosmimera.Player
 
         /// <summary>Horizontal camera heading (unit, tangent to the planet) for movement input.</summary>
         /// <remarks>Pre: Configure called. Post: unit, ⟂ local up of the last LateUpdate. Side effects: none.</remarks>
-        public Vector3 Heading => _orbit.Heading;
+        public Vector3 Heading
+        {
+            get
+            {
+                Contract.Requires(_configured, "Configure has not been called");
+                return _orbit.Heading;
+            }
+        }
 
         /// <summary>Wires the rig.</summary>
         /// <remarks>
@@ -84,14 +91,15 @@ namespace Cosmimera.Player
 
         /// <summary>Queues look input for the next LateUpdate.</summary>
         /// <remarks>
-        /// Pre: pointerDelta and stick components finite; deltaTime finite and ≥ 0. pointerDelta is in pixels (mouse);
-        ///      stick is in [-1, 1] and scaled by deltaTime here.
+        /// Pre: pointerDelta finite (pixels, mouse); each stick component in [-1, 1] (+1e-3), scaled by deltaTime here;
+        ///      deltaTime finite and ≥ 0.
         /// Post: accumulated until consumed. Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
         {
             Contract.Requires(math.all(math.isfinite(new float4(pointerDelta.x, pointerDelta.y, stick.x, stick.y))),
                 "look deltas must be finite");
+            Contract.Requires(math.abs(stick.x) <= 1.001f && math.abs(stick.y) <= 1.001f, "stick components must be in [-1, 1]");
             Contract.Requires(deltaTime >= 0f && !float.IsInfinity(deltaTime), "deltaTime must be finite and >= 0");
             _pendingLook += (float2)pointerDelta * _sensitivityDegrees + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
         }

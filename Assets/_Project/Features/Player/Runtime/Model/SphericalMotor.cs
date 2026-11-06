@@ -137,7 +137,8 @@ namespace Cosmimera.Player
     /// <remarks>
     /// Pre: create through <see cref="SphericalMotor.Initial"/>.
     /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing and PlanarVelocity ⟂ Up (±1e-4), Facing
-    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded.
+    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded;
+    ///       |PlanarVelocity| ≤ MaxStateSpeed, |VerticalSpeed| ≤ MaxStateSpeed, |Velocity| ≤ 2·MaxStateSpeed.
     /// Side effects: none.
     /// </remarks>
     internal struct MotorState
@@ -178,6 +179,15 @@ namespace Cosmimera.Player
         // A heading within ~1e-3 rad of ±up is noise (PlanetFrame.ProjectOnTangent's degeneracy threshold).
         private const float DegenerateSq = 1e-6f;
 
+        /// <summary>Largest planar or vertical speed a MotorState may carry, m/s.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/reviews/P1-review-r4-sol.md#N4 — a finite tangent PlanarVelocity of 2e19 overflowed lengthsq and the
+        /// length restore produced NaN. 1e4 m/s is 100× MaxSpeed and ~1000× any fall on R ≤ 8000 m, while every
+        /// squared length in Step stays below 1e9. Falling speed is clamped here (an engine-free terminal velocity).
+        /// </remarks>
+        public const float MaxStateSpeed = 1e4f;
+
         /// <summary>State at rest at local up <paramref name="up"/> facing <paramref name="facing"/>.</summary>
         /// <remarks>
         /// Pre: up unit (±1e-3); facing finite (any length), not zero and not within 1e-3 rad of ±up.
@@ -197,7 +207,8 @@ namespace Cosmimera.Player
         /// <summary>Advances <paramref name="prev"/> by <paramref name="dt"/> seconds at the new local up <paramref name="up"/>.</summary>
         /// <remarks>
         /// Pre: settings.IsValid; prev satisfies the MotorState invariant (checked with 1e-3 slack: Facing unit and
-        ///      ⟂ prev.Up, PlanarVelocity ⟂ prev.Up relative to its length, all fields finite); up unit (±1e-3) and
+        ///      ⟂ prev.Up, PlanarVelocity ⟂ prev.Up relative to its length, all fields finite, speeds within
+        ///      MaxStateSpeed bounds, VerticalSpeed == 0 while Grounded, ¬(JumpStarted ∧ Grounded)); up unit (±1e-3) and
         ///      strictly less than 90° from prev.Up;
         ///      0 &lt; dt ≤ 0.1; input satisfies the MotorInput precondition; ground satisfies GroundContact's.
         /// Post: MotorState invariant holds; result.Up == normalize(up);
@@ -223,6 +234,15 @@ namespace Cosmimera.Player
                 "prev.PlanarVelocity must be a finite tangent");
             Contract.Requires(math.all(math.isfinite(prev.Velocity)) && math.isfinite(prev.VerticalSpeed),
                 "prev velocities must be finite");
+            // Component-wise first so lengthsq below cannot overflow; then the Euclidean bounds of the type invariant.
+            Contract.Requires(math.cmax(math.abs(prev.PlanarVelocity)) <= MaxStateSpeed
+                && math.lengthsq(prev.PlanarVelocity) <= MaxStateSpeed * MaxStateSpeed
+                && math.abs(prev.VerticalSpeed) <= MaxStateSpeed
+                && math.cmax(math.abs(prev.Velocity)) <= 2f * MaxStateSpeed
+                && math.lengthsq(prev.Velocity) <= 4f * MaxStateSpeed * MaxStateSpeed,
+                "prev speeds exceed MaxStateSpeed");
+            Contract.Requires(!prev.Grounded || (prev.VerticalSpeed == 0f && !prev.JumpStarted),
+                "prev is Grounded but carries vertical speed or a jump start");
             Contract.Requires(math.dot(up, prev.Up) > 0f, "up moved more than 90° in one step");
             Contract.Requires(math.lengthsq(input.Move) <= 1.002f, "|Move| must be ≤ 1");
             Contract.Requires(math.all(math.isfinite(input.ViewForward)), "ViewForward must be finite");
@@ -297,7 +317,7 @@ namespace Cosmimera.Player
             }
             else
             {
-                vUp -= settings.Gravity * dt;
+                vUp = math.max(vUp - settings.Gravity * dt, -MaxStateSpeed);
                 velocity = vTan + up * vUp;
             }
 
