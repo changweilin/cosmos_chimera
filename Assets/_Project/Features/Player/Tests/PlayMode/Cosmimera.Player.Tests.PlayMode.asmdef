@@ -1,0 +1,25 @@
+{
+    "name": "Cosmimera.Player.Tests.PlayMode",
+    "rootNamespace": "Cosmimera.Player.Tests",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Planet",
+        "Cosmimera.Player",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

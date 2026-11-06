@@ -35,3 +35,4 @@
 | Q-T1 | 宙獸導航：區域局部 NavMesh 或自訂 steering？ | P1-06 | 原型兩者後決定 |
 | Q-T2 | 「ChatGPT Terra/Sol」「Gemini Flash/Argon」各自的能力層級假設是否正確？見 ai-agents.md | 全部 | 見該檔 |
 | Q-T3 | 概念圖/貼圖/3D 模型由哪個工具產出？ | P5-04 | 概念圖、三視圖、特效分鏡：ChatGPT（圖像生成）/ Gemini Argon 任務模式，經 `tools/prompt-forge`。**3D 網格/綁骨/動畫仍未定**：對話式 AI 只保證交付三視圖 + 骨架規格 + Blender 腳本，真正的 image-to-3D 工具待選 |
+| Q-T5 | `PlanetFrame` 規定 cross(East, North) == Up（右手公式），但 Unity 是左手系：面向 North 時 East 在**畫面左邊**，等於鏡像地圖。要 (a) 改成 cross(North, East) == Up 讓 East 在右邊（P1-01 契約破壞性變更，`LatLon` 經度方向一併翻轉），還是 (b) 維持數學慣例、由 P3 貼真實地圖模板時鏡像？ | P1-01、P3-03（真實地圖會左右顛倒）、HUD 指南針 | 建議 (a)；P1-05 移動與攝影機只用 cross(up, forward)，不受影響 |

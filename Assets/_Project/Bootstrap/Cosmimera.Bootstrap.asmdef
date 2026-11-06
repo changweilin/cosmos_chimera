@@ -12,7 +12,10 @@
         "Cosmimera.Lobby",
         "Cosmimera.Codex",
         "Cosmimera.Net",
-        "Cosmimera.Save"
+        "Cosmimera.Save",
+        "Unity.Mathematics",
+        "Unity.InputSystem",
+        "Unity.Cinemachine"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -3,7 +3,10 @@
     "rootNamespace": "Cosmimera.Player",
     "references": [
         "Cosmimera.Core",
-        "Cosmimera.Planet"
+        "Cosmimera.Planet",
+        "Unity.Mathematics",
+        "Unity.InputSystem",
+        "Unity.Cinemachine"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
