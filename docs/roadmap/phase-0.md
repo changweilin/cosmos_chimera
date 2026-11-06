@@ -9,7 +9,7 @@
 | P0-03 | `.editorconfig` + Roslyn analyzers、asmdef 骨架（依 overview.md） | SONNET | OPUS | 編譯 0 警告；跨 feature 引用 `Internal/` 會編譯失敗 | 🟨 |
 | P0-04 | `Core/Contracts`（`Contract.Requires/Ensures`，Release 剝除）、`Core/Random/Pcg32` | OPUS | SOL | 單元測試覆蓋；Pcg32 對照官方測試向量 | 🟨 |
 | P0-05 | `Data/schemas/*.schema.json`（creature, move, trait, relation, planet-type）+ `tools/validate-data` | SONNET | OPUS | 範例資料通過，錯誤資料給出可讀錯誤訊息 | 🟨 |
-| P0-06 | JSON → ScriptableObject importer（Editor） | SONNET | OPUS | 改 JSON 後重新匯入，registry 可依 id 查詢 | ⬜ |
+| P0-06 | JSON → ScriptableObject importer（Editor） | SONNET | OPUS | 改 JSON 後重新匯入，registry 可依 id 查詢 | 🟨 |
 | P0-07 | CI（GitHub Actions + GameCI）跑 EditMode 測試與資料驗證 | SONNET | — | PR 上自動跑；失敗會擋 | ⬜ |
 
 ## 交接紀錄
@@ -22,3 +22,4 @@
 - 2026-11-06 · ChatGPT Sol（Codex CLI，唯讀）· done · P0-04 審查**不通過**：PCG 公式與官方向量正確，但 (1) 建構子 seed 加法與 `ulong→uint` 截斷沒有明示 `unchecked`，在 `/checked+` 編譯下會拋例外；(2) `default(Pcg32)` 呼叫 `NextUInt(3)` 會無限迴圈；(3) 把拒絕取樣改成 `% bound`，現有測試仍全過；另有可變 struct 防呆、Burst 相容性、DbC 文件缺口等項。全文：`docs/reviews/P0-04-sol.md` · 下一步：OPUS 修正 1–3 並補測試，4–6 評估後交使用者決定
 - 2026-11-06 · Claude Opus · done · P0-03：10 個 feature asmdef + Bootstrap（依 overview.md 依賴圖，只用名稱引用）；每個 feature 的 `AssemblyInfo.cs` 只對自家測試開 `InternalsVisibleTo`；`Microsoft.Unity.Analyzers` 1.28.0 + `Assets/Default.ruleset`（ADR-0003）；`.editorconfig`；`Tests/EditMode/ArchitectureTests`（依賴方向白名單、Internal 命名空間不可有 public 型別）。驗證：EditMode 23/23、0 個警告。反向探針（驗證後已刪除）：跨 feature 引用 internal 型別 → CS0122；空的 `Update` → UNT0001 warning；public 的 Internal 型別 → 守門測試失敗。**注意**：Unity 在 batchmode 會把 `PC_RPAsset.asset` 的 `k_AssetPreviousVersion` 12 改成 13（URP 資產遷移），這次已還原，未納入本項 · 下一步：SONNET 審 P0-03 → P0-06
 - 2026-11-06 · Claude Opus · done · P0-04 修正 Sol 審查的 #1–#3：seed 加法與 32 位截斷改為明示 `unchecked`；`NextUInt()` 加上 `Contract.Requires(increment 為奇數)`，所以 default 實例在 Editor/Dev 會丟 `ContractException`，不會無限迴圈（Release 仍是未定義行為，已寫進契約）；補拒絕取樣向量、極端 seed 向量、未初始化與逆序區間測試。驗證：EditMode 28/28；`/checked+` 編譯探針：修正前拋 `OverflowException`、修正後輸出正確；變異測試（有界取樣改成 `% bound`）會被新測試擋下。**未做**：#4 struct 防呆、#5 Burst 編譯驗證、#6 DbC 文件缺口；也沒有把 checked/unchecked 編譯矩陣做成常駐測試 · 下一步：SOL 複審 #1–#3；使用者決定 #4–#6
+- 2026-11-06 · Claude Opus · done · P0-06：新增 `Cosmimera.GameData` 組件（`MoveDef`/`TraitDef`/`CreatureDef`/`PlanetTypeDef`/`RuleDef`/關係邊 + `GameDatabase.TryGet<T>(id)`、`GetRelations`，setter 皆為 internal）與 Editor importer `DataImporter`（選單 + batchmode `ImportAllBatch [-dataRoot]`）。兩階段：先解析與檢查所有引用，有錯就在寫入前中止並列出全部錯誤；重新匯入時原地覆寫，GUID 不變；id 消失則刪除資產。決定寫在 ADR-0004（**提議中，待使用者確認**）：GameData 只引用 Core，Planet/Player 不可引用；Newtonsoft.Json 3.2.2 從遞移依賴改為明確釘選（無新下載）。驗證：EditMode 41/41（新增 13 項 importer 測試），0 個警告；對真實 `Data/` 執行 batchmode 匯入 exit 0（目前沒有正式資料，所以 `GameDatabase.asset` 是空的）。URP `PC_RPAsset` 遷移的變動照例已還原 · 下一步：使用者確認 ADR-0004；SONNET 審 P0-06

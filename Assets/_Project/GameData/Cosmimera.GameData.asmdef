@@ -1,0 +1,16 @@
+{
+    "name": "Cosmimera.GameData",
+    "rootNamespace": "Cosmimera.GameData",
+    "references": [
+        "Cosmimera.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

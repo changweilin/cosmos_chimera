@@ -20,16 +20,19 @@ namespace Cosmimera.Architecture.Tests
         private static readonly Dictionary<string, string[]> AllowedReferences = new Dictionary<string, string[]>
         {
             ["Cosmimera.Core"] = new string[0],
+            // ADR-0004: imported definitions; Planet and Player stay unaware of creatures, so they may not use it.
+            ["Cosmimera.GameData"] = new[] { "Cosmimera.Core" },
+            ["Cosmimera.GameData.Editor"] = new[] { "Cosmimera.Core", "Cosmimera.GameData" },
             ["Cosmimera.Planet"] = new[] { "Cosmimera.Core" },
-            ["Cosmimera.WorldGen"] = new[] { "Cosmimera.Core", "Cosmimera.Planet" },
+            ["Cosmimera.WorldGen"] = new[] { "Cosmimera.Core", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Player"] = new[] { "Cosmimera.Core", "Cosmimera.Planet" },
-            ["Cosmimera.Creatures"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet" },
-            ["Cosmimera.Combat"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet" },
-            ["Cosmimera.Capture"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet" },
-            ["Cosmimera.Lobby"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures" },
-            ["Cosmimera.Codex"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures" },
-            ["Cosmimera.Net"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Creatures", "Cosmimera.Planet" },
-            ["Cosmimera.Save"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Capture" },
+            ["Cosmimera.Creatures"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
+            ["Cosmimera.Combat"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
+            ["Cosmimera.Capture"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
+            ["Cosmimera.Lobby"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
+            ["Cosmimera.Codex"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
+            ["Cosmimera.Net"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Creatures", "Cosmimera.Planet", "Cosmimera.GameData" },
+            ["Cosmimera.Save"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Capture", "Cosmimera.GameData" },
         };
 
         [Serializable]
