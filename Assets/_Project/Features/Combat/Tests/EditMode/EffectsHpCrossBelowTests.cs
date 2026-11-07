@@ -114,5 +114,58 @@ namespace Cosmimera.Combat.Tests
             book.Clear(500);
             Assert.Throws<ContractException>(() => book.NotifyHpChanged(100, 10, 100, 499, out _));
         }
+
+        // SOL P2-09 r3 H1: witnesses for ten mutants that survived the tests above (HC08–HC19).
+        [TestCase(25, 101, 26, 25, 12)]
+        [TestCase(1, 101, 2, 1, 12)]
+        [TestCase(100, int.MaxValue, int.MaxValue, int.MaxValue - 1, 12)]
+        [TestCase(50, int.MaxValue, int.MaxValue, int.MaxValue, 0)]
+        public void Threshold_is_exact_and_uses_Int64(int percent, int maxHp, int before, int after, int expected)
+        {
+            Assert.AreEqual(expected, Heal(Book(percent, 1000, Heal12), before, after, 0, maxHp));
+        }
+
+        [Test]
+        public void Nonmatching_notifications_advance_the_watermark()
+        {
+            var book = new EffectBook();
+            book.NotifyHpChanged(0, 0, 1, 500, out _);
+            Assert.Throws<ContractException>(() => book.NotifyHpChanged(0, 0, 1, 499, out _));
+        }
+
+        [TestCase(-1L)]
+        [TestCase(long.MinValue)]
+        [TestCase(CombatTime.MaxMs + 1)]
+        [TestCase(long.MaxValue)]
+        public void Nonmatching_notifications_check_the_time_domain(long now)
+        {
+            Assert.Throws<ContractException>(() => new EffectBook().NotifyHpChanged(0, 0, 1, now, out _));
+        }
+
+        [TestCase(1)]
+        [TestCase(600000)]
+        public void Duration_is_preserved_and_one_event_adds_one_stack(int duration)
+        {
+            var buff = new EffectSpec(EffectType.MasteryMod, false, Element.Fire, 20, 0, 3);
+            EffectBook book = Book(25, duration, buff);
+
+            book.NotifyHpChanged(100, 20, 100, 0, out _);
+            Assert.AreEqual(1, book.StacksOf("trait_x", 0, duration - 1));
+            Assert.AreEqual(0, book.StacksOf("trait_x", 0, duration));
+
+            book.NotifyHpChanged(20, 30, 100, duration, out _);
+            book.NotifyHpChanged(30, 20, 100, duration, out _);
+            Assert.AreEqual(0, book.StacksOf("trait_x", 0, duration));
+        }
+
+        [Test]
+        public void Recovery_from_zero_does_not_count_as_a_downward_crossing()
+        {
+            EffectBook book = Book(25, 1000, Heal12);
+            Assert.AreEqual(0, Heal(book, 100, 0, 0));
+            Assert.AreEqual(0, Heal(book, 0, 10, 1));
+            Assert.AreEqual(0, Heal(book, 10, 30, 2));
+            Assert.AreEqual(12, Heal(book, 30, 20, 3));
+        }
     }
 }
