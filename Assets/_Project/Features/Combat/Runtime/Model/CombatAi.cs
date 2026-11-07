@@ -378,6 +378,12 @@ namespace Cosmimera.Combat
         ///    FollowLeashMm from the player, then the point FollowLeashMm/2 from the player toward self. Else by style
         ///    (combat.md table) using the min / max ReachMm of all Hostile options, ready or not; a stand-off beyond a
         ///    quarter circumference is clamped to it.
+        ///  - Direction: a stand-off toward self lies on the great circle through the anchor (target or player) and
+        ///    self whenever their lateral separation |anchorRel × selfRel| / |anchorRel| (center-relative) is at least
+        ///    2⁻²² · (max |center component| + 2R) — the float rounding scale of the world coordinates themselves.
+        ///    Below that the plane is not resolved by the inputs (e.g. self and target radially aligned to within float
+        ///    precision): any tangent may be used, chosen deterministically; an exactly zero normal uses the
+        ///    target's facing (leash: a fixed world axis). The stand-off distance holds in every case.
         ///  - DestinationDirection is unit length. Same inputs → same output.
         /// Side effects: none; no allocation on the success path in any build.
         /// </remarks>
