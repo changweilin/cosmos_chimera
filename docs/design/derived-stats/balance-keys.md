@@ -55,3 +55,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `player.roll_duration_ms` | 一次翻滾全長 |
 | `player.roll_invulnerable_ms` | 從翻滾開始算的無敵幀長度，≤ 翻滾全長；區間 [開始, 開始+長度) |
 | `player.roll_cooldown_ms` | 兩次翻滾開始的最短間隔，≥ 翻滾全長（避免連滾得到永久無敵） |
+| `ai.keep_distance_permille` | P2-10 保距站位 = 最長敵對可及距離 × 此值 / 1000（1–1000） |
+| `ai.close_in_permille` | P2-10 突進 / 繞背站位 = 最短敵對可及距離 × 此值 / 1000（1–1000） |
+| `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
+| `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |

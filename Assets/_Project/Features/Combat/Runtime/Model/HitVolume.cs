@@ -518,6 +518,13 @@ namespace Cosmimera.Combat
             return true;
         }
 
+        // Shared with CombatAi so both layers accept exactly the same planets and positions.
+        internal static void RequireCombatPosition(in PlanetConfig planet, float3 position, string name)
+        {
+            RequirePlanet(planet);
+            RequireInDomain((double3)position - (double3)planet.Center, planet, name);
+        }
+
         private static void RequirePlanet(in PlanetConfig planet)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");

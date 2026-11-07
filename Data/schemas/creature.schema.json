@@ -9,12 +9,16 @@
     "creature": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "line_id", "stage", "size_class", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
+      "required": ["id", "line_id", "stage", "size_class", "ai_style", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "line_id": { "$ref": "common.schema.json#/$defs/id" },
         "stage": { "enum": ["juvenile", "adolescent", "adult"] },
         "size_class": { "enum": ["S", "M", "L", "XL"] },
+        "ai_style": {
+          "description": "Combat AI positioning style. REQ: docs/design/combat.md#戰鬥 AI (Q-C21). Per stage: a line may change style as its signature move changes.",
+          "enum": ["keep_distance", "flank", "charge", "hold"]
+        },
         "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
         "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },
         "resist": {

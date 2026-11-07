@@ -372,6 +372,7 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be S, M, L or XL");
                 }
+                RequireEnum<AiStyle>(c.Where, "ai_style", d.AiStyle);
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
@@ -505,7 +506,7 @@ namespace Cosmimera.GameData.Editor
                 string sensitivity = (string)d.Concept["sensitivity"];
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
-                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass,
+                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Exp ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),

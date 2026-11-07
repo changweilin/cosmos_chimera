@@ -105,6 +105,7 @@ namespace Cosmimera.GameData
         [SerializeField] private string lineId;
         [SerializeField] private CreatureStage stage;
         [SerializeField] private CreatureSizeClass sizeClass;
+        [SerializeField] private AiStyle aiStyle;
         [SerializeField] private CreatureDef evolvesTo;
         [SerializeField] private int evolutionExp;
         [SerializeField] private List<EvolutionMaterial> evolutionMaterials = new List<EvolutionMaterial>();
@@ -127,6 +128,10 @@ namespace Cosmimera.GameData
         /// <summary>Size class for animation pairing and art budgets.</summary>
         /// <remarks>Pre: none. Post: a defined CreatureSizeClass. Side effects: none.</remarks>
         public CreatureSizeClass SizeClass => sizeClass;
+
+        /// <summary>Combat AI positioning style of this form (P2-10).</summary>
+        /// <remarks>Pre: none. Post: a defined AiStyle. Side effects: none.</remarks>
+        public AiStyle AiStyle => aiStyle;
 
         /// <summary>The next form, or null for an adult.</summary>
         /// <remarks>Pre: none. Post: null iff Stage == Adult; otherwise same LineId, next stage. Side effects: none.</remarks>
@@ -176,7 +181,8 @@ namespace Cosmimera.GameData
             return resist[(int)element];
         }
 
-        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, CreatureDef evolvesTo, int evolutionExp,
+        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle, CreatureDef evolvesTo,
+            int evolutionExp,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
         {
@@ -184,6 +190,7 @@ namespace Cosmimera.GameData
             this.lineId = lineId;
             this.stage = stage;
             this.sizeClass = sizeClass;
+            this.aiStyle = aiStyle;
             this.evolvesTo = evolvesTo;
             this.evolutionExp = evolutionExp;
             this.evolutionMaterials = evolutionMaterials;

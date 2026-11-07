@@ -32,6 +32,13 @@ namespace Cosmimera.Combat.Tests
                 (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"]);
         }
 
+        public static AiTuning AiTuning()
+        {
+            JToken a = BalanceJson()["ai"];
+            return new AiTuning((int)a["keep_distance_permille"], (int)a["close_in_permille"], (int)a["hold_permille"],
+                (int)a["follow_leash_mm"]);
+        }
+
         public static int SwitchCooldownMs() => (int)BalanceJson()["team"]["switch_cooldown_ms"];
 
         public static PlayerVitalsConfig PlayerConfig()

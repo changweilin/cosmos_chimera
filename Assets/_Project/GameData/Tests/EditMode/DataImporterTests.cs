@@ -572,6 +572,30 @@ namespace Cosmimera.GameData.Tests
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
+        [TestCase("keep_distance", AiStyle.KeepDistance)]
+        [TestCase("flank", AiStyle.Flank)]
+        [TestCase("charge", AiStyle.Charge)]
+        [TestCase("hold", AiStyle.Hold)]
+        public void Every_ai_style_survives_import(string style, AiStyle expected)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(expected, cub.AiStyle);
+            Assert.AreEqual(AiStyle.Hold, cub.EvolvesTo.AiStyle);
+            Assert.AreEqual(AiStyle.KeepDistance, cub.EvolvesTo.EvolvesTo.AiStyle);
+        }
+
+        [TestCase("Charge")]
+        [TestCase("0")]
+        [TestCase("kite")]
+        public void Invalid_ai_style_aborts_without_writing(string style)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
+            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+        }
+
         [TestCase("aoe", "none", 2000, null)]
         [TestCase("dash", "none", 2000, null)]
         [TestCase("cone", "dash", 2000, null)]

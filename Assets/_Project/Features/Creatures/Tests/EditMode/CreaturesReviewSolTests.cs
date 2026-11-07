@@ -335,7 +335,7 @@ namespace Cosmimera.Creatures.Tests
             foreach (string id in new[] { "a", "b", "c" })
             {
                 CreatureDef c = New<CreatureDef>(id);
-                c.Set("line", CreatureStage.Adult, CreatureSizeClass.M, null, 0, new List<EvolutionMaterial>(), new int[10],
+                c.Set("line", CreatureStage.Adult, CreatureSizeClass.M, AiStyle.Hold, null, 0, new List<EvolutionMaterial>(), new int[10],
                     new List<ElementValue>(), default, moveB, traitB, "{}", false);
                 creatures.Add(id, c);
                 defs.Add(c);

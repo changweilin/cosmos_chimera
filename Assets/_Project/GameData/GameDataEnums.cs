@@ -56,6 +56,13 @@ namespace Cosmimera.GameData
         S = 0, M = 1, L = 2, XL = 3,
     }
 
+    /// <summary>Combat AI positioning style. REQ: docs/design/combat.md#戰鬥-ai (Q-C21, closed enum).</summary>
+    /// <remarks>Pre: imported from keep_distance|flank|charge|hold. Post: stable serialized values. Side effects: none.</remarks>
+    public enum AiStyle
+    {
+        KeepDistance = 0, Flank = 1, Charge = 2, Hold = 3,
+    }
+
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>
     public enum RelationKind
     {

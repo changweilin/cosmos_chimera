@@ -266,6 +266,35 @@ class CrossFileRules(unittest.TestCase):
                 self.assertIn("schema", self.codes(findings))
                 self.assertNotIn("material_sum_overflow", self.codes(findings))
 
+    def test_malformed_material_entries_are_excluded_from_the_sum(self):
+        # Sol P2-05/07 r3: with qty=1 a malformed entry could be summed wrongly yet stay below Int32 and pass.
+        # Pair each with a legal MaxValue entry on the same key so wrongly summing it overflows.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        for bad in ({"tier": True}, {"tier": float(base["tier"])}, {"tier": None}, {"qty": True},
+                    {"element": None}):
+            with self.subTest(bad=bad):
+                for pair in ([{**base, "qty": 2147483647}, {**base, "qty": 1, **bad}],
+                             [{**base, "qty": 2147483647, **bad}, {**base, "qty": 1, **bad}]):
+                    if "qty" in bad and pair[0].get("qty") is True:
+                        continue
+                    mats[:] = pair
+                    findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                    self.assertNotIn("material_sum_overflow", self.codes(findings))
+                    self.assertTrue(self.codes(findings) & {"schema", "float_literal"})
+
+    def test_ai_style_is_required_and_closed(self):
+        # Q-C21: P2-10 reads the positioning style from data; a missing or unknown style must not default silently.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        for value in ("keep_distance", "flank", "charge", "hold"):
+            creatures[0]["ai_style"] = value
+            self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        creatures[0]["ai_style"] = "kite"
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        del creatures[0]["ai_style"]
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))
