@@ -599,6 +599,12 @@ namespace Cosmimera.Combat
             }
         }
 
+        // Lets Combatant check its Pre before an early return without moving the watermark (ARGON cast review K1).
+        internal void RequireTime(long nowMs)
+        {
+            CombatTime.Require(nowMs, _watermarkMs);
+        }
+
         private void Advance(long nowMs)
         {
             CombatTime.Require(nowMs, _watermarkMs);

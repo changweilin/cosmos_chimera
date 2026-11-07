@@ -540,5 +540,216 @@ namespace Cosmimera.Combat.Tests
                 alive.ReceiveSupport(Cast(Make(), Both(Mod(EffectType.MasteryMod, 5), 1000), 0), 0));
             Assert.Throws<ContractException>(() => alive.ReceiveSupport(default, 0));
         }
+
+        // ---- ARGON cast review K1 / K2 / K4 / K5 ----
+
+        [Test]
+        public void FromDef_copies_timed_and_instant_moves()
+        {
+            MoveDef timed = UnityEngine.ScriptableObject.CreateInstance<MoveDef>();
+            MoveDef heal = UnityEngine.ScriptableObject.CreateInstance<MoveDef>();
+            try
+            {
+                timed.SetId("m_timed");
+                timed.Set(Element.Fire, MoveKind.Both, 45,
+                    new EffectDef(EffectType.MasteryMod, false, Element.Fire, 15, 0, 2), 3500, 0, 2500, 85,
+                    RangeClass.Mid, MoveShape.Line, 12000, MoveMovement.None, default);
+                CastMove t = CastMove.FromDef(timed);
+                Assert.AreEqual("m_timed", t.Id);
+                Assert.AreEqual(Element.Fire, t.Element);
+                Assert.AreEqual(MoveKind.Both, t.Kind);
+                Assert.AreEqual(45, t.Power);
+                Assert.AreEqual(85, t.AccuracyPercent);
+                Assert.AreEqual(2500, t.BaseCooldownMs);
+                Assert.IsTrue(t.HasEffect);
+                Assert.AreEqual(3500, t.EffectDurationMs);
+                Assert.AreEqual(15, t.Effect.Delta);
+                Assert.AreEqual(2, t.Effect.MaxStacks);
+
+                heal.SetId("m_heal");
+                heal.Set(Element.Water, MoveKind.Effect, 0,
+                    new EffectDef(EffectType.HealPercentMaxHp, false, default, 0, 25, 1), 0, 0, 4000, 100,
+                    RangeClass.Melee, MoveShape.Ally, 12000, MoveMovement.None, default);
+                CastMove h = CastMove.FromDef(heal);
+                Assert.AreEqual(0, h.EffectDurationMs);
+                Assert.IsTrue(h.Effect.IsInstant);
+                Assert.AreEqual(25, h.Effect.Percent);
+                Assert.IsFalse(h.DealsDamage);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(timed);
+                UnityEngine.Object.DestroyImmediate(heal);
+            }
+        }
+
+        [Test]
+        public void Combatant_rejects_too_many_slots()
+        {
+            Assert.Throws<ContractException>(() => Make(slots: MoveCooldowns.MaxSlots + 1));
+            Assert.DoesNotThrow(() => Make(slots: MoveCooldowns.MaxSlots));
+        }
+
+        [Test]
+        public void Refused_casts_still_check_slot_and_time()
+        {
+            Combatant dead = Make(con: 0);
+            dead.EnterField(false, 500);
+            Pcg32 rng = Rng();
+            dead.ReceiveHostile(Cast(Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent)),
+                Damage(power: DamageModel.MaxPower), 0), true, ref rng, 500);
+            Assert.Throws<ContractException>(() => dead.BeginCast(-1, Damage(), 500, out _));
+            Assert.Throws<ContractException>(() => dead.BeginCast(2, Damage(), 500, out _));
+            Assert.Throws<ContractException>(() => dead.BeginCast(0, Damage(), 499, out _), "Book watermark");
+            Assert.Throws<ContractException>(() => dead.BeginCast(0, Damage(), CombatTime.MaxMs + 1, out _));
+
+            Combatant c = Make();
+            Cast(c, Damage(cd: 3000), 0);
+            c.Book.Apply("buff", 0, Mod(EffectType.MasteryMod, 10), 5000, 1000);
+            Assert.Throws<ContractException>(() => c.BeginCast(0, Damage(cd: 3000), 500, out _),
+                "cooling down but before the Book watermark");
+            Assert.AreEqual(CastResult.OnCooldown, c.BeginCast(0, Damage(cd: 3000), 1000, out _));
+        }
+
+        [Test]
+        public void Support_checks_time_even_at_full_hp()
+        {
+            Combatant target = Make();
+            target.Book.Apply("b", 0, Mod(EffectType.MasteryMod, 5), 5000, 500);
+            CastContext ctx = Cast(Make(), Support(Heal(30), 0), 500);
+            Assert.Throws<ContractException>(() => target.ReceiveSupport(ctx, 499));
+            Assert.Throws<ContractException>(() => target.ReceiveSupport(ctx, -1));
+            Assert.DoesNotThrow(() => target.ReceiveSupport(ctx, 500));
+        }
+
+        [Test]
+        public void Default_hit_report_is_not_a_faint()
+        {
+            Assert.IsFalse(default(HitReport).Fainted);
+        }
+
+        [Test]
+        public void On_move_used_heal_reaches_hp()
+        {
+            var trigger = new TriggerSpec(TriggerType.OnMoveUsed, false, Element.Fire, 0, 1000);
+            Combatant c = Make(Trait(trigger, Heal(10)), con: 100);
+            Pcg32 rng = Rng();
+            c.ReceiveHostile(Cast(Make(), Damage(power: 200), 0), true, ref rng, 0);
+            int hp = c.Hp;
+            Cast(c, Damage(), 0);
+            Assert.AreEqual(System.Math.Min(c.MaxHp, hp + EffectMath.HealAmount(c.MaxHp, 10)), c.Hp);
+        }
+
+        [Test]
+        public void Continuous_traits_see_current_hp_when_casting_and_when_hit()
+        {
+            // on_hp_below{50}: +30 fire mastery and +40 fire resist only once HP is under half.
+            var trigger = new TriggerSpec(TriggerType.OnHpBelow, false, default, 50, 0);
+            Combatant c = Make(Trait(trigger, Mod(EffectType.MasteryMod, 30), Mod(EffectType.ResistMod, 40)), con: 0);
+            Assert.AreEqual(0, Cast(c, Damage(), 0).MasteryPercent, "full HP: trait off");
+            Combatant caster = Make();
+            int power = 1;
+            while (DamageModel.Compute(power, 0, 0) * 100 <= 60 * c.MaxHp)
+            {
+                power++;
+            }
+
+            Pcg32 rng = Rng();
+            HitReport first = c.ReceiveHostile(Cast(caster, Damage(power: power), 0), true, ref rng, 0);
+            Assert.AreEqual(DamageModel.Compute(power, 0, 0), first.Damage, "trait off before the hit");
+            Assert.Less((long)c.Hp * 100, 50L * c.MaxHp);
+            Assert.AreEqual(30, Cast(c, Damage(), 0, slot: 1).MasteryPercent, "below half: trait on for the cast");
+            HitReport second = c.ReceiveHostile(Cast(caster, Damage(power: 10), 0, slot: 1), true, ref rng, 0);
+            Assert.AreEqual(System.Math.Min(c.Hp + second.Damage, DamageModel.Compute(10, 0, 40)), second.Damage,
+                "below half: trait resist on for the hit");
+        }
+
+        [Test]
+        public void Sure_hit_contact_still_draws_once()
+        {
+            Combatant target = Make(con: 200);
+            Pcg32 rng = Rng();
+            Pcg32 expected = rng;
+            expected.NextUInt(DerivedStats.Permille);
+            HitReport r = target.ReceiveHostile(Cast(Make(), Damage(power: 5, accuracy: 100), 0), true, ref rng, 0);
+            Assert.AreEqual(HitOutcome.Hit, r.Outcome);
+            Assert.AreEqual(expected.NextUInt(), rng.NextUInt());
+        }
+
+        [Test]
+        public void Hostile_timed_effect_lasts_its_duration()
+        {
+            Combatant target = Make(con: 200);
+            CastMove move = Both(Mod(EffectType.EvasionModPercent, -20), 3000, power: 5);
+            Pcg32 rng = Rng();
+            target.ReceiveHostile(Cast(Make(), move, 1000), true, ref rng, 1000);
+            Assert.AreEqual(1, target.Book.StacksOf("move_both", 0, 3999));
+            Assert.AreEqual(0, target.Book.StacksOf("move_both", 0, 4000));
+        }
+
+        [Test]
+        public void Survivor_on_hit_taken_heal_and_move_heal_resolve_once()
+        {
+            var trigger = new TriggerSpec(TriggerType.OnHitTaken, true, default, 0, 1000);
+            Combatant target = Make(Trait(trigger, Heal(7)), con: 100);
+            Combatant caster = Make();
+            Pcg32 rng = Rng();
+            target.ReceiveHostile(Cast(caster, Damage(power: 300), 0), true, ref rng, 0);
+            int hp = target.Hp;
+            CastMove healing = new CastMove("move_hh", Element.Fire, MoveKind.Both, 1, 100, 0, true, Heal(9), 0);
+            HitReport r = target.ReceiveHostile(Cast(caster, healing, 0, slot: 1), true, ref rng, 0);
+            int afterDamage = hp - r.Damage;
+            int expected = System.Math.Min(target.MaxHp - afterDamage, EffectMath.HealAmount(target.MaxHp, 16));
+            Assert.AreEqual(expected, r.Healed, "7 + 9 percent summed before rounding");
+            Assert.AreEqual(afterDamage + expected, target.Hp);
+        }
+
+        [Test]
+        public void Support_report_and_heal_advance_the_book()
+        {
+            Combatant target = Make(con: 100);
+            Pcg32 rng = Rng();
+            target.ReceiveHostile(Cast(Make(), Damage(power: 200), 0), true, ref rng, 0);
+            int hp = target.Hp;
+            HitReport r = target.ReceiveSupport(Cast(Make(), Support(Heal(5), 0), 500), 500);
+            Assert.AreEqual(hp, r.HpBefore);
+            Assert.AreEqual(target.Hp, r.HpAfter);
+            Assert.AreEqual(r.HpBefore + r.Healed, r.HpAfter);
+            Assert.Throws<ContractException>(() => target.Book.StacksOf("x", 0, 499), "heal notified the book at 500");
+        }
+
+        [Test]
+        public void EnterField_fires_summon_and_swap_and_heals_once()
+        {
+            var summon = new TriggerSpec(TriggerType.OnSummon, false, default, 0, 2000);
+            Combatant a = Make(Trait(summon, Heal(8)), con: 100);
+            Pcg32 rng = Rng();
+            a.ReceiveHostile(Cast(Make(), Damage(power: 300), 0), true, ref rng, 0);
+            int hp = a.Hp;
+            int healed = a.EnterField(false, 100);
+            Assert.AreEqual(EffectMath.HealAmount(a.MaxHp, 8), healed);
+            Assert.AreEqual(hp + healed, a.Hp);
+
+            var swap = new TriggerSpec(TriggerType.OnAllySwap, false, default, 0, 2000);
+            Combatant b = Make(Trait(swap, Mod(EffectType.MoveSpeedModPercent, 20)));
+            Assert.AreEqual(0, b.EnterField(false, 0));
+            Assert.AreEqual(0, b.Book.StacksOf("trait_t", 0, 0), "opening summon is not a swap");
+            Assert.AreEqual(0, b.EnterField(true, 10));
+            Assert.AreEqual(1, b.Book.StacksOf("trait_t", 0, 10));
+            Assert.AreEqual(0, b.Book.StacksOf("trait_t", 0, 2010));
+        }
+
+        [Test]
+        public void EnterField_rejects_fainted_and_backwards_time()
+        {
+            Combatant dead = Make(con: 0);
+            Pcg32 rng = Rng();
+            dead.ReceiveHostile(Cast(Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent)),
+                Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
+            Assert.Throws<ContractException>(() => dead.EnterField(true, 0));
+            Combatant c = Make();
+            c.EnterField(false, 100);
+            Assert.Throws<ContractException>(() => c.EnterField(false, 99));
+        }
     }
 }

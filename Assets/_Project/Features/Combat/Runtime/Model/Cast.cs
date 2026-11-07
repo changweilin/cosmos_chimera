@@ -16,7 +16,8 @@ namespace Cosmimera.Combat
         /// <summary>Creates a validated move.</summary>
         /// <remarks>
         /// Pre: id non-empty; element and kind defined; 0 &lt;= power &lt;= DamageModel.MaxPower (ignored when kind == Effect);
-        ///      0 &lt;= accuracyPercent &lt;= 100; baseCooldownMs >= 0; hasEffect iff kind != Damage;
+        ///      0 &lt;= accuracyPercent &lt;= 100; baseCooldownMs >= 0; hasEffect iff kind != Damage, and then effect was built
+        ///      by the EffectSpec constructor (MaxStacks >= 1);
         ///      when hasEffect and !effect.IsInstant: 1 &lt;= effectDurationMs &lt;= EffectBook.MaxDurationMs, else effectDurationMs == 0.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
@@ -57,7 +58,7 @@ namespace Cosmimera.Combat
         }
 
         /// <summary>Move id; also the stacking source id of its effect (combat.md#效果疊加).</summary>
-        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: non-empty, except null on default(CastMove). Side effects: none.</remarks>
         public string Id { get; }
 
         /// <summary>Move element.</summary>
@@ -112,7 +113,7 @@ namespace Cosmimera.Combat
     /// <summary>Per-slot move cooldowns of one combatant.</summary>
     /// <remarks>
     /// REQ: docs/design/combat.md#CD; user decision 2026-11-07: a cooldown starts at the instant the cast is accepted.
-    /// Time watermark: every call taking nowMs requires nowMs >= the latest nowMs passed to <see cref="Start"/>.
+    /// Time watermark: every call taking nowMs requires nowMs >= the latest nowMs passed to <see cref="Start"/> or <see cref="Reset"/>.
     /// Invariant: ReadyAtMs(slot) &lt;= CombatTime.MaxMs + int.MaxValue for every slot (no Int64 wrap).
     /// </remarks>
     public sealed class MoveCooldowns
@@ -235,7 +236,7 @@ namespace Cosmimera.Combat
         public long RangePercentSum { get; }
 
         /// <summary>Effective cooldown that was started.</summary>
-        /// <remarks>Pre: none. Post: >= CdFloorMs. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: >= CdFloorMs for an Accepted cast; 0 on default(CastContext). Side effects: none.</remarks>
         public int CooldownMs { get; }
 
         /// <summary>Time the cast went out.</summary>
@@ -244,7 +245,7 @@ namespace Cosmimera.Combat
     }
 
     /// <summary>What one move did to one combatant.</summary>
-    /// <remarks>Pre: none. Post: immutable. Side effects: none.</remarks>
+    /// <remarks>Pre: obtained from Combatant.ReceiveHostile / ReceiveSupport (default is an empty report). Post: immutable. Side effects: none.</remarks>
     public readonly struct HitReport
     {
         internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied)
@@ -270,7 +271,7 @@ namespace Cosmimera.Combat
         public int Healed { get; }
 
         /// <summary>HP before the move landed.</summary>
-        /// <remarks>Pre: none. Post: >= 1 (fainted combatants are never targets). Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: >= 1 (fainted combatants are never targets), except 0 on default(HitReport). Side effects: none.</remarks>
         public int HpBefore { get; }
 
         /// <summary>HP after damage, trait triggers and heals.</summary>
@@ -283,7 +284,7 @@ namespace Cosmimera.Combat
 
         /// <summary>Whether this move took the combatant to 0 HP.</summary>
         /// <remarks>Pre: none. Post: true iff HpBefore >= 1 and HpAfter == 0. Side effects: none.</remarks>
-        public bool Fainted => HpAfter == 0;
+        public bool Fainted => HpBefore >= 1 && HpAfter == 0;
     }
 
     /// <summary>
@@ -384,13 +385,16 @@ namespace Cosmimera.Combat
         public CastResult BeginCast(int slot, in CastMove move, long nowMs, out CastContext context)
         {
             Contract.Requires(move.Id != null, "move must come from the CastMove constructor");
+            // Both checks run before any early return so a refused cast still enforces Pre (ARGON cast review K1).
+            bool ready = Cooldowns.IsReady(slot, nowMs);
+            Book.RequireTime(nowMs);
             context = default;
             if (IsFainted)
             {
                 return CastResult.Fainted;
             }
 
-            if (!Cooldowns.IsReady(slot, nowMs))
+            if (!ready)
             {
                 return CastResult.OnCooldown;
             }
@@ -484,6 +488,7 @@ namespace Cosmimera.Combat
             CastMove move = cast.Move;
             Contract.Requires(move.Id != null && move.HasEffect && move.Kind == MoveKind.Effect,
                 "support needs an effect-only move from BeginCast");
+            Book.RequireTime(nowMs);
             int hpBefore = Hp;
             if (move.Effect.IsInstant)
             {
@@ -493,6 +498,29 @@ namespace Cosmimera.Combat
 
             Book.Apply(move.Id, 0, move.Effect, move.EffectDurationMs, nowMs);
             return new HitReport(HitOutcome.Hit, 0, 0, hpBefore, Hp, true);
+        }
+
+        /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
+        /// <remarks>
+        /// REQ: combat.md#特性觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
+        /// through here is the only way it reaches Hp (ARGON cast review K2).
+        /// Pre: !IsFainted (a fainted creature cannot enter); nowMs in CombatTime and >= every watermark of Book.
+        /// Post: returns HP restored (>= 0); Hp == previous Hp + result &lt;= MaxHp.
+        /// Side effects: mutates Book (trait windows) and Hp (trait heals, resolved once for both triggers).
+        /// </remarks>
+        public int EnterField(bool bySwap, long nowMs)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant cannot enter the field");
+            int hpBefore = Hp;
+            Book.NotifySummoned(nowMs, out int summonHeal);
+            int swapHeal = 0;
+            if (bySwap)
+            {
+                Book.NotifySwappedIn(nowMs, out swapHeal);
+            }
+
+            HealPercent(summonHeal + swapHeal, nowMs);
+            return Hp - hpBefore;
         }
 
         private void HealPercent(int percent, long nowMs)
