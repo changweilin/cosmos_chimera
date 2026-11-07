@@ -76,8 +76,9 @@
 
   // 取得外觀基底子類別清單（由外觀基底父類別決定）
   function getCreatureSubBases(cat) {
-    const parent = CR.bases_hierarchy.find(b => b.cat === cat) || CR.bases_hierarchy[0];
-    return parent.groups.flatMap(g => g.subs.map(s => cat + "·" + g.group + "·" + s));
+    const list = CR.base_sub_map[cat] || [];
+    const prefix = cat.split("·")[1] || cat;
+    return list.map(x => `${prefix}·${x}`);
   }
 
   // 人類常態生成（身高/體重/體脂）
@@ -159,10 +160,10 @@
         return [{ v: d.bodyFat, w: 1 }, { v: "18.0%", w: 1 }, { v: "22.0%", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.body_fat").map(v => ({ v, w: 1 })));
       }, count: [{ n: 1, w: 1 }], dep: "weight", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).bodyFat },
       { key: "cup_size", label: "罩杯（女性）", options: () => CH.cup_sizes.map(c => ({ v: c.v, w: c.w })).concat(getCustom("character.cup_size").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], when: s => s.character.gender?.[0] === "女" },
-      { key: "outfit_palette", label: "服裝色系 (1~3色)", options: () => uniform(C.PALETTES.outfit_and_creature.concat(getCustom("character.outfit_palette"))), count: [{ n: 1, w: 1 }], max: 3 },
-      { key: "hair_palette", label: "頭髮色系 (1~2色)", options: () => uniform(C.PALETTES.hair.concat(getCustom("character.hair_palette"))), count: [{ n: 1, w: 1 }], max: 2 },
-      { key: "eye_palette", label: "瞳孔色系 (1~2色)", options: () => uniform(C.PALETTES.eyes.concat(getCustom("character.eye_palette"))), count: [{ n: 1, w: 1 }], max: 2 },
-      { key: "personality", label: "性格特質", options: () => uniform(C.PERSONALITY_TRAITS.concat(getCustom("character.personality"))), count: [{ n: 2, w: 1 }], max: 4 },
+      { key: "outfit_palette", label: "服裝色系 (1~3色)", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("character.outfit_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }], max: 3 },
+      { key: "hair_palette", label: "頭髮色系 (1~2色)", options: () => CH.hair_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.hair_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "eye_palette", label: "瞳孔色系 (1~2色)", options: () => CH.eye_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.eye_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "personality", label: "性格特質", options: () => uniform(C.PERSONALITIES.concat(getCustom("character.personality"))), count: [{ n: 2, w: 1 }], max: 4 },
       { key: "style", label: "服裝/外觀風格", options: () => uniform(CH.style.concat(getCustom("character.style"))), count: [{ n: 2, w: 1 }], max: 3 },
       { key: "interests", label: "休閒興趣", options: () => uniform(CH.interests.concat(getCustom("character.interests"))), count: [{ n: 2, w: 1 }], max: 3 },
       { key: "likes", label: "喜歡事物", options: () => uniform(CH.likes.concat(getCustom("character.likes"))), count: [{ n: 2, w: 1 }], max: 3 },
@@ -171,21 +172,25 @@
     ],
     creature: [
       { key: "elements", label: "屬性", options: () => C.ELEMENTS.map(e => ({ v: e.v, w: e.w, zh: e.zh })).concat(getCustom("creature.elements").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 2 }, { n: 2, w: 1 }], max: 2 },
-      { key: "base_parents", label: "外觀基底類別", options: () => uniform(CR.bases_hierarchy.map(b => b.cat).concat(getCustom("creature.base_parents"))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "base_parents", label: "外觀基底類別", options: () => CR.base_parents.map(b => ({ v: b.v, zh: b.zh || b.v, w: b.w })).concat(getCustom("creature.base_parents").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
       { key: "bases", label: "外觀基底 (1~3)", options: s => {
-        const parents = (s.creature.base_parents || [CR.bases_hierarchy[0].cat]).map(traceBaseParent);
-        const pool = parents.flatMap(p => getCreatureSubBases(p));
-        return uniform(pool.concat(getCustom("creature.bases")));
+        const parents = (s.creature.base_parents || []).map(traceBaseParent);
+        let subs = [];
+        parents.forEach(p => { subs = subs.concat(getCreatureSubBases(p)); });
+        if (!subs.length) {
+          subs = getCreatureSubBases("生物·哺乳類").concat(getCreatureSubBases("生物·鳥類"));
+        }
+        return uniform(subs.concat(["未知"]).concat(getCustom("creature.bases")));
       }, count: [{ n: 2, w: 1 }], max: 3, dep: "base_parents" },
-      { key: "appearance_palette", label: "宙獸色系 (1~3色)", options: () => uniform(C.PALETTES.outfit_and_creature.concat(getCustom("creature.appearance_palette"))), count: [{ n: 1, w: 1 }], max: 3 },
+      { key: "appearance_palette", label: "宙獸色系 (1~3色)", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("creature.appearance_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }], max: 3 },
       { key: "timeline", label: "文化時間線", options: () => C.TIMELINES.map(t => ({ v: t.v, zh: t.zh, w: 1 })).concat(getCustom("creature.timeline").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 1 }] },
       { key: "region", label: "文化地區", options: () => uniform(C.CULTURE_REGIONS.concat(getCustom("creature.region"))), count: [{ n: 1, w: 1 }] },
       { key: "archetype", label: "文化原型", options: s => {
         const pool = archetypePool(s);
         return pool.map(a => ({ v: a.name, w: 1, zh: a.name + "（" + a.region + "·" + a.type + (a.sensitivity === "review" ? "・需審" : "") + "）" })).concat(getCustom("creature.archetype").map(v => ({ v, w: 1, zh: v })));
       }, count: [{ n: 1, w: 1 }] },
-      { key: "role", label: "戰鬥定位", options: () => uniform(CR.roles.concat(getCustom("creature.role"))), count: [{ n: 1, w: 1 }] },
-      { key: "temperament", label: "性情", options: () => uniform(C.PERSONALITY_TRAITS.concat(getCustom("creature.temperament"))), count: [{ n: 1, w: 1 }] },
+      { key: "role", label: "戰鬥定位", options: () => uniform(CR.role.concat(getCustom("creature.role"))), count: [{ n: 1, w: 1 }] },
+      { key: "temperament", label: "性情", options: () => uniform(C.PERSONALITIES.concat(getCustom("creature.temperament"))), count: [{ n: 1, w: 1 }] },
       { key: "size_profile", label: "體型（幼→少→成→超載）", options: () => CR.size_profile.map(p => ({ v: p.v, w: p.w })).concat(getCustom("creature.size_profile").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }] },
       { key: "height_length", label: "成體身長/高 (m)", options: s => {
         const adultClass = (s.creature.size_profile?.[0] || "S→M→L→XL").split("→")[2] || "L";
@@ -769,15 +774,19 @@
     return pkg;
   }
 
-  function addPackage(pkg) {
-    const idx = reviewState.packages.findIndex(p => p.id === pkg.id);
-    if (idx >= 0) reviewState.packages[idx] = pkg;
-    else reviewState.packages.unshift(pkg);
-    reviewState.activePkgId = pkg.id;
-    reviewState.activeImgIdx = 0;
-    renderReviewView();
-    toast("已載入任務包：" + pkg.id);
-  }
+    function addPackage(pkg) {
+      const idx = reviewState.packages.findIndex(p => p.id === pkg.id);
+      if (idx >= 0) reviewState.packages[idx] = pkg;
+      else reviewState.packages.unshift(pkg);
+      reviewState.activePkgId = pkg.id;
+      reviewState.activeImgIdx = 0;
+      try {
+        renderReviewView();
+      } catch (e) {
+        console.error("renderReviewView failed for package " + pkg.id, e);
+      }
+      toast("已載入任務包：" + pkg.id);
+    }
 
   // 載入內建測試範例（fixtures）
   function loadSampleFixtures() {
@@ -932,31 +941,156 @@
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
 
+  // ==================== IndexedDB 目錄 Handle 持久化 ====================
+  function getDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { resolve(null); return; }
+      const req = indexedDB.open("CosmimeraForgeDB", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("handles");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function saveDirectoryHandle(handle) {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      const tx = db.transaction("handles", "readwrite");
+      tx.objectStore("handles").put(handle, "incomingDir");
+    } catch (e) {}
+  }
+
+  async function getSavedDirectoryHandle() {
+    try {
+      const db = await getDb();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction("handles", "readonly");
+        const req = tx.objectStore("handles").get("incomingDir");
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 自動或手動掃描目錄
+  async function performScanDirectory(dirHandle) {
+    let foundCount = 0;
+    for await (const [name, handle] of dirHandle.entries()) {
+      if (handle.kind === "directory" && (name.startsWith("chr-") || name.startsWith("cr-") || name.startsWith("mdl-") || name.startsWith("anim-") || name.startsWith("fx-") || name.startsWith("vsl-"))) {
+        await loadFromDirHandle(name, handle);
+        foundCount++;
+      } else if (handle.kind === "file" && name.endsWith(".zip")) {
+        const file = await handle.getFile();
+        await loadZipFile(file);
+        foundCount++;
+      }
+    }
+    return foundCount;
+  }
+
+  // 嘗試自動掃描已記憶授權的目錄
+  async function tryAutoScanIncoming() {
+    const handle = await getSavedDirectoryHandle();
+    if (!handle) return false;
+    try {
+      let perm = await handle.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted") {
+        perm = await handle.queryPermission({ mode: "read" });
+      }
+      if (perm === "granted") {
+        const count = await performScanDirectory(handle);
+        if (count > 0) {
+          toast(`自動掃描完成，已載入 ${count} 個交付包`);
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  }
+
   // 掃描 Art/_incoming 目錄（File System Access API）
   async function scanIncomingDirectory() {
     if (!window.showDirectoryPicker) {
-      toast("您的瀏覽器不支援目錄讀取，請使用「載入 Zip」按鈕");
-      $("#zipFileInput").click();
+      $("#folderFileInput").click();
       return;
     }
     try {
       const dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+      await saveDirectoryHandle(dirHandle);
       toast("正在掃描目錄...");
-      let foundCount = 0;
-      for await (const [name, handle] of dirHandle.entries()) {
-        if (handle.kind === "directory" && (name.startsWith("chr-") || name.startsWith("cr-") || name.startsWith("mdl-") || name.startsWith("anim-") || name.startsWith("fx-") || name.startsWith("vsl-"))) {
-          await loadFromDirHandle(name, handle);
-          foundCount++;
-        } else if (handle.kind === "file" && name.endsWith(".zip")) {
-          const file = await handle.getFile();
-          await loadZipFile(file);
-          foundCount++;
-        }
-      }
+      const foundCount = await performScanDirectory(dirHandle);
       toast("掃描完成，已載入 " + foundCount + " 個交付包");
     } catch (e) {
       if (e.name !== "AbortError") toast("掃描失敗：" + e.message);
     }
+  }
+
+  // 透過標準 webkitdirectory 上傳批次資料夾解析
+  async function handleFolderUpload(fileList) {
+    if (!fileList || !fileList.length) return;
+    toast("正在讀取資料夾檔案...");
+    const taskGroups = {};
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const rel = file.webkitRelativePath || file.name;
+      const parts = rel.split("/");
+      // 判斷是否直接選中了 Art/_incoming 目錄，或者選中了某個 task 資料夾
+      let taskId = "";
+      let subPath = "";
+      for (let p = 0; p < parts.length; p++) {
+        if (/^(chr-|cr-|mdl-|anim-|fx-|vsl-)/.test(parts[p])) {
+          taskId = parts[p];
+          subPath = parts.slice(p + 1).join("/");
+          break;
+        }
+      }
+      if (taskId) {
+        if (!taskGroups[taskId]) taskGroups[taskId] = [];
+        taskGroups[taskId].push({ file, subPath });
+      } else if (file.name.endsWith(".zip")) {
+        await loadZipFile(file);
+      }
+    }
+
+    let loadedCount = 0;
+    for (const taskId in taskGroups) {
+      const entries = taskGroups[taskId];
+      let manifestData = null, conceptData = null, rawPrompt = "";
+      const images = [];
+      let fileCount = entries.length;
+
+      for (const item of entries) {
+        const fn = item.subPath || item.file.name;
+        if (fn.endsWith("manifest.json")) {
+          try { manifestData = JSON.parse(await item.file.text()); } catch (e) {}
+        } else if (fn.endsWith("concept.json")) {
+          try { conceptData = JSON.parse(await item.file.text()); } catch (e) {}
+        } else if (fn.endsWith(".prompt.md") || fn === "prompt.md") {
+          try { rawPrompt = await item.file.text(); } catch (e) {}
+        } else if (/\.(png|jpe?g|webp)$/i.test(fn)) {
+          images.push({ path: fn, url: URL.createObjectURL(item.file) });
+        }
+      }
+
+      const pkg = {
+        id: taskId,
+        type: manifestData?.task_type || (taskId.startsWith("chr") ? "character-concept" : taskId.startsWith("cr") ? "creature-concept" : taskId.startsWith("mdl") ? "model-rig" : "unknown"),
+        subjectId: manifestData?.subject_id || "",
+        manifest: manifestData,
+        concept: conceptData,
+        rawPrompt,
+        images,
+        fileCount,
+        status: manifestData?.missing?.length ? "missing" : "pending"
+      };
+      addPackage(pkg);
+      loadedCount++;
+    }
+    toast(`已讀取 ${loadedCount} 個任務資料夾`);
   }
 
   async function loadFromDirHandle(taskId, dirHandle) {
@@ -1131,12 +1265,18 @@
 
       const seed = pkg.manifest?.task_header?.match(/seed=([^\s\]]+)/)?.[1] || pkg.id.split("-")[2] || "7f3a";
       const header = "[COSMIMERA-TASK spec=1 tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + targetTaskId + " seed=" + seed + "]";
+      const stagesOpts = ["juvenile", "adolescent", "adult", "overload"];
       const ctx = {
-        header, taskId: targetTaskId, task: t, opts: {}, concept: updatedConcept, notes: updatedManifest.notes || "",
+        header, taskId: targetTaskId, task: t, opts: { stages: stagesOpts }, concept: updatedConcept, notes: updatedManifest.notes || "",
         platform: "chatgpt", platformName: "ChatGPT（對話版）",
         subjectId: updatedConcept.line_id || ("line_" + seed)
       };
-      const newPromptText = t.build(ctx);
+      let newPromptText = "";
+      try {
+        newPromptText = t.build(ctx);
+      } catch (e) {
+        newPromptText = pkg.rawPrompt || (pkg.manifest?.task_header || "Prompt 格式升級失敗：" + e.message);
+      }
 
       updatedManifest.spec = "cosmimera-art-task/1";
       updatedManifest.task_header = header;
@@ -1687,7 +1827,7 @@
   }
 
   // 視圖切換
-  function setViewMode(mode) {
+  async function setViewMode(mode) {
     state.activeTab = mode;
     if (mode === "review") {
       $("#forgeView").style.display = "none";
@@ -1696,7 +1836,10 @@
       $("#viewBtnReview").classList.add("on");
       $("#forgeHeaderControls").style.display = "none";
       if (!reviewState.packages.length) {
-        loadSampleFixtures();
+        const autoScanned = await tryAutoScanIncoming();
+        if (!autoScanned && !reviewState.packages.length) {
+          loadSampleFixtures();
+        }
       } else {
         renderReviewView();
       }
@@ -1800,6 +1943,7 @@
 
     // 審查台控制列事件
     $("#btnScanDir").addEventListener("click", scanIncomingDirectory);
+    $("#folderFileInput")?.addEventListener("change", e => handleFolderUpload(e.target.files));
     $("#btnLoadZip").addEventListener("click", () => $("#zipFileInput").click());
     $("#zipFileInput").addEventListener("change", async e => {
       const files = e.target.files;
