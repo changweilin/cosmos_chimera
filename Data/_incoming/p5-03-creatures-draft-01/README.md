@@ -9,13 +9,13 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 
 | line_id | 主要屬性 | 地區 | 文化原型 ID | 外觀基底 (概念公式) | 戰鬥定位 | 精通招式（幼年 / 少年 / 成年） | 共用特性 |
 |---|---|---|---|---|---|---|---|
-| `line_metal_gearclock` | metal | 西亞/中東 | `arch_al_jazari` | 器械 (machine) | 前排重裝堡壘、陣地錨定 | `metal_needle_thrust` (30) / `metal_iron_cleave` (60) / `metal_lance_charge` (110) | `trait_metal_dense_alloy` |
-| `line_wood_vinecrest` | wood | 東南亞 | `arch_sarimanok` | 生物 (creature) | 中排持續治癒、藤蔓控場與環境共鳴 | `wood_briar_dash` (35) / `wood_root_spear` (85) / `wood_canopy_crush` (105) | `trait_wood_photosynthesis` |
-| `line_water_tidecraft` | water | 大洋洲 | `arch_edai_siabo_lakatoi` | 生物 × 載具 | 遠距波浪牽引、高速水流重砲與位移牽制 | `water_aqua_cutter` (40) / `water_torrent_burst` (75) / `water_deluge_crater` (115) | `trait_water_torrent_flow` |
-| `line_fire_blazelion` | fire | 非洲 | `arch_apedemak` | 生物 (creature) | 前鋒爆發突擊、近戰高烈度撕裂與熱能反撲 | `fire_ember_lash` (35) / `fire_blaze_charge` (65) / `fire_inferno_cataclysm` (120) | `trait_fire_thermal_recharge` |
-| `line_earth_gildedgolem` | earth | 美洲 | `arch_el_dorado_muisca` | 人形 (humanoid) | 中前排岩壁屏障、震波壓制與聚怪震懾 | `earth_pebble_shot` (30) / `earth_seismic_slam` (60) / `earth_rampart_rush` (100) | `trait_earth_tectonic_rebound` |
-| `line_ice_frostbeast` | ice | 中亞/北亞 | `arch_pazyryk_antlered_griffin` | 生物 × 器械 | 中距離極寒壓制、破冰衝刺與減速干擾 | `ice_shard_flurry` (35) / `ice_glacier_lance` (85) / `ice_blizzard_vortex` (110) | `trait_ice_flash_freeze` |
-| `line_wind_fluteglider` | wind | 南亞 | `arch_heer_ranjha` | 載具 (vehicle) | 遠距風壓牽制、全場超高速巡航與風刃覆蓋 | `wind_gale_claw` (30) / `wind_vacuum_blade` (80) / `wind_tempest_sphere` (105) | `trait_wind_tailwind_glide` |
+| `line_metal_gearclock` | metal | 西亞/中東 | `arch_al_jazari` | 器械 (machine) | 前排坦克（近戰→遠距突進） | `metal_needle_thrust` (30) / `metal_iron_cleave` (60) / `metal_lance_charge` (110) | `trait_metal_dense_alloy` |
+| `line_wood_vinecrest` | wood | 東南亞 | `arch_sarimanok` | 生物 (creature) | 中排輸出，上場自我治療 | `wood_briar_dash` (35) / `wood_root_spear` (85) / `wood_canopy_crush` (105) | `trait_wood_photosynthesis` |
+| `line_water_tidecraft` | water | 大洋洲 | `arch_edai_siabo_lakatoi` | 生物 × 載具 | 中遠距輸出，連續水招縮 CD | `water_aqua_cutter` (40) / `water_torrent_burst` (75) / `water_deluge_crater` (115) | `trait_water_torrent_flow` |
+| `line_fire_blazelion` | fire | 非洲 | `arch_apedemak` | 生物 (creature) | 近戰→突進→遠距重砲 | `fire_ember_lash` (35) / `fire_blaze_charge` (65) / `fire_inferno_cataclysm` (120) | `trait_fire_thermal_recharge` |
+| `line_earth_gildedgolem` | earth | 美洲 | `arch_el_dorado_muisca` | 人形 (humanoid) | 中前排，受擊提高土專精 | `earth_pebble_shot` (30) / `earth_seismic_slam` (60) / `earth_rampart_rush` (100) | `trait_earth_tectonic_rebound` |
+| `line_ice_frostbeast` | ice | 中亞/北亞 | `arch_pazyryk_antlered_griffin` | 生物 × 器械 | 中遠距輸出，上場暫提冰抗 | `ice_shard_flurry` (35) / `ice_glacier_lance` (85) / `ice_blizzard_vortex` (110) | `trait_ice_flash_freeze` |
+| `line_wind_fluteglider` | wind | 南亞 | `arch_heer_ranjha` | 載具 (vehicle) | 高敏捷游擊，換手上場加速 | `wind_gale_claw` (30) / `wind_vacuum_blade` (80) / `wind_tempest_sphere` (105) | `trait_wind_tailwind_glide` |
 
 ---
 
@@ -72,3 +72,6 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 2. **成年副專精之後續招式池搭配**：本批有 3 條線（金加土、水加風、冰加金）在成年開放次要專精（15%），其餘 4 條線保持純單屬性。副手與超載機制解鎖後，是否需額外配置次要屬性之招式，留待 P5-06 關係網與 P5-07 平衡模擬驗證。
 3. **跨線關係邊構建**：`relations/edges.json` 目前僅包含 14 條線內 `evolution_family` 關係邊。跨文化與生態關係（如 `myth_kin`、`rival_symbiosis`、`tool_kin`）將在 P5-06 統一進行全圖景連通性配對。
 4. **命名與圖鑑文案審查**：中英正式名稱與圖鑑傳說文案待 TERRA 進行進一步文學潤飾後產出 `copy-terra.json`。
+
+## 命名與文案（TERRA）
+中英名稱與圖鑑文案在 `copy-terra.json`。TERRA 指出 15 隻的 `concept.role` 承諾了戰鬥系統沒有的機制（牽引、屏障、聚怪、減速、持續治癒）或與精通招式射程不符；Opus 已把 21 隻的 `role` 改寫成與實際招式／特性一致（上表同步）。若要保留原本的定位構想，需換精通招式或等 effect 招式（P5-05 batch 05 類）指派，**待人工決定**。
