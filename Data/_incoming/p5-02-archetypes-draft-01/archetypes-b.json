@@ -1,0 +1,733 @@
+[
+  {
+    "id": "arch_el_dorado_muisca",
+    "region": "美洲",
+    "culture": "穆伊斯卡文明（哥倫比亞）",
+    "name": "黃金國穆伊斯卡祭典",
+    "name_en": "El Dorado (Muisca Raft Rite)",
+    "type": "傳奇",
+    "motifs": "金粉覆身、蘆葦儀式木筏、火山湖綠寶石、黃金祭偶",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Museo del Oro (Banco de la República, Bogotá), The Muisca Raft (Balsa Muisca) Collection Catalogue; Warwick Bray, The Gold of El Dorado (Times Newspapers / Royal Academy of Arts, 1978)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_ahuizotl",
+    "region": "美洲",
+    "culture": "阿茲特克（墨西哥）",
+    "name": "阿胡伊佐特尾手水獸",
+    "name_en": "Ahuizotl",
+    "type": "神話生物",
+    "motifs": "濕亮黑毛水獸、尾端靈巧掌爪、深潭漩渦、綠松石水沫",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Bernardino de Sahagún, Florentine Codex: General History of the Things of New Spain, Book 11: Earthly Things, trans. Charles E. Dibble and Arthur J. O. Anderson (School of American Research and University of Utah, 1963)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_sor_juana",
+    "region": "美洲",
+    "culture": "新西班牙（墨西哥）",
+    "name": "索爾·胡安娜",
+    "name_en": "Sor Juana Inés de la Cruz",
+    "type": "歷史名人",
+    "motifs": "鵝毛筆詩卷、渾天星盤、古典藏書閣、齒輪鐘錶",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Octavio Paz, Sor Juana: Or, The Traps of Faith, trans. Margaret Sayers Peden (Belknap Press of Harvard University Press, 1988)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_moby_dick",
+    "region": "美洲",
+    "culture": "美國",
+    "name": "白鯨莫比·迪克",
+    "name_en": "Moby-Dick",
+    "type": "文學",
+    "motifs": "傷痕白抹香鯨、斷裂魚叉、怒海大漩渦、捕鯨木桅",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Herman Melville, Moby-Dick; or, The Whale (Harper & Brothers, 1851)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_martin_fierro",
+    "region": "美洲",
+    "culture": "阿根廷",
+    "name": "馬丁·菲耶羅高喬傳奇",
+    "name_en": "Martín Fierro",
+    "type": "文學",
+    "motifs": "彭巴草原駿馬、三球流星錘索、六弦木吉他、銀飾馬鞍",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "José Hernández, El Gaucho Martín Fierro (Imprenta de La Pampa, 1872)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_raven_steals_light",
+    "region": "美洲",
+    "culture": "海達族（加拿大西北岸）",
+    "name": "海達渡鴉盜光",
+    "name_en": "Raven Steals the Light",
+    "type": "傳說",
+    "motifs": "漆黑渡鴉、雕紋雪松木匣、口銜烈日、星月微光",
+    "sensitivity": "review",
+    "sensitivity_reason": "渡鴉為北美西北岸海達等原住民族現存氏族圖騰與創世傳統核心形象，借用視覺紋樣需留意氏族文化規範。",
+    "sources": [
+      {
+        "title": "Bill Reid and Robert Bringhurst, The Raven Steals the Light (Douglas & McIntyre / University of Washington Press, 1984)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_trentren_caicai",
+    "region": "美洲",
+    "culture": "馬普切族（智利／阿根廷）",
+    "name": "特倫特倫與凱凱雙蛇",
+    "name_en": "Trentren Vilu and Caicai Vilu",
+    "type": "神話生物",
+    "motifs": "隆起山嶽巨蛇、掀起海嘯海蛇、碎裂群島峽灣、浪濤岩壁",
+    "sensitivity": "review",
+    "sensitivity_reason": "特倫特倫與凱凱雙蛇屬於智利與阿根廷現存馬普切族宇宙觀核心敘事，涉及活態原住民族神聖傳統。",
+    "sources": [
+      {
+        "title": "Tom D. Dillehay, Monuments, Empires, and Resistance: The Araucanian Polity and Ritual Narratives (Cambridge University Press, 2007)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_tupaia",
+    "region": "大洋洲",
+    "culture": "社會群島（大溪地）",
+    "name": "圖帕伊亞星海領航師",
+    "name_en": "Tupaia",
+    "type": "歷史名人",
+    "motifs": "群島星辰海圖、雙體遠洋獨木舟、信風湧浪、珊瑚環礁航標",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Joan Druett, Tupaia: Captain Cook's Polynesian Navigator (Praeger, 2011)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_ernest_rutherford",
+    "region": "大洋洲",
+    "culture": "紐西蘭",
+    "name": "歐內斯特·拉塞福",
+    "name_en": "Ernest Rutherford",
+    "type": "歷史名人",
+    "motifs": "金箔散射光束、原子行星軌跡、放射線閃爍屏、電磁線圈",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Ernest Rutherford, Radio-activity (Cambridge University Press, 1904)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_kingsford_smith",
+    "region": "大洋洲",
+    "culture": "澳洲",
+    "name": "查爾斯·金斯福德·史密斯",
+    "name_en": "Charles Kingsford Smith",
+    "type": "歷史名人",
+    "motifs": "三引擎藍翼飛機、南十字星羅盤、跨洋無線電、暴風積雲",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Frederick Howard, 'Kingsford Smith, Sir Charles Edward (1897–1935)', Australian Dictionary of Biography, Vol. 9 (Melbourne University Press, 1983)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_pouakai",
+    "region": "大洋洲",
+    "culture": "毛利族（紐西蘭）",
+    "name": "波烏阿凱巨鷹",
+    "name_en": "Pouākai",
+    "type": "神話生物",
+    "motifs": "遮天巨翼猛禽、高山岩壁巨巢、利爪狂風、峽谷迷霧",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Paul Scofield and Brent Stephenson, Birds of New Zealand: A Photographic Guide (Auckland University Press, 2013); Te Ara: The Encyclopedia of New Zealand, 'Extinct Birds: Pouākai / Haast's Eagle' (Manatū Taonga Ministry for Culture and Heritage)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_edai_siabo_lakatoi",
+    "region": "大洋洲",
+    "culture": "莫圖族（巴布亞紐幾內亞）",
+    "name": "埃達伊·西阿波陶船傳奇",
+    "name_en": "Edai Siabo and the Lakatoi",
+    "type": "傳奇",
+    "motifs": "蟹爪風帆多體舟、彩繪陶罐船隊、海蝕洞巨鰻、季風海浪",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Tom Dutton (ed.), The Hiri in History: Further Aspects of Long Distance Motu Trade in Central Papua, Pacific Research Monograph No. 8 (Australian National University, 1982)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_meduu_ribtal",
+    "region": "大洋洲",
+    "culture": "帛琉",
+    "name": "恩吉布塔爾湧魚麵包樹",
+    "name_en": "Meduu Ribtal (Breadfruit Tree of Ngibtal)",
+    "type": "傳說",
+    "motifs": "中空麵包果巨樹、樹幹噴湧銀魚、木雕故事板、沉海珊瑚遺跡",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Richard J. Parmentier, The Sacred Remnants: Myth, History, and Polity in Belau (University of Chicago Press, 1987)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_adaro",
+    "region": "大洋洲",
+    "culture": "所羅門群島（馬基拉島）",
+    "name": "阿達羅鋸吻海精",
+    "name_en": "Adaro",
+    "type": "神話生物",
+    "motifs": "鋸鰩長吻角、鯊鰭魚尾、彩虹水橋、飛魚投槍",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Charles Elliot Fox, The Threshold of the Pacific: An Account of the Social Organization, Magic and Religion of the People of San Cristoval in the Solomon Islands (Kegan Paul, Trench, Trubner & Co., 1924)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_sina_and_eel",
+    "region": "大洋洲",
+    "culture": "薩摩亞",
+    "name": "西娜與椰樹銀鰻",
+    "name_en": "Sina and the Eel (Sina ma le Tuna)",
+    "type": "傳說",
+    "motifs": "清泉銀鰻、三孔椰果、高聳椰林、珊瑚潟湖",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "George Turner, Samoa, a Hundred Years Ago and Long Before (Macmillan and Co., 1884)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_snugglepot_cuddlepie",
+    "region": "大洋洲",
+    "culture": "澳洲",
+    "name": "桉樹果精靈與斑克木怪",
+    "name_en": "Snugglepot and Cuddlepie",
+    "type": "文學",
+    "motifs": "尤加利果殼帽、金合歡絨球、多眼斑克木毬果、桉花披風",
+    "sensitivity": "review",
+    "sensitivity_reason": "May Gibbs 卒於 1969 年，角色在澳洲仍受著作權保護（至 2039 年），借用角色造型需授權；植物意象本身可自由使用。",
+    "sources": [
+      {
+        "title": "May Gibbs, Tales of Snugglepot and Cuddlepie: Their Wonderful Adventures (Angus & Robertson, 1918; archival collection at State Library of New South Wales)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_pele",
+    "region": "大洋洲",
+    "culture": "夏威夷",
+    "name": "佩蕾火山女神",
+    "name_en": "Pele",
+    "type": "神祇",
+    "motifs": "赤紅熔岩火河、火山玻璃絲髮、山桃金孃紅花、噴發火山口",
+    "sensitivity": "review",
+    "sensitivity_reason": "佩蕾在當代夏威夷原住民文化中仍受深切崇敬，涉及活態傳統信仰與火山聖地禁忌。",
+    "sources": [
+      {
+        "title": "Martha Warren Beckwith, Hawaiian Mythology (Yale University Press, 1940)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_dakuwaqa",
+    "region": "大洋洲",
+    "culture": "斐濟",
+    "name": "達庫瓦卡鯊神",
+    "name_en": "Dakuwaqa",
+    "type": "神祇",
+    "motifs": "巨鯊戰軀、珊瑚礁海門、纏鬥巨章觸腕、浪濤漩渦",
+    "sensitivity": "review",
+    "sensitivity_reason": "達庫瓦卡為斐濟傳統祖靈鯊神，至今仍與部分酋長氏族血脈及海域守護傳統相連。",
+    "sources": [
+      {
+        "title": "Lorimer Fison, Tales from Old Fiji (Alexander Moring / The De La More Press, 1904); Fiji Museum Indigenous Oral Traditions Archive (Suva)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_olisihpa_olosohpa",
+    "region": "大洋洲",
+    "culture": "波納佩（密克羅尼西亞）",
+    "name": "南馬都爾雙子築城師",
+    "name_en": "Olisihpa and Olosohpa",
+    "type": "傳說",
+    "motifs": "懸浮六角玄武岩柱、人工珊瑚礁水道、雙子祭司舟、飛空巨鱷",
+    "sensitivity": "review",
+    "sensitivity_reason": "雙子築城傳說連結波納佩神聖祭祀遺址南馬都爾，當地傳統社會對該遺址仍保有高度敬畏與禁忌。",
+    "sources": [
+      {
+        "title": "David L. Hanlon, Upon a Stone Altar: A History of the Island of Pohnpei to 1890, Pacific Islands Monograph Series No. 5 (University of Hawaiʻi Press, 1988)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_tomyris",
+    "region": "中亞/北亞",
+    "culture": "馬薩革泰族（中亞草原）",
+    "name": "托米麗司草原女王",
+    "name_en": "Tomyris",
+    "type": "歷史名人",
+    "motifs": "雙刃青銅戰斧、黃金車馬具、烈日戰旗、紅革箭囊",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Herodotus, The Histories, Book 1, trans. Robin Waterfield, ed. Carolyn Dewald (Oxford University Press, 1998)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_ali_shir_navai",
+    "region": "中亞/北亞",
+    "culture": "帖木兒王朝（烏茲別克）",
+    "name": "阿里·希爾·納瓦伊",
+    "name_en": "Ali-Shir Nava'i",
+    "type": "歷史名人",
+    "motifs": "金箔細密畫卷、百鳥羽冠、綠松石拱廊、蘆葦書法筆",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Mir 'Ali Shir Nawāi, Muhakamat al-Lughatain (Judgment of Two Languages), trans. and ed. Robert Devereux (E. J. Brill, 1966)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_dersu_uzala",
+    "region": "中亞/北亞",
+    "culture": "那乃族（西伯利亞烏蘇里）",
+    "name": "德爾蘇·烏扎拉",
+    "name_en": "Dersu Uzala",
+    "type": "歷史名人",
+    "motifs": "樺樹皮行囊、針葉林營火、東北虎足印、分叉木架獵槍",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Vladimir K. Arsenyev, Dersu the Trapper (Dersu Uzala), trans. Malcolm Burr (E. P. Dutton & Co., 1941; orig. Vladivostok, 1923)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_pazyryk_antlered_griffin",
+    "region": "中亞/北亞",
+    "culture": "巴澤雷克文化（阿爾泰山）",
+    "name": "巴澤雷克鹿角獅鷲",
+    "name_en": "Pazyryk Antlered Griffin",
+    "type": "神話生物",
+    "motifs": "鳥首分叉巨鹿角、鷹喙有翼猛獸、金箔毛氈鞍飾、永凍冰塚",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Sergei I. Rudenko, Frozen Tombs of Siberia: The Pazyryk Burials of Iron Age Horsemen, trans. M. W. Thompson (University of California Press, 1970)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_olgoi_khorkhoi",
+    "region": "中亞/北亞",
+    "culture": "蒙古",
+    "name": "戈壁赤電沙蟲",
+    "name_en": "Olgoi-Khorkhoi (Mongolian Death Worm)",
+    "type": "神話生物",
+    "motifs": "戈壁紅沙丘、放電赤紅巨蟲、梭梭木荒原、灼熱沙暴",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Roy Chapman Andrews, On the Trail of Ancient Man: A Narrative of the Field Work of the Central Asiatic Expeditions (G. P. Putnam's Sons, 1926)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_tulpar",
+    "region": "中亞/北亞",
+    "culture": "哈薩克",
+    "name": "圖爾帕爾金翼天馬",
+    "name_en": "Tulpar",
+    "type": "神話生物",
+    "motifs": "黃金雙翼駿馬、彎月額角、疾風長鬃、無垠綠草原",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Jeannine Davis-Kimball, Vladimir A. Bashilov, and Leonid T. Yablonsky (eds.), Nomads of the Eurasian Steppes in the Early Iron Age (Zinat Press, 1995)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_alpamish",
+    "region": "中亞/北亞",
+    "culture": "烏茲別克",
+    "name": "阿爾帕米斯英雄史詩",
+    "name_en": "Alpamish",
+    "type": "英雄",
+    "motifs": "斑紋疾馳神駒、青銅重弓、冬不拉琴弦、大漠古堡",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Karl Reichl, Turkic Oral Epic Poetry: Traditions, Forms, Poetic Structure (Garland Publishing, 1992)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_nyurgun_bootur",
+    "region": "中亞/北亞",
+    "culture": "薩哈族（西伯利亞雅庫特）",
+    "name": "紐爾貢·博圖爾極北英雄",
+    "name_en": "Nyurgun Bootur the Swift",
+    "type": "英雄",
+    "motifs": "玄鐵重鎧黑駒、繁枝世界巨樹、口簧琴音波、極寒凍土",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Platon A. Oyunsky, Olonkho: Nurgun Botur the Swift, Sakha Heroic Epic (UNESCO Representative List of the Intangible Cultural Heritage of Humanity, proclaimed 2005)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_korkut_ata",
+    "region": "中亞/北亞",
+    "culture": "哈薩克／烏古斯突厥",
+    "name": "科爾庫特阿塔琴聖傳奇",
+    "name_en": "Korkut Ata (Dede Korkut)",
+    "type": "傳奇",
+    "motifs": "馬尾雙弦庫布孜琴、疾風白駝、錫爾河水波、風鳴音管",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Geoffrey Lewis (trans.), The Book of Dede Korkut (Penguin Classics, 1974); UNESCO Intangible Cultural Heritage, 'Heritage of Dede Qorqud/Korkyt Ata/Dede Korkut' (2018)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_kutadgu_bilig",
+    "region": "中亞/北亞",
+    "culture": "喀喇汗王朝（中亞突厥）",
+    "name": "《福樂智慧》日月寓言",
+    "name_en": "Kutadgu Bilig",
+    "type": "文學",
+    "motifs": "滾動命運圓球、三足白銀寶座、新月滿月星輝、古突厥詩卷",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Yusuf Khass Hajib, Wisdom of Royal Glory (Kutadgu Bilig): A Turko-Islamic Mirror for Princes, trans. Robert Dankoff (University of Chicago Press, 1983)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_tengri",
+    "region": "中亞/北亞",
+    "culture": "突厥—蒙古草原傳統",
+    "name": "騰格里蒼天之神",
+    "name_en": "Tengri",
+    "type": "神祇",
+    "motifs": "無垠湛藍蒼穹、金輪烈日、高山敖包石堆、御風蒼鷹",
+    "sensitivity": "review",
+    "sensitivity_reason": "騰格里信仰在中亞與北亞部分突厥、蒙古及西伯利亞社群中仍具當代宗教與精神復興意義。",
+    "sources": [
+      {
+        "title": "Peter B. Golden, An Introduction to the History of the Turkic Peoples (Otto Harrassowitz, 1992)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_umay",
+    "region": "中亞/北亞",
+    "culture": "阿爾泰與吉爾吉斯傳統",
+    "name": "烏邁守護母神",
+    "name_en": "Umay",
+    "type": "神祇",
+    "motifs": "三尖黃金寶冠、白銀搖籃、天鵝白羽、神聖樺木火塘",
+    "sensitivity": "review",
+    "sensitivity_reason": "烏邁女神至今仍受阿爾泰、吉爾吉斯與哈薩克等族民間信仰及薩滿傳統敬奉。",
+    "sources": [
+      {
+        "title": "Peter B. Golden, Central Asia in World History (Oxford University Press, 2011)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_fridtjof_nansen",
+    "region": "極地",
+    "culture": "挪威（北極科考）",
+    "name": "弗里喬夫·南森與前進號",
+    "name_en": "Fridtjof Nansen",
+    "type": "歷史名人",
+    "motifs": "圓底抗冰木帆船、深海採水瓶、浮冰觀測儀、極地雙板雪橇",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Fridtjof Nansen, Farthest North: Being the Record of a Voyage of Exploration of the Ship 'Fram' 1893–96 (Archibald Constable and Co., 1897)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_ernest_shackleton",
+    "region": "極地",
+    "culture": "英國／愛爾蘭（南極探險）",
+    "name": "歐內斯特·沙克爾頓",
+    "name_en": "Ernest Shackleton",
+    "type": "歷史名人",
+    "motifs": "冰封三桅木帆船、驚濤救生小艇、六分儀航跡、南極鋸齒冰山",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Ernest Shackleton, South: The Story of Shackleton's Last Expedition, 1914–1917 (William Heinemann, 1919)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_matthew_henson",
+    "region": "極地",
+    "culture": "美國（北極探險）",
+    "name": "馬修·亨森",
+    "name_en": "Matthew Henson",
+    "type": "歷史名人",
+    "motifs": "北極點觀測標、木骨皮革雪橇、海豹皮防寒裝、冰裂水道",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Matthew A. Henson, A Negro Explorer at the North Pole (Frederick A. Stokes Company, 1912)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_douglas_mawson",
+    "region": "極地",
+    "culture": "澳洲（南極科考）",
+    "name": "道格拉斯·莫森",
+    "name_en": "Douglas Mawson",
+    "type": "歷史名人",
+    "motifs": "暴風雪測風儀、南極冰原隕石、木造科考小屋、極地無線電塔",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Douglas Mawson, The Home of the Blizzard: Being the Story of the Australasian Antarctic Expedition, 1911–1914 (William Heinemann, 1915)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_ancient_mariner_albatross",
+    "region": "極地",
+    "culture": "英國（南極文學）",
+    "name": "《老水手行》南極信天翁",
+    "name_en": "The Rime of the Ancient Mariner",
+    "type": "文學",
+    "motifs": "穿霧巨翼信天翁、翠綠高聳冰山、冰封古帆船、木柄十字弩",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Samuel Taylor Coleridge and William Wordsworth, Lyrical Ballads, with a Few Other Poems (J. & A. Arch, 1798)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_johan_turi_account",
+    "region": "極地",
+    "culture": "薩米族（北歐極圈）",
+    "name": "《薩米人生活記述》星鹿畫卷",
+    "name_en": "An Account of the Sámi (Muitalus sámiid birra)",
+    "type": "文學",
+    "motifs": "星空馴鹿星座、圓錐樺木帳篷、手繪雪原獸群、雙板木雪橇",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Johan Turi, An Account of the Sámi, trans. Thomas A. DuBois (Nordic Studies Press, 2011; orig. Muitalus sámiid birra, 1910)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_stallu",
+    "region": "極地",
+    "culture": "薩米族（北歐極圈）",
+    "name": "斯塔洛極北鐵衣巨人",
+    "name_en": "Stállu",
+    "type": "傳說",
+    "motifs": "玄鐵鎧甲雪原巨人、中空吸魂鐵管、漆黑巨獵犬、冰封湖面",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Lars Levi Laestadius, Fragments of Lappish Mythology, ed. Juha Pentikäinen, trans. Börje Vähämäki (Aspasia Books, 2002)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_palraiyuk",
+    "region": "極地",
+    "culture": "尤皮克族（阿拉斯加白令海）",
+    "name": "帕盧賴克六足水龍",
+    "name_en": "Palraiyuk",
+    "type": "神話生物",
+    "motifs": "六足雙角長軀水獸、獸皮舟彩繪紋、凍原蘆葦沼澤、鋸齒背鰭",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Edward William Nelson, The Eskimo About Bering Strait, 18th Annual Report of the Bureau of American Ethnology (Smithsonian Institution, 1900)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_amarok",
+    "region": "極地",
+    "culture": "格陵蘭因紐特（卡拉阿利特）",
+    "name": "阿馬洛克極夜巨狼",
+    "name_en": "Amarok",
+    "type": "神話生物",
+    "motifs": "孤行極地巨灰狼、冰原極夜星光、巨石摔角試煉、震地長尾",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Hinrich Rink, Tales and Traditions of the Eskimo (William Blackwood and Sons, 1875)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_kaassassuk",
+    "region": "極地",
+    "culture": "格陵蘭因紐特（卡拉阿利特）",
+    "name": "卡薩蘇克巨力孤兒英雄",
+    "name_en": "Kaassassuk",
+    "type": "英雄",
+    "motifs": "徒手舉起冰原巨岩、三頭白熊試煉、海豹皮長靴、峽灣浮冰",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "Knud Rasmussen, Eskimo Folk-Tales, ed. and trans. W. Worster (Gyldendal, 1921)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_hafgufa",
+    "region": "極地",
+    "culture": "古北歐（格陵蘭海）",
+    "name": "《王室寶鑑》哈夫古法海怪",
+    "name_en": "Hafgufa (Konungs skuggsjá)",
+    "type": "傳奇",
+    "motifs": "島嶼級偽裝巨獸、峽灣巨顎、群魚漩渦、極光寒海",
+    "sensitivity": "ok",
+    "sources": [
+      {
+        "title": "The King's Mirror (Speculum Regale—Konungs skuggsjá), trans. Laurence Marcellus Larson (The American-Scandinavian Foundation, 1917)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_silap_inua",
+    "region": "極地",
+    "culture": "因紐特（加拿大努納武特）",
+    "name": "西拉大氣與風雪之靈",
+    "name_en": "Sila (Silap Inua)",
+    "type": "神祇",
+    "motifs": "無形呼吸氣旋、極地暴風雪眼、冰晶蒼穹、萬物生命吐息",
+    "sensitivity": "review",
+    "sensitivity_reason": "西拉為當代因紐特傳統宇宙觀與靈性核心概念，屬於活態原住民族信仰範疇。",
+    "sources": [
+      {
+        "title": "Knud Rasmussen, Intellectual Culture of the Iglulik Eskimos, Report of the Fifth Thule Expedition 1921–24, Vol. 7, No. 1 (Gyldendalske Boghandel, 1929)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_beaivi",
+    "region": "極地",
+    "culture": "薩米族（北歐極圈）",
+    "name": "貝伊維薩米太陽神",
+    "name_en": "Beaivi",
+    "type": "神祇",
+    "motifs": "菱形四射太陽紋、薩米彩繪神鼓、融雪春牧草地、白毛馴鹿群",
+    "sensitivity": "review",
+    "sensitivity_reason": "貝伊維與薩米神鼓宇宙觀屬於薩米族神聖精神文化遺產，借用鼓面神聖符號需審慎評估。",
+    "sources": [
+      {
+        "title": "Lars Levi Laestadius, Fragments of Lappish Mythology, ed. Juha Pentikäinen, trans. Börje Vähämäki (Aspasia Books, 2002)",
+        "url": null
+      }
+    ]
+  },
+  {
+    "id": "arch_pichvuchin",
+    "region": "極地",
+    "culture": "楚科奇族（西伯利亞極東北）",
+    "name": "皮奇武欽野鹿之主",
+    "name_en": "Pichvu'chin",
+    "type": "神祇",
+    "motifs": "袖珍白樺雪橇、旅鼠拉車幻影、萬頭野馴鹿群、凍原深谷",
+    "sensitivity": "review",
+    "sensitivity_reason": "皮奇武欽為楚科奇族傳統狩獵與萬物有靈信仰中的護生神靈，涉及活態原住民祭儀傳統。",
+    "sources": [
+      {
+        "title": "Waldemar Bogoras, The Chukchee, Memoirs of the American Museum of Natural History, Vol. 11 (E. J. Brill / G. E. Stechert, 1904–1909)",
+        "url": null
+      }
+    ]
+  }
+]

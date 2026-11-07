@@ -7,7 +7,7 @@
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
 | P5-01 | 批次 prompt 模板 `tools/prompts/*.md` + 配額矩陣 | SONNET | OPUS | 模板產出可直接通過 schema | ⬜ |
-| P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | ⬜ |
+| P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | 🟨 |
 | P5-03 | 宙獸批次初稿（每批 20–50） | FLASH / TERRA | SONNET | 每批通過驗證工具 | ⬜ |
 | P5-04 | 概念圖 prompt 與美術生產（依 Q-T3），經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
 | P5-05 | 招式/特性批次 | FLASH | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
@@ -31,3 +31,4 @@
 - 2026-11-07 · Gemini Flash（agy）· done · P5-04 Prompt Forge 1.4.0：修復全站按鈕格式與佈局；新增舊版立繪/3D 壓縮包 prompt 與規格一鍵升級功能（補齊常態生理數值、基底遷移、招式特性圖鑑化、回溯參照）；model-rig 交付管線強制要求 source_pack 回溯立繪包；成果審查台新增 2D 立繪 ⇄ 3D 成果雙欄對比視圖（參考 steel_vs_swarm 機體審查台）與 3D 分頁；新增 Prompt 項目完整顯示分頁（角色與宙獸全欄位明細及原始文本） · 下一步：人工開啟瀏覽器確認審查台雙欄對比與一鍵升級效果；進行真實 3D 交付包驗證
 - 2026-11-07 · Gemini Flash（agy）→ ChatGPT Terra 第二審 → Claude Opus 驗收 · partial（待人工）· P5-05 招式草稿 batch 06：`Data/_incoming/p5-05-moves-draft-06/`，20 招 — 10 個 `field`（每屬性 1，mid/long 各 5，壽命 3–8 s、每次結算威力 8–18，首批用 `field_duration_ms`）＋10 個疊層招（`max_stacks` 2–5、|delta|×層數 ≤ 40，攻擊 5／自身 5，首批用 `max_stacks`）。累計 200 招。Opus 以腳本重驗：`validate-data --root` 0 錯誤、無浮點、id 不與 batch 01–05／retired 衝突，任務單 20 項約束（分佈、數值帶、場地只減益敵方、時長↔CD 單調）全過。Terra 6 項（`docs/reviews/P5-05-batch06-terra.md`）：README 3 處機制敘述已改、`light_blinding_glare`→`light_prismatic_exposure`；**待人工**：`metal_caltrop_zone`(48 總威力/10 s)、`wood_tangle_grove`(32/10.5 s) 偏弱，6 組與舊批近似（立即 vs 累積的定位差是否足夠）；README 待決 Q1 重疊同名場地是否各自結算 · 下一步：人工決定上述平衡；P2-04 場地處理器完成後 P5-07 模擬
 - 2026-11-07 · Claude Opus · blocked · P5-02 已派 Gemini Argon（agy，任務：各地區補到 ≥15 原型＋來源＋既有條目敏感度稽核，輸出 `Data/_incoming/p5-02-archetypes-draft-01/`），agy 個人額度用盡（約 43 h 後重置），未產出檔案 · 下一步：額度恢復後重派 ARGON
+- 2026-11-07 · Gemini Argon（agy，唯寫檔，兩段並行）→ Claude Opus 驗收 · partial（待人工）· P5-02：`Data/_incoming/p5-02-archetypes-draft-01/`（`archetypes-a.json` 南亞/東南亞/西亞中東/非洲 39 筆、`archetypes-b.json` 美洲/大洋洲/中亞北亞/極地 45 筆，各附 README）。連同 catalog.js 既有條目，10 個地理區皆 ≥ 15（16–19），每區 `ok` ≥ 11；每筆有 id/culture/英文名/3–4 意象/敏感度（review 附理由）/學術出處（紙本專書，url 一律 null，未臆造連結）。Opus 以腳本重驗：欄位、id 唯一、不與 catalog 重名、單一文化 ≤ 40%、歷史名人 ≤ 40%、每區 ≥ 3 類型，0 錯誤；逐筆人工核對事實無誤，唯一修正 `arch_snugglepot_cuddlepie` 改 `review`（May Gibbs 角色在澳洲著作權保護至 2039）。**待人工**：Argon 建議既有「葛內舍象神智慧」「風之靈納瓦霍」「納努克白熊之主」由 ok 改 review；`arch_la_galigo`、`arch_lafaek_diak` 及 5 筆大洋洲/極地口傳條目的 ok 邊界；`arch_douglas_mawson` 歸極地；之後併入 `tools/prompt-forge/catalog.js` · 下一步：人工決定上述敏感度後併入 catalog.js
