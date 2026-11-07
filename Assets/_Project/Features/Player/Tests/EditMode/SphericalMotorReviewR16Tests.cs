@@ -63,12 +63,12 @@ namespace Cosmimera.Player.Tests
             Assert.Throws<ContractException>(() => SphericalMotor.Step(MotorSettings.Default, prev, default, default, X, Dt));
         }
 
-        // The Initial Pre excludes sin θ ≤ 1e-3 as tested in float; this facing (θ = 1e-3 + 9e-11 rad) lands exactly on
-        // lengthsq == 1e-6 and is rejected by that documented test (sol r16 N32), while as ViewForward it is legal input.
+        // The Initial Pre excludes sin θ ≤ 1e-3 as tested in float; a facing landing exactly on
+        // lengthsq == 1e-6 (θ ≈ 1e-3 rad) is rejected by that documented test (sol r16 N32), while as ViewForward it is legal input.
         [Test]
         public void N32_N34_facing_on_the_float_degeneracy_cutoff()
         {
-            var nearUp = new float3(2.4e-7f, 1f, 0.0010000004f);
+            float3 nearUp = NearUp;
             Assert.Throws<ContractException>(() => SphericalMotor.Initial(Y, nearUp));
             MotorState prev = SphericalMotor.Initial(Y, Z);
             MotorState next = default;
@@ -103,8 +103,31 @@ namespace Cosmimera.Player.Tests
 
         // sol P1 r17 N36: both signs of the cutoff; the ViewForward case must fall back to the existing facing (+X here,
         // unlike the projected direction ≈ +Z), not merely stay unit length.
-        private static readonly float3 NearUp = new float3(2.4e-7f, 1f, 0.0010000004f);
-        private static readonly float3 NearDown = new float3(2.4e-7f, -1f, 0.0010000004f);
+        // Sol's (2.4e-7, ±1, 0.0010000004) hits lengthsq == 1e-6 exactly on CLR but not on Unity Mono, so the witness is
+        // searched in the running runtime with the same steps as SphericalMotor.TangentOr (up = +Y, |v| largest = 1).
+        private static readonly float3 NearUp = CutoffWitness(1f);
+        private static readonly float3 NearDown = CutoffWitness(-1f);
+
+        private static float3 CutoffWitness(float ySign)
+        {
+            uint start = math.asuint(0.001f) - 64u;
+            for (uint zBits = start; zBits < start + 128u; zBits++)
+            {
+                for (uint xStep = 0u; xStep < 64u; xStep++)
+                {
+                    var v = new float3(xStep * 1e-8f, ySign, math.asfloat(zBits));
+                    float3 d = math.normalize(v / math.cmax(math.abs(v)));
+                    float3 t = d - Y * math.dot(d, Y);
+                    if (math.lengthsq(t) == 1e-6f)
+                    {
+                        return v;
+                    }
+                }
+            }
+
+            Assert.Fail("no float witness on the 1e-6 cutoff in this runtime");
+            return default;
+        }
 
         [Test]
         public void N36_initial_rejects_the_cutoff_near_minus_up()
