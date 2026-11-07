@@ -100,17 +100,19 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: type defined; element is a defined Element even where it is meaningless (pass default);
         ///      OnHpBelow/OnHpAbove: 1 &lt;= percent &lt;= 100 and durationMs == 0; OnSummon/OnHitTaken/
-        ///      OnMoveUsed/OnAllySwap: 1 &lt;= durationMs &lt;= 600000 and percent == 0; Always: both 0;
+        ///      OnMoveUsed/OnAllySwap: 1 &lt;= durationMs &lt;= 600000 and percent == 0; OnHpCrossBelow: both in those
+        ///      ranges; Always: both 0;
         ///      anyElement only for OnHitTaken.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public TriggerSpec(TriggerType type, bool anyElement, Element element, int percent, int durationMs)
         {
-            Contract.Requires(type >= TriggerType.Always && type <= TriggerType.OnAllySwap, "undefined TriggerType");
+            Contract.Requires(type >= TriggerType.Always && type <= TriggerType.OnHpCrossBelow, "undefined TriggerType");
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
             Contract.Requires(!anyElement || type == TriggerType.OnHitTaken, "only on_hit_taken accepts 'any'");
-            bool threshold = type == TriggerType.OnHpBelow || type == TriggerType.OnHpAbove;
-            bool timed = !threshold && type != TriggerType.Always;
+            bool continuous = type == TriggerType.Always || type == TriggerType.OnHpBelow || type == TriggerType.OnHpAbove;
+            bool threshold = type == TriggerType.OnHpBelow || type == TriggerType.OnHpAbove || type == TriggerType.OnHpCrossBelow;
+            bool timed = !continuous;
             Contract.Requires(threshold ? percent >= 1 && percent <= 100 : percent == 0, "percent must match the trigger type");
             Contract.Requires(timed ? durationMs >= 1 && durationMs <= EffectBook.MaxDurationMs : durationMs == 0,
                 "durationMs must match the trigger type");
@@ -134,7 +136,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined Element. Side effects: none.</remarks>
         public Element Element { get; }
 
-        /// <summary>HP threshold percent for OnHpBelow / OnHpAbove, else 0.</summary>
+        /// <summary>HP threshold percent for OnHpBelow / OnHpAbove / OnHpCrossBelow, else 0.</summary>
         /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
         public int Percent { get; }
 
@@ -163,6 +165,8 @@ namespace Cosmimera.Combat
                 case TriggerType.OnSummon:
                 case TriggerType.OnAllySwap:
                     return new TriggerSpec(def.Type, false, default, 0, def.DurationMs);
+                case TriggerType.OnHpCrossBelow:
+                    return new TriggerSpec(def.Type, false, default, def.Percent, def.DurationMs);
                 default:
                     return new TriggerSpec(TriggerType.Always, false, default, 0, 0);
             }
@@ -346,6 +350,7 @@ namespace Cosmimera.Combat
         private readonly TriggerSpec _trigger;
         private readonly EffectSpec[] _traitEffects;
         private long _watermarkMs;
+        private bool _crossBelowSpent;
 
         /// <summary>Creates a book for a combatant without a trait.</summary>
         /// <remarks>Pre: none. Post: HasTrait false; no active effects. Side effects: none.</remarks>
@@ -488,12 +493,40 @@ namespace Cosmimera.Combat
             Fire(TriggerType.OnMoveUsed, match, nowMs, out healPercent);
         }
 
-        /// <summary>Removes every timed effect (end of combat).</summary>
-        /// <remarks>Pre: nowMs in CombatTime and >= watermark. Post: no live slots. Side effects: records the watermark.</remarks>
+        /// <summary>The creature's HP changed from <paramref name="previousHp"/> to <paramref name="hp"/>: fires on_hp_cross_below.</summary>
+        /// <remarks>
+        /// REQ: combat.md#特性觸發 (Q-C18, user decision 2026-11-07: once per combat). Call after every HP change
+        /// (damage, heal, field tick) with the values before and after it.
+        /// Pre: maxHp >= 1; 0 &lt;= previousHp, hp &lt;= maxHp; nowMs in CombatTime and >= watermark.
+        /// Post: fires iff the trait is on_hp_cross_below{p}, it has not fired since construction or the last
+        ///       <see cref="Clear"/>, previousHp·100 >= p·maxHp, and 0 &lt; hp·100 &lt; p·maxHp. A drop straight to 0
+        ///       does not fire and keeps the charge, so the trait never acts as a revive.
+        /// Side effects: records the watermark; spends the charge when it fires.
+        /// </remarks>
+        public void NotifyHpChanged(int previousHp, int hp, int maxHp, long nowMs, out int healPercent)
+        {
+            Contract.Requires(maxHp >= 1 && previousHp >= 0 && previousHp <= maxHp && hp >= 0 && hp <= maxHp,
+                "need 0 <= previousHp, hp <= maxHp, maxHp >= 1");
+            long threshold = (long)_trigger.Percent * maxHp;
+            bool match = _traitId != null && _trigger.Type == TriggerType.OnHpCrossBelow && !_crossBelowSpent
+                && hp >= 1 && (long)previousHp * 100 >= threshold && (long)hp * 100 < threshold;
+            Fire(TriggerType.OnHpCrossBelow, match, nowMs, out healPercent);
+            if (match)
+            {
+                _crossBelowSpent = true;
+            }
+        }
+
+        /// <summary>Removes every timed effect and re-arms on_hp_cross_below (end of combat).</summary>
+        /// <remarks>
+        /// Pre: nowMs in CombatTime and >= watermark. Post: no live slots; on_hp_cross_below can fire again.
+        /// Side effects: records the watermark.
+        /// </remarks>
         public void Clear(long nowMs)
         {
             Advance(nowMs);
             _slots.Clear();
+            _crossBelowSpent = false;
         }
 
         /// <summary>Sums every modifier active at <paramref name="nowMs"/> into <paramref name="into"/>.</summary>

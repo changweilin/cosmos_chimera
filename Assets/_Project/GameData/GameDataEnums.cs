@@ -66,6 +66,8 @@ namespace Cosmimera.GameData
     public enum TriggerType
     {
         Always = 0, OnHpBelow = 1, OnHpAbove = 2, OnSummon = 3, OnHitTaken = 4, OnMoveUsed = 5, OnAllySwap = 6,
+        // Appended, not inserted: values are serialized into imported .asset files.
+        OnHpCrossBelow = 7,
     }
 
     /// <summary>What a trait effect or move effect does. REQ: common.schema.json#/$defs/effect (closed in P2-01).</summary>

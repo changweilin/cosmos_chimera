@@ -600,6 +600,7 @@ namespace Cosmimera.GameData.Editor
                 ["on_hit_taken"] = new[] { ("element", ParamKind.ElementOrAny), ("duration_ms", ParamKind.DurationMs) },
                 ["on_move_used"] = new[] { ("element", ParamKind.Element), ("duration_ms", ParamKind.DurationMs) },
                 ["on_ally_swap"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+                ["on_hp_cross_below"] = new[] { ("percent", ParamKind.Percent), ("duration_ms", ParamKind.DurationMs) },
             };
 
         private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> EffectParams =

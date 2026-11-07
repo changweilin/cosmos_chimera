@@ -130,6 +130,19 @@ class CrossFileRules(unittest.TestCase):
         self.assertEqual([], self._with_valid({"traits/extra.json": trait(summon, [mod] * 8)}))
         self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(summon, [mod] * 9)})))
 
+    def test_hp_cross_below_is_an_event_trigger_with_percent_and_duration(self):
+        # Q-C18 (user decision 2026-11-07): the heal-on-threshold traits use this event trigger.
+        heal = '{"type":"heal_percent_max_hp","params":{"percent":12}}'
+
+        def trait(params):
+            return ('[{"id":"sample_extra_trait","trigger":{"type":"on_hp_cross_below","params":' + params
+                    + '},"effects":[' + heal + ']}]')
+
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait('{"percent":25,"duration_ms":1000}')}))
+        for params in ('{"percent":25}', '{"duration_ms":1000}', '{"percent":0,"duration_ms":1000}',
+                       '{"percent":25,"duration_ms":1000,"element":"fire"}'):
+            self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(params)})), params)
+
     def test_effect_move_requires_effect(self):
         move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')

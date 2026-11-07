@@ -367,12 +367,30 @@ namespace Cosmimera.GameData.Tests
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
+        [Test]
+        public void Hp_cross_below_imports_percent_and_duration()
+        {
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":{\"type\":\"on_hp_cross_below\",\"params\":"
+                + "{\"percent\":25,\"duration_ms\":4000}},\"effects\":[{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":12}}]}]");
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.AreEqual(TriggerType.OnHpCrossBelow, trait.Trigger.Type);
+            Assert.AreEqual(25, trait.Trigger.Percent);
+            Assert.AreEqual(4000, trait.Trigger.DurationMs);
+            Assert.IsFalse(trait.Trigger.HasElement);
+        }
+
         // SOL P2-09 E4: schema-valid data that EffectBook rejected must already fail at import.
         [TestCase("{\"type\":\"always\"}", 1, false, "")]
         [TestCase("{\"type\":\"on_hp_below\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
         [TestCase("{\"type\":\"on_hp_above\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
         [TestCase("{\"type\":\"always\"}", 1, true, "event trigger")]
         [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 1, true, "")]
+        [TestCase("{\"type\":\"on_hp_cross_below\",\"params\":{\"percent\":25,\"duration_ms\":1000}}", 1, true, "")]
+        [TestCase("{\"type\":\"on_hp_cross_below\",\"params\":{\"percent\":25}}", 1, true, "duration_ms")]
         [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 8, false, "")]
         [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 9, false, "effects must have")]
         public void Trait_effects_are_bounded_and_heals_need_an_event_trigger(string trigger, int count, bool heal, string expectedError)

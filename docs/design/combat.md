@@ -80,7 +80,7 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 
 ## 特性觸發（P2-09）
 - 持續判定（查詢當下測試，不存計時）：`always`；`on_hp_below{p}` 在 HP×100 < p×最大HP 時成立；`on_hp_above{p}` 在 HP×100 > p×最大HP 時成立（皆為嚴格不等式）。
-- 事件觸發（開啟 `duration_ms` 視窗，依效果的 `max_stacks` 疊加/刷新）：`on_summon`＝每次上場（開場召喚與換手上場都算）；`on_ally_swap`＝**換手上場的那一隻**（使用者確認）；`on_hit_taken{element|any}`＝命中確定（幾何＋擲骰）後，依招式屬性比對；`on_move_used{element}`＝自己使用該屬性的招式。
+- 事件觸發（開啟 `duration_ms` 視窗，依效果的 `max_stacks` 疊加/刷新）：`on_summon`＝每次上場（開場召喚與換手上場都算）；`on_ally_swap`＝**換手上場的那一隻**（使用者確認）；`on_hit_taken{element|any}`＝命中確定（幾何＋擲骰）後，依招式屬性比對；`on_move_used{element}`＝自己使用該屬性的招式；`on_hp_cross_below{p, duration_ms}`＝HP 由 HP×100 ≥ p×最大HP 跌到 0 < HP×100 < p×最大HP 的那一刻（每次 HP 變動後以變動前後的值呼叫 `NotifyHpChanged`），**每場戰鬥最多一次**（`Clear` 重新武裝）；直接跌到 0 不觸發、也不消耗次數（不當復活用）。2026-11-07 使用者確認（Q-C18）。
 - 事件觸發的治療效果立即回傳治療百分比給呼叫端；治療不可掛在持續觸發上。
 - 暫定（未定案，待 P2-10/P3 戰鬥流程確認）：收回宙獸時不清除身上的計時效果（以絕對時間到期）；戰鬥結束呼叫 `Clear`。
 

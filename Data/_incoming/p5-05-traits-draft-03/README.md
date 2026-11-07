@@ -73,7 +73,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **thunder** | `trait_thunder_arc_discharge` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
 | **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `move_speed_mod_percent: +15%` | None |
 | **light** | `trait_light_luminous_barrier` | `on_move_used` | `light`, 4000ms | `resist_mod: shadow +25`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
-| **light** | `trait_light_saving_grace` | `on_hp_below` | 25% | `heal_percent_max_hp: 12%` | None |
+| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25% | `heal_percent_max_hp: 12%` | None |
 | **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `move_speed_mod_percent: +20%` | None |
 | **shadow** | `trait_shadow_umbral_cloak` | `always` | `{}` | `evasion_mod_percent: +5%`, `resist_mod: light -15` | Yes (`resist light -15`) |
 | **shadow** | `trait_shadow_fade_step` | `on_move_used` | `shadow`, 3000ms | `move_speed_mod_percent: +15%` | None |
