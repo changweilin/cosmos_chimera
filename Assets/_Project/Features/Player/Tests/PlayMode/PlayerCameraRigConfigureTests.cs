@@ -82,6 +82,54 @@ namespace Cosmimera.Player.Tests
             Assert.AreSame(_pivot, _third.Target.TrackingTarget);
         }
 
+        // sol P1 r16 N33: endpoint acceptance for every closed Configure bound.
+        [TestCase("_sensitivityDegrees", -PlayerCameraRig.MaxSensitivityDegrees)]
+        [TestCase("_sensitivityDegrees", PlayerCameraRig.MaxSensitivityDegrees)]
+        [TestCase("_gamepadDegreesPerSecond", PlayerCameraRig.MaxGamepadDegreesPerSecond)]
+        public void N33_configure_accepts_multipliers_at_their_limits(string field, float value)
+        {
+            SetField(field, value);
+
+            Assert.DoesNotThrow(Configure);
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+        }
+
+        [TestCase(1f, 0f, 0f)]
+        [TestCase(-1f, 0f, 0f)]
+        [TestCase(0f, -1f, 0f)]
+        [TestCase(0f, 0f, 1f)]
+        [TestCase(0f, 0f, -1f)]
+        public void N33_configure_accepts_a_target_component_at_max(float x, float y, float z)
+        {
+            _target.position = new Vector3(x, y, z) * PlayerCameraRig.MaxTargetComponent;
+
+            Assert.DoesNotThrow(Configure);
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+        }
+
+        [TestCase(PlanetConfig.MinSupportedRadius, 0f, 0f, 0f)]
+        [TestCase(PlanetConfig.MaxSupportedRadius, 0f, 0f, 0f)]
+        [TestCase(640f, -PlanetConfig.MaxCenterComponent, 0f, 0f)]
+        [TestCase(640f, 0f, PlanetConfig.MaxCenterComponent, 0f)]
+        [TestCase(640f, 0f, -PlanetConfig.MaxCenterComponent, 0f)]
+        [TestCase(640f, 0f, 0f, PlanetConfig.MaxCenterComponent)]
+        [TestCase(640f, 0f, 0f, -PlanetConfig.MaxCenterComponent)]
+        public void N33_configure_accepts_a_planet_at_its_limits(float radius, float cx, float cy, float cz)
+        {
+            var center = new float3(cx, cy, cz);
+            _target.position = center + new float3(0f, radius, 0f);
+
+            Assert.DoesNotThrow(() => _rig.Configure(new PlanetConfig(radius, center), _target, _pivot, _third, _first, _brain));
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+        }
+
+        [Test]
+        public void N33_default_planet_is_rejected_before_any_write()
+        {
+            Assert.Throws<ContractException>(() => _rig.Configure(default, _target, _pivot, _third, _first, _brain));
+            AssertNothingWritten();
+        }
+
         // sol P1 r8 N12-R8: TrackingTarget alone could not see an early write to the rig's own fields.
         private void AssertNothingWritten()
         {

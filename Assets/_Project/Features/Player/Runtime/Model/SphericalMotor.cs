@@ -96,7 +96,8 @@ namespace Cosmimera.Player
     /// <summary>One fixed step of player intent.</summary>
     /// <remarks>
     /// Pre: |Move| ≤ 1 (+1e-3); ViewForward finite (any length, scale-invariant; projected onto the tangent plane;
-    ///      zero or within 1e-3 rad of ±up = "use facing").
+    ///      zero or within 1e-3 rad of ±up = "use facing", i.e. sin θ ≤ 1e-3 tested as lengthsq ≤ 1e-6 on the
+    ///      normalised tangent part); |Move| is compared as lengthsq(Move) ≤ (1 + 1e-3)².
     /// Post: n/a. Side effects: none.
     /// </remarks>
     internal struct MotorInput
@@ -181,6 +182,17 @@ namespace Cosmimera.Player
         // A heading within ~1e-3 rad of ±up is noise (PlanetFrame.ProjectOnTangent's degeneracy threshold).
         private const float DegenerateSq = 1e-6f;
 
+        // (1 ∓ 1e-3)²: the documented ±1e-3 slack is on the length; `|lengthsq − 1| < 2e-3` dropped the ε² term and
+        // rejected lengths just below 1.001 (sol P1 r16 N32).
+        private const float UnitSqMin = 0.998001f;
+        private const float UnitSqMax = 1.002001f;
+
+        private static bool IsUnitWithinSlack(float3 v)
+        {
+            float lengthSq = math.lengthsq(v);
+            return lengthSq >= UnitSqMin && lengthSq <= UnitSqMax;
+        }
+
         /// <summary>Largest planar or vertical speed a MotorState may carry, m/s.</summary>
         /// <remarks>
         /// Pre: none. Post: constant. Side effects: none.
@@ -192,13 +204,14 @@ namespace Cosmimera.Player
 
         /// <summary>State at rest at local up <paramref name="up"/> facing <paramref name="facing"/>.</summary>
         /// <remarks>
-        /// Pre: up unit (±1e-3); facing finite (any length), not zero and not within 1e-3 rad of ±up.
+        /// Pre: up unit (±1e-3, compared as (1 − 1e-3)² ≤ lengthsq ≤ (1 + 1e-3)²); facing finite (any length), not
+        ///      zero and not within 1e-3 rad of ±up (sin θ ≤ 1e-3, tested as lengthsq ≤ 1e-6 on the normalised tangent part).
         /// Post: result satisfies the MotorState invariant; Velocity == 0; Grounded == false.
         /// Side effects: none.
         /// </remarks>
         public static MotorState Initial(float3 up, float3 facing)
         {
-            Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
+            Contract.Requires(IsUnitWithinSlack(up), "up must be unit length");
             Contract.Requires(math.all(math.isfinite(facing)), "facing must be finite");
             up = math.normalize(up);
             float3 tangent = TangentOr(facing, up, float3.zero);
@@ -229,9 +242,9 @@ namespace Cosmimera.Player
         {
             Contract.Requires(settings.IsValid, "invalid MotorSettings");
             Contract.Requires(dt > 0f && dt <= 0.1f, "dt must be in (0, 0.1]");
-            Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
-            Contract.Requires(math.abs(math.lengthsq(prev.Up) - 1f) < 2e-3f, "prev is uninitialised (use Initial)");
-            Contract.Requires(math.abs(math.lengthsq(prev.Facing) - 1f) < 2e-3f && math.abs(math.dot(prev.Facing, prev.Up)) <= 1e-3f,
+            Contract.Requires(IsUnitWithinSlack(up), "up must be unit length");
+            Contract.Requires(IsUnitWithinSlack(prev.Up), "prev is uninitialised (use Initial)");
+            Contract.Requires(IsUnitWithinSlack(prev.Facing) && math.abs(math.dot(prev.Facing, prev.Up)) <= 1e-3f,
                 "prev.Facing must be a unit tangent");
             Contract.Requires(math.all(math.isfinite(prev.PlanarVelocity))
                 && math.abs(math.dot(prev.PlanarVelocity, prev.Up)) <= 1e-3f * math.max(1f, math.length(prev.PlanarVelocity)),
@@ -248,7 +261,7 @@ namespace Cosmimera.Player
             Contract.Requires(!prev.Grounded || (prev.VerticalSpeed == 0f && !prev.JumpStarted),
                 "prev is Grounded but carries vertical speed or a jump start");
             Contract.Requires(math.dot(up, prev.Up) > 0f, "up moved more than 90° in one step");
-            Contract.Requires(math.lengthsq(input.Move) <= 1.002f, "|Move| must be ≤ 1");
+            Contract.Requires(math.lengthsq(input.Move) <= UnitSqMax, "|Move| must be ≤ 1");
             Contract.Requires(math.all(math.isfinite(input.ViewForward)), "ViewForward must be finite");
             Contract.Requires(!ground.Hit || (math.abs(math.lengthsq(ground.Normal) - 1f) < 2e-3f && ground.Distance >= 0f),
                 "ground normal must be unit and distance ≥ 0");
@@ -377,7 +390,8 @@ namespace Cosmimera.Player
         /// <summary>Unit tangent of <paramref name="v"/> at <paramref name="up"/>, or <paramref name="fallback"/> if degenerate.</summary>
         /// <remarks>
         /// Pre: up unit; v finite.
-        /// Post: result ⟂ up (≤ 1e-6) and unit, or == fallback when v is zero or within 1e-3 rad of ±up;
+        /// Post: result ⟂ up (≤ 1e-6) and unit, or == fallback when v is zero or within 1e-3 rad of ±up (sin θ ≤ 1e-3,
+        ///       tested as lengthsq ≤ 1e-6 on the normalised tangent part);
         ///       independent of |v|.
         /// Side effects: none.
         /// </remarks>

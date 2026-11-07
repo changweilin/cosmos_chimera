@@ -70,6 +70,42 @@ namespace Cosmimera.Player.Tests
             Assert.AreEqual(10f, _rig.PendingLook.y, 1e-5f);
         }
 
+        // sol P1 r16 N33: endpoint acceptance for the AddLook Pre and the pending-range Post.
+        [TestCase(-1.001f, 0f)]
+        [TestCase(0f, -1.001f)]
+        public void N33_stick_at_the_negative_slack_is_accepted(float x, float y)
+        {
+            Assert.DoesNotThrow(() => _rig.AddLook(Vector2.zero, new Vector2(x, y), 0.01f));
+        }
+
+        [Test]
+        public void N33_sensitivity_at_plus_max_is_accepted()
+        {
+            SetField("_sensitivityDegrees", PlayerCameraRig.MaxSensitivityDegrees);
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(1f, 0f), Vector2.zero, 0f));
+            Assert.AreEqual(PlayerCameraRig.MaxSensitivityDegrees, _rig.PendingLook.x, 1e-5f);
+        }
+
+        // Default 0.12°/px × 3000 px is exactly one turn: the Post's open (-360, 360) range must wrap it to 0.
+        [TestCase(3000f)]
+        [TestCase(-3000f)]
+        public void N33_exactly_one_turn_of_yaw_wraps_inside_the_open_range(float pointerX)
+        {
+            _rig.AddLook(new Vector2(pointerX, 0f), Vector2.zero, 0f);
+            Assert.AreEqual(0f, _rig.PendingLook.x, 1e-3f);
+            Assert.Less(math.abs(_rig.PendingLook.x), 360f);
+        }
+
+        // ±160 is the documented "reaches ±80 from every start" boundary; the value must accumulate exactly.
+        [TestCase(1600f)]
+        [TestCase(-1600f)]
+        public void N33_pitch_exactly_at_160_accumulates_exactly(float pointerY)
+        {
+            SetField("_sensitivityDegrees", 0.1f);
+            _rig.AddLook(new Vector2(0f, pointerY), Vector2.zero, 0f);
+            Assert.AreEqual(math.sign(pointerY) * 160f, _rig.PendingLook.y);
+        }
+
         [Test]
         public void N8_R6_extreme_legal_multipliers_keep_the_queue_finite_and_in_range()
         {
