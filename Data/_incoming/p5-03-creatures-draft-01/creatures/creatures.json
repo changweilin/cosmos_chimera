@@ -1,0 +1,1076 @@
+[
+  {
+    "id": "metal_clock_chick",
+    "line_id": "line_metal_gearclock",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "evolves_to": "metal_gear_strider",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 20,
+      "wood": 5,
+      "water": 0,
+      "fire": -20,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 15
+    },
+    "stats": {
+      "con": 40,
+      "str": 28,
+      "spi": 18,
+      "agi": 14
+    },
+    "signature_move": "metal_needle_thrust",
+    "trait": "trait_metal_dense_alloy",
+    "concept": {
+      "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
+      "stage_look": "圓弧青銅齒輪幼雛，胸口帶有微型浮碗漏刻水槽，步伐伴隨清脆齒輪發條聲",
+      "archetype": "arch_al_jazari",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "報時機械巨象",
+        "沉水浮碗漏壺",
+        "盤龍平衡桿"
+      ],
+      "role": "前排坦克：高體質，近距前方斬擊",
+      "palette": "青銅綠、黃銅金、玄鐵黑"
+    }
+  },
+  {
+    "id": "metal_gear_strider",
+    "line_id": "line_metal_gearclock",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "evolves_to": "metal_chronos_engine",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 35,
+      "wood": 10,
+      "water": 0,
+      "fire": -30,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 25
+    },
+    "stats": {
+      "con": 80,
+      "str": 55,
+      "spi": 37,
+      "agi": 28
+    },
+    "signature_move": "metal_iron_cleave",
+    "trait": "trait_metal_dense_alloy",
+    "concept": {
+      "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
+      "stage_look": "半披重甲的機械機關獸，雙肩裝配盤龍青銅連桿與報時鳴鐘音板",
+      "archetype": "arch_al_jazari",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "報時機械巨象",
+        "沉水浮碗漏壺",
+        "盤龍平衡桿"
+      ],
+      "role": "前排坦克：高體質，近距橫掃",
+      "palette": "青銅綠、黃銅金、玄鐵黑"
+    }
+  },
+  {
+    "id": "metal_chronos_engine",
+    "line_id": "line_metal_gearclock",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "charge",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 10,
+      "water": 0,
+      "fire": -40,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 40,
+      "earth": 15
+    },
+    "stats": {
+      "con": 165,
+      "str": 110,
+      "spi": 70,
+      "agi": 55
+    },
+    "signature_move": "metal_lance_charge",
+    "trait": "trait_metal_dense_alloy",
+    "concept": {
+      "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
+      "stage_look": "巍峨的重裝機械巨象機兵，軀幹內嵌沉水浮碗水力計時輪系，雙足如鐵樁般屹立",
+      "archetype": "arch_al_jazari",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "報時機械巨象",
+        "沉水浮碗漏壺",
+        "盤龍平衡桿"
+      ],
+      "role": "前排坦克：遠距直線突進破陣，常駐金抗換取移速",
+      "palette": "青銅綠、黃銅金、玄鐵黑"
+    }
+  },
+  {
+    "id": "wood_fern_chick",
+    "line_id": "line_wood_vinecrest",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "charge",
+    "evolves_to": "wood_plume_peafowl",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": -20,
+      "wood": 20,
+      "water": 10,
+      "fire": 0,
+      "earth": 5,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 15
+    },
+    "stats": {
+      "con": 28,
+      "str": 16,
+      "spi": 40,
+      "agi": 16
+    },
+    "signature_move": "wood_briar_dash",
+    "trait": "trait_wood_photosynthesis",
+    "concept": {
+      "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
+      "stage_look": "蓬鬆翠綠幼鳥，頭頂生出初萌的捲曲蕨葉冠羽，雙足踏著金木雕花底座",
+      "archetype": "arch_sarimanok",
+      "region": "東南亞",
+      "motifs_used": [
+        "流線捲紋羽冠",
+        "雙重虹彩長尾",
+        "黃銅雕花底座"
+      ],
+      "role": "中排輸出：短距直線突進，上場時自我治療",
+      "palette": "翡翠綠、孔雀藍、琉璃金"
+    }
+  },
+  {
+    "id": "wood_plume_peafowl",
+    "line_id": "line_wood_vinecrest",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "evolves_to": "wood_canopy_regent",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": -30,
+      "wood": 35,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 25
+    },
+    "stats": {
+      "con": 55,
+      "str": 32,
+      "spi": 81,
+      "agi": 32
+    },
+    "signature_move": "wood_root_spear",
+    "trait": "trait_wood_photosynthesis",
+    "concept": {
+      "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
+      "stage_look": "羽翼舒展的熱帶孔雀型錦鳥，背負流線捲紋蔓藤，雙爪覆蓋金屬木質硬鱗",
+      "archetype": "arch_sarimanok",
+      "region": "東南亞",
+      "motifs_used": [
+        "流線捲紋羽冠",
+        "雙重虹彩長尾",
+        "黃銅雕花底座"
+      ],
+      "role": "中排輸出：高精神縮短 CD，遠距直線射擊，上場時自我治療",
+      "palette": "翡翠綠、孔雀藍、琉璃金"
+    }
+  },
+  {
+    "id": "wood_canopy_regent",
+    "line_id": "line_wood_vinecrest",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "hold",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 40
+    },
+    "stats": {
+      "con": 110,
+      "str": 65,
+      "spi": 160,
+      "agi": 65
+    },
+    "signature_move": "wood_canopy_crush",
+    "trait": "trait_wood_photosynthesis",
+    "concept": {
+      "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
+      "stage_look": "盤踞巨木頂端的七彩神禽，雙重虹彩長尾如垂藤流光，周身綻放翠玉繁花",
+      "archetype": "arch_sarimanok",
+      "region": "東南亞",
+      "motifs_used": [
+        "流線捲紋羽冠",
+        "雙重虹彩長尾",
+        "黃銅雕花底座"
+      ],
+      "role": "中排輸出：高精神，中距指定點範圍爆發，上場時自我治療",
+      "palette": "翡翠綠、孔雀藍、琉璃金"
+    }
+  },
+  {
+    "id": "water_wave_elver",
+    "line_id": "line_water_tidecraft",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "evolves_to": "water_skiff_eel",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 20,
+      "fire": 10,
+      "earth": 0,
+      "ice": 5,
+      "wind": 0,
+      "thunder": -20,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 15
+    },
+    "stats": {
+      "con": 20,
+      "str": 38,
+      "spi": 18,
+      "agi": 24
+    },
+    "signature_move": "water_aqua_cutter",
+    "trait": "trait_water_torrent_flow",
+    "concept": {
+      "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
+      "stage_look": "身軀如銀色小鰻，背部生出半透明蟹爪形水膜小翼，在波浪間滑行",
+      "archetype": "arch_edai_siabo_lakatoi",
+      "region": "大洋洲",
+      "motifs_used": [
+        "蟹爪風帆多體舟",
+        "海蝕洞巨鰻",
+        "季風海浪"
+      ],
+      "role": "中距輸出：直線水刃，連續施放水招縮短 CD",
+      "palette": "潮汐碧藍、白沫銀、陶土赭紅"
+    }
+  },
+  {
+    "id": "water_skiff_eel",
+    "line_id": "line_water_tidecraft",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "evolves_to": "water_catamaran_serpent",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 35,
+      "fire": 15,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -30,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 25
+    },
+    "stats": {
+      "con": 40,
+      "str": 75,
+      "spi": 35,
+      "agi": 50
+    },
+    "signature_move": "water_torrent_burst",
+    "trait": "trait_water_torrent_flow",
+    "concept": {
+      "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
+      "stage_look": "腹部長出木紋雙浮筒外甲的飛浪海鰻，脊背張開硬質蟹爪帆，能破浪滑翔",
+      "archetype": "arch_edai_siabo_lakatoi",
+      "region": "大洋洲",
+      "motifs_used": [
+        "蟹爪風帆多體舟",
+        "海蝕洞巨鰻",
+        "季風海浪"
+      ],
+      "role": "中距輸出：扇形水流，連續施放水招縮短 CD",
+      "palette": "潮汐碧藍、白沫銀、陶土赭紅"
+    }
+  },
+  {
+    "id": "water_catamaran_serpent",
+    "line_id": "line_water_tidecraft",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 50,
+      "fire": 15,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -40,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 40,
+      "wind": 15
+    },
+    "stats": {
+      "con": 80,
+      "str": 150,
+      "spi": 70,
+      "agi": 100
+    },
+    "signature_move": "water_deluge_crater",
+    "trait": "trait_water_torrent_flow",
+    "concept": {
+      "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
+      "stage_look": "巨大如浮島的雙體風帆巨鰻舟，雙側連綴彩繪水流側舷，乘踏季風怒濤疾航",
+      "archetype": "arch_edai_siabo_lakatoi",
+      "region": "大洋洲",
+      "motifs_used": [
+        "蟹爪風帆多體舟",
+        "海蝕洞巨鰻",
+        "季風海浪"
+      ],
+      "role": "遠距砲台：高力量，遠距指定點範圍爆發，連續施放水招縮短 CD",
+      "palette": "潮汐碧藍、白沫銀、陶土赭紅"
+    }
+  },
+  {
+    "id": "fire_ember_cub",
+    "line_id": "line_fire_blazelion",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "evolves_to": "fire_mane_stalker",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 10,
+      "water": -20,
+      "fire": 20,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 15
+    },
+    "stats": {
+      "con": 30,
+      "str": 40,
+      "spi": 12,
+      "agi": 18
+    },
+    "signature_move": "fire_ember_lash",
+    "trait": "trait_fire_thermal_recharge",
+    "concept": {
+      "base": "烈焰雄獅 × 砂岩熔核甲胄",
+      "stage_look": "滾燙赤褐小獅，頸圈生有一圈暗紅餘燼絨毛，爪尖踏出微小火星",
+      "archetype": "arch_apedemak",
+      "region": "非洲",
+      "motifs_used": [
+        "三首四臂雄獅像",
+        "盤蛇綻放蓮花",
+        "陡頂砂岩金字塔"
+      ],
+      "role": "近戰輸出：近距橫掃，受火屬性攻擊後縮短火招 CD",
+      "palette": "赭石紅、熾金黃、玄武岩暗灰"
+    }
+  },
+  {
+    "id": "fire_mane_stalker",
+    "line_id": "line_fire_blazelion",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "evolves_to": "fire_pyre_monarch",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -30,
+      "fire": 35,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 25
+    },
+    "stats": {
+      "con": 60,
+      "str": 80,
+      "spi": 25,
+      "agi": 35
+    },
+    "signature_move": "fire_blaze_charge",
+    "trait": "trait_fire_thermal_recharge",
+    "concept": {
+      "base": "烈焰雄獅 × 砂岩熔核甲胄",
+      "stage_look": "肌肉結實的烈焰荒原獅，鬃毛如翻騰火浪，額前凝結三道熔岩裂紋",
+      "archetype": "arch_apedemak",
+      "region": "非洲",
+      "motifs_used": [
+        "三首四臂雄獅像",
+        "盤蛇綻放蓮花",
+        "陡頂砂岩金字塔"
+      ],
+      "role": "突擊手：中距直線突進，受火屬性攻擊後縮短火招 CD",
+      "palette": "赭石紅、熾金黃、玄武岩暗灰"
+    }
+  },
+  {
+    "id": "fire_pyre_monarch",
+    "line_id": "line_fire_blazelion",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -40,
+      "fire": 50,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 40
+    },
+    "stats": {
+      "con": 120,
+      "str": 155,
+      "spi": 55,
+      "agi": 70
+    },
+    "signature_move": "fire_inferno_cataclysm",
+    "trait": "trait_fire_thermal_recharge",
+    "concept": {
+      "base": "烈焰雄獅 × 砂岩熔核甲胄",
+      "stage_look": "威儀萬丈的三面烈火霸獅，鬃毛化為熊熊金紅蓮華火冠，每聲咆哮皆引動砂岩爆震",
+      "archetype": "arch_apedemak",
+      "region": "非洲",
+      "motifs_used": [
+        "三首四臂雄獅像",
+        "盤蛇綻放蓮花",
+        "陡頂砂岩金字塔"
+      ],
+      "role": "重砲手：高力量，遠距指定點範圍爆發，受火屬性攻擊後縮短火招 CD",
+      "palette": "赭石紅、熾金黃、玄武岩暗灰"
+    }
+  },
+  {
+    "id": "earth_pebble_pawn",
+    "line_id": "line_earth_gildedgolem",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "evolves_to": "earth_gilded_warden",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 5,
+      "earth": 20,
+      "ice": 0,
+      "wind": -20,
+      "thunder": 10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 15
+    },
+    "stats": {
+      "con": 36,
+      "str": 22,
+      "spi": 30,
+      "agi": 12
+    },
+    "signature_move": "earth_pebble_shot",
+    "trait": "trait_earth_tectonic_rebound",
+    "concept": {
+      "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
+      "stage_look": "圓潤敦實的小石偶，周身覆蓋薄金微粒，胸膛嵌有一顆微光綠寶石晶核",
+      "archetype": "arch_el_dorado_muisca",
+      "region": "美洲",
+      "motifs_used": [
+        "金粉覆身",
+        "火山湖綠寶石",
+        "黃金祭偶"
+      ],
+      "role": "中排：中距直線投石，受擊後提高土專精",
+      "palette": "鎏金黃、翡翠綠、陶土赭褐"
+    }
+  },
+  {
+    "id": "earth_gilded_warden",
+    "line_id": "line_earth_gildedgolem",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "evolves_to": "earth_auric_sovereign",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 35,
+      "ice": 0,
+      "wind": -30,
+      "thunder": 15,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 25
+    },
+    "stats": {
+      "con": 72,
+      "str": 44,
+      "spi": 59,
+      "agi": 25
+    },
+    "signature_move": "earth_seismic_slam",
+    "trait": "trait_earth_tectonic_rebound",
+    "concept": {
+      "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
+      "stage_look": "佩帶幾何金面甲的岩土行者，肩背覆蓋層疊板狀黏土與生長金晶",
+      "archetype": "arch_el_dorado_muisca",
+      "region": "美洲",
+      "motifs_used": [
+        "金粉覆身",
+        "火山湖綠寶石",
+        "黃金祭偶"
+      ],
+      "role": "前排：自身周圍近距震波，受擊後提高土專精",
+      "palette": "鎏金黃、翡翠綠、陶土赭褐"
+    }
+  },
+  {
+    "id": "earth_auric_sovereign",
+    "line_id": "line_earth_gildedgolem",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "charge",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 50,
+      "ice": 0,
+      "wind": -40,
+      "thunder": 15,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 40
+    },
+    "stats": {
+      "con": 145,
+      "str": 85,
+      "spi": 120,
+      "agi": 50
+    },
+    "signature_move": "earth_rampart_rush",
+    "trait": "trait_earth_tectonic_rebound",
+    "concept": {
+      "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
+      "stage_look": "巍然屹立的重岩金祭聖偶，雙臂如立柱，通體鎏金結晶與翡翠石脈共鳴",
+      "archetype": "arch_el_dorado_muisca",
+      "region": "美洲",
+      "motifs_used": [
+        "金粉覆身",
+        "火山湖綠寶石",
+        "黃金祭偶"
+      ],
+      "role": "前排：遠距直線突進，受擊後提高土專精",
+      "palette": "鎏金黃、翡翠綠、陶土赭褐"
+    }
+  },
+  {
+    "id": "ice_frost_fledgling",
+    "line_id": "line_ice_frostbeast",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "evolves_to": "ice_rime_strider",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 10,
+      "fire": 0,
+      "earth": -20,
+      "ice": 20,
+      "wind": 5,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 15
+    },
+    "stats": {
+      "con": 26,
+      "str": 24,
+      "spi": 20,
+      "agi": 30
+    },
+    "signature_move": "ice_shard_flurry",
+    "trait": "trait_ice_flash_freeze",
+    "concept": {
+      "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
+      "stage_look": "覆蓋厚實白絨的幼雛，額頂生有一對冰晶小角，四肢嵌有金屬防滑掌爪",
+      "archetype": "arch_pazyryk_antlered_griffin",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "鳥首分叉巨鹿角",
+        "金箔毛氈鞍飾",
+        "永凍冰塚"
+      ],
+      "role": "中距輸出：扇形冰霜，上場時暫時提高冰抗",
+      "palette": "霜雪白、冰川淡藍、凍鐵古金"
+    }
+  },
+  {
+    "id": "ice_rime_strider",
+    "line_id": "line_ice_frostbeast",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "evolves_to": "ice_tundra_dreadnought",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -30,
+      "ice": 35,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 25
+    },
+    "stats": {
+      "con": 52,
+      "str": 48,
+      "spi": 40,
+      "agi": 60
+    },
+    "signature_move": "ice_glacier_lance",
+    "trait": "trait_ice_flash_freeze",
+    "concept": {
+      "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
+      "stage_look": "雙翼裝配鍛鐵鉸鏈與金箔鞍軛的冰原獵獸，冰柱狀分叉巨角能導引寒氣",
+      "archetype": "arch_pazyryk_antlered_griffin",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "鳥首分叉巨鹿角",
+        "金箔毛氈鞍飾",
+        "永凍冰塚"
+      ],
+      "role": "遠距輸出：高敏捷，遠距直線冰槍，上場時暫時提高冰抗",
+      "palette": "霜雪白、冰川淡藍、凍鐵古金"
+    }
+  },
+  {
+    "id": "ice_tundra_dreadnought",
+    "line_id": "line_ice_frostbeast",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 40,
+      "metal": 15
+    },
+    "stats": {
+      "con": 105,
+      "str": 95,
+      "spi": 80,
+      "agi": 120
+    },
+    "signature_move": "ice_blizzard_vortex",
+    "trait": "trait_ice_flash_freeze",
+    "concept": {
+      "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
+      "stage_look": "永凍裝甲巨型鹿角霜獸，機械冰裂翼展覆蓋寒霜，破冰金屬尖爪能粉碎凍土",
+      "archetype": "arch_pazyryk_antlered_griffin",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "鳥首分叉巨鹿角",
+        "金箔毛氈鞍飾",
+        "永凍冰塚"
+      ],
+      "role": "遠距砲台：高敏捷，遠距指定點範圍爆發，上場時暫時提高冰抗",
+      "palette": "霜雪白、冰川淡藍、凍鐵古金"
+    }
+  },
+  {
+    "id": "wind_reed_skiff",
+    "line_id": "line_wind_fluteglider",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "flank",
+    "evolves_to": "wind_flute_cruiser",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -20,
+      "wind": 20,
+      "thunder": -5,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 15
+    },
+    "stats": {
+      "con": 14,
+      "str": 28,
+      "spi": 18,
+      "agi": 40
+    },
+    "signature_move": "wind_gale_claw",
+    "trait": "trait_wind_tailwind_glide",
+    "concept": {
+      "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
+      "stage_look": "梭形浮空音管小舟，舟首飾有三孔細竹笛管，隨微風發出悠揚鳴響",
+      "archetype": "arch_heer_ranjha",
+      "region": "南亞",
+      "motifs_used": [
+        "雕花竹笛",
+        "奇納布河渡船",
+        "幾何刺繡披肩"
+      ],
+      "role": "游擊手：最高敏捷，近距橫掃，換手上場時加速",
+      "palette": "茜草絳紅、竹青綠、暖沙金"
+    }
+  },
+  {
+    "id": "wind_flute_cruiser",
+    "line_id": "line_wind_fluteglider",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "evolves_to": "wind_monsoon_galeon",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -30,
+      "wind": 35,
+      "thunder": -10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 25
+    },
+    "stats": {
+      "con": 28,
+      "str": 56,
+      "spi": 36,
+      "agi": 80
+    },
+    "signature_move": "wind_vacuum_blade",
+    "trait": "trait_wind_tailwind_glide",
+    "concept": {
+      "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
+      "stage_look": "張開彩繡刺繡滑翔翼的氣動巡航飛舟，兩側排列排笛風孔，能乘疾風滑行",
+      "archetype": "arch_heer_ranjha",
+      "region": "南亞",
+      "motifs_used": [
+        "雕花竹笛",
+        "奇納布河渡船",
+        "幾何刺繡披肩"
+      ],
+      "role": "游擊手：最高敏捷，遠距直線風刃，換手上場時加速",
+      "palette": "茜草絳紅、竹青綠、暖沙金"
+    }
+  },
+  {
+    "id": "wind_monsoon_galeon",
+    "line_id": "line_wind_fluteglider",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -40,
+      "wind": 50,
+      "thunder": -10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 40
+    },
+    "stats": {
+      "con": 56,
+      "str": 114,
+      "spi": 70,
+      "agi": 160
+    },
+    "signature_move": "wind_tempest_sphere",
+    "trait": "trait_wind_tailwind_glide",
+    "concept": {
+      "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
+      "stage_look": "流線重層的御風天舟，舟翼懸垂繁複幾何刺繡雲帆，長笛風門全開噴湧颶風",
+      "archetype": "arch_heer_ranjha",
+      "region": "南亞",
+      "motifs_used": [
+        "雕花竹笛",
+        "奇納布河渡船",
+        "幾何刺繡披肩"
+      ],
+      "role": "游擊砲台：最高敏捷，遠距指定點範圍爆發，換手上場時加速",
+      "palette": "茜草絳紅、竹青綠、暖沙金"
+    }
+  }
+]

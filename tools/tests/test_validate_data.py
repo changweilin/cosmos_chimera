@@ -113,6 +113,36 @@ class CrossFileRules(unittest.TestCase):
         edge = '[{"a":"sample_fox_cub","b":"sample_fox_lord","kind":"friends"}]'
         self.assertIn("schema", self.codes(self._with_valid({"relations/more.json": edge})))
 
+    def test_trait_heal_needs_event_trigger_and_effects_are_bounded(self):
+        # SOL P2-09 E4: these were schema-valid but rejected by EffectBook.
+        heal = '{"type":"heal_percent_max_hp","params":{"percent":10}}'
+        mod = '{"type":"mastery_mod","params":{"element":"fire","delta":5}}'
+
+        def trait(trigger, effects):
+            return '[{"id":"sample_extra_trait","trigger":' + trigger + ',"effects":[' + ",".join(effects) + ']}]'
+
+        for trigger in ('{"type":"always"}', '{"type":"on_hp_below","params":{"percent":30}}',
+                        '{"type":"on_hp_above","params":{"percent":30}}'):
+            findings = self._with_valid({"traits/extra.json": trait(trigger, [heal])})
+            self.assertTrue(any("event trigger" in f.message for f in findings), trigger)
+        summon = '{"type":"on_summon","params":{"duration_ms":1000}}'
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait(summon, [heal])}))
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait(summon, [mod] * 8)}))
+        self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(summon, [mod] * 9)})))
+
+    def test_hp_cross_below_is_an_event_trigger_with_percent_and_duration(self):
+        # Q-C18 (user decision 2026-11-07): the heal-on-threshold traits use this event trigger.
+        heal = '{"type":"heal_percent_max_hp","params":{"percent":12}}'
+
+        def trait(params):
+            return ('[{"id":"sample_extra_trait","trigger":{"type":"on_hp_cross_below","params":' + params
+                    + '},"effects":[' + heal + ']}]')
+
+        self.assertEqual([], self._with_valid({"traits/extra.json": trait('{"percent":25,"duration_ms":1000}')}))
+        for params in ('{"percent":25}', '{"duration_ms":1000}', '{"percent":0,"duration_ms":1000}',
+                       '{"percent":25,"duration_ms":1000,"element":"fire"}'):
+            self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(params)})), params)
+
     def test_effect_move_requires_effect(self):
         move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
@@ -166,6 +196,8 @@ class CrossFileRules(unittest.TestCase):
                     relative = f"{kind}/{kind}.json"
                     records = json.loads((SAMPLES / "valid" / relative).read_text(encoding="utf-8"))
                     parent = records[0]
+                    if path == ("base_range_mm",):
+                        parent["movement"] = "none"  # the sample is a dash, capped at 36000 by Q-C19
                     for key in path[:-1]:
                         parent = parent[key]
                     parent[path[-1]] = value
@@ -185,12 +217,21 @@ class CrossFileRules(unittest.TestCase):
                 self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
         for changes in [
             {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},
-            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0},
+            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0}, {"base_range_mm": 36001},
         ]:
             with self.subTest(changes=changes):
                 move = {**source, "id": "review_move", **changes}
                 findings = self._with_valid({"moves/review.json": json.dumps([move])})
                 self.assertIn("schema", self.codes(findings))
+
+    def test_dash_range_cap_is_inclusive(self):
+        # Q-C19: dash path length is capped at 36000 mm in data, same as the ranged cap.
+        source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]
+        self.assertEqual("dash", source["movement"])
+        move = {**source, "id": "review_move", "base_range_mm": 36000}
+        self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
+        undashed = {**source, "id": "review_move", "movement": "none", "base_range_mm": 36001}
+        self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([undashed])})))
 
     def test_material_outside_mastery_is_an_error(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")
@@ -199,6 +240,60 @@ class CrossFileRules(unittest.TestCase):
         findings = self._with_valid({"creatures/creatures.json": mutated})
         self.assertEqual({"material_not_mastery"}, self.codes(findings))
         self.assertTrue(all(f.level == "error" for f in findings))
+
+    def test_repeated_material_sum_is_bounded_by_int32(self):
+        # Sol P2-05 review C2: each qty is legal alone, the merged (element, tier) total is not.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        mats[:] = [{**base, "qty": 2147483647}, {**base, "qty": 1}]
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+        self.assertEqual({"material_sum_overflow"}, self.codes(findings))
+        mats[:] = [{**base, "qty": 2147483646}, {**base, "qty": 1}]
+        self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        mats[:] = [{**base, "qty": 2147483647}, {**base, "tier": base["tier"] + 1, "qty": 1}]
+        self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
+    def test_malformed_material_key_is_a_schema_error_not_a_crash(self):
+        # Sol P2-05/07 r2 C8: unhashable element/tier crashed the material-sum check.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        for bad in ({"tier": []}, {"tier": {}}, {"element": []}, {"element": {}}, {"tier": True}):
+            with self.subTest(bad=bad):
+                mats[:] = [{**base, **bad, "qty": 1}]
+                findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                self.assertIn("schema", self.codes(findings))
+                self.assertNotIn("material_sum_overflow", self.codes(findings))
+
+    def test_malformed_material_entries_are_excluded_from_the_sum(self):
+        # Sol P2-05/07 r3: with qty=1 a malformed entry could be summed wrongly yet stay below Int32 and pass.
+        # Pair each with a legal MaxValue entry on the same key so wrongly summing it overflows.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        for bad in ({"tier": True}, {"tier": float(base["tier"])}, {"tier": None}, {"qty": True},
+                    {"element": None}):
+            with self.subTest(bad=bad):
+                for pair in ([{**base, "qty": 2147483647}, {**base, "qty": 1, **bad}],
+                             [{**base, "qty": 2147483647, **bad}, {**base, "qty": 1, **bad}]):
+                    if "qty" in bad and pair[0].get("qty") is True:
+                        continue
+                    mats[:] = pair
+                    findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                    self.assertNotIn("material_sum_overflow", self.codes(findings))
+                    self.assertTrue(self.codes(findings) & {"schema", "float_literal"})
+
+    def test_ai_style_is_required_and_closed(self):
+        # Q-C21: P2-10 reads the positioning style from data; a missing or unknown style must not default silently.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        for value in ("keep_distance", "flank", "charge", "hold"):
+            creatures[0]["ai_style"] = value
+            self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        creatures[0]["ai_style"] = "kite"
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        del creatures[0]["ai_style"]
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
 
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))

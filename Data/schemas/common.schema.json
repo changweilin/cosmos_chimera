@@ -48,7 +48,7 @@
       "required": ["type"],
       "additionalProperties": false,
       "properties": {
-        "type": { "enum": ["always", "on_hp_below", "on_hp_above", "on_summon", "on_hit_taken", "on_move_used", "on_ally_swap"] },
+        "type": { "enum": ["always", "on_hp_below", "on_hp_above", "on_summon", "on_hit_taken", "on_move_used", "on_ally_swap", "on_hp_cross_below"] },
         "params": { "type": "object" }
       },
       "allOf": [
@@ -58,7 +58,8 @@
         { "if": { "properties": { "type": { "const": "on_summon" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["duration_ms"], "properties": { "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
         { "if": { "properties": { "type": { "const": "on_hit_taken" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "duration_ms"], "properties": { "element": { "$ref": "#/$defs/elementOrAny" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
         { "if": { "properties": { "type": { "const": "on_move_used" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "duration_ms"], "properties": { "element": { "$ref": "#/$defs/element" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
-        { "if": { "properties": { "type": { "const": "on_ally_swap" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["duration_ms"], "properties": { "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } }
+        { "if": { "properties": { "type": { "const": "on_ally_swap" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["duration_ms"], "properties": { "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } },
+        { "if": { "properties": { "type": { "const": "on_hp_cross_below" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["percent", "duration_ms"], "properties": { "percent": { "$ref": "#/$defs/rulePercent" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } }
       ]
     },
     "effect": {

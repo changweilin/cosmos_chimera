@@ -1,0 +1,468 @@
+[
+  {
+    "id": "sun_mirror_chick",
+    "line_id": "starter_sun_line",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "keep_distance",
+    "evolves_to": "sun_heliostat_heron",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -5,
+      "fire": 10,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 20,
+      "shadow": -20
+    },
+    "mastery": {
+      "light": 15
+    },
+    "stats": {
+      "con": 25,
+      "str": 30,
+      "spi": 30,
+      "agi": 15
+    },
+    "signature_move": "light_mirror_glint",
+    "trait": "trait_light_heliostat_focus",
+    "concept": {
+      "base": "太陽鳥雛鳥 × 頭頂一面圓形聚光小鏡",
+      "stage_look": "圓滾雛鳥，鏡面冠羽會追著太陽轉",
+      "archetype": "arch_sultanas_dream",
+      "region": "南亞",
+      "motifs_used": [
+        "聚光太陽鏡陣",
+        "汲雲氣球管道",
+        "苔絨花園"
+      ],
+      "role": "後排輸出、控距：遠距直線光束",
+      "palette": "象牙白、晨金、苔綠"
+    }
+  },
+  {
+    "id": "sun_heliostat_heron",
+    "line_id": "starter_sun_line",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "evolves_to": "sun_array_skyheron",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -10,
+      "fire": 15,
+      "earth": 0,
+      "ice": 5,
+      "wind": 0,
+      "thunder": 0,
+      "light": 35,
+      "shadow": -30
+    },
+    "mastery": {
+      "light": 25
+    },
+    "stats": {
+      "con": 45,
+      "str": 60,
+      "spi": 60,
+      "agi": 35
+    },
+    "signature_move": "light_heliostat_beam",
+    "trait": "trait_light_heliostat_focus",
+    "concept": {
+      "base": "鷺鳥 × 翅羽化為可調角度的鏡片陣列",
+      "stage_look": "單腳佇立、雙翼展開成扇形鏡陣聚光",
+      "archetype": "arch_sultanas_dream",
+      "region": "南亞",
+      "motifs_used": [
+        "聚光太陽鏡陣",
+        "汲雲氣球管道",
+        "苔絨花園"
+      ],
+      "role": "後排輸出、控距：遠距直線光束",
+      "palette": "象牙白、晨金、苔綠"
+    }
+  },
+  {
+    "id": "sun_array_skyheron",
+    "line_id": "starter_sun_line",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -15,
+      "fire": 25,
+      "earth": 0,
+      "ice": 10,
+      "wind": 5,
+      "thunder": 0,
+      "light": 50,
+      "shadow": -40
+    },
+    "mastery": {
+      "light": 40,
+      "fire": 15
+    },
+    "stats": {
+      "con": 90,
+      "str": 120,
+      "spi": 120,
+      "agi": 70
+    },
+    "signature_move": "light_solar_array_lance",
+    "trait": "trait_light_heliostat_focus",
+    "concept": {
+      "base": "鷺鳥 × 太陽鏡陣飛行器（生物＋器械）",
+      "stage_look": "背負環形鏡陣與汲雲氣球管的天空鷺，鏡陣合焦射出光束",
+      "archetype": "arch_sultanas_dream",
+      "region": "南亞",
+      "motifs_used": [
+        "聚光太陽鏡陣",
+        "汲雲氣球管道",
+        "苔絨花園"
+      ],
+      "role": "後排輸出、控距：遠距直線光束",
+      "palette": "象牙白、晨金、苔綠"
+    }
+  },
+  {
+    "id": "moon_night_pup",
+    "line_id": "starter_moon_line",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "flank",
+    "evolves_to": "moon_shade_wolf",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -20,
+      "light": -5,
+      "shadow": 20
+    },
+    "mastery": {
+      "shadow": 15
+    },
+    "stats": {
+      "con": 20,
+      "str": 25,
+      "spi": 20,
+      "agi": 35
+    },
+    "signature_move": "shadow_nightpaw_swipe",
+    "trait": "trait_shadow_longnight_stalker",
+    "concept": {
+      "base": "灰狼幼崽 × 尾尖一點星光",
+      "stage_look": "尾尖閃著星光的小狼投下比本體更大的影子，繞到背後揮爪拍擊。",
+      "archetype": "arch_amarok",
+      "region": "極地",
+      "motifs_used": [
+        "孤行極地巨灰狼",
+        "冰原極夜星光",
+        "震地長尾"
+      ],
+      "role": "繞背近戰：繞至對手背後，以近身爪擊持續作戰，並暫時削弱其影抗性。",
+      "palette": "墨藍、霜灰、星白"
+    }
+  },
+  {
+    "id": "moon_shade_wolf",
+    "line_id": "starter_moon_line",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "flank",
+    "evolves_to": "moon_longnight_wolf",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 5,
+      "thunder": -30,
+      "light": -10,
+      "shadow": 35
+    },
+    "mastery": {
+      "shadow": 25
+    },
+    "stats": {
+      "con": 40,
+      "str": 45,
+      "spi": 45,
+      "agi": 70
+    },
+    "signature_move": "shadow_longnight_lunge",
+    "trait": "trait_shadow_longnight_stalker",
+    "concept": {
+      "base": "孤狼 × 極夜冰原的星光斑紋",
+      "stage_look": "墨藍孤狼身上的星斑隨呼吸明滅，向前疾衝時拖出影子殘像。",
+      "archetype": "arch_amarok",
+      "region": "極地",
+      "motifs_used": [
+        "孤行極地巨灰狼",
+        "冰原極夜星光",
+        "震地長尾"
+      ],
+      "role": "繞背突進：繞至對手背後，沿直線向前突進並貼身作戰。",
+      "palette": "墨藍、霜灰、星白"
+    }
+  },
+  {
+    "id": "moon_longnight_wolf",
+    "line_id": "starter_moon_line",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "flank",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": 0,
+      "ice": 30,
+      "wind": 10,
+      "thunder": -40,
+      "light": -15,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 40,
+      "ice": 15
+    },
+    "stats": {
+      "con": 75,
+      "str": 90,
+      "spi": 85,
+      "agi": 150
+    },
+    "signature_move": "shadow_lone_hunter_ambush",
+    "trait": "trait_shadow_longnight_stalker",
+    "concept": {
+      "base": "極夜巨狼 × 震地長尾",
+      "stage_look": "身形如雪丘的巨灰狼拖著震地長尾，繞背後貼地向前疾衝。",
+      "archetype": "arch_amarok",
+      "region": "極地",
+      "motifs_used": [
+        "孤行極地巨灰狼",
+        "冰原極夜星光",
+        "震地長尾"
+      ],
+      "role": "繞背突進：沿直線突進並降低命中敵人的影抗性，隨後貼身作戰。",
+      "palette": "墨藍、霜灰、星白"
+    }
+  },
+  {
+    "id": "star_blaze_foal",
+    "line_id": "starter_star_line",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "charge",
+    "evolves_to": "star_storm_colt",
+    "evolution": {
+      "exp": 100,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": -5,
+      "ice": 0,
+      "wind": 10,
+      "thunder": 20,
+      "light": -20,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 15
+    },
+    "stats": {
+      "con": 30,
+      "str": 30,
+      "spi": 20,
+      "agi": 20
+    },
+    "signature_move": "thunder_starblaze_charge",
+    "trait": "trait_thunder_storm_gallop",
+    "concept": {
+      "base": "小馬駒 × 額頭星形白斑會放電",
+      "stage_look": "蹄下冒火花、跌跌撞撞往前衝的小馬",
+      "archetype": "arch_tulpar",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "黃金雙翼駿馬",
+        "彎月額角",
+        "疾風長鬃",
+        "無垠綠草原"
+      ],
+      "role": "衝鋒、群體壓制：近中距突進與範圍放電",
+      "palette": "金黃、電紫、草原綠"
+    }
+  },
+  {
+    "id": "star_storm_colt",
+    "line_id": "starter_star_line",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "evolves_to": "star_skyhoof_steed",
+    "evolution": {
+      "exp": 300,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": -10,
+      "ice": 0,
+      "wind": 20,
+      "thunder": 35,
+      "light": -30,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 25,
+      "wind": 10
+    },
+    "stats": {
+      "con": 60,
+      "str": 55,
+      "spi": 40,
+      "agi": 45
+    },
+    "signature_move": "thunder_galloping_discharge",
+    "trait": "trait_thunder_storm_gallop",
+    "concept": {
+      "base": "駿馬 × 疾風長鬃化為電弧",
+      "stage_look": "長鬃是持續跳動的電弧，肩胛冒出未展開的金色翼芽",
+      "archetype": "arch_tulpar",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "黃金雙翼駿馬",
+        "彎月額角",
+        "疾風長鬃",
+        "無垠綠草原"
+      ],
+      "role": "衝鋒、群體壓制：近中距突進與範圍放電",
+      "palette": "金黃、電紫、草原綠"
+    }
+  },
+  {
+    "id": "star_skyhoof_steed",
+    "line_id": "starter_star_line",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "charge",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": -15,
+      "ice": 0,
+      "wind": 30,
+      "thunder": 50,
+      "light": -40,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 40,
+      "wind": 20
+    },
+    "stats": {
+      "con": 120,
+      "str": 110,
+      "spi": 80,
+      "agi": 90
+    },
+    "signature_move": "thunder_skyhoof_stampede",
+    "trait": "trait_thunder_storm_gallop",
+    "concept": {
+      "base": "金翼天馬 × 彎月額角與雷雲",
+      "stage_look": "黃金雙翼展開時翼緣串著星點電光，額上彎月角導引落雷，衝鋒時拖出雷鳴長軌",
+      "archetype": "arch_tulpar",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "黃金雙翼駿馬",
+        "彎月額角",
+        "疾風長鬃",
+        "無垠綠草原"
+      ],
+      "role": "衝鋒、群體壓制：近中距突進與範圍放電",
+      "palette": "金黃、電紫、草原綠"
+    }
+  }
+]

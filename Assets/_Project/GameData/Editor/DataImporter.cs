@@ -288,9 +288,9 @@ namespace Cosmimera.GameData.Editor
                 }
 
                 if (m.Dto.BaseRangeMm < 0 || (m.Dto.Movement == "dash"
-                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0)))
+                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0 || m.Dto.BaseRangeMm > MoveDef.MaxDashRangeMm)))
                 {
-                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and positive range");
+                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and range 1..{MoveDef.MaxDashRangeMm}");
                 }
                 if ((m.Dto.Kind == "damage") != (m.Dto.Effect == null))
                 {
@@ -329,15 +329,23 @@ namespace Cosmimera.GameData.Editor
             {
                 Claim(t.Where, t.Dto.Id, "trait");
                 CheckRule(t.Where, "trigger", t.Dto.Trigger, TriggerParams, errors);
-                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0)
+                if (t.Dto.Effects == null || t.Dto.Effects.Count == 0 || t.Dto.Effects.Count > TraitDef.MaxEffects)
                 {
-                    errors.Add($"{t.Where}: effects must have at least one entry");
+                    errors.Add($"{t.Where}: effects must have 1..{TraitDef.MaxEffects} entries");
                     continue;
                 }
 
+                // REQ: docs/design/combat.md#特性觸發 — a heal is instant; a continuous trigger has no moment to fire it
+                // (SOL P2-09 E4: the schema accepted it and EffectBook then rejected the imported trait).
+                bool continuous = t.Dto.Trigger != null
+                    && (t.Dto.Trigger.Type == "always" || t.Dto.Trigger.Type == "on_hp_below" || t.Dto.Trigger.Type == "on_hp_above");
                 for (int i = 0; i < t.Dto.Effects.Count; i++)
                 {
                     CheckRule(t.Where, $"effects[{i}]", t.Dto.Effects[i], EffectParams, errors);
+                    if (continuous && t.Dto.Effects[i]?.Type == "heal_percent_max_hp")
+                    {
+                        errors.Add($"{t.Where}: effects[{i}] heal_percent_max_hp needs an event trigger, not '{t.Dto.Trigger.Type}'");
+                    }
                 }
             }
 
@@ -364,6 +372,7 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be S, M, L or XL");
                 }
+                RequireEnum<AiStyle>(c.Where, "ai_style", d.AiStyle);
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
@@ -377,6 +386,16 @@ namespace Cosmimera.GameData.Editor
                     foreach (MaterialDto mat in d.Evolution?.Materials ?? new List<MaterialDto>())
                     {
                         RequireEnum<Element>(c.Where, "evolution.materials.element", mat.Element);
+                    }
+
+                    // EvolutionRequirement merges repeated (element, tier) entries into one int Qty; the schema only
+                    // bounds each entry, so a legal file could otherwise import and then throw at evolution time.
+                    foreach (var g in (d.Evolution?.Materials ?? new List<MaterialDto>()).GroupBy(m => (m.Element, m.Tier)))
+                    {
+                        if (g.Sum(m => (long)m.Qty) > int.MaxValue)
+                        {
+                            errors.Add($"{c.Where}: evolution.materials {g.Key.Element}/tier {g.Key.Tier} summed qty exceeds {int.MaxValue}");
+                        }
                     }
                 }
 
@@ -487,7 +506,7 @@ namespace Cosmimera.GameData.Editor
                 string sensitivity = (string)d.Concept["sensitivity"];
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
-                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass,
+                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Exp ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),
@@ -592,6 +611,7 @@ namespace Cosmimera.GameData.Editor
                 ["on_hit_taken"] = new[] { ("element", ParamKind.ElementOrAny), ("duration_ms", ParamKind.DurationMs) },
                 ["on_move_used"] = new[] { ("element", ParamKind.Element), ("duration_ms", ParamKind.DurationMs) },
                 ["on_ally_swap"] = new[] { ("duration_ms", ParamKind.DurationMs) },
+                ["on_hp_cross_below"] = new[] { ("percent", ParamKind.Percent), ("duration_ms", ParamKind.DurationMs) },
             };
 
         private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> EffectParams =

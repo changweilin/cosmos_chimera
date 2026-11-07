@@ -48,7 +48,7 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **wood** | `trait_wood_verdant_resonance` | `on_ally_swap` | 5000ms | `mastery_mod: wood +20` | None |
 | **water** | `trait_water_fluid_stance` | `always` | `{}` | `evasion_mod_percent: +6%`, `resist_mod: thunder -15` | Yes (`resist thunder -15%`) |
 | **water** | `trait_water_torrent_flow` | `on_move_used` | `water`, 4000ms | `cd_mod_percent: water -20%` | None |
-| **water** | `trait_water_cleansing_tide` | `on_hp_below` | 30% | `heal_percent_max_hp: 12%` | None |
+| **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30% | `heal_percent_max_hp: 12%` | None |
 | **fire** | `trait_fire_blazing_fury` | `on_hp_below` | 35% | `mastery_mod: fire +30`, `resist_mod: water -20` | Yes (`resist water -20%`) |
 | **fire** | `trait_fire_heat_exhaust` | `on_summon` | 5000ms | `move_speed_mod_percent: +15%` | None |
 | **fire** | `trait_fire_thermal_recharge` | `on_hit_taken` | `fire`, 5000ms | `cd_mod_percent: fire -25%` | None |

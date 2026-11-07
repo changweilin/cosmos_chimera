@@ -13,8 +13,18 @@
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "trigger": { "$ref": "common.schema.json#/$defs/trigger" },
-        "effects": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/effect" } }
-      }
+        "effects": {
+          "description": "1..8 effects (GameData TraitDef.MaxEffects).",
+          "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "common.schema.json#/$defs/effect" }
+        }
+      },
+      "allOf": [
+        {
+          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#特性觸發).",
+          "if": { "properties": { "trigger": { "properties": { "type": { "enum": ["always", "on_hp_below", "on_hp_above"] } } } } },
+          "then": { "properties": { "effects": { "items": { "properties": { "type": { "not": { "const": "heal_percent_max_hp" } } } } } } }
+        }
+      ]
     }
   }
 }

@@ -41,6 +41,7 @@
       "base": "fennec fox with ember tail",
       "archetype": "trickster"
     },
+    "ai_style": "charge",
     "size_class": "S"
   },
   {
@@ -86,6 +87,7 @@
       "base": "twin-tailed fire fox",
       "archetype": "magical beast"
     },
+    "ai_style": "hold",
     "size_class": "M"
   },
   {
@@ -122,6 +124,7 @@
       "base": "nine-tailed celestial fox",
       "archetype": "solar guardian"
     },
+    "ai_style": "keep_distance",
     "size_class": "L"
   }
 ]

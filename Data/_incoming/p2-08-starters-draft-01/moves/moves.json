@@ -1,0 +1,11 @@
+[
+  {"id": "light_mirror_glint", "element": "light", "kind": "both", "power": 38, "cooldown_ms": 1500, "accuracy": 100, "range_class": "long", "shape": "line", "base_range_mm": 24000, "effect": {"type": "evasion_mod_percent", "params": {"delta": -10}}, "effect_duration_ms": 3000},
+  {"id": "light_heliostat_beam", "element": "light", "kind": "damage", "power": 70, "cooldown_ms": 4000, "accuracy": 95, "range_class": "long", "shape": "line", "base_range_mm": 24000},
+  {"id": "light_solar_array_lance", "element": "light", "kind": "both", "power": 95, "cooldown_ms": 8000, "accuracy": 85, "range_class": "long", "shape": "line", "base_range_mm": 24000, "effect": {"type": "resist_mod", "params": {"element": "light", "delta": -10}}, "effect_duration_ms": 6000},
+  {"id": "shadow_nightpaw_swipe", "element": "shadow", "kind": "both", "power": 30, "cooldown_ms": 1000, "accuracy": 100, "range_class": "melee", "shape": "front", "base_range_mm": 2000, "effect": {"type": "resist_mod", "params": {"element": "shadow", "delta": -5}}, "effect_duration_ms": 4000},
+  {"id": "shadow_longnight_lunge", "element": "shadow", "kind": "damage", "power": 60, "cooldown_ms": 2600, "accuracy": 95, "range_class": "melee", "shape": "line", "base_range_mm": 6000, "movement": "dash"},
+  {"id": "shadow_lone_hunter_ambush", "element": "shadow", "kind": "both", "power": 95, "cooldown_ms": 7000, "accuracy": 90, "range_class": "melee", "shape": "line", "base_range_mm": 8000, "movement": "dash", "effect": {"type": "resist_mod", "params": {"element": "shadow", "delta": -15}}, "effect_duration_ms": 5000},
+  {"id": "thunder_starblaze_charge", "element": "thunder", "kind": "damage", "power": 40, "cooldown_ms": 1300, "accuracy": 100, "range_class": "melee", "shape": "line", "base_range_mm": 4000, "movement": "dash"},
+  {"id": "thunder_galloping_discharge", "element": "thunder", "kind": "damage", "power": 70, "cooldown_ms": 4200, "accuracy": 90, "range_class": "melee", "shape": "burst", "base_range_mm": 3000, "origin": "caster"},
+  {"id": "thunder_skyhoof_stampede", "element": "thunder", "kind": "damage", "power": 110, "cooldown_ms": 8000, "accuracy": 85, "range_class": "mid", "shape": "line", "base_range_mm": 12000, "movement": "dash"}
+]

@@ -6,6 +6,7 @@
 | `id` | 全域唯一 snake_case |
 | `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載待 Q-C12／P2-05（見〈超載〉） |
 | `size_class` | 體型級距 `S` / `M` / `L` / `XL`（見〈體型級距〉） |
+| `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
 | `evolves_to` | 下一階段 ID（成年為 null） |
 | `evolution` | `{exp, materials: [{element, tier, qty}]}`；成年為 null（見〈進化〉） |
 | `resist` | 十屬性抗性：`{metal, wood, water, fire, earth, ice, wind, thunder, light, shadow}` 整數 % |
@@ -35,7 +36,7 @@
 ## 特性（`Data/traits/`）
 被動效果；以「觸發條件 + 效果」資料描述（例：`on_hp_below:30 → mastery.shadow +20`），不寫死在程式碼。
 資料形狀：`{id, trigger: {type, params}, effects: [{type, params}]}`；`type` 詞彙於 P2 收斂為 enum（2026-11-06 定案）。招式 `effect` 用同一形狀。
-P2-01 已封閉詞彙（2026-11-06 使用者確認）：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{percent}` / `on_summon{duration_ms}` / `on_hit_taken{element|any, duration_ms}` / `on_move_used{element, duration_ms}` / `on_ally_swap{duration_ms}`；效果 `mastery_mod{element, delta}` / `resist_mod{element, delta}` / `cd_mod_percent{element|any, delta}` / `evasion_mod_percent{delta}` / `move_speed_mod_percent{delta}` / `range_mod_percent{delta}` / `heal_percent_max_hp{percent}`。正式定義在 `common.schema.json#/$defs/trigger`、`#/$defs/effect`；新增一種 = schema + `GameData` enum + P2-09 處理器。觸發與疊加的判定見 `combat.md#特性觸發`、`#效果疊加`（P2-09）。
+P2-01 已封閉詞彙（2026-11-06 使用者確認）：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{percent}` / `on_summon{duration_ms}` / `on_hit_taken{element|any, duration_ms}` / `on_move_used{element, duration_ms}` / `on_ally_swap{duration_ms}` / `on_hp_cross_below{percent, duration_ms}`（2026-11-07 新增，Q-C18）；效果 `mastery_mod{element, delta}` / `resist_mod{element, delta}` / `cd_mod_percent{element|any, delta}` / `evasion_mod_percent{delta}` / `move_speed_mod_percent{delta}` / `range_mod_percent{delta}` / `heal_percent_max_hp{percent}`。正式定義在 `common.schema.json#/$defs/trigger`、`#/$defs/effect`；新增一種 = schema + `GameData` enum + P2-09 處理器。觸發與疊加的判定見 `combat.md#特性觸發`、`#效果疊加`（P2-09）。
 
 ## 隊伍規則
 - 一場遊戲最多攜帶 **6 隻主力**；其中最多 **4 隻**組成上場池，**同時最多 2 隻在場**，其餘在池中輪替（Q-C4 定案）。
@@ -75,7 +76,7 @@ P2-01 已封閉詞彙（2026-11-06 使用者確認）：觸發 `always` / `on_hp
 | 代號 | 專精 | 特長 | 戰鬥定位 |
 |---|---|---|---|
 | 日 | 光 | 遠距離持續直線傷害（光束、引導施法） | 後排輸出、控距 |
-| 月 | 影 | 近距離隱蔽傷害（潛行、背刺、閃現） | 刺客、爆發後撤 |
+| 月 | 影 | 近距離繞背傷害（繞背、直線突進、削弱影抗） | 刺客、貼身纏鬥（2026-11-07 P5-08 A6：戰鬥無潛行／自動後撤機制） |
 | 星 | 雷 | 近中距離爆發攻擊（突進、範圍放電） | 衝鋒、群體壓制 |
 
 三隻各有完整三段進化線；概念由 `creature-concept-pipeline.md` 流程產出，人工定稿。

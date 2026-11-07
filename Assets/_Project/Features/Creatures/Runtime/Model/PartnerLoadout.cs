@@ -17,6 +17,9 @@ namespace Cosmimera.Creatures
     /// nothing is removed automatically (the player decides in the lobby).
     /// Invariant: every main has 0..MaxSubsPerMain subs; no sub is also a main; no sub serves two mains.
     /// Exposed lists are read-only views.
+    /// Pre: construct through the public constructor; main-thread or externally synchronized (not thread-safe).
+    /// Post: the invariant above holds after every public call.
+    /// Side effects: only TryAssign and Unassign mutate the assignment.
     /// </remarks>
     public sealed class PartnerLoadout
     {
@@ -197,7 +200,10 @@ namespace Cosmimera.Creatures
         public IReadOnlyList<Provision> ResolveProvisions(int mainInstanceId, string mainSpeciesId, Func<int, OwnedCreature> creatureOf, ISpeciesLookup species)
         {
             Contract.Requires(_subsByMain.ContainsKey(mainInstanceId), "mainInstanceId is not one of Mains");
+            Contract.Requires(!string.IsNullOrEmpty(mainSpeciesId), "mainSpeciesId must be non-empty");
             Contract.Requires(creatureOf != null, "creatureOf is null");
+            // Checked here, not only inside Provision.Resolve: a main with no subs would otherwise skip the Pre.
+            Contract.Requires(species != null, "species is null");
 
             List<int> subs = _subsByMain[mainInstanceId];
             var provisions = new List<Provision>(subs.Count);

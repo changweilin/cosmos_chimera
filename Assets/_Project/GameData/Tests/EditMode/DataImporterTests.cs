@@ -13,16 +13,35 @@ namespace Cosmimera.GameData.Tests
     // and writes into a throwaway Assets folder because AssetDatabase only works under Assets/.
     public sealed class DataImporterTests
     {
-        private const string Output = "Assets/__DataImporterTests";
+        private const string OutputRoot = "Assets/__DataImporterTests";
+        private static int _run;
+        private string Output { get; set; }
         private string _src;
 
         private static string FixtureRoot =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Data", "_incoming", "p0-05-samples", "valid"));
 
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            AssetDatabase.DeleteAsset(OutputRoot);
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            AssetDatabase.DeleteAsset(OutputRoot);
+        }
+
         [SetUp]
         public void SetUp()
         {
-            AssetDatabase.DeleteAsset(Output);
+            // FENCE: a fresh output folder per test instead of deleting and recreating one fixed folder · with
+            // Windows Defender real-time scanning on, the just-deleted Assets/__DataImporterTests.meta stays
+            // delete-pending while the scanner holds it, and the next test's CreateFolder failed with "Cannot open
+            // file ... .meta for write" (a different test each run) · still needed if reverting to a fixed path
+            // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/phase-2.md (2026-11-07 flake).
+            Output = OutputRoot + "/run" + ++_run;
             _src = Path.Combine(Path.GetTempPath(), "cosmimera-import-" + System.Guid.NewGuid().ToString("N"));
             CopyDir(FixtureRoot, _src);
         }
@@ -152,6 +171,28 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains("missing_move", e.Message);
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(30, move.Power, "valid edits in the same batch must not be half-applied");
+        }
+
+        [Test]
+        public void Repeated_material_whose_summed_qty_overflows_int_is_rejected()
+        {
+            // Sol P2-05 review C2: each entry is schema-legal; EvolutionRequirement would throw when merging them.
+            ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483647 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
+
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains("summed qty", e.Message);
+        }
+
+        [Test]
+        public void Repeated_material_whose_summed_qty_fits_int_is_imported()
+        {
+            ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483646 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(2, cub.EvolutionMaterials.Count, "the importer keeps entries; merging is EvolutionRequirement's job");
         }
 
         [Test]
@@ -367,6 +408,59 @@ namespace Cosmimera.GameData.Tests
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
+        [Test]
+        public void Hp_cross_below_imports_percent_and_duration()
+        {
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":{\"type\":\"on_hp_cross_below\",\"params\":"
+                + "{\"percent\":25,\"duration_ms\":4000}},\"effects\":[{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":12}}]}]");
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.AreEqual(TriggerType.OnHpCrossBelow, trait.Trigger.Type);
+            Assert.AreEqual(25, trait.Trigger.Percent);
+            Assert.AreEqual(4000, trait.Trigger.DurationMs);
+            Assert.IsFalse(trait.Trigger.HasElement);
+        }
+
+        // SOL P2-09 E4: schema-valid data that EffectBook rejected must already fail at import.
+        [TestCase("{\"type\":\"always\"}", 1, false, "")]
+        [TestCase("{\"type\":\"on_hp_below\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"on_hp_above\",\"params\":{\"percent\":30}}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"always\"}", 1, true, "event trigger")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 1, true, "")]
+        [TestCase("{\"type\":\"on_hp_cross_below\",\"params\":{\"percent\":25,\"duration_ms\":1000}}", 1, true, "")]
+        [TestCase("{\"type\":\"on_hp_cross_below\",\"params\":{\"percent\":25}}", 1, true, "duration_ms")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 8, false, "")]
+        [TestCase("{\"type\":\"on_summon\",\"params\":{\"duration_ms\":1000}}", 9, false, "effects must have")]
+        public void Trait_effects_are_bounded_and_heals_need_an_event_trigger(string trigger, int count, bool heal, string expectedError)
+        {
+            string effect = heal
+                ? "{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":10}}"
+                : "{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":20}}";
+            var effects = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < count; i++)
+            {
+                effects.Add(effect);
+            }
+
+            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger + ",\"effects\":[" + string.Join(",", effects) + "]}]");
+
+            if (expectedError.Length > 0)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains(expectedError, error.Message);
+                Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.AreEqual(count, trait.Effects.Count);
+        }
+
         [TestCase("{\"type\":\"always\"}", true)]
         [TestCase("{\"type\":\"always\",\"params\":{}}", true)]
         [TestCase("{\"type\":\"always\",\"params\":null}", false)]
@@ -478,10 +572,35 @@ namespace Cosmimera.GameData.Tests
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
+        [TestCase("keep_distance", AiStyle.KeepDistance)]
+        [TestCase("flank", AiStyle.Flank)]
+        [TestCase("charge", AiStyle.Charge)]
+        [TestCase("hold", AiStyle.Hold)]
+        public void Every_ai_style_survives_import(string style, AiStyle expected)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(expected, cub.AiStyle);
+            Assert.AreEqual(AiStyle.Hold, cub.EvolvesTo.AiStyle);
+            Assert.AreEqual(AiStyle.KeepDistance, cub.EvolvesTo.EvolvesTo.AiStyle);
+        }
+
+        [TestCase("Charge")]
+        [TestCase("0")]
+        [TestCase("kite")]
+        public void Invalid_ai_style_aborts_without_writing(string style)
+        {
+            ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
+            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
+        }
+
         [TestCase("aoe", "none", 2000, null)]
         [TestCase("dash", "none", 2000, null)]
         [TestCase("cone", "dash", 2000, null)]
         [TestCase("line", "dash", 0, null)]
+        [TestCase("line", "dash", 36001, null)]
         [TestCase("line", "none", -1, null)]
         [TestCase("line", "none", 2000, "caster")]
         [TestCase("burst", "none", 2000, null)]

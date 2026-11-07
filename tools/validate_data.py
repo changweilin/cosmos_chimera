@@ -26,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Folder name → schema stem. Folder layout mirrors the real Data/ tree so an _incoming
 # batch can be validated with the exact same command before it is moved in.
+INT32_MAX = 2**31 - 1
 KINDS = {
     "creatures": "creature",
     "moves": "move",
@@ -110,6 +111,8 @@ def _schema_message(err) -> str:
     branch = next((p for p in err.absolute_schema_path if p in ("then", "else")), None)
     if branch is not None and err.validator == "not" and "max_stacks" in str(err.validator_value):
         return "'max_stacks' is not allowed on instant heals (heal_percent_max_hp)"
+    if branch is not None and err.validator == "not" and "heal_percent_max_hp" in str(err.validator_value)             and "effects" in err.absolute_path:
+        return "heal_percent_max_hp needs an event trigger; always/on_hp_below/on_hp_above are continuous"
     if branch is not None and "allOf" in err.absolute_schema_path and any(
         p in ("trigger", "effect", "effects") for p in err.absolute_path
     ):
@@ -233,6 +236,7 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
                 findings.append(Finding("error", "evolution_chain", r.file, f"/{r.index}/evolves_to",
                                         f"{stage} must evolve into {STAGE_NEXT.get(stage)}, got {nxt.data.get('stage')}"))
         _warn_material_elements(r, findings)
+        _check_material_sums(r, findings)
 
     seen_edges: dict[tuple[str, str], Record] = {}
     for r in records["relations"]:
@@ -255,6 +259,29 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             seen_edges[key] = r
         ref(r, "a", "creatures")
         ref(r, "b", "creatures")
+
+
+def _check_material_sums(r: Record, findings: list[Finding]) -> None:
+    # EvolutionRequirement (C#) merges repeated (element, tier) entries into one Int32 qty; the schema bounds each
+    # entry only, so a legal file could otherwise pass here and throw at evolution time (Sol P2-05 review C2).
+    evo = r.data.get("evolution")
+    if not isinstance(evo, dict):
+        return
+    sums: dict[tuple, int] = {}
+    for m in evo.get("materials") or []:
+        # Schema-invalid entries still reach cross-file checks; an unhashable element/tier used to raise TypeError
+        # and drop every finding (Sol P2-05/07 r2 C8). Skip them here — the schema finding already reports them.
+        if not isinstance(m, dict):
+            continue
+        qty, el, tier = m.get("qty"), m.get("element"), m.get("tier")
+        if (isinstance(qty, int) and not isinstance(qty, bool) and isinstance(el, str)
+                and isinstance(tier, int) and not isinstance(tier, bool)):
+            key = (el, tier)
+            sums[key] = sums.get(key, 0) + m["qty"]
+    for (el, tier), total in sums.items():
+        if total > INT32_MAX:
+            findings.append(Finding("error", "material_sum_overflow", r.file, f"/{r.index}/evolution/materials",
+                                    f"{el}/tier {tier} summed qty {total} exceeds {INT32_MAX}"))
 
 
 def _warn_material_elements(r: Record, findings: list[Finding]) -> None:

@@ -33,6 +33,7 @@
       "base": "nine-tailed celestial fox",
       "archetype": "solar guardian"
     },
+    "ai_style": "keep_distance",
     "size_class": "L"
   }
 ]

@@ -1,7 +1,10 @@
 namespace Cosmimera.Creatures
 {
     /// <summary>Why a sub-partner command was accepted or refused; refusals are player-facing reasons for the lobby UI.</summary>
-    /// <remarks>Player input can legally ask for any of these, so they are results, not contract violations.</remarks>
+    /// <remarks>
+    /// Player input can legally ask for any of these, so they are results, not contract violations.
+    /// Pre: none. Post: stable values (UI strings key off them; never renumber). Side effects: none.
+    /// </remarks>
     public enum PartnerResult
     {
         /// <summary>Accepted and applied.</summary>

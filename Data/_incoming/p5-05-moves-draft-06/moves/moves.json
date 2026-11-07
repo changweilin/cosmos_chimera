@@ -1,0 +1,363 @@
+[
+  {
+    "id": "metal_caltrop_zone",
+    "element": "metal",
+    "kind": "damage",
+    "power": 12,
+    "cooldown_ms": 10000,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000,
+    "field_duration_ms": 4000
+  },
+  {
+    "id": "metal_corrosion_edge",
+    "element": "metal",
+    "kind": "both",
+    "power": 35,
+    "cooldown_ms": 2200,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "front",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "metal",
+        "delta": -8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "wood_tangle_grove",
+    "element": "wood",
+    "kind": "both",
+    "power": 8,
+    "cooldown_ms": 10500,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000,
+    "field_duration_ms": 4000,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": -10
+      }
+    },
+    "effect_duration_ms": 2500
+  },
+  {
+    "id": "wood_vernal_growth",
+    "element": "wood",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 4000,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "wood",
+        "delta": 8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "water_vortex_basin",
+    "element": "water",
+    "kind": "both",
+    "power": 10,
+    "cooldown_ms": 12000,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "field",
+    "base_range_mm": 24000,
+    "field_duration_ms": 5000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": -15
+      }
+    },
+    "effect_duration_ms": 3000
+  },
+  {
+    "id": "water_flow_state",
+    "element": "water",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 3500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": 7
+      },
+      "max_stacks": 5
+    },
+    "effect_duration_ms": 7000
+  },
+  {
+    "id": "fire_ember_carpet",
+    "element": "fire",
+    "kind": "damage",
+    "power": 14,
+    "cooldown_ms": 11500,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000,
+    "field_duration_ms": 5000
+  },
+  {
+    "id": "fire_slag_rake",
+    "element": "fire",
+    "kind": "both",
+    "power": 40,
+    "cooldown_ms": 2500,
+    "accuracy": 95,
+    "range_class": "melee",
+    "shape": "sweep",
+    "base_range_mm": 2000,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "fire",
+        "delta": -7
+      },
+      "max_stacks": 5
+    },
+    "effect_duration_ms": 6000
+  },
+  {
+    "id": "earth_quicksand_sink",
+    "element": "earth",
+    "kind": "both",
+    "power": 12,
+    "cooldown_ms": 13500,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000,
+    "field_duration_ms": 6000,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "any",
+        "delta": 10
+      }
+    },
+    "effect_duration_ms": 3000
+  },
+  {
+    "id": "earth_lithic_plating",
+    "element": "earth",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 4500,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "earth",
+        "delta": 10
+      },
+      "max_stacks": 3
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "ice_tundra_expanse",
+    "element": "ice",
+    "kind": "damage",
+    "power": 16,
+    "cooldown_ms": 13000,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "field",
+    "base_range_mm": 24000,
+    "field_duration_ms": 6000
+  },
+  {
+    "id": "ice_frigid_breath",
+    "element": "ice",
+    "kind": "both",
+    "power": 30,
+    "cooldown_ms": 2400,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "cone",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "move_speed_mod_percent",
+      "params": {
+        "delta": -8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 5000
+  },
+  {
+    "id": "wind_monsoon_domain",
+    "element": "wind",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 11000,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "field",
+    "base_range_mm": 24000,
+    "field_duration_ms": 5000,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": -15
+      }
+    },
+    "effect_duration_ms": 3000
+  },
+  {
+    "id": "wind_ballistic_focus",
+    "element": "wind",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 3800,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "range_mod_percent",
+      "params": {
+        "delta": 8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "thunder_conductive_grid",
+    "element": "thunder",
+    "kind": "damage",
+    "power": 18,
+    "cooldown_ms": 15000,
+    "accuracy": 80,
+    "range_class": "long",
+    "shape": "field",
+    "base_range_mm": 24000,
+    "field_duration_ms": 7000
+  },
+  {
+    "id": "thunder_voltage_tracer",
+    "element": "thunder",
+    "kind": "both",
+    "power": 45,
+    "cooldown_ms": 3200,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "line",
+    "base_range_mm": 24000,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "any",
+        "delta": 8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 5000
+  },
+  {
+    "id": "light_prismatic_exposure",
+    "element": "light",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 13000,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "field",
+    "base_range_mm": 12000,
+    "field_duration_ms": 6000,
+    "effect": {
+      "type": "resist_mod",
+      "params": {
+        "element": "light",
+        "delta": -15
+      }
+    },
+    "effect_duration_ms": 3000
+  },
+  {
+    "id": "light_harmonic_cadence",
+    "element": "light",
+    "kind": "effect",
+    "power": 0,
+    "cooldown_ms": 4200,
+    "accuracy": 100,
+    "range_class": "melee",
+    "shape": "self",
+    "base_range_mm": 0,
+    "effect": {
+      "type": "cd_mod_percent",
+      "params": {
+        "element": "light",
+        "delta": -8
+      },
+      "max_stacks": 4
+    },
+    "effect_duration_ms": 8000
+  },
+  {
+    "id": "shadow_stygian_pit",
+    "element": "shadow",
+    "kind": "both",
+    "power": 14,
+    "cooldown_ms": 15500,
+    "accuracy": 85,
+    "range_class": "long",
+    "shape": "field",
+    "base_range_mm": 24000,
+    "field_duration_ms": 7000,
+    "effect": {
+      "type": "mastery_mod",
+      "params": {
+        "element": "shadow",
+        "delta": -10
+      }
+    },
+    "effect_duration_ms": 3500
+  },
+  {
+    "id": "shadow_pitch_lob",
+    "element": "shadow",
+    "kind": "both",
+    "power": 35,
+    "cooldown_ms": 2800,
+    "accuracy": 90,
+    "range_class": "mid",
+    "shape": "arc",
+    "base_range_mm": 12000,
+    "effect": {
+      "type": "evasion_mod_percent",
+      "params": {
+        "delta": -10
+      },
+      "max_stacks": 3
+    },
+    "effect_duration_ms": 6000
+  }
+]

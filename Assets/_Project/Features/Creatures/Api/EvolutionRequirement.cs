@@ -87,7 +87,8 @@ namespace Cosmimera.Creatures
         /// <summary>Reads the requirement off a creature form.</summary>
         /// <remarks>
         /// Pre: def != null; for a non-adult, def.EvolutionExp &gt;= 0 and each material has Tier &gt;= 1, Qty &gt;= 1
-        ///      (guaranteed by imported data; a violation is a data bug and throws).
+        ///      and the Qty summed per (element, tier)
+    ///      fits in int (all guaranteed by validate-data and the importer; a violation is a data bug and throws).
         /// Post: IsFinal iff def.EvolvesTo == null (adults); otherwise RequiredExp, Materials and NextSpeciesId mirror the def.
         /// Side effects: allocates.
         /// </remarks>

@@ -41,6 +41,7 @@
       "base": "fennec fox with ember tail",
       "archetype": "trickster"
     },
+    "ai_style": "charge",
     "size_class": "S"
   }
 ]

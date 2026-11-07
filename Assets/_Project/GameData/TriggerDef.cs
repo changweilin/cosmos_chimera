@@ -62,21 +62,21 @@ namespace Cosmimera.GameData
         }
 
         /// <summary>HP threshold percent of max HP.</summary>
-        /// <remarks>Pre: Type is OnHpBelow or OnHpAbove. Post: 1..100. Side effects: none.</remarks>
+        /// <remarks>Pre: Type is OnHpBelow, OnHpAbove or OnHpCrossBelow. Post: 1..100. Side effects: none.</remarks>
         public int Percent
         {
             get
             {
-                Contract.Requires(type == TriggerType.OnHpBelow || type == TriggerType.OnHpAbove,
+                Contract.Requires(type == TriggerType.OnHpBelow || type == TriggerType.OnHpAbove || type == TriggerType.OnHpCrossBelow,
                     $"{type} has no percent parameter");
                 return percent;
             }
         }
 
-        /// <summary>True when this type opens a timed window (OnSummon, OnHitTaken, OnMoveUsed, OnAllySwap).</summary>
+        /// <summary>True when this type opens a timed window (OnSummon, OnHitTaken, OnMoveUsed, OnAllySwap, OnHpCrossBelow).</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool HasDuration => type == TriggerType.OnSummon || type == TriggerType.OnHitTaken
-            || type == TriggerType.OnMoveUsed || type == TriggerType.OnAllySwap;
+            || type == TriggerType.OnMoveUsed || type == TriggerType.OnAllySwap || type == TriggerType.OnHpCrossBelow;
 
         /// <summary>How long the effects stay active after the trigger, in ms.</summary>
         /// <remarks>Pre: HasDuration. Post: 1..600000. Side effects: none.</remarks>

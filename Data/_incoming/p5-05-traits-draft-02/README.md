@@ -55,7 +55,7 @@ This batch contains the second draft of 30 new placeholder passive traits for CO
 | **wood** | `trait_wood_bramble_wall` | `on_hit_taken` | `wood`, 4000ms | `resist_mod: earth +25` | None |
 | **wood** | `trait_wood_spore_regeneration` | `on_move_used` | `wood`, 3000ms | `heal_percent_max_hp: 5%` | None |
 | **water** | `trait_water_calm_waters` | `on_hp_above` | 75% | `cd_mod_percent: water -20%`, `resist_mod: thunder -15` | Yes (`resist thunder -15`) |
-| **water** | `trait_water_undertow_escape` | `on_hp_below` | 35% | `move_speed_mod_percent: +20%` | None |
+| **water** | `trait_water_undertow_escape` | `on_hp_below` | 20% | `evasion_mod_percent: +15%` | None |
 | **water** | `trait_water_spring_surge` | `on_ally_swap` | 5000ms | `heal_percent_max_hp: 7%` | None |
 | **fire** | `trait_fire_pyroclastic_burst` | `on_summon` | 5000ms | `mastery_mod: fire +25`, `evasion_mod_percent: -6%` | Yes (`evasion -6%`) |
 | **fire** | `trait_fire_wildfire_momentum` | `on_hit_taken` | `fire`, 4000ms | `move_speed_mod_percent: +20%` | None |
@@ -167,3 +167,7 @@ In Batch 01, out of 49 theoretical combinations (7 triggers × 7 effects), only 
 2. **Compound Multi-Effect Timing**: Traits with both positive buffs and drawbacks (e.g., `range_mod_percent: +20%` and `move_speed_mod_percent: -10%` on summon) apply both effects over the same trigger window (`duration_ms: 6000`). If one effect is cleansed or modified by status effects, does the linked drawback persist independently?
 3. **P2 Formal Schema Constraints**: As noted in Batch 01, `rule` parameter validation is currently schematic rather than strictly typed per rule name. Once the vocabulary is locked, `oneOf` discriminator schemas should enforce exact parameters per `type` in `trait.schema.json`.
 4. **Range Modifier Interaction with Melee Moves**: `range_mod_percent` modifies attack reach and projectile distance. Combat logic will need to clamp minimum and maximum hitbox scaling for melee shapes (e.g., slash arcs and point-blank bursts) to prevent animation distortion or collision clipping.
+
+## 修訂 2026-11-07（P5-08 A1/A14，使用者裁決）
+執行期完全同效的特性改綁各自主題，下方分佈統計表是修訂前的數字，未重算：
+- `trait_water_undertow_escape`：HP<35% 移速 +20% → HP<20% 閃避 +15%（原與 `trait_wind_desperation_updraft` 完全相同；門檻 20% 依 SOL 複核，避免嚴格支配 `trait_shadow_void_embrace` HP<25%／+10%）。

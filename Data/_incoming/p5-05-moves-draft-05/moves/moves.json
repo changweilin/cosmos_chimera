@@ -56,7 +56,7 @@
     "effect_duration_ms": 6000
   },
   {
-    "id": "wood_photosynthesis",
+    "id": "wood_sunlight_mend",
     "element": "wood",
     "kind": "effect",
     "power": 0,

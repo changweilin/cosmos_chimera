@@ -43,7 +43,7 @@ Values are strictly integers obeying monotonic trade-offs:
 ### Monotonic Scaling Observations
 1. **Heal Scaling**: Monotonic cooldown progression with heal potency:
    - 20% max HP (`earth_mineral_communion`): 9,500 ms CD
-   - 25% max HP (`wood_photosynthesis`): 11,000 ms CD
+   - 25% max HP (`wood_sunlight_mend`): 11,000 ms CD
    - 30% max HP (`water_healing_spring`): 13,000 ms CD
    - 35% max HP (`light_radiant_benediction`): 15,000 ms CD
 2. **Buff Duration & Magnitude**:
@@ -61,7 +61,7 @@ Values are strictly integers obeying monotonic trade-offs:
 | Element | Move 1 (`effect`) | Move 2 (`effect`) | Move 3 (`both`) | Combat Niche & Roles |
 |---|---|---|---|---|
 | **metal** | `metal_ferro_temper`<br>(0 P / 8500ms / 100% / self / melee)<br>`resist_mod` metal +25 (10s) | `metal_alloy_polish`<br>(0 P / 7000ms / 100% / self / melee)<br>`mastery_mod` metal +20 (8s) | `metal_magnet_strike`<br>(45 P / 2600ms / 95% / front / melee)<br>`move_speed_mod_percent` -20 (6s) | Defensive hardening, offensive hone, close-range magnetic snare |
-| **wood** | `wood_photosynthesis`<br>(0 P / 11000ms / 100% / self / melee)<br>`heal_percent_max_hp` 25% | `wood_verdant_infusion`<br>(0 P / 9000ms / 100% / ally / mid)<br>`cd_mod_percent` any -15 (8s) | `wood_thorn_snare`<br>(50 P / 3000ms / 90% / line / mid)<br>`evasion_mod_percent` -20 (6s) | Personal sustain, ally cooldown acceleration, evasion stripping |
+| **wood** | `wood_sunlight_mend`<br>(0 P / 11000ms / 100% / self / melee)<br>`heal_percent_max_hp` 25% | `wood_verdant_infusion`<br>(0 P / 9000ms / 100% / ally / mid)<br>`cd_mod_percent` any -15 (8s) | `wood_thorn_snare`<br>(50 P / 3000ms / 90% / line / mid)<br>`evasion_mod_percent` -20 (6s) | Personal sustain, ally cooldown acceleration, evasion stripping |
 | **water** | `water_healing_spring`<br>(0 P / 13000ms / 100% / ally / mid)<br>`heal_percent_max_hp` 30% | `water_vapor_veil`<br>(0 P / 7500ms / 100% / self / melee)<br>`evasion_mod_percent` +25 (8s) | `water_drenching_surge`<br>(55 P / 3400ms / 90% / cone / mid)<br>`resist_mod` water -20 (7s) | Teammate triage, evasive mist shroud, elemental drench vulnerability |
 | **fire** | `fire_kindle_ward`<br>(0 P / 8000ms / 100% / self / melee)<br>`mastery_mod` fire +25 (9s) | `fire_thermal_sprint`<br>(0 P / 6500ms / 100% / self / melee)<br>`move_speed_mod_percent` +25 (7s) | `fire_cinder_slash`<br>(60 P / 3800ms / 95% / sweep / melee)<br>`range_mod_percent` -20 (6s) | Fire amplification, thermal mobility rush, ash sweep that reduces enemy attack range by 20% for 6 s |
 | **earth** | `earth_mineral_communion`<br>(0 P / 9500ms / 100% / self / melee)<br>`heal_percent_max_hp` 20% | `earth_granite_stance`<br>(0 P / 10500ms / 100% / self / melee)<br>`resist_mod` earth +30 (12s) | `earth_tremor_stomp`<br>(50 P / 3200ms / 95% / burst / melee)<br>`cd_mod_percent` any +20 (7s) | Mineral self-repair, heavy armor hardening, seismic cadence disruption |
@@ -95,7 +95,7 @@ Values are strictly integers obeying monotonic trade-offs:
 - **Total**: Exactly 30 moves.
 
 ### Per Shape & Targeting Category
-- `self` (Caster buff / self sustain): Exactly 12 moves (`metal_ferro_temper`, `metal_alloy_polish`, `wood_photosynthesis`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`).
+- `self` (Caster buff / self sustain): Exactly 12 moves (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`).
 - `ally` (Targeted teammate buff / heal): Exactly 6 moves (`wood_verdant_infusion`, `water_healing_spring`, `wind_haste_current`, `thunder_amplifying_spark`, `light_radiant_benediction`, `shadow_veiling_mist`).
 - Enemy-targeting (Offensive debuff / damage + debuff): Exactly 12 moves:
   - `front`: 2 moves (`metal_magnet_strike`, `ice_brittle_strike`)
@@ -115,7 +115,7 @@ Values are strictly integers obeying monotonic trade-offs:
 ### Per Effect Type Breakdown
 | Effect Type | Buffs (`self` / `ally`) | Debuffs (Enemy) | Total Count | Specific Moves |
 |---|---|---|---|---|
-| `heal_percent_max_hp` | 4 (2 self, 2 ally) | 0 | **4** | `wood_photosynthesis`, `water_healing_spring`, `earth_mineral_communion`, `light_radiant_benediction` |
+| `heal_percent_max_hp` | 4 (2 self, 2 ally) | 0 | **4** | `wood_sunlight_mend`, `water_healing_spring`, `earth_mineral_communion`, `light_radiant_benediction` |
 | `mastery_mod` | 3 (3 self, 0 ally) | 1 | **4** | `metal_alloy_polish` (+20), `fire_kindle_ward` (+25), `light_aureole_halo` (+25), `shadow_enervating_mire` (-25) |
 | `resist_mod` | 2 (2 self, 0 ally) | 3 | **5** | `metal_ferro_temper` (+25), `earth_granite_stance` (+30), `water_drenching_surge` (-20), `ice_brittle_strike` (-25), `light_dazzling_crescent` (-20) |
 | `cd_mod_percent` | 2 (1 self, 1 ally) | 2 | **4** | `wood_verdant_infusion` (-15), `thunder_overclock_charge` (-25), `earth_tremor_stomp` (+20), `thunder_draining_bolt` (+20) |
@@ -130,7 +130,7 @@ Values are strictly integers obeying monotonic trade-offs:
 
 | Shape | Melee (0 mm / 2000 mm) | Mid (12000 mm) | Long (24000 mm) | Total |
 |---|---|---|---|---|
-| **self** | 12 (`metal_ferro_temper`, `metal_alloy_polish`, `wood_photosynthesis`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`) | 0 | 0 | **12** |
+| **self** | 12 (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`) | 0 | 0 | **12** |
 | **ally** | 0 | 6 (`wood_verdant_infusion`, `water_healing_spring`, `wind_haste_current`, `thunder_amplifying_spark`, `light_radiant_benediction`, `shadow_veiling_mist`) | 0 | **6** |
 | **front** | 2 (`metal_magnet_strike`, `ice_brittle_strike`) | 0 | 0 | **2** |
 | **sweep** | 2 (`fire_cinder_slash`, `light_dazzling_crescent`) | 0 | 0 | **2** |
@@ -165,3 +165,6 @@ Values are strictly integers obeying monotonic trade-offs:
    - `heal_percent_max_hp` currently computes directly against target max HP. Should spirit (SPI) or elemental mastery scale the effective heal amount, or is it strictly locked to the fixed percentage?
 4. **Telegraph Windows for Status Bursts**:
    - Ranged debuffs like `shadow_enervating_mire` (Mid Burst) will require distinct visual telegraph indicators (e.g. purple miasma ring on ground) so players and AI opponents have counterplay opportunities to roll or dash out of the radius before detonation.
+
+## 修訂 2026-11-07（P5-08 A1，使用者裁決）
+- `wood_photosynthesis` 更名 `wood_sunlight_mend`（與特性 `trait_wood_photosynthesis` 撞詞幹，TERRA 命名）；數值不變。

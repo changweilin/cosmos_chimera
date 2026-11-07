@@ -40,6 +40,9 @@
   .task.on { border-color: var(--accent); background: #202735; box-shadow: inset 3px 0 0 var(--accent); }
   .tname { display: block; font-weight: 600; font-size: 13.5px; }
   .tmeta { display: block; color: var(--muted); font-size: 11.5px; }
+  .designed { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .designed.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .designed .row { display: flex; flex-wrap: wrap; gap: 6px; }
 
   .subhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
   .field { display: grid; grid-template-columns: 115px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px dashed var(--line); }
@@ -192,6 +195,17 @@
   .upgrade-changes { background: #12141a; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 12px; }
   .upgrade-changes ul { margin: 4px 0 0; padding-left: 18px; }
   .upgrade-changes li { margin-bottom: 3px; color: var(--ok); }
+
+  /* ---- 輸入 img / 審查台立繪包選擇器 ---- */
+  .pack-picker-box { display: flex; flex-direction: column; gap: 7px; width: 100%; }
+  .img-picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px; max-width: 100%; scrollbar-width: thin; }
+  .img-picker-item { flex: none; width: 78px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; background: #171a21; cursor: pointer; transition: .15s; }
+  .img-picker-item:hover { border-color: var(--accent); background: #1f2532; }
+  .img-picker-item.on { border-color: var(--accent); background: #273142; box-shadow: 0 0 0 1px var(--accent); }
+  .img-picker-item img { width: 68px; height: 68px; object-fit: cover; border-radius: 4px; background: #0e1015; }
+  .img-picker-label { font-size: 10.5px; color: var(--muted); margin-top: 4px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: Consolas, monospace; }
+  .img-picker-item.on .img-picker-label { color: #7fd8ff; font-weight: bold; }
+  .selected-img-badge { display: flex; align-items: center; justify-content: space-between; background: #1a2736; border: 1px solid #2b4260; border-radius: 6px; padding: 5px 10px; font-size: 11.5px; color: #a4d2ff; }
 </style>
 </head>
 <body>
@@ -219,6 +233,8 @@
     <section>
       <h2>任務清單</h2>
       <div id="tasks"></div>
+      <h2 style="margin-top:14px">已設計項目</h2>
+      <div id="designed"></div>
       <details style="margin-top:12px">
         <summary class="muted" style="cursor:pointer">專案路徑設定</summary>
         <input id="root" style="width:100%;margin-top:6px;font-family:Consolas,monospace" spellcheck="false">
@@ -279,6 +295,7 @@
             <button class="btn ghost" id="btnUpgradeZip" type="button" title="一鍵升級舊版立繪或3D壓縮包格式">🔄 升級舊包</button>
           </div>
         </div>
+        <input type="file" id="folderFileInput" webkitdirectory directory multiple style="display:none">
         <input type="file" id="zipFileInput" accept=".zip,application/zip" multiple style="display:none">
         <input type="file" id="upgradeFileInput" accept=".zip,application/zip" style="display:none">
         <div class="seg" id="catSeg">
@@ -353,6 +370,7 @@
           <button class="segb" id="zoomOut" type="button">－</button>
         </div>
         <button class="btn" id="btnUnpack" type="button">⚡ 一鍵解壓縮</button>
+        <button class="btn ghost" id="btnToImg3d" type="button" title="以此立繪包（或當前預覽圖）產出 img-to-3D Prompt">🧊 產出 3D Prompt</button>
         <button class="btn ghost" id="btnUpgradeActive" type="button" title="一鍵升級為最新版 Prompt 與規格">🔄 升級格式</button>
         <button class="btn ghost mini" id="btnCopyPath" type="button">📋 複製路徑</button>
         <button class="btn ghost mini" id="btnCopyPs" type="button">💻 PowerShell</button>
@@ -423,6 +441,7 @@
 
 <script src="catalog.js"></script>
 <script src="tasks.js"></script>
+<script src="designed.js"></script>
 <script src="forge.js"></script>
 </body>
 </html>

@@ -146,14 +146,14 @@
     "trigger": {
       "type": "on_hp_below",
       "params": {
-        "percent": 35
+        "percent": 20
       }
     },
     "effects": [
       {
-        "type": "move_speed_mod_percent",
+        "type": "evasion_mod_percent",
         "params": {
-          "delta": 20
+          "delta": 15
         }
       }
     ]

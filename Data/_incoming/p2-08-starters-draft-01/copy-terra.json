@@ -1,0 +1,183 @@
+{
+  "creatures": [
+    {
+      "id": "sun_mirror_chick",
+      "name_zh": "鏡芽雀",
+      "name_en": "Mirrill",
+      "naming_note": "鏡冠初生，如芽迎日。",
+      "dex_zh": "圓滾滾的身子披著象牙白絨羽，頭頂的小圓鏡總追著日光轉。牠喜歡站在苔地上練習聚光，隔著遠遠的距離射出細細的光束。",
+      "dex_en": "This round, ivory chick turns its little crown mirror toward the sun. It practices focusing light from mossy perches, sending narrow beams at distant targets while keeping safely out of reach."
+    },
+    {
+      "id": "sun_heliostat_heron",
+      "name_zh": "鏡羽鷺",
+      "name_en": "Mirravel",
+      "naming_note": "承接鏡冠，羽翼展成鏡陣。",
+      "dex_zh": "牠常單腳佇立，讓扇形鏡羽隨日影緩緩轉動。發現威脅時，牠會退到夥伴後方調整鏡面，將聚攏的光芒化作筆直遠射的光束。",
+      "dex_en": "Standing on one leg, it slowly turns its fan of mirror feathers to follow the sun. When danger approaches, it retreats behind its companions and directs a straight beam from afar."
+    },
+    {
+      "id": "sun_array_skyheron",
+      "name_zh": "鏡環天鷺",
+      "name_en": "Mirravault",
+      "naming_note": "環形鏡陣托起天空之姿。",
+      "dex_zh": "環形鏡陣環繞著牠的背，細長管道汲取雲間水氣。牠在高空盤旋尋找日光，遭遇敵人便於遠處合攏鏡面，射出貫穿長空的光束。",
+      "dex_en": "A ring of mirrors circles its back, and slender tubes gather moisture from passing clouds. It searches the skies for sunlight, then focuses its array into a long beam from a distant vantage."
+    },
+    {
+      "id": "moon_night_pup",
+      "name_zh": "夜痕仔",
+      "name_en": "Nivetch",
+      "naming_note": "夜色留下幼狼的足痕。",
+      "dex_zh": "尾尖閃著一點星光，小小身軀投下的影子卻比自己還大。牠繞到對手背後，揮爪拍向身前，接著緊貼對手繼續交戰。",
+      "dex_en": "A light glimmers at its tail tip, while its shadow stretches larger than its small body. It circles behind an opponent, strikes with its paw, and stays close to fight."
+    },
+    {
+      "id": "moon_shade_wolf",
+      "name_zh": "夜痕狼",
+      "name_en": "Niverren",
+      "naming_note": "夜痕成長為伏行孤狼。",
+      "dex_zh": "墨藍皮毛上的星斑隨呼吸明滅，像極夜冰原上的微光。牠繞向對手背後，沿直線向前突進，隨即貼近對手繼續交戰。",
+      "dex_en": "Starry markings pulse with each breath across its dark blue coat, like lights on a polar plain. It circles behind an opponent, lunges forward in a straight line, and keeps fighting up close."
+    },
+    {
+      "id": "moon_longnight_wolf",
+      "name_zh": "夜痕霜狼",
+      "name_en": "Nivervast",
+      "naming_note": "霜原巨狼延續夜痕意象。",
+      "dex_zh": "巨大的灰狼身形宛如雪原上的一座雪丘，長尾掃過霜地。牠繞向對手背後，沿直線疾衝，貼近對手後持續揮爪作戰。",
+      "dex_en": "This immense gray wolf resembles a snowdrift, its long tail brushing the frost. It circles behind an opponent, rushes forward in a straight line, and stays close to continue the fight."
+    },
+    {
+      "id": "star_blaze_foal",
+      "name_zh": "星蹄駒",
+      "name_en": "Voltfoal",
+      "naming_note": "星斑與帶電小蹄相映。",
+      "dex_zh": "額上的白色星斑不時迸出細小電光，蹄子踏過草地也會濺起火花。牠總跌跌撞撞地向前衝，遇到對手便鼓起勇氣帶電撞去。",
+      "dex_en": "Sparks dance from the white star on its forehead and scatter beneath its hooves. It tumbles through the grass in eager practice, gathering courage to charge an opponent with crackling energy.",
+      "opus_note": "Terra 原案 Voltrot 與 Pokemon Voltorb 過近，Opus 改名"
+    },
+    {
+      "id": "star_storm_colt",
+      "name_zh": "星蹄騏",
+      "name_en": "Voltraven",
+      "naming_note": "星蹄長成逐風的駿馬。",
+      "dex_zh": "跳動的電弧化作長鬃，金色翼芽從肩胛間探出。牠喜歡迎風奔過草原，衝入敵群後揚起前蹄，讓電光向身邊四散，逼退圍來的對手。",
+      "dex_en": "Its mane flickers with living arcs, and golden wing buds rise from its shoulders. It races into the wind and, surrounded by foes, rears up to scatter electricity around itself."
+    },
+    {
+      "id": "star_skyhoof_steed",
+      "name_zh": "星蹄天驥",
+      "name_en": "Voltrazent",
+      "naming_note": "星蹄展翼，奔馳如天驥。",
+      "dex_zh": "黃金雙翼的邊緣串著星點電光，彎月般的額角指向雷雲。牠迎風馳過遼闊草原，衝鋒時拖出雷鳴長軌，以帶電的身軀突破敵陣。",
+      "dex_en": "Starlike sparks line its golden wings, and a crescent horn points toward the storm. It gallops across open grasslands, trailing thunder as it charges through enemies with electricity coursing over its body."
+    }
+  ],
+  "moves": [
+    {
+      "id": "light_mirror_glint",
+      "name_zh": "鏡閃",
+      "name_en": "Mirrorflash",
+      "naming_note": "小鏡聚起一線閃光。",
+      "desc_zh": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人並暫時降低其閃避率。",
+      "desc_en": "Focus a glimmer into a straight beam that damages enemies along its distant path and briefly lowers their evasion."
+    },
+    {
+      "id": "light_heliostat_beam",
+      "name_zh": "追日光束",
+      "name_en": "Suntrack Beam",
+      "naming_note": "追隨日光的鏡陣齊射。",
+      "desc_zh": "調轉鏡面追聚日光，向遠方射出直線光束，傷害路徑上的敵人。",
+      "desc_en": "Turn mirrors toward the sun and fire a straight beam that damages enemies along its distant path."
+    },
+    {
+      "id": "light_solar_array_lance",
+      "name_zh": "日環光槍",
+      "name_en": "Solar Array Lance",
+      "naming_note": "環形鏡陣凝光如槍。",
+      "desc_zh": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。",
+      "desc_en": "Unite the array's light into a lance-like beam that damages enemies along a distant straight path and briefly lowers their light resistance."
+    },
+    {
+      "id": "shadow_nightpaw_swipe",
+      "name_zh": "夜爪掠",
+      "name_en": "Nightpaw Swipe",
+      "naming_note": "夜色中的迅捷爪擊。",
+      "desc_zh": "揮出裹著暗影的爪擊，傷害身前近處的敵人並暫時降低其影抗性。",
+      "desc_en": "Swipe with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
+    },
+    {
+      "id": "shadow_longnight_lunge",
+      "name_zh": "長夜突",
+      "name_en": "Longnight Lunge",
+      "naming_note": "漫長夜色中一瞬突襲。",
+      "desc_zh": "拖著暗影向前突進，傷害直線路徑上的敵人。",
+      "desc_en": "Lunge forward trailing shadow, damaging enemies along the straight path."
+    },
+    {
+      "id": "shadow_lone_hunter_ambush",
+      "name_zh": "孤影伏襲",
+      "name_en": "Loneshade Ambush",
+      "naming_note": "孤行獵手的暗影伏擊。",
+      "desc_zh": "化作疾掠的暗影向前突襲，傷害路徑上的敵人，並暫時降低其影抗性。",
+      "desc_en": "Rush forward in a sweeping shadow, damaging enemies along the path and temporarily lowering their shadow resistance."
+    },
+    {
+      "id": "thunder_starblaze_charge",
+      "name_zh": "星火衝",
+      "name_en": "Starspark Charge",
+      "naming_note": "星斑電火隨衝勢迸發。",
+      "desc_zh": "踏著迸散的電火花向前衝鋒，傷害直線路徑上的敵人。",
+      "desc_en": "Charge forward amid scattering sparks, damaging enemies along the straight path."
+    },
+    {
+      "id": "thunder_galloping_discharge",
+      "name_zh": "奔雷散電",
+      "name_en": "Galloping Discharge",
+      "naming_note": "奔馬電鬃向四周散開。",
+      "desc_zh": "揚起電光奔騰的長鬃，向自身周圍放電，傷害附近的敵人。",
+      "desc_en": "Toss a mane of racing sparks and discharge electricity around the caster, damaging nearby enemies."
+    },
+    {
+      "id": "thunder_skyhoof_stampede",
+      "name_zh": "天蹄雷馳",
+      "name_en": "Skyhoof Stampede",
+      "naming_note": "天蹄奔馳，雷軌隨行。",
+      "desc_zh": "裹著雷光向前疾衝，沿直線踐踏並傷害路徑上的敵人。",
+      "desc_en": "Charge forward wrapped in lightning, trampling and damaging enemies along the straight path."
+    }
+  ],
+  "traits": [
+    {
+      "id": "trait_light_heliostat_focus",
+      "name_zh": "逐光聚焦",
+      "name_en": "Sunward Focus",
+      "naming_note": "逐光調鏡，焦點漸遠。",
+      "desc_zh": "使用光屬性招式後，鏡光暫時延伸招式範圍，此效果可疊加。",
+      "desc_en": "After using a light move, focused mirrorlight temporarily extends move range; the effect can stack."
+    },
+    {
+      "id": "trait_shadow_longnight_stalker",
+      "name_zh": "夜行初步",
+      "name_en": "Nightstalk Arrival",
+      "naming_note": "入場之初腳步輕捷。",
+      "desc_zh": "召喚上場時腳步輕捷，暫時提升移動速度與閃避率。",
+      "desc_en": "On being summoned, move light-footed and temporarily gain movement speed and evasion."
+    },
+    {
+      "id": "trait_thunder_storm_gallop",
+      "name_zh": "迎擊雷鬃",
+      "name_en": "Stormmane Resolve",
+      "naming_note": "迎擊時雷鬃愈發閃耀。",
+      "desc_zh": "受到任何屬性的攻擊後，雷鬃暫時蓄電並提升雷專精，此效果可疊加。",
+      "desc_en": "After taking a hit of any element, the storm mane temporarily builds charge and increases thunder mastery; the effect can stack."
+    }
+  ],
+  "issues": [
+    "設計文件將日線定位為持續直線傷害與引導施法，但三個光招式資料均為一般傷害招式，沒有持續傷害或引導機制；README 已標明此落差。",
+    "（已解決 2026-11-07，P5-08 A6）月線三階的定位、外觀與圖鑑改寫為繞背、直線突進與貼身作戰，不再暗示隱身或撤離。",
+    "星線整體定位包含範圍放電，但成年的精通招式是直線突進傷害，並非以自身為中心的範圍放電；範圍放電由少年招式呈現。"
+  ],
+  "source": "ChatGPT Terra（codex exec -s read-only -m gpt-6.1-terra），2026-11-07；Claude Opus 驗收"
+}

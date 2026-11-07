@@ -11,6 +11,8 @@
 | `catalog.js` | 選項池、權重、原型清單、動作 clip、特效分類 | 加選項、調權重、改動作 |
 | `tasks.js` | 各任務的 prompt 模板（產出清單、檔名、JSON 欄位） | 新任務、改交付規格 |
 | `forge.js` | UI、隨機、組裝、任務標頭 | 改介面行為 |
+| `designed.js` | 已設計項目（**產生檔，勿手改**） | 改 `Data/_incoming` 批次後跑 `python tools/prompt-forge/gen_designed.py` |
+| `gen_designed.py` | 從資料批次 + `copy-terra.json` 產生 `designed.js`；資料沒有的視覺欄位（基底、時空、成體尺寸）寫在檔內 `LINES` | 新增已設計的進化線 |
 
 ## 版本（SemVer）
 每個 prompt 第一行是任務標頭 `[COSMIMERA-TASK spec tool catalog template@ver task_id seed]`，交付的 `manifest.json` 必須原樣抄回，所以任何產出都能追溯到產生它的規格版本。

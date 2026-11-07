@@ -6,7 +6,7 @@
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
-| P3-01 | 真實地圖資料授權調查與署名方案（Q-W1） | ARGON | OPUS + 人工 | 授權摘要與採用清單 | ⬜ |
+| P3-01 | 真實地圖資料授權調查與署名方案（Q-W1） | ARGON | OPUS + 人工 | 授權摘要與採用清單 | 🟨 |
 | P3-02 | 離線烘焙工具：DEM + OSM → 地理模板包（遮罩/高程/水系） | SONNET | OPUS | 產出 ≥ 12 個模板，含預覽圖 | ⬜ |
 | P3-03 | 模板 gnomonic 投影拼貼 + 接縫山脈 | OPUS | SOL | 模板內真實地貌可辨識；接縫無斷崖 | ⬜ |
 | P3-04 | 生物群系（緯度×海拔×濕度×星球類型） | SONNET | SOL | 6 種星球類型視覺差異明顯 | ⬜ |
@@ -19,3 +19,5 @@
 
 ## 交接紀錄
 - 2026-11-06 · Gemini Flash（agy，Claude Opus 驗收）· partial · P3-04 資料準備：`Data/_incoming/p3-planet-types-draft-01/`，planet-world.md 表中 6 種星球類型轉成 JSON（只有 id/size/terrain_tags/element_bias，無數值），12 個共用地貌標籤，README 附繁中/英/日名稱。Opus 驗收：`validate-data --root` 0 錯誤、尺寸與屬性逐列對照設計表一致。待決：`eternal_day`/`eternal_night` 是光照遮罩而不是地形模板，P3-03/P3-04 要決定怎麼處理 · 下一步：人工確認 id 與名稱後搬到 `Data/planet-types/`
+- 2026-11-07 · Gemini Argon（agy） · partial · 完成 P3-01 真實地圖資料授權調查與署名方案（`docs/research/P3-01-map-data-licensing.md`），比較 OSM ODbL、6 項高程/水深與 WorldCover/HydroSHEDS 商用再散布條件，提出零 Share-Alike 首選組合、中英署名範本與待律師確認風險點 · 下一步：OPUS + 人工審查並定案 Q-W1
+- 2026-11-07 · Claude Opus（驗收 Argon）· partial · P3-01 報告結構與範圍符合任務；抽查官方來源：OSMF Substantial Guideline「Less than 100 Features」屬實；HydroSHEDS 使用條款頁本身沒有寫產品授權（各產品另附），報告的「避免 HydroSHEDS v1」結論保守、不受影響；「HydroSHEDS v2 自 2026-07-09 分區釋出」**未能查證**。推薦方案 A（Copernicus GLO-30 + NASADEM + ETOPO/GEBCO + ESA WorldCover + DEM 自算水系，不用 OSM）會改變 P3-02 的項目名稱（「DEM + OSM」），**待人工決定**是否採用 · 下一步：人工（必要時律師）確認 Q-W1 與 §4.4 四個風險點；定案後更新 planet-world.md 與 P3-02
