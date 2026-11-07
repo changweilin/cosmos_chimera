@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) r10 (N20) and r11 (N22, N23, camera/brain output ownership). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) r10 (N20) and r11 (N22, N23, camera/brain output ownership) and r12 (N24, N25). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -200,6 +200,66 @@ namespace Cosmimera.Player.Tests
             _target.position = new Vector3(0f, PlayerCameraRig.MaxTargetComponent, 0f);
             Configure();
             Assert.AreEqual(1.6f, Vector3.Distance(_target.position, _pivot.position), 4e-3f);
+        }
+
+        // sol P1 r12 N25: the bound is per component and on the world position, not on position − Center.
+        [TestCase(PlayerCameraRig.MaxTargetComponent * 1.001f, 640f, 0f)]
+        [TestCase(0f, 640f, -PlayerCameraRig.MaxTargetComponent * 1.001f)]
+        public void N25_x_or_z_beyond_the_domain_is_rejected_before_wiring(float x, float y, float z)
+        {
+            _target.position = new Vector3(x, y, z);
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N25_the_bound_applies_to_the_world_position_not_the_centre_offset()
+        {
+            var offCentre = new PlanetConfig(640f, new float3(16000f, 0f, 0f));
+            _target.position = new Vector3(48000f, 0f, 0f);
+            Assert.Throws<ContractException>(() => _rig.Configure(offCentre, _target, _pivot, _third, _first, _brain),
+                "offset 32000 is in range, the world position is not");
+            AssertNothingWritten();
+
+            _target.position = new Vector3(-20000f, 0f, 0f);
+            Assert.DoesNotThrow(() => _rig.Configure(offCentre, _target, _pivot, _third, _first, _brain),
+                "offset −36000 is out of range, the world position is not");
+        }
+
+        [Test]
+        public void N25_camera_above_the_pivot_is_rejected_before_wiring()
+        {
+            _pivot.SetParent(_third.transform, true);
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        // sol P1 r12 N24: CinemachineBrain writes ControlledObject.transform, which can differ from brain.transform.
+        [Test]
+        public void N24_brain_output_on_the_pivot_is_rejected_before_wiring()
+        {
+            _brain.ControlledObject = _pivot.gameObject;
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N24_brain_output_above_the_target_is_rejected_before_wiring()
+        {
+            var holder = new GameObject("OutputHolder").transform;
+            holder.SetParent(_root.transform, false);
+            _target.SetParent(holder, true);
+            _brain.ControlledObject = holder.gameObject;
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N24_reconfigure_with_brain_output_on_the_owned_world_up_is_rejected_before_any_write()
+        {
+            Configure();
+            _brain.ControlledObject = _brain.WorldUpOverride.gameObject;
+            AssertReconfigureRejectedWithoutWrites(_target, _pivot);
         }
 
         [Test]

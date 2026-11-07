@@ -56,8 +56,10 @@ namespace Cosmimera.Player
         ///      live); target.position finite with some |component| of (position − planet.Center) > 1e-3 m (the
         ///      PlanetConfig.ToDirection domain) and every |component| of target.position ≤ MaxTargetComponent (so
         ///      float spacing cannot swallow the eye height); the transforms Cinemachine writes — both cameras' and the
-        ///      brain's — are none of target, pivot or WorldUpReference, nor an ancestor of them (their pose writes
-        ///      would move the body, the pivot or the level up); serialized look multipliers in range (see AddLook).
+        ///      brain's ControlledObject (its own GameObject unless overridden) — are none of target, pivot or
+        ///      WorldUpReference, nor an ancestor of them (their pose writes would move the body, the pivot or the
+        ///      level up), checked at Configure only (re-pointing ControlledObject later is the caller's to avoid);
+        ///      serialized look multipliers in range (see AddLook).
         ///      All checked before anything is written.
         /// Post: third person live; any look queued before Configure is discarded; orbit heading == target forward
         ///       (tangent part); brain.WorldUpOverride == WorldUpReference.
@@ -87,7 +89,8 @@ namespace Cosmimera.Player
             // aliasing (or parenting) a transform the rig relies on corrupts it after the rig's LateUpdate.
             RequireNotMovedBy(thirdPerson.transform, target, pivot);
             RequireNotMovedBy(firstPerson.transform, target, pivot);
-            RequireNotMovedBy(brain.transform, target, pivot);
+            // The brain writes ControlledObject, which may be overridden away from its own GameObject (SOL P1 r12 N24).
+            RequireNotMovedBy(brain.ControlledObject.transform, target, pivot);
             RequireMultipliers();
 
             _planet = planet;
