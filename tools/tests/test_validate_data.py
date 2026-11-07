@@ -254,6 +254,18 @@ class CrossFileRules(unittest.TestCase):
         mats[:] = [{**base, "qty": 2147483647}, {**base, "tier": base["tier"] + 1, "qty": 1}]
         self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
 
+    def test_malformed_material_key_is_a_schema_error_not_a_crash(self):
+        # Sol P2-05/07 r2 C8: unhashable element/tier crashed the material-sum check.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        for bad in ({"tier": []}, {"tier": {}}, {"element": []}, {"element": {}}, {"tier": True}):
+            with self.subTest(bad=bad):
+                mats[:] = [{**base, **bad, "qty": 1}]
+                findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                self.assertIn("schema", self.codes(findings))
+                self.assertNotIn("material_sum_overflow", self.codes(findings))
+
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))

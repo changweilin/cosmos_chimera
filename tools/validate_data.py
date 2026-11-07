@@ -269,8 +269,14 @@ def _check_material_sums(r: Record, findings: list[Finding]) -> None:
         return
     sums: dict[tuple, int] = {}
     for m in evo.get("materials") or []:
-        if isinstance(m, dict) and isinstance(m.get("qty"), int) and not isinstance(m.get("qty"), bool):
-            key = (m.get("element"), m.get("tier"))
+        # Schema-invalid entries still reach cross-file checks; an unhashable element/tier used to raise TypeError
+        # and drop every finding (Sol P2-05/07 r2 C8). Skip them here — the schema finding already reports them.
+        if not isinstance(m, dict):
+            continue
+        qty, el, tier = m.get("qty"), m.get("element"), m.get("tier")
+        if (isinstance(qty, int) and not isinstance(qty, bool) and isinstance(el, str)
+                and isinstance(tier, int) and not isinstance(tier, bool)):
+            key = (el, tier)
             sums[key] = sums.get(key, 0) + m["qty"]
     for (el, tier), total in sums.items():
         if total > INT32_MAX:
