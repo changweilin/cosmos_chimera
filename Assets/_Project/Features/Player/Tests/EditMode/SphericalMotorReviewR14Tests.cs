@@ -59,6 +59,22 @@ namespace Cosmimera.Player.Tests
             AssertAlongGroundAtPlanarSpeed(next, normal);
         }
 
+        // sol P1 r15 N30: the Post's `slope ≤ MaxSlope` is closed; only a contact exactly at the limit tells `>=` from `>`.
+        [Test]
+        public void N30_contact_exactly_at_max_slope_is_grounded()
+        {
+            MotorSettings settings = MotorSettings.Default;
+            settings.MaxSlopeDegrees = 45f;
+            settings.StickSpeed = 0f;
+            float3 normal = math.normalize(new float3(0f, 1f, -1f));
+            Assert.AreEqual(math.cos(math.radians(45f)), math.dot(normal, Up), "witness sits exactly on the float limit");
+            var ground = new GroundContact { Hit = true, Normal = normal, Distance = 0f };
+
+            MotorState next = SphericalMotor.Step(settings, SphericalMotor.Initial(Up, new float3(0f, 0f, 1f)), Forward(), ground, Up, 0.02f);
+
+            Assert.IsTrue(next.Grounded);
+        }
+
         [Test]
         public void N28_random_speeds_and_slopes_keep_the_along_slope_length()
         {

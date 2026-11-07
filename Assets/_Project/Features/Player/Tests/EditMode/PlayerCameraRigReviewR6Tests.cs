@@ -58,6 +58,18 @@ namespace Cosmimera.Player.Tests
             Assert.AreEqual(1.2f, _rig.PendingLook.y, 1e-5f);
         }
 
+        // sol P1 r15 N31: |sensitivity| ≤ Max includes 0; an extra `!= 0` rejection is only visible to an accepting case.
+        [Test]
+        public void N31_zero_pointer_sensitivity_is_accepted()
+        {
+            SetField("_sensitivityDegrees", 0f);
+            SetField("_gamepadDegreesPerSecond", 10f);
+
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(10f, 10f), new Vector2(1f, 1f), 1f));
+            Assert.AreEqual(10f, _rig.PendingLook.x, 1e-5f, "the pointer contributes nothing");
+            Assert.AreEqual(10f, _rig.PendingLook.y, 1e-5f);
+        }
+
         [Test]
         public void N8_R6_extreme_legal_multipliers_keep_the_queue_finite_and_in_range()
         {

@@ -72,6 +72,16 @@ namespace Cosmimera.Player.Tests
             Assert.AreSame(_pivot, _third.Target.TrackingTarget);
         }
 
+        // sol P1 r15 N31: the shared multiplier range includes a zero pointer sensitivity.
+        [Test]
+        public void N31_configure_accepts_a_zero_pointer_sensitivity()
+        {
+            SetField("_sensitivityDegrees", 0f);
+
+            Assert.DoesNotThrow(Configure);
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+        }
+
         // sol P1 r8 N12-R8: TrackingTarget alone could not see an early write to the rig's own fields.
         private void AssertNothingWritten()
         {
