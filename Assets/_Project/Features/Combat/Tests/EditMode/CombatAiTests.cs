@@ -398,7 +398,9 @@ namespace Cosmimera.Combat.Tests
             for (int i = 0; i < 100; i++) CombatAi.Decide(_planet, _tuning, input, e, m);
             long before = System.GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 1000; i++) CombatAi.Decide(_planet, _tuning, input, e, m);
-            Assert.AreEqual(0, System.GC.GetAllocatedBytesForCurrentThread() - before);
+            // Read the counter before Assert boxes its arguments, or the boxing itself is measured (SOL r2).
+            long allocated = System.GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.AreEqual(0L, allocated);
         }
 
         [Test]
@@ -426,6 +428,76 @@ namespace Cosmimera.Combat.Tests
                 Decide(Input(), new[] { Enemy(1, At(12.002f, 0f)) }, new[] { Hostile(0, 12000, 1) }).CastSlot);
             AiDecision d = Decide(Input(AiStyle.Hold), new[] { Enemy(1, At(10.802f, 0f)) }, new[] { Hostile(0, 12000, 1) });
             Assert.Greater(DistM(d.DestinationDirection, Dir(_self)), 1e-3, "just outside the hold zone: move");
+        }
+
+        // SOL r2: the 2 mm offsets above let a gate widened by 1 mm survive; these sit inside that 1 mm.
+        [Test]
+        public void A7_sub_millimetre_boundaries()
+        {
+            float3 justOut = At(12.0005f, 0f);
+            double dOut = DistM(Dir(justOut), Dir(_self));
+            Assert.That(dOut, Is.GreaterThan(12.0).And.LessThan(12.001), "fixture precondition");
+            Assert.AreEqual(CombatAi.NoCast, Decide(Input(), new[] { Enemy(1, justOut) }, new[] { Hostile(0, 12000, 1) }).CastSlot);
+
+            float3 holdOut = At(10.8005f, 0f);
+            double dHold = DistM(Dir(holdOut), Dir(_self));
+            Assert.That(dHold, Is.GreaterThan(10.8).And.LessThan(10.801), "fixture precondition");
+            AiDecision d = Decide(Input(AiStyle.Hold), new[] { Enemy(1, holdOut) }, new[] { Hostile(0, 12000, 1) });
+            Assert.Greater(DistM(d.DestinationDirection, Dir(_self)), 1e-5, "outside the hold zone by < 1 mm: still moves");
+        }
+
+        [Test]
+        public void A4_a_real_offset_across_radii_keeps_its_great_circle()
+        {
+            var planet = new PlanetConfig(R, float3.zero);
+            var self = new float3(0f, R, 0f);
+            var enemy = new AiEnemy(1, new float3(0f, 2f * R, 1e-10f), new float3(1f, 0f, 0f), true);
+            var input = new AiInput(self, AiStyle.KeepDistance, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                self, false, default);
+            AiDecision d = CombatAi.Decide(planet, _tuning, input, new[] { enemy }, new[] { Hostile(0, 10000, 1) });
+            Assert.Less(math.abs(d.DestinationDirection.x), 1e-6f, "not sent along the target's facing");
+            Assert.Less(d.DestinationDirection.z, -0.012f);
+        }
+
+        [Test]
+        public void A7_large_stand_off_multiplies_in_double()
+        {
+            float r2 = 2f * R;
+            float3 self = _planet.Center + _up * r2;
+            float a = 20f / r2;
+            float3 target = _planet.Center + (math.cos(a) * _up + math.sin(a) * _forward) * r2;
+            var input = new AiInput(self, AiStyle.Charge, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget, self, false, default);
+            AiDecision d = CombatAi.Decide(_planet, _tuning, input, new[] { new AiEnemy(1, target, Facing(target, self), true) },
+                new[] { Hostile(0, 5000000, 1) });
+            double3 dd = d.DestinationDirection, td = Dir(target);
+            double angle = math.atan2(math.length(math.cross(dd, td)), math.dot(dd, td));
+            Assert.AreEqual(math.PI_DBL * 0.5, angle, 1e-5, "5000 km × 0.5 clamps to a quarter circle, no int overflow");
+        }
+
+        // SOL r2 M32/M33: subtracting a 16 km center in float flips these reach gates.
+        [TestCase(1.00425875f, 38.0317574f, 37.29118f, 48402, 0)]
+        [TestCase(1.22399712f, 38.99483f, -31.5966225f, 51279, CombatAi.NoCast)]
+        public void A7_far_center_gates_subtract_in_double(float tx, float ty, float tz, int reachMm, int expectedSlot)
+        {
+            var planet = new PlanetConfig(8000f, new float3(16000f, 0f, 0f));
+            var self = new float3(0.003008881f, 2.503535f, 4.424855f);
+            var target = new float3(tx, ty, tz);
+            float3 up = planet.ToDirection(target);
+            float3 toward = self - target;
+            float3 fwd = math.normalize(toward - up * math.dot(toward, up));
+            var input = new AiInput(self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget, self, false, default);
+            AiDecision d = CombatAi.Decide(planet, _tuning, input, new[] { new AiEnemy(1, target, fwd, true) },
+                new[] { Hostile(0, reachMm, 1) });
+            Assert.AreEqual(expectedSlot, d.CastSlot);
+        }
+
+        [Test]
+        public void A1_rect_corner_is_an_exact_ceiling()
+        {
+            var rect = new HitVolume(HitVolumeKind.Rect, HitVolumeAnchor.Caster, 1000000000, 1, 0, 1, 0, 0);
+            Assert.AreEqual(1000000001, CombatAi.ReachMmOf(rect));
+            var square = new HitVolume(HitVolumeKind.Rect, HitVolumeAnchor.Caster, 3000, 8000, 0, 1, 0, 0);
+            Assert.AreEqual(5000, CombatAi.ReachMmOf(square), "3-4-5: exact root is not bumped");
         }
 
         [Test]

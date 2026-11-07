@@ -285,8 +285,8 @@ namespace Cosmimera.Combat
     /// <remarks>
     /// Pure and allocation-free so the host can run it for all 8 creatures per tick (combat.md 效能預算) and clients
     /// can replay it. It only chooses; contact is still MoveGeometry's and the cast still goes through Combatant, so a
-    /// wrong choice here costs a cooldown, never rule correctness. Distances are geodesic at the caster's radius,
-    /// matching MoveGeometry's footprint convention.
+    /// wrong choice here costs AI quality (wasted or withheld casts), never rule correctness. Distances are geodesic
+    /// at the caster's radius, matching MoveGeometry's footprint convention.
     /// </remarks>
     public static class CombatAi
     {
@@ -300,19 +300,19 @@ namespace Cosmimera.Combat
 
         private const float UnitTolerance = 1e-3f;
 
-        // Relative to |offset|: below this the tangent part is rounding noise of an (anti)parallel offset.
-        private const double DegenerateTangent = 1e-9;
 
         /// <summary>Range gate: surface distance from the caster to a target's center beyond which the AI does not cast <paramref name="volume"/>.</summary>
         /// <remarks>
         /// Pre: volume built by MoveGeometry.Build.
         /// Post: Caster → 0; Ally → CastDistanceMm; Rect → ceil(√(ReachMm² + (WidthMm/2)²)) (the far corners, SOL A1);
         ///       Sector / caster Circle → ReachMm; aim-point Circle → CastDistanceMm + ReachMm. Saturates at int.MaxValue.
-        ///       An upper bound on contact for zero-radius targets at the caster's radius. NOT exact: it ignores target
-        ///       radius, the sector angle and the π/2 cut-off (gate may pass, MoveGeometry may still miss), and for
-        ///       aim-point volumes a target far above or below the caster's radius can connect slightly beyond it or
-        ///       miss inside it, because the disc is measured at the anchor's radius (SOL A2). A wrong gate costs one
-        ///       cooldown, never rule correctness.
+        ///       An upper bound on contact only for zero-radius targets at the caster's radius. It is an approximation,
+        ///       not a hit test: it ignores target radius, the sector angle and the π/2 cut-off (the gate passes, the
+        ///       hit may still miss), and for aim-point volumes the disc is measured at the anchor's radius, so with the
+        ///       target well above or below the caster the true reach scales by casterRadius / anchorRadius (several
+        ///       times off inside the combat shell, SOL A2). The gate can therefore withhold a move that would connect
+        ///       or pick one that will miss, possibly on every ready tick; contact is always decided by MoveGeometry,
+        ///       so this affects AI quality, never rule correctness.
         /// Side effects: none.
         /// </remarks>
         public static int ReachMmOf(in HitVolume volume)
@@ -332,12 +332,29 @@ namespace Cosmimera.Combat
 
             if (volume.Kind == HitVolumeKind.Rect)
             {
-                double half = volume.WidthMm * 0.5;
-                double corner = math.ceil(math.sqrt((double)volume.ReachMm * volume.ReachMm + half * half));
-                return (int)math.min(corner, int.MaxValue);
+                return RectCornerMm(volume.ReachMm, volume.WidthMm);
             }
 
             return volume.ReachMm;
+        }
+
+        // Exact ceil(√(L² + (W/2)²)) = smallest n with 4n² >= 4L² + W². double alone rounded a 1e9 × 1 mm rect down
+        // by 1 mm (SOL r2); decimal (96-bit, allocation-free) holds 4·int.MaxValue² ≈ 1.8e19 exactly.
+        private static int RectCornerMm(int lengthMm, int widthMm)
+        {
+            decimal need = 4m * lengthMm * lengthMm + (decimal)widthMm * widthMm;
+            long n = (long)math.ceil(math.sqrt((double)lengthMm * lengthMm + 0.25 * widthMm * widthMm));
+            while (4m * n * n < need)
+            {
+                n++;
+            }
+
+            while (n > 0 && 4m * (n - 1) * (n - 1) >= need)
+            {
+                n--;
+            }
+
+            return (int)math.min(n, int.MaxValue);
         }
 
         /// <summary>Chooses target, cast and destination for one creature this tick.</summary>
@@ -548,19 +565,20 @@ namespace Cosmimera.Combat
         }
 
         // Point at `angle` radians from unit `from` along the great circle in the direction of world offset `delta`;
-        // `fallback` (a unit tangent at `from`) when that direction is undetermined (same point, or exactly antipodal).
-        // The tangent comes from the raw world offset, not from two normalized directions: normalizing first rounded
-        // a 1e-10 m offset at 640 m to an "identical" direction and sent the creature 8 m sideways (SOL P2-10 A4).
+        // `fallback` (a unit tangent at `from`) only when the offset's tangent part is exactly zero (same point).
+        // The tangent comes from the raw world offset, not from two normalized directions, and any nonzero tangent is
+        // kept: a relative cut-off still dropped a real 1e-10 m sideways offset next to a 640 m radial one and sent the
+        // creature 8 m along the target's facing (SOL P2-10 r1/r2 A4). For an (almost) antipodal offset every great
+        // circle is a shortest path, so a tangent that is only rounding noise is still a valid, deterministic choice.
         private static double3 Toward(double3 from, double3 delta, double angle, double3 fallback)
         {
             double3 t = delta - from * math.dot(from, delta);
             double len = math.length(t);
-            bool determined = len > DegenerateTangent * math.length(delta);
-            return Along(from, determined ? t / len : fallback, angle);
+            return Along(from, len > 0.0 ? t / len : fallback, angle);
         }
 
-        // Clamped to a quarter circumference: past it the angle wraps the sphere and lands nearer than asked (SOL A3),
-        // and MoveGeometry never connects beyond pi/2 anyway, so standing farther buys nothing.
+        // Clamped to a quarter circumference by choice: MoveGeometry never connects beyond π/2, so standing farther
+        // buys nothing; unclamped, angles past π also folded back and landed nearer than asked (SOL A3).
         private static double3 Along(double3 from, double3 unitTangent, double angle)
         {
             double a = math.min(angle, math.PI_DBL * 0.5);
