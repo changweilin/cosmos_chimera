@@ -386,6 +386,16 @@ namespace Cosmimera.GameData.Editor
                     {
                         RequireEnum<Element>(c.Where, "evolution.materials.element", mat.Element);
                     }
+
+                    // EvolutionRequirement merges repeated (element, tier) entries into one int Qty; the schema only
+                    // bounds each entry, so a legal file could otherwise import and then throw at evolution time.
+                    foreach (var g in (d.Evolution?.Materials ?? new List<MaterialDto>()).GroupBy(m => (m.Element, m.Tier)))
+                    {
+                        if (g.Sum(m => (long)m.Qty) > int.MaxValue)
+                        {
+                            errors.Add($"{c.Where}: evolution.materials {g.Key.Element}/tier {g.Key.Tier} summed qty exceeds {int.MaxValue}");
+                        }
+                    }
                 }
 
                 foreach (string key in d.Resist.Keys.Concat(d.Mastery.Keys))

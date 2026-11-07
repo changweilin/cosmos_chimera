@@ -34,7 +34,7 @@ namespace Cosmimera.Creatures
         public int Need { get; }
 
         /// <summary>How many more are needed.</summary>
-        /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: &gt;= 1 unless default(MaterialShortfall) (then 0). Side effects: none.</remarks>
         public int Missing => Need - Have;
     }
 

@@ -41,11 +41,11 @@ namespace Cosmimera.Creatures
         public ProvisionKind Kind { get; }
 
         /// <summary>Move id, trait id, or the main's species id, depending on <see cref="Kind"/>.</summary>
-        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: non-empty unless default(Provision) (then null). Side effects: none.</remarks>
         public string Id { get; }
 
         /// <summary>The sub-partner individual that provides it.</summary>
-        /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: &gt;= 1 unless default(Provision) (then 0). Side effects: none.</remarks>
         public int SourceInstanceId { get; }
 
         /// <summary>Decides what <paramref name="sub"/> provides from the vessel it was captured with.</summary>

@@ -174,6 +174,28 @@ namespace Cosmimera.GameData.Tests
         }
 
         [Test]
+        public void Repeated_material_whose_summed_qty_overflows_int_is_rejected()
+        {
+            // Sol P2-05 review C2: each entry is schema-legal; EvolutionRequirement would throw when merging them.
+            ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483647 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
+
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains("summed qty", e.Message);
+        }
+
+        [Test]
+        public void Repeated_material_whose_summed_qty_fits_int_is_imported()
+        {
+            ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483646 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreEqual(2, cub.EvolutionMaterials.Count, "the importer keeps entries; merging is EvolutionRequirement's job");
+        }
+
+        [Test]
         public void Float_literal_is_rejected()
         {
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": 30.5,");

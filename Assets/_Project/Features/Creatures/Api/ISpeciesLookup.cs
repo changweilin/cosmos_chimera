@@ -22,15 +22,15 @@ namespace Cosmimera.Creatures
         }
 
         /// <summary>CreatureDef id.</summary>
-        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: non-empty unless default(SpeciesInfo) (then null). Side effects: none.</remarks>
         public string SpeciesId { get; }
 
         /// <summary>The species' only move in data (CreatureDef.SignatureMove).</summary>
-        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: non-empty unless default(SpeciesInfo) (then null). Side effects: none.</remarks>
         public string SignatureMoveId { get; }
 
         /// <summary>The species' trait (CreatureDef.Trait).</summary>
-        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: non-empty unless default(SpeciesInfo) (then null). Side effects: none.</remarks>
         public string TraitId { get; }
     }
 

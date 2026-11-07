@@ -1,0 +1,8 @@
+[
+  {"id": "trait_light_heliostat_focus", "trigger": {"type": "on_move_used", "params": {"element": "light", "duration_ms": 4000}},
+   "effects": [{"type": "range_mod_percent", "params": {"delta": 6}, "max_stacks": 3}]},
+  {"id": "trait_shadow_longnight_stalker", "trigger": {"type": "on_summon", "params": {"duration_ms": 5000}},
+   "effects": [{"type": "evasion_mod_percent", "params": {"delta": 20}}, {"type": "move_speed_mod_percent", "params": {"delta": 15}}]},
+  {"id": "trait_thunder_storm_gallop", "trigger": {"type": "on_hit_taken", "params": {"element": "any", "duration_ms": 3000}},
+   "effects": [{"type": "mastery_mod", "params": {"element": "thunder", "delta": 8}, "max_stacks": 3}]}
+]

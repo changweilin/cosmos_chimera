@@ -1,6 +1,6 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.4.0";
+  const TOOL_VERSION = "1.5.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
@@ -64,8 +64,13 @@
   const state = {
     seed: "", platform: "chatgpt", taskId: TASKS[0].id, includeReview: false,
     character: {}, creature: {}, locks: {}, opts: {}, notes: "", subjectIds: {},
-    customOptions: {}, customValues: {}, activeTab: "forge"
+    customOptions: {}, customValues: {}, activeTab: "forge",
+    preset: null // 已設計項目的 line_id；設定時宙獸概念改用 designed.js 的定案內容，不再隨機
   };
+
+  // REQ: 使用者 2026-11-07 — 已設計的宙獸（P2-08 御三家等）直接產出立繪 / img-to-3D prompt。
+  const DESIGNED = (window.COSMI_DESIGNED && window.COSMI_DESIGNED.items) || [];
+  function designedItem() { return state.preset ? DESIGNED.find(d => d.line_id === state.preset) || null : null; }
 
   function getCustom(key) { return state.customOptions[key] || []; }
   function addCustom(key, val) {
@@ -273,6 +278,8 @@
   }
 
   function creatureConcept() {
+    const d = designedItem();
+    if (d) return JSON.parse(JSON.stringify(d.concept));
     const c = state.creature, a = CR.archetypes.find(x => x.name === c.archetype?.[0]) || {};
     const parents = (c.base_parents || []).map(traceBaseParent);
     return {
@@ -295,6 +302,8 @@
   }
 
   function subjectId(kind) {
+    const d = kind === "creature" ? designedItem() : null;
+    if (d) return d.line_id;
     const custom = state.subjectIds[kind];
     if (custom) return custom;
     return (kind === "character" ? "chr_" : "line_") + state.seed;
@@ -341,7 +350,8 @@
     const concept = subj === "character" ? characterConcept() : subj === "creature" ? creatureConcept() : null;
     
     // 若為 model-rig 且未手動指定 source_pack，預設自動關聯目前概念立繪包
-    if (t.id === "model-rig" && o.scope !== "batch" && !o.source_pack) {
+    // 已設計項目的立繪包不是本次 seed 產生的，猜一個 task_id 只會造成錯誤追溯；交給 prompt 依 subject_id 找最新包。
+    if (t.id === "model-rig" && o.scope !== "batch" && !o.source_pack && !designedItem()) {
       const srcPrefix = (subj === "creature" ? "cr-" : "chr-");
       o.source_pack = srcPrefix + s.day + "-" + state.seed + "-" + s.hm;
     }
@@ -390,6 +400,31 @@
         onclick: () => { state.taskId = t.id; renderAll(); }
       }, el("span", { class: "tname" }, t.zh), el("span", { class: "tmeta" }, t.id + " · 建議 " + (t.platform === "gemini" ? "Gemini" : "ChatGPT"))));
     });
+    renderDesigned();
+  }
+
+  function useDesigned(lineId, taskId) {
+    state.preset = lineId;
+    state.taskId = taskId;
+    const o = state.opts[taskId] || (state.opts[taskId] = {});
+    if (taskId === "model-rig") { o.scope = "single"; o.subject = "creature"; o.source_pack = ""; }
+    renderAll();
+  }
+
+  function renderDesigned() {
+    const box = $("#designed"); if (!box) return;
+    box.replaceChildren();
+    if (!DESIGNED.length) { box.append(el("p", { class: "muted" }, "沒有已設計項目（designed.js 未載入）。")); return; }
+    DESIGNED.forEach(d => {
+      const on = state.preset === d.line_id;
+      box.append(el("div", { class: "designed" + (on ? " on" : "") },
+        el("span", { class: "tname" }, d.code_zh + " · " + d.title_zh),
+        el("span", { class: "tmeta" }, d.line_id + " · " + d.element),
+        el("div", { class: "row" },
+          el("button", { type: "button", class: "btn mini" + (on && state.taskId === "creature-concept" ? "" : " ghost"), onclick: () => useDesigned(d.line_id, "creature-concept") }, "🎨 立繪 prompt"),
+          el("button", { type: "button", class: "btn mini" + (on && state.taskId === "model-rig" ? "" : " ghost"), onclick: () => useDesigned(d.line_id, "model-rig") }, "🧊 img-to-3D prompt"))));
+    });
+    if (state.preset) box.append(el("button", { type: "button", class: "btn mini ghost", onclick: () => { state.preset = null; renderAll(); } }, "✕ 取消已設計項目（回到隨機概念）"));
   }
 
   function fieldRow(kind, f) {
@@ -460,6 +495,18 @@
     const box = $("#concept"); box.replaceChildren();
     if (!subj) { box.append(el("p", { class: "muted" }, "此任務不使用角色/宙獸概念。")); return; }
     const kind = subj;
+    const d = kind === "creature" ? designedItem() : null;
+    if (d) {
+      const L = d.concept.locked;
+      box.append(el("div", { class: "subhead" }, el("h3", {}, "已設計宙獸：" + d.code_zh + " 線"), el("code", {}, d.line_id)));
+      box.append(el("p", { class: "muted" }, "內容來自 " + d.source + "（designed.js），不隨機、不可在此修改；要改請改資料後重跑 gen_designed.py。"));
+      L.stages.forEach(s => box.append(el("div", { class: "field" },
+        el("label", {}, s.stage + " · " + s.size_class),
+        el("div", {}, el("b", {}, s.name_zh + " " + s.name_en), " ", el("code", {}, s.creature_id),
+          el("div", { class: "muted" }, s.look), el("div", { class: "muted" }, "招式 " + s.signature_move.name_zh + "（" + s.signature_move.move_id + "）")))));
+      box.append(el("p", { class: "muted" }, "特性：" + L.trait.name_zh + "（" + L.trait.trait_id + "）· 原型：" + d.concept.archetype + "（" + d.concept.region + "）· 超載：" + L.overload));
+      return;
+    }
     box.append(el("div", { class: "subhead" },
       el("h3", {}, kind === "character" ? "角色設計概念" : "宙獸設計概念"),
       el("label", { class: "inline" }, "主體 ID ",
@@ -1885,7 +1932,8 @@
       localStorage.setItem(LS_KEY, JSON.stringify({
         catalog: C.version, seed: state.seed, platform: state.platform, taskId: state.taskId, includeReview: state.includeReview,
         character: state.character, creature: state.creature, locks: state.locks, opts: state.opts, notes: state.notes,
-        subjectIds: state.subjectIds, history: state.history, root: state.root, customOptions: state.customOptions
+        subjectIds: state.subjectIds, history: state.history, root: state.root, customOptions: state.customOptions,
+        preset: state.preset
       }));
     } catch (e) {}
   }
@@ -1898,7 +1946,8 @@
       const sameMajor = (d.catalog || "").split(".")[0] === C.version.split(".")[0];
       Object.assign(state, {
         platform: d.platform || "chatgpt", history: d.history || [], root: d.root || "", notes: d.notes || "",
-        customOptions: d.customOptions || {}
+        customOptions: d.customOptions || {},
+        preset: DESIGNED.some(x => x.line_id === d.preset) ? d.preset : null
       });
       if (TASKS.some(t => t.id === d.taskId)) state.taskId = d.taskId;
       if (sameMajor) {

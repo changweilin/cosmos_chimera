@@ -40,6 +40,9 @@
   .task.on { border-color: var(--accent); background: #202735; box-shadow: inset 3px 0 0 var(--accent); }
   .tname { display: block; font-weight: 600; font-size: 13.5px; }
   .tmeta { display: block; color: var(--muted); font-size: 11.5px; }
+  .designed { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .designed.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .designed .row { display: flex; flex-wrap: wrap; gap: 6px; }
 
   .subhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
   .field { display: grid; grid-template-columns: 115px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px dashed var(--line); }
@@ -219,6 +222,8 @@
     <section>
       <h2>任務清單</h2>
       <div id="tasks"></div>
+      <h2 style="margin-top:14px">已設計項目</h2>
+      <div id="designed"></div>
       <details style="margin-top:12px">
         <summary class="muted" style="cursor:pointer">專案路徑設定</summary>
         <input id="root" style="width:100%;margin-top:6px;font-family:Consolas,monospace" spellcheck="false">
@@ -424,6 +429,7 @@
 
 <script src="catalog.js"></script>
 <script src="tasks.js"></script>
+<script src="designed.js"></script>
 <script src="forge.js"></script>
 </body>
 </html>

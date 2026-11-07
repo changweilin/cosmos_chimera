@@ -175,7 +175,7 @@
     },
 
     {
-      id: "creature-concept", version: "2.0.0", zh: "宙獸設計概念與四型態立繪", prefix: "cr", platform: "chatgpt",
+      id: "creature-concept", version: "2.1.0", zh: "宙獸設計概念與四型態立繪", prefix: "cr", platform: "chatgpt",
       needs: "creature", drop: "Art/_incoming",
       options: [
         { key: "stages", type: "checks", label: "型態", items: () => C.STAGES.map(s => ({ v: s.v, zh: s.zh })), def: ["juvenile", "adolescent", "adult", "overload"] }
@@ -193,6 +193,14 @@
           "## 輸入概念",
           json(c),
           "",
+          ...(c.locked ? [
+            "## 已設計項目（優先於下方所有預設）",
+            "- 本線**已定案**：`locked.stages[]` 的 `creature_id`、`name_zh`、`name_en`、`size_class` 與 `signature_move.move_id`、`locked.trait.trait_id` 必須**原樣**寫進 concept.json（`stages[].name_*`、`signature_move`、`trait`），不得改名或改 id。",
+            "- 外觀以 `locked.stages[].look` 與 `dex_zh` 為準，你只負責補視覺細節（比例、花紋、配色 hex、剪影）；與它衝突的細節一律以 locked 為準。",
+            "- 每個型態有自己的招式：concept.json 的 `signature_move` 填成年型態那招，另加 `stage_moves: [{stage, move_id, visual}]` 列出三個型態各自的招式視覺。",
+            "- 超載型態尚未定案：" + c.locked.overload + "。",
+            ""
+          ] : []),
           "## 型態與體型",
           "| 型態 | 體型級距 | 面數預算 |",
           "|---|---|---|",

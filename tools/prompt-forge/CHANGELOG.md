@@ -2,6 +2,8 @@
 
 格式：`日期 · 元件@版本 · 變更`。版本規則見 README.md。
 
+- 2026-11-07 · tool@1.5.0 · template@(creature-concept@2.1.0) · 新增「已設計項目」面板：`designed.js`（由 `gen_designed.py` 從 `Data/_incoming` 批次與 TERRA 文案產生，首批為 P2-08 御三家日月星 3 條線 9 隻）一鍵產出立繪 prompt 或 img-to-3D prompt；已設計時宙獸概念不隨機、主體 ID＝`line_id`、model-rig 不再自動猜 `source_pack`（改依 subject_id 找最新立繪包）。creature-concept 對含 `locked` 的概念加上「定案 id／名稱原樣照抄、每型態 `stage_moves`」段落（新增選填段落 → minor）。
+
 - 2026-11-07 · tool@1.4.0 · template@(model-rig@2.0.0) · 全站按鈕樣式與排版修復（解決平台選擇、名冊工具、視角標籤、鎖定鈕跑版）；新增一鍵將舊版本立繪/3D 壓縮包升級為最新版 prompt 與規格格式功能（自動補齊常態生理數值、基底追溯遷移、招式特性圖鑑化與關聯 source_pack）；確保 img-to-3d 管線與 manifest 輸出必須回溯參照立繪包（source_pack）；成果審查台新增 2D 立繪 ⇄ 3D 成果雙欄對比視圖（參考 steel_vs_swarm 機體審查台）與 3D 分類分頁；審查台新增 Prompt 項目完整顯示分頁（角色與宙獸全欄位明細及原始 prompt）。
 - 2026-11-07 · tool@1.3.0 · template@(model-rig@2.0.0, creature-concept@2.0.0, move-vfx@1.1.0) · `model-rig` 併入 `animation-set`（已退役）：image-to-3D → Blender → 綁骨 → 動作在同一個 prompt；立繪包從 Google 雲端硬碟 `project/cosmos_chimera/image_in` 讀取，成品 zip 上傳 `project/cosmos_chimera/3D_out`；新增批次模式（處理 image_in 全部立繪包，每包 task_id = `<批次 id>-<subject-id>`、manifest 加 `batch_id`／`source_pack`）。宙獸/招式/特性圖鑑獨立：creature-concept 的 `signature_move_idea`／`trait_idea_zh` 改為 `signature_move{move_id,…}`／`trait{trait_id,…}`；move-vfx 加 `move_id`，宙獸改為示範施放者。validate-art 接受 model-rig 內的動作檔與批次標頭。
 - 2026-11-06 · tool@1.2.0 · catalog@1.2.0 · template@(character-concept@1.2.0, creature-concept@1.2.0) · 宙獸人形基底改為類人奇幻種族（精靈、矮人、獸人、龍人、妖精、天使、惡魔、水棲人、翼人、不死、傀儡、巨人共 12 種，舊版本人形追溯至精靈族）；擴充文化原型（110+）、戰鬥定位（14類）；追加文化時間線（含遠古神話至晶石賽博、太空歌劇、超弦維度等未來時間線）；角色人種與文化地區互相獨立並擴充至 18 種表型特徵；角色與宙獸共用文化地區與文化時間線；宙獸外觀色系與角色服裝色系合併共用（1~3色組合庫）；宙獸性情與角色性格合併共用特質庫。

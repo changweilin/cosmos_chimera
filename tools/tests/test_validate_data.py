@@ -241,6 +241,19 @@ class CrossFileRules(unittest.TestCase):
         self.assertEqual({"material_not_mastery"}, self.codes(findings))
         self.assertTrue(all(f.level == "error" for f in findings))
 
+    def test_repeated_material_sum_is_bounded_by_int32(self):
+        # Sol P2-05 review C2: each qty is legal alone, the merged (element, tier) total is not.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        mats = creatures[0]["evolution"]["materials"]
+        base = dict(mats[0])
+        mats[:] = [{**base, "qty": 2147483647}, {**base, "qty": 1}]
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+        self.assertEqual({"material_sum_overflow"}, self.codes(findings))
+        mats[:] = [{**base, "qty": 2147483646}, {**base, "qty": 1}]
+        self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        mats[:] = [{**base, "qty": 2147483647}, {**base, "tier": base["tier"] + 1, "qty": 1}]
+        self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))

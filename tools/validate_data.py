@@ -26,6 +26,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Folder name → schema stem. Folder layout mirrors the real Data/ tree so an _incoming
 # batch can be validated with the exact same command before it is moved in.
+INT32_MAX = 2**31 - 1
 KINDS = {
     "creatures": "creature",
     "moves": "move",
@@ -235,6 +236,7 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
                 findings.append(Finding("error", "evolution_chain", r.file, f"/{r.index}/evolves_to",
                                         f"{stage} must evolve into {STAGE_NEXT.get(stage)}, got {nxt.data.get('stage')}"))
         _warn_material_elements(r, findings)
+        _check_material_sums(r, findings)
 
     seen_edges: dict[tuple[str, str], Record] = {}
     for r in records["relations"]:
@@ -257,6 +259,23 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             seen_edges[key] = r
         ref(r, "a", "creatures")
         ref(r, "b", "creatures")
+
+
+def _check_material_sums(r: Record, findings: list[Finding]) -> None:
+    # EvolutionRequirement (C#) merges repeated (element, tier) entries into one Int32 qty; the schema bounds each
+    # entry only, so a legal file could otherwise pass here and throw at evolution time (Sol P2-05 review C2).
+    evo = r.data.get("evolution")
+    if not isinstance(evo, dict):
+        return
+    sums: dict[tuple, int] = {}
+    for m in evo.get("materials") or []:
+        if isinstance(m, dict) and isinstance(m.get("qty"), int) and not isinstance(m.get("qty"), bool):
+            key = (m.get("element"), m.get("tier"))
+            sums[key] = sums.get(key, 0) + m["qty"]
+    for (el, tier), total in sums.items():
+        if total > INT32_MAX:
+            findings.append(Finding("error", "material_sum_overflow", r.file, f"/{r.index}/evolution/materials",
+                                    f"{el}/tier {tier} summed qty {total} exceeds {INT32_MAX}"))
 
 
 def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
