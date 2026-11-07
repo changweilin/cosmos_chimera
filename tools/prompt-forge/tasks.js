@@ -248,11 +248,12 @@
     {
       // REQ: 使用者 2026-11-07 — image-to-3D → Blender → 綁骨 → 動作在同一管線；輸入/輸出走 Google 雲端硬碟；可批次。
       // 取代 animation-set（已退役）。招式不在此管線：招式是獨立圖鑑條目，由 move-vfx 處理。
-      id: "model-rig", version: "2.0.0", zh: "Image-to-3D 建模、綁骨與動作（雲端硬碟立繪包）", prefix: "mdl", platform: "gemini",
+      id: "model-rig", version: "2.1.0", zh: "Image-to-3D 建模、綁骨與動作（雲端硬碟立繪包）", prefix: "mdl", platform: "gemini",
       needs: "either", drop: "Art/_incoming", drive: true,
       options: [
         { key: "scope", type: "select", label: "範圍", items: () => [{ v: "single", zh: "單一立繪包（目前概念）" }, { v: "batch", zh: "批次：image_in 內所有立繪包" }], def: "single" },
         { key: "source_pack", type: "text", label: "參照立繪包 ID (source_pack)", def: "", placeholder: "例：cr-20261106-7f3a-2105 或 chr-20261106-7f3a-2105", when: o => o.scope !== "batch" },
+        { key: "input_img", type: "text", label: "指定輸入 img", def: "", placeholder: "選填，留空預設使用正面正交 + turnaround 三視圖", when: o => o.scope !== "batch" },
         { key: "subject", type: "select", label: "對象", items: () => [{ v: "character", zh: "目前角色概念" }, { v: "creature", zh: "目前宙獸概念" }], def: "creature", when: o => o.scope !== "batch" },
         { key: "stages", type: "checks", label: "宙獸型態", items: () => C.STAGES.map(s => ({ v: s.v, zh: s.zh })), def: ["juvenile", "adolescent", "adult", "overload"], when: o => o.scope === "batch" || o.subject === "creature" },
         { key: "actions_character", type: "checks", label: "角色動作", items: () => C.ACTIONS.character.map(a => ({ v: a.id, zh: a.zh })), def: "all", when: o => o.scope === "batch" || o.subject !== "creature" },
@@ -281,9 +282,12 @@
         const kindBlocks = kinds.map(kind => {
           const isCr = kind === "creature";
           const unit = isCr ? "cr_" + S + "_<stage>" : S;
-          const src = isCr
+          let src = isCr
             ? "`images/cr_" + S + "_<stage>_front.png` + `_turnaround.png`（側/背/3/4 從三視圖裁切）"
             : "`images/" + S + "_front.png`、`_side.png`、`_back.png`（不足時從 `_turnaround.png` 裁切）";
+          if (o.input_img) {
+            src = "`" + o.input_img + "`（審查台指定輸入立繪，其餘視圖由三視圖裁切補齊）";
+          }
           return [
             "### " + (isCr ? "宙獸（立繪包 task_type = creature-concept，`cr-` 開頭）" : "角色（立繪包 task_type = character-concept，`chr-` 開頭）"),
             "- image-to-3D 輸入圖：" + src + "。",
@@ -322,9 +326,14 @@
           : [
             "## 輸入：Google 雲端硬碟立繪包",
             list([
-              "資料夾：`" + DRIVE_IN + "/`。找 manifest.subject_id = `" + S + "` 的 `" + (kinds[0] === "creature" ? "cr-" : "chr-") + "*.zip`；有多包時用 task_id 最大（最新）的一包。",
+              o.source_pack
+                ? "資料夾：`" + DRIVE_IN + "/`。指定來源立繪包：`" + o.source_pack + ".zip`（manifest.task_id = `" + o.source_pack + "`" + (S ? "，subject_id = `" + S + "`" : "") + "）。"
+                : "資料夾：`" + DRIVE_IN + "/`。找 manifest.subject_id = `" + S + "` 的 `" + (kinds[0] === "creature" ? "cr-" : "chr-") + "*.zip`；有多包時用 task_id 最大（最新）的一包。",
+              o.input_img
+                ? "指定 image-to-3D 輸入圖：`" + o.input_img + "`（優先作為主要建模參考，其餘視圖裁切自立繪包三視圖）。"
+                : null,
               "找不到就停下來告訴我，**不要**改用其他主體或自行生成立繪。"
-            ]),
+            ].filter(Boolean)),
             "企劃概念（立繪包內的 concept.json 優先於此）：",
             json(ctx.concept)
           ].join("\n");

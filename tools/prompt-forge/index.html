@@ -195,6 +195,17 @@
   .upgrade-changes { background: #12141a; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 12px; }
   .upgrade-changes ul { margin: 4px 0 0; padding-left: 18px; }
   .upgrade-changes li { margin-bottom: 3px; color: var(--ok); }
+
+  /* ---- 輸入 img / 審查台立繪包選擇器 ---- */
+  .pack-picker-box { display: flex; flex-direction: column; gap: 7px; width: 100%; }
+  .img-picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px; max-width: 100%; scrollbar-width: thin; }
+  .img-picker-item { flex: none; width: 78px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; background: #171a21; cursor: pointer; transition: .15s; }
+  .img-picker-item:hover { border-color: var(--accent); background: #1f2532; }
+  .img-picker-item.on { border-color: var(--accent); background: #273142; box-shadow: 0 0 0 1px var(--accent); }
+  .img-picker-item img { width: 68px; height: 68px; object-fit: cover; border-radius: 4px; background: #0e1015; }
+  .img-picker-label { font-size: 10.5px; color: var(--muted); margin-top: 4px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: Consolas, monospace; }
+  .img-picker-item.on .img-picker-label { color: #7fd8ff; font-weight: bold; }
+  .selected-img-badge { display: flex; align-items: center; justify-content: space-between; background: #1a2736; border: 1px solid #2b4260; border-radius: 6px; padding: 5px 10px; font-size: 11.5px; color: #a4d2ff; }
 </style>
 </head>
 <body>
@@ -359,6 +370,7 @@
           <button class="segb" id="zoomOut" type="button">－</button>
         </div>
         <button class="btn" id="btnUnpack" type="button">⚡ 一鍵解壓縮</button>
+        <button class="btn ghost" id="btnToImg3d" type="button" title="以此立繪包（或當前預覽圖）產出 img-to-3D Prompt">🧊 產出 3D Prompt</button>
         <button class="btn ghost" id="btnUpgradeActive" type="button" title="一鍵升級為最新版 Prompt 與規格">🔄 升級格式</button>
         <button class="btn ghost mini" id="btnCopyPath" type="button">📋 複製路徑</button>
         <button class="btn ghost mini" id="btnCopyPs" type="button">💻 PowerShell</button>

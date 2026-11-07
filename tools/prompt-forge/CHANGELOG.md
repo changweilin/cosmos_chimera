@@ -2,6 +2,12 @@
 
 格式：`日期 · 元件@版本 · 變更`。版本規則見 README.md。
 
+- 2026-11-07 · tool@1.6.0 · template@(model-rig@2.1.0) · Prompt Forge 的 img to 3D prompt 生成管線（model-rig）：
+  - 來源立繪包（`source_pack`）可直接自審查台讀入的立繪開發包（`cr-*` / `chr-*`）下拉選擇，並支援快捷載入範例與 Zip；
+  - 新增「指定輸入 img」選項與視覺化縮圖點選列，可精確指定立繪包內特定視圖或立繪（如正面、三視圖、主立繪等）作為 3D 建模參考；
+  - 成果審查台新增「🧊 產出 3D Prompt」快捷按鈕與雙向連動，一鍵帶入當前檢閱之立繪包與當前預覽圖片至 3D 管線；
+  - 當綁定審查台立繪包時，企劃概念區塊自動帶入該立繪包 `concept.json` 內容，並支援一鍵解除關聯。
+
 - 2026-11-07 · tool@1.5.0 · template@(creature-concept@2.1.0) · 新增「已設計項目」面板：`designed.js`（由 `gen_designed.py` 從 `Data/_incoming` 批次與 TERRA 文案產生，首批為 P2-08 御三家日月星 3 條線 9 隻）一鍵產出立繪 prompt 或 img-to-3D prompt；已設計時宙獸概念不隨機、主體 ID＝`line_id`、model-rig 不再自動猜 `source_pack`（改依 subject_id 找最新立繪包）。creature-concept 對含 `locked` 的概念加上「定案 id／名稱原樣照抄、每型態 `stage_moves`」段落（新增選填段落 → minor）。
 
 - 2026-11-07 · tool@1.4.0 · template@(model-rig@2.0.0) · 全站按鈕樣式與排版修復（解決平台選擇、名冊工具、視角標籤、鎖定鈕跑版）；新增一鍵將舊版本立繪/3D 壓縮包升級為最新版 prompt 與規格格式功能（自動補齊常態生理數值、基底追溯遷移、招式特性圖鑑化與關聯 source_pack）；確保 img-to-3d 管線與 manifest 輸出必須回溯參照立繪包（source_pack）；成果審查台新增 2D 立繪 ⇄ 3D 成果雙欄對比視圖（參考 steel_vs_swarm 機體審查台）與 3D 分類分頁；審查台新增 Prompt 項目完整顯示分頁（角色與宙獸全欄位明細及原始 prompt）。

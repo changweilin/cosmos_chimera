@@ -1,6 +1,6 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.5.0";
+  const TOOL_VERSION = "1.6.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
@@ -67,6 +67,57 @@
     customOptions: {}, customValues: {}, activeTab: "forge",
     preset: null // 已設計項目的 line_id；設定時宙獸概念改用 designed.js 的定案內容，不再隨機
   };
+
+  // ==================== 成果審查台狀態與跨管線工具 ====================
+  const reviewState = {
+    packages: [], activePkgId: null, activeImgIdx: 0,
+    filterCat: "all", filterQuery: "", viewMode: "single", // "single" | "compare"
+    zoomLevel: 1.0, panX: 0, panY: 0,
+    reviews: {}
+  };
+
+  function describeImg(path) {
+    if (!path) return "圖片";
+    const p = path.toLowerCase();
+    if (p.includes("turnaround")) return "三視圖";
+    if (p.includes("model_front")) return "建模正";
+    if (p.includes("model_side")) return "建模側";
+    if (p.includes("model_back")) return "建模背";
+    if (p.includes("front")) return "正面";
+    if (p.includes("side")) return "側面";
+    if (p.includes("back")) return "背面";
+    if (p.includes("main")) return "主立繪";
+    if (p.includes("expression")) return "表情集";
+    if (p.includes("prop")) return "道具集";
+    if (p.includes("lineup")) return "進化排列";
+    if (p.includes("anim_sheet")) return "動作分鏡";
+    if (p.includes("storyboard")) return "分鏡";
+    if (p.includes("layer")) return "圖層";
+    if (p.includes("flipbook")) return "序列圖";
+    const name = path.split("/").pop() || path;
+    return name.replace(/\.[^.]+$/, "");
+  }
+
+  function sendToImgTo3D(pkg, imgPath) {
+    if (!pkg) return;
+    state.taskId = "model-rig";
+    const t = TASKS.find(x => x.id === "model-rig");
+    const o = taskOpts(t);
+    o.scope = "single";
+    o.source_pack = pkg.id;
+    o.subject = (pkg.type === "character-concept" || pkg.id.startsWith("chr")) ? "character" : "creature";
+    if (imgPath) {
+      o.input_img = imgPath;
+    } else if (pkg.images && pkg.images.length) {
+      const activeIm = pkg.images[reviewState.activeImgIdx];
+      o.input_img = activeIm ? activeIm.path : "";
+    } else {
+      o.input_img = "";
+    }
+    setViewMode("forge");
+    renderAll();
+    toast("已將立繪包「" + pkg.id + "」" + (o.input_img ? "（指定圖：" + o.input_img + "）" : "") + " 帶入 img-to-3D 管線");
+  }
 
   // REQ: 使用者 2026-11-07 — 已設計的宙獸（P2-08 御三家等）直接產出立繪 / img-to-3D prompt。
   const DESIGNED = (window.COSMI_DESIGNED && window.COSMI_DESIGNED.items) || [];
@@ -347,19 +398,14 @@
     const s = stamp();
     const taskId = t.prefix + "-" + s.day + "-" + state.seed + "-" + s.hm;
     const header = "[COSMIMERA-TASK spec=" + SPEC + " tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + taskId + " seed=" + state.seed + "]";
-    const concept = subj === "character" ? characterConcept() : subj === "creature" ? creatureConcept() : null;
-    
-    // 若為 model-rig 且未手動指定 source_pack，預設自動關聯目前概念立繪包
-    // 已設計項目的立繪包不是本次 seed 產生的，猜一個 task_id 只會造成錯誤追溯；交給 prompt 依 subject_id 找最新包。
-    if (t.id === "model-rig" && o.scope !== "batch" && !o.source_pack && !designedItem()) {
-      const srcPrefix = (subj === "creature" ? "cr-" : "chr-");
-      o.source_pack = srcPrefix + s.day + "-" + state.seed + "-" + s.hm;
-    }
+    const chosenPkg = (t.id === "model-rig" && o.source_pack) ? reviewState.packages.find(p => p.id === o.source_pack) : null;
+    let concept = chosenPkg?.concept || (subj === "character" ? characterConcept() : subj === "creature" ? creatureConcept() : null);
+    let subjId = chosenPkg?.subjectId || (subj ? subjectId(subj) : t.id === "model-rig" ? "batch" : t.id === "capture-vessel" ? "vessels" : t.id === "culture-research" ? "region_" + o.region : "fx_" + o.element + "_" + o.shape);
 
     const ctx = {
       header, taskId, task: t, opts: o, concept, notes: state.notes.trim(),
       platform: state.platform, platformName: state.platform === "gemini" ? "Gemini Argon（任務模式）" : "ChatGPT（對話版）",
-      subjectId: subj ? subjectId(subj) : t.id === "model-rig" ? "batch" : t.id === "capture-vessel" ? "vessels" : t.id === "culture-research" ? "region_" + o.region : "fx_" + o.element + "_" + o.shape
+      subjectId: subjId
     };
     lastBuild = { ctx, errors, text: errors.length ? "" : t.build(ctx) };
     return lastBuild;
@@ -495,6 +541,20 @@
     const box = $("#concept"); box.replaceChildren();
     if (!subj) { box.append(el("p", { class: "muted" }, "此任務不使用角色/宙獸概念。")); return; }
     const kind = subj;
+    const chosenPkg = (t.id === "model-rig" && o.source_pack) ? reviewState.packages.find(p => p.id === o.source_pack) : null;
+    if (chosenPkg) {
+      box.append(el("div", { class: "subhead" },
+        el("h3", {}, "審查台來源立繪包：" + chosenPkg.id),
+        el("button", { type: "button", class: "btn mini ghost", onclick: () => { o.source_pack = ""; o.input_img = ""; renderAll(); } }, "✕ 取消選擇")
+      ));
+      box.append(el("p", { class: "muted" }, "概念與造型參照自審查台讀入之立繪包（主體 " + (chosenPkg.subjectId || "—") + " · " + (chosenPkg.type === "character-concept" || chosenPkg.id.startsWith("chr") ? "角色" : "宙獸") + " · 共 " + (chosenPkg.images ? chosenPkg.images.length : 0) + " 張圖）。"));
+      if (chosenPkg.concept) {
+        box.append(el("pre", { style: "font-size:11px;max-height:160px;overflow-y:auto;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;margin-top:6px;border:1px solid var(--line)" }, JSON.stringify(chosenPkg.concept, null, 2)));
+      } else {
+        box.append(el("p", { class: "muted" }, "此立繪包內無 concept.json，造型以圖為準。"));
+      }
+      return;
+    }
     const d = kind === "creature" ? designedItem() : null;
     if (d) {
       const L = d.concept.locked;
@@ -526,7 +586,97 @@
     t.options.filter(d => !d.when || d.when(o)).forEach(d => {
       const items = d.items ? d.items(o, env()) : [];
       let control;
-      if (d.type === "checks") {
+      if (t.id === "model-rig" && d.key === "source_pack") {
+        const conceptPkgs = reviewState.packages.filter(p => p.type === "creature-concept" || p.type === "character-concept" || p.id.startsWith("cr-") || p.id.startsWith("chr-"));
+        const packSelect = el("select", {
+          onchange: e => {
+            const val = e.target.value;
+            o.source_pack = val;
+            const p = reviewState.packages.find(x => x.id === val);
+            if (p) {
+              o.subject = (p.type === "character-concept" || p.id.startsWith("chr")) ? "character" : "creature";
+              if (o.input_img && p.images && !p.images.some(im => im.path === o.input_img)) {
+                o.input_img = "";
+              }
+            }
+            renderAll();
+          }
+        },
+          el("option", { value: "" }, conceptPkgs.length ? "-- 從審查台讀入的立繪包中選擇 (或手動輸入) --" : "-- 審查台尚無讀入的立繪包 (可手動輸入或載入) --"),
+          conceptPkgs.map(p => el("option", {
+            value: p.id,
+            selected: o.source_pack === p.id
+          }, "📦 " + p.id + " (" + (p.subjectId || "無主體") + " · " + (p.type === "character-concept" || p.id.startsWith("chr") ? "角色" : "宙獸") + " · " + (p.images ? p.images.length : 0) + " 張圖)"))
+        );
+
+        const textInput = el("input", {
+          value: o.source_pack || "",
+          placeholder: d.placeholder || "或手動輸入立繪包 ID，例 cr-20261106-7f3a-2105",
+          onchange: e => {
+            o.source_pack = e.target.value.trim();
+            const p = reviewState.packages.find(x => x.id === o.source_pack);
+            if (p) {
+              o.subject = (p.type === "character-concept" || p.id.startsWith("chr")) ? "character" : "creature";
+            }
+            renderAll();
+          }
+        });
+
+        const quickTools = el("div", { style: "display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;" },
+          el("span", { class: "muted", style: "font-size:11px;" }, "審查台立繪包：" + conceptPkgs.length + " 包"),
+          el("button", { type: "button", class: "btn mini ghost", title: "載入系統內建測試包至審查台", onclick: () => { loadSampleFixtures(); renderAll(); } }, "🧪 載入範例包"),
+          el("button", { type: "button", class: "btn mini ghost", title: "從本機選擇 Zip 載入審查台", onclick: () => $("#zipFileInput").click() }, "🗜️ 載入 Zip"),
+          el("button", { type: "button", class: "btn mini ghost", title: "前往成果審查台進行立繪檢閱", onclick: () => setViewMode("review") }, "🔍 轉至審查台")
+        );
+
+        control = el("div", { class: "pack-picker-box" }, packSelect, textInput, quickTools);
+      } else if (t.id === "model-rig" && d.key === "input_img") {
+        const curPkg = reviewState.packages.find(p => p.id === o.source_pack);
+        if (curPkg && curPkg.images && curPkg.images.length) {
+          const imgSelect = el("select", {
+            onchange: e => { o.input_img = e.target.value; renderAll(); }
+          },
+            el("option", { value: "" }, "（預設）全套正交三視圖 (正面正交 + turnaround)"),
+            curPkg.images.map(im => el("option", {
+              value: im.path,
+              selected: o.input_img === im.path
+            }, "🖼️ " + im.path + " [" + describeImg(im.path) + "]"))
+          );
+
+          const strip = el("div", { class: "img-picker-strip" });
+          curPkg.images.forEach(im => {
+            const isSel = o.input_img === im.path;
+            const item = el("div", {
+              class: "img-picker-item" + (isSel ? " on" : ""),
+              title: im.path + " (" + describeImg(im.path) + ")",
+              onclick: () => {
+                o.input_img = isSel ? "" : im.path;
+                renderAll();
+              }
+            },
+              el("img", { src: im.url, alt: im.path }),
+              el("span", { class: "img-picker-label" }, describeImg(im.path))
+            );
+            strip.append(item);
+          });
+
+          let badge = null;
+          if (o.input_img) {
+            badge = el("div", { class: "selected-img-badge" },
+              el("span", {}, "✅ 指定輸入圖：", el("code", {}, o.input_img), " (" + describeImg(o.input_img) + ")"),
+              el("button", { type: "button", class: "btn mini ghost", onclick: () => { o.input_img = ""; renderAll(); } }, "✕ 重設為全套視圖")
+            );
+          }
+
+          control = el("div", { class: "pack-picker-box" }, imgSelect, strip, badge);
+        } else {
+          control = el("input", {
+            value: o.input_img || "",
+            placeholder: d.placeholder || "選填，留空預設使用正面正交 + turnaround 三視圖",
+            onchange: e => { o.input_img = e.target.value.trim(); renderAll(); }
+          });
+        }
+      } else if (d.type === "checks") {
         control = el("div", { class: "checks" },
           el("button", { type: "button", class: "btn mini ghost", onclick: () => { o[d.key] = o[d.key].length === items.length ? [] : items.map(i => i.v); renderAll(); } }, o[d.key].length === items.length ? "全不選" : "全選"),
           items.map(i => el("label", { class: "check" }, el("input", { type: "checkbox", checked: o[d.key].includes(i.v), onchange: e => { o[d.key] = e.target.checked ? o[d.key].concat(i.v) : o[d.key].filter(x => x !== i.v); renderAll(); } }), i.zh)));
@@ -685,13 +835,6 @@
   }
 
   // ==================== 成果審查台（Review Workbench，參考 steel_vs_swarm） ====================
-  const reviewState = {
-    packages: [], activePkgId: null, activeImgIdx: 0,
-    filterCat: "all", filterQuery: "", viewMode: "single", // "single" | "compare"
-    zoomLevel: 1.0, panX: 0, panY: 0,
-    reviews: {}
-  };
-
   // 取得與目前封裝相互參照的關聯封裝（2D 立繪 ⇄ 3D 模型雙向參照）
   function getLinkedPackage(pkg) {
     if (!pkg) return null;
@@ -896,7 +1039,7 @@
         subjectId: "line_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
-          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=model-rig@2.0.0 task_id=mdl-20261106-7f3a-2105 seed=7f3a]",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.6.0 catalog=1.2.0 template=model-rig@2.1.0 task_id=mdl-20261106-7f3a-2105 seed=7f3a]",
           task_id: "mdl-20261106-7f3a-2105",
           task_type: "model-rig",
           subject_id: "line_7f3a",
@@ -1334,7 +1477,7 @@
 
     } else if (is3d) {
       const t = TASKS.find(x => x.id === "model-rig");
-      changes.push("升級至最新 3D 管線模板：template=model-rig@2.0.0 (整合綁骨與動畫)");
+      changes.push("升級至最新 3D 管線模板：template=model-rig@2.1.0 (整合綁骨與動畫)");
 
       // 補齊並確保往回參照立繪包 (source_pack)
       let sp = updatedManifest.source_pack;
@@ -1540,31 +1683,23 @@
     // 視圖按鈕（精簡標籤，解決按鈕排版爆炸問題）
     const viewSeg = $("#viewSeg"); viewSeg.replaceChildren();
     pkg.images.forEach((im, idx) => {
-      const p = im.path.toLowerCase();
-      let label = "視圖 " + (idx + 1);
-      if (p.includes("turnaround")) label = "三視圖";
-      else if (p.includes("front")) label = "正面";
-      else if (p.includes("side")) label = "側面";
-      else if (p.includes("back")) label = "背面";
-      else if (p.includes("main")) label = "主立繪";
-      else if (p.includes("expression")) label = "表情集";
-      else if (p.includes("prop")) label = "道具集";
-      else if (p.includes("lineup")) label = "進化排列";
-      else if (p.includes("model_front")) label = "建模正";
-      else if (p.includes("model_side")) label = "建模側";
-      else if (p.includes("model_back")) label = "建模背";
-      else if (p.includes("anim_sheet")) label = "動作分鏡";
-      else if (p.includes("storyboard")) label = "分鏡";
-      else if (p.includes("layer")) label = "圖層";
-      else if (p.includes("flipbook")) label = "序列圖";
-
       viewSeg.append(el("button", {
         class: "segb" + (idx === reviewState.activeImgIdx ? " on" : ""),
         type: "button",
         title: im.path,
         onclick: () => { reviewState.activeImgIdx = idx; renderReviewView(); }
-      }, label));
+      }, describeImg(im.path)));
     });
+
+    // 快捷產出 3D Prompt 按鈕狀態更新
+    const isConceptPkg = pkg.type === "creature-concept" || pkg.type === "character-concept" || pkg.id.startsWith("cr-") || pkg.id.startsWith("chr-");
+    const btnToImg3d = $("#btnToImg3d");
+    if (btnToImg3d) {
+      btnToImg3d.style.display = isConceptPkg ? "inline-block" : "none";
+      const curIm = pkg.images[reviewState.activeImgIdx];
+      btnToImg3d.textContent = curIm ? "🧊 以當前圖產出 3D Prompt" : "🧊 產出 3D Prompt";
+      btnToImg3d.title = curIm ? "以目前預覽圖「" + curIm.path + "」帶入 img-to-3D 管線產出 Prompt" : "將此立繪包帶入 img-to-3D 管線產出 Prompt";
+    }
 
     // 渲染右欄分頁資訊
     renderPanel(pkg, linkedPkg);
@@ -1744,14 +1879,9 @@
                 renderReviewView();
               } }, "⚡ 開啟雙欄對比")
             ) : el("div", { style: "margin-top:10px" },
-              el("p", { class: "muted", style: "margin-bottom:6px" }, "可一鍵將此立繪包帶入鍛造台，生成對應的 Image-to-3D prompt："),
+              el("p", { class: "muted", style: "margin-bottom:6px" }, "可一鍵將此立繪包（及當前選取圖）帶入鍛造台，生成對應的 Image-to-3D prompt："),
               el("button", { class: "btn mini", type: "button", onclick: () => {
-                state.taskId = "model-rig";
-                const o = taskOpts(TASKS.find(t => t.id === "model-rig"));
-                o.source_pack = pkg.id;
-                o.subject = pkg.id.startsWith("chr") ? "character" : "creature";
-                setViewMode("forge");
-                toast("已帶入立繪包參照：" + pkg.id);
+                sendToImgTo3D(pkg, pkg.images?.[reviewState.activeImgIdx]?.path);
               } }, "🚀 帶入鍛造台產生 3D Prompt (model-rig)")
             )
           )
@@ -2073,6 +2203,11 @@
       const root = state.root || DEFAULT_ROOT;
       const cmd = `Expand-Archive -Path "$HOME\\Downloads\\${pkg.id}.zip" -DestinationPath "${root}\\Art\\_incoming\\" -Force`;
       copyText(cmd, "已複製解壓指令！可在 PowerShell 直接貼上執行一鍵解壓");
+    });
+    $("#btnToImg3d")?.addEventListener("click", () => {
+      const pkg = getActivePkg();
+      if (!pkg) return;
+      sendToImgTo3D(pkg, pkg.images?.[reviewState.activeImgIdx]?.path);
     });
     $("#btnCopyPath").addEventListener("click", () => {
       const pkg = getActivePkg();
