@@ -13,16 +13,35 @@ namespace Cosmimera.GameData.Tests
     // and writes into a throwaway Assets folder because AssetDatabase only works under Assets/.
     public sealed class DataImporterTests
     {
-        private const string Output = "Assets/__DataImporterTests";
+        private const string OutputRoot = "Assets/__DataImporterTests";
+        private static int _run;
+        private string Output { get; set; }
         private string _src;
 
         private static string FixtureRoot =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Data", "_incoming", "p0-05-samples", "valid"));
 
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
+        {
+            AssetDatabase.DeleteAsset(OutputRoot);
+        }
+
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
+        {
+            AssetDatabase.DeleteAsset(OutputRoot);
+        }
+
         [SetUp]
         public void SetUp()
         {
-            AssetDatabase.DeleteAsset(Output);
+            // FENCE: a fresh output folder per test instead of deleting and recreating one fixed folder · with
+            // Windows Defender real-time scanning on, the just-deleted Assets/__DataImporterTests.meta stays
+            // delete-pending while the scanner holds it, and the next test's CreateFolder failed with "Cannot open
+            // file ... .meta for write" (a different test each run) · still needed if reverting to a fixed path
+            // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/phase-2.md (2026-11-07 flake).
+            Output = OutputRoot + "/run" + ++_run;
             _src = Path.Combine(Path.GetTempPath(), "cosmimera-import-" + System.Guid.NewGuid().ToString("N"));
             CopyDir(FixtureRoot, _src);
         }
