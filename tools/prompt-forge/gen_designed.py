@@ -43,6 +43,64 @@ LINES = {
     },
 }
 
+# 御三家超載型態（Overload）定案設定
+OVERLOADS = {
+    "starter_sun_line": {
+        "stage": "overload",
+        "creature_id": "sun_coronavault_skyheron",
+        "name_zh": "鏡冕天鷺",
+        "name_en": "Mirracorona",
+        "size_class": "XL",
+        "look": "太陽鏡陣飛行器與天鷺完全共鳴；背部環形鏡陣激發為三層旋轉日冕光環，光羽噴射耀眼金炎，以太管道引導星雲光子流",
+        "dex_zh": "當以太能量在鏡陣中超載激盪，背部的聚光環便會如初升之日般耀眼綻放。合攏所有鏡面射出的神聖日冕光柱，能在一瞬間照亮整顆星球的夜空。",
+        "signature_move": {
+            "move_id": "light_coronavault_burst",
+            "name_zh": "日冕貫天神光",
+            "element": "light",
+            "range_class": "long",
+            "shape": "line",
+            "movement": "none",
+            "visual": "全鏡面合攏聚光鎖定，射出貫穿天際的金色日冕光柱，伴隨刺目光波震盪"
+        }
+    },
+    "starter_moon_line": {
+        "stage": "overload",
+        "creature_id": "moon_eclipsvast_wolf",
+        "name_zh": "夜痕蝕月狼",
+        "name_en": "Niverclis",
+        "size_class": "XL",
+        "look": "極地霜原巨狼超載爆發；極夜暗影與萬年玄冰包覆全身，背脊升起星圖冰棘，雙瞳燃燒極光幽火，踩踏之處地面化為幽冥暗影冰鏡",
+        "dex_zh": "在極寒與暗影達到頂點的瞬間，牠的身軀化作吞噬光芒的蝕月巨狼。踏冰而過時留下的夜痕凍結空間，揮動的霜影重爪足以撕裂冰河裂谷。",
+        "signature_move": {
+            "move_id": "shadow_eclipsvast_claw",
+            "name_zh": "極夜蝕月裂空爪",
+            "element": "shadow",
+            "range_class": "melee",
+            "shape": "sweep",
+            "movement": "forward",
+            "visual": "撕開暗影裂隙暴風突進，巨爪帶起幽藍極光與霜凍暗影大範圍橫掃"
+        }
+    },
+    "starter_star_line": {
+        "stage": "overload",
+        "creature_id": "star_tempest_celestial",
+        "name_zh": "星蹄雷皇驥",
+        "name_en": "Voltrastorm",
+        "size_class": "XL",
+        "look": "天馬雷霆超載；金色雙翼展開為暴風雷雲之翼，周身奔湧萬鈞高壓電弧，鬃毛如雷漿流淌，馬蹄踏空激起轟鳴雷爆",
+        "dex_zh": "體內的雷霆核心完全解放，四蹄踏擊雷雲如金鼓擂動。牠能裹挾萬重狂風與熾盛天雷在天際翱翔，如同一顆劃破長夜的金色流星。",
+        "signature_move": {
+            "move_id": "thunder_tempest_stride",
+            "name_zh": "萬鈞星雷破空撞",
+            "element": "thunder",
+            "range_class": "melee",
+            "shape": "burst",
+            "movement": "forward",
+            "visual": "雙翼聚斂百萬伏特雷暴，以超音速突進引發全場範圍的金色雷暴轟鳴"
+        }
+    }
+}
+
 
 def load(batch: Path, kind: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
@@ -81,7 +139,10 @@ def main() -> int:
                                    "range_class": mv["range_class"], "shape": mv["shape"],
                                    "movement": mv.get("movement", "none"), "visual": mcp.get("desc_zh", "")},
             })
+        if line_id in OVERLOADS:
+            locked_stages.append(OVERLOADS[line_id])
         tcp = copy_by_id.get(trait_id, {})
+        ov = OVERLOADS.get(line_id, {})
         items.append({
             "line_id": line_id, "code_zh": extra["code_zh"], "element": extra["element"],
             "title_zh": " → ".join(s["name_zh"] for s in locked_stages),
@@ -94,14 +155,14 @@ def main() -> int:
                 "timeline": extra["timeline"], "region": concept["region"],
                 "archetype": concept["archetype"], "archetype_type": "P5-02 考據庫", "motifs": "、".join(concept["motifs_used"]),
                 "sensitivity": "ok", "role": concept["role"], "temperament": extra["temperament"],
-                "size_profile": "→".join(s["size_class"] for s in locked_stages) + "→XL",
+                "size_profile": "→".join(s["size_class"] for s in locked_stages),
                 **extra["adult_dims"],
                 "formula": " + ".join(extra["elements"]) + " × " + " + ".join(extra["bases"]) + " × " + concept["archetype"],
                 "locked": {
                     "status": "已設計（Data/_incoming 草稿；id 與名稱照抄，不可改）",
                     "stages": locked_stages,
                     "trait": {"trait_id": trait_id, "name_zh": tcp.get("name_zh", ""), "idea_zh": tcp.get("desc_zh", "")},
-                    "overload": "未定案（Q-C12）：依成年延伸設計，寫入 manifest.notes 供人工確認",
+                    "overload": ov.get("name_zh", "") + "（" + ov.get("creature_id", "") + " · XL）：" + ov.get("look", "超載爆發型態"),
                 },
             },
         })

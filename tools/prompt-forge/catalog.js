@@ -2,7 +2,7 @@
 // 改動規則見 README.md：新增選項 → minor；改既有 ID / 刪除 / 改動作事件 → major。
 // 權重 w 為相對值，不必加總為 100。
 window.COSMI_CATALOG = {
-  version: "1.2.0",
+  version: "1.3.0",
 
   ELEMENTS: [
     { v: "metal",   zh: "金", palette: "銀白、淡金、鋼藍高光" },
@@ -53,111 +53,87 @@ window.COSMI_CATALOG = {
     { v: "未知", zh: "未知", desc: "自由發揮未來或架空時空" }
   ],
 
-  // 角色服裝色系與宙獸外觀色系合併且共用（包含 1 色、2 色、3 色豐富組合）
-  PALETTES: [
-    // 1 色（單色純色系）
-    { v: "曜石純黑", w: 8, colors: 1 },
-    { v: "月華純白", w: 8, colors: 1 },
-    { v: "海軍深藍", w: 7, colors: 1 },
-    { v: "橄欖墨綠", w: 6, colors: 1 },
-    { v: "大地赭石", w: 6, colors: 1 },
-    { v: "深酒紅", w: 6, colors: 1 },
-    { v: "卡其棕", w: 6, colors: 1 },
-    { v: "櫻花粉", w: 5, colors: 1 },
-    { v: "丁香淡紫", w: 5, colors: 1 },
-    { v: "薄荷淺青", w: 5, colors: 1 },
-    { v: "克萊因藍", w: 5, colors: 1 },
-    { v: "象牙米白", w: 6, colors: 1 },
-    { v: "炭煙燻灰", w: 6, colors: 1 },
-    { v: "青瓷灰綠", w: 5, colors: 1 },
-    { v: "焦糖茶褐", w: 6, colors: 1 },
-    { v: "玄鐵青黑", w: 6, colors: 1 },
-    { v: "鍍銀鋼白", w: 6, colors: 1 },
-    { v: "熔岩赤紅", w: 6, colors: 1 },
-    { v: "蒼翡翠", w: 6, colors: 1 },
-    { v: "霜雪透白", w: 6, colors: 1 },
-    { v: "耀日光金", w: 5, colors: 1 },
-    { v: "虛空深紫", w: 5, colors: 1 },
-    { v: "古銅生鏽綠", w: 5, colors: 1 },
-    { v: "暮雲灰藍", w: 5, colors: 1 },
-    { v: "珊瑚鮮橘", w: 5, colors: 1 },
+  // 基礎單色系選項池（供角色服裝、頭髮與宙獸外觀多選組合，每項為單色，可多選組合成 1~3 色）
+  COLOR_TONES: [
+    // 中性通用色（全元素適用，或作基底/高光）
+    { v: "曜石純黑", zh: "曜石黑", elements: ["all"], w: 9 },
+    { v: "月華純白", zh: "月華白", elements: ["all"], w: 9 },
+    { v: "象牙米白", zh: "象牙白", elements: ["all"], w: 8 },
+    { v: "炭煙燻灰", zh: "炭煙灰", elements: ["all"], w: 8 },
+    { v: "暮雲灰藍", zh: "暮雲灰藍", elements: ["water", "wind", "ice", "metal", "all"], w: 7 },
+    { v: "鍍銀鋼白", zh: "鍍銀鋼白", elements: ["metal", "ice", "light", "all"], w: 8 },
+    { v: "玄鐵青黑", zh: "玄鐵青黑", elements: ["metal", "earth", "shadow", "all"], w: 7 },
+    { v: "古銅生鏽綠", zh: "古銅綠", elements: ["metal", "earth", "wood"], w: 6 },
+    { v: "黃銅金", zh: "黃銅金", elements: ["metal", "thunder", "light"], w: 7 },
 
-    // 2 色（雙色合理搭配）
-    { v: "曜石黑 × 烈焰紅", w: 9, colors: 2 },
-    { v: "曜石黑 × 亮橙", w: 9, colors: 2 },
-    { v: "海軍藍 × 象牙白", w: 10, colors: 2 },
-    { v: "墨綠 × 焦糖棕", w: 8, colors: 2 },
-    { v: "霜白 × 冰藍", w: 8, colors: 2 },
-    { v: "炭黑 × 鉻銀", w: 8, colors: 2 },
-    { v: "卡其米 × 橄欖綠", w: 8, colors: 2 },
-    { v: "櫻花粉 × 雲白", w: 8, colors: 2 },
-    { v: "深紫 × 星塵金", w: 7, colors: 2 },
-    { v: "水泥灰 × 螢光青", w: 7, colors: 2 },
-    { v: "純黑 × 琥珀金", w: 8, colors: 2 },
-    { v: "磚紅 × 風化白", w: 7, colors: 2 },
-    { v: "薄荷綠 × 奶白", w: 7, colors: 2 },
-    { v: "酒紅 × 墨黑", w: 8, colors: 2 },
-    { v: "藏青 × 暖沙色", w: 8, colors: 2 },
-    { v: "灰粉 × 石墨黑", w: 7, colors: 2 },
-    { v: "墨藍 × 銀灰", w: 7, colors: 2 },
-    { v: "玄青 × 月白", w: 8, colors: 2 },
-    { v: "軍綠 × 狼棕", w: 7, colors: 2 },
-    { v: "暗金 × 曜石黑", w: 8, colors: 2 },
-    { v: "青瓷色 × 珍珠白", w: 8, colors: 2 },
-    { v: "珊瑚粉 × 霧藍", w: 7, colors: 2 },
-    { v: "深棕 × 芥末黃", w: 6, colors: 2 },
-    { v: "鈷藍 × 純白", w: 8, colors: 2 },
-    { v: "紫羅蘭 × 霧灰", w: 7, colors: 2 },
-    { v: "鍍銀鋼白 × 鋼藍輝光", w: 7, colors: 2 },
-    { v: "熔岩赤紅 × 炭黑硬甲", w: 8, colors: 2 },
-    { v: "曜石黑 × 熔岩橘金", w: 7, colors: 2 },
-    { v: "虛空深黑 × 幽冥深紫", w: 7, colors: 2 },
-    { v: "深海墨黑 × 螢光青綠", w: 7, colors: 2 },
-    { v: "古銅生鏽綠 × 鑄鐵黑", w: 6, colors: 2 },
-    { v: "暗影墨黑 × 緋紅血瞳", w: 7, colors: 2 },
-    { v: "薄荷玉青 × 雲霧純白", w: 7, colors: 2 },
-    { v: "雷電曜紫 × 閃電熾黃", w: 7, colors: 2 },
-    { v: "蒼翡翠 × 苔綠樹褐", w: 7, colors: 2 },
+    // 火系相關
+    { v: "熔岩赤紅", zh: "熔岩赤紅", elements: ["fire", "earth"], w: 8 },
+    { v: "烈焰紅", zh: "烈焰紅", elements: ["fire"], w: 8 },
+    { v: "珊瑚鮮橘", zh: "珊瑚鮮橘", elements: ["fire", "light", "water"], w: 7 },
+    { v: "深酒紅", zh: "深酒紅", elements: ["fire", "shadow"], w: 7 },
+    { v: "陶土磚紅", zh: "陶土磚紅", elements: ["earth", "fire"], w: 7 },
 
-    // 3 色（三色和諧搭配）
-    { v: "海軍藍 × 象牙白 × 霧金", w: 10, colors: 3 },
-    { v: "曜石黑 × 亮橙 × 水泥灰", w: 10, colors: 3 },
-    { v: "卡其米 × 森林綠 × 焦糖棕", w: 10, colors: 3 },
-    { v: "霜白 × 冰藍 × 淺丁香紫", w: 9, colors: 3 },
-    { v: "酒紅 × 炭黑 × 暗金高光", w: 9, colors: 3 },
-    { v: "櫻花粉 × 雲白 × 薄荷青", w: 9, colors: 3 },
-    { v: "深邃藍紫 × 螢光青 × 鉻銀", w: 8, colors: 3 },
-    { v: "暖鵝黃 × 鈷藍 × 純白", w: 8, colors: 3 },
-    { v: "苔蘚綠 × 樹皮褐 × 晨霧灰", w: 8, colors: 3 },
-    { v: "星海深藍 × 墨黑 × 星塵金", w: 8, colors: 3 },
-    { v: "鐵鏽紅 × 煙燻灰 × 風化白", w: 7, colors: 3 },
-    { v: "翡翠綠 × 湖水藍 × 珍珠白", w: 7, colors: 3 },
-    { v: "炭黑 × 蜜桃粉 × 金屬銀", w: 7, colors: 3 },
-    { v: "淡紫羅蘭 × 奶白 × 鼠尾草綠", w: 7, colors: 3 },
-    { v: "深海藍 × 珊瑚紅 × 米白", w: 6, colors: 3 },
-    { v: "純白 × 亞麻褐 × 淺橄欖", w: 6, colors: 3 },
-    { v: "赭石陶紅 × 岩灰 × 苔綠斑紋", w: 7, colors: 3 },
-    { v: "黑曜石 × 曜金 × 緋紅", w: 8, colors: 3 },
-    { v: "天青瓷色 × 櫻粉 × 霧白", w: 7, colors: 3 },
-    { v: "藏青 × 駝色 × 奶白", w: 8, colors: 3 },
-    { v: "青金藍 × 硃砂紅 × 琉璃金", w: 7, colors: 3 },
-    { v: "紫羅蘭 × 玫瑰金 × 煙墨灰", w: 7, colors: 3 },
-    { v: "夜空黑 × 極光綠 × 珍珠白", w: 7, colors: 3 },
-    { v: "鍍銀鋼白 × 曜金紋理 × 鋼藍輝光", w: 8, colors: 3 },
-    { v: "蒼翡翠 × 苔綠樹褐 × 嫩芽金光", w: 8, colors: 3 },
-    { v: "深海湛藍 × 浪花雪白 × 湖綠微光", w: 8, colors: 3 },
-    { v: "熔岩赤紅 × 炭黑硬甲 × 烈焰耀金", w: 8, colors: 3 },
-    { v: "霜雪透白 × 冰晶天藍 × 稜鏡淡紫", w: 8, colors: 3 },
-    { v: "薄荷玉青 × 雲霧純白 × 碧流紋路", w: 8, colors: 3 },
-    { v: "雷電曜紫 × 閃電熾黃 × 刺目光輝", w: 8, colors: 3 },
-    { v: "暖曦金白 × 晨光淡粉 × 神聖金暈", w: 8, colors: 3 },
-    { v: "虛空深黑 × 幽冥深紫 × 魂火冷藍", w: 7, colors: 3 },
-    { v: "曜石黑 × 熔岩橘金 × 晶核白光", w: 7, colors: 3 },
-    { v: "古銅生鏽綠 × 鑄鐵黑 × 齒輪金", w: 7, colors: 3 },
-    { v: "純白羽翼 × 晨曦金 × 柔粉光暈", w: 7, colors: 3 },
-    { v: "暗影墨黑 × 緋紅血瞳 × 幽紫微光", w: 7, colors: 3 },
-    { v: "未知", w: 2, colors: 0 }
+    // 木系相關
+    { v: "蒼翡翠", zh: "蒼翡翠", elements: ["wood"], w: 8 },
+    { v: "翠綠", zh: "翠綠", elements: ["wood"], w: 8 },
+    { v: "嫩芽黃綠", zh: "嫩芽黃綠", elements: ["wood", "light"], w: 7 },
+    { v: "橄欖墨綠", zh: "橄欖墨綠", elements: ["wood", "earth"], w: 7 },
+    { v: "苔綠", zh: "苔蘚綠", elements: ["wood", "earth"], w: 7 },
+
+    // 水系相關
+    { v: "海軍深藍", zh: "海軍深藍", elements: ["water", "shadow"], w: 8 },
+    { v: "深海湛藍", zh: "深海湛藍", elements: ["water"], w: 8 },
+    { v: "克萊因藍", zh: "克萊因藍", elements: ["water", "thunder"], w: 7 },
+    { v: "清透天藍", zh: "清透天藍", elements: ["water", "wind", "ice"], w: 7 },
+    { v: "湖水綠", zh: "湖水綠", elements: ["water", "wood"], w: 7 },
+
+    // 冰系相關
+    { v: "冰晶天藍", zh: "冰晶天藍", elements: ["ice", "water"], w: 8 },
+    { v: "霜雪透白", zh: "霜雪透白", elements: ["ice", "light"], w: 8 },
+    { v: "純淨冰藍", zh: "純淨冰藍", elements: ["ice"], w: 8 },
+    { v: "稜鏡淡紫", zh: "稜鏡淡紫", elements: ["ice", "light", "wind"], w: 7 },
+
+    // 風系相關
+    { v: "薄荷淺青", zh: "薄荷淺青", elements: ["wind", "water", "ice"], w: 8 },
+    { v: "青瓷灰綠", zh: "青瓷灰綠", elements: ["wind", "wood", "water"], w: 7 },
+    { v: "流線淡青", zh: "流線淡青", elements: ["wind", "light"], w: 7 },
+
+    // 土系相關
+    { v: "大地赭石", zh: "大地赭石", elements: ["earth"], w: 8 },
+    { v: "卡其棕", zh: "卡其棕", elements: ["earth", "wood", "all"], w: 7 },
+    { v: "焦糖茶褐", zh: "焦糖茶褐", elements: ["earth", "wood"], w: 7 },
+    { v: "砂岩黃", zh: "砂岩黃", elements: ["earth", "light"], w: 7 },
+
+    // 雷系相關
+    { v: "雷電曜紫", zh: "雷電曜紫", elements: ["thunder", "shadow"], w: 8 },
+    { v: "閃電熾黃", zh: "閃電熾黃", elements: ["thunder", "light"], w: 8 },
+    { v: "電弧青藍", zh: "電弧青藍", elements: ["thunder", "water"], w: 7 },
+
+    // 光系相關
+    { v: "耀日光金", zh: "耀日光金", elements: ["light", "thunder", "metal", "fire"], w: 8 },
+    { v: "晨曦金", zh: "晨曦金", elements: ["light", "fire"], w: 8 },
+    { v: "琥珀金", zh: "琥珀金", elements: ["light", "earth", "thunder"], w: 7 },
+    { v: "櫻花粉", zh: "櫻花粉", elements: ["light", "wood"], w: 7 },
+
+    // 影系相關
+    { v: "虛空深紫", zh: "虛空深紫", elements: ["shadow"], w: 8 },
+    { v: "暗影幽黑", zh: "暗影幽黑", elements: ["shadow"], w: 8 },
+    { v: "丁香淡紫", zh: "丁香淡紫", elements: ["shadow", "wind", "ice", "light"], w: 7 },
+    { v: "緋紅血瞳色", zh: "緋紅血瞳色", elements: ["shadow", "fire"], w: 6 }
   ],
+
+  // 取得受元素限定範圍的色系池（排除與元素不合的色系）
+  getFilteredPalettes(creatureElements) {
+    if (!creatureElements || !creatureElements.length) return this.COLOR_TONES;
+    const cleanElems = creatureElements.map(e => e.replace(/（.*）/, "").replace(/\(.*?\)/, "").trim());
+    if (cleanElems.includes("未知") || !cleanElems.length) return this.COLOR_TONES;
+    return this.COLOR_TONES.filter(c => {
+      if (c.elements.includes("all")) return true;
+      return cleanElems.some(el => c.elements.includes(el));
+    });
+  },
+
+  get PALETTES() { return this.COLOR_TONES; },
 
   // 角色性格與宙獸性情合併且共用
   PERSONALITIES: [
@@ -224,22 +200,16 @@ window.COSMI_CATALOG = {
       { v: "孔雀藍", w: 5 },
       { v: "珊瑚橘", w: 5 },
       { v: "純雪白", w: 8 },
-      { v: "純黑 × 挑染天藍", w: 8 },
-      { v: "銀白 × 漸層淡紫", w: 8 },
-      { v: "黑 × 挑染緋紅", w: 7 },
-      { v: "亞麻金 × 挑染粉櫻", w: 7 },
-      { v: "深褐 × 漸層琥珀", w: 6 },
-      { v: "白 × 挑染薄荷綠", w: 6 },
-      { v: "墨藍 × 挑染銀灰", w: 6 },
-      { v: "深紫 × 漸層粉金", w: 6 },
-      { v: "炭灰 × 挑染白金", w: 6 },
-      { v: "深茶 × 漸層蜜橘", w: 5 },
-      { v: "暗黑 × 挑染亮紫", w: 5 },
-      { v: "墨綠 × 挑染薄荷青", w: 5 },
-      { v: "淺金 × 挑染水藍", w: 5 },
-      { v: "純白 × 漸層冰藍", w: 6 },
-      { v: "深酒紅 × 挑染暗金", w: 5 },
-      { v: "霧灰 × 挑染粉紫", w: 5 },
+      { v: "天藍", w: 6 },
+      { v: "冰晶淡藍", w: 6 },
+      { v: "丁香淡紫", w: 6 },
+      { v: "挑染天藍", w: 7 },
+      { v: "挑染緋紅", w: 7 },
+      { v: "挑染白金", w: 6 },
+      { v: "挑染薄荷綠", w: 6 },
+      { v: "挑染亮紫", w: 5 },
+      { v: "漸層粉櫻", w: 6 },
+      { v: "漸層琥珀", w: 5 },
       { v: "未知", w: 2 }
     ],
     eye_palettes: [

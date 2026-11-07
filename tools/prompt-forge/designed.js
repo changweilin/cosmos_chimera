@@ -6,7 +6,7 @@ window.COSMI_DESIGNED = {
       "line_id": "starter_sun_line",
       "code_zh": "日",
       "element": "light",
-      "title_zh": "鏡芽雀 → 鏡羽鷺 → 鏡環天鷺",
+      "title_zh": "鏡芽雀 → 鏡羽鷺 → 鏡環天鷺 → 鏡冕天鷺",
       "source": "Data/_incoming/p2-08-starters-draft-01",
       "concept": {
         "line_id": "starter_sun_line",
@@ -96,6 +96,24 @@ window.COSMI_DESIGNED = {
                 "movement": "none",
                 "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。"
               }
+            },
+            {
+              "stage": "overload",
+              "creature_id": "sun_coronavault_skyheron",
+              "name_zh": "鏡冕天鷺",
+              "name_en": "Mirracorona",
+              "size_class": "XL",
+              "look": "太陽鏡陣飛行器與天鷺完全共鳴；背部環形鏡陣激發為三層旋轉日冕光環，光羽噴射耀眼金炎，以太管道引導星雲光子流",
+              "dex_zh": "當以太能量在鏡陣中超載激盪，背部的聚光環便會如初升之日般耀眼綻放。合攏所有鏡面射出的神聖日冕光柱，能在一瞬間照亮整顆星球的夜空。",
+              "signature_move": {
+                "move_id": "light_coronavault_burst",
+                "name_zh": "日冕貫天神光",
+                "element": "light",
+                "range_class": "long",
+                "shape": "line",
+                "movement": "none",
+                "visual": "全鏡面合攏聚光鎖定，射出貫穿天際的金色日冕光柱，伴隨刺目光波震盪"
+              }
             }
           ],
           "trait": {
@@ -103,7 +121,7 @@ window.COSMI_DESIGNED = {
             "name_zh": "逐光聚焦",
             "idea_zh": "使用光屬性招式後，鏡光暫時延伸招式範圍，此效果可疊加。"
           },
-          "overload": "未定案（Q-C12）：依成年延伸設計，寫入 manifest.notes 供人工確認"
+          "overload": "鏡冕天鷺（sun_coronavault_skyheron · XL）：太陽鏡陣飛行器與天鷺完全共鳴；背部環形鏡陣激發為三層旋轉日冕光環，光羽噴射耀眼金炎，以太管道引導星雲光子流"
         }
       }
     },
@@ -111,7 +129,7 @@ window.COSMI_DESIGNED = {
       "line_id": "starter_moon_line",
       "code_zh": "月",
       "element": "shadow",
-      "title_zh": "夜痕仔 → 夜痕狼 → 夜痕霜狼",
+      "title_zh": "夜痕仔 → 夜痕狼 → 夜痕霜狼 → 夜痕蝕月狼",
       "source": "Data/_incoming/p2-08-starters-draft-01",
       "concept": {
         "line_id": "starter_moon_line",
@@ -199,6 +217,24 @@ window.COSMI_DESIGNED = {
                 "movement": "dash",
                 "visual": "化作疾掠的暗影向前突襲，傷害路徑上的敵人，並暫時降低其影抗性。"
               }
+            },
+            {
+              "stage": "overload",
+              "creature_id": "moon_eclipsvast_wolf",
+              "name_zh": "夜痕蝕月狼",
+              "name_en": "Niverclis",
+              "size_class": "XL",
+              "look": "極地霜原巨狼超載爆發；極夜暗影與萬年玄冰包覆全身，背脊升起星圖冰棘，雙瞳燃燒極光幽火，踩踏之處地面化為幽冥暗影冰鏡",
+              "dex_zh": "在極寒與暗影達到頂點的瞬間，牠的身軀化作吞噬光芒的蝕月巨狼。踏冰而過時留下的夜痕凍結空間，揮動的霜影重爪足以撕裂冰河裂谷。",
+              "signature_move": {
+                "move_id": "shadow_eclipsvast_claw",
+                "name_zh": "極夜蝕月裂空爪",
+                "element": "shadow",
+                "range_class": "melee",
+                "shape": "sweep",
+                "movement": "forward",
+                "visual": "撕開暗影裂隙暴風突進，巨爪帶起幽藍極光與霜凍暗影大範圍橫掃"
+              }
             }
           ],
           "trait": {
@@ -206,7 +242,7 @@ window.COSMI_DESIGNED = {
             "name_zh": "夜行初步",
             "idea_zh": "召喚上場時腳步輕捷，暫時提升移動速度與閃避率。"
           },
-          "overload": "未定案（Q-C12）：依成年延伸設計，寫入 manifest.notes 供人工確認"
+          "overload": "夜痕蝕月狼（moon_eclipsvast_wolf · XL）：極地霜原巨狼超載爆發；極夜暗影與萬年玄冰包覆全身，背脊升起星圖冰棘，雙瞳燃燒極光幽火，踩踏之處地面化為幽冥暗影冰鏡"
         }
       }
     },
@@ -214,7 +250,7 @@ window.COSMI_DESIGNED = {
       "line_id": "starter_star_line",
       "code_zh": "星",
       "element": "thunder",
-      "title_zh": "星蹄駒 → 星蹄騏 → 星蹄天驥",
+      "title_zh": "星蹄駒 → 星蹄騏 → 星蹄天驥 → 星蹄雷皇驥",
       "source": "Data/_incoming/p2-08-starters-draft-01",
       "concept": {
         "line_id": "starter_star_line",
@@ -304,6 +340,24 @@ window.COSMI_DESIGNED = {
                 "movement": "dash",
                 "visual": "裹著雷光向前疾衝，沿直線踐踏並傷害路徑上的敵人。"
               }
+            },
+            {
+              "stage": "overload",
+              "creature_id": "star_tempest_celestial",
+              "name_zh": "星蹄雷皇驥",
+              "name_en": "Voltrastorm",
+              "size_class": "XL",
+              "look": "天馬雷霆超載；金色雙翼展開為暴風雷雲之翼，周身奔湧萬鈞高壓電弧，鬃毛如雷漿流淌，馬蹄踏空激起轟鳴雷爆",
+              "dex_zh": "體內的雷霆核心完全解放，四蹄踏擊雷雲如金鼓擂動。牠能裹挾萬重狂風與熾盛天雷在天際翱翔，如同一顆劃破長夜的金色流星。",
+              "signature_move": {
+                "move_id": "thunder_tempest_stride",
+                "name_zh": "萬鈞星雷破空撞",
+                "element": "thunder",
+                "range_class": "melee",
+                "shape": "burst",
+                "movement": "forward",
+                "visual": "雙翼聚斂百萬伏特雷暴，以超音速突進引發全場範圍的金色雷暴轟鳴"
+              }
             }
           ],
           "trait": {
@@ -311,7 +365,7 @@ window.COSMI_DESIGNED = {
             "name_zh": "迎擊雷鬃",
             "idea_zh": "受到任何屬性的攻擊後，雷鬃暫時蓄電並提升雷專精，此效果可疊加。"
           },
-          "overload": "未定案（Q-C12）：依成年延伸設計，寫入 manifest.notes 供人工確認"
+          "overload": "星蹄雷皇驥（star_tempest_celestial · XL）：天馬雷霆超載；金色雙翼展開為暴風雷雲之翼，周身奔湧萬鈞高壓電弧，鬃毛如雷漿流淌，馬蹄踏空激起轟鳴雷爆"
         }
       }
     }

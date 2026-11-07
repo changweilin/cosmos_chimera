@@ -196,6 +196,12 @@
   .upgrade-changes ul { margin: 4px 0 0; padding-left: 18px; }
   .upgrade-changes li { margin-bottom: 3px; color: var(--ok); }
 
+  .stage-switch-seg { display: inline-flex; gap: 2px; margin-left: 10px; vertical-align: middle; }
+  .stage-switch-seg .segb { padding: 3px 8px; font-size: 11px; }
+  .stage-pills { display: inline-flex; gap: 3px; margin-top: 3px; }
+  .stage-pill { font-size: 10px; padding: 1px 4px; border-radius: 3px; background: #232a36; color: var(--muted); }
+  .stage-pill.on { background: #1c3b5e; color: #7fd8ff; font-weight: bold; border: 1px solid #2f5a8a; }
+
   /* ---- 輸入 img / 審查台立繪包選擇器 ---- */
   .pack-picker-box { display: flex; flex-direction: column; gap: 7px; width: 100%; }
   .img-picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px; max-width: 100%; scrollbar-width: thin; }
@@ -372,6 +378,7 @@
         <button class="btn" id="btnUnpack" type="button">⚡ 一鍵解壓縮</button>
         <button class="btn ghost" id="btnToImg3d" type="button" title="以此立繪包（或當前預覽圖）產出 img-to-3D Prompt">🧊 產出 3D Prompt</button>
         <button class="btn ghost" id="btnUpgradeActive" type="button" title="一鍵升級為最新版 Prompt 與規格">🔄 升級格式</button>
+        <button class="btn ghost mini" id="btnBackup" type="button" title="移至備份區（自動加入時間戳）">📦 移至備份區</button>
         <button class="btn ghost mini" id="btnCopyPath" type="button">📋 複製路徑</button>
         <button class="btn ghost mini" id="btnCopyPs" type="button">💻 PowerShell</button>
       </div>

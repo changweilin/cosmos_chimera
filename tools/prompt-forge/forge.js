@@ -1,6 +1,6 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.6.0";
+  const TOOL_VERSION = "1.7.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
@@ -69,8 +69,23 @@
   };
 
   // ==================== 成果審查台狀態與跨管線工具 ====================
+  const STAGE_KEYS = ["juvenile", "adolescent", "adult", "overload"];
+  const STAGE_ZH = { juvenile: "幼年", adolescent: "少年", adult: "成年", overload: "超載" };
+
+  function parsePackageStage(pkgId, manifest, concept) {
+    const stageRegex = /[-_](juvenile|adolescent|adult|overload)(?:\.zip)?$/i;
+    const m = (pkgId || "").match(stageRegex);
+    if (m) {
+      return { stage: m[1].toLowerCase(), baseId: pkgId.slice(0, m.index) };
+    }
+    if (concept?.stage && STAGE_KEYS.includes(concept.stage)) {
+      return { stage: concept.stage, baseId: pkgId };
+    }
+    return { stage: null, baseId: pkgId };
+  }
+
   const reviewState = {
-    packages: [], activePkgId: null, activeImgIdx: 0,
+    packages: [], activePkgId: null, activeStage: "adult", activeImgIdx: 0,
     filterCat: "all", filterQuery: "", viewMode: "single", // "single" | "compare"
     zoomLevel: 1.0, panX: 0, panY: 0,
     reviews: {}
@@ -216,8 +231,8 @@
         return [{ v: d.bodyFat, w: 1 }, { v: "18.0%", w: 1 }, { v: "22.0%", w: 1 }, { v: "未知", w: 1 }].concat(getCustom("character.body_fat").map(v => ({ v, w: 1 })));
       }, count: [{ n: 1, w: 1 }], dep: "weight", customGen: (s, rng) => sampleHumanDimensions(rng, s.character.gender?.[0], s.character.age_band?.[0], s.character.age?.[0]).bodyFat },
       { key: "cup_size", label: "罩杯（女性）", options: () => CH.cup_sizes.map(c => ({ v: c.v, w: c.w })).concat(getCustom("character.cup_size").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], when: s => s.character.gender?.[0] === "女" },
-      { key: "outfit_palette", label: "服裝色系 (1~3色)", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("character.outfit_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }], max: 3 },
-      { key: "hair_palette", label: "頭髮色系 (1~2色)", options: () => CH.hair_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.hair_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "outfit_palette", label: "服裝色系 (1~3色)", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: p.zh || p.v })).concat(getCustom("character.outfit_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 2 }, { n: 2, w: 5 }, { n: 3, w: 3 }], max: 3 },
+      { key: "hair_palette", label: "頭髮色系 (1~2色)", options: () => CH.hair_palettes.map(p => ({ v: p.v, w: p.w, zh: p.zh || p.v })).concat(getCustom("character.hair_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 6 }, { n: 2, w: 4 }], max: 2 },
       { key: "eye_palette", label: "瞳孔色系 (1~2色)", options: () => CH.eye_palettes.map(p => ({ v: p.v, w: p.w })).concat(getCustom("character.eye_palette").map(v => ({ v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
       { key: "personality", label: "性格特質", options: () => uniform(C.PERSONALITIES.concat(getCustom("character.personality"))), count: [{ n: 2, w: 1 }], max: 4 },
       { key: "style", label: "服裝/外觀風格", options: () => uniform(CH.style.concat(getCustom("character.style"))), count: [{ n: 2, w: 1 }], max: 3 },
@@ -238,7 +253,10 @@
         }
         return uniform(subs.concat(["未知"]).concat(getCustom("creature.bases")));
       }, count: [{ n: 2, w: 1 }], max: 3, dep: "base_parents" },
-      { key: "appearance_palette", label: "宙獸色系 (1~3色)", options: () => C.PALETTES.map(p => ({ v: p.v, w: p.w, zh: `${p.v} (${p.colors || 0}色)` })).concat(getCustom("creature.appearance_palette").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 1 }], max: 3 },
+      { key: "appearance_palette", label: "宙獸色系 (1~3色)", options: s => {
+        const pool = C.getFilteredPalettes(s.creature.elements || []);
+        return pool.map(p => ({ v: p.v, w: p.w, zh: p.zh || p.v })).concat(getCustom("creature.appearance_palette").map(v => ({ v, w: 1, zh: v })));
+      }, count: [{ n: 1, w: 2 }, { n: 2, w: 5 }, { n: 3, w: 3 }], max: 3, dep: "elements" },
       { key: "timeline", label: "文化時間線", options: () => C.TIMELINES.map(t => ({ v: t.v, zh: t.zh, w: 1 })).concat(getCustom("creature.timeline").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 1 }] },
       { key: "region", label: "文化地區", options: () => uniform(C.CULTURE_REGIONS.concat(getCustom("creature.region"))), count: [{ n: 1, w: 1 }] },
       { key: "archetype", label: "文化原型", options: s => {
@@ -396,7 +414,12 @@
       .filter(d => d.type === "checks" && !d.optional && (!d.when || d.when(o)) && (o[d.key] || []).length === 0)
       .forEach(d => errors.push("至少勾選一個「" + d.label + "」"));
     const s = stamp();
-    const taskId = t.prefix + "-" + s.day + "-" + state.seed + "-" + s.hm;
+    let taskId = t.prefix + "-" + s.day + "-" + state.seed + "-" + s.hm;
+    if (t.id === "creature-concept" && o.stage) {
+      taskId += "-" + o.stage;
+    } else if (t.id === "model-rig" && o.subject === "creature" && o.stage) {
+      taskId += "-" + o.stage;
+    }
     const header = "[COSMIMERA-TASK spec=" + SPEC + " tool=" + TOOL_VERSION + " catalog=" + C.version + " template=" + t.id + "@" + t.version + " task_id=" + taskId + " seed=" + state.seed + "]";
     const chosenPkg = (t.id === "model-rig" && o.source_pack) ? reviewState.packages.find(p => p.id === o.source_pack) : null;
     let concept = chosenPkg?.concept || (subj === "character" ? characterConcept() : subj === "creature" ? creatureConcept() : null);
@@ -835,19 +858,22 @@
   }
 
   // ==================== 成果審查台（Review Workbench，參考 steel_vs_swarm） ====================
-  // 取得與目前封裝相互參照的關聯封裝（2D 立繪 ⇄ 3D 模型雙向參照）
+  // 取得與目前封裝相互參照的關聯封裝（2D 立繪 ⇄ 3D 模型雙向參照，優先配對同一型態）
   function getLinkedPackage(pkg) {
     if (!pkg) return null;
+    const curStage = pkg.stage || reviewState.activeStage || "adult";
     if (pkg.type === "model-rig") {
       // 3D 封裝往回找立繪包
       if (pkg.manifest?.source_pack) {
         const found = reviewState.packages.find(p => p.id === pkg.manifest.source_pack);
         if (found) return found;
       }
-      return reviewState.packages.find(p => p.type !== "model-rig" && p.subjectId && p.subjectId === pkg.subjectId) || null;
+      return reviewState.packages.find(p => p.type !== "model-rig" && (p.groupKey === pkg.groupKey || p.subjectId === pkg.subjectId) && (!p.stage || p.stage === curStage))
+        || reviewState.packages.find(p => p.type !== "model-rig" && p.subjectId && p.subjectId === pkg.subjectId) || null;
     } else {
       // 立繪包往下找衍生 3D 封裝
-      return reviewState.packages.find(p => p.type === "model-rig" && (p.manifest?.source_pack === pkg.id || (p.subjectId && p.subjectId === pkg.subjectId))) || null;
+      return reviewState.packages.find(p => p.type === "model-rig" && (p.groupKey === pkg.groupKey || p.manifest?.source_pack === pkg.id || p.subjectId === pkg.subjectId) && (!p.stage || p.stage === curStage))
+        || reviewState.packages.find(p => p.type === "model-rig" && (p.manifest?.source_pack === pkg.id || (p.subjectId && p.subjectId === pkg.subjectId))) || null;
     }
   }
 
@@ -965,10 +991,22 @@
   }
 
     function addPackage(pkg) {
+      if (!pkg.baseId || pkg.stage === undefined) {
+        const info = parsePackageStage(pkg.id, pkg.manifest, pkg.concept);
+        pkg.stage = info.stage;
+        pkg.baseId = info.baseId;
+      }
+      pkg.groupKey = (pkg.type === "creature-concept" || pkg.id.startsWith("cr"))
+        ? (pkg.baseId || pkg.subjectId || pkg.id)
+        : (pkg.type === "model-rig" || pkg.id.startsWith("mdl"))
+        ? (pkg.baseId || pkg.id)
+        : pkg.id;
+
       const idx = reviewState.packages.findIndex(p => p.id === pkg.id);
       if (idx >= 0) reviewState.packages[idx] = pkg;
       else reviewState.packages.unshift(pkg);
       reviewState.activePkgId = pkg.id;
+      if (pkg.stage) reviewState.activeStage = pkg.stage;
       reviewState.activeImgIdx = 0;
       try {
         renderReviewView();
@@ -978,17 +1016,117 @@
       toast("已載入任務包：" + pkg.id);
     }
 
+  function getBackupTimestamp() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  }
+
+  function backupActivePackage(pkg) {
+    if (!pkg) pkg = getActivePkg();
+    if (!pkg) { toast("請先選取要備份的任務包"); return; }
+    const ts = getBackupTimestamp();
+    const root = state.root || DEFAULT_ROOT;
+    const dest = `${root}\\Art\\_backup\\${pkg.id}_${ts}`;
+    const cmd = `Move-Item -Path "${root}\\Art\\_incoming\\${pkg.id}" -Destination "${dest}" -Force`;
+    copyText(cmd, `已複製備份指令（目標：Art\\_backup\\${pkg.id}_${ts}）！可直接在 PowerShell 貼上執行`);
+  }
+
   // 載入內建測試範例（fixtures）
   function loadSampleFixtures() {
+    const crBaseConcept = {
+      line_id: "line_7f3a",
+      elements: ["fire（火）", "metal（金）"],
+      element_palettes: ["自然火紅 × 琉璃金"],
+      base_parents: ["類人奇幻·精靈族", "器械·武器"],
+      bases: ["精靈族·高等精靈/月光祭司", "武器·符文巨盾/塔盾護壁"],
+      appearance_palette: ["熔岩赤紅 × 炭黑硬甲 × 烈焰耀金"],
+      timeline: "青銅神話/古典英雄時代", region: "東亞",
+      size_profile: "S→M→L→XL",
+      archetype: "桃太郎", archetype_type: "傳說", motifs: "桃紋飾、雙角重鎧、腰間黍糰印記",
+      sensitivity: "ok", role: "前排肉盾/坦克", temperament: "好鬥凶悍",
+      signature_move: { name_zh: "崩天熾烈斬", move_id: "move_earth_heavy_cleave" },
+      trait: { name_zh: "熔鋼重裝壁", trait_id: "trait_metal_impenetrable_shell" },
+      formula: "fire+metal × 精靈族·高等精靈+武器·符文巨盾 × 桃太郎（青銅神話/古典英雄時代）"
+    };
+
     const mockPackages = [
       {
-        id: "cr-20261106-7f3a-2105",
+        id: "cr-20261106-7f3a-2105-juvenile",
         type: "creature-concept",
+        stage: "juvenile",
+        baseId: "cr-20261106-7f3a-2105",
         subjectId: "line_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
-          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=creature-concept@2.0.0 task_id=cr-20261106-7f3a-2105 seed=7f3a]",
-          task_id: "cr-20261106-7f3a-2105",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=creature-concept@4.0.0 task_id=cr-20261106-7f3a-2105-juvenile seed=7f3a]",
+          task_id: "cr-20261106-7f3a-2105-juvenile",
+          task_type: "creature-concept",
+          subject_id: "line_7f3a",
+          produced_by: "ChatGPT",
+          files: [
+            { path: "concept.json", kind: "spec", level: "L1" },
+            { path: "images/cr_line_7f3a_juvenile_main.png", kind: "main", level: "L1" },
+            { path: "images/cr_line_7f3a_juvenile_turnaround.png", kind: "turnaround", level: "L1" },
+            { path: "images/cr_line_7f3a_juvenile_front.png", kind: "view", level: "L1" }
+          ],
+          missing: [],
+          notes: "幼年型態：火角石，嬌小滾圓，頭部單一赤紅小犄角"
+        },
+        concept: Object.assign({}, crBaseConcept, {
+          stage: "juvenile", name_zh: "火角石", size_class: "S", height_length: "0.45 m", weight: "12 kg", body_fat: "18.0%"
+        }),
+        images: [
+          { path: "images/cr_line_7f3a_juvenile_main.png", url: createSampleSvgDataUrl("火角石 · 幼年立繪 (0.45m)", "#e67e22") },
+          { path: "images/cr_line_7f3a_juvenile_turnaround.png", url: createSampleSvgDataUrl("火角石 · T-Pose 三視圖", "#7f8c8d") },
+          { path: "images/cr_line_7f3a_juvenile_front.png", url: createSampleSvgDataUrl("正面正交視圖 1:1", "#34495e") }
+        ],
+        fileCount: 4,
+        status: "ok"
+      },
+      {
+        id: "cr-20261106-7f3a-2105-adolescent",
+        type: "creature-concept",
+        stage: "adolescent",
+        baseId: "cr-20261106-7f3a-2105",
+        subjectId: "line_7f3a",
+        manifest: {
+          spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=creature-concept@4.0.0 task_id=cr-20261106-7f3a-2105-adolescent seed=7f3a]",
+          task_id: "cr-20261106-7f3a-2105-adolescent",
+          task_type: "creature-concept",
+          subject_id: "line_7f3a",
+          produced_by: "ChatGPT",
+          files: [
+            { path: "concept.json", kind: "spec", level: "L1" },
+            { path: "images/cr_line_7f3a_adolescent_main.png", kind: "main", level: "L1" },
+            { path: "images/cr_line_7f3a_adolescent_turnaround.png", kind: "turnaround", level: "L1" },
+            { path: "images/cr_line_7f3a_adolescent_front.png", kind: "view", level: "L1" }
+          ],
+          missing: [],
+          notes: "少年型態：熔脊獸，背脊隆起暗紅火山岩刺甲"
+        },
+        concept: Object.assign({}, crBaseConcept, {
+          stage: "adolescent", name_zh: "熔脊獸", size_class: "M", height_length: "1.10 m", weight: "85 kg", body_fat: "16.0%"
+        }),
+        images: [
+          { path: "images/cr_line_7f3a_adolescent_main.png", url: createSampleSvgDataUrl("熔脊獸 · 少年立繪 (1.10m)", "#d35400") },
+          { path: "images/cr_line_7f3a_adolescent_turnaround.png", url: createSampleSvgDataUrl("熔脊獸 · T-Pose 三視圖", "#7f8c8d") },
+          { path: "images/cr_line_7f3a_adolescent_front.png", url: createSampleSvgDataUrl("正面正交視圖 1:1", "#34495e") }
+        ],
+        fileCount: 4,
+        status: "ok"
+      },
+      {
+        id: "cr-20261106-7f3a-2105-adult",
+        type: "creature-concept",
+        stage: "adult",
+        baseId: "cr-20261106-7f3a-2105",
+        subjectId: "line_7f3a",
+        manifest: {
+          spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=creature-concept@4.0.0 task_id=cr-20261106-7f3a-2105-adult seed=7f3a]",
+          task_id: "cr-20261106-7f3a-2105-adult",
           task_type: "creature-concept",
           subject_id: "line_7f3a",
           produced_by: "ChatGPT",
@@ -996,54 +1134,68 @@
             { path: "concept.json", kind: "spec", level: "L1" },
             { path: "images/cr_line_7f3a_adult_main.png", kind: "main", level: "L1" },
             { path: "images/cr_line_7f3a_adult_turnaround.png", kind: "turnaround", level: "L1" },
-            { path: "images/cr_line_7f3a_adult_front.png", kind: "view", level: "L1" },
-            { path: "images/cr_line_7f3a_lineup.png", kind: "sheet", level: "L1" }
+            { path: "images/cr_line_7f3a_adult_front.png", kind: "view", level: "L1" }
           ],
           missing: [],
-          notes: "三視圖與配色完整生成，符號意象已融入裝甲"
+          notes: "成年型態：焰甲重龍，四足重甲巨獸，雙角重鎧桃紋飾"
         },
-        concept: {
-          line_id: "line_7f3a",
-          elements: ["fire（火）", "metal（金）"],
-          element_palettes: ["自然火紅 × 琉璃金"],
-          base_parents: ["類人奇幻·精靈族", "器械·武器"],
-          bases: ["精靈族·高等精靈/月光祭司", "武器·符文巨盾/塔盾護壁"],
-          appearance_palette: ["熔岩赤紅 × 炭黑硬甲 × 烈焰耀金"],
-          timeline: "青銅神話/古典英雄時代", region: "東亞",
-          size_profile: "S→M→L→XL",
-          height_length: "2.10 m", weight: "340 kg", body_fat: "15.0%",
-          archetype: "桃太郎", archetype_type: "傳說", motifs: "桃紋飾、雙角重鎧、腰間黍糰印記",
-          sensitivity: "ok", role: "前排肉盾/坦克", temperament: "好鬥凶悍",
-          stages: [
-            { stage: "juvenile", name_zh: "火角石", size_class: "S", height_m: 0.45 },
-            { stage: "adolescent", name_zh: "熔脊獸", size_class: "M", height_m: 1.10 },
-            { stage: "adult", name_zh: "焰甲重龍", size_class: "L", height_m: 2.10 },
-            { stage: "overload", name_zh: "天炎煌角甲", size_class: "XL", height_m: 3.80 }
-          ],
-          signature_move: { name_zh: "崩天熾烈斬", move_id: "move_earth_heavy_cleave" },
-          trait: { name_zh: "熔鋼重裝壁", trait_id: "trait_metal_impenetrable_shell" },
-          formula: "fire+metal × 精靈族·高等精靈+武器·符文巨盾 × 桃太郎（青銅神話/古典英雄時代）"
-        },
+        concept: Object.assign({}, crBaseConcept, {
+          stage: "adult", name_zh: "焰甲重龍", size_class: "L", height_length: "2.10 m", weight: "340 kg", body_fat: "15.0%"
+        }),
         images: [
-          { path: "images/cr_line_7f3a_adult_main.png", url: createSampleSvgDataUrl("焰甲重龍 · 成年立繪 (2.1m)", "#d35400") },
+          { path: "images/cr_line_7f3a_adult_main.png", url: createSampleSvgDataUrl("焰甲重龍 · 成年立繪 (2.10m)", "#c0392b") },
           { path: "images/cr_line_7f3a_adult_turnaround.png", url: createSampleSvgDataUrl("焰甲重龍 · T-Pose 三視圖", "#7f8c8d") },
-          { path: "images/cr_line_7f3a_adult_front.png", url: createSampleSvgDataUrl("正面正交視圖 1:1", "#34495e") },
-          { path: "images/cr_line_7f3a_lineup.png", url: createSampleSvgDataUrl("進化排列圖 21:9", "#2c3e50") }
+          { path: "images/cr_line_7f3a_adult_front.png", url: createSampleSvgDataUrl("正面正交視圖 1:1", "#34495e") }
         ],
-        fileCount: 6,
+        fileCount: 4,
         status: "ok"
       },
       {
-        id: "mdl-20261106-7f3a-2105",
-        type: "model-rig",
+        id: "cr-20261106-7f3a-2105-overload",
+        type: "creature-concept",
+        stage: "overload",
+        baseId: "cr-20261106-7f3a-2105",
         subjectId: "line_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
-          task_header: "[COSMIMERA-TASK spec=1 tool=1.6.0 catalog=1.2.0 template=model-rig@2.1.0 task_id=mdl-20261106-7f3a-2105 seed=7f3a]",
-          task_id: "mdl-20261106-7f3a-2105",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=creature-concept@4.0.0 task_id=cr-20261106-7f3a-2105-overload seed=7f3a]",
+          task_id: "cr-20261106-7f3a-2105-overload",
+          task_type: "creature-concept",
+          subject_id: "line_7f3a",
+          produced_by: "ChatGPT",
+          files: [
+            { path: "concept.json", kind: "spec", level: "L1" },
+            { path: "images/cr_line_7f3a_overload_main.png", kind: "main", level: "L1" },
+            { path: "images/cr_line_7f3a_overload_turnaround.png", kind: "turnaround", level: "L1" },
+            { path: "images/cr_line_7f3a_overload_front.png", kind: "view", level: "L1" }
+          ],
+          missing: [],
+          notes: "超載型態：天炎煌角甲，熔金光翼巨角，超載能量外溢"
+        },
+        concept: Object.assign({}, crBaseConcept, {
+          stage: "overload", name_zh: "天炎煌角甲", size_class: "XL", height_length: "3.80 m", weight: "920 kg", body_fat: "12.0%"
+        }),
+        images: [
+          { path: "images/cr_line_7f3a_overload_main.png", url: createSampleSvgDataUrl("天炎煌角甲 · 超載立繪 (3.80m)", "#962d22") },
+          { path: "images/cr_line_7f3a_overload_turnaround.png", url: createSampleSvgDataUrl("天炎煌角甲 · T-Pose 三視圖", "#7f8c8d") },
+          { path: "images/cr_line_7f3a_overload_front.png", url: createSampleSvgDataUrl("正面正交視圖 1:1", "#34495e") }
+        ],
+        fileCount: 4,
+        status: "ok"
+      },
+      {
+        id: "mdl-20261106-7f3a-2105-adult",
+        type: "model-rig",
+        stage: "adult",
+        baseId: "mdl-20261106-7f3a-2105",
+        subjectId: "line_7f3a",
+        manifest: {
+          spec: "cosmimera-art-task/1",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=model-rig@3.1.0 task_id=mdl-20261106-7f3a-2105-adult seed=7f3a]",
+          task_id: "mdl-20261106-7f3a-2105-adult",
           task_type: "model-rig",
           subject_id: "line_7f3a",
-          source_pack: "cr-20261106-7f3a-2105",
+          source_pack: "cr-20261106-7f3a-2105-adult",
           produced_by: "Gemini Argon",
           files: [
             { path: "images/cr_line_7f3a_adult_model_front.png", kind: "view", level: "L1" },
@@ -1060,7 +1212,7 @@
           missing: [
             { item: "models/cr_line_7f3a_adult.glb", level: "L2", reason: "no 3D generation on this platform" }
           ],
-          notes: "由立繪包 cr-20261106-7f3a-2105 清理生成 3D 建模正交視圖與骨架規格"
+          notes: "由成年立繪包 cr-20261106-7f3a-2105-adult 生成 3D 建模正交視圖與骨架動作規格"
         },
         images: [
           { path: "images/cr_line_7f3a_adult_model_front.png", url: createSampleSvgDataUrl("焰甲重龍 · 建模正交正面 2048px", "#e67e22") },
@@ -1077,7 +1229,7 @@
         subjectId: "chr_7f3a",
         manifest: {
           spec: "cosmimera-art-task/1",
-          task_header: "[COSMIMERA-TASK spec=1 tool=1.4.0 catalog=1.2.0 template=character-concept@1.2.0 task_id=chr-20261106-7f3a-2105 seed=7f3a]",
+          task_header: "[COSMIMERA-TASK spec=1 tool=1.7.0 catalog=1.3.0 template=character-concept@2.1.0 task_id=chr-20261106-7f3a-2105 seed=7f3a]",
           task_id: "chr-20261106-7f3a-2105",
           task_type: "character-concept",
           subject_id: "chr_7f3a",
@@ -1098,7 +1250,7 @@
           gender: "女", age_band: "青少年", age: 17, height: "163 cm", weight: "51.5 kg", body_fat: "21.5%",
           cup_size: "C",
           outfit_palette: ["海軍藍 × 象牙白 × 霧金"],
-          hair_palette: ["純黑 × 挑染天藍"],
+          hair_palette: ["純黑", "天藍挑染"],
           eye_palette: ["琥珀金"],
           personality: ["熱血", "好奇"], style: "街頭機能 × 學院制服改造",
           interests: ["星際探索", "古文字解密"], likes: ["熱奶茶", "發光晶石"], dislikes: ["冗長報告"],
@@ -1110,14 +1262,15 @@
           { path: "images/chr_7f3a_expressions.png", url: createSampleSvgDataUrl("表情集 2×3", "#8e44ad") },
           { path: "images/chr_7f3a_props.png", url: createSampleSvgDataUrl("道具板 · 符籙卡片與背包", "#16a085") }
         ],
-        fileCount: 6,
+        fileCount: 5,
         status: "ok"
       }
     ];
     mockPackages.forEach(p => addPackage(p));
-    reviewState.activePkgId = mockPackages[0].id;
+    reviewState.activeStage = "adult";
+    reviewState.activePkgId = "cr-20261106-7f3a-2105-adult";
     renderReviewView();
-    toast("已載入內建測試範例（含立繪與 3D 成果參照）");
+    toast("已載入內建測試範例（含宙獸四型態、3D成果與角色立繪）");
   }
 
   function createSampleSvgDataUrl(title, color) {
@@ -1349,7 +1502,7 @@
 
     if (isChr) {
       const t = TASKS.find(x => x.id === "character-concept");
-      changes.push("升級至最新角色模板：template=character-concept@1.2.0, spec=1, tool=" + TOOL_VERSION);
+      changes.push("升級至最新角色模板：template=character-concept@" + t.version + ", spec=1, tool=" + TOOL_VERSION);
 
       // 解除人種與文化關聯，補齊生理常態數值
       if (!updatedConcept.ethnicity) { updatedConcept.ethnicity = "東亞體系"; changes.push("補齊人種表型：東亞體系"); }
@@ -1411,7 +1564,7 @@
 
     } else if (isCr) {
       const t = TASKS.find(x => x.id === "creature-concept");
-      changes.push("升級至最新宙獸模板：template=creature-concept@2.0.0, spec=1, tool=" + TOOL_VERSION);
+      changes.push("升級至最新宙獸模板：template=creature-concept@" + t.version + ", spec=1, tool=" + TOOL_VERSION);
 
       // 外觀基底父類別遷移
       if (updatedConcept.base_parents) {
@@ -1477,7 +1630,7 @@
 
     } else if (is3d) {
       const t = TASKS.find(x => x.id === "model-rig");
-      changes.push("升級至最新 3D 管線模板：template=model-rig@2.1.0 (整合綁骨與動畫)");
+      changes.push("升級至最新 3D 管線模板：template=model-rig@" + t.version + " (整合綁骨與動畫)");
 
       // 補齊並確保往回參照立繪包 (source_pack)
       let sp = updatedManifest.source_pack;
@@ -1544,6 +1697,7 @@
     const linkedPkg = getLinkedPackage(pkg);
 
     // 渲染名冊清單
+    // 渲染名冊清單（依 groupKey 分組，同宙獸之四種型態收合於同一項目）
     const railList = $("#railList"); railList.replaceChildren();
     const query = reviewState.filterQuery.toLowerCase();
     const filtered = reviewState.packages.filter(p => {
@@ -1556,37 +1710,85 @@
       return true;
     });
 
+    const groups = [];
+    const groupMap = new Map();
     filtered.forEach(p => {
-      const isSel = pkg && pkg.id === p.id;
-      const thumbUrl = p.images?.[0]?.url;
-      const statZh = p.status === "ok" ? "✅ 合規" : p.status === "reject" ? "❌ 退回" : p.status === "missing" ? "⚠️ 缺檔" : "🟨 待審";
-      const pLinked = getLinkedPackage(p);
+      const gk = (p.type === "creature-concept" || p.id.startsWith("cr"))
+        ? (p.groupKey || p.baseId || p.id)
+        : (p.type === "model-rig" || p.id.startsWith("mdl"))
+        ? (p.groupKey || p.baseId || p.id)
+        : p.id;
+      if (!groupMap.has(gk)) {
+        const g = { key: gk, packages: [], baseId: p.baseId || p.id, type: p.type, subjectId: p.subjectId };
+        groupMap.set(gk, g);
+        groups.push(g);
+      }
+      groupMap.get(gk).packages.push(p);
+    });
+
+    groups.forEach(g => {
+      const isSel = pkg && (pkg.groupKey === g.key || pkg.id === g.key || g.packages.some(p => p.id === pkg.id));
+      let repPkg = (isSel && pkg) ? pkg : null;
+      if (!repPkg) {
+        repPkg = g.packages.find(p => p.stage === reviewState.activeStage)
+          || g.packages.find(p => p.stage === "adult")
+          || g.packages[0];
+      }
+
+      const thumbUrl = repPkg.images?.[0]?.url || g.packages.find(p => p.images?.[0]?.url)?.images[0].url;
+      const statZh = repPkg.status === "ok" ? "✅ 合規" : repPkg.status === "reject" ? "❌ 退回" : repPkg.status === "missing" ? "⚠️ 缺檔" : "🟨 待審";
+      const pLinked = getLinkedPackage(repPkg);
+
+      // 若群組有多種型態或具備型態屬性，顯示型態標籤 pills
+      let stagePillsEl = null;
+      const hasStages = g.packages.some(p => p.stage);
+      if (hasStages) {
+        const pills = STAGE_KEYS.map(stKey => {
+          const matchP = g.packages.find(p => p.stage === stKey);
+          if (!matchP) return null;
+          const isStOn = isSel && repPkg.stage === stKey;
+          return el("span", {
+            class: "stage-pill" + (isStOn ? " on" : ""),
+            title: STAGE_ZH[stKey] + " (" + matchP.id + ")",
+            onclick: (e) => {
+              e.stopPropagation();
+              reviewState.activeStage = stKey;
+              reviewState.activePkgId = matchP.id;
+              reviewState.activeImgIdx = 0;
+              renderReviewView();
+            }
+          }, STAGE_ZH[stKey]);
+        }).filter(Boolean);
+        stagePillsEl = el("div", { class: "stage-pills" }, pills);
+      }
 
       const badges = el("div", { class: "rl-badges" },
-        el("span", { class: "rl-stat " + p.status }, statZh),
-        p.manifest?.source_pack ? el("span", { class: "rl-link-tag", title: "參照立繪: " + p.manifest.source_pack }, "⬅ " + p.manifest.source_pack.slice(0, 10)) : null,
-        (!p.manifest?.source_pack && pLinked && p.type !== "model-rig") ? el("span", { class: "rl-link-tag", title: "已關聯 3D 模型" }, "➡ 3D") : null
+        el("span", { class: "rl-stat " + repPkg.status }, statZh),
+        repPkg.manifest?.source_pack ? el("span", { class: "rl-link-tag", title: "參照立繪: " + repPkg.manifest.source_pack }, "⬅ " + repPkg.manifest.source_pack.slice(0, 10)) : null,
+        (!repPkg.manifest?.source_pack && pLinked && repPkg.type !== "model-rig") ? el("span", { class: "rl-link-tag", title: "已關聯 3D 模型" }, "➡ 3D") : null
       );
 
       const item = el("div", {
         class: "rl" + (isSel ? " on" : ""),
         onclick: () => {
-          reviewState.activePkgId = p.id;
+          reviewState.activePkgId = repPkg.id;
+          if (repPkg.stage) reviewState.activeStage = repPkg.stage;
           reviewState.activeImgIdx = 0;
           renderReviewView();
         }
       },
         el("div", { class: "rl-thumb" }, thumbUrl ? el("img", { src: thumbUrl }) : "📦"),
         el("div", { class: "rl-txt" },
-          el("div", { class: "rl-id" }, p.id),
-          el("div", { class: "rl-sub" }, p.type + (p.subjectId ? " · " + p.subjectId : "")),
+          el("div", { class: "rl-id" }, g.baseId || repPkg.id),
+          el("div", { class: "rl-sub" }, repPkg.type + (repPkg.subjectId ? " · " + repPkg.subjectId : "") + (repPkg.stage ? " · " + STAGE_ZH[repPkg.stage] : "")),
+          stagePillsEl,
           badges
         )
       );
       railList.append(item);
     });
 
-    if (!filtered.length) {
+    if (!groups.length) {
       railList.append(el("div", { class: "muted", style: "padding:16px 8px;text-align:center" }, "無符合條件的任務包"));
     }
 
@@ -1604,7 +1806,7 @@
 
     $("#stageEmpty").style.display = "none";
     $("#stageTag").style.display = "flex";
-    $("#stId").textContent = pkg.id;
+    $("#stId").textContent = pkg.id + (pkg.stage ? ` · ${STAGE_ZH[pkg.stage] || pkg.stage}` : "");
     const badge = $("#stBadge");
     badge.className = "badge " + pkg.status;
     badge.textContent = pkg.status === "ok" ? "已通過" : pkg.status === "reject" ? "需修改" : pkg.status === "missing" ? "有缺檔" : "待審核";
@@ -1622,6 +1824,38 @@
       refTag.title = "點選切換至雙欄對照或跳轉 3D 包";
     } else {
       refTag.style.display = "none";
+    }
+
+    // 型態切換按鈕組 (按鍵切換型態：幼年、少年、成年、超載)
+    let stageSwitchSeg = $("#stageSwitchSeg");
+    const siblingStages = reviewState.packages.filter(p => p.groupKey === pkg.groupKey && p.type === pkg.type && p.stage);
+    if (siblingStages.length > 0 || (pkg.type === "creature-concept" || pkg.id.startsWith("cr-"))) {
+      if (!stageSwitchSeg) {
+        stageSwitchSeg = el("div", { class: "seg stage-switch-seg", id: "stageSwitchSeg" });
+        $("#stageTag").append(stageSwitchSeg);
+      }
+      stageSwitchSeg.style.display = "inline-flex";
+      stageSwitchSeg.replaceChildren();
+      STAGE_KEYS.forEach(stKey => {
+        const found = siblingStages.find(p => p.stage === stKey);
+        const isActive = (pkg.stage === stKey);
+        const btn = el("button", {
+          class: "segb" + (isActive ? " on" : ""),
+          type: "button",
+          disabled: !found,
+          title: found ? `切換至 ${STAGE_ZH[stKey]} (${found.id})` : `尚未載入此型態交付包`,
+          onclick: () => {
+            if (!found) return;
+            reviewState.activeStage = stKey;
+            reviewState.activePkgId = found.id;
+            reviewState.activeImgIdx = 0;
+            renderReviewView();
+          }
+        }, STAGE_ZH[stKey]);
+        stageSwitchSeg.append(btn);
+      });
+    } else if (stageSwitchSeg) {
+      stageSwitchSeg.style.display = "none";
     }
 
     // 雙欄模式切換與呈現 (參考 steel_vs_swarm)
@@ -1949,9 +2183,10 @@
           el("button", { class: "segb" + (pkg.status === "reject" ? " on" : ""), type: "button", onclick: () => { pkg.status = "reject"; saveReview(pkg); renderReviewView(); } }, "❌ 退回拒絕")
         ),
         el("textarea", { id: "revNote", placeholder: "填寫人工審查意見（例如：身高比例良好，但服裝配色需微調；臉部表情需更生動...）", onchange: e => { saveReview(pkg, e.target.value); } }, getReviewNote(pkg)),
-        el("div", { style: "display:flex;gap:6px;margin-top:6px" },
+        el("div", { style: "display:flex;gap:6px;margin-top:6px;flex-wrap:wrap" },
           el("button", { class: "btn mini", type: "button", onclick: () => { saveReview(pkg, $("#revNote")?.value); toast("已儲存審查結果"); } }, "💾 儲存審查意見"),
-          el("button", { class: "btn ghost mini", type: "button", onclick: () => exportReviewReport(pkg) }, "⬇ 下載審查報告 (.json)")
+          el("button", { class: "btn ghost mini", type: "button", onclick: () => exportReviewReport(pkg) }, "⬇ 下載審查報告 (.json)"),
+          el("button", { class: "btn ghost mini", type: "button", title: "移至備份區（自動加入時間戳）", onclick: () => backupActivePackage(pkg) }, "📦 移至備份區 (含時間戳)")
         )
       );
       box.append(reviewBox);
@@ -1960,13 +2195,17 @@
     } else if (activeTab === "cli") {
       box.append(el("h4", {}, "解壓與管線部署"));
       const root = state.root || DEFAULT_ROOT;
+      const ts = getBackupTimestamp();
       const psCmd = `Expand-Archive -Path "$HOME\\Downloads\\${pkg.id}.zip" -DestinationPath "${root}\\Art\\_incoming\\" -Force`;
       const valCmd = `python tools/validate_art.py Art/_incoming/${pkg.id} --apply`;
+      const backupCmd = `Move-Item -Path "${root}\\Art\\_incoming\\${pkg.id}" -Destination "${root}\\Art\\_backup\\${pkg.id}_${ts}" -Force`;
       box.append(
         el("p", { class: "muted" }, "一鍵解壓指令（PowerShell）："),
         el("div", { class: "cmd" }, el("code", {}, psCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(psCmd, "已複製解壓指令") }, "複製")),
         el("p", { class: "muted", style: "margin-top:10px" }, "驗收搬入管線指令（validate-art）："),
-        el("div", { class: "cmd" }, el("code", {}, valCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(valCmd, "已複製驗收指令") }, "複製"))
+        el("div", { class: "cmd" }, el("code", {}, valCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(valCmd, "已複製驗收指令") }, "複製")),
+        el("p", { class: "muted", style: "margin-top:10px" }, "移至備份區指令（含時間戳）："),
+        el("div", { class: "cmd" }, el("code", {}, backupCmd), el("button", { type: "button", class: "btn ghost mini", onclick: () => copyText(backupCmd, "已複製備份指令") }, "複製"))
       );
     }
   }
@@ -2208,6 +2447,11 @@
       const pkg = getActivePkg();
       if (!pkg) return;
       sendToImgTo3D(pkg, pkg.images?.[reviewState.activeImgIdx]?.path);
+    });
+    $("#btnBackup")?.addEventListener("click", () => {
+      const pkg = getActivePkg();
+      if (!pkg) return;
+      backupActivePackage(pkg);
     });
     $("#btnCopyPath").addEventListener("click", () => {
       const pkg = getActivePkg();
