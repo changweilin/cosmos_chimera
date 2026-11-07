@@ -510,6 +510,26 @@ namespace Cosmimera.Combat.Tests
             Assert.AreEqual(1.0, math.length(dd), 1e-6);
         }
 
+        // SOL r4: normalizing the target before the cross product picked the wrong great circle (11 m off).
+        [TestCase(640f, 3f, 640f, 1.5f, 320f, 1e-20f)]
+        [TestCase(640f, 3f, 640f, -3f, -640f, 1e-20f)]
+        [TestCase(8000f, 7874f, 12272f, 3937f, 6136f, 1e-10f)]
+        public void A4_tiny_offsets_stay_on_the_true_great_circle(float planetR, float sx, float sy, float tx, float ty, float tz)
+        {
+            var planet = new PlanetConfig(planetR, float3.zero);
+            var self = new float3(sx, sy, 0f);
+            var enemy = new AiEnemy(1, new float3(tx, ty, tz), new float3(0f, 0f, 1f), true);
+            var input = new AiInput(self, AiStyle.KeepDistance, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                self, false, default);
+            AiDecision d = CombatAi.Decide(planet, _tuning, input, new[] { enemy }, new[] { Hostile(0, 10000, 1) });
+
+            double3 n = math.normalize(math.cross((double3)enemy.Position, (double3)self));
+            double r = math.length((double3)self);
+            Assert.Less(math.abs(math.dot((double3)d.DestinationDirection, n)) * r, 1e-3, "on the self/target plane");
+            double3 dd = d.DestinationDirection, td = math.normalize((double3)enemy.Position);
+            Assert.AreEqual(8.0, math.atan2(math.length(math.cross(dd, td)), math.dot(dd, td)) * r, TolM);
+        }
+
         [Test]
         public void A1_rect_corner_is_an_exact_ceiling()
         {

@@ -421,12 +421,11 @@ namespace Cosmimera.Combat
             int targetIndex = PickTarget(enemies, preferred, center, self);
             double targetDistanceM = 0;
             double3 target = default;
-            double3 targetToSelf = default;
+            double3 targetFromCenter = default;
             if (targetIndex >= 0)
             {
-                double3 targetFromCenter = (double3)enemies[targetIndex].Position - center;
+                targetFromCenter = (double3)enemies[targetIndex].Position - center;
                 target = math.normalize(targetFromCenter);
-                targetToSelf = selfFromCenter - targetFromCenter;
                 targetDistanceM = Angle(self, target) * radius;
             }
 
@@ -442,7 +441,7 @@ namespace Cosmimera.Combat
             bool hasHostile = HostileReach(moves, out int minReachMm, out int maxReachMm);
             if (command == AiCommandKind.Follow || targetIndex < 0 || !hasHostile)
             {
-                return new AiDecision(targetId, castSlot, (float3)Leash(self, player, selfFromCenter - playerFromCenter, radius,
+                return new AiDecision(targetId, castSlot, (float3)Leash(self, player, playerFromCenter, selfFromCenter, radius,
                     tuning.FollowLeashMm));
             }
 
@@ -450,11 +449,13 @@ namespace Cosmimera.Combat
             switch (input.Style)
             {
                 case AiStyle.KeepDistance:
-                    destination = Toward(target, targetToSelf, maxReachMm * (double)tuning.KeepDistancePermille / 1e6 / radius,
+                    destination = Toward(target, targetFromCenter, selfFromCenter,
+                        maxReachMm * (double)tuning.KeepDistancePermille / 1e6 / radius,
                         TangentOf(enemies[targetIndex].Forward, target));
                     break;
                 case AiStyle.Charge:
-                    destination = Toward(target, targetToSelf, minReachMm * (double)tuning.CloseInPermille / 1e6 / radius,
+                    destination = Toward(target, targetFromCenter, selfFromCenter,
+                        minReachMm * (double)tuning.CloseInPermille / 1e6 / radius,
                         TangentOf(enemies[targetIndex].Forward, target));
                     break;
                 case AiStyle.Flank:
@@ -465,7 +466,8 @@ namespace Cosmimera.Combat
                     double holdM = maxReachMm * (double)tuning.HoldPermille / 1e6;
                     destination = targetDistanceM <= holdM
                         ? self
-                        : Toward(target, targetToSelf, holdM / radius, TangentOf(enemies[targetIndex].Forward, target));
+                        : Toward(target, targetFromCenter, selfFromCenter, holdM / radius,
+                            TangentOf(enemies[targetIndex].Forward, target));
                     break;
             }
 
@@ -552,7 +554,8 @@ namespace Cosmimera.Combat
             return any;
         }
 
-        private static double3 Leash(double3 self, double3 player, double3 playerToSelf, double radius, int leashMm)
+        private static double3 Leash(double3 self, double3 player, double3 playerFromCenter, double3 selfFromCenter,
+            double radius, int leashMm)
         {
             double leashM = leashMm / 1000.0;
             if (Angle(self, player) * radius <= leashM)
@@ -561,21 +564,21 @@ namespace Cosmimera.Combat
             }
 
             // Return to half the leash, not its edge, so a creature does not oscillate across the boundary every tick.
-            return Toward(player, playerToSelf, leashM * 0.5 / radius, AnyTangent(player));
+            return Toward(player, playerFromCenter, selfFromCenter, leashM * 0.5 / radius, AnyTangent(player));
         }
 
-        // Point at `angle` radians from unit `from` along the great circle in the direction of world offset `delta`;
-        // `fallback` (a unit tangent at `from`) only when no plane is defined at all (exact zero cross product).
-        // History (SOL P2-10): r1 normalized both directions first and lost a real 1e-10 m offset; r2's relative
-        // cut-off still lost it across radii; r3's projection `delta − from·(from·delta)` cancelled a radial delta to a
-        // residual that was itself almost radial, so Along walked ~3 mm instead of 8 m. The plane normal
-        // n = from × delta keeps even a tiny sideways offset (its components do not cancel against the radial part),
-        // and t = n × from is orthogonal to `from` by construction whatever |n| is. When delta is (anti)parallel to
-        // `from` up to rounding, n is rounding noise: the direction is then arbitrary but deterministic, and the
-        // stand-off distance is still exact because t is a true tangent.
-        private static double3 Toward(double3 from, double3 delta, double angle, double3 fallback)
+        // Point at `angle` radians from unit `from` along the great circle through the center-relative points
+        // `fromRel` → `toRel`; `fallback` (a unit tangent at `from`) only when they define no plane (exact zero normal:
+        // same direction or exactly antipodal).
+        // The plane normal is fromRel × toRel on the raw coordinates, never on normalized directions: each component
+        // then rounds at most once relative to its own size (and is exact when the center is zero, float × float fitting
+        // in double), so a tiny sideways offset is never swamped by normalization error. Every earlier variant built
+        // the plane from something already rounded and lost it (SOL P2-10 r1 normalized directions, r2 relative cut-off,
+        // r3 projection residual, r4 normalize-then-cross: 11 m off the true circle). t = n × from is a true tangent.
+        private static double3 Toward(double3 from, double3 fromRel, double3 toRel, double angle, double3 fallback)
         {
-            double3 t = math.cross(math.cross(from, delta), from);
+            double3 n = math.cross(fromRel, toRel);
+            double3 t = math.cross(n, from);
             t -= from * math.dot(t, from);
             double len = math.length(t);
             return Along(from, len > 0.0 ? t / len : fallback, angle);
