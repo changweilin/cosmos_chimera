@@ -1,38 +1,8 @@
-# Prompt Forge
+# Prompt Forge & 交付審查台
 
-產生交給 ChatGPT 對話版 / Gemini Argon 任務模式的美術任務 prompt。
-- **線上版（GitHub Pages）**：`https://changweilin.github.io/cosmos_chimera/`
-- **離線單頁**：直接用瀏覽器開 `index.html`（不需伺服器）。
+本工具已獨立遷移至專屬專案：
+**`cosmos_chimera_forge`**（路徑：`../cosmos_chimera_forge`）。
 
-規格與交付流程：`docs/design/art-asset-pipeline.md`。
-
-| 檔案 | 內容 | 何時改 |
-|---|---|---|
-| `catalog.js` | 選項池、權重、原型清單、動作 clip、特效分類 | 加選項、調權重、改動作 |
-| `tasks.js` | 各任務的 prompt 模板（產出清單、檔名、JSON 欄位） | 新任務、改交付規格 |
-| `forge.js` | UI、隨機、組裝、任務標頭 | 改介面行為 |
-| `designed.js` | 已設計項目（**產生檔，勿手改**） | 改 `Data/_incoming` 批次後跑 `python tools/prompt-forge/gen_designed.py` |
-| `gen_designed.py` | 從資料批次 + `copy-terra.json` 產生 `designed.js`；資料沒有的視覺欄位（基底、時空、成體尺寸）寫在檔內 `LINES` | 新增已設計的進化線 |
-
-## 版本（SemVer）
-每個 prompt 第一行是任務標頭 `[COSMIMERA-TASK spec tool catalog template@ver task_id seed]`，交付的 `manifest.json` 必須原樣抄回，所以任何產出都能追溯到產生它的規格版本。
-
-| 版本號 | 位置 | major | minor | patch |
-|---|---|---|---|---|
-| `spec` | `forge.js` `SPEC` | manifest 結構改變 | — | — |
-| `tool` | `forge.js` `TOOL_VERSION` | 任務標頭格式改變 | 新 UI 功能 | 修 bug |
-| `catalog` | `catalog.js` `version` | 改名/刪除既有選項 ID、改動作 clip ID 或事件 | 新增選項、調權重 | 改中文措辭 |
-| `template` | `tasks.js` 各任務 `version` | 改產出清單、檔名、JSON 欄位 | 新增選填項目 | 改措辭 |
-
-- 每次 bump 都在 `CHANGELOG.md` 記一行。
-- catalog major 變動時，瀏覽器內記住的舊選項會自動重抽（`forge.js` `load()`）。
-- 動作 clip ID 會被 Unity Animator 引用，改 ID 等於破壞性變更，要同步改 `art-asset-pipeline.md` 與已產出的資產。
-
-## 擴充
-- **加選項**：在 `catalog.js` 對應陣列加一筆 → bump catalog minor。
-- **加任務**：在 `tasks.js` 的 `TASKS` 加一個物件：`id`、`version`、`zh`、`prefix`（task_id 前綴）、`platform`（建議平台）、`needs`（`character` / `creature` / `either` / `null`）、`drop`（解壓位置）、`options`、`build(ctx)`。`build` 用 `common()` + `deliverySection()` 組字串，確保標頭、平台指示、manifest 規格一致。
-- **加概念欄位**：`forge.js` 的 `FIELDS`，並在 `characterConcept()` / `creatureConcept()` 輸出。
-
-## 已知限制
-- 對話式 AI 不保證能產出 3D 網格與 FBX 動畫；模板把它們列為 L2，必交的是三視圖、骨架規格與 Blender 腳本（Q-T3）。
-- ChatGPT 生成的圖片不一定能被它的 Python 環境打包；manifest 會列出檔名讓你手動存放。
+- 所有 Prompt 產生、交付審查台介面、選項池及相關 GitHub Actions 均已移至該專案維護與佈署。
+- 交付成果之一鍵解壓、驗收與備份路徑仍指向本專案（`cosmos_chimera`）。
+- 本專案保留完整的 `Data/` 作為宙獸、角色與數值圖鑑資料庫。
