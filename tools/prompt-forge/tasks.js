@@ -122,13 +122,16 @@
 
   const TASKS = [
     {
-      id: "character-concept", version: "2.1.0", zh: "角色設計概念與立繪", prefix: "chr", platform: "chatgpt",
+      id: "character-concept", version: "2.2.0", zh: "角色設計概念與立繪", prefix: "chr", platform: "chatgpt",
       needs: "character", drop: "Art/_incoming",
       options: [],
       build(ctx) {
         const S = ctx.subjectId, c = ctx.concept;
         const conceptJsonSchema = {
-          id: S, name_zh: "", name_en: "", role: c.role,
+          id: S,
+          name_zh: "角色繁中名（請依命名格式創作）",
+          name_en: "CharacterEnglishName (PascalCase)",
+          role: c.role,
           gender: c.gender, age: c.age, height_cm: c.height, weight_kg: c.weight, body_fat_pct: c.body_fat,
           ...(c.gender === "女" && c.cup_size && c.cup_size !== "未知" ? { cup_size: c.cup_size } : {}),
           ethnicity: c.ethnicity, region: c.region, timeline: c.timeline,
@@ -137,6 +140,11 @@
         };
 
         const body = [
+          "## 角色命名任務與格式規範",
+          "請為此角色創作原創姓名（中英文各一，填入 concept.json）：",
+          "- 繁中姓名格式：2–4 字，符合該文化地區與人種背景，體現角色個性與時空氛圍（例：凌霄、薇爾菈、墨巡、艾希莉亞、拓跋烈、琉璃）。",
+          "- 英文姓名格式：符合羅馬拼音或西洋/科幻命名美感（PascalCase，例：Linxiao, Valera, MoXun, Ashley, Tuobalie）。",
+          "",
           "## 輸入概念",
           json(c),
           "",
@@ -164,7 +172,7 @@
     },
 
     {
-      id: "creature-concept", version: "4.0.0", zh: "宙獸設計概念與型態立繪", prefix: "cr", platform: "chatgpt",
+      id: "creature-concept", version: "4.1.0", zh: "宙獸設計概念與型態立繪", prefix: "cr", platform: "chatgpt",
       needs: "creature", drop: "Art/_incoming",
       options: [
         { key: "stage", type: "select", label: "宙獸型態（四型態分開產出）", items: () => C.STAGES.map(s => ({ v: s.v, zh: s.zh + "（" + s.v + "）" })), def: "adult" }
@@ -182,31 +190,59 @@
         const lockedStage = c.locked?.stages?.find(s => s.stage === curStage);
         const lockedTrait = c.locked?.trait;
 
+        // 當前型態尺寸數據
+        const curHeight = lockedStage?.height_length || (stageIdx === 2 ? c.height_length : null) || (curSize === "XS" ? "0.20 m" : curSize === "S" ? "0.45 m" : curSize === "M" ? "1.20 m" : curSize === "L" ? "2.20 m" : "5.0 m");
+        const curWeight = lockedStage?.weight || (stageIdx === 2 ? c.weight : null) || (curSize === "XS" ? "0.15 kg" : curSize === "S" ? "3.5 kg" : curSize === "M" ? "35 kg" : curSize === "L" ? "220 kg" : "2500 kg");
+        const curFat = lockedStage?.body_fat || (stageIdx === 2 ? c.body_fat : null) || "15%";
+
+        const namingSection = lockedStage ? [
+          "### 命名規範（已設計定案）",
+          "- 繁中名：**" + lockedStage.name_zh + "** · 英文名：**" + lockedStage.name_en + "** · 宙獸 ID：`" + lockedStage.creature_id + "`",
+          "- （已有名稱者原樣照抄，嚴禁任意更動）。"
+        ] : [
+          "### 宙獸命名任務與格式規範（請 AI 原創命名）",
+          "請為此宙獸（本型態）創作原創圖鑑名稱（中英文各一，填入 concept.json）：",
+          "- 繁中名稱格式：",
+          "  - 長度：2–4 個繁體中文字。",
+          "  - 格式公式：『特徵/屬性字 + 生物/外觀意象字』（例：幼年『鏡芽雀』、少年『鏡羽鷺』、成年『鏡環天鷺』、超載『鏡冕天鷺』；或『雷鬃駒』、『夜痕霜狼』、『熾晶狐』、『岩甲巨犀』）。",
+          "  - 語感：具備奇幻生物圖鑑感與自然神話韻味，嚴禁使用人類姓名、真實神祇全名或商業 IP 名稱。",
+          "- 英文名稱格式：",
+          "  - 1–2 個詞根拼接之原創奇幻生物名（PascalCase，例：Mirrill, Mirravel, Voltrastorm, Nivervast, Pyraclaw）。"
+        ];
+
         const body = [
           "## 本次目標型態：" + stageDef.zh + "（" + curStage + "）",
           "- 體型級距：" + curSize + "（" + szInfo.zh + "） · 面數預算約 " + szInfo.tris + " tris",
+          "- 當前型態尺寸估算：身長/高約 " + curHeight + "、體重約 " + curWeight + "、體脂率約 " + curFat,
+          "",
+          "## 文化原型轉化指引（避免人形化）",
+          "- 本任務目標為【宙獸（奇幻生物/魔獸/機獸）】，嚴禁生成為人形角色（除非外觀基底明確指定類人種族）。",
+          "- 文化原型（如神祇、傳說英雄、歷史人物）僅提取其代表性的【象徵圖騰、法寶神兵、自然天象、聖獸化身、精神意義與意象元素】，必須將其完全轉化為動物、幻獸或構裝體的生理構造、羽翼、角鱗、光環或外甲特徵。",
+          "",
+          ...namingSection,
+          "",
           ...(lockedStage ? [
-            "### 已設計定案規格（嚴格照抄，不得改名或改 id）",
+            "### 已設計定案規格（嚴格照抄）",
             "- 宙獸 ID：`" + lockedStage.creature_id + "` · 繁中名：**" + lockedStage.name_zh + "** · 英文名：**" + lockedStage.name_en + "**",
             "- 外觀設定：" + lockedStage.look,
             "- 圖鑑描述：" + lockedStage.dex_zh,
             "- 專屬招式：`" + lockedStage.signature_move?.move_id + "`（" + lockedStage.signature_move?.name_zh + "）— " + lockedStage.signature_move?.visual,
-            lockedTrait ? "- 專屬特性：`" + lockedTrait.trait_id + "`（" + lockedTrait.name_zh + "）— " + lockedTrait.idea_zh : null
-          ].filter(Boolean) : [
-            "### 概念設定",
-            "- 屬性：" + (c.elements || []).join("、"),
-            "- 配色組合：" + (c.appearance_palette || []).join("、"),
-            "- 外觀基底：" + (c.base_parents ? c.base_parents.join(" + ") + " → " : "") + (c.bases ? c.bases.join(" + ") : ""),
-            "- 文化原型與時空：" + (c.archetype || "自由原型") + "（" + (c.region || "未知") + "）· " + (c.timeline || "架空"),
-            "- 成年基準尺寸：約 " + (c.height_length || "2.0 m") + "、重約 " + (c.weight || "100 kg"),
-            "- 戰鬥定位與性情：" + (c.role || "戰鬥") + " · " + (c.temperament || "沉穩")
-          ]),
+            lockedTrait ? "- 專屬特性：`" + lockedTrait.trait_id + "`（" + lockedTrait.name_zh + "）— " + lockedTrait.idea_zh : null,
+            ""
+          ].filter(Boolean) : []),
+          "### 概念設定（完整規格）",
+          "- 屬性：" + (c.elements || []).join("、"),
+          "- 配色組合：" + (c.appearance_palette || []).join("、"),
+          "- 外觀基底：" + (c.base_parents ? c.base_parents.join(" + ") + " → " : "") + (c.bases ? c.bases.join(" + ") : ""),
+          "- 文化原型與時空：" + (c.archetype || "自由原型") + "（" + (c.region || "未知") + "）· " + (c.timeline || "架空"),
+          c.motifs ? "- 核心文化象徵與意象：" + c.motifs + (c.meaning ? " · 精神象徵：" + c.meaning : "") : null,
+          "- 戰鬥定位與性情：" + (c.role || "戰鬥") + " · " + (c.temperament || "沉穩"),
           "",
           "## 型態特徵指引",
-          curStage === "juvenile" ? "- 幼年型態：體型圓潤小巧（S 級），特徵幼態可愛，保留 1–2 個核心意象特徵，動作靈動。" :
-          curStage === "adolescent" ? "- 少年型態：介於幼年與成年之間（M 級），初顯原型輪廓，活力與敏捷感並重。" :
-          curStage === "adult" ? "- 成年型態：完全展現文化原型之威嚴與主體構造（L 級），比例成熟勻稱，特徵完備。" :
-          "- 超載型態：戰鬥中能量極致爆發之態（XL 級），裝甲展開、光環浮現、能量外溢或粒子流，輪廓更具威嚴與壓迫感，但保留核心種族識別。",
+          curStage === "juvenile" ? "- 幼年型態：體型圓潤小巧（" + curSize + " 級），特徵幼態可愛，保留 1–2 個核心意象特徵，動作靈動。" :
+          curStage === "adolescent" ? "- 少年型態：介於幼年與成年之間（" + curSize + " 級），初顯原型輪廓，活力與敏捷感並重。" :
+          curStage === "adult" ? "- 成年型態：完全展現文化原型之威嚴與主體構造（" + curSize + " 級），比例成熟勻稱，特徵完備。" :
+          "- 超載型態：戰鬥中能量極致爆發之態（" + curSize + " 級），裝甲展開、光環浮現、能量外溢或粒子流，輪廓更具威嚴與壓迫感，但保留核心種族識別。",
           "",
           "## 產出清單（3 種圖像 + 1 設定檔，單獨打包）",
           "| 檔案 | 內容 | 層級 |",
@@ -221,23 +257,33 @@
             line_id: S,
             stage: curStage,
             creature_id: lockedStage ? lockedStage.creature_id : ("cr_" + S + "_" + curStage),
-            name_zh: lockedStage ? lockedStage.name_zh : "",
-            name_en: lockedStage ? lockedStage.name_en : "",
+            name_zh: lockedStage ? lockedStage.name_zh : "宙獸繁中名（請依命名格式創作）",
+            name_en: lockedStage ? lockedStage.name_en : "CreatureEnglishName (PascalCase)",
             size_class: curSize,
+            height_length: curHeight,
+            weight: curWeight,
+            body_fat: curFat,
             elements: c.elements,
             appearance_palette: c.appearance_palette,
+            base_parents: c.base_parents,
             bases: c.bases,
+            region: c.region,
+            timeline: c.timeline,
             archetype: c.archetype,
+            role: c.role,
+            temperament: c.temperament,
             signature_move: lockedStage?.signature_move || {
               move_id: "snake_case_move_id",
-              name_zh: "",
+              name_zh: "招式繁中名（請命名）",
+              name_en: "MoveEnglishName (PascalCase)",
               element: (c.elements || ["light"])[0],
               range_class: "melee|mid|long",
-              visual: ""
+              shape: "front|line|sweep|burst|cone|arc",
+              visual: "招式演出視覺效果描述"
             },
             ...(curStage === "overload" ? { overload_visual: lockedStage?.look || "超載能量外溢特徵" } : {})
           })
-        ].join("\n");
+        ].filter(Boolean).join("\n");
         return common(ctx, body) + "\n\n" + deliverySection(ctx, "├── concept.json\n└── images/");
       }
     },
@@ -245,7 +291,7 @@
     {
       // REQ: 使用者 2026-11-07 — image-to-3D → Blender → 綁骨 → 動作在同一管線；輸入/輸出走 Google 雲端硬碟；可批次；宙獸四型態分開處理。
       // 取代 animation-set（已退役）。招式不在此管線：招式是獨立圖鑑條目，由 move-vfx 處理。
-      id: "model-rig", version: "3.1.0", zh: "Image-to-3D 建模、綁骨與動作（雲端硬碟立繪包）", prefix: "mdl", platform: "gemini",
+      id: "model-rig", version: "3.2.0", zh: "Image-to-3D 建模、綁骨與動作（雲端硬碟立繪包）", prefix: "mdl", platform: "gemini",
       needs: "either", drop: "Art/_incoming", drive: true,
       options: [
         { key: "scope", type: "select", label: "範圍", items: () => [{ v: "single", zh: "單一立繪包（目前概念）" }, { v: "batch", zh: "批次：image_in 內所有立繪包" }], def: "single" },

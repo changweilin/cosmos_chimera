@@ -1,18 +1,21 @@
 // COSMIMERA prompt-forge · 介面與組裝 + 交付成果審查台
 (function () {
-  const TOOL_VERSION = "1.7.0";
+  const TOOL_VERSION = "1.8.0";
   const SPEC = "1";
   const C = window.COSMI_CATALOG, TASKS = window.COSMI_TASKS;
   const LS_KEY = "cosmimera.prompt-forge.v2";
   const REVIEW_KEY = "cosmimera.prompt-forge.reviews.v1";
   const DEFAULT_ROOT = "C:\\Users\\user\\Documents\\app\\cosmos_chimera";
 
-  // 舊版人形父類別追溯相容（人形一律視為精靈族）
+  // 舊版人形與基底父類別追溯相容（人形一律視為精靈族）
   function traceBaseParent(bp) {
     if (!bp) return bp;
     if (bp.startsWith("人形") || bp === "人形") {
       return "類人奇幻·精靈族";
     }
+    if (bp === "器械·武器") return "裝備·兵器";
+    if (bp === "生物·植物/菌類") return "植物·樹木/神木";
+    if (bp === "生物·古生物") return "古生物·獸腳恐龍";
     return bp;
   }
 
@@ -183,22 +186,25 @@
     return { height: height + " cm", weight: weight + " kg", bodyFat: bodyFat + "%" };
   }
 
-  // 宙獸生物常態生成（身高/體長、體重、體脂率），排除小於老鼠（長>=0.15m, 重>=0.04kg），上限至暴龍 (12.5m, 9000kg)
+  // 宙獸生物常態生成（身高/體長、體重、體脂率），包含微型 XS（長>=0.05m, 重>=0.01kg），上限至暴龍/巨獸 (14.0m, 12000kg)
   function sampleCreatureDimensions(rng, sizeClass) {
     const sc = C.SIZE_CLASSES[sizeClass] || C.SIZE_CLASSES.M;
     let lenLogM = 0, lenLogS = 0.25, wtLogM = 0, wtLogS = 0.55;
-    if (sizeClass === "S") {
-      lenLogM = Math.log(0.32); lenLogS = 0.32;
-      wtLogM = Math.log(0.9); wtLogS = 0.75;
+    if (sizeClass === "XS") {
+      lenLogM = Math.log(0.16); lenLogS = 0.35;
+      wtLogM = Math.log(0.15); wtLogS = 0.75;
+    } else if (sizeClass === "S") {
+      lenLogM = Math.log(0.45); lenLogS = 0.28;
+      wtLogM = Math.log(2.2); wtLogS = 0.65;
     } else if (sizeClass === "M") {
-      lenLogM = Math.log(1.05); lenLogS = 0.22;
-      wtLogM = Math.log(22.0); wtLogS = 0.55;
+      lenLogM = Math.log(1.10); lenLogS = 0.22;
+      wtLogM = Math.log(26.0); wtLogS = 0.55;
     } else if (sizeClass === "L") {
-      lenLogM = Math.log(2.05); lenLogS = 0.18;
-      wtLogM = Math.log(180.0); wtLogS = 0.48;
+      lenLogM = Math.log(2.20); lenLogS = 0.18;
+      wtLogM = Math.log(210.0); wtLogS = 0.48;
     } else { // XL
-      lenLogM = Math.log(5.2); lenLogS = 0.40;
-      wtLogM = Math.log(2600.0); wtLogS = 0.75;
+      lenLogM = Math.log(5.5); lenLogS = 0.40;
+      wtLogM = Math.log(3000.0); wtLogS = 0.75;
     }
 
     const length = Math.round(rollLogNormal(rng, lenLogM, lenLogS, sc.len_min, sc.len_max) * 100) / 100;
@@ -243,13 +249,13 @@
     ],
     creature: [
       { key: "elements", label: "屬性", options: () => C.ELEMENTS.map(e => ({ v: e.v, w: e.w, zh: e.zh })).concat(getCustom("creature.elements").map(v => ({ v, w: 1, zh: v }))), count: [{ n: 1, w: 2 }, { n: 2, w: 1 }], max: 2 },
-      { key: "base_parents", label: "外觀基底類別", options: () => CR.base_parents.map(b => ({ v: b.v, zh: b.zh || b.v, w: b.w })).concat(getCustom("creature.base_parents").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 1 }], max: 2 },
+      { key: "base_parents", label: "外觀基底類別", options: () => CR.base_parents.map(b => ({ v: b.v, zh: b.zh || b.v, w: b.w })).concat(getCustom("creature.base_parents").map(v => ({ v, zh: v, w: 1 }))), count: [{ n: 1, w: 55 }, { n: 2, w: 45 }], max: 2 },
       { key: "bases", label: "外觀基底 (1~3)", options: s => {
         const parents = (s.creature.base_parents || []).map(traceBaseParent);
         let subs = [];
         parents.forEach(p => { subs = subs.concat(getCreatureSubBases(p)); });
         if (!subs.length) {
-          subs = getCreatureSubBases("生物·哺乳類").concat(getCreatureSubBases("生物·鳥類"));
+          subs = getCreatureSubBases("生物·哺乳類").concat(getCreatureSubBases("自然·星體"));
         }
         return uniform(subs.concat(["未知"]).concat(getCustom("creature.bases")));
       }, count: [{ n: 2, w: 1 }], max: 3, dep: "base_parents" },
@@ -360,7 +366,10 @@
       appearance_palette: c.appearance_palette || [],
       timeline: c.timeline?.[0] || "未知",
       region: c.region?.[0] || "未知",
-      archetype: c.archetype?.[0] || "未知", archetype_type: a.type || "自由原型", motifs: a.motifs || "",
+      archetype: c.archetype?.[0] || "未知",
+      archetype_type: a.type || "自由原型",
+      motifs: a.motifs || "",
+      meaning: a.meaning || "",
       sensitivity: a.sensitivity || "ok", role: c.role?.[0] || "未知", temperament: c.temperament?.[0] || "未知",
       size_profile: c.size_profile?.[0] || "未知",
       height_length: c.height_length?.[0] || "未知",
@@ -600,7 +609,7 @@
         el("input", { type: "checkbox", checked: state.includeReview, onchange: e => { state.includeReview = e.target.checked; revalidate("creature"); renderAll(); } }),
         " 包含 sensitivity: review 原型（在世信仰、族群神聖敘事、爭議人物；需人工審核）"));
       const a = CR.archetypes.find(x => x.name === state.creature.archetype?.[0]);
-      if (a) box.append(el("p", { class: "muted" }, "意象：" + a.motifs));
+      if (a) box.append(el("p", { class: "muted" }, "象徵意象：" + a.motifs + (a.meaning ? " · 精神意義：" + a.meaning : "")));
     }
   }
 
