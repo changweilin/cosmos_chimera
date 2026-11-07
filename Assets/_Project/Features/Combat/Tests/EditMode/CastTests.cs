@@ -526,7 +526,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         [Test]
-        public void Support_rejects_fainted_target_and_non_effect_moves()
+        public void Support_rejects_fainted_target_and_default_cast()
         {
             Combatant caster = Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
             Combatant dead = Make(con: 0);
@@ -534,11 +534,63 @@ namespace Cosmimera.Combat.Tests
             dead.ReceiveHostile(Cast(caster, Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
             Combatant healer = Make();
             Assert.Throws<ContractException>(() => dead.ReceiveSupport(Cast(healer, Support(Heal(50), 0), 0), 0));
-            Combatant alive = Make();
-            Assert.Throws<ContractException>(() => alive.ReceiveSupport(Cast(healer, Damage(), 0, slot: 1), 0));
-            Assert.Throws<ContractException>(() =>
-                alive.ReceiveSupport(Cast(Make(), Both(Mod(EffectType.MasteryMod, 5), 1000), 0), 0));
-            Assert.Throws<ContractException>(() => alive.ReceiveSupport(default, 0));
+            Assert.Throws<ContractException>(() => Make().ReceiveSupport(default, 0));
+        }
+
+        [Test]
+        public void Support_damage_is_a_cost_without_roll_or_hit_trigger()
+        {
+            // User decision 2026-11-07 (ARGON K3): self/ally damage hurts the receiver, uses caster mastery and receiver
+            // resist, never rolls, never fires on_hit_taken.
+            var trigger = new TriggerSpec(TriggerType.OnHitTaken, true, default, 0, 5000);
+            EffectBook book = Trait(trigger, Mod(EffectType.ResistMod, 40));
+            Combatant self = Make(book, con: 100, mastery: Table(Element.Fire, 20), resist: Table(Element.Fire, 10));
+            Pcg32 rng = Rng();
+            Pcg32 before = rng;
+            CastMove cost = Both(Mod(EffectType.MasteryMod, 30), 4000, power: 40);
+            CastContext ctx = Cast(self, cost, 0);
+            HitReport r = self.ReceiveSupport(ctx, 0);
+            Assert.AreEqual(HitOutcome.Hit, r.Outcome);
+            Assert.AreEqual(DamageModel.Compute(40, 20, 10), r.Damage);
+            Assert.AreEqual(self.MaxHp - r.Damage, self.Hp);
+            Assert.IsTrue(r.EffectApplied);
+            Assert.AreEqual(1, book.StacksOf("move_both", 0, 0));
+            Assert.AreEqual(0, book.StacksOf("trait_t", 0, 0), "no on_hit_taken");
+            Assert.AreEqual(before.NextUInt(), rng.NextUInt(), "no roll");
+
+            HitReport plain = self.ReceiveSupport(Cast(self, Damage(power: 10), 0, slot: 1), 0);
+            Assert.AreEqual(DamageModel.Compute(10, 20 + 30, 10), plain.Damage, "mastery buff from the cost move");
+            Assert.IsFalse(plain.EffectApplied);
+        }
+
+        [Test]
+        public void Support_damage_can_faint_and_then_nothing_else_happens()
+        {
+            Combatant self = Make(con: 0, mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
+            HitReport r = self.ReceiveSupport(
+                Cast(self, Both(Mod(EffectType.MasteryMod, 5), 1000, power: DamageModel.MaxPower), 0), 0);
+            Assert.IsTrue(r.Fainted);
+            Assert.AreEqual(self.MaxHp, r.Damage);
+            Assert.IsTrue(self.IsFainted);
+            Assert.IsFalse(r.EffectApplied);
+            Assert.AreEqual(0, self.Book.StacksOf("move_both", 0, 0));
+        }
+
+        [Test]
+        public void Support_damage_can_fire_hp_cross_below()
+        {
+            var trigger = new TriggerSpec(TriggerType.OnHpCrossBelow, false, default, 50, 1000);
+            Combatant self = Make(Trait(trigger, Heal(20)), con: 0);
+            int power = 1;
+            while (DamageModel.Compute(power, 0, 0) * 100 <= 50 * self.MaxHp)
+            {
+                power++;
+            }
+
+            HitReport r = self.ReceiveSupport(Cast(self, Damage(power: power), 0), 0);
+            Assert.Greater(r.Damage, 0);
+            Assert.AreEqual(EffectMath.HealAmount(self.MaxHp, 20), r.Healed);
+            Assert.AreEqual(r.HpBefore - r.Damage + r.Healed, r.HpAfter);
         }
 
         // ---- ARGON cast review K1 / K2 / K4 / K5 ----

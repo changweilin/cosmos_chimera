@@ -476,28 +476,54 @@ namespace Cosmimera.Combat
 
         /// <summary>Resolves a self/ally move landing on this combatant: no roll (user decision 2026-11-07).</summary>
         /// <remarks>
-        /// Pre: !IsFainted; cast from BeginCast with Move.HasEffect and Move.Kind == Effect; nowMs in CombatTime and >=
-        ///      every watermark of Book.
-        /// Post: Outcome == Hit, Damage == 0. A heal restores min(MaxHp − Hp, HealAmount(MaxHp, percent)); a timed effect
-        ///       is applied (EffectApplied). Support moves fire no on_hit_taken — that trigger means a hostile hit.
-        /// Side effects: mutates Hp or Book. Does not touch any rng.
+        /// Damage/both on self/ally is a cost (user decision 2026-11-07, ARGON cast review K3): it hurts the receiver with
+        /// the caster's frozen mastery and the receiver's resist, may faint it, and is not a hostile hit.
+        /// Pre: !IsFainted; cast from BeginCast; nowMs in CombatTime and >= every watermark of Book.
+        /// Post: Outcome == Hit. Damage = min(Hp, DamageModel.Compute(power, cast mastery, effective resist)) when the
+        ///       move deals damage, else 0; if that faints the receiver nothing else happens. Otherwise on_hp_cross_below
+        ///       may fire (it is an HP change), the move's timed effect is applied or its heal added, and heals resolve
+        ///       once. on_hit_taken never fires — that trigger means a hostile hit.
+        /// Side effects: mutates Hp and Book. Does not touch any rng.
         /// </remarks>
         public HitReport ReceiveSupport(in CastContext cast, long nowMs)
         {
             Contract.Requires(!IsFainted, "a fainted combatant cannot be supported (no revive)");
             CastMove move = cast.Move;
-            Contract.Requires(move.Id != null && move.HasEffect && move.Kind == MoveKind.Effect,
-                "support needs an effect-only move from BeginCast");
+            Contract.Requires(move.Id != null, "cast must come from BeginCast");
             Book.RequireTime(nowMs);
             int hpBefore = Hp;
-            if (move.Effect.IsInstant)
+            int damage = 0;
+            int crossHeal = 0;
+            if (move.DealsDamage)
             {
-                HealPercent(move.Effect.Percent, nowMs);
-                return new HitReport(HitOutcome.Hit, 0, Hp - hpBefore, hpBefore, Hp, false);
+                Book.Collect(nowMs, Hp, MaxHp, _totals);
+                int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
+                int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist);
+                damage = raw > Hp ? Hp : raw;
+                Hp -= damage;
+                if (Hp == 0)
+                {
+                    return new HitReport(HitOutcome.Hit, damage, 0, hpBefore, 0, false);
+                }
+
+                Book.NotifyHpChanged(hpBefore, Hp, MaxHp, nowMs, out crossHeal);
             }
 
-            Book.Apply(move.Id, 0, move.Effect, move.EffectDurationMs, nowMs);
-            return new HitReport(HitOutcome.Hit, 0, 0, hpBefore, Hp, true);
+            int hpAfterDamage = Hp;
+            bool applied = false;
+            int moveHeal = 0;
+            if (move.HasEffect && move.Effect.IsInstant)
+            {
+                moveHeal = move.Effect.Percent;
+            }
+            else if (move.HasEffect)
+            {
+                Book.Apply(move.Id, 0, move.Effect, move.EffectDurationMs, nowMs);
+                applied = true;
+            }
+
+            HealPercent(crossHeal + moveHeal, nowMs);
+            return new HitReport(HitOutcome.Hit, damage, Hp - hpAfterDamage, hpBefore, Hp, applied);
         }
 
         /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
