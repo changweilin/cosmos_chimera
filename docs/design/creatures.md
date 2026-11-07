@@ -6,6 +6,7 @@
 | `id` | 全域唯一 snake_case |
 | `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載待 Q-C12／P2-05（見〈超載〉） |
 | `size_class` | 體型級距 `S` / `M` / `L` / `XL`（見〈體型級距〉） |
+| `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
 | `evolves_to` | 下一階段 ID（成年為 null） |
 | `evolution` | `{exp, materials: [{element, tier, qty}]}`；成年為 null（見〈進化〉） |
 | `resist` | 十屬性抗性：`{metal, wood, water, fire, earth, ice, wind, thunder, light, shadow}` 整數 % |
