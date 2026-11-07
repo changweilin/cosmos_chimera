@@ -55,7 +55,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **wood** | `trait_wood_thorn_lash` | `on_hp_below` | 35% | `range_mod_percent: +20%` | None |
 | **wood** | `trait_wood_sap_absorption` | `on_hit_taken` | `water`, 4000ms | `heal_percent_max_hp: 6%` | None |
 | **water** | `trait_water_torrential_deluge` | `on_move_used` | `water`, 4000ms | `range_mod_percent: +15%`, `move_speed_mod_percent: -10%` | Yes (`move_speed -10%`) |
-| **water** | `trait_water_revitalizing_spring` | `on_summon` | 5000ms | `heal_percent_max_hp: 8%` | None |
+| **water** | `trait_water_revitalizing_spring` | `on_move_used` (water) | 5000ms | `heal_percent_max_hp: 4%` | None |
 | **water** | `trait_water_rippling_counter` | `on_hit_taken` | `water`, 4000ms | `mastery_mod: water +20` | None |
 | **fire** | `trait_fire_smoldering_core` | `always` | `{}` | `cd_mod_percent: fire -10%`, `resist_mod: water -15` | Yes (`resist water -15`) |
 | **fire** | `trait_fire_scorching_momentum` | `on_hp_above` | 80% | `move_speed_mod_percent: +15%` | None |
@@ -70,11 +70,11 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **wind** | `trait_wind_slipstream_dodge` | `on_hit_taken` | `wind`, 4000ms | `evasion_mod_percent: +10%` | None |
 | **wind** | `trait_wind_desperation_updraft` | `on_hp_below` | 35% | `move_speed_mod_percent: +20%` | None |
 | **thunder** | `trait_thunder_plasma_charge` | `always` | `{}` | `range_mod_percent: +8%`, `resist_mod: earth -15` | Yes (`resist earth -15`) |
-| **thunder** | `trait_thunder_arc_discharge` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
-| **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `move_speed_mod_percent: +15%` | None |
+| **thunder** | `trait_thunder_crisis_arc` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
+| **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `cd_mod_percent: thunder -10%` | None |
 | **light** | `trait_light_luminous_barrier` | `on_move_used` | `light`, 4000ms | `resist_mod: shadow +25`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
 | **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25% | `heal_percent_max_hp: 12%` | None |
-| **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `move_speed_mod_percent: +20%` | None |
+| **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `mastery_mod: light +15` | None |
 | **shadow** | `trait_shadow_umbral_cloak` | `always` | `{}` | `evasion_mod_percent: +5%`, `resist_mod: light -15` | Yes (`resist light -15`) |
 | **shadow** | `trait_shadow_fade_step` | `on_move_used` | `shadow`, 3000ms | `move_speed_mod_percent: +15%` | None |
 | **shadow** | `trait_shadow_dark_retaliation` | `on_hit_taken` | `shadow`, 4000ms | `mastery_mod: shadow +20` | None |
@@ -142,7 +142,7 @@ In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remain
 | `on_hp_below` | `range_mod_percent` | **1** | **+2** | `trait_wood_thorn_lash`, `trait_earth_shattered_carapace` | **3** |
 | `on_hp_below` | `move_speed_mod_percent` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_wind_desperation_updraft` | **3** |
 | `on_hp_below` | `heal_percent_max_hp` | **1** | **+1** | `trait_light_saving_grace` | **2** |
-| `on_hp_below` | `mastery_mod` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_thunder_arc_discharge` | **3** |
+| `on_hp_below` | `mastery_mod` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_thunder_crisis_arc` | **3** |
 | `on_hp_above` | `move_speed_mod_percent` | **1** | **+3** | `trait_wood_overgrowth_surge`, `trait_fire_scorching_momentum`, `trait_thunder_supercharged_stride` | **4** |
 | `on_hp_above` | `mastery_mod` | **1** | **+1** | `trait_ice_subzero_focus` | **2** |
 | `on_summon` | `resist_mod` | **1** | **+1** | `trait_earth_grounding_mantle` | **2** |
@@ -164,3 +164,10 @@ In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remain
 1. **Healing on Discrete Event Triggers**: `heal_percent_max_hp` in this batch is strictly bound to discrete event triggers (`on_summon`, `on_hit_taken`, `on_hp_below`). For `on_hp_below` (e.g., `trait_light_saving_grace`), combat state logic must ensure single-shot execution per health gate crossing or apply an internal cooldown (ICD) so that rapid damage/healing cycles around the 25% threshold do not re-trigger healing loops.
 2. **Hitbox Scaling for High Range Modifiers**: Several traits provide +15% to +20% `range_mod_percent`. Combat system integration will need to test visual clipping and projectile collision shape boundaries when melee swings or close-range bursts are scaled by these factors.
 3. **Compound Buff/Drawback Resolution on Buff Expiration**: Traits like `trait_metal_scrap_overdrive` or `trait_water_torrential_deluge` combine a positive modifier with a speed reduction. If an external cleanse or purge mechanic removes positive buffs, game rules must clarify whether the drawback expires simultaneously or tracks its own independent duration.
+
+## 修訂 2026-11-07（P5-08 A1/A14，使用者裁決）
+執行期完全同效的特性改綁各自主題，下方分佈統計表是修訂前的數字，未重算：
+- `trait_thunder_supercharged_stride`：移速 +15% → 雷招 CD −10%（原與 `trait_fire_scorching_momentum` 完全相同）。
+- `trait_water_revitalizing_spring`：上場治療 8% → 使用水招時治療 4%（原與 `trait_wood_photosynthesis` 同效；先改的「受水擊治療 6%」又與 `trait_wood_sap_absorption` 相同，故再改）。
+- `trait_light_guiding_beam`：換手移速 +20% → 換手光專精 +15（原與 `trait_wind_tailwind_glide` 僅差 1 s）。
+- `trait_thunder_arc_discharge` 更名 `trait_thunder_crisis_arc`（與招式 `thunder_arc_discharge` 撞詞幹，TERRA 命名）。

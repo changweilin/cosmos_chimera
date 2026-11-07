@@ -145,8 +145,9 @@
   {
     "id": "trait_water_revitalizing_spring",
     "trigger": {
-      "type": "on_summon",
+      "type": "on_move_used",
       "params": {
+        "element": "water",
         "duration_ms": 5000
       }
     },
@@ -154,7 +155,7 @@
       {
         "type": "heal_percent_max_hp",
         "params": {
-          "percent": 8
+          "percent": 4
         }
       }
     ]
@@ -438,7 +439,7 @@
     ]
   },
   {
-    "id": "trait_thunder_arc_discharge",
+    "id": "trait_thunder_crisis_arc",
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -465,9 +466,10 @@
     },
     "effects": [
       {
-        "type": "move_speed_mod_percent",
+        "type": "cd_mod_percent",
         "params": {
-          "delta": 15
+          "element": "thunder",
+          "delta": -10
         }
       }
     ]
@@ -525,9 +527,10 @@
     },
     "effects": [
       {
-        "type": "move_speed_mod_percent",
+        "type": "mastery_mod",
         "params": {
-          "delta": 20
+          "element": "light",
+          "delta": 15
         }
       }
     ]

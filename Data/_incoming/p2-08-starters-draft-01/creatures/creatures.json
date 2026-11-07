@@ -195,7 +195,7 @@
     "trait": "trait_shadow_longnight_stalker",
     "concept": {
       "base": "灰狼幼崽 × 尾尖一點星光",
-      "stage_look": "影子比本體大一號、走路無聲的小狼",
+      "stage_look": "尾尖閃著星光的小狼投下比本體更大的影子，繞到背後揮爪拍擊。",
       "archetype": "arch_amarok",
       "region": "極地",
       "motifs_used": [
@@ -203,7 +203,7 @@
         "冰原極夜星光",
         "震地長尾"
       ],
-      "role": "刺客：近距隱蔽突進、爆發後撤",
+      "role": "繞背近戰：繞至對手背後，以近身爪擊持續作戰，並暫時削弱其影抗性。",
       "palette": "墨藍、霜灰、星白"
     }
   },
@@ -249,7 +249,7 @@
     "trait": "trait_shadow_longnight_stalker",
     "concept": {
       "base": "孤狼 × 極夜冰原的星光斑紋",
-      "stage_look": "低伏潛行，身上星斑隨呼吸明滅，衝刺時只留下影子殘像",
+      "stage_look": "墨藍孤狼身上的星斑隨呼吸明滅，向前疾衝時拖出影子殘像。",
       "archetype": "arch_amarok",
       "region": "極地",
       "motifs_used": [
@@ -257,7 +257,7 @@
         "冰原極夜星光",
         "震地長尾"
       ],
-      "role": "刺客：近距隱蔽突進、爆發後撤",
+      "role": "繞背突進：繞至對手背後，沿直線向前突進並貼身作戰。",
       "palette": "墨藍、霜灰、星白"
     }
   },
@@ -295,7 +295,7 @@
     "trait": "trait_shadow_longnight_stalker",
     "concept": {
       "base": "極夜巨狼 × 震地長尾",
-      "stage_look": "身形如雪丘的巨灰狼，長尾拍地揚起雪幕，趁對手視線被遮時貼地疾衝穿過、衝出後立刻拉開距離",
+      "stage_look": "身形如雪丘的巨灰狼拖著震地長尾，繞背後貼地向前疾衝。",
       "archetype": "arch_amarok",
       "region": "極地",
       "motifs_used": [
@@ -303,7 +303,7 @@
         "冰原極夜星光",
         "震地長尾"
       ],
-      "role": "刺客：近距隱蔽突進、爆發後撤",
+      "role": "繞背突進：沿直線突進並降低命中敵人的影抗性，隨後貼身作戰。",
       "palette": "墨藍、霜灰、星白"
     }
   },

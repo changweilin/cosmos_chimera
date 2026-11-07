@@ -43,3 +43,7 @@ OPUS 概念與數值初配；命名與圖鑑文案由 TERRA 補在 `copy-terra.j
 
 ## ai_style（2026-11-07，P2-10 / Q-C21，待人工）
 三線依使用者定案逐階一致：日 `keep_distance`、月 `flank`、星 `charge`（`docs/design/combat.md#戰鬥-ai`）。
+
+## 修訂 2026-11-07（P5-08 A6/A13，使用者裁決）
+- A13 精通招與 P5-05 招式池去重（Claude Opus 提案，SOL 已複核）：`shadow_nightpaw_swipe` damage 35 → both 30＋目標影抗 −5／4 s（原與 `shadow_dusk_fang` 八欄相同；改 sweep 會與 `shadow_umbral_fang` 相同，故保留 front）；`light_mirror_glint` 40 → both 38＋目標閃避 −10%／3 s；`light_solar_array_lance` 110 → both 95＋目標光抗 −10／6 s（威力 38／95 依 SOL 複核：35 低於招式池帶 −22%、100 計入隊友共享降抗後 +22.5%）。月線三招因此一致帶「削弱影抗」。
+- A6 月線三階的 `concept.role`、`stage_look`、圖鑑與 `trait_shadow_longnight_stalker` 文案由 TERRA 改寫為繞背、直線突進、貼身作戰（戰鬥沒有潛行或自動後撤）；`docs/design/creatures.md` 月線定位同步。

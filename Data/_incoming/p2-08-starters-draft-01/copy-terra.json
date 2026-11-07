@@ -29,24 +29,24 @@
       "name_zh": "夜痕仔",
       "name_en": "Nivetch",
       "naming_note": "夜色留下幼狼的足痕。",
-      "dex_zh": "尾尖閃著一點星光，小小身軀投下的影子卻比自己還大。牠習慣悄悄繞到對手身後，用爪子迅速一拍，再無聲地退回暗處。",
-      "dex_en": "A single light glimmers at its tail tip, while its shadow stretches larger than its body. It pads quietly behind a target, swipes with a small paw, and slips back into darkness."
+      "dex_zh": "尾尖閃著一點星光，小小身軀投下的影子卻比自己還大。牠繞到對手背後，揮爪拍向身前，接著緊貼對手繼續交戰。",
+      "dex_en": "A light glimmers at its tail tip, while its shadow stretches larger than its small body. It circles behind an opponent, strikes with its paw, and stays close to fight."
     },
     {
       "id": "moon_shade_wolf",
       "name_zh": "夜痕狼",
       "name_en": "Niverren",
       "naming_note": "夜痕成長為伏行孤狼。",
-      "dex_zh": "墨藍皮毛上的星斑隨呼吸明滅，像雪地裡忽遠忽近的微光。牠獨自低伏前行，伺機繞向敵人背後突進，留下模糊的影子殘像。",
-      "dex_en": "Starry markings pulse with each breath across its dark blue coat. It hunts alone, crouching low before circling behind its target and lunging, leaving a wavering afterimage in the snow."
+      "dex_zh": "墨藍皮毛上的星斑隨呼吸明滅，像極夜冰原上的微光。牠繞向對手背後，沿直線向前突進，隨即貼近對手繼續交戰。",
+      "dex_en": "Starry markings pulse with each breath across its dark blue coat, like lights on a polar plain. It circles behind an opponent, lunges forward in a straight line, and keeps fighting up close."
     },
     {
       "id": "moon_longnight_wolf",
       "name_zh": "夜痕霜狼",
       "name_en": "Nivervast",
       "naming_note": "霜原巨狼延續夜痕意象。",
-      "dex_zh": "巨大的灰狼伏在雪原時，身形宛如一座沉靜雪丘。牠獨自追蹤獵物，以長尾拍地擾亂對手，再趁其分心繞向背後，突襲後迅速撤離。",
-      "dex_en": "Resting on a snowy plain, this immense gray wolf resembles a quiet drift. It stalks alone, thumping its long tail to distract prey before rushing from behind and swiftly withdrawing."
+      "dex_zh": "巨大的灰狼身形宛如雪原上的一座雪丘，長尾掃過霜地。牠繞向對手背後，沿直線疾衝，貼近對手後持續揮爪作戰。",
+      "dex_en": "This immense gray wolf resembles a snowdrift, its long tail brushing the frost. It circles behind an opponent, rushes forward in a straight line, and stays close to continue the fight."
     },
     {
       "id": "star_blaze_foal",
@@ -80,8 +80,8 @@
       "name_zh": "鏡閃",
       "name_en": "Mirrorflash",
       "naming_note": "小鏡聚起一線閃光。",
-      "desc_zh": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人。",
-      "desc_en": "Focus a glimmer into a straight beam that damages enemies along its distant path."
+      "desc_zh": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人並暫時降低其閃避率。",
+      "desc_en": "Focus a glimmer into a straight beam that damages enemies along its distant path and briefly lowers their evasion."
     },
     {
       "id": "light_heliostat_beam",
@@ -96,16 +96,16 @@
       "name_zh": "日環光槍",
       "name_en": "Solar Array Lance",
       "naming_note": "環形鏡陣凝光如槍。",
-      "desc_zh": "將鏡陣光芒合為長槍般的光束，向遠方直射並傷害路徑上的敵人。",
-      "desc_en": "Unite the array's light into a lance-like beam that damages enemies along a distant straight path."
+      "desc_zh": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。",
+      "desc_en": "Unite the array's light into a lance-like beam that damages enemies along a distant straight path and briefly lowers their light resistance."
     },
     {
       "id": "shadow_nightpaw_swipe",
       "name_zh": "夜爪掠",
       "name_en": "Nightpaw Swipe",
       "naming_note": "夜色中的迅捷爪擊。",
-      "desc_zh": "揮出裹著暗影的爪擊，傷害身前近處的敵人。",
-      "desc_en": "Swipe with a shadow-cloaked paw, damaging enemies close in front."
+      "desc_zh": "揮出裹著暗影的爪擊，傷害身前近處的敵人並暫時降低其影抗性。",
+      "desc_en": "Swipe with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
     },
     {
       "id": "shadow_longnight_lunge",
@@ -161,9 +161,9 @@
       "id": "trait_shadow_longnight_stalker",
       "name_zh": "夜行初步",
       "name_en": "Nightstalk Arrival",
-      "naming_note": "入場之初隱入夜色。",
-      "desc_zh": "召喚上場時遁入夜色，暫時提升移動速度與閃避率。",
-      "desc_en": "On being summoned, slip into the night and temporarily gain movement speed and evasion."
+      "naming_note": "入場之初腳步輕捷。",
+      "desc_zh": "召喚上場時腳步輕捷，暫時提升移動速度與閃避率。",
+      "desc_en": "On being summoned, move light-footed and temporarily gain movement speed and evasion."
     },
     {
       "id": "trait_thunder_storm_gallop",
@@ -176,7 +176,7 @@
   ],
   "issues": [
     "設計文件將日線定位為持續直線傷害與引導施法，但三個光招式資料均為一般傷害招式，沒有持續傷害或引導機制；README 已標明此落差。",
-    "月成年外觀描述提到瞬間消失並從背後現身，但其招式資料只指定向前直線突進與降低影抗性，未定義瞬移或背後現身。",
+    "（已解決 2026-11-07，P5-08 A6）月線三階的定位、外觀與圖鑑改寫為繞背、直線突進與貼身作戰，不再暗示隱身或撤離。",
     "星線整體定位包含範圍放電，但成年的精通招式是直線突進傷害，並非以自身為中心的範圍放電；範圍放電由少年招式呈現。"
   ],
   "source": "ChatGPT Terra（codex exec -s read-only -m gpt-6.1-terra），2026-11-07；Claude Opus 驗收"

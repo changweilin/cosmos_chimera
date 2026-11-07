@@ -58,7 +58,7 @@ window.COSMI_DESIGNED = {
                 "range_class": "long",
                 "shape": "line",
                 "movement": "none",
-                "visual": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人。"
+                "visual": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人並暫時降低其閃避率。"
               }
             },
             {
@@ -94,7 +94,7 @@ window.COSMI_DESIGNED = {
                 "range_class": "long",
                 "shape": "line",
                 "movement": "none",
-                "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射並傷害路徑上的敵人。"
+                "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。"
               }
             }
           ],
@@ -136,7 +136,7 @@ window.COSMI_DESIGNED = {
         "archetype_type": "P5-02 考據庫",
         "motifs": "孤行極地巨灰狼、冰原極夜星光、震地長尾",
         "sensitivity": "ok",
-        "role": "刺客：近距隱蔽突進、爆發後撤",
+        "role": "繞背突進：沿直線突進並降低命中敵人的影抗性，隨後貼身作戰。",
         "temperament": "孤僻警覺、只親近主人",
         "size_profile": "S→M→L→XL",
         "height_length": "2.6 m",
@@ -152,8 +152,8 @@ window.COSMI_DESIGNED = {
               "name_zh": "夜痕仔",
               "name_en": "Nivetch",
               "size_class": "S",
-              "look": "灰狼幼崽 × 尾尖一點星光；影子比本體大一號、走路無聲的小狼",
-              "dex_zh": "尾尖閃著一點星光，小小身軀投下的影子卻比自己還大。牠習慣悄悄繞到對手身後，用爪子迅速一拍，再無聲地退回暗處。",
+              "look": "灰狼幼崽 × 尾尖一點星光；尾尖閃著星光的小狼投下比本體更大的影子，繞到背後揮爪拍擊。",
+              "dex_zh": "尾尖閃著一點星光，小小身軀投下的影子卻比自己還大。牠繞到對手背後，揮爪拍向身前，接著緊貼對手繼續交戰。",
               "signature_move": {
                 "move_id": "shadow_nightpaw_swipe",
                 "name_zh": "夜爪掠",
@@ -161,7 +161,7 @@ window.COSMI_DESIGNED = {
                 "range_class": "melee",
                 "shape": "front",
                 "movement": "none",
-                "visual": "揮出裹著暗影的爪擊，傷害身前近處的敵人。"
+                "visual": "揮出裹著暗影的爪擊，傷害身前近處的敵人並暫時降低其影抗性。"
               }
             },
             {
@@ -170,8 +170,8 @@ window.COSMI_DESIGNED = {
               "name_zh": "夜痕狼",
               "name_en": "Niverren",
               "size_class": "M",
-              "look": "孤狼 × 極夜冰原的星光斑紋；低伏潛行，身上星斑隨呼吸明滅，衝刺時只留下影子殘像",
-              "dex_zh": "墨藍皮毛上的星斑隨呼吸明滅，像雪地裡忽遠忽近的微光。牠獨自低伏前行，伺機繞向敵人背後突進，留下模糊的影子殘像。",
+              "look": "孤狼 × 極夜冰原的星光斑紋；墨藍孤狼身上的星斑隨呼吸明滅，向前疾衝時拖出影子殘像。",
+              "dex_zh": "墨藍皮毛上的星斑隨呼吸明滅，像極夜冰原上的微光。牠繞向對手背後，沿直線向前突進，隨即貼近對手繼續交戰。",
               "signature_move": {
                 "move_id": "shadow_longnight_lunge",
                 "name_zh": "長夜突",
@@ -188,8 +188,8 @@ window.COSMI_DESIGNED = {
               "name_zh": "夜痕霜狼",
               "name_en": "Nivervast",
               "size_class": "L",
-              "look": "極夜巨狼 × 震地長尾；身形如雪丘的巨灰狼，長尾拍地揚起雪幕，趁對手視線被遮時貼地疾衝穿過、衝出後立刻拉開距離",
-              "dex_zh": "巨大的灰狼伏在雪原時，身形宛如一座沉靜雪丘。牠獨自追蹤獵物，以長尾拍地擾亂對手，再趁其分心繞向背後，突襲後迅速撤離。",
+              "look": "極夜巨狼 × 震地長尾；身形如雪丘的巨灰狼拖著震地長尾，繞背後貼地向前疾衝。",
+              "dex_zh": "巨大的灰狼身形宛如雪原上的一座雪丘，長尾掃過霜地。牠繞向對手背後，沿直線疾衝，貼近對手後持續揮爪作戰。",
               "signature_move": {
                 "move_id": "shadow_lone_hunter_ambush",
                 "name_zh": "孤影伏襲",
@@ -204,7 +204,7 @@ window.COSMI_DESIGNED = {
           "trait": {
             "trait_id": "trait_shadow_longnight_stalker",
             "name_zh": "夜行初步",
-            "idea_zh": "召喚上場時遁入夜色，暫時提升移動速度與閃避率。"
+            "idea_zh": "召喚上場時腳步輕捷，暫時提升移動速度與閃避率。"
           },
           "overload": "未定案（Q-C12）：依成年延伸設計，寫入 manifest.notes 供人工確認"
         }
