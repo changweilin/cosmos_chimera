@@ -47,6 +47,17 @@ namespace Cosmimera.Player.Tests
             Assert.AreEqual(before, _rig.PendingLook);
         }
 
+        // sol P1 r14 N29: the Pre range is closed at 0; only an accepting case at the endpoint can tell `>= 0` from `> 0`.
+        [Test]
+        public void N29_zero_gamepad_rate_is_accepted()
+        {
+            SetField("_gamepadDegreesPerSecond", 0f);
+
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(10f, 10f), new Vector2(1f, 1f), 1f));
+            Assert.AreEqual(1.2f, _rig.PendingLook.x, 1e-5f, "the stick contributes nothing");
+            Assert.AreEqual(1.2f, _rig.PendingLook.y, 1e-5f);
+        }
+
         [Test]
         public void N8_R6_extreme_legal_multipliers_keep_the_queue_finite_and_in_range()
         {

@@ -219,7 +219,8 @@ namespace Cosmimera.Player
         ///       |PlanarVelocity| ≤ min(MaxStateSpeed, max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding)); transport alone preserves
         ///       |PlanarVelocity| except at the domain edge, where lengthsq ≥ MaxStateSpeed²·(1−2e-6) is rescaled to
         ///       MaxStateSpeed·(1−1e-6) (≤ ~0.011 m/s at 1e4 m/s, sol P1 r6); while grounded, Velocity runs along the
-        ///       ground plane at |PlanarVelocity| plus StickSpeed into the ground;
+        ///       ground plane at |PlanarVelocity| (relative rounding, any speed and any legal slope) plus StickSpeed into the
+        ///       ground, the along-plane part being zero only when PlanarVelocity is zero or parallel to ground.Normal in float;
         ///       a jump starts only from Grounded and sets the vertical speed to sqrt(2·Gravity·JumpHeight).
         /// Side effects: none (pure).
         /// </remarks>
@@ -323,11 +324,24 @@ namespace Cosmimera.Player
             else if (grounded)
             {
                 // Follow the ground plane at the same speed so slopes neither slow the body nor launch it.
-                float3 along = vTan - ground.Normal * math.dot(vTan, ground.Normal);
-                float alongLenSq = math.lengthsq(along);
-                if (alongLenSq > 1e-12f)
+                // An absolute 1e-12 cutoff on the projection skipped the speed restore for micro speeds and for legal
+                // near-vertical slopes, whose projection is only cos(slope)·|vTan| long (sol P1 r14 N28). Scaling by the
+                // largest component keeps lengthsq in [1, 3], so neither tiny nor large speeds under- or overflow.
+                float3 along = float3.zero;
+                float scale = math.cmax(math.abs(vTan));
+                if (scale > 0f)
                 {
-                    along *= math.length(vTan) / math.sqrt(alongLenSq);
+                    float3 dir = vTan / scale;
+                    float speed = scale * math.length(dir);
+                    float3 a = dir - ground.Normal * math.dot(dir, ground.Normal);
+                    // |a| ≥ |dir|·cos(slope) can be ~1e-7; one projection leaves a normal residual of ~ε·|dir|, which
+                    // normalising would amplify by 1/|a|, so project a second time on the normalised result.
+                    if (math.lengthsq(a) > 0f)
+                    {
+                        a = math.normalize(a);
+                        a -= ground.Normal * math.dot(a, ground.Normal);
+                        along = math.normalize(a) * speed;
+                    }
                 }
 
                 velocity = along - ground.Normal * settings.StickSpeed;

@@ -62,6 +62,16 @@ namespace Cosmimera.Player.Tests
             AssertNothingWritten();
         }
 
+        // sol P1 r14 N29: Configure shares the closed multiplier range; the zero endpoint must be accepted.
+        [Test]
+        public void N29_configure_accepts_a_zero_gamepad_rate()
+        {
+            SetField("_gamepadDegreesPerSecond", 0f);
+
+            Assert.DoesNotThrow(Configure);
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+        }
+
         // sol P1 r8 N12-R8: TrackingTarget alone could not see an early write to the rig's own fields.
         private void AssertNothingWritten()
         {
