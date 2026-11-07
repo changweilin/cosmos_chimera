@@ -54,8 +54,11 @@ namespace Cosmimera.Player
         ///      the pivot must not move the body); on a repeated Configure, neither target nor pivot is (or is below)
         ///      the rig-owned WorldUpReference; thirdPerson != firstPerson (ToggleView must leave exactly one
         ///      live); target.position finite with some |component| of (position − planet.Center) > 1e-3 m (the
-        ///      PlanetConfig.ToDirection domain); serialized look multipliers in range (see AddLook). All checked
-        ///      before anything is written.
+        ///      PlanetConfig.ToDirection domain) and every |component| of target.position ≤ MaxTargetComponent (so
+        ///      float spacing cannot swallow the eye height); the transforms Cinemachine writes — both cameras' and the
+        ///      brain's — are none of target, pivot or WorldUpReference, nor an ancestor of them (their pose writes
+        ///      would move the body, the pivot or the level up); serialized look multipliers in range (see AddLook).
+        ///      All checked before anything is written.
         /// Post: third person live; any look queued before Configure is discarded; orbit heading == target forward
         ///       (tangent part); brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
@@ -78,6 +81,13 @@ namespace Cosmimera.Player
             float3 offset = (float3)target.position - planet.Center;
             Contract.Requires(math.all(math.isfinite(offset)) && math.cmax(math.abs(offset)) > 1e-3f,
                 "target must be finite and away from the planet centre (sol P1 r8 N16)");
+            Contract.Requires(math.cmax(math.abs((float3)target.position)) <= MaxTargetComponent,
+                "target position exceeds MaxTargetComponent (sol P1 r11 N23)");
+            // SOL P1 r11: CinemachineCamera writes its own transform and the brain writes the Unity camera's; either
+            // aliasing (or parenting) a transform the rig relies on corrupts it after the rig's LateUpdate.
+            RequireNotMovedBy(thirdPerson.transform, target, pivot);
+            RequireNotMovedBy(firstPerson.transform, target, pivot);
+            RequireNotMovedBy(brain.transform, target, pivot);
             RequireMultipliers();
 
             _planet = planet;
@@ -166,12 +176,25 @@ namespace Cosmimera.Player
         /// <remarks>Pre: none. Post: constant. Side effects: none. A frame longer than this is a stall, not input.</remarks>
         public const float MaxLookDeltaTime = 1f;
 
+        /// <summary>Largest |component| of the target position accepted by <see cref="Configure"/>, in metres.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Float spacing below 2^15 m is ≤ 3.9 mm, so the eye
+        /// height stays within 0.25 % of the default 1.6 m; PlanetConfig allows |Center| ≤ 16000 and R ≤ 8000, so every
+        /// supported surface point is inside (SOL P1 r11 N23: at 1e8 m the 1.6 m eye height rounded to 0).</remarks>
+        public const float MaxTargetComponent = 32768f;
+
         /// <summary>Switches between third and first person.</summary>
         /// <remarks>Pre: Configure called. Post: IsFirstPerson toggled; exactly one camera has the higher priority. Side effects: priorities.</remarks>
         public void ToggleView()
         {
             Contract.Requires(_configured, "Configure has not been called");
             SetFirstPerson(!IsFirstPerson);
+        }
+
+        // Transform.IsChildOf is reflexive, so this also rejects writer == any of the three.
+        private void RequireNotMovedBy(Transform writer, Transform target, Transform pivot)
+        {
+            Contract.Requires(!target.IsChildOf(writer) && !pivot.IsChildOf(writer) && (_worldUp == null || !_worldUp.IsChildOf(writer)),
+                "a camera or brain transform must not be, or be an ancestor of, the target, pivot or world-up transform");
         }
 
         // Serialized fields can be edited in the inspector at any time, so they are checked where used, not only once.

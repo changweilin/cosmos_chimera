@@ -296,6 +296,10 @@ namespace Cosmimera.Player
                 if (into < 0f)
                 {
                     vTan -= wallOut * into;
+                    // When nearly all of a large vTan pushes into the wall, the subtraction cancels to a residue made of
+                    // rounding (~|vTan|·ε, 1e-3 m/s at 1e4 m/s) that is not tangent; re-project so the tangent Post and
+                    // the next Step's Pre still hold (sol P1 r11 N21).
+                    vTan -= up * math.dot(vTan, up);
                 }
             }
 

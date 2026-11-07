@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) and r10 (N20). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) r10 (N20) and r11 (N22, N23, camera/brain output ownership). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -133,6 +133,98 @@ namespace Cosmimera.Player.Tests
             _pivot.SetParent(_brain.WorldUpOverride, true);
 
             Assert.Throws<ContractException>(Configure);
+        }
+
+        private object Field(string name) =>
+            typeof(PlayerCameraRig).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_rig);
+
+        // sol P1 r11 N22: the rejected re-Configure uses a different planet, so a guard moved after `_planet = planet`
+        // shows up as a changed radius.
+        private void AssertReconfigureRejectedWithoutWrites(Transform target, Transform pivot)
+        {
+            var other = new PlanetConfig(320f, float3.zero);
+            Vector3 pivotPose = _pivot.position;
+
+            Assert.Throws<ContractException>(() => _rig.Configure(other, target, pivot, _third, _first, _brain));
+            Assert.AreEqual(640f, ((PlanetConfig)Field("_planet")).Radius, "_planet untouched");
+            Assert.AreSame(_target, Field("_target"), "_target untouched");
+            Assert.AreSame(_pivot, Field("_pivot"), "_pivot untouched");
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget, "wiring untouched");
+            Assert.AreEqual(pivotPose, _pivot.position, "pivot pose untouched");
+        }
+
+        [Test]
+        public void N22_reconfigure_with_the_owned_world_up_as_target_is_rejected_before_any_write()
+        {
+            Configure();
+            AssertReconfigureRejectedWithoutWrites(_brain.WorldUpOverride, _pivot);
+        }
+
+        [Test]
+        public void N22_reconfigure_with_a_child_of_the_owned_world_up_as_target_is_rejected_before_any_write()
+        {
+            Configure();
+            var other = new GameObject("BelowOwned").transform;
+            other.SetParent(_brain.WorldUpOverride, false);
+            other.position = _target.position;
+            try
+            {
+                AssertReconfigureRejectedWithoutWrites(other, _pivot);
+            }
+            finally
+            {
+                Object.DestroyImmediate(other.gameObject);
+            }
+        }
+
+        [Test]
+        public void N22_reconfigure_with_the_owned_world_up_as_pivot_is_rejected_before_any_write()
+        {
+            Configure();
+            AssertReconfigureRejectedWithoutWrites(_target, _brain.WorldUpOverride);
+        }
+
+        [TestCase(PlayerCameraRig.MaxTargetComponent * 1.001f)]
+        [TestCase(-PlayerCameraRig.MaxTargetComponent * 1.001f)]
+        [TestCase(1e8f)]
+        public void N23_target_beyond_the_eye_height_precision_domain_is_rejected_before_wiring(float y)
+        {
+            _target.position = new Vector3(0f, y, 0f);
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N23_target_at_the_domain_edge_keeps_the_eye_height()
+        {
+            _target.position = new Vector3(0f, PlayerCameraRig.MaxTargetComponent, 0f);
+            Configure();
+            Assert.AreEqual(1.6f, Vector3.Distance(_target.position, _pivot.position), 4e-3f);
+        }
+
+        [Test]
+        public void R11_camera_on_the_pivot_object_is_rejected_before_wiring()
+        {
+            var onPivot = _pivot.gameObject.AddComponent<CinemachineCamera>();
+            Assert.Throws<ContractException>(() => _rig.Configure(_config, _target, _pivot, onPivot, _first, _brain));
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void R11_brain_above_the_target_is_rejected_before_wiring()
+        {
+            _target.SetParent(_brain.transform, true);
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void R11_reconfigure_with_a_camera_above_the_owned_world_up_is_rejected_before_any_write()
+        {
+            Configure();
+            Transform owned = _brain.WorldUpOverride;
+            owned.SetParent(_first.transform, true);
+            AssertReconfigureRejectedWithoutWrites(_target, _pivot);
         }
 
         [Test]
