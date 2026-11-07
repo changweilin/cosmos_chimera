@@ -178,6 +178,27 @@ namespace Cosmimera.Combat.Tests
                 new float3(320f, 0f, 0f), new float3(0f, 0f, 1f)));
         }
 
+        // SOL r10 D4: pin the bound's equality (DP01, `<=` → `<`) and that it uses the unclamped rc (DP06).
+        [Test]
+        public void Dash_bound_accepts_exact_double_equality()
+        {
+            var planet = new PlanetConfig(640f, float3.zero);
+            var caster = new float3(640f, 1.8829232454299927f, 0.0005388259887695312f);
+            double rc = math.length((double3)caster);
+            float3 forward = PlanetFrame.FromUp((float3)math.normalize((double3)caster)).North;
+
+            Assert.AreEqual(502657 * 0.001, rc * (math.PI_DBL / 4.0));
+            Assert.DoesNotThrow(() => MoveGeometry.ResolveDashEnd(Dash(502657), planet, caster, forward));
+        }
+
+        [Test]
+        public void Dash_bound_uses_actual_radius_inside_shell_slack()
+        {
+            var planet = new PlanetConfig(640f, float3.zero);
+            Assert.Throws<ContractException>(() => MoveGeometry.ResolveDashEnd(Dash(251327), planet,
+                new float3(319.999f, 0f, 0f), new float3(0f, 0f, 1f)));
+        }
+
         // SOL r9 D3 witnesses (DD01/DD15, DD03, DD04/DD05, DD16/DD17).
         [Test]
         public void Valid_shell_boundary_is_accepted_in_double()
