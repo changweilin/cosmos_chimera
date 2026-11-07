@@ -51,7 +51,8 @@ namespace Cosmimera.Player
         /// <remarks>
         /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; target and pivot are distinct and
         ///      neither is a descendant of the other (the orbit, not the body, owns the pivot's rotation, and writing
-        ///      the pivot must not move the body); thirdPerson != firstPerson (ToggleView must leave exactly one
+        ///      the pivot must not move the body); on a repeated Configure, neither target nor pivot is (or is below)
+        ///      the rig-owned WorldUpReference; thirdPerson != firstPerson (ToggleView must leave exactly one
         ///      live); target.position finite with some |component| of (position − planet.Center) > 1e-3 m (the
         ///      PlanetConfig.ToDirection domain); serialized look multipliers in range (see AddLook). All checked
         ///      before anything is written.
@@ -69,6 +70,10 @@ namespace Cosmimera.Player
             Contract.Requires(!pivot.IsChildOf(target), "pivot must not be parented to the target");
             // LateUpdate writes the pivot's pose; a target below it would be dragged along (SOL P1 r9 N18).
             Contract.Requires(!target.IsChildOf(pivot), "target must not be parented to the pivot");
+            // brain.WorldUpOverride exposes the rig-owned level transform after the first Configure; reusing it as the
+            // pivot makes LateUpdate's level write overwrite the eye-height/pitch pose (SOL P1 r10 N20).
+            Contract.Requires(_worldUp == null || (!pivot.IsChildOf(_worldUp) && !target.IsChildOf(_worldUp)),
+                "target and pivot must not be the rig-owned world-up transform");
             Contract.Requires(thirdPerson != firstPerson, "third- and first-person cameras must be different objects");
             float3 offset = (float3)target.position - planet.Center;
             Contract.Requires(math.all(math.isfinite(offset)) && math.cmax(math.abs(offset)) > 1e-3f,

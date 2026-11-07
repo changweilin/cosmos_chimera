@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) and r10 (N20). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -112,6 +112,38 @@ namespace Cosmimera.Player.Tests
         {
             Assert.Throws<ContractException>(() => _rig.Configure(_config, _target, _target, _third, _first, _brain));
             AssertNothingWritten();
+        }
+
+        // sol P1 r10 N20: the rig-owned level transform is reachable through brain.WorldUpOverride after Configure.
+        [Test]
+        public void N20_reconfigure_with_the_owned_world_up_as_pivot_is_rejected_before_rewiring()
+        {
+            Configure();
+            Transform owned = _brain.WorldUpOverride;
+
+            Assert.Throws<ContractException>(() => _rig.Configure(_config, _target, owned, _third, _first, _brain));
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget, "first wiring kept");
+            Assert.AreSame(owned, _brain.WorldUpOverride);
+        }
+
+        [Test]
+        public void N20_reconfigure_with_a_child_of_the_owned_world_up_as_pivot_is_rejected()
+        {
+            Configure();
+            _pivot.SetParent(_brain.WorldUpOverride, true);
+
+            Assert.Throws<ContractException>(Configure);
+        }
+
+        [Test]
+        public void N20_reconfigure_with_separate_transforms_keeps_the_pivot_at_eye_height()
+        {
+            Configure();
+            Vector3 eye = _pivot.position;
+            Configure();
+
+            Assert.AreEqual(0f, Vector3.Distance(eye, _pivot.position), 1e-4f, "repeat Configure is idempotent");
+            Assert.Greater(Vector3.Distance(_target.position, _pivot.position), 1f, "pivot sits above the body");
         }
 
         [Test]
