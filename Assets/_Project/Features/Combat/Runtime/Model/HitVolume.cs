@@ -319,13 +319,17 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.DashDistanceMm > 0 (built with
         ///      movement == Dash); caster inside the combat shell (same bounds and rounding slack as ResolveAnchor);
+        ///      DashDistanceMm · 0.001 &lt;= rc · π/4, rc = |caster − planet.Center| (an eighth of a circumference:
+        ///      ≥ 251 m anywhere in the shell at R = 640);
         ///      forward is unit (±1e-3) and tangent at the caster (|dot(forward, up)| &lt;= 1e-3).
         /// Post: result is finite and inside the combat shell, so it can be passed to Overlaps; it lies on the great
         ///       circle through the caster along forward's tangent direction, at the caster's radius (clamped into the
         ///       strict shell); geodesic distance (at the caster's radius) from caster to result equals
         ///       DashDistanceMm within 1 mm + 1e-6 · (largest |component| of result) — float rounding of the returned
-        ///       world position only. The result therefore sits on the centre line of the dash's own Rect volume at its
-        ///       far edge. Only forward's tangent direction matters, not its length within the tolerance.
+        ///       world position only. Horizontally the result sits on the centre line of the dash's own Rect volume at
+        ///       its far edge; vertically it is level with the caster unless the caster was in the shell's rounding
+        ///       slack and got clamped, so a Rect thinner than that clamp can miss it by height (SOL r9 D2). Only
+        ///       forward's tangent direction matters, not its length within the tolerance.
         ///       Terrain height, obstacles and collider sync are not modelled here (PlayMode presentation layer).
         /// Side effects: none.
         /// REQ: docs/design/combat.md#判定體 — dash displacement equals base_range, never STR-scaled.
@@ -339,6 +343,11 @@ namespace Cosmimera.Combat
             double3 dc = (double3)caster - center;
             RequireInDomain(dc, planet, "caster");
             double rc = math.length(dc);
+            // Past a quarter circumference Overlaps rejects the end as far-hemisphere, past half the shortest geodesic
+            // is no longer the path, and multiple laps wrap back to the start (SOL r9 D1). π/4 leaves the end deep
+            // inside the hemisphere Overlaps measures, far beyond any float rounding of the landing point.
+            Contract.Requires(volume.DashDistanceMm * MmToMd <= rc * (math.PI_DBL / 4.0),
+                "dash longer than an eighth of the caster's circumference");
             double3 up = dc / rc;
             double3 forwardD = forward;
             Contract.Requires(math.abs(math.length(forwardD) - 1.0) <= UnitTolerance
