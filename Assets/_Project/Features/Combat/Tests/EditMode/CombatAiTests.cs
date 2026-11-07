@@ -315,7 +315,13 @@ namespace Cosmimera.Combat.Tests
             HitVolume ally = Build(MoveShape.Ally, RangeClass.Mid, 12000);
             Assert.AreEqual(ally.CastDistanceMm, CombatAi.ReachMmOf(ally));
             HitVolume line = Build(MoveShape.Line, RangeClass.Long, 24000);
-            Assert.AreEqual(line.ReachMm, CombatAi.ReachMmOf(line));
+            double lineHalf = line.WidthMm * 0.5;
+            Assert.AreEqual((int)math.ceil(math.sqrt((double)line.ReachMm * line.ReachMm + lineHalf * lineHalf)),
+                CombatAi.ReachMmOf(line));
+            HitVolume cone = Build(MoveShape.Cone, RangeClass.Mid, 12000);
+            Assert.AreEqual(cone.ReachMm, CombatAi.ReachMmOf(cone));
+            HitVolume field = Build(MoveShape.Field, RangeClass.Long, 24000);
+            Assert.AreEqual(field.CastDistanceMm + field.ReachMm, CombatAi.ReachMmOf(field));
             HitVolume burst = Build(MoveShape.Burst, RangeClass.Mid, 3000, BurstOrigin.Target);
             Assert.AreEqual(HitVolumeAnchor.AimPoint, burst.Anchor);
             Assert.AreEqual(burst.CastDistanceMm + burst.ReachMm, CombatAi.ReachMmOf(burst));
@@ -329,6 +335,132 @@ namespace Cosmimera.Combat.Tests
             AiTuning t = BalanceFixture.AiTuning();
             Assert.That(t.KeepDistancePermille, Is.InRange(1, 1000));
             Assert.That(t.FollowLeashMm, Is.GreaterThan(0));
+        }
+
+        // ---- SOL P2-10 r1 witnesses ----
+
+        [Test]
+        public void A1_rect_gate_covers_its_far_corners()
+        {
+            var stats = new DerivedStats(BalanceFixture.Coefficients());
+            HitVolume front = MoveGeometry.Build(MoveShape.Front, MoveMovement.None, RangeClass.Melee, BurstOrigin.Caster,
+                2000, 0, stats, BalanceFixture.HitDefaults());
+            double half = front.WidthMm * 0.5;
+            Assert.AreEqual((int)math.ceil(math.sqrt((double)front.ReachMm * front.ReachMm + half * half)),
+                CombatAi.ReachMmOf(front));
+
+            float x = (float)(half * 0.93 / 1000.0), z = front.ReachMm * 0.995f / 1000f;
+            float3 corner = At(math.sqrt(x * x + z * z), math.degrees(math.atan2(x, z)));
+            Assert.Greater(DistM(Dir(corner), Dir(_self)), front.ReachMm / 1000.0, "beyond the plain length");
+            Assert.IsTrue(MoveGeometry.Overlaps(front, _planet, _self, _forward, corner, 0f), "oracle: it connects");
+            AiDecision d = Decide(Input(), new[] { Enemy(1, corner) },
+                new[] { Hostile(0, CombatAi.ReachMmOf(front), 10) });
+            Assert.AreEqual(0, d.CastSlot);
+        }
+
+        [Test]
+        public void A1_reach_saturates()
+        {
+            var huge = new HitVolume(HitVolumeKind.Circle, HitVolumeAnchor.AimPoint, int.MaxValue, 0, 0, 1, int.MaxValue, 0);
+            Assert.AreEqual(int.MaxValue, CombatAi.ReachMmOf(huge));
+            var rect = new HitVolume(HitVolumeKind.Rect, HitVolumeAnchor.Caster, int.MaxValue, int.MaxValue, 0, 1, 0, 0);
+            Assert.AreEqual(int.MaxValue, CombatAi.ReachMmOf(rect));
+        }
+
+        [Test]
+        public void A3_stand_off_is_clamped_to_a_quarter_circumference()
+        {
+            float3 target = At(5f, 0f);
+            AiDecision d = Decide(Input(AiStyle.KeepDistance), new[] { Enemy(1, target) }, new[] { Hostile(0, 3000000, 1) });
+            Assert.AreEqual(math.PI_DBL * 0.5 * R, DistM(d.DestinationDirection, Dir(target)), TolM);
+            Assert.AreEqual(math.PI_DBL * 0.5 * R - 5.0, DistM(d.DestinationDirection, Dir(_self)), TolM, "on self's side");
+        }
+
+        [Test]
+        public void A4_a_tiny_but_real_offset_keeps_its_great_circle()
+        {
+            var planet = new PlanetConfig(R, float3.zero);
+            var self = new float3(0f, R, 0f);
+            var enemy = new AiEnemy(1, new float3(0f, R, 1e-10f), new float3(1f, 0f, 0f), true);
+            var input = new AiInput(self, AiStyle.KeepDistance, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                self, false, default);
+            AiDecision d = CombatAi.Decide(planet, _tuning, input, new[] { enemy }, new[] { Hostile(0, 10000, 1) });
+            Assert.Less(math.abs(d.DestinationDirection.x), 1e-6f, "not sent along the target's facing");
+            Assert.Less(d.DestinationDirection.z, -0.012f, "8 m toward self's side of the target");
+        }
+
+        [Test]
+        public void A5_decide_does_not_allocate()
+        {
+            AiEnemy[] e = { Enemy(1, At(5f, 0f)), Enemy(2, At(9f, 40f)) };
+            AiMoveOption[] m = { Hostile(0, 12000, 5), new AiMoveOption(1, AiMoveTargeting.Ally, 12000, 0, true) };
+            AiInput input = Input(AiStyle.Flank, partner: At(3f, 90f));
+            for (int i = 0; i < 100; i++) CombatAi.Decide(_planet, _tuning, input, e, m);
+            long before = System.GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 1000; i++) CombatAi.Decide(_planet, _tuning, input, e, m);
+            Assert.AreEqual(0, System.GC.GetAllocatedBytesForCurrentThread() - before);
+        }
+
+        [Test]
+        public void A7_tuning_values_drive_the_result()
+        {
+            _tuning = new AiTuning(400, 250, 500, 2000);
+            float3 target = At(5f, 0f);
+            AiDecision d = Decide(Input(AiStyle.KeepDistance), new[] { Enemy(1, target) }, new[] { Hostile(0, 24000, 1) });
+            Assert.AreEqual(9.6, DistM(d.DestinationDirection, Dir(target)), TolM);
+            d = Decide(Input(AiStyle.Charge), new[] { Enemy(1, At(20f, 0f)) }, new[] { Hostile(0, 4000, 1) });
+            Assert.AreEqual(1.0, DistM(d.DestinationDirection, Dir(At(20f, 0f))), TolM);
+            d = Decide(Input(AiStyle.Hold), new[] { Enemy(1, At(8f, 0f)) }, new[] { Hostile(0, 12000, 1) });
+            Assert.AreEqual(6.0, DistM(d.DestinationDirection, Dir(At(8f, 0f))), TolM);
+            float3 player = At(5f, 90f);
+            d = Decide(Input(command: Cmd(AiCommandKind.Follow), player: player), new AiEnemy[0], new[] { Hostile(0, 1, 1) });
+            Assert.AreEqual(1.0, DistM(d.DestinationDirection, Dir(player)), TolM);
+        }
+
+        [Test]
+        public void A7_reach_and_hold_boundaries()
+        {
+            Assert.AreEqual(0, Decide(Input(), new[] { new AiEnemy(1, _self, _forward, true) }, new[] { Hostile(0, 0, 1) }).CastSlot,
+                "zero reach still hits an enemy on the same spot (inclusive gate)");
+            Assert.AreEqual(CombatAi.NoCast,
+                Decide(Input(), new[] { Enemy(1, At(12.002f, 0f)) }, new[] { Hostile(0, 12000, 1) }).CastSlot);
+            AiDecision d = Decide(Input(AiStyle.Hold), new[] { Enemy(1, At(10.802f, 0f)) }, new[] { Hostile(0, 12000, 1) });
+            Assert.Greater(DistM(d.DestinationDirection, Dir(_self)), 1e-3, "just outside the hold zone: move");
+        }
+
+        [Test]
+        public void A7_distances_use_the_caster_radius()
+        {
+            float r2 = 2f * R;
+            float3 self = _planet.Center + _up * r2;
+            float a = 20f / r2;
+            float3 target = _planet.Center + (math.cos(a) * _up + math.sin(a) * _forward) * r2;
+            var input = new AiInput(self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget, self, false, default);
+            AiDecision d = CombatAi.Decide(_planet, _tuning, input, new[] { new AiEnemy(1, target, Facing(target, self), true) },
+                new[] { Hostile(0, 12000, 1) });
+            Assert.AreEqual(CombatAi.NoCast, d.CastSlot, "20 m at 1280 m radius is out of a 12 m reach");
+        }
+
+        [Test]
+        public void A7_retreat_still_validates_inputs()
+        {
+            float3 pos = At(5f, 0f);
+            Assert.Throws<ContractException>(() => Decide(Input(command: Cmd(AiCommandKind.Retreat)),
+                new[] { new AiEnemy(1, pos, Dir(pos), true) }, new[] { Hostile(0, 1, 1) }));
+            Assert.Throws<ContractException>(() => Decide(Input(command: Cmd(AiCommandKind.Retreat)),
+                new[] { Enemy(1, pos) }, new[] { Hostile(0, 1, 1), Hostile(0, 2, 1) }));
+        }
+
+        [Test]
+        public void A7_remaining_constructor_bounds()
+        {
+            Assert.Throws<ContractException>(() => _ = new AiTuning(800, 1001, 900, 1));
+            Assert.Throws<ContractException>(() => _ = new AiTuning(800, 500, 0, 1));
+            Assert.Throws<ContractException>(() => _ = new AiMoveOption(0, (AiMoveTargeting)(-1), 1, 1, true));
+            Assert.Throws<ContractException>(() => _ = new AiCommand((AiCommandKind)(-1), CombatAi.NoTarget));
+            Assert.Throws<ContractException>(() => _ = Input(style: (AiStyle)(-1)));
+            Assert.DoesNotThrow(() => _ = new AiMoveOption(MoveCooldowns.MaxSlots - 1, AiMoveTargeting.Hostile, int.MaxValue,
+                DamageModel.MaxPower, false));
         }
 
         // ---- preconditions ----

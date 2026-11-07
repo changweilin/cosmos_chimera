@@ -542,8 +542,10 @@ namespace Cosmimera.Combat
             double slackM = ShellSlack * (math.cmax(math.abs((double3)planet.Center)) + 2.0 * planet.Radius);
             double inner = planet.Radius * 0.5 - slackM;
             double outer = planet.Radius * 2.0 + slackM;
-            Contract.Requires(r2 >= inner * inner && r2 <= outer * outer,
-                name + " must be within R/2..2R of the planet center (combat shell)");
+            bool inShell = r2 >= inner * inner && r2 <= outer * outer;
+            // Message built only on failure: concatenating it unconditionally allocated ~472 B per CombatAi.Decide
+            // in Editor/Development builds (SOL P2-10 A5).
+            Contract.Requires(inShell, inShell ? string.Empty : name + " must be within R/2..2R of the planet center (combat shell)");
         }
 
         private static int Lateral(int mm, bool melee, int linearPermille)

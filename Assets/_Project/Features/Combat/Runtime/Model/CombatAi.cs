@@ -7,6 +7,7 @@ using Unity.Mathematics;
 namespace Cosmimera.Combat
 {
     /// <summary>Player command for the main creature. REQ: docs/design/combat.md#戰鬥-ai (Q-C20).</summary>
+    /// <remarks>Pre: none. Post: stable values; constructors reject undefined ones. Side effects: none.</remarks>
     public enum AiCommandKind
     {
         /// <summary>Fight by own style; nearest living enemy.</summary>
@@ -20,6 +21,7 @@ namespace Cosmimera.Combat
     }
 
     /// <summary>Which of the two fielded creatures this is. REQ: combat.md#戰鬥-ai (Q-C11).</summary>
+    /// <remarks>Pre: none. Post: stable values; constructors reject undefined ones. Side effects: none.</remarks>
     public enum AiRole
     {
         /// <summary>Receives the player's command.</summary>
@@ -29,6 +31,7 @@ namespace Cosmimera.Combat
     }
 
     /// <summary>Who a move is aimed at, as far as the AI is concerned.</summary>
+    /// <remarks>Pre: none. Post: stable values; constructors reject undefined ones. Side effects: none.</remarks>
     public enum AiMoveTargeting
     {
         /// <summary>Any shape that tests enemies (front/line/sweep/cone/burst/arc/field).</summary>
@@ -63,20 +66,23 @@ namespace Cosmimera.Combat
 
         /// <summary>Focused enemy id, or <see cref="CombatAi.NoTarget"/>.</summary>
         /// <remarks>
-        /// Pre: none. Post: >= 0 iff Kind == Focus. default(AiCommand) is Free with TargetId 0, so callers use the
-        /// constructor; Decide treats any non-Focus command's TargetId as irrelevant. Side effects: none.
+        /// Pre: none. Post: for constructed values, >= 0 iff Kind == Focus. Exception: default(AiCommand) is Free with
+        /// TargetId 0; Decide never reads TargetId of a non-Focus command, so default behaves as Free. Side effects: none.
         /// </remarks>
         public int TargetId { get; }
     }
 
     /// <summary>AI tuning from <c>Data/balance.json#ai</c>.</summary>
-    /// <remarks>REQ: docs/design/derived-stats/balance-keys.md. Pre: build through the constructor. Post: immutable.</remarks>
+    /// <remarks>
+    /// REQ: docs/design/derived-stats/balance-keys.md. Pre: build through the constructor. Post: immutable.
+    /// Side effects: none after construction.
+    /// </remarks>
     public sealed class AiTuning
     {
         /// <summary>Creates validated tuning.</summary>
         /// <remarks>
         /// Pre: 1 &lt;= keepDistancePermille, closeInPermille, holdPermille &lt;= 1000; followLeashMm >= 1.
-        /// Post: properties equal the arguments. Side effects: none.
+        /// Post: properties equal the arguments. Side effects: allocates this instance (build once, not per tick).
         /// </remarks>
         public AiTuning(int keepDistancePermille, int closeInPermille, int holdPermille, int followLeashMm)
         {
@@ -196,8 +202,8 @@ namespace Cosmimera.Combat
         /// <summary>Creates the input.</summary>
         /// <remarks>
         /// Pre: style and role defined; mainTargetId >= CombatAi.NoTarget. Positions are checked by Decide.
-        ///      partnerPosition is ignored when !hasPartner; command and mainTargetId are ignored by Main / Support
-        ///      respectively (Q-C11: only the main creature hears commands; only the support follows the main's target).
+        ///      partnerPosition is ignored when !hasPartner; command is ignored by Support and mainTargetId by Main
+        ///      (Q-C11: only the main creature hears commands; only the support follows the main's target).
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public AiInput(float3 selfPosition, AiStyle style, AiRole role, in AiCommand command, int mainTargetId,
@@ -294,15 +300,19 @@ namespace Cosmimera.Combat
 
         private const float UnitTolerance = 1e-3f;
 
-        // Below this |tangent| the great circle between two directions is undetermined (same or antipodal point).
+        // Relative to |offset|: below this the tangent part is rounding noise of an (anti)parallel offset.
         private const double DegenerateTangent = 1e-9;
 
-        /// <summary>Largest surface distance from the caster to a target's center at which <paramref name="volume"/> can connect.</summary>
+        /// <summary>Range gate: surface distance from the caster to a target's center beyond which the AI does not cast <paramref name="volume"/>.</summary>
         /// <remarks>
         /// Pre: volume built by MoveGeometry.Build.
-        /// Post: Caster → 0; Ally → CastDistanceMm; aim-point volumes → CastDistanceMm + ReachMm (aim clamps to the cast
-        ///       distance, then the disc reaches further); caster-anchored volumes → ReachMm. Ignores target radius and
-        ///       width/angle, so it is a range gate, not a hit test. Saturates at int.MaxValue.
+        /// Post: Caster → 0; Ally → CastDistanceMm; Rect → ceil(√(ReachMm² + (WidthMm/2)²)) (the far corners, SOL A1);
+        ///       Sector / caster Circle → ReachMm; aim-point Circle → CastDistanceMm + ReachMm. Saturates at int.MaxValue.
+        ///       An upper bound on contact for zero-radius targets at the caster's radius. NOT exact: it ignores target
+        ///       radius, the sector angle and the π/2 cut-off (gate may pass, MoveGeometry may still miss), and for
+        ///       aim-point volumes a target far above or below the caster's radius can connect slightly beyond it or
+        ///       miss inside it, because the disc is measured at the anchor's radius (SOL A2). A wrong gate costs one
+        ///       cooldown, never rule correctness.
         /// Side effects: none.
         /// </remarks>
         public static int ReachMmOf(in HitVolume volume)
@@ -318,6 +328,13 @@ namespace Cosmimera.Combat
             if (volume.Anchor == HitVolumeAnchor.AimPoint)
             {
                 return (int)math.min((long)volume.CastDistanceMm + volume.ReachMm, int.MaxValue);
+            }
+
+            if (volume.Kind == HitVolumeKind.Rect)
+            {
+                double half = volume.WidthMm * 0.5;
+                double corner = math.ceil(math.sqrt((double)volume.ReachMm * volume.ReachMm + half * half));
+                return (int)math.min(corner, int.MaxValue);
             }
 
             return volume.ReachMm;
@@ -336,13 +353,16 @@ namespace Cosmimera.Combat
         ///  - Otherwise TargetId is a living enemy or NoTarget (NoTarget iff none lives). Focus picks its target while
         ///    alive and present; Support picks MainTargetId while alive and present; else the nearest living enemy
         ///    (geodesic, ties → smaller id).
-        ///  - CastSlot != NoCast ⇒ that option IsReady and either (Hostile, TargetId != NoTarget and target within
-        ///    ReachMm) or (no Hostile option qualifies, TargetId != NoTarget, and the option is Self, or Ally with the
-        ///    partner within ReachMm). Hostile picks max Power, then smaller slot; Self/Ally pick the smaller slot.
-        ///  - Destination: Follow, no target, or no Hostile option → stay unless farther than FollowLeashMm from the
-        ///    player, then the point FollowLeashMm/2 from the player toward self. Else by style (combat.md table).
+        ///  - A move qualifies iff IsReady, TargetId != NoTarget, and: Hostile with the target within ReachMm (inclusive),
+        ///    or Self, or Ally with HasPartner and the partner within ReachMm. CastSlot is the qualifying Hostile option
+        ///    with max Power, then smaller slot; else the qualifying Self/Ally option with the smaller slot; NoCast iff
+        ///    none qualifies (so never with no living enemy: out-of-combat support casts are not chosen).
+        ///  - Destination: Follow, no target, or no Hostile option at all (ready or not) → stay unless farther than
+        ///    FollowLeashMm from the player, then the point FollowLeashMm/2 from the player toward self. Else by style
+        ///    (combat.md table) using the min / max ReachMm of all Hostile options, ready or not; a stand-off beyond a
+        ///    quarter circumference is clamped to it.
         ///  - DestinationDirection is unit length. Same inputs → same output.
-        /// Side effects: none (no allocation).
+        /// Side effects: none; no allocation on the success path in any build.
         /// </remarks>
         public static AiDecision Decide(in PlanetConfig planet, AiTuning tuning, in AiInput input,
             IReadOnlyList<AiEnemy> enemies, IReadOnlyList<AiMoveOption> moves)
@@ -362,7 +382,8 @@ namespace Cosmimera.Combat
             double3 selfFromCenter = (double3)input.SelfPosition - center;
             double radius = math.length(selfFromCenter);
             double3 self = selfFromCenter / radius;
-            double3 player = math.normalize((double3)input.PlayerPosition - center);
+            double3 playerFromCenter = (double3)input.PlayerPosition - center;
+            double3 player = math.normalize(playerFromCenter);
 
             AiCommandKind command = input.Role == AiRole.Main ? input.Command.Kind : AiCommandKind.Free;
             if (command == AiCommandKind.Retreat)
@@ -383,9 +404,12 @@ namespace Cosmimera.Combat
             int targetIndex = PickTarget(enemies, preferred, center, self);
             double targetDistanceM = 0;
             double3 target = default;
+            double3 targetToSelf = default;
             if (targetIndex >= 0)
             {
-                target = math.normalize((double3)enemies[targetIndex].Position - center);
+                double3 targetFromCenter = (double3)enemies[targetIndex].Position - center;
+                target = math.normalize(targetFromCenter);
+                targetToSelf = selfFromCenter - targetFromCenter;
                 targetDistanceM = Angle(self, target) * radius;
             }
 
@@ -401,18 +425,19 @@ namespace Cosmimera.Combat
             bool hasHostile = HostileReach(moves, out int minReachMm, out int maxReachMm);
             if (command == AiCommandKind.Follow || targetIndex < 0 || !hasHostile)
             {
-                return new AiDecision(targetId, castSlot, (float3)Leash(self, player, radius, tuning.FollowLeashMm));
+                return new AiDecision(targetId, castSlot, (float3)Leash(self, player, selfFromCenter - playerFromCenter, radius,
+                    tuning.FollowLeashMm));
             }
 
             double3 destination;
             switch (input.Style)
             {
                 case AiStyle.KeepDistance:
-                    destination = Toward(target, self, maxReachMm * (double)tuning.KeepDistancePermille / 1e6 / radius,
+                    destination = Toward(target, targetToSelf, maxReachMm * (double)tuning.KeepDistancePermille / 1e6 / radius,
                         TangentOf(enemies[targetIndex].Forward, target));
                     break;
                 case AiStyle.Charge:
-                    destination = Toward(target, self, minReachMm * (double)tuning.CloseInPermille / 1e6 / radius,
+                    destination = Toward(target, targetToSelf, minReachMm * (double)tuning.CloseInPermille / 1e6 / radius,
                         TangentOf(enemies[targetIndex].Forward, target));
                     break;
                 case AiStyle.Flank:
@@ -423,7 +448,7 @@ namespace Cosmimera.Combat
                     double holdM = maxReachMm * (double)tuning.HoldPermille / 1e6;
                     destination = targetDistanceM <= holdM
                         ? self
-                        : Toward(target, self, holdM / radius, TangentOf(enemies[targetIndex].Forward, target));
+                        : Toward(target, targetToSelf, holdM / radius, TangentOf(enemies[targetIndex].Forward, target));
                     break;
             }
 
@@ -510,7 +535,7 @@ namespace Cosmimera.Combat
             return any;
         }
 
-        private static double3 Leash(double3 self, double3 player, double radius, int leashMm)
+        private static double3 Leash(double3 self, double3 player, double3 playerToSelf, double radius, int leashMm)
         {
             double leashM = leashMm / 1000.0;
             if (Angle(self, player) * radius <= leashM)
@@ -519,21 +544,27 @@ namespace Cosmimera.Combat
             }
 
             // Return to half the leash, not its edge, so a creature does not oscillate across the boundary every tick.
-            return Toward(player, self, leashM * 0.5 / radius, AnyTangent(player));
+            return Toward(player, playerToSelf, leashM * 0.5 / radius, AnyTangent(player));
         }
 
-        // Point at `angle` radians from `from` along the great circle toward `to`; `fallback` (a unit tangent at `from`)
-        // when the circle is undetermined (to == ±from), e.g. a creature standing exactly on its target.
-        private static double3 Toward(double3 from, double3 to, double angle, double3 fallback)
+        // Point at `angle` radians from unit `from` along the great circle in the direction of world offset `delta`;
+        // `fallback` (a unit tangent at `from`) when that direction is undetermined (same point, or exactly antipodal).
+        // The tangent comes from the raw world offset, not from two normalized directions: normalizing first rounded
+        // a 1e-10 m offset at 640 m to an "identical" direction and sent the creature 8 m sideways (SOL P2-10 A4).
+        private static double3 Toward(double3 from, double3 delta, double angle, double3 fallback)
         {
-            double3 t = to - from * math.dot(from, to);
+            double3 t = delta - from * math.dot(from, delta);
             double len = math.length(t);
-            return Along(from, len > DegenerateTangent ? t / len : fallback, angle);
+            bool determined = len > DegenerateTangent * math.length(delta);
+            return Along(from, determined ? t / len : fallback, angle);
         }
 
+        // Clamped to a quarter circumference: past it the angle wraps the sphere and lands nearer than asked (SOL A3),
+        // and MoveGeometry never connects beyond pi/2 anyway, so standing farther buys nothing.
         private static double3 Along(double3 from, double3 unitTangent, double angle)
         {
-            return math.normalize(from * math.cos(angle) + unitTangent * math.sin(angle));
+            double a = math.min(angle, math.PI_DBL * 0.5);
+            return math.normalize(from * math.cos(a) + unitTangent * math.sin(a));
         }
 
         private static double3 TangentOf(float3 forward, double3 up)
