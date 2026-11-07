@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) r10 (N20) and r11 (N22, N23, camera/brain output ownership) and r12 (N24, N25). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19) r10 (N20) and r11 (N22, N23, camera/brain output ownership) r12 (N24, N25) and r13 (N27). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -252,6 +252,22 @@ namespace Cosmimera.Player.Tests
             _brain.ControlledObject = holder.gameObject;
             Assert.Throws<ContractException>(Configure);
             AssertNothingWritten();
+        }
+
+        // sol P1 r13 N27: the Pre constrains the actual writer; a brain component on the body whose output is a
+        // separate object is legal and must not be rejected by a check on brain.transform.
+        [Test]
+        public void N27_brain_on_the_target_with_a_separate_output_is_accepted()
+        {
+            var cameraGo = new GameObject("SeparateOutput");
+            cameraGo.transform.SetParent(_root.transform, false);
+            cameraGo.AddComponent<Camera>();
+            var bodyBrain = _target.gameObject.AddComponent<CinemachineBrain>();
+            bodyBrain.ControlledObject = cameraGo;
+
+            Assert.DoesNotThrow(() => _rig.Configure(_config, _target, _pivot, _third, _first, bodyBrain));
+            Assert.AreSame(_pivot, _third.Target.TrackingTarget);
+            Assert.AreEqual(1.6f, Vector3.Distance(_target.position, _pivot.position), 1e-4f);
         }
 
         [Test]

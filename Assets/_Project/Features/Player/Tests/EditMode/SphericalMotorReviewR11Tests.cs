@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace Cosmimera.Player.Tests
 {
-    // Counter-example from docs/reviews/P1-review-r11-sol.md (N21): blocking a fast push into a steep wall cancels to a
+    // Counter-examples from docs/reviews/P1-review-r11-sol.md (N21) and r13 (N26): blocking a fast push into a steep wall cancels to a
     // rounding residue that left the tangent plane.
     public sealed class SphericalMotorReviewR11Tests
     {
@@ -39,6 +39,20 @@ namespace Cosmimera.Player.Tests
             MotorState next = SphericalMotor.Step(settings, prev, default, ground, up, Dt);
 
             AssertTangentAndAccepted(settings, next, ground, up);
+        }
+
+        // sol P1 r13 N26: a speed inside the legal domain but inside the (1−2e-6) trigger band must be rescaled to
+        // MaxStateSpeed·(1−1e-6) as the Post states; a trigger at exactly MaxStateSpeed² would leave it unchanged.
+        [Test]
+        public void N26_speed_in_the_clamp_trigger_band_is_rescaled()
+        {
+            MotorState prev = SphericalMotor.Initial(new float3(0f, 1f, 0f), new float3(0f, 0f, 1f));
+            prev.PlanarVelocity = prev.Velocity = new float3(9999.995f, 0f, 0f);
+
+            MotorState next = SphericalMotor.Step(Gliding(), prev, default, default, new float3(0f, 1f, 0f), Dt);
+
+            Assert.AreEqual(SphericalMotor.MaxStateSpeed * (1f - 1e-6f), next.PlanarVelocity.x, 1e-3f);
+            Assert.Less(next.PlanarVelocity.x, 9999.993f, "rescaled, not passed through");
         }
 
         [Test]
