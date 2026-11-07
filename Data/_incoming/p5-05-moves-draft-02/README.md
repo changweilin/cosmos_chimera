@@ -1,5 +1,7 @@
 # Moves Draft Batch 02 (P5-05)
 
+> 2026-11-07 P5-08 A19：形狀已遷移為九形狀（`shape` ∈ front/sweep/burst/line/cone，加 `origin`、`movement`）。形狀統計以下方「現行形狀分佈」為準（由 `moves/moves.json` 腳本產生）；其餘段落提到的舊四形狀（line/cone/aoe/dash）是初稿歷史描述。
+
 ## Overview
 This batch contains the second draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), corresponding to roadmap item **P5-05**.
 - **Scope**: Exactly 40 new moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), 4 moves per element.
@@ -44,28 +46,26 @@ All values are strictly integers following monotonic trade-offs (higher power co
   - `shadow`: 4
 - **Total**: 40 moves.
 
-### Per Shape
-- `line`: 10 moves (`metal_rail_slug`, `wood_thorn_ballista`, `water_maelstrom_lance`, `fire_spark_jab`, `earth_boulder_roll`, `ice_frost_tap`, `wind_typhoon_spire`, `thunder_chain_needle`, `light_glint_jab`, `shadow_shade_dart`)
-- `cone`: 10 moves (`metal_shrapnel_spray`, `wood_acorn_bombard`, `water_brine_spray`, `fire_magma_wave`, `earth_mud_sling`, `ice_polar_sweep`, `wind_breeze_gust`, `thunder_static_prick`, `light_corona_sweep`, `shadow_nightmare_cleave`)
-- `aoe`: 10 moves (`metal_razor_spin`, `wood_sap_splash`, `water_bubble_pop`, `fire_caldera_burst`, `earth_monolith_quarry`, `ice_hail_burst`, `wind_squall_vortex`, `thunder_megavolt_burst`, `light_stellar_nova`, `shadow_singularity_maw`)
-- `dash`: 10 moves (`metal_mercury_drift`, `wood_bamboo_surge`, `water_rip_current`, `fire_cinder_slide`, `earth_fault_dash`, `ice_floe_crash`, `wind_draft_step`, `thunder_fulgur_dive`, `light_aurora_drift`, `shadow_wraith_charge`)
-- **Total**: Exactly 10 per shape (40 moves total).
+## 現行形狀分佈（由 moves.json 產生）
+
+| shape(@origin)(+movement) | melee | mid | long | 合計 |
+|---|---|---|---|---|
+| `burst@caster` | 3 | 0 | 0 | 3 |
+| `burst@target` | 0 | 2 | 5 | 7 |
+| `cone` | 0 | 6 | 1 | 7 |
+| `front` | 3 | 0 | 0 | 3 |
+| `line` | 0 | 3 | 4 | 7 |
+| `line+dash` | 5 | 2 | 3 | 10 |
+| `sweep` | 3 | 0 | 0 | 3 |
+| **合計** | 14 | 13 | 13 | **40** |
+
+同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
 
 ### Per Range Class
 - `melee`: 14 moves (metal: 2, wood: 2, water: 2, fire: 2, earth: 1, ice: 1, wind: 1, thunder: 1, light: 1, shadow: 1)
 - `mid`: 13 moves (metal: 1, wood: 1, water: 1, fire: 1, earth: 2, ice: 2, wind: 2, thunder: 1, light: 1, shadow: 1)
 - `long`: 13 moves (metal: 1, wood: 1, water: 1, fire: 1, earth: 1, ice: 1, wind: 1, thunder: 2, light: 2, shadow: 2)
 - **Total**: 40 moves (each range class >= 12).
-
-### Shape × Range Class Cross-Tabulation
-
-| Shape | Melee | Mid | Long | Total |
-|---|---|---|---|---|
-| **line** | 3 (`fire_spark_jab`, `ice_frost_tap`, `light_glint_jab`) | 3 (`earth_boulder_roll`, `thunder_chain_needle`, `shadow_shade_dart`) | 4 (`metal_rail_slug`, `wood_thorn_ballista`, `water_maelstrom_lance`, `wind_typhoon_spire`) | **10** |
-| **cone** | 3 (`fire_magma_wave`, `thunder_static_prick`, `shadow_nightmare_cleave`) | 6 (`metal_shrapnel_spray`, `wood_acorn_bombard`, `water_brine_spray`, `earth_mud_sling`, `wind_breeze_gust`, `light_corona_sweep`) | 1 (`ice_polar_sweep`) | **10** |
-| **aoe** | 3 (`metal_razor_spin`, `wood_sap_splash`, `water_bubble_pop`) | 2 (`ice_hail_burst`, `wind_squall_vortex`) | 5 (`fire_caldera_burst`, `earth_monolith_quarry`, `thunder_megavolt_burst`, `light_stellar_nova`, `shadow_singularity_maw`) | **10** |
-| **dash** | 5 (`metal_mercury_drift`, `wood_bamboo_surge`, `water_rip_current`, `earth_fault_dash`, `wind_draft_step`) | 2 (`fire_cinder_slide`, `ice_floe_crash`) | 3 (`thunder_fulgur_dive`, `light_aurora_drift`, `shadow_wraith_charge`) | **10** |
-| **Total** | **14** | **13** | **13** | **40** |
 
 ## Prospective Kind "both" Candidates (P2 Integration)
 

@@ -15,13 +15,14 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | Trigger Type | Parameter Schema | Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
 | `always` | `{}` | N/A | 5 | Permanent passive effect while creature is active. |
-| `on_hp_below` | `{"percent": <int>}` | 10–50% | 4 | Activates when current HP falls below threshold. |
+| `on_hp_below` | `{"percent": <int>}` | 10–50% | 3 | Activates when current HP falls below threshold. |
 | `on_hp_above` | `{"percent": <int>}` | 50–100% | 4 | Active only while current HP remains above threshold. |
 | `on_summon` | `{"duration_ms": <int>}` | 3,000–15,000 ms | 4 | Temporary effect triggered upon deployment to the battlefield. |
 | `on_hit_taken` | `{"element": <element\|"any">, "duration_ms": <int>}` | 2,000–8,000 ms | 5 | Temporary buff upon receiving damage of the specified element or any element. |
 | `on_move_used` | `{"element": <element>, "duration_ms": <int>}` | 2,000–8,000 ms | 4 | Temporary buff triggered after executing a move of the specified element. |
 | `on_ally_swap` | `{"duration_ms": <int>}` | 2,000–8,000 ms | 4 | Temporary effect when swapping into battle or rotating allies. |
-| **Total** | | | **30** | Every trigger type is represented at least 3 times. |
+| `on_hp_cross_below` | `{"percent": <int>, "duration_ms": 1000}` | 10–50% | 1 | One-shot when HP crosses below the threshold (Q-C18, 2026-11-07); instant heals only. |
+| **Total** | | | **30** | Not every trigger type reaches 3 (see counts; on_hp_cross_below / migrations). |
 
 ### Effect Types
 
@@ -48,7 +49,7 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **wood** | `trait_wood_verdant_resonance` | `on_ally_swap` | 5000ms | `mastery_mod: wood +20` | None |
 | **water** | `trait_water_fluid_stance` | `always` | `{}` | `evasion_mod_percent: +6%`, `resist_mod: thunder -15` | Yes (`resist thunder -15%`) |
 | **water** | `trait_water_torrent_flow` | `on_move_used` | `water`, 4000ms | `cd_mod_percent: water -20%` | None |
-| **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30% | `heal_percent_max_hp: 12%` | None |
+| **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30%, 1000ms | `heal_percent_max_hp: 12%` | None |
 | **fire** | `trait_fire_blazing_fury` | `on_hp_below` | 35% | `mastery_mod: fire +30`, `resist_mod: water -20` | Yes (`resist water -20%`) |
 | **fire** | `trait_fire_heat_exhaust` | `on_summon` | 5000ms | `move_speed_mod_percent: +15%` | None |
 | **fire** | `trait_fire_thermal_recharge` | `on_hit_taken` | `fire`, 5000ms | `cd_mod_percent: fire -25%` | None |
@@ -73,12 +74,13 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 
 ### Trigger Distribution Summary
 - `always`: 5 traits
-- `on_hp_below`: 4 traits
+- `on_hp_below`: 3 traits
 - `on_hp_above`: 4 traits
 - `on_summon`: 4 traits
 - `on_hit_taken`: 5 traits
 - `on_move_used`: 4 traits
 - `on_ally_swap`: 4 traits
+- `on_hp_cross_below`: 1 trait
 - **Total**: 30 traits (each trigger type appears >= 3 times)
 
 ## Open Issues

@@ -54,8 +54,7 @@
       "name_en": "Voltfoal",
       "naming_note": "星斑與帶電小蹄相映。",
       "dex_zh": "額上的白色星斑不時迸出細小電光，蹄子踏過草地也會濺起火花。牠總跌跌撞撞地向前衝，遇到對手便鼓起勇氣帶電撞去。",
-      "dex_en": "Sparks dance from the white star on its forehead and scatter beneath its hooves. It tumbles through the grass in eager practice, gathering courage to charge an opponent with crackling energy.",
-      "opus_note": "Terra 原案 Voltrot 與 Pokemon Voltorb 過近，Opus 改名"
+      "dex_en": "Sparks dance from the white star on its forehead and scatter beneath its hooves. It tumbles through the grass in eager practice, gathering courage to charge an opponent with crackling energy."
     },
     {
       "id": "star_storm_colt",
@@ -104,8 +103,8 @@
       "name_zh": "夜爪掠",
       "name_en": "Nightpaw Swipe",
       "naming_note": "夜色中的迅捷爪擊。",
-      "desc_zh": "揮出裹著暗影的爪擊，傷害身前近處的敵人並暫時降低其影抗性。",
-      "desc_en": "Swipe with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
+      "desc_zh": "以裹著暗影的爪子向前直擊，傷害身前近處的敵人並暫時降低其影抗性。",
+      "desc_en": "Strike straight forward with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
     },
     {
       "id": "shadow_longnight_lunge",

@@ -6,7 +6,7 @@ This batch contains the second draft of 30 new placeholder passive traits for CO
 - **ID & Collision Rules**: All IDs follow `trait_<element>_<snake_name>`, with zero collisions against Batch 01 IDs or `Data/retired-ids.txt`.
 - **Mechanics Non-Duplication**: No trait shares both the same trigger and the same effect type with any Batch 01 trait of the same element.
 - **Data Model**: Conforms strictly to `trait.schema.json` and `common.schema.json`: `{ "id", "trigger": { "type", "params" }, "effects": [{ "type", "params" }] }` with no additional properties.
-- **Provisional Vocabulary**: Strictly restricted to the 7 trigger types and 7 effect types established in Batch 01 (no new types introduced). Integers only, no floats. Max 2 effects per trait.
+- **Provisional Vocabulary**: Strictly restricted to the 8 trigger types (7 + `on_hp_cross_below`, Q-C18) and 7 effect types established in Batch 01 (no new types introduced). Integers only, no floats. Max 2 effects per trait.
 - **Power/STR Rule Compliance**: Adheres to Q-C2; no trait affects base power or STR scaling directly.
 - **Magnitude Balance**: Permanent (`always`) traits exhibit lower modifier magnitudes than conditional or temporary ones.
 - **Side-Grade Balance**: Exactly 10 out of 30 traits (33.3%, roughly 1/3) incorporate explicit drawbacks (a negative delta for the holder), distributed evenly across the 10 elements (1 drawback trait per element).
@@ -96,7 +96,7 @@ This batch contains the second draft of 30 new placeholder passive traits for CO
 - `shadow`: 3
 - **Total Traits**: **30**
 
-### Triggers Distribution (All ≥ 3)
+### Triggers Distribution
 - `always`: 4 traits
 - `on_hp_below`: 4 traits
 - `on_hp_above`: 3 traits

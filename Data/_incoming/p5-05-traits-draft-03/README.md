@@ -6,7 +6,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 - **ID & Collision Rules**: All IDs follow `trait_<element>_<snake_name>`, with zero collisions against Batch 01 IDs, Batch 02 IDs, or `Data/retired-ids.txt`.
 - **Mechanics Non-Duplication**: No trait shares both the same trigger and the same effect type combination with any Batch 01 or Batch 02 trait of the same element.
 - **Data Model**: Conforms strictly to `trait.schema.json` and `common.schema.json`: `{ "id", "trigger": { "type", "params" }, "effects": [{ "type", "params" }] }` with no additional properties.
-- **Closed Vocabulary**: Strictly restricted to the 7 trigger types and 7 effect types closed in P2-01 (`common.schema.json`). Integers only, no floats. Max 2 effects per trait.
+- **Closed Vocabulary**: Strictly restricted to the 8 trigger types (7 + `on_hp_cross_below`, Q-C18) and 7 effect types closed in P2-01 (`common.schema.json`). Integers only, no floats. Max 2 effects per trait.
 - **Power/STR Rule Compliance**: Adheres to Q-C2; no trait affects base power or STR scaling directly.
 - **Magnitude Balance**: Permanent (`always`) traits exhibit strictly lower modifier magnitudes than conditional or temporary ones.
 - **Side-Grade Balance**: Exactly 10 out of 30 traits (33.3%, roughly 1/3) incorporate explicit drawbacks (a negative delta for the holder), distributed evenly across the 10 elements (exactly 1 drawback trait per element).
@@ -21,13 +21,14 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | Trigger Type | Parameter Schema | Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
 | `always` | `{}` | N/A | 3 | Permanent passive effect active while creature is deployed. |
-| `on_hp_below` | `{"percent": <int>}` | 10–50% | 6 | Activates when current HP falls below threshold. |
+| `on_hp_below` | `{"percent": <int>}` | 10–50% | 5 | Activates when current HP falls below threshold. |
 | `on_hp_above` | `{"percent": <int>}` | 50–100% | 4 | Active only while current HP remains above threshold. |
-| `on_summon` | `{"duration_ms": <int>}` | 3,000–15,000 ms | 3 | Temporary effect triggered upon deployment to the battlefield. |
+| `on_summon` | `{"duration_ms": <int>}` | 3,000–15,000 ms | 2 | Temporary effect triggered upon deployment to the battlefield. |
 | `on_hit_taken` | `{"element": <element\|"any">, "duration_ms": <int>}` | 2,000–8,000 ms | 6 | Temporary buff upon receiving damage of the specified element or any element. |
-| `on_move_used` | `{"element": <element>, "duration_ms": <int>}` | 2,000–8,000 ms | 5 | Temporary buff triggered after executing a move of the specified element. |
+| `on_move_used` | `{"element": <element>, "duration_ms": <int>}` | 2,000–8,000 ms | 6 | Temporary buff triggered after executing a move of the specified element. |
 | `on_ally_swap` | `{"duration_ms": <int>}` | 2,000–8,000 ms | 3 | Temporary effect when swapping into battle or rotating allies. |
-| **Total** | | | **30** | Every trigger type is represented at least 3 times. |
+| `on_hp_cross_below` | `{"percent": <int>, "duration_ms": 1000}` | 10–50% | 1 | One-shot when HP crosses below the threshold (Q-C18, 2026-11-07); instant heals only. |
+| **Total** | | | **30** | Not every trigger type reaches 3 (see counts; on_hp_cross_below / migrations). |
 
 ### Effect Types
 
@@ -96,14 +97,15 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 - `shadow`: 3
 - **Total Traits**: **30**
 
-### Triggers Distribution (All ≥ 3)
+### Triggers Distribution
 - `always`: 3 traits
-- `on_hp_below`: 6 traits
+- `on_hp_below`: 5 traits
 - `on_hp_above`: 4 traits
-- `on_summon`: 3 traits
+- `on_summon`: 2 traits
 - `on_hit_taken`: 6 traits
-- `on_move_used`: 5 traits
+- `on_move_used`: 6 traits
 - `on_ally_swap`: 3 traits
+- `on_hp_cross_below`: 1 trait
 - **Total Triggers**: **30**
 
 ### Effects Distribution (All ≥ 3)
@@ -141,7 +143,7 @@ In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remain
 | `always` | `cd_mod_percent` | **1** | **+1** | `trait_fire_smoldering_core` | **2** |
 | `on_hp_below` | `range_mod_percent` | **1** | **+2** | `trait_wood_thorn_lash`, `trait_earth_shattered_carapace` | **3** |
 | `on_hp_below` | `move_speed_mod_percent` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_wind_desperation_updraft` | **3** |
-| `on_hp_below` | `heal_percent_max_hp` | **1** | **+1** | `trait_light_saving_grace` | **2** |
+| `on_hp_cross_below` | `heal_percent_max_hp` | **1** | **+1** | `trait_light_saving_grace` | **2** |
 | `on_hp_below` | `mastery_mod` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_thunder_crisis_arc` | **3** |
 | `on_hp_above` | `move_speed_mod_percent` | **1** | **+3** | `trait_wood_overgrowth_surge`, `trait_fire_scorching_momentum`, `trait_thunder_supercharged_stride` | **4** |
 | `on_hp_above` | `mastery_mod` | **1** | **+1** | `trait_ice_subzero_focus` | **2** |
@@ -161,7 +163,7 @@ In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remain
 
 ## Open Issues
 
-1. **Healing on Discrete Event Triggers**: `heal_percent_max_hp` in this batch is strictly bound to discrete event triggers (`on_summon`, `on_hit_taken`, `on_hp_below`). For `on_hp_below` (e.g., `trait_light_saving_grace`), combat state logic must ensure single-shot execution per health gate crossing or apply an internal cooldown (ICD) so that rapid damage/healing cycles around the 25% threshold do not re-trigger healing loops.
+1. ~~**Healing on Discrete Event Triggers**~~ — closed 2026-11-07 by Q-C18: schema forbids `on_hp_below` + `heal_percent_max_hp`; `trait_light_saving_grace` now uses one-shot `on_hp_cross_below`. Original note: `heal_percent_max_hp` in this batch is strictly bound to discrete event triggers (`on_summon`, `on_hit_taken`, `on_hp_below`). For `on_hp_below` (e.g., `trait_light_saving_grace`), combat state logic must ensure single-shot execution per health gate crossing or apply an internal cooldown (ICD) so that rapid damage/healing cycles around the 25% threshold do not re-trigger healing loops.
 2. **Hitbox Scaling for High Range Modifiers**: Several traits provide +15% to +20% `range_mod_percent`. Combat system integration will need to test visual clipping and projectile collision shape boundaries when melee swings or close-range bursts are scaled by these factors.
 3. **Compound Buff/Drawback Resolution on Buff Expiration**: Traits like `trait_metal_scrap_overdrive` or `trait_water_torrential_deluge` combine a positive modifier with a speed reduction. If an external cleanse or purge mechanic removes positive buffs, game rules must clarify whether the drawback expires simultaneously or tracks its own independent duration.
 

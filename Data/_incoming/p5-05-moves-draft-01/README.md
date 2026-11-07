@@ -1,5 +1,7 @@
 # Moves Draft Batch 01 (P5-05)
 
+> 2026-11-07 P5-08 A19：形狀已遷移為九形狀（`shape` ∈ front/sweep/burst/line/cone，加 `origin`、`movement`）。形狀統計以下方「現行形狀分佈」為準（由 `moves/moves.json` 腳本產生）；其餘段落提到的舊四形狀（line/cone/aoe/dash）是初稿歷史描述。
+
 ## Overview
 This batch contains the initial draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), corresponding to roadmap item **P5-05**.
 - **Scope**: Exactly 40 moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), 4 moves per element.
@@ -12,9 +14,20 @@ All values are strictly integers following monotonic trade-offs (higher power co
 - **Cooldown**: 800–10,000 ms
 - **Accuracy**: 70–100%
 
-### Range & Shape Distribution
-- **Range Classes**: Each element includes at least one `melee`, one `mid`, and one `long` attack.
-- **Shapes**: The four primary targeting shapes (`line`, `cone`, `aoe`, `dash`) are distributed equally across the batch (10 moves per shape, meeting the requirement of at least 5 each).
+## 現行形狀分佈（由 moves.json 產生）
+
+| shape(@origin)(+movement) | melee | mid | long | 合計 |
+|---|---|---|---|---|
+| `burst@caster` | 3 | 0 | 0 | 3 |
+| `burst@target` | 0 | 3 | 4 | 7 |
+| `cone` | 0 | 6 | 0 | 6 |
+| `front` | 1 | 0 | 0 | 1 |
+| `line` | 0 | 2 | 7 | 9 |
+| `line+dash` | 5 | 3 | 2 | 10 |
+| `sweep` | 4 | 0 | 0 | 4 |
+| **合計** | 13 | 14 | 13 | **40** |
+
+同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
 
 ## Element to Moves Mapping
 

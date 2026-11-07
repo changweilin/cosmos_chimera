@@ -5,7 +5,7 @@
       "name_zh": "漏輪雛",
       "name_en": "Clepspro",
       "naming_note": "漏刻浮碗藏在初生齒輪間。",
-      "dex_zh": "圓弧形的青銅身軀裡藏著細小齒輪，胸前浮碗隨水面輕晃。牠守在夥伴前方，等敵人靠近才向前刺出細針。",
+      "dex_zh": "圓弧形的青銅身軀裡藏著細小齒輪，胸前微型浮碗隨水面輕晃。牠守在夥伴前方，等敵人靠近才向前刺出細針。",
       "dex_en": "Tiny gears turn inside its rounded bronze body, while a floating bowl rocks gently on its chest. It guards the front of the group and thrusts a fine needle at approaching enemies."
     },
     {
@@ -13,8 +13,8 @@
       "name_zh": "漏輪衛",
       "name_en": "Clepsward",
       "naming_note": "漏輪披甲，守住夥伴前方。",
-      "dex_zh": "半身重甲隨步伐發出沉穩聲響，肩上的盤龍連桿牽動報時音板。牠立在陣前，揮動金屬利刃橫掃近身的敵人。",
-      "dex_en": "Its half suit of heavy armor rattles steadily as coiled dragon linkages move the chime plates on its shoulders. It holds the front line and sweeps a metal blade across nearby foes."
+      "dex_zh": "半身重甲隨步伐發出沉穩聲響，肩上的青銅盤龍連桿牽動報時音板。牠立在陣前，揮動金屬利刃橫掃近身的敵人。",
+      "dex_en": "Its half-suit of heavy armor rattles steadily as coiled dragon linkages move the chime plates on its shoulders. It holds the front line and sweeps a metal blade across nearby foes."
     },
     {
       "id": "metal_chronos_engine",
@@ -46,7 +46,7 @@
       "name_en": "Vireloria",
       "naming_note": "蔓冠長尾映出雙重虹彩。",
       "dex_zh": "七彩羽翼覆住巨木頂端，兩道虹彩長尾如垂藤般輕晃，翠玉色花朵在身旁盛開。牠遙望中距離的敵人，令枝葉在目標周圍壓落。",
-      "dex_en": "Perched atop a great tree, it trails twin iridescent tails like hanging vines amid jade green blossoms. It watches the middle distance and brings a canopy crashing down around its chosen target."
+      "dex_en": "Perched atop a great tree, it trails twin iridescent tails like hanging vines amid jade-green blossoms. It watches the middle distance and brings a canopy crashing down around its chosen target."
     },
     {
       "id": "water_wave_elver",
@@ -54,7 +54,7 @@
       "name_en": "Brinelle",
       "naming_note": "小鰻背上的水膜初展如帆。",
       "dex_zh": "銀色小鰻穿梭浪間，背上的半透明水膜彎成蟹爪般的小帆。牠一邊貼水滑行，一邊向中距離的對手直射薄薄水刃。",
-      "dex_en": "A translucent membrane rises like a tiny crab claw sail above this silver eel. It skims between waves and sends a thin blade of water straight toward an opponent at medium range."
+      "dex_en": "A translucent membrane rises like a tiny crab-claw sail above this silver eel. It skims between waves and sends a thin blade of water straight toward an opponent at medium range."
     },
     {
       "id": "water_skiff_eel",
@@ -62,7 +62,7 @@
       "name_en": "Brinavela",
       "naming_note": "潮帆長出雙浮筒，破浪如舟。",
       "dex_zh": "木紋雙浮筒護著海鰻的腹部，硬質蟹爪帆在脊背上迎風張開。牠乘浪滑翔，朝中距離前方扇形水域噴出奔湧水流。",
-      "dex_en": "Wood grained floats protect its belly, and a rigid crab claw sail rises from its back. Gliding over waves, it releases a broad cone of rushing water ahead at medium range."
+      "dex_en": "Wood-grained floats protect its belly, and a rigid crab-claw sail rises from its back. Gliding over waves, it releases a broad cone of rushing water ahead at medium range."
     },
     {
       "id": "water_catamaran_serpent",
@@ -70,7 +70,7 @@
       "name_en": "Brinavast",
       "naming_note": "潮帆巨鰻如雙體大舟乘浪。",
       "dex_zh": "巨大的鰻舟浮在海面時宛如一座小島，彩繪側舷隨季風劈開怒濤。牠從遠處瞄準敵群，令洪流在目標周圍轟然炸開。",
-      "dex_en": "As large as a floating island, this twin hulled eel cuts through rough seas with painted flanks and towering sails. From afar, it unleashes a deluge that bursts around its target."
+      "dex_en": "As large as a floating island, this twin-hulled eel cuts through rough seas with painted flanks and towering sails. From afar, it unleashes a deluge that bursts around its target."
     },
     {
       "id": "fire_ember_cub",
@@ -93,8 +93,8 @@
       "name_zh": "燼鬃焰獅",
       "name_en": "Cindraval",
       "naming_note": "燼鬃盛開成三面獅的火冠。",
-      "dex_zh": "三面的雄獅昂首咆哮，金紅鬃毛如盛放蓮花，震響在砂岩間迴盪。牠守在前鋒，朝遠處敵群引爆一團擴散的烈焰。",
-      "dex_en": "A golden red crown of fire opens around this lion's three faces, and its roar echoes through sandstone. It guards the vanguard while detonating a spreading blaze around a distant target."
+      "dex_zh": "三面的雄獅昂首咆哮，金紅鬃毛如盛放蓮花，震響在砂岩間迴盪。牠與敵人保持距離，朝遠處目標引爆一團擴散的烈焰。",
+      "dex_en": "A golden-red crown of fire opens around this lion's three faces, and its roar echoes through sandstone. It keeps its distance and detonates a spreading blaze around a distant target."
     },
     {
       "id": "earth_pebble_pawn",
@@ -109,7 +109,7 @@
       "name_zh": "金塵衛",
       "name_en": "Gildumant",
       "naming_note": "金塵石偶戴上守陣面甲。",
-      "dex_zh": "幾何金面甲遮住岩土行者的面容，層疊黏土和金晶護著肩背。牠站在隊伍前方，猛擊地面使震波向身邊擴散。",
+      "dex_zh": "幾何金面甲遮住岩土行者的面容，層疊板狀黏土和金晶護著肩背。牠站在隊伍前方，猛擊地面使震波向身邊擴散。",
       "dex_en": "A geometric gold mask covers its face, while layers of clay and growing crystals protect its shoulders. It stands near the front and strikes the ground, sending tremors outward around itself."
     },
     {
@@ -134,7 +134,7 @@
       "name_en": "Rimbraven",
       "naming_note": "霜角分岔，為獵獸引導寒氣。",
       "dex_zh": "冰柱般的巨角向兩側分岔，雙翼上的鍛鐵鉸鏈與金箔鞍軛隨步伐輕響。牠引寒氣凝成長槍，朝遠處敵人直射而去。",
-      "dex_en": "Great antlers branch like icicles above its head, and iron hinges click beside a gold trimmed harness. It gathers cold into a lance and sends it straight toward a distant foe."
+      "dex_en": "Great antlers branch like icicles above its head, and iron hinges click beside a gold-trimmed harness. It gathers cold into a lance and sends it straight toward a distant foe."
     },
     {
       "id": "ice_tundra_dreadnought",
@@ -150,7 +150,7 @@
       "name_en": "Reevilo",
       "naming_note": "竹笛小舟隨風發出清音。",
       "dex_zh": "梭形小舟輕浮空中，舟首三孔竹笛迎著微風鳴響。牠喜歡沿氣流迅速滑行，遇到靠近的敵人便揮出一道橫掃風刃。",
-      "dex_en": "Three holes in the bamboo flute at its prow sing softly as this spindle shaped skiff floats through the air. It follows swift currents and sweeps a blade of wind at nearby foes."
+      "dex_en": "Three holes in the bamboo flute at its prow sing softly as this spindle-shaped skiff floats through the air. It follows swift currents and sweeps a blade of wind at nearby foes."
     },
     {
       "id": "wind_flute_cruiser",
@@ -169,7 +169,9 @@
       "dex_en": "Geometric embroidery hangs from the layered hull, and open flute vents pour out wind as it cruises swiftly through the sky. It aims from afar and raises a storm around its target."
     }
   ],
-  "issues_resolved": [
+  "moves": [],
+  "traits": [],
+  "issues": [
     {
       "id": "metal_chronos_engine",
       "issue": "定位強調陣地錨定，但精通招式是沿長距離直線突進，使用時會離開原先位置。"
@@ -230,5 +232,6 @@
       "id": "wind_reed_skiff",
       "issue": "定位強調遠距風壓牽制，但精通招式是近距離橫掃傷害。"
     }
-  ]
+  ],
+  "source": "ChatGPT Terra (codex exec -m gpt-6.1-terra), P5-03 batch 01; P5-08 A7/A21 revision"
 }

@@ -1,5 +1,7 @@
 # Moves Draft Batch 03 (P5-05)
 
+> 2026-11-07 P5-08 A19：形狀已遷移為九形狀（`shape` ∈ front/sweep/burst/line/cone，加 `origin`、`movement`）。形狀統計以下方「現行形狀分佈」為準（由 `moves/moves.json` 腳本產生）；其餘段落提到的舊四形狀（line/cone/aoe/dash）是初稿歷史描述。
+
 ## Overview
 This batch contains the third draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), completing roadmap item **P5-05**'s 120-move foundational damage pool.
 - **Scope**: Exactly 40 new moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), exactly 4 moves per element.
@@ -41,25 +43,20 @@ All numerical attributes are strictly integers obeying monotonic trade-offs (hig
 
 ## Coverage Analysis: Before vs. After Batch 03
 
-### 1. Element × Shape Coverage
+## 現行形狀分佈（由 moves.json 產生）
 
-Every element in Batch 01 and Batch 02 received exactly 2 moves per shape. Batch 03 contributes exactly 1 new move per shape to each element.
+| shape(@origin)(+movement) | melee | mid | long | 合計 |
+|---|---|---|---|---|
+| `burst@caster` | 3 | 0 | 0 | 3 |
+| `burst@target` | 0 | 3 | 4 | 7 |
+| `cone` | 0 | 2 | 3 | 5 |
+| `front` | 3 | 0 | 0 | 3 |
+| `line` | 0 | 5 | 2 | 7 |
+| `line+dash` | 2 | 3 | 5 | 10 |
+| `sweep` | 5 | 0 | 0 | 5 |
+| **合計** | 13 | 13 | 14 | **40** |
 
-| Element | Line (Pre → Post) | Cone (Pre → Post) | AoE (Pre → Post) | Dash (Pre → Post) | Total (Pre → Post) |
-|---|---|---|---|---|---|
-| **metal** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **wood** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **water** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **fire** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **earth** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **ice** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **wind** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **thunder** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **light** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **shadow** | 2 → **3** | 2 → **3** | 2 → **3** | 2 → **3** | 8 → **12** |
-| **Total** | **20 → 30** | **20 → 30** | **20 → 30** | **20 → 30** | **80 → 120** |
-
-*Post-Batch 03 Status*: Every element contains every shape at least 3 times (requirement was at least 1).
+同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
 
 ### 2. Element × Range Class Coverage
 
@@ -81,19 +78,6 @@ Before Batch 03, several elements sat at the minimum threshold of 2 moves for sp
 
 *Post-Batch 03 Status*: Every element contains every range class exactly 4 times (fully exceeding the requirement of at least 2).
 
-### 3. Specific Spatial Matrix Gaps Filled by Batch 03
-Beyond generic range and shape categories, Batch 03 introduces combinations of (shape × range_class) that were previously vacant within specific elements:
-- **Metal**: Added mid-range line (`metal_flechette_beam`), mid-range dash (`metal_drill_drive`), long-range cone (`metal_shard_volley`), and long-range orbital AoE (`metal_anvil_drop`). Completes the entire 4×3 matrix for Metal.
-- **Wood**: Added close-quarters cone lash (`wood_bramble_whip`), mid-range linear jet (`wood_pollen_jet`), long-range sling dash (`wood_vine_grapple`), and long-range ballistic drop AoE (`wood_timber_fall`).
-- **Water**: Added point-blank melee thrust line (`water_cascade_jab`), mid-range eruptive AoE (`water_geyser_pool`), long-range dispersion cone (`water_hydro_spray`), and long-range surging dash (`water_tsunami_charge`).
-- **Fire**: Added point-blank self-centered detonation AoE (`fire_flare_nova`), mid-range ash cone (`fire_ash_fan`), mid-range beam line (`fire_searing_ray`), and long-range projectile dash (`fire_meteor_rush`).
-- **Earth**: Added close-range rock skate dash (`earth_stone_skate`), close-range dust cone (`earth_dust_cloud`), long-range seismic field AoE (`earth_stalagmite_field`), and long-range tectonic beam line (`earth_tectonic_lance`).
-- **Ice**: Added close-range frosted claw sweep cone (`ice_claw_cleave`), close-range perimeter freeze AoE (`ice_permafrost_surge`), mid-range ray line (`ice_icicle_beam`), and long-range charging avalanche dash (`ice_avalanche_charge`).
-- **Wind**: Added close-range vortex burst AoE (`wind_whirlwind_burst`), close-range wind shear cone (`wind_shear_fan`), mid-range cutting air line (`wind_air_slash`), and long-range diving dash (`wind_tailwind_dive`).
-- **Thunder**: Added close-range shock lance line (`thunder_shock_prod`), mid-range electromagnetic slip dash (`thunder_volt_drift`), mid-range lingering electric cell AoE (`thunder_storm_cell`), and long-range branching lightning cone (`thunder_fork_barrage`).
-- **Light**: Added close-range blinding flash cone (`light_photon_flash`), close-range swift dash slip (`light_luminous_glide`), mid-range radial aura AoE (`light_halo_burst`), and long-range piercing beam finisher (`light_zenith_lance`).
-- **Shadow**: Added close-range needle pierce line (`shadow_dusk_fang`), mid-range phantom phase dash (`shadow_twilight_phase`), mid-range cone veil (`shadow_abyssal_shroud`), and long-range gravitational pull AoE (`shadow_void_well`).
-
 ## Distribution Counts (Hand-Verified)
 
 ### Per Element
@@ -110,38 +94,11 @@ Beyond generic range and shape categories, Batch 03 introduces combinations of (
   - `shadow`: 4
 - **Total**: Exactly 40 moves.
 
-### Per Shape (Batch 03)
-- `line`: 10 moves (`metal_flechette_beam`, `wood_pollen_jet`, `water_cascade_jab`, `fire_searing_ray`, `earth_tectonic_lance`, `ice_icicle_beam`, `wind_air_slash`, `thunder_shock_prod`, `light_zenith_lance`, `shadow_dusk_fang`)
-- `cone`: 10 moves (`metal_shard_volley`, `wood_bramble_whip`, `water_hydro_spray`, `fire_ash_fan`, `earth_dust_cloud`, `ice_claw_cleave`, `wind_shear_fan`, `thunder_fork_barrage`, `light_photon_flash`, `shadow_abyssal_shroud`)
-- `aoe`: 10 moves (`metal_anvil_drop`, `wood_timber_fall`, `water_geyser_pool`, `fire_flare_nova`, `earth_stalagmite_field`, `ice_permafrost_surge`, `wind_whirlwind_burst`, `thunder_storm_cell`, `light_halo_burst`, `shadow_void_well`)
-- `dash`: 10 moves (`metal_drill_drive`, `wood_vine_grapple`, `water_tsunami_charge`, `fire_meteor_rush`, `earth_stone_skate`, `ice_avalanche_charge`, `wind_tailwind_dive`, `thunder_volt_drift`, `light_luminous_glide`, `shadow_twilight_phase`)
-- **Total**: Exactly 10 per shape (40 moves total).
-
 ### Per Range Class (Batch 03)
 - `melee`: 13 moves (`wood_bramble_whip`, `water_cascade_jab`, `fire_flare_nova`, `earth_stone_skate`, `earth_dust_cloud`, `ice_claw_cleave`, `ice_permafrost_surge`, `wind_whirlwind_burst`, `wind_shear_fan`, `thunder_shock_prod`, `light_photon_flash`, `light_luminous_glide`, `shadow_dusk_fang`)
 - `mid`: 13 moves (`metal_drill_drive`, `metal_flechette_beam`, `wood_pollen_jet`, `water_geyser_pool`, `fire_ash_fan`, `fire_searing_ray`, `ice_icicle_beam`, `wind_air_slash`, `thunder_volt_drift`, `thunder_storm_cell`, `light_halo_burst`, `shadow_twilight_phase`, `shadow_abyssal_shroud`)
 - `long`: 14 moves (`metal_shard_volley`, `metal_anvil_drop`, `wood_vine_grapple`, `wood_timber_fall`, `water_hydro_spray`, `water_tsunami_charge`, `fire_meteor_rush`, `earth_stalagmite_field`, `earth_tectonic_lance`, `ice_avalanche_charge`, `wind_tailwind_dive`, `thunder_fork_barrage`, `light_zenith_lance`, `shadow_void_well`)
 - **Total**: Exactly 40 moves.
-
-### Batch 03 Shape × Range Class Cross-Tabulation
-
-| Shape | Melee | Mid | Long | Total |
-|---|---|---|---|---|
-| **line** | 3 (`water_cascade_jab`, `thunder_shock_prod`, `shadow_dusk_fang`) | 5 (`metal_flechette_beam`, `wood_pollen_jet`, `fire_searing_ray`, `ice_icicle_beam`, `wind_air_slash`) | 2 (`earth_tectonic_lance`, `light_zenith_lance`) | **10** |
-| **cone** | 5 (`wood_bramble_whip`, `earth_dust_cloud`, `ice_claw_cleave`, `wind_shear_fan`, `light_photon_flash`) | 2 (`fire_ash_fan`, `shadow_abyssal_shroud`) | 3 (`metal_shard_volley`, `water_hydro_spray`, `thunder_fork_barrage`) | **10** |
-| **aoe** | 3 (`fire_flare_nova`, `ice_permafrost_surge`, `wind_whirlwind_burst`) | 3 (`water_geyser_pool`, `thunder_storm_cell`, `light_halo_burst`) | 4 (`metal_anvil_drop`, `wood_timber_fall`, `earth_stalagmite_field`, `shadow_void_well`) | **10** |
-| **dash** | 2 (`earth_stone_skate`, `light_luminous_glide`) | 3 (`metal_drill_drive`, `thunder_volt_drift`, `shadow_twilight_phase`) | 5 (`wood_vine_grapple`, `water_tsunami_charge`, `fire_meteor_rush`, `ice_avalanche_charge`, `wind_tailwind_dive`) | **10** |
-| **Total** | **13** | **13** | **14** | **40** |
-
-### Combined Batches 01 + 02 + 03 Grand Totals (120 Moves)
-
-| Shape | Melee | Mid | Long | Total |
-|---|---|---|---|---|
-| **line** | 8 | 11 | 11 | **30** |
-| **cone** | 12 | 11 | 7 | **30** |
-| **aoe** | 10 | 8 | 12 | **30** |
-| **dash** | 10 | 10 | 10 | **30** |
-| **Total** | **40** | **40** | **40** | **120** |
 
 ## Prospective Kind "both" Candidates (P2 Integration)
 
