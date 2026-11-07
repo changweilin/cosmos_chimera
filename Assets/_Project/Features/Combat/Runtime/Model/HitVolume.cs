@@ -315,6 +315,43 @@ namespace Cosmimera.Combat
             return (float3)(center + dir * radius);
         }
 
+        /// <summary>Nominal end of a dash started at <paramref name="caster"/> heading <paramref name="forward"/>.</summary>
+        /// <remarks>
+        /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.DashDistanceMm > 0 (built with
+        ///      movement == Dash); caster inside the combat shell (same bounds and rounding slack as ResolveAnchor);
+        ///      forward is unit (±1e-3) and tangent at the caster (|dot(forward, up)| &lt;= 1e-3).
+        /// Post: result is finite and inside the combat shell, so it can be passed to Overlaps; it lies on the great
+        ///       circle through the caster along forward's tangent direction, at the caster's radius (clamped into the
+        ///       strict shell); geodesic distance (at the caster's radius) from caster to result equals
+        ///       DashDistanceMm within 1 mm + 1e-6 · (largest |component| of result) — float rounding of the returned
+        ///       world position only. The result therefore sits on the centre line of the dash's own Rect volume at its
+        ///       far edge. Only forward's tangent direction matters, not its length within the tolerance.
+        ///       Terrain height, obstacles and collider sync are not modelled here (PlayMode presentation layer).
+        /// Side effects: none.
+        /// REQ: docs/design/combat.md#判定體 — dash displacement equals base_range, never STR-scaled.
+        /// </remarks>
+        public static float3 ResolveDashEnd(in HitVolume volume, in PlanetConfig planet, float3 caster, float3 forward)
+        {
+            RequirePlanet(planet);
+            Contract.Requires(volume.DashDistanceMm > 0, "only dash volumes move the caster");
+            // Double for the same reasons as ResolveAnchor (SOL r4 Q1/Q4): a float slerp around a 16 km center drifts mm.
+            double3 center = planet.Center;
+            double3 dc = (double3)caster - center;
+            RequireInDomain(dc, planet, "caster");
+            double rc = math.length(dc);
+            double3 up = dc / rc;
+            double3 forwardD = forward;
+            Contract.Requires(math.abs(math.length(forwardD) - 1.0) <= UnitTolerance
+                && math.abs(math.dot(forwardD, up)) <= UnitTolerance, "forward must be a unit tangent at the caster");
+
+            // Re-orthonormalize so a 0.9995-long forward cannot shorten the path (same as Overlaps, SOL G5).
+            double3 f = math.normalize(forwardD - math.dot(forwardD, up) * up);
+            double angle = volume.DashDistanceMm * MmToMd / rc;
+            double3 dir = math.normalize(math.cos(angle) * up + math.sin(angle) * f);
+            double radius = math.clamp(rc, planet.Radius * 0.5, planet.Radius * 2.0);
+            return (float3)(center + dir * radius);
+        }
+
         /// <summary>Whether a target sphere overlaps the volume placed at <paramref name="anchor"/> facing <paramref name="forward"/>.</summary>
         /// <remarks>
         /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.Kind != Caster; anchor and targetCenter
