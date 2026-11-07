@@ -565,14 +565,18 @@ namespace Cosmimera.Combat
         }
 
         // Point at `angle` radians from unit `from` along the great circle in the direction of world offset `delta`;
-        // `fallback` (a unit tangent at `from`) only when the offset's tangent part is exactly zero (same point).
-        // The tangent comes from the raw world offset, not from two normalized directions, and any nonzero tangent is
-        // kept: a relative cut-off still dropped a real 1e-10 m sideways offset next to a 640 m radial one and sent the
-        // creature 8 m along the target's facing (SOL P2-10 r1/r2 A4). For an (almost) antipodal offset every great
-        // circle is a shortest path, so a tangent that is only rounding noise is still a valid, deterministic choice.
+        // `fallback` (a unit tangent at `from`) only when no plane is defined at all (exact zero cross product).
+        // History (SOL P2-10): r1 normalized both directions first and lost a real 1e-10 m offset; r2's relative
+        // cut-off still lost it across radii; r3's projection `delta − from·(from·delta)` cancelled a radial delta to a
+        // residual that was itself almost radial, so Along walked ~3 mm instead of 8 m. The plane normal
+        // n = from × delta keeps even a tiny sideways offset (its components do not cancel against the radial part),
+        // and t = n × from is orthogonal to `from` by construction whatever |n| is. When delta is (anti)parallel to
+        // `from` up to rounding, n is rounding noise: the direction is then arbitrary but deterministic, and the
+        // stand-off distance is still exact because t is a true tangent.
         private static double3 Toward(double3 from, double3 delta, double angle, double3 fallback)
         {
-            double3 t = delta - from * math.dot(from, delta);
+            double3 t = math.cross(math.cross(from, delta), from);
+            t -= from * math.dot(t, from);
             double len = math.length(t);
             return Along(from, len > 0.0 ? t / len : fallback, angle);
         }

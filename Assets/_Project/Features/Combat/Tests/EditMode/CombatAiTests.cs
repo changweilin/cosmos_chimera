@@ -491,6 +491,25 @@ namespace Cosmimera.Combat.Tests
             Assert.AreEqual(expectedSlot, d.CastSlot);
         }
 
+        // SOL r3: an exactly antipodal or radially aligned target left only an almost radial projection residual.
+        [TestCase(-1f, -640f, AiStyle.KeepDistance, 8.0)]
+        [TestCase(-1f, -640f, AiStyle.Charge, 5.0)]
+        [TestCase(-1f, -640f, AiStyle.Hold, 9.0)]
+        [TestCase(0.5f, 320f, AiStyle.KeepDistance, 8.0)]
+        [TestCase(0.5f, 320f, AiStyle.Charge, 5.0)]
+        public void A4_degenerate_alignment_still_keeps_the_stand_off(float tx, float ty, AiStyle style, double expectedM)
+        {
+            var planet = new PlanetConfig(R, float3.zero);
+            var self = new float3(1f, 640f, 0f);
+            var enemy = new AiEnemy(1, new float3(tx, ty, 0f), new float3(0f, 0f, 1f), true);
+            var input = new AiInput(self, style, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget, self, false, default);
+            AiDecision d = CombatAi.Decide(planet, _tuning, input, new[] { enemy }, new[] { Hostile(0, 10000, 1) });
+            double3 dd = d.DestinationDirection, td = math.normalize((double3)enemy.Position);
+            double angle = math.atan2(math.length(math.cross(dd, td)), math.dot(dd, td));
+            Assert.AreEqual(expectedM, angle * math.length((double3)self), TolM);
+            Assert.AreEqual(1.0, math.length(dd), 1e-6);
+        }
+
         [Test]
         public void A1_rect_corner_is_an_exact_ceiling()
         {
