@@ -196,6 +196,8 @@ class CrossFileRules(unittest.TestCase):
                     relative = f"{kind}/{kind}.json"
                     records = json.loads((SAMPLES / "valid" / relative).read_text(encoding="utf-8"))
                     parent = records[0]
+                    if path == ("base_range_mm",):
+                        parent["movement"] = "none"  # the sample is a dash, capped at 36000 by Q-C19
                     for key in path[:-1]:
                         parent = parent[key]
                     parent[path[-1]] = value
@@ -215,12 +217,21 @@ class CrossFileRules(unittest.TestCase):
                 self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
         for changes in [
             {"shape": "aoe"}, {"shape": "dash"}, {"shape": "burst"},
-            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0},
+            {"origin": "caster"}, {"shape": "cone"}, {"base_range_mm": 0}, {"base_range_mm": 36001},
         ]:
             with self.subTest(changes=changes):
                 move = {**source, "id": "review_move", **changes}
                 findings = self._with_valid({"moves/review.json": json.dumps([move])})
                 self.assertIn("schema", self.codes(findings))
+
+    def test_dash_range_cap_is_inclusive(self):
+        # Q-C19: dash path length is capped at 36000 mm in data, same as the ranged cap.
+        source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]
+        self.assertEqual("dash", source["movement"])
+        move = {**source, "id": "review_move", "base_range_mm": 36000}
+        self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
+        undashed = {**source, "id": "review_move", "movement": "none", "base_range_mm": 36001}
+        self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([undashed])})))
 
     def test_material_outside_mastery_is_an_error(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")

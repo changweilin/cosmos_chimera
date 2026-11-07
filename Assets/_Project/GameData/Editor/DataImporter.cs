@@ -288,9 +288,9 @@ namespace Cosmimera.GameData.Editor
                 }
 
                 if (m.Dto.BaseRangeMm < 0 || (m.Dto.Movement == "dash"
-                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0)))
+                    && (m.Dto.Shape != "line" || m.Dto.BaseRangeMm == 0 || m.Dto.BaseRangeMm > MoveDef.MaxDashRangeMm)))
                 {
-                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and positive range");
+                    errors.Add($"{m.Where}: base_range_mm must be nonnegative; dash requires line shape and range 1..{MoveDef.MaxDashRangeMm}");
                 }
                 if ((m.Dto.Kind == "damage") != (m.Dto.Effect == null))
                 {

@@ -68,7 +68,7 @@
         },
         {
           "if": { "required": ["movement"], "properties": { "movement": { "const": "dash" } } },
-          "then": { "properties": { "shape": { "const": "line" }, "base_range_mm": { "minimum": 1 } } }
+          "then": { "properties": { "shape": { "const": "line" }, "base_range_mm": { "minimum": 1, "maximum": 36000 } } }
         }
       ]
     }

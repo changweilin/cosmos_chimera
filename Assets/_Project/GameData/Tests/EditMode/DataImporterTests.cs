@@ -535,6 +535,7 @@ namespace Cosmimera.GameData.Tests
         [TestCase("dash", "none", 2000, null)]
         [TestCase("cone", "dash", 2000, null)]
         [TestCase("line", "dash", 0, null)]
+        [TestCase("line", "dash", 36001, null)]
         [TestCase("line", "none", -1, null)]
         [TestCase("line", "none", 2000, "caster")]
         [TestCase("burst", "none", 2000, null)]

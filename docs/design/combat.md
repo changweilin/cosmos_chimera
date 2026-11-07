@@ -29,7 +29,7 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 ## 力量 → 範圍/射程
 `range = move.base_range_mm × g(STR)`；每招必填非負 Int32 毫米值，不從 `range_class` 查表。近戰招式放大判定體積，遠程招式延長射程。
 
-2026-11-06 使用者確認的初稿值：melee=2000、mid=12000、long=24000 mm，已逐招寫入初稿，之後可個別調整。`burst` 的數值表示爆發半徑；`origin` 只指定中心來源，目標點的選擇與施法距離判定屬 P2-04。`movement=dash` 時，數值表示突進的直線路徑長度，必須 >0。
+2026-11-06 使用者確認的初稿值：melee=2000、mid=12000、long=24000 mm，已逐招寫入初稿，之後可個別調整。`burst` 的數值表示爆發半徑；`origin` 只指定中心來源，目標點的選擇與施法距離判定屬 P2-04。`movement=dash` 時，數值表示突進的直線路徑長度，必須 1–36000（2026-11-07 使用者定案 Q-C19：與遠程 36 m 上限一致，schema／importer／validate-data 同步檢查；幾何層 `ResolveDashEnd` 另以施放者半徑·π/4 為正確性界）。
 
 ## 召喚與輪替
 - 上場池最多 4 隻，**同時最多 2 隻在場**（Q-C4 定案）；切換有共用冷卻（暫定 3 s），避免無限換手來躲傷害。

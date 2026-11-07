@@ -90,8 +90,16 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined MoveShape. Side effects: none.</remarks>
         public MoveShape Shape => shape;
 
+        /// <summary>Longest dash path a move may declare, in millimeters.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: docs/design/combat.md#判定體 (Q-C19, user decision 2026-11-07): same as the 36 m ranged cap; must match
+        /// move.schema.json's dash branch.
+        /// </remarks>
+        public const int MaxDashRangeMm = 36000;
+
         /// <summary>Base geometric range in millimeters, before STR scaling; dash path length for a dash.</summary>
-        /// <remarks>Pre: none. Post: nonnegative; positive when Movement is Dash. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: nonnegative; 1..MaxDashRangeMm when Movement is Dash. Side effects: none.</remarks>
         public int BaseRangeMm => baseRangeMm;
 
         /// <summary>Movement accompanying this move.</summary>
