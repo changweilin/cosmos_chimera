@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Player.Tests
 {
-    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) and r8 (N12-R8, N14, N16, N17). PlayMode because Configure needs Cinemachine.
+    // Regressions for docs/reviews/P1-review-r7-sol.md (N12, N13, U17) r8 (N12-R8, N14, N16, N17) and r9 (N18, N19). PlayMode because Configure needs Cinemachine.
     public sealed class PlayerCameraRigConfigureTests
     {
         private GameObject _root;
@@ -80,6 +80,37 @@ namespace Cosmimera.Player.Tests
         {
             _target.position = Vector3.zero;
             Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        // sol P1 r9 N19: the centre alone cannot tell a correct 1e-3 m threshold from a weakened `> 0` one; the
+        // ±1e-3 cases also pin the strict inequality at the boundary.
+        [TestCase(0.0005f)]
+        [TestCase(-0.0005f)]
+        [TestCase(0.001f)]
+        [TestCase(-0.001f)]
+        public void N19_target_inside_the_centre_exclusion_box_is_rejected_before_wiring(float y)
+        {
+            _target.position = new Vector3(0f, y, 0f);
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+        }
+
+        [Test]
+        public void N18_target_parented_under_the_pivot_is_rejected_before_wiring()
+        {
+            _target.SetParent(_pivot, true);
+            Vector3 before = _target.position;
+
+            Assert.Throws<ContractException>(Configure);
+            AssertNothingWritten();
+            Assert.AreEqual(before, _target.position, "the body was not dragged by a pivot write");
+        }
+
+        [Test]
+        public void N18_target_used_as_its_own_pivot_is_rejected_before_wiring()
+        {
+            Assert.Throws<ContractException>(() => _rig.Configure(_config, _target, _target, _third, _first, _brain));
             AssertNothingWritten();
         }
 
