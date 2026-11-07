@@ -69,8 +69,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public MoveKind Kind { get; }
 
-        /// <summary>Damage power; 0 for an effect-only move.</summary>
-        /// <remarks>Pre: none. Post: 0..DamageModel.MaxPower. Side effects: none.</remarks>
+        /// <summary>Damage power; ignored when Kind == Effect (kept as given, never applied).</summary>
+        /// <remarks>Pre: none. Post: 0..DamageModel.MaxPower for every kind. Side effects: none.</remarks>
         public int Power { get; }
 
         /// <summary>Move accuracy percent used by the roll.</summary>
@@ -376,7 +376,7 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: 0 &lt;= slot &lt; Cooldowns.SlotCount; move from the CastMove constructor; nowMs in CombatTime and >= every
         ///      watermark of Book and Cooldowns.
-        /// Post: Fainted iff IsFainted; else OnCooldown iff !Cooldowns.IsReady(slot, nowMs); on those two nothing
+        /// Post: Fainted iff IsFainted on entry; else OnCooldown iff !Cooldowns.IsReady(slot, nowMs) on entry; on those two nothing
         ///       changes and context is default. Accepted otherwise: on_move_used{move.Element} has fired (heals applied),
         ///       context.MasteryPercent / RangePercentSum reflect modifiers after that, and
         ///       Cooldowns.ReadyAtMs(slot) == nowMs + context.CooldownMs.
@@ -417,7 +417,7 @@ namespace Cosmimera.Combat
         /// Pre: !IsFainted (callers drop fainted targets before geometry); cast from BeginCast; rng is the host's combat
         ///      stream; nowMs in CombatTime and >= every watermark of Book.
         /// Post: Outcome follows <see cref="HitResolver.Resolve"/> with this combatant's evasion after modifiers sampled
-        ///       before the hit. On Hit: Damage = min(Hp, DamageModel.Compute(power, cast mastery, effective resist)) for
+        ///       before the hit. On Hit: Damage = min(HpBefore, DamageModel.Compute(power, cast mastery, effective resist)) for
         ///       damaging moves; then, if still alive, on_hp_cross_below / on_hit_taken fire, the move's timed effect is
         ///       applied (or its heal added), and all heals resolve once. Trait buffs gained here never change this
         ///       hit's damage. On NoContact / Miss: nothing but the roll changes.
@@ -479,7 +479,7 @@ namespace Cosmimera.Combat
         /// Damage/both on self/ally is a cost (user decision 2026-11-07, ARGON cast review K3): it hurts the receiver with
         /// the caster's frozen mastery and the receiver's resist, may faint it, and is not a hostile hit.
         /// Pre: !IsFainted; cast from BeginCast; nowMs in CombatTime and >= every watermark of Book.
-        /// Post: Outcome == Hit. Damage = min(Hp, DamageModel.Compute(power, cast mastery, effective resist)) when the
+        /// Post: Outcome == Hit. Damage = min(HpBefore, DamageModel.Compute(power, cast mastery, effective resist)) when the
         ///       move deals damage, else 0; if that faints the receiver nothing else happens. Otherwise on_hp_cross_below
         ///       may fire (it is an HP change), the move's timed effect is applied or its heal added, and heals resolve
         ///       once. on_hit_taken never fires — that trigger means a hostile hit.

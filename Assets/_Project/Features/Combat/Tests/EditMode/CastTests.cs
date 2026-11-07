@@ -803,5 +803,110 @@ namespace Cosmimera.Combat.Tests
             c.EnterField(false, 100);
             Assert.Throws<ContractException>(() => c.EnterField(false, 99));
         }
+
+        // ---- SOL cast review r1 K1 witnesses (W04–W49) ----
+
+        [Test]
+        public void W04_reset_moves_the_watermark()
+        {
+            var cd = new MoveCooldowns(1);
+            cd.Reset(500);
+            Assert.Throws<ContractException>(() => cd.IsReady(0, 499));
+        }
+
+        [Test]
+        public void W07_mastery_modifier_is_read_for_the_move_element()
+        {
+            var book = new EffectBook();
+            book.Apply("buff", 0, Mod(EffectType.MasteryMod, 40, Element.Water), 1000, 0);
+            Combatant c = Make(book);
+            Assert.AreEqual(40, Cast(c, Damage(e: Element.Water), 0).MasteryPercent);
+        }
+
+        [Test]
+        public void W27_cost_damage_uses_receiver_resist_modifiers()
+        {
+            var book = new EffectBook();
+            book.Apply("shell", 0, Mod(EffectType.ResistMod, 40), 1000, 0);
+            Combatant self = Make(book, con: 100);
+            HitReport r = self.ReceiveSupport(Cast(self, Damage(power: 100), 0), 0);
+            Assert.AreEqual(DamageModel.Compute(100, 0, 40), r.Damage);
+        }
+
+        [Test]
+        public void W32_support_timed_effect_lasts_its_duration()
+        {
+            Combatant target = Make();
+            target.ReceiveSupport(Cast(Make(), Support(Mod(EffectType.MasteryMod, 5), 3000), 1000), 1000);
+            Assert.AreEqual(1, target.Book.StacksOf("move_sup", 0, 3999));
+            Assert.AreEqual(0, target.Book.StacksOf("move_sup", 0, 4000));
+        }
+
+        [Test]
+        public void W34_swap_entry_also_fires_on_summon()
+        {
+            var summon = new TriggerSpec(TriggerType.OnSummon, false, default, 0, 2000);
+            Combatant c = Make(Trait(summon, Mod(EffectType.MoveSpeedModPercent, 20)));
+            c.EnterField(true, 0);
+            Assert.AreEqual(1, c.Book.StacksOf("trait_t", 0, 0));
+        }
+
+        [Test]
+        public void W35_swap_heal_reaches_hp()
+        {
+            var swap = new TriggerSpec(TriggerType.OnAllySwap, false, default, 0, 2000);
+            Combatant c = Make(Trait(swap, Heal(10)), con: 100);
+            Pcg32 rng = Rng();
+            c.ReceiveHostile(Cast(Make(), Damage(power: 300), 0), true, ref rng, 0);
+            int hp = c.Hp;
+            int healed = c.EnterField(true, 100);
+            Assert.AreEqual(EffectMath.HealAmount(c.MaxHp, 10), healed);
+            Assert.AreEqual(hp + healed, c.Hp);
+        }
+
+        [Test]
+        public void W37_context_does_not_alias_later_samples()
+        {
+            var book = new EffectBook();
+            book.Apply("focus", 0, Mod(EffectType.MasteryMod, 40), 100, 0);
+            Combatant c = Make(book);
+            CastContext early = Cast(c, Damage(), 0);
+            Assert.AreEqual(0, Cast(c, Damage(), 1000, slot: 1).MasteryPercent);
+            Assert.AreEqual(40, early.MasteryPercent);
+        }
+
+        [Test]
+        public void W47_mastery_table_is_copied()
+        {
+            int[] mastery = Table(Element.Fire, 20);
+            Combatant c = Make(mastery: mastery);
+            mastery[(int)Element.Fire] = 100;
+            Assert.AreEqual(20, Cast(c, Damage(), 0).MasteryPercent);
+        }
+
+        [Test]
+        public void W48_on_move_used_range_buff_applies_to_the_triggering_cast()
+        {
+            var trigger = new TriggerSpec(TriggerType.OnMoveUsed, false, Element.Fire, 0, 1000);
+            Combatant c = Make(Trait(trigger, Mod(EffectType.RangeModPercent, 20)));
+            Assert.AreEqual(20, Cast(c, Damage(), 0).RangePercentSum);
+        }
+
+        [Test]
+        public void W49_cost_damage_sees_current_hp_for_continuous_traits()
+        {
+            var trigger = new TriggerSpec(TriggerType.OnHpBelow, false, default, 50, 0);
+            Combatant self = Make(Trait(trigger, Mod(EffectType.ResistMod, 40)), con: 0);
+            int power = 1;
+            while (DamageModel.Compute(power, 0, 0) * 100 <= 60 * self.MaxHp)
+            {
+                power++;
+            }
+
+            self.ReceiveSupport(Cast(self, Damage(power: power), 0), 0);
+            Assert.Less((long)self.Hp * 100, 50L * self.MaxHp);
+            HitReport second = self.ReceiveSupport(Cast(self, Damage(power: 10), 0, slot: 1), 0);
+            Assert.AreEqual(System.Math.Min(self.Hp + second.Damage, DamageModel.Compute(10, 0, 40)), second.Damage);
+        }
     }
 }
