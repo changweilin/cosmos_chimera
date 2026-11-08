@@ -26,7 +26,7 @@
 - `up = normalize(pos − center)`；重力 = `−up × g`。
 - ⚠️ Unity `CharacterController` 的膠囊永遠沿世界 Y 軸，**不能**用於球面。改用 Rigidbody（`useGravity=false`）+ 自訂地面偵測，或自寫 kinematic controller。
 - Cinemachine 3：每幀設定 World Up Override 為角色的當地 up。
-- 宙獸/敵人導航：內建 NavMesh 假設平面世界 → 待評估（Q-T1）：區域局部 NavMesh（每個戰鬥區域一塊有向 NavMeshSurface）vs. 高度場上的自訂 steering。
+- 宙獸/敵人導航：**自訂 steering**（2026-11-08 定案 Q-T1）：沿大圓朝目標、以高度場取樣做坡度限制與局部障礙迴避。不用 NavMesh，因為它假設全域重力向上，球面上要逐區建置且在區塊接縫失效。
 
 ## 浮點精度
 R = 1280 m 時最大座標約 2.6 km，float 精度約 0.25 mm，**不需要** floating origin。若日後 R > 8 km 才需重新評估。

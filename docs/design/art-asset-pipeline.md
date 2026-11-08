@@ -110,3 +110,6 @@ clip ID、幀數、迴圈與事件的唯一來源是 `tools/prompt-forge/catalog
 ## 版本
 - prompt 第一行為任務標頭：`[COSMIMERA-TASK spec=… tool=… catalog=… template=<id>@<ver> task_id=… seed=…]`，manifest 必須原樣抄回，日後可追溯是哪一版規格產出的。
 - 規則與變更紀錄：`tools/prompt-forge/README.md`、`CHANGELOG.md`。
+
+## 佔位模型（D0）
+3D 模型交付前，宙獸/角色以卡通著色幾何體 + 主屬性色 + 體型尺寸（`creatures.md` 體型表）佔位；表現層透過模型替換介面載入，真模型到位後只換資源不改程式。
