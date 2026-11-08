@@ -68,7 +68,7 @@
     "base_range_mm": 12000
   },
   {
-    "id": "wood_vine_grapple",
+    "id": "wood_vine_lunge",
     "element": "wood",
     "kind": "damage",
     "power": 80,

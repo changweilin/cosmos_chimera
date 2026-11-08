@@ -496,7 +496,7 @@
     ]
   },
   {
-    "id": "trait_light_blinding_arrival",
+    "id": "trait_light_mirage_arrival",
     "trigger": {
       "type": "on_summon",
       "params": {

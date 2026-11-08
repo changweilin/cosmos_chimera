@@ -76,7 +76,7 @@ The original evasion design band is -10 to +15%; the table shows the observed ba
 | **thunder** | `trait_thunder_discharge_sprint` | `on_hit_taken` | `thunder`, 4000ms | `move_speed_mod_percent: +20%` | None |
 | **thunder** | `trait_thunder_fulgur_reach` | `on_move_used` | `thunder`, 3000ms | `range_mod_percent: +15%` | None |
 | **light** | `trait_light_radiant_core` | `always` | `{}` | `mastery_mod: light +10`, `resist_mod: shadow -15` | Yes (`resist shadow -15`) |
-| **light** | `trait_light_blinding_arrival` | `on_summon` | 5000ms | `evasion_mod_percent: +8%` | None |
+| **light** | `trait_light_mirage_arrival` | `on_summon` | 5000ms | `evasion_mod_percent: +8%` | None |
 | **light** | `trait_light_halo_rebound` | `on_move_used` | `light`, 3000ms | `heal_percent_max_hp: 6%` | None |
 | **shadow** | `trait_shadow_nightfall_creed` | `on_summon` | 6000ms | `mastery_mod: shadow +25`, `range_mod_percent: -10%` | Yes (`range -10%`) |
 | **shadow** | `trait_shadow_smoke_veil` | `on_hit_taken` | `any`, 4000ms | `evasion_mod_percent: +10%` | None |
@@ -158,7 +158,7 @@ In Batch 01, out of 56 theoretical combinations (8 triggers × 7 effects), 27 we
 | `on_hp_below` | `range_mod_percent` | **YES** | **YES** | `trait_fire_conflagration_flare` |
 | `on_move_used` | `heal_percent_max_hp` | **YES** | **YES** | `trait_wood_spore_regeneration`, `trait_light_halo_rebound` |
 | `on_move_used` | `move_speed_mod_percent` | **YES** | **YES** | `trait_earth_landslide_charge` |
-| `on_summon` | `evasion_mod_percent` | **YES** | **YES** | `trait_fire_pyroclastic_burst`, `trait_light_blinding_arrival` |
+| `on_summon` | `evasion_mod_percent` | **YES** | **YES** | `trait_fire_pyroclastic_burst`, `trait_light_mirage_arrival` |
 | `on_summon` | `mastery_mod` | **YES** | **YES** | `trait_fire_pyroclastic_burst`, `trait_shadow_nightfall_creed` |
 | `on_summon` | `range_mod_percent` | **YES** | **YES** | `trait_metal_siege_anchoring`, `trait_wind_gale_gust`, `trait_shadow_nightfall_creed` |
 

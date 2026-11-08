@@ -100,8 +100,8 @@
     },
     {
       "id": "shadow_nightpaw_swipe",
-      "name_zh": "夜爪掠",
-      "name_en": "Nightpaw Swipe",
+      "name_zh": "夜爪擊",
+      "name_en": "Nightpaw Strike",
       "naming_note": "夜色中的迅捷爪擊。",
       "desc_zh": "以裹著暗影的爪子向前直擊，傷害身前近處的敵人並暫時降低其影抗性。",
       "desc_en": "Strike straight forward with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."

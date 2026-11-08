@@ -31,7 +31,7 @@ All numerical attributes are strictly integers obeying monotonic trade-offs (hig
 | Element | Move 1 | Move 2 | Move 3 | Move 4 | Mid-Band Utility (50–75 P) | Spatial Niches Filled in Batch 03 |
 |---|---|---|---|---|---|---|
 | **metal** | `metal_drill_drive` | `metal_flechette_beam` | `metal_shard_volley` | `metal_anvil_drop` | `metal_flechette_beam` (70) | dash/mid, line/mid, cone/long, aoe/long |
-| **wood** | `wood_bramble_whip` | `wood_pollen_jet` | `wood_vine_grapple` | `wood_timber_fall` | `wood_pollen_jet` (60) | cone/melee, line/mid, dash/long, aoe/long |
+| **wood** | `wood_bramble_whip` | `wood_pollen_jet` | `wood_vine_lunge` | `wood_timber_fall` | `wood_pollen_jet` (60) | cone/melee, line/mid, dash/long, aoe/long |
 | **water** | `water_cascade_jab` | `water_geyser_pool` | `water_hydro_spray` | `water_tsunami_charge` | `water_geyser_pool` (65) | line/melee, aoe/mid, cone/long, dash/long |
 | **fire** | `fire_ash_fan` | `fire_flare_nova` | `fire_searing_ray` | `fire_meteor_rush` | `fire_flare_nova` (55), `fire_searing_ray` (75) | cone/mid, aoe/melee, line/mid, dash/long |
 | **earth** | `earth_stone_skate` | `earth_dust_cloud` | `earth_stalagmite_field` | `earth_tectonic_lance` | `earth_dust_cloud` (55), `earth_stalagmite_field` (75) | dash/melee, cone/melee, aoe/long, line/long |
@@ -97,7 +97,7 @@ Before Batch 03, several elements sat at the minimum threshold of 2 moves for sp
 ### Per Range Class (Batch 03)
 - `melee`: 13 moves (`wood_bramble_whip`, `water_cascade_jab`, `fire_flare_nova`, `earth_stone_skate`, `earth_dust_cloud`, `ice_claw_cleave`, `ice_permafrost_surge`, `wind_whirlwind_burst`, `wind_shear_fan`, `thunder_shock_prod`, `light_photon_flash`, `light_luminous_glide`, `shadow_dusk_fang`)
 - `mid`: 13 moves (`metal_drill_drive`, `metal_flechette_beam`, `wood_pollen_jet`, `water_geyser_pool`, `fire_ash_fan`, `fire_searing_ray`, `ice_icicle_beam`, `wind_air_slash`, `thunder_volt_drift`, `thunder_storm_cell`, `light_halo_burst`, `shadow_twilight_phase`, `shadow_abyssal_shroud`)
-- `long`: 14 moves (`metal_shard_volley`, `metal_anvil_drop`, `wood_vine_grapple`, `wood_timber_fall`, `water_hydro_spray`, `water_tsunami_charge`, `fire_meteor_rush`, `earth_stalagmite_field`, `earth_tectonic_lance`, `ice_avalanche_charge`, `wind_tailwind_dive`, `thunder_fork_barrage`, `light_zenith_lance`, `shadow_void_well`)
+- `long`: 14 moves (`metal_shard_volley`, `metal_anvil_drop`, `wood_vine_lunge`, `wood_timber_fall`, `water_hydro_spray`, `water_tsunami_charge`, `fire_meteor_rush`, `earth_stalagmite_field`, `earth_tectonic_lance`, `ice_avalanche_charge`, `wind_tailwind_dive`, `thunder_fork_barrage`, `light_zenith_lance`, `shadow_void_well`)
 - **Total**: Exactly 40 moves.
 
 ## Prospective Kind "both" Candidates (P2 Integration)
@@ -115,7 +115,7 @@ As with earlier batches, several moves authored in Batch 03 were deliberately de
    - `shadow_void_well`: Gravitational nexus creating centripetal inward `suction` / vortex pull.
 2. **Mobility Utility / Repositioning**:
    - `metal_drill_drive`: Mid-range thrust granting frontal collision armor during drilling.
-   - `wood_vine_grapple`: Pulls the user to the impact coordinate (or pulls light targets backward).
+   - `wood_vine_lunge`: Dashes the user along the vine line to the impact point (no target pull; combat has no pull mechanic).
    - `thunder_volt_drift`: Teleport/drift motion granting momentary evasion window.
    - `shadow_twilight_phase`: Shadow phase shifting granting partial collision intangibility.
 

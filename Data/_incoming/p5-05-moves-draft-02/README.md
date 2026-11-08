@@ -26,7 +26,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 | **earth** | `earth_fault_dash` | `earth_mud_sling` | `earth_boulder_roll` | `earth_monolith_quarry` | `earth_mud_sling` (35 / 1100ms) | `earth_monolith_quarry` (105) |
 | **ice** | `ice_frost_tap` | `ice_hail_burst` | `ice_floe_crash` | `ice_polar_sweep` | `ice_frost_tap` (30 / 900ms) | `ice_polar_sweep` (100) |
 | **wind** | `wind_draft_step` | `wind_breeze_gust` | `wind_squall_vortex` | `wind_typhoon_spire` | `wind_draft_step` (30 / 850ms) | `wind_typhoon_spire` (105) |
-| **thunder** | `thunder_static_prick` | `thunder_chain_needle` | `thunder_fulgur_dive` | `thunder_megavolt_burst` | `thunder_static_prick` (35 / 1000ms) | `thunder_megavolt_burst` (115) |
+| **thunder** | `thunder_static_prick` | `thunder_piercing_needle` | `thunder_fulgur_dive` | `thunder_megavolt_burst` | `thunder_static_prick` (35 / 1000ms) | `thunder_megavolt_burst` (115) |
 | **light** | `light_glint_jab` | `light_corona_sweep` | `light_aurora_drift` | `light_stellar_nova` | `light_glint_jab` (30 / 900ms) | `light_stellar_nova` (110) |
 | **shadow** | `shadow_nightmare_cleave` | `shadow_shade_dart` | `shadow_wraith_charge` | `shadow_singularity_maw` | `shadow_shade_dart` (30 / 900ms) | `shadow_singularity_maw` (120) |
 
