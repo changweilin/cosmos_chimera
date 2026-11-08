@@ -200,6 +200,14 @@ namespace Cosmimera.Bootstrap.Demo
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f);
+            if (toonShader != null)
+            {
+                var surface = new HeightSurface(height, templates);
+                System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+                gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
+                    surface.GroundAltitude, isSea, PlayerPosition, toonShader);
+            }
+
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
             _captureRng = new Pcg32(setup.Seed, 'K');
 

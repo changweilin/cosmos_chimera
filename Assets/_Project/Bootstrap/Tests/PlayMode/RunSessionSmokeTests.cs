@@ -114,6 +114,19 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(hit, Is.True, "some fielded creature took damage within 60 s");
+
+            // P3-09 acceptance: scatter exists around the player and nothing floats or sinks into the ground.
+            var scatter = session.GetComponent<ScatterField>();
+            Assert.That(scatter, Is.Not.Null, "scatter component is attached");
+            Assert.That(scatter.LiveCount, Is.GreaterThan(0), "some scatter near the player");
+            foreach (Transform root in scatter.transform)
+            {
+                float3 p = (float3)root.position;
+                float3 dir = rig.Config.ToDirection(p);
+                Assert.That(rig.Config.Altitude(p), Is.EqualTo(rig.SurfaceHeight(dir) - 0.1f).Within(0.15f),
+                    "scatter root sits on the ground: " + root.name);
+            }
+
             if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") == "1")
             {
                 // Visual proof for reviewers (needs a GPU: run without -nographics). Waits for the LOD to settle first.
