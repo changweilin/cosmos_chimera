@@ -5,7 +5,7 @@
 ## Overview
 This batch contains the fourth draft of 30 placeholder damage moves for COSMIMERA (`moves/moves.json`), completing roadmap item **P5-05** and bringing the total foundational damage move pool to exactly **150 moves** (15 moves per element across all 10 elements).
 - **Scope**: Exactly 30 new moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), exactly 3 moves per element.
-- **Move Kind**: `damage` only (status / effect schema and vocabularies are deferred to P2; no `effect` block is included).
+- **Move Kind**: `damage` only (no `effect` block in this batch; the effect vocabulary was closed by P2-01).
 - **Batch Role & Milestone**:
   - Reaches the 150-move milestone for P5-05.
   - Balances power bands across all elements such that every element has at least 3 moves each in low (`<=45`), mid (`46–85`), and high (`>=86`) power tiers.

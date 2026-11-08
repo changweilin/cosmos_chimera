@@ -120,7 +120,7 @@
       "name_en": "Loneshade Ambush",
       "naming_note": "孤行獵手的暗影伏擊。",
       "desc_zh": "化作疾掠的暗影向前突襲，傷害路徑上的敵人，並暫時降低其影抗性。",
-      "desc_en": "Rush forward in a sweeping shadow, damaging enemies along the path and temporarily lowering their shadow resistance."
+      "desc_en": "Rush straight forward as a darting shadow, damaging enemies along the path and temporarily lowering their shadow resistance."
     },
     {
       "id": "thunder_starblaze_charge",
@@ -174,7 +174,7 @@
     }
   ],
   "issues": [
-    "設計文件將日線定位為持續直線傷害與引導施法，但三個光招式資料均為一般傷害招式，沒有持續傷害或引導機制；README 已標明此落差。",
+    "設計文件將日線定位為持續直線傷害與引導施法，但三個光招式均為 line 光束且沒有持續傷害或引導機制；light_mirror_glint 與 light_solar_array_lance 為 both，分別降低閃避 10%／3 秒及光抗 10／6 秒；README 已標明此落差。",
     "（已解決 2026-11-07，P5-08 A6）月線三階的定位、外觀與圖鑑改寫為繞背、直線突進與貼身作戰，不再暗示隱身或撤離。",
     "星線整體定位包含範圍放電，但成年的精通招式是直線突進傷害，並非以自身為中心的範圍放電；範圍放電由少年招式呈現。"
   ],

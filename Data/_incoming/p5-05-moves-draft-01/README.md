@@ -5,7 +5,7 @@
 ## Overview
 This batch contains the initial draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), corresponding to roadmap item **P5-05**.
 - **Scope**: Exactly 40 moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), 4 moves per element.
-- **Move Kind**: `damage` only (status / effect schema and vocabularies are deferred to P2; no `effect` block is included).
+- **Move Kind**: `damage` only (no `effect` block in this batch; the effect vocabulary was closed by P2-01).
 - **Draft Status**: All values are placeholder numbers for architecture and validation readiness; final balance and tuning will be executed by human designers.
 
 ## Number Bands & Balance Guidelines
@@ -45,7 +45,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 | **shadow** | `shadow_umbral_fang` | `shadow_void_step` | `shadow_abyss_ray` | `shadow_eclipse_collapse` |
 
 ## Open Issues
-1. **Geometric / Spatial Parameters**: The current `move.schema.json` only tracks abstract `shape` and `range_class`. Concrete geometric dimensions (e.g., collision box dimensions, cone arc angles, dash distances/speeds, projectile speeds, and AoE radii) will need schema extensions or combat engine parameter definitions during P2/P3.
-2. **Transition to Hybrid / Status Moves**: Several moves designed here (such as `ice_blizzard_vortex`, `thunder_spark_dash`, or `wood_spore_scatter`) naturally suggest crowd-control or status effects (e.g. freeze, paralyze, slow, poison/entangle). When the P2 effect vocabulary is finalized, human designers should review whether to convert these into `kind: "both"` with explicit effect definitions.
+1. **Geometric / Spatial Parameters**: ~~The current `move.schema.json` only tracks abstract `shape` and `range_class`.~~ 已由 P2-04 結案：`base_range_mm`, `origin` and `movement` are defined. Collision box dimensions, cone angles and movement/projectile speeds still need combat definitions.
+2. **Transition to Hybrid / Status Moves**: Several moves designed here (such as `ice_blizzard_vortex`, `thunder_spark_dash`, or `wood_spore_scatter`) naturally suggest crowd-control or status effects (e.g. freeze, paralyze, slow, poison/entangle). The vocabulary has been closed by P2-01; human designers should review whether to convert these into `kind: "both"` with explicit effect definitions.
 3. **Range Metric Standardization on Spherical Terrain**: Absolute unit boundaries between `melee`, `mid`, and `long` in relation to spherical planetary surface coordinates remain to be finalized in the combat design specification.
 4. **Signature Move Assignments**: These 40 moves serve as a broad element pool. Once creature evolutionary lines and archetypes are authored in P5, signature moves (`signature_move`) can be selected and linked from this pool.

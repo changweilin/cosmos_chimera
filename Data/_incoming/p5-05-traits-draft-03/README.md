@@ -8,9 +8,9 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 - **Data Model**: Conforms strictly to `trait.schema.json` and `common.schema.json`: `{ "id", "trigger": { "type", "params" }, "effects": [{ "type", "params" }] }` with no additional properties.
 - **Closed Vocabulary**: Strictly restricted to the 8 trigger types (7 + `on_hp_cross_below`, Q-C18) and 7 effect types closed in P2-01 (`common.schema.json`). Integers only, no floats. Max 2 effects per trait.
 - **Power/STR Rule Compliance**: Adheres to Q-C2; no trait affects base power or STR scaling directly.
-- **Magnitude Balance**: Permanent (`always`) traits exhibit strictly lower modifier magnitudes than conditional or temporary ones.
+- **Magnitude Balance**: Permanent (`always`) traits generally exhibit lower modifier magnitudes than conditional or temporary ones; the cooldown reduction matches one conditional trait.
 - **Side-Grade Balance**: Exactly 10 out of 30 traits (33.3%, roughly 1/3) incorporate explicit drawbacks (a negative delta for the holder), distributed evenly across the 10 elements (exactly 1 drawback trait per element).
-- **Target Gap Coverage**: Specifically targets low-frequency (trigger, effect) combinations from Batch 01 and Batch 02, reinforcing 20 combinations that had ≤ 1 prior occurrence (including resolving the 0-occurrence combination `on_ally_swap` + `range_mod_percent`). Every trigger type appears ≥ 3 times, and every effect type appears ≥ 3 times.
+- **Target Gap Coverage**: Specifically targets low-frequency (trigger, effect) combinations from Batch 01 and Batch 02, reinforcing 18 combinations that had ≤ 1 prior occurrence (including resolving the 0-occurrence combination `on_ally_swap` + `range_mod_percent`). `on_summon` appears twice and `on_hp_cross_below` once; every effect type appears ≥ 3 times.
 
 ---
 
@@ -32,15 +32,15 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 
 ### Effect Types
 
-| Effect Type | Parameter Schema | Parameter Range | Batch Count | Description |
+| Effect Type | Parameter Schema | Observed Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
-| `mastery_mod` | `{"element": <element>, "delta": <int>}` | -20 to +30 | 5 | Modifies elemental mastery percentage for damage calculation. |
-| `resist_mod` | `{"element": <element>, "delta": <int>}` | -30 to +40 | 8 | Modifies elemental resistance percentage (clamped to ±100 in combat). |
-| `cd_mod_percent` | `{"element": <element\|"any">, "delta": <int>}` | -25 to +15% | 3 | Percentage cooldown modifier (negative = faster, positive = slower drawback). |
-| `evasion_mod_percent` | `{"delta": <int>}` | -10 to +10% | 5 | Flat modifier to derived evasion roll. |
-| `move_speed_mod_percent` | `{"delta": <int>}` | -15 to +20% | 9 | Percentage modifier to base movement speed. |
-| `range_mod_percent` | `{"delta": <int>}` | -15 to +20% | 7 | Percentage modifier to attack reach and projectile range. |
-| `heal_percent_max_hp` | `{"percent": <int>}` | 1 to 15% | 3 | Restores an integer percentage of maximum HP upon activation. |
+| `mastery_mod` | `{"element": <element>, "delta": <int>}` | +15 to +25 | 6 | Modifies elemental mastery percentage for damage calculation. |
+| `resist_mod` | `{"element": <element>, "delta": <int>}` | -15 to +30 | 8 | Modifies elemental resistance percentage (clamped to ±100 in combat). |
+| `cd_mod_percent` | `{"element": <element\|"any">, "delta": <int>}` | -20 to -10% | 4 | Percentage cooldown modifier (negative = faster, positive = slower drawback). |
+| `evasion_mod_percent` | `{"delta": <int>}` | -6 to +10% | 5 | Flat modifier to derived evasion roll. |
+| `move_speed_mod_percent` | `{"delta": <int>}` | -10 to +20% | 7 | Percentage modifier to base movement speed. |
+| `range_mod_percent` | `{"delta": <int>}` | +8 to +20% | 7 | Percentage modifier to attack reach and projectile range. |
+| `heal_percent_max_hp` | `{"percent": <int>}` | 4 to 12% | 3 | Restores an integer percentage of maximum HP upon activation. |
 | **Total** | | | **40** | Max 2 effects per trait (20 traits with 1 effect, 10 traits with 2 effects). Every effect type ≥ 3. |
 
 ---
@@ -74,7 +74,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **thunder** | `trait_thunder_crisis_arc` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
 | **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `cd_mod_percent: thunder -10%` | None |
 | **light** | `trait_light_luminous_barrier` | `on_move_used` | `light`, 4000ms | `resist_mod: shadow +25`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
-| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25% | `heal_percent_max_hp: 12%` | None |
+| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25%, 1000ms | `heal_percent_max_hp: 12%` | None |
 | **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `mastery_mod: light +15` | None |
 | **shadow** | `trait_shadow_umbral_cloak` | `always` | `{}` | `evasion_mod_percent: +5%`, `resist_mod: light -15` | Yes (`resist light -15`) |
 | **shadow** | `trait_shadow_fade_step` | `on_move_used` | `shadow`, 3000ms | `move_speed_mod_percent: +15%` | None |
@@ -109,11 +109,11 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 - **Total Triggers**: **30**
 
 ### Effects Distribution (All ≥ 3)
-- `mastery_mod`: 5 instances
+- `mastery_mod`: 6 instances
 - `resist_mod`: 8 instances
-- `cd_mod_percent`: 3 instances
+- `cd_mod_percent`: 4 instances
 - `evasion_mod_percent`: 5 instances
-- `move_speed_mod_percent`: 9 instances
+- `move_speed_mod_percent`: 7 instances
 - `range_mod_percent`: 7 instances
 - `heal_percent_max_hp`: 3 instances
 - **Total Effect Instances**: **40** (20 traits with 1 effect, 10 traits with 2 effects)
@@ -125,8 +125,8 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 - **Total Side-Grade Traits**: **10** (exactly 1 per element)
 
 ### Permanent (`always`) Magnitude Check
-All permanent traits utilize strictly conservative values compared to conditional activations:
-- `trait_fire_smoldering_core`: `cd_mod_percent: fire -10%` (conditional cooldown reductions are -20% to -25%)
+Permanent traits use conservative values; the cooldown reduction equals the smallest conditional reduction:
+- `trait_fire_smoldering_core`: `cd_mod_percent: fire -10%` (conditional cooldown reductions are -10% to -20%)
 - `trait_thunder_plasma_charge`: `range_mod_percent: +8%` (conditional ranges are +15% to +20%)
 - `trait_shadow_umbral_cloak`: `evasion_mod_percent: +5%` (conditional evasions are +8% to +10%)
 
@@ -134,30 +134,36 @@ All permanent traits utilize strictly conservative values compared to conditiona
 
 ## Coverage Gap Analysis (Batch 01 + Batch 02 vs. Batch 03)
 
-In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remained unrepresented (0 occurrences) or severely under-represented (only 1 occurrence). Batch 03 explicitly reinforces **20 low-frequency combinations** (count ≤ 1 across B01+B02), achieving balanced matrix coverage:
+In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remained unrepresented (0 occurrences) or severely under-represented (only 1 occurrence). Batch 03 explicitly reinforces **18 low-frequency combinations** (count ≤ 1 across B01+B02), achieving balanced matrix coverage:
 
 | Trigger Type | Effect Type | B01+B02 Count | Added in B03 | B03 Trait IDs | New Combined Count |
 |---|---|:---:|:---:|---|:---:|
-| `on_ally_swap` | `range_mod_percent` | **0** | **+2** | `trait_metal_ballistic_pivot`, `trait_earth_faultline_shift` | **2** |
-| `always` | `range_mod_percent` | **1** | **+1** | `trait_thunder_plasma_charge` | **2** |
 | `always` | `cd_mod_percent` | **1** | **+1** | `trait_fire_smoldering_core` | **2** |
-| `on_hp_below` | `range_mod_percent` | **1** | **+2** | `trait_wood_thorn_lash`, `trait_earth_shattered_carapace` | **3** |
-| `on_hp_below` | `move_speed_mod_percent` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_wind_desperation_updraft` | **3** |
-| `on_hp_cross_below` | `heal_percent_max_hp` | **1** | **+1** | `trait_light_saving_grace` | **2** |
-| `on_hp_below` | `mastery_mod` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_thunder_crisis_arc` | **3** |
-| `on_hp_above` | `move_speed_mod_percent` | **1** | **+3** | `trait_wood_overgrowth_surge`, `trait_fire_scorching_momentum`, `trait_thunder_supercharged_stride` | **4** |
-| `on_hp_above` | `mastery_mod` | **1** | **+1** | `trait_ice_subzero_focus` | **2** |
-| `on_summon` | `resist_mod` | **1** | **+1** | `trait_earth_grounding_mantle` | **2** |
-| `on_summon` | `cd_mod_percent` | **1** | **+1** | `trait_wind_tempest_headway` | **2** |
-| `on_summon` | `heal_percent_max_hp` | **1** | **+1** | `trait_water_revitalizing_spring` | **2** |
+| `always` | `range_mod_percent` | **1** | **+1** | `trait_thunder_plasma_charge` | **2** |
+| `on_ally_swap` | `range_mod_percent` | **0** | **+2** | `trait_metal_ballistic_pivot`, `trait_earth_faultline_shift` | **2** |
+| `on_hit_taken` | `evasion_mod_percent` | **1** | **+1** | `trait_wind_slipstream_dodge` | **2** |
 | `on_hit_taken` | `heal_percent_max_hp` | **1** | **+1** | `trait_wood_sap_absorption` | **2** |
 | `on_hit_taken` | `mastery_mod` | **1** | **+2** | `trait_water_rippling_counter`, `trait_shadow_dark_retaliation` | **3** |
 | `on_hit_taken` | `range_mod_percent` | **1** | **+1** | `trait_ice_mirror_frost` | **2** |
-| `on_hit_taken` | `evasion_mod_percent` | **1** | **+1** | `trait_wind_slipstream_dodge` | **2** |
-| `on_move_used` | `move_speed_mod_percent` | **1** | **+3** | `trait_water_torrential_deluge`, `trait_ice_hoarfrost_tread`, `trait_shadow_fade_step` | **4** |
+| `on_hp_above` | `mastery_mod` | **1** | **+1** | `trait_ice_subzero_focus` | **2** |
+| `on_hp_above` | `move_speed_mod_percent` | **1** | **+2** | `trait_wood_overgrowth_surge`, `trait_fire_scorching_momentum` | **3** |
+| `on_hp_below` | `mastery_mod` | **1** | **+2** | `trait_metal_scrap_overdrive`, `trait_thunder_crisis_arc` | **3** |
+| `on_hp_below` | `move_speed_mod_percent` | **0** | **+2** | `trait_metal_scrap_overdrive`, `trait_wind_desperation_updraft` | **2** |
+| `on_hp_below` | `range_mod_percent` | **1** | **+2** | `trait_wood_thorn_lash`, `trait_earth_shattered_carapace` | **3** |
+| `on_hp_cross_below` | `heal_percent_max_hp` | **1** | **+1** | `trait_light_saving_grace` | **2** |
 | `on_move_used` | `evasion_mod_percent` | **1** | **+2** | `trait_fire_cinder_screen`, `trait_light_luminous_barrier` | **3** |
+| `on_move_used` | `move_speed_mod_percent` | **1** | **+3** | `trait_water_torrential_deluge`, `trait_ice_hoarfrost_tread`, `trait_shadow_fade_step` | **4** |
 | `on_move_used` | `resist_mod` | **1** | **+2** | `trait_ice_hoarfrost_tread`, `trait_light_luminous_barrier` | **3** |
-| `on_ally_swap` | `move_speed_mod_percent` | **1** | **+1** | `trait_light_guiding_beam` | **2** |
+| `on_summon` | `cd_mod_percent` | **1** | **+1** | `trait_wind_tempest_headway` | **2** |
+| `on_summon` | `resist_mod` | **1** | **+1** | `trait_earth_grounding_mantle` | **2** |
+
+Other revised combinations have more than one prior occurrence:
+
+| Trigger Type | Effect Type | B01+B02 Count | Added in B03 | B03 Trait IDs | New Combined Count |
+|---|---|:---:|:---:|---|:---:|
+| `on_ally_swap` | `mastery_mod` | **2** | **+1** | `trait_light_guiding_beam` | **3** |
+| `on_hp_above` | `cd_mod_percent` | **2** | **+1** | `trait_thunder_supercharged_stride` | **3** |
+| `on_move_used` | `heal_percent_max_hp` | **2** | **+1** | `trait_water_revitalizing_spring` | **3** |
 
 ---
 
@@ -168,7 +174,7 @@ In Batch 01 and Batch 02 combined, several (trigger, effect) combinations remain
 3. **Compound Buff/Drawback Resolution on Buff Expiration**: Traits like `trait_metal_scrap_overdrive` or `trait_water_torrential_deluge` combine a positive modifier with a speed reduction. If an external cleanse or purge mechanic removes positive buffs, game rules must clarify whether the drawback expires simultaneously or tracks its own independent duration.
 
 ## 修訂 2026-11-07（P5-08 A1/A14，使用者裁決）
-執行期完全同效的特性改綁各自主題，下方分佈統計表是修訂前的數字，未重算：
+執行期完全同效的特性改綁各自主題；分佈與覆蓋統計已於 2026-11-08 從 `traits.json` 重新產生：
 - `trait_thunder_supercharged_stride`：移速 +15% → 雷招 CD −10%（原與 `trait_fire_scorching_momentum` 完全相同）。
 - `trait_water_revitalizing_spring`：上場治療 8% → 使用水招時治療 4%（原與 `trait_wood_photosynthesis` 同效；先改的「受水擊治療 6%」又與 `trait_wood_sap_absorption` 相同，故再改）。
 - `trait_light_guiding_beam`：換手移速 +20% → 換手光專精 +15（原與 `trait_wind_tailwind_glide` 僅差 1 s）。

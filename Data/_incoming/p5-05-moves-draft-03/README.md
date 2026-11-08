@@ -5,7 +5,7 @@
 ## Overview
 This batch contains the third draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), completing roadmap item **P5-05**'s 120-move foundational damage pool.
 - **Scope**: Exactly 40 new moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), exactly 4 moves per element.
-- **Move Kind**: `damage` only (status and secondary effect schema/vocabularies are deferred to P2; no `effect` block is included).
+- **Move Kind**: `damage` only (no `effect` block in this batch; the effect vocabulary was closed by P2-01).
 - **Batch Role & Focus**:
   - Bridges the extremes of Batch 01 and Batch 02 by providing core mid-band "utility" attacks (`power 50–75`) for every element.
   - Surgically eliminates remaining spatial deficits in the (element × shape) and (element × range_class) matrices.
@@ -120,7 +120,7 @@ As with earlier batches, several moves authored in Batch 03 were deliberately de
    - `shadow_twilight_phase`: Shadow phase shifting granting partial collision intangibility.
 
 ## Open Questions
-1. **Targeting Origin Distinction for AoE**: Currently, `shape: "aoe"` encompasses both caster-centered novas (`fire_flare_nova`, `ice_permafrost_surge`, `wind_whirlwind_burst`) and targeted remote ground reticles (`metal_anvil_drop`, `earth_stalagmite_field`, `shadow_void_well`). As combat prototyping advances in P2, consider extending the schema or metadata to distinguish `aoe_self` from `aoe_ground`.
+1. ~~**Targeting Origin Distinction for AoE**: Currently, `shape: "aoe"` encompasses both caster-centered novas and targeted remote ground reticles; extend the schema to distinguish them.~~ 已由 P2-04 結案：`shape: "burst"` requires `origin: "caster"` or `"target"`.
 2. **Dash Trajectory vs. Teleport**: Skills like `shadow_twilight_phase` and `light_luminous_glide` straddle the border between high-speed physical translation and short-range blink/teleport. The collision subsystem will need parameters indicating whether hitboxes remain active and vulnerable along the traversed path.
 3. **Horizon Horizon Cut-off for Planetary Long-Range Projectiles**: Long-range beam and volley attacks (`light_zenith_lance`, `earth_tectonic_lance`, `metal_shard_volley`) will require curvature-aware tracing on smaller celestial bodies to ensure raycasts follow planetary geodesic terrain without flying into orbit prematurely.
 4. **Integration with P2-10 AI Combat Evaluator**: With 120 total damage moves spanning all 10 elements, AI combat behavior trees will need clear heuristics to pick between pokes, mid-band utility, and heavy finishers based on enemy distance and vulnerability windows.

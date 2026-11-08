@@ -5,7 +5,7 @@
 ## Overview
 This batch contains the second draft of 40 placeholder damage moves for COSMIMERA (`moves/moves.json`), corresponding to roadmap item **P5-05**.
 - **Scope**: Exactly 40 new moves across all 10 elements (`metal`, `wood`, `water`, `fire`, `earth`, `ice`, `wind`, `thunder`, `light`, `shadow`), 4 moves per element.
-- **Move Kind**: `damage` only (status/effect schema and vocabularies are deferred to P2; no `effect` block is included).
+- **Move Kind**: `damage` only (no `effect` block in this batch; the effect vocabulary was closed by P2-01).
 - **Target Niches**: Expands on coverage gaps from Batch 01 by ensuring every element includes at least one low-power fast "poke" (`power <= 40`, `cooldown_ms <= 1500`) and at least one high-commitment finisher (`power >= 90`).
 - **Concept & ID Freshness**: Every ID is newly introduced with zero reuse from Batch 01 or retired IDs, avoiding near-duplicate mechanics or concepts from the first batch.
 
@@ -94,4 +94,4 @@ When P2 standardizes the closed rule/effect vocabulary, several moves in this ba
 1. **Spatial & Movement Collision Tuning**: `dash` moves (`water_rip_current`, `wind_draft_step`, `thunder_fulgur_dive`, etc.) need collision volume dimensions, pass-through permissions (whether the user stops on enemy collision or clips through), and maximum dash distance calibrated during combat implementation.
 2. **Finisher Windup / Recovery Telegraphing**: Moves with `power >= 100` and `cooldown_ms >= 7500` (`metal_rail_slug`, `thunder_megavolt_burst`, `shadow_singularity_maw`, etc.) require clear cast windup animations and telegraph decals on the ground to give players and AI viable dodge windows.
 3. **Spherical Coordinate Scaling for Long-Range Lines**: Long-range line attacks (`metal_rail_slug`, `water_maelstrom_lance`, `wind_typhoon_spire`) on small planets could exceed horizon curvature if modeled as pure Euclidean rays. The combat engine needs clear clamping or geodesic tangent projection.
-4. **Effect Vocabulary Schema Migration**: Once the P2 effect vocabulary is finalized, the designated candidates above should be reviewed by designers for migration from `kind: "damage"` to `kind: "both"` with explicit structured effect blocks.
+4. **Effect Vocabulary Schema Migration**: ~~The P2 effect vocabulary needs to be finalized.~~ 已由 P2-01 結案；designers should still review the candidates above for migration from `kind: "damage"` to `kind: "both"`.

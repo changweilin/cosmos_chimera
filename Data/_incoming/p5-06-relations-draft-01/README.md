@@ -83,4 +83,18 @@
 - 現行考據庫中，本批 30 型態使用的 10 個原型皆標記為 `sensitivity: "ok"`，**2 條 `myth_kin` 邊均未觸及現行標為 `review` 之原型**。
 - 邊界提醒：`(water_catamaran_serpent, wood_canopy_regent)` 所涉 `arch_edai_siabo_lakatoi`（莫圖族陶船傳奇）於 P5-02 `README-b.md` 列為「原住民族口傳敘事敏感度待人工確認邊界」項目，且 `arch_sarimanok` 為馬拉瑙族重要文化象徵；本批 `note` 僅陳述南島語族海洋與神鳥圖騰文化圈之學術關聯，未挪用神聖儀軌或真名。
 
+## 7. 理由強度抽查（Claude Opus 代 SONNET，2026-11-08，全 23 條）
+
+逐條比對兩端 `concept`（base／stage_look／archetype／role）。結構面無誤（mentor 兩端必為成年＋幼年、tool_kin 至少一端含器械或載具基底）。理由需人工決定或改寫者：
+
+| # | 邊 | 問題 | 建議 |
+|---|---|---|---|
+| R1 | `(ice_tundra_dreadnought, star_skyhoof_steed)` myth_kin | §4 寫「塞迦—突厥神駒**直系**」：巴澤雷克（前 4 世紀塞迦）與圖爾帕爾（突厥／哈薩克）同屬草原馬崇拜是學界常見比較，「直系」無出處支撐；且巴澤雷克原型是有角格里芬，不是馬 | note／README 改為「同屬阿爾泰草原有翼神獸母題」，或補出處；否則降為 `rival_symbiosis`／刪除 |
+| R2 | `(water_catamaran_serpent, wood_canopy_regent)` myth_kin | 莫圖族（巴布亞）與馬拉瑙族（民答那峨）只在語族層級同屬南島語系，沒有共同神話母體；`myth_kin` 的定義是共同神話源流 | 人工決定 myth_kin 是否接受「語族級」關聯；不接受則改 `tool_kin`（帆舟 × 彩舟意象不成立）或刪除，並確認兩族敏感度（§6） |
+| R3 | `(earth_pebble_pawn, fire_ember_cub)` rival_symbiosis | 「火山湖」是 P5-02 `arch_el_dorado_muisca` motif 的用語，但瓜塔維塔湖成因有爭議（常見說法為塌陷／溶蝕，並非公認火山口湖）；「地熱孕晶」因此缺乏依據 | 先改 P5-02 motif 為「高山聖湖綠寶石」，此邊改以「岩殼護燼」單一意象或刪除 |
+| R4 | `(metal_gear_strider, wind_flute_cruiser)` tool_kin | 敲擊音板 vs 氣鳴排笛，Argon 已自列為延伸意象（§4） | 同意 §4：待人工；兩端度數刪後仍 ≥ 2（4→3、3→2），可安全刪除 |
+| R5 | `(metal_clock_chick, sun_mirror_chick)` tool_kin | `sun_mirror_chick` 基底是「太陽鳥雛鳥 × 頭頂小鏡」，器械成分只有一面鏡子；理由（測時 × 追光儀器）成立但偏弱 | 保留；它是商圖生成樹邊 1，刪除前需另補 sun—metal 連通 |
+
+其餘 18 條理由與雙方設定一致。R1／R2 是本表僅有的 2 條 myth_kin，若都不成立，`myth_kin` 會歸零 — 是否要求每類關係至少出現一次需人工決定。
+
 - 2026-11-07 · Gemini Argon · partial · P5-06 草稿 01：為 30 型態提出 23 條跨線關係邊（總度數全數 2–4、10 線單一連通分量）並附平衡與敏感度分析 · 下一步：SONNET 跑 validate-data 並審查理由強度；人工裁決越階副手與副專精配對平衡
