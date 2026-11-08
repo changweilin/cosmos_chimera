@@ -82,6 +82,8 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 ## 招式效果
 2026-11-06 使用者確認：`kind` 為 effect/both 的招式，除 `heal_percent_max_hp`（瞬間）外必須填 `effect_duration_ms`（1..600000），表示效果在每個被命中目標上持續的時間；heal 與 damage 招式不得填。作用對象由 `shape` 決定：`self` → 施放者、`ally` → 指定隊友、其他形狀 → 判定體命中的敵方目標。同一效果重複施加時的刷新/疊加規則由 P2-09 定。
 
+招式命名（2026-11-08 定案，P5-08 A5／Q-C26）：`light_aureole_halo` 改為 `light_crown_radiance`，舊 ID 退役，數值與效果沿用；其他招式／特性共用 cinder、tailwind、halo 詞根可保留，後續玩家顯示名需區分用詞。
+
 ## 場地（Q-C17 定案 2026-11-06）
 - `shape: field` 的招式必填 `field_duration_ms`（1..600000），其他形狀不得填。場地存在於 [放置, 放置+壽命)。
 - 放置當下結算第一次，之後每 `Data/balance.json#field.tick_ms`（1000 ms）結算一次，共 ceil(壽命/間隔) 次；每次結算對判定體內每個目標各做一次完整招式結算（命中擲骰＋傷害/效果），所以同一目標每次結算最多被作用一次。

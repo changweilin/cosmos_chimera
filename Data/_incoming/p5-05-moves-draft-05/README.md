@@ -68,7 +68,7 @@ Values are strictly integers obeying monotonic trade-offs:
 | **ice** | `ice_glacial_mirror`<br>(0 P / 6500ms / 100% / self / melee)<br>`evasion_mod_percent` +20 (8s) | `ice_numbing_haze`<br>(0 P / 9000ms / 80% / cone / long)<br>`move_speed_mod_percent` -25 (8s) | `ice_brittle_strike`<br>(40 P / 2400ms / 100% / front / melee)<br>`resist_mod` ice -25 (6s) | Frost refraction dodging, long-range blizzard slow, brittle freeze vulnerability |
 | **wind** | `wind_tailwind_boon`<br>(0 P / 7000ms / 100% / self / melee)<br>`range_mod_percent` +25 (8s) | `wind_haste_current`<br>(0 P / 8500ms / 100% / ally / mid)<br>`move_speed_mod_percent` +30 (8s) | `wind_turbulent_arc`<br>(45 P / 2800ms / 90% / arc / mid)<br>`evasion_mod_percent` -20 (6s) | Ballistic range expansion, targeted gale haste, destabilizing crosswind |
 | **thunder** | `thunder_overclock_charge`<br>(0 P / 9000ms / 100% / self / melee)<br>`cd_mod_percent` thunder -25 (8s) | `thunder_amplifying_spark`<br>(0 P / 8500ms / 100% / ally / mid)<br>`range_mod_percent` +25 (8s) | `thunder_draining_bolt`<br>(65 P / 4200ms / 85% / line / long)<br>`cd_mod_percent` any +20 (6s) | Internal cycle acceleration, ally electric conductance range, neural cooldown drain |
-| **light** | `light_radiant_benediction`<br>(0 P / 15000ms / 100% / ally / mid)<br>`heal_percent_max_hp` 35% | `light_aureole_halo`<br>(0 P / 8000ms / 100% / self / melee)<br>`mastery_mod` light +25 (9s) | `light_dazzling_crescent`<br>(45 P / 2600ms / 95% / sweep / melee)<br>`resist_mod` light -20 (6s) | High-potency single-target blessing, divine solar halo, light-exposing crescent sweep (lowers light resist; no blind status) |
+| **light** | `light_radiant_benediction`<br>(0 P / 15000ms / 100% / ally / mid)<br>`heal_percent_max_hp` 35% | `light_crown_radiance`<br>(0 P / 8000ms / 100% / self / melee)<br>`mastery_mod` light +25 (9s) | `light_dazzling_crescent`<br>(45 P / 2600ms / 95% / sweep / melee)<br>`resist_mod` light -20 (6s) | High-potency single-target blessing, divine solar halo, light-exposing crescent sweep (lowers light resist; no blind status) |
 | **shadow** | `shadow_veiling_mist`<br>(0 P / 7500ms / 100% / ally / mid)<br>`move_speed_mod_percent` +25 (8s) | `shadow_enervating_mire`<br>(0 P / 9500ms / 90% / burst / mid)<br>`mastery_mod` shadow -25 (8s) | `shadow_umbra_curse`<br>(55 P / 3600ms / 80% / arc / long)<br>`range_mod_percent` -25 (7s) | Cloaked ally speed buff, ranged mire enervation, long-range perception atrophy |
 
 ---
@@ -95,7 +95,7 @@ Values are strictly integers obeying monotonic trade-offs:
 - **Total**: Exactly 30 moves.
 
 ### Per Shape & Targeting Category
-- `self` (Caster buff / self sustain): Exactly 12 moves (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`).
+- `self` (Caster buff / self sustain): Exactly 12 moves (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_crown_radiance`).
 - `ally` (Targeted teammate buff / heal): Exactly 6 moves (`wood_verdant_infusion`, `water_healing_spring`, `wind_haste_current`, `thunder_amplifying_spark`, `light_radiant_benediction`, `shadow_veiling_mist`).
 - Enemy-targeting (Offensive debuff / damage + debuff): Exactly 12 moves:
   - `front`: 2 moves (`metal_magnet_strike`, `ice_brittle_strike`)
@@ -116,7 +116,7 @@ Values are strictly integers obeying monotonic trade-offs:
 | Effect Type | Buffs (`self` / `ally`) | Debuffs (Enemy) | Total Count | Specific Moves |
 |---|---|---|---|---|
 | `heal_percent_max_hp` | 4 (2 self, 2 ally) | 0 | **4** | `wood_sunlight_mend`, `water_healing_spring`, `earth_mineral_communion`, `light_radiant_benediction` |
-| `mastery_mod` | 3 (3 self, 0 ally) | 1 | **4** | `metal_alloy_polish` (+20), `fire_kindle_ward` (+25), `light_aureole_halo` (+25), `shadow_enervating_mire` (-25) |
+| `mastery_mod` | 3 (3 self, 0 ally) | 1 | **4** | `metal_alloy_polish` (+20), `fire_kindle_ward` (+25), `light_crown_radiance` (+25), `shadow_enervating_mire` (-25) |
 | `resist_mod` | 2 (2 self, 0 ally) | 3 | **5** | `metal_ferro_temper` (+25), `earth_granite_stance` (+30), `water_drenching_surge` (-20), `ice_brittle_strike` (-25), `light_dazzling_crescent` (-20) |
 | `cd_mod_percent` | 2 (1 self, 1 ally) | 2 | **4** | `wood_verdant_infusion` (-15), `thunder_overclock_charge` (-25), `earth_tremor_stomp` (+20), `thunder_draining_bolt` (+20) |
 | `evasion_mod_percent` | 2 (2 self, 0 ally) | 2 | **4** | `water_vapor_veil` (+25), `ice_glacial_mirror` (+20), `wood_thorn_snare` (-20), `wind_turbulent_arc` (-20) |
@@ -130,7 +130,7 @@ Values are strictly integers obeying monotonic trade-offs:
 
 | Shape | Melee (0 mm / 2000 mm) | Mid (12000 mm) | Long (24000 mm) | Total |
 |---|---|---|---|---|
-| **self** | 12 (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_aureole_halo`) | 0 | 0 | **12** |
+| **self** | 12 (`metal_ferro_temper`, `metal_alloy_polish`, `wood_sunlight_mend`, `water_vapor_veil`, `fire_kindle_ward`, `fire_thermal_sprint`, `earth_mineral_communion`, `earth_granite_stance`, `ice_glacial_mirror`, `wind_tailwind_boon`, `thunder_overclock_charge`, `light_crown_radiance`) | 0 | 0 | **12** |
 | **ally** | 0 | 6 (`wood_verdant_infusion`, `water_healing_spring`, `wind_haste_current`, `thunder_amplifying_spark`, `light_radiant_benediction`, `shadow_veiling_mist`) | 0 | **6** |
 | **front** | 2 (`metal_magnet_strike`, `ice_brittle_strike`) | 0 | 0 | **2** |
 | **sweep** | 2 (`fire_cinder_slash`, `light_dazzling_crescent`) | 0 | 0 | **2** |
