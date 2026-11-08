@@ -70,7 +70,7 @@ namespace Cosmimera.Bootstrap.Tests
                 {
                     PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
                 }, wild, o => outcome = o, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
-                Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"));
+                Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
             float deadline = Time.realtimeSinceStartup + 60f;
             while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
@@ -126,6 +126,15 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(rig.Config.Altitude(p), Is.EqualTo(rig.SurfaceHeight(dir) - 0.1f).Within(0.15f),
                     "scatter root sits on the ground: " + root.name);
             }
+
+            // P1-08 star shell: attached, centred on the camera, opacity in range.
+            var stars = session.GetComponent<StarField>();
+            Assert.That(stars, Is.Not.Null, "star field is attached");
+            Assert.That(stars.Visibility, Is.InRange(0f, 1f));
+            // Relative bound: -nographics never fires beginCameraRendering, so only the LateUpdate placement (one
+            // Cinemachine frame behind) is observable here; 1e-3 of the shell radius is far below one pixel of parallax.
+            Assert.That(Vector3.Distance(stars.Shell.position, rig.Camera.transform.position),
+                Is.LessThan(stars.Shell.localScale.x * 1e-3f), "star shell follows the camera");
 
             if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") == "1")
             {

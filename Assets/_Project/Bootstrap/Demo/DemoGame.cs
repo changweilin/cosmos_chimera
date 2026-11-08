@@ -43,6 +43,7 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private string _language = "zh-TW";
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
+        [SerializeField] private Shader _starShader;
         [SerializeField] private TextAsset[] _geoMeta;
         [SerializeField] private TextAsset[] _geoHeights;
         [SerializeField] private TextAsset[] _geoWater;
@@ -332,7 +333,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
                     Templates = _templates, TemplateTags = _templateTags,
-                }, _wildPool, OnRunEnded, _terrainShader, _toonShader);
+                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
         }
 
@@ -401,11 +402,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
+            game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
             game._geoMeta = meta.ToArray();
             game._geoHeights = heights.ToArray();
             game._geoWater = water.ToArray();
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
-                         game._strings, game._names, game._terrainShader, game._toonShader, game._affixes, game._themes, game._quests, game._epithets })
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets })
             {
                 if (o == null)
                 {

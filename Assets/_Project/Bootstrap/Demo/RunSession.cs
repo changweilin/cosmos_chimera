@@ -156,7 +156,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
-            Shader toonShader = null)
+            Shader toonShader = null, Shader starShader = null)
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
@@ -200,6 +200,11 @@ namespace Cosmimera.Bootstrap.Demo
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f);
+            if (starShader != null)
+            {
+                gameObject.AddComponent<StarField>().Configure(_rig.Camera, _rig.Sun, config, setup.Seed, starShader);
+            }
+
             if (toonShader != null)
             {
                 var surface = new HeightSurface(height, templates);

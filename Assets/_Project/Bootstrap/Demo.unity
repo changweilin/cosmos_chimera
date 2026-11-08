@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1496511592
+--- !u!1 &1089608408
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1496511594}
-  - component: {fileID: 1496511593}
+  - component: {fileID: 1089608410}
+  - component: {fileID: 1089608409}
   m_Layer: 0
   m_Name: DemoGame
   m_TagString: Untagged
@@ -136,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1496511593
+--- !u!114 &1089608409
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1496511592}
+  m_GameObject: {fileID: 1089608408}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52e13305c15de4c46aeb0d28aa72bd3a, type: 3}
@@ -161,6 +161,7 @@ MonoBehaviour:
   _language: zh-TW
   _terrainShader: {fileID: 4800000, guid: d09290f17421722418f56efbef4dbb9e, type: 3}
   _toonShader: {fileID: 4800000, guid: 839c81a2e4cc9664d8f6a223c32ac9c4, type: 3}
+  _starShader: {fileID: 4800000, guid: 7c3f1a9e5b2d4e8fa61c0d93b47e2f15, type: 3}
   _geoMeta:
   - {fileID: 4900000, guid: 8773132245332e24791cca42ba4aa8cd, type: 3}
   - {fileID: 4900000, guid: 01674f985ecdfea489a2b7675193c961, type: 3}
@@ -200,13 +201,13 @@ MonoBehaviour:
   - {fileID: 4900000, guid: b57ec3c2526157c4abc4791e6ac6df18, type: 3}
   - {fileID: 4900000, guid: 6c1b63888f3fd1843891e8295197efeb, type: 3}
   - {fileID: 4900000, guid: f1329c6c0b018304f95f1f2b54c9b57d, type: 3}
---- !u!4 &1496511594
+--- !u!4 &1089608410
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1496511592}
+  m_GameObject: {fileID: 1089608408}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -219,4 +220,4 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1496511594}
+  - {fileID: 1089608410}
