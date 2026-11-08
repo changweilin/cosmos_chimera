@@ -62,7 +62,7 @@ The original evasion design band is -10 to +15%; the table shows the observed ba
 | **water** | `trait_water_spring_surge` | `on_ally_swap` | 5000ms | `heal_percent_max_hp: 7%` | None |
 | **fire** | `trait_fire_pyroclastic_burst` | `on_summon` | 5000ms | `mastery_mod: fire +25`, `evasion_mod_percent: -6%` | Yes (`evasion -6%`) |
 | **fire** | `trait_fire_wildfire_momentum` | `on_hit_taken` | `fire`, 4000ms | `move_speed_mod_percent: +20%` | None |
-| **fire** | `trait_fire_conflagration_flare` | `on_hp_below` | 30% | `range_mod_percent: +20%` | None |
+| **fire** | `trait_fire_conflagration_flare` | `on_hp_below` | 30% | `range_mod_percent: +25%` | None |
 | **earth** | `trait_earth_crag_attunement` | `always` | `{}` | `mastery_mod: earth +12`, `move_speed_mod_percent: -8%` | Yes (`move_speed -8%`) |
 | **earth** | `trait_earth_landslide_charge` | `on_move_used` | `earth`, 4000ms | `move_speed_mod_percent: +15%` | None |
 | **earth** | `trait_earth_unyielding_mantle` | `on_hit_taken` | `earth`, 5000ms | `resist_mod: water +25` | None |

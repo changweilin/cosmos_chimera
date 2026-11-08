@@ -229,7 +229,7 @@
       {
         "type": "range_mod_percent",
         "params": {
-          "delta": 20
+          "delta": 25
         }
       }
     ]

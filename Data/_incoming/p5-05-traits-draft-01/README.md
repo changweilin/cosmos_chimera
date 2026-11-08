@@ -51,7 +51,7 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **water** | `trait_water_torrent_flow` | `on_move_used` | `water`, 4000ms | `cd_mod_percent: water -20%` | None |
 | **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30%, 1000ms | `heal_percent_max_hp: 12%` | None |
 | **fire** | `trait_fire_blazing_fury` | `on_hp_below` | 35% | `mastery_mod: fire +30`, `resist_mod: water -20` | Yes (`resist water -20%`) |
-| **fire** | `trait_fire_heat_exhaust` | `on_summon` | 5000ms | `move_speed_mod_percent: +15%` | None |
+| **fire** | `trait_fire_heat_exhaust` | `on_summon` | 5000ms | `move_speed_mod_percent: +20%` | None |
 | **fire** | `trait_fire_thermal_recharge` | `on_hit_taken` | `fire`, 5000ms | `cd_mod_percent: fire -25%` | None |
 | **earth** | `trait_earth_monolith_posture` | `always` | `{}` | `resist_mod: earth +25`, `evasion_mod_percent: -6%` | Yes (`evasion -6%`) |
 | **earth** | `trait_earth_tectonic_rebound` | `on_hit_taken` | `any`, 4000ms | `mastery_mod: earth +15` | None |
@@ -68,9 +68,9 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **light** | `trait_light_aurora_veil` | `on_ally_swap` | 5000ms | `resist_mod: shadow +25` | None |
 | **light** | `trait_light_solar_overdrive` | `on_hp_above` | 70% | `mastery_mod: light +20`, `range_mod_percent: -10%` | Yes (`range -10%`) |
 | **light** | `trait_light_dawn_renewal` | `on_hit_taken` | `shadow`, 3000ms | `cd_mod_percent: light -15%` | None |
-| **shadow** | `trait_shadow_void_embrace` | `on_hp_below` | 25% | `evasion_mod_percent: +10%` | None |
+| **shadow** | `trait_shadow_void_embrace` | `on_hp_below` | 25% | `evasion_mod_percent: +15%` | None |
 | **shadow** | `trait_shadow_umbral_ambush` | `on_ally_swap` | 4000ms | `mastery_mod: shadow +25`, `resist_mod: light -20` | Yes (`resist light -20%`) |
-| **shadow** | `trait_shadow_dusk_flicker` | `on_hp_above` | 90% | `move_speed_mod_percent: +15%` | None |
+| **shadow** | `trait_shadow_dusk_flicker` | `on_hp_above` | 90% | `move_speed_mod_percent: +20%` | None |
 
 ### Trigger Distribution Summary
 - `always`: 5 traits

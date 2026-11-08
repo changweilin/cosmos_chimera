@@ -61,7 +61,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **fire** | `trait_fire_smoldering_core` | `always` | `{}` | `cd_mod_percent: fire -10%`, `resist_mod: water -15` | Yes (`resist water -15`) |
 | **fire** | `trait_fire_scorching_momentum` | `on_hp_above` | 80% | `move_speed_mod_percent: +15%` | None |
 | **fire** | `trait_fire_cinder_screen` | `on_move_used` | `fire`, 3000ms | `evasion_mod_percent: +8%` | None |
-| **earth** | `trait_earth_shattered_carapace` | `on_hp_below` | 30% | `range_mod_percent: +20%`, `resist_mod: earth -15` | Yes (`resist earth -15`) |
+| **earth** | `trait_earth_shattered_carapace` | `on_hp_below` | 30% | `range_mod_percent: +30%`, `resist_mod: earth -15` | Yes (`resist earth -15`) |
 | **earth** | `trait_earth_grounding_mantle` | `on_summon` | 6000ms | `resist_mod: thunder +30` | None |
 | **earth** | `trait_earth_faultline_shift` | `on_ally_swap` | 5000ms | `range_mod_percent: +15%` | None |
 | **ice** | `trait_ice_hoarfrost_tread` | `on_move_used` | `ice`, 4000ms | `move_speed_mod_percent: +15%`, `resist_mod: fire -15` | Yes (`resist fire -15`) |
@@ -74,7 +74,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **thunder** | `trait_thunder_crisis_arc` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
 | **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `cd_mod_percent: thunder -10%` | None |
 | **light** | `trait_light_luminous_barrier` | `on_move_used` | `light`, 4000ms | `resist_mod: shadow +25`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
-| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25%, 1000ms | `heal_percent_max_hp: 12%` | None |
+| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25%, 1000ms | `heal_percent_max_hp: 15%` | None |
 | **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `mastery_mod: light +15` | None |
 | **shadow** | `trait_shadow_umbral_cloak` | `always` | `{}` | `evasion_mod_percent: +5%`, `resist_mod: light -15` | Yes (`resist light -15`) |
 | **shadow** | `trait_shadow_fade_step` | `on_move_used` | `shadow`, 3000ms | `move_speed_mod_percent: +15%` | None |
