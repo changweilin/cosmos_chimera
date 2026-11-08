@@ -49,11 +49,27 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             party.RemoveAll(c => c.Stage != CreatureStage.Adult);
+            var meta = new List<TextAsset>();
+            var heights = new List<TextAsset>();
+            var water = new List<TextAsset>();
+            foreach (string id in new[] { "etna_volcano", "sognefjord", "olympic_forest", "kenya_rift" })
+            {
+                meta.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".meta.json"));
+                heights.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".height.bytes"));
+                water.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".water.bytes"));
+            }
+
+            var templates = new List<Planet.TemplateSource>();
+            var tags = new List<IReadOnlyList<string>>();
+            GeoTemplateLoader.Load(meta.ToArray(), heights.ToArray(), water.ToArray(), templates, tags);
             RunOutcome outcome = null;
             var session = new GameObject("Run").AddComponent<RunSession>();
             session.Configure(copy, balance, Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
-                new RunSetup { PlanetType = type, Seed = 2026, Radius = 640f, Party = party }, wild, o => outcome = o);
+                new RunSetup
+                {
+                    PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
+                }, wild, o => outcome = o);
 
             float deadline = Time.realtimeSinceStartup + 60f;
             while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
@@ -97,6 +113,33 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(hit, Is.True, "some fielded creature took damage within 60 s");
+            if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") == "1")
+            {
+                // Visual proof for reviewers (needs a GPU: run without -nographics). Waits for the LOD to settle first.
+                deadline = Time.realtimeSinceStartup + 20f;
+                while (!rig.Terrain.IsSettled && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+
+                for (int f = 0; f < 30; f++)
+                {
+                    yield return null;
+                }
+
+                var rt = new RenderTexture(1280, 720, 24);
+                rig.Camera.targetTexture = rt;
+                rig.Camera.Render();
+                RenderTexture.active = rt;
+                var tex = new Texture2D(1280, 720, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+                tex.Apply();
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath, "..", "Logs", "demo-shot.png"),
+                    tex.EncodeToPNG());
+                rig.Camera.targetTexture = null;
+                RenderTexture.active = null;
+            }
+
             Object.Destroy(session.gameObject);
             yield return null;
         }

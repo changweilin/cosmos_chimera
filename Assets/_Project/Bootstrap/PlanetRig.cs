@@ -14,11 +14,14 @@ namespace Cosmimera.Bootstrap
     public sealed class PlanetRig
     {
         private readonly GameObject[] _owned;
+        private readonly PlanetTemplates _templates;
         private bool _spawned;
 
-        private PlanetRig(PlanetConfig config, PlanetHeight height, float3 spawnDir, PlanetTerrain terrain,
-            SphericalCharacter character, PlayerCameraRig rig, PlayerInputDriver input, Camera camera, GameObject[] owned)
+        private PlanetRig(PlanetConfig config, PlanetHeight height, PlanetTemplates templates, float3 spawnDir,
+            PlanetTerrain terrain, SphericalCharacter character, PlayerCameraRig rig, PlayerInputDriver input,
+            Camera camera, GameObject[] owned)
         {
+            _templates = templates;
             Config = config;
             Height = height;
             SpawnDirection = spawnDir;
@@ -37,6 +40,15 @@ namespace Cosmimera.Bootstrap
         /// <summary>Terrain height function.</summary>
         /// <remarks>Pre: none. Post: valid. Side effects: none.</remarks>
         public PlanetHeight Height { get; }
+
+        /// <summary>Ground altitude (m above Radius) under <paramref name="direction"/>, templates included.</summary>
+        /// <remarks>Pre: not disposed; direction unit. Post: matches the rendered/collided terrain. Side effects: none.</remarks>
+        public float SurfaceHeight(float3 direction) =>
+            _templates != null ? _templates.Sample(Height, direction) : Height.Sample(direction);
+
+        /// <summary>Whether <paramref name="direction"/> is template sea (false without templates).</summary>
+        /// <remarks>Pre: not disposed; direction unit. Post: none. Side effects: none.</remarks>
+        public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
 
         /// <summary>Where the character starts.</summary>
         /// <remarks>Pre: none. Post: unit length. Side effects: none.</remarks>
@@ -68,11 +80,13 @@ namespace Cosmimera.Bootstrap
 
         /// <summary>Creates the rig.</summary>
         /// <remarks>
-        /// Pre: config/height valid; spawnDir unit length; terrainMaterial non-null.
+        /// Pre: config/height valid; spawnDir unit length; terrainMaterial non-null; templates null or undisposed
+        ///      (ownership passes to the rig, which disposes it after the terrain's jobs are complete).
         /// Post: objects exist; character kinematic at the spawn point.
         /// Side effects: creates GameObjects (planet, player, cameras, sun).
         /// </remarks>
-        public static PlanetRig Build(in PlanetConfig config, in PlanetHeight height, float3 spawnDir, Material terrainMaterial)
+        public static PlanetRig Build(in PlanetConfig config, in PlanetHeight height, float3 spawnDir,
+            Material terrainMaterial, PlanetTemplates templates = null)
         {
             var terrain = new GameObject("Planet").AddComponent<PlanetTerrain>();
 
@@ -89,9 +103,17 @@ namespace Cosmimera.Bootstrap
             visual.transform.localPosition = capsule.center;
             visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
 
-            body.transform.SetPositionAndRotation(SpawnPoint(config, height, spawnDir),
+            float spawnHeight = templates != null ? templates.Sample(height, spawnDir) : height.Sample(spawnDir);
+            body.transform.SetPositionAndRotation(config.ToWorld(spawnDir, spawnHeight + 0.3f),
                 quaternion.LookRotationSafe(PlanetFrame.FromUp(spawnDir).North, spawnDir));
-            terrain.Configure(config, height, body.transform, terrainMaterial);
+            if (templates != null)
+            {
+                terrain.Configure(config, height, body.transform, terrainMaterial, templates.View, templates.MaxAbsContribution);
+            }
+            else
+            {
+                terrain.Configure(config, height, body.transform, terrainMaterial);
+            }
 
             var pivot = new GameObject("ViewPivot").transform;
             var cameraGo = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -118,7 +140,7 @@ namespace Cosmimera.Bootstrap
             sun.transform.rotation = Quaternion.LookRotation(-(Vector3)spawnDir + new Vector3(0.3f, 0f, 0.2f));
 
             var owned = new[] { terrain.gameObject, body, pivot.gameObject, cameraGo, third.gameObject, first.gameObject, sun.gameObject };
-            return new PlanetRig(config, height, spawnDir, terrain, character, rig, input, camera, owned);
+            return new PlanetRig(config, height, templates, spawnDir, terrain, character, rig, input, camera, owned);
         }
 
         /// <summary>Releases the character once a ground collider exists under the spawn point.</summary>
@@ -135,7 +157,7 @@ namespace Cosmimera.Bootstrap
             }
 
             // Ground colliders are baked asynchronously after the meshes settle; wait for one under the spawn point.
-            Vector3 origin = SpawnPoint(Config, Height, SpawnDirection);
+            Vector3 origin = Config.ToWorld(SpawnDirection, SurfaceHeight(SpawnDirection) + 0.3f);
             if (!Physics.Raycast(origin, -(Vector3)SpawnDirection, 5f))
             {
                 return false;
@@ -157,9 +179,16 @@ namespace Cosmimera.Bootstrap
         }
 
         /// <summary>Destroys every object the rig created.</summary>
-        /// <remarks>Pre: none. Post: objects destroyed (end of frame). Side effects: Object.Destroy.</remarks>
+        /// <remarks>Pre: none. Post: terrain destroyed now, templates freed, other objects destroyed at end of frame. Side effects: Object.Destroy.</remarks>
         public void Dispose()
         {
+            if (Terrain != null)
+            {
+                // Immediate so its OnDestroy completes the mesh job that reads the template buffers before we free them.
+                Object.DestroyImmediate(Terrain.gameObject);
+            }
+
+            _templates?.Dispose();
             foreach (GameObject go in _owned)
             {
                 if (go != null)
@@ -168,8 +197,5 @@ namespace Cosmimera.Bootstrap
                 }
             }
         }
-
-        private static Vector3 SpawnPoint(in PlanetConfig config, in PlanetHeight height, float3 dir) =>
-            config.ToWorld(dir, height.Sample(dir) + 0.3f);
     }
 }

@@ -41,6 +41,9 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private TextAsset _quests;
         [SerializeField] private TextAsset _epithets;
         [SerializeField] private string _language = "zh-TW";
+        [SerializeField] private TextAsset[] _geoMeta;
+        [SerializeField] private TextAsset[] _geoHeights;
+        [SerializeField] private TextAsset[] _geoWater;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
@@ -56,6 +59,8 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _title;
         private GUIStyle _text;
         private Camera _lobbyCamera;
+        private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
+        private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
 
         private void Awake()
         {
@@ -64,6 +69,7 @@ namespace Cosmimera.Bootstrap.Demo
             _combatBalance = CombatBalance.FromJson(_balance.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath);
+            GeoTemplateLoader.Load(_geoMeta, _geoHeights, _geoWater, _templates, _templateTags);
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
             foreach (GameDef def in _database.All)
@@ -238,7 +244,11 @@ namespace Cosmimera.Bootstrap.Demo
             _lobbyCamera.gameObject.SetActive(false);
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
-                new RunSetup { PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party }, _wildPool, OnRunEnded);
+                new RunSetup
+                {
+                    PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
+                    Templates = _templates, TemplateTags = _templateTags,
+                }, _wildPool, OnRunEnded);
             _screen = Screen.Running;
         }
 
@@ -283,6 +293,31 @@ namespace Cosmimera.Bootstrap.Demo
             game._themes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "region-themes.json");
             game._quests = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "quest-templates.json");
             game._epithets = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "boss-epithets.json");
+            var meta = new List<TextAsset>();
+            var heights = new List<TextAsset>();
+            var water = new List<TextAsset>();
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:TextAsset", new[] { GeoTemplateLoader.Folder.TrimEnd('/') });
+            var paths = new List<string>();
+            foreach (string g in guids)
+            {
+                paths.Add(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            }
+
+            paths.Sort(System.StringComparer.Ordinal);
+            foreach (string path in paths)
+            {
+                if (path.EndsWith(".meta.json"))
+                {
+                    string stem = path.Substring(0, path.Length - ".meta.json".Length);
+                    meta.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(path));
+                    heights.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".height.bytes"));
+                    water.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".water.bytes"));
+                }
+            }
+
+            game._geoMeta = meta.ToArray();
+            game._geoHeights = heights.ToArray();
+            game._geoWater = water.ToArray();
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
                          game._strings, game._names, game._affixes, game._themes, game._quests, game._epithets })
             {

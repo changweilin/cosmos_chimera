@@ -24,6 +24,25 @@ D0_COPY = ["affixes", "region-themes", "quest-templates", "boss-epithets", "stri
 NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01"]
 
 
+GEO_OUT = Path("Assets/_Project/Data/GeoTemplates")
+
+
+def stage_geo(root: Path) -> int:
+    """Copy baked templates as .bytes/.json TextAssets (Unity loads only known extensions as TextAsset)."""
+    if GEO_OUT.exists():
+        shutil.rmtree(GEO_OUT)
+    GEO_OUT.mkdir(parents=True)
+    count = 0
+    for d in sorted((root / "geo-templates").iterdir()):
+        if not (d / "meta.json").is_file():
+            continue
+        shutil.copyfile(d / "meta.json", GEO_OUT / f"{d.name}.meta.json")
+        shutil.copyfile(d / "height.r16", GEO_OUT / f"{d.name}.height.bytes")
+        shutil.copyfile(d / "water.u8", GEO_OUT / f"{d.name}.water.bytes")
+        count += 1
+    return count
+
+
 def stage_copy(root: Path) -> None:
     COPY_OUT.mkdir(parents=True, exist_ok=True)
     for name in D0_COPY:
@@ -56,6 +75,7 @@ def main() -> int:
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(f, dst)
     stage_copy(root)
+    print(f"staged {stage_geo(root)} geo templates into {GEO_OUT}")
     print(f"staged {sum(1 for _ in out.rglob('*.json'))} files into {out}; copy into {COPY_OUT}")
     return 0
 

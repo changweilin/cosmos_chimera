@@ -46,6 +46,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: >= MoveGeometry.MinSupportedRadiusM. Post: none. Side effects: none.</remarks>
         public float Radius;
 
+        /// <summary>Baked geo-templates available to this run (P3-02 output), with their terrain tags; may be empty.</summary>
+        /// <remarks>Pre: Templates.Count == TemplateTags.Count. Post: none. Side effects: none.</remarks>
+        public List<TemplateSource> Templates = new List<TemplateSource>();
+
+        /// <summary>Terrain tags per template.</summary>
+        /// <remarks>Pre: see Templates. Post: none. Side effects: none.</remarks>
+        public List<IReadOnlyList<string>> TemplateTags = new List<IReadOnlyList<string>>();
+
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
@@ -78,10 +86,17 @@ namespace Cosmimera.Bootstrap.Demo
         private sealed class HeightSurface : IEncounterSurface
         {
             private readonly PlanetHeight _height;
+            private readonly PlanetTemplates _templates;
 
-            public HeightSurface(PlanetHeight height) => _height = height;
+            public HeightSurface(PlanetHeight height, PlanetTemplates templates)
+            {
+                _height = height;
+                _templates = templates;
+            }
 
-            public float GroundAltitude(float3 direction) => _height.Sample(direction);
+            // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
+            public float GroundAltitude(float3 direction) =>
+                _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
         }
 
         private sealed class WildInfo
@@ -152,11 +167,26 @@ namespace Cosmimera.Bootstrap.Demo
 
             var config = new PlanetConfig(setup.Radius, float3.zero);
             PlanetHeight height = PlanetHeight.ForPlanet(config, setup.Seed);
+            PlanetTemplates templates = null;
+            if (setup.Templates.Count > 0)
+            {
+                List<TemplatePlacement> placements = TemplatePlanner.Choose(setup.Seed, setup.PlanetType.TerrainTags,
+                    setup.TemplateTags, TemplatePlanner.CountFor(setup.PlanetType.Size));
+                templates = PlanetTemplates.Create(config, setup.Templates, placements);
+            }
+
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, null);
+            System.Func<float3, bool> isLand = null;
+            if (templates != null)
+            {
+                TemplateView view = templates.View;
+                isLand = d => !view.IsSea(d);
+            }
+
+            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
-            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial);
-            _encounter = new Encounter(config, balance, new HeightSurface(height), setup.Seed);
+            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
+            _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
             _captureRng = new Pcg32(setup.Seed, 'K');
 
             for (int s = 0; s < _plan.Spawns.Count; s++)
