@@ -3,7 +3,9 @@
     "rootNamespace": "Cosmimera.WorldGen",
     "references": [
         "Cosmimera.Core",
-        "Cosmimera.Planet"
+        "Cosmimera.Planet",
+        "Cosmimera.GameData",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
