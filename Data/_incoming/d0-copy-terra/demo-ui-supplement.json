@@ -80,31 +80,31 @@
     "en": "Press Esc again within 3 seconds to abandon the run. Captured Cosmimera will return to the lobby."
   },
   "ui.lobby.party_hint": {
-    "zh-TW": "??????????????",
+    "zh-TW": "隊伍順序：第一隻宙獸擔任主力。",
     "en": "Party order: the first Cosmimera leads the fight."
   },
   "ui.lobby.reserve": {
-    "zh-TW": "???",
+    "zh-TW": "候補",
     "en": "Reserve"
   },
   "ui.lobby.move_up": {
-    "zh-TW": "??",
+    "zh-TW": "上移",
     "en": "Move Up"
   },
   "ui.lobby.remove_from_party": {
-    "zh-TW": "????",
+    "zh-TW": "移出隊伍",
     "en": "Remove"
   },
   "ui.lobby.add_to_party": {
-    "zh-TW": "????",
+    "zh-TW": "加入隊伍",
     "en": "Add to Party"
   },
   "ui.lobby.party_min": {
-    "zh-TW": "???????????",
+    "zh-TW": "隊伍至少需要一隻宙獸。",
     "en": "The party needs at least one Cosmimera."
   },
   "ui.lobby.party_full": {
-    "zh-TW": "??????? 6 ???",
+    "zh-TW": "隊伍已滿（最多 6 隻）。",
     "en": "The party is full (max 6)."
   }
 }

@@ -13,3 +13,4 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | D0-R1 | med | 倒下的宙獸整場 run 不能復活、戰鬥外不回血（無設計規則；可能過難） |
 | 同上 | D0-R2 | low | BOSS 只是成年型態，沒有 HP/數值加成 |
 | `Bootstrap/Demo/PlanetLook.cs` | D0-V1 | low | 生物群系只在 shader 依高度/坡度/緯度上色；無規則層 biome 表、無散佈（P3-09） |
+| `docs/reviews/D0-r2-sol.md` | S5 | low | `ScatterField` 半格距離圓盤取樣在 cube-face 接縫附近可漏掉 90 m 內的格（裝飾漏生/跳現）；改為保守枚舉 face/cell 範圍後再距離篩選 |

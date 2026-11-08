@@ -10,6 +10,7 @@ names = [
     "quest-templates.json",
     "boss-epithets.json",
     "strings.json",
+    "demo-ui-supplement.json",
 ]
 
 
@@ -43,11 +44,11 @@ def compare_structures(src, tgt, path=""):
                 f"src_en={src_en_placeholders}, tgt={tgt_placeholders}"
             )
 
-            # Check arabic numbers in zh-TW appear in ja
-            src_nums = extract_numbers(src["zh-TW"])
+            # Check arabic numbers in source appear in ja
+            src_nums = set(extract_numbers(src["zh-TW"])) | set(extract_numbers(src["en"]))
             for num in src_nums:
                 assert re.search(rf"(?<!\d){num}(?!\d)", tgt["ja"]), (
-                    f"Number {num} from zh-TW missing in ja at {path}: '{tgt['ja']}'"
+                    f"Number {num} from source missing in ja at {path}: '{tgt['ja']}'"
                 )
             return 1
         else:
@@ -90,7 +91,7 @@ def main():
         print(f"PASS: {name} ({field_count} localized fields verified)")
         total_fields += field_count
 
-    print(f"ALL PASS: 5 files, {total_fields} localized fields match perfectly.")
+    print(f"ALL PASS: {len(names)} files, {total_fields} localized fields match perfectly.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,83 @@
+{
+  "planet.verdant_planet": {
+    "ja": "翠緑星"
+  },
+  "planet.lava_planet": {
+    "ja": "溶岩星"
+  },
+  "planet.ice_crystal_planet": {
+    "ja": "氷晶星"
+  },
+  "planet.storm_planet": {
+    "ja": "嵐星"
+  },
+  "planet.mineral_planet": {
+    "ja": "晶鉱星"
+  },
+  "planet.twilight_planet": {
+    "ja": "晨昏星"
+  },
+  "element.metal": {
+    "ja": "金"
+  },
+  "element.wood": {
+    "ja": "木"
+  },
+  "element.water": {
+    "ja": "水"
+  },
+  "element.fire": {
+    "ja": "火"
+  },
+  "element.earth": {
+    "ja": "土"
+  },
+  "element.ice": {
+    "ja": "氷"
+  },
+  "element.wind": {
+    "ja": "風"
+  },
+  "element.thunder": {
+    "ja": "雷"
+  },
+  "element.light": {
+    "ja": "光"
+  },
+  "element.shadow": {
+    "ja": "影"
+  },
+  "ui.hud.select_active": {
+    "ja": "出撃主力を選択"
+  },
+  "ui.hud.cycle_vessel": {
+    "ja": "捕獲道具を切り替え"
+  },
+  "ui.hud.command_keys": {
+    "ja": "F 集中／R 自由／T 追従／G 撤退"
+  },
+  "ui.hud.abandon_confirm": {
+    "ja": "3秒以内に再度Escを押すと探索を放棄します。捕獲した宙獣はロビーに持ち帰ることができます。"
+  },
+  "ui.lobby.party_hint": {
+    "ja": "編成順：先頭の宙獣が先発として戦います。"
+  },
+  "ui.lobby.reserve": {
+    "ja": "控え"
+  },
+  "ui.lobby.move_up": {
+    "ja": "上へ移動"
+  },
+  "ui.lobby.remove_from_party": {
+    "ja": "チームから外す"
+  },
+  "ui.lobby.add_to_party": {
+    "ja": "チームに追加"
+  },
+  "ui.lobby.party_min": {
+    "ja": "チームには最低1体の宙獣が必要です。"
+  },
+  "ui.lobby.party_full": {
+    "ja": "チームが満員です（最大6体）。"
+  }
+}

@@ -18,3 +18,4 @@ PASS: 5 step types, 3 variants each, required placeholders, 3 chains
 PASS: 6 source planet types and 3 epithets each
 PASS: 40 UI keys, naming and required items, capture placeholders
 ```
+- 2026-11-09 · TERRA · done · 修正 ui.lobby.party_hint、reserve、move_up、remove_from_party、add_to_party、party_min、party_full 繁中文案。 · 下一步：人工審核
