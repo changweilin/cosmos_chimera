@@ -102,7 +102,7 @@ Before Batch 03, several elements sat at the minimum threshold of 2 moves for sp
 
 ## Prospective Kind "both" Candidates (P2 Integration)
 
-As with earlier batches, several moves authored in Batch 03 were deliberately designed around gameplay sensations that will naturally accept secondary effects once the P2 closed rule vocabulary is established:
+As with earlier batches, several moves authored in Batch 03 were deliberately designed around gameplay sensations that naturally accept secondary effects. The vocabulary has been closed by P2-01 (`common.schema.json`); human designers should review whether to convert these candidates into `kind: "both"` with explicit effect definitions:
 1. **Control / Area Denial**:
    - `metal_anvil_drop`: Heavy impact producing high stagger or target `knockdown`.
    - `wood_bramble_whip`: Thorny entanglement inflicting brief `root` or movement speed reduction.

@@ -116,7 +116,7 @@ Requirements:
 
 ## Prospective Kind "both" Candidates (P2 Integration)
 
-As with earlier batches, several moves authored in Batch 04 embody combat sensations that can naturally receive status or secondary effects upon P2 effect vocabulary finalization:
+As with earlier batches, several moves authored in Batch 04 embody combat sensations that naturally accept secondary effects. The vocabulary has been closed by P2-01 (`common.schema.json`); human designers should review whether to convert these candidates into `kind: "both"` with explicit effect definitions:
 1. **Control & Terrain Disruption**:
    - `metal_siege_bombard`: Extreme kinetic impact creating physical stagger, target `knockdown`, or brief armor reduction.
    - `water_depth_charge`: Submerged concussion wave launching targets into an airborne juggle state.

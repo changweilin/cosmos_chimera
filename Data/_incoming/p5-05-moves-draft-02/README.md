@@ -69,7 +69,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 
 ## Prospective Kind "both" Candidates (P2 Integration)
 
-When P2 standardizes the closed rule/effect vocabulary, several moves in this batch possess strong thematic affinities for hybrid damage-and-status profiles:
+The effect vocabulary has been closed by P2-01 (`common.schema.json`); human designers can review whether to convert these candidate moves with strong thematic affinities into `kind: "both"` with explicit effect definitions:
 1. **Damage + Crowd Control (Hard / Soft)**:
    - `metal_shrapnel_spray`: Inflicts `bleed` / physical vulnerability over time.
    - `wood_sap_splash`: Leaves sticky resin inflicting `slow` / movement penalty.
@@ -94,4 +94,4 @@ When P2 standardizes the closed rule/effect vocabulary, several moves in this ba
 1. **Spatial & Movement Collision Tuning**: `dash` moves (`water_rip_current`, `wind_draft_step`, `thunder_fulgur_dive`, etc.) need collision volume dimensions, pass-through permissions (whether the user stops on enemy collision or clips through), and maximum dash distance calibrated during combat implementation.
 2. **Finisher Windup / Recovery Telegraphing**: Moves with `power >= 100` and `cooldown_ms >= 7500` (`metal_rail_slug`, `thunder_megavolt_burst`, `shadow_singularity_maw`, etc.) require clear cast windup animations and telegraph decals on the ground to give players and AI viable dodge windows.
 3. **Spherical Coordinate Scaling for Long-Range Lines**: Long-range line attacks (`metal_rail_slug`, `water_maelstrom_lance`, `wind_typhoon_spire`) on small planets could exceed horizon curvature if modeled as pure Euclidean rays. The combat engine needs clear clamping or geodesic tangent projection.
-4. **Effect Vocabulary Schema Migration**: ~~The P2 effect vocabulary needs to be finalized.~~ 已由 P2-01 結案；designers should still review the candidates above for migration from `kind: "damage"` to `kind: "both"`.
+4. **Effect Vocabulary Schema Migration**: ~~The P2 effect vocabulary needs to be finalized.~~ 已由 P2-01 結案：`common.schema.json` defines closed types and per-type parameters; human designers can review whether to convert candidates above into `kind: "both"`.
