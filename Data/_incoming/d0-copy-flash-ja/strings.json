@@ -1,0 +1,122 @@
+{
+  "ui.lobby.title": {
+    "ja": "地球観測所"
+  },
+  "ui.lobby.start_run": {
+    "ja": "惑星選択へ"
+  },
+  "ui.lobby.team": {
+    "ja": "チーム編成"
+  },
+  "ui.lobby.choose_starter": {
+    "ja": "旅の最初の仲間となる宙獣（ちゅうじゅう）を1体選択してください。"
+  },
+  "ui.lobby.starter_confirm": {
+    "ja": "この仲間を選択"
+  },
+  "ui.lobby.quit": {
+    "ja": "ゲーム終了"
+  },
+  "ui.star_select.title": {
+    "ja": "惑星選択"
+  },
+  "ui.star_select.planet_type": {
+    "ja": "惑星タイプ"
+  },
+  "ui.star_select.size_small": {
+    "ja": "小型"
+  },
+  "ui.star_select.size_medium": {
+    "ja": "中型"
+  },
+  "ui.star_select.size_large": {
+    "ja": "大型"
+  },
+  "ui.star_select.main_elements": {
+    "ja": "主要属性"
+  },
+  "ui.star_select.seed": {
+    "ja": "シード値"
+  },
+  "ui.star_select.reroll": {
+    "ja": "再生成"
+  },
+  "ui.star_select.launch": {
+    "ja": "出発"
+  },
+  "ui.star_select.loading": {
+    "ja": "惑星を生成中…"
+  },
+  "ui.hud.hp": {
+    "ja": "HP"
+  },
+  "ui.hud.cd_ready": {
+    "ja": "スキル準備完了"
+  },
+  "ui.hud.switch": {
+    "ja": "交代"
+  },
+  "ui.hud.switch_cooldown": {
+    "ja": "交代CT中"
+  },
+  "ui.hud.command_focus": {
+    "ja": "ターゲット集中"
+  },
+  "ui.hud.command_free": {
+    "ja": "自由戦闘"
+  },
+  "ui.hud.command_follow": {
+    "ja": "追従待機"
+  },
+  "ui.hud.command_retreat": {
+    "ja": "撤退"
+  },
+  "ui.hud.capture_prompt": {
+    "ja": "{key} を押して {vessel} を投擲"
+  },
+  "ui.hud.capture_success": {
+    "ja": "捕獲成功！"
+  },
+  "ui.hud.capture_fail": {
+    "ja": "捕獲失敗"
+  },
+  "ui.hud.knocked_out": {
+    "ja": "撃破"
+  },
+  "ui.hud.quest_tracker": {
+    "ja": "クエスト"
+  },
+  "ui.hud.boss_incoming": {
+    "ja": "惑星ボス出現！"
+  },
+  "ui.hud.player_down": {
+    "ja": "力尽きた…"
+  },
+  "ui.vessel.talisman_card": {
+    "ja": "符籙カード"
+  },
+  "ui.vessel.glass_bead": {
+    "ja": "瑠璃玉"
+  },
+  "ui.vessel.magic_cube": {
+    "ja": "マジックキューブ"
+  },
+  "ui.results.victory": {
+    "ja": "探索完了"
+  },
+  "ui.results.defeat": {
+    "ja": "探索失敗"
+  },
+  "ui.results.captured_list": {
+    "ja": "捕獲した宙獣"
+  },
+  "ui.results.eggs_obtained": {
+    "ja": "獲得したタマゴ"
+  },
+  "ui.results.return_lobby": {
+    "ja": "ロビーへ戻る"
+  },
+  "ui.results.abandon_run": {
+    "ja": "探索を放棄しますか？今回の挑戦は無効になりますが、捕獲した宙獣はロビーに持ち帰ることができます。"
+  }
+}

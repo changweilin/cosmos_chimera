@@ -47,3 +47,5 @@ sysinfo.txt
 # Unreviewed AI art deliveries (tools/prompt-forge); only promoted assets under Assets/ are committed
 /Art/_incoming/*
 !/Art/_incoming/README.md
+# D0 demo staging of draft batches (tools/demo-data/merge.py); regenerate, never edit
+/Data/_demo/

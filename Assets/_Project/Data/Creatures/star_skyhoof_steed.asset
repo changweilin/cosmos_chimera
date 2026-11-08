@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: star_skyhoof_steed
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: star_skyhoof_steed
+  lineId: starter_star_line
+  stage: 2
+  sizeClass: 2
+  aiStyle: 2
+  evolvesTo: {fileID: 0}
+  evolutionExp: 0
+  evolutionMaterials: []
+  resist: 0a000000000000000500000000000000f1ffffff000000001e00000032000000d8ffffff00000000
+  mastery:
+  - element: 6
+    value: 20
+  - element: 7
+    value: 40
+  stats:
+    con: 120
+    str: 110
+    spi: 80
+    agi: 90
+  signatureMove: {fileID: 11400000, guid: 3c1647dcf2fa7f14483eba91f2de84de, type: 2}
+  trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  conceptJson: "{\"base\":\"\u91D1\u7FFC\u5929\u99AC \xD7 \u5F4E\u6708\u984D\u89D2\u8207\u96F7\u96F2\",\"stage_look\":\"\u9EC3\u91D1\u96D9\u7FFC\u5C55\u958B\u6642\u7FFC\u7DE3\u4E32\u8457\u661F\u9EDE\u96FB\u5149\uFF0C\u984D\u4E0A\u5F4E\u6708\u89D2\u5C0E\u5F15\u843D\u96F7\uFF0C\u885D\u92D2\u6642\u62D6\u51FA\u96F7\u9CF4\u9577\u8ECC\",\"archetype\":\"arch_tulpar\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u9EC3\u91D1\u96D9\u7FFC\u99FF\u99AC\",\"\u5F4E\u6708\u984D\u89D2\",\"\u75BE\u98A8\u9577\u9B03\",\"\u7121\u57A0\u7DA0\u8349\u539F\"],\"role\":\"\u4E2D\u8DDD\u885D\u92D2\uFF1A\u6CBF\u76F4\u7DDA\u5411\u524D\u7A81\u9032\uFF0C\u4EE5\u96F7\u5C6C\u6027\u653B\u64CA\u547D\u4E2D\u8DEF\u5F91\u4E0A\u7684\u6575\u4EBA\u3002\",\"palette\":\"\u91D1\u9EC3\u3001\u96FB\u7D2B\u3001\u8349\u539F\u7DA0\u3001\u96FB\u5149\u9280\u767D\"}"
+  needsSensitivityReview: 0

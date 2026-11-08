@@ -23,5 +23,7 @@
 | 戰鬥 | P2-05/07/09/10 表現層接線、P2-11 HUD | OPUS | 規則層已完成 |
 | Meta | P4-01 大廳（最低限度）、P4-02 選星、P4-03 收服、P4-06 存檔（只存大廳）、P4-07 隊伍編成（最低限度） | OPUS | |
 | 文案 | 區域主題/詞綴/任務/BOSS/UI 字串 zh-TW + en | TERRA（Codex） | `Data/_incoming/d0-copy-terra/` |
-| 文案 | 上項 ja 翻譯初稿 | FLASH（agy） | 待 TERRA 完成 |
+| 文案 | 上項 ja 翻譯初稿 | FLASH（agy） | `Data/_incoming/d0-copy-flash-ja/` |
 - 2026-11-08 · ChatGPT Terra（Codex CLI） · done · D0 繁中及英文文案初稿與自行驗收完成 · 下一步：SONNET 審核、FLASH 製作日文初稿
+- 2026-11-08 · Gemini Flash（agy） · done · D0 日文翻譯初稿 5 檔與 check.py 完成，123 處本地化欄位人工比對通過 · 下一步：OPUS 驗收
+- 2026-11-08 · Claude Opus（驗收 Flash）· done · 重跑 `d0-copy-flash-ja/check.py`：5 檔 123 欄 ALL PASS；抽查術語（交代、捕獲、CT、〜の稱號）符合 brief · 下一步：人工定稿

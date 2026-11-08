@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: water_catamaran_serpent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: water_catamaran_serpent
+  lineId: line_water_tidecraft
+  stage: 2
+  sizeClass: 2
+  aiStyle: 0
+  evolvesTo: {fileID: 0}
+  evolutionExp: 0
+  evolutionMaterials: []
+  resist: 0000000000000000320000000f000000000000000a00000000000000d8ffffff0000000000000000
+  mastery:
+  - element: 2
+    value: 40
+  - element: 6
+    value: 15
+  stats:
+    con: 80
+    str: 150
+    spi: 70
+    agi: 100
+  signatureMove: {fileID: 11400000, guid: bbaa3e40f86f9614d902c300784a744d, type: 2}
+  trait: {fileID: 11400000, guid: cc3a3024e21611744adc97c7995ca97b, type: 2}
+  conceptJson: "{\"base\":\"\u6F6E\u6C50\u6D77\u9C3B \xD7 \u96D9\u9AD4\u98A8\u5E06\u5916\u7532\u6D6E\u7B52\uFF08\u751F\u7269
+    \xD7 \u8F09\u5177\uFF09\",\"stage_look\":\"\u5DE8\u5927\u5982\u6D6E\u5CF6\u7684\u96D9\u9AD4\u98A8\u5E06\u5DE8\u9C3B\u821F\uFF0C\u96D9\u5074\u9023\u7DB4\u5F69\u7E6A\u6C34\u6D41\u5074\u8237\uFF0C\u4E58\u8E0F\u5B63\u98A8\u6012\u6FE4\u75BE\u822A\",\"archetype\":\"arch_edai_siabo_lakatoi\",\"region\":\"\u5927\u6D0B\u6D32\",\"motifs_used\":[\"\u87F9\u722A\u98A8\u5E06\u591A\u9AD4\u821F\",\"\u6D77\u8755\u6D1E\u5DE8\u9C3B\",\"\u5B63\u98A8\u6D77\u6D6A\"],\"role\":\"\u9060\u8DDD\u7832\u53F0\uFF1A\u9AD8\u529B\u91CF\uFF0C\u9060\u8DDD\u6307\u5B9A\u9EDE\u7BC4\u570D\u7206\u767C\uFF0C\u9023\u7E8C\u65BD\u653E\u6C34\u62DB\u7E2E\u77ED
+    CD\",\"palette\":\"\u6F6E\u6C50\u78A7\u85CD\u3001\u767D\u6CAB\u9280\u3001\u9676\u571F\u8D6D\u7D05\"}"
+  needsSensitivityReview: 0

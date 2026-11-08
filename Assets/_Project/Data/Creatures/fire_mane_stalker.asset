@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: fire_mane_stalker
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: fire_mane_stalker
+  lineId: line_fire_blazelion
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  evolvesTo: {fileID: 11400000, guid: 5004155136d050441a62e726e406d197, type: 2}
+  evolutionExp: 300
+  evolutionMaterials:
+  - element: 3
+    tier: 2
+    qty: 5
+  resist: 0a0000000f000000e2ffffff23000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 25
+  stats:
+    con: 60
+    str: 80
+    spi: 25
+    agi: 35
+  signatureMove: {fileID: 11400000, guid: 49c10a5c308d94349b79d42a6d684f55, type: 2}
+  trait: {fileID: 11400000, guid: e5472874e510aa94c9b028f73ab75459, type: 2}
+  conceptJson: "{\"base\":\"\u70C8\u7130\u96C4\u7345 \xD7 \u7802\u5CA9\u7194\u6838\u7532\u80C4\",\"stage_look\":\"\u808C\u8089\u7D50\u5BE6\u7684\u70C8\u7130\u8352\u539F\u7345\uFF0C\u9B03\u6BDB\u5982\u7FFB\u9A30\u706B\u6D6A\uFF0C\u984D\u524D\u51DD\u7D50\u4E09\u9053\u7194\u5CA9\u88C2\u7D0B\",\"archetype\":\"arch_apedemak\",\"region\":\"\u975E\u6D32\",\"motifs_used\":[\"\u4E09\u9996\u56DB\u81C2\u96C4\u7345\u50CF\",\"\u76E4\u86C7\u7DBB\u653E\u84EE\u82B1\",\"\u9661\u9802\u7802\u5CA9\u91D1\u5B57\u5854\"],\"role\":\"\u7A81\u64CA\u624B\uFF1A\u4E2D\u8DDD\u76F4\u7DDA\u7A81\u9032\uFF0C\u53D7\u706B\u5C6C\u6027\u653B\u64CA\u5F8C\u7E2E\u77ED\u706B\u62DB
+    CD\",\"palette\":\"\u8D6D\u77F3\u7D05\u3001\u71BE\u91D1\u9EC3\u3001\u7384\u6B66\u5CA9\u6697\u7070\"}"
+  needsSensitivityReview: 0

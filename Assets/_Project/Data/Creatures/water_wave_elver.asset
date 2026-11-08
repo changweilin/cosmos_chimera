@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: water_wave_elver
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: water_wave_elver
+  lineId: line_water_tidecraft
+  stage: 0
+  sizeClass: 0
+  aiStyle: 3
+  evolvesTo: {fileID: 11400000, guid: 65dcc86e4bbf9b14b97f0acfd75b12b6, type: 2}
+  evolutionExp: 100
+  evolutionMaterials:
+  - element: 2
+    tier: 1
+    qty: 3
+  resist: 0000000000000000140000000a000000000000000500000000000000ecffffff0000000000000000
+  mastery:
+  - element: 2
+    value: 15
+  stats:
+    con: 20
+    str: 38
+    spi: 18
+    agi: 24
+  signatureMove: {fileID: 11400000, guid: 96f60bf169d585743852ff9ae9348122, type: 2}
+  trait: {fileID: 11400000, guid: cc3a3024e21611744adc97c7995ca97b, type: 2}
+  conceptJson: "{\"base\":\"\u6F6E\u6C50\u6D77\u9C3B \xD7 \u96D9\u9AD4\u98A8\u5E06\u5916\u7532\u6D6E\u7B52\uFF08\u751F\u7269
+    \xD7 \u8F09\u5177\uFF09\",\"stage_look\":\"\u8EAB\u8EC0\u5982\u9280\u8272\u5C0F\u9C3B\uFF0C\u80CC\u90E8\u751F\u51FA\u534A\u900F\u660E\u87F9\u722A\u5F62\u6C34\u819C\u5C0F\u7FFC\uFF0C\u5728\u6CE2\u6D6A\u9593\u6ED1\u884C\",\"archetype\":\"arch_edai_siabo_lakatoi\",\"region\":\"\u5927\u6D0B\u6D32\",\"motifs_used\":[\"\u87F9\u722A\u98A8\u5E06\u591A\u9AD4\u821F\",\"\u6D77\u8755\u6D1E\u5DE8\u9C3B\",\"\u5B63\u98A8\u6D77\u6D6A\"],\"role\":\"\u4E2D\u8DDD\u8F38\u51FA\uFF1A\u76F4\u7DDA\u6C34\u5203\uFF0C\u9023\u7E8C\u65BD\u653E\u6C34\u62DB\u7E2E\u77ED
+    CD\",\"palette\":\"\u6F6E\u6C50\u78A7\u85CD\u3001\u767D\u6CAB\u9280\u3001\u9676\u571F\u8D6D\u7D05\"}"
+  needsSensitivityReview: 0

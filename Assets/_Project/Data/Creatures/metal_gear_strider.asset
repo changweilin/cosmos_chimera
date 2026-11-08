@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: metal_gear_strider
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: metal_gear_strider
+  lineId: line_metal_gearclock
+  stage: 1
+  sizeClass: 1
+  aiStyle: 3
+  evolvesTo: {fileID: 11400000, guid: c4d01b44568137545abd82c48d06f4e7, type: 2}
+  evolutionExp: 300
+  evolutionMaterials:
+  - element: 0
+    tier: 2
+    qty: 5
+  resist: 230000000a00000000000000e2ffffff0f0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 0
+    value: 25
+  stats:
+    con: 80
+    str: 55
+    spi: 37
+    agi: 28
+  signatureMove: {fileID: 11400000, guid: 9a5e77227de1e2b42b8734c9f1935a90, type: 2}
+  trait: {fileID: 11400000, guid: 60316f332fe13ea4c87560931756e7bf, type: 2}
+  conceptJson: "{\"base\":\"\u7CBE\u5BC6\u9752\u9285\u767C\u689D\u6A5F\u95DC \xD7
+    \u9418\u9336\u9F52\u8F2A\u8207\u6C34\u529B\u5E73\u8861\u9023\u687F\",\"stage_look\":\"\u534A\u62AB\u91CD\u7532\u7684\u6A5F\u68B0\u6A5F\u95DC\u7378\uFF0C\u96D9\u80A9\u88DD\u914D\u76E4\u9F8D\u9752\u9285\u9023\u687F\u8207\u5831\u6642\u9CF4\u9418\u97F3\u677F\",\"archetype\":\"arch_al_jazari\",\"region\":\"\u897F\u4E9E/\u4E2D\u6771\",\"motifs_used\":[\"\u5831\u6642\u6A5F\u68B0\u5DE8\u8C61\",\"\u6C89\u6C34\u6D6E\u7897\u6F0F\u58FA\",\"\u76E4\u9F8D\u5E73\u8861\u687F\"],\"role\":\"\u524D\u6392\u5766\u514B\uFF1A\u9AD8\u9AD4\u8CEA\uFF0C\u8FD1\u8DDD\u6A6B\u6383\",\"palette\":\"\u9752\u9285\u7DA0\u3001\u9EC3\u9285\u91D1\u3001\u7384\u9435\u9ED1\"}"
+  needsSensitivityReview: 0

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fee4a263ad2320140be20f5f8b40d8df, type: 3}
+  m_Name: fire_ash_fan
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.MoveDef
+  id: fire_ash_fan
+  element: 3
+  kind: 0
+  power: 40
+  hasEffect: 0
+  effect:
+    type: 0
+    anyElement: 0
+    element: 0
+    delta: 0
+    percent: 0
+    maxStacks: 0
+  effectDurationMs: 0
+  fieldDurationMs: 0
+  cooldownMs: 1400
+  accuracy: 95
+  rangeClass: 1
+  shape: 1
+  baseRangeMm: 12000
+  movement: 0
+  origin: 0

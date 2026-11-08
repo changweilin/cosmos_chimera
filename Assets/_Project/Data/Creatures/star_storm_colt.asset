@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: star_storm_colt
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: star_storm_colt
+  lineId: starter_star_line
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  evolvesTo: {fileID: 11400000, guid: bc4983aab4bbc9940889964e43bbb616, type: 2}
+  evolutionExp: 300
+  evolutionMaterials:
+  - element: 7
+    tier: 2
+    qty: 5
+  resist: 05000000000000000000000000000000f6ffffff000000001400000023000000e2ffffff00000000
+  mastery:
+  - element: 6
+    value: 10
+  - element: 7
+    value: 25
+  stats:
+    con: 60
+    str: 55
+    spi: 40
+    agi: 45
+  signatureMove: {fileID: 11400000, guid: 0ce411d88f37c8746a9974a0729548f0, type: 2}
+  trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  conceptJson: "{\"base\":\"\u99FF\u99AC \xD7 \u75BE\u98A8\u9577\u9B03\u5316\u70BA\u96FB\u5F27\",\"stage_look\":\"\u9577\u9B03\u662F\u6301\u7E8C\u8DF3\u52D5\u7684\u96FB\u5F27\uFF0C\u80A9\u80DB\u5192\u51FA\u672A\u5C55\u958B\u7684\u91D1\u8272\u7FFC\u82BD\",\"archetype\":\"arch_tulpar\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u9EC3\u91D1\u96D9\u7FFC\u99FF\u99AC\",\"\u5F4E\u6708\u984D\u89D2\",\"\u75BE\u98A8\u9577\u9B03\",\"\u7121\u57A0\u7DA0\u8349\u539F\"],\"role\":\"\u7FA4\u9AD4\u58D3\u5236\uFF1A\u4EE5\u81EA\u8EAB\u70BA\u4E2D\u5FC3\u7BC4\u570D\u653E\u96FB\uFF0C\u653B\u64CA\u5468\u570D\u6575\u4EBA\u3002\",\"palette\":\"\u91D1\u9EC3\u3001\u96FB\u7D2B\u3001\u8349\u539F\u7DA0\u3001\u96FB\u5149\u9280\u767D\"}"
+  needsSensitivityReview: 0

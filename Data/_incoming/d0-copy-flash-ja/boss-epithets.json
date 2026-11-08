@@ -1,0 +1,86 @@
+[
+  {
+    "planet_type": "verdant_planet",
+    "epithets": [
+      {
+        "ja": "森冠の"
+      },
+      {
+        "ja": "青蔓纏いの"
+      },
+      {
+        "ja": "碧野の"
+      }
+    ]
+  },
+  {
+    "planet_type": "lava_planet",
+    "epithets": [
+      {
+        "ja": "熔心の"
+      },
+      {
+        "ja": "余燼纏いの"
+      },
+      {
+        "ja": "赤岩の"
+      }
+    ]
+  },
+  {
+    "planet_type": "ice_crystal_planet",
+    "epithets": [
+      {
+        "ja": "霜冠の"
+      },
+      {
+        "ja": "氷晶輝きの"
+      },
+      {
+        "ja": "寒潮の"
+      }
+    ]
+  },
+  {
+    "planet_type": "storm_planet",
+    "epithets": [
+      {
+        "ja": "風追いの"
+      },
+      {
+        "ja": "雷雲の下の"
+      },
+      {
+        "ja": "嵐の眼の"
+      }
+    ]
+  },
+  {
+    "planet_type": "mineral_planet",
+    "epithets": [
+      {
+        "ja": "晶脈の"
+      },
+      {
+        "ja": "鉄岩の"
+      },
+      {
+        "ja": "鉱輝映しの"
+      }
+    ]
+  },
+  {
+    "planet_type": "twilight_planet",
+    "epithets": [
+      {
+        "ja": "晨昏交界の"
+      },
+      {
+        "ja": "昼影交織の"
+      },
+      {
+        "ja": "暮光の下の"
+      }
+    ]
+  }
+]

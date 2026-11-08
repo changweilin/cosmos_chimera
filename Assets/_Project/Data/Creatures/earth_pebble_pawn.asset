@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: earth_pebble_pawn
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: earth_pebble_pawn
+  lineId: line_earth_gildedgolem
+  stage: 0
+  sizeClass: 0
+  aiStyle: 3
+  evolvesTo: {fileID: 11400000, guid: eea89aff26ff3724e80fa8447848207c, type: 2}
+  evolutionExp: 100
+  evolutionMaterials:
+  - element: 4
+    tier: 1
+    qty: 3
+  resist: 000000000000000000000000050000001400000000000000ecffffff0a0000000000000000000000
+  mastery:
+  - element: 4
+    value: 15
+  stats:
+    con: 36
+    str: 22
+    spi: 30
+    agi: 12
+  signatureMove: {fileID: 11400000, guid: e737e029ca78270409c51e483dd91547, type: 2}
+  trait: {fileID: 11400000, guid: 5619766b3e3caba49932813f4429bad3, type: 2}
+  conceptJson: "{\"base\":\"\u9EC3\u91D1\u7926\u8108\u4EBA\u5F62 \xD7 \u5100\u5178\u5CA9\u93A7\u77F3\u5076\uFF08\u4EBA\u5F62\uFF09\",\"stage_look\":\"\u5713\u6F64\u6566\u5BE6\u7684\u5C0F\u77F3\u5076\uFF0C\u5468\u8EAB\u8986\u84CB\u8584\u91D1\u5FAE\u7C92\uFF0C\u80F8\u819B\u5D4C\u6709\u4E00\u9846\u5FAE\u5149\u7DA0\u5BF6\u77F3\u6676\u6838\",\"archetype\":\"arch_el_dorado_muisca\",\"region\":\"\u7F8E\u6D32\",\"motifs_used\":[\"\u91D1\u7C89\u8986\u8EAB\",\"\u9AD8\u5C71\u8056\u6E56\u7DA0\u5BF6\u77F3\",\"\u9EC3\u91D1\u796D\u5076\"],\"role\":\"\u4E2D\u6392\uFF1A\u4E2D\u8DDD\u76F4\u7DDA\u6295\u77F3\uFF0C\u53D7\u64CA\u5F8C\u63D0\u9AD8\u571F\u5C08\u7CBE\",\"palette\":\"\u938F\u91D1\u9EC3\u3001\u7FE1\u7FE0\u7DA0\u3001\u9676\u571F\u8D6D\u8910\"}"
+  needsSensitivityReview: 0
