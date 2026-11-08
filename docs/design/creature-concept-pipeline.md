@@ -7,7 +7,7 @@
 例：`雷 + 風` × `鷹 + 戰車` × `北歐雷神的錘與山羊車` → 幼年：小羊角雛鷹；少年：拖著雷輪的鷹；成年：鷹首戰車；超載：雷雲環繞、雙輪噴電的戰車鷹神。
 
 選項池（屬性數量權重、外觀子類、原型清單與敏感度）由外部專案 `../cosmos_chimera_forge/catalog.js` 維護（`tools/prompt-forge/` 已遷出，見其 README），美術交付流程見 `art-asset-pipeline.md`。
-文化原型考據庫（`Data/_incoming/p5-02-archetypes-draft-01/`）與宙獸批次資料**兩個專案都維護**（2026-11-08 定案，P5-08 N8）：本專案 `Data/` 給 validate-data／importer，forge 的 `Data/` 給 `gen_designed.py`。任何一邊修改都要在同一次工作中同步另一邊，並以 `cmp` 確認兩份逐位元相同；forge 端改完跑 `python gen_designed.py`。
+文化原型考據庫（`Data/_incoming/p5-02-archetypes-draft-01/`）與宙獸批次資料**兩個專案都維護**（2026-11-08 定案，P5-08 N8）：本專案 `Data/` 給 validate-data／importer，forge 的 `Data/` 給 `gen_designed.py`。任何一邊修改都要在同一次工作中同步另一邊，並以 `git diff --no-index --ignore-cr-at-eol` 確認兩份內容相同（forge 開啟 autocrlf，換行符可能不同）；forge 端改完跑 `python gen_designed.py`。
 
 ## 管線
 | 步驟 | 產出 | AI（見 `ai-agents.md`） | 人工關卡 |
