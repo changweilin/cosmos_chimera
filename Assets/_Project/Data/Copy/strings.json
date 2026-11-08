@@ -158,5 +158,85 @@
   "ui.results.abandon_run": {
     "zh-TW": "放棄本場？本場作廢，已收服的宙獸仍會帶回大廳。",
     "en": "Abandon this run? The run will be forfeited, but captured Cosmimera will return to the lobby with you."
+  },
+  "planet.verdant_planet": {
+    "zh-TW": "翠綠星",
+    "en": "Verdant Planet"
+  },
+  "planet.lava_planet": {
+    "zh-TW": "熔岩星",
+    "en": "Lava Planet"
+  },
+  "planet.ice_crystal_planet": {
+    "zh-TW": "冰晶星",
+    "en": "Ice Crystal Planet"
+  },
+  "planet.storm_planet": {
+    "zh-TW": "風暴星",
+    "en": "Storm Planet"
+  },
+  "planet.mineral_planet": {
+    "zh-TW": "晶礦星",
+    "en": "Mineral Planet"
+  },
+  "planet.twilight_planet": {
+    "zh-TW": "晨昏星",
+    "en": "Twilight Planet"
+  },
+  "element.metal": {
+    "zh-TW": "金",
+    "en": "Metal"
+  },
+  "element.wood": {
+    "zh-TW": "木",
+    "en": "Wood"
+  },
+  "element.water": {
+    "zh-TW": "水",
+    "en": "Water"
+  },
+  "element.fire": {
+    "zh-TW": "火",
+    "en": "Fire"
+  },
+  "element.earth": {
+    "zh-TW": "土",
+    "en": "Earth"
+  },
+  "element.ice": {
+    "zh-TW": "冰",
+    "en": "Ice"
+  },
+  "element.wind": {
+    "zh-TW": "風",
+    "en": "Wind"
+  },
+  "element.thunder": {
+    "zh-TW": "雷",
+    "en": "Thunder"
+  },
+  "element.light": {
+    "zh-TW": "光",
+    "en": "Light"
+  },
+  "element.shadow": {
+    "zh-TW": "影",
+    "en": "Shadow"
+  },
+  "ui.hud.select_active": {
+    "zh-TW": "選擇在場主力",
+    "en": "Select active lead"
+  },
+  "ui.hud.cycle_vessel": {
+    "zh-TW": "切換收服道具",
+    "en": "Cycle capture vessel"
+  },
+  "ui.hud.command_keys": {
+    "zh-TW": "F 集火／R 自由／T 跟隨／G 撤退",
+    "en": "F Focus / R Free / T Follow / G Retreat"
+  },
+  "ui.hud.abandon_confirm": {
+    "zh-TW": "3 秒內再按 Esc 放棄本場；已收服的宙獸仍會帶回大廳。",
+    "en": "Press Esc again within 3 seconds to abandon the run. Captured Cosmimera will return to the lobby."
   }
 }

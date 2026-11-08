@@ -28,3 +28,4 @@
 - 2026-11-08 · Gemini Flash（agy） · done · D0 日文翻譯初稿 5 檔與 check.py 完成，123 處本地化欄位人工比對通過 · 下一步：OPUS 驗收
 - 2026-11-08 · Claude Opus（驗收 Flash）· done · 重跑 `d0-copy-flash-ja/check.py`：5 檔 123 欄 ALL PASS；抽查術語（交代、捕獲、CT、〜の稱號）符合 brief · 下一步：人工定稿
 - 2026-11-08 · Claude Opus · partial · D0 可完整跑一場：`Bootstrap/Demo.unity` 大廳→選星→真實地貌星球（12 個 GLO-90 模板）→野生戰鬥/收服/任務→BOSS→結算存檔。EditMode 862/862、PlayMode 62/62（含 run 煙霧測試：降落、交戰、造成傷害、無錯誤 log）。Sol 唯讀審查 2 high（LobbySave）已修。未做：P3-09 散佈、P4-07 隊伍編成 UI、P2-05 進化接線、星空；**未經人工實機試玩**（輸入手感、難度）。待決 Q-D1 · 下一步：人工試玩 `Demo.unity`，回報手感/難度
+- 2026-11-09 · Claude Sonnet · partial · P4-08 接線：`merge.py` 併入 `demo-ui-supplement.json`（鍵衝突即失敗）；選星/任務顯示星球與屬性名稱，HUD 補主力選擇/指令鍵/收服道具說明，放棄提示改為三秒內再按 Esc。未驗證編譯與測試（Unity Editor 開啟中，batchmode 無法執行）；ja 仍未接線 · 下一步：人工在 Editor 跑 EditMode/PlayMode 並試玩；FLASH 翻補 supplement 日文。注意：`merge.py` 會 rmtree GeoTemplates 而刪除 .meta，執行後需 `git checkout -- Assets/_Project/Data/GeoTemplates`

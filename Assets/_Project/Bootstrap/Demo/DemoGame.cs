@@ -168,8 +168,14 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (PlanetOption o in _options)
             {
                 string size = _copy.Ui("ui.star_select.size_" + o.Type.Size.ToString().ToLowerInvariant());
-                string elements = string.Join(" / ", o.Type.ElementBias);
-                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{o.Type.Id}   {size} (R={o.Radius:0} m)\n" +
+                var elementNames = new List<string>();
+                foreach (Element e in o.Type.ElementBias)
+                {
+                    elementNames.Add(_copy.Element(e.ToString()));
+                }
+
+                string elements = string.Join(" / ", elementNames);
+                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {size} (R={o.Radius:0} m)\n" +
                                 $"{_copy.Ui("ui.star_select.main_elements")}：{elements}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (GUILayout.Button(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {

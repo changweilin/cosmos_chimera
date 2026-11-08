@@ -106,6 +106,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: the string, or the key when missing. Side effects: none.</remarks>
         public string Ui(string key) => _ui.TryGetValue(key, out string s) && !string.IsNullOrEmpty(s) ? s : key;
 
+        /// <summary>Player-facing planet type name (never show the internal id).</summary>
+        /// <remarks>Pre: planetTypeId e.g. "lava_planet". Post: the name, or the key when missing. Side effects: none.</remarks>
+        public string Planet(string planetTypeId) => Ui("planet." + planetTypeId);
+
+        /// <summary>Player-facing element name (never show the enum identifier).</summary>
+        /// <remarks>Pre: elementName is the enum name, any casing. Post: the name, or the key when missing. Side effects: none.</remarks>
+        public string Element(string elementName) => Ui("element." + (elementName ?? string.Empty).ToLowerInvariant());
+
         /// <summary>Display name of a creature/move/trait id.</summary>
         /// <remarks>Pre: none. Post: the name, or the id. Side effects: none.</remarks>
         public string Name(string id) => id != null && _names.TryGetValue(id, out string s) ? s : id;

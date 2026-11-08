@@ -478,7 +478,7 @@ namespace Cosmimera.Bootstrap.Demo
                 else
                 {
                     _abandonArmedUntilMs = _nowMs + 3000;
-                    Toast(_copy.Ui("ui.results.abandon_run") + " (Esc)");
+                    Toast(_copy.Ui("ui.hud.abandon_confirm"));
                 }
             }
         }
@@ -836,7 +836,7 @@ namespace Cosmimera.Bootstrap.Demo
                 RunQuestStep s = _quest.Current;
                 string text = _copy.Step(StepType(s.Kind), (int)(_plan.Seed % 3))
                     .Replace("{count}", (s.Count - _quest.Progress).ToString())
-                    .Replace("{element}", s.Element.ToString())
+                    .Replace("{element}", _copy.Element(s.Element.ToString()))
                     .Replace("{poi}", _copy.Theme(_plan.Regions[s.Region].ThemeId))
                     .Replace("{boss}", _copy.Name(_plan.Spawns[_plan.Quest[_plan.Quest.Count - 1].TargetSpawn].CreatureId));
                 GUILayout.Label(_copy.Ui("ui.hud.quest_tracker") + "：" + text, _label);
@@ -883,8 +883,9 @@ namespace Cosmimera.Bootstrap.Demo
                 AiCommandKind.Retreat => _copy.Ui("ui.hud.command_retreat"),
                 _ => _copy.Ui("ui.hud.command_free"),
             };
-            GUILayout.Label($"[1/2] ★  [Tab] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}  " +
-                $"[F/R/T/G] {cmd}  [V] {_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
+            GUILayout.Label($"[1/2] ★ {_copy.Ui("ui.hud.select_active")}  [Tab] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
+                $"{_copy.Ui("ui.hud.command_keys")}（{cmd}）\n" +
+                $"[V] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", "C").Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
             GUILayout.EndArea();

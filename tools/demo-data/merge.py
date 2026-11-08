@@ -47,6 +47,16 @@ def stage_copy(root: Path) -> None:
     COPY_OUT.mkdir(parents=True, exist_ok=True)
     for name in D0_COPY:
         shutil.copyfile(root / "_incoming" / "d0-copy-terra" / f"{name}.json", COPY_OUT / f"{name}.json")
+    # Supplement keys are additive UI strings; a key collision would silently shadow reviewed copy, so fail loudly.
+    incoming = root / "_incoming" / "d0-copy-terra"
+    strings = json.loads((incoming / "strings.json").read_text(encoding="utf-8"))
+    supplement = json.loads((incoming / "demo-ui-supplement.json").read_text(encoding="utf-8"))
+    clash = sorted(set(strings) & set(supplement))
+    if clash:
+        raise SystemExit(f"error: demo-ui-supplement.json overrides strings.json keys: {clash}")
+    strings.update(supplement)
+    (COPY_OUT / "strings.json").write_text(json.dumps(strings, ensure_ascii=False, indent=2) + "\n",
+                                           encoding="utf-8", newline="\n")
     shutil.copyfile(root / "balance.json", COPY_OUT / "balance.json")
     names = {}
     for batch in NAME_SOURCES:
