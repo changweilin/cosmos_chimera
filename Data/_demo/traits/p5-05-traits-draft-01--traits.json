@@ -1,0 +1,602 @@
+[
+  {
+    "id": "trait_metal_dense_alloy",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "metal",
+          "delta": 15
+        }
+      },
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -8
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_metal_magnetic_recoil",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "metal",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_metal_tempered_edge",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "metal",
+        "duration_ms": 3000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "metal",
+          "delta": 25
+        }
+      },
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "any",
+          "delta": 10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_photosynthesis",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 1000
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 8
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_bark_reinforcement",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "earth",
+          "delta": 20
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "fire",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wood_verdant_resonance",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "wood",
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_fluid_stance",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 6
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "thunder",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_torrent_flow",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "water",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "water",
+          "delta": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_water_cleansing_tide",
+    "trigger": {
+      "type": "on_hp_cross_below",
+      "params": {
+        "percent": 30,
+        "duration_ms": 1000
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 12
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_blazing_fury",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 35
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "fire",
+          "delta": 30
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "water",
+          "delta": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_heat_exhaust",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_fire_thermal_recharge",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "fire",
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "fire",
+          "delta": -25
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_monolith_posture",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "earth",
+          "delta": 25
+        }
+      },
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -6
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_tectonic_rebound",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "any",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "earth",
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_earth_stone_bastion",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 80
+      }
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "fire",
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_permafrost_shell",
+    "trigger": {
+      "type": "always",
+      "params": {}
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "ice",
+          "delta": 20
+        }
+      },
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_glacial_patience",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 75
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_ice_flash_freeze",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "ice",
+          "delta": 35
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_tailwind_glide",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 6000
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_cyclone_instability",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "wind",
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      },
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_wind_feather_grace",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 40
+      }
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_static_overload",
+    "trigger": {
+      "type": "on_move_used",
+      "params": {
+        "element": "thunder",
+        "duration_ms": 3000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "thunder",
+          "delta": 25
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "thunder",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_grounding_circuit",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "thunder",
+        "duration_ms": 1000
+      }
+    },
+    "effects": [
+      {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 6
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_thunder_spark_stride",
+    "trigger": {
+      "type": "on_summon",
+      "params": {
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "any",
+          "delta": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_aurora_veil",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 5000
+      }
+    },
+    "effects": [
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "shadow",
+          "delta": 25
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_solar_overdrive",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 70
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "light",
+          "delta": 20
+        }
+      },
+      {
+        "type": "range_mod_percent",
+        "params": {
+          "delta": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_light_dawn_renewal",
+    "trigger": {
+      "type": "on_hit_taken",
+      "params": {
+        "element": "shadow",
+        "duration_ms": 3000
+      }
+    },
+    "effects": [
+      {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "light",
+          "delta": -15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_void_embrace",
+    "trigger": {
+      "type": "on_hp_below",
+      "params": {
+        "percent": 25
+      }
+    },
+    "effects": [
+      {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 15
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_umbral_ambush",
+    "trigger": {
+      "type": "on_ally_swap",
+      "params": {
+        "duration_ms": 4000
+      }
+    },
+    "effects": [
+      {
+        "type": "mastery_mod",
+        "params": {
+          "element": "shadow",
+          "delta": 25
+        }
+      },
+      {
+        "type": "resist_mod",
+        "params": {
+          "element": "light",
+          "delta": -20
+        }
+      }
+    ]
+  },
+  {
+    "id": "trait_shadow_dusk_flicker",
+    "trigger": {
+      "type": "on_hp_above",
+      "params": {
+        "percent": 90
+      }
+    },
+    "effects": [
+      {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 20
+        }
+      }
+    ]
+  }
+]

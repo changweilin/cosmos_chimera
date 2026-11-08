@@ -1,0 +1,134 @@
+[
+  {
+    "a": "earth_auric_sovereign",
+    "b": "metal_clock_chick",
+    "kind": "mentor",
+    "note": "屹立前排的金塵岩偶指導初生青銅漏輪雛穩守陣線抵禦近敵"
+  },
+  {
+    "a": "earth_pebble_pawn",
+    "b": "fire_ember_cub",
+    "kind": "rival_symbiosis",
+    "note": "岩鎧石偶以岩殼護住砂岩熔核幼獅的餘燼（幼年外觀尚無岩殼，取線基底）"
+  },
+  {
+    "a": "earth_pebble_pawn",
+    "b": "metal_chronos_engine",
+    "kind": "mentor",
+    "note": "雙足如樁守陣的漏輪巨象指導慢步跟隨前排的金塵偶鎮守陣線"
+  },
+  {
+    "a": "fire_ember_cub",
+    "b": "moon_longnight_wolf",
+    "kind": "mentor",
+    "note": "沉穩繞背伏襲的夜痕霜狼教導急躁搶前的燼鬃仔低伏伺機突擊"
+  },
+  {
+    "a": "fire_mane_stalker",
+    "b": "star_storm_colt",
+    "kind": "rival_symbiosis",
+    "note": "低伏荒原的烈焰雄獅與奔馳綠草原的電鬃駿馬具掠食天敵對峙意象"
+  },
+  {
+    "a": "fire_pyre_monarch",
+    "b": "metal_chronos_engine",
+    "kind": "rival_symbiosis",
+    "note": "砂岩烈火霸獅與水力計時青銅巨象具巨獸爭鋒及熔火剋銅對峙意象"
+  },
+  {
+    "a": "fire_pyre_monarch",
+    "b": "sun_mirror_chick",
+    "kind": "mentor",
+    "note": "金紅火冠的燼鬃焰獅引導練習追日聚光的鏡芽雀凝光化熱"
+  },
+  {
+    "a": "ice_frost_fledgling",
+    "b": "star_skyhoof_steed",
+    "kind": "mentor",
+    "note": "北亞草原展翼的額角天驥引領初生冰角絨毛幼雛穩踏寒原霜地"
+  },
+  {
+    "a": "ice_rime_strider",
+    "b": "metal_gear_strider",
+    "kind": "tool_kin",
+    "note": "鍛鐵鉸鏈連動翼甲與盤龍青銅連桿重甲同屬金屬連桿關節機關系"
+  },
+  {
+    "a": "ice_rime_strider",
+    "b": "moon_longnight_wolf",
+    "kind": "rival_symbiosis",
+    "note": "永凍原分叉鹿角獵獸與極夜冰原巨灰狼同處寒境，具凍原競獵意象"
+  },
+  {
+    "a": "ice_tundra_dreadnought",
+    "b": "metal_chronos_engine",
+    "kind": "tool_kin",
+    "note": "機械冰裂翼重甲霜獸與青銅水力輪系巨象同屬重裝機械巨獸系"
+  },
+  {
+    "a": "ice_tundra_dreadnought",
+    "b": "star_skyhoof_steed",
+    "kind": "myth_kin",
+    "note": "巴澤雷克有翼鹿角獅鷲與圖爾帕爾金翼天馬同屬歐亞草原有翼神獸母題"
+  },
+  {
+    "a": "metal_clock_chick",
+    "b": "sun_mirror_chick",
+    "kind": "tool_kin",
+    "note": "浮碗漏刻發條齒輪與追日轉動聚光小鏡同屬測時追光精密儀器"
+  },
+  {
+    "a": "moon_night_pup",
+    "b": "star_blaze_foal",
+    "kind": "rival_symbiosis",
+    "note": "繞背揮爪的灰狼幼崽與帶電衝撞的草原幼駒具掠食天敵對峙意象"
+  },
+  {
+    "a": "star_blaze_foal",
+    "b": "wind_monsoon_galeon",
+    "kind": "mentor",
+    "note": "御風高速巡航的笛風天舟指導跌撞練跑的星蹄駒掌握乘風疾馳"
+  },
+  {
+    "a": "sun_array_skyheron",
+    "b": "wind_monsoon_galeon",
+    "kind": "tool_kin",
+    "note": "汲雲氣球鏡陣飛行器與刺繡雲帆御風天舟同屬高空氣動航行載具"
+  },
+  {
+    "a": "sun_array_skyheron",
+    "b": "wood_fern_chick",
+    "kind": "mentor",
+    "note": "高空盤旋的鏡環天鷺引領初萌蕨冠的蔓冠幼鳥掌握展翼與控距"
+  },
+  {
+    "a": "sun_heliostat_heron",
+    "b": "water_wave_elver",
+    "kind": "rival_symbiosis",
+    "note": "單腳佇立的鏡羽鷺與穿梭浪間的銀色幼鰻具涉水禽捕鰻天敵意象"
+  },
+  {
+    "a": "water_catamaran_serpent",
+    "b": "wind_monsoon_galeon",
+    "kind": "tool_kin",
+    "note": "雙體蟹爪風帆巨鰻舟與重層刺繡雲帆天舟同屬季風大型帆船載具"
+  },
+  {
+    "a": "water_catamaran_serpent",
+    "b": "wood_canopy_regent",
+    "kind": "tool_kin",
+    "note": "彩繪側舷雙體帆舟與黃銅雕花底座彩禽同屬手工彩繪雕飾器物"
+  },
+  {
+    "a": "water_skiff_eel",
+    "b": "wind_reed_skiff",
+    "kind": "tool_kin",
+    "note": "木紋雙浮筒蟹爪帆舟與奇納布河梭形渡舟同屬輕型舟船載具系"
+  },
+  {
+    "a": "water_wave_elver",
+    "b": "wood_plume_peafowl",
+    "kind": "rival_symbiosis",
+    "note": "延伸意象：原型薩里馬諾克有爪銜鮮魚母題，但木線未採用；彩禽捕食銀鰻"
+  }
+]

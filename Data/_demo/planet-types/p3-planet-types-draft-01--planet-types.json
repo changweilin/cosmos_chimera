@@ -1,0 +1,38 @@
+[
+  {
+    "id": "verdant_planet",
+    "size": "medium",
+    "terrain_tags": ["forest", "river_valley"],
+    "element_bias": ["wood", "water", "wind"]
+  },
+  {
+    "id": "lava_planet",
+    "size": "small",
+    "terrain_tags": ["volcano", "rift_valley"],
+    "element_bias": ["fire", "earth"]
+  },
+  {
+    "id": "ice_crystal_planet",
+    "size": "medium",
+    "terrain_tags": ["ice_field", "fjord"],
+    "element_bias": ["ice", "water"]
+  },
+  {
+    "id": "storm_planet",
+    "size": "large",
+    "terrain_tags": ["plateau", "archipelago"],
+    "element_bias": ["thunder", "wind"]
+  },
+  {
+    "id": "mineral_planet",
+    "size": "small",
+    "terrain_tags": ["canyon", "cave"],
+    "element_bias": ["metal", "earth"]
+  },
+  {
+    "id": "twilight_planet",
+    "size": "large",
+    "terrain_tags": ["eternal_day", "eternal_night"],
+    "element_bias": ["light", "shadow"]
+  }
+]

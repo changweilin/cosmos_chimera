@@ -1,0 +1,86 @@
+[
+  {
+    "a": "metal_clock_chick",
+    "b": "metal_gear_strider",
+    "kind": "evolution_family",
+    "note": "line_metal_gearclock juvenile → adolescent"
+  },
+  {
+    "a": "metal_chronos_engine",
+    "b": "metal_gear_strider",
+    "kind": "evolution_family",
+    "note": "line_metal_gearclock adolescent → adult"
+  },
+  {
+    "a": "wood_fern_chick",
+    "b": "wood_plume_peafowl",
+    "kind": "evolution_family",
+    "note": "line_wood_vinecrest juvenile → adolescent"
+  },
+  {
+    "a": "wood_canopy_regent",
+    "b": "wood_plume_peafowl",
+    "kind": "evolution_family",
+    "note": "line_wood_vinecrest adolescent → adult"
+  },
+  {
+    "a": "water_skiff_eel",
+    "b": "water_wave_elver",
+    "kind": "evolution_family",
+    "note": "line_water_tidecraft juvenile → adolescent"
+  },
+  {
+    "a": "water_catamaran_serpent",
+    "b": "water_skiff_eel",
+    "kind": "evolution_family",
+    "note": "line_water_tidecraft adolescent → adult"
+  },
+  {
+    "a": "fire_ember_cub",
+    "b": "fire_mane_stalker",
+    "kind": "evolution_family",
+    "note": "line_fire_blazelion juvenile → adolescent"
+  },
+  {
+    "a": "fire_mane_stalker",
+    "b": "fire_pyre_monarch",
+    "kind": "evolution_family",
+    "note": "line_fire_blazelion adolescent → adult"
+  },
+  {
+    "a": "earth_gilded_warden",
+    "b": "earth_pebble_pawn",
+    "kind": "evolution_family",
+    "note": "line_earth_gildedgolem juvenile → adolescent"
+  },
+  {
+    "a": "earth_auric_sovereign",
+    "b": "earth_gilded_warden",
+    "kind": "evolution_family",
+    "note": "line_earth_gildedgolem adolescent → adult"
+  },
+  {
+    "a": "ice_frost_fledgling",
+    "b": "ice_rime_strider",
+    "kind": "evolution_family",
+    "note": "line_ice_frostbeast juvenile → adolescent"
+  },
+  {
+    "a": "ice_rime_strider",
+    "b": "ice_tundra_dreadnought",
+    "kind": "evolution_family",
+    "note": "line_ice_frostbeast adolescent → adult"
+  },
+  {
+    "a": "wind_flute_cruiser",
+    "b": "wind_reed_skiff",
+    "kind": "evolution_family",
+    "note": "line_wind_fluteglider juvenile → adolescent"
+  },
+  {
+    "a": "wind_flute_cruiser",
+    "b": "wind_monsoon_galeon",
+    "kind": "evolution_family",
+    "note": "line_wind_fluteglider adolescent → adult"
+  }
+]

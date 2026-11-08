@@ -1,0 +1,38 @@
+[
+  {
+    "a": "sun_heliostat_heron",
+    "b": "sun_mirror_chick",
+    "kind": "evolution_family",
+    "note": "starter_sun_line juvenile → adolescent"
+  },
+  {
+    "a": "sun_array_skyheron",
+    "b": "sun_heliostat_heron",
+    "kind": "evolution_family",
+    "note": "starter_sun_line adolescent → adult"
+  },
+  {
+    "a": "moon_night_pup",
+    "b": "moon_shade_wolf",
+    "kind": "evolution_family",
+    "note": "starter_moon_line juvenile → adolescent"
+  },
+  {
+    "a": "moon_longnight_wolf",
+    "b": "moon_shade_wolf",
+    "kind": "evolution_family",
+    "note": "starter_moon_line adolescent → adult"
+  },
+  {
+    "a": "star_blaze_foal",
+    "b": "star_storm_colt",
+    "kind": "evolution_family",
+    "note": "starter_star_line juvenile → adolescent"
+  },
+  {
+    "a": "star_skyhoof_steed",
+    "b": "star_storm_colt",
+    "kind": "evolution_family",
+    "note": "starter_star_line adolescent → adult"
+  }
+]
