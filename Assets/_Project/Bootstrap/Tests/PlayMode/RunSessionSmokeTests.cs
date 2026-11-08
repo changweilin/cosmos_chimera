@@ -1,0 +1,105 @@
+#if UNITY_EDITOR
+using System.Collections;
+using System.Collections.Generic;
+using Cosmimera.Bootstrap.Demo;
+using Cosmimera.Combat;
+using Cosmimera.GameData;
+using Cosmimera.WorldGen;
+using NUnit.Framework;
+using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.TestTools;
+
+namespace Cosmimera.Bootstrap.Tests
+{
+    public sealed class RunSessionSmokeTests
+    {
+        private const string Copy = "Assets/_Project/Data/Copy/";
+
+        private static T Load<T>(string path) where T : Object
+        {
+            var a = AssetDatabase.LoadAssetAtPath<T>(path);
+            Assert.That(a, Is.Not.Null, path);
+            return a;
+        }
+
+        [UnityTest]
+        public IEnumerator A_run_lands_engages_a_wild_pack_and_deals_damage()
+        {
+            var db = Load<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            var copy = new DemoCopy("zh-TW", Load<TextAsset>(Copy + "strings.json").text, Load<TextAsset>(Copy + "names.json").text,
+                Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
+                Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
+            CombatBalance balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            var wild = new List<CreatureDef>();
+            var party = new List<CreatureDef>();
+            PlanetTypeDef type = null;
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c)
+                {
+                    (c.LineId.StartsWith("starter_") ? party : wild).Add(c);
+                }
+                else if (d is PlanetTypeDef t && type == null)
+                {
+                    type = t;
+                }
+            }
+
+            party.RemoveAll(c => c.Stage != CreatureStage.Adult);
+            RunOutcome outcome = null;
+            var session = new GameObject("Run").AddComponent<RunSession>();
+            session.Configure(copy, balance, Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+                Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
+                new RunSetup { PlanetType = type, Seed = 2026, Radius = 640f, Party = party }, wild, o => outcome = o);
+
+            float deadline = Time.realtimeSinceStartup + 60f;
+            while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(session.StartedForTests, Is.True, "terrain colliders under the landing point within 60 s");
+
+            // Teleport next to the nearest normal pack so the 18 m aggro radius engages it. Nearest, because the
+            // character's motor rejects an up vector that turns > 90° in one step (a far teleport is not gameplay).
+            RunPlan plan = session.PlanForTests;
+            float3 target = float3.zero;
+            float best = -2f;
+            foreach (RunSpawn s in plan.Spawns)
+            {
+                float d = math.dot(s.Direction, plan.LandingDirection);
+                if (s.Role == SpawnRole.Normal && d > best)
+                {
+                    best = d;
+                    target = s.Direction;
+                }
+            }
+
+            PlanetRig rig = session.RigForTests;
+            Encounter encounter = session.EncounterForTests;
+            var rb = rig.Character.GetComponent<Rigidbody>();
+            rb.position = rig.Config.ToWorld(target, rig.Height.Sample(target) + 1f);
+            rig.Character.transform.position = rb.position;
+
+            bool hit = false;
+            deadline = Time.realtimeSinceStartup + 60f;
+            while (!hit && outcome == null && Time.realtimeSinceStartup < deadline)
+            {
+                foreach (EncounterUnit u in encounter.Units)
+                {
+                    hit |= u.Fielded && u.Combatant.Hp < u.Combatant.MaxHp;
+                }
+
+                yield return null;
+            }
+
+            Assert.That(hit, Is.True, "some fielded creature took damage within 60 s");
+            Object.Destroy(session.gameObject);
+            yield return null;
+        }
+    }
+}
+#endif

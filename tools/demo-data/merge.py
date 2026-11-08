@@ -5,6 +5,7 @@ The importer takes -dataRoot, so we stage copies instead of promoting drafts int
 Pre: run from the repo root. Post: Data/_demo/<kind>/<batch>.json mirrors the batches below; nothing else changes.
 Side effects: deletes and rewrites Data/_demo/.
 """
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -17,6 +18,26 @@ BATCHES = [
     "p5-06-relations-draft-01",
 ]
 KINDS = ["creatures", "moves", "traits", "relations", "planet-types"]
+# Runtime copy for the demo UI. Unity cannot read Data/ in a build, so the text is staged as TextAssets.
+COPY_OUT = Path("Assets/_Project/Data/Copy")
+D0_COPY = ["affixes", "region-themes", "quest-templates", "boss-epithets", "strings"]
+NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01"]
+
+
+def stage_copy(root: Path) -> None:
+    COPY_OUT.mkdir(parents=True, exist_ok=True)
+    for name in D0_COPY:
+        shutil.copyfile(root / "_incoming" / "d0-copy-terra" / f"{name}.json", COPY_OUT / f"{name}.json")
+    shutil.copyfile(root / "balance.json", COPY_OUT / "balance.json")
+    names = {}
+    for batch in NAME_SOURCES:
+        copy = json.loads((root / "_incoming" / batch / "copy-terra.json").read_text(encoding="utf-8"))
+        for section in ("creatures", "moves", "traits"):
+            for entry in copy.get(section, []):
+                names[entry["id"]] = {"zh-TW": entry.get("name_zh", entry["id"]), "en": entry.get("name_en", entry["id"])}
+    entries = [{"id": k, "zh": v["zh-TW"], "en": v["en"]} for k, v in sorted(names.items())]
+    (COPY_OUT / "names.json").write_text(json.dumps({"entries": entries}, ensure_ascii=False, indent=1) + "\n",
+                                         encoding="utf-8", newline="\n")
 
 
 def main() -> int:
@@ -34,7 +55,8 @@ def main() -> int:
                 dst = out / kind / f"{batch}--{f.name}"
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(f, dst)
-    print(f"staged {sum(1 for _ in out.rglob('*.json'))} files into {out}")
+    stage_copy(root)
+    print(f"staged {sum(1 for _ in out.rglob('*.json'))} files into {out}; copy into {COPY_OUT}")
     return 0
 
 
