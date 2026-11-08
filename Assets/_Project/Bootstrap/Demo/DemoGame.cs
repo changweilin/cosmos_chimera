@@ -61,6 +61,8 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _title;
         private GUIStyle _text;
         private Camera _lobbyCamera;
+        private Vector2 _partyScroll;
+        private string _partyMsg = string.Empty;
         private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
         private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
 
@@ -142,13 +144,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            GUILayout.Label(_copy.Ui("ui.lobby.team"), _text);
-            foreach (int id in _save.Party)
-            {
-                OwnedCreature o = _save.Get(id);
-                GUILayout.Label("· " + _copy.Name(o.SpeciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")", _text);
-            }
-
+            DrawPartyEditor();
             GUILayout.Space(20);
             if (GUILayout.Button(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
             {
@@ -160,6 +156,86 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Application.Quit();
             }
+        }
+
+        // P4-07 minimal: order + add/remove only. Vessel/sub-hand pairing rules are not in D0 (vessel is shown, not enforced).
+        private void DrawPartyEditor()
+        {
+            GUILayout.Label($"{_copy.Ui("ui.lobby.team")} ({_save.Party.Count}/{LobbySave.MaxParty})", _text);
+            GUILayout.Label(_copy.Ui("ui.lobby.party_hint"), _text);
+            _partyScroll = GUILayout.BeginScrollView(_partyScroll, GUILayout.Height(Mathf.Min(300, UnityEngine.Screen.height - 340)));
+            // Snapshot: mutating the save while iterating Party would break the foreach.
+            var party = new List<int>(_save.Party);
+            for (int i = 0; i < party.Count; i++)
+            {
+                OwnedCreature o = _save.Get(party[i]);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(330));
+                GUI.enabled = i > 0;
+                if (GUILayout.Button(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
+                {
+                    (party[i - 1], party[i]) = (party[i], party[i - 1]);
+                    CommitParty(party);
+                }
+
+                GUI.enabled = true;
+                if (GUILayout.Button(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
+                {
+                    if (party.Count <= 1)
+                    {
+                        _partyMsg = _copy.Ui("ui.lobby.party_min");
+                    }
+                    else
+                    {
+                        party.RemoveAt(i);
+                        CommitParty(party);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Label(_copy.Ui("ui.lobby.reserve"), _text);
+            foreach (OwnedCreature o in _save.Owned)
+            {
+                if (party.Contains(o.InstanceId))
+                {
+                    continue;
+                }
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(330));
+                if (GUILayout.Button(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
+                {
+                    if (party.Count >= LobbySave.MaxParty)
+                    {
+                        _partyMsg = _copy.Ui("ui.lobby.party_full");
+                    }
+                    else
+                    {
+                        party.Add(o.InstanceId);
+                        CommitParty(party);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndScrollView();
+            if (!string.IsNullOrEmpty(_partyMsg))
+            {
+                GUILayout.Label(_partyMsg, _text);
+            }
+        }
+
+        private string PartyLabel(OwnedCreature o) =>
+            _copy.Name(o.SpeciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")";
+
+        private void CommitParty(List<int> party)
+        {
+            _save.SetParty(party);
+            _save.Write(_savePath);
+            _partyMsg = string.Empty;
         }
 
         private void DrawStarSelect()

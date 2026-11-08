@@ -12,9 +12,10 @@
 | P4-04 | 圖鑑、招式表、特性表、關係表（關係網視覺化） | SONNET | 人工 | 全部由 Data 自動生成 | ⬜ |
 | P4-05 | 孵蛋所（依 Q-M3） | SONNET | — | 孵化結果依資料表 | ⬜ |
 | P4-06 | 存檔：格式、版本號、遷移（依 Q-M4） | OPUS | SONNET | 舊版存檔可遷移；ID 退役不壞檔 | 🟦 |
-| P4-07 | 隊伍編成 UI：6 主力、4 輪替、副手配對提示 | SONNET | 人工 | 不合法配對有清楚理由 | ⬜ |
+| P4-07 | 隊伍編成 UI：6 主力、4 輪替、副手配對提示 | SONNET | 人工 | 不合法配對有清楚理由 | 🟦 |
 | P4-08 | UI 文案與本地化（繁中/英/日） | TERRA | FLASH（交叉）+ 人工 | 字串全部外部化 | 🟦 |
 
 ## 交接紀錄
 - 2026-11-08 · Claude Opus · partial · D0：`Bootstrap/Demo.unity`（`DemoGame`：大廳選御三家 → 三選一星球 → run → 結算）；P4-03 `Capture/Api/CaptureRules`（擊倒後投擲、每隻一次機會、bounty +10）；P4-06 `Save/Api/LobbySave`（Q-M4：只存大廳、原子寫入；Sol D0 審查 H1 SetParty 自我別名、H2 Release 剝除版本檢查，已修並補測試）。P4-07 隊伍編成 UI 未做（收服自動入隊至 6 隻） · 下一步：P4-07；人工試玩
 - 2026-11-09 · ChatGPT Codex · partial · P4-08：依 D0 實際畫面補星球／屬性名稱與操作提示雙語草稿，記錄內部 ID、按鍵說明和日文接線缺口；尚未接入遊戲或翻譯日文 · 下一步：SONNET 接線、FLASH 翻譯及交叉審查、人工試玩
+- 2026-11-09 · Claude Sonnet · partial · P4-07 最低限度：大廳 DemoGame.DrawPartyEditor 可調整隊伍順序（首位為出戰主力）、移出／加入待命區（1..6 隻，變更即寫存檔）；未做輪替／副手配對規則與提示；字串在 demo-ui-supplement.json（zh-TW 為 Sonnet 草稿）；未編譯、未測試（Editor 開啟中） · 下一步：人工在 Editor 編譯試玩；TERRA 審字串、FLASH 補日文
