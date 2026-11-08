@@ -1,0 +1,151 @@
+using System.Reflection;
+using Cosmimera.Core.Contracts;
+using NUnit.Framework;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Cosmimera.Player.Tests
+{
+    // Regressions for docs/reviews/P1-review-r6-sol.md (N8-R6, N10, N11).
+    public sealed class PlayerCameraRigReviewR6Tests
+    {
+        private GameObject _go;
+        private PlayerCameraRig _rig;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _go = new GameObject("R6Rig");
+            _rig = _go.AddComponent<PlayerCameraRig>();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_go);
+        }
+
+        private void SetField(string name, float value)
+        {
+            typeof(PlayerCameraRig).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_rig, value);
+        }
+
+        [TestCase("_sensitivityDegrees", float.MaxValue)]
+        [TestCase("_sensitivityDegrees", -float.MaxValue)]
+        [TestCase("_sensitivityDegrees", float.NaN)]
+        [TestCase("_sensitivityDegrees", PlayerCameraRig.MaxSensitivityDegrees * 1.01f)]
+        [TestCase("_gamepadDegreesPerSecond", float.MaxValue)]
+        [TestCase("_gamepadDegreesPerSecond", -1f)]
+        [TestCase("_gamepadDegreesPerSecond", PlayerCameraRig.MaxGamepadDegreesPerSecond * 1.01f)]
+        public void N8_R6_out_of_range_serialized_multipliers_are_rejected_before_the_queue_changes(string field, float value)
+        {
+            _rig.AddLook(new Vector2(10f, 10f), Vector2.zero, 0f);
+            float2 before = _rig.PendingLook;
+            SetField(field, value);
+
+            Assert.Throws<ContractException>(() => _rig.AddLook(new Vector2(1e6f, 0f), new Vector2(1.001f, 0f), 1f));
+            Assert.AreEqual(before, _rig.PendingLook);
+        }
+
+        // sol P1 r14 N29: the Pre range is closed at 0; only an accepting case at the endpoint can tell `>= 0` from `> 0`.
+        [Test]
+        public void N29_zero_gamepad_rate_is_accepted()
+        {
+            SetField("_gamepadDegreesPerSecond", 0f);
+
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(10f, 10f), new Vector2(1f, 1f), 1f));
+            Assert.AreEqual(1.2f, _rig.PendingLook.x, 1e-5f, "the stick contributes nothing");
+            Assert.AreEqual(1.2f, _rig.PendingLook.y, 1e-5f);
+        }
+
+        // sol P1 r15 N31: |sensitivity| ≤ Max includes 0; an extra `!= 0` rejection is only visible to an accepting case.
+        [Test]
+        public void N31_zero_pointer_sensitivity_is_accepted()
+        {
+            SetField("_sensitivityDegrees", 0f);
+            SetField("_gamepadDegreesPerSecond", 10f);
+
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(10f, 10f), new Vector2(1f, 1f), 1f));
+            Assert.AreEqual(10f, _rig.PendingLook.x, 1e-5f, "the pointer contributes nothing");
+            Assert.AreEqual(10f, _rig.PendingLook.y, 1e-5f);
+        }
+
+        // sol P1 r16 N33: endpoint acceptance for the AddLook Pre and the pending-range Post.
+        [TestCase(-1.001f, 0f)]
+        [TestCase(0f, -1.001f)]
+        public void N33_stick_at_the_negative_slack_is_accepted(float x, float y)
+        {
+            Assert.DoesNotThrow(() => _rig.AddLook(Vector2.zero, new Vector2(x, y), 0.01f));
+        }
+
+        [Test]
+        public void N33_sensitivity_at_plus_max_is_accepted()
+        {
+            SetField("_sensitivityDegrees", PlayerCameraRig.MaxSensitivityDegrees);
+            Assert.DoesNotThrow(() => _rig.AddLook(new Vector2(1f, 0f), Vector2.zero, 0f));
+            Assert.AreEqual(PlayerCameraRig.MaxSensitivityDegrees, _rig.PendingLook.x, 1e-5f);
+        }
+
+        // Default 0.12°/px × 3000 px is exactly one turn: the Post's open (-360, 360) range must wrap it to 0.
+        [TestCase(3000f)]
+        [TestCase(-3000f)]
+        public void N33_exactly_one_turn_of_yaw_wraps_inside_the_open_range(float pointerX)
+        {
+            _rig.AddLook(new Vector2(pointerX, 0f), Vector2.zero, 0f);
+            Assert.AreEqual(0f, _rig.PendingLook.x, 1e-3f);
+            Assert.Less(math.abs(_rig.PendingLook.x), 360f);
+        }
+
+        // ±160 is the documented "reaches ±80 from every start" boundary; the value must accumulate exactly.
+        [TestCase(1600f)]
+        [TestCase(-1600f)]
+        public void N33_pitch_exactly_at_160_accumulates_exactly(float pointerY)
+        {
+            SetField("_sensitivityDegrees", 0.1f);
+            _rig.AddLook(new Vector2(0f, pointerY), Vector2.zero, 0f);
+            Assert.AreEqual(math.sign(pointerY) * 160f, _rig.PendingLook.y);
+        }
+
+        [Test]
+        public void N8_R6_extreme_legal_multipliers_keep_the_queue_finite_and_in_range()
+        {
+            SetField("_sensitivityDegrees", -PlayerCameraRig.MaxSensitivityDegrees);
+            SetField("_gamepadDegreesPerSecond", PlayerCameraRig.MaxGamepadDegreesPerSecond);
+            for (int i = 0; i < 1000; i++)
+            {
+                _rig.AddLook(new Vector2(PlayerCameraRig.MaxPointerDelta, -PlayerCameraRig.MaxPointerDelta),
+                    new Vector2(1.001f, 1.001f), PlayerCameraRig.MaxLookDeltaTime);
+                AssertInRange(_rig.PendingLook);
+            }
+        }
+
+        [Test]
+        public void N10_pitch_saturates_at_a_half_turn_within_one_frame()
+        {
+            // Default sensitivity 0.12°/px: +300° then −200°. Saturation keeps +180 then lands at −20 (documented Post),
+            // whereas exact summation would give +100.
+            _rig.AddLook(new Vector2(0f, 2500f), Vector2.zero, 0f);
+            Assert.AreEqual(180f, _rig.PendingLook.y, 1e-3f);
+            _rig.AddLook(new Vector2(0f, -1666.6666f), Vector2.zero, 0f);
+            Assert.AreEqual(-20f, _rig.PendingLook.y, 1e-2f);
+        }
+
+        [Test]
+        public void N11_pending_yaw_wraps_and_pitch_saturates()
+        {
+            _rig.AddLook(new Vector2(1e6f, 1e6f), Vector2.zero, 0f);
+            Assert.AreEqual(120f, _rig.PendingLook.x, 1e-2f, "1.2e5° of yaw wraps to 120°");
+            Assert.AreEqual(180f, _rig.PendingLook.y, "pitch saturates");
+            _rig.AddLook(new Vector2(-1e6f, -1e6f), Vector2.zero, 0f);
+            AssertInRange(_rig.PendingLook);
+            Assert.AreEqual(-180f, _rig.PendingLook.y);
+        }
+
+        private static void AssertInRange(float2 look)
+        {
+            Assert.IsTrue(math.all(math.isfinite(look)), "finite");
+            Assert.Less(math.abs(look.x), 360f, "yaw in (-360, 360)");
+            Assert.LessOrEqual(math.abs(look.y), 180f, "pitch in [-180, 180]");
+        }
+    }
+}
