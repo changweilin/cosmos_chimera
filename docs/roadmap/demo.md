@@ -24,3 +24,4 @@
 | Meta | P4-01 大廳（最低限度）、P4-02 選星、P4-03 收服、P4-06 存檔（只存大廳）、P4-07 隊伍編成（最低限度） | OPUS | |
 | 文案 | 區域主題/詞綴/任務/BOSS/UI 字串 zh-TW + en | TERRA（Codex） | `Data/_incoming/d0-copy-terra/` |
 | 文案 | 上項 ja 翻譯初稿 | FLASH（agy） | 待 TERRA 完成 |
+- 2026-11-08 · ChatGPT Terra（Codex CLI） · done · D0 繁中及英文文案初稿與自行驗收完成 · 下一步：SONNET 審核、FLASH 製作日文初稿
