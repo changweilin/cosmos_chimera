@@ -11,7 +11,7 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 |---|---|---|---|---|---|---|---|
 | `line_metal_gearclock` | metal | 西亞/中東 | `arch_al_jazari` | 器械 (machine) | 前排坦克（近戰→遠距突進） | `metal_needle_thrust` (30) / `metal_iron_cleave` (60) / `metal_lance_charge` (110) | `trait_metal_dense_alloy` |
 | `line_wood_vinecrest` | wood | 東南亞 | `arch_sarimanok` | 生物 (creature) | 中排輸出，上場自我治療 | `wood_briar_dash` (35) / `wood_root_spear` (85) / `wood_canopy_crush` (105) | `trait_wood_photosynthesis` |
-| `line_water_tidecraft` | water | 大洋洲 | `arch_edai_siabo_lakatoi` | 生物 × 載具 | 中遠距輸出，連續水招縮 CD | `water_aqua_cutter` (40) / `water_torrent_burst` (75) / `water_deluge_crater` (115) | `trait_water_torrent_flow` |
+| `line_water_tidecraft` | water | 大洋洲 | `arch_edai_siabo_lakatoi` | 生物 × 載具 | 中遠距輸出，連續水招縮 CD | `water_crest_slicer` (40) / `water_torrent_burst` (75) / `water_deluge_crater` (115) | `trait_water_torrent_flow` |
 | `line_fire_blazelion` | fire | 非洲 | `arch_apedemak` | 生物 (creature) | 近戰→突進→遠距重砲 | `fire_ember_lash` (35) / `fire_blaze_charge` (65) / `fire_inferno_cataclysm` (120) | `trait_fire_thermal_recharge` |
 | `line_earth_gildedgolem` | earth | 美洲 | `arch_el_dorado_muisca` | 人形 (humanoid) | 中前排，受擊提高土專精 | `earth_pebble_shot` (30) / `earth_seismic_slam` (60) / `earth_rampart_rush` (100) | `trait_earth_tectonic_rebound` |
 | `line_ice_frostbeast` | ice | 中亞/北亞 | `arch_pazyryk_antlered_griffin` | 生物 × 器械 | 中遠距輸出，上場暫提冰抗 | `ice_shard_flurry` (35) / `ice_glacier_lance` (85) / `ice_blizzard_vortex` (110) | `trait_ice_flash_freeze` |
@@ -35,7 +35,7 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 | `wood_fern_chick` | 幼年 | S | 28 | 16 | 40 | 16 | 100 | wood: 15 | wood +20, water +10, earth +5, metal -20 | `wood_briar_dash` (35) |
 | `wood_plume_peafowl` | 少年 | M | 55 | 32 | 81 | 32 | 200 | wood: 25 | wood +35, water +15, earth +10, metal -30 | `wood_root_spear` (85) |
 | `wood_canopy_regent` | 成年 | L | 110 | 65 | 160 | 65 | 400 | wood: 40 | wood +50, water +15, earth +10, metal -40 | `wood_canopy_crush` (105) |
-| `water_wave_elver` | 幼年 | S | 20 | 38 | 18 | 24 | 100 | water: 15 | water +20, fire +10, ice +5, thunder -20 | `water_aqua_cutter` (40) |
+| `water_wave_elver` | 幼年 | S | 20 | 38 | 18 | 24 | 100 | water: 15 | water +20, fire +10, ice +5, thunder -20 | `water_crest_slicer` (40) |
 | `water_skiff_eel` | 少年 | M | 40 | 75 | 35 | 50 | 200 | water: 25 | water +35, fire +15, ice +10, thunder -30 | `water_torrent_burst` (75) |
 | `water_catamaran_serpent` | 成年 | L | 80 | 150 | 70 | 100 | 400 | water: 40, wind: 15 | water +50, fire +15, ice +10, thunder -40 | `water_deluge_crater` (115) |
 | `fire_ember_cub` | 幼年 | S | 30 | 40 | 12 | 18 | 100 | fire: 15 | fire +20, wood +10, metal +5, water -20 | `fire_ember_lash` (35) |

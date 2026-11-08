@@ -276,7 +276,7 @@
     "movement": "dash"
   },
   {
-    "id": "wind_air_slash",
+    "id": "wind_zephyr_cutter",
     "element": "wind",
     "kind": "damage",
     "power": 40,

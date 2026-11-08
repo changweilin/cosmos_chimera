@@ -70,7 +70,7 @@
     "trigger": {
       "type": "on_summon",
       "params": {
-        "duration_ms": 6000
+        "duration_ms": 1000
       }
     },
     "effects": [
@@ -449,7 +449,7 @@
       "type": "on_hit_taken",
       "params": {
         "element": "thunder",
-        "duration_ms": 5000
+        "duration_ms": 1000
       }
     },
     "effects": [

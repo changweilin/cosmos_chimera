@@ -92,7 +92,7 @@
     "origin": "target"
   },
   {
-    "id": "water_aqua_cutter",
+    "id": "water_crest_slicer",
     "element": "water",
     "kind": "damage",
     "power": 40,

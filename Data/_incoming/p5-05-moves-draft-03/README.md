@@ -36,7 +36,7 @@ All numerical attributes are strictly integers obeying monotonic trade-offs (hig
 | **fire** | `fire_ash_fan` | `fire_flare_nova` | `fire_searing_ray` | `fire_meteor_rush` | `fire_flare_nova` (55), `fire_searing_ray` (75) | cone/mid, aoe/melee, line/mid, dash/long |
 | **earth** | `earth_stone_skate` | `earth_dust_cloud` | `earth_stalagmite_field` | `earth_tectonic_lance` | `earth_dust_cloud` (55), `earth_stalagmite_field` (75) | dash/melee, cone/melee, aoe/long, line/long |
 | **ice** | `ice_claw_cleave` | `ice_permafrost_surge` | `ice_icicle_beam` | `ice_avalanche_charge` | `ice_permafrost_surge` (65) | cone/melee, aoe/melee, line/mid, dash/long |
-| **wind** | `wind_air_slash` | `wind_whirlwind_burst` | `wind_shear_fan` | `wind_tailwind_dive` | `wind_whirlwind_burst` (50), `wind_shear_fan` (65) | line/mid, aoe/melee, cone/melee, dash/long |
+| **wind** | `wind_zephyr_cutter` | `wind_whirlwind_burst` | `wind_shear_fan` | `wind_tailwind_dive` | `wind_whirlwind_burst` (50), `wind_shear_fan` (65) | line/mid, aoe/melee, cone/melee, dash/long |
 | **thunder** | `thunder_shock_prod` | `thunder_volt_drift` | `thunder_storm_cell` | `thunder_fork_barrage` | `thunder_volt_drift` (55), `thunder_storm_cell` (75) | line/melee, dash/mid, aoe/mid, cone/long |
 | **light** | `light_photon_flash` | `light_luminous_glide` | `light_halo_burst` | `light_zenith_lance` | `light_luminous_glide` (55), `light_halo_burst` (75) | cone/melee, dash/melee, aoe/mid, line/long |
 | **shadow** | `shadow_dusk_fang` | `shadow_twilight_phase` | `shadow_abyssal_shroud` | `shadow_void_well` | `shadow_twilight_phase` (55), `shadow_abyssal_shroud` (70) | line/melee, dash/mid, cone/mid, aoe/long |
@@ -96,7 +96,7 @@ Before Batch 03, several elements sat at the minimum threshold of 2 moves for sp
 
 ### Per Range Class (Batch 03)
 - `melee`: 13 moves (`wood_bramble_whip`, `water_cascade_jab`, `fire_flare_nova`, `earth_stone_skate`, `earth_dust_cloud`, `ice_claw_cleave`, `ice_permafrost_surge`, `wind_whirlwind_burst`, `wind_shear_fan`, `thunder_shock_prod`, `light_photon_flash`, `light_luminous_glide`, `shadow_dusk_fang`)
-- `mid`: 13 moves (`metal_drill_drive`, `metal_flechette_beam`, `wood_pollen_jet`, `water_geyser_pool`, `fire_ash_fan`, `fire_searing_ray`, `ice_icicle_beam`, `wind_air_slash`, `thunder_volt_drift`, `thunder_storm_cell`, `light_halo_burst`, `shadow_twilight_phase`, `shadow_abyssal_shroud`)
+- `mid`: 13 moves (`metal_drill_drive`, `metal_flechette_beam`, `wood_pollen_jet`, `water_geyser_pool`, `fire_ash_fan`, `fire_searing_ray`, `ice_icicle_beam`, `wind_zephyr_cutter`, `thunder_volt_drift`, `thunder_storm_cell`, `light_halo_burst`, `shadow_twilight_phase`, `shadow_abyssal_shroud`)
 - `long`: 14 moves (`metal_shard_volley`, `metal_anvil_drop`, `wood_vine_lunge`, `wood_timber_fall`, `water_hydro_spray`, `water_tsunami_charge`, `fire_meteor_rush`, `earth_stalagmite_field`, `earth_tectonic_lance`, `ice_avalanche_charge`, `wind_tailwind_dive`, `thunder_fork_barrage`, `light_zenith_lance`, `shadow_void_well`)
 - **Total**: Exactly 40 moves.
 

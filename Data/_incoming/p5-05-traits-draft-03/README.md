@@ -18,6 +18,8 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 
 ### Trigger Types
 
+Pure instant-heal traits use a schema placeholder, not a timed effect (see [trait copy rules](../../../docs/design/creatures.md)). Their placeholder values are excluded from the timed-effect ranges below; player copy must not display them as healing durations.
+
 | Trigger Type | Parameter Schema | Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
 | `always` | `{}` | N/A | 3 | Permanent passive effect active while creature is deployed. |
@@ -54,9 +56,9 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **metal** | `trait_metal_conductive_plating` | `on_hit_taken` | `thunder`, 4000ms | `cd_mod_percent: metal -20%` | None |
 | **wood** | `trait_wood_overgrowth_surge` | `on_hp_above` | 75% | `move_speed_mod_percent: +15%`, `resist_mod: fire -15` | Yes (`resist fire -15`) |
 | **wood** | `trait_wood_thorn_lash` | `on_hp_below` | 35% | `range_mod_percent: +20%` | None |
-| **wood** | `trait_wood_sap_absorption` | `on_hit_taken` | `water`, 4000ms | `heal_percent_max_hp: 6%` | None |
+| **wood** | `trait_wood_sap_absorption` | `on_hit_taken` | `water`, 1000ms (placeholder) | `heal_percent_max_hp: 6%` | None |
 | **water** | `trait_water_torrential_deluge` | `on_move_used` | `water`, 4000ms | `range_mod_percent: +15%`, `move_speed_mod_percent: -10%` | Yes (`move_speed -10%`) |
-| **water** | `trait_water_revitalizing_spring` | `on_move_used` (water) | 5000ms | `heal_percent_max_hp: 4%` | None |
+| **water** | `trait_water_revitalizing_spring` | `on_move_used` (water) | 1000ms (placeholder) | `heal_percent_max_hp: 4%` | None |
 | **water** | `trait_water_rippling_counter` | `on_hit_taken` | `water`, 4000ms | `mastery_mod: water +20` | None |
 | **fire** | `trait_fire_smoldering_core` | `always` | `{}` | `cd_mod_percent: fire -10%`, `resist_mod: water -15` | Yes (`resist water -15`) |
 | **fire** | `trait_fire_scorching_momentum` | `on_hp_above` | 80% | `move_speed_mod_percent: +15%` | None |
@@ -74,7 +76,7 @@ This batch contains the third draft of 30 new placeholder passive traits for COS
 | **thunder** | `trait_thunder_crisis_arc` | `on_hp_below` | 30% | `mastery_mod: thunder +25` | None |
 | **thunder** | `trait_thunder_supercharged_stride` | `on_hp_above` | 80% | `cd_mod_percent: thunder -10%` | None |
 | **light** | `trait_light_luminous_barrier` | `on_move_used` | `light`, 4000ms | `resist_mod: shadow +25`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
-| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25%, 1000ms | `heal_percent_max_hp: 15%` | None |
+| **light** | `trait_light_saving_grace` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 25%, 1000ms (placeholder) | `heal_percent_max_hp: 15%` | None |
 | **light** | `trait_light_guiding_beam` | `on_ally_swap` | 5000ms | `mastery_mod: light +15` | None |
 | **shadow** | `trait_shadow_umbral_cloak` | `always` | `{}` | `evasion_mod_percent: +5%`, `resist_mod: light -15` | Yes (`resist light -15`) |
 | **shadow** | `trait_shadow_fade_step` | `on_move_used` | `shadow`, 3000ms | `move_speed_mod_percent: +15%` | None |

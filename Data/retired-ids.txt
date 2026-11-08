@@ -3,3 +3,6 @@
 thunder_chain_needle
 wood_vine_grapple
 trait_light_blinding_arrival
+# P5-08 A2 (2026-11-08): renamed move ids to avoid existing-work move names.
+water_aqua_cutter
+wind_air_slash

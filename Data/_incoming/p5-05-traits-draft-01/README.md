@@ -12,6 +12,8 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 
 ### Trigger Types
 
+Pure instant-heal traits use a schema placeholder, not a timed effect (see [trait copy rules](../../../docs/design/creatures.md)). Their placeholder values are excluded from the timed-effect ranges below; player copy must not display them as healing durations.
+
 | Trigger Type | Parameter Schema | Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
 | `always` | `{}` | N/A | 5 | Permanent passive effect while creature is active. |
@@ -44,12 +46,12 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **metal** | `trait_metal_dense_alloy` | `always` | `{}` | `resist_mod: metal +15`, `move_speed_mod_percent: -8%` | Yes (`move_speed -8%`) |
 | **metal** | `trait_metal_magnetic_recoil` | `on_hit_taken` | `metal`, 4000ms | `range_mod_percent: +15%` | None |
 | **metal** | `trait_metal_tempered_edge` | `on_move_used` | `metal`, 3000ms | `mastery_mod: metal +25`, `cd_mod_percent: any +10%` | Yes (`cd +10%`) |
-| **wood** | `trait_wood_photosynthesis` | `on_summon` | 6000ms | `heal_percent_max_hp: 8%` | None |
+| **wood** | `trait_wood_photosynthesis` | `on_summon` | 1000ms (placeholder) | `heal_percent_max_hp: 8%` | None |
 | **wood** | `trait_wood_bark_reinforcement` | `always` | `{}` | `resist_mod: earth +20`, `resist_mod: fire -15` | Yes (`resist fire -15%`) |
 | **wood** | `trait_wood_verdant_resonance` | `on_ally_swap` | 5000ms | `mastery_mod: wood +20` | None |
 | **water** | `trait_water_fluid_stance` | `always` | `{}` | `evasion_mod_percent: +6%`, `resist_mod: thunder -15` | Yes (`resist thunder -15%`) |
 | **water** | `trait_water_torrent_flow` | `on_move_used` | `water`, 4000ms | `cd_mod_percent: water -20%` | None |
-| **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30%, 1000ms | `heal_percent_max_hp: 12%` | None |
+| **water** | `trait_water_cleansing_tide` | `on_hp_cross_below` (Q-C18, 2026-11-07; was `on_hp_below`) | 30%, 1000ms (placeholder) | `heal_percent_max_hp: 12%` | None |
 | **fire** | `trait_fire_blazing_fury` | `on_hp_below` | 35% | `mastery_mod: fire +30`, `resist_mod: water -20` | Yes (`resist water -20%`) |
 | **fire** | `trait_fire_heat_exhaust` | `on_summon` | 5000ms | `move_speed_mod_percent: +20%` | None |
 | **fire** | `trait_fire_thermal_recharge` | `on_hit_taken` | `fire`, 5000ms | `cd_mod_percent: fire -25%` | None |
@@ -63,7 +65,7 @@ This batch contains the initial draft of 30 placeholder passive traits for COSMI
 | **wind** | `trait_wind_cyclone_instability` | `on_move_used` | `wind`, 4000ms | `range_mod_percent: +20%`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
 | **wind** | `trait_wind_feather_grace` | `on_hp_below` | 40% | `evasion_mod_percent: +10%` | None |
 | **thunder** | `trait_thunder_static_overload` | `on_move_used` | `thunder`, 3000ms | `mastery_mod: thunder +25`, `resist_mod: thunder -15` | Yes (`resist thunder -15%`) |
-| **thunder** | `trait_thunder_grounding_circuit` | `on_hit_taken` | `thunder`, 5000ms | `heal_percent_max_hp: 6%` | None |
+| **thunder** | `trait_thunder_grounding_circuit` | `on_hit_taken` | `thunder`, 1000ms (placeholder) | `heal_percent_max_hp: 6%` | None |
 | **thunder** | `trait_thunder_spark_stride` | `on_summon` | 4000ms | `cd_mod_percent: any -20%` | None |
 | **light** | `trait_light_aurora_veil` | `on_ally_swap` | 5000ms | `resist_mod: shadow +25` | None |
 | **light** | `trait_light_solar_overdrive` | `on_hp_above` | 70% | `mastery_mod: light +20`, `range_mod_percent: -10%` | Yes (`range -10%`) |

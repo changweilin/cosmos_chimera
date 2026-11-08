@@ -344,7 +344,7 @@
       "spi": 18,
       "agi": 24
     },
-    "signature_move": "water_aqua_cutter",
+    "signature_move": "water_crest_slicer",
     "trait": "trait_water_torrent_flow",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",

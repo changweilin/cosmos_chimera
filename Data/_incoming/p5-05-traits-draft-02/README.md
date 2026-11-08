@@ -18,6 +18,8 @@ This batch contains the second draft of 30 new placeholder passive traits for CO
 
 ### Trigger Types
 
+Pure instant-heal traits use a schema placeholder, not a timed effect (see [trait copy rules](../../../docs/design/creatures.md)). Their placeholder values are excluded from the timed-effect ranges below; player copy must not display them as healing durations.
+
 | Trigger Type | Parameter Schema | Parameter Range | Batch Count | Description |
 |---|---|---|---|---|
 | `always` | `{}` | N/A | 4 | Permanent passive effect active while creature is deployed. |
@@ -56,10 +58,10 @@ The original evasion design band is -10 to +15%; the table shows the observed ba
 | **metal** | `trait_metal_reinforce_protocol` | `on_ally_swap` | 5000ms | `cd_mod_percent: any -15%` | None |
 | **wood** | `trait_wood_canopy_reach` | `always` | `{}` | `range_mod_percent: +8%`, `evasion_mod_percent: -5%` | Yes (`evasion -5%`) |
 | **wood** | `trait_wood_bramble_wall` | `on_hit_taken` | `wood`, 4000ms | `resist_mod: earth +25` | None |
-| **wood** | `trait_wood_spore_regeneration` | `on_move_used` | `wood`, 3000ms | `heal_percent_max_hp: 5%` | None |
+| **wood** | `trait_wood_spore_regeneration` | `on_move_used` | `wood`, 1000ms (placeholder) | `heal_percent_max_hp: 5%` | None |
 | **water** | `trait_water_calm_waters` | `on_hp_above` | 75% | `cd_mod_percent: water -20%`, `resist_mod: thunder -15` | Yes (`resist thunder -15`) |
 | **water** | `trait_water_undertow_escape` | `on_hp_below` | 20% | `evasion_mod_percent: +15%` | None |
-| **water** | `trait_water_spring_surge` | `on_ally_swap` | 5000ms | `heal_percent_max_hp: 7%` | None |
+| **water** | `trait_water_spring_surge` | `on_ally_swap` | 1000ms (placeholder) | `heal_percent_max_hp: 7%` | None |
 | **fire** | `trait_fire_pyroclastic_burst` | `on_summon` | 5000ms | `mastery_mod: fire +25`, `evasion_mod_percent: -6%` | Yes (`evasion -6%`) |
 | **fire** | `trait_fire_wildfire_momentum` | `on_hit_taken` | `fire`, 4000ms | `move_speed_mod_percent: +20%` | None |
 | **fire** | `trait_fire_conflagration_flare` | `on_hp_below` | 30% | `range_mod_percent: +25%` | None |
@@ -77,7 +79,7 @@ The original evasion design band is -10 to +15%; the table shows the observed ba
 | **thunder** | `trait_thunder_fulgur_reach` | `on_move_used` | `thunder`, 3000ms | `range_mod_percent: +15%` | None |
 | **light** | `trait_light_radiant_core` | `always` | `{}` | `mastery_mod: light +10`, `resist_mod: shadow -15` | Yes (`resist shadow -15`) |
 | **light** | `trait_light_mirage_arrival` | `on_summon` | 5000ms | `evasion_mod_percent: +8%` | None |
-| **light** | `trait_light_halo_rebound` | `on_move_used` | `light`, 3000ms | `heal_percent_max_hp: 6%` | None |
+| **light** | `trait_light_halo_rebound` | `on_move_used` | `light`, 1000ms (placeholder) | `heal_percent_max_hp: 6%` | None |
 | **shadow** | `trait_shadow_nightfall_creed` | `on_summon` | 6000ms | `mastery_mod: shadow +25`, `range_mod_percent: -10%` | Yes (`range -10%`) |
 | **shadow** | `trait_shadow_smoke_veil` | `on_hit_taken` | `any`, 4000ms | `evasion_mod_percent: +10%` | None |
 | **shadow** | `trait_shadow_abyssal_haste` | `on_hp_below` | 30% | `cd_mod_percent: shadow -25%` | None |

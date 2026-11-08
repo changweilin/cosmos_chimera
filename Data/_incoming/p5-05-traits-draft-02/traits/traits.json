@@ -104,7 +104,7 @@
       "type": "on_move_used",
       "params": {
         "element": "wood",
-        "duration_ms": 3000
+        "duration_ms": 1000
       }
     },
     "effects": [
@@ -163,7 +163,7 @@
     "trigger": {
       "type": "on_ally_swap",
       "params": {
-        "duration_ms": 5000
+        "duration_ms": 1000
       }
     },
     "effects": [
@@ -518,7 +518,7 @@
       "type": "on_move_used",
       "params": {
         "element": "light",
-        "duration_ms": 3000
+        "duration_ms": 1000
       }
     },
     "effects": [

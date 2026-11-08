@@ -35,7 +35,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 |---|---|---|---|---|
 | **metal** | `metal_needle_thrust` | `metal_iron_cleave` | `metal_scrap_barrage` | `metal_lance_charge` |
 | **wood** | `wood_briar_dash` | `wood_spore_scatter` | `wood_root_spear` | `wood_canopy_crush` |
-| **water** | `water_aqua_cutter` | `water_tidal_surge` | `water_torrent_burst` | `water_deluge_crater` |
+| **water** | `water_crest_slicer` | `water_tidal_surge` | `water_torrent_burst` | `water_deluge_crater` |
 | **fire** | `fire_ember_lash` | `fire_blaze_charge` | `fire_scorch_beam` | `fire_inferno_cataclysm` |
 | **earth** | `earth_pebble_shot` | `earth_seismic_slam` | `earth_sand_sweep` | `earth_rampart_rush` |
 | **ice** | `ice_shard_flurry` | `ice_rime_skate` | `ice_glacier_lance` | `ice_blizzard_vortex` |
