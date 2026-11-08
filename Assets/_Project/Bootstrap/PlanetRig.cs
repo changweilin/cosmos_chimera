@@ -74,6 +74,10 @@ namespace Cosmimera.Bootstrap
         /// <remarks>Pre: none. Post: non-null until Dispose. Side effects: none.</remarks>
         public Camera Camera { get; }
 
+        /// <summary>Directional sun light.</summary>
+        /// <remarks>Pre: none. Post: non-null until Dispose. Side effects: none.</remarks>
+        public Light Sun { get; private set; }
+
         /// <summary>Whether the character is on the ground and controllable.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool IsSpawned => _spawned;
@@ -140,7 +144,7 @@ namespace Cosmimera.Bootstrap
             sun.transform.rotation = Quaternion.LookRotation(-(Vector3)spawnDir + new Vector3(0.3f, 0f, 0.2f));
 
             var owned = new[] { terrain.gameObject, body, pivot.gameObject, cameraGo, third.gameObject, first.gameObject, sun.gameObject };
-            return new PlanetRig(config, height, templates, spawnDir, terrain, character, rig, input, camera, owned);
+            return new PlanetRig(config, height, templates, spawnDir, terrain, character, rig, input, camera, owned) { Sun = sun };
         }
 
         /// <summary>Releases the character once a ground collider exists under the spawn point.</summary>

@@ -84,15 +84,17 @@ namespace Cosmimera.Save
         {
             Contract.Requires(instanceIds != null && instanceIds.Count >= 1 && instanceIds.Count <= MaxParty,
                 "party must hold 1..6 creatures");
+            // Copy first: callers may pass Party itself, and clearing _party would empty the input (SOL D0 H1).
+            var copy = new List<int>(instanceIds);
             var seen = new HashSet<int>();
-            foreach (int id in instanceIds)
+            foreach (int id in copy)
             {
                 Contract.Requires(seen.Add(id), "party ids must be distinct");
                 Contract.Requires(_owned.Exists(o => o.InstanceId == id), "party ids must be owned");
             }
 
             _party.Clear();
-            _party.AddRange(instanceIds);
+            _party.AddRange(copy);
         }
 
         /// <summary>Owned creature by instance id.</summary>
@@ -131,16 +133,18 @@ namespace Cosmimera.Save
         /// <summary>Parses a save.</summary>
         /// <remarks>
         /// Pre: json non-empty.
-        /// Post: the save it encodes; ContractException for a newer FormatVersion, duplicate or non-positive instance
-        ///       ids, next id not above every owned id, or a party entry that is not owned.
+        /// Post: the save it encodes; <see cref="InvalidDataException"/> in every build (Contract checks are stripped
+        ///       from Release, and a Release that loaded and re-wrote a newer save would silently drop its fields —
+        ///       SOL D0 H2) for: not a save, a newer FormatVersion, duplicate/non-positive instance ids, next id not above
+        ///       every owned id, an undefined vessel, or a party entry that is not owned.
         /// Side effects: allocates.
         /// </remarks>
         public static LobbySave FromJson(string json)
         {
-            Contract.Requires(!string.IsNullOrEmpty(json), "save json must not be empty");
+            Check(!string.IsNullOrEmpty(json), "save json is empty");
             Dto dto = JsonUtility.FromJson<Dto>(json);
-            Contract.Requires(dto != null && dto.version >= 1, "not a lobby save");
-            Contract.Requires(dto.version <= FormatVersion, "save is from a newer game version");
+            Check(dto != null && dto.version >= 1, "not a lobby save");
+            Check(dto.version <= FormatVersion, "save is from a newer game version");
             var save = new LobbySave
             {
                 StarterLine = string.IsNullOrEmpty(dto.starter_line) ? null : dto.starter_line,
@@ -149,18 +153,28 @@ namespace Cosmimera.Save
             var ids = new HashSet<int>();
             foreach (CreatureDto c in dto.owned ?? new CreatureDto[0])
             {
-                Contract.Requires(ids.Add(c.instance_id), "duplicate instance id");
-                Contract.Requires(c.instance_id < dto.next_instance_id, "next_instance_id must exceed every owned id");
+                Check(c.instance_id >= 1 && ids.Add(c.instance_id), "duplicate or non-positive instance id");
+                Check(c.instance_id < dto.next_instance_id, "next_instance_id must exceed every owned id");
+                Check(Enum.IsDefined(typeof(VesselKind), c.vessel) && !string.IsNullOrEmpty(c.species_id),
+                    "creature entry has an undefined vessel or empty species");
                 save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, (VesselKind)c.vessel, c.exp));
             }
 
             foreach (int p in dto.party ?? new int[0])
             {
-                Contract.Requires(ids.Contains(p), "party entry is not owned");
+                Check(ids.Contains(p), "party entry is not owned");
             }
 
             save._party.AddRange(dto.party ?? new int[0]);
             return save;
+        }
+
+        private static void Check(bool condition, string message)
+        {
+            if (!condition)
+            {
+                throw new InvalidDataException("lobby save: " + message);
+            }
         }
 
         /// <summary>Loads from <paramref name="path"/>, or returns a new empty save when the file does not exist.</summary>

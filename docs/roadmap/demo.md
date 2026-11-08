@@ -27,3 +27,4 @@
 - 2026-11-08 · ChatGPT Terra（Codex CLI） · done · D0 繁中及英文文案初稿與自行驗收完成 · 下一步：SONNET 審核、FLASH 製作日文初稿
 - 2026-11-08 · Gemini Flash（agy） · done · D0 日文翻譯初稿 5 檔與 check.py 完成，123 處本地化欄位人工比對通過 · 下一步：OPUS 驗收
 - 2026-11-08 · Claude Opus（驗收 Flash）· done · 重跑 `d0-copy-flash-ja/check.py`：5 檔 123 欄 ALL PASS；抽查術語（交代、捕獲、CT、〜の稱號）符合 brief · 下一步：人工定稿
+- 2026-11-08 · Claude Opus · partial · D0 可完整跑一場：`Bootstrap/Demo.unity` 大廳→選星→真實地貌星球（12 個 GLO-90 模板）→野生戰鬥/收服/任務→BOSS→結算存檔。EditMode 862/862、PlayMode 62/62（含 run 煙霧測試：降落、交戰、造成傷害、無錯誤 log）。Sol 唯讀審查 2 high（LobbySave）已修。未做：P3-09 散佈、P4-07 隊伍編成 UI、P2-05 進化接線、星空；**未經人工實機試玩**（輸入手感、難度）。待決 Q-D1 · 下一步：人工試玩 `Demo.unity`，回報手感/難度

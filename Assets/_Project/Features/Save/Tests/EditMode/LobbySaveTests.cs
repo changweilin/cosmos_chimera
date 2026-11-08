@@ -46,7 +46,7 @@ namespace Cosmimera.Save.Tests
         public void Newer_format_is_refused()
         {
             string json = new LobbySave().ToJson().Replace("\"version\": 1", "\"version\": 99");
-            Assert.Throws<ContractException>(() => LobbySave.FromJson(json));
+            Assert.Throws<InvalidDataException>(() => LobbySave.FromJson(json), "must hold in Release too (SOL D0 H2)");
         }
 
         [Test]
@@ -55,6 +55,30 @@ namespace Cosmimera.Save.Tests
             var s = new LobbySave();
             s.Add("a", VesselKind.TalismanCard);
             Assert.Throws<ContractException>(() => s.SetParty(new[] { 1, 2 }));
+        }
+
+        [Test]
+        public void Setting_the_party_to_itself_keeps_it()
+        {
+            // SOL D0 H1: Party is the live list; SetParty(Party) used to clear its own input.
+            var s = new LobbySave();
+            s.ChooseStarter("line_sun", "sun_0");
+            s.Add("b", VesselKind.GlassBead);
+            s.SetParty(s.Party);
+            Assert.That(s.Party.Count, Is.EqualTo(2));
+            Assert.That(LobbySave.FromJson(s.ToJson()).Party.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Corrupt_entries_are_refused()
+        {
+            Assert.Throws<InvalidDataException>(() => LobbySave.FromJson("{}"));
+            Assert.Throws<InvalidDataException>(() => LobbySave.FromJson(
+                "{\"version\":1,\"next_instance_id\":1,\"owned\":[{\"instance_id\":5,\"species_id\":\"a\",\"vessel\":0,\"exp\":0}]}"),
+                "an owned id at or above next_instance_id would be handed out twice");
+            Assert.Throws<InvalidDataException>(() => LobbySave.FromJson(
+                "{\"version\":1,\"next_instance_id\":2,\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":7,\"exp\":0}]}"),
+                "undefined vessel");
         }
 
         [Test]

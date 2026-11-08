@@ -137,6 +137,8 @@ namespace Cosmimera.Bootstrap.Demo
         private string _toast = string.Empty;
         private long _toastUntilMs;
         private GUIStyle _label;
+        private Shader _toonShader;
+        private Material _terrainMaterial;
 
         internal Encounter EncounterForTests => _encounter;
 
@@ -153,7 +155,8 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: creates GameObjects.
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
-            RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd)
+            RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
+            Shader toonShader = null)
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
@@ -185,7 +188,18 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
+            _toonShader = toonShader;
+            if (terrainShader != null)
+            {
+                float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
+                _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief);
+                terrainMaterial = _terrainMaterial;
+            }
+
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
+            // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
+            gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
+                PlanetLook.Sky(setup.PlanetType.Id), 600f);
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
             _captureRng = new Pcg32(setup.Seed, 'K');
 
@@ -683,7 +697,16 @@ namespace Cosmimera.Bootstrap.Demo
             float scale = u.BodyRadiusM * 2f * (role == SpawnRole.Boss ? 2.5f : role == SpawnRole.Elite ? 1.4f : 1f);
             go.transform.localScale = new Vector3(scale, scale, scale);
             var r = go.GetComponent<Renderer>();
-            r.material.color = ElementColors[(int)RunPlanner.MainElement(u.Def)];
+            Color color = ElementColors[(int)RunPlanner.MainElement(u.Def)];
+            if (_toonShader != null)
+            {
+                // Outline width is in world metres (the hull extrudes along the normalized world normal).
+                r.material = PlanetLook.CreatureMaterial(_toonShader, color, 0.03f);
+            }
+            else
+            {
+                r.material.color = color;
+            }
             _views[u.Id] = go.transform;
             _renderers[u.Id] = r;
             go.SetActive(u.Fielded);
@@ -714,7 +737,14 @@ namespace Cosmimera.Bootstrap.Demo
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
                 if (u.Combatant.IsFainted)
                 {
-                    _renderers[u.Id].material.color = Color.gray;
+                    if (_toonShader != null)
+                    {
+                        _renderers[u.Id].material.SetColor("_BaseColor", Color.gray);
+                    }
+                    else
+                    {
+                        _renderers[u.Id].material.color = Color.gray;
+                    }
                 }
             }
         }
@@ -888,6 +918,11 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnDestroy()
         {
             _rig?.Dispose();
+            if (_terrainMaterial != null)
+            {
+                Destroy(_terrainMaterial);
+            }
+
             foreach (Transform t in _views.Values)
             {
                 if (t != null)

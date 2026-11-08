@@ -42,7 +42,7 @@ namespace Cosmimera.Bootstrap.Tests
                 {
                     (c.LineId.StartsWith("starter_") ? party : wild).Add(c);
                 }
-                else if (d is PlanetTypeDef t && type == null)
+                else if (d is PlanetTypeDef t && (type == null || t.Id == "verdant_planet"))
                 {
                     type = t;
                 }
@@ -69,7 +69,8 @@ namespace Cosmimera.Bootstrap.Tests
                 new RunSetup
                 {
                     PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
-                }, wild, o => outcome = o);
+                }, wild, o => outcome = o, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
+                Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"));
 
             float deadline = Time.realtimeSinceStartup + 60f;
             while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
@@ -127,6 +128,26 @@ namespace Cosmimera.Bootstrap.Tests
                     yield return null;
                 }
 
+                // Frame the fight: from above/behind the player toward the nearest fielded wild creature.
+                float3 player = (float3)rig.Character.transform.position;
+                float3 look = player;
+                float bestD = float.MaxValue;
+                foreach (EncounterUnit u in encounter.Units)
+                {
+                    float dd = math.distance(u.Position, player);
+                    if (u.Side == EncounterSide.Wild && u.Fielded && dd < bestD)
+                    {
+                        bestD = dd;
+                        look = u.Position;
+                    }
+                }
+
+                float3 upv = rig.Config.ToDirection(player);
+                Debug.Log($"CAPTURE type={type.Id} lat={math.abs(upv.y):0.000} h={rig.SurfaceHeight(upv):0.00} " +
+                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={rig.Terrain.GetComponentInChildren<Renderer>()?.sharedMaterial?.shader?.name}");
+                float3 toward = math.normalize(look - player - math.dot(look - player, upv) * upv + upv * 1e-4f);
+                rig.Camera.transform.position = player - toward * 7f + upv * 4f;
+                rig.Camera.transform.rotation = Quaternion.LookRotation(look - (float3)rig.Camera.transform.position, upv);
                 var rt = new RenderTexture(1280, 720, 24);
                 rig.Camera.targetTexture = rt;
                 rig.Camera.Render();
