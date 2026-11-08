@@ -550,6 +550,7 @@ namespace Cosmimera.GameData.Tests
             else Assert.Throws<ContractException>(() => _ = actual.FieldDurationMs);
         }
 
+        [TestCase("XS", CreatureSizeClass.XS)]
         [TestCase("S", CreatureSizeClass.S)]
         [TestCase("M", CreatureSizeClass.M)]
         [TestCase("L", CreatureSizeClass.L)]
@@ -563,6 +564,7 @@ namespace Cosmimera.GameData.Tests
         }
 
         [TestCase("s")]
+        [TestCase("xs")]
         [TestCase("3")]
         [TestCase("XXL")]
         public void Invalid_creature_size_aborts_without_writing(string size)

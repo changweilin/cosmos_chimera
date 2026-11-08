@@ -89,8 +89,8 @@ zip 內頂層必須是 `<task_id>/` 資料夾；若 AI 打包時少了這層，�
 |---|---|---|
 | 畫風 | 柔和卡通著色 2–3 階明暗、邊緣光、深色描邊（`vision.md`） | 同左 |
 | 三視圖 | T-pose，正/側/背/3/4，正交、中性灰底、無陰影透視 | 自然站姿（四足/飛行依身形），其餘同左 |
-| 面數（LOD0） | 15–25k tris | S 5–8k · M 8–15k · L 15–25k · XL/超載 25–35k |
-| 貼圖 | 2048² base color（+ emissive mask 選用） | 1024²（S/M）· 2048²（L/XL） |
+| 面數（LOD0） | 15–25k tris | XS 3–5k · S 5–8k · M 8–15k · L 15–25k · XL/超載 25–35k |
+| 貼圖 | 2048² base color（+ emissive mask 選用） | 512²（XS）· 1024²（S/M）· 2048²（L/XL） |
 | 座標 | Unity：Y 向上、面向 +Z、公尺、腳底中心為 pivot | 同左 |
 | 骨架 | Unity Humanoid 相容命名 | Generic，`Root` 在地面 |
 | 動畫 | 30 fps；移動類 in-place，閃避/突進類 root motion | 同左 |
@@ -104,9 +104,12 @@ Steam Deck 是效能下限（`vision.md`），面數上限以 4 人 × 2 隻宙�
 ## 動作
 clip ID、幀數、迴圈與事件的唯一來源是 `tools/prompt-forge/catalog.js` 的 `ACTIONS`；改動時同步 bump catalog 版本（見 `tools/prompt-forge/README.md`）。
 - 事件名：`ev_hit`（傷害判定幀）、`ev_spawn_fx`、`ev_release`（投擲離手）、`ev_footstep`、`ev_end_lock`（可接下一動作）。
-- 撫摸：角色依宙獸 `size_class` 播 `chr_pet_s|m|l|xl`；宙獸播對應的 `cr_<stage>_petted`，兩者以 `Socket_PetTouch` 對位。
+- 撫摸：角色依宙獸 `size_class` 播 `chr_pet_xs|s|m|l|xl`（XS：托在掌心輕撫）；宙獸播對應的 `cr_<stage>_petted`，兩者以 `Socket_PetTouch` 對位。
 - 攻擊動作依 `combat.md#招式形狀` 分類命名。
 
 ## 版本
 - prompt 第一行為任務標頭：`[COSMIMERA-TASK spec=… tool=… catalog=… template=<id>@<ver> task_id=… seed=…]`，manifest 必須原樣抄回，日後可追溯是哪一版規格產出的。
 - 規則與變更紀錄：`tools/prompt-forge/README.md`、`CHANGELOG.md`。
+
+## 佔位模型（D0）
+3D 模型交付前，宙獸/角色以卡通著色幾何體 + 主屬性色 + 體型尺寸（`creatures.md` 體型表）佔位；表現層透過模型替換介面載入，真模型到位後只換資源不改程式。

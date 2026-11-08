@@ -344,7 +344,7 @@
       "spi": 18,
       "agi": 24
     },
-    "signature_move": "water_aqua_cutter",
+    "signature_move": "water_crest_slicer",
     "trait": "trait_water_torrent_flow",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -660,7 +660,7 @@
       "region": "美洲",
       "motifs_used": [
         "金粉覆身",
-        "火山湖綠寶石",
+        "高山聖湖綠寶石",
         "黃金祭偶"
       ],
       "role": "中排：中距直線投石，受擊後提高土專精",
@@ -714,7 +714,7 @@
       "region": "美洲",
       "motifs_used": [
         "金粉覆身",
-        "火山湖綠寶石",
+        "高山聖湖綠寶石",
         "黃金祭偶"
       ],
       "role": "前排：自身周圍近距震波，受擊後提高土專精",
@@ -759,7 +759,7 @@
       "region": "美洲",
       "motifs_used": [
         "金粉覆身",
-        "火山湖綠寶石",
+        "高山聖湖綠寶石",
         "黃金祭偶"
       ],
       "role": "前排：遠距直線突進，受擊後提高土專精",

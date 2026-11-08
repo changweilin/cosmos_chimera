@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Bootstrap",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.GameData",
         "Cosmimera.Planet",
         "Cosmimera.WorldGen",
         "Cosmimera.Player",
@@ -20,8 +21,10 @@
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

@@ -1,0 +1,20 @@
+{
+  "id": "vatnajokull_ice",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 64.35,
+  "center_lon": -16.5,
+  "half_extent_km": 20,
+  "elev_min_m": 160.77016758558722,
+  "elev_max_m": 1742.2512637744867,
+  "sea_level_norm": -0.10165797616741419,
+  "terrain_tags": [
+    "ice_field"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N64_00_W017_00_DEM"
+  ]
+}

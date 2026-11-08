@@ -8,7 +8,7 @@ raw     = move.power × (1 + attacker.mastery[move.element] / 100)
 damage  = raw × (1 − clamp(target.resist[move.element], −100, 100) / 100)
 ```
 - `resist < 0` 表示弱點（受到更多傷害）；`resist = 100` 表示免疫。
-- 沒有攻擊/防禦數值，也沒有全域相剋表。成長來源只有：專精 %、進化後的招式威力、副手提供的招式與特性。
+- 沒有攻擊/防禦數值，也沒有全域相剋表。既有成長來源：專精 %、進化後的招式威力、副手提供的招式與特性；新增 [等級成長](level-progression.md) 只縮放四維，不直接縮放專精、招式威力或抗性，因此等級不直接進入傷害公式（2026-11-08 使用者確認）。
 - 力量不進入傷害公式，只影響範圍/射程。
 - 2026-11-06 使用者確認：以 Int64 計算中間值，只在最後四捨五入（half up）；威力非零且非免疫的命中至少 1 點。`power` 表示域為 0..100000，有效專精為 0..1000；這是資料／API 契約上限，非平衡目標。P2-09 必須保證修正後專精符合此域，負值先歸零；疊加規則另由 P2-09 定義。
 
@@ -81,6 +81,8 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 
 ## 招式效果
 2026-11-06 使用者確認：`kind` 為 effect/both 的招式，除 `heal_percent_max_hp`（瞬間）外必須填 `effect_duration_ms`（1..600000），表示效果在每個被命中目標上持續的時間；heal 與 damage 招式不得填。作用對象由 `shape` 決定：`self` → 施放者、`ally` → 指定隊友、其他形狀 → 判定體命中的敵方目標。同一效果重複施加時的刷新/疊加規則由 P2-09 定。
+
+招式命名（2026-11-08 定案，P5-08 A5／Q-C26）：`light_aureole_halo` 改為 `light_crown_radiance`，舊 ID 退役，數值與效果沿用；其他招式／特性共用 cinder、tailwind、halo 詞根可保留，後續玩家顯示名需區分用詞。
 
 ## 場地（Q-C17 定案 2026-11-06）
 - `shape: field` 的招式必填 `field_duration_ms`（1..600000），其他形狀不得填。場地存在於 [放置, 放置+壽命)。

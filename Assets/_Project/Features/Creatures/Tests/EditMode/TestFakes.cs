@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Cosmimera.GameData;
 
 namespace Cosmimera.Creatures.Tests
 {
@@ -42,11 +43,32 @@ namespace Cosmimera.Creatures.Tests
 
         public FakeSpeciesLookup Add(string speciesId, string moveId, string traitId)
         {
-            _species[speciesId] = new SpeciesInfo(speciesId, moveId, traitId);
+            _species[speciesId] = new SpeciesInfo(speciesId, moveId, traitId, CreatureStage.Juvenile);
             return this;
         }
 
         public bool TryGet(string speciesId, out SpeciesInfo info) => _species.TryGetValue(speciesId, out info);
+    }
+
+    /// Partner-rule tests that are not about stages: every species is known, at DefaultStage unless overridden.
+    internal sealed class FakeStages : ISpeciesLookup
+    {
+        private readonly Dictionary<string, CreatureStage> _overrides = new Dictionary<string, CreatureStage>();
+
+        public CreatureStage DefaultStage { get; set; } = CreatureStage.Juvenile;
+
+        public FakeStages Set(string speciesId, CreatureStage stage)
+        {
+            _overrides[speciesId] = stage;
+            return this;
+        }
+
+        public bool TryGet(string speciesId, out SpeciesInfo info)
+        {
+            CreatureStage stage = _overrides.TryGetValue(speciesId, out CreatureStage s) ? s : DefaultStage;
+            info = new SpeciesInfo(speciesId, "move_" + speciesId, "trait_" + speciesId, stage);
+            return true;
+        }
     }
 
     internal static class Make

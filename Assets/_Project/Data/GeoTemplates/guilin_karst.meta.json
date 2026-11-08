@@ -1,0 +1,21 @@
+{
+  "id": "guilin_karst",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 25.15,
+  "center_lon": 110.35,
+  "half_extent_km": 20,
+  "elev_min_m": 117.1914730481709,
+  "elev_max_m": 1154.7809006392029,
+  "sea_level_norm": -0.11294590127065383,
+  "terrain_tags": [
+    "cave"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N24_00_E110_00_DEM",
+    "Copernicus_DSM_COG_30_N25_00_E110_00_DEM"
+  ]
+}

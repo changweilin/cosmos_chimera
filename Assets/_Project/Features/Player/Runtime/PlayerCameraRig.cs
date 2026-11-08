@@ -49,9 +49,20 @@ namespace Cosmimera.Player
 
         /// <summary>Wires the rig.</summary>
         /// <remarks>
-        /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; pivot is not a child of target (the
-        ///      orbit, not the body, owns its rotation).
-        /// Post: third person live; orbit heading == target forward; brain.WorldUpOverride == WorldUpReference.
+        /// Pre: planet.IsValid; target, pivot, both cameras and brain non-null; target and pivot are distinct and
+        ///      neither is a descendant of the other (the orbit, not the body, owns the pivot's rotation, and writing
+        ///      the pivot must not move the body); on a repeated Configure, neither target nor pivot is (or is below)
+        ///      the rig-owned WorldUpReference; thirdPerson != firstPerson (ToggleView must leave exactly one
+        ///      live); target.position finite with some |component| of (position − planet.Center) > 1e-3 m (the
+        ///      PlanetConfig.ToDirection domain) and every |component| of target.position ≤ MaxTargetComponent (so
+        ///      float spacing cannot swallow the eye height); the transforms Cinemachine writes — both cameras' and the
+        ///      brain's ControlledObject (its own GameObject unless overridden) — are none of target, pivot or
+        ///      WorldUpReference, nor an ancestor of them (their pose writes would move the body, the pivot or the
+        ///      level up), checked at Configure only (re-pointing ControlledObject later is the caller's to avoid);
+        ///      serialized look multipliers in range (see AddLook).
+        ///      All checked before anything is written.
+        /// Post: third person live; any look queued before Configure is discarded; orbit heading == target forward
+        ///       (tangent part); brain.WorldUpOverride == WorldUpReference.
         /// Side effects: mutates camera targets/priorities and brain settings.
         /// </remarks>
         public void Configure(in PlanetConfig planet, Transform target, Transform pivot, CinemachineCamera thirdPerson,
@@ -60,7 +71,27 @@ namespace Cosmimera.Player
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(target != null && pivot != null && thirdPerson != null && firstPerson != null && brain != null,
                 "all rig references are required");
+            // Transform.IsChildOf is reflexive (x.IsChildOf(x) == true), so these two checks also reject target == pivot.
             Contract.Requires(!pivot.IsChildOf(target), "pivot must not be parented to the target");
+            // LateUpdate writes the pivot's pose; a target below it would be dragged along (SOL P1 r9 N18).
+            Contract.Requires(!target.IsChildOf(pivot), "target must not be parented to the pivot");
+            // brain.WorldUpOverride exposes the rig-owned level transform after the first Configure; reusing it as the
+            // pivot makes LateUpdate's level write overwrite the eye-height/pitch pose (SOL P1 r10 N20).
+            Contract.Requires(_worldUp == null || (!pivot.IsChildOf(_worldUp) && !target.IsChildOf(_worldUp)),
+                "target and pivot must not be the rig-owned world-up transform");
+            Contract.Requires(thirdPerson != firstPerson, "third- and first-person cameras must be different objects");
+            float3 offset = (float3)target.position - planet.Center;
+            Contract.Requires(math.all(math.isfinite(offset)) && math.cmax(math.abs(offset)) > 1e-3f,
+                "target must be finite and away from the planet centre (sol P1 r8 N16)");
+            Contract.Requires(math.cmax(math.abs((float3)target.position)) <= MaxTargetComponent,
+                "target position exceeds MaxTargetComponent (sol P1 r11 N23)");
+            // SOL P1 r11: CinemachineCamera writes its own transform and the brain writes the Unity camera's; either
+            // aliasing (or parenting) a transform the rig relies on corrupts it after the rig's LateUpdate.
+            RequireNotMovedBy(thirdPerson.transform, target, pivot);
+            RequireNotMovedBy(firstPerson.transform, target, pivot);
+            // The brain writes ControlledObject, which may be overridden away from its own GameObject (SOL P1 r12 N24).
+            RequireNotMovedBy(brain.ControlledObject.transform, target, pivot);
+            RequireMultipliers();
 
             _planet = planet;
             _target = target;
@@ -81,6 +112,9 @@ namespace Cosmimera.Player
             float3 up = PlanetFrame.At(planet, target.position).Up;
             _orbit = ViewOrbit.Create(up, SphericalMotor.TangentOr(target.forward, up, PlanetFrame.FromUp(up).North));
             SetFirstPerson(false);
+            // Look queued before the rig had an orbit refers to no heading; consuming it here broke the Post above
+            // (SOL P1 r7 N13: +90° queued yaw turned the initial heading sideways).
+            _pendingLook = float2.zero;
             _configured = true;
             LateUpdate();
         }
@@ -91,18 +125,65 @@ namespace Cosmimera.Player
 
         /// <summary>Queues look input for the next LateUpdate.</summary>
         /// <remarks>
-        /// Pre: pointerDelta finite (pixels, mouse); each stick component in [-1, 1] (+1e-3), scaled by deltaTime here;
-        ///      deltaTime finite and ≥ 0.
-        /// Post: accumulated until consumed. Side effects: mutates pending look.
+        /// Pre: each pointerDelta component finite with |·| ≤ MaxPointerDelta (pixels, mouse); each stick component in
+        ///      [-1, 1] (+1e-3), scaled by deltaTime here; deltaTime in [0, MaxLookDeltaTime] (the project's Maximum
+        ///      Allowed Timestep is 0.333 s, so Time.deltaTime satisfies it); the serialized multipliers are in range:
+        ///      |sensitivity| ≤ MaxSensitivityDegrees, 0 ≤ gamepad rate ≤ MaxGamepadDegreesPerSecond, both finite.
+        /// Post: yaw accumulates modulo 360, so pending yaw stays in (-360, 360). Pitch accumulates and **saturates**
+        ///       at ±180°: input that pushes past a half turn in one direction within one frame is dropped, and later
+        ///       opposite input starts from the saturated value. Any |pitch| ≥ 160 already drives the orbit to its
+        ///       ±80° limit from every starting pitch. Once saturated, later opposite input in the same consumption
+        ///       cycle — a partial or a full reversal — can end somewhere else than exact summation would (SOL P1 r6
+        ///       N10, r7 N10-R7). The queued look is always finite.
+        /// Side effects: mutates pending look.
         /// </remarks>
         public void AddLook(Vector2 pointerDelta, Vector2 stick, float deltaTime)
         {
             Contract.Requires(math.all(math.isfinite(new float4(pointerDelta.x, pointerDelta.y, stick.x, stick.y))),
                 "look deltas must be finite");
+            Contract.Requires(math.abs(pointerDelta.x) <= MaxPointerDelta && math.abs(pointerDelta.y) <= MaxPointerDelta,
+                "pointer delta exceeds MaxPointerDelta");
             Contract.Requires(math.abs(stick.x) <= 1.001f && math.abs(stick.y) <= 1.001f, "stick components must be in [-1, 1]");
-            Contract.Requires(deltaTime >= 0f && !float.IsInfinity(deltaTime), "deltaTime must be finite and >= 0");
-            _pendingLook += (float2)pointerDelta * _sensitivityDegrees + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
+            Contract.Requires(deltaTime >= 0f && deltaTime <= MaxLookDeltaTime, "deltaTime must be in [0, MaxLookDeltaTime]");
+            RequireMultipliers();
+            float2 look = _pendingLook + (float2)pointerDelta * _sensitivityDegrees
+                + (float2)stick * (_gamepadDegreesPerSecond * deltaTime);
+            // Bound the queue (sol P1 r5 N8): finite inputs could still multiply/accumulate to ±Infinity and wedge
+            // LateUpdate, which only clears the queue after Advance succeeds. Yaw is periodic, so the wrap is exact;
+            // the pitch saturation is the documented Post, not a no-op (sol P1 r6 N10).
+            look.x = math.fmod(look.x, 360f);
+            look.y = math.clamp(look.y, -180f, 180f);
+            Contract.Ensures(math.all(math.isfinite(look)), "pending look must stay finite");
+            _pendingLook = look;
         }
+
+        /// <summary>Pending look queued for the next LateUpdate, (yaw, pitch) in degrees.</summary>
+        /// <remarks>Pre: none. Post: yaw in (-360, 360), pitch in [-180, 180]. Side effects: none.</remarks>
+        internal float2 PendingLook => _pendingLook;
+
+        /// <summary>Largest |mouse sensitivity| (degrees per pixel) the rig accepts.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. 10°/px is ~80× the default; with MaxPointerDelta it
+        /// keeps one call's contribution at 1e7°, far from float overflow (SOL P1 r6 N8-R6).</remarks>
+        public const float MaxSensitivityDegrees = 10f;
+
+        /// <summary>Largest gamepad look rate (degrees per second) the rig accepts.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Ten turns per second; 20× the default.</remarks>
+        public const float MaxGamepadDegreesPerSecond = 3600f;
+
+        /// <summary>Largest per-call mouse delta accepted by <see cref="AddLook"/>, in pixels.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Far above any real frame's mouse motion; keeps
+        /// delta × sensitivity finite for any sensitivity below 1e30.</remarks>
+        public const float MaxPointerDelta = 1e6f;
+
+        /// <summary>Largest per-call deltaTime accepted by <see cref="AddLook"/>, in seconds.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. A frame longer than this is a stall, not input.</remarks>
+        public const float MaxLookDeltaTime = 1f;
+
+        /// <summary>Largest |component| of the target position accepted by <see cref="Configure"/>, in metres.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none. Float spacing below 2^15 m is ≤ 3.9 mm, so the eye
+        /// height stays within 0.25 % of the default 1.6 m; PlanetConfig allows |Center| ≤ 16000 and R ≤ 8000, so every
+        /// supported surface point is inside (SOL P1 r11 N23: at 1e8 m the 1.6 m eye height rounded to 0).</remarks>
+        public const float MaxTargetComponent = 32768f;
 
         /// <summary>Switches between third and first person.</summary>
         /// <remarks>Pre: Configure called. Post: IsFirstPerson toggled; exactly one camera has the higher priority. Side effects: priorities.</remarks>
@@ -110,6 +191,23 @@ namespace Cosmimera.Player
         {
             Contract.Requires(_configured, "Configure has not been called");
             SetFirstPerson(!IsFirstPerson);
+        }
+
+        // Transform.IsChildOf is reflexive, so this also rejects writer == any of the three.
+        private void RequireNotMovedBy(Transform writer, Transform target, Transform pivot)
+        {
+            Contract.Requires(!target.IsChildOf(writer) && !pivot.IsChildOf(writer) && (_worldUp == null || !_worldUp.IsChildOf(writer)),
+                "a camera or brain transform must not be, or be an ancestor of, the target, pivot or world-up transform");
+        }
+
+        // Serialized fields can be edited in the inspector at any time, so they are checked where used, not only once.
+        private void RequireMultipliers()
+        {
+            Contract.Requires(math.isfinite(_sensitivityDegrees) && math.abs(_sensitivityDegrees) <= MaxSensitivityDegrees,
+                "sensitivity must be finite and within ±MaxSensitivityDegrees");
+            Contract.Requires(math.isfinite(_gamepadDegreesPerSecond) && _gamepadDegreesPerSecond >= 0f
+                && _gamepadDegreesPerSecond <= MaxGamepadDegreesPerSecond,
+                "gamepad look rate must be finite and within [0, MaxGamepadDegreesPerSecond]");
         }
 
         private void SetFirstPerson(bool firstPerson)

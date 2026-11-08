@@ -1,0 +1,162 @@
+{
+  "ui.lobby.title": {
+    "zh-TW": "地球觀測站",
+    "en": "Earth Observatory"
+  },
+  "ui.lobby.start_run": {
+    "zh-TW": "前往選星",
+    "en": "Choose a Planet"
+  },
+  "ui.lobby.team": {
+    "zh-TW": "隊伍編成",
+    "en": "Team"
+  },
+  "ui.lobby.choose_starter": {
+    "zh-TW": "選擇一隻宙獸作為旅途的第一位夥伴。",
+    "en": "Choose your first Cosmimera companion."
+  },
+  "ui.lobby.starter_confirm": {
+    "zh-TW": "選擇這位夥伴",
+    "en": "Choose This Companion"
+  },
+  "ui.lobby.quit": {
+    "zh-TW": "離開遊戲",
+    "en": "Quit Game"
+  },
+  "ui.star_select.title": {
+    "zh-TW": "選擇星球",
+    "en": "Choose a Planet"
+  },
+  "ui.star_select.planet_type": {
+    "zh-TW": "星球類型",
+    "en": "Planet Type"
+  },
+  "ui.star_select.size_small": {
+    "zh-TW": "小型",
+    "en": "Small"
+  },
+  "ui.star_select.size_medium": {
+    "zh-TW": "中型",
+    "en": "Medium"
+  },
+  "ui.star_select.size_large": {
+    "zh-TW": "大型",
+    "en": "Large"
+  },
+  "ui.star_select.main_elements": {
+    "zh-TW": "主屬性",
+    "en": "Main Elements"
+  },
+  "ui.star_select.seed": {
+    "zh-TW": "種子",
+    "en": "Seed"
+  },
+  "ui.star_select.reroll": {
+    "zh-TW": "重新生成",
+    "en": "Reroll"
+  },
+  "ui.star_select.launch": {
+    "zh-TW": "出發",
+    "en": "Launch"
+  },
+  "ui.star_select.loading": {
+    "zh-TW": "正在生成星球…",
+    "en": "Generating planet…"
+  },
+  "ui.hud.hp": {
+    "zh-TW": "HP",
+    "en": "HP"
+  },
+  "ui.hud.cd_ready": {
+    "zh-TW": "招式就緒",
+    "en": "Move Ready"
+  },
+  "ui.hud.switch": {
+    "zh-TW": "輪替",
+    "en": "Switch"
+  },
+  "ui.hud.switch_cooldown": {
+    "zh-TW": "輪替冷卻中",
+    "en": "Switch on Cooldown"
+  },
+  "ui.hud.command_focus": {
+    "zh-TW": "集火目標",
+    "en": "Focus Target"
+  },
+  "ui.hud.command_free": {
+    "zh-TW": "自由戰鬥",
+    "en": "Fight Freely"
+  },
+  "ui.hud.command_follow": {
+    "zh-TW": "跟隨待命",
+    "en": "Follow and Wait"
+  },
+  "ui.hud.command_retreat": {
+    "zh-TW": "撤退",
+    "en": "Retreat"
+  },
+  "ui.hud.capture_prompt": {
+    "zh-TW": "按 {key} 投擲 {vessel}",
+    "en": "Press {key} to throw {vessel}"
+  },
+  "ui.hud.capture_success": {
+    "zh-TW": "收服成功！",
+    "en": "Captured!"
+  },
+  "ui.hud.capture_fail": {
+    "zh-TW": "收服失敗",
+    "en": "Capture Failed"
+  },
+  "ui.hud.knocked_out": {
+    "zh-TW": "已擊倒",
+    "en": "Knocked Out"
+  },
+  "ui.hud.quest_tracker": {
+    "zh-TW": "任務",
+    "en": "Quest"
+  },
+  "ui.hud.boss_incoming": {
+    "zh-TW": "星球 BOSS 出現！",
+    "en": "Planet Boss Incoming!"
+  },
+  "ui.hud.player_down": {
+    "zh-TW": "你倒下了",
+    "en": "You Are Down"
+  },
+  "ui.vessel.talisman_card": {
+    "zh-TW": "符籙卡片",
+    "en": "Talisman Card"
+  },
+  "ui.vessel.glass_bead": {
+    "zh-TW": "琉璃珠",
+    "en": "Glass Bead"
+  },
+  "ui.vessel.magic_cube": {
+    "zh-TW": "魔術方塊",
+    "en": "Magic Cube"
+  },
+  "ui.results.victory": {
+    "zh-TW": "探索完成",
+    "en": "Expedition Complete"
+  },
+  "ui.results.defeat": {
+    "zh-TW": "探索失敗",
+    "en": "Expedition Failed"
+  },
+  "ui.results.captured_list": {
+    "zh-TW": "已收服的宙獸",
+    "en": "Captured Cosmimera"
+  },
+  "ui.results.eggs_obtained": {
+    "zh-TW": "獲得的蛋",
+    "en": "Eggs Obtained"
+  },
+  "ui.results.return_lobby": {
+    "zh-TW": "返回大廳",
+    "en": "Return to Lobby"
+  },
+  "ui.results.abandon_run": {
+    "zh-TW": "放棄本場？本場作廢，已收服的宙獸仍會帶回大廳。",
+    "en": "Abandon this run? The run will be forfeited, but captured Cosmimera will return to the lobby with you."
+  }
+}

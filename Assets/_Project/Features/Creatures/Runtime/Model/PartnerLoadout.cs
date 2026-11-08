@@ -7,8 +7,8 @@ namespace Cosmimera.Creatures
 {
     /// <summary>
     /// Which sub-partners serve which main: max 4 per main, a relation edge required, one creature serves at most
-    /// one main, and a main is never a sub. Sub-partners do not level or grow.
-    /// REQ: docs/design/creatures.md#隊伍規則 (Q-C5), Q-C10 decided 2026-11-06.
+    /// one main, a main is never a sub, and a sub's stage never exceeds its main's. Sub-partners do not level or grow.
+    /// REQ: docs/design/creatures.md#隊伍規則 (Q-C5), Q-C10 decided 2026-11-06; stage rule decided 2026-11-08 (P5-08 N3, option c).
     /// </summary>
     /// <remarks>
     /// Stores instance ids only. Species, vessel and experience live with the caller's creature collection, so an
@@ -82,7 +82,8 @@ namespace Cosmimera.Creatures
         /// <summary>Assigns <paramref name="sub"/> to <paramref name="main"/>.</summary>
         /// <remarks>
         /// Pre: main.InstanceId &gt;= 1 and sub.InstanceId &gt;= 1 (constructed values; main/sub carry their CURRENT
-        ///      species, which the relation check uses); relations != null.
+        ///      species, which the relation and stage checks use); relations != null; species != null and knows both
+        ///      species once checks 1–5 pass (a missing species is data/save corruption, so it throws).
         /// Post: Ok iff all of the following hold, refusals reported in exactly this order and leaving state unchanged:
         ///       1. UnknownMain — main is one of Mains.
         ///       2. SubIsAMain — sub is not any of Mains (this includes sub == main).
@@ -90,14 +91,16 @@ namespace Cosmimera.Creatures
         ///          this main is reported as ...ToThisMain even when that main is full).
         ///       4. MainFull — main has fewer than MaxSubsPerMain subs.
         ///       5. NoRelation — relations.AreRelated(main.SpeciesId, sub.SpeciesId); only consulted if 1–4 passed.
+        ///       6. SubStageAboveMain — sub's stage &lt;= main's stage (species lookup); only consulted if 1–5 passed.
         ///       On Ok the sub is appended to SubsOf(main).
         /// Side effects: mutates the assignment on Ok.
         /// </remarks>
-        public PartnerResult TryAssign(in OwnedCreature main, in OwnedCreature sub, IRelationGraph relations)
+        public PartnerResult TryAssign(in OwnedCreature main, in OwnedCreature sub, IRelationGraph relations, ISpeciesLookup species)
         {
             Contract.Requires(main.InstanceId >= 1, "main must be a constructed OwnedCreature (InstanceId >= 1)");
             Contract.Requires(sub.InstanceId >= 1, "sub must be a constructed OwnedCreature (InstanceId >= 1)");
             Contract.Requires(relations != null, "relations is null");
+            Contract.Requires(species != null, "species is null");
 
             if (!_subsByMain.TryGetValue(main.InstanceId, out List<int> subs))
             {
@@ -122,6 +125,17 @@ namespace Cosmimera.Creatures
             if (!relations.AreRelated(main.SpeciesId, sub.SpeciesId))
             {
                 return PartnerResult.NoRelation;
+            }
+
+            // REQ: P5-08 N3 option c — applies to all three vessels, since damage ignores stats and a juvenile main
+            // would otherwise borrow an adult's 95–120 power finisher (or trait / overload) on day one.
+            bool mainKnown = species.TryGet(main.SpeciesId, out SpeciesInfo mainInfo);
+            Contract.Requires(mainKnown, "main species '" + main.SpeciesId + "' is not in the species data");
+            bool subKnown = species.TryGet(sub.SpeciesId, out SpeciesInfo subInfo);
+            Contract.Requires(subKnown, "sub species '" + sub.SpeciesId + "' is not in the species data");
+            if (subInfo.Stage > mainInfo.Stage)
+            {
+                return PartnerResult.SubStageAboveMain;
             }
 
             subs.Add(sub.InstanceId);
@@ -151,6 +165,8 @@ namespace Cosmimera.Creatures
 
         /// <summary>Lists assignments whose two forms no longer have a relation edge (typically after an evolution).</summary>
         /// <remarks>
+        /// The stage rule is not re-checked: mains only evolve upward and subs never grow (Q-C10), so a pair accepted
+        /// by TryAssign cannot later violate sub stage &lt;= main stage.
         /// Pre: relations != null; currentSpeciesOf != null and returns a non-empty species id for every assigned sub and
         ///      for every main that has subs (the caller owns the creature collection; release a sub via Unassign first).
         /// Post: one entry per assignment with !relations.AreRelated(currentSpeciesOf(main), currentSpeciesOf(sub)),

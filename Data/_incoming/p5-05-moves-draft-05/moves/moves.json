@@ -457,7 +457,7 @@
     }
   },
   {
-    "id": "light_aureole_halo",
+    "id": "light_crown_radiance",
     "element": "light",
     "kind": "effect",
     "power": 0,

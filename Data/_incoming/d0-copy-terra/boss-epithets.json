@@ -1,0 +1,104 @@
+[
+  {
+    "planet_type": "verdant_planet",
+    "epithets": [
+      {
+        "zh-TW": "森冠的",
+        "en": "Forest-Crowned"
+      },
+      {
+        "zh-TW": "青藤纏繞的",
+        "en": "Vinebound"
+      },
+      {
+        "zh-TW": "碧野的",
+        "en": "Wildwood"
+      }
+    ]
+  },
+  {
+    "planet_type": "lava_planet",
+    "epithets": [
+      {
+        "zh-TW": "熔心的",
+        "en": "Moltenheart"
+      },
+      {
+        "zh-TW": "餘燼環繞的",
+        "en": "Emberwreathed"
+      },
+      {
+        "zh-TW": "赤岩的",
+        "en": "Crimson-Crag"
+      }
+    ]
+  },
+  {
+    "planet_type": "ice_crystal_planet",
+    "epithets": [
+      {
+        "zh-TW": "霜冠的",
+        "en": "Frostcrowned"
+      },
+      {
+        "zh-TW": "冰晶閃耀的",
+        "en": "Crystalglint"
+      },
+      {
+        "zh-TW": "寒潮的",
+        "en": "Frozen-Tide"
+      }
+    ]
+  },
+  {
+    "planet_type": "storm_planet",
+    "epithets": [
+      {
+        "zh-TW": "逐風的",
+        "en": "Windchasing"
+      },
+      {
+        "zh-TW": "雷雲之下的",
+        "en": "Thundercloud"
+      },
+      {
+        "zh-TW": "風暴之眼的",
+        "en": "Storm-Eyed"
+      }
+    ]
+  },
+  {
+    "planet_type": "mineral_planet",
+    "epithets": [
+      {
+        "zh-TW": "晶脈的",
+        "en": "Crystal-Veined"
+      },
+      {
+        "zh-TW": "鐵岩的",
+        "en": "Ironstone"
+      },
+      {
+        "zh-TW": "礦輝映照的",
+        "en": "Mineral-lit"
+      }
+    ]
+  },
+  {
+    "planet_type": "twilight_planet",
+    "epithets": [
+      {
+        "zh-TW": "晨昏交界的",
+        "en": "Twilight-Bound"
+      },
+      {
+        "zh-TW": "晝影交織的",
+        "en": "Day-and-Shadow"
+      },
+      {
+        "zh-TW": "暮光之下的",
+        "en": "Gloaming"
+      }
+    ]
+  }
+]

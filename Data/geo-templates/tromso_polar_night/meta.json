@@ -1,0 +1,21 @@
+{
+  "id": "tromso_polar_night",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 69.65,
+  "center_lon": 18.95,
+  "half_extent_km": 20,
+  "elev_min_m": 0.0,
+  "elev_max_m": 1307.5673282312425,
+  "sea_level_norm": 0.0,
+  "terrain_tags": [
+    "eternal_night"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N69_00_E018_00_DEM",
+    "Copernicus_DSM_COG_30_N69_00_E019_00_DEM"
+  ]
+}

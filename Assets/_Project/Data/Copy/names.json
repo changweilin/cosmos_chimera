@@ -1,0 +1,354 @@
+{
+ "entries": [
+  {
+   "id": "earth_auric_sovereign",
+   "zh": "金塵岩偶",
+   "en": "Gildumara"
+  },
+  {
+   "id": "earth_gilded_warden",
+   "zh": "金塵衛",
+   "en": "Gildumant"
+  },
+  {
+   "id": "earth_pebble_pawn",
+   "zh": "金塵偶",
+   "en": "Gilduma"
+  },
+  {
+   "id": "earth_pebble_shot",
+   "zh": "礫紋彈",
+   "en": "Pebblegrain Shot"
+  },
+  {
+   "id": "earth_rampart_rush",
+   "zh": "岩壘馳",
+   "en": "Rampartborne Rush"
+  },
+  {
+   "id": "earth_seismic_slam",
+   "zh": "地脈震",
+   "en": "Faultpulse Slam"
+  },
+  {
+   "id": "fire_blaze_charge",
+   "zh": "焰鬃突",
+   "en": "Blazemane Drive"
+  },
+  {
+   "id": "fire_ember_cub",
+   "zh": "燼鬃仔",
+   "en": "Cindrel"
+  },
+  {
+   "id": "fire_ember_lash",
+   "zh": "燼尾掃",
+   "en": "Embertail Sweep"
+  },
+  {
+   "id": "fire_inferno_cataclysm",
+   "zh": "熾墜界",
+   "en": "Pyrefall Expanse"
+  },
+  {
+   "id": "fire_mane_stalker",
+   "zh": "燼鬃獅",
+   "en": "Cindrava"
+  },
+  {
+   "id": "fire_pyre_monarch",
+   "zh": "燼鬃焰獅",
+   "en": "Cindraval"
+  },
+  {
+   "id": "ice_blizzard_vortex",
+   "zh": "雪渦綻",
+   "en": "Snowwhorl Bloom"
+  },
+  {
+   "id": "ice_frost_fledgling",
+   "zh": "霜角雛",
+   "en": "Rimbril"
+  },
+  {
+   "id": "ice_glacier_lance",
+   "zh": "冰川矛",
+   "en": "Glaciergrain Lance"
+  },
+  {
+   "id": "ice_rime_strider",
+   "zh": "霜角獵獸",
+   "en": "Rimbraven"
+  },
+  {
+   "id": "ice_shard_flurry",
+   "zh": "霜晶扇",
+   "en": "Rimeglass Fan"
+  },
+  {
+   "id": "ice_tundra_dreadnought",
+   "zh": "霜角巨獸",
+   "en": "Rimbragard"
+  },
+  {
+   "id": "light_heliostat_beam",
+   "zh": "追日光束",
+   "en": "Suntrack Beam"
+  },
+  {
+   "id": "light_mirror_glint",
+   "zh": "鏡閃",
+   "en": "Mirrorflash"
+  },
+  {
+   "id": "light_solar_array_lance",
+   "zh": "日環光槍",
+   "en": "Solar Array Lance"
+  },
+  {
+   "id": "metal_chronos_engine",
+   "zh": "漏輪巨象",
+   "en": "Clepsarche"
+  },
+  {
+   "id": "metal_clock_chick",
+   "zh": "漏輪雛",
+   "en": "Clepspro"
+  },
+  {
+   "id": "metal_gear_strider",
+   "zh": "漏輪衛",
+   "en": "Clepsward"
+  },
+  {
+   "id": "metal_iron_cleave",
+   "zh": "鐵輪斬",
+   "en": "Ironwheel Cleave"
+  },
+  {
+   "id": "metal_lance_charge",
+   "zh": "鉚槍馳",
+   "en": "Rivetlance Rush"
+  },
+  {
+   "id": "metal_needle_thrust",
+   "zh": "針輪刺",
+   "en": "Needlewheel Thrust"
+  },
+  {
+   "id": "moon_longnight_wolf",
+   "zh": "夜痕霜狼",
+   "en": "Nivervast"
+  },
+  {
+   "id": "moon_night_pup",
+   "zh": "夜痕仔",
+   "en": "Nivetch"
+  },
+  {
+   "id": "moon_shade_wolf",
+   "zh": "夜痕狼",
+   "en": "Niverren"
+  },
+  {
+   "id": "shadow_lone_hunter_ambush",
+   "zh": "孤影伏襲",
+   "en": "Loneshade Ambush"
+  },
+  {
+   "id": "shadow_longnight_lunge",
+   "zh": "長夜突",
+   "en": "Longnight Lunge"
+  },
+  {
+   "id": "shadow_nightpaw_swipe",
+   "zh": "夜爪擊",
+   "en": "Nightpaw Strike"
+  },
+  {
+   "id": "star_blaze_foal",
+   "zh": "星蹄駒",
+   "en": "Voltfoal"
+  },
+  {
+   "id": "star_skyhoof_steed",
+   "zh": "星蹄天驥",
+   "en": "Voltrazent"
+  },
+  {
+   "id": "star_storm_colt",
+   "zh": "星蹄騏",
+   "en": "Voltrmane"
+  },
+  {
+   "id": "sun_array_skyheron",
+   "zh": "鏡環天鷺",
+   "en": "Mirravault"
+  },
+  {
+   "id": "sun_heliostat_heron",
+   "zh": "鏡羽鷺",
+   "en": "Mirravel"
+  },
+  {
+   "id": "sun_mirror_chick",
+   "zh": "鏡芽雀",
+   "en": "Mirrill"
+  },
+  {
+   "id": "thunder_galloping_discharge",
+   "zh": "奔雷散電",
+   "en": "Galloping Discharge"
+  },
+  {
+   "id": "thunder_skyhoof_stampede",
+   "zh": "天蹄雷馳",
+   "en": "Skyhoof Stampede"
+  },
+  {
+   "id": "thunder_starblaze_charge",
+   "zh": "星火衝",
+   "en": "Starspark Charge"
+  },
+  {
+   "id": "trait_earth_tectonic_rebound",
+   "zh": "地脈回應",
+   "en": "Faultline Answer"
+  },
+  {
+   "id": "trait_fire_thermal_recharge",
+   "zh": "受焰回充",
+   "en": "Flamefed Renewal"
+  },
+  {
+   "id": "trait_ice_flash_freeze",
+   "zh": "初霜護性",
+   "en": "Firstfrost Temper"
+  },
+  {
+   "id": "trait_light_heliostat_focus",
+   "zh": "逐光聚焦",
+   "en": "Sunward Focus"
+  },
+  {
+   "id": "trait_metal_dense_alloy",
+   "zh": "密金軀",
+   "en": "Densemetal Frame"
+  },
+  {
+   "id": "trait_shadow_longnight_stalker",
+   "zh": "夜行初步",
+   "en": "Nightstalk Arrival"
+  },
+  {
+   "id": "trait_thunder_storm_gallop",
+   "zh": "迎擊雷鬃",
+   "en": "Stormmane Resolve"
+  },
+  {
+   "id": "trait_water_torrent_flow",
+   "zh": "水脈迴轉",
+   "en": "Watercourse Cycle"
+  },
+  {
+   "id": "trait_wind_tailwind_glide",
+   "zh": "換風輕行",
+   "en": "Turnwind Glide"
+  },
+  {
+   "id": "trait_wood_photosynthesis",
+   "zh": "初陽滋養",
+   "en": "Firstlight Nourish"
+  },
+  {
+   "id": "water_catamaran_serpent",
+   "zh": "潮帆巨鰻",
+   "en": "Brinamar"
+  },
+  {
+   "id": "water_crest_slicer",
+   "zh": "漣刃線",
+   "en": "Rippleedge Ray"
+  },
+  {
+   "id": "water_deluge_crater",
+   "zh": "瀾坑爆",
+   "en": "Deluge Hollow"
+  },
+  {
+   "id": "water_skiff_eel",
+   "zh": "潮帆舟鰻",
+   "en": "Brinavela"
+  },
+  {
+   "id": "water_torrent_burst",
+   "zh": "湍流扇",
+   "en": "Torrentfan Surge"
+  },
+  {
+   "id": "water_wave_elver",
+   "zh": "潮帆鰻",
+   "en": "Brinelle"
+  },
+  {
+   "id": "wind_flute_cruiser",
+   "zh": "笛風巡舟",
+   "en": "Reevilane"
+  },
+  {
+   "id": "wind_gale_claw",
+   "zh": "颯爪掃",
+   "en": "Galepaw Sweep"
+  },
+  {
+   "id": "wind_monsoon_galeon",
+   "zh": "笛風天舟",
+   "en": "Reevilora"
+  },
+  {
+   "id": "wind_reed_skiff",
+   "zh": "笛風舟",
+   "en": "Reevilo"
+  },
+  {
+   "id": "wind_tempest_sphere",
+   "zh": "風球綻",
+   "en": "Stormsphere Bloom"
+  },
+  {
+   "id": "wind_vacuum_blade",
+   "zh": "空鳴刃",
+   "en": "Hollowwind Edge"
+  },
+  {
+   "id": "wood_briar_dash",
+   "zh": "棘芽突",
+   "en": "Briarsprout Dash"
+  },
+  {
+   "id": "wood_canopy_crush",
+   "zh": "翠冠墜",
+   "en": "Verdant Crownfall"
+  },
+  {
+   "id": "wood_canopy_regent",
+   "zh": "蔓冠虹禽",
+   "en": "Vireloria"
+  },
+  {
+   "id": "wood_fern_chick",
+   "zh": "蔓冠雛",
+   "en": "Virellet"
+  },
+  {
+   "id": "wood_plume_peafowl",
+   "zh": "蔓冠翎",
+   "en": "Virelume"
+  },
+  {
+   "id": "wood_root_spear",
+   "zh": "根紋槍",
+   "en": "Rootgrain Spear"
+  }
+ ]
+}

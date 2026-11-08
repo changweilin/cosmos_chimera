@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wood_fern_chick
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wood_fern_chick
+  lineId: line_wood_vinecrest
+  stage: 0
+  sizeClass: 0
+  aiStyle: 2
+  evolvesTo: {fileID: 11400000, guid: 062a0beac66bce2439906f0d5608a3d7, type: 2}
+  evolutionExp: 100
+  evolutionMaterials:
+  - element: 1
+    tier: 1
+    qty: 3
+  resist: ecffffff140000000a00000000000000050000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 15
+  stats:
+    con: 28
+    str: 16
+    spi: 40
+    agi: 16
+  signatureMove: {fileID: 11400000, guid: 80e135e9b58514a4d9a232de2fd8ed96, type: 2}
+  trait: {fileID: 11400000, guid: 8334967007d2901409f2732434408a83, type: 2}
+  conceptJson: "{\"base\":\"\u71B1\u5E36\u5F69\u7FFC\u9326\u79BD \xD7 \u8513\u751F\u85E4\u8513\u7FBD\u51A0\",\"stage_look\":\"\u84EC\u9B06\u7FE0\u7DA0\u5E7C\u9CE5\uFF0C\u982D\u9802\u751F\u51FA\u521D\u840C\u7684\u6372\u66F2\u8568\u8449\u51A0\u7FBD\uFF0C\u96D9\u8DB3\u8E0F\u8457\u91D1\u6728\u96D5\u82B1\u5E95\u5EA7\",\"archetype\":\"arch_sarimanok\",\"region\":\"\u6771\u5357\u4E9E\",\"motifs_used\":[\"\u6D41\u7DDA\u6372\u7D0B\u7FBD\u51A0\",\"\u96D9\u91CD\u8679\u5F69\u9577\u5C3E\",\"\u9EC3\u9285\u96D5\u82B1\u5E95\u5EA7\"],\"role\":\"\u4E2D\u6392\u8F38\u51FA\uFF1A\u77ED\u8DDD\u76F4\u7DDA\u7A81\u9032\uFF0C\u4E0A\u5834\u6642\u81EA\u6211\u6CBB\u7642\",\"palette\":\"\u7FE1\u7FE0\u7DA0\u3001\u5B54\u96C0\u85CD\u3001\u7409\u7483\u91D1\"}"
+  needsSensitivityReview: 0

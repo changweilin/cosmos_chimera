@@ -41,6 +41,7 @@ namespace Cosmimera.Planet
 
         private PlanetConfig _config;
         private PlanetHeight _height;
+        private TemplateView _templates;
         private Transform _viewer;
         private Material _material;
         private float _colliderRange;
@@ -111,20 +112,33 @@ namespace Cosmimera.Planet
         /// Side effects: moves this transform; allocates the persistent index buffer holding all 16 variants.
         /// </remarks>
         public void Configure(in PlanetConfig config, in PlanetHeight height, Transform viewer, Material material,
-            float colliderRange = 128f, int quadsPerEdge = 32)
+            float colliderRange = 128f, int quadsPerEdge = 32) =>
+            Configure(config, height, viewer, material, default, 0f, colliderRange, quadsPerEdge);
+
+        /// <summary>As the other overload, with geo-templates stamped over the noise (P3-03).</summary>
+        /// <remarks>
+        /// Pre: as the other overload; templates default or the View of a live PlanetTemplates that outlives this
+        ///      terrain; templateMarginM == that PlanetTemplates.MaxAbsContribution (0 for none), added to the LOD
+        ///      height margin so culling/splitting stay conservative.
+        /// Post/Side effects: as the other overload.
+        /// </remarks>
+        public void Configure(in PlanetConfig config, in PlanetHeight height, Transform viewer, Material material,
+            TemplateView templates, float templateMarginM, float colliderRange = 128f, int quadsPerEdge = 32)
         {
+            Contract.Requires(math.isfinite(templateMarginM) && templateMarginM >= 0f, "templateMarginM must be >= 0");
             Contract.Requires(_tree == null, "PlanetTerrain is already configured");
             Contract.Requires(config.IsValid, "PlanetConfig is default/uninitialised");
             Contract.Requires(height.IsValid, "PlanetHeight is default/uninitialised");
             Contract.Requires(viewer != null, "viewer must be non-null");
             Contract.Requires(math.isfinite(colliderRange) && colliderRange > 0f, "colliderRange must be > 0");
             // Finest vertex spacing 1 m: planet-tech.md#幾何 (R=320/640/1280 → depth 4/5/6).
-            ChunkLodSettings lod = ChunkLodSettings.ForPlanet(config, 1f, height.MaxAbsHeight, quadsPerEdge);
+            ChunkLodSettings lod = ChunkLodSettings.ForPlanet(config, 1f, height.MaxAbsHeight + templateMarginM, quadsPerEdge);
             // Checked before any state changes (sol r3 N1): the quadtree would otherwise throw half-way through Configure.
             Contract.Requires(ChunkQuadtree.Supports(config, lod),
                 "terrain is too tall for this radius/quadsPerEdge without per-node height bounds (ChunkQuadtree.Supports)");
             _config = config;
             _height = height;
+            _templates = templates;
             _viewer = viewer;
             _material = material;
             _colliderRange = colliderRange;
@@ -212,6 +226,7 @@ namespace Cosmimera.Planet
                 AllIndices = _allIndices,
                 Output = _meshData,
                 Bounds = _bounds,
+                Templates = _templates,
             }.Schedule(count, 1);
             JobHandle.ScheduleBatchedJobs();
             _building = true;

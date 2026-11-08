@@ -25,9 +25,9 @@ PlanetSeed + PlanetType + GeneratorVersion
 ## 1. 真實世界地圖骨架
 - **離線**從開放資料烘焙「地理模板包」，執行期不連網：
   - 高程：Copernicus GLO-30 / SRTM DEM
-  - 海岸、水系、土地利用、道路紋理：OpenStreetMap
+  - 土地覆蓋：ESA WorldCover；海陸/水深：ETOPO 2022；水系由 DEM 自算。**不使用 OSM**（2026-11-08 定案 Q-W1 方案 A，見 `docs/research/P3-01-map-data-licensing.md` §4.1；律師風險點於發行前確認）
 - 模板 = 一塊真實區域（例：峽灣、群島、火山島、河口三角洲）縮放風格化後的遮罩與高程。一顆星球由 3–8 塊模板拼貼投影到球面，接縫以噪聲與山脈遮蔽。
-- ⚠️ 授權：OSM 為 ODbL（需署名；衍生資料庫需同授權），DEM 各有條款 → `open-questions.md#Q-W1`。
+- 授權：方案 A 資料只需署名（無 Share-Alike）；署名範本見 P3-01 報告。
 
 ## 2–5. 程序化層
 - 區域圖保證：從降落點到 BOSS 至少一條主路線；每區域 1 種主題（遺跡、森林、洞窟…）。

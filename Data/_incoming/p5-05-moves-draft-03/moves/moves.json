@@ -68,7 +68,7 @@
     "base_range_mm": 12000
   },
   {
-    "id": "wood_vine_grapple",
+    "id": "wood_vine_lunge",
     "element": "wood",
     "kind": "damage",
     "power": 80,
@@ -276,7 +276,7 @@
     "movement": "dash"
   },
   {
-    "id": "wind_air_slash",
+    "id": "wind_zephyr_cutter",
     "element": "wind",
     "kind": "damage",
     "power": 40,
