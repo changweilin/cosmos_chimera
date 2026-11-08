@@ -370,7 +370,7 @@ namespace Cosmimera.GameData.Editor
                 RequireEnum<CreatureStage>(c.Where, "stage", d.Stage);
                 if (!TryParseSizeClass(d.SizeClass, out _))
                 {
-                    errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be S, M, L or XL");
+                    errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be XS, S, M, L or XL");
                 }
                 RequireEnum<AiStyle>(c.Where, "ai_style", d.AiStyle);
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
@@ -737,7 +737,7 @@ namespace Cosmimera.GameData.Editor
         private static bool TryParseSizeClass(string value, out CreatureSizeClass sizeClass)
         {
             sizeClass = default;
-            return (value == "S" || value == "M" || value == "L" || value == "XL")
+            return (value == "XS" || value == "S" || value == "M" || value == "L" || value == "XL")
                 && Enum.TryParse(value, out sizeClass);
         }
 

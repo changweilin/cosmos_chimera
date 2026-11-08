@@ -5,7 +5,7 @@
 |---|---|
 | `id` | 全域唯一 snake_case |
 | `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載待 Q-C12／P2-05（見〈超載〉） |
-| `size_class` | 體型級距 `S` / `M` / `L` / `XL`（見〈體型級距〉） |
+| `size_class` | 體型級距 `XS` / `S` / `M` / `L` / `XL`（見〈體型級距〉） |
 | `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
 | `evolves_to` | 下一階段 ID（成年為 null） |
 | `evolution` | `{exp, materials: [{element, tier, qty}]}`；成年為 null（見〈進化〉） |
@@ -61,14 +61,15 @@ P2-01 已封閉詞彙（2026-11-06 使用者確認）：觸發 `always` / `on_hp
 ## 體型級距
 | 級距 | 身高/身長 | 典型階段 | 用途 |
 |---|---|---|---|
-| S | < 0.6 m | 幼年 | 撫摸動作配對（角色蹲下）、模型面數預算 |
+| XS | < 0.3 m | 幼年（手掌／昆蟲級） | 角色托在掌心輕撫（`chr_pet_xs`）；面數 3–5k、貼圖 512² |
+| S | 0.3–0.6 m | 幼年 | 撫摸動作配對（角色蹲下）、模型面數預算 |
 | M | 0.6–1.4 m | 少年 | 角色彎腰撫摸 |
 | L | 1.4–2.5 m | 成年 | 角色抬手撫摸 |
 | XL | > 2.5 m | 成年大型 / 超載 | 角色抬手撫摸前肢或頭部降低的宙獸 |
 
 美術規格（面數、骨架、動作清單）見 `art-asset-pipeline.md`。
 
-2026-11-06 使用者確認：`size_class` 現在即為必填，JSON 使用大寫 S／M／L／XL；狐狸樣本三階段分別 S／M／L。體型由內容指定，不由階段自動推算；超載欄位留給 Q-C12／P2-05。
+2026-11-06 使用者確認：`size_class` 現在即為必填，JSON 使用大寫 S／M／L／XL（2026-11-08 加入 XS，P5-08 N9；上限 0.3 m、面數與撫摸動作取自 forge `catalog.js`）；狐狸樣本三階段分別 S／M／L。體型由內容指定，不由階段自動推算；超載欄位留給 Q-C12／P2-05。
 
 ## 關係表（`Data/relations/edges.json`）
 無向圖：`{a, b, kind, note}`；`kind` 為封閉 enum（2026-11-06 定案）：`evolution_family` 同進化線、`myth_kin` 神話同源、`rival_symbiosis` 天敵共生、`tool_kin` 同工具系、`mentor` 師徒；新增種類需改 `relation.schema.json`。用途：副手資格、圖鑑關係網、劇情台詞。
