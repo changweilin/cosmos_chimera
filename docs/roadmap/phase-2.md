@@ -16,7 +16,7 @@
 | P2-08 | 御三家日月星概念與資料（9 隻） | OPUS（概念）+ TERRA（文案） | 人工 | 三條線定稿入 `Data/creatures/` | 🟨 |
 | P2-09 | 特性系統：觸發條件 + 效果資料驅動 | SONNET | OPUS | 新增特性只需改 JSON | 🟨 |
 | P2-10 | 宙獸戰鬥 AI（行為樹或效用 AI）+ 玩家指令（2 隻在場的指令分派，依 Q-C11） | OPUS | SONNET | 日=保距、月=繞背、星=突進，行為可辨識；8 隻同時 AI 仍達幀率預算 | 🟦 |
-| P2-11 | 戰鬥 HUD（HP、CD、輪替列、副手提示） | SONNET | 人工 | 4 隻輪替狀態一眼可讀 | ⬜ |
+| P2-11 | 戰鬥 HUD（HP、CD、輪替列、副手提示） | SONNET | 人工 | 4 隻輪替狀態一眼可讀 | 🟦 |
 
 ## 交接紀錄
 
@@ -69,3 +69,4 @@
 - 2026-11-07 · ChatGPT Sol（P2-10 r4，唯讀，對象 `fb85f5e`）→ Claude Opus 修正 · partial（待審）· **判定 fail**：r3 對蹠站距回歸 fixed、55 變異 53 killed（M25/M34 未證明不等價）、50,000 組探針站距誤差皆 < 1 cm；但先正規化 target 再叉積，正規化誤差蓋過 1e-20～1e-10 m 的真實側向位移，1,366 組站位偏離正確大圓 > 1 cm（最大 11 m）→ 平面法向改用未正規化座標 `fromRel × toRel`，只在法向精確為 0 時 fallback。新增 3 組方向見證。驗證：EditMode 748/748、0 警告。報告：`docs/reviews/P2-10-sol-r4.md` · 下一步：SOL r5
 - 2026-11-07 · ChatGPT Sol（P2-10 r5，唯讀，對象 `9b2a4e9`）→ Claude Opus 處置 · partial（待審）· **判定 fail**：r4 方向錯誤 fixed（同 seed 50,000 組由 1,366 → 0、最大大圓誤差 1.5e-5 m）、55 變異 53 killed；剩餘反例是非零球心下側向位移小於座標 float 捨入（球心 x=1e-20 使 `1.5−c` 捨回 1.5；10 km 座標配 1e-10 m 偏移）→ 判定為輸入精度極限，不再換算法：`Decide` Post 寫明方向保證只在側向分離 ≥ 2⁻²²·(max|center|+2R) 時成立（與 `MoveGeometry.ShellSlack` 同一思路），以下只保證站距、單位長度、決定性。驗證：EditMode 748/748。報告：`docs/reviews/P2-10-sol-r5.md` · 下一步：SOL r6 依新契約判定
 - 2026-11-07 · ChatGPT Sol（P2-10 r6，唯讀，對象 `d350cc9`）· done（規則層審查收斂）· **判定 pass**：方向門檻契約與 `ShellSlack` 同原則、門檻 0.3–7.6 mm 不使保證空洞；150,011 組探針（BigInteger 精確 oracle，含門檻等號）新契約違反 0，最大方向誤差 0.647 mm、站距誤差 0.675 mm；55 變異 52 killed，M25/M34 未證明不等價、M30 差異落在契約容許範圍。註：`A4_tiny_offsets…`／`A4_a_real_offset…` 等見證測的是門檻以下的現行行為（比契約更嚴），改演算法時可放寬為只驗站距。報告：`docs/reviews/P2-10-sol-r6.md` · 下一步：P2-10 剩 PlayMode 表現層（尋路待 Q-T1）、8 隻同時 AI 幀率預算、「日保距／月繞背／星突進可辨識」實機驗收；人工回答 Q-C22
+- 2026-11-08 · Claude Opus · partial · D0：`Combat/Runtime/Model/Encounter`（CombatAi → steering → BeginCast → MoveGeometry → ReceiveHostile/Support，依 unit id 決定性）+ `CombatBalance`（執行期解析 balance.json）；P2-11 HUD 為 IMGUI 暫用版（`Bootstrap/Demo/RunSession`）。簡化見 docs/tech-debt.md D0-E1..E3、D0-R1/R2 · 下一步：人工試玩手感；P2-05 進化尚未接到 run

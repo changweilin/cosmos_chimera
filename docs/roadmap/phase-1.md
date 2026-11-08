@@ -10,9 +10,9 @@
 | P1-03 | 區塊網格生成（Jobs + Burst）、附近區塊 MeshCollider | SONNET | OPUS | 主執行緒每幀 < 2 ms；碰撞只存在 ~128 m 內 | 🟨 |
 | P1-04 | 高度函數 `height(dir)`：多層 3D 噪聲（暫不接真實地圖） | SONNET | SOL | 快照測試；同 seed 同結果 | 🟦 |
 | P1-05 | 球面角色控制器（Rigidbody 自訂重力、坡度、跳躍）+ Cinemachine 第三/第一人稱 | SONNET | OPUS | 在極點與面交界處行走無抖動、無翻轉 | 🟨 |
-| P1-06 | 導航原型：局部 NavMesh vs steering（回答 Q-T1） | OPUS | SONNET | 比較報告 + 決定寫入 planet-tech.md | ⬜ |
-| P1-07 | URP 卡通著色（地形/角色）、角色反向外殼描邊、大氣霧 | SONNET | 人工 | 美術比對參考截圖通過 | ⬜ |
-| P1-08 | 天空：日夜循環 + 星海 skybox（與大廳共用） | SONNET | 人工 | 日夜轉換無接縫 | ⬜ |
+| P1-06 | 導航原型：局部 NavMesh vs steering（回答 Q-T1） | OPUS | SONNET | 比較報告 + 決定寫入 planet-tech.md | 🟨 |
+| P1-07 | URP 卡通著色（地形/角色）、角色反向外殼描邊、大氣霧 | SONNET | 人工 | 美術比對參考截圖通過 | 🟦 |
+| P1-08 | 天空：日夜循環 + 星海 skybox（與大廳共用） | SONNET | 人工 | 日夜轉換無接縫 | 🟦 |
 | P1-09 | 草/植被 GPU instancing + 風場 | SONNET | OPUS | 10 萬株草 60 fps | ⬜ |
 | P1-10 | 不同 R（320/640/1280）參數切換測試 | SONNET | — | 三種尺寸皆可繞行，地平線符合公式 | ⬜ |
 
@@ -49,3 +49,4 @@
 - 2026-11-08 · ChatGPT Sol（第十六輪，唯讀，對象 `1de9777`，含一次性端點掃描 300 變異）→ Claude Opus 修正 · done（待審）· P1 r16 **fail（最高 low）**：N30／N31 fixed；127 變異 117 killed。N32：up／Facing／Move 的 ±1e-3 長度 slack 以 `|lengthsq−1| < 2e-3` 實作漏了 ε²，拒絕略低於 1.001 的合法長度；Opus 改為 `IsUnitWithinSlack`（(1−1e-3)² ≤ lengthsq ≤ (1+1e-3)²，Move 用同上界），**契約措辭**：Initial／TangentOr／MotorInput 的 1e-3 rad 退化判定明寫為 float 檢定（正規化切向分量 lengthsq ≤ 1e-6），呼叫端不受影響。地面法線容差未改。N33／N34：一次補齊 Sol 矩陣中所有 † 端點（stick −1.001、sensitivity ±10、gamepad 3600、yaw 恰一圈、pitch 恰 ±160、target 各軸 ±32768、planet R 1／8000 與 Center 各軸 ±16000、default planet 原子拒絕、up 0.999 與 90°、Move lengthsq 1.002、速度各軸端點、VerticalSpeed +1e4 輸出、MotorSettings 零值、ViewForward 退化切點、Initial Velocity == 0）。新增 EditMode `SphericalMotorReviewR16Tests`，擴充 R6 與 Configure fixtures。Opus 變異 10 項（舊 slack、Move、dot ≥ 0、Initial Velocity、InRange ≥ 0、Snap 零拒絕、yaw 360、pitch 1 ulp、sensitivity <、target <）皆 killed。驗證：EditMode 586/586、PlayMode 61/61、0 警告。報告：`docs/reviews/P1-review-r16-sol.md` · 下一步：SOL 第十七輪
 - 2026-11-08 · ChatGPT Sol（第十七輪，唯讀，對象 `de0a959`）→ Claude Opus 補測試 · done（待審）· P1 r17 **fail（僅 low，皆測試缺口、無產品缺陷）**：N32／N33 fixed、N34 partial（ViewForward 負向切點）；接受 N32 浮點退化 Pre 為明訂契約變更；r16 † 93 項 92 killed。N35：平方 slack 上下界與 Move 上界的精確等號；N36：負向 Initial 切點拒絕與 ViewForward 切點須回退既有 facing；N37（AD12）：近 90° 坡、速度幾近沿法線時第一次投影為非零捨入殘值。Opus 補測於 `SphericalMotorReviewR16Tests`。**跨 runtime 注意**：Sol 的 CLR 位元見證在 Unity Mono 不成立（N37：Mono 的 normalize(up) 捨入使 dot 1.72e-7 < cos 1.95e-7、未 grounded；切點向量在 Mono 不恰為 1e-6）。切點改為測試內以 TangentOr 同步驟搜尋當前 runtime 的精確見證；N37 以 Sol 位元為 sample 0 加 20,000 個 ulp 鄰域樣本，Mono 上經 300 萬樣本插樁搜尋找不到 grounded 且殘值 ≤1e-14 的情況，故 AD12 僅在 CLR 可區分（Mono 上為實質等價）。Opus 變異：平方下界 >、上界 <、Move <、切點 <、ViewForward 不回退皆 killed（AD12 於 Mono 存活，原因如上）。驗證：EditMode 591/591、PlayMode 61/61、0 警告。報告：`docs/reviews/P1-review-r17-sol.md` · 下一步：SOL 第十八輪
 - 2026-11-08 · Claude Opus · blocked · SOL 第十八輪（對象 `5c4e582`）執行中因 Codex 用量上限中斷（約 10:09 重置），未產出判定 · 下一步：額度恢復後重跑 SOL r18（提示 `Logs/sol-r18-prompt.txt`）
+- 2026-11-08 · Claude Opus · partial · D0：P1-06 依 Q-T1 定案改 steering（`Encounter` 沿大圓移動，無障礙迴避，tech-debt D0-E3）；P1-07 `Art/Shaders/ToonTerrain`（高度/坡度/緯度上色、3 段 cel、霧）與 `ToonOutlined`（反向外殼描邊）；P1-08 `AtmosphereDriver` 以相機所在處的太陽仰角決定天空/霧色，太陽以 600 s 週期繞自轉軸（skybox 假設世界 +Y 為上，球面上不成立）。截圖 `docs/roadmap/d0-shot-verdant.png` · 下一步：人工美術比對；星空與雲（P1-08 剩餘）
