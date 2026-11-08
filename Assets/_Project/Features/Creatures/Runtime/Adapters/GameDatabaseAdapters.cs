@@ -79,7 +79,7 @@ namespace Cosmimera.Creatures
             }
 
             Contract.Requires(def.SignatureMove != null && def.Trait != null, "creature '" + speciesId + "' has no signature move or trait; re-run the data importer");
-            info = new SpeciesInfo(def.Id, def.SignatureMove.Id, def.Trait.Id);
+            info = new SpeciesInfo(def.Id, def.SignatureMove.Id, def.Trait.Id, def.Stage);
             return true;
         }
     }

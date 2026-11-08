@@ -75,7 +75,7 @@
   - `(ice_rime_strider, moon_longnight_wolf)`：讓具 `ice: 15` 副專精且全池最高 AGI（150）的成年月狼透過符籙取得遠程直線 `ice_glacier_lance`（威力 85、24 m），同時吃副專精加成並補足純近戰刺客的遠程破綻。
   - `(water_catamaran_serpent, wind_monsoon_galeon)`：`water_catamaran_serpent`（`wind: 15`、STR 150）可借 `wind_tempest_sphere`（威力 105、24 m 爆發），兼具風專精與高 STR 射程放大。
   - `(ice_tundra_dreadnought, metal_chronos_engine)`：`ice_tundra_dreadnought`（`metal: 15`）可借 `metal_lance_charge`（威力 110 突進）獲得長距位移破陣手段。
-- **跨階 `mentor` 邊之越階借招**：7 條 `mentor` 邊連結幼年與他線成年（如 `sun_mirror_chick` ↔ `fire_pyre_monarch`、`star_blaze_foal` ↔ `wind_monsoon_galeon`、`fire_ember_cub` ↔ `moon_longnight_wolf`）。因傷害公式只看招式威力 × 專精 × 抗性（不看能力值），幼年主力若裝備成年符籙副手即可施放威力 95–120 的終結技；請人工裁決是否允許越階裝備符籙副手。
+- **跨階 `mentor` 邊之越階借招**：7 條 `mentor` 邊連結幼年與他線成年（如 `sun_mirror_chick` ↔ `fire_pyre_monarch`、`star_blaze_foal` ↔ `wind_monsoon_galeon`、`fire_ember_cub` ↔ `moon_longnight_wolf`）。因傷害公式只看招式威力 × 專精 × 抗性（不看能力值），幼年主力若裝備成年符籙副手即可施放威力 95–120 的終結技；請人工裁決是否允許越階裝備符籙副手。**已裁決 2026-11-08（P5-08 N3 方案 c）**：副手階段須 ≤ 主力階段，三種收服道具皆適用（`creatures.md#隊伍規則`、`PartnerLoadout.TryAssign` → `SubStageAboveMain`）；7 條 mentor 邊只能由成年當主力、幼年當副手，其餘跨階邊同理。
 - **強力琉璃珠特性轉移與補盲**：`sun_array_skyheron`（弱影 −40）連 `wind_monsoon_galeon` 可借 `trait_wind_tailwind_glide`（換手移速 +20%／6 s）強化拉距；反之風天舟可借 `light_solar_array_lance`（威力 95＋光抗 −10）重創弱光的星線（光抗 −40）。`moon_longnight_wolf` 的 `trait_shadow_longnight_stalker`（上場閃避 +20%、移速 +15%）轉給 `ice_rime_strider` 亦具高泛用性。
 
 ## 6. 文化敏感度備註（Cultural Sensitivity）
