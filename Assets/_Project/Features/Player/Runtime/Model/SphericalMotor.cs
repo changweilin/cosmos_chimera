@@ -96,7 +96,8 @@ namespace Cosmimera.Player
     /// <summary>One fixed step of player intent.</summary>
     /// <remarks>
     /// Pre: |Move| ≤ 1 (+1e-3); ViewForward finite (any length, scale-invariant; projected onto the tangent plane;
-    ///      zero or within 1e-3 rad of ±up = "use facing").
+    ///      zero or within 1e-3 rad of ±up = "use facing", i.e. sin θ ≤ 1e-3 tested as lengthsq ≤ 1e-6 on the
+    ///      normalised tangent part); |Move| is compared as lengthsq(Move) ≤ (1 + 1e-3)².
     /// Post: n/a. Side effects: none.
     /// </remarks>
     internal struct MotorInput
@@ -136,9 +137,11 @@ namespace Cosmimera.Player
     /// <summary>Motor state carried between fixed steps.</summary>
     /// <remarks>
     /// Pre: create through <see cref="SphericalMotor.Initial"/>.
-    /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing and PlanarVelocity ⟂ Up (±1e-4), Facing
-    ///       unit; Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded;
-    ///       |PlanarVelocity| ≤ MaxStateSpeed, |VerticalSpeed| ≤ MaxStateSpeed, |Velocity| ≤ 2·MaxStateSpeed.
+    /// Post (after every <see cref="SphericalMotor.Step"/>): Up unit; Facing unit and ⟂ Up (±1e-4); PlanarVelocity ⟂ Up
+    ///       within 1e-4·max(1, |PlanarVelocity|) — relative, because at 1e4 m/s float spacing alone leaves ~1e-3 m/s
+    ///       of dot residual (sol P1 r5 N7); Velocity finite; VerticalSpeed == 0 while Grounded; JumpStarted ⇒ ¬Grounded;
+    ///       lengthsq(PlanarVelocity) ≤ MaxStateSpeed², |VerticalSpeed| ≤ MaxStateSpeed, |Velocity| ≤ 2·MaxStateSpeed
+    ///       (so every Step output is accepted by the next Step's Pre).
     /// Side effects: none.
     /// </remarks>
     internal struct MotorState
@@ -179,6 +182,17 @@ namespace Cosmimera.Player
         // A heading within ~1e-3 rad of ±up is noise (PlanetFrame.ProjectOnTangent's degeneracy threshold).
         private const float DegenerateSq = 1e-6f;
 
+        // (1 ∓ 1e-3)²: the documented ±1e-3 slack is on the length; `|lengthsq − 1| < 2e-3` dropped the ε² term and
+        // rejected lengths just below 1.001 (sol P1 r16 N32).
+        private const float UnitSqMin = 0.998001f;
+        private const float UnitSqMax = 1.002001f;
+
+        private static bool IsUnitWithinSlack(float3 v)
+        {
+            float lengthSq = math.lengthsq(v);
+            return lengthSq >= UnitSqMin && lengthSq <= UnitSqMax;
+        }
+
         /// <summary>Largest planar or vertical speed a MotorState may carry, m/s.</summary>
         /// <remarks>
         /// Pre: none. Post: constant. Side effects: none.
@@ -190,13 +204,14 @@ namespace Cosmimera.Player
 
         /// <summary>State at rest at local up <paramref name="up"/> facing <paramref name="facing"/>.</summary>
         /// <remarks>
-        /// Pre: up unit (±1e-3); facing finite (any length), not zero and not within 1e-3 rad of ±up.
+        /// Pre: up unit (±1e-3, compared as (1 − 1e-3)² ≤ lengthsq ≤ (1 + 1e-3)²); facing finite (any length), not
+        ///      zero and not within 1e-3 rad of ±up (sin θ ≤ 1e-3, tested as lengthsq ≤ 1e-6 on the normalised tangent part).
         /// Post: result satisfies the MotorState invariant; Velocity == 0; Grounded == false.
         /// Side effects: none.
         /// </remarks>
         public static MotorState Initial(float3 up, float3 facing)
         {
-            Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
+            Contract.Requires(IsUnitWithinSlack(up), "up must be unit length");
             Contract.Requires(math.all(math.isfinite(facing)), "facing must be finite");
             up = math.normalize(up);
             float3 tangent = TangentOr(facing, up, float3.zero);
@@ -214,9 +229,11 @@ namespace Cosmimera.Player
         /// Post: MotorState invariant holds; result.Up == normalize(up);
         ///       Grounded ⇔ ground.Hit ∧ Distance ≤ SnapDistance ∧ slope ≤ MaxSlope ∧ prev.VerticalSpeed ≤ 0.5 ∧ no jump;
         ///       JumpStarted ⇔ a jump started this step;
-        ///       |PlanarVelocity| ≤ max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding); transport alone preserves
-        ///       |PlanarVelocity|; while grounded, Velocity runs along the
-        ///       ground plane at |PlanarVelocity| plus StickSpeed into the ground;
+        ///       |PlanarVelocity| ≤ min(MaxStateSpeed, max(|prev.PlanarVelocity|, SprintSpeed) (+ rounding)); transport alone preserves
+        ///       |PlanarVelocity| except at the domain edge, where lengthsq ≥ MaxStateSpeed²·(1−2e-6) is rescaled to
+        ///       MaxStateSpeed·(1−1e-6) (≤ ~0.011 m/s at 1e4 m/s, sol P1 r6); while grounded, Velocity runs along the
+        ///       ground plane at |PlanarVelocity| (relative rounding, any speed and any legal slope) plus StickSpeed into the
+        ///       ground, the along-plane part being zero only when PlanarVelocity is zero or parallel to ground.Normal in float;
         ///       a jump starts only from Grounded and sets the vertical speed to sqrt(2·Gravity·JumpHeight).
         /// Side effects: none (pure).
         /// </remarks>
@@ -225,9 +242,9 @@ namespace Cosmimera.Player
         {
             Contract.Requires(settings.IsValid, "invalid MotorSettings");
             Contract.Requires(dt > 0f && dt <= 0.1f, "dt must be in (0, 0.1]");
-            Contract.Requires(math.abs(math.lengthsq(up) - 1f) < 2e-3f, "up must be unit length");
-            Contract.Requires(math.abs(math.lengthsq(prev.Up) - 1f) < 2e-3f, "prev is uninitialised (use Initial)");
-            Contract.Requires(math.abs(math.lengthsq(prev.Facing) - 1f) < 2e-3f && math.abs(math.dot(prev.Facing, prev.Up)) <= 1e-3f,
+            Contract.Requires(IsUnitWithinSlack(up), "up must be unit length");
+            Contract.Requires(IsUnitWithinSlack(prev.Up), "prev is uninitialised (use Initial)");
+            Contract.Requires(IsUnitWithinSlack(prev.Facing) && math.abs(math.dot(prev.Facing, prev.Up)) <= 1e-3f,
                 "prev.Facing must be a unit tangent");
             Contract.Requires(math.all(math.isfinite(prev.PlanarVelocity))
                 && math.abs(math.dot(prev.PlanarVelocity, prev.Up)) <= 1e-3f * math.max(1f, math.length(prev.PlanarVelocity)),
@@ -244,7 +261,7 @@ namespace Cosmimera.Player
             Contract.Requires(!prev.Grounded || (prev.VerticalSpeed == 0f && !prev.JumpStarted),
                 "prev is Grounded but carries vertical speed or a jump start");
             Contract.Requires(math.dot(up, prev.Up) > 0f, "up moved more than 90° in one step");
-            Contract.Requires(math.lengthsq(input.Move) <= 1.002f, "|Move| must be ≤ 1");
+            Contract.Requires(math.lengthsq(input.Move) <= UnitSqMax, "|Move| must be ≤ 1");
             Contract.Requires(math.all(math.isfinite(input.ViewForward)), "ViewForward must be finite");
             Contract.Requires(!ground.Hit || (math.abs(math.lengthsq(ground.Normal) - 1f) < 2e-3f && ground.Distance >= 0f),
                 "ground normal must be unit and distance ≥ 0");
@@ -271,7 +288,10 @@ namespace Cosmimera.Player
             // Unity is left-handed (Vector3.right == cross(up, forward) for up=Y, forward=Z), so screen-right is
             // cross(up, forward). Do not derive it from PlanetFrame.East: that frame is right-handed by formula.
             float3 viewRight = math.cross(up, viewForward);
-            float3 wishDir = viewRight * input.Move.x + viewForward * input.Move.y;
+            // The Pre tolerates |Move| up to ~1.001 (stick calibration); limit it to the unit disc so that tolerance
+            // cannot push speed past SprintSpeed and break the speed Post (sol P1 r8 N15: +0.09 m/s at 100 m/s).
+            float2 move = math.lengthsq(input.Move) > 1f ? math.normalize(input.Move) : input.Move;
+            float3 wishDir = viewRight * move.x + viewForward * move.y;
             float wishSpeed = input.Sprint ? settings.SprintSpeed : settings.WalkSpeed;
             float3 wishVelocity = wishDir * wishSpeed;
 
@@ -290,7 +310,19 @@ namespace Cosmimera.Player
                 if (into < 0f)
                 {
                     vTan -= wallOut * into;
+                    // When nearly all of a large vTan pushes into the wall, the subtraction cancels to a residue made of
+                    // rounding (~|vTan|·ε, 1e-3 m/s at 1e4 m/s) that is not tangent; re-project so the tangent Post and
+                    // the next Step's Pre still hold (sol P1 r11 N21).
+                    vTan -= up * math.dot(vTan, up);
                 }
+            }
+
+            // Close the speed domain over Step (sol P1 r5 N6): restoring the transported length can round
+            // lengthsq(vTan) a few ulp above MaxStateSpeed², and the next Step's Pre would then reject this output.
+            // The 1e-6 relative headroom is ~10 float ulp, enough for lengthsq of the rescaled vector to stay below.
+            if (math.lengthsq(vTan) > MaxStateSpeed * MaxStateSpeed * (1f - 2e-6f))
+            {
+                vTan *= MaxStateSpeed * (1f - 1e-6f) / math.length(vTan);
             }
 
             float3 velocity;
@@ -305,11 +337,24 @@ namespace Cosmimera.Player
             else if (grounded)
             {
                 // Follow the ground plane at the same speed so slopes neither slow the body nor launch it.
-                float3 along = vTan - ground.Normal * math.dot(vTan, ground.Normal);
-                float alongLenSq = math.lengthsq(along);
-                if (alongLenSq > 1e-12f)
+                // An absolute 1e-12 cutoff on the projection skipped the speed restore for micro speeds and for legal
+                // near-vertical slopes, whose projection is only cos(slope)·|vTan| long (sol P1 r14 N28). Scaling by the
+                // largest component keeps lengthsq in [1, 3], so neither tiny nor large speeds under- or overflow.
+                float3 along = float3.zero;
+                float scale = math.cmax(math.abs(vTan));
+                if (scale > 0f)
                 {
-                    along *= math.length(vTan) / math.sqrt(alongLenSq);
+                    float3 dir = vTan / scale;
+                    float speed = scale * math.length(dir);
+                    float3 a = dir - ground.Normal * math.dot(dir, ground.Normal);
+                    // |a| ≥ |dir|·cos(slope) can be ~1e-7; one projection leaves a normal residual of ~ε·|dir|, which
+                    // normalising would amplify by 1/|a|, so project a second time on the normalised result.
+                    if (math.lengthsq(a) > 0f)
+                    {
+                        a = math.normalize(a);
+                        a -= ground.Normal * math.dot(a, ground.Normal);
+                        along = math.normalize(a) * speed;
+                    }
                 }
 
                 velocity = along - ground.Normal * settings.StickSpeed;
@@ -345,7 +390,8 @@ namespace Cosmimera.Player
         /// <summary>Unit tangent of <paramref name="v"/> at <paramref name="up"/>, or <paramref name="fallback"/> if degenerate.</summary>
         /// <remarks>
         /// Pre: up unit; v finite.
-        /// Post: result ⟂ up (≤ 1e-6) and unit, or == fallback when v is zero or within 1e-3 rad of ±up;
+        /// Post: result ⟂ up (≤ 1e-6) and unit, or == fallback when v is zero or within 1e-3 rad of ±up (sin θ ≤ 1e-3,
+        ///       tested as lengthsq ≤ 1e-6 on the normalised tangent part);
         ///       independent of |v|.
         /// Side effects: none.
         /// </remarks>

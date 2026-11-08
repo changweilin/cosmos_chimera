@@ -54,13 +54,12 @@
       "name_en": "Voltfoal",
       "naming_note": "星斑與帶電小蹄相映。",
       "dex_zh": "額上的白色星斑不時迸出細小電光，蹄子踏過草地也會濺起火花。牠總跌跌撞撞地向前衝，遇到對手便鼓起勇氣帶電撞去。",
-      "dex_en": "Sparks dance from the white star on its forehead and scatter beneath its hooves. It tumbles through the grass in eager practice, gathering courage to charge an opponent with crackling energy.",
-      "opus_note": "Terra 原案 Voltrot 與 Pokemon Voltorb 過近，Opus 改名"
+      "dex_en": "Sparks dance from the white star on its forehead and scatter beneath its hooves. It tumbles through the grass in eager practice, gathering courage to charge an opponent with crackling energy."
     },
     {
       "id": "star_storm_colt",
       "name_zh": "星蹄騏",
-      "name_en": "Voltraven",
+      "name_en": "Voltrmane",
       "naming_note": "星蹄長成逐風的駿馬。",
       "dex_zh": "跳動的電弧化作長鬃，金色翼芽從肩胛間探出。牠喜歡迎風奔過草原，衝入敵群後揚起前蹄，讓電光向身邊四散，逼退圍來的對手。",
       "dex_en": "Its mane flickers with living arcs, and golden wing buds rise from its shoulders. It races into the wind and, surrounded by foes, rears up to scatter electricity around itself."
@@ -101,11 +100,11 @@
     },
     {
       "id": "shadow_nightpaw_swipe",
-      "name_zh": "夜爪掠",
-      "name_en": "Nightpaw Swipe",
+      "name_zh": "夜爪擊",
+      "name_en": "Nightpaw Strike",
       "naming_note": "夜色中的迅捷爪擊。",
-      "desc_zh": "揮出裹著暗影的爪擊，傷害身前近處的敵人並暫時降低其影抗性。",
-      "desc_en": "Swipe with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
+      "desc_zh": "以裹著暗影的爪子向前直擊，傷害身前近處的敵人並暫時降低其影抗性。",
+      "desc_en": "Strike straight forward with a shadow-cloaked paw, damaging enemies close in front and briefly lowering their shadow resistance."
     },
     {
       "id": "shadow_longnight_lunge",
@@ -121,7 +120,7 @@
       "name_en": "Loneshade Ambush",
       "naming_note": "孤行獵手的暗影伏擊。",
       "desc_zh": "化作疾掠的暗影向前突襲，傷害路徑上的敵人，並暫時降低其影抗性。",
-      "desc_en": "Rush forward in a sweeping shadow, damaging enemies along the path and temporarily lowering their shadow resistance."
+      "desc_en": "Rush straight forward as a darting shadow, damaging enemies along the path and temporarily lowering their shadow resistance."
     },
     {
       "id": "thunder_starblaze_charge",
@@ -175,9 +174,9 @@
     }
   ],
   "issues": [
-    "設計文件將日線定位為持續直線傷害與引導施法，但三個光招式資料均為一般傷害招式，沒有持續傷害或引導機制；README 已標明此落差。",
+    "（已解決 2026-11-08，P5-08 A8）日線設計文件與 README 改為遠距瞬發直線光束，不採引導施法；light_mirror_glint 與 light_solar_array_lance 為 both，分別降低閃避 10%／3 秒及光抗 10／6 秒。",
     "（已解決 2026-11-07，P5-08 A6）月線三階的定位、外觀與圖鑑改寫為繞背、直線突進與貼身作戰，不再暗示隱身或撤離。",
-    "星線整體定位包含範圍放電，但成年的精通招式是直線突進傷害，並非以自身為中心的範圍放電；範圍放電由少年招式呈現。"
+    "（已解決 2026-11-08，P5-08 A8）星線三階定位已分開描述：幼年與成年為直線突進，少年以自身為中心範圍放電；設計文件與 README 同步。"
   ],
   "source": "ChatGPT Terra（codex exec -s read-only -m gpt-6.1-terra），2026-11-07；Claude Opus 驗收"
 }

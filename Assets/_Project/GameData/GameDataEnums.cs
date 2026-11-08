@@ -50,10 +50,14 @@ namespace Cosmimera.GameData
     }
 
     /// <summary>Creature size for animation pairing and art budgets.</summary>
-    /// <remarks>Pre: imported from S|M|L|XL. Post: stable serialized values. Side effects: none.</remarks>
+    /// <remarks>
+    /// Pre: imported from XS|S|M|L|XL. Post: stable serialized values. Side effects: none.
+    /// XS is appended as 4 instead of renumbered to 0 because imported assets store the integer; numeric order is
+    /// therefore NOT size order — never compare these values with &lt; / &gt;.
+    /// </remarks>
     public enum CreatureSizeClass
     {
-        S = 0, M = 1, L = 2, XL = 3,
+        S = 0, M = 1, L = 2, XL = 3, XS = 4,
     }
 
     /// <summary>Combat AI positioning style. REQ: docs/design/combat.md#戰鬥-ai (Q-C21, closed enum).</summary>

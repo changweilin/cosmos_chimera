@@ -25,4 +25,4 @@ P1+P2 ─▶ P6（可與 P4/P5 平行）
 P1 與 P2 可平行（不同 feature、不同 session）。
 
 ## 現在
-下一個可開工項目：**P0-01**（見 phase-0.md）。阻塞中的待決問題：`../open-questions.md`。
+**優先：D0 初始 demo**（[demo.md](demo.md)，2026-11-08 起優先於各 phase 出口條件）。阻塞中的待決問題：`../open-questions.md`。

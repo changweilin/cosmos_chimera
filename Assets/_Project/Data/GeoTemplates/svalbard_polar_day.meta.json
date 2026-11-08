@@ -1,0 +1,22 @@
+{
+  "id": "svalbard_polar_day",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 78.2,
+  "center_lon": 15.5,
+  "half_extent_km": 20,
+  "elev_min_m": -0.1359818089608375,
+  "elev_max_m": 1050.275158940576,
+  "sea_level_norm": 0.00012945579467465055,
+  "terrain_tags": [
+    "eternal_day"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N78_00_E014_00_DEM",
+    "Copernicus_DSM_COG_30_N78_00_E015_00_DEM",
+    "Copernicus_DSM_COG_30_N78_00_E016_00_DEM"
+  ]
+}

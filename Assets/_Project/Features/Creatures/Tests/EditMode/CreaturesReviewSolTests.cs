@@ -16,12 +16,14 @@ namespace Cosmimera.Creatures.Tests
         private readonly List<UnityEngine.Object> _created = new List<UnityEngine.Object>();
         private FakeRelationGraph _graph;
         private FakeSpeciesLookup _species;
+        private FakeStages _stages;
 
         [SetUp]
         public void SetUp()
         {
             _graph = new FakeRelationGraph();
             _species = new FakeSpeciesLookup();
+            _stages = new FakeStages();
             foreach (string main in new[] { "main_1", "main_2" })
             {
                 for (int i = 10; i < 30; i++)
@@ -87,8 +89,8 @@ namespace Cosmimera.Creatures.Tests
         public void Several_magic_cubes_give_one_overload_each_in_order()
         {
             var loadout = new PartnerLoadout(new[] { 1 });
-            loadout.TryAssign(Main(1), Sub(10, VesselKind.MagicCube), _graph);
-            loadout.TryAssign(Main(1), Sub(11, VesselKind.MagicCube), _graph);
+            loadout.TryAssign(Main(1), Sub(10, VesselKind.MagicCube), _graph, _stages);
+            loadout.TryAssign(Main(1), Sub(11, VesselKind.MagicCube), _graph, _stages);
 
             IReadOnlyList<Provision> p = loadout.ResolveProvisions(1, "main_1", id => Sub(id, VesselKind.MagicCube), _species);
 
@@ -113,7 +115,7 @@ namespace Cosmimera.Creatures.Tests
             var loadout = new PartnerLoadout(new[] { 1, 2 });
             for (int i = 10; i < 14; i++)
             {
-                Assert.AreEqual(PartnerResult.Ok, loadout.TryAssign(Main(1), Sub(i), _graph));
+                Assert.AreEqual(PartnerResult.Ok, loadout.TryAssign(Main(1), Sub(i), _graph, _stages));
             }
 
             return loadout;
@@ -125,7 +127,7 @@ namespace Cosmimera.Creatures.Tests
             PartnerLoadout loadout = FullMainOne();
             int calls = _graph.Calls;
 
-            Assert.AreEqual(PartnerResult.SubIsAMain, loadout.TryAssign(Main(1), Main(2), _graph));
+            Assert.AreEqual(PartnerResult.SubIsAMain, loadout.TryAssign(Main(1), Main(2), _graph, _stages));
             Assert.AreEqual(calls, _graph.Calls);
         }
 
@@ -133,20 +135,20 @@ namespace Cosmimera.Creatures.Tests
         public void Full_main_still_reports_AlreadySubOfAnotherMain_first()
         {
             PartnerLoadout loadout = FullMainOne();
-            Assert.AreEqual(PartnerResult.Ok, loadout.TryAssign(Main(2), Sub(20), _graph));
+            Assert.AreEqual(PartnerResult.Ok, loadout.TryAssign(Main(2), Sub(20), _graph, _stages));
 
-            Assert.AreEqual(PartnerResult.AlreadySubOfAnotherMain, loadout.TryAssign(Main(1), Sub(20), _graph));
+            Assert.AreEqual(PartnerResult.AlreadySubOfAnotherMain, loadout.TryAssign(Main(1), Sub(20), _graph, _stages));
         }
 
         [Test]
         public void Reassigning_the_same_pair_does_not_requery_relations()
         {
             var loadout = new PartnerLoadout(new[] { 1 });
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
             _graph.Unrelate("main_1", "sub_10");
             int calls = _graph.Calls;
 
-            Assert.AreEqual(PartnerResult.AlreadyAssignedToThisMain, loadout.TryAssign(Main(1), Sub(10), _graph));
+            Assert.AreEqual(PartnerResult.AlreadyAssignedToThisMain, loadout.TryAssign(Main(1), Sub(10), _graph, _stages));
             Assert.AreEqual(calls, _graph.Calls);
         }
 
@@ -154,9 +156,9 @@ namespace Cosmimera.Creatures.Tests
         public void Invalid_pairs_follow_mains_order_then_assignment_order_across_mains()
         {
             var loadout = new PartnerLoadout(new[] { 2, 1 });
-            loadout.TryAssign(Main(2), Sub(20), _graph);
-            loadout.TryAssign(Main(2), Sub(21), _graph);
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(2), Sub(20), _graph, _stages);
+            loadout.TryAssign(Main(2), Sub(21), _graph, _stages);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
 
             IReadOnlyList<PartnerPair> invalid = loadout.FindInvalidPairs(new FakeRelationGraph(), SpeciesOfId);
 
@@ -173,8 +175,8 @@ namespace Cosmimera.Creatures.Tests
         public void Invalid_pairs_are_found_on_a_later_main_only()
         {
             var loadout = new PartnerLoadout(new[] { 1, 2 });
-            loadout.TryAssign(Main(1), Sub(10), _graph);
-            loadout.TryAssign(Main(2), Sub(20), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
+            loadout.TryAssign(Main(2), Sub(20), _graph, _stages);
             _graph.Unrelate("main_2", "sub_20");
 
             IReadOnlyList<PartnerPair> invalid = loadout.FindInvalidPairs(_graph, SpeciesOfId);
@@ -199,7 +201,7 @@ namespace Cosmimera.Creatures.Tests
             var loadout = new PartnerLoadout(new[] { 1 });
             IReadOnlyList<int> view = loadout.SubsOf(1);
 
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
 
             CollectionAssert.AreEqual(new[] { 10 }, view);
         }
@@ -216,7 +218,7 @@ namespace Cosmimera.Creatures.Tests
         public void TryGetMainOf_an_unassigned_creature_is_false_with_zero()
         {
             var loadout = new PartnerLoadout(new[] { 1 });
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
 
             Assert.IsFalse(loadout.TryGetMainOf(42, out int main));
             Assert.AreEqual(0, main);
@@ -226,7 +228,7 @@ namespace Cosmimera.Creatures.Tests
         public void ResolveProvisions_rejects_a_callback_returning_the_wrong_individual()
         {
             var loadout = new PartnerLoadout(new[] { 1 });
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
 
             Assert.Throws<ContractException>(() => loadout.ResolveProvisions(1, "main_1", id => Sub(11), _species));
         }
@@ -235,7 +237,7 @@ namespace Cosmimera.Creatures.Tests
         public void FindInvalidPairs_rejects_a_missing_current_species()
         {
             var loadout = new PartnerLoadout(new[] { 1 });
-            loadout.TryAssign(Main(1), Sub(10), _graph);
+            loadout.TryAssign(Main(1), Sub(10), _graph, _stages);
 
             Assert.Throws<ContractException>(() => loadout.FindInvalidPairs(_graph, id => id == 1 ? null : "sub_10"));
             Assert.Throws<ContractException>(() => loadout.FindInvalidPairs(_graph, id => id == 1 ? "main_1" : ""));
@@ -281,10 +283,12 @@ namespace Cosmimera.Creatures.Tests
         {
             foreach (string bad in new[] { null, "" })
             {
-                Assert.Throws<ContractException>(() => new SpeciesInfo(bad, "m", "t"));
-                Assert.Throws<ContractException>(() => new SpeciesInfo("s", bad, "t"));
-                Assert.Throws<ContractException>(() => new SpeciesInfo("s", "m", bad));
+                Assert.Throws<ContractException>(() => new SpeciesInfo(bad, "m", "t", CreatureStage.Juvenile));
+                Assert.Throws<ContractException>(() => new SpeciesInfo("s", bad, "t", CreatureStage.Juvenile));
+                Assert.Throws<ContractException>(() => new SpeciesInfo("s", "m", bad, CreatureStage.Juvenile));
             }
+
+            Assert.Throws<ContractException>(() => new SpeciesInfo("s", "m", "t", (CreatureStage)99));
         }
 
         // ---- C5: evolution blockers and identity (M35, M44, M45) ----

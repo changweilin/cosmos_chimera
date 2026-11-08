@@ -17,7 +17,7 @@
           "description": "Closed enum (user decision 2026-11-06). myth_kin=神話同源, rival_symbiosis=天敵共生, tool_kin=同工具系, mentor=師徒.",
           "enum": ["evolution_family", "myth_kin", "rival_symbiosis", "tool_kin", "mentor"]
         },
-        "note": { "type": "string" }
+        "note": { "type": "string", "description": "Developer-only rationale (never shown to players; real-world names allowed). REQ: docs/design/creatures.md#關係表" }
       }
     }
   }

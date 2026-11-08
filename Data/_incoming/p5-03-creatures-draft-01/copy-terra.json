@@ -5,7 +5,7 @@
       "name_zh": "漏輪雛",
       "name_en": "Clepspro",
       "naming_note": "漏刻浮碗藏在初生齒輪間。",
-      "dex_zh": "圓弧形的青銅身軀裡藏著細小齒輪，胸前浮碗隨水面輕晃。牠守在夥伴前方，等敵人靠近才向前刺出細針。",
+      "dex_zh": "圓弧形的青銅身軀裡藏著細小齒輪，胸前微型浮碗隨水面輕晃。牠守在夥伴前方，等敵人靠近才向前刺出細針。",
       "dex_en": "Tiny gears turn inside its rounded bronze body, while a floating bowl rocks gently on its chest. It guards the front of the group and thrusts a fine needle at approaching enemies."
     },
     {
@@ -13,8 +13,8 @@
       "name_zh": "漏輪衛",
       "name_en": "Clepsward",
       "naming_note": "漏輪披甲，守住夥伴前方。",
-      "dex_zh": "半身重甲隨步伐發出沉穩聲響，肩上的盤龍連桿牽動報時音板。牠立在陣前，揮動金屬利刃橫掃近身的敵人。",
-      "dex_en": "Its half suit of heavy armor rattles steadily as coiled dragon linkages move the chime plates on its shoulders. It holds the front line and sweeps a metal blade across nearby foes."
+      "dex_zh": "半身重甲隨步伐發出沉穩聲響，肩上的青銅盤龍連桿牽動報時音板。牠立在陣前，揮動金屬利刃橫掃近身的敵人。",
+      "dex_en": "Its half-suit of heavy armor rattles steadily as coiled dragon linkages move the chime plates on its shoulders. It holds the front line and sweeps a metal blade across nearby foes."
     },
     {
       "id": "metal_chronos_engine",
@@ -46,7 +46,7 @@
       "name_en": "Vireloria",
       "naming_note": "蔓冠長尾映出雙重虹彩。",
       "dex_zh": "七彩羽翼覆住巨木頂端，兩道虹彩長尾如垂藤般輕晃，翠玉色花朵在身旁盛開。牠遙望中距離的敵人，令枝葉在目標周圍壓落。",
-      "dex_en": "Perched atop a great tree, it trails twin iridescent tails like hanging vines amid jade green blossoms. It watches the middle distance and brings a canopy crashing down around its chosen target."
+      "dex_en": "Perched atop a great tree, it trails twin iridescent tails like hanging vines amid jade-green blossoms. It watches the middle distance and brings a canopy crashing down around its chosen target."
     },
     {
       "id": "water_wave_elver",
@@ -54,7 +54,7 @@
       "name_en": "Brinelle",
       "naming_note": "小鰻背上的水膜初展如帆。",
       "dex_zh": "銀色小鰻穿梭浪間，背上的半透明水膜彎成蟹爪般的小帆。牠一邊貼水滑行，一邊向中距離的對手直射薄薄水刃。",
-      "dex_en": "A translucent membrane rises like a tiny crab claw sail above this silver eel. It skims between waves and sends a thin blade of water straight toward an opponent at medium range."
+      "dex_en": "A translucent membrane rises like a tiny crab-claw sail above this silver eel. It skims between waves and sends a thin blade of water straight toward an opponent at medium range."
     },
     {
       "id": "water_skiff_eel",
@@ -62,15 +62,15 @@
       "name_en": "Brinavela",
       "naming_note": "潮帆長出雙浮筒，破浪如舟。",
       "dex_zh": "木紋雙浮筒護著海鰻的腹部，硬質蟹爪帆在脊背上迎風張開。牠乘浪滑翔，朝中距離前方扇形水域噴出奔湧水流。",
-      "dex_en": "Wood grained floats protect its belly, and a rigid crab claw sail rises from its back. Gliding over waves, it releases a broad cone of rushing water ahead at medium range."
+      "dex_en": "Wood-grained floats protect its belly, and a rigid crab-claw sail rises from its back. Gliding over waves, it releases a broad cone of rushing water ahead at medium range."
     },
     {
       "id": "water_catamaran_serpent",
       "name_zh": "潮帆巨鰻",
-      "name_en": "Brinavast",
+      "name_en": "Brinamar",
       "naming_note": "潮帆巨鰻如雙體大舟乘浪。",
       "dex_zh": "巨大的鰻舟浮在海面時宛如一座小島，彩繪側舷隨季風劈開怒濤。牠從遠處瞄準敵群，令洪流在目標周圍轟然炸開。",
-      "dex_en": "As large as a floating island, this twin hulled eel cuts through rough seas with painted flanks and towering sails. From afar, it unleashes a deluge that bursts around its target."
+      "dex_en": "As large as a floating island, this twin-hulled eel cuts through rough seas with painted flanks and towering sails. From afar, it unleashes a deluge that bursts around its target."
     },
     {
       "id": "fire_ember_cub",
@@ -93,8 +93,8 @@
       "name_zh": "燼鬃焰獅",
       "name_en": "Cindraval",
       "naming_note": "燼鬃盛開成三面獅的火冠。",
-      "dex_zh": "三面的雄獅昂首咆哮，金紅鬃毛如盛放蓮花，震響在砂岩間迴盪。牠守在前鋒，朝遠處敵群引爆一團擴散的烈焰。",
-      "dex_en": "A golden red crown of fire opens around this lion's three faces, and its roar echoes through sandstone. It guards the vanguard while detonating a spreading blaze around a distant target."
+      "dex_zh": "三面的雄獅昂首咆哮，金紅鬃毛如盛放蓮花，震響在砂岩間迴盪。牠與敵人保持距離，朝遠處目標引爆一團擴散的烈焰。",
+      "dex_en": "A golden-red crown of fire opens around this lion's three faces, and its roar echoes through sandstone. It keeps its distance and detonates a spreading blaze around a distant target."
     },
     {
       "id": "earth_pebble_pawn",
@@ -109,7 +109,7 @@
       "name_zh": "金塵衛",
       "name_en": "Gildumant",
       "naming_note": "金塵石偶戴上守陣面甲。",
-      "dex_zh": "幾何金面甲遮住岩土行者的面容，層疊黏土和金晶護著肩背。牠站在隊伍前方，猛擊地面使震波向身邊擴散。",
+      "dex_zh": "幾何金面甲遮住岩土行者的面容，層疊板狀黏土和金晶護著肩背。牠站在隊伍前方，猛擊地面使震波向身邊擴散。",
       "dex_en": "A geometric gold mask covers its face, while layers of clay and growing crystals protect its shoulders. It stands near the front and strikes the ground, sending tremors outward around itself."
     },
     {
@@ -134,12 +134,12 @@
       "name_en": "Rimbraven",
       "naming_note": "霜角分岔，為獵獸引導寒氣。",
       "dex_zh": "冰柱般的巨角向兩側分岔，雙翼上的鍛鐵鉸鏈與金箔鞍軛隨步伐輕響。牠引寒氣凝成長槍，朝遠處敵人直射而去。",
-      "dex_en": "Great antlers branch like icicles above its head, and iron hinges click beside a gold trimmed harness. It gathers cold into a lance and sends it straight toward a distant foe."
+      "dex_en": "Great antlers branch like icicles above its head, and iron hinges click beside a gold-trimmed harness. It gathers cold into a lance and sends it straight toward a distant foe."
     },
     {
       "id": "ice_tundra_dreadnought",
       "name_zh": "霜角巨獸",
-      "name_en": "Rimbravast",
+      "name_en": "Rimbragard",
       "naming_note": "霜角巨獸披上永凍甲翼。",
       "dex_zh": "厚重凍甲覆著巨獸身軀，機械雙翼結滿寒霜，金屬尖爪能鑿開凍土。牠凝視遠處的敵人，讓暴雪在目標周圍旋開。",
       "dex_en": "Frozen armor covers its massive body, frost clings to its mechanical wings, and metal claws break hard ground. It watches distant enemies and stirs a blizzard around its chosen target."
@@ -150,7 +150,7 @@
       "name_en": "Reevilo",
       "naming_note": "竹笛小舟隨風發出清音。",
       "dex_zh": "梭形小舟輕浮空中，舟首三孔竹笛迎著微風鳴響。牠喜歡沿氣流迅速滑行，遇到靠近的敵人便揮出一道橫掃風刃。",
-      "dex_en": "Three holes in the bamboo flute at its prow sing softly as this spindle shaped skiff floats through the air. It follows swift currents and sweeps a blade of wind at nearby foes."
+      "dex_en": "Three holes in the bamboo flute at its prow sing softly as this spindle-shaped skiff floats through the air. It follows swift currents and sweeps a blade of wind at nearby foes."
     },
     {
       "id": "wind_flute_cruiser",
@@ -169,66 +169,250 @@
       "dex_en": "Geometric embroidery hangs from the layered hull, and open flute vents pour out wind as it cruises swiftly through the sky. It aims from afar and raises a storm around its target."
     }
   ],
-  "issues_resolved": [
+  "moves": [
     {
-      "id": "metal_chronos_engine",
-      "issue": "定位強調陣地錨定，但精通招式是沿長距離直線突進，使用時會離開原先位置。"
+      "id": "metal_needle_thrust",
+      "name_zh": "針輪刺",
+      "name_en": "Needlewheel Thrust",
+      "naming_note": "細針般的金屬齒輪向前刺出。",
+      "desc_zh": "凝起銳利金針向正前方刺擊，傷害身前近處的敵人。",
+      "desc_en": "Thrust a sharp metal needle straight ahead, damaging enemies close in front."
     },
     {
-      "id": "wood_fern_chick",
-      "issue": "定位包含中排持續治癒與控場，但精通招式為近距離直線突進傷害，特性則是召喚時治療，未提供持續治癒或控場。"
+      "id": "metal_iron_cleave",
+      "name_zh": "鐵輪斬",
+      "name_en": "Ironwheel Cleave",
+      "naming_note": "厚重鐵輪劃出弧線。",
+      "desc_zh": "揮動沉重鐵輪向前扇形橫掃，傷害近處的敵人。",
+      "desc_en": "Swing a heavy iron wheel in a forward arc, damaging nearby enemies."
     },
     {
-      "id": "wood_plume_peafowl",
-      "issue": "定位包含持續治癒與藤蔓控場，但精通招式只有長距離直線傷害，特性也未提供持續治癒或控場。"
+      "id": "metal_lance_charge",
+      "name_zh": "鉚槍馳",
+      "name_en": "Rivetlance Rush",
+      "naming_note": "鉚接長槍隨機關疾進。",
+      "desc_zh": "架起鉚接長槍沿直線向前突進，傷害路徑上的敵人。",
+      "desc_en": "Drive forward with a riveted lance, damaging enemies along the straight path."
     },
     {
-      "id": "wood_canopy_regent",
-      "issue": "定位包含持續治癒與藤蔓控場，但精通招式只有目標周圍的中距離範圍傷害，特性也未提供持續治癒或控場。"
+      "id": "wood_briar_dash",
+      "name_zh": "棘芽突",
+      "name_en": "Briarsprout Dash",
+      "naming_note": "嫩芽帶棘，貼地疾行。",
+      "desc_zh": "裹著新生荊棘向前直線突進，傷害路徑上的敵人。",
+      "desc_en": "Dash straight forward wrapped in young briars, damaging enemies along the path."
     },
     {
-      "id": "water_wave_elver",
-      "issue": "定位強調遠距波浪牽引與位移牽制，但精通招式是中距離直線傷害，沒有牽引或位移效果。"
+      "id": "wood_root_spear",
+      "name_zh": "根紋槍",
+      "name_en": "Rootgrain Spear",
+      "naming_note": "盤繞根紋凝成長槍。",
+      "desc_zh": "凝聚盤繞的根須向前直線射出，傷害路徑上的敵人。",
+      "desc_en": "Send a spear of entwined roots straight ahead, damaging enemies along its path."
     },
     {
-      "id": "water_skiff_eel",
-      "issue": "定位強調遠距波浪牽引與位移牽制，但精通招式是中距離扇形傷害，沒有牽引或位移效果。"
+      "id": "wood_canopy_crush",
+      "name_zh": "翠冠墜",
+      "name_en": "Verdant Crownfall",
+      "naming_note": "樹冠之力落向指定處。",
+      "desc_zh": "在指定目標周圍引爆翠綠樹冠之力，傷害範圍內的敵人。",
+      "desc_en": "Unleash the canopy at the chosen point, damaging enemies around that target."
     },
     {
-      "id": "water_catamaran_serpent",
-      "issue": "定位包含波浪牽引與位移牽制，但精通招式只有遠距離目標周圍範圍傷害，沒有牽引或位移效果。"
+      "id": "water_crest_slicer",
+      "name_zh": "漣刃線",
+      "name_en": "Rippleedge Ray",
+      "naming_note": "水刃劃開筆直漣紋。",
+      "desc_zh": "向前射出筆直水刃，傷害沿途被水光劃過的敵人。",
+      "desc_en": "Fire a straight blade of water ahead, damaging enemies along its path."
     },
     {
-      "id": "fire_pyre_monarch",
-      "issue": "定位強調前鋒近戰突擊，但精通招式是以遠距離目標為中心的範圍傷害。"
+      "id": "water_torrent_burst",
+      "name_zh": "湍流扇",
+      "name_en": "Torrentfan Surge",
+      "naming_note": "湍流向前展開如扇。",
+      "desc_zh": "向前噴出錐形湍流，傷害水流範圍內的敵人。",
+      "desc_en": "Release a forward cone of rushing water, damaging enemies caught within its reach."
     },
     {
-      "id": "earth_pebble_pawn",
-      "issue": "定位包含岩壁屏障與聚怪，但精通招式只有中距離直線傷害，特性也不提供屏障或聚怪。"
+      "id": "water_deluge_crater",
+      "name_zh": "瀾坑爆",
+      "name_en": "Deluge Hollow",
+      "naming_note": "洶湧水勢匯聚目標處。",
+      "desc_zh": "在指定目標周圍引爆洶湧水流，傷害範圍內的敵人。",
+      "desc_en": "Burst a deluge around the chosen point, damaging enemies caught in its radius."
     },
     {
-      "id": "earth_gilded_warden",
-      "issue": "定位包含岩壁屏障與聚怪，但精通招式只有自身周圍的近距離範圍傷害，特性也不提供屏障或聚怪。"
+      "id": "fire_ember_lash",
+      "name_zh": "燼尾掃",
+      "name_en": "Embertail Sweep",
+      "naming_note": "餘燼隨揮動的火尾散開。",
+      "desc_zh": "揮出燃燒的火尾向前扇形橫掃，傷害近處的敵人。",
+      "desc_en": "Swing a burning tail in a forward arc, damaging enemies close by."
     },
     {
-      "id": "earth_auric_sovereign",
-      "issue": "定位強調中前排屏障與聚怪，但精通招式是長距離直線突進傷害，沒有屏障或聚怪效果。"
+      "id": "fire_blaze_charge",
+      "name_zh": "焰鬃突",
+      "name_en": "Blazemane Drive",
+      "naming_note": "火鬃沿突進軌跡燃起。",
+      "desc_zh": "披著燃燒火鬃沿直線向前突進，傷害路徑上的敵人。",
+      "desc_en": "Dash straight forward beneath a blazing mane, damaging enemies along the path."
     },
     {
-      "id": "ice_frost_fledgling",
-      "issue": "定位包含減速干擾，但精通招式只有中距離扇形傷害，特性也沒有減速效果。"
+      "id": "fire_inferno_cataclysm",
+      "name_zh": "熾墜界",
+      "name_en": "Pyrefall Expanse",
+      "naming_note": "熾熱火勢在目標處綻放。",
+      "desc_zh": "在指定目標周圍引爆熾烈火焰，傷害範圍內的敵人。",
+      "desc_en": "Erupt in fierce flame around the chosen point, damaging enemies within the blast."
     },
     {
-      "id": "ice_rime_strider",
-      "issue": "定位強調中距離壓制與減速，但精通招式只有長距離直線傷害，特性也沒有減速效果。"
+      "id": "earth_pebble_shot",
+      "name_zh": "礫紋彈",
+      "name_en": "Pebblegrain Shot",
+      "naming_note": "小石裹著土紋飛出。",
+      "desc_zh": "向前直線投出凝聚土力的小石，傷害路徑上的敵人。",
+      "desc_en": "Launch a stone charged with earth straight ahead, damaging enemies along its path."
     },
     {
-      "id": "ice_tundra_dreadnought",
-      "issue": "定位強調中距離壓制與減速，但精通招式只有遠距離目標周圍範圍傷害，特性也沒有減速效果。"
+      "id": "earth_seismic_slam",
+      "name_zh": "地脈震",
+      "name_en": "Faultpulse Slam",
+      "naming_note": "地脈震動自腳下擴散。",
+      "desc_zh": "猛擊地面向自身周圍釋出震波，傷害附近的敵人。",
+      "desc_en": "Strike the ground to release a shockwave around the caster, damaging nearby enemies."
     },
     {
-      "id": "wind_reed_skiff",
-      "issue": "定位強調遠距風壓牽制，但精通招式是近距離橫掃傷害。"
+      "id": "earth_rampart_rush",
+      "name_zh": "岩壘馳",
+      "name_en": "Rampartborne Rush",
+      "naming_note": "岩壘之勢化作直線突進。",
+      "desc_zh": "裹著厚重岩力沿直線向前突進，傷害路徑上的敵人。",
+      "desc_en": "Dash straight forward clad in dense stone, damaging enemies along the path."
+    },
+    {
+      "id": "ice_shard_flurry",
+      "name_zh": "霜晶扇",
+      "name_en": "Rimeglass Fan",
+      "naming_note": "霜晶向前方鋪展。",
+      "desc_zh": "向前撒出錐形霜晶，傷害冰屑範圍內的敵人。",
+      "desc_en": "Scatter a forward cone of frost shards, damaging enemies within their reach."
+    },
+    {
+      "id": "ice_glacier_lance",
+      "name_zh": "冰川矛",
+      "name_en": "Glaciergrain Lance",
+      "naming_note": "冰川紋理凝成長矛。",
+      "desc_zh": "將冰晶凝成長矛向前直線射出，傷害路徑上的敵人。",
+      "desc_en": "Fire a lance of glacial ice straight ahead, damaging enemies along its path."
+    },
+    {
+      "id": "ice_blizzard_vortex",
+      "name_zh": "雪渦綻",
+      "name_en": "Snowwhorl Bloom",
+      "naming_note": "雪渦在目標周圍綻開。",
+      "desc_zh": "在指定目標周圍引爆飛旋冰雪，傷害範圍內的敵人。",
+      "desc_en": "Unleash whirling snow around the chosen point, damaging enemies within the burst."
+    },
+    {
+      "id": "wind_gale_claw",
+      "name_zh": "颯爪掃",
+      "name_en": "Galepaw Sweep",
+      "naming_note": "風爪揮動時掀起弧線。",
+      "desc_zh": "揮起迅疾風爪向前扇形橫掃，傷害近處的敵人。",
+      "desc_en": "Sweep a swift wind claw through a forward arc, damaging nearby enemies."
+    },
+    {
+      "id": "wind_vacuum_blade",
+      "name_zh": "空鳴刃",
+      "name_en": "Hollowwind Edge",
+      "naming_note": "薄刃破空留下輕鳴。",
+      "desc_zh": "向前射出筆直風刃，傷害沿途被氣流劃過的敵人。",
+      "desc_en": "Send a straight blade of wind ahead, damaging enemies along its path."
+    },
+    {
+      "id": "wind_tempest_sphere",
+      "name_zh": "風球綻",
+      "name_en": "Stormsphere Bloom",
+      "naming_note": "旋風凝聚於指定之處。",
+      "desc_zh": "在指定目標周圍引爆凝聚的旋風，傷害範圍內的敵人。",
+      "desc_en": "Burst a gathered wind around the chosen point, damaging enemies within its radius."
     }
-  ]
+  ],
+  "traits": [
+    {
+      "id": "trait_metal_dense_alloy",
+      "name_zh": "密金軀",
+      "name_en": "Densemetal Frame",
+      "naming_note": "密合金屬強化身軀。",
+      "desc_zh": "金屬緊密包覆身軀，常駐提高金抗性十五點，但移動速度降低百分之八。",
+      "desc_en": "Dense metal always grants 15 metal resistance, but reduces movement speed by 8 percent."
+    },
+    {
+      "id": "trait_wood_photosynthesis",
+      "name_zh": "初陽滋養",
+      "name_en": "Firstlight Nourish",
+      "naming_note": "初次照見光芒時汲取生機。",
+      "desc_zh": "召喚上場時汲取光能，立即恢復自身最大生命值的百分之八。",
+      "desc_en": "On being summoned, draw in light and immediately restore 8 percent of maximum health."
+    },
+    {
+      "id": "trait_water_torrent_flow",
+      "name_zh": "水脈迴轉",
+      "name_en": "Watercourse Cycle",
+      "naming_note": "水勢流轉加快後續施招。",
+      "desc_zh": "使用水屬性招式後四秒內，水屬性招式冷卻時間減少百分之二十。",
+      "desc_en": "After using a water move, reduce water move cooldowns by 20 percent for four seconds."
+    },
+    {
+      "id": "trait_fire_thermal_recharge",
+      "name_zh": "受焰回充",
+      "name_en": "Flamefed Renewal",
+      "naming_note": "受火攻後重新蓄積熱力。",
+      "desc_zh": "受到火屬性攻擊後五秒內，火屬性招式冷卻時間減少百分之二十五。",
+      "desc_en": "After taking a fire hit, reduce fire move cooldowns by 25 percent for five seconds."
+    },
+    {
+      "id": "trait_earth_tectonic_rebound",
+      "name_zh": "地脈回應",
+      "name_en": "Faultline Answer",
+      "naming_note": "受擊時地脈之力回應。",
+      "desc_zh": "受到任意屬性攻擊後，土專精提高十五點，持續四秒。",
+      "desc_en": "After taking a hit of any element, gain 15 earth mastery for four seconds."
+    },
+    {
+      "id": "trait_ice_flash_freeze",
+      "name_zh": "初霜護性",
+      "name_en": "Firstfrost Temper",
+      "naming_note": "上場時霜氣短暫凝聚。",
+      "desc_zh": "召喚上場時凝聚霜氣，冰抗性提高三十五點，持續四秒。",
+      "desc_en": "On being summoned, gather frost and gain 35 ice resistance for four seconds."
+    },
+    {
+      "id": "trait_wind_tailwind_glide",
+      "name_zh": "換風輕行",
+      "name_en": "Turnwind Glide",
+      "naming_note": "換手之際風勢托起腳步。",
+      "desc_zh": "換手上場時借風加速，移動速度提高百分之二十，持續六秒。",
+      "desc_en": "When swapped into battle, gain 20 percent movement speed for six seconds."
+    }
+  ],
+  "issues": [
+    "（已解決 2026-11-08，P5-08 N7）metal_chronos_engine：現行定位改為遠距直線突進，與長槍突進一致。",
+    "（已解決 2026-11-08，P5-08 N7）wood_fern_chick：現行定位改為短距直線突進與上場治療，符合招式及特性。",
+    "（已解決 2026-11-08，P5-08 N7）wood_plume_peafowl：現行定位改為遠距直線射擊，上場自療亦符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）wood_canopy_regent：現行定位改為指定點範圍爆發，上場自療亦符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）water_wave_elver：現行定位改為中距直線水刃，符合招式形狀。",
+    "（已解決 2026-11-08，P5-08 N7）water_skiff_eel：現行定位改為中距扇形水流，符合招式形狀。",
+    "（已解決 2026-11-08，P5-08 N7）water_catamaran_serpent：現行定位改為指定點範圍爆發，符合招式中心。",
+    "（已解決 2026-11-08，P5-08 N7）fire_pyre_monarch：現行定位改為指定點範圍爆發的重砲手，符合招式中心。",
+    "（已解決 2026-11-08，P5-08 N7）earth_pebble_pawn：現行定位改為中距直線投石，受擊增土專精符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）earth_gilded_warden：現行定位改為自身周圍震波，符合招式中心。",
+    "（已解決 2026-11-08，P5-08 N7）earth_auric_sovereign：現行定位改為遠距直線突進，符合招式位移。",
+    "（已解決 2026-11-08，P5-08 N7）ice_frost_fledgling：現行定位改為扇形冰霜，上場提高冰抗符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）ice_rime_strider：現行定位改為遠距直線冰槍，上場提高冰抗符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）ice_tundra_dreadnought：現行定位改為指定點範圍爆發，上場提高冰抗符合特性。",
+    "（已解決 2026-11-08，P5-08 N7）wind_reed_skiff：現行定位改為近距橫掃，符合招式形狀。"
+  ],
+  "source": "ChatGPT Terra (codex exec -m gpt-6.1-terra), P5-03 batch 01; P5-08 A7/A21 revision; P5-08 N7 revision"
 }

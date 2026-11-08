@@ -1,0 +1,156 @@
+[
+  {
+    "id": "affix_metal_surge",
+    "name": {
+      "zh-TW": "金湧",
+      "en": "Metal Surge"
+    },
+    "desc": {
+      "zh-TW": "金屑在空中閃爍，本區域內所有金屬性招式的 CD 減少 15%。",
+      "en": "Metallic flecks shimmer in the air; all metal moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_wood_surge",
+    "name": {
+      "zh-TW": "木湧",
+      "en": "Wood Surge"
+    },
+    "desc": {
+      "zh-TW": "落葉隨風盤旋，本區域內所有木屬性招式的 CD 減少 15%。",
+      "en": "Leaves spiral through the air; all wood moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_water_surge",
+    "name": {
+      "zh-TW": "水湧",
+      "en": "Water Surge"
+    },
+    "desc": {
+      "zh-TW": "細雨輕落，本區域內所有水屬性招式的 CD 減少 15%。",
+      "en": "A fine rain falls; all water moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_fire_surge",
+    "name": {
+      "zh-TW": "火湧",
+      "en": "Fire Surge"
+    },
+    "desc": {
+      "zh-TW": "餘燼如雨飄落，本區域內所有火屬性招式的 CD 減少 15%。",
+      "en": "Embers drift down like rain; all fire moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_earth_surge",
+    "name": {
+      "zh-TW": "土湧",
+      "en": "Earth Surge"
+    },
+    "desc": {
+      "zh-TW": "塵沙在地面翻湧，本區域內所有土屬性招式的 CD 減少 15%。",
+      "en": "Dust swirls across the ground; all earth moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_ice_surge",
+    "name": {
+      "zh-TW": "冰湧",
+      "en": "Ice Surge"
+    },
+    "desc": {
+      "zh-TW": "冰晶飄散，本區域內所有冰屬性招式的 CD 減少 15%。",
+      "en": "Ice crystals drift through the air; all ice moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_wind_surge",
+    "name": {
+      "zh-TW": "風湧",
+      "en": "Wind Surge"
+    },
+    "desc": {
+      "zh-TW": "氣流掠過地表，本區域內所有風屬性招式的 CD 減少 15%。",
+      "en": "Gusts sweep across the ground; all wind moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_thunder_surge",
+    "name": {
+      "zh-TW": "雷湧",
+      "en": "Thunder Surge"
+    },
+    "desc": {
+      "zh-TW": "閃電劃過天空，本區域內所有雷屬性招式的 CD 減少 15%。",
+      "en": "Lightning streaks across the sky; all thunder moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_light_surge",
+    "name": {
+      "zh-TW": "光湧",
+      "en": "Light Surge"
+    },
+    "desc": {
+      "zh-TW": "光點在空中流轉，本區域內所有光屬性招式的 CD 減少 15%。",
+      "en": "Motes of light drift through the air; all light moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_shadow_surge",
+    "name": {
+      "zh-TW": "影湧",
+      "en": "Shadow Surge"
+    },
+    "desc": {
+      "zh-TW": "暗影在地面流動，本區域內所有影屬性招式的 CD 減少 15%。",
+      "en": "Shadows ripple across the ground; all shadow moves in this region have 15% less cooldown."
+    }
+  },
+  {
+    "id": "affix_frenzy",
+    "name": {
+      "zh-TW": "狂奔",
+      "en": "Frenzy"
+    },
+    "desc": {
+      "zh-TW": "本區域內野生宙獸的移動速度增加 15%。",
+      "en": "Wild Cosmimera in this region move 15% faster."
+    }
+  },
+  {
+    "id": "affix_pack",
+    "name": {
+      "zh-TW": "群聚",
+      "en": "Pack"
+    },
+    "desc": {
+      "zh-TW": "本區域的菁英群數量增加 1。",
+      "en": "This region has 1 additional elite group."
+    }
+  },
+  {
+    "id": "affix_fog",
+    "name": {
+      "zh-TW": "迷霧",
+      "en": "Fog"
+    },
+    "desc": {
+      "zh-TW": "本區域視距縮短，遠處敵人不顯示 HP。",
+      "en": "Visibility is reduced in this region, and distant enemies' HP is hidden."
+    }
+  },
+  {
+    "id": "affix_bounty",
+    "name": {
+      "zh-TW": "豐收",
+      "en": "Bounty"
+    },
+    "desc": {
+      "zh-TW": "本區域的收服成功率增加 10%。",
+      "en": "Capture success rate in this region increases by 10%."
+    }
+  }
+]

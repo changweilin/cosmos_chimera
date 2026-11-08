@@ -1,0 +1,31 @@
+{
+    "name": "Cosmimera.Bootstrap.Tests.PlayMode",
+    "rootNamespace": "Cosmimera.Bootstrap.Tests",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Planet",
+        "Cosmimera.GameData",
+        "Cosmimera.WorldGen",
+        "Cosmimera.Combat",
+        "Cosmimera.Bootstrap",
+        "Cosmimera.Player",
+        "Unity.Mathematics",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,1 +1,10 @@
 # Retired ids: never reuse (saves and net packets reference ids). One id per line; # starts a comment.
+# P5-08 A16 (2026-11-08): renamed in _incoming because the names promised mechanics the data lacks.
+thunder_chain_needle
+wood_vine_grapple
+trait_light_blinding_arrival
+# P5-08 A2 (2026-11-08): renamed move ids to avoid existing-work move names.
+water_aqua_cutter
+wind_air_slash
+# P5-08 A5 (2026-11-08): renamed to avoid redundant synonyms.
+light_aureole_halo

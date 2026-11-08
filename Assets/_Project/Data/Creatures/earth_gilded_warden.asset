@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: earth_gilded_warden
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: earth_gilded_warden
+  lineId: line_earth_gildedgolem
+  stage: 1
+  sizeClass: 1
+  aiStyle: 3
+  evolvesTo: {fileID: 11400000, guid: a61a5385915bb3b4082ca72d2baea3c0, type: 2}
+  evolutionExp: 300
+  evolutionMaterials:
+  - element: 4
+    tier: 2
+    qty: 5
+  resist: 0000000000000000000000000a0000002300000000000000e2ffffff0f0000000000000000000000
+  mastery:
+  - element: 4
+    value: 25
+  stats:
+    con: 72
+    str: 44
+    spi: 59
+    agi: 25
+  signatureMove: {fileID: 11400000, guid: 81603f8b410f9ed4fa4497a8d9f108c3, type: 2}
+  trait: {fileID: 11400000, guid: 5619766b3e3caba49932813f4429bad3, type: 2}
+  conceptJson: "{\"base\":\"\u9EC3\u91D1\u7926\u8108\u4EBA\u5F62 \xD7 \u5100\u5178\u5CA9\u93A7\u77F3\u5076\uFF08\u4EBA\u5F62\uFF09\",\"stage_look\":\"\u4F69\u5E36\u5E7E\u4F55\u91D1\u9762\u7532\u7684\u5CA9\u571F\u884C\u8005\uFF0C\u80A9\u80CC\u8986\u84CB\u5C64\u758A\u677F\u72C0\u9ECF\u571F\u8207\u751F\u9577\u91D1\u6676\",\"archetype\":\"arch_el_dorado_muisca\",\"region\":\"\u7F8E\u6D32\",\"motifs_used\":[\"\u91D1\u7C89\u8986\u8EAB\",\"\u9AD8\u5C71\u8056\u6E56\u7DA0\u5BF6\u77F3\",\"\u9EC3\u91D1\u796D\u5076\"],\"role\":\"\u524D\u6392\uFF1A\u81EA\u8EAB\u5468\u570D\u8FD1\u8DDD\u9707\u6CE2\uFF0C\u53D7\u64CA\u5F8C\u63D0\u9AD8\u571F\u5C08\u7CBE\",\"palette\":\"\u938F\u91D1\u9EC3\u3001\u7FE1\u7FE0\u7DA0\u3001\u9676\u571F\u8D6D\u8910\"}"
+  needsSensitivityReview: 0

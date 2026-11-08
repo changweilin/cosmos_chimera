@@ -1,0 +1,23 @@
+{
+  "id": "grand_canyon",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 36.15,
+  "center_lon": -112.15,
+  "half_extent_km": 20,
+  "elev_min_m": 669.0668464022323,
+  "elev_max_m": 2791.9434266783737,
+  "sea_level_norm": -0.31516992208524947,
+  "terrain_tags": [
+    "canyon"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N35_00_W112_00_DEM",
+    "Copernicus_DSM_COG_30_N35_00_W113_00_DEM",
+    "Copernicus_DSM_COG_30_N36_00_W112_00_DEM",
+    "Copernicus_DSM_COG_30_N36_00_W113_00_DEM"
+  ]
+}

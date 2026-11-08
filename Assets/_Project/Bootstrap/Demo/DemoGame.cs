@@ -1,0 +1,432 @@
+using System.Collections.Generic;
+using System.IO;
+using Cosmimera.Combat;
+using Cosmimera.Core.Random;
+using Cosmimera.Creatures;
+using Cosmimera.GameData;
+using Cosmimera.Save;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace Cosmimera.Bootstrap.Demo
+{
+    /// <summary>
+    /// D0 composition root: Earth lobby → star selection → planet run → results, looping.
+    /// REQ: docs/roadmap/demo.md, docs/design/lobby-meta.md#循環.
+    /// </summary>
+    /// <remarks>
+    /// Pre: serialized references assigned by <c>Cosmimera/Create Demo Scene</c>. Post: one RunSession at a time.
+    /// Side effects: reads/writes the lobby save under Application.persistentDataPath.
+    /// UI is IMGUI on purpose for D0: it is throwaway until the P4 UI pass, and IMGUI needs no prefab/asset plumbing.
+    /// </remarks>
+    public sealed class DemoGame : MonoBehaviour
+    {
+        private enum Screen { Lobby, StarSelect, Running, Results }
+
+        private sealed class PlanetOption
+        {
+            public PlanetTypeDef Type;
+            public ulong Seed;
+            public float Radius;
+        }
+
+        [SerializeField] private GameDatabase _database;
+        [SerializeField] private InputActionAsset _actions;
+        [SerializeField] private Material _terrainMaterial;
+        [SerializeField] private TextAsset _balance;
+        [SerializeField] private TextAsset _strings;
+        [SerializeField] private TextAsset _names;
+        [SerializeField] private TextAsset _affixes;
+        [SerializeField] private TextAsset _themes;
+        [SerializeField] private TextAsset _quests;
+        [SerializeField] private TextAsset _epithets;
+        [SerializeField] private string _language = "zh-TW";
+        [SerializeField] private Shader _terrainShader;
+        [SerializeField] private Shader _toonShader;
+        [SerializeField] private TextAsset[] _geoMeta;
+        [SerializeField] private TextAsset[] _geoHeights;
+        [SerializeField] private TextAsset[] _geoWater;
+
+        private DemoCopy _copy;
+        private CombatBalance _combatBalance;
+        private LobbySave _save;
+        private string _savePath;
+        private Screen _screen = Screen.Lobby;
+        private readonly List<PlanetOption> _options = new List<PlanetOption>();
+        private readonly List<CreatureDef> _starters = new List<CreatureDef>();
+        private readonly List<CreatureDef> _wildPool = new List<CreatureDef>();
+        private RunSession _run;
+        private RunOutcome _outcome;
+        private Pcg32 _menuRng;
+        private GUIStyle _title;
+        private GUIStyle _text;
+        private Camera _lobbyCamera;
+        private Vector2 _partyScroll;
+        private string _partyMsg = string.Empty;
+        private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
+        private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
+
+        private void Awake()
+        {
+            _copy = new DemoCopy(_language, _strings.text, _names.text, _affixes.text, _themes.text, _quests.text,
+                _epithets.text);
+            _combatBalance = CombatBalance.FromJson(_balance.text);
+            _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
+            _save = LobbySave.Load(_savePath);
+            GeoTemplateLoader.Load(_geoMeta, _geoHeights, _geoWater, _templates, _templateTags);
+            _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
+
+            foreach (GameDef def in _database.All)
+            {
+                if (def is CreatureDef c)
+                {
+                    if (c.LineId.StartsWith("starter_"))
+                    {
+                        if (c.Stage == CreatureStage.Juvenile)
+                        {
+                            _starters.Add(c);
+                        }
+                    }
+                    else
+                    {
+                        _wildPool.Add(c);
+                    }
+                }
+            }
+
+            _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
+            _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
+            _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+        }
+
+        private void OnGUI()
+        {
+            if (_screen == Screen.Running)
+            {
+                return;
+            }
+
+            _title ??= new GUIStyle(GUI.skin.label) { fontSize = 32, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            _text ??= new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            var area = new Rect(UnityEngine.Screen.width / 2f - 320, 60, 640, UnityEngine.Screen.height - 120);
+            GUILayout.BeginArea(area);
+            switch (_screen)
+            {
+                case Screen.Lobby:
+                    DrawLobby();
+                    break;
+                case Screen.StarSelect:
+                    DrawStarSelect();
+                    break;
+                case Screen.Results:
+                    DrawResults();
+                    break;
+            }
+
+            GUILayout.EndArea();
+        }
+
+        private void DrawLobby()
+        {
+            GUILayout.Label(_copy.Ui("ui.lobby.title"), _title, GUILayout.Height(60));
+            if (_save.StarterLine == null)
+            {
+                GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
+                foreach (CreatureDef s in _starters)
+                {
+                    if (GUILayout.Button(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
+                    {
+                        _save.ChooseStarter(s.LineId, s.Id);
+                        _save.Write(_savePath);
+                    }
+                }
+
+                return;
+            }
+
+            DrawPartyEditor();
+            GUILayout.Space(20);
+            if (GUILayout.Button(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
+            {
+                RollOptions();
+                _screen = Screen.StarSelect;
+            }
+
+            if (GUILayout.Button(_copy.Ui("ui.lobby.quit"), GUILayout.Height(36)))
+            {
+                Application.Quit();
+            }
+        }
+
+        // P4-07 minimal: order + add/remove only. Vessel/sub-hand pairing rules are not in D0 (vessel is shown, not enforced).
+        private void DrawPartyEditor()
+        {
+            GUILayout.Label($"{_copy.Ui("ui.lobby.team")} ({_save.Party.Count}/{LobbySave.MaxParty})", _text);
+            GUILayout.Label(_copy.Ui("ui.lobby.party_hint"), _text);
+            _partyScroll = GUILayout.BeginScrollView(_partyScroll, GUILayout.Height(Mathf.Min(300, UnityEngine.Screen.height - 340)));
+            // Snapshot: mutating the save while iterating Party would break the foreach.
+            var party = new List<int>(_save.Party);
+            for (int i = 0; i < party.Count; i++)
+            {
+                OwnedCreature o = _save.Get(party[i]);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(330));
+                GUI.enabled = i > 0;
+                if (GUILayout.Button(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
+                {
+                    (party[i - 1], party[i]) = (party[i], party[i - 1]);
+                    CommitParty(party);
+                }
+
+                GUI.enabled = true;
+                if (GUILayout.Button(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
+                {
+                    if (party.Count <= 1)
+                    {
+                        _partyMsg = _copy.Ui("ui.lobby.party_min");
+                    }
+                    else
+                    {
+                        party.RemoveAt(i);
+                        CommitParty(party);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Label(_copy.Ui("ui.lobby.reserve"), _text);
+            foreach (OwnedCreature o in _save.Owned)
+            {
+                if (party.Contains(o.InstanceId))
+                {
+                    continue;
+                }
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(330));
+                if (GUILayout.Button(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
+                {
+                    if (party.Count >= LobbySave.MaxParty)
+                    {
+                        _partyMsg = _copy.Ui("ui.lobby.party_full");
+                    }
+                    else
+                    {
+                        party.Add(o.InstanceId);
+                        CommitParty(party);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndScrollView();
+            if (!string.IsNullOrEmpty(_partyMsg))
+            {
+                GUILayout.Label(_partyMsg, _text);
+            }
+        }
+
+        private string PartyLabel(OwnedCreature o) =>
+            _copy.Name(o.SpeciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")";
+
+        private void CommitParty(List<int> party)
+        {
+            _save.SetParty(party);
+            _save.Write(_savePath);
+            _partyMsg = string.Empty;
+        }
+
+        private void DrawStarSelect()
+        {
+            GUILayout.Label(_copy.Ui("ui.star_select.title"), _title, GUILayout.Height(60));
+            foreach (PlanetOption o in _options)
+            {
+                string size = _copy.Ui("ui.star_select.size_" + o.Type.Size.ToString().ToLowerInvariant());
+                var elementNames = new List<string>();
+                foreach (Element e in o.Type.ElementBias)
+                {
+                    elementNames.Add(_copy.Element(e.ToString()));
+                }
+
+                string elements = string.Join(" / ", elementNames);
+                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {size} (R={o.Radius:0} m)\n" +
+                                $"{_copy.Ui("ui.star_select.main_elements")}：{elements}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
+                if (GUILayout.Button(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
+                {
+                    Launch(o);
+                    return;
+                }
+
+                GUILayout.Space(12);
+            }
+
+            if (GUILayout.Button(_copy.Ui("ui.star_select.reroll"), GUILayout.Height(36)))
+            {
+                RollOptions();
+            }
+        }
+
+        private void DrawResults()
+        {
+            string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
+            GUILayout.Label(title, _title, GUILayout.Height(60));
+            GUILayout.Label(_copy.Ui("ui.results.captured_list"), _text);
+            foreach ((string speciesId, VesselKind vessel) in _outcome.Captured)
+            {
+                GUILayout.Label("· " + _copy.Name(speciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
+            }
+
+            GUILayout.Space(20);
+            if (GUILayout.Button(_copy.Ui("ui.results.return_lobby"), GUILayout.Height(52)))
+            {
+                _screen = Screen.Lobby;
+            }
+        }
+
+        private void RollOptions()
+        {
+            _options.Clear();
+            var types = new List<PlanetTypeDef>();
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t)
+                {
+                    types.Add(t);
+                }
+            }
+
+            for (int i = 0; i < 3 && types.Count > 0; i++)
+            {
+                PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
+                _options.Add(new PlanetOption { Type = t, Seed = _menuRng.NextUInt(), Radius = RadiusFor(t.Size) });
+            }
+        }
+
+        // REQ: planet-world.md#星球尺度 says small = 320 m, but combat geometry is approved only for R >= 640
+        // (MoveGeometry.MinSupportedRadiusM). D0 plays small planets at 640 m; tracked as open question Q-D1.
+        private static float RadiusFor(PlanetSize size) => size == PlanetSize.Large ? 1280f : MoveGeometry.MinSupportedRadiusM;
+
+        private void Launch(PlanetOption o)
+        {
+            var party = new List<CreatureDef>();
+            foreach (int id in _save.Party)
+            {
+                if (_database.TryGet(_save.Get(id).SpeciesId, out CreatureDef def))
+                {
+                    party.Add(def);
+                }
+            }
+
+            if (party.Count == 0)
+            {
+                Debug.LogError("DemoGame: the party has no creature found in the GameDatabase.");
+                return;
+            }
+
+            _lobbyCamera.gameObject.SetActive(false);
+            _run = new GameObject("Run").AddComponent<RunSession>();
+            _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
+                new RunSetup
+                {
+                    PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
+                    Templates = _templates, TemplateTags = _templateTags,
+                }, _wildPool, OnRunEnded, _terrainShader, _toonShader);
+            _screen = Screen.Running;
+        }
+
+        private void OnRunEnded(RunOutcome outcome)
+        {
+            // Q-M4: the run itself is never saved; only what it brought back is written to the lobby save.
+            foreach ((string speciesId, VesselKind vessel) in outcome.Captured)
+            {
+                _save.Add(speciesId, vessel);
+            }
+
+            _save.Write(_savePath);
+            _outcome = outcome;
+            Destroy(_run.gameObject);
+            _run = null;
+            _lobbyCamera.gameObject.SetActive(true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            _screen = Screen.Results;
+        }
+
+        private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"
+            : v == VesselKind.GlassBead ? "glass_bead" : "magic_cube";
+
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("Cosmimera/Create Demo Scene")]
+        public static void CreateScene()
+        {
+            const string scenePath = "Assets/_Project/Bootstrap/Demo.unity";
+            const string copy = "Assets/_Project/Data/Copy/";
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.NewScene(
+                UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+            var game = new GameObject("DemoGame").AddComponent<DemoGame>();
+            game._database = UnityEditor.AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            game._actions = UnityEditor.AssetDatabase.LoadAssetAtPath<InputActionAsset>(
+                "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions");
+            game._terrainMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat");
+            game._balance = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "balance.json");
+            game._strings = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "strings.json");
+            game._names = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "names.json");
+            game._affixes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "affixes.json");
+            game._themes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "region-themes.json");
+            game._quests = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "quest-templates.json");
+            game._epithets = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "boss-epithets.json");
+            var meta = new List<TextAsset>();
+            var heights = new List<TextAsset>();
+            var water = new List<TextAsset>();
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:TextAsset", new[] { GeoTemplateLoader.Folder.TrimEnd('/') });
+            var paths = new List<string>();
+            foreach (string g in guids)
+            {
+                paths.Add(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+            }
+
+            paths.Sort(System.StringComparer.Ordinal);
+            foreach (string path in paths)
+            {
+                if (path.EndsWith(".meta.json"))
+                {
+                    string stem = path.Substring(0, path.Length - ".meta.json".Length);
+                    meta.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(path));
+                    heights.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".height.bytes"));
+                    water.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".water.bytes"));
+                }
+            }
+
+            game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
+            game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
+            game._geoMeta = meta.ToArray();
+            game._geoHeights = heights.ToArray();
+            game._geoWater = water.ToArray();
+            foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._affixes, game._themes, game._quests, game._epithets })
+            {
+                if (o == null)
+                {
+                    throw new System.InvalidOperationException("Create Demo Scene: a required asset is missing; run tools/demo-data/merge.py and the importer first.");
+                }
+            }
+
+            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene, scenePath);
+            var scenes = new List<UnityEditor.EditorBuildSettingsScene>(UnityEditor.EditorBuildSettings.scenes);
+            if (!scenes.Exists(s => s.path == scenePath))
+            {
+                scenes.Insert(0, new UnityEditor.EditorBuildSettingsScene(scenePath, true));
+                UnityEditor.EditorBuildSettings.scenes = scenes.ToArray();
+            }
+
+            UnityEditor.AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.Bootstrap.Demo.DemoGame.CreateSceneBatch</c>.</summary>
+        /// <remarks>Pre: batchmode. Post: scene saved. Side effects: writes assets.</remarks>
+        public static void CreateSceneBatch() => CreateScene();
+#endif
+    }
+}

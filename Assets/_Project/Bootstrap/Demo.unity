@@ -1,0 +1,222 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 10
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 0
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 0
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 0}
+  m_UseRadianceAmbientProbe: 0
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 1
+    m_EnableRealtimeLightmaps: 0
+  m_LightmapEditorSettings:
+    serializedVersion: 12
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_AtlasSize: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 2
+    m_BakeBackend: 2
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 512
+    m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 256
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
+    m_PVREnvironmentMIS: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 1
+    m_PVRFilteringGaussRadiusAO: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingSettings: {fileID: 0}
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 3
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    buildHeightMesh: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
+    debug:
+      m_Flags: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &1496511592
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1496511594}
+  - component: {fileID: 1496511593}
+  m_Layer: 0
+  m_Name: DemoGame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1496511593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496511592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e13305c15de4c46aeb0d28aa72bd3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Cosmimera.Bootstrap::Cosmimera.Bootstrap.Demo.DemoGame
+  _database: {fileID: 11400000, guid: 32a160fe2d81c794e8f40a8fd64e740a, type: 2}
+  _actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  _terrainMaterial: {fileID: 2100000, guid: f023ed7d9d5a2af439a901c2e920f5fc, type: 2}
+  _balance: {fileID: 4900000, guid: 15a6d3a0f335ec3488980ac8ec541c62, type: 3}
+  _strings: {fileID: 4900000, guid: 249521105a522e543aed0ac9782a9fd2, type: 3}
+  _names: {fileID: 4900000, guid: 58ddb6e724861064381ebfc6c28faf07, type: 3}
+  _affixes: {fileID: 4900000, guid: ba2d049adcb566742a804da1a661940a, type: 3}
+  _themes: {fileID: 4900000, guid: b9ac5489e3c5a5843b79c2d2ea732538, type: 3}
+  _quests: {fileID: 4900000, guid: a8690181b7be0df40bc6e8e6aedc1e60, type: 3}
+  _epithets: {fileID: 4900000, guid: a1131260be8b3ea4eb86194fff23f186, type: 3}
+  _language: zh-TW
+  _terrainShader: {fileID: 4800000, guid: d09290f17421722418f56efbef4dbb9e, type: 3}
+  _toonShader: {fileID: 4800000, guid: 839c81a2e4cc9664d8f6a223c32ac9c4, type: 3}
+  _geoMeta:
+  - {fileID: 4900000, guid: 8773132245332e24791cca42ba4aa8cd, type: 3}
+  - {fileID: 4900000, guid: 01674f985ecdfea489a2b7675193c961, type: 3}
+  - {fileID: 4900000, guid: 04dbd244040819647a0d8ef4ca28c0b1, type: 3}
+  - {fileID: 4900000, guid: d56764927c2e8b546a4ba63600831185, type: 3}
+  - {fileID: 4900000, guid: 7318bc88a1b8647459386717aafc96cc, type: 3}
+  - {fileID: 4900000, guid: 923431b712746534a970c4e21c9dcf4f, type: 3}
+  - {fileID: 4900000, guid: f4af12d6eb7f9e947b3af7ae7cfe471f, type: 3}
+  - {fileID: 4900000, guid: df992bd370909d34893a0e9e641388a4, type: 3}
+  - {fileID: 4900000, guid: 01195411306215c4e97a6aa419472b5e, type: 3}
+  - {fileID: 4900000, guid: 4c85b7d2052208f4abde0ff34933c62a, type: 3}
+  - {fileID: 4900000, guid: e973f76a32f285b449a1144d953abfe2, type: 3}
+  - {fileID: 4900000, guid: 903f2786190be794ea61673ca39a71f0, type: 3}
+  _geoHeights:
+  - {fileID: 4900000, guid: 352db2be34db7c14bbad2c6271447590, type: 3}
+  - {fileID: 4900000, guid: 3be462a5ff1999d41bd6c467724f3719, type: 3}
+  - {fileID: 4900000, guid: 05e311a2c70720948b50f175e844aa04, type: 3}
+  - {fileID: 4900000, guid: 699c789bb39f59e4e8e4579787feac18, type: 3}
+  - {fileID: 4900000, guid: 24adc471387a02c41aea7b1d6be9c310, type: 3}
+  - {fileID: 4900000, guid: b5b50942c0491b848b5f0b4c01e2b69f, type: 3}
+  - {fileID: 4900000, guid: f617c36a1fbbc3c4b8a03d2544556bc5, type: 3}
+  - {fileID: 4900000, guid: 3bf07945a475304439059a34bd339359, type: 3}
+  - {fileID: 4900000, guid: faff8a97c0bf36546be6177290724198, type: 3}
+  - {fileID: 4900000, guid: 5aedd1378a540714cba01d3c4edebed9, type: 3}
+  - {fileID: 4900000, guid: 3c8199d51526197419ddf84f76075ee2, type: 3}
+  - {fileID: 4900000, guid: 3f49ff6bda5111647b23f6b188a3d9a7, type: 3}
+  _geoWater:
+  - {fileID: 4900000, guid: eac8348b474632940894d44416c40fc9, type: 3}
+  - {fileID: 4900000, guid: b694536fd877ab24aa2c7d1d633d0ae6, type: 3}
+  - {fileID: 4900000, guid: c38b63afdc8f22a4c9f939751297c530, type: 3}
+  - {fileID: 4900000, guid: 83631e550d0d1174198538880715e97c, type: 3}
+  - {fileID: 4900000, guid: 77de9b2395e7e29428f9de25c84719ee, type: 3}
+  - {fileID: 4900000, guid: f225340786c7c7349bd04e294a51ada9, type: 3}
+  - {fileID: 4900000, guid: 82f5b4bb11b747345a1f72361f5c7a34, type: 3}
+  - {fileID: 4900000, guid: a7efc06ad854da7499e6d8385ecc9385, type: 3}
+  - {fileID: 4900000, guid: e7f4f74252875f546aaf8315458fdc9d, type: 3}
+  - {fileID: 4900000, guid: b57ec3c2526157c4abc4791e6ac6df18, type: 3}
+  - {fileID: 4900000, guid: 6c1b63888f3fd1843891e8295197efeb, type: 3}
+  - {fileID: 4900000, guid: f1329c6c0b018304f95f1f2b54c9b57d, type: 3}
+--- !u!4 &1496511594
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496511592}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1496511594}

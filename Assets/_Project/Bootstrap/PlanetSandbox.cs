@@ -1,6 +1,4 @@
 using Cosmimera.Planet;
-using Cosmimera.Player;
-using Unity.Cinemachine;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -21,92 +19,18 @@ namespace Cosmimera.Bootstrap
         [SerializeField] private InputActionAsset _actions;
         [SerializeField] private Material _terrainMaterial;
 
-        private PlanetTerrain _terrain;
-        private SphericalCharacter _character;
-        private PlayerCameraRig _rig;
-        private PlayerInputDriver _input;
-        private PlanetConfig _config;
-        private PlanetHeight _height;
-        private float3 _spawnDir;
-        private bool _spawned;
+        private PlanetRig _rig;
 
         private void Awake()
         {
-            _config = new PlanetConfig(_radius, float3.zero);
-            _height = PlanetHeight.ForPlanet(_config, (ulong)(uint)_seed);
-            _spawnDir = math.normalize(new float3(0.2f, 1f, 0.1f));
-
-            _terrain = new GameObject("Planet").AddComponent<PlanetTerrain>();
-
-            var body = new GameObject("Player");
-            var capsule = body.AddComponent<CapsuleCollider>();
-            capsule.height = 1.8f;
-            capsule.radius = 0.35f;
-            capsule.center = new Vector3(0f, 0.9f, 0f);
-            body.AddComponent<Rigidbody>().isKinematic = true; // held until the ground colliders exist
-            _character = body.AddComponent<SphericalCharacter>();
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            Destroy(visual.GetComponent<Collider>());
-            visual.transform.SetParent(body.transform, false);
-            visual.transform.localPosition = capsule.center;
-            visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
-
-            float3 up = _spawnDir;
-            body.transform.SetPositionAndRotation(SpawnPoint(), quaternion.LookRotationSafe(PlanetFrame.FromUp(up).North, up));
-            _terrain.Configure(_config, _height, body.transform, _terrainMaterial);
-
-            var pivot = new GameObject("ViewPivot").transform;
-            var cameraGo = new GameObject("Main Camera") { tag = "MainCamera" };
-            cameraGo.AddComponent<Camera>().nearClipPlane = 0.1f;
-            cameraGo.AddComponent<AudioListener>();
-            var brain = cameraGo.AddComponent<CinemachineBrain>();
-
-            var third = new GameObject("CM ThirdPerson").AddComponent<CinemachineCamera>();
-            var follow = third.gameObject.AddComponent<CinemachineThirdPersonFollow>();
-            follow.ShoulderOffset = new Vector3(0.4f, 0.2f, 0f);
-            follow.CameraDistance = 4f;
-            follow.Damping = new Vector3(0.1f, 0.3f, 0.3f);
-            var first = new GameObject("CM FirstPerson").AddComponent<CinemachineCamera>();
-            first.gameObject.AddComponent<CinemachineHardLockToTarget>();
-            first.gameObject.AddComponent<CinemachineRotateWithFollowTarget>();
-
-            _rig = body.AddComponent<PlayerCameraRig>();
-            _rig.Configure(_config, body.transform, pivot, third, first, brain);
-            _input = body.AddComponent<PlayerInputDriver>();
-
-            var sun = new GameObject("Sun").AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.transform.rotation = Quaternion.LookRotation(-(Vector3)_spawnDir + new Vector3(0.3f, 0f, 0.2f));
+            var config = new PlanetConfig(_radius, float3.zero);
+            _rig = PlanetRig.Build(config, PlanetHeight.ForPlanet(config, (ulong)(uint)_seed),
+                math.normalize(new float3(0.2f, 1f, 0.1f)), _terrainMaterial);
         }
-
-        private Vector3 SpawnPoint() => _config.ToWorld(_spawnDir, _height.Sample(_spawnDir) + 0.3f);
 
         private void Update()
         {
-            if (_spawned || !_terrain.IsSettled)
-            {
-                return;
-            }
-
-            // Ground colliders are baked asynchronously after the meshes settle; wait for one under the spawn point.
-            Vector3 origin = SpawnPoint();
-            if (!Physics.Raycast(origin, -(Vector3)_spawnDir, 5f))
-            {
-                return;
-            }
-
-            _character.GetComponent<Rigidbody>().isKinematic = false;
-            _character.Configure(_config);
-            if (_actions != null)
-            {
-                _input.Configure(_actions, _character, _rig);
-            }
-            else
-            {
-                Debug.LogError("PlanetSandbox: _actions is not assigned; the player cannot be controlled.", this);
-            }
-
-            _spawned = true;
+            _rig.TrySpawn(_actions);
         }
 
 #if UNITY_EDITOR

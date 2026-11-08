@@ -33,7 +33,7 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined RelationKind. Side effects: none.</remarks>
         public RelationKind Kind => kind;
 
-        /// <summary>Optional author note.</summary>
+        /// <summary>Optional developer-only rationale; never shown to players (docs/design/creatures.md#關係表).</summary>
         /// <remarks>Pre: none. Post: never null (empty when absent). Side effects: none.</remarks>
         public string Note => note ?? string.Empty;
     }
@@ -57,7 +57,7 @@ namespace Cosmimera.GameData
         /// <summary>Relation kind.</summary>
         public RelationKind Kind { get; }
 
-        /// <summary>Author note (may be empty).</summary>
+        /// <summary>Developer-only rationale (may be empty); never shown to players.</summary>
         public string Note { get; }
     }
 }

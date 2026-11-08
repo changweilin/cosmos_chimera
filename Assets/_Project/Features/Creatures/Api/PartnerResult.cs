@@ -30,6 +30,9 @@ namespace Cosmimera.Creatures
 
         /// <summary>(Unassign) the creature is not a sub-partner of anyone.</summary>
         NotAssigned = 7,
+
+        /// <summary>The sub is at a later evolution stage than the main (sub stage must be &lt;= main stage, for every vessel kind).</summary>
+        SubStageAboveMain = 8,
     }
 
     /// <summary>One main/sub assignment, identified by instance ids.</summary>

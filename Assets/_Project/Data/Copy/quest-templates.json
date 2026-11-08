@@ -1,0 +1,124 @@
+{
+  "steps": [
+    {
+      "type": "reach_poi",
+      "variants": [
+        {
+          "zh-TW": "前往 {poi}。",
+          "en": "Reach {poi}."
+        },
+        {
+          "zh-TW": "找到通往 {poi} 的路。",
+          "en": "Find your way to {poi}."
+        },
+        {
+          "zh-TW": "抵達 {poi}，繼續探索。",
+          "en": "Continue your exploration at {poi}."
+        }
+      ]
+    },
+    {
+      "type": "defeat_wild",
+      "variants": [
+        {
+          "zh-TW": "擊敗 {count} 隻{element}屬性野生宙獸。",
+          "en": "Defeat {count} wild {element} Cosmimera."
+        },
+        {
+          "zh-TW": "與野外的{element}屬性宙獸交戰，擊敗 {count} 隻。",
+          "en": "Battle and defeat {count} wild {element} Cosmimera."
+        },
+        {
+          "zh-TW": "在這片土地上擊敗 {count} 隻{element}屬性野生宙獸。",
+          "en": "Defeat {count} wild {element} Cosmimera in the field."
+        }
+      ]
+    },
+    {
+      "type": "defeat_elite",
+      "variants": [
+        {
+          "zh-TW": "擊敗菁英宙獸。",
+          "en": "Defeat the elite Cosmimera."
+        },
+        {
+          "zh-TW": "迎戰眼前的菁英宙獸。",
+          "en": "Take on the elite Cosmimera."
+        },
+        {
+          "zh-TW": "擊倒擋路的菁英宙獸。",
+          "en": "Defeat the elite Cosmimera blocking your way."
+        }
+      ]
+    },
+    {
+      "type": "capture_one",
+      "variants": [
+        {
+          "zh-TW": "收服一隻宙獸。",
+          "en": "Capture a Cosmimera."
+        },
+        {
+          "zh-TW": "在野外收服一隻宙獸。",
+          "en": "Capture a wild Cosmimera."
+        },
+        {
+          "zh-TW": "尋找並收服一隻宙獸。",
+          "en": "Find and capture a Cosmimera."
+        }
+      ]
+    },
+    {
+      "type": "defeat_boss",
+      "variants": [
+        {
+          "zh-TW": "擊敗 {boss}。",
+          "en": "Defeat {boss}."
+        },
+        {
+          "zh-TW": "迎戰這顆星球的 BOSS：{boss}。",
+          "en": "Face {boss}, the planet's boss."
+        },
+        {
+          "zh-TW": "與 {boss} 決一勝負。",
+          "en": "Confront {boss}."
+        }
+      ]
+    }
+  ],
+  "chains": [
+    {
+      "id": "starward_trail",
+      "title": {
+        "zh-TW": "循星之途",
+        "en": "A Trail Among Stars"
+      },
+      "intro": {
+        "zh-TW": "這顆星球還有許多未知。踏上旅途，親自調查它的風貌。",
+        "en": "This planet holds countless unknowns. Set out and discover what lies ahead."
+      }
+    },
+    {
+      "id": "traces_on_the_wind",
+      "title": {
+        "zh-TW": "風中的線索",
+        "en": "Traces on the Wind"
+      },
+      "intro": {
+        "zh-TW": "陌生的地景與宙獸引人好奇。循著線索，調查這顆星球吧。",
+        "en": "Strange landscapes and unfamiliar Cosmimera await. Follow the clues and investigate this planet."
+      }
+    },
+    {
+      "id": "beyond_the_horizon",
+      "title": {
+        "zh-TW": "地平線彼端",
+        "en": "Beyond the Horizon"
+      },
+      "intro": {
+        "zh-TW": "從降落點望去，地平線之外藏著什麼？帶上夥伴，探索這顆星球。",
+        "en": "What waits beyond the horizon? Take your companions and explore this planet."
+      }
+    }
+  ]
+}

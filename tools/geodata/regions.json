@@ -1,0 +1,14 @@
+[
+  {"id": "olympic_forest", "name_en": "Olympic temperate rainforest", "center_lat": 47.65, "center_lon": -123.65, "half_extent_km": 20, "terrain_tags": ["forest"]},
+  {"id": "alpine_rhine", "name_en": "Alpine Rhine valley", "center_lat": 46.75, "center_lon": 9.5, "half_extent_km": 20, "terrain_tags": ["river_valley"]},
+  {"id": "etna_volcano", "name_en": "Mount Etna", "center_lat": 37.75, "center_lon": 15.0, "half_extent_km": 20, "terrain_tags": ["volcano"]},
+  {"id": "kenya_rift", "name_en": "Kenyan Great Rift Valley", "center_lat": 0.5, "center_lon": 36.35, "half_extent_km": 20, "terrain_tags": ["rift_valley"]},
+  {"id": "vatnajokull_ice", "name_en": "Vatnajokull ice cap", "center_lat": 64.35, "center_lon": -16.5, "half_extent_km": 20, "terrain_tags": ["ice_field"]},
+  {"id": "sognefjord", "name_en": "Sognefjord", "center_lat": 61.15, "center_lon": 6.9, "half_extent_km": 20, "terrain_tags": ["fjord"]},
+  {"id": "tibetan_plateau", "name_en": "Tibetan Plateau", "center_lat": 30.5, "center_lon": 90.5, "half_extent_km": 20, "terrain_tags": ["plateau"]},
+  {"id": "stockholm_archipelago", "name_en": "Stockholm archipelago", "center_lat": 59.35, "center_lon": 18.55, "half_extent_km": 20, "terrain_tags": ["archipelago"]},
+  {"id": "grand_canyon", "name_en": "Grand Canyon", "center_lat": 36.15, "center_lon": -112.15, "half_extent_km": 20, "terrain_tags": ["canyon"]},
+  {"id": "guilin_karst", "name_en": "Guilin cave-bearing karst", "center_lat": 25.15, "center_lon": 110.35, "half_extent_km": 20, "terrain_tags": ["cave"]},
+  {"id": "svalbard_polar_day", "name_en": "Svalbard polar-day terrain", "center_lat": 78.2, "center_lon": 15.5, "half_extent_km": 20, "terrain_tags": ["eternal_day"]},
+  {"id": "tromso_polar_night", "name_en": "Tromso polar-night terrain", "center_lat": 69.65, "center_lon": 18.95, "half_extent_km": 20, "terrain_tags": ["eternal_night"]}
+]

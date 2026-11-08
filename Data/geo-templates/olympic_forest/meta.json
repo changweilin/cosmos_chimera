@@ -1,0 +1,20 @@
+{
+  "id": "olympic_forest",
+  "generator_version": 1,
+  "size": 256,
+  "center_lat": 47.65,
+  "center_lon": -123.65,
+  "half_extent_km": 20,
+  "elev_min_m": 54.49999999999999,
+  "elev_max_m": 2358.672449627814,
+  "sea_level_norm": -0.023652743530026676,
+  "terrain_tags": [
+    "forest"
+  ],
+  "sources": [
+    "copernicus_glo90"
+  ],
+  "tiles": [
+    "Copernicus_DSM_COG_30_N47_00_W124_00_DEM"
+  ]
+}

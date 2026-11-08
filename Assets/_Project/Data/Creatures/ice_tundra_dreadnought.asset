@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: ice_tundra_dreadnought
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: ice_tundra_dreadnought
+  lineId: line_ice_frostbeast
+  stage: 2
+  sizeClass: 2
+  aiStyle: 0
+  evolvesTo: {fileID: 0}
+  evolutionExp: 0
+  evolutionMaterials: []
+  resist: 00000000000000000f00000000000000d8ffffff320000000a000000000000000000000000000000
+  mastery:
+  - element: 0
+    value: 15
+  - element: 5
+    value: 40
+  stats:
+    con: 105
+    str: 95
+    spi: 80
+    agi: 120
+  signatureMove: {fileID: 11400000, guid: 854e071e017512a4bbacdb4624467744, type: 2}
+  trait: {fileID: 11400000, guid: 230b438fbc486c04fb9204f2218bf401, type: 2}
+  conceptJson: "{\"base\":\"\u6C38\u51CD\u9E7F\u89D2\u795E\u7378 \xD7 \u51B0\u88C2\u935B\u9435\u95DC\u7BC0\u8207\u978D\u8EDB\u9023\u52D5\u6A5F\u95DC\uFF08\u751F\u7269
+    \xD7 \u5668\u68B0\uFF09\",\"stage_look\":\"\u6C38\u51CD\u88DD\u7532\u5DE8\u578B\u9E7F\u89D2\u971C\u7378\uFF0C\u6A5F\u68B0\u51B0\u88C2\u7FFC\u5C55\u8986\u84CB\u5BD2\u971C\uFF0C\u7834\u51B0\u91D1\u5C6C\u5C16\u722A\u80FD\u7C89\u788E\u51CD\u571F\",\"archetype\":\"arch_pazyryk_antlered_griffin\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u9CE5\u9996\u5206\u53C9\u5DE8\u9E7F\u89D2\",\"\u91D1\u7B94\u6BDB\u6C08\u978D\u98FE\",\"\u6C38\u51CD\u51B0\u585A\"],\"role\":\"\u9060\u8DDD\u7832\u53F0\uFF1A\u9AD8\u654F\u6377\uFF0C\u9060\u8DDD\u6307\u5B9A\u9EDE\u7BC4\u570D\u7206\u767C\uFF0C\u4E0A\u5834\u6642\u66AB\u6642\u63D0\u9AD8\u51B0\u6297\",\"palette\":\"\u971C\u96EA\u767D\u3001\u51B0\u5DDD\u6DE1\u85CD\u3001\u51CD\u9435\u53E4\u91D1\"}"
+  needsSensitivityReview: 0

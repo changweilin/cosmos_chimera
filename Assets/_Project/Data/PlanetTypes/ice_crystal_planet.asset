@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a8b2e561e01dff4d810578b3ce81306, type: 3}
+  m_Name: ice_crystal_planet
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
+  id: ice_crystal_planet
+  size: 1
+  terrainTags:
+  - ice_field
+  - fjord
+  elementBias: 0500000002000000
