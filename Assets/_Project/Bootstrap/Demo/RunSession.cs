@@ -221,7 +221,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Encounter unit id of each party slot, in party order.</summary>
         /// <remarks>Pre: Configure ran. Post: one id per RunSetup.Party slot. Side effects: none.</remarks>
-        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits;
+        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits.ToArray();
 
         /// <summary>Cumulative XP of one party slot right now.</summary>
         /// <remarks>Pre: 0 &lt;= slot &lt; party size. Post: &gt;= the slot's starting XP. Side effects: none.</remarks>
@@ -248,7 +248,7 @@ namespace Cosmimera.Bootstrap.Demo
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
         /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
-        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials;
+        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials.ToArray();
 
         /// <summary>Swaps the main for the first eligible reserve, exactly as the Switch input does.</summary>
         /// <remarks>Pre: Configure ran. Post: as SwitchMain. Side effects: as SwitchMain (team, encounter, toast).</remarks>
