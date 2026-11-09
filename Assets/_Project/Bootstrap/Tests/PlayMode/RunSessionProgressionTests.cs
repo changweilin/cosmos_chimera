@@ -228,7 +228,13 @@ namespace Cosmimera.Bootstrap.Tests
         public IEnumerator Real_tick_knockout_pays_xp()
         {
             Env env = LoadEnv();
-            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count > 0);
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return Tier0Normals(p, null).Count > 0 &&
+                    rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out _);
+            });
             RunPlan plan = PlanFor(env, seed);
             int target = Tier0Normals(plan, null)[0];
             var run = new Run();
@@ -239,14 +245,55 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 int[] before = Exp(s);
                 Step(s);
-                if (s.EncounterForTests.Events.Any(e => e.Kind == EncounterEventKind.Faint && s.EncounterForTests.Units[e.TargetId].Side == EncounterSide.Wild))
+                if (s.EncounterForTests.Events.Any(e => e.Kind == EncounterEventKind.Faint && e.TargetId == target))
                 {
+                    var rng = new Pcg32(seed, 'D');
+                    Assert.That(rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out MaterialStack expected), Is.True);
+                    Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1), "real faint dispatch awards the drop");
+                    Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
+                    Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
                     Assert.That(Delta(before, Exp(s)).Sum(), Is.GreaterThan(0), "real faint dispatch pays XP");
                     yield break;
                 }
             }
 
             Assert.Fail("the wild creature was not knocked out by Encounter.Tick");
+        }
+
+        [UnityTest]
+        public IEnumerator Elite_knockout_drops_elite_material()
+        {
+            Env env = LoadEnv();
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return p.Spawns.Any(sp => sp.Role == SpawnRole.Elite) &&
+                    rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref rng, out _);
+            });
+            RunPlan plan = PlanFor(env, seed);
+            int elite = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Elite);
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run);
+            RunSession s = run.Session;
+            Kill(s, env, elite);
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            s.InjectFaintForTests(elite);
+            Step(s);
+
+            var oracle = new Pcg32(seed, 'D');
+            Assert.That(rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref oracle, out MaterialStack expected), Is.True);
+            Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1));
+            Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
+            Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
+            Assert.That(s.MaterialsForTests[0].Key.Tier, Is.EqualTo(rules.TierFor(SpawnRole.Elite)));
+            var snapshot = (MaterialStack[])s.MaterialsForTests;
+            snapshot[0] = default;
+            Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key), "the snapshot cannot alter the run");
+            var party = (int[])s.PartyUnitsForTests;
+            int first = party[0];
+            party[0] = -1;
+            Assert.That(s.PartyUnitsForTests[0], Is.EqualTo(first), "the party snapshot cannot alter the run");
         }
 
         [UnityTest]
