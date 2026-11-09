@@ -244,8 +244,8 @@
     "en": "Press Esc again within 3 seconds to abandon the run. Captured Cosmimera will return to the lobby."
   },
   "ui.lobby.party_hint": {
-    "zh-TW": "隊伍順序：第一隻宙獸擔任主力。",
-    "en": "Party order: the first Cosmimera leads the fight."
+    "zh-TW": "前 2 隻開場出戰，前 4 隻可輪替；第 5、6 隻本場待命。★ 為預設主力。",
+    "en": "The first 2 deploy; the first 4 can rotate. Slots 5–6 sit out this run. ★ marks the default lead."
   },
   "ui.lobby.reserve": {
     "zh-TW": "候補",
@@ -270,5 +270,53 @@
   "ui.lobby.party_full": {
     "zh-TW": "隊伍已滿（最多 6 隻）。",
     "en": "The party is full (max 6)."
+  },
+  "ui.hud.bearing_ahead": {
+    "zh-TW": "目標在視角前方",
+    "en": "Target ahead of view"
+  },
+  "ui.hud.bearing_left": {
+    "zh-TW": "視角左轉 {angle}°",
+    "en": "Turn view left {angle}°"
+  },
+  "ui.hud.bearing_right": {
+    "zh-TW": "視角右轉 {angle}°",
+    "en": "Turn view right {angle}°"
+  },
+  "ui.hud.bearing_unavailable": {
+    "zh-TW": "目標距離（方向未定）",
+    "en": "Target distance (bearing unavailable)"
+  },
+  "ui.hud.no_quest_target": {
+    "zh-TW": "目前沒有可追蹤的任務目標；仍可尋找並挑戰 BOSS。",
+    "en": "No trackable quest target remains. You can still find and challenge the BOSS."
+  },
+  "ui.hud.quest_complete": {
+    "zh-TW": "任務完成；靠近倒下的 BOSS，按 {capture} 嘗試收服。",
+    "en": "Quest complete. Approach the fallen BOSS and press {capture} to attempt capture."
+  },
+  "ui.hud.exploration_help": {
+    "zh-TW": "WASD／方向鍵 移動 · Shift 衝刺\nSpace 跳躍 · 滑鼠 轉動視角\nV 切換第一／第三人稱\n宙獸接敵後自動施招，請跟上主力。\n擊倒後 20 秒內，靠近至 8 m 按 C 收服；每隻僅一次機會。\nB 切換收服道具\n倒下的隊友本場不復活，戰外不回血。\n3 秒內按兩次 Esc 結算返回大廳。",
+    "en": "WASD / Arrows Move · Shift Sprint\nSpace Jump · Mouse Look\nV Toggle first / third person\nCosmimera attack automatically. Keep up with your lead.\nAfter a knockout: get within 8 m and press C within 20 s. One attempt per target.\nB Cycle capture vessel\nNo revives or out-of-combat healing this run.\nPress Esc twice within 3 s to end the run."
+  },
+  "ui.hud.capture_available": {
+    "zh-TW": "[{capture}] 收服 {name} · 剩餘 {seconds} 秒\n[{cycle}] 切換收服道具 · 每隻僅一次機會",
+    "en": "[{capture}] Capture {name} · {seconds} s left\n[{cycle}] Cycle vessel · One attempt per target"
+  },
+  "ui.hud.capture_no_target": {
+    "zh-TW": "請在擊倒後 20 秒內靠近至 8 m，再按 {capture} 收服。",
+    "en": "Get within 8 m of a target knocked out in the last 20 s, then press {capture}."
+  },
+  "ui.hud.command_bindings": {
+    "zh-TW": "{focus} 集火／{free} 自由／{follow} 跟隨／{retreat} 撤退",
+    "en": "{focus} Focus / {free} Free / {follow} Follow / {retreat} Retreat"
+  },
+  "ui.hud.abandon_binding_confirm": {
+    "zh-TW": "3 秒內再按 {key} 放棄本場；已收服的宙獸仍會帶回大廳。",
+    "en": "Press {key} again within 3 seconds to abandon. Captured Cosmimera return to the lobby."
+  },
+  "ui.hud.gamepad_help": {
+    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n大廳選單仍需鍵盤滑鼠。",
+    "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nLobby menus still need keyboard / mouse."
   }
 }

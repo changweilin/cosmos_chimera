@@ -60,7 +60,7 @@
     "ja": "3秒以内に再度Escを押すと探索を放棄します。捕獲した宙獣はロビーに持ち帰ることができます。"
   },
   "ui.lobby.party_hint": {
-    "ja": "編成順：先頭の宙獣が先発として戦います。"
+    "ja": "先頭の2体が出撃し、先頭の4体で交代できます。5・6番目は今回の探索では待機します。★は初期主力です。"
   },
   "ui.lobby.reserve": {
     "ja": "控え"
@@ -79,5 +79,41 @@
   },
   "ui.lobby.party_full": {
     "ja": "チームが満員です（最大6体）。"
+  },
+  "ui.hud.bearing_ahead": {
+    "ja": "目標は視点の前方"
+  },
+  "ui.hud.bearing_left": {
+    "ja": "視点を左へ{angle}°回す"
+  },
+  "ui.hud.bearing_right": {
+    "ja": "視点を右へ{angle}°回す"
+  },
+  "ui.hud.bearing_unavailable": {
+    "ja": "目標までの距離（方向未確定）"
+  },
+  "ui.hud.no_quest_target": {
+    "ja": "追跡できる任務目標がありません。引き続きBOSSを探して挑戦できます。"
+  },
+  "ui.hud.quest_complete": {
+    "ja": "任務完了。倒れたBOSSに近づき、{capture}で捕獲を試みましょう。"
+  },
+  "ui.hud.exploration_help": {
+    "ja": "WASD／方向キー 移動・Shift ダッシュ\nSpace ジャンプ・マウス 視点操作\nV 一人称／三人称の切り替え\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づき、Cで捕獲。各対象につき1回限り。\nB 捕獲道具の切り替え\n今回の探索中は復活も戦闘外の回復もありません。\n3秒以内にEscを2回押すと探索を終了します。"
+  },
+  "ui.hud.capture_available": {
+    "ja": "[{capture}] {name}を捕獲・残り{seconds}秒\n[{cycle}] 捕獲道具の切り替え・各対象につき1回限り"
+  },
+  "ui.hud.capture_no_target": {
+    "ja": "撃破から20秒以内の対象に8 mまで近づき、{capture}で捕獲してください。"
+  },
+  "ui.hud.command_bindings": {
+    "ja": "{focus} 集中／{free} 自由／{follow} 追従／{retreat} 撤退"
+  },
+  "ui.hud.abandon_binding_confirm": {
+    "ja": "3秒以内に再度{key}を押すと探索を放棄します。捕獲した宙獣はロビーに持ち帰れます。"
+  },
+  "ui.hud.gamepad_help": {
+    "ja": "左スティックで移動、右スティックで視点操作。\n左スティック押し込みでダッシュ、右押し込みで視点切り替え。\n下のボタンでジャンプ、上のボタンで捕獲。\n右のボタンで捕獲道具を切り替え。\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づいて捕獲。各対象1回限り。\n復活も戦闘外の回復もありません。\n3秒以内にStartを2回押すと終了。\nロビーはキーボード／マウスで操作。"
   }
 }

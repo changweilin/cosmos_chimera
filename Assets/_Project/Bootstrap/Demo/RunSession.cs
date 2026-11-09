@@ -82,7 +82,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>
     /// Pre: Configure once right after AddComponent. Post: calls the end callback exactly once.
     /// Side effects: owns every object it creates and destroys them in OnDestroy.
-    /// Input is read from Keyboard.current for the combat verbs; gamepad mapping is P7-07 (tech-debt D0-U1).
+    /// Run actions are cloned per session so enabling or disposing a run never changes the shared input asset.
     /// </remarks>
     public sealed class RunSession : MonoBehaviour
     {
@@ -131,6 +131,17 @@ namespace Cosmimera.Bootstrap.Demo
         private DemoCopy _copy;
         private CombatBalance _balance;
         private InputActionAsset _actions;
+        private InputActionMap _runInput;
+        private InputAction _selectFirstAction;
+        private InputAction _selectSecondAction;
+        private InputAction _switchAction;
+        private InputAction _focusAction;
+        private InputAction _freeAction;
+        private InputAction _followAction;
+        private InputAction _retreatAction;
+        private InputAction _cycleVesselAction;
+        private InputAction _captureAction;
+        private InputAction _abandonAction;
         private RunSetup _setup;
         private Action<RunOutcome> _onEnd;
 
@@ -176,12 +187,19 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal bool StartedForTests => _started;
 
+        internal VesselKind VesselForTests => _vessel;
+
+        internal int MainForTests => _mainId;
+
+        internal AiCommandKind CommandForTests => _command.Kind;
+
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
+        /// Pre: all arguments non-null; actions contains the DemoRun map and its ten actions;
+        ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
         ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
-        /// Side effects: creates GameObjects.
+        /// Side effects: creates GameObjects and a private input map, enabled while the component is enabled.
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
@@ -189,6 +207,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
+            InputActionMap runMap = RequireRunMap(actions);
             Core.Contracts.Contract.Requires(setup.Party != null && setup.Party.Count >= 1 && setup.Party.Count <= 6,
                 "party must hold 1..6 forms");
             Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
@@ -199,6 +218,21 @@ namespace Cosmimera.Bootstrap.Demo
             _partyExp = setup.PartyExp.ToArray();
             _balance = balance;
             _actions = actions;
+            _runInput = runMap.Clone();
+            _selectFirstAction = _runInput.FindAction("SelectFirst", true);
+            _selectSecondAction = _runInput.FindAction("SelectSecond", true);
+            _switchAction = _runInput.FindAction("Switch", true);
+            _focusAction = _runInput.FindAction("Focus", true);
+            _freeAction = _runInput.FindAction("Free", true);
+            _followAction = _runInput.FindAction("Follow", true);
+            _retreatAction = _runInput.FindAction("Retreat", true);
+            _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
+            _captureAction = _runInput.FindAction("Capture", true);
+            _abandonAction = _runInput.FindAction("Abandon", true);
+            if (isActiveAndEnabled)
+            {
+                _runInput.Enable();
+            }
             _setup = setup;
             _onEnd = onEnd;
 
@@ -490,59 +524,58 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ReadInput()
         {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
+            if (_runInput == null || !_runInput.enabled)
             {
                 return;
             }
 
-            if (kb.digit1Key.wasPressedThisFrame && _team.Active.Count > 0)
+            if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
             }
 
-            if (kb.digit2Key.wasPressedThisFrame && _team.Active.Count > 1)
+            if (_selectSecondAction.WasPressedThisFrame() && _team.Active.Count > 1)
             {
                 _mainId = _team.Active[1];
             }
 
-            if (kb.tabKey.wasPressedThisFrame)
+            if (_switchAction.WasPressedThisFrame())
             {
                 SwitchMain();
             }
 
-            if (kb.fKey.wasPressedThisFrame)
+            if (_focusAction.WasPressedThisFrame())
             {
                 int target = NearestEngaged(PlayerPosition());
                 _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
             }
 
-            if (kb.rKey.wasPressedThisFrame)
+            if (_freeAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             }
 
-            if (kb.tKey.wasPressedThisFrame)
+            if (_followAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
             }
 
-            if (kb.gKey.wasPressedThisFrame)
+            if (_retreatAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Retreat, CombatAi.NoTarget);
             }
 
-            if (kb.vKey.wasPressedThisFrame)
+            if (_cycleVesselAction.WasPressedThisFrame())
             {
                 _vessel = (VesselKind)(((int)_vessel + 1) % 3);
             }
 
-            if (kb.cKey.wasPressedThisFrame)
+            if (_captureAction.WasPressedThisFrame())
             {
                 TryCapture();
             }
 
-            if (kb.escapeKey.wasPressedThisFrame)
+            if (_abandonAction.WasPressedThisFrame())
             {
                 if (_nowMs <= _abandonArmedUntilMs)
                 {
@@ -551,10 +584,27 @@ namespace Cosmimera.Bootstrap.Demo
                 else
                 {
                     _abandonArmedUntilMs = _nowMs + 3000;
-                    Toast(_copy.Ui("ui.hud.abandon_confirm"));
+                    Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
                 }
             }
         }
+
+        internal static InputActionMap RequireRunMap(InputActionAsset actions)
+        {
+            Core.Contracts.Contract.Requires(actions != null, "actions are required");
+            InputActionMap map = actions.FindActionMap("DemoRun");
+            Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
+            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "Free", "Follow",
+                         "Retreat", "CycleVessel", "Capture", "Abandon" })
+            {
+                Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
+            }
+
+            return map;
+        }
+
+        private static string BindingLabel(InputAction action) =>
+            action.GetBindingDisplayString(group: Gamepad.current != null ? "Gamepad" : "Keyboard&Mouse");
 
         private void SwitchMain()
         {
@@ -589,26 +639,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TryCapture()
         {
-            float3 player = PlayerPosition();
-            int best = -1;
-            float bestDist = CaptureReachM;
-            foreach (KeyValuePair<int, WildInfo> kv in _wild)
-            {
-                if (kv.Value.Gone || kv.Value.KnockedOutAtMs < 0)
-                {
-                    continue;
-                }
-
-                float d = math.distance(_encounter.Units[kv.Key].Position, player);
-                if (d <= bestDist)
-                {
-                    bestDist = d;
-                    best = kv.Key;
-                }
-            }
-
+            int best = FindCaptureTarget(CaptureReachM);
             if (best < 0)
             {
+                Toast(_copy.Ui("ui.hud.capture_no_target").Replace("{capture}", BindingLabel(_captureAction)));
                 return;
             }
 
@@ -633,6 +667,30 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Toast(_copy.Ui("ui.hud.capture_fail"));
             }
+        }
+
+        private int FindCaptureTarget(float reach)
+        {
+            float3 player = PlayerPosition();
+            int best = -1;
+            float bestDist = reach;
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                if (kv.Value.Gone || kv.Value.KnockedOutAtMs < 0 ||
+                    _nowMs - kv.Value.KnockedOutAtMs > KnockedOutWindowMs)
+                {
+                    continue;
+                }
+
+                float d = math.distance(_encounter.Units[kv.Key].Position, player);
+                if (d <= bestDist)
+                {
+                    bestDist = d;
+                    best = kv.Key;
+                }
+            }
+
+            return best;
         }
 
         private void ApplyAffixes(float3 player)
@@ -969,6 +1027,7 @@ namespace Cosmimera.Bootstrap.Demo
             DrawWorldBars();
             DrawQuestPanel();
             DrawTeamPanel();
+            DrawControlsPanel();
             if (_nowMs < _toastUntilMs)
             {
                 GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
@@ -1024,7 +1083,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DrawQuestPanel()
         {
-            var box = new Rect(16, 16, 460, 150);
+            var box = new Rect(16, 16, 460, 210);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.Label("<b>" + _copy.ChainTitle(_plan.ChainId) + "</b>", _label);
@@ -1036,10 +1095,30 @@ namespace Cosmimera.Bootstrap.Demo
                     .Replace("{element}", _copy.Element(s.Element.ToString()))
                     .Replace("{poi}", _copy.Theme(_plan.Regions[s.Region].ThemeId))
                     .Replace("{boss}", _copy.Name(_plan.Spawns[_plan.Quest[_plan.Quest.Count - 1].TargetSpawn].CreatureId));
-                GUILayout.Label(_copy.Ui("ui.hud.quest_tracker") + "：" + text, _label);
-                float3 here = _rig.Config.ToDirection(PlayerPosition());
-                float meters = math.acos(math.clamp(math.dot(here, _plan.Regions[s.Region].Center), -1f, 1f)) * _rig.Config.Radius;
-                GUILayout.Label($"→ {meters:0} m", _label);
+                GUILayout.Label(_copy.Ui("ui.hud.quest_tracker") + "：" + text,
+                    new GUIStyle(_label) { wordWrap = true });
+                if (TryQuestTarget(s, out float3 target))
+                {
+                    float3 here = _rig.Config.ToDirection(PlayerPosition());
+                    float meters = math.acos(math.clamp(math.dot(here, target), -1f, 1f)) * _rig.Config.Radius;
+                    // The bearing follows the view on the local tangent plane, including beyond the horizon.
+                    bool hasBearing = DemoNavigation.TryBearing(here, target, _rig.CameraRig.Heading, out float angle);
+                    string bearing = !hasBearing ? _copy.Ui("ui.hud.bearing_unavailable")
+                        : math.abs(angle) < 10f ? _copy.Ui("ui.hud.bearing_ahead")
+                        : _copy.Ui(angle < 0f ? "ui.hud.bearing_left" : "ui.hud.bearing_right")
+                            .Replace("{angle}", math.abs(angle).ToString("0"));
+                    GUILayout.Label($"{bearing} · {meters:0} m", _label);
+                }
+                else
+                {
+                    GUILayout.Label(_copy.Ui("ui.hud.no_quest_target"),
+                        new GUIStyle(_label) { fontSize = 14, wordWrap = true });
+                }
+            }
+            else
+            {
+                GUILayout.Label(_copy.Ui("ui.hud.quest_complete").Replace("{capture}", BindingLabel(_captureAction)),
+                    new GUIStyle(_label) { wordWrap = true });
             }
 
             if (_region >= 0)
@@ -1052,10 +1131,83 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndArea();
         }
 
+        internal bool TryQuestTarget(RunQuestStep step, out float3 target)
+        {
+            target = float3.zero;
+            if (step.Kind == QuestStepKind.ReachPoi)
+            {
+                target = _plan.Regions[step.Region].Center;
+                return true;
+            }
+
+            int capture = step.Kind == QuestStepKind.CaptureOne ? FindCaptureTarget(float.MaxValue) : -1;
+            if (capture >= 0)
+            {
+                target = _rig.Config.ToDirection(_encounter.Units[capture].Position);
+                return true;
+            }
+
+            float3 here = _rig.Config.ToDirection(PlayerPosition());
+            float bestDot = -2f;
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                EncounterUnit unit = _encounter.Units[kv.Key];
+                if (kv.Value.Gone || unit.Combatant.IsFainted)
+                {
+                    continue;
+                }
+
+                if ((step.Kind == QuestStepKind.DefeatBoss || step.Kind == QuestStepKind.DefeatElite) &&
+                    kv.Value.Spawn != step.TargetSpawn)
+                {
+                    continue;
+                }
+
+                if (step.Kind == QuestStepKind.DefeatWild && RunPlanner.MainElement(unit.Def) != step.Element)
+                {
+                    continue;
+                }
+
+                float3 direction = _rig.Config.ToDirection(unit.Position);
+                float dot = math.dot(here, direction);
+                if (dot > bestDot)
+                {
+                    bestDot = dot;
+                    target = direction;
+                }
+            }
+
+            return bestDot > -2f;
+        }
+
+        private void DrawControlsPanel()
+        {
+            var box = new Rect(Screen.width - 346, 16, 330, 260);
+            GUI.Box(box, GUIContent.none);
+            GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12),
+                _copy.Ui(Gamepad.current != null ? "ui.hud.gamepad_help" : "ui.hud.exploration_help"),
+                new GUIStyle(_label) { fontSize = 14, wordWrap = true });
+
+            int capture = FindCaptureTarget(CaptureReachM);
+            if (capture < 0)
+            {
+                return;
+            }
+
+            float seconds = (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f;
+            string prompt = _copy.Ui("ui.hud.capture_available")
+                .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
+                .Replace("{name}", _copy.Name(_encounter.Units[capture].Def.Id))
+                .Replace("{seconds}", seconds.ToString("0.0"));
+            GUI.Box(new Rect(Screen.width / 2f - 220, Screen.height - 280, 440, 50), GUIContent.none);
+            GUI.Label(new Rect(Screen.width / 2f - 210, Screen.height - 277, 420, 44), prompt,
+                new GUIStyle(_label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = true });
+        }
+
         private void DrawTeamPanel()
         {
-            float y = Screen.height - 150;
-            var box = new Rect(16, y, 620, 140);
+            float y = Screen.height - 220;
+            var box = new Rect(16, y, math.min(900, Screen.width - 32), 210);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
@@ -1080,10 +1232,14 @@ namespace Cosmimera.Bootstrap.Demo
                 AiCommandKind.Retreat => _copy.Ui("ui.hud.command_retreat"),
                 _ => _copy.Ui("ui.hud.command_free"),
             };
-            GUILayout.Label($"[1/2] ★ {_copy.Ui("ui.hud.select_active")}  [Tab] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
-                $"{_copy.Ui("ui.hud.command_keys")}（{cmd}）\n" +
-                $"[V] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
-                _copy.Ui("ui.hud.capture_prompt").Replace("{key}", "C").Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
+            string commands = _copy.Ui("ui.hud.command_bindings")
+                .Replace("{focus}", BindingLabel(_focusAction)).Replace("{free}", BindingLabel(_freeAction))
+                .Replace("{follow}", BindingLabel(_followAction)).Replace("{retreat}", BindingLabel(_retreatAction));
+            GUILayout.Label($"[{BindingLabel(_selectFirstAction)} / {BindingLabel(_selectSecondAction)}] ★ {_copy.Ui("ui.hud.select_active")}  " +
+                $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
+                $"{commands}（{cmd}）\n" +
+                $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
+                _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
             GUILayout.EndArea();
         }
@@ -1113,8 +1269,13 @@ namespace Cosmimera.Bootstrap.Demo
             _ => "defeat_boss",
         };
 
+        private void OnEnable() => _runInput?.Enable();
+
+        private void OnDisable() => _runInput?.Disable();
+
         private void OnDestroy()
         {
+            _runInput?.Dispose();
             _rig?.Dispose();
             if (_terrainMaterial != null)
             {

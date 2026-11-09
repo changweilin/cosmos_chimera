@@ -4,7 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parent
 repo = root.parents[2]
-names = ["affixes.json", "region-themes.json", "quest-templates.json", "boss-epithets.json", "strings.json"]
+names = ["affixes.json", "region-themes.json", "quest-templates.json", "boss-epithets.json", "strings.json", "demo-ui-supplement.json"]
 data = {name: json.loads((root / name).read_text(encoding="utf-8")) for name in names}
 
 def check_localized(value):
@@ -12,6 +12,7 @@ def check_localized(value):
         if "zh-TW" in value or "en" in value:
             assert set(value) == {"zh-TW", "en"}
             assert all(isinstance(v, str) and v.strip() for v in value.values())
+            assert set(re.findall(r"\{([^{}]+)\}", value["zh-TW"])) == set(re.findall(r"\{([^{}]+)\}", value["en"]))
         else:
             for child in value.values():
                 check_localized(child)
@@ -21,7 +22,7 @@ def check_localized(value):
 
 for value in data.values():
     check_localized(value)
-print("PASS: 5 UTF-8 JSON files; localized fields are complete")
+print(f"PASS: {len(names)} UTF-8 JSON files; localized fields and placeholders are complete")
 
 elements = "metal wood water fire earth ice wind thunder light shadow".split()
 ids = {f"affix_{element}_surge" for element in elements} | {"affix_frenzy", "affix_pack", "affix_fog", "affix_bounty"}
@@ -69,3 +70,8 @@ assert len(strings) <= 80 and all(re.fullmatch(r"ui\.[a-z_]+\.[a-z0-9_]+", key) 
 assert {f"ui.{screen}.{key}" for screen, items in required_strings.items() for key in items.split()} <= strings.keys()
 assert all(set(re.findall(r"\{([^{}]+)\}", text)) == {"key", "vessel"} for text in strings["ui.hud.capture_prompt"].values())
 print(f"PASS: {len(strings)} UI keys, naming and required items, capture placeholders")
+
+supplement = data["demo-ui-supplement.json"]
+assert not strings.keys() & supplement.keys()
+assert all(re.fullmatch(r"(?:ui\.[a-z_]+\.[a-z0-9_]+|planet\.[a-z_]+|element\.[a-z_]+)", key) for key in supplement)
+print(f"PASS: {len(supplement)} supplement keys; no base-key collisions")

@@ -21,6 +21,10 @@
 
 ## 交接紀錄
 
+- 2026-11-09 · ChatGPT Terra（Codex） · partial · P2-11：HUD 指令／收服／放棄提示改讀 action binding，探索支援手把；契約變更：`RunSession.Configure` 的 actions 必須含 DemoRun 與十個必需 action，呼叫端使用既有更新資產，EditMode 896/896、GPU PlayMode 62/62 通過 · 下一步：人工驗收實體手把與 HUD，SONNET 接續核心玩法缺口
+
+- 2026-11-09 · ChatGPT Terra（Codex） · partial · P2-11 的 D0 表現層補相對視角的球面任務方向、實際存活目標追蹤與近距離收服倒數；B／V 解綁，GPU PlayMode 62/62 通過（含真實 InputSystem 事件互斥測試），方向邊界測試納入 EditMode 895/895 · 下一步：人工驗收 HUD 與完整通關；SONNET 完成副手提示及其他核心接線
+
 - 2026-11-09 · SOL（ChatGPT Sol） · partial · P2-12 核定 A 已改讀 balance.json，新增 222045 bytes 黃金向量（200 組固定種子＋27 組結算邊界）、重生腳本與 20 隻非成年宙獸等級提案；tools/balance unittest 54/54 通過，指定 pytest 缺套件未能執行，tools/tests unittest 30 項有 4 個模組因缺 pytest／Pillow／jsonschema 載入失敗，下載遭網路權限拒絕；正式數值無異議 · 下一步：OPUS 於具依賴環境執行指定 pytest 並以黃金向量核對 C#；人工確認 evolution-levels.json
 - 2026-11-08 · Codex（SOL） · blocked · P2-12 已記錄 LV1–100、御三家 LV10、型態固定屬性／基礎抗性及三段解鎖區間；Q-C28／Q-C29 未定，未修改程式與資料契約 · 下一步：使用者確認成長曲線、縮放欄位及等級／經驗／進化規則後，SOL 提數值模型、SONNET 實作
 - 2026-11-08 · Codex（SOL） · partial · P2-12 已依使用者回覆確認四維線性倍率、各物種不同門檻及四種指數經驗來源，新增 level-progression.md 與 Data/_incoming/p2-12-level-proposal/progression.json（首級 100／成長 5% 待審）；99 級需求以獨立 Decimal 驗算一致，1000 組四維縮放邊界／單調／取整檢查通過；實作仍受 Q-C28／Q-C29 未決細節阻塞 · 下一步：人工確認取整、經驗係數／獎勵分配及進化門檻轉換，再由 SONNET／OPUS 實作並交 OPUS 審查

@@ -1,0 +1,17 @@
+{
+    "name": "Cosmimera.Bootstrap.Tests.EditMode",
+    "rootNamespace": "Cosmimera.Bootstrap.Tests",
+    "references": [
+        "Cosmimera.Bootstrap",
+        "Cosmimera.Core",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": ["Editor"],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}
