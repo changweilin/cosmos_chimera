@@ -68,6 +68,52 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         // ---------------------------------------------------------------------------------------------------------
+        // P2-05 model-replacement seam (art-asset-pipeline.md#佔位模型)
+        // ---------------------------------------------------------------------------------------------------------
+
+        private sealed class RecordingViews : ICreatureViewFactory
+        {
+            private readonly PlaceholderCreatureViewFactory _inner = new PlaceholderCreatureViewFactory(null);
+            public readonly List<CreatureViewRequest> Requests = new List<CreatureViewRequest>();
+            public readonly List<GameObject> Roots = new List<GameObject>();
+
+            public ICreatureView Create(in CreatureViewRequest request)
+            {
+                ICreatureView view = _inner.Create(request);
+                Requests.Add(request);
+                Roots.Add(view.Root.gameObject);
+                return view;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ViewFactory_BuildsEveryUnitView_AndViewsDieWithTheRun()
+        {
+            Env env = LoadEnv();
+            var views = new RecordingViews();
+            var run = new Run();
+            yield return Launch(env, 2026, env.Progression.XpThreshold(env.Progression.StarterLevel), run, views);
+            Encounter encounter = run.Session.EncounterForTests;
+
+            Assert.That(views.Requests.Count, Is.EqualTo(encounter.Units.Count), "one view per encounter unit");
+            for (int i = 0; i < encounter.Units.Count; i++)
+            {
+                EncounterUnit u = encounter.Units[i];
+                Assert.That(views.Requests[i].Def, Is.SameAs(u.Def));
+                Assert.That(views.Requests[i].Ally, Is.EqualTo(u.Side == EncounterSide.Player));
+                Assert.That(views.Requests[i].BodyRadiusM, Is.EqualTo(u.BodyRadiusM));
+            }
+
+            Assert.That(views.Requests.Count(r => !r.Ally && r.Role == SpawnRole.Boss), Is.EqualTo(1), "the boss spawn");
+            Assert.Throws<Core.Contracts.ContractException>(() => run.Session.UseViewFactory(new RecordingViews()),
+                "the factory is fixed once the run is configured");
+
+            Object.Destroy(run.Session.gameObject);
+            yield return null;
+            Assert.That(views.Roots.All(r => r == null), Is.True, "OnDestroy disposes every view");
+        }
+
+        // ---------------------------------------------------------------------------------------------------------
         // R1 — SOL P2-12 R1
         // ---------------------------------------------------------------------------------------------------------
 
@@ -723,7 +769,7 @@ namespace Cosmimera.Bootstrap.Tests
 
         // Six main slots (the starters repeat if the data has fewer than six), ids 1..6, equal starting XP. The session is
         // disabled as soon as it has landed: Update would otherwise run its own ticks between the test's steps.
-        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run)
+        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null)
         {
             var party = new List<CreatureDef>();
             for (int i = 0; i < PartySize; i++)
@@ -734,6 +780,11 @@ namespace Cosmimera.Bootstrap.Tests
             var session = new GameObject("RunProgression").AddComponent<RunSession>();
             _live.Add(session.gameObject);
             run.Session = session;
+            if (views != null)
+            {
+                session.UseViewFactory(views);
+            }
+
             session.Configure(env.Copy, env.Balance, env.Actions, Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {

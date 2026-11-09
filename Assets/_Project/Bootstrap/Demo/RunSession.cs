@@ -106,14 +106,6 @@ namespace Cosmimera.Bootstrap.Demo
         // planet type is calibrated at d = 1 (SOL rewards.json d0_evidence).
         private const int D0Difficulty = 1;
 
-        private static readonly Color[] ElementColors =
-        {
-            new Color(0.75f, 0.75f, 0.8f), new Color(0.3f, 0.7f, 0.25f), new Color(0.2f, 0.5f, 0.95f),
-            new Color(0.95f, 0.35f, 0.15f), new Color(0.6f, 0.45f, 0.25f), new Color(0.6f, 0.9f, 1f),
-            new Color(0.6f, 0.95f, 0.7f), new Color(0.95f, 0.85f, 0.2f), new Color(1f, 0.97f, 0.75f),
-            new Color(0.35f, 0.25f, 0.5f),
-        };
-
         private sealed class HeightSurface : IEncounterSurface
         {
             private readonly PlanetHeight _height;
@@ -170,8 +162,8 @@ namespace Cosmimera.Bootstrap.Demo
         private bool[] _questPaid;
         private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
-        private readonly Dictionary<int, Transform> _views = new Dictionary<int, Transform>();
-        private readonly Dictionary<int, Renderer> _renderers = new Dictionary<int, Renderer>();
+        private readonly Dictionary<int, ICreatureView> _views = new Dictionary<int, ICreatureView>();
+        private ICreatureViewFactory _viewFactory;
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
         private Pcg32 _materialRng;
@@ -190,7 +182,6 @@ namespace Cosmimera.Bootstrap.Demo
         private string _toast = string.Empty;
         private long _toastUntilMs;
         private GUIStyle _label;
-        private Shader _toonShader;
         private Material _terrainMaterial;
         private Material _playerMaterial;
 
@@ -238,6 +229,15 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: everything StepCombat does (encounter tick, XP, level-ups, quest, end check).
         /// </remarks>
         internal void StepCombatForTests() => StepCombat();
+
+        /// <summary>Replaces the placeholder view factory (model-replacement seam, art-asset-pipeline.md#佔位模型).</summary>
+        /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: none.</remarks>
+        internal void UseViewFactory(ICreatureViewFactory factory)
+        {
+            Core.Contracts.Contract.Requires(factory != null, "factory required");
+            Core.Contracts.Contract.Requires(_plan == null, "view factory must be chosen before Configure");
+            _viewFactory = factory;
+        }
 
         /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
         /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
@@ -329,7 +329,7 @@ namespace Cosmimera.Bootstrap.Demo
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
-            _toonShader = toonShader;
+            _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
             if (terrainShader != null)
             {
                 float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
@@ -1040,33 +1040,19 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CreateView(EncounterUnit u, SpawnRole role)
         {
-            // REQ: art-asset-pipeline.md#佔位模型 — placeholder geometry by size class and main element until models land.
-            GameObject go = GameObject.CreatePrimitive(u.Side == EncounterSide.Player ? PrimitiveType.Capsule : PrimitiveType.Sphere);
-            Destroy(go.GetComponent<Collider>());
-            go.name = (u.Side == EncounterSide.Player ? "Ally " : "Wild ") + u.Def.Id;
-            float scale = u.BodyRadiusM * 2f * (role == SpawnRole.Boss ? 2.5f : role == SpawnRole.Elite ? 1.4f : 1f);
-            go.transform.localScale = new Vector3(scale, scale, scale);
-            var r = go.GetComponent<Renderer>();
-            Color color = ElementColors[(int)RunPlanner.MainElement(u.Def)];
-            if (_toonShader != null)
-            {
-                // Outline width is in world metres (the hull extrudes along the normalized world normal).
-                r.material = PlanetLook.CreatureMaterial(_toonShader, color, 0.03f);
-            }
-            else
-            {
-                r.material.color = color;
-            }
-            _views[u.Id] = go.transform;
-            _renderers[u.Id] = r;
-            go.SetActive(u.Fielded);
+            // REQ: art-asset-pipeline.md#佔位模型 — the factory is the model-replacement seam; D0 uses placeholders.
+            ICreatureView view = _viewFactory.Create(
+                new CreatureViewRequest(u.Def, u.Side == EncounterSide.Player, role, u.BodyRadiusM));
+            _views[u.Id] = view;
+            view.Root.gameObject.SetActive(u.Fielded);
         }
 
         private void SyncViews()
         {
             foreach (EncounterUnit u in _encounter.Units)
             {
-                Transform t = _views[u.Id];
+                ICreatureView view = _views[u.Id];
+                Transform t = view.Root;
                 bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
                 if (_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone)
                 {
@@ -1087,14 +1073,7 @@ namespace Cosmimera.Bootstrap.Demo
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
                 if (u.Combatant.IsFainted)
                 {
-                    if (_toonShader != null)
-                    {
-                        _renderers[u.Id].material.SetColor("_BaseColor", Color.gray);
-                    }
-                    else
-                    {
-                        _renderers[u.Id].material.color = Color.gray;
-                    }
+                    view.ShowFainted();
                 }
             }
         }
@@ -1135,7 +1114,7 @@ namespace Cosmimera.Bootstrap.Demo
             Camera cam = _rig.Camera;
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (!_views[u.Id].gameObject.activeSelf)
+                if (!_views[u.Id].Root.gameObject.activeSelf)
                 {
                     continue;
                 }
@@ -1382,12 +1361,9 @@ namespace Cosmimera.Bootstrap.Demo
                 Destroy(_playerMaterial);
             }
 
-            foreach (Transform t in _views.Values)
+            foreach (ICreatureView view in _views.Values)
             {
-                if (t != null)
-                {
-                    Destroy(t.gameObject);
-                }
+                view.Dispose();
             }
         }
     }
