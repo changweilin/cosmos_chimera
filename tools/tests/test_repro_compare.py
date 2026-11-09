@@ -7,8 +7,8 @@ spec = importlib.util.spec_from_file_location("repro_compare", Path(__file__).pa
 rc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rc)
 
-HEAD = "# cosmimera repro-probe v1\n# PlanetHeight.GeneratorVersion 3 RunPlanner.GeneratorVersion 1\n"
-ROW = "lava 1 640 a b c d 5 p q\n"
+HEAD = "# cosmimera repro-probe v3\n# PlanetHeight.GeneratorVersion 3 RunPlanner.GeneratorVersion 1\n"
+ROW = "lava 1 640 a b c d 5 p q 3f800000,00000000,00000000\n"
 
 
 def report(env="mono", rows=ROW, head=HEAD):
@@ -21,7 +21,7 @@ def test_identical_ignores_env_line():
 
 
 def test_counts_differences_per_column():
-    status, diffs, _ = rc.compare(report(), report(rows="lava 1 640 X b c d 5 Q q\n"))
+    status, diffs, _ = rc.compare(report(), report(rows="lava 1 640 X b c d 5 Q q 3f800000,00000000,00000000\n"))
     assert status == 1 and diffs["baseBits"] == 1 and diffs["plan"] == 1 and diffs["baseMm"] == 0
 
 
@@ -31,7 +31,7 @@ def test_header_mismatch_is_not_comparable():
 
 
 def test_row_set_mismatch_is_not_comparable():
-    status, _, _ = rc.compare(report(), report(rows=ROW + "lava 2 640 a b c d 5 p q\n"))
+    status, _, _ = rc.compare(report(), report(rows=ROW + "lava 2 640 a b c d 5 p q 3f800000,00000000,00000000\n"))
     assert status == 2
 
 
@@ -71,11 +71,11 @@ def _stats(base, surf):
 
 
 def test_policy_b_passes_geometry_within_tolerance_when_content_agrees():
-    _, diffs, _ = rc.compare(report(), report(rows="lava 1 640 X Y Z W 5 Q q\n"))
+    _, diffs, _ = rc.compare(report(), report(rows="lava 1 640 X Y Z W 5 Q q 3f800000,00000000,00000000\n"))
     assert rc.policy_b(diffs, _stats(0.0022, 0.003)) == (True, [])
 
 
-@pytest.mark.parametrize("rows, base", [("lava 1 640 a b c d 6 p q\n", 0.0), ("lava 1 640 a b c d 5 p Q\n", 0.0),
+@pytest.mark.parametrize("rows, base", [("lava 1 640 a b c d 6 p q 3f800000,00000000,00000000\n", 0.0), ("lava 1 640 a b c d 5 p Q 3f800000,00000000,00000000\n", 0.0),
                                         (ROW, 0.0031), (ROW, float("nan"))])
 def test_policy_b_fails_on_content_or_excess_geometry(rows, base):
     _, diffs, _ = rc.compare(report(), report(rows=rows))

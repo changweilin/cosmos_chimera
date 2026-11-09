@@ -4,14 +4,14 @@ Why per column: Q-T6 needs to know *which* layer diverges across machines/backen
 1 mm-rounded heights (option b), or the discrete RunPlan content that gameplay and netcode must agree on.
 Exit code 0 = identical rows, 1 = some column differs, 2 = the reports are not comparable (header/rows mismatch).
 With --policy b (Q-T6 decided 2026-11-09, docs/decisions/ADR-0007): 0 = PASS, i.e. discrete content identical and
-every height within TOLERANCE_M; 1 = FAIL; 2 = not comparable (including missing .samples dumps).
+every height and landing displacement within TOLERANCE_M; 1 = FAIL; 2 = not comparable (including missing .samples dumps).
 """
 import math
 import os
 import struct
 import sys
 
-COLUMNS = ["baseBits", "baseMm", "surfBits", "surfMm", "seaCount", "plan", "planDiscrete"]
+COLUMNS = ["baseBits", "baseMm", "surfBits", "surfMm", "seaCount", "plan", "planDiscrete", "landingBits"]
 # ADR-0007: content must agree exactly; geometry may differ by up to 3 mm across backends (IL2CPP measured 2.2 mm).
 DISCRETE_COLUMNS = ["seaCount", "planDiscrete"]
 TOLERANCE_M = 0.003
@@ -35,6 +35,10 @@ def parse(text):
         key = tuple(parts[:3])
         if key in rows:
             raise ValueError(f"duplicate row: {key}")
+        _landing(parts[-1])
+        radius = float(key[2])
+        if not math.isfinite(radius) or radius <= 0:
+            raise ValueError(f"invalid radius: {key[2]}")
         rows[key] = parts[3:]
     # Two empty or header-only files would otherwise compare IDENTICAL (SOL P3-10 S3).
     if not header or not header[0].startswith("# cosmimera repro-probe "):
@@ -64,6 +68,27 @@ def compare(a_text, b_text):
 
 def _f32(hex_bits):
     return struct.unpack("<f", struct.pack("<I", int(hex_bits, 16)))[0]
+
+
+def _landing(bits):
+    """Decode v3 landingBits; reject missing/non-finite/zero directions before any policy verdict."""
+    parts = bits.split(",")
+    if len(parts) != 3 or any(len(p) != 8 or any(c not in "0123456789abcdefABCDEF" for c in p) for p in parts):
+        raise ValueError(f"malformed landingBits: {bits!r}")
+    direction = tuple(_f32(p) for p in parts)
+    length = math.sqrt(sum(v * v for v in direction))
+    if not math.isfinite(length) or length == 0:
+        raise ValueError(f"non-finite or zero landing direction: {bits!r}")
+    return tuple(v / length for v in direction)
+
+
+def landing_max_distance(a_text, b_text):
+    """ADR-0007 geometry: chord displacement in metres at report radius, independent of height and content."""
+    _, ra = parse(a_text)
+    _, rb = parse(b_text)
+    if ra.keys() != rb.keys():
+        raise ValueError("landing row keys differ")
+    return max(float(key[2]) * math.dist(_landing(ra[key][-1]), _landing(rb[key][-1])) for key in ra)
 
 
 def sample_stats(a_text, b_text):
@@ -166,6 +191,9 @@ def main(argv):
         if stats is None:
             print("Q-T6(b) NOT COMPARABLE: both .samples dumps are required to check the height tolerance")
             return 2
+        landing = landing_max_distance(report_a, report_b)
+        print(f"landing directions: max displacement = {landing:.6g} m")
+        stats["landing"] = [landing, 0, 0]
         passed, reasons = policy_b(diffs, stats)
         print("Q-T6(b) PASS" if passed else "Q-T6(b) FAIL: " + "; ".join(reasons))
         return 0 if passed else 1

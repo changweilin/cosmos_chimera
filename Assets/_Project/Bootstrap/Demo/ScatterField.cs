@@ -151,7 +151,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Spawns the items of one cell, or none.</summary>
         /// <remarks>
-        /// Pre: Configure called; key from <see cref="KeyOf"/>. Post: ≤ 1 item rooted at the ground of that cell.
+        /// Pre: Configure called; key encodes (face, j, i). Post: ≤ 1 item rooted at the ground of that cell.
         /// Why a per-cell RNG stream: the same cell regenerates identically after being streamed out and back in.
         /// Side effects: creates GameObjects.
         /// </remarks>
@@ -274,13 +274,55 @@ namespace Cosmimera.Bootstrap.Demo
             return m;
         }
 
-        private long KeyOf(float3 dir)
+        private void CollectCells(float3 up)
         {
-            CubeFace face = CubeSphere.DirectionToFace(dir, out float u, out float v);
             int n = _cellsPerFace;
-            int i = math.clamp((int)((u + 1f) * 0.5f * n), 0, n - 1);
-            int j = math.clamp((int)((v + 1f) * 0.5f * n), 0, n - 1);
-            return ((long)(int)face * n + j) * n + i;
+            // Each parameter's angular derivative is at most π/4. A cell's centre is therefore at most
+            // R·π/(2n) from any point in it (two half-widths). Padding keeps every intersecting cell,
+            // including cells found by the former tangent-disc sampler; per-cell RNG keys stay unchanged.
+            float angle = math.min(math.PI, RadiusM / _config.Radius + math.PI / (2f * n));
+            float chord = 2f * math.sin(angle * 0.5f) + 1e-6f;
+            _wanted.Clear();
+            for (int f = 0; f < CubeSphere.FaceCount; f++)
+            {
+                var face = (CubeFace)f;
+                float normal = math.dot(up, (float3)CubeSphere.Normal(face));
+                // Every direction owned by this face has normal component ≥ 1/√3. Intersect its
+                // component interval with the cap's chord ball before dividing to bound tan(u·π/4).
+                float lo = math.max(math.rsqrt(3f), normal - chord);
+                float hi = math.min(1f, normal + chord);
+                if (lo > hi)
+                {
+                    continue;
+                }
+
+                CellRange(math.dot(up, (float3)CubeSphere.AxisU(face)), chord, lo, hi, n, out int iMin, out int iMax);
+                CellRange(math.dot(up, (float3)CubeSphere.AxisV(face)), chord, lo, hi, n, out int jMin, out int jMax);
+                for (int j = jMin; j <= jMax; j++)
+                {
+                    for (int i = iMin; i <= iMax; i++)
+                    {
+                        float3 centre = CubeSphere.FaceToDirection(face, -1f + 2f * (i + 0.5f) / n,
+                            -1f + 2f * (j + 0.5f) / n);
+                        if (math.distancesq(up, centre) <= chord * chord)
+                        {
+                            _wanted.Add(((long)f * n + j) * n + i);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void CellRange(float component, float chord, float lo, float hi, int n,
+            out int first, out int last)
+        {
+            float a = component - chord;
+            float b = component + chord;
+            float min = CubeSphere.Unwarp(a / (a < 0f ? lo : hi));
+            float max = CubeSphere.Unwarp(b / (b > 0f ? lo : hi));
+            // An extra index absorbs inverse-projection rounding at exact cell boundaries.
+            first = math.clamp((int)math.floor((min + 1f) * 0.5f * n) - 1, 0, n - 1);
+            last = math.clamp((int)math.floor((max + 1f) * 0.5f * n) + 1, 0, n - 1);
         }
 
         private void Update()
@@ -305,25 +347,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void Refresh(float3 focus)
         {
             float3 up = _config.ToDirection(focus);
-            PlanetFrame frame = PlanetFrame.FromUp(up);
-            float3 centre = _config.ToWorld(up, 0f);
-            _wanted.Clear();
-            // Half-cell sampling of the disc guarantees every intersecting cell is hit at least once.
-            float step = CellM * 0.5f;
-            int span = (int)math.ceil(RadiusM / step);
-            for (int a = -span; a <= span; a++)
-            {
-                for (int b = -span; b <= span; b++)
-                {
-                    float3 offset = frame.East * (a * step) + frame.North * (b * step);
-                    if (math.lengthsq(offset) > RadiusM * RadiusM)
-                    {
-                        continue;
-                    }
-
-                    _wanted.Add(KeyOf(_config.ToDirection(centre + offset)));
-                }
-            }
+            CollectCells(up);
 
             _stale.Clear();
             foreach (long key in _live.Keys)

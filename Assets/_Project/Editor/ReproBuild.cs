@@ -17,9 +17,17 @@ namespace Cosmimera.EditorTools
     public static class ReproBuild
     {
         /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.EditorTools.ReproBuild.BuildAll</c>.</summary>
-        /// <remarks>Pre: as the class. Post: both players built, or Editor exits 1. Side effects: as the class.</remarks>
-        public static void BuildAll()
+        /// <remarks>Pre: as the class. Post: outside batchmode throws before any side effects; otherwise both players
+        /// built, or Editor exits 1. Side effects: as the class.</remarks>
+        public static void BuildAll() => BuildAll(UnityEngine.Application.isBatchMode);
+
+        private static void BuildAll(bool isBatchMode)
         {
+            if (!isBatchMode)
+            {
+                throw new InvalidOperationException("ReproBuild.BuildAll requires batchmode");
+            }
+
             NamedBuildTarget target = NamedBuildTarget.Standalone;
             ScriptingImplementation previous = PlayerSettings.GetScriptingBackend(target);
             int code = 0;
