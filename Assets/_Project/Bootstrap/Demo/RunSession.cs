@@ -95,7 +95,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// Side effects: owns every object it creates and destroys them in OnDestroy.
     /// Run actions are cloned per session so enabling or disposing a run never changes the shared input asset.
     /// </remarks>
-    public sealed class RunSession : MonoBehaviour
+    public sealed partial class RunSession : MonoBehaviour
     {
         private const int TickMs = 50;
         private const long KnockedOutWindowMs = 20000;
@@ -158,7 +158,11 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly HashSet<int> _appeared = new HashSet<int>();
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
+        /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
+        /// <remarks>Pre: observer must not mutate the run. Post: called before each tick. Side effects: invokes the observer.</remarks>
         internal Action BeforeTickForTests;
+        /// <summary>Synchronizes views for isolated view tests; per-frame wiring tests must use Unity Update.</summary>
+        /// <remarks>Pre: Configure ran. Post: views reflect current units. Side effects: view transforms and materials.</remarks>
         internal void SyncViewsForTests() => SyncViews();
         internal void AbandonForTests() => RequestAbandon();
         internal bool EndedForTests => _ended;
@@ -192,12 +196,6 @@ namespace Cosmimera.Bootstrap.Demo
         private Material _playerMaterial;
 
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
-        internal Encounter EncounterForTests => _encounter;
-
-        internal RunPlan PlanForTests => _plan;
-
-        internal PlanetRig RigForTests => _rig;
-
         internal bool StartedForTests => _started;
 
         internal VesselKind VesselForTests => _vessel;
@@ -205,17 +203,6 @@ namespace Cosmimera.Bootstrap.Demo
         internal int MainForTests => _mainId;
 
         internal AiCommandKind CommandForTests => _command.Kind;
-
-        // Seams for RunSessionProgressionTests (P2-12 regression). They expose state or call existing private flow; none
-        // changes behaviour while _injectedFaints stays empty.
-
-        /// <summary>Team rule state, so a test can read Active/InCombat without re-deriving them.</summary>
-        /// <remarks>Pre: Configure ran. Post: the live TeamState (callers must not drive it). Side effects: none.</remarks>
-        internal TeamState TeamForTests => _team;
-
-        /// <summary>The quest tracker of this run.</summary>
-        /// <remarks>Pre: Configure ran. Post: the live QuestTracker (read only for callers). Side effects: none.</remarks>
-        internal QuestTracker QuestForTests => _quest;
 
         /// <summary>Simulation time of the last <see cref="StepCombatForTests"/> (ms).</summary>
         /// <remarks>Pre: none. Post: &gt;= 1000, equals the nowMs of the last Encounter.Tick. Side effects: none.</remarks>
