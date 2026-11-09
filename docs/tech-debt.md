@@ -25,11 +25,5 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | R8 | low | `Settle` Post 應寫成 `min(Exp, MaxExp) + Paid <= MaxExp` |
 | 同上 | R9 | low | `XpRecipient` 建構子未以 Contract 檢查 id/exp（由 `Settle` 攔截） |
 | `docs/reviews/P2-12-sol-r3.md` | R3-04 | low | `Encounter.SetLevel` 的戰鬥外限制只寫在 Pre，未檢查（呼叫端 `RunSession` 以 `InCombat` 把關） |
-| `docs/reviews/P2-12-sol-r5.md` | R5-01 | med | `RunSession.InjectFaintForTests` 未去重：同 id 排入兩次會重複發擊倒 XP（僅測試接縫，正式路徑不呼叫） |
-| 同上 | R5-02 | med | XP 回歸測試的擊倒全走注入，未經正式 `Encounter.Tick` Faint 分派；移除正式 `OnFaint` 呼叫不會被測出。需補一例真實 Tick 擊倒 |
-| 同上 | R5-03 | med | R3-01 測試只看 Step 後等級，無法證明升級在首個 Tick 前生效（把 `ApplyLevelUps` 移到 Tick 後仍通過） |
-| 同上 | R5-04 | med | RunSession XP oracle 多處重算 `Split`／共用 `WildLevel`，且只測全存活、ID＝槽位＋1；死亡分母與永久 ID 平手接線無守護 |
-| 同上 | R5-05 | low | 測試接縫未以 `UNITY_EDITOR` 排除於正式 build；accessor 回傳可變 live 物件 |
-| 同上 | R5-06 | low | 回歸測試讀正式 balance 卻斷言精確 XP 值，平衡調整會誤報；改用合成 progression fixture |
+| `docs/reviews/P2-12-sol-r5.md` | R5-05 | low | 測試接縫及注入佇列已排除於一般玩家建置；accessor 仍回傳可變 live 物件，需改為快照與受控操作後才能關閉 |
 | `docs/reviews/P2-05-wiring-sol.md` | W-03 | med | 素材接線 PlayMode 仍只涵蓋普通＋BOSS 注入擊倒：精英、真實 Tick 分派、End 回呼經 `DemoGame.OnRunEnded` 入帳、勝／敗／放棄各路徑，以及 JsonUtility 對 qty/tier 小數／數字字串／超出 Int32 的嚴格性未測（進化落盤、拒絕不變、W-01／W-02 交易已由 `LobbyTransactionsTests` 涵蓋） |
-| `docs/reviews/P2-05-views-sol.md` | V-01 | med | view 接線測試未經 SyncViews：RunSession 不呼叫 `ShowFainted` 不會被測出；佔位外觀（primitive、十色、toon 外框 0.03 m）未以固定基準斷言 |

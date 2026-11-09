@@ -64,6 +64,44 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [UnityTest]
+        public IEnumerator Placeholder_baseline_covers_all_elements_and_both_primitives()
+        {
+            Color[] colors = {
+                new Color(0.75f, 0.75f, 0.8f), new Color(0.3f, 0.7f, 0.25f), new Color(0.2f, 0.5f, 0.95f),
+                new Color(0.95f, 0.35f, 0.15f), new Color(0.6f, 0.45f, 0.25f), new Color(0.6f, 0.9f, 1f),
+                new Color(0.6f, 0.95f, 0.7f), new Color(0.95f, 0.85f, 0.2f), new Color(1f, 0.97f, 0.75f),
+                new Color(0.35f, 0.25f, 0.5f),
+            };
+            Shader shader = Toon();
+            var factory = new PlaceholderCreatureViewFactory(shader);
+            CreatureDef def = ScriptableObject.CreateInstance<CreatureDef>();
+            var serialized = new SerializedObject(def);
+            SerializedProperty mastery = serialized.FindProperty("mastery");
+            mastery.arraySize = 1;
+            for (int i = 0; i < colors.Length; i++)
+            {
+                mastery.GetArrayElementAtIndex(0).FindPropertyRelative("element").enumValueIndex = i;
+                mastery.GetArrayElementAtIndex(0).FindPropertyRelative("value").intValue = 1;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                foreach (bool ally in new[] { true, false })
+                {
+                    ICreatureView view = factory.Create(new CreatureViewRequest(def, ally, SpawnRole.Normal, 0.5f));
+                    GameObject root = view.Root.gameObject;
+                    Assert.That(root.GetComponent<CapsuleCollider>() != null, Is.EqualTo(ally));
+                    Assert.That(root.GetComponent<SphereCollider>() != null, Is.EqualTo(!ally));
+                    Material material = root.GetComponent<Renderer>().sharedMaterial;
+                    Assert.That(material.shader, Is.SameAs(shader));
+                    Assert.That(material.GetFloat("_OutlineWidth"), Is.EqualTo(0.03f).Within(1e-6f));
+                    AssertColor(material.GetColor("_BaseColor"), colors[i]);
+                    view.Dispose();
+                }
+            }
+
+            Object.Destroy(def);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Create_ToonAndFallback_ColliderFreeSizedGreysOutAndDisposes([Values(true, false)] bool toon)
         {
             CreatureDef def = AnyCreature();
