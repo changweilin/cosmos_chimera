@@ -152,6 +152,7 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
+        private readonly List<int> _injectedFaints = new List<int>();
         private Progression _progression;
         private int[] _partyExp;
         private bool[] _questPaid;
@@ -192,6 +193,57 @@ namespace Cosmimera.Bootstrap.Demo
         internal int MainForTests => _mainId;
 
         internal AiCommandKind CommandForTests => _command.Kind;
+
+        // Seams for RunSessionProgressionTests (P2-12 regression). They expose state or call existing private flow; none
+        // changes behaviour while _injectedFaints stays empty.
+
+        /// <summary>Team rule state, so a test can read Active/InCombat without re-deriving them.</summary>
+        /// <remarks>Pre: Configure ran. Post: the live TeamState (callers must not drive it). Side effects: none.</remarks>
+        internal TeamState TeamForTests => _team;
+
+        /// <summary>The quest tracker of this run.</summary>
+        /// <remarks>Pre: Configure ran. Post: the live QuestTracker (read only for callers). Side effects: none.</remarks>
+        internal QuestTracker QuestForTests => _quest;
+
+        /// <summary>Simulation time of the last <see cref="StepCombatForTests"/> (ms).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 1000, equals the nowMs of the last Encounter.Tick. Side effects: none.</remarks>
+        internal long NowMsForTests => _nowMs;
+
+        /// <summary>Encounter unit id of each party slot, in party order.</summary>
+        /// <remarks>Pre: Configure ran. Post: one id per RunSetup.Party slot. Side effects: none.</remarks>
+        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits;
+
+        /// <summary>Cumulative XP of one party slot right now.</summary>
+        /// <remarks>Pre: 0 &lt;= slot &lt; party size. Post: &gt;= the slot's starting XP. Side effects: none.</remarks>
+        internal int PartyExpForTests(int slot) => _partyExp[slot];
+
+        /// <summary>Runs exactly one fixed combat step, the same code Update runs per 50 ms tick.</summary>
+        /// <remarks>
+        /// Pre: Configure ran; the component is disabled so Update does not tick as well.
+        /// Post: _nowMs advanced by one tick.
+        /// Side effects: everything StepCombat does (encounter tick, XP, level-ups, quest, end check).
+        /// </remarks>
+        internal void StepCombatForTests() => StepCombat();
+
+        /// <summary>Swaps the main for the first eligible reserve, exactly as the Switch input does.</summary>
+        /// <remarks>Pre: Configure ran. Post: as SwitchMain. Side effects: as SwitchMain (team, encounter, toast).</remarks>
+        internal void SwitchMainForTests() => SwitchMain();
+
+        /// <summary>Queues the knock-out of a wild unit that a test already took to 0 HP, to be settled in the next step.</summary>
+        /// <remarks>
+        /// Pre: wildUnitId is a wild unit with 0 HP whose knock-out has not been settled yet.
+        /// Post: the next StepCombat settles it like an Encounter Faint event (after that tick's real events).
+        /// Side effects: appends to the queue; nothing else until the next step.
+        /// </remarks>
+        internal void InjectFaintForTests(int wildUnitId)
+        {
+            Core.Contracts.Contract.Requires(_encounter != null && wildUnitId >= 0 && wildUnitId < _encounter.Units.Count,
+                "unknown unit");
+            Core.Contracts.Contract.Requires(_encounter.Units[wildUnitId].Side == EncounterSide.Wild &&
+                _encounter.Units[wildUnitId].Combatant.IsFainted && _wild[wildUnitId].KnockedOutAtMs < 0,
+                "only an unsettled fainted wild unit can be injected");
+            _injectedFaints.Add(wildUnitId);
+        }
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
@@ -399,6 +451,14 @@ namespace Cosmimera.Bootstrap.Demo
                     OnFaint(ev.TargetId);
                 }
             }
+
+            // Test seam: empty in play. A knock-out a test produced out of band settles exactly like a Tick event.
+            for (int i = 0; i < _injectedFaints.Count; i++)
+            {
+                OnFaint(_injectedFaints[i]);
+            }
+
+            _injectedFaints.Clear();
 
             if (!engaged && _team.InCombat)
             {
