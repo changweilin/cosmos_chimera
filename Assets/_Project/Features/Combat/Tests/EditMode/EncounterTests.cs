@@ -116,6 +116,11 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(99, 50));
             e.SetLevel(grown.Id, 30);
             Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp), "same level is a no-op");
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, def, null, Dir(2f), 10);
+            wild.Engaged = true;
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(grown.Id, 31), "not mid-fight");
+            wild.Engaged = false;
+            e.SetLevel(grown.Id, 31);
         }
 
         [Test]

@@ -19,12 +19,6 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Bootstrap/Demo/RunSession.cs` | D0-X2 | low | 副手經驗只在 `Progression.Settle` 規則層；D0 無副手編成，run 只結算主力 |
 | 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1；野生等級只隨區域 tier 與角色變化 |
 | `docs/decisions/ADR-0007-generation-reproducibility.md` | Q-T6-R1 | med | 生成點選陸地（`IsSea(direction)`）與 Scatter 讀浮點方向，格界附近跨後端可能翻轉；P6 握手比對 `planDiscrete` 偵測，不一致時改以主機計畫下發 |
-| `docs/reviews/P2-12-sol.md` | R6 | low | `QuestTracker.OnKnockedOut` 未忽略同一 spawn 重送；D0 Encounter 不會重送，屬防禦缺口 |
-| `docs/reviews/D0-E1-R3-R5-sol.md` | R5-01 | med | `Progression.FromJson` 的配置包絡與 Int32 上限是 `Contract.Requires`，Release 剝除後非核定配置仍可讓 `SourceXp` 為負；核定值安全。打包前以契約啟用版驗證同一 balance.json，或改不剝除的拒絕路徑 |
-| `docs/reviews/P2-12-sol.md` | R7 | low | `XpSettlement.Paid/Assigned` 回傳可轉型的原始陣列 |
-| 同上 | R8 | low | `Settle` Post 應寫成 `min(Exp, MaxExp) + Paid <= MaxExp` |
-| 同上 | R9 | low | `XpRecipient` 建構子未以 Contract 檢查 id/exp（由 `Settle` 攔截） |
-| `docs/reviews/P2-12-sol-r3.md` | R3-04 | low | `Encounter.SetLevel` 的戰鬥外限制只寫在 Pre，未檢查（呼叫端 `RunSession` 以 `InCombat` 把關） |
 | `docs/reviews/P2-12-sol-r5.md` | R5-01 | med | `RunSession.InjectFaintForTests` 未去重：同 id 排入兩次會重複發擊倒 XP（僅測試接縫，正式路徑不呼叫） |
 | 同上 | R5-02 | med | XP 回歸測試的擊倒全走注入，未經正式 `Encounter.Tick` Faint 分派；移除正式 `OnFaint` 呼叫不會被測出。需補一例真實 Tick 擊倒 |
 | 同上 | R5-03 | med | R3-01 測試只看 Step 後等級，無法證明升級在首個 Tick 前生效（把 `ApplyLevelUps` 移到 Tick 後仍通過） |

@@ -206,19 +206,28 @@ namespace Cosmimera.Creatures.Tests
         }
 
         [Test]
+        public void Settlement_lists_cannot_be_cast_back_and_mutated()
+        {
+            XpSettlement s = P.Settle(10, new[] { new XpRecipient(1, 0, false, true, -1) });
+            Assert.IsNotInstanceOf<int[]>(s.Paid);
+            Assert.IsNotInstanceOf<int[]>(s.Assigned);
+            Assert.Throws<System.NotSupportedException>(() => ((IList<int>)s.Paid)[0] = 99);
+        }
+
+        [Test]
         public void FromJson_rejects_missing_or_unsupported_sections()
         {
-            Assert.Throws<ContractException>(() => Progression.FromJson(""));
-            Assert.Throws<ContractException>(() => Progression.FromJson("{}"));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(""));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson("{}"));
             string json = BalanceJson();
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"sidekick_share_divisor\": 2", "\"sidekick_share_divisor\": 3")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"xp_growth_numerator\": 105", "\"xp_growth_numerator\": 100")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"starter_level\": 10", "\"starter_level\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"sidekick_share_divisor\": 2", "\"sidekick_share_divisor\": 3")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_growth_numerator\": 105", "\"xp_growth_numerator\": 100")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"starter_level\": 10", "\"starter_level\": 0")));
             Assert.AreEqual(10, Progression.FromJson(json).StarterLevel);
             // SOL P2-12 R5: the Python envelope (elite 1..100) and no config whose source reward overflows Int32.
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
         }
 
         // The bands live in the schema, CreatureDef and balance.json; tools/tests checks schema == balance.json.

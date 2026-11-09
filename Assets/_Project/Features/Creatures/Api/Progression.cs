@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
@@ -25,6 +26,8 @@ namespace Cosmimera.Creatures
         /// <remarks>Pre: see type. Post: properties equal the arguments. Side effects: none.</remarks>
         public XpRecipient(int instanceId, int exp, bool dead, bool appeared, int owner)
         {
+            Contract.Requires(instanceId >= 1, "instance id must be >= 1");
+            Contract.Requires(exp >= 0, "exp must be >= 0");
             InstanceId = instanceId;
             Exp = exp;
             Dead = dead;
@@ -59,15 +62,16 @@ namespace Cosmimera.Creatures
     {
         internal XpSettlement(int[] paid, int[] assigned, long mainLoss, long sidekickEntitlementHalves, long sidekickPaid)
         {
-            Paid = paid;
-            Assigned = assigned;
+            // Read-only wrappers: a raw int[] behind IReadOnlyList can be cast back and mutated (SOL P2-12 R7).
+            Paid = Array.AsReadOnly(paid);
+            Assigned = Array.AsReadOnly(assigned);
             MainLoss = mainLoss;
             SidekickEntitlementHalves = sidekickEntitlementHalves;
             SidekickPaid = sidekickPaid;
         }
 
         /// <summary>XP credited per recipient (same order as the input), after the LV100 cap.</summary>
-        /// <remarks>Pre: none. Post: each &gt;= 0 and Exp + Paid &lt;= MaxExp. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: each &gt;= 0 and min(Exp, MaxExp) + Paid &lt;= MaxExp. Side effects: none.</remarks>
         public IReadOnlyList<int> Paid { get; }
 
         /// <summary>XP assigned per recipient before the cap (mains: integer share; sidekicks: group share).</summary>
@@ -133,10 +137,10 @@ namespace Cosmimera.Creatures
                 // compounding the rounding would drift from the approved table (level-progression.md#指數經驗曲線).
                 BigInteger scaled = d.xp_first_level_cost * num;
                 BigInteger cost = BigInteger.Divide(scaled + den - 1, den);
-                Contract.Requires(cost <= int.MaxValue, "xp cost exceeds Int32");
+                Check(cost <= int.MaxValue, "xp cost exceeds Int32");
                 _costs[level] = (int)cost;
                 total += (int)cost;
-                Contract.Requires(total <= int.MaxValue, "cumulative xp exceeds Int32");
+                Check(total <= int.MaxValue, "cumulative xp exceeds Int32");
                 _thresholds[level + 1] = (int)total;
                 num *= d.xp_growth_numerator;
                 den *= d.xp_growth_denominator;
@@ -173,36 +177,38 @@ namespace Cosmimera.Creatures
         /// Pre: json is Data/balance.json content with a complete progression section (curve growth &gt; 1, positive
         ///      costs, 3 stage floors inside 1..MaxLevel, 5 base XP values &gt;= 0, elite multiplier 1..100, every
         ///      source's reward at C(MaxLevel−1) within Int32, weights &gt;= 1, divisor 2).
-        /// Post: thresholds strictly increase and fit Int32. ContractException on any violation.
+        /// Post: thresholds strictly increase and fit Int32. <see cref="InvalidDataException"/> on any violation, in
+        ///       every build: these are data checks, and a Release build that strips them would let an unapproved
+        ///       config make SourceXp negative (tech-debt R5-01).
         /// Side effects: allocates.
         /// </remarks>
         public static Progression FromJson(string json)
         {
-            Contract.Requires(!string.IsNullOrEmpty(json), "balance json must not be empty");
+            Check(!string.IsNullOrEmpty(json), "balance json must not be empty");
             Root root = JsonUtility.FromJson<Root>(json);
             Dto d = root?.progression;
-            Contract.Requires(d != null && d.migration_stage_floor_levels != null && d.rewards != null &&
+            Check(d != null && d.migration_stage_floor_levels != null && d.rewards != null &&
                 d.rewards.base_xp != null && d.rewards.wild_level != null && d.rewards.wild_level.role_bonus != null,
                 "balance json is missing the progression section");
-            Contract.Requires(d.level_max >= 2 && d.level_max <= 1000, "level_max out of range");
-            Contract.Requires(d.starter_level >= MinLevel && d.starter_level <= d.level_max, "starter_level out of range");
-            Contract.Requires(d.xp_first_level_cost >= 1 && d.xp_growth_denominator >= 1 &&
+            Check(d.level_max >= 2 && d.level_max <= 1000, "level_max out of range");
+            Check(d.starter_level >= MinLevel && d.starter_level <= d.level_max, "starter_level out of range");
+            Check(d.xp_first_level_cost >= 1 && d.xp_growth_denominator >= 1 &&
                 d.xp_growth_numerator > d.xp_growth_denominator, "xp curve must start >= 1 and grow");
-            Contract.Requires(d.migration_stage_floor_levels.Length == 3, "three stage floor levels are required");
+            Check(d.migration_stage_floor_levels.Length == 3, "three stage floor levels are required");
             foreach (int f in d.migration_stage_floor_levels)
             {
-                Contract.Requires(f >= MinLevel && f <= d.level_max, "stage floor level out of range");
+                Check(f >= MinLevel && f <= d.level_max, "stage floor level out of range");
             }
 
             RewardsDto r = d.rewards;
-            Contract.Requires(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
+            Check(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
                 r.base_xp.quest_chain >= 0 && r.base_xp.boss >= 0, "base xp must be >= 0");
-            Contract.Requires(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
+            Check(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
             // Same envelope as tools/balance/level_rewards.py (SOL P2-12 R5): C# and Python must accept the same configs.
-            Contract.Requires(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
+            Check(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
             // The ledger counts sidekick entitlement in half points; another divisor needs a different ledger unit.
-            Contract.Requires(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
-            Contract.Requires(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
+            Check(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
+            Check(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
             var progression = new Progression(d);
             // SourceXp is monotonic in level and elite, so its largest value per source is at C(MaxLevel−1) with the
             // multiplier. Bounding that by Int32 here also bounds SourceXp's Int64 product (< 2^31 · C(ref) < 2^62), so
@@ -212,11 +218,20 @@ namespace Cosmimera.Creatures
             {
                 int multiplier = s == (int)XpSource.Wild ? progression._eliteMultiplier : 1;
                 BigInteger top = progression._baseXp[s] * maxCost * multiplier / progression._costs[progression._referenceLevel];
-                Contract.Requires(top <= int.MaxValue, "base xp makes a source reward exceed Int32 at the level cap");
+                Check(top <= int.MaxValue, "base xp makes a source reward exceed Int32 at the level cap");
             }
 
             return progression;
         }
+
+        private static void Check(bool condition, string message)
+        {
+            if (!condition)
+            {
+                throw new InvalidDataException("balance progression: " + message);
+            }
+        }
+
 
         /// <summary>Minimum cumulative XP for <paramref name="level"/>, T(L).</summary>
         /// <remarks>Pre: 1 &lt;= level &lt;= MaxLevel. Post: T(1) == 0; strictly increasing. Side effects: none.</remarks>
@@ -298,8 +313,8 @@ namespace Cosmimera.Creatures
         /// Pre: pool &gt;= 0; 1..6 mains (Owner == -1) listed before their sidekicks; each sidekick's Owner indexes a
         ///      main; instance ids &gt;= 1 and unique; Exp &gt;= 0.
         /// Post: sum(main Paid) + MainLoss == pool; a dead recipient gets 0; when any main lives,
-        ///       sum(main Assigned) == pool; Exp + Paid &lt;= MaxExp for every recipient (Exp above MaxExp is
-        ///       treated as MaxExp, earning nothing); identical inputs give identical outputs.
+        ///       sum(main Assigned) == pool; min(Exp, MaxExp) + Paid &lt;= MaxExp for every recipient (Exp
+        ///       above MaxExp earns nothing); identical inputs give identical outputs.
         /// Side effects: allocates the result.
         /// </remarks>
         public XpSettlement Settle(int pool, IReadOnlyList<XpRecipient> recipients)

@@ -327,13 +327,26 @@ namespace Cosmimera.Combat
             return unit;
         }
 
+        private bool AnyActiveEngaged()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].Engaged && _units[i].IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Raises a unit to <paramref name="level"/> between battles: CON/SPI/AGI and STR-scaled hit volumes are re-derived
         /// from the form's LV100 basis. REQ: Q-C31 (2026-11-09) — level-up effects settle when the battle ends.
         /// </summary>
         /// <remarks>
-        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while the
-        ///      unit is out of combat (the caller owns battle state; stats must not change mid-fight, Q-C31).
+        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while no
+        ///      active unit is Engaged (stats must not change mid-fight, Q-C31).
         /// Post: Level == level; volumes and stats equal those AddCreature would build at that level; Hp grows by the MaxHp
         ///       increase; position, cooldowns and effects unchanged. level == Level is a no-op.
         /// Side effects: mutates the unit.
@@ -344,6 +357,9 @@ namespace Cosmimera.Combat
             EncounterUnit u = _units[unitId];
             Contract.Requires(level >= u.Level && level <= 100, "level must be in Level..100");
             Contract.Requires(!u.Combatant.IsFainted, "a fainted unit cannot level up");
+            // The Pre "between battles" is checkable here: a battle exists exactly while an active wild is engaged
+            // (RunSession.AnyEngaged), so a mid-fight call is a caller bug rather than a rule we can only document.
+            Contract.Requires(!AnyActiveEngaged(), "stats must not change mid-fight (Q-C31)");
             if (level == u.Level)
             {
                 return;
