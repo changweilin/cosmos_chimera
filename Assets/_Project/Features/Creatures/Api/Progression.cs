@@ -171,7 +171,8 @@ namespace Cosmimera.Creatures
         /// <summary>Parses the <c>progression</c> section of balance.json.</summary>
         /// <remarks>
         /// Pre: json is Data/balance.json content with a complete progression section (curve growth &gt; 1, positive
-        ///      costs, 3 stage floors inside 1..MaxLevel, 5 base XP values &gt;= 0, weights &gt;= 1, divisor 2).
+        ///      costs, 3 stage floors inside 1..MaxLevel, 5 base XP values &gt;= 0, elite multiplier 1..100, every
+        ///      source's reward at C(MaxLevel−1) within Int32, weights &gt;= 1, divisor 2).
         /// Post: thresholds strictly increase and fit Int32. ContractException on any violation.
         /// Side effects: allocates.
         /// </remarks>
@@ -197,11 +198,24 @@ namespace Cosmimera.Creatures
             Contract.Requires(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
                 r.base_xp.quest_chain >= 0 && r.base_xp.boss >= 0, "base xp must be >= 0");
             Contract.Requires(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
-            Contract.Requires(r.elite_multiplier >= 1, "elite_multiplier must be >= 1");
+            // Same envelope as tools/balance/level_rewards.py (SOL P2-12 R5): C# and Python must accept the same configs.
+            Contract.Requires(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
             // The ledger counts sidekick entitlement in half points; another divisor needs a different ledger unit.
             Contract.Requires(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
             Contract.Requires(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
-            return new Progression(d);
+            var progression = new Progression(d);
+            // SourceXp is monotonic in level and elite, so its largest value per source is at C(MaxLevel−1) with the
+            // multiplier. Bounding that by Int32 here also bounds SourceXp's Int64 product (< 2^31 · C(ref) < 2^62), so
+            // SourceXp can never wrap negative at run time (SOL P2-12 R5: base and elite at Int32.Max gave −1982292521).
+            BigInteger maxCost = progression._costs[progression.MaxLevel - 1];
+            for (int s = 0; s < progression._baseXp.Length; s++)
+            {
+                int multiplier = s == (int)XpSource.Wild ? progression._eliteMultiplier : 1;
+                BigInteger top = progression._baseXp[s] * maxCost * multiplier / progression._costs[progression._referenceLevel];
+                Contract.Requires(top <= int.MaxValue, "base xp makes a source reward exceed Int32 at the level cap");
+            }
+
+            return progression;
         }
 
         /// <summary>Minimum cumulative XP for <paramref name="level"/>, T(L).</summary>

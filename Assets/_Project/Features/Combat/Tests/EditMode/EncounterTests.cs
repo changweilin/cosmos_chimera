@@ -133,6 +133,43 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(60, 10, 10), "fainted");
         }
 
+        // REQ: docs/design/combat.md#場地 — a field resolves at placement and every field.tick_ms, ceil(life/tick) times.
+        [Test]
+        public void Field_move_resolves_ceil_lifetime_over_tick_times_then_expires()
+        {
+            var field = ScriptableObject.CreateInstance<MoveDef>();
+            _created.Add(field);
+            field.SetId("fire_field");
+            field.Set(Element.Fire, MoveKind.Damage, 1, null, 0, 3500, 60000, 100, RangeClass.Mid, MoveShape.Field,
+                12000, MoveMovement.None, BurstOrigin.Caster);
+            MoveDef nibble = Move("fire_nibble", 1, MoveShape.Front, RangeClass.Melee, 2000);
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", field, AiStyle.Hold), null, Dir(0f), 100);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
+            e.Field(mine.Id, Dir(0f), false, 0);
+            var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
+            int resolutions = 0;
+            bool sawActive = false;
+            for (int t = 1; t <= 200; t++)
+            {
+                e.Tick(t * 50L, 50, _planet.ToWorld(Dir(-0.05f), 1f), free, mine.Id);
+                sawActive |= e.ActiveFieldCount > 0;
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    if (ev.SourceId == mine.Id && ev.TargetId == wild.Id &&
+                        (ev.Kind == EncounterEventKind.Hit || ev.Kind == EncounterEventKind.Miss))
+                    {
+                        resolutions++;
+                    }
+                }
+            }
+
+            Assert.That(sawActive, Is.True);
+            Assert.That(resolutions, Is.EqualTo(4), "3500 ms life / 1000 ms tick → 4 resolutions from one cast");
+            Assert.That(e.ActiveFieldCount, Is.EqualTo(0), "the field expires after its last tick");
+            Assert.That(wild.Combatant.IsFainted, Is.False);
+        }
+
         [Test]
         public void Two_charging_creatures_close_in_and_one_faints()
         {

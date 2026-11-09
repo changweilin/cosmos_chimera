@@ -168,8 +168,8 @@ namespace Cosmimera.Combat
     /// order. REQ: docs/design/combat.md (rules), docs/roadmap/demo.md (D0 glue), Q-T1 steering.
     /// </summary>
     /// <remarks>
-    /// D0 simplifications (recorded in docs/tech-debt.md): field moves resolve once at cast instead of ticking; the player
-    /// character is not a target; steering is direct great-circle movement without obstacle avoidance; movement
+    /// Field moves persist for field_duration_ms and resolve on <see cref="FieldTimeline"/> ticks (combat.md#場地).
+    /// D0 simplifications (recorded in docs/tech-debt.md): the player character is not a target; steering is direct great-circle movement without obstacle avoidance; movement
     /// speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
     /// Pre: one owner, main thread. Side effects: owns its units and RNG stream.
     /// </remarks>
@@ -193,8 +193,40 @@ namespace Cosmimera.Combat
         private readonly List<EncounterEvent> _events = new List<EncounterEvent>(64);
         private readonly List<AiEnemy> _enemyBuffer = new List<AiEnemy>(32);
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
+        private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private Pcg32 _rng;
         private long _lastTickMs = long.MinValue;
+
+        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
+        // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
+        private readonly struct PlacedField
+        {
+            public PlacedField(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
+                float3 anchor, float3 forward, in FieldTimeline timeline)
+            {
+                CasterId = casterId;
+                Side = side;
+                Slot = slot;
+                Ctx = ctx;
+                Volume = volume;
+                Anchor = anchor;
+                Forward = forward;
+                Timeline = timeline;
+            }
+
+            public int CasterId { get; }
+            public EncounterSide Side { get; }
+            public int Slot { get; }
+            public CastContext Ctx { get; }
+            public HitVolume Volume { get; }
+            public float3 Anchor { get; }
+            public float3 Forward { get; }
+            public FieldTimeline Timeline { get; }
+        }
+
+        /// <summary>Number of fields still alive after the last tick (presentation and tests).</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int ActiveFieldCount => _fields.Count;
 
         /// <summary>Creates an empty encounter.</summary>
         /// <remarks>
@@ -383,9 +415,14 @@ namespace Cosmimera.Combat
         {
             Contract.Requires(nowMs > _lastTickMs, "ticks must strictly advance CombatTime");
             Contract.Requires(dtMs > 0 && dtMs <= 1000, "dtMs must be 1..1000");
+            long previousMs = _lastTickMs;
             _lastTickMs = nowMs;
             _events.Clear();
             UpdateEngagement(playerPosition);
+
+            // Fields placed in earlier ticks resolve before any unit acts, in placement order, so every peer sees the same
+            // RNG draw order. Their tick-0 resolution already happened inside the placing TryCast.
+            ResolveFields(previousMs, nowMs);
 
             for (int i = 0; i < _units.Count; i++)
             {
@@ -467,24 +504,22 @@ namespace Cosmimera.Combat
                 anchor = MoveGeometry.ResolveAnchor(volume, _planet, u.Position, aim);
             }
 
-            for (int i = 0; i < _units.Count; i++)
+            if (u.MoveDefs[slot].Shape == MoveShape.Field)
             {
-                EncounterUnit t = _units[i];
-                if (!IsValidEnemy(u, t.Id) ||
-                    !MoveGeometry.Overlaps(volume, _planet, anchor, u.Forward, t.Position, t.BodyRadiusM))
+                var timeline = new FieldTimeline(nowMs, u.MoveDefs[slot].FieldDurationMs, _balance.Effects.FieldTickMs);
+                var field = new PlacedField(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, timeline);
+                _fields.Add(field);
+                // nowMs - 1 makes the placement instant itself the first resolution (FieldTimeline.TicksDue contract).
+                int due = timeline.TicksDue(nowMs - 1, nowMs);
+                for (int k = 0; k < due; k++)
                 {
-                    continue;
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
                 }
 
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs);
-                bool hit = r.Outcome == HitOutcome.Hit;
-                _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, u.Id, t.Id, slot,
-                    r.Damage));
-                if (r.Fainted)
-                {
-                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, u.Id, t.Id, slot, 0));
-                }
+                return;
             }
+
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
 
             if (volume.DashDistanceMm > 0)
             {
@@ -493,6 +528,53 @@ namespace Cosmimera.Combat
                 u.Position = GroundPoint(_planet.ToDirection(end), u.BodyRadiusM);
                 u.Forward = Tangent(Up(u.Position), u.Forward);
             }
+        }
+
+        private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
+            float3 anchor, float3 forward, long nowMs)
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit t = _units[i];
+                if (!IsValidEnemy(side, t.Id) ||
+                    !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
+                {
+                    continue;
+                }
+
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs);
+                bool hit = r.Outcome == HitOutcome.Hit;
+                _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, casterId, t.Id, slot,
+                    r.Damage));
+                if (r.Fainted)
+                {
+                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, casterId, t.Id, slot, 0));
+                }
+            }
+        }
+
+        private void ResolveFields(long previousMs, long nowMs)
+        {
+            int write = 0;
+            for (int i = 0; i < _fields.Count; i++)
+            {
+                PlacedField f = _fields[i];
+                FieldTimeline tl = f.Timeline;
+                // previousMs >= PlacedMs here (placement happened in an earlier tick), so (previousMs, nowMs] never
+                // re-counts tick 0.
+                int due = tl.TicksDue(previousMs, nowMs);
+                for (int k = 0; k < due; k++)
+                {
+                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs);
+                }
+
+                if (tl.TicksDue(-1, nowMs) < tl.TotalTicks)
+                {
+                    _fields[write++] = f;
+                }
+            }
+
+            _fields.RemoveRange(write, _fields.Count - write);
         }
 
         private void Support(EncounterUnit caster, EncounterUnit receiver, in CastContext ctx, int slot, long nowMs)
@@ -530,7 +612,9 @@ namespace Cosmimera.Combat
             }
         }
 
-        private bool IsValidEnemy(EncounterUnit self, int id)
+        private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
+
+        private bool IsValidEnemy(EncounterSide side, int id)
         {
             if (id < 0 || id >= _units.Count)
             {
@@ -538,7 +622,7 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit t = _units[id];
-            if (t.Side == self.Side || !t.IsActive)
+            if (t.Side == side || !t.IsActive)
             {
                 return false;
             }

@@ -215,6 +215,10 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"xp_growth_numerator\": 105", "\"xp_growth_numerator\": 100")));
             Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"starter_level\": 10", "\"starter_level\": 0")));
             Assert.AreEqual(10, Progression.FromJson(json).StarterLevel);
+            // SOL P2-12 R5: the Python envelope (elite 1..100) and no config whose source reward overflows Int32.
+            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
+            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
+            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
         }
 
         // The bands live in the schema, CreatureDef and balance.json; tools/tests checks schema == balance.json.

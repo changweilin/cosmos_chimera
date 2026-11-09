@@ -68,11 +68,21 @@ namespace Cosmimera.Save
         /// <remarks>
         /// Pre: speciesId non-empty; vessel defined; exp &gt;= 0 (a capture keeps its encounter level: T(L)).
         /// Post: one more owned creature with a fresh InstanceId and that exp; in Party iff Party had &lt; 6 before.
+        ///       <see cref="InvalidOperationException"/> in every build, with the save unchanged, once instance ids are
+        ///       exhausted (the next id would be int.MaxValue and the cursor could not advance past it).
         /// Side effects: mutates this save.
         /// </remarks>
         public OwnedCreature Add(string speciesId, VesselKind vessel, int exp)
         {
-            var c = new OwnedCreature(_nextInstanceId++, speciesId, vessel, exp);
+            // Checked before any mutation: incrementing first would overflow the cursor and write a save FromJson rejects
+            // (SOL P2-12 R4).
+            if (_nextInstanceId >= int.MaxValue)
+            {
+                throw new InvalidOperationException("lobby save: creature instance ids are exhausted");
+            }
+
+            var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp);
+            _nextInstanceId++;
             _owned.Add(c);
             if (_party.Count < MaxParty)
             {
@@ -157,8 +167,9 @@ namespace Cosmimera.Save
         ///       a format-1 creature gets progression.MigrationExp(stage of its species) and LoadedFormatVersion == 1.
         ///       <see cref="InvalidDataException"/> in every build (Contract checks are stripped from Release, and a
         ///       Release that loaded and re-wrote a newer save would silently drop its fields — SOL D0 H2) for: not a
-        ///       save, a newer FormatVersion, duplicate/non-positive instance ids, next id not above every owned id, an
-        ///       undefined vessel, a negative exp, a party entry that is not owned, or a format-1 species stageOf
+        ///       save, a newer FormatVersion, duplicate/non-positive instance ids, next id below 1 or not above every owned
+        ///       id, an undefined vessel, a negative exp, a party entry that is not owned or listed twice, a party over 6,
+        ///       a party empty while creatures are owned (or non-empty without any), or a format-1 species stageOf
         ///       does not know (it cannot be migrated without guessing).
         /// Side effects: allocates.
         /// </remarks>
@@ -175,6 +186,8 @@ namespace Cosmimera.Save
                 _nextInstanceId = dto.next_instance_id,
                 LoadedFormatVersion = dto.version,
             };
+            // Independent of owned: with an empty roster the per-creature check below never runs (SOL P2-12 R4).
+            Check(dto.next_instance_id >= 1, "next_instance_id must be >= 1");
             var ids = new HashSet<int>();
             foreach (CreatureDto c in dto.owned ?? new CreatureDto[0])
             {
@@ -195,12 +208,19 @@ namespace Cosmimera.Save
                     Math.Min(exp, progression.MaxExp)));
             }
 
-            foreach (int p in dto.party ?? new int[0])
+            // Party is the XP settlement roster, so a duplicate would be paid twice (SOL P2-12 R3). An owned roster always
+            // has a party: ChooseStarter/Add put the first creature in it and SetParty never empties it.
+            int[] party = dto.party ?? new int[0];
+            Check(party.Length <= MaxParty, "party holds more than 6 creatures");
+            Check(party.Length > 0 == ids.Count > 0, "party must be non-empty exactly when creatures are owned");
+            var inParty = new HashSet<int>();
+            foreach (int p in party)
             {
                 Check(ids.Contains(p), "party entry is not owned");
+                Check(inParty.Add(p), "party lists a creature twice");
             }
 
-            save._party.AddRange(dto.party ?? new int[0]);
+            save._party.AddRange(party);
             return save;
         }
 

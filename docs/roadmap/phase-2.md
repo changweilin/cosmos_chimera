@@ -21,6 +21,7 @@
 
 ## 交接紀錄
 
+- 2026-11-09 · Claude Opus · partial（待審）· D0-E1：`Encounter` 場地招式改為依 `FieldTimeline` 持續結算（放置瞬間一次，之後每 `field.tick_ms`，共 ceil(壽命/間隔) 次；凍結施放當下的 CastContext，施放者倒下／收回後仍存在；每個 Tick 開頭、單位行動前依放置順序結算，RNG 順序決定性；`ActiveFieldCount` 供表現層）。同時關閉 SOL P2-12 R3（`LobbySave.FromJson` 拒絕重複／超過 6 隻／有 owned 卻空 party）、R4（cursor ≥ 1 獨立檢查；`Add` ID 耗盡先拋 `InvalidOperationException` 不改狀態）、R5（elite 1..100 與 Python 一致；FromJson 以 BigInteger 拒絕在 C(MaxLevel−1) 超過 Int32 的來源獎勵）。**契約變更**：FromJson 多拒絕三類存檔（僅損壞／手改存檔，正常流程不會產生）。EditMode 898/899：唯一失敗 `DemoRunInputTests`（共用 `DemoRun` map 在 -nographics 跑時已 enabled，與本變更無關，交 TERRA 於 P7-07 一併處理） · 下一步：SOL 對抗式審查 D0-E1／R3–R5
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P2-11：HUD 指令／收服／放棄提示改讀 action binding，探索支援手把；契約變更：`RunSession.Configure` 的 actions 必須含 DemoRun 與十個必需 action，呼叫端使用既有更新資產，EditMode 896/896、GPU PlayMode 62/62 通過 · 下一步：人工驗收實體手把與 HUD，SONNET 接續核心玩法缺口
 
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P2-11 的 D0 表現層補相對視角的球面任務方向、實際存活目標追蹤與近距離收服倒數；B／V 解綁，GPU PlayMode 62/62 通過（含真實 InputSystem 事件互斥測試），方向邊界測試納入 EditMode 895/895 · 下一步：人工驗收 HUD 與完整通關；SONNET 完成副手提示及其他核心接線

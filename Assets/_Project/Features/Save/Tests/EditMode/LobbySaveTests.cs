@@ -98,6 +98,41 @@ namespace Cosmimera.Save.Tests
                 "negative exp");
         }
 
+        // SOL P2-12 R3: the party is the XP settlement roster; a duplicate or oversized party would be paid twice.
+        [Test]
+        public void Invalid_parties_are_refused()
+        {
+            const string one = "\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":0,\"exp\":0}]";
+            Assert.Throws<InvalidDataException>(() => Parse("{\"version\":2,\"next_instance_id\":2,\"party\":[1,1]," + one + "}"),
+                "duplicate");
+            Assert.Throws<InvalidDataException>(() => Parse(
+                "{\"version\":2,\"next_instance_id\":2,\"party\":[1,1,1,1,1,1,1]," + one + "}"), "over 6");
+            Assert.Throws<InvalidDataException>(() => Parse("{\"version\":2,\"next_instance_id\":2," + one + "}"),
+                "owned without a party");
+            var seven = new LobbySave();
+            for (int i = 0; i < 7; i++)
+            {
+                seven.Add("a", VesselKind.TalismanCard, 0);
+            }
+
+            Assert.That(Parse(seven.ToJson()).Party.Count, Is.EqualTo(LobbySave.MaxParty), "a legal full party round-trips");
+        }
+
+        // SOL P2-12 R4: the cursor is validated even with no creatures, and exhaustion never writes an unreadable save.
+        [Test]
+        public void Instance_id_cursor_is_validated_and_exhaustion_leaves_the_save_unchanged()
+        {
+            Assert.Throws<InvalidDataException>(() => Parse("{\"version\":2}"), "missing cursor");
+            Assert.Throws<InvalidDataException>(() => Parse("{\"version\":2,\"next_instance_id\":0}"));
+            Assert.That(Parse(new LobbySave().ToJson()).Owned.Count, Is.EqualTo(0), "a new empty save round-trips");
+
+            LobbySave full = Parse("{\"version\":2,\"next_instance_id\":2147483647}");
+            string before = full.ToJson();
+            Assert.Throws<System.InvalidOperationException>(() => full.Add("a", VesselKind.TalismanCard, 0));
+            Assert.That(full.ToJson(), Is.EqualTo(before));
+            Assert.That(Parse(before).Owned.Count, Is.EqualTo(0));
+        }
+
         // REQ: level-progression.md#獎勵量 option A — old evolution XP is not cumulative level XP; restart at T(floor).
         [Test]
         public void Format_1_migrates_to_the_stage_floor_and_ignores_old_exp()
@@ -124,7 +159,7 @@ namespace Cosmimera.Save.Tests
         [Test]
         public void Exp_above_the_cap_is_clipped_on_load()
         {
-            LobbySave r = Parse("{\"version\":2,\"next_instance_id\":2,\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":0,\"exp\":2147483647}]}");
+            LobbySave r = Parse("{\"version\":2,\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":0,\"exp\":2147483647}]}");
             Assert.That(r.Owned[0].Exp, Is.EqualTo(P.MaxExp));
         }
 
@@ -163,7 +198,7 @@ namespace Cosmimera.Save.Tests
             string backup = path + ".v1.bak";
             Directory.CreateDirectory(dir);
             File.Delete(backup);
-            const string v1 = "{\"version\":1,\"next_instance_id\":2,\"owned\":[{\"instance_id\":1,\"species_id\":\"a_0\",\"vessel\":0,\"exp\":7}]}";
+            const string v1 = "{\"version\":1,\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a_0\",\"vessel\":0,\"exp\":7}]}";
             File.WriteAllText(path, v1);
             LobbySave r = LobbySave.Load(path, P, Stage);
             Assert.That(File.ReadAllText(backup), Is.EqualTo(v1));

@@ -5,8 +5,7 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 來源 | ID | 嚴重度 | 內容 |
 |---|---|---|---|
 | `docs/reviews/P1-review-r17-sol.md` 之後 | r18 | — | P1 第 18 輪複審因 Codex 額度中斷未執行；p1/r5-fixes 已於 2026-11-08 合併（EditMode 825/825） |
-| `Combat/Runtime/Model/Encounter.cs` | D0-E1 | med | 場地招式在施放瞬間結算一次，未依 `field.tick_ms` 持續判定 |
-| 同上 | D0-E2 | med | 玩家角色不是野生宙獸的目標（`PlayerVitals` 尚未接線） |
+| `Combat/Runtime/Model/Encounter.cs` | D0-E2 | med | 玩家角色不是野生宙獸的目標（`PlayerVitals` 尚未接線） |
 | 同上 | D0-E3 | low | steering 為直線大圓移動，無障礙迴避；移速未套 move_speed 效果 |
 | `Data/balance.json#capture` | D0-B1 | — | 收服率 60% / BOSS 100% 為佔位值，待 SOL 平衡模型（P5-07）定案 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-U1 | med | 戰鬥操作已接 `DemoRun` action map 與手把綁定；大廳／選星／結算仍需鍵鼠，尚無遊戲內重綁或 Steam Deck 實機驗收（P7-07） |
@@ -19,10 +18,7 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Bootstrap/Demo/RunSession.cs` | D0-X2 | low | 副手經驗只在 `Progression.Settle` 規則層；D0 無副手編成，run 只結算主力 |
 | 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1；野生等級只隨區域 tier 與角色變化 |
 | `docs/decisions/ADR-0007-generation-reproducibility.md` | Q-T6-R1 | med | 生成點選陸地（`IsSea(direction)`）與 Scatter 讀浮點方向，格界附近跨後端可能翻轉；P6 握手比對 `planDiscrete` 偵測，不一致時改以主機計畫下發 |
-| `docs/reviews/P2-12-sol.md` | R3 | med | `LobbySave.FromJson` 未拒絕重複或超過 6 隻的 party（僅限損壞存檔）；重複 id 進 XP 結算會重複配額 |
-| 同上 | R4 | med | 空 owned 時未檢查 `next_instance_id` ≥ 1；`Add` 在 Int32 極值時先自增再溢位，寫出自己拒讀的存檔 |
-| 同上 | R5 | med | `Progression.FromJson` 未限制係數包絡（Python 有 elite 1–100）；極端 base×elite 讓 `SourceXp` Int64 溢位為負數。核定值安全 |
-| 同上 | R6 | low | `QuestTracker.OnKnockedOut` 未忽略同一 spawn 重送；D0 Encounter 不會重送，屬防禦缺口 |
+| `docs/reviews/P2-12-sol.md` | R6 | low | `QuestTracker.OnKnockedOut` 未忽略同一 spawn 重送；D0 Encounter 不會重送，屬防禦缺口 |
 | 同上 | R7 | low | `XpSettlement.Paid/Assigned` 回傳可轉型的原始陣列 |
 | 同上 | R8 | low | `Settle` Post 應寫成 `min(Exp, MaxExp) + Paid <= MaxExp` |
 | 同上 | R9 | low | `XpRecipient` 建構子未以 Contract 檢查 id/exp（由 `Settle` 攔截） |
