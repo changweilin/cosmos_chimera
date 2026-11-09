@@ -205,6 +205,15 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => P.Settle(1, new[] { new XpRecipient(2, 0, false, false, 0), main }), "mains first");
         }
 
+        // SOL core-contracts CC-01: the Settle assertions above would still pass if only Settle validated.
+        [Test]
+        public void XpRecipient_rejects_bad_id_or_exp_at_construction()
+        {
+            Assert.Throws<ContractException>(() => new XpRecipient(0, 0, false, true, -1));
+            Assert.Throws<ContractException>(() => new XpRecipient(1, -1, false, true, -1));
+            Assert.DoesNotThrow(() => new XpRecipient(1, 0, false, true, -1));
+        }
+
         [Test]
         public void Settlement_lists_cannot_be_cast_back_and_mutated()
         {

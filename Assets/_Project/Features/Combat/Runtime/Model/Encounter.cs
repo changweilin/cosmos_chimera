@@ -724,9 +724,28 @@ namespace Cosmimera.Combat
 
         private float3 Up(float3 position) => _planet.ToDirection(position);
 
-        private float3 TangentToward(float3 from, float3 to, float3 fallback)
+        // REQ: tech-debt D0-E4 · docs/reviews/D0-E4-proposal-sol.md. In float, a target almost straight above/below left a
+        // ~4e-6 residue after removing the radial part; normalising it gave a forward 0.0135 off the tangent plane and
+        // tripped MoveGeometry's unit-tangent Pre. Promoting before the subtraction keeps the projection exact enough, and
+        // a projected offset below the float position uncertainty (tau) is treated as "no bearing" (keep the heading).
+        internal float3 TangentToward(float3 from, float3 to, float3 fallback)
         {
-            return Tangent(Up(from), to - from, fallback);
+            double3 offset = (double3)from - (double3)_planet.Center;
+            double radius = math.length(offset);
+            double3 up = offset / radius;
+            double3 delta = (double3)to - (double3)from;
+            double3 tangent = math.cross(math.cross(up, delta), up);
+            double length = math.length(tangent);
+
+            const double FloatUnitRoundoff = 5.9604644775390625e-8; // 2^-24
+            double scale = math.max(1.0, math.max(radius, math.max(math.cmax(math.abs((double3)from)),
+                math.max(math.cmax(math.abs((double3)to)), math.cmax(math.abs((double3)_planet.Center))))));
+            // 16·u·S bounds per-axis coordinate rounding with margin; (1 + |d|/|r|) adds the error of the up estimate
+            // itself, which the projection scales by |d| (derivation in the proposal).
+            double tau = 16.0 * FloatUnitRoundoff * scale * (1.0 + math.length(delta) / radius);
+            float3 candidate = length > tau ? (float3)(tangent / length) : fallback;
+            // ProjectOnTangent re-orthogonalises against the float up and maps a zero/radial fallback to North.
+            return PlanetFrame.FromUp((float3)up).ProjectOnTangent(candidate);
         }
 
         private static float3 Tangent(float3 up, float3 v) => Tangent(up, v, v);
