@@ -182,6 +182,14 @@ namespace Cosmimera.Bootstrap.Tests
                 LobbyTransactions.Settle(live, new[] { 1 }, new RunOutcome(), _path, out _, out _, out _), "PartyExp count");
             Assert.Throws<ContractException>(() =>
                 LobbyTransactions.Settle(live, null, Outcome(0), _path, out _, out _, out _));
+            // R2-04: a data refusal (Refused / StockFull) must not mask a caller bug.
+            Assert.Throws<ContractException>(() =>
+                LobbyTransactions.Evolve(Ready(lightQty: 1), 1, Req(), P, "", out _, out _, out _), "refused with empty path");
+            LobbySave full = Ready(lightQty: int.MaxValue);
+            Assert.Throws<ContractException>(() => LobbyTransactions.Settle(full, new[] { 99 },
+                Outcome(0, new MaterialStack(Light1, 1)), _path, out _, out _, out _), "stock full with unowned party id");
+            Assert.Throws<ContractException>(() => LobbyTransactions.Settle(full, new[] { 1 },
+                Outcome(0, new MaterialStack(Light1, 1)), "", out _, out _, out _), "stock full with empty path");
         }
     }
 }

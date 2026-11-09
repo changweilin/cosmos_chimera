@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.Save;
@@ -64,6 +65,8 @@ namespace Cosmimera.Bootstrap.Demo
             Progression progression, string path, out LobbySave next, out EvolutionResult result, out Exception error)
         {
             Contract.Requires(live != null && progression != null, "live and progression are required");
+            // Checked here, not only in TryWrite: a Refused early return would otherwise hide a bad path (SOL r2 R2-04).
+            Contract.Requires(!string.IsNullOrEmpty(path), "path must not be empty");
             next = live;
             error = null;
             LobbySave candidate = live.Clone();
@@ -92,8 +95,10 @@ namespace Cosmimera.Bootstrap.Demo
         ///      path non-empty.
         /// Post: Committed → <paramref name="next"/> holds the outcome and the file holds next. StockFull → banking would
         ///       push <paramref name="overflow"/> past int.MaxValue; nothing applied, nothing written (never truncated).
-        ///       WriteFailed → <paramref name="error"/> set. Otherwise next == live; live is never mutated, so calling
-        ///       again with the same outcome is a safe retry that cannot bank twice.
+        ///       WriteFailed → <paramref name="error"/> set. Otherwise next == live; live is never mutated, so after a
+        ///       non-Committed result calling again with the same live and outcome is a safe retry. Not idempotent after
+        ///       Committed: settling the same outcome into next banks it again (no settlement token, SOL r2 R2-01) —
+        ///       callers submit an outcome until its first Committed and never after.
         /// Side effects: writes files on success.
         /// </remarks>
         public static CommitStatus Settle(LobbySave live, IReadOnlyList<int> partyIds, RunOutcome outcome, string path,
@@ -101,6 +106,13 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(live != null && partyIds != null && outcome != null, "live, partyIds and outcome are required");
             Contract.Requires(outcome.PartyExp.Count == partyIds.Count, "one PartyExp entry per party slot");
+            // Before the StockFull early return, so a caller bug is never masked by a data refusal (SOL r2 R2-04).
+            Contract.Requires(!string.IsNullOrEmpty(path), "path must not be empty");
+            for (int i = 0; i < partyIds.Count; i++)
+            {
+                Contract.Requires(live.Owned.Any(o => o.InstanceId == partyIds[i]), "party ids must be owned by live");
+            }
+
             next = live;
             error = null;
             // Checked before any change so the player is told which key is full (W-02): AddMaterials would only throw.

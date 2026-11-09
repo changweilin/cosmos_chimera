@@ -215,6 +215,13 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     count++;
                 }
+
+                // Same predicate EvolveButton draws with: a budget short of the drawn buttons strands focus before
+                // start-run on a gamepad (SOL r2 R2-03).
+                if (EvolveRequirementFor(_save.Owned[i], out _))
+                {
+                    count++;
+                }
             }
             return count;
         }
@@ -384,6 +391,12 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
 
+                // The party editor that normally shows _partyMsg is not drawn before a starter exists (SOL r2 R2-02).
+                if (!string.IsNullOrEmpty(_partyMsg))
+                {
+                    GUILayout.Label(_partyMsg, _text);
+                }
+
                 return;
             }
 
@@ -499,15 +512,21 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: creatures.md#進化 — lobby only; level and every material shortfall are listed at once, nothing is consumed
         // on refusal (EvolutionRules). A final form, or a species missing from the database, gets no button.
-        private void EvolveButton(OwnedCreature o)
+        private bool EvolveRequirementFor(OwnedCreature o, out EvolutionRequirement req)
         {
+            req = default;
             if (!_database.TryGet(o.SpeciesId, out CreatureDef def))
             {
-                return;
+                return false;
             }
 
-            EvolutionRequirement req = EvolutionRequirement.FromDef(def);
-            if (req.IsFinal)
+            req = EvolutionRequirement.FromDef(def);
+            return !req.IsFinal;
+        }
+
+        private void EvolveButton(OwnedCreature o)
+        {
+            if (!EvolveRequirementFor(o, out EvolutionRequirement req))
             {
                 return;
             }
