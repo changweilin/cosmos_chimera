@@ -49,9 +49,27 @@ namespace Cosmimera.Bootstrap.Tests
 
         private LobbySave Reload() => LobbySave.Load(_path, P, _ => CreatureStage.Juvenile);
 
-        // Holding the final file open without FileShare.Delete makes File.Replace throw on Windows, while the directory
-        // and the .tmp stay writable — the failure Sol reproduced in W-01.
-        private FileStream LockSave() => new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        // A directory squatting on the .tmp path makes LobbySave.Write throw before the final file is touched, on every OS
+        // and even as root (CI runs Linux containers as root). The earlier FileShare lock only failed File.Replace on
+        // Windows: Linux lets a file be replaced while it is open, so CI saw Committed.
+        private IDisposable LockSave()
+        {
+            string tmp = _path + ".tmp";
+            Directory.CreateDirectory(tmp);
+            return new Blocker(tmp);
+        }
+
+        private sealed class Blocker : IDisposable
+        {
+            private readonly string _tmp;
+
+            public Blocker(string tmp) => _tmp = tmp;
+
+            public void Dispose()
+            {
+                if (Directory.Exists(_tmp)) Directory.Delete(_tmp, true);
+            }
+        }
 
         [Test]
         public void Evolve_commits_to_disk_then_memory()
