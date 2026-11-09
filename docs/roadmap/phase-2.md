@@ -20,6 +20,7 @@
 | P2-12 | 宙獸 LV1–100：等級成長、御三家 LV10、進化與超載等級解鎖（分配細節 Q-C29／Q-C30） | SOL（數值提案）／SONNET（實作） | OPUS | 成長曲線與欄位定案；等級邊界、解鎖門檻、存檔遷移及戰鬥接線通過驗證 | 🟦 |
 
 ## 交接紀錄
+- 2026-11-09 · Claude Opus（實作）＋ SOL（Codex，審查） · partial · P2-05 模型替換介面（art-asset-pipeline.md#佔位模型）：`Bootstrap/Demo/CreatureViews.cs` 的 `ICreatureViewFactory`／`ICreatureView`（Root、ShowFainted、Dispose），RunSession 不再直接 CreatePrimitive；D0 用 `PlaceholderCreatureViewFactory`（外觀與舊碼相同，per-view 材質隨 run 釋放，舊碼會洩漏）；`RunSession.UseViewFactory` 於 Configure 前注入。真模型只需新增 factory，不改 RunSession；資源載入技術（Resources／Addressables）未定案，模型到位時再決定。SOL 審查 `b7266b9` **pass**（0 high，`docs/reviews/P2-05-views-sol.md`）：V-02（非法半徑先拒絕再建物件）、V-03（Destroy 時點與副作用文件）及 V-01 的 Dispose 接線已修；V-01 其餘（SyncViews→ShowFainted 接線、外觀固定基準）記入 tech-debt。驗證：EditMode 940/940、PlayMode 74/74、0 警告 · 下一步：人工試玩；模型到位時定載入方式
 - 2026-11-09 · Claude Opus（依 SOL 審查修正）· partial · D0-E1 SOL pass 後順修三項：E1-01 場地對判定體內所有敵方作用（不再受 AI 用的 Engaged 閘門限制，脫戰野生仍受擊）；E1-02 場地保留到壽命結束（`ActiveFieldCount` 與 `FieldTimeline.IsAlive` 一致，測試斷言存活 3450 ms＠50 ms 步進）；E1-03 `Tick` Post 改寫事件順序。R5-01（Release 剝除包絡檢查）記入 tech-debt。新增 Q-C32（進化素材來源）、Q-C33（玩家是否為野生目標）待使用者決定。EditMode 898/899（唯一失敗仍為 TERRA 的 `DemoRunInputTests`）· 下一步：使用者決定 Q-C32／Q-C33；TERRA 的 P7-07／P4-08 待 Codex 沙箱能執行 Unity
 - 2026-11-09 · SOL（ChatGPT Sol） · done · D0-E1／R3–R5 唯讀對抗式審查 pass（D0 gate）：無 high，2 med／2 low 延後；R3／R4 fixed，R5 Release 驗證仍有缺口；CLR 雙設定各 1,035 項斷言與場地首 tick 清場整合情境實跑，詳見 docs/reviews/D0-E1-R3-R5-sol.md · 下一步：OPUS 記錄延後項目；具 Unity 環境補原生序列化與跨後端驗收
 

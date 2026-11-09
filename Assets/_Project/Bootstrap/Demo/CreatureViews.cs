@@ -36,12 +36,17 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: not disposed. Post: non-null. Side effects: none.</remarks>
         Transform Root { get; }
 
-        /// <summary>Marks the unit as fainted. Idempotent.</summary>
+        /// <summary>Marks the unit as fainted. Idempotent. Not callable after <see cref="Dispose"/>.</summary>
         /// <remarks>Pre: not disposed. Post: view reads as fainted. Side effects: mutates owned materials only.</remarks>
         void ShowFainted();
 
         /// <summary>Destroys the root and everything the view created. Idempotent.</summary>
-        /// <remarks>Pre: main thread. Post: no scene objects or materials of this view remain. Side effects: Destroy calls.</remarks>
+        /// <remarks>
+        /// Pre: main thread.
+        /// Post: Root and ShowFainted are no longer callable; the root and owned materials are scheduled for destruction
+        /// and are gone once Unity processes Destroy (end of frame), as with any Object.Destroy.
+        /// Side effects: Destroy calls.
+        /// </remarks>
         void Dispose();
     }
 
@@ -55,7 +60,8 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Creates a view for <paramref name="request"/>; the caller owns it, sets its active state and disposes it.</summary>
         /// <remarks>
         /// Pre: request satisfies <see cref="CreatureViewRequest"/> preconditions.
-        /// Post: result != null; result.Root has no Collider (views must not take part in physics; combat geometry is rule-side).
+        /// Post: result != null; any Collider on result.Root is scheduled for destruction and gone by the next frame (views must
+        /// not take part in physics; combat geometry is rule-side).
         /// Side effects: instantiates scene objects and materials.
         /// </remarks>
         ICreatureView Create(in CreatureViewRequest request);
@@ -107,10 +113,11 @@ namespace Cosmimera.Bootstrap.Demo
         public ICreatureView Create(in CreatureViewRequest request)
         {
             Contract.Requires(request.Def != null, "def required");
+            // Before CreatePrimitive: a Pre violation must not leave an ownerless scene object behind (SOL V-02).
+            float scale = Scale(request);
             GameObject go = GameObject.CreatePrimitive(request.Ally ? PrimitiveType.Capsule : PrimitiveType.Sphere);
             UnityEngine.Object.Destroy(go.GetComponent<Collider>());
             go.name = (request.Ally ? "Ally " : "Wild ") + request.Def.Id;
-            float scale = Scale(request);
             go.transform.localScale = new Vector3(scale, scale, scale);
             var renderer = go.GetComponent<Renderer>();
             Color color = ColorOf(request.Def);

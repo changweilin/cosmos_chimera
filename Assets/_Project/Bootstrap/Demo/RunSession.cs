@@ -231,7 +231,7 @@ namespace Cosmimera.Bootstrap.Demo
         internal void StepCombatForTests() => StepCombat();
 
         /// <summary>Replaces the placeholder view factory (model-replacement seam, art-asset-pipeline.md#佔位模型).</summary>
-        /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: none.</remarks>
+        /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: replaces the selected factory.</remarks>
         internal void UseViewFactory(ICreatureViewFactory factory)
         {
             Core.Contracts.Contract.Requires(factory != null, "factory required");

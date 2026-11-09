@@ -57,6 +57,10 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() => PlaceholderCreatureViewFactory.ColorOf(null));
             var factory = new PlaceholderCreatureViewFactory(Toon());
             Assert.Throws<ContractException>(() => factory.Create(new CreatureViewRequest(null, true, SpawnRole.Normal, 0.5f)));
+            int roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().rootCount;
+            Assert.Throws<ContractException>(() => factory.Create(new CreatureViewRequest(def, true, SpawnRole.Normal, 0f)));
+            Assert.That(UnityEngine.SceneManagement.SceneManager.GetActiveScene().rootCount, Is.EqualTo(roots),
+                "a rejected request creates no scene object");
         }
 
         [UnityTest]

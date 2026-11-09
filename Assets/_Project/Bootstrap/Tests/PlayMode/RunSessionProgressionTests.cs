@@ -76,13 +76,36 @@ namespace Cosmimera.Bootstrap.Tests
             private readonly PlaceholderCreatureViewFactory _inner = new PlaceholderCreatureViewFactory(null);
             public readonly List<CreatureViewRequest> Requests = new List<CreatureViewRequest>();
             public readonly List<GameObject> Roots = new List<GameObject>();
+            public int Disposed;
 
             public ICreatureView Create(in CreatureViewRequest request)
             {
                 ICreatureView view = _inner.Create(request);
                 Requests.Add(request);
                 Roots.Add(view.Root.gameObject);
-                return view;
+                return new Counting(view, this);
+            }
+
+            private sealed class Counting : ICreatureView
+            {
+                private readonly ICreatureView _inner;
+                private readonly RecordingViews _owner;
+
+                public Counting(ICreatureView inner, RecordingViews owner)
+                {
+                    _inner = inner;
+                    _owner = owner;
+                }
+
+                public Transform Root => _inner.Root;
+
+                public void ShowFainted() => _inner.ShowFainted();
+
+                public void Dispose()
+                {
+                    _owner.Disposed++;
+                    _inner.Dispose();
+                }
             }
         }
 
@@ -110,7 +133,8 @@ namespace Cosmimera.Bootstrap.Tests
 
             Object.Destroy(run.Session.gameObject);
             yield return null;
-            Assert.That(views.Roots.All(r => r == null), Is.True, "OnDestroy disposes every view");
+            Assert.That(views.Disposed, Is.EqualTo(views.Requests.Count), "OnDestroy calls Dispose on every view");
+            Assert.That(views.Roots.All(r => r == null), Is.True, "every view root is gone");
         }
 
         // ---------------------------------------------------------------------------------------------------------
