@@ -51,6 +51,7 @@ namespace Cosmimera.Bootstrap.Demo
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
         private Progression _progression;
+        private MaterialDrops _materialDrops;
         private LobbySave _save;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
@@ -101,6 +102,7 @@ namespace Cosmimera.Bootstrap.Demo
             RebuildCopy();
             _combatBalance = CombatBalance.FromJson(_balance.text);
             _progression = Progression.FromJson(_balance.text);
+            _materialDrops = MaterialDrops.FromJson(_balance.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
@@ -382,6 +384,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             DrawPartyEditor();
+            DrawMaterials();
             GUILayout.Space(20);
             if (MenuButton(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
             {
@@ -421,6 +424,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 GUI.enabled = true;
+                EvolveButton(o);
                 if (MenuButton(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
                 {
                     if (party.Count <= 1)
@@ -448,6 +452,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(330));
+                EvolveButton(o);
                 if (MenuButton(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
                 {
                     if (party.Count >= LobbySave.MaxParty)
@@ -471,6 +476,89 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 GUILayout.Label(_partyMsg, _text);
             }
+        }
+
+        // REQ: creatures.md#進化 — lobby only; level and every material shortfall are listed at once, nothing is consumed
+        // on refusal (EvolutionRules). A final form, or a species missing from the database, gets no button.
+        private void EvolveButton(OwnedCreature o)
+        {
+            if (!_database.TryGet(o.SpeciesId, out CreatureDef def))
+            {
+                return;
+            }
+
+            EvolutionRequirement req = EvolutionRequirement.FromDef(def);
+            if (req.IsFinal)
+            {
+                return;
+            }
+
+            if (!MenuButton(_copy.Ui("ui.lobby.evolve"), GUILayout.Width(90)))
+            {
+                return;
+            }
+
+            EvolutionResult r = EvolutionRules.TryEvolve(o, req, _save.Materials, EvolutionVenue.Lobby, _progression);
+            if (r.Succeeded)
+            {
+                _save.SetSpecies(o.InstanceId, r.Creature.SpeciesId);
+                _save.Write(_savePath);
+                _partyMsg = _copy.Ui("ui.lobby.evolve_success").Replace("{from}", _copy.Name(o.SpeciesId))
+                    .Replace("{to}", _copy.Name(r.Creature.SpeciesId));
+            }
+            else
+            {
+                _partyMsg = DescribeRefusal(req, r.Check);
+            }
+
+            GUIUtility.ExitGUI();
+        }
+
+        private string DescribeRefusal(EvolutionRequirement req, EvolutionCheck check)
+        {
+            var needs = new List<string>();
+            foreach (MaterialStack m in req.Materials)
+            {
+                needs.Add(_copy.Material(m.Key) + " ×" + m.Qty);
+            }
+
+            var lines = new List<string>
+            {
+                _copy.Ui("ui.lobby.evolve_requirement").Replace("{level}", req.RequiredLevel.ToString())
+                    .Replace("{materials}", string.Join("  ", needs)),
+            };
+            if (check.LevelShortBy > 0)
+            {
+                lines.Add(_copy.Ui("ui.lobby.evolve_level_short").Replace("{level}", req.RequiredLevel.ToString())
+                    .Replace("{missing}", check.LevelShortBy.ToString()));
+            }
+
+            foreach (MaterialShortfall s in check.Shortfalls)
+            {
+                lines.Add(_copy.Ui("ui.lobby.evolve_material_short").Replace("{material}", _copy.Material(s.Key))
+                    .Replace("{have}", s.Have.ToString()).Replace("{need}", s.Need.ToString()));
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private void DrawMaterials()
+        {
+            GUILayout.Label(_copy.Ui("ui.lobby.materials"), _text);
+            IReadOnlyList<MaterialStack> stock = _save.Materials.Snapshot();
+            if (stock.Count == 0)
+            {
+                GUILayout.Label("· " + _copy.Ui("ui.lobby.materials_empty"), _text);
+                return;
+            }
+
+            var parts = new List<string>(stock.Count);
+            foreach (MaterialStack m in stock)
+            {
+                parts.Add(_copy.Material(m.Key) + " ×" + m.Qty);
+            }
+
+            GUILayout.Label("· " + string.Join("  ", parts), _text);
         }
 
         private string PartyLabel(OwnedCreature o) =>
@@ -524,6 +612,18 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 GUILayout.Label("· " + _copy.Name(speciesId) + " LV" + _progression.LevelOf(exp) + "  (" +
                     _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
+            }
+
+            GUILayout.Space(10);
+            GUILayout.Label(_copy.Ui("ui.results.materials_list"), _text);
+            if (_outcome.Materials.Count == 0)
+            {
+                GUILayout.Label("· " + _copy.Ui("ui.results.materials_none"), _text);
+            }
+
+            foreach (MaterialStack m in _outcome.Materials)
+            {
+                GUILayout.Label("· " + _copy.Material(m.Key) + " ×" + m.Qty, _text);
             }
 
             GUILayout.Space(10);
@@ -595,6 +695,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
+                    Materials = _materialDrops,
                     Templates = _templates, TemplateTags = _templateTags,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
@@ -619,6 +720,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _save.Add(speciesId, vessel, exp);
             }
 
+            _save.AddMaterials(outcome.Materials);
             _save.Write(_savePath);
             _outcome = outcome;
             Destroy(_run.gameObject);

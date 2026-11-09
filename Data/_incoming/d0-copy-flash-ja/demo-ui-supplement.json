@@ -118,5 +118,41 @@
   },
   "ui.lobby.language": {
     "ja": "言語"
+  },
+  "ui.material.label": {
+    "ja": "{element}素材 T{tier}"
+  },
+  "ui.hud.material_drop": {
+    "ja": "素材を獲得：{material}"
+  },
+  "ui.lobby.materials": {
+    "ja": "所持素材"
+  },
+  "ui.lobby.materials_empty": {
+    "ja": "素材がありません"
+  },
+  "ui.lobby.evolve": {
+    "ja": "進化"
+  },
+  "ui.lobby.evolve_success": {
+    "ja": "{from}は{to}に進化した！"
+  },
+  "ui.lobby.evolve_final": {
+    "ja": "すでに最終形態です"
+  },
+  "ui.lobby.evolve_level_short": {
+    "ja": "レベル不足：必要 LV{level}（あと{missing}）"
+  },
+  "ui.lobby.evolve_material_short": {
+    "ja": "{material} 不足：所持 {have}／必要 {need}"
+  },
+  "ui.lobby.evolve_requirement": {
+    "ja": "進化条件：LV{level}・{materials}"
+  },
+  "ui.results.materials_list": {
+    "ja": "獲得素材"
+  },
+  "ui.results.materials_none": {
+    "ja": "なし"
   }
 }

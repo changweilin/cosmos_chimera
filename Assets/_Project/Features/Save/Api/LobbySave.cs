@@ -17,13 +17,15 @@ namespace Cosmimera.Save
     /// newer version than we know is refused instead of silently dropping fields.
     /// Version 2 (P2-12): <c>exp</c> is cumulative level XP. Version 1 stored the old evolution XP, whose meaning differs,
     /// so it is not converted: a v1 creature restarts at T(stage floor) (option A, level-progression.md#獎勵量).
+    /// Version 3 (P2-05, Q-C32): root <c>materials</c> — the lobby-wide evolution material stock. Older saves load with an
+    /// empty stock; no past run's drops are reconstructed.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 2;
+        public const int FormatVersion = 3;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -32,6 +34,7 @@ namespace Cosmimera.Save
         private readonly List<OwnedCreature> _owned = new List<OwnedCreature>();
         private readonly List<int> _party = new List<int>();
         private int _nextInstanceId = 1;
+        private readonly MaterialInventory _materials = new MaterialInventory();
 
         /// <summary>Format version the save was read from (FormatVersion for a new save); lower means it was migrated.</summary>
         /// <remarks>Pre: none. Post: 1..FormatVersion. Side effects: none.</remarks>
@@ -48,6 +51,45 @@ namespace Cosmimera.Save
         /// <summary>Party instance ids (≤ 6, each owned, no duplicates).</summary>
         /// <remarks>Pre: none. Post: as stated. Side effects: none.</remarks>
         public IReadOnlyList<int> Party => _party;
+
+        /// <summary>Lobby-wide evolution material stock (Q-C32: shared by every creature, not per individual).</summary>
+        /// <remarks>
+        /// Pre: none. Post: non-null; the same instance for the save's lifetime, so <c>EvolutionRules.TryEvolve</c> can
+        ///      consume from it directly. Side effects: none (mutating the returned inventory mutates this save).
+        /// </remarks>
+        public MaterialInventory Materials => _materials;
+
+        /// <summary>Banks the materials a run brought back, all or nothing.</summary>
+        /// <remarks>
+        /// Pre: stacks non-null.
+        /// Post: each key's count grew by the sum of its stacks. <see cref="InvalidOperationException"/> in every build,
+        ///       with the stock unchanged, when any key would exceed int.MaxValue (summed in long first, so a partial
+        ///       deposit never happens).
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void AddMaterials(IReadOnlyList<MaterialStack> stacks)
+        {
+            Contract.Requires(stacks != null, "stacks must not be null");
+            var totals = new Dictionary<MaterialKey, long>();
+            foreach (MaterialStack st in stacks)
+            {
+                totals.TryGetValue(st.Key, out long sum);
+                totals[st.Key] = sum + st.Qty;
+            }
+
+            foreach (KeyValuePair<MaterialKey, long> t in totals)
+            {
+                if (_materials.Count(t.Key) + t.Value > int.MaxValue)
+                {
+                    throw new InvalidOperationException("lobby save: material stock for " + t.Key + " would overflow");
+                }
+            }
+
+            foreach (KeyValuePair<MaterialKey, long> t in totals)
+            {
+                _materials.Add(t.Key, (int)t.Value);
+            }
+        }
 
         /// <summary>Records the starter choice and adds the starter.</summary>
         /// <remarks>
@@ -127,6 +169,21 @@ namespace Cosmimera.Save
             _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp);
         }
 
+        /// <summary>Replaces an owned creature's form after a successful lobby evolution.</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; speciesId non-empty (the caller resolved it from the evolution requirement).
+        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, exp, party membership and order unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetSpecies(int instanceId, string speciesId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(speciesId), "speciesId must be non-empty");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            OwnedCreature o = _owned[i];
+            _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp);
+        }
+
         /// <summary>Owned creature by instance id.</summary>
         /// <remarks>Pre: id owned. Post: InstanceId == id. Side effects: none.</remarks>
         public OwnedCreature Get(int instanceId)
@@ -148,6 +205,16 @@ namespace Cosmimera.Save
                 party = _party.ToArray(),
                 owned = new CreatureDto[_owned.Count],
             };
+            IReadOnlyList<MaterialStack> stock = _materials.Snapshot();
+            dto.materials = new MaterialDto[stock.Count];
+            for (int i = 0; i < stock.Count; i++)
+            {
+                dto.materials[i] = new MaterialDto
+                {
+                    element = ElementId(stock[i].Key.Element), tier = stock[i].Key.Tier, qty = stock[i].Qty,
+                };
+            }
+
             for (int i = 0; i < _owned.Count; i++)
             {
                 OwnedCreature o = _owned[i];
@@ -160,7 +227,7 @@ namespace Cosmimera.Save
             return JsonUtility.ToJson(dto, true);
         }
 
-        /// <summary>Parses a save, migrating format 1 to the current format.</summary>
+        /// <summary>Parses a save, migrating formats 1 and 2 to the current format.</summary>
         /// <remarks>
         /// Pre: json non-empty; progression non-null; stageOf non-null (returns null for an unknown species).
         /// Post: the save it encodes with every Exp in 0..progression.MaxExp (higher values are clipped, never earned);
@@ -170,7 +237,9 @@ namespace Cosmimera.Save
         ///       save, a newer FormatVersion, duplicate/non-positive instance ids, next id below 1 or not above every owned
         ///       id, an undefined vessel, a negative exp, a party entry that is not owned or listed twice, a party over 6,
         ///       a party empty while creatures are owned (or non-empty without any), or a format-1 species stageOf
-        ///       does not know (it cannot be migrated without guessing).
+        ///       does not know (it cannot be migrated without guessing), and — format 3 only — a material entry with an
+        ///       unknown element id, a tier outside 1..MaterialDrops.MaxTier, a qty below 1, or an (element, tier) listed
+        ///       twice. Formats 1–2 load with an empty material stock (their materials field is ignored).
         /// Side effects: allocates.
         /// </remarks>
         public static LobbySave FromJson(string json, Progression progression, Func<string, CreatureStage?> stageOf)
@@ -221,7 +290,41 @@ namespace Cosmimera.Save
             }
 
             save._party.AddRange(party);
+            if (dto.version >= 3)
+            {
+                var keys = new HashSet<MaterialKey>();
+                foreach (MaterialDto m in dto.materials ?? new MaterialDto[0])
+                {
+                    Element element = default;
+                    Check(m != null && TryParseElement(m.element, out element), "material entry has an unknown element");
+                    Check(m.tier >= 1 && m.tier <= MaterialDrops.MaxTier, "material entry has a tier outside 1..3");
+                    Check(m.qty >= 1, "material entry has a qty below 1");
+                    var key = new MaterialKey(element, m.tier);
+                    Check(keys.Add(key), "material entry lists an element and tier twice");
+                    save._materials.Add(key, m.qty);
+                }
+            }
+
             return save;
+        }
+
+        // Lower-case enum name ("light"): readable in the file and stable across enum reordering. Enum.Parse is not used
+        // because it also accepts numeric strings ("8"), which would make a hand-edited save silently remap elements.
+        private static string ElementId(Element e) => e.ToString().ToLowerInvariant();
+
+        private static bool TryParseElement(string id, out Element element)
+        {
+            foreach (Element e in (Element[])Enum.GetValues(typeof(Element)))
+            {
+                if (ElementId(e) == id)
+                {
+                    element = e;
+                    return true;
+                }
+            }
+
+            element = default;
+            return false;
         }
 
         private static void Check(bool condition, string message)
@@ -288,6 +391,14 @@ namespace Cosmimera.Save
             public string starter_line;
             public int[] party;
             public CreatureDto[] owned;
+            public MaterialDto[] materials;
+        }
+
+        [Serializable] private sealed class MaterialDto
+        {
+            public string element;
+            public int tier;
+            public int qty;
         }
 
         [Serializable] private sealed class CreatureDto

@@ -77,3 +77,11 @@ P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與
 | `progression.rewards.elite_multiplier` | 擊倒菁英的 r（2）；只用於野戰擊倒 |
 | `progression.rewards.wild_level.*` | 野生等級 = clamp(base + per_difficulty×(d−1) + per_tier×tier + role_bonus, 1, 100) |
 | `progression.rewards.sidekick_share_divisor` | 副手組共分 floor(主力實得 / 此值)；目前只支援 2 |
+
+## materials
+
+P2-05，2026-11-09 定案（Q-C32 方案 B）。規則見 [creatures.md#進化](../creatures.md#進化)；C# `Creatures/Api/MaterialDrops.cs`。
+
+| Key | 說明 |
+|---|---|
+| `materials.normal` / `elite` / `boss` | 擊倒該角色野生時：`tier`（1–3）、`chance_percent`（0–100）、成功時 `qty`（1–1000）。屬性從星球類型 `element_bias` 等機率抽一種；每個 spawn 只結算一次，角色不疊加 |

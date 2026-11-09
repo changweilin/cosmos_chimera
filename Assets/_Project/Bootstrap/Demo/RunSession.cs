@@ -32,6 +32,13 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Cumulative XP of each party slot when the run ended (same order as RunSetup.Party).</summary>
         /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
         public readonly List<int> PartyExp = new List<int>();
+
+        /// <summary>Evolution materials dropped by wild knock-outs, in drop order (Q-C32 option B).</summary>
+        /// <remarks>
+        /// Pre: none. Post: non-null; at most one entry per spawn. Kept on victory, defeat and abandon alike, like
+        ///      captures and XP (Q-M4: whatever the run earned comes back). Side effects: none.
+        /// </remarks>
+        public readonly List<MaterialStack> Materials = new List<MaterialStack>();
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -73,6 +80,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Approved level curve and XP rewards (balance.json#progression).</summary>
         /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
         public Progression Progression;
+
+        /// <summary>Approved evolution material drop rules (balance.json#materials).</summary>
+        /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
+        public MaterialDrops Materials;
     }
 
     /// <summary>
@@ -126,6 +137,7 @@ namespace Cosmimera.Bootstrap.Demo
             public HashSet<int> AppearedAtKnockout;
             public long KnockedOutAtMs = -1;
             public bool Gone;
+            public bool Dropped;
         }
 
         private DemoCopy _copy;
@@ -162,6 +174,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Dictionary<int, Renderer> _renderers = new Dictionary<int, Renderer>();
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
+        private Pcg32 _materialRng;
+        private MaterialDrops _drops;
         private long _nowMs = 1000;
         private float _accumulator;
         private long _nextAffixMs;
@@ -225,6 +239,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         internal void StepCombatForTests() => StepCombat();
 
+        /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
+        /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
+        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials;
+
         /// <summary>Swaps the main for the first eligible reserve, exactly as the Switch input does.</summary>
         /// <remarks>Pre: Configure ran. Post: as SwitchMain. Side effects: as SwitchMain (team, encounter, toast).</remarks>
         internal void SwitchMainForTests() => SwitchMain();
@@ -265,8 +283,10 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
                 setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
                 "progression, party ids and party exp are required, one per party slot");
+            Core.Contracts.Contract.Requires(setup.Materials != null, "material drop rules are required");
             _copy = copy;
             _progression = setup.Progression;
+            _drops = setup.Materials;
             _partyExp = setup.PartyExp.ToArray();
             _balance = balance;
             _actions = actions;
@@ -339,6 +359,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
             _captureRng = new Pcg32(setup.Seed, 'K');
+            // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
+            _materialRng = new Pcg32(setup.Seed, 'D');
 
             for (int s = 0; s < _plan.Spawns.Count; s++)
             {
@@ -510,6 +532,19 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
+            }
+
+            // REQ: creatures.md#進化 (Q-C32 B) — one roll per spawn; the flag also stops a re-sent faint from paying twice.
+            if (!w.Dropped)
+            {
+                w.Dropped = true;
+                if (_drops.TryRoll(spawn.Role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                {
+                    _outcome.Materials.Add(drop);
+                    string msg = _copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key));
+                    // One toast slot: keep the boss knock-out line visible instead of overwriting it.
+                    Toast(spawn.Role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
+                }
             }
         }
 

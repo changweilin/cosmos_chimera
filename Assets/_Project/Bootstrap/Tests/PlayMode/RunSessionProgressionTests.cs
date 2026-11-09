@@ -120,6 +120,63 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         // ---------------------------------------------------------------------------------------------------------
+        // P2-05 — material drops (Q-C32 option B)
+        // ---------------------------------------------------------------------------------------------------------
+
+        // REQ: creatures.md#進化 — one roll per knocked-out spawn on the run's own 'D' stream, tier by role, element from the
+        // planet type's bias. The oracle replays the same knock-out order on a fresh stream; the boss is injected twice
+        // before one step to show a re-sent faint cannot roll a second drop (tech-debt R5-01).
+        [UnityTest]
+        public IEnumerator Knockouts_drop_one_roll_per_spawn_from_the_planet_bias()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count >= 2);
+            RunPlan plan = PlanFor(env, seed);
+            List<int> normals = Tier0Normals(plan, null);
+            int boss = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Boss);
+            Assert.That(boss, Is.GreaterThanOrEqualTo(0), "plan has a boss");
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+            int questRegion = plan.Quest[0].Region;
+            var order = new List<int> { normals[0], normals[1], boss };
+            foreach (int unit in order)
+            {
+                Kill(s, env, unit);
+                ParkAt(s, Quiet(s, questRegion));
+                s.InjectFaintForTests(unit);
+                if (unit == boss)
+                {
+                    s.InjectFaintForTests(unit);
+                }
+
+                Step(s);
+            }
+
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            var oracle = new Pcg32(seed, 'D');
+            var expected = new List<MaterialStack>();
+            foreach (int unit in order)
+            {
+                if (rules.TryRoll(plan.Spawns[unit].Role, env.Type.ElementBias, ref oracle, out MaterialStack drop))
+                {
+                    expected.Add(drop);
+                }
+            }
+
+            IReadOnlyList<MaterialStack> got = s.MaterialsForTests;
+            Assert.That(got.Count, Is.EqualTo(expected.Count), "one roll per spawn; the boss's re-sent faint adds nothing");
+            for (int i = 0; i < got.Count; i++)
+            {
+                Assert.That(got[i].Key, Is.EqualTo(expected[i].Key), "drop " + i);
+                Assert.That(got[i].Qty, Is.EqualTo(expected[i].Qty), "drop " + i);
+                CollectionAssert.Contains(env.Type.ElementBias, got[i].Key.Element);
+            }
+
+            Assert.That(got[got.Count - 1].Key.Tier, Is.EqualTo(rules.TierFor(SpawnRole.Boss)), "the boss always drops (100%)");
+        }
+
+        // ---------------------------------------------------------------------------------------------------------
         // R3-01 — SOL P2-12 r3
         // ---------------------------------------------------------------------------------------------------------
 
@@ -683,7 +740,7 @@ namespace Cosmimera.Bootstrap.Tests
                     PlanetType = env.Type, Seed = seed, Radius = Radius, Party = party,
                     PartyIds = Enumerable.Range(1, PartySize).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
-                    Progression = env.Progression,
+                    Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
                 }, env.Wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
@@ -695,6 +752,10 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(session.StartedForTests, Is.True, "terrain colliders under the landing point within 60 s");
             session.enabled = false;
+            // The tests teleport the character across the planet between frames; the camera's one-frame continuity
+            // contract (ViewOrbit: up turns < 90° per step) would then fire in the frame between a test's end and the
+            // deferred Destroy, and be reported against the next test.
+            session.RigForTests.CameraRig.enabled = false;
         }
     }
 }

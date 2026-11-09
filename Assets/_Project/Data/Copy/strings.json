@@ -403,5 +403,65 @@
     "zh-TW": "語言",
     "en": "Language",
     "ja": "言語"
+  },
+  "ui.material.label": {
+    "zh-TW": "{element}素材 T{tier}",
+    "en": "{element} Material T{tier}",
+    "ja": "{element}素材 T{tier}"
+  },
+  "ui.hud.material_drop": {
+    "zh-TW": "獲得素材：{material}",
+    "en": "Material obtained: {material}",
+    "ja": "素材を獲得：{material}"
+  },
+  "ui.lobby.materials": {
+    "zh-TW": "素材庫存",
+    "en": "Materials",
+    "ja": "所持素材"
+  },
+  "ui.lobby.materials_empty": {
+    "zh-TW": "尚無素材",
+    "en": "No materials yet",
+    "ja": "素材がありません"
+  },
+  "ui.lobby.evolve": {
+    "zh-TW": "進化",
+    "en": "Evolve",
+    "ja": "進化"
+  },
+  "ui.lobby.evolve_success": {
+    "zh-TW": "{from} 進化為 {to}！",
+    "en": "{from} evolved into {to}!",
+    "ja": "{from}は{to}に進化した！"
+  },
+  "ui.lobby.evolve_final": {
+    "zh-TW": "已是最終型態",
+    "en": "Already at final form",
+    "ja": "すでに最終形態です"
+  },
+  "ui.lobby.evolve_level_short": {
+    "zh-TW": "等級不足：需要 LV{level}（還差 {missing} 級）",
+    "en": "Level too low: LV{level} required ({missing} more)",
+    "ja": "レベル不足：必要 LV{level}（あと{missing}）"
+  },
+  "ui.lobby.evolve_material_short": {
+    "zh-TW": "{material} 不足：持有 {have}／需要 {need}",
+    "en": "Not enough {material}: {have} / {need}",
+    "ja": "{material} 不足：所持 {have}／必要 {need}"
+  },
+  "ui.lobby.evolve_requirement": {
+    "zh-TW": "進化條件：LV{level}・{materials}",
+    "en": "Evolution requirements: LV{level} / {materials}",
+    "ja": "進化条件：LV{level}・{materials}"
+  },
+  "ui.results.materials_list": {
+    "zh-TW": "獲得素材",
+    "en": "Materials Obtained",
+    "ja": "獲得素材"
+  },
+  "ui.results.materials_none": {
+    "zh-TW": "無",
+    "en": "None",
+    "ja": "なし"
   }
 }

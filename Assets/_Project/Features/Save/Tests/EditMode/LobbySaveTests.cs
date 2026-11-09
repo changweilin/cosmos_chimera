@@ -59,7 +59,7 @@ namespace Cosmimera.Save.Tests
         [Test]
         public void Newer_format_is_refused()
         {
-            string json = new LobbySave().ToJson().Replace("\"version\": 2", "\"version\": 99");
+            string json = new LobbySave().ToJson().Replace("\"version\": " + LobbySave.FormatVersion, "\"version\": 99");
             Assert.Throws<InvalidDataException>(() => Parse(json), "must hold in Release too (SOL D0 H2)");
         }
 
@@ -146,7 +146,7 @@ namespace Cosmimera.Save.Tests
             Assert.That(r.Owned[1].Exp, Is.EqualTo(P.XpThreshold(20)));
             Assert.That(r.Owned[2].Exp, Is.EqualTo(P.XpThreshold(35)));
             Assert.That(r.Owned[2].Vessel, Is.EqualTo(VesselKind.GlassBead));
-            Assert.That(r.ToJson(), Does.Contain("\"version\": 2"));
+            Assert.That(r.ToJson(), Does.Contain("\"version\": " + LobbySave.FormatVersion));
         }
 
         [Test]

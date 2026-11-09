@@ -120,6 +120,11 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: elementName is the enum name, any casing. Post: the name, or the key when missing. Side effects: none.</remarks>
         public string Element(string elementName) => Ui("element." + (elementName ?? string.Empty).ToLowerInvariant());
 
+        /// <summary>Player-facing evolution material name, e.g. "光素材 T1".</summary>
+        /// <remarks>Pre: key constructed. Post: ui.material.label with {element} and {tier} filled. Side effects: allocates.</remarks>
+        public string Material(Creatures.MaterialKey key) =>
+            Ui("ui.material.label").Replace("{element}", Element(key.Element.ToString())).Replace("{tier}", key.Tier.ToString());
+
         /// <summary>Display name of a creature/move/trait id.</summary>
         /// <remarks>Pre: none. Post: the selected name, English fallback, or the id if absent in both. Side effects: none.</remarks>
         public string Name(string id) => id != null && _names.TryGetValue(id, out string s) && !string.IsNullOrEmpty(s) ? s : id;
