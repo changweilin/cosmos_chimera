@@ -259,8 +259,12 @@ namespace Cosmimera.Bootstrap.Tests
                 }
 
                 float3 upv = rig.Config.ToDirection(player);
+                Renderer terrainRenderer = rig.Terrain.GetComponentInChildren<Renderer>();
+                Material terrainMaterial = terrainRenderer != null ? terrainRenderer.sharedMaterial : null;
+                Shader terrainShader = terrainMaterial != null ? terrainMaterial.shader : null;
+                string shaderName = terrainShader != null ? terrainShader.name : null;
                 Debug.Log($"CAPTURE type={type.Id} lat={math.abs(upv.y):0.000} h={rig.SurfaceHeight(upv):0.00} " +
-                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={rig.Terrain.GetComponentInChildren<Renderer>()?.sharedMaterial?.shader?.name}");
+                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={shaderName}");
                 float3 toward = math.normalize(look - player - math.dot(look - player, upv) * upv + upv * 1e-4f);
                 rig.Camera.transform.position = player - toward * 7f + upv * 4f;
                 rig.Camera.transform.rotation = Quaternion.LookRotation(look - (float3)rig.Camera.transform.position, upv);

@@ -13,6 +13,7 @@
 | P7-06 | 全域程式碼審查：契約、FENCE 標記、測試覆蓋 | OPUS | SOL | 無未標記 workaround；public API 契約 100% | ⬜ |
 
 ## 交接紀錄
+- 2026-11-09 · ChatGPT Terra（Codex） · partial · P7-07 demo 大廳／選星／結算已接手把及鍵盤焦點導航；兩種 EditMode 各 898 項及 GPU PlayMode 63 項通過，含合成手把確認 · 下一步：人工驗收實體手把與 Steam Deck／Proton；後續製作重綁介面
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P7-05 更新 `COSMIMERA-D0-20261109-86e591d-terra2-win64.zip`（46.7 MB），含探索手把操作；Mono／IL2CPP 零建置錯誤、EditMode 896/896、GPU PlayMode 62/62，獨立版生成探針與前輪逐位元相同，CRC／SHA-256 通過，見 `../reviews/D0-input-terra.md` · 下一步：人工驗收實體手把／HUD／完整通關；SONNET 接續選單手把導航
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P7-07：十個探索操作接 `DemoRun` action map 與手把，HUD 顯示 binding 名稱，每場 clone／停用／銷毀隔離；EditMode 896/896、GPU PlayMode 62/62（含合成手把輪替與指令）通過，見 `../reviews/D0-input-terra.md` · 下一步：人工驗收實體手把與 HUD；SONNET 接大廳選單導航、重綁介面及 Steam Deck／Proton
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P7-05 產出 `COSMIMERA-D0-20261109-86e591d-terra1-win64.zip`（46.7 MB），Mono／IL2CPP 零建置錯誤、GPU PlayMode 62/62、EditMode 895/895、Python 171 項＋194 子案例；獨立版跨後端 policy b PASS，ZIP CRC／逐檔 SHA-256 PASS。畫面自動化未取得可操作視窗，未做 HUD 目視／完整通關 · 下一步：人工試玩新包；OPUS／SONNET 接續核心玩法與發行 CI

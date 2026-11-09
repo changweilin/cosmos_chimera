@@ -152,7 +152,11 @@
     "en": "Press {key} again within 3 seconds to abandon. Captured Cosmimera return to the lobby."
   },
   "ui.hud.gamepad_help": {
-    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n大廳選單仍需鍵盤滑鼠。",
-    "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nLobby menus still need keyboard / mouse."
+    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n選單：方向鍵或左搖桿移動，下方按鈕確認，右方按鈕返回。",
+    "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nMenus: D-pad or left stick to move, bottom button to confirm, right button to go back."
+  },
+  "ui.lobby.language": {
+    "zh-TW": "語言",
+    "en": "Language"
   }
 }

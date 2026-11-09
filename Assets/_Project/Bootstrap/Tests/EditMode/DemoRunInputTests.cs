@@ -27,9 +27,22 @@ namespace Cosmimera.Bootstrap.Tests
 
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
                 "Assets/_Project/Settings/Input/InputSystem_Actions.inputactions");
-            InputActionMap map = RunSession.RequireRunMap(asset);
-            Assert.That(map.enabled, Is.False, "validation does not enable the shared asset");
-            Assert.That(map.actions.Count, Is.EqualTo(10));
+            InputActionMap sharedMap = asset.FindActionMap("DemoRun");
+            bool wasEnabled = sharedMap.enabled;
+            try
+            {
+                sharedMap.Disable();
+                InputActionMap map = RunSession.RequireRunMap(asset);
+                Assert.That(map.enabled, Is.False, "validation does not enable the shared asset");
+                Assert.That(map.actions.Count, Is.EqualTo(10));
+            }
+            finally
+            {
+                if (wasEnabled)
+                {
+                    sharedMap.Enable();
+                }
+            }
         }
     }
 }
