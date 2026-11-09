@@ -156,7 +156,11 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
+        internal Action BeforeTickForTests;
+        internal void SyncViewsForTests() => SyncViews();
+#endif
         private Progression _progression;
         private int[] _partyExp;
         private bool[] _questPaid;
@@ -185,6 +189,7 @@ namespace Cosmimera.Bootstrap.Demo
         private Material _terrainMaterial;
         private Material _playerMaterial;
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         internal Encounter EncounterForTests => _encounter;
 
         internal RunPlan PlanForTests => _plan;
@@ -229,6 +234,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: everything StepCombat does (encounter tick, XP, level-ups, quest, end check).
         /// </remarks>
         internal void StepCombatForTests() => StepCombat();
+#endif
 
         /// <summary>Replaces the placeholder view factory (model-replacement seam, art-asset-pipeline.md#佔位模型).</summary>
         /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: replaces the selected factory.</remarks>
@@ -239,6 +245,7 @@ namespace Cosmimera.Bootstrap.Demo
             _viewFactory = factory;
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
         /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
         internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials;
@@ -251,7 +258,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: wildUnitId is a wild unit with 0 HP whose knock-out has not been settled yet.
         /// Post: the next StepCombat settles it like an Encounter Faint event (after that tick's real events).
-        /// Side effects: appends to the queue; nothing else until the next step.
+        /// Side effects: appends to the queue unless already queued; nothing else until the next step.
         /// </remarks>
         internal void InjectFaintForTests(int wildUnitId)
         {
@@ -260,8 +267,13 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(_encounter.Units[wildUnitId].Side == EncounterSide.Wild &&
                 _encounter.Units[wildUnitId].Combatant.IsFainted && _wild[wildUnitId].KnockedOutAtMs < 0,
                 "only an unsettled fainted wild unit can be injected");
-            _injectedFaints.Add(wildUnitId);
+            if (!_injectedFaints.Contains(wildUnitId))
+            {
+                _injectedFaints.Add(wildUnitId);
+            }
         }
+
+#endif
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
@@ -457,6 +469,9 @@ namespace Cosmimera.Bootstrap.Demo
             // SOL P2-12 R3-01: XP earned out of combat (capture input, region step) must level up before a new battle
             // can start this tick; otherwise the growth would wait for that battle to end.
             ApplyLevelUps();
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            BeforeTickForTests?.Invoke();
+#endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
@@ -474,6 +489,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             // Test seam: empty in play. A knock-out a test produced out of band settles exactly like a Tick event.
             for (int i = 0; i < _injectedFaints.Count; i++)
             {
@@ -481,6 +497,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _injectedFaints.Clear();
+#endif
 
             if (!engaged && _team.InCombat)
             {

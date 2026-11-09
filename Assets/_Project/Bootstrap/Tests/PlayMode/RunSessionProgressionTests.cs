@@ -19,11 +19,8 @@ using UnityEngine.TestTools;
 namespace Cosmimera.Bootstrap.Tests
 {
     /// <summary>
-    /// Regression for the four XP-flow fixes in RunSession (SOL P2-12 R1, R3-01, R3-02, R3-03). Each test drives the real
-    /// StepCombat through <c>StepCombatForTests</c> on a real planet; only two things are staged by the test:
-    /// where the party/player stand (so a wild pack is or is not engaged) and which wild units are already at 0 HP when
-    /// the step runs (their knock-out is then settled by the same OnFaint a Tick event reaches). Fighting itself is
-    /// not relied on, because a real kill on a chosen tick would depend on hit rolls and AI timing.
+    /// XP-flow regressions drive StepCombat on a real planet. Staged faints exercise settlement ordering; a separate
+    /// combat case verifies the real Tick dispatch.
     /// REQ: docs/design/level-progression.md#經驗分配.
     /// </summary>
     public sealed class RunSessionProgressionTests
@@ -77,6 +74,7 @@ namespace Cosmimera.Bootstrap.Tests
             public readonly List<CreatureViewRequest> Requests = new List<CreatureViewRequest>();
             public readonly List<GameObject> Roots = new List<GameObject>();
             public int Disposed;
+            public int Fainted;
 
             public ICreatureView Create(in CreatureViewRequest request)
             {
@@ -99,7 +97,11 @@ namespace Cosmimera.Bootstrap.Tests
 
                 public Transform Root => _inner.Root;
 
-                public void ShowFainted() => _inner.ShowFainted();
+                public void ShowFainted()
+                {
+                    _owner.Fainted++;
+                    _inner.ShowFainted();
+                }
 
                 public void Dispose()
                 {
@@ -130,6 +132,12 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(views.Requests.Count(r => !r.Ally && r.Role == SpawnRole.Boss), Is.EqualTo(1), "the boss spawn");
             Assert.Throws<Core.Contracts.ContractException>(() => run.Session.UseViewFactory(new RecordingViews()),
                 "the factory is fixed once the run is configured");
+
+            int ally = run.Session.PartyUnitsForTests[0];
+            Kill(run.Session, env, ally);
+            run.Session.SyncViewsForTests();
+            Assert.That(views.Fainted, Is.GreaterThan(0), "SyncViews shows the fielded fainted ally");
+            Assert.That(views.Roots[ally].GetComponent<Renderer>().sharedMaterial.color, Is.EqualTo(Color.gray));
 
             Object.Destroy(run.Session.gameObject);
             yield return null;
@@ -174,9 +182,10 @@ namespace Cosmimera.Bootstrap.Tests
             ParkAt(s, Quiet(s, questRegion));
             int[] before = Exp(s);
             s.InjectFaintForTests(e1);
+            s.InjectFaintForTests(e1);
             Step(s);
             Assert.That(s.TeamForTests.InCombat, Is.False, "battle 1 over");
-            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 20, 20, 10, 10, 10, 10 }), "battle 1 pays {0,1}");
+            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 20, 20, 10, 10, 10, 10 }), "duplicate faint pays {0,1} once");
 
             s.SwitchMainForTests();
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 1, 2 }), "slot 0 swapped for slot 2 out of combat");
@@ -196,6 +205,50 @@ namespace Cosmimera.Bootstrap.Tests
         // REQ: creatures.md#進化 — one roll per knocked-out spawn on the run's own 'D' stream, tier by role, element from the
         // planet type's bias. The oracle replays the same knock-out order on a fresh stream; the boss is injected twice
         // before one step to show a re-sent faint cannot roll a second drop (tech-debt R5-01).
+        [UnityTest]
+        public IEnumerator Knockout_excludes_fainted_member_and_breaks_ties_by_persistent_id()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count > 0);
+            RunPlan plan = PlanFor(env, seed);
+            int target = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run, ids: new[] { 6, 5, 4, 3, 2, 1 });
+            RunSession s = run.Session;
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            Kill(s, env, s.PartyUnitsForTests[0]);
+            Kill(s, env, target);
+            int[] before = Exp(s);
+            s.InjectFaintForTests(target);
+            Step(s);
+            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 0, 27, 13, 13, 13, 14 }));
+        }
+
+        [UnityTest]
+        public IEnumerator Real_tick_knockout_pays_xp()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count > 0);
+            RunPlan plan = PlanFor(env, seed);
+            int target = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(50), run);
+            RunSession s = run.Session;
+            ParkAt(s, Beside(plan.Spawns[target].Direction));
+            for (int i = 0; i < 2000; i++)
+            {
+                int[] before = Exp(s);
+                Step(s);
+                if (s.EncounterForTests.Events.Any(e => e.Kind == EncounterEventKind.Faint && s.EncounterForTests.Units[e.TargetId].Side == EncounterSide.Wild))
+                {
+                    Assert.That(Delta(before, Exp(s)).Sum(), Is.GreaterThan(0), "real faint dispatch pays XP");
+                    yield break;
+                }
+            }
+
+            Assert.Fail("the wild creature was not knocked out by Encounter.Tick");
+        }
+
         [UnityTest]
         public IEnumerator Knockouts_drop_one_roll_per_spawn_from_the_planet_bias()
         {
@@ -276,8 +329,11 @@ namespace Cosmimera.Bootstrap.Tests
 
             int pool = Pool(progression, BaseQuestStep, QuestLevel(env, plan, 0), false);
             int[] before = Exp(s);
+            int[] levelsAtTick = null;
+            s.BeforeTickForTests = () => levelsAtTick = s.PartyUnitsForTests.Select(id => enc.Units[id].Level).ToArray();
             ParkAt(s, Beside(plan.Spawns[spawn].Direction));
             Step(s);
+            Assert.That(levelsAtTick, Is.EqualTo(Enumerable.Repeat(11, PartySize).ToArray()), "levels at the first Tick");
 
             Assert.That(s.TeamForTests.InCombat, Is.True, "this step starts a battle");
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(Split(pool, new int[0])),
@@ -542,51 +598,38 @@ namespace Cosmimera.Bootstrap.Tests
             return 0;
         }
 
+        // Golden vectors for the synthetic fixture, calculated independently of Progression.
         private static int WildLevelOf(Env env, RunPlan plan, int spawn) =>
-            env.Progression.WildLevel(1, plan.Regions[plan.Spawns[spawn].Region].Tier, plan.Spawns[spawn].Role);
+            10 + 2 * plan.Regions[plan.Spawns[spawn].Region].Tier +
+            (plan.Spawns[spawn].Role == SpawnRole.Elite ? 3 : plan.Spawns[spawn].Role == SpawnRole.Boss ? 5 : 0);
 
-        // A quest step pays at its region's normal wild level (RunSession.PayQuest, level-progression.md#獎勵量).
-        private static int QuestLevel(Env env, RunPlan plan, int step) =>
-            env.Progression.WildLevel(1, plan.Regions[plan.Quest[step].Region].Tier, SpawnRole.Normal);
+        private static int QuestLevel(Env env, RunPlan plan, int step) => 10 + 2 * plan.Regions[plan.Quest[step].Region].Tier;
 
-        // ---------------------------------------------------------------------------------------------------------
-        // XP oracle (level-progression.md#獎勵量 / #經驗分配), independent of Progression.Settle
-        // ---------------------------------------------------------------------------------------------------------
+        private static int Pool(Progression progression, int baseXp, int level, bool elite)
+        {
+            int[] costs = { 156, 163, 172, 180, 189, 198, 208, 219, 230, 241 };
+            return baseXp * costs[level - 10] * (elite ? 2 : 1) / 156;
+        }
 
-        // E = floor(base × C(min(L,99)) × r / C(10)); r = 1 here (no elite pool is asserted).
-        private static int Pool(Progression progression, int baseXp, int level, bool elite) =>
-            (int)((long)baseXp * progression.XpToNext(System.Math.Min(level, 99)) * (elite ? 2 : 1) / progression.XpToNext(10));
-
-        // All six alive: weight 4 if the slot appeared in the record, else 2; floor the exact share, give the leftover
-        // points by larger remainder, ties to the smaller persistent id (slot + 1).
         private static int[] Split(int pool, int[] appeared)
         {
-            var weight = new long[PartySize];
-            long total = 0;
-            for (int i = 0; i < PartySize; i++)
+            string key = pool + ":" + string.Join(",", appeared);
+            return key switch
             {
-                weight[i] = appeared.Contains(i) ? 4 : 2;
-                total += weight[i];
-            }
-
-            var share = new int[PartySize];
-            var remainder = new long[PartySize];
-            int given = 0;
-            for (int i = 0; i < PartySize; i++)
-            {
-                long exact = (long)pool * weight[i];
-                share[i] = (int)(exact / total);
-                remainder[i] = exact % total;
-                given += share[i];
-            }
-
-            int[] order = Enumerable.Range(0, PartySize).OrderByDescending(i => remainder[i]).ThenBy(i => i).ToArray();
-            for (int k = 0; k < pool - given; k++)
-            {
-                share[order[k]]++;
-            }
-
-            return share;
+                "80:" => new[] { 14, 14, 13, 13, 13, 13 },
+                "80:0,1" => new[] { 20, 20, 10, 10, 10, 10 },
+                "80:1,2" => new[] { 10, 20, 20, 10, 10, 10 },
+                "80:0,1,2" => new[] { 18, 18, 17, 9, 9, 9 },
+                "88:" => new[] { 15, 15, 15, 15, 14, 14 },
+                "88:0,1" => new[] { 22, 22, 11, 11, 11, 11 },
+                "88:1,2" => new[] { 11, 22, 22, 11, 11, 11 },
+                "88:0,1,2" => new[] { 20, 19, 19, 10, 10, 10 },
+                "96:" => new[] { 16, 16, 16, 16, 16, 16 },
+                "96:0,1" => new[] { 24, 24, 12, 12, 12, 12 },
+                "96:1,2" => new[] { 12, 24, 24, 12, 12, 12 },
+                "96:0,1,2" => new[] { 21, 21, 21, 11, 11, 11 },
+                _ => throw new System.InvalidOperationException("No golden split for " + key),
+            };
         }
 
         private static string Show(int[] values) => "[" + string.Join(",", values) + "]";
@@ -770,7 +813,15 @@ namespace Cosmimera.Bootstrap.Tests
                     Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
                     Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text),
                 Balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text),
-                Progression = Progression.FromJson(Load<TextAsset>(Copy + "balance.json").text),
+                Progression = Progression.FromJson(@"{""progression"":{
+                    ""level_max"":100,""starter_level"":10,""xp_first_level_cost"":100,
+                    ""xp_growth_numerator"":105,""xp_growth_denominator"":100,
+                    ""evolution_level_bands"":{""juvenile"":[20,30],""adolescent"":[35,50]},
+                    ""migration_stage_floor_levels"":[10,20,35],""appeared_weight"":4,""reserve_weight"":2,
+                    ""rewards"":{""base_xp"":{""wild"":80,""capture"":40,""quest_step"":80,""quest_chain"":160,""boss"":640},
+                    ""reference_level"":10,""elite_multiplier"":2,
+                    ""wild_level"":{""base"":10,""per_difficulty"":10,""per_tier"":2,
+                    ""role_bonus"":{""normal"":0,""elite"":3,""boss"":5}},""sidekick_share_divisor"":2}}}"),
                 Actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
             };
             foreach (GameDef d in db.All)
@@ -791,9 +842,9 @@ namespace Cosmimera.Bootstrap.Tests
             return env;
         }
 
-        // Six main slots (the starters repeat if the data has fewer than six), ids 1..6, equal starting XP. The session is
+        // Six main slots (the starters repeat if the data has fewer than six), equal starting XP. The session is
         // disabled as soon as it has landed: Update would otherwise run its own ticks between the test's steps.
-        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null)
+        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null)
         {
             var party = new List<CreatureDef>();
             for (int i = 0; i < PartySize; i++)
@@ -813,7 +864,7 @@ namespace Cosmimera.Bootstrap.Tests
                 new RunSetup
                 {
                     PlanetType = env.Type, Seed = seed, Radius = Radius, Party = party,
-                    PartyIds = Enumerable.Range(1, PartySize).ToList(),
+                    PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
                 }, env.Wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
