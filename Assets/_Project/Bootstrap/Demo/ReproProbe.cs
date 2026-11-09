@@ -32,7 +32,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Builds the probe report.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; types non-empty; templates.Count == templateTags.Count; radiusFor returns a
+        /// Pre: all arguments non-null (environment and sampleDump optional); types non-empty with no null elements;
+        ///      wildPool non-empty, no nulls, each with mastery, including an Adult; templates.Count == templateTags.Count; radiusFor returns a
         ///      radius RunPlanner accepts for every type.
         /// Post: deterministic text for identical inputs and identical floating-point behaviour; one header block,
         ///      then one line per (planet type sorted by Id ordinal, seed) in <see cref="Seeds"/> order.
@@ -50,17 +51,32 @@ namespace Cosmimera.Bootstrap.Demo
                 "wildPool, vocabulary and radiusFor are required");
             Core.Contracts.Contract.Requires(templates != null && templateTags != null && templates.Count == templateTags.Count,
                 "templates and templateTags must be parallel lists");
+            foreach (PlanetTypeDef type in types)
+            {
+                Core.Contracts.Contract.Requires(type != null, "types must not contain null elements");
+            }
+
+            bool hasAdult = false;
+            foreach (CreatureDef creature in wildPool)
+            {
+                Core.Contracts.Contract.Requires(creature != null && creature.Mastery.Count > 0,
+                    "wild pool entries need a main element");
+                hasAdult |= creature.Stage == CreatureStage.Adult;
+            }
+
+            Core.Contracts.Contract.Requires(hasAdult, "wild pool needs an adult form for the boss");
 
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v2\n");
+            sb.Append("# cosmimera repro-probe v3\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" templates ").Append(templates.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
-            sb.Append("# type seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete\n");
+            sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
+            sb.Append("# type seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete landingBits\n");
             foreach (PlanetTypeDef type in sorted)
             {
                 foreach (ulong seed in Seeds)
@@ -130,7 +146,12 @@ namespace Cosmimera.Bootstrap.Demo
                     .Append(surfMm.ToString("x16")).Append(' ')
                     .Append(sea.ToString(CultureInfo.InvariantCulture)).Append(' ')
                     .Append(RunPlanner.Hash(plan).ToString("x16")).Append(' ')
-                    .Append(DiscreteHash(plan).ToString("x16")).Append('\n');
+                    .Append(DiscreteHash(plan).ToString("x16")).Append(' ')
+                    // ADR-0007: landing is geometry, so preserve bits for same-backend checks and let policy b
+                    // measure displacement without contaminating the authoritative discrete digest.
+                    .Append(math.asuint(plan.LandingDirection.x).ToString("x8")).Append(',')
+                    .Append(math.asuint(plan.LandingDirection.y).ToString("x8")).Append(',')
+                    .Append(math.asuint(plan.LandingDirection.z).ToString("x8")).Append('\n');
             }
             finally
             {
