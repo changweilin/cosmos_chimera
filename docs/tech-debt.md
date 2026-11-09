@@ -7,7 +7,7 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `docs/reviews/P1-review-r17-sol.md` 之後 | r18 | — | P1 第 18 輪複審因 Codex 額度中斷未執行；p1/r5-fixes 已於 2026-11-08 合併（EditMode 825/825） |
 | `Combat/Runtime/Model/Encounter.cs` | D0-E2 | med | 玩家角色不是野生宙獸的目標（`PlayerVitals` 尚未接線） |
 | 同上 | D0-E3 | low | steering 為直線大圓移動，無障礙迴避；移速未套 move_speed 效果 |
-| 同上 | D0-E4 | low | `TangentToward` 以絕對門檻 1e-6 判斷退化：目標正好在施放者正上／下方（世界座標 ~640 m，float 殘差 ~1e-5）時會正規化殘差，產生非切向 forward，觸發 `MoveGeometry` 的 unit-tangent Pre。正常遊玩需兩單位同一方向才會發生；P2-12 回歸測試曾因把隊伍停在野生生成點正上方而觸發。改為相對 `|to-from|` 的門檻或先去掉徑向分量再比較 |
+| 同上 | D0-E4 | low | `TangentToward` 在目標近乎正上／下方（側向偏移 ≲ 0.1 mm，世界座標 ~640 m）時，去掉徑向分量後的 float 殘差（例：4.36e-6）仍超過門檻並被正規化，產生非切向 forward，觸發 `MoveGeometry` 的 unit-tangent Pre（Release 剝除後靜默使用）。單純改相對門檻無效（見 `docs/reviews/P2-12-sol-r5.md` R5-07 數值見證）；需含世界座標精度的退化判定＋再次正交化，並補獨立幾何測試。P2-12 回歸測試以 6 m 停位隔離此缺陷 |
 | `Data/balance.json#capture` | D0-B1 | — | 收服率 60% / BOSS 100% 為佔位值，待 SOL 平衡模型（P5-07）定案 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-U1 | med | 探索及大廳／選星／結算已支援手把；尚無遊戲內重綁，仍需實體手把與 Steam Deck／Proton 實機驗收（P7-07） |
 | 同上 | D0-R1 | med | 倒下的宙獸整場 run 不能復活、戰鬥外不回血（無設計規則；可能過難） |
@@ -25,3 +25,9 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | R8 | low | `Settle` Post 應寫成 `min(Exp, MaxExp) + Paid <= MaxExp` |
 | 同上 | R9 | low | `XpRecipient` 建構子未以 Contract 檢查 id/exp（由 `Settle` 攔截） |
 | `docs/reviews/P2-12-sol-r3.md` | R3-04 | low | `Encounter.SetLevel` 的戰鬥外限制只寫在 Pre，未檢查（呼叫端 `RunSession` 以 `InCombat` 把關） |
+| `docs/reviews/P2-12-sol-r5.md` | R5-01 | med | `RunSession.InjectFaintForTests` 未去重：同 id 排入兩次會重複發擊倒 XP（僅測試接縫，正式路徑不呼叫） |
+| 同上 | R5-02 | med | XP 回歸測試的擊倒全走注入，未經正式 `Encounter.Tick` Faint 分派；移除正式 `OnFaint` 呼叫不會被測出。需補一例真實 Tick 擊倒 |
+| 同上 | R5-03 | med | R3-01 測試只看 Step 後等級，無法證明升級在首個 Tick 前生效（把 `ApplyLevelUps` 移到 Tick 後仍通過） |
+| 同上 | R5-04 | med | RunSession XP oracle 多處重算 `Split`／共用 `WildLevel`，且只測全存活、ID＝槽位＋1；死亡分母與永久 ID 平手接線無守護 |
+| 同上 | R5-05 | low | 測試接縫未以 `UNITY_EDITOR` 排除於正式 build；accessor 回傳可變 live 物件 |
+| 同上 | R5-06 | low | 回歸測試讀正式 balance 卻斷言精確 XP 值，平衡調整會誤報；改用合成 progression fixture |
