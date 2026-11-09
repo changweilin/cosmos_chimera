@@ -8,6 +8,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -356,6 +357,93 @@ namespace Cosmimera.Bootstrap.Tests
         // combat pays one quest step to an all-reserve record (weights 2 each): pool/6 each, ≥ 1 → LV11 for all six.
         // In the same step a wild pack next to the arrival point engages, so that step starts a new battle. The old code
         // applied level-ups only after Tick, saw InCombat, and left every unit at LV10 for the whole fight.
+        // REQ: docs/reviews/P2-05-wiring-sol.md W-03 — every end path hands its drops to the lobby (Q-C32: win, loss and
+        // abandon all keep materials). The seed makes the boss's knock-out the stream's first, successful roll, so the
+        // test does not depend on balance.json's chance values.
+        public enum EndPath { Victory, Defeat, Abandon }
+
+        [UnityTest]
+        public IEnumerator Every_end_path_hands_the_run_materials_to_the_lobby(
+            [Values(EndPath.Victory, EndPath.Defeat, EndPath.Abandon)] EndPath path)
+        {
+            Env env = LoadEnv();
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return rules.TryRoll(SpawnRole.Boss, env.Type.ElementBias, ref rng, out _);
+            });
+            RunPlan plan = PlanFor(env, seed);
+            int boss = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Boss);
+            RunOutcome outcome = null;
+            int ends = 0;
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run, onEnd: o => { outcome = o; ends++; });
+            RunSession s = run.Session;
+            Kill(s, env, boss);
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            s.InjectFaintForTests(boss);
+            Step(s);
+            MaterialStack[] dropped = s.MaterialsForTests.ToArray();
+            Assert.That(dropped.Length, Is.EqualTo(1), "the boss drop is banked in the run");
+            Assert.That(s.EndedForTests, Is.False, "the boss stays capturable for its knocked-out window");
+
+            switch (path)
+            {
+                case EndPath.Victory:
+                    // The window closes with no capture throw: the boss is gone and the run is won.
+                    for (int i = 0; i < 2000 && !s.EndedForTests; i++)
+                    {
+                        Step(s);
+                    }
+
+                    break;
+                case EndPath.Defeat:
+                    foreach (int id in s.PartyUnitsForTests)
+                    {
+                        Kill(s, env, id);
+                    }
+
+                    Step(s);
+                    break;
+                case EndPath.Abandon:
+                    s.AbandonForTests();
+                    Assert.That(s.EndedForTests, Is.False, "the first press only arms");
+                    s.AbandonForTests();
+                    break;
+            }
+
+            Assert.That(ends, Is.EqualTo(1), "End fires exactly once");
+            Assert.That(outcome.Victory, Is.EqualTo(path == EndPath.Victory));
+            Assert.That(outcome.Abandoned, Is.EqualTo(path == EndPath.Abandon));
+            Assert.That(outcome.Materials, Is.EqualTo(dropped), "the outcome carries exactly what dropped");
+            Assert.That(outcome.PartyExp.Count, Is.EqualTo(PartySize));
+
+            // DemoGame.OnRunEnded banks every outcome through LobbyTransactions.Settle; the same call here proves the
+            // drop reaches the save on this path (the Settle rules themselves are LobbyTransactionsTests' job).
+            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cosmimera-endpath-" + System.Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(dir);
+            try
+            {
+                var live = new LobbySave();
+                live.ChooseStarter(env.Starters[0].LineId, env.Starters[0].Id, env.Progression.XpThreshold(10));
+                for (int i = 1; i < PartySize; i++)
+                {
+                    live.Add(env.Starters[i % env.Starters.Count].Id, VesselKind.TalismanCard, env.Progression.XpThreshold(10));
+                }
+
+                List<int> ids = live.Owned.Select(o => o.InstanceId).Take(PartySize).ToList();
+                CommitStatus st = LobbyTransactions.Settle(live, ids, outcome, System.IO.Path.Combine(dir, "lobby.json"),
+                    out LobbySave next, out _, out System.Exception error);
+                Assert.That(st, Is.EqualTo(CommitStatus.Committed), error?.ToString());
+                Assert.That(next.Materials.Count(dropped[0].Key), Is.EqualTo(dropped[0].Qty));
+            }
+            finally
+            {
+                System.IO.Directory.Delete(dir, true);
+            }
+        }
+
         [UnityTest]
         public IEnumerator R3_01_a_level_earned_outside_combat_is_applied_even_when_the_same_step_starts_a_battle()
         {
@@ -891,7 +979,8 @@ namespace Cosmimera.Bootstrap.Tests
 
         // Six main slots (the starters repeat if the data has fewer than six), equal starting XP. The session is
         // disabled as soon as it has landed: Update would otherwise run its own ticks between the test's steps.
-        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null)
+        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null,
+            System.Action<RunOutcome> onEnd = null)
         {
             var party = new List<CreatureDef>();
             for (int i = 0; i < PartySize; i++)
@@ -914,7 +1003,7 @@ namespace Cosmimera.Bootstrap.Tests
                     PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
-                }, env.Wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
+                }, env.Wild, onEnd ?? (o => { }), Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
             float deadline = Time.realtimeSinceStartup + 60f;

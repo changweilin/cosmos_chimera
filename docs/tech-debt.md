@@ -16,4 +16,3 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1；野生等級只隨區域 tier 與角色變化 |
 | `docs/decisions/ADR-0007-generation-reproducibility.md` | Q-T6-R1 | med | 生成點選陸地（`IsSea(direction)`）與 Scatter 讀浮點方向，格界附近跨後端可能翻轉；P6 握手比對 `planDiscrete` 偵測，不一致時改以主機計畫下發 |
 | `docs/reviews/P2-12-sol-r5.md` | R5-05 | low | PartyUnits／Materials 已改為快照；Encounter、Plan、Team、Quest 與 Rig 仍暴露 live 物件，尚未完成受控操作替換 |
-| `docs/reviews/P2-05-wiring-sol.md` | W-03 | med | 精英及真實 Tick 素材掉落已測；End 回呼經 `DemoGame.OnRunEnded` 的勝／敗／放棄入帳、JsonUtility 對 qty/tier 小數／數字字串／超出 Int32 的嚴格性仍未完成（進化落盤、拒絕不變、W-01／W-02 交易已由 `LobbyTransactionsTests` 涵蓋） |

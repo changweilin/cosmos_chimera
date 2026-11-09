@@ -104,6 +104,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             RebuildCopy();
             _combatBalance = CombatBalance.FromJson(_balance.text);
+            // Before the JsonUtility loaders below, which truncate/wrap non-integer numbers into int fields unseen.
+            BalanceIntegerGuard.RequireIntegers(_balance.text, "materials", "progression");
             _progression = Progression.FromJson(_balance.text);
             _materialDrops = MaterialDrops.FromJson(_balance.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");

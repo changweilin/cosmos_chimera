@@ -160,6 +160,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<int> _injectedFaints = new List<int>();
         internal Action BeforeTickForTests;
         internal void SyncViewsForTests() => SyncViews();
+        internal void AbandonForTests() => RequestAbandon();
+        internal bool EndedForTests => _ended;
 #endif
         private Progression _progression;
         private int[] _partyExp;
@@ -689,15 +691,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_abandonAction.WasPressedThisFrame())
             {
-                if (_nowMs <= _abandonArmedUntilMs)
-                {
-                    End(false, true);
-                }
-                else
-                {
-                    _abandonArmedUntilMs = _nowMs + 3000;
-                    Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
-                }
+                RequestAbandon();
             }
         }
 
@@ -1006,6 +1000,20 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             return -1;
+        }
+
+        // Two presses within 3 s: the first only arms and explains, so a stray press cannot throw away a run.
+        private void RequestAbandon()
+        {
+            if (_nowMs <= _abandonArmedUntilMs)
+            {
+                End(false, true);
+            }
+            else
+            {
+                _abandonArmedUntilMs = _nowMs + 3000;
+                Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
+            }
         }
 
         private void End(bool victory, bool abandoned)
