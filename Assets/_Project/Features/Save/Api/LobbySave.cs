@@ -59,24 +59,52 @@ namespace Cosmimera.Save
         /// </remarks>
         public MaterialInventory Materials => _materials;
 
+        /// <summary>Finds the first material key that banking <paramref name="stacks"/> would push past int.MaxValue.</summary>
+        /// <remarks>
+        /// Pre: stacks non-null.
+        /// Post: true iff AddMaterials(stacks) would overflow; then <paramref name="overflow"/> is the lowest such key in
+        ///       Snapshot order (element, then tier), so the UI names the same key every retry. false sets it to default.
+        ///       <see cref="ArgumentException"/> in every build for a stack outside the save domain (see AddMaterials).
+        /// Side effects: allocates.
+        /// </remarks>
+        public bool WouldOverflow(IReadOnlyList<MaterialStack> stacks, out MaterialKey overflow)
+        {
+            Contract.Requires(stacks != null, "stacks must not be null");
+            var keys = new List<MaterialKey>();
+            Dictionary<MaterialKey, long> totals = SumInDomain(stacks);
+            foreach (KeyValuePair<MaterialKey, long> t in totals)
+            {
+                if (_materials.Count(t.Key) + t.Value > int.MaxValue)
+                {
+                    keys.Add(t.Key);
+                }
+            }
+
+            overflow = default;
+            if (keys.Count == 0)
+            {
+                return false;
+            }
+
+            keys.Sort((a, b) => a.Element != b.Element ? ((int)a.Element).CompareTo((int)b.Element) : a.Tier.CompareTo(b.Tier));
+            overflow = keys[0];
+            return true;
+        }
+
         /// <summary>Banks the materials a run brought back, all or nothing.</summary>
         /// <remarks>
         /// Pre: stacks non-null.
         /// Post: each key's count grew by the sum of its stacks. <see cref="InvalidOperationException"/> in every build,
         ///       with the stock unchanged, when any key would exceed int.MaxValue (summed in long first, so a partial
-        ///       deposit never happens).
+        ///       deposit never happens). <see cref="ArgumentException"/> in every build, stock unchanged, for a stack
+        ///       outside the save domain — a tier outside 1..MaterialDrops.MaxTier, a qty below 1 or an undefined
+        ///       element (default(MaterialStack) included) — because ToJson could not write it back (SOL W-04).
         /// Side effects: mutates this save.
         /// </remarks>
         public void AddMaterials(IReadOnlyList<MaterialStack> stacks)
         {
             Contract.Requires(stacks != null, "stacks must not be null");
-            var totals = new Dictionary<MaterialKey, long>();
-            foreach (MaterialStack st in stacks)
-            {
-                totals.TryGetValue(st.Key, out long sum);
-                totals[st.Key] = sum + st.Qty;
-            }
-
+            Dictionary<MaterialKey, long> totals = SumInDomain(stacks);
             foreach (KeyValuePair<MaterialKey, long> t in totals)
             {
                 if (_materials.Count(t.Key) + t.Value > int.MaxValue)
@@ -89,6 +117,50 @@ namespace Cosmimera.Save
             {
                 _materials.Add(t.Key, (int)t.Value);
             }
+        }
+
+        private static Dictionary<MaterialKey, long> SumInDomain(IReadOnlyList<MaterialStack> stacks)
+        {
+            var totals = new Dictionary<MaterialKey, long>();
+            foreach (MaterialStack st in stacks)
+            {
+                if (!InSaveDomain(st.Key) || st.Qty < 1)
+                {
+                    throw new ArgumentException("lobby save: material " + st.Key + " x" + st.Qty + " is outside the save domain");
+                }
+
+                totals.TryGetValue(st.Key, out long sum);
+                totals[st.Key] = sum + st.Qty;
+            }
+
+            return totals;
+        }
+
+        // The domain FromJson accepts; ToJson must never produce anything outside it (round-trip Post).
+        private static bool InSaveDomain(MaterialKey key) =>
+            Enum.IsDefined(typeof(Element), key.Element) && key.Tier >= 1 && key.Tier <= MaterialDrops.MaxTier;
+
+        /// <summary>An independent deep copy, used as the candidate of an all-or-nothing lobby change.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: the copy's ToJson equals this one's and LoadedFormatVersion matches; mutating either never affects the
+        ///       other (OwnedCreature is an immutable struct, the lists and stock are copied).
+        /// Side effects: allocates.
+        /// </remarks>
+        public LobbySave Clone()
+        {
+            var c = new LobbySave
+            {
+                StarterLine = StarterLine, _nextInstanceId = _nextInstanceId, LoadedFormatVersion = LoadedFormatVersion,
+            };
+            c._owned.AddRange(_owned);
+            c._party.AddRange(_party);
+            foreach (MaterialStack m in _materials.Snapshot())
+            {
+                c._materials.Add(m.Key, m.Qty);
+            }
+
+            return c;
         }
 
         /// <summary>Records the starter choice and adds the starter.</summary>
@@ -194,7 +266,12 @@ namespace Cosmimera.Save
         }
 
         /// <summary>Serializes to JSON.</summary>
-        /// <remarks>Pre: none. Post: FromJson(ToJson()) reproduces this save. Side effects: allocates.</remarks>
+        /// <remarks>
+        /// Pre: none. Post: FromJson(ToJson()) reproduces this save. <see cref="InvalidOperationException"/> in every
+        ///      build, with nothing produced, when the stock holds a key outside the save domain (reachable only by
+        ///      calling Materials.Add directly with a tier above MaterialDrops.MaxTier — SOL W-04): writing it would make
+        ///      a file this class refuses to load. Side effects: allocates.
+        /// </remarks>
         public string ToJson()
         {
             var dto = new Dto
@@ -209,6 +286,11 @@ namespace Cosmimera.Save
             dto.materials = new MaterialDto[stock.Count];
             for (int i = 0; i < stock.Count; i++)
             {
+                if (!InSaveDomain(stock[i].Key))
+                {
+                    throw new InvalidOperationException("lobby save: material " + stock[i].Key + " is outside the save domain");
+                }
+
                 dto.materials[i] = new MaterialDto
                 {
                     element = ElementId(stock[i].Key.Element), tier = stock[i].Key.Tier, qty = stock[i].Qty,

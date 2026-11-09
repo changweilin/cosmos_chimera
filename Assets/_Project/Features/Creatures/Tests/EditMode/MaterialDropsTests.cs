@@ -146,6 +146,12 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, null, ref rng, out _));
             Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, new Element[0], ref rng, out _));
             Assert.Throws<ContractException>(() => d.TryRoll((SpawnRole)9, Twilight, ref rng, out _));
+            // W-05: checked before the chance draw, so it fails for every role, not only when something drops.
+            foreach (SpawnRole role in new[] { SpawnRole.Normal, SpawnRole.Elite, SpawnRole.Boss })
+            {
+                Assert.Throws<ContractException>(() =>
+                    d.TryRoll(role, new[] { Element.Light, (Element)99 }, ref rng, out _), role.ToString());
+            }
             Assert.Throws<ContractException>(() => d.TierFor((SpawnRole)9));
             Assert.Throws<ContractException>(() => d.ChancePercent((SpawnRole)9));
             Assert.Throws<ContractException>(() => d.QtyFor((SpawnRole)9));

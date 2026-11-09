@@ -96,5 +96,76 @@ namespace Cosmimera.Save.Tests
             Assert.Throws<ContractException>(() => s.SetSpecies(3, "x"), "not owned");
             Assert.Throws<ContractException>(() => s.SetSpecies(1, ""), "empty species");
         }
+
+        [Test]
+        public void Clone_is_equal_and_independent()
+        {
+            var s = new LobbySave();
+            s.ChooseStarter("line", "a", 10);
+            s.Add("b", VesselKind.GlassBead, 7);
+            s.AddMaterials(new[] { Stack(Element.Light, 1, 3) });
+            LobbySave c = s.Clone();
+            Assert.That(c.ToJson(), Is.EqualTo(s.ToJson()));
+            Assert.That(c.LoadedFormatVersion, Is.EqualTo(s.LoadedFormatVersion));
+
+            c.SetExp(1, 999);
+            c.SetSpecies(2, "b_1");
+            c.SetParty(new[] { 2 });
+            c.Add("z", VesselKind.MagicCube, 0);
+            c.AddMaterials(new[] { Stack(Element.Light, 1, 1), Stack(Element.Fire, 2, 1) });
+            Assert.That(s.Get(1).Exp, Is.EqualTo(10));
+            Assert.That(s.Get(2).SpeciesId, Is.EqualTo("b"));
+            CollectionAssert.AreEqual(new[] { 1, 2 }, s.Party);
+            Assert.That(s.Owned.Count, Is.EqualTo(2));
+            Assert.That(s.Materials.Count(new MaterialKey(Element.Light, 1)), Is.EqualTo(3));
+            Assert.That(s.Materials.Count(new MaterialKey(Element.Fire, 2)), Is.EqualTo(0));
+            Assert.That(c.Add("y", VesselKind.MagicCube, 0).InstanceId, Is.EqualTo(s.Add("y", VesselKind.MagicCube, 0).InstanceId + 1),
+                "the id cursor is copied, not shared");
+        }
+
+        [Test]
+        public void WouldOverflow_names_the_lowest_full_key_and_changes_nothing()
+        {
+            var s = new LobbySave();
+            s.AddMaterials(new[] { Stack(Element.Fire, 2, int.MaxValue), Stack(Element.Wood, 3, int.MaxValue - 1) });
+            Assert.IsFalse(s.WouldOverflow(new[] { Stack(Element.Wood, 3, 1), Stack(Element.Light, 1, 9) }, out MaterialKey none));
+            Assert.That(none, Is.EqualTo(default(MaterialKey)));
+            Assert.IsTrue(s.WouldOverflow(new[] { Stack(Element.Fire, 2, 1), Stack(Element.Wood, 3, 1), Stack(Element.Wood, 3, 1) },
+                out MaterialKey full));
+            Assert.That(full, Is.EqualTo(new MaterialKey(Element.Wood, 3)), "Snapshot order: Wood (1) before Fire (3)");
+            Assert.That(s.Materials.Count(new MaterialKey(Element.Wood, 3)), Is.EqualTo(int.MaxValue - 1));
+            Assert.Throws<ContractException>(() => s.WouldOverflow(null, out _));
+        }
+
+        [Test]
+        public void Stacks_outside_the_save_domain_are_refused_whole()
+        {
+            var s = new LobbySave();
+            Assert.Throws<ArgumentException>(() =>
+                s.AddMaterials(new[] { Stack(Element.Light, 1, 1), Stack(Element.Light, MaterialDrops.MaxTier + 1, 1) }));
+            Assert.Throws<ArgumentException>(() => s.AddMaterials(new[] { Stack(Element.Light, 1, 1), default }));
+            Assert.Throws<ArgumentException>(() => s.WouldOverflow(new MaterialStack[] { default }, out _));
+            Assert.That(s.Materials.Snapshot().Count, Is.EqualTo(0), "no partial deposit");
+        }
+
+        [Test]
+        public void ToJson_refuses_a_stock_it_could_not_read_back()
+        {
+            // Materials is exposed so TryEvolve can consume from it; its Add accepts any tier >= 1 (SOL W-04).
+            var s = new LobbySave();
+            s.Materials.Add(new MaterialKey(Element.Light, MaterialDrops.MaxTier + 1), 1);
+            Assert.Throws<InvalidOperationException>(() => s.ToJson());
+            string dir = Path.Combine(Path.GetTempPath(), "cosmimera-save-w04-" + Guid.NewGuid().ToString("N"));
+            string path = Path.Combine(dir, "lobby.json");
+            try
+            {
+                Assert.Throws<InvalidOperationException>(() => s.Write(path));
+                Assert.IsFalse(File.Exists(path), "nothing unreadable reaches the disk");
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
+        }
     }
 }

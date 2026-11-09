@@ -154,5 +154,17 @@
   },
   "ui.results.materials_none": {
     "ja": "なし"
+  },
+  "ui.lobby.save_failed": {
+    "ja": "セーブに失敗しました。変更は適用されていません。しばらくしてから再度お試しください。"
+  },
+  "ui.results.save_failed": {
+    "ja": "セーブに失敗しました。今回の報酬はまだ付与されていません。再試行してください。"
+  },
+  "ui.results.stock_full": {
+    "ja": "{material}の所持数が上限に達しているため、今回の報酬は一切付与されていません。"
+  },
+  "ui.results.retry": {
+    "ja": "再試行"
   }
 }

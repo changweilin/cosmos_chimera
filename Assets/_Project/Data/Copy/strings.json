@@ -463,5 +463,25 @@
     "zh-TW": "無",
     "en": "None",
     "ja": "なし"
+  },
+  "ui.lobby.save_failed": {
+    "zh-TW": "存檔失敗，變更未套用。請稍後再試。",
+    "en": "Save failed. Changes were not applied. Please try again later.",
+    "ja": "セーブに失敗しました。変更は適用されていません。しばらくしてから再度お試しください。"
+  },
+  "ui.results.save_failed": {
+    "zh-TW": "存檔失敗，本場獎勵尚未入帳。請重試。",
+    "en": "Save failed. Run rewards have not been added. Please retry.",
+    "ja": "セーブに失敗しました。今回の報酬はまだ付与されていません。再試行してください。"
+  },
+  "ui.results.stock_full": {
+    "zh-TW": "{material} 庫存已達上限，本場所有獎勵尚未入帳。",
+    "en": "{material} stock is full. No rewards from this run have been added.",
+    "ja": "{material}の所持数が上限に達しているため、今回の報酬は一切付与されていません。"
+  },
+  "ui.results.retry": {
+    "zh-TW": "重試",
+    "en": "Retry",
+    "ja": "再試行"
   }
 }

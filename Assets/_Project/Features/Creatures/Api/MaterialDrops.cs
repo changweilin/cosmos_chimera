@@ -93,8 +93,10 @@ namespace Cosmimera.Creatures
 
         /// <summary>Rolls the drop for one knock-out on a planet whose type prefers <paramref name="planetBias"/>.</summary>
         /// <remarks>
-        /// Pre: role defined; planetBias non-null with &gt;= 1 defined element (every planet type has a bias; a type without
-        ///      one would make its planet drop nothing, which is a data error, not a rule).
+        /// Pre: role defined; planetBias non-null with &gt;= 1 element, every one defined (checked before the draw, so a bad
+        ///      entry fails even on a roll that drops nothing — SOL W-05); every planet type has a bias, and a type without
+        ///      one would make its planet drop nothing, which is a data error, not a rule. rng was seeded through a Pcg32
+        ///      constructor (default(Pcg32) is not a seeded stream).
         /// Post: true iff the chance roll succeeded; then drop.Key == (planetBias[v], TierFor(role)) for a uniform v and
         ///       drop.Qty == QtyFor(role). Deterministic for a given rng state.
         /// Side effects: advances <paramref name="rng"/> by exactly one bounded draw on failure and two on success. Callers
@@ -104,6 +106,11 @@ namespace Cosmimera.Creatures
         {
             Contract.Requires(Enum.IsDefined(typeof(SpawnRole), role), "role must be defined");
             Contract.Requires(planetBias != null && planetBias.Count >= 1, "planet type must have an element bias");
+            for (int i = 0; i < planetBias.Count; i++)
+            {
+                Contract.Requires(Enum.IsDefined(typeof(Element), planetBias[i]), "planet bias elements must be defined");
+            }
+
             drop = default;
             // Always draw the chance, even at 100%: the stream position then depends only on the knock-out sequence.
             if (rng.NextUInt(100) >= (uint)_chancePercent[(int)role])

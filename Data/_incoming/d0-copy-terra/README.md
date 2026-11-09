@@ -22,3 +22,4 @@ PASS: 39 supplement keys; no base-key collisions
 - 2026-11-09 · TERRA · done · 修正 ui.lobby.party_hint、reserve、move_up、remove_from_party、add_to_party、party_min、party_full 繁中文案。 · 下一步：人工審核
 
 探索操作已接 `DemoRun` action map。`command_bindings`、`abandon_binding_confirm` 及 `gamepad_help` 支援手把提示；收服及任務完成提示改用 binding 佔位符，避免固定顯示鍵盤按鍵。三語初稿共 163 個本地化欄位，日文仍待交叉審核與執行期接線。
+- 2026-11-09 · TERRA · done · 補充存檔失敗、素材上限與重試文案 · 下一步：FLASH 補 ja

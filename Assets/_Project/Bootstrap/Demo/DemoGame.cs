@@ -60,6 +60,9 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<CreatureDef> _wildPool = new List<CreatureDef>();
         private RunSession _run;
         private RunOutcome _outcome;
+        // Non-null while the ended run's rewards are not yet in the lobby save (W-02): Results offers a retry and stays
+        // open, because leaving would drop rewards the player was shown.
+        private string _settleError;
         private readonly List<string> _xpLines = new List<string>();
         private readonly List<int> _runPartyIds = new List<int>();
         private Pcg32 _menuRng;
@@ -171,7 +174,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_menuInput.FindAction("Cancel").WasPressedThisFrame())
             {
-                if (_screen == Screen.StarSelect || _screen == Screen.Results)
+                if (_screen == Screen.StarSelect || (_screen == Screen.Results && _settleError == null))
                 {
                     _screen = Screen.Lobby;
                     _menuFocus.SetCount(0);
@@ -193,7 +196,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private int MenuButtonCount()
         {
-            if (_screen == Screen.Results) return 1;
+            if (_screen == Screen.Results) return 1;  // return-to-lobby, or retry while unsettled
             if (_screen == Screen.StarSelect) return _options.Count + 1;
             if (_save.StarterLine == null) return 1 + _starters.Count;
             int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 2;
@@ -374,8 +377,9 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
-                        _save.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
-                        _save.Write(_savePath);
+                        LobbySave candidate = _save.Clone();
+                        candidate.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
+                        CommitLobby(candidate);
                         GUIUtility.ExitGUI();
                     }
                 }
@@ -478,6 +482,21 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        // W-01: lobby changes go to a clone first; the live save is replaced only after the file holds the clone.
+        private bool CommitLobby(LobbySave candidate)
+        {
+            if (!LobbyTransactions.TryWrite(candidate, _savePath, out System.Exception error))
+            {
+                Debug.LogException(error);
+                _partyMsg = _copy.Ui("ui.lobby.save_failed");
+                return false;
+            }
+
+            _save = candidate;
+            _partyMsg = string.Empty;
+            return true;
+        }
+
         // REQ: creatures.md#進化 — lobby only; level and every material shortfall are listed at once, nothing is consumed
         // on refusal (EvolutionRules). A final form, or a species missing from the database, gets no button.
         private void EvolveButton(OwnedCreature o)
@@ -498,17 +517,22 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            EvolutionResult r = EvolutionRules.TryEvolve(o, req, _save.Materials, EvolutionVenue.Lobby, _progression);
-            if (r.Succeeded)
+            CommitStatus status = LobbyTransactions.Evolve(_save, o.InstanceId, req, _progression, _savePath,
+                out LobbySave next, out EvolutionResult r, out System.Exception error);
+            if (status == CommitStatus.Committed)
             {
-                _save.SetSpecies(o.InstanceId, r.Creature.SpeciesId);
-                _save.Write(_savePath);
+                _save = next;
                 _partyMsg = _copy.Ui("ui.lobby.evolve_success").Replace("{from}", _copy.Name(o.SpeciesId))
                     .Replace("{to}", _copy.Name(r.Creature.SpeciesId));
             }
-            else
+            else if (status == CommitStatus.Refused)
             {
                 _partyMsg = DescribeRefusal(req, r.Check);
+            }
+            else
+            {
+                Debug.LogException(error);
+                _partyMsg = _copy.Ui("ui.lobby.save_failed");
             }
 
             GUIUtility.ExitGUI();
@@ -566,9 +590,9 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CommitParty(List<int> party)
         {
-            _save.SetParty(party);
-            _save.Write(_savePath);
-            _partyMsg = string.Empty;
+            LobbySave candidate = _save.Clone();
+            candidate.SetParty(party);
+            CommitLobby(candidate);
         }
 
         private void DrawStarSelect()
@@ -634,6 +658,18 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             GUILayout.Space(20);
+            if (_settleError != null)
+            {
+                GUILayout.Label(_settleError, _text);
+                if (MenuButton(_copy.Ui("ui.results.retry"), GUILayout.Height(52)))
+                {
+                    TrySettle();
+                    GUIUtility.ExitGUI();
+                }
+
+                return;
+            }
+
             if (MenuButton(_copy.Ui("ui.results.return_lobby"), GUILayout.Height(52)))
             {
                 _screen = Screen.Lobby;
@@ -704,7 +740,6 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnRunEnded(RunOutcome outcome)
         {
             // Q-M4: the run itself is never saved; only what it brought back is written to the lobby save.
-            // XP is applied before captures join, so a new capture never receives its own capture reward.
             _xpLines.Clear();
             for (int i = 0; i < _runPartyIds.Count; i++)
             {
@@ -712,16 +747,10 @@ namespace Cosmimera.Bootstrap.Demo
                 int after = outcome.PartyExp[i];
                 _xpLines.Add(_copy.Name(o.SpeciesId) + " LV" + _progression.LevelOf(o.Exp) + " → LV" +
                     _progression.LevelOf(after) + "  (+" + (after - o.Exp) + " XP)");
-                _save.SetExp(o.InstanceId, after);
             }
 
-            foreach ((string speciesId, VesselKind vessel, int exp) in outcome.Captured)
-            {
-                _save.Add(speciesId, vessel, exp);
-            }
-
-            _save.AddMaterials(outcome.Materials);
-            _save.Write(_savePath);
+            // The run is over whether or not banking succeeds (End is single-shot), so leave it first; a failed bank
+            // keeps Results open with a retry instead of stranding the player in Running (W-02).
             _outcome = outcome;
             Destroy(_run.gameObject);
             _run = null;
@@ -734,6 +763,29 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _menuInput.Enable();
             }
+
+            TrySettle();
+        }
+
+        private void TrySettle()
+        {
+            CommitStatus status = LobbyTransactions.Settle(_save, _runPartyIds, _outcome, _savePath,
+                out LobbySave next, out MaterialKey overflow, out System.Exception error);
+            if (status == CommitStatus.Committed)
+            {
+                _save = next;
+                _settleError = null;
+                return;
+            }
+
+            if (status == CommitStatus.StockFull)
+            {
+                _settleError = _copy.Ui("ui.results.stock_full").Replace("{material}", _copy.Material(overflow));
+                return;
+            }
+
+            Debug.LogException(error);
+            _settleError = _copy.Ui("ui.results.save_failed");
         }
 
         private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"

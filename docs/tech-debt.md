@@ -31,8 +31,4 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | R5-04 | med | RunSession XP oracle 多處重算 `Split`／共用 `WildLevel`，且只測全存活、ID＝槽位＋1；死亡分母與永久 ID 平手接線無守護 |
 | 同上 | R5-05 | low | 測試接縫未以 `UNITY_EDITOR` 排除於正式 build；accessor 回傳可變 live 物件 |
 | 同上 | R5-06 | low | 回歸測試讀正式 balance 卻斷言精確 XP 值，平衡調整會誤報；改用合成 progression fixture |
-| `docs/reviews/P2-05-wiring-sol.md` | W-01 | med | 大廳進化 `TryEvolve → SetSpecies → Write` 寫檔失敗（IOException）時記憶體已進化、磁碟未進化且無提示；改為候選存檔寫入成功才替換，或失敗時復原並提示 |
-| 同上 | W-02 | med | 結算時素材庫存 Int32 溢位使 `OnRunEnded` 中途拋例外，run 卡在 Running（僅手改／極端累積可達）；結算前對完整候選存檔預檢並可重試 |
-| 同上 | W-03 | med | 素材接線測試只涵蓋普通＋BOSS 注入擊倒；精英、真實 Tick 分派、End 回呼入帳、勝／敗／放棄、進化落盤與 JsonUtility 數值型別嚴格性未測 |
-| 同上 | W-04 | low | `Materials` 公開庫存可加入 tier4（`MaterialKey` 只要求 tier≥1），`ToJson` 產出自身拒讀的 v3 檔 |
-| 同上 | W-05 | low | `MaterialDrops.TryRoll` 未在抽樣前驗證所有 bias 元素已定義；rng 需由建構子播種的 Pre 未明載 |
+| `docs/reviews/P2-05-wiring-sol.md` | W-03 | med | 素材接線 PlayMode 仍只涵蓋普通＋BOSS 注入擊倒：精英、真實 Tick 分派、End 回呼經 `DemoGame.OnRunEnded` 入帳、勝／敗／放棄各路徑，以及 JsonUtility 對 qty/tier 小數／數字字串／超出 Int32 的嚴格性未測（進化落盤、拒絕不變、W-01／W-02 交易已由 `LobbyTransactionsTests` 涵蓋） |

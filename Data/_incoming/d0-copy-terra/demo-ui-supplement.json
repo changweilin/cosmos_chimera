@@ -206,5 +206,21 @@
   "ui.results.materials_none": {
     "zh-TW": "無",
     "en": "None"
+  },
+  "ui.lobby.save_failed": {
+    "zh-TW": "存檔失敗，變更未套用。請稍後再試。",
+    "en": "Save failed. Changes were not applied. Please try again later."
+  },
+  "ui.results.save_failed": {
+    "zh-TW": "存檔失敗，本場獎勵尚未入帳。請重試。",
+    "en": "Save failed. Run rewards have not been added. Please retry."
+  },
+  "ui.results.stock_full": {
+    "zh-TW": "{material} 庫存已達上限，本場所有獎勵尚未入帳。",
+    "en": "{material} stock is full. No rewards from this run have been added."
+  },
+  "ui.results.retry": {
+    "zh-TW": "重試",
+    "en": "Retry"
   }
 }
