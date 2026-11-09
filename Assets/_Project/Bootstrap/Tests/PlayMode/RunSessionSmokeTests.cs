@@ -1,8 +1,10 @@
 #if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Combat;
+using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
 using NUnit.Framework;
@@ -10,6 +12,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 
 namespace Cosmimera.Bootstrap.Tests
@@ -33,6 +36,9 @@ namespace Cosmimera.Bootstrap.Tests
                 Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
                 Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
             CombatBalance balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            Progression progression = Progression.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            var actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions");
+            bool sharedRunEnabled = actions.FindActionMap("DemoRun").enabled;
             var wild = new List<CreatureDef>();
             var party = new List<CreatureDef>();
             PlanetTypeDef type = null;
@@ -64,11 +70,14 @@ namespace Cosmimera.Bootstrap.Tests
             GeoTemplateLoader.Load(meta.ToArray(), heights.ToArray(), water.ToArray(), templates, tags);
             RunOutcome outcome = null;
             var session = new GameObject("Run").AddComponent<RunSession>();
-            session.Configure(copy, balance, Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+            session.Configure(copy, balance, actions,
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
                     PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
+                    PartyIds = Enumerable.Range(1, party.Count).ToList(),
+                    PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
+                    Progression = progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
                 }, wild, o => outcome = o, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
@@ -79,6 +88,91 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(session.StartedForTests, Is.True, "terrain colliders under the landing point within 60 s");
+
+            Assert.That(session.TryQuestTarget(session.PlanForTests.Quest[0], out float3 questTarget), Is.True);
+            Assert.That(math.distance(questTarget, session.PlanForTests.Regions[session.PlanForTests.Quest[0].Region].Center),
+                Is.LessThan(1e-5f), "the reach-region guide points at the quest region");
+
+            Keyboard previousKeyboard = Keyboard.current;
+            InputSettings.BackgroundBehavior previousBackground = InputSystem.settings.backgroundBehavior;
+            InputSettings.EditorInputBehaviorInPlayMode previousEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            // Batchmode's hidden Game view can lose focus; synthetic input must still reach the real Update path.
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            InputSystem.settings.editorInputBehaviorInPlayMode =
+                InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            Gamepad previousGamepad = Gamepad.current;
+            Gamepad gamepad = InputSystem.AddDevice<Gamepad>();
+            InputSystem.EnableDevice(keyboard);
+            keyboard.MakeCurrent();
+            try
+            {
+                bool view = session.RigForTests.CameraRig.IsFirstPerson;
+                var vessel = session.VesselForTests;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.B));
+                yield return null;
+                yield return null;
+                Assert.That(keyboard.bKey.isPressed, Is.True, "the synthetic keyboard event reached InputSystem");
+                Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "B cycles the capture vessel");
+                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.EqualTo(view), "B leaves the view alone");
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                vessel = session.VesselForTests;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.V));
+                yield return null;
+                yield return null;
+                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.Not.EqualTo(view), "V toggles the view");
+                Assert.That(session.VesselForTests, Is.EqualTo(vessel), "V leaves the vessel alone");
+                session.RigForTests.CameraRig.ToggleView();
+
+                vessel = session.VesselForTests;
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
+                Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "gamepad east cycles vessels");
+                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.EqualTo(view), "vessel input leaves the view alone");
+
+                int main = session.MainForTests;
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadRight));
+                Assert.That(session.MainForTests, Is.Not.EqualTo(main), "d-pad right selects the other active lead");
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadLeft));
+                Assert.That(session.MainForTests, Is.EqualTo(main), "d-pad left selects the first active lead");
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightShoulder));
+                Assert.That(session.MainForTests, Is.Not.EqualTo(main), "right shoulder switches to a reserve creature");
+
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadUp));
+                Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Follow));
+                yield return Press(gamepad, new GamepadState { leftTrigger = 1f });
+                Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Retreat));
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadDown));
+                Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Free));
+
+                session.enabled = false;
+                vessel = session.VesselForTests;
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
+                Assert.That(session.VesselForTests, Is.EqualTo(vessel), "disabled run actions do not fire");
+                session.enabled = true;
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
+                Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "reenabled run actions work again");
+                // Unity's project-wide action asset may already be enabled when PlayMode starts.
+                Assert.That(actions.FindActionMap("DemoRun").enabled, Is.EqualTo(sharedRunEnabled),
+                    "the session leaves the shared map's original state unchanged");
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                InputSystem.RemoveDevice(gamepad);
+                InputSystem.settings.backgroundBehavior = previousBackground;
+                InputSystem.settings.editorInputBehaviorInPlayMode = previousEditorInput;
+                if (previousKeyboard != null && previousKeyboard.added)
+                {
+                    previousKeyboard.MakeCurrent();
+                }
+
+                if (previousGamepad != null && previousGamepad.added)
+                {
+                    previousGamepad.MakeCurrent();
+                }
+            }
 
             // Teleport next to the nearest normal pack so the 18 m aggro radius engages it. Nearest, because the
             // character's motor rejects an up vector that turns > 90° in one step (a far teleport is not gameplay).
@@ -165,8 +259,12 @@ namespace Cosmimera.Bootstrap.Tests
                 }
 
                 float3 upv = rig.Config.ToDirection(player);
+                Renderer terrainRenderer = rig.Terrain.GetComponentInChildren<Renderer>();
+                Material terrainMaterial = terrainRenderer != null ? terrainRenderer.sharedMaterial : null;
+                Shader terrainShader = terrainMaterial != null ? terrainMaterial.shader : null;
+                string shaderName = terrainShader != null ? terrainShader.name : null;
                 Debug.Log($"CAPTURE type={type.Id} lat={math.abs(upv.y):0.000} h={rig.SurfaceHeight(upv):0.00} " +
-                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={rig.Terrain.GetComponentInChildren<Renderer>()?.sharedMaterial?.shader?.name}");
+                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={shaderName}");
                 float3 toward = math.normalize(look - player - math.dot(look - player, upv) * upv + upv * 1e-4f);
                 rig.Camera.transform.position = player - toward * 7f + upv * 4f;
                 rig.Camera.transform.rotation = Quaternion.LookRotation(look - (float3)rig.Camera.transform.position, upv);
@@ -186,6 +284,16 @@ namespace Cosmimera.Bootstrap.Tests
             Object.Destroy(session.gameObject);
             yield return null;
         }
+
+        private static IEnumerator Press(Gamepad gamepad, GamepadState state)
+        {
+            InputSystem.QueueStateEvent(gamepad, state);
+            yield return null;
+            yield return null;
+            InputSystem.QueueStateEvent(gamepad, new GamepadState());
+            yield return null;
+        }
+
     }
 }
 #endif

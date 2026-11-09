@@ -30,9 +30,11 @@ jobs:
         run: pip install -r tools/requirements.txt
       - name: Validate production data
         run: tools/validate-data
-      # unittest covers the valid set and overlays every invalid fixture onto it.
+      # unittest covers the valid set and overlays every invalid fixture onto it. pytest, not unittest discover:
+      # test_demo_merge/test_demo_package/test_repro_compare use pytest fixtures and parametrize, which unittest
+      # cannot collect; pytest still runs the unittest.TestCase modules.
       - name: Test validator and sample fixtures
-        run: python -m unittest discover -s tools/tests -v
+        run: python -m pytest tools/tests -v
 
   unity-license:
     runs-on: ubuntu-latest

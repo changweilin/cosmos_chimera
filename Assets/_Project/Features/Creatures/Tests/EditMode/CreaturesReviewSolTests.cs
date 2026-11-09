@@ -266,16 +266,16 @@ namespace Cosmimera.Creatures.Tests
         }
 
         [Test]
-        public void Max_required_exp_is_kept_and_reported_unclamped()
+        public void Max_required_level_is_kept_and_reported_unclamped()
         {
             EvolutionRequirement req = Req(int.MaxValue, new MaterialStack(F1, 1));
             var inv = new MaterialInventory();
             inv.Add(F1, 1);
 
-            EvolutionCheck check = EvolutionRules.Check(Make.Creature(1, "a", exp: 0), req, inv, EvolutionVenue.Lobby);
+            EvolutionCheck check = EvolutionRules.Check(Make.Creature(1, "a", exp: 0), req, inv, EvolutionVenue.Lobby, Make.Progression);
 
-            Assert.AreEqual(int.MaxValue, req.RequiredExp);
-            Assert.AreEqual(int.MaxValue, check.ExpShortBy);
+            Assert.AreEqual(int.MaxValue, req.RequiredLevel);
+            Assert.AreEqual(int.MaxValue - 1, check.LevelShortBy, "exp 0 is LV1");
         }
 
         [Test]
@@ -296,7 +296,7 @@ namespace Cosmimera.Creatures.Tests
         [Test]
         public void Adult_on_a_planet_reports_both_blockers()
         {
-            EvolutionCheck check = EvolutionRules.Check(Make.Creature(1, "a"), default, new MaterialInventory(), EvolutionVenue.Planet);
+            EvolutionCheck check = EvolutionRules.Check(Make.Creature(1, "a"), default, new MaterialInventory(), EvolutionVenue.Planet, Make.Progression);
 
             Assert.IsTrue(check.AlreadyFinal);
             Assert.IsTrue(check.NotInLobby);
@@ -311,7 +311,7 @@ namespace Cosmimera.Creatures.Tests
             inv.Add(F2, 3);
             var creature = new OwnedCreature(7, "a", vessel, int.MaxValue);
 
-            EvolutionResult r = EvolutionRules.TryEvolve(creature, Req(100, new MaterialStack(F2, 3)), inv, EvolutionVenue.Lobby);
+            EvolutionResult r = EvolutionRules.TryEvolve(creature, Req(100, new MaterialStack(F2, 3)), inv, EvolutionVenue.Lobby, Make.Progression);
 
             Assert.IsTrue(r.Succeeded);
             Assert.AreEqual(vessel, r.Creature.Vessel);

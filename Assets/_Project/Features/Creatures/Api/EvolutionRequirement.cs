@@ -31,14 +31,14 @@ namespace Cosmimera.Creatures
 
         /// <summary>Creates the requirement for a non-final form.</summary>
         /// <remarks>
-        /// Pre: requiredExp &gt;= 0; materials != null with every entry Qty &gt;= 1 and a constructed key; nextSpeciesId
+        /// Pre: requiredLevel &gt;= 0; materials != null with every entry Qty &gt;= 1 and a constructed key; nextSpeciesId
         ///      non-empty; the summed Qty of repeated keys fits in int.
         /// Post: IsFinal false; Materials has unique keys (repeats summed) in first-seen order; the input list is copied.
         /// Side effects: allocates.
         /// </remarks>
-        public EvolutionRequirement(int requiredExp, IReadOnlyList<MaterialStack> materials, string nextSpeciesId)
+        public EvolutionRequirement(int requiredLevel, IReadOnlyList<MaterialStack> materials, string nextSpeciesId)
         {
-            Contract.Requires(requiredExp >= 0, "requiredExp must be >= 0");
+            Contract.Requires(requiredLevel >= 0, "requiredLevel must be >= 0");
             Contract.Requires(materials != null, "materials is null");
             Contract.Requires(!string.IsNullOrEmpty(nextSpeciesId), "nextSpeciesId must be non-empty");
 
@@ -63,14 +63,14 @@ namespace Cosmimera.Creatures
                 }
             }
 
-            RequiredExp = requiredExp;
+            RequiredLevel = requiredLevel;
             _materials = merged.AsReadOnly();
             NextSpeciesId = nextSpeciesId;
         }
 
-        /// <summary>Experience the creature must have reached (a threshold; not consumed).</summary>
+        /// <summary>Level the creature must have reached (a gate; experience is never consumed).</summary>
         /// <remarks>Pre: none. Post: &gt;= 0; 0 for the final requirement. Side effects: none.</remarks>
-        public int RequiredExp { get; }
+        public int RequiredLevel { get; }
 
         /// <summary>Materials consumed by a successful evolution.</summary>
         /// <remarks>Pre: none. Post: never null; unique keys; read-only; empty when IsFinal. Side effects: none.</remarks>
@@ -86,10 +86,10 @@ namespace Cosmimera.Creatures
 
         /// <summary>Reads the requirement off a creature form.</summary>
         /// <remarks>
-        /// Pre: def != null; for a non-adult, def.EvolutionExp &gt;= 0 and each material has Tier &gt;= 1, Qty &gt;= 1
+        /// Pre: def != null; for a non-adult, def.EvolutionLevel &gt;= 0 and each material has Tier &gt;= 1, Qty &gt;= 1
         ///      and the Qty summed per (element, tier)
     ///      fits in int (all guaranteed by validate-data and the importer; a violation is a data bug and throws).
-        /// Post: IsFinal iff def.EvolvesTo == null (adults); otherwise RequiredExp, Materials and NextSpeciesId mirror the def.
+        /// Post: IsFinal iff def.EvolvesTo == null (adults); otherwise RequiredLevel, Materials and NextSpeciesId mirror the def.
         /// Side effects: allocates.
         /// </remarks>
         public static EvolutionRequirement FromDef(CreatureDef def)
@@ -107,7 +107,7 @@ namespace Cosmimera.Creatures
                 stacks.Add(new MaterialStack(new MaterialKey(m.Element, m.Tier), m.Qty));
             }
 
-            return new EvolutionRequirement(def.EvolutionExp, stacks, def.EvolvesTo.Id);
+            return new EvolutionRequirement(def.EvolutionLevel, stacks, def.EvolvesTo.Id);
         }
     }
 }

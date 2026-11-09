@@ -110,6 +110,12 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public CreatureDef Def { get; }
 
+        /// <summary>Level its stats are currently scaled to (raised only by <see cref="Encounter.SetLevel"/>).</summary>
+        /// <remarks>Pre: none. Post: 1..100; never decreases. Side effects: none.</remarks>
+        public int Level { get; internal set; }
+
+        internal MoveDef[] MoveDefs { get; set; }
+
         /// <summary>HP, cooldowns and effects.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public Combatant Combatant { get; }
@@ -126,7 +132,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
         public float BodyRadiusM { get; }
 
-        internal int Agi { get; }
+        internal int Agi { get; set; }
 
         /// <summary>Leash anchor for wild units (their spawn point); unused for the player's side.</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
@@ -162,8 +168,8 @@ namespace Cosmimera.Combat
     /// order. REQ: docs/design/combat.md (rules), docs/roadmap/demo.md (D0 glue), Q-T1 steering.
     /// </summary>
     /// <remarks>
-    /// D0 simplifications (recorded in docs/tech-debt.md): field moves resolve once at cast instead of ticking; the player
-    /// character is not a target; steering is direct great-circle movement without obstacle avoidance; movement
+    /// Field moves persist for field_duration_ms and resolve on <see cref="FieldTimeline"/> ticks (combat.md#場地).
+    /// D0 simplifications (recorded in docs/tech-debt.md): the player character is not a target; steering is direct great-circle movement without obstacle avoidance; movement
     /// speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
     /// Pre: one owner, main thread. Side effects: owns its units and RNG stream.
     /// </remarks>
@@ -187,8 +193,40 @@ namespace Cosmimera.Combat
         private readonly List<EncounterEvent> _events = new List<EncounterEvent>(64);
         private readonly List<AiEnemy> _enemyBuffer = new List<AiEnemy>(32);
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
+        private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private Pcg32 _rng;
         private long _lastTickMs = long.MinValue;
+
+        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
+        // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
+        private readonly struct PlacedField
+        {
+            public PlacedField(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
+                float3 anchor, float3 forward, in FieldTimeline timeline)
+            {
+                CasterId = casterId;
+                Side = side;
+                Slot = slot;
+                Ctx = ctx;
+                Volume = volume;
+                Anchor = anchor;
+                Forward = forward;
+                Timeline = timeline;
+            }
+
+            public int CasterId { get; }
+            public EncounterSide Side { get; }
+            public int Slot { get; }
+            public CastContext Ctx { get; }
+            public HitVolume Volume { get; }
+            public float3 Anchor { get; }
+            public float3 Forward { get; }
+            public FieldTimeline Timeline { get; }
+        }
+
+        /// <summary>Number of fields still alive after the last tick (presentation and tests).</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int ActiveFieldCount => _fields.Count;
 
         /// <summary>Creates an empty encounter.</summary>
         /// <remarks>
@@ -232,29 +270,32 @@ namespace Cosmimera.Combat
             }
         }
 
-        /// <summary>Adds a creature at full HP standing on the ground under <paramref name="direction"/>.</summary>
+        /// <summary>
+        /// Adds a creature at <paramref name="level"/> (CON/STR/SPI/AGI scaled from the form's LV100 basis,
+        /// level-progression.md#四維縮放) at full HP, standing on the ground under <paramref name="direction"/>.
+        /// </summary>
         /// <remarks>
-        /// Pre: def non-null with a signature move; partnerMove null or a MoveDef; direction unit length.
-        /// Post: returns the unit with Id == previous Units.Count; Fielded == (side == Wild); Forward tangent.
+        /// Pre: def non-null with a signature move; partnerMove null or a MoveDef; direction unit length; 1 &lt;= level &lt;= 100.
+        /// Post: returns the unit with Id == previous Units.Count and Level == level; Fielded == (side == Wild); Forward tangent.
         /// Side effects: allocates the unit; does not fire on_summon (call <see cref="Field"/> for the player's side).
         /// </remarks>
-        public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction)
+        public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level)
         {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
+            Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(math.abs(math.lengthsq(direction) - 1f) <= 2e-3f, "direction must be unit length");
             int slots = partnerMove != null ? 2 : 1;
             var moves = new CastMove[slots];
             var volumes = new HitVolume[slots];
             var ranges = new RangeClass[slots];
-            CreatureStats s = def.Stats;
+            var defs = new MoveDef[slots];
+            CreatureStats s = def.Stats.AtLevel(level);
             for (int i = 0; i < slots; i++)
             {
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMove;
+                defs[i] = m;
                 moves[i] = CastMove.FromDef(m);
-                // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
-                BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
-                volumes[i] = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, s.Str,
-                    _balance.Stats, _balance.Hit);
+                volumes[i] = BuildVolume(m, s.Str);
                 ranges[i] = m.RangeClass;
             }
 
@@ -276,12 +317,54 @@ namespace Cosmimera.Combat
             float3 position = GroundPoint(direction, radius);
             var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Agi, position)
             {
+                Level = level,
+                MoveDefs = defs,
                 Position = position,
                 Forward = PlanetFrame.FromUp(direction).North,
                 Fielded = side == EncounterSide.Wild,
             };
             _units.Add(unit);
             return unit;
+        }
+
+        /// <summary>
+        /// Raises a unit to <paramref name="level"/> between battles: CON/SPI/AGI and STR-scaled hit volumes are re-derived
+        /// from the form's LV100 basis. REQ: Q-C31 (2026-11-09) — level-up effects settle when the battle ends.
+        /// </summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while the
+        ///      unit is out of combat (the caller owns battle state; stats must not change mid-fight, Q-C31).
+        /// Post: Level == level; volumes and stats equal those AddCreature would build at that level; Hp grows by the MaxHp
+        ///       increase; position, cooldowns and effects unchanged. level == Level is a no-op.
+        /// Side effects: mutates the unit.
+        /// </remarks>
+        public void SetLevel(int unitId, int level)
+        {
+            Contract.Requires(unitId >= 0 && unitId < _units.Count, "unknown unit");
+            EncounterUnit u = _units[unitId];
+            Contract.Requires(level >= u.Level && level <= 100, "level must be in Level..100");
+            Contract.Requires(!u.Combatant.IsFainted, "a fainted unit cannot level up");
+            if (level == u.Level)
+            {
+                return;
+            }
+
+            CreatureStats s = u.Def.Stats.AtLevel(level);
+            for (int i = 0; i < u.Volumes.Length; i++)
+            {
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str);
+            }
+
+            u.Combatant.Rescale(s.Con, s.Spi, s.Agi);
+            u.Agi = s.Agi;
+            u.Level = level;
+        }
+
+        private HitVolume BuildVolume(MoveDef m, int str)
+        {
+            // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
+            BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
+            return MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats, _balance.Hit);
         }
 
         /// <summary>Puts a player-side unit on the field at <paramref name="direction"/> and fires on_summon.</summary>
@@ -325,16 +408,23 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: nowMs > previous tick's nowMs (strictly increasing CombatTime); 0 &lt; dtMs &lt;= 1000; mainId is a fielded
         ///      Player unit or NoTarget; player position inside the combat shell.
-        /// Post: Events lists this tick's casts and resolutions in unit-id order; positions stay on the ground.
+        /// Post: Events lists, in order: resolutions of fields placed in earlier ticks (fields in placement order, targets
+        ///       in id order), then each acting unit's cast and its resolutions in unit-id order (a new field resolves
+        ///       at once); positions stay on the ground.
         /// Side effects: mutates units, RNG and Events. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
         {
             Contract.Requires(nowMs > _lastTickMs, "ticks must strictly advance CombatTime");
             Contract.Requires(dtMs > 0 && dtMs <= 1000, "dtMs must be 1..1000");
+            long previousMs = _lastTickMs;
             _lastTickMs = nowMs;
             _events.Clear();
             UpdateEngagement(playerPosition);
+
+            // Fields placed in earlier ticks resolve before any unit acts, in placement order, so every peer sees the same
+            // RNG draw order. Their tick-0 resolution already happened inside the placing TryCast.
+            ResolveFields(previousMs, nowMs);
 
             for (int i = 0; i < _units.Count; i++)
             {
@@ -416,24 +506,22 @@ namespace Cosmimera.Combat
                 anchor = MoveGeometry.ResolveAnchor(volume, _planet, u.Position, aim);
             }
 
-            for (int i = 0; i < _units.Count; i++)
+            if (u.MoveDefs[slot].Shape == MoveShape.Field)
             {
-                EncounterUnit t = _units[i];
-                if (!IsValidEnemy(u, t.Id) ||
-                    !MoveGeometry.Overlaps(volume, _planet, anchor, u.Forward, t.Position, t.BodyRadiusM))
+                var timeline = new FieldTimeline(nowMs, u.MoveDefs[slot].FieldDurationMs, _balance.Effects.FieldTickMs);
+                var field = new PlacedField(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, timeline);
+                _fields.Add(field);
+                // nowMs - 1 makes the placement instant itself the first resolution (FieldTimeline.TicksDue contract).
+                int due = timeline.TicksDue(nowMs - 1, nowMs);
+                for (int k = 0; k < due; k++)
                 {
-                    continue;
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, true);
                 }
 
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs);
-                bool hit = r.Outcome == HitOutcome.Hit;
-                _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, u.Id, t.Id, slot,
-                    r.Damage));
-                if (r.Fainted)
-                {
-                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, u.Id, t.Id, slot, 0));
-                }
+                return;
             }
+
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, false);
 
             if (volume.DashDistanceMm > 0)
             {
@@ -442,6 +530,57 @@ namespace Cosmimera.Combat
                 u.Position = GroundPoint(_planet.ToDirection(end), u.BodyRadiusM);
                 u.Forward = Tangent(Up(u.Position), u.Forward);
             }
+        }
+
+        private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
+            float3 anchor, float3 forward, long nowMs, bool field)
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit t = _units[i];
+                // A field hits every enemy inside it (combat.md#場地), including a wild unit that has disengaged; the
+                // Engaged gate only governs AI target choice (SOL D0-E1-01).
+                bool eligible = field ? t.Side != side && t.IsActive : IsValidEnemy(side, t.Id);
+                if (!eligible ||
+                    !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
+                {
+                    continue;
+                }
+
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs);
+                bool hit = r.Outcome == HitOutcome.Hit;
+                _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, casterId, t.Id, slot,
+                    r.Damage));
+                if (r.Fainted)
+                {
+                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, casterId, t.Id, slot, 0));
+                }
+            }
+        }
+
+        private void ResolveFields(long previousMs, long nowMs)
+        {
+            int write = 0;
+            for (int i = 0; i < _fields.Count; i++)
+            {
+                PlacedField f = _fields[i];
+                FieldTimeline tl = f.Timeline;
+                // previousMs >= PlacedMs here (placement happened in an earlier tick), so (previousMs, nowMs] never
+                // re-counts tick 0.
+                int due = tl.TicksDue(previousMs, nowMs);
+                for (int k = 0; k < due; k++)
+                {
+                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs, true);
+                }
+
+                // Kept for its whole life [placed, placed + life), not just until its last resolution (SOL D0-E1-02).
+                if (tl.IsAlive(nowMs))
+                {
+                    _fields[write++] = f;
+                }
+            }
+
+            _fields.RemoveRange(write, _fields.Count - write);
         }
 
         private void Support(EncounterUnit caster, EncounterUnit receiver, in CastContext ctx, int slot, long nowMs)
@@ -479,7 +618,9 @@ namespace Cosmimera.Combat
             }
         }
 
-        private bool IsValidEnemy(EncounterUnit self, int id)
+        private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
+
+        private bool IsValidEnemy(EncounterSide side, int id)
         {
             if (id < 0 || id >= _units.Count)
             {
@@ -487,7 +628,7 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit t = _units[id];
-            if (t.Side == self.Side || !t.IsActive)
+            if (t.Side == side || !t.IsActive)
             {
                 return false;
             }

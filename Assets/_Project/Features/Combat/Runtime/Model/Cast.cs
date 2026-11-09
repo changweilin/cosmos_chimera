@@ -309,8 +309,8 @@ namespace Cosmimera.Combat
 
         private readonly DerivedStats _stats;
         private readonly EffectRulesConfig _rules;
-        private readonly int _spi;
-        private readonly int _agi;
+        private int _spi;
+        private int _agi;
         private readonly int[] _mastery = new int[ElementCount];
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
@@ -354,7 +354,30 @@ namespace Cosmimera.Combat
 
         /// <summary>Max HP from CON.</summary>
         /// <remarks>Pre: none. Post: >= HpBase >= 1. Side effects: none.</remarks>
-        public int MaxHp { get; }
+        public int MaxHp { get; private set; }
+
+        /// <summary>
+        /// Re-derives the stat-driven values after a level-up between battles (Q-C31, 2026-11-09: growth applies when
+        /// the battle ends). The damage already taken is kept: Hp rises by exactly the MaxHp increase.
+        /// </summary>
+        /// <remarks>
+        /// Pre: !IsFainted (a fainted creature earns no XP); con, spi, agi >= 0; stats.MaxHp(con) >= MaxHp (levels never
+        ///      go down, and the stat curves are monotone).
+        /// Post: MaxHp == stats.MaxHp(con); Hp == old Hp + (new MaxHp − old MaxHp); SPI/AGI-derived values use the new
+        ///       stats from the next query; cooldowns, effects and mastery/resist unchanged.
+        /// Side effects: mutates this combatant.
+        /// </remarks>
+        internal void Rescale(int con, int spi, int agi)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant cannot level up");
+            Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
+            int maxHp = _stats.MaxHp(con);
+            Contract.Requires(maxHp >= MaxHp, "a level-up never lowers MaxHp");
+            Hp += maxHp - MaxHp;
+            MaxHp = maxHp;
+            _spi = spi;
+            _agi = agi;
+        }
 
         /// <summary>Current HP.</summary>
         /// <remarks>Pre: none. Post: 0..MaxHp. Side effects: none.</remarks>

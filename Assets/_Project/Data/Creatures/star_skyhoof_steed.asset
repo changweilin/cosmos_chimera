@@ -18,7 +18,7 @@ MonoBehaviour:
   sizeClass: 2
   aiStyle: 2
   evolvesTo: {fileID: 0}
-  evolutionExp: 0
+  evolutionLevel: 0
   evolutionMaterials: []
   resist: 0a000000000000000500000000000000f1ffffff000000001e00000032000000d8ffffff00000000
   mastery:

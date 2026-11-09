@@ -31,7 +31,7 @@ namespace Cosmimera.Creatures.Tests
         public void Constructor_exposes_values()
         {
             var r = new EvolutionRequirement(100, new[] { new MaterialStack(Fire1, 3), new MaterialStack(Light2, 2) }, "next");
-            Assert.AreEqual(100, r.RequiredExp);
+            Assert.AreEqual(100, r.RequiredLevel);
             Assert.AreEqual("next", r.NextSpeciesId);
             Assert.IsFalse(r.IsFinal);
             Assert.AreEqual(2, r.Materials.Count);
@@ -43,7 +43,7 @@ namespace Cosmimera.Creatures.Tests
         public void Zero_exp_and_no_materials_are_allowed()
         {
             var r = new EvolutionRequirement(0, new MaterialStack[0], "next");
-            Assert.AreEqual(0, r.RequiredExp);
+            Assert.AreEqual(0, r.RequiredLevel);
             Assert.IsEmpty(r.Materials);
         }
 
@@ -55,7 +55,7 @@ namespace Cosmimera.Creatures.Tests
             Assert.IsNull(r.NextSpeciesId);
             Assert.IsNotNull(r.Materials);
             Assert.IsEmpty(r.Materials);
-            Assert.AreEqual(0, r.RequiredExp);
+            Assert.AreEqual(0, r.RequiredLevel);
         }
 
         [Test]
@@ -117,12 +117,12 @@ namespace Cosmimera.Creatures.Tests
         // GameData setters are internal, so the def is filled through its serialized private fields; the field
         // names are the contract with CreatureDef/GameDef (see GameData/CreatureDef.cs).
         [Test]
-        public void FromDef_non_adult_mirrors_exp_materials_and_next_id()
+        public void FromDef_non_adult_mirrors_level_materials_and_next_id()
         {
             CreatureDef next = NewDef("fox_adolescent");
             CreatureDef juvenile = NewDef("fox_juvenile");
             Set(juvenile, "evolvesTo", next);
-            Set(juvenile, "evolutionExp", 120);
+            Set(juvenile, "evolutionLevel", 25);
             Set(juvenile, "evolutionMaterials", new List<EvolutionMaterial>
             {
                 Material(Element.Fire, 1, 3),
@@ -133,7 +133,7 @@ namespace Cosmimera.Creatures.Tests
 
             Assert.IsFalse(r.IsFinal);
             Assert.AreEqual("fox_adolescent", r.NextSpeciesId);
-            Assert.AreEqual(120, r.RequiredExp);
+            Assert.AreEqual(25, r.RequiredLevel);
             Assert.AreEqual(2, r.Materials.Count);
             Assert.AreEqual(new MaterialKey(Element.Fire, 1), r.Materials[0].Key);
             Assert.AreEqual(3, r.Materials[0].Qty);

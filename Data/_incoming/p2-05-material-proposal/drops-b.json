@@ -1,0 +1,19 @@
+{
+  "proposal_version": 1,
+  "status": "proposal",
+  "confirmed": false,
+  "question": "Q-C32",
+  "option": "B",
+  "element_source": "uniform_planet_bias",
+  "rules": {
+    "normal": {"tier": 1, "chance_percent": 10, "qty": 1},
+    "elite": {"tier": 2, "chance_percent": 60, "qty": 1},
+    "boss": {"tier": 3, "chance_percent": 100, "qty": 1}
+  },
+  "other_triggers": [],
+  "duplicate_policy": "one_defeat_per_spawn_no_role_stacking",
+  "inventory_scope": "shared_lobby_save",
+  "bank_before_evolution": true,
+  "tier_substitution": false,
+  "decision_owner": "human"
+}

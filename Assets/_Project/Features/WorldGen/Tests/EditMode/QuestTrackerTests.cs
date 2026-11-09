@@ -58,6 +58,47 @@ namespace Cosmimera.WorldGen.Tests
             var q = new QuestTracker(Plan());
             q.OnKnockedOut(2, Element.Fire);
             Assert.That(q.IsComplete, Is.True);
+            Assert.That(!q.IsEarned(0) && !q.IsEarned(1) && !q.IsEarned(3), Is.True, "skipped steps are not earned");
+            Assert.That(q.IsEarned(4), Is.True, "the boss step itself was genuinely done");
+        }
+
+        // REQ: Q-E1 (2026-11-09) — an elite knocked out before its step still counts.
+        [Test]
+        public void Elite_knocked_out_early_completes_its_step_when_it_becomes_current()
+        {
+            var q = new QuestTracker(Plan());
+            q.OnKnockedOut(1, Element.Fire);
+            Assert.That(q.StepIndex, Is.EqualTo(0));
+            q.OnRegionEntered(1);
+            q.OnKnockedOut(0, Element.Wood);
+            q.OnKnockedOut(0, Element.Wood);
+            Assert.That(q.Current.Kind, Is.EqualTo(QuestStepKind.CaptureOne));
+            Assert.That(q.IsEarned(2), Is.True);
+        }
+
+        // SOL P3-10 S1 witness shape: the elite is one of the DefeatWild kills.
+        [Test]
+        public void Elite_counted_toward_defeat_wild_still_completes_the_elite_step()
+        {
+            var q = new QuestTracker(Plan());
+            q.OnRegionEntered(1);
+            q.OnKnockedOut(0, Element.Wood);
+            q.OnKnockedOut(1, Element.Wood);
+            Assert.That(q.Current.Kind, Is.EqualTo(QuestStepKind.CaptureOne));
+            q.OnCaptured();
+            q.OnKnockedOut(2, Element.Wood);
+            for (int i = 0; i < 5; i++)
+            {
+                Assert.That(q.IsEarned(i), Is.True, $"step {i}");
+            }
+        }
+
+        [Test]
+        public void IsEarned_rejects_out_of_range_steps()
+        {
+            var q = new QuestTracker(Plan());
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => q.IsEarned(-1));
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => q.IsEarned(5));
         }
     }
 }

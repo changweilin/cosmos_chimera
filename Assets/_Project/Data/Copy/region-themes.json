@@ -3,88 +3,104 @@
     "id": "ruins",
     "name": {
       "zh-TW": "遺跡",
-      "en": "Ruins"
+      "en": "Ruins",
+      "ja": "遺跡"
     },
     "desc": {
       "zh-TW": "殘牆靜立，風穿過古老的石縫。",
-      "en": "Wind slips through the stones of silent ruins."
+      "en": "Wind slips through the stones of silent ruins.",
+      "ja": "佇む崩壁の間を、風が静かに吹き抜ける。"
     }
   },
   {
     "id": "forest",
     "name": {
       "zh-TW": "森林",
-      "en": "Forest"
+      "en": "Forest",
+      "ja": "森林"
     },
     "desc": {
       "zh-TW": "樹影交疊，葉間漏下斑駁微光。",
-      "en": "Dappled light filters through overlapping boughs."
+      "en": "Dappled light filters through overlapping boughs.",
+      "ja": "幾重もの木陰から、木漏れ日が揺らめく。"
     }
   },
   {
     "id": "riverbank",
     "name": {
       "zh-TW": "河岸",
-      "en": "Riverbank"
+      "en": "Riverbank",
+      "ja": "河岸"
     },
     "desc": {
       "zh-TW": "水聲伴著微風，輕拂河畔。",
-      "en": "Water murmurs beneath a gentle riverside breeze."
+      "en": "Water murmurs beneath a gentle riverside breeze.",
+      "ja": "せせらぎと共に、そよ風が水辺を撫でる。"
     }
   },
   {
     "id": "highland",
     "name": {
       "zh-TW": "高地",
-      "en": "Highland"
+      "en": "Highland",
+      "ja": "高地"
     },
     "desc": {
       "zh-TW": "草浪漫過起伏山脊，天際遼闊。",
-      "en": "Grass ripples along ridges beneath a wide sky."
+      "en": "Grass ripples along ridges beneath a wide sky.",
+      "ja": "波打つ草原が尾根を包み、広大な空が広がる。"
     }
   },
   {
     "id": "coast",
     "name": {
       "zh-TW": "海岸",
-      "en": "Coast"
+      "en": "Coast",
+      "ja": "海岸"
     },
     "desc": {
       "zh-TW": "潮聲迴盪，海風帶來鹹濕氣息。",
-      "en": "Salt air and rolling surf fill the coast."
+      "en": "Salt air and rolling surf fill the coast.",
+      "ja": "波音が響き渡り、潮風が微かに薫る。"
     }
   },
   {
     "id": "crater",
     "name": {
       "zh-TW": "隕坑",
-      "en": "Crater"
+      "en": "Crater",
+      "ja": "クレーター"
     },
     "desc": {
       "zh-TW": "環形峭壁圍攏寂靜的坑底。",
-      "en": "Ringed cliffs enclose a quiet crater floor."
+      "en": "Ringed cliffs enclose a quiet crater floor.",
+      "ja": "険しい環状壁が、静まり返る底を囲む。"
     }
   },
   {
     "id": "ice_shelf",
     "name": {
       "zh-TW": "冰棚",
-      "en": "Ice Shelf"
+      "en": "Ice Shelf",
+      "ja": "氷棚"
     },
     "desc": {
       "zh-TW": "冰層延向遠方，寒光映著天色。",
-      "en": "Cold light glints across an expanse of ice."
+      "en": "Cold light glints across an expanse of ice.",
+      "ja": "見渡す限りの氷原に、冷たい光が映える。"
     }
   },
   {
     "id": "canyon",
     "name": {
       "zh-TW": "峽谷",
-      "en": "Canyon"
+      "en": "Canyon",
+      "ja": "峡谷"
     },
     "desc": {
       "zh-TW": "層層岩壁間，風聲悠長。",
-      "en": "Wind echoes between layers of canyon rock."
+      "en": "Wind echoes between layers of canyon rock.",
+      "ja": "幾重の岩壁の間に、風の音が遠く響く。"
     }
   }
 ]

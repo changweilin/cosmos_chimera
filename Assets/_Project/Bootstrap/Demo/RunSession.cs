@@ -13,8 +13,8 @@ using UnityEngine.InputSystem;
 
 namespace Cosmimera.Bootstrap.Demo
 {
-    /// <summary>What a finished run hands back to the lobby (Q-M4: only captures persist).</summary>
-    /// <remarks>Pre: none. Post: Captured non-null. Side effects: none.</remarks>
+    /// <summary>What a finished run hands back to the lobby (Q-M4: only captures and earned XP persist).</summary>
+    /// <remarks>Pre: none. Post: Captured and PartyExp non-null. Side effects: none.</remarks>
     public sealed class RunOutcome
     {
         /// <summary>Boss knocked out.</summary>
@@ -25,9 +25,20 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Abandoned;
 
-        /// <summary>Captured (species id, vessel) in capture order.</summary>
-        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
-        public readonly List<(string speciesId, VesselKind vessel)> Captured = new List<(string, VesselKind)>();
+        /// <summary>Captured (species id, vessel, cumulative XP = T(encounter level)) in capture order.</summary>
+        /// <remarks>Pre: none. Post: non-null; exp &gt;= 0. Side effects: none.</remarks>
+        public readonly List<(string speciesId, VesselKind vessel, int exp)> Captured = new List<(string, VesselKind, int)>();
+
+        /// <summary>Cumulative XP of each party slot when the run ended (same order as RunSetup.Party).</summary>
+        /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
+        public readonly List<int> PartyExp = new List<int>();
+
+        /// <summary>Evolution materials dropped by wild knock-outs, in drop order (Q-C32 option B).</summary>
+        /// <remarks>
+        /// Pre: none. Post: non-null; at most one entry per spawn. Kept on victory, defeat and abandon alike, like
+        ///      captures and XP (Q-M4: whatever the run earned comes back). Side effects: none.
+        /// </remarks>
+        public readonly List<MaterialStack> Materials = new List<MaterialStack>();
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -57,6 +68,22 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
+
+        /// <summary>Persistent instance id of each party slot (XP rounding tie-break, level-progression.md).</summary>
+        /// <remarks>Pre: same count as Party; unique, &gt;= 1. Post: none. Side effects: none.</remarks>
+        public List<int> PartyIds;
+
+        /// <summary>Cumulative XP of each party slot; its level scales the slot's stats for the whole run.</summary>
+        /// <remarks>Pre: same count as Party; each &gt;= 0. Post: none. Side effects: none.</remarks>
+        public List<int> PartyExp;
+
+        /// <summary>Approved level curve and XP rewards (balance.json#progression).</summary>
+        /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
+        public Progression Progression;
+
+        /// <summary>Approved evolution material drop rules (balance.json#materials).</summary>
+        /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
+        public MaterialDrops Materials;
     }
 
     /// <summary>
@@ -66,7 +93,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>
     /// Pre: Configure once right after AddComponent. Post: calls the end callback exactly once.
     /// Side effects: owns every object it creates and destroys them in OnDestroy.
-    /// Input is read from Keyboard.current for the combat verbs; gamepad mapping is P7-07 (tech-debt D0-U1).
+    /// Run actions are cloned per session so enabling or disposing a run never changes the shared input asset.
     /// </remarks>
     public sealed class RunSession : MonoBehaviour
     {
@@ -75,13 +102,9 @@ namespace Cosmimera.Bootstrap.Demo
         private const float CaptureReachM = 8f;
         private const long AffixRefreshMs = 1000;
 
-        private static readonly Color[] ElementColors =
-        {
-            new Color(0.75f, 0.75f, 0.8f), new Color(0.3f, 0.7f, 0.25f), new Color(0.2f, 0.5f, 0.95f),
-            new Color(0.95f, 0.35f, 0.15f), new Color(0.6f, 0.45f, 0.25f), new Color(0.6f, 0.9f, 1f),
-            new Color(0.6f, 0.95f, 0.7f), new Color(0.95f, 0.85f, 0.2f), new Color(1f, 0.97f, 0.75f),
-            new Color(0.35f, 0.25f, 0.5f),
-        };
+        // REQ: level-progression.md#獎勵量 — planet difficulty d is a proposed field absent from the data; every D0
+        // planet type is calibrated at d = 1 (SOL rewards.json d0_evidence).
+        private const int D0Difficulty = 1;
 
         private sealed class HeightSurface : IEncounterSurface
         {
@@ -102,13 +125,27 @@ namespace Cosmimera.Bootstrap.Demo
         private sealed class WildInfo
         {
             public int Spawn;
+            public int Level;
+            public HashSet<int> AppearedAtKnockout;
             public long KnockedOutAtMs = -1;
             public bool Gone;
+            public bool Dropped;
         }
 
         private DemoCopy _copy;
         private CombatBalance _balance;
         private InputActionAsset _actions;
+        private InputActionMap _runInput;
+        private InputAction _selectFirstAction;
+        private InputAction _selectSecondAction;
+        private InputAction _switchAction;
+        private InputAction _focusAction;
+        private InputAction _freeAction;
+        private InputAction _followAction;
+        private InputAction _retreatAction;
+        private InputAction _cycleVesselAction;
+        private InputAction _captureAction;
+        private InputAction _abandonAction;
         private RunSetup _setup;
         private Action<RunOutcome> _onEnd;
 
@@ -118,11 +155,19 @@ namespace Cosmimera.Bootstrap.Demo
         private Encounter _encounter;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
+        private readonly HashSet<int> _appeared = new HashSet<int>();
+        private readonly List<int> _injectedFaints = new List<int>();
+        private Progression _progression;
+        private int[] _partyExp;
+        private bool[] _questPaid;
+        private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
-        private readonly Dictionary<int, Transform> _views = new Dictionary<int, Transform>();
-        private readonly Dictionary<int, Renderer> _renderers = new Dictionary<int, Renderer>();
+        private readonly Dictionary<int, ICreatureView> _views = new Dictionary<int, ICreatureView>();
+        private ICreatureViewFactory _viewFactory;
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
+        private Pcg32 _materialRng;
+        private MaterialDrops _drops;
         private long _nowMs = 1000;
         private float _accumulator;
         private long _nextAffixMs;
@@ -137,8 +182,8 @@ namespace Cosmimera.Bootstrap.Demo
         private string _toast = string.Empty;
         private long _toastUntilMs;
         private GUIStyle _label;
-        private Shader _toonShader;
         private Material _terrainMaterial;
+        private Material _playerMaterial;
 
         internal Encounter EncounterForTests => _encounter;
 
@@ -148,11 +193,83 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal bool StartedForTests => _started;
 
+        internal VesselKind VesselForTests => _vessel;
+
+        internal int MainForTests => _mainId;
+
+        internal AiCommandKind CommandForTests => _command.Kind;
+
+        // Seams for RunSessionProgressionTests (P2-12 regression). They expose state or call existing private flow; none
+        // changes behaviour while _injectedFaints stays empty.
+
+        /// <summary>Team rule state, so a test can read Active/InCombat without re-deriving them.</summary>
+        /// <remarks>Pre: Configure ran. Post: the live TeamState (callers must not drive it). Side effects: none.</remarks>
+        internal TeamState TeamForTests => _team;
+
+        /// <summary>The quest tracker of this run.</summary>
+        /// <remarks>Pre: Configure ran. Post: the live QuestTracker (read only for callers). Side effects: none.</remarks>
+        internal QuestTracker QuestForTests => _quest;
+
+        /// <summary>Simulation time of the last <see cref="StepCombatForTests"/> (ms).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 1000, equals the nowMs of the last Encounter.Tick. Side effects: none.</remarks>
+        internal long NowMsForTests => _nowMs;
+
+        /// <summary>Encounter unit id of each party slot, in party order.</summary>
+        /// <remarks>Pre: Configure ran. Post: one id per RunSetup.Party slot. Side effects: none.</remarks>
+        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits;
+
+        /// <summary>Cumulative XP of one party slot right now.</summary>
+        /// <remarks>Pre: 0 &lt;= slot &lt; party size. Post: &gt;= the slot's starting XP. Side effects: none.</remarks>
+        internal int PartyExpForTests(int slot) => _partyExp[slot];
+
+        /// <summary>Runs exactly one fixed combat step, the same code Update runs per 50 ms tick.</summary>
+        /// <remarks>
+        /// Pre: Configure ran; the component is disabled so Update does not tick as well.
+        /// Post: _nowMs advanced by one tick.
+        /// Side effects: everything StepCombat does (encounter tick, XP, level-ups, quest, end check).
+        /// </remarks>
+        internal void StepCombatForTests() => StepCombat();
+
+        /// <summary>Replaces the placeholder view factory (model-replacement seam, art-asset-pipeline.md#佔位模型).</summary>
+        /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: replaces the selected factory.</remarks>
+        internal void UseViewFactory(ICreatureViewFactory factory)
+        {
+            Core.Contracts.Contract.Requires(factory != null, "factory required");
+            Core.Contracts.Contract.Requires(_plan == null, "view factory must be chosen before Configure");
+            _viewFactory = factory;
+        }
+
+        /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
+        /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
+        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials;
+
+        /// <summary>Swaps the main for the first eligible reserve, exactly as the Switch input does.</summary>
+        /// <remarks>Pre: Configure ran. Post: as SwitchMain. Side effects: as SwitchMain (team, encounter, toast).</remarks>
+        internal void SwitchMainForTests() => SwitchMain();
+
+        /// <summary>Queues the knock-out of a wild unit that a test already took to 0 HP, to be settled in the next step.</summary>
+        /// <remarks>
+        /// Pre: wildUnitId is a wild unit with 0 HP whose knock-out has not been settled yet.
+        /// Post: the next StepCombat settles it like an Encounter Faint event (after that tick's real events).
+        /// Side effects: appends to the queue; nothing else until the next step.
+        /// </remarks>
+        internal void InjectFaintForTests(int wildUnitId)
+        {
+            Core.Contracts.Contract.Requires(_encounter != null && wildUnitId >= 0 && wildUnitId < _encounter.Units.Count,
+                "unknown unit");
+            Core.Contracts.Contract.Requires(_encounter.Units[wildUnitId].Side == EncounterSide.Wild &&
+                _encounter.Units[wildUnitId].Combatant.IsFainted && _wild[wildUnitId].KnockedOutAtMs < 0,
+                "only an unsettled fainted wild unit can be injected");
+            _injectedFaints.Add(wildUnitId);
+        }
+
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms.
+        /// Pre: all arguments non-null; actions contains the DemoRun map and its ten actions;
+        ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
+        ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
-        /// Side effects: creates GameObjects.
+        /// Side effects: creates GameObjects and a private input map, enabled while the component is enabled.
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
@@ -160,11 +277,34 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
+            InputActionMap runMap = RequireRunMap(actions);
             Core.Contracts.Contract.Requires(setup.Party != null && setup.Party.Count >= 1 && setup.Party.Count <= 6,
                 "party must hold 1..6 forms");
+            Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
+                setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
+                "progression, party ids and party exp are required, one per party slot");
+            Core.Contracts.Contract.Requires(setup.Materials != null, "material drop rules are required");
             _copy = copy;
+            _progression = setup.Progression;
+            _drops = setup.Materials;
+            _partyExp = setup.PartyExp.ToArray();
             _balance = balance;
             _actions = actions;
+            _runInput = runMap.Clone();
+            _selectFirstAction = _runInput.FindAction("SelectFirst", true);
+            _selectSecondAction = _runInput.FindAction("SelectSecond", true);
+            _switchAction = _runInput.FindAction("Switch", true);
+            _focusAction = _runInput.FindAction("Focus", true);
+            _freeAction = _runInput.FindAction("Free", true);
+            _followAction = _runInput.FindAction("Follow", true);
+            _retreatAction = _runInput.FindAction("Retreat", true);
+            _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
+            _captureAction = _runInput.FindAction("Capture", true);
+            _abandonAction = _runInput.FindAction("Abandon", true);
+            if (isActiveAndEnabled)
+            {
+                _runInput.Enable();
+            }
             _setup = setup;
             _onEnd = onEnd;
 
@@ -188,7 +328,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
-            _toonShader = toonShader;
+            _questPaid = new bool[_plan.Quest.Count];
+            _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
             if (terrainShader != null)
             {
                 float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
@@ -207,6 +348,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (toonShader != null)
             {
+                // Runtime primitives keep the built-in material, which renders magenta under URP.
+                _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
+                _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
                 var surface = new HeightSurface(height, templates);
                 System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
                 gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
@@ -215,20 +359,25 @@ namespace Cosmimera.Bootstrap.Demo
 
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
             _captureRng = new Pcg32(setup.Seed, 'K');
+            // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
+            _materialRng = new Pcg32(setup.Seed, 'D');
 
             for (int s = 0; s < _plan.Spawns.Count; s++)
             {
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction);
-                _wild[u.Id] = new WildInfo { Spawn = s };
+                int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
+                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
+                _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
 
             var roster = new List<int>();
-            foreach (CreatureDef def in setup.Party)
+            for (int i = 0; i < setup.Party.Count; i++)
             {
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Player, def, null, _plan.LandingDirection);
+                CreatureDef def = setup.Party[i];
+                EncounterUnit u = _encounter.AddCreature(EncounterSide.Player, def, null, _plan.LandingDirection,
+                    _progression.LevelOf(_partyExp[i]));
                 roster.Add(u.Id);
                 _partyUnits.Add(u.Id);
                 CreateView(u, SpawnRole.Normal);
@@ -296,6 +445,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _nowMs += TickMs;
             float3 player = PlayerPosition();
+            // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
+            RecordAppearances();
             UpdateRegion(player);
             if (_nowMs >= _nextAffixMs)
             {
@@ -303,12 +454,17 @@ namespace Cosmimera.Bootstrap.Demo
                 ApplyAffixes(player);
             }
 
+            // SOL P2-12 R3-01: XP earned out of combat (capture input, region step) must level up before a new battle
+            // can start this tick; otherwise the growth would wait for that battle to end.
+            ApplyLevelUps();
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
             {
-                _team.BeginCombat();
+                BeginCombat();
             }
+
+            RecordAppearances();
 
             foreach (EncounterEvent ev in _encounter.Events)
             {
@@ -318,10 +474,20 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // Test seam: empty in play. A knock-out a test produced out of band settles exactly like a Tick event.
+            for (int i = 0; i < _injectedFaints.Count; i++)
+            {
+                OnFaint(_injectedFaints[i]);
+            }
+
+            _injectedFaints.Clear();
+
             if (!engaged && _team.InCombat)
             {
                 _team.EndCombat();
             }
+
+            ApplyLevelUps();
 
             RefillField(player);
             ExpireKnockedOut();
@@ -331,12 +497,16 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnFaint(int unitId)
         {
             EncounterUnit u = _encounter.Units[unitId];
+            // SOL P2-12 R1: a battle whose only enemy falls on its first tick is no longer "engaged" after Tick, so the
+            // combat start above never ran; open it here or the knockout would be paid with the previous battle's record.
+            if (!_team.InCombat)
+            {
+                BeginCombat();
+                RecordAppearances();
+            }
+
             if (u.Side == EncounterSide.Player)
             {
-                if (!_team.InCombat)
-                {
-                    _team.BeginCombat();
-                }
 
                 _team.Faint(unitId);
                 _encounter.Unfield(unitId);
@@ -351,11 +521,30 @@ namespace Cosmimera.Bootstrap.Demo
             WildInfo w = _wild[unitId];
             w.KnockedOutAtMs = _nowMs;
             RunSpawn spawn = _plan.Spawns[w.Spawn];
+            // The capture of this creature settles later but belongs to this battle's participants (per-event record).
+            w.AppearedAtKnockout = new HashSet<int>(_appeared);
+            // REQ: option A — a boss pays only its boss pool, never a second wild-defeat pool.
+            Reward(spawn.Role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, spawn.Role == SpawnRole.Elite,
+                w.AppearedAtKnockout);
             _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
+            PayQuest(w.AppearedAtKnockout);
             if (spawn.Role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
+            }
+
+            // REQ: creatures.md#進化 (Q-C32 B) — one roll per spawn; the flag also stops a re-sent faint from paying twice.
+            if (!w.Dropped)
+            {
+                w.Dropped = true;
+                if (_drops.TryRoll(spawn.Role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                {
+                    _outcome.Materials.Add(drop);
+                    string msg = _copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key));
+                    // One toast slot: keep the boss knock-out line visible instead of overwriting it.
+                    Toast(spawn.Role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
+                }
             }
         }
 
@@ -430,59 +619,58 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ReadInput()
         {
-            Keyboard kb = Keyboard.current;
-            if (kb == null)
+            if (_runInput == null || !_runInput.enabled)
             {
                 return;
             }
 
-            if (kb.digit1Key.wasPressedThisFrame && _team.Active.Count > 0)
+            if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
             }
 
-            if (kb.digit2Key.wasPressedThisFrame && _team.Active.Count > 1)
+            if (_selectSecondAction.WasPressedThisFrame() && _team.Active.Count > 1)
             {
                 _mainId = _team.Active[1];
             }
 
-            if (kb.tabKey.wasPressedThisFrame)
+            if (_switchAction.WasPressedThisFrame())
             {
                 SwitchMain();
             }
 
-            if (kb.fKey.wasPressedThisFrame)
+            if (_focusAction.WasPressedThisFrame())
             {
                 int target = NearestEngaged(PlayerPosition());
                 _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
             }
 
-            if (kb.rKey.wasPressedThisFrame)
+            if (_freeAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             }
 
-            if (kb.tKey.wasPressedThisFrame)
+            if (_followAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
             }
 
-            if (kb.gKey.wasPressedThisFrame)
+            if (_retreatAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Retreat, CombatAi.NoTarget);
             }
 
-            if (kb.vKey.wasPressedThisFrame)
+            if (_cycleVesselAction.WasPressedThisFrame())
             {
                 _vessel = (VesselKind)(((int)_vessel + 1) % 3);
             }
 
-            if (kb.cKey.wasPressedThisFrame)
+            if (_captureAction.WasPressedThisFrame())
             {
                 TryCapture();
             }
 
-            if (kb.escapeKey.wasPressedThisFrame)
+            if (_abandonAction.WasPressedThisFrame())
             {
                 if (_nowMs <= _abandonArmedUntilMs)
                 {
@@ -491,10 +679,27 @@ namespace Cosmimera.Bootstrap.Demo
                 else
                 {
                     _abandonArmedUntilMs = _nowMs + 3000;
-                    Toast(_copy.Ui("ui.hud.abandon_confirm"));
+                    Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
                 }
             }
         }
+
+        internal static InputActionMap RequireRunMap(InputActionAsset actions)
+        {
+            Core.Contracts.Contract.Requires(actions != null, "actions are required");
+            InputActionMap map = actions.FindActionMap("DemoRun");
+            Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
+            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "Free", "Follow",
+                         "Retreat", "CycleVessel", "Capture", "Abandon" })
+            {
+                Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
+            }
+
+            return map;
+        }
+
+        private static string BindingLabel(InputAction action) =>
+            action.GetBindingDisplayString(group: Gamepad.current != null ? "Gamepad" : "Keyboard&Mouse");
 
         private void SwitchMain()
         {
@@ -529,26 +734,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TryCapture()
         {
-            float3 player = PlayerPosition();
-            int best = -1;
-            float bestDist = CaptureReachM;
-            foreach (KeyValuePair<int, WildInfo> kv in _wild)
-            {
-                if (kv.Value.Gone || kv.Value.KnockedOutAtMs < 0)
-                {
-                    continue;
-                }
-
-                float d = math.distance(_encounter.Units[kv.Key].Position, player);
-                if (d <= bestDist)
-                {
-                    bestDist = d;
-                    best = kv.Key;
-                }
-            }
-
+            int best = FindCaptureTarget(CaptureReachM);
             if (best < 0)
             {
+                Toast(_copy.Ui("ui.hud.capture_no_target").Replace("{capture}", BindingLabel(_captureAction)));
                 return;
             }
 
@@ -561,14 +750,42 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
             {
-                _outcome.Captured.Add((spawn.CreatureId, _vessel));
+                // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
+                _outcome.Captured.Add((spawn.CreatureId, _vessel, _progression.XpThreshold(w.Level)));
+                HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
+                Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
+                PayQuest(battle);
                 Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(spawn.CreatureId));
             }
             else
             {
                 Toast(_copy.Ui("ui.hud.capture_fail"));
             }
+        }
+
+        private int FindCaptureTarget(float reach)
+        {
+            float3 player = PlayerPosition();
+            int best = -1;
+            float bestDist = reach;
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                if (kv.Value.Gone || kv.Value.KnockedOutAtMs < 0 ||
+                    _nowMs - kv.Value.KnockedOutAtMs > KnockedOutWindowMs)
+                {
+                    continue;
+                }
+
+                float d = math.distance(_encounter.Units[kv.Key].Position, player);
+                if (d <= bestDist)
+                {
+                    bestDist = d;
+                    best = kv.Key;
+                }
+            }
+
+            return best;
         }
 
         private void ApplyAffixes(float3 player)
@@ -603,7 +820,126 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _region = region;
                 _quest.OnRegionEntered(region);
+                // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
+                PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
             }
+        }
+
+        // REQ: level-progression.md#經驗分配 — each battle keeps its own appearance record, reset when the next starts.
+        private void BeginCombat()
+        {
+            _appeared.Clear();
+            _team.BeginCombat();
+        }
+
+        private void RecordAppearances()
+        {
+            if (!_team.InCombat)
+            {
+                return;
+            }
+
+            foreach (int id in _team.Active)
+            {
+                _appeared.Add(id);
+            }
+        }
+
+        private void Reward(XpSource source, int level, bool elite, HashSet<int> appeared)
+        {
+            int pool = _progression.SourceXp(source, level, elite);
+            var recipients = new List<XpRecipient>(_partyUnits.Count);
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                int unit = _partyUnits[i];
+                recipients.Add(new XpRecipient(_setup.PartyIds[i], _partyExp[i], _encounter.Units[unit].Combatant.IsFainted,
+                    appeared.Contains(unit), -1));
+            }
+
+            // D0 has no sidekick loadout yet (P2-07 lobby UI), so only mains are paid.
+            XpSettlement settled = _progression.Settle(pool, recipients);
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                int before = _progression.LevelOf(_partyExp[i]);
+                _partyExp[i] += settled.Paid[i];
+                int after = _progression.LevelOf(_partyExp[i]);
+                if (after > before)
+                {
+                    // Q-C31: the stats change when this battle ends (ApplyLevelUps), not mid-fight.
+                    Toast(_copy.Ui("ui.hud.level_up").Replace("{name}", _copy.Name(_encounter.Units[_partyUnits[i]].Def.Id))
+                        .Replace("{level}", after.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                }
+            }
+        }
+
+        // REQ: Q-C31 (2026-11-09) — growth applies once the battle is over; a creature that fainted stays at its level
+        // for this run (it is not revived, D0-R1), but its XP still reaches the save.
+        private void ApplyLevelUps()
+        {
+            if (_team.InCombat)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                EncounterUnit u = _encounter.Units[_partyUnits[i]];
+                int level = _progression.LevelOf(_partyExp[i]);
+                if (level > u.Level && !u.Combatant.IsFainted)
+                {
+                    _encounter.SetLevel(u.Id, level);
+                }
+            }
+        }
+
+        // REQ: level-progression.md#獎勵量 — each genuinely completed step pays once at its region's normal wild level;
+        // the chain bonus needs every step earned, so a boss shortcut that skips steps pays neither for them.
+        // Q-C31 (2026-11-09): quest XP is split by the same appearance record as the battle event that completed the step.
+        private void PayQuest(HashSet<int> appeared)
+        {
+            bool all = true;
+            for (int i = 0; i < _plan.Quest.Count; i++)
+            {
+                if (!_quest.IsEarned(i))
+                {
+                    all = false;
+                    continue;
+                }
+
+                if (!_questPaid[i])
+                {
+                    _questPaid[i] = true;
+                    int tier = _plan.Regions[_plan.Quest[i].Region].Tier;
+                    Reward(XpSource.QuestStep, _progression.WildLevel(D0Difficulty, tier, SpawnRole.Normal), false,
+                        RecordFor(_plan.Quest[i], appeared));
+                }
+            }
+
+            if (all && !_chainPaid)
+            {
+                _chainPaid = true;
+                Reward(XpSource.QuestChain, _wild[BossUnit()].Level, false, appeared);
+            }
+        }
+
+        // SOL P2-12 R3-03: an elite step credited late (Q-E1 pre-credit) belongs to the battle that knocked the elite out,
+        // not to whichever event advanced the tracker into it.
+        private HashSet<int> RecordFor(RunQuestStep step, HashSet<int> eventRecord)
+        {
+            if (step.Kind != QuestStepKind.DefeatElite && step.Kind != QuestStepKind.DefeatBoss)
+            {
+                return eventRecord;
+            }
+
+            foreach (WildInfo w in _wild.Values)
+            {
+                if (w.Spawn == step.TargetSpawn && w.AppearedAtKnockout != null)
+                {
+                    return w.AppearedAtKnockout;
+                }
+            }
+
+            return eventRecord;
         }
 
         private bool AnyEngaged()
@@ -663,6 +999,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _ended = true;
+            _outcome.PartyExp.AddRange(_partyExp);
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _onEnd(_outcome);
@@ -703,33 +1040,19 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CreateView(EncounterUnit u, SpawnRole role)
         {
-            // REQ: art-asset-pipeline.md#佔位模型 — placeholder geometry by size class and main element until models land.
-            GameObject go = GameObject.CreatePrimitive(u.Side == EncounterSide.Player ? PrimitiveType.Capsule : PrimitiveType.Sphere);
-            Destroy(go.GetComponent<Collider>());
-            go.name = (u.Side == EncounterSide.Player ? "Ally " : "Wild ") + u.Def.Id;
-            float scale = u.BodyRadiusM * 2f * (role == SpawnRole.Boss ? 2.5f : role == SpawnRole.Elite ? 1.4f : 1f);
-            go.transform.localScale = new Vector3(scale, scale, scale);
-            var r = go.GetComponent<Renderer>();
-            Color color = ElementColors[(int)RunPlanner.MainElement(u.Def)];
-            if (_toonShader != null)
-            {
-                // Outline width is in world metres (the hull extrudes along the normalized world normal).
-                r.material = PlanetLook.CreatureMaterial(_toonShader, color, 0.03f);
-            }
-            else
-            {
-                r.material.color = color;
-            }
-            _views[u.Id] = go.transform;
-            _renderers[u.Id] = r;
-            go.SetActive(u.Fielded);
+            // REQ: art-asset-pipeline.md#佔位模型 — the factory is the model-replacement seam; D0 uses placeholders.
+            ICreatureView view = _viewFactory.Create(
+                new CreatureViewRequest(u.Def, u.Side == EncounterSide.Player, role, u.BodyRadiusM));
+            _views[u.Id] = view;
+            view.Root.gameObject.SetActive(u.Fielded);
         }
 
         private void SyncViews()
         {
             foreach (EncounterUnit u in _encounter.Units)
             {
-                Transform t = _views[u.Id];
+                ICreatureView view = _views[u.Id];
+                Transform t = view.Root;
                 bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
                 if (_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone)
                 {
@@ -750,14 +1073,7 @@ namespace Cosmimera.Bootstrap.Demo
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
                 if (u.Combatant.IsFainted)
                 {
-                    if (_toonShader != null)
-                    {
-                        _renderers[u.Id].material.SetColor("_BaseColor", Color.gray);
-                    }
-                    else
-                    {
-                        _renderers[u.Id].material.color = Color.gray;
-                    }
+                    view.ShowFainted();
                 }
             }
         }
@@ -785,6 +1101,7 @@ namespace Cosmimera.Bootstrap.Demo
             DrawWorldBars();
             DrawQuestPanel();
             DrawTeamPanel();
+            DrawControlsPanel();
             if (_nowMs < _toastUntilMs)
             {
                 GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
@@ -797,7 +1114,7 @@ namespace Cosmimera.Bootstrap.Demo
             Camera cam = _rig.Camera;
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (!_views[u.Id].gameObject.activeSelf)
+                if (!_views[u.Id].Root.gameObject.activeSelf)
                 {
                     continue;
                 }
@@ -840,7 +1157,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DrawQuestPanel()
         {
-            var box = new Rect(16, 16, 460, 150);
+            var box = new Rect(16, 16, 460, 210);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.Label("<b>" + _copy.ChainTitle(_plan.ChainId) + "</b>", _label);
@@ -852,10 +1169,30 @@ namespace Cosmimera.Bootstrap.Demo
                     .Replace("{element}", _copy.Element(s.Element.ToString()))
                     .Replace("{poi}", _copy.Theme(_plan.Regions[s.Region].ThemeId))
                     .Replace("{boss}", _copy.Name(_plan.Spawns[_plan.Quest[_plan.Quest.Count - 1].TargetSpawn].CreatureId));
-                GUILayout.Label(_copy.Ui("ui.hud.quest_tracker") + "：" + text, _label);
-                float3 here = _rig.Config.ToDirection(PlayerPosition());
-                float meters = math.acos(math.clamp(math.dot(here, _plan.Regions[s.Region].Center), -1f, 1f)) * _rig.Config.Radius;
-                GUILayout.Label($"→ {meters:0} m", _label);
+                GUILayout.Label(_copy.Ui("ui.hud.quest_tracker") + "：" + text,
+                    new GUIStyle(_label) { wordWrap = true });
+                if (TryQuestTarget(s, out float3 target))
+                {
+                    float3 here = _rig.Config.ToDirection(PlayerPosition());
+                    float meters = math.acos(math.clamp(math.dot(here, target), -1f, 1f)) * _rig.Config.Radius;
+                    // The bearing follows the view on the local tangent plane, including beyond the horizon.
+                    bool hasBearing = DemoNavigation.TryBearing(here, target, _rig.CameraRig.Heading, out float angle);
+                    string bearing = !hasBearing ? _copy.Ui("ui.hud.bearing_unavailable")
+                        : math.abs(angle) < 10f ? _copy.Ui("ui.hud.bearing_ahead")
+                        : _copy.Ui(angle < 0f ? "ui.hud.bearing_left" : "ui.hud.bearing_right")
+                            .Replace("{angle}", math.abs(angle).ToString("0"));
+                    GUILayout.Label($"{bearing} · {meters:0} m", _label);
+                }
+                else
+                {
+                    GUILayout.Label(_copy.Ui("ui.hud.no_quest_target"),
+                        new GUIStyle(_label) { fontSize = 14, wordWrap = true });
+                }
+            }
+            else
+            {
+                GUILayout.Label(_copy.Ui("ui.hud.quest_complete").Replace("{capture}", BindingLabel(_captureAction)),
+                    new GUIStyle(_label) { wordWrap = true });
             }
 
             if (_region >= 0)
@@ -868,10 +1205,83 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndArea();
         }
 
+        internal bool TryQuestTarget(RunQuestStep step, out float3 target)
+        {
+            target = float3.zero;
+            if (step.Kind == QuestStepKind.ReachPoi)
+            {
+                target = _plan.Regions[step.Region].Center;
+                return true;
+            }
+
+            int capture = step.Kind == QuestStepKind.CaptureOne ? FindCaptureTarget(float.MaxValue) : -1;
+            if (capture >= 0)
+            {
+                target = _rig.Config.ToDirection(_encounter.Units[capture].Position);
+                return true;
+            }
+
+            float3 here = _rig.Config.ToDirection(PlayerPosition());
+            float bestDot = -2f;
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                EncounterUnit unit = _encounter.Units[kv.Key];
+                if (kv.Value.Gone || unit.Combatant.IsFainted)
+                {
+                    continue;
+                }
+
+                if ((step.Kind == QuestStepKind.DefeatBoss || step.Kind == QuestStepKind.DefeatElite) &&
+                    kv.Value.Spawn != step.TargetSpawn)
+                {
+                    continue;
+                }
+
+                if (step.Kind == QuestStepKind.DefeatWild && RunPlanner.MainElement(unit.Def) != step.Element)
+                {
+                    continue;
+                }
+
+                float3 direction = _rig.Config.ToDirection(unit.Position);
+                float dot = math.dot(here, direction);
+                if (dot > bestDot)
+                {
+                    bestDot = dot;
+                    target = direction;
+                }
+            }
+
+            return bestDot > -2f;
+        }
+
+        private void DrawControlsPanel()
+        {
+            var box = new Rect(Screen.width - 346, 16, 330, 260);
+            GUI.Box(box, GUIContent.none);
+            GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12),
+                _copy.Ui(Gamepad.current != null ? "ui.hud.gamepad_help" : "ui.hud.exploration_help"),
+                new GUIStyle(_label) { fontSize = 14, wordWrap = true });
+
+            int capture = FindCaptureTarget(CaptureReachM);
+            if (capture < 0)
+            {
+                return;
+            }
+
+            float seconds = (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f;
+            string prompt = _copy.Ui("ui.hud.capture_available")
+                .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
+                .Replace("{name}", _copy.Name(_encounter.Units[capture].Def.Id))
+                .Replace("{seconds}", seconds.ToString("0.0"));
+            GUI.Box(new Rect(Screen.width / 2f - 220, Screen.height - 280, 440, 50), GUIContent.none);
+            GUI.Label(new Rect(Screen.width / 2f - 210, Screen.height - 277, 420, 44), prompt,
+                new GUIStyle(_label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = true });
+        }
+
         private void DrawTeamPanel()
         {
-            float y = Screen.height - 150;
-            var box = new Rect(16, y, 620, 140);
+            float y = Screen.height - 220;
+            var box = new Rect(16, y, math.min(900, Screen.width - 32), 210);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
@@ -883,7 +1293,7 @@ namespace Cosmimera.Bootstrap.Demo
                 string cd = u.Combatant.Cooldowns.IsReady(0, _nowMs) ? _copy.Ui("ui.hud.cd_ready")
                     : $"{(u.Combatant.Cooldowns.ReadyAtMs(0) - _nowMs) / 1000f:0.0}s";
                 string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
-                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)}\n{state}\n{(active ? cd : string.Empty)}",
+                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
                     new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
             }
 
@@ -896,10 +1306,14 @@ namespace Cosmimera.Bootstrap.Demo
                 AiCommandKind.Retreat => _copy.Ui("ui.hud.command_retreat"),
                 _ => _copy.Ui("ui.hud.command_free"),
             };
-            GUILayout.Label($"[1/2] ★ {_copy.Ui("ui.hud.select_active")}  [Tab] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
-                $"{_copy.Ui("ui.hud.command_keys")}（{cmd}）\n" +
-                $"[V] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
-                _copy.Ui("ui.hud.capture_prompt").Replace("{key}", "C").Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
+            string commands = _copy.Ui("ui.hud.command_bindings")
+                .Replace("{focus}", BindingLabel(_focusAction)).Replace("{free}", BindingLabel(_freeAction))
+                .Replace("{follow}", BindingLabel(_followAction)).Replace("{retreat}", BindingLabel(_retreatAction));
+            GUILayout.Label($"[{BindingLabel(_selectFirstAction)} / {BindingLabel(_selectSecondAction)}] ★ {_copy.Ui("ui.hud.select_active")}  " +
+                $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
+                $"{commands}（{cmd}）\n" +
+                $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
+                _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
             GUILayout.EndArea();
         }
@@ -929,20 +1343,27 @@ namespace Cosmimera.Bootstrap.Demo
             _ => "defeat_boss",
         };
 
+        private void OnEnable() => _runInput?.Enable();
+
+        private void OnDisable() => _runInput?.Disable();
+
         private void OnDestroy()
         {
+            _runInput?.Dispose();
             _rig?.Dispose();
             if (_terrainMaterial != null)
             {
                 Destroy(_terrainMaterial);
             }
 
-            foreach (Transform t in _views.Values)
+            if (_playerMaterial != null)
             {
-                if (t != null)
-                {
-                    Destroy(t.gameObject);
-                }
+                Destroy(_playerMaterial);
+            }
+
+            foreach (ICreatureView view in _views.Values)
+            {
+                view.Dispose();
             }
         }
     }

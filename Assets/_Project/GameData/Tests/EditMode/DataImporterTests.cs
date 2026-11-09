@@ -96,12 +96,12 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual("sample_trait_placeholder", cub.Trait.Id);
             Assert.AreEqual(25, cub.GetResist(Element.Fire));
             Assert.AreEqual(-25, cub.GetResist(Element.Water));
-            Assert.AreEqual(100, cub.EvolutionExp);
+            Assert.AreEqual(25, cub.EvolutionLevel);
             Assert.AreEqual("sample_fox_beast", cub.EvolvesTo.Id);
             CreatureDef lord = cub.EvolvesTo.EvolvesTo;
             Assert.AreEqual(CreatureStage.Adult, lord.Stage);
             Assert.IsNull(lord.EvolvesTo);
-            Assert.AreEqual(0, lord.EvolutionExp);
+            Assert.AreEqual(0, lord.EvolutionLevel);
             Assert.IsEmpty(lord.EvolutionMaterials);
         }
 

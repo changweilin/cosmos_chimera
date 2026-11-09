@@ -70,6 +70,9 @@ class DerivedStats:
             if isinstance(node, dict):
                 for key, value in node.items():
                     walk(value, f"{name}.{key}")
+            elif isinstance(node, list):
+                for index, value in enumerate(node):
+                    walk(value, f"{name}[{index}]")
             else:
                 _integer(node, name, maximum=1_000_000)
 

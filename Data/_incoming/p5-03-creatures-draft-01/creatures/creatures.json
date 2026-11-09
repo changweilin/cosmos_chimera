@@ -7,7 +7,7 @@
     "ai_style": "hold",
     "evolves_to": "metal_gear_strider",
     "evolution": {
-      "exp": 100,
+      "level": 28,
       "materials": [
         {
           "element": "metal",
@@ -61,7 +61,7 @@
     "ai_style": "hold",
     "evolves_to": "metal_chronos_engine",
     "evolution": {
-      "exp": 300,
+      "level": 48,
       "materials": [
         {
           "element": "metal",
@@ -161,7 +161,7 @@
     "ai_style": "charge",
     "evolves_to": "wood_plume_peafowl",
     "evolution": {
-      "exp": 100,
+      "level": 24,
       "materials": [
         {
           "element": "wood",
@@ -215,7 +215,7 @@
     "ai_style": "keep_distance",
     "evolves_to": "wood_canopy_regent",
     "evolution": {
-      "exp": 300,
+      "level": 40,
       "materials": [
         {
           "element": "wood",
@@ -314,7 +314,7 @@
     "ai_style": "hold",
     "evolves_to": "water_skiff_eel",
     "evolution": {
-      "exp": 100,
+      "level": 22,
       "materials": [
         {
           "element": "water",
@@ -368,7 +368,7 @@
     "ai_style": "hold",
     "evolves_to": "water_catamaran_serpent",
     "evolution": {
-      "exp": 300,
+      "level": 38,
       "materials": [
         {
           "element": "water",
@@ -468,7 +468,7 @@
     "ai_style": "hold",
     "evolves_to": "fire_mane_stalker",
     "evolution": {
-      "exp": 100,
+      "level": 26,
       "materials": [
         {
           "element": "fire",
@@ -522,7 +522,7 @@
     "ai_style": "charge",
     "evolves_to": "fire_pyre_monarch",
     "evolution": {
-      "exp": 300,
+      "level": 44,
       "materials": [
         {
           "element": "fire",
@@ -621,7 +621,7 @@
     "ai_style": "hold",
     "evolves_to": "earth_gilded_warden",
     "evolution": {
-      "exp": 100,
+      "level": 30,
       "materials": [
         {
           "element": "earth",
@@ -675,7 +675,7 @@
     "ai_style": "hold",
     "evolves_to": "earth_auric_sovereign",
     "evolution": {
-      "exp": 300,
+      "level": 50,
       "materials": [
         {
           "element": "earth",
@@ -774,7 +774,7 @@
     "ai_style": "hold",
     "evolves_to": "ice_rime_strider",
     "evolution": {
-      "exp": 100,
+      "level": 25,
       "materials": [
         {
           "element": "ice",
@@ -828,7 +828,7 @@
     "ai_style": "keep_distance",
     "evolves_to": "ice_tundra_dreadnought",
     "evolution": {
-      "exp": 300,
+      "level": 43,
       "materials": [
         {
           "element": "ice",
@@ -928,7 +928,7 @@
     "ai_style": "flank",
     "evolves_to": "wind_flute_cruiser",
     "evolution": {
-      "exp": 100,
+      "level": 20,
       "materials": [
         {
           "element": "wind",
@@ -982,7 +982,7 @@
     "ai_style": "keep_distance",
     "evolves_to": "wind_monsoon_galeon",
     "evolution": {
-      "exp": 300,
+      "level": 35,
       "materials": [
         {
           "element": "wind",

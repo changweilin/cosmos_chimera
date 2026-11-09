@@ -5,40 +5,44 @@ using Cosmimera.Core.Contracts;
 namespace Cosmimera.Creatures
 {
     /// <summary>
-    /// Lobby-only evolution rules: experience threshold + element materials, materials consumed on success.
-    /// REQ: docs/design/creatures.md#進化 (Q-C3), Q-C9 decided 2026-11-06.
+    /// Lobby-only evolution rules: level gate + element materials, materials consumed on success.
+    /// REQ: docs/design/creatures.md#進化 (Q-C3), Q-C9 decided 2026-11-06; level replaces the old experience gate
+    /// (docs/design/level-progression.md, P2-12).
     /// </summary>
     /// <remarks>
     /// Pre: callers pass the requirement of the creature's CURRENT form (<see cref="EvolutionRequirement.FromDef"/>);
     ///      the rules cannot verify that without data access.
-    /// Post: experience is a threshold and is never reduced; evolving never changes InstanceId, Vessel or Exp.
+    /// Post: experience is never reduced (evolving keeps the level); evolving never changes InstanceId, Vessel or Exp.
     /// Side effects: only <see cref="TryEvolve"/> mutates anything (the material inventory).
     /// </remarks>
     public static class EvolutionRules
     {
         /// <summary>Reports every reason the creature cannot evolve right now (empty set of reasons = it can).</summary>
         /// <remarks>
-        /// Pre: creature.InstanceId &gt;= 1; materials != null; venue is a defined EvolutionVenue.
+        /// Pre: creature.InstanceId &gt;= 1; materials != null; venue is a defined EvolutionVenue; progression != null.
         /// Post: NotInLobby iff venue != Lobby; AlreadyFinal iff requirement.IsFinal; for a non-final requirement
-        ///       ExpShortBy = max(0, RequiredExp - creature.Exp) and one shortfall per material whose held count is
+        ///       LevelShortBy = max(0, RequiredLevel - progression.LevelOf(creature.Exp)) and one shortfall per material whose held count is
         ///       below the need (exact element AND tier; higher tiers do not substitute). All blockers are reported
         ///       together, not just the first.
         /// Side effects: none (pure; the inventory is only read).
         /// </remarks>
-        public static EvolutionCheck Check(in OwnedCreature creature, in EvolutionRequirement requirement, MaterialInventory materials, EvolutionVenue venue)
+        public static EvolutionCheck Check(in OwnedCreature creature, in EvolutionRequirement requirement, MaterialInventory materials, EvolutionVenue venue,
+            Progression progression)
         {
             Contract.Requires(creature.InstanceId >= 1, "creature must be a constructed OwnedCreature (InstanceId >= 1)");
             Contract.Requires(materials != null, "materials is null");
+            Contract.Requires(progression != null, "progression is null");
             Contract.Requires(Enum.IsDefined(typeof(EvolutionVenue), venue), "venue must be a defined EvolutionVenue");
 
             bool alreadyFinal = requirement.IsFinal;
-            int expShortBy = 0;
+            int levelShortBy = 0;
             List<MaterialShortfall> shortfalls = null;
             if (!alreadyFinal)
             {
-                if (creature.Exp < requirement.RequiredExp)
+                int level = progression.LevelOf(creature.Exp);
+                if (level < requirement.RequiredLevel)
                 {
-                    expShortBy = requirement.RequiredExp - creature.Exp;
+                    levelShortBy = requirement.RequiredLevel - level;
                 }
 
                 IReadOnlyList<MaterialStack> needs = requirement.Materials;
@@ -53,7 +57,7 @@ namespace Cosmimera.Creatures
                 }
             }
 
-            return new EvolutionCheck(requirement.NextSpeciesId, venue != EvolutionVenue.Lobby, alreadyFinal, expShortBy, shortfalls);
+            return new EvolutionCheck(requirement.NextSpeciesId, venue != EvolutionVenue.Lobby, alreadyFinal, levelShortBy, shortfalls);
         }
 
         /// <summary>Evolves the creature if <see cref="Check"/> passes, consuming the materials.</summary>
@@ -64,9 +68,10 @@ namespace Cosmimera.Creatures
         ///       the input and the inventory is untouched (all-or-nothing). Result.Check explains a refusal.
         /// Side effects: mutates <paramref name="materials"/> on success only.
         /// </remarks>
-        public static EvolutionResult TryEvolve(in OwnedCreature creature, in EvolutionRequirement requirement, MaterialInventory materials, EvolutionVenue venue)
+        public static EvolutionResult TryEvolve(in OwnedCreature creature, in EvolutionRequirement requirement, MaterialInventory materials, EvolutionVenue venue,
+            Progression progression)
         {
-            EvolutionCheck check = Check(creature, requirement, materials, venue);
+            EvolutionCheck check = Check(creature, requirement, materials, venue, progression);
             if (!check.CanEvolve)
             {
                 return new EvolutionResult(check, creature);

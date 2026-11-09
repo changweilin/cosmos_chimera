@@ -20,7 +20,7 @@ class LevelProgressionTests(unittest.TestCase):
         cls.config = json.loads(CONFIG.read_text(encoding="utf-8"))
 
     def test_all_level_thresholds_against_independent_decimal_oracle(self):
-        c = self.config["confirmed"]
+        c = self.config["progression"]
         total = 0
         with localcontext() as context:
             context.prec = 180
@@ -97,19 +97,16 @@ class LevelProgressionTests(unittest.TestCase):
 
     def test_invalid_configuration_fails_before_building_an_unsupported_model(self):
         invalid = []
-        for key, value in (("level_min", 0), ("level_max", 101),
-                           ("stat_min_percent", 0), ("stat_max_percent", 99),
+        for key, value in (("level_max", 101), ("appeared_weight", 0),
+                           ("reserve_weight", 0),
                            ("xp_first_level_cost", 0), ("xp_growth_denominator", 0),
                            ("xp_growth_numerator", 100),
-                           ("xp_growth_numerator", INT32_MAX),
-                           ("stat_curve", "exponential"), ("stat_rounding", "floor"),
-                           ("stat_basis", "other"), ("xp_curve", "linear"),
-                           ("xp_curve_applies_to", "total"), ("xp_cost_rounding", "floor")):
+                           ("xp_growth_numerator", INT32_MAX)):
             document = copy.deepcopy(self.config)
-            document["confirmed"][key] = value
+            document["progression"][key] = value
             invalid.append(document)
         document = copy.deepcopy(self.config)
-        document["proposal_version"] = 2
+        document["model_version"] = 2
         invalid.append(document)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "progression.json"
@@ -117,7 +114,7 @@ class LevelProgressionTests(unittest.TestCase):
                 path.write_text(json.dumps(document), encoding="utf-8")
                 with self.subTest(document=document), self.assertRaises(ValueError):
                     LevelProgression(path)
-            path.write_text('{"proposal_version":1,"proposal_version":1}', encoding="utf-8")
+            path.write_text('{"model_version":1,"model_version":1}', encoding="utf-8")
             with self.assertRaises(ValueError):
                 LevelProgression(path)
 
@@ -164,6 +161,8 @@ class RewardWeightTests(unittest.TestCase):
                         self.assertLessEqual(len(per_weight), 1)
 
     def test_invalid_flag_types_party_size_and_mismatched_parties(self):
+        with self.assertRaises(TypeError):
+            main_reward_weights([True], [False], curve=True)
         for bad in (None, "yes", True, {True}):
             for args in ((bad, [False]), ([True], bad)):
                 with self.assertRaises(TypeError):

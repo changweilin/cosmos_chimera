@@ -4,15 +4,18 @@
     "epithets": [
       {
         "zh-TW": "森冠的",
-        "en": "Forest-Crowned"
+        "en": "Forest-Crowned",
+        "ja": "森冠の"
       },
       {
         "zh-TW": "青藤纏繞的",
-        "en": "Vinebound"
+        "en": "Vinebound",
+        "ja": "青蔓纏いの"
       },
       {
         "zh-TW": "碧野的",
-        "en": "Wildwood"
+        "en": "Wildwood",
+        "ja": "碧野の"
       }
     ]
   },
@@ -21,15 +24,18 @@
     "epithets": [
       {
         "zh-TW": "熔心的",
-        "en": "Moltenheart"
+        "en": "Moltenheart",
+        "ja": "熔心の"
       },
       {
         "zh-TW": "餘燼環繞的",
-        "en": "Emberwreathed"
+        "en": "Emberwreathed",
+        "ja": "余燼纏いの"
       },
       {
         "zh-TW": "赤岩的",
-        "en": "Crimson-Crag"
+        "en": "Crimson-Crag",
+        "ja": "赤岩の"
       }
     ]
   },
@@ -38,15 +44,18 @@
     "epithets": [
       {
         "zh-TW": "霜冠的",
-        "en": "Frostcrowned"
+        "en": "Frostcrowned",
+        "ja": "霜冠の"
       },
       {
         "zh-TW": "冰晶閃耀的",
-        "en": "Crystalglint"
+        "en": "Crystalglint",
+        "ja": "氷晶輝きの"
       },
       {
         "zh-TW": "寒潮的",
-        "en": "Frozen-Tide"
+        "en": "Frozen-Tide",
+        "ja": "寒潮の"
       }
     ]
   },
@@ -55,15 +64,18 @@
     "epithets": [
       {
         "zh-TW": "逐風的",
-        "en": "Windchasing"
+        "en": "Windchasing",
+        "ja": "風追いの"
       },
       {
         "zh-TW": "雷雲之下的",
-        "en": "Thundercloud"
+        "en": "Thundercloud",
+        "ja": "雷雲の下の"
       },
       {
         "zh-TW": "風暴之眼的",
-        "en": "Storm-Eyed"
+        "en": "Storm-Eyed",
+        "ja": "嵐の眼の"
       }
     ]
   },
@@ -72,15 +84,18 @@
     "epithets": [
       {
         "zh-TW": "晶脈的",
-        "en": "Crystal-Veined"
+        "en": "Crystal-Veined",
+        "ja": "晶脈の"
       },
       {
         "zh-TW": "鐵岩的",
-        "en": "Ironstone"
+        "en": "Ironstone",
+        "ja": "鉄岩の"
       },
       {
         "zh-TW": "礦輝映照的",
-        "en": "Mineral-lit"
+        "en": "Mineral-lit",
+        "ja": "鉱輝映しの"
       }
     ]
   },
@@ -89,15 +104,18 @@
     "epithets": [
       {
         "zh-TW": "晨昏交界的",
-        "en": "Twilight-Bound"
+        "en": "Twilight-Bound",
+        "ja": "晨昏交界の"
       },
       {
         "zh-TW": "晝影交織的",
-        "en": "Day-and-Shadow"
+        "en": "Day-and-Shadow",
+        "ja": "昼影交織の"
       },
       {
         "zh-TW": "暮光之下的",
-        "en": "Gloaming"
+        "en": "Gloaming",
+        "ja": "暮光の下の"
       }
     ]
   }
