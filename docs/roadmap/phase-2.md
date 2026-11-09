@@ -20,6 +20,8 @@
 | P2-12 | 宙獸 LV1–100：等級成長、御三家 LV10、進化與超載等級解鎖（分配細節 Q-C29／Q-C30） | SOL（數值提案）／SONNET（實作） | OPUS | 成長曲線與欄位定案；等級邊界、解鎖門檻、存檔遷移及戰鬥接線通過驗證 | 🟦 |
 
 ## 交接紀錄
+- 2026-11-09 · Claude Opus（依 SOL 審查修正）· partial · D0-E1 SOL pass 後順修三項：E1-01 場地對判定體內所有敵方作用（不再受 AI 用的 Engaged 閘門限制，脫戰野生仍受擊）；E1-02 場地保留到壽命結束（`ActiveFieldCount` 與 `FieldTimeline.IsAlive` 一致，測試斷言存活 3450 ms＠50 ms 步進）；E1-03 `Tick` Post 改寫事件順序。R5-01（Release 剝除包絡檢查）記入 tech-debt。新增 Q-C32（進化素材來源）、Q-C33（玩家是否為野生目標）待使用者決定。EditMode 898/899（唯一失敗仍為 TERRA 的 `DemoRunInputTests`）· 下一步：使用者決定 Q-C32／Q-C33；TERRA 的 P7-07／P4-08 待 Codex 沙箱能執行 Unity
+- 2026-11-09 · SOL（ChatGPT Sol） · done · D0-E1／R3–R5 唯讀對抗式審查 pass（D0 gate）：無 high，2 med／2 low 延後；R3／R4 fixed，R5 Release 驗證仍有缺口；CLR 雙設定各 1,035 項斷言與場地首 tick 清場整合情境實跑，詳見 docs/reviews/D0-E1-R3-R5-sol.md · 下一步：OPUS 記錄延後項目；具 Unity 環境補原生序列化與跨後端驗收
 
 - 2026-11-09 · Claude Opus · partial（待審）· D0-E1：`Encounter` 場地招式改為依 `FieldTimeline` 持續結算（放置瞬間一次，之後每 `field.tick_ms`，共 ceil(壽命/間隔) 次；凍結施放當下的 CastContext，施放者倒下／收回後仍存在；每個 Tick 開頭、單位行動前依放置順序結算，RNG 順序決定性；`ActiveFieldCount` 供表現層）。同時關閉 SOL P2-12 R3（`LobbySave.FromJson` 拒絕重複／超過 6 隻／有 owned 卻空 party）、R4（cursor ≥ 1 獨立檢查；`Add` ID 耗盡先拋 `InvalidOperationException` 不改狀態）、R5（elite 1..100 與 Python 一致；FromJson 以 BigInteger 拒絕在 C(MaxLevel−1) 超過 Int32 的來源獎勵）。**契約變更**：FromJson 多拒絕三類存檔（僅損壞／手改存檔，正常流程不會產生）。EditMode 898/899：唯一失敗 `DemoRunInputTests`（共用 `DemoRun` map 在 -nographics 跑時已 enabled，與本變更無關，交 TERRA 於 P7-07 一併處理） · 下一步：SOL 對抗式審查 D0-E1／R3–R5
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P2-11：HUD 指令／收服／放棄提示改讀 action binding，探索支援手把；契約變更：`RunSession.Configure` 的 actions 必須含 DemoRun 與十個必需 action，呼叫端使用既有更新資產，EditMode 896/896、GPU PlayMode 62/62 通過 · 下一步：人工驗收實體手把與 HUD，SONNET 接續核心玩法缺口

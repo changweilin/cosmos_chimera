@@ -149,11 +149,16 @@ namespace Cosmimera.Combat.Tests
             e.Field(mine.Id, Dir(0f), false, 0);
             var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             int resolutions = 0;
-            bool sawActive = false;
+            long firstAlive = -1;
+            long lastAlive = -1;
             for (int t = 1; t <= 200; t++)
             {
                 e.Tick(t * 50L, 50, _planet.ToWorld(Dir(-0.05f), 1f), free, mine.Id);
-                sawActive |= e.ActiveFieldCount > 0;
+                if (e.ActiveFieldCount > 0)
+                {
+                    firstAlive = firstAlive < 0 ? t * 50L : firstAlive;
+                    lastAlive = t * 50L;
+                }
                 foreach (EncounterEvent ev in e.Events)
                 {
                     if (ev.SourceId == mine.Id && ev.TargetId == wild.Id &&
@@ -164,7 +169,8 @@ namespace Cosmimera.Combat.Tests
                 }
             }
 
-            Assert.That(sawActive, Is.True);
+            Assert.That(firstAlive, Is.GreaterThan(0));
+            Assert.That(lastAlive - firstAlive, Is.EqualTo(3450), "alive for its whole [placed, placed + 3500) life");
             Assert.That(resolutions, Is.EqualTo(4), "3500 ms life / 1000 ms tick → 4 resolutions from one cast");
             Assert.That(e.ActiveFieldCount, Is.EqualTo(0), "the field expires after its last tick");
             Assert.That(wild.Combatant.IsFainted, Is.False);

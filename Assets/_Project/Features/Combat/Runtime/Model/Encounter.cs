@@ -408,7 +408,9 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: nowMs > previous tick's nowMs (strictly increasing CombatTime); 0 &lt; dtMs &lt;= 1000; mainId is a fielded
         ///      Player unit or NoTarget; player position inside the combat shell.
-        /// Post: Events lists this tick's casts and resolutions in unit-id order; positions stay on the ground.
+        /// Post: Events lists, in order: resolutions of fields placed in earlier ticks (fields in placement order, targets
+        ///       in id order), then each acting unit's cast and its resolutions in unit-id order (a new field resolves
+        ///       at once); positions stay on the ground.
         /// Side effects: mutates units, RNG and Events. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
@@ -513,13 +515,13 @@ namespace Cosmimera.Combat
                 int due = timeline.TicksDue(nowMs - 1, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, true);
                 }
 
                 return;
             }
 
-            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, false);
 
             if (volume.DashDistanceMm > 0)
             {
@@ -531,12 +533,15 @@ namespace Cosmimera.Combat
         }
 
         private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
-            float3 anchor, float3 forward, long nowMs)
+            float3 anchor, float3 forward, long nowMs, bool field)
         {
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit t = _units[i];
-                if (!IsValidEnemy(side, t.Id) ||
+                // A field hits every enemy inside it (combat.md#場地), including a wild unit that has disengaged; the
+                // Engaged gate only governs AI target choice (SOL D0-E1-01).
+                bool eligible = field ? t.Side != side && t.IsActive : IsValidEnemy(side, t.Id);
+                if (!eligible ||
                     !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
                 {
                     continue;
@@ -565,10 +570,11 @@ namespace Cosmimera.Combat
                 int due = tl.TicksDue(previousMs, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs);
+                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs, true);
                 }
 
-                if (tl.TicksDue(-1, nowMs) < tl.TotalTicks)
+                // Kept for its whole life [placed, placed + life), not just until its last resolution (SOL D0-E1-02).
+                if (tl.IsAlive(nowMs))
                 {
                     _fields[write++] = f;
                 }
