@@ -166,6 +166,7 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _label;
         private Shader _toonShader;
         private Material _terrainMaterial;
+        private Material _playerMaterial;
 
         internal Encounter EncounterForTests => _encounter;
 
@@ -241,6 +242,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (toonShader != null)
             {
+                // Runtime primitives keep the built-in material, which renders magenta under URP.
+                _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
+                _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
                 var surface = new HeightSurface(height, templates);
                 System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
                 gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
@@ -1115,6 +1119,11 @@ namespace Cosmimera.Bootstrap.Demo
             if (_terrainMaterial != null)
             {
                 Destroy(_terrainMaterial);
+            }
+
+            if (_playerMaterial != null)
+            {
+                Destroy(_playerMaterial);
             }
 
             foreach (Transform t in _views.Values)
