@@ -1,8 +1,10 @@
 #if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Combat;
+using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
 using NUnit.Framework;
@@ -33,6 +35,7 @@ namespace Cosmimera.Bootstrap.Tests
                 Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
                 Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
             CombatBalance balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            Progression progression = Progression.FromJson(Load<TextAsset>(Copy + "balance.json").text);
             var wild = new List<CreatureDef>();
             var party = new List<CreatureDef>();
             PlanetTypeDef type = null;
@@ -69,6 +72,9 @@ namespace Cosmimera.Bootstrap.Tests
                 new RunSetup
                 {
                     PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
+                    PartyIds = Enumerable.Range(1, party.Count).ToList(),
+                    PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
+                    Progression = progression,
                 }, wild, o => outcome = o, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 

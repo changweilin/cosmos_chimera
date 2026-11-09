@@ -186,7 +186,6 @@ class CrossFileRules(unittest.TestCase):
             ("moves", ("base_range_mm",), 2147483647),
             ("creatures", ("mastery", "fire"), 1000),
             ("creatures", ("stats", "con"), 2147483647),
-            ("creatures", ("evolution", "exp"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "tier"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "qty"), 2147483647),
         ]
@@ -203,6 +202,29 @@ class CrossFileRules(unittest.TestCase):
                     parent[path[-1]] = value
                     errors = [f for f in self._with_valid({relative: json.dumps(records)}) if f.level == "error"]
                     self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_evolution_level_bands_per_stage(self):
+        # REQ: docs/design/level-progression.md — juvenile gates LV20-30, adolescent LV35-50, inclusive.
+        records = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        by_stage = {r["stage"]: i for i, r in enumerate(records) if r.get("evolution")}
+        for stage, low, high in (("juvenile", 20, 30), ("adolescent", 35, 50)):
+            if stage not in by_stage:
+                continue
+            for value, valid in ((low, True), (high, True), (low - 1, False), (high + 1, False)):
+                with self.subTest(stage=stage, value=value):
+                    edited = json.loads(json.dumps(records))
+                    edited[by_stage[stage]]["evolution"]["level"] = value
+                    errors = [f for f in self._with_valid({"creatures/creatures.json": json.dumps(edited)})
+                              if f.level == "error"]
+                    self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
+
+    def test_schema_bands_match_balance(self):
+        schema = json.loads((REPO / "Data/schemas/creature.schema.json").read_text(encoding="utf-8"))
+        bands = json.loads((REPO / "Data/balance.json").read_text(encoding="utf-8"))["progression"]["evolution_level_bands"]
+        for rule in schema["$defs"]["creature"]["allOf"]:
+            stage = rule["if"]["properties"]["stage"]["const"]
+            level = rule["then"]["properties"]["evolution"]["properties"]["level"]
+            self.assertEqual(bands[stage], [level["minimum"], level["maximum"]], stage)
 
     def test_move_geometry_contracts(self):
         source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]

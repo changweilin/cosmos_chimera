@@ -110,6 +110,12 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public CreatureDef Def { get; }
 
+        /// <summary>Level its stats are currently scaled to (raised only by <see cref="Encounter.SetLevel"/>).</summary>
+        /// <remarks>Pre: none. Post: 1..100; never decreases. Side effects: none.</remarks>
+        public int Level { get; internal set; }
+
+        internal MoveDef[] MoveDefs { get; set; }
+
         /// <summary>HP, cooldowns and effects.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public Combatant Combatant { get; }
@@ -126,7 +132,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
         public float BodyRadiusM { get; }
 
-        internal int Agi { get; }
+        internal int Agi { get; set; }
 
         /// <summary>Leash anchor for wild units (their spawn point); unused for the player's side.</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
@@ -232,29 +238,32 @@ namespace Cosmimera.Combat
             }
         }
 
-        /// <summary>Adds a creature at full HP standing on the ground under <paramref name="direction"/>.</summary>
+        /// <summary>
+        /// Adds a creature at <paramref name="level"/> (CON/STR/SPI/AGI scaled from the form's LV100 basis,
+        /// level-progression.md#四維縮放) at full HP, standing on the ground under <paramref name="direction"/>.
+        /// </summary>
         /// <remarks>
-        /// Pre: def non-null with a signature move; partnerMove null or a MoveDef; direction unit length.
-        /// Post: returns the unit with Id == previous Units.Count; Fielded == (side == Wild); Forward tangent.
+        /// Pre: def non-null with a signature move; partnerMove null or a MoveDef; direction unit length; 1 &lt;= level &lt;= 100.
+        /// Post: returns the unit with Id == previous Units.Count and Level == level; Fielded == (side == Wild); Forward tangent.
         /// Side effects: allocates the unit; does not fire on_summon (call <see cref="Field"/> for the player's side).
         /// </remarks>
-        public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction)
+        public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level)
         {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
+            Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(math.abs(math.lengthsq(direction) - 1f) <= 2e-3f, "direction must be unit length");
             int slots = partnerMove != null ? 2 : 1;
             var moves = new CastMove[slots];
             var volumes = new HitVolume[slots];
             var ranges = new RangeClass[slots];
-            CreatureStats s = def.Stats;
+            var defs = new MoveDef[slots];
+            CreatureStats s = def.Stats.AtLevel(level);
             for (int i = 0; i < slots; i++)
             {
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMove;
+                defs[i] = m;
                 moves[i] = CastMove.FromDef(m);
-                // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
-                BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
-                volumes[i] = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, s.Str,
-                    _balance.Stats, _balance.Hit);
+                volumes[i] = BuildVolume(m, s.Str);
                 ranges[i] = m.RangeClass;
             }
 
@@ -276,12 +285,54 @@ namespace Cosmimera.Combat
             float3 position = GroundPoint(direction, radius);
             var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Agi, position)
             {
+                Level = level,
+                MoveDefs = defs,
                 Position = position,
                 Forward = PlanetFrame.FromUp(direction).North,
                 Fielded = side == EncounterSide.Wild,
             };
             _units.Add(unit);
             return unit;
+        }
+
+        /// <summary>
+        /// Raises a unit to <paramref name="level"/> between battles: CON/SPI/AGI and STR-scaled hit volumes are re-derived
+        /// from the form's LV100 basis. REQ: Q-C31 (2026-11-09) — level-up effects settle when the battle ends.
+        /// </summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while the
+        ///      unit is out of combat (the caller owns battle state; stats must not change mid-fight, Q-C31).
+        /// Post: Level == level; volumes and stats equal those AddCreature would build at that level; Hp grows by the MaxHp
+        ///       increase; position, cooldowns and effects unchanged. level == Level is a no-op.
+        /// Side effects: mutates the unit.
+        /// </remarks>
+        public void SetLevel(int unitId, int level)
+        {
+            Contract.Requires(unitId >= 0 && unitId < _units.Count, "unknown unit");
+            EncounterUnit u = _units[unitId];
+            Contract.Requires(level >= u.Level && level <= 100, "level must be in Level..100");
+            Contract.Requires(!u.Combatant.IsFainted, "a fainted unit cannot level up");
+            if (level == u.Level)
+            {
+                return;
+            }
+
+            CreatureStats s = u.Def.Stats.AtLevel(level);
+            for (int i = 0; i < u.Volumes.Length; i++)
+            {
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str);
+            }
+
+            u.Combatant.Rescale(s.Con, s.Spi, s.Agi);
+            u.Agi = s.Agi;
+            u.Level = level;
+        }
+
+        private HitVolume BuildVolume(MoveDef m, int str)
+        {
+            // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
+            BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
+            return MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats, _balance.Hit);
         }
 
         /// <summary>Puts a player-side unit on the field at <paramref name="direction"/> and fires on_summon.</summary>

@@ -383,6 +383,15 @@ namespace Cosmimera.GameData.Editor
                 if (d.EvolvesTo != null)
                 {
                     RequireRef(c.Where, "evolves_to", d.EvolvesTo, "creature");
+                    // An adult with evolves_to is reported by the chain checks; only non-adult gates have a band.
+                    if (d.Evolution != null && TryParseEnum(d.Stage, out CreatureStage stage) && stage != CreatureStage.Adult &&
+                        (d.Evolution.Level < CreatureDef.EvolutionLevelMin[(int)stage] ||
+                         d.Evolution.Level > CreatureDef.EvolutionLevelMax[(int)stage]))
+                    {
+                        errors.Add($"{c.Where}: evolution.level {d.Evolution.Level} is outside the {d.Stage} band " +
+                            $"{CreatureDef.EvolutionLevelMin[(int)stage]}..{CreatureDef.EvolutionLevelMax[(int)stage]}");
+                    }
+
                     foreach (MaterialDto mat in d.Evolution?.Materials ?? new List<MaterialDto>())
                     {
                         RequireEnum<Element>(c.Where, "evolution.materials.element", mat.Element);
@@ -507,7 +516,7 @@ namespace Cosmimera.GameData.Editor
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
                 creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
-                    d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Exp ?? 0, materials, resist,
+                    d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),
                     sensitivity == "review");

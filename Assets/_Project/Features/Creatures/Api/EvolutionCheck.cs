@@ -53,12 +53,12 @@ namespace Cosmimera.Creatures
 
         private readonly IReadOnlyList<MaterialShortfall> _shortfalls;
 
-        internal EvolutionCheck(string nextSpeciesId, bool notInLobby, bool alreadyFinal, int expShortBy, List<MaterialShortfall> shortfalls)
+        internal EvolutionCheck(string nextSpeciesId, bool notInLobby, bool alreadyFinal, int levelShortBy, List<MaterialShortfall> shortfalls)
         {
             NextSpeciesId = nextSpeciesId;
             NotInLobby = notInLobby;
             AlreadyFinal = alreadyFinal;
-            ExpShortBy = expShortBy;
+            LevelShortBy = levelShortBy;
             _shortfalls = shortfalls == null ? (IReadOnlyList<MaterialShortfall>)NoShortfalls : shortfalls.AsReadOnly();
         }
 
@@ -71,20 +71,20 @@ namespace Cosmimera.Creatures
         public bool NotInLobby { get; }
 
         /// <summary>The creature is an adult: there is nothing to evolve into.</summary>
-        /// <remarks>Pre: none. Post: when true, ExpShortBy == 0 and Shortfalls is empty (no requirement exists). Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: when true, LevelShortBy == 0 and Shortfalls is empty (no requirement exists). Side effects: none.</remarks>
         public bool AlreadyFinal { get; }
 
-        /// <summary>How much experience is still missing.</summary>
-        /// <remarks>Pre: none. Post: &gt;= 0; 0 means the threshold is reached. Side effects: none.</remarks>
-        public int ExpShortBy { get; }
+        /// <summary>How many levels are still missing.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0; 0 means the level gate is reached. Side effects: none.</remarks>
+        public int LevelShortBy { get; }
 
         /// <summary>Every material held in too small a quantity, in requirement order.</summary>
         /// <remarks>Pre: none. Post: never null; read-only; one entry per short material. Side effects: none.</remarks>
         public IReadOnlyList<MaterialShortfall> Shortfalls => _shortfalls;
 
         /// <summary>True iff nothing blocks the evolution.</summary>
-        /// <remarks>Pre: none. Post: !NotInLobby &amp;&amp; !AlreadyFinal &amp;&amp; ExpShortBy == 0 &amp;&amp; Shortfalls is empty. Side effects: none.</remarks>
-        public bool CanEvolve => !NotInLobby && !AlreadyFinal && ExpShortBy == 0 && _shortfalls.Count == 0;
+        /// <remarks>Pre: none. Post: !NotInLobby &amp;&amp; !AlreadyFinal &amp;&amp; LevelShortBy == 0 &amp;&amp; Shortfalls is empty. Side effects: none.</remarks>
+        public bool CanEvolve => !NotInLobby && !AlreadyFinal && LevelShortBy == 0 && _shortfalls.Count == 0;
     }
 
     /// <summary>Outcome of <see cref="EvolutionRules.TryEvolve"/>.</summary>

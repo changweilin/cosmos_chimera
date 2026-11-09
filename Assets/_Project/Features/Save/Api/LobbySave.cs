@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
+using Cosmimera.GameData;
 using UnityEngine;
 
 namespace Cosmimera.Save
@@ -14,13 +15,15 @@ namespace Cosmimera.Save
     /// <remarks>
     /// Format: UTF-8 JSON, <see cref="FormatVersion"/> at the top. P4-06 (migrations, retired ids) builds on this; a
     /// newer version than we know is refused instead of silently dropping fields.
+    /// Version 2 (P2-12): <c>exp</c> is cumulative level XP. Version 1 stored the old evolution XP, whose meaning differs,
+    /// so it is not converted: a v1 creature restarts at T(stage floor) (option A, level-progression.md#獎勵量).
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 1;
+        public const int FormatVersion = 2;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -29,6 +32,10 @@ namespace Cosmimera.Save
         private readonly List<OwnedCreature> _owned = new List<OwnedCreature>();
         private readonly List<int> _party = new List<int>();
         private int _nextInstanceId = 1;
+
+        /// <summary>Format version the save was read from (FormatVersion for a new save); lower means it was migrated.</summary>
+        /// <remarks>Pre: none. Post: 1..FormatVersion. Side effects: none.</remarks>
+        public int LoadedFormatVersion { get; private set; } = FormatVersion;
 
         /// <summary>Starter line chosen in the lobby, or null before the first choice.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -44,28 +51,28 @@ namespace Cosmimera.Save
 
         /// <summary>Records the starter choice and adds the starter.</summary>
         /// <remarks>
-        /// Pre: StarterLine == null; lineId and speciesId non-empty.
-        /// Post: StarterLine == lineId; the starter is owned (vessel magic_cube is irrelevant for a main creature,
-        ///       lobby-meta.md: "作為主力 無差別"; talisman_card chosen as default) and in the party.
+        /// Pre: StarterLine == null; lineId and speciesId non-empty; exp &gt;= 0 (T(starter level), LV10).
+        /// Post: StarterLine == lineId; the starter is owned with that exp (vessel magic_cube is irrelevant for a main
+        ///       creature, lobby-meta.md: "作為主力 無差別"; talisman_card chosen as default) and in the party.
         /// Side effects: mutates this save.
         /// </remarks>
-        public OwnedCreature ChooseStarter(string lineId, string speciesId)
+        public OwnedCreature ChooseStarter(string lineId, string speciesId, int exp)
         {
             Contract.Requires(StarterLine == null, "starter already chosen");
             Contract.Requires(!string.IsNullOrEmpty(lineId), "lineId must be non-empty");
             StarterLine = lineId;
-            return Add(speciesId, VesselKind.TalismanCard);
+            return Add(speciesId, VesselKind.TalismanCard, exp);
         }
 
         /// <summary>Adds a captured creature; it joins the party if there is room.</summary>
         /// <remarks>
-        /// Pre: speciesId non-empty; vessel defined.
-        /// Post: one more owned creature with a fresh InstanceId; in Party iff Party had &lt; 6 before.
+        /// Pre: speciesId non-empty; vessel defined; exp &gt;= 0 (a capture keeps its encounter level: T(L)).
+        /// Post: one more owned creature with a fresh InstanceId and that exp; in Party iff Party had &lt; 6 before.
         /// Side effects: mutates this save.
         /// </remarks>
-        public OwnedCreature Add(string speciesId, VesselKind vessel)
+        public OwnedCreature Add(string speciesId, VesselKind vessel, int exp)
         {
-            var c = new OwnedCreature(_nextInstanceId++, speciesId, vessel, 0);
+            var c = new OwnedCreature(_nextInstanceId++, speciesId, vessel, exp);
             _owned.Add(c);
             if (_party.Count < MaxParty)
             {
@@ -95,6 +102,19 @@ namespace Cosmimera.Save
 
             _party.Clear();
             _party.AddRange(copy);
+        }
+
+        /// <summary>Replaces an owned creature's cumulative XP (run rewards are applied in the lobby, Q-M4).</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; exp &gt;= 0. Post: Get(instanceId).Exp == exp; species, vessel and order unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetExp(int instanceId, int exp)
+        {
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            OwnedCreature o = _owned[i];
+            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp);
         }
 
         /// <summary>Owned creature by instance id.</summary>
@@ -130,17 +150,21 @@ namespace Cosmimera.Save
             return JsonUtility.ToJson(dto, true);
         }
 
-        /// <summary>Parses a save.</summary>
+        /// <summary>Parses a save, migrating format 1 to the current format.</summary>
         /// <remarks>
-        /// Pre: json non-empty.
-        /// Post: the save it encodes; <see cref="InvalidDataException"/> in every build (Contract checks are stripped
-        ///       from Release, and a Release that loaded and re-wrote a newer save would silently drop its fields —
-        ///       SOL D0 H2) for: not a save, a newer FormatVersion, duplicate/non-positive instance ids, next id not above
-        ///       every owned id, an undefined vessel, or a party entry that is not owned.
+        /// Pre: json non-empty; progression non-null; stageOf non-null (returns null for an unknown species).
+        /// Post: the save it encodes with every Exp in 0..progression.MaxExp (higher values are clipped, never earned);
+        ///       a format-1 creature gets progression.MigrationExp(stage of its species) and LoadedFormatVersion == 1.
+        ///       <see cref="InvalidDataException"/> in every build (Contract checks are stripped from Release, and a
+        ///       Release that loaded and re-wrote a newer save would silently drop its fields — SOL D0 H2) for: not a
+        ///       save, a newer FormatVersion, duplicate/non-positive instance ids, next id not above every owned id, an
+        ///       undefined vessel, a negative exp, a party entry that is not owned, or a format-1 species stageOf
+        ///       does not know (it cannot be migrated without guessing).
         /// Side effects: allocates.
         /// </remarks>
-        public static LobbySave FromJson(string json)
+        public static LobbySave FromJson(string json, Progression progression, Func<string, CreatureStage?> stageOf)
         {
+            Contract.Requires(progression != null && stageOf != null, "progression and stageOf are required");
             Check(!string.IsNullOrEmpty(json), "save json is empty");
             Dto dto = JsonUtility.FromJson<Dto>(json);
             Check(dto != null && dto.version >= 1, "not a lobby save");
@@ -149,6 +173,7 @@ namespace Cosmimera.Save
             {
                 StarterLine = string.IsNullOrEmpty(dto.starter_line) ? null : dto.starter_line,
                 _nextInstanceId = dto.next_instance_id,
+                LoadedFormatVersion = dto.version,
             };
             var ids = new HashSet<int>();
             foreach (CreatureDto c in dto.owned ?? new CreatureDto[0])
@@ -157,7 +182,17 @@ namespace Cosmimera.Save
                 Check(c.instance_id < dto.next_instance_id, "next_instance_id must exceed every owned id");
                 Check(Enum.IsDefined(typeof(VesselKind), c.vessel) && !string.IsNullOrEmpty(c.species_id),
                     "creature entry has an undefined vessel or empty species");
-                save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, (VesselKind)c.vessel, c.exp));
+                Check(c.exp >= 0, "creature entry has a negative exp");
+                int exp = c.exp;
+                if (dto.version == 1)
+                {
+                    CreatureStage? stage = stageOf(c.species_id);
+                    Check(stage.HasValue, "format-1 creature '" + c.species_id + "' is unknown and cannot be migrated");
+                    exp = progression.MigrationExp(stage.Value);
+                }
+
+                save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, (VesselKind)c.vessel,
+                    Math.Min(exp, progression.MaxExp)));
             }
 
             foreach (int p in dto.party ?? new int[0])
@@ -178,11 +213,28 @@ namespace Cosmimera.Save
         }
 
         /// <summary>Loads from <paramref name="path"/>, or returns a new empty save when the file does not exist.</summary>
-        /// <remarks>Pre: path non-empty. Post: see FromJson. Side effects: reads the file.</remarks>
-        public static LobbySave Load(string path)
+        /// <remarks>
+        /// Pre: path non-empty; see FromJson. Post: see FromJson; when the file was an older format, the original bytes
+        ///      exist at <paramref name="path"/> + ".v{N}.bak" (an existing backup is never overwritten).
+        /// Side effects: reads the file; may write the backup.
+        /// </remarks>
+        public static LobbySave Load(string path, Progression progression, Func<string, CreatureStage?> stageOf)
         {
             Contract.Requires(!string.IsNullOrEmpty(path), "path must not be empty");
-            return File.Exists(path) ? FromJson(File.ReadAllText(path)) : new LobbySave();
+            if (!File.Exists(path))
+            {
+                return new LobbySave();
+            }
+
+            LobbySave save = FromJson(File.ReadAllText(path), progression, stageOf);
+            // Migration is lossy by design (old evolution XP is dropped), so keep the original before Write replaces it.
+            string backup = path + ".v" + save.LoadedFormatVersion + ".bak";
+            if (save.LoadedFormatVersion < FormatVersion && !File.Exists(backup))
+            {
+                File.Copy(path, backup);
+            }
+
+            return save;
         }
 
         /// <summary>Writes atomically to <paramref name="path"/> (temp file + replace, so a crash never leaves half a save).</summary>

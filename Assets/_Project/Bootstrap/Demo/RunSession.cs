@@ -13,8 +13,8 @@ using UnityEngine.InputSystem;
 
 namespace Cosmimera.Bootstrap.Demo
 {
-    /// <summary>What a finished run hands back to the lobby (Q-M4: only captures persist).</summary>
-    /// <remarks>Pre: none. Post: Captured non-null. Side effects: none.</remarks>
+    /// <summary>What a finished run hands back to the lobby (Q-M4: only captures and earned XP persist).</summary>
+    /// <remarks>Pre: none. Post: Captured and PartyExp non-null. Side effects: none.</remarks>
     public sealed class RunOutcome
     {
         /// <summary>Boss knocked out.</summary>
@@ -25,9 +25,13 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Abandoned;
 
-        /// <summary>Captured (species id, vessel) in capture order.</summary>
-        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
-        public readonly List<(string speciesId, VesselKind vessel)> Captured = new List<(string, VesselKind)>();
+        /// <summary>Captured (species id, vessel, cumulative XP = T(encounter level)) in capture order.</summary>
+        /// <remarks>Pre: none. Post: non-null; exp &gt;= 0. Side effects: none.</remarks>
+        public readonly List<(string speciesId, VesselKind vessel, int exp)> Captured = new List<(string, VesselKind, int)>();
+
+        /// <summary>Cumulative XP of each party slot when the run ended (same order as RunSetup.Party).</summary>
+        /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
+        public readonly List<int> PartyExp = new List<int>();
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -57,6 +61,18 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
+
+        /// <summary>Persistent instance id of each party slot (XP rounding tie-break, level-progression.md).</summary>
+        /// <remarks>Pre: same count as Party; unique, &gt;= 1. Post: none. Side effects: none.</remarks>
+        public List<int> PartyIds;
+
+        /// <summary>Cumulative XP of each party slot; its level scales the slot's stats for the whole run.</summary>
+        /// <remarks>Pre: same count as Party; each &gt;= 0. Post: none. Side effects: none.</remarks>
+        public List<int> PartyExp;
+
+        /// <summary>Approved level curve and XP rewards (balance.json#progression).</summary>
+        /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
+        public Progression Progression;
     }
 
     /// <summary>
@@ -74,6 +90,10 @@ namespace Cosmimera.Bootstrap.Demo
         private const long KnockedOutWindowMs = 20000;
         private const float CaptureReachM = 8f;
         private const long AffixRefreshMs = 1000;
+
+        // REQ: level-progression.md#獎勵量 — planet difficulty d is a proposed field absent from the data; every D0
+        // planet type is calibrated at d = 1 (SOL rewards.json d0_evidence).
+        private const int D0Difficulty = 1;
 
         private static readonly Color[] ElementColors =
         {
@@ -102,6 +122,8 @@ namespace Cosmimera.Bootstrap.Demo
         private sealed class WildInfo
         {
             public int Spawn;
+            public int Level;
+            public HashSet<int> AppearedAtKnockout;
             public long KnockedOutAtMs = -1;
             public bool Gone;
         }
@@ -118,6 +140,11 @@ namespace Cosmimera.Bootstrap.Demo
         private Encounter _encounter;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
+        private readonly HashSet<int> _appeared = new HashSet<int>();
+        private Progression _progression;
+        private int[] _partyExp;
+        private bool[] _questPaid;
+        private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
         private readonly Dictionary<int, Transform> _views = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Renderer> _renderers = new Dictionary<int, Renderer>();
@@ -150,7 +177,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms.
+        /// Pre: all arguments non-null; setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
+        ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
         /// Side effects: creates GameObjects.
         /// </remarks>
@@ -162,7 +190,12 @@ namespace Cosmimera.Bootstrap.Demo
                 "copy, balance, setup and onEnd are required");
             Core.Contracts.Contract.Requires(setup.Party != null && setup.Party.Count >= 1 && setup.Party.Count <= 6,
                 "party must hold 1..6 forms");
+            Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
+                setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
+                "progression, party ids and party exp are required, one per party slot");
             _copy = copy;
+            _progression = setup.Progression;
+            _partyExp = setup.PartyExp.ToArray();
             _balance = balance;
             _actions = actions;
             _setup = setup;
@@ -188,6 +221,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
+            _questPaid = new bool[_plan.Quest.Count];
             _toonShader = toonShader;
             if (terrainShader != null)
             {
@@ -220,15 +254,18 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction);
-                _wild[u.Id] = new WildInfo { Spawn = s };
+                int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
+                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
+                _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
 
             var roster = new List<int>();
-            foreach (CreatureDef def in setup.Party)
+            for (int i = 0; i < setup.Party.Count; i++)
             {
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Player, def, null, _plan.LandingDirection);
+                CreatureDef def = setup.Party[i];
+                EncounterUnit u = _encounter.AddCreature(EncounterSide.Player, def, null, _plan.LandingDirection,
+                    _progression.LevelOf(_partyExp[i]));
                 roster.Add(u.Id);
                 _partyUnits.Add(u.Id);
                 CreateView(u, SpawnRole.Normal);
@@ -296,6 +333,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _nowMs += TickMs;
             float3 player = PlayerPosition();
+            // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
+            RecordAppearances();
             UpdateRegion(player);
             if (_nowMs >= _nextAffixMs)
             {
@@ -303,12 +342,17 @@ namespace Cosmimera.Bootstrap.Demo
                 ApplyAffixes(player);
             }
 
+            // SOL P2-12 R3-01: XP earned out of combat (capture input, region step) must level up before a new battle
+            // can start this tick; otherwise the growth would wait for that battle to end.
+            ApplyLevelUps();
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
             {
-                _team.BeginCombat();
+                BeginCombat();
             }
+
+            RecordAppearances();
 
             foreach (EncounterEvent ev in _encounter.Events)
             {
@@ -323,6 +367,8 @@ namespace Cosmimera.Bootstrap.Demo
                 _team.EndCombat();
             }
 
+            ApplyLevelUps();
+
             RefillField(player);
             ExpireKnockedOut();
             CheckEnd();
@@ -331,12 +377,16 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnFaint(int unitId)
         {
             EncounterUnit u = _encounter.Units[unitId];
+            // SOL P2-12 R1: a battle whose only enemy falls on its first tick is no longer "engaged" after Tick, so the
+            // combat start above never ran; open it here or the knockout would be paid with the previous battle's record.
+            if (!_team.InCombat)
+            {
+                BeginCombat();
+                RecordAppearances();
+            }
+
             if (u.Side == EncounterSide.Player)
             {
-                if (!_team.InCombat)
-                {
-                    _team.BeginCombat();
-                }
 
                 _team.Faint(unitId);
                 _encounter.Unfield(unitId);
@@ -351,7 +401,13 @@ namespace Cosmimera.Bootstrap.Demo
             WildInfo w = _wild[unitId];
             w.KnockedOutAtMs = _nowMs;
             RunSpawn spawn = _plan.Spawns[w.Spawn];
+            // The capture of this creature settles later but belongs to this battle's participants (per-event record).
+            w.AppearedAtKnockout = new HashSet<int>(_appeared);
+            // REQ: option A — a boss pays only its boss pool, never a second wild-defeat pool.
+            Reward(spawn.Role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, spawn.Role == SpawnRole.Elite,
+                w.AppearedAtKnockout);
             _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
+            PayQuest(w.AppearedAtKnockout);
             if (spawn.Role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
@@ -561,8 +617,12 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
             {
-                _outcome.Captured.Add((spawn.CreatureId, _vessel));
+                // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
+                _outcome.Captured.Add((spawn.CreatureId, _vessel, _progression.XpThreshold(w.Level)));
+                HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
+                Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
+                PayQuest(battle);
                 Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(spawn.CreatureId));
             }
             else
@@ -603,7 +663,126 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _region = region;
                 _quest.OnRegionEntered(region);
+                // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
+                PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
             }
+        }
+
+        // REQ: level-progression.md#經驗分配 — each battle keeps its own appearance record, reset when the next starts.
+        private void BeginCombat()
+        {
+            _appeared.Clear();
+            _team.BeginCombat();
+        }
+
+        private void RecordAppearances()
+        {
+            if (!_team.InCombat)
+            {
+                return;
+            }
+
+            foreach (int id in _team.Active)
+            {
+                _appeared.Add(id);
+            }
+        }
+
+        private void Reward(XpSource source, int level, bool elite, HashSet<int> appeared)
+        {
+            int pool = _progression.SourceXp(source, level, elite);
+            var recipients = new List<XpRecipient>(_partyUnits.Count);
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                int unit = _partyUnits[i];
+                recipients.Add(new XpRecipient(_setup.PartyIds[i], _partyExp[i], _encounter.Units[unit].Combatant.IsFainted,
+                    appeared.Contains(unit), -1));
+            }
+
+            // D0 has no sidekick loadout yet (P2-07 lobby UI), so only mains are paid.
+            XpSettlement settled = _progression.Settle(pool, recipients);
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                int before = _progression.LevelOf(_partyExp[i]);
+                _partyExp[i] += settled.Paid[i];
+                int after = _progression.LevelOf(_partyExp[i]);
+                if (after > before)
+                {
+                    // Q-C31: the stats change when this battle ends (ApplyLevelUps), not mid-fight.
+                    Toast(_copy.Ui("ui.hud.level_up").Replace("{name}", _copy.Name(_encounter.Units[_partyUnits[i]].Def.Id))
+                        .Replace("{level}", after.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                }
+            }
+        }
+
+        // REQ: Q-C31 (2026-11-09) — growth applies once the battle is over; a creature that fainted stays at its level
+        // for this run (it is not revived, D0-R1), but its XP still reaches the save.
+        private void ApplyLevelUps()
+        {
+            if (_team.InCombat)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                EncounterUnit u = _encounter.Units[_partyUnits[i]];
+                int level = _progression.LevelOf(_partyExp[i]);
+                if (level > u.Level && !u.Combatant.IsFainted)
+                {
+                    _encounter.SetLevel(u.Id, level);
+                }
+            }
+        }
+
+        // REQ: level-progression.md#獎勵量 — each genuinely completed step pays once at its region's normal wild level;
+        // the chain bonus needs every step earned, so a boss shortcut that skips steps pays neither for them.
+        // Q-C31 (2026-11-09): quest XP is split by the same appearance record as the battle event that completed the step.
+        private void PayQuest(HashSet<int> appeared)
+        {
+            bool all = true;
+            for (int i = 0; i < _plan.Quest.Count; i++)
+            {
+                if (!_quest.IsEarned(i))
+                {
+                    all = false;
+                    continue;
+                }
+
+                if (!_questPaid[i])
+                {
+                    _questPaid[i] = true;
+                    int tier = _plan.Regions[_plan.Quest[i].Region].Tier;
+                    Reward(XpSource.QuestStep, _progression.WildLevel(D0Difficulty, tier, SpawnRole.Normal), false,
+                        RecordFor(_plan.Quest[i], appeared));
+                }
+            }
+
+            if (all && !_chainPaid)
+            {
+                _chainPaid = true;
+                Reward(XpSource.QuestChain, _wild[BossUnit()].Level, false, appeared);
+            }
+        }
+
+        // SOL P2-12 R3-03: an elite step credited late (Q-E1 pre-credit) belongs to the battle that knocked the elite out,
+        // not to whichever event advanced the tracker into it.
+        private HashSet<int> RecordFor(RunQuestStep step, HashSet<int> eventRecord)
+        {
+            if (step.Kind != QuestStepKind.DefeatElite && step.Kind != QuestStepKind.DefeatBoss)
+            {
+                return eventRecord;
+            }
+
+            foreach (WildInfo w in _wild.Values)
+            {
+                if (w.Spawn == step.TargetSpawn && w.AppearedAtKnockout != null)
+                {
+                    return w.AppearedAtKnockout;
+                }
+            }
+
+            return eventRecord;
         }
 
         private bool AnyEngaged()
@@ -663,6 +842,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _ended = true;
+            _outcome.PartyExp.AddRange(_partyExp);
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _onEnd(_outcome);
@@ -883,7 +1063,7 @@ namespace Cosmimera.Bootstrap.Demo
                 string cd = u.Combatant.Cooldowns.IsReady(0, _nowMs) ? _copy.Ui("ui.hud.cd_ready")
                     : $"{(u.Combatant.Cooldowns.ReadyAtMs(0) - _nowMs) / 1000f:0.0}s";
                 string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
-                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)}\n{state}\n{(active ? cd : string.Empty)}",
+                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
                     new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
             }
 

@@ -1,20 +1,21 @@
 """P2-12 exact reference for approved level rules; not Unity runtime wiring.
 
-REQ: docs/design/level-progression.md. Fractional payouts remain exact here;
-integer settlement and partner allocation details remain Q-C30.
+REQ: docs/design/level-progression.md; coefficients: Data/balance.json#progression.
+Fractional allocation remains exact here; level_rewards handles integer settlement.
 Run directly to print the deterministic integer XP table for a C# port.
 """
 
 import argparse
 from bisect import bisect_right
 from fractions import Fraction
+from functools import lru_cache
 import json
 from pathlib import Path
 
 from derived_stats import INT32_MAX, REPO, _ceil_div, _integer, _unique_object
 
 
-CONFIG = REPO / "Data/_incoming/p2-12-level-proposal/progression.json"
+CONFIG = REPO / "Data/balance.json"
 
 
 class LevelProgression:
@@ -28,19 +29,11 @@ class LevelProgression:
     def __init__(self, path=CONFIG):
         document = json.loads(Path(path).read_text(encoding="utf-8"),
                               object_pairs_hook=_unique_object)
-        version = _integer(document["proposal_version"], "proposal_version", 1, 1)
-        c = document["confirmed"]
-        for key, expected in (("level_min", 1), ("level_max", 100),
-                              ("stat_min_percent", 10), ("stat_max_percent", 100)):
-            _integer(c[key], key, expected, expected)
-        for key, expected in (("stat_curve", "linear"),
-                              ("stat_rounding", "half_up"),
-                              ("stat_basis", "current_form_stats_at_level_100"),
-                              ("xp_curve", "exponential"),
-                              ("xp_curve_applies_to", "cost_to_next_level"),
-                              ("xp_cost_rounding", "ceil_exact_power")):
-            if c[key] != expected:
-                raise ValueError(f"unsupported {key}: {c[key]}")
+        version = _integer(document["model_version"], "model_version", 1, 1)
+        c = document["progression"]
+        self.level_max = _integer(c["level_max"], "level_max", 100, 100)
+        self.appeared_weight = _integer(c["appeared_weight"], "appeared_weight", 1)
+        self.reserve_weight = _integer(c["reserve_weight"], "reserve_weight", 1)
 
         first_cost = _integer(c["xp_first_level_cost"], "xp_first_level_cost", 1)
         numerator = _integer(c["xp_growth_numerator"], "xp_growth_numerator", 1)
@@ -50,7 +43,7 @@ class LevelProgression:
 
         thresholds = [0]
         costs = []
-        for exponent in range(99):
+        for exponent in range(self.level_max - 1):
             # Never grow a rounded previous cost: that compounds quantization error.
             cost = _ceil_div(first_cost * numerator ** exponent, denominator ** exponent)
             total = thresholds[-1] + cost
@@ -71,7 +64,7 @@ class LevelProgression:
         Side effects: none.
         """
         _integer(base_stat, "base_stat")
-        _integer(level, "level", 1, 100)
+        _integer(level, "level", 1, self.level_max)
         return (base_stat * (level + 10) + 55) // 110
 
     def xp_threshold(self, level):
@@ -81,7 +74,7 @@ class LevelProgression:
         Post: non-negative Int32; zero iff level==1; strictly increases by level.
         Side effects: none.
         """
-        _integer(level, "level", 1, 100)
+        _integer(level, "level", 1, self.level_max)
         return self._thresholds[level - 1]
 
     def xp_to_next(self, level):
@@ -91,7 +84,7 @@ class LevelProgression:
         Post: positive Int32 for level<100; zero for level==100.
         Side effects: none.
         """
-        _integer(level, "level", 1, 100)
+        _integer(level, "level", 1, self.level_max)
         return self._costs[level - 1]
 
     def level_from_xp(self, xp):
@@ -106,15 +99,21 @@ class LevelProgression:
         return bisect_right(self._thresholds, xp)
 
 
-def main_reward_weights(appeared, dead):
+@lru_cache(maxsize=1)
+def _default_curve():
+    return LevelProgression()
+
+
+def main_reward_weights(appeared, dead, *, curve=None):
     """Return the approved XP weight for each main creature in party order.
 
     Pre: appeared and dead are lists/tuples of bool, same length in 1..6;
          appeared records whether each individual ever entered during the
-         current event, including creatures since swapped out.
-    Post: each weight is 0 if dead, otherwise 4 if appeared, otherwise 2;
+         current event, including creatures since swapped out; curve is None
+         (cached approved configuration) or a LevelProgression instance.
+    Post: each weight is 0 if dead, otherwise the configured appeared/reserve weight;
           repeated entries or time spent on field cannot multiply the weight.
-    Side effects: allocates an immutable tuple; does not mutate inputs.
+    Side effects: allocates a tuple; reads approved data on first default use.
     """
     for name, flags in (("appeared", appeared), ("dead", dead)):
         if not isinstance(flags, (list, tuple)):
@@ -124,23 +123,28 @@ def main_reward_weights(appeared, dead):
             raise TypeError(f"{name} must contain only bool")
     if len(appeared) != len(dead):
         raise ValueError("appearance and death flags must refer to the same party")
-    return tuple(0 if is_dead else 4 if has_appeared else 2
+    if curve is None:
+        curve = _default_curve()
+    if not isinstance(curve, LevelProgression):
+        raise TypeError("curve must be a LevelProgression instance")
+    return tuple(0 if is_dead else curve.appeared_weight if has_appeared else curve.reserve_weight
                  for has_appeared, is_dead in zip(appeared, dead))
 
 
-def allocate_main_xp(total_xp, appeared, dead):
-    """Divide event XP exactly among living mains by their 4/2 weights.
+def allocate_main_xp(total_xp, appeared, dead, *, curve=None):
+    """Divide event XP exactly among living mains by configured weights.
 
     Pre: total_xp is an integer in 0..Int32.MaxValue; flag arguments satisfy
-         main_reward_weights's contract and reflect the current event.
+         main_reward_weights's contract and reflect the current event; curve
+         supplies the configured weights, or None selects approved defaults.
     Post: immutable tuple of non-negative Fractions in party order; dead mains
           get zero and are excluded from the denominator. If any main lives,
           rewards sum to total_xp and reward/weight is identical for survivors;
           if all mains are dead, all rewards are zero. No rounding is applied.
-    Side effects: allocates result values; inputs and stored XP remain unchanged.
+    Side effects: allocates values; reads approved data on first default use.
     """
     _integer(total_xp, "total_xp")
-    weights = main_reward_weights(appeared, dead)
+    weights = main_reward_weights(appeared, dead, curve=curve)
     denominator = sum(weights)
     if denominator == 0:
         return tuple(Fraction(0) for _ in weights)

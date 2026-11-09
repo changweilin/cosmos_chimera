@@ -18,7 +18,7 @@ MonoBehaviour:
   sizeClass: 0
   aiStyle: 2
   evolvesTo: {fileID: 11400000, guid: fb2e0365a6ff16f41a983302b2d6ca9c, type: 2}
-  evolutionExp: 100
+  evolutionLevel: 27
   evolutionMaterials:
   - element: 7
     tier: 1

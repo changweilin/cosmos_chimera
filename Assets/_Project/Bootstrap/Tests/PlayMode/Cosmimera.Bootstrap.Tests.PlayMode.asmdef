@@ -7,6 +7,7 @@
         "Cosmimera.GameData",
         "Cosmimera.WorldGen",
         "Cosmimera.Combat",
+        "Cosmimera.Creatures",
         "Cosmimera.Bootstrap",
         "Cosmimera.Player",
         "Unity.Mathematics",

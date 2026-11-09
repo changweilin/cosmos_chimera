@@ -59,3 +59,21 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.close_in_permille` | P2-10 突進 / 繞背站位 = 最短敵對可及距離 × 此值 / 1000（1–1000） |
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
+
+## progression
+
+P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與公式見 [level-progression.md](../level-progression.md)；C# `Creatures/Api/Progression.cs`。
+
+| Key | 說明 |
+|---|---|
+| `progression.level_max` | 最高等級（100）；累計經驗上限 T(level_max) |
+| `progression.starter_level` | 新取得御三家的等級（10），初始經驗 T(10) |
+| `progression.xp_first_level_cost` / `xp_growth_numerator` / `xp_growth_denominator` | C(L) = ceil(first × (num/den)^(L−1))，以精確整數計算 |
+| `progression.evolution_level_bands` | 進化等級門檻允許區間（含端點）；schema 與 `CreatureDef.EvolutionLevelMin/Max` 鏡像，測試檢查一致 |
+| `progression.migration_stage_floor_levels` | 存檔格式 1→2 遷移：幼年／少年／成年改為 T(10／20／35) |
+| `progression.appeared_weight` / `reserve_weight` | 主力分配權重：出場 4、後備 2；死亡 0 且移出分母 |
+| `progression.rewards.base_xp.*` | 來源基數：wild／capture／quest_step／quest_chain／boss |
+| `progression.rewards.reference_level` | E = floor(base × C(min(L,99)) × r / C(reference_level)) 的分母等級（10） |
+| `progression.rewards.elite_multiplier` | 擊倒菁英的 r（2）；只用於野戰擊倒 |
+| `progression.rewards.wild_level.*` | 野生等級 = clamp(base + per_difficulty×(d−1) + per_tier×tier + role_bonus, 1, 100) |
+| `progression.rewards.sidekick_share_divisor` | 副手組共分 floor(主力實得 / 此值)；目前只支援 2 |

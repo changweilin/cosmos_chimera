@@ -59,7 +59,7 @@ namespace Cosmimera.GameData.Editor
 
     internal sealed class EvolutionDto
     {
-        [JsonProperty("exp", Required = Required.Always)] public int Exp;
+        [JsonProperty("level", Required = Required.Always)] public int Level;
         [JsonProperty("materials", Required = Required.Always)] public List<MaterialDto> Materials;
     }
 

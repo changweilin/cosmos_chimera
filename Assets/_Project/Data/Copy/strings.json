@@ -107,6 +107,10 @@
     "zh-TW": "收服失敗",
     "en": "Capture Failed"
   },
+  "ui.hud.level_up": {
+    "zh-TW": "{name} 升到 LV{level}（戰鬥結束後生效）",
+    "en": "{name} reached LV{level} (applies after this battle)"
+  },
   "ui.hud.knocked_out": {
     "zh-TW": "已擊倒",
     "en": "Knocked Out"

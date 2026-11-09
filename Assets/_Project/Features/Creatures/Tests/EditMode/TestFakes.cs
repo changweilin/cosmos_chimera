@@ -77,5 +77,10 @@ namespace Cosmimera.Creatures.Tests
             => new OwnedCreature(id, species, vessel, exp);
 
         public static Func<int, string> SpeciesOf(Dictionary<int, string> table) => id => table[id];
+
+        /// The approved curve from Data/balance.json, so level-gate tests use the real T(L) table.
+        public static readonly Progression Progression = Cosmimera.Creatures.Progression.FromJson(System.IO.File.ReadAllText(
+            System.IO.Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(UnityEngine.Application.dataPath, "..")),
+                "Data", "balance.json")));
     }
 }

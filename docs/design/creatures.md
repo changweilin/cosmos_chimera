@@ -33,7 +33,7 @@
 ## 等級與成長
 等級範圍、御三家起始等級、四維線性成長、各物種解鎖區間及指數經驗曲線統一定義於 [level-progression.md](level-progression.md)（2026-11-08 使用者確認）。只縮放 CON／STR／SPI／AGI；屬性、基礎抗性、專精與招式威力不隨等級改變。
 
-數值取整與經驗係數已定案，經驗分配細節待 Q-C30；目前尚未接入資料契約與執行期。超載其餘規則仍見 Q-C12。
+數值取整、經驗係數與分配（Q-C28～Q-C30）已定案並接入資料契約與執行期，見 [level-progression.md](level-progression.md)。超載其餘規則仍見 Q-C12。
 
 ## 招式（`Data/moves/`）
 `id, element, kind(damage|effect|both), power, effect{...}, cooldown_ms, accuracy(%), range_class(melee|mid|long), shape, base_range_mm, movement?, origin?`

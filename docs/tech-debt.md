@@ -14,3 +14,16 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 同上 | D0-R2 | low | BOSS 只是成年型態，沒有 HP/數值加成 |
 | `Bootstrap/Demo/PlanetLook.cs` | D0-V1 | low | 生物群系只在 shader 依高度/坡度/緯度上色；無規則層 biome 表、無散佈（P3-09） |
 | `docs/reviews/D0-r2-sol.md` | S5 | low | `ScatterField` 半格距離圓盤取樣在 cube-face 接縫附近可漏掉 90 m 內的格（裝飾漏生/跳現）；改為保守枚舉 face/cell 範圍後再距離篩選 |
+| `docs/reviews/P3-10-sol.md` | S6 | med | 探針沒有摘要 `LandingDirection`（`RunPlanner.Hash` 也不含），降落點改變不會被偵測 |
+| 同上 | S7 | low | `ReproProbe.Report` 未檢查 null 型別元素／缺 Adult 的野生池；`ReproBuild.BuildAll` 未檢查 batchmode |
+| `Bootstrap/Demo/RunSession.cs` | D0-X2 | low | 副手經驗只在 `Progression.Settle` 規則層；D0 無副手編成，run 只結算主力 |
+| 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1；野生等級只隨區域 tier 與角色變化 |
+| `docs/decisions/ADR-0007-generation-reproducibility.md` | Q-T6-R1 | med | 生成點選陸地（`IsSea(direction)`）與 Scatter 讀浮點方向，格界附近跨後端可能翻轉；P6 握手比對 `planDiscrete` 偵測，不一致時改以主機計畫下發 |
+| `docs/reviews/P2-12-sol.md` | R3 | med | `LobbySave.FromJson` 未拒絕重複或超過 6 隻的 party（僅限損壞存檔）；重複 id 進 XP 結算會重複配額 |
+| 同上 | R4 | med | 空 owned 時未檢查 `next_instance_id` ≥ 1；`Add` 在 Int32 極值時先自增再溢位，寫出自己拒讀的存檔 |
+| 同上 | R5 | med | `Progression.FromJson` 未限制係數包絡（Python 有 elite 1–100）；極端 base×elite 讓 `SourceXp` Int64 溢位為負數。核定值安全 |
+| 同上 | R6 | low | `QuestTracker.OnKnockedOut` 未忽略同一 spawn 重送；D0 Encounter 不會重送，屬防禦缺口 |
+| 同上 | R7 | low | `XpSettlement.Paid/Assigned` 回傳可轉型的原始陣列 |
+| 同上 | R8 | low | `Settle` Post 應寫成 `min(Exp, MaxExp) + Paid <= MaxExp` |
+| 同上 | R9 | low | `XpRecipient` 建構子未以 Contract 檢查 id/exp（由 `Settle` 攔截） |
+| `docs/reviews/P2-12-sol-r3.md` | R3-04 | low | `Encounter.SetLevel` 的戰鬥外限制只寫在 Pre，未檢查（呼叫端 `RunSession` 以 `InCombat` 把關） |

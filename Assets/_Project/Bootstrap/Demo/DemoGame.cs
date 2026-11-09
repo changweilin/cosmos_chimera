@@ -50,6 +50,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
+        private Progression _progression;
         private LobbySave _save;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
@@ -58,6 +59,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<CreatureDef> _wildPool = new List<CreatureDef>();
         private RunSession _run;
         private RunOutcome _outcome;
+        private readonly List<string> _xpLines = new List<string>();
+        private readonly List<int> _runPartyIds = new List<int>();
         private Pcg32 _menuRng;
         private GUIStyle _title;
         private GUIStyle _text;
@@ -69,11 +72,26 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void Awake()
         {
+            LoadData();
+            if (TryRunReproProbe())
+            {
+                return;
+            }
+
+            _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
+            _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
+            _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+        }
+
+        private void LoadData()
+        {
             _copy = new DemoCopy(_language, _strings.text, _names.text, _affixes.text, _themes.text, _quests.text,
                 _epithets.text);
             _combatBalance = CombatBalance.FromJson(_balance.text);
+            _progression = Progression.FromJson(_balance.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
-            _save = LobbySave.Load(_savePath);
+            _save = LobbySave.Load(_savePath, _progression,
+                id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
             GeoTemplateLoader.Load(_geoMeta, _geoHeights, _geoWater, _templates, _templateTags);
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
@@ -94,10 +112,70 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
             }
+        }
 
-            _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
-            _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
-            _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+        // P3-10: `Cosmimera.exe -batchmode -reproProbe <file>` writes the probe report and quits, so the shipped player
+        // binary (Mono or IL2CPP) is what gets measured, not the Editor.
+        private bool TryRunReproProbe()
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            int i = System.Array.IndexOf(args, "-reproProbe");
+            if (i < 0)
+            {
+                return false;
+            }
+
+            if (i + 1 >= args.Length)
+            {
+                Debug.LogError("DemoGame: -reproProbe needs an output file path.");
+                Application.Quit(2);
+                return true;
+            }
+
+            // A batchmode player that throws out of Awake never quits; the caller would hang instead of seeing a failure.
+            try
+            {
+                WriteReproReport(args[i + 1]);
+                Application.Quit(0);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                Application.Quit(1);
+            }
+
+            return true;
+        }
+
+        // The sample dump sits next to the report as <file>.samples; tools/repro/compare.py reads it when present.
+        private void WriteReproReport(string path)
+        {
+            var samples = new System.Text.StringBuilder();
+            string report = ReproReport(samples);
+            File.WriteAllText(path, report, new System.Text.UTF8Encoding(false));
+            File.WriteAllText(path + ".samples", samples.ToString(), new System.Text.UTF8Encoding(false));
+        }
+
+        private string ReproReport(System.Text.StringBuilder samples)
+        {
+            var types = new List<PlanetTypeDef>();
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t)
+                {
+                    types.Add(t);
+                }
+            }
+
+#if ENABLE_IL2CPP
+            const string backend = "il2cpp";
+#else
+            const string backend = "mono";
+#endif
+            string env = backend + " " + Application.platform + " editor=" + Application.isEditor + " cpu="
+                + SystemInfo.processorType.Replace(' ', '_');
+            var vocab = new WorldGen.RunPlanVocabulary(_copy.ThemeIds, _copy.GenericAffixIds, _copy.ChainIds);
+            return ReproProbe.Report(types, _wildPool, vocab, _templates, _templateTags, RadiusFor, env, samples);
         }
 
         private void OnGUI()
@@ -137,7 +215,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     if (GUILayout.Button(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
-                        _save.ChooseStarter(s.LineId, s.Id);
+                        _save.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
                         _save.Write(_savePath);
                     }
                 }
@@ -230,7 +308,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         private string PartyLabel(OwnedCreature o) =>
-            _copy.Name(o.SpeciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")";
+            _copy.Name(o.SpeciesId) + " LV" + _progression.LevelOf(o.Exp) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")";
 
         private void CommitParty(List<int> party)
         {
@@ -274,9 +352,17 @@ namespace Cosmimera.Bootstrap.Demo
             string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
             GUILayout.Label(title, _title, GUILayout.Height(60));
             GUILayout.Label(_copy.Ui("ui.results.captured_list"), _text);
-            foreach ((string speciesId, VesselKind vessel) in _outcome.Captured)
+            foreach ((string speciesId, VesselKind vessel, int exp) in _outcome.Captured)
             {
-                GUILayout.Label("· " + _copy.Name(speciesId) + "  (" + _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
+                GUILayout.Label("· " + _copy.Name(speciesId) + " LV" + _progression.LevelOf(exp) + "  (" +
+                    _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
+            }
+
+            GUILayout.Space(10);
+            GUILayout.Label(_copy.Ui("ui.lobby.team"), _text);
+            foreach (string line in _xpLines)
+            {
+                GUILayout.Label("· " + line, _text);
             }
 
             GUILayout.Space(20);
@@ -307,16 +393,20 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: planet-world.md#星球尺度 says small = 320 m, but combat geometry is approved only for R >= 640
         // (MoveGeometry.MinSupportedRadiusM). D0 plays small planets at 640 m; tracked as open question Q-D1.
-        private static float RadiusFor(PlanetSize size) => size == PlanetSize.Large ? 1280f : MoveGeometry.MinSupportedRadiusM;
+        internal static float RadiusFor(PlanetSize size) => size == PlanetSize.Large ? 1280f : MoveGeometry.MinSupportedRadiusM;
 
         private void Launch(PlanetOption o)
         {
             var party = new List<CreatureDef>();
+            var partyExp = new List<int>();
+            _runPartyIds.Clear();
             foreach (int id in _save.Party)
             {
                 if (_database.TryGet(_save.Get(id).SpeciesId, out CreatureDef def))
                 {
                     party.Add(def);
+                    partyExp.Add(_save.Get(id).Exp);
+                    _runPartyIds.Add(id);
                 }
             }
 
@@ -332,6 +422,7 @@ namespace Cosmimera.Bootstrap.Demo
                 new RunSetup
                 {
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
+                    PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Templates = _templates, TemplateTags = _templateTags,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
@@ -340,9 +431,20 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnRunEnded(RunOutcome outcome)
         {
             // Q-M4: the run itself is never saved; only what it brought back is written to the lobby save.
-            foreach ((string speciesId, VesselKind vessel) in outcome.Captured)
+            // XP is applied before captures join, so a new capture never receives its own capture reward.
+            _xpLines.Clear();
+            for (int i = 0; i < _runPartyIds.Count; i++)
             {
-                _save.Add(speciesId, vessel);
+                OwnedCreature o = _save.Get(_runPartyIds[i]);
+                int after = outcome.PartyExp[i];
+                _xpLines.Add(_copy.Name(o.SpeciesId) + " LV" + _progression.LevelOf(o.Exp) + " → LV" +
+                    _progression.LevelOf(after) + "  (+" + (after - o.Exp) + " XP)");
+                _save.SetExp(o.InstanceId, after);
+            }
+
+            foreach ((string speciesId, VesselKind vessel, int exp) in outcome.Captured)
+            {
+                _save.Add(speciesId, vessel, exp);
             }
 
             _save.Write(_savePath);
@@ -424,6 +526,32 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             UnityEditor.AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.Bootstrap.Demo.DemoGame.ReproProbeBatch -reproProbe &lt;file&gt;</c>.</summary>
+        /// <remarks>
+        /// Pre: batchmode; Demo.unity exists (CreateScene ran). Post: the Editor (Mono JIT) reference report and its
+        ///      .samples dump are written.
+        /// Side effects: opens Demo.unity; writes both files; exits the Editor with 0, or 1 on failure.
+        /// </remarks>
+        public static void ReproProbeBatch()
+        {
+            try
+            {
+                string[] args = System.Environment.GetCommandLineArgs();
+                int i = System.Array.IndexOf(args, "-reproProbe");
+                Core.Contracts.Contract.Requires(i >= 0 && i + 1 < args.Length, "-reproProbe <file> is required");
+                UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Bootstrap/Demo.unity");
+                DemoGame game = Object.FindAnyObjectByType<DemoGame>(); // Editor tooling only; runtime never looks up.
+                game.LoadData();
+                game.WriteReproReport(args[i + 1]);
+                UnityEditor.EditorApplication.Exit(0);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                UnityEditor.EditorApplication.Exit(1);
+            }
         }
 
         /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.Bootstrap.Demo.DemoGame.CreateSceneBatch</c>.</summary>

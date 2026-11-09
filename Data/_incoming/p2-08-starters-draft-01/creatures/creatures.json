@@ -7,7 +7,7 @@
     "ai_style": "keep_distance",
     "evolves_to": "sun_heliostat_heron",
     "evolution": {
-      "exp": 100,
+      "level": 25,
       "materials": [
         {
           "element": "light",
@@ -61,7 +61,7 @@
     "ai_style": "keep_distance",
     "evolves_to": "sun_array_skyheron",
     "evolution": {
-      "exp": 300,
+      "level": 42,
       "materials": [
         {
           "element": "light",
@@ -161,7 +161,7 @@
     "ai_style": "flank",
     "evolves_to": "moon_shade_wolf",
     "evolution": {
-      "exp": 100,
+      "level": 23,
       "materials": [
         {
           "element": "shadow",
@@ -215,7 +215,7 @@
     "ai_style": "flank",
     "evolves_to": "moon_longnight_wolf",
     "evolution": {
-      "exp": 300,
+      "level": 40,
       "materials": [
         {
           "element": "shadow",
@@ -315,7 +315,7 @@
     "ai_style": "charge",
     "evolves_to": "star_storm_colt",
     "evolution": {
-      "exp": 100,
+      "level": 27,
       "materials": [
         {
           "element": "thunder",
@@ -370,7 +370,7 @@
     "ai_style": "charge",
     "evolves_to": "star_skyhoof_steed",
     "evolution": {
-      "exp": 300,
+      "level": 45,
       "materials": [
         {
           "element": "thunder",

@@ -69,8 +69,8 @@ namespace Cosmimera.Combat.Tests
         {
             MoveDef bite = Move("fire_bite", 40, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), seed);
-            mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f));
-            wild = e.AddCreature(EncounterSide.Wild, Creature("wild", bite, AiStyle.Charge), null, Dir(0.9f));
+            mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f), 100);
+            wild = e.AddCreature(EncounterSide.Wild, Creature("wild", bite, AiStyle.Charge), null, Dir(0.9f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
             return e;
         }
@@ -91,6 +91,46 @@ namespace Cosmimera.Combat.Tests
             }
 
             return -1;
+        }
+
+        // REQ: Q-C31 (2026-11-09) — level-up effects settle when the battle ends; the result must equal a unit built
+        // at the new level, keeping damage taken.
+        [Test]
+        public void SetLevel_matches_a_unit_built_at_that_level_and_keeps_damage_taken()
+        {
+            MoveDef bite = Move("fire_bite", 40, MoveShape.Front, RangeClass.Melee, 2000);
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            CreatureDef def = Creature("mine", bite, AiStyle.Charge);
+            EncounterUnit grown = e.AddCreature(EncounterSide.Player, def, null, Dir(0f), 10);
+            EncounterUnit built = e.AddCreature(EncounterSide.Player, def, null, Dir(1f), 30);
+            int before = grown.Combatant.MaxHp;
+            e.SetLevel(grown.Id, 30);
+            Assert.That(grown.Level, Is.EqualTo(30));
+            Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp));
+            Assert.That(grown.Combatant.Hp, Is.EqualTo(grown.Combatant.MaxHp), "full HP stays full");
+            Assert.That(grown.Agi, Is.EqualTo(built.Agi));
+            Assert.That(grown.Volumes[0], Is.EqualTo(built.Volumes[0]));
+            Assert.That(grown.Combatant.MaxHp, Is.GreaterThan(before));
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(grown.Id, 29), "levels never go down");
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(grown.Id, 101));
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(99, 50));
+            e.SetLevel(grown.Id, 30);
+            Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp), "same level is a no-op");
+        }
+
+        [Test]
+        public void Rescale_raises_hp_by_the_max_hp_increase_and_refuses_fainted()
+        {
+            var c = new Combatant(_balance.Stats, _balance.Effects, 10, 10, 10, new int[10], new int[10], new EffectBook(), 1);
+            int max10 = c.MaxHp;
+            System.Reflection.PropertyInfo hp = typeof(Combatant).GetProperty(nameof(Combatant.Hp));
+            hp.SetValue(c, max10 - 100); // damage taken in the battle that just ended
+            c.Rescale(50, 10, 10);
+            Assert.That(c.MaxHp, Is.GreaterThan(max10));
+            Assert.That(c.Hp, Is.EqualTo(c.MaxHp - 100), "damage taken is kept, not healed");
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(10, 10, 10), "never lowers MaxHp");
+            hp.SetValue(c, 0);
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(60, 10, 10), "fainted");
         }
 
         [Test]
@@ -119,8 +159,8 @@ namespace Cosmimera.Combat.Tests
         {
             MoveDef bite = Move("fire_bite", 40, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f));
-            EncounterUnit far = e.AddCreature(EncounterSide.Wild, Creature("far", bite, AiStyle.Charge), null, Dir(10f));
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f), 100);
+            EncounterUnit far = e.AddCreature(EncounterSide.Wild, Creature("far", bite, AiStyle.Charge), null, Dir(10f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
             var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             for (int t = 1; t <= 200; t++)

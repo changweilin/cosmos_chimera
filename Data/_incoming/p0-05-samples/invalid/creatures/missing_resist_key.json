@@ -5,7 +5,7 @@
     "stage": "juvenile",
     "evolves_to": "sample_fox_beast",
     "evolution": {
-      "exp": 100,
+      "level": 25,
       "materials": [
         {
           "element": "fire",

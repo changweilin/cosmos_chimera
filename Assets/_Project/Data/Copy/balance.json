@@ -30,5 +30,23 @@
     "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},
     "adolescent": {"min_stat": 25, "max_stat": 100, "total_stats": 200},
     "adult": {"min_stat": 50, "max_stat": 200, "total_stats": 400}
+  },
+  "progression": {
+    "level_max": 100,
+    "starter_level": 10,
+    "xp_first_level_cost": 100,
+    "xp_growth_numerator": 105,
+    "xp_growth_denominator": 100,
+    "evolution_level_bands": {"juvenile": [20, 30], "adolescent": [35, 50]},
+    "migration_stage_floor_levels": [10, 20, 35],
+    "appeared_weight": 4,
+    "reserve_weight": 2,
+    "rewards": {
+      "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640},
+      "reference_level": 10,
+      "elite_multiplier": 2,
+      "wild_level": {"base": 10, "per_difficulty": 10, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},
+      "sidekick_share_divisor": 2
+    }
   }
 }

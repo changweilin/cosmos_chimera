@@ -4,6 +4,7 @@
     "references": [
         "Cosmimera.Core",
         "Cosmimera.Creatures",
+        "Cosmimera.GameData",
         "Cosmimera.Capture"
     ],
     "includePlatforms": [],

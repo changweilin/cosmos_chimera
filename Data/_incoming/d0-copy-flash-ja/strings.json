@@ -80,6 +80,9 @@
   "ui.hud.capture_fail": {
     "ja": "捕獲失敗"
   },
+  "ui.hud.level_up": {
+    "ja": "{name} が LV{level} に上がった（戦闘終了後に反映）"
+  },
   "ui.hud.knocked_out": {
     "ja": "撃破"
   },

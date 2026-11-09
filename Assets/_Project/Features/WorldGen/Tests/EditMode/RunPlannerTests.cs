@@ -11,7 +11,9 @@ namespace Cosmimera.WorldGen.Tests
     public sealed class RunPlannerTests
     {
         // Pinned digest of seed 12345 on the fixture below; update only with a GeneratorVersion bump (testing.md).
-        private const ulong SnapshotSeed12345V1 = 3196599958287516450UL;
+        // v1 → v2 left this fixture's digest unchanged: its bias elements are all in the pool, so the quest element and the
+        // RNG stream are the same; only twilight/storm-like biases change.
+        private const ulong SnapshotSeed12345V2 = 3196599958287516450UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -155,8 +157,69 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(1), "bump the snapshot with GeneratorVersion");
-            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V1));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(2), "bump the snapshot with GeneratorVersion");
+            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V2));
+        }
+
+        // REQ: SOL P2-12 D0 calibration (2026-11-09) — twilight (light/shadow) and storm (thunder) biases have no wild
+        // forms, which made the DefeatWild step impossible.
+        [TestCase(false, TestName = "DefeatWild_is_achievable_when_bias_is_in_the_pool")]
+        [TestCase(true, TestName = "DefeatWild_is_achievable_when_bias_is_absent_from_the_pool")]
+        public void DefeatWild_is_achievable(bool biasAbsent)
+        {
+            if (biasAbsent)
+            {
+                _type.Set(PlanetSize.Medium, new List<string> { "ruins" }, new List<Element> { Element.Light, Element.Shadow });
+            }
+
+            var byId = new Dictionary<string, Element>();
+            foreach (CreatureDef c in _pool)
+            {
+                byId[c.Id] = RunPlanner.MainElement(c);
+            }
+
+            int inBias = 0;
+            for (ulong seed = 0; seed < 300; seed++)
+            {
+                RunPlan p = Plan(seed);
+                RunQuestStep step = default;
+                int eliteTarget = -1;
+                foreach (RunQuestStep q in p.Quest)
+                {
+                    if (q.Kind == QuestStepKind.DefeatWild)
+                    {
+                        step = q;
+                    }
+                    else if (q.Kind == QuestStepKind.DefeatElite)
+                    {
+                        eliteTarget = q.TargetSpawn;
+                    }
+                }
+
+                // SOL P3-10 S1: the next step's elite must survive DefeatWild, so it never counts as available.
+                int available = 0;
+                for (int i = 0; i < p.Spawns.Count; i++)
+                {
+                    RunSpawn sp = p.Spawns[i];
+                    if (sp.Role != SpawnRole.Boss && i != eliteTarget && byId[sp.CreatureId] == step.Element)
+                    {
+                        available++;
+                    }
+                }
+
+                Assert.That(step.Count, Is.InRange(1, 3), $"seed {seed}");
+                Assert.That(available, Is.GreaterThanOrEqualTo(step.Count), $"seed {seed}");
+                if (step.Element == Element.Wood || step.Element == Element.Water)
+                {
+                    inBias++;
+                }
+            }
+
+            if (!biasAbsent)
+            {
+                // Wood/water are weighted 3:1 over fire, so a bias element almost always has 3 non-boss spawns.
+                Assert.That(inBias, Is.GreaterThanOrEqualTo(290));
+            }
         }
 
         [Test]

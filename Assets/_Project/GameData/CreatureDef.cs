@@ -38,6 +38,25 @@ namespace Cosmimera.GameData
         /// <summary>Agility.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
         public int Agi => agi;
+
+        /// <summary>
+        /// These stats (the LV100 basis) scaled to <paramref name="level"/>: each of CON/STR/SPI/AGI becomes
+        /// round_half_up(B × (L + 10) / 110). REQ: docs/design/level-progression.md#四維縮放 (Q-C28).
+        /// </summary>
+        /// <remarks>
+        /// Pre: 1 &lt;= level &lt;= 100; stats &gt;= 0.
+        /// Post: each value in 0..base, monotone in level, equal to base at 100. Side effects: none.
+        /// </remarks>
+        public CreatureStats AtLevel(int level)
+        {
+            Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
+            Contract.Requires(con >= 0 && str >= 0 && spi >= 0 && agi >= 0, "stats must be >= 0");
+            return new CreatureStats(Scale(con, level), Scale(str, level), Scale(spi, level), Scale(agi, level));
+        }
+
+        // Int64 before multiplying: B up to Int32.MaxValue × 110 overflows Int32. One rounding at the end only, so low
+        // levels do not get the extra staircase a pre-rounded percentage would add.
+        private static int Scale(int b, int level) => (int)(((long)b * (level + 10) + 55) / 110);
     }
 
     /// <summary>An (element, integer) pair, used for mastery.</summary>
@@ -102,12 +121,24 @@ namespace Cosmimera.GameData
     {
         private const int ElementCount = 10;
 
+        /// <summary>Lowest legal evolution level gate per non-adult stage (juvenile, adolescent).</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant. Side effects: none.
+        /// REQ: level-progression.md#已確認規則 — juvenile→adolescent LV20–30, adolescent→adult LV35–50, inclusive. Mirrored
+        /// by creature.schema.json and the importer; tools/tests checks the schema against these numbers.
+        /// </remarks>
+        public static readonly IReadOnlyList<int> EvolutionLevelMin = new[] { 20, 35 };
+
+        /// <summary>Highest legal evolution level gate per non-adult stage (juvenile, adolescent).</summary>
+        /// <remarks>Pre: none. Post: constant; &gt;= EvolutionLevelMin. Side effects: none.</remarks>
+        public static readonly IReadOnlyList<int> EvolutionLevelMax = new[] { 30, 50 };
+
         [SerializeField] private string lineId;
         [SerializeField] private CreatureStage stage;
         [SerializeField] private CreatureSizeClass sizeClass;
         [SerializeField] private AiStyle aiStyle;
         [SerializeField] private CreatureDef evolvesTo;
-        [SerializeField] private int evolutionExp;
+        [SerializeField] private int evolutionLevel;
         [SerializeField] private List<EvolutionMaterial> evolutionMaterials = new List<EvolutionMaterial>();
         [SerializeField] private int[] resist = new int[ElementCount];
         [SerializeField] private List<ElementValue> mastery = new List<ElementValue>();
@@ -137,9 +168,9 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: null iff Stage == Adult; otherwise same LineId, next stage. Side effects: none.</remarks>
         public CreatureDef EvolvesTo => evolvesTo;
 
-        /// <summary>Experience required to evolve.</summary>
-        /// <remarks>Pre: none. Post: 0 iff EvolvesTo == null, otherwise >= 1. Side effects: none.</remarks>
-        public int EvolutionExp => evolutionExp;
+        /// <summary>Level gate to evolve (fixed per species; juvenile 20–30, adolescent 35–50 — level-progression.md).</summary>
+        /// <remarks>Pre: none. Post: 0 iff EvolvesTo == null, otherwise inside the stage's band. Side effects: none.</remarks>
+        public int EvolutionLevel => evolutionLevel;
 
         /// <summary>Materials required to evolve.</summary>
         /// <remarks>Pre: none. Post: empty iff EvolvesTo == null. Side effects: none.</remarks>
@@ -182,7 +213,7 @@ namespace Cosmimera.GameData
         }
 
         internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle, CreatureDef evolvesTo,
-            int evolutionExp,
+            int evolutionLevel,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
         {
@@ -192,7 +223,7 @@ namespace Cosmimera.GameData
             this.sizeClass = sizeClass;
             this.aiStyle = aiStyle;
             this.evolvesTo = evolvesTo;
-            this.evolutionExp = evolutionExp;
+            this.evolutionLevel = evolutionLevel;
             this.evolutionMaterials = evolutionMaterials;
             this.resist = resist;
             this.mastery = mastery;

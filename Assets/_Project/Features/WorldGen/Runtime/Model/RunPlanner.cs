@@ -21,8 +21,10 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
+        // v2 (2026-11-09): the DefeatWild element is restricted to elements that have enough non-boss spawns.
+        private const int DefeatWildCount = 3;
         private const double SurfaceKm2PerRegion = 0.42;
         private const int MinRegions = 8;
         private const int MaxRegions = 32;
@@ -51,7 +53,9 @@ namespace Cosmimera.WorldGen
         /// Post: regions in [8, 32] scaled by surface area; region graph connected; MainRoute is a shortest path from
         ///       LandingRegion to BossRegion; BossRegion maximizes hops from landing; exactly one Boss spawn (an Adult
         ///       form whose main element is in the type's bias when one exists) in the boss region; one Elite per
-        ///       route region strictly between landing and boss (at least one overall); quest ends with DefeatBoss.
+        ///       route region strictly between landing and boss (at least one overall); quest ends with DefeatBoss;
+        ///       the DefeatWild step's Element has ≥ its Count (1..3) spawns that are neither the boss nor the
+        ///       DefeatElite target, preferring the type's bias.
         ///       Same inputs → same plan.
         /// Side effects: allocates.
         /// </remarks>
@@ -152,17 +156,47 @@ namespace Cosmimera.WorldGen
             int bossSpawn = spawns.Count;
             spawns.Add(new RunSpawn(boss, group, Scatter(sites[boss], 0f, isLand, ref rng), bossSpecies.Id, SpawnRole.Boss));
 
-            Element questElement = planetType.ElementBias.Count > 0
-                ? planetType.ElementBias[(int)rng.NextUInt((uint)planetType.ElementBias.Count)]
-                : MainElement(bossSpecies);
+            // REQ: docs/roadmap/phase-2.md (SOL P2-12 D0 calibration, 2026-11-09): picking straight from ElementBias made
+            // DefeatWild impossible when no wild form has that element (twilight light/shadow, storm thunder). The
+            // element must have ≥ DefeatWildCount non-boss spawns; the boss ends the run, so it can never count.
+            // The next step's elite is excluded too (SOL P3-10 S1): QuestTracker gives no pre-credit, so killing it to
+            // fill DefeatWild would leave DefeatElite with no target.
             int firstStop = route.Length > 2 ? route[1] : landing;
             int middle = route[route.Length / 2];
             int eliteRegion = eliteByRegion.ContainsKey(middle) ? middle : FirstKey(eliteByRegion, route);
+            int eliteTarget = eliteByRegion[eliteRegion];
+            var nonBossByElement = new Dictionary<Element, int>();
+            for (int i = 0; i < spawns.Count; i++)
+            {
+                RunSpawn s = spawns[i];
+                if (s.Role == SpawnRole.Boss || i == eliteTarget)
+                {
+                    continue;
+                }
+
+                Element e = MainElement(FindById(wildPool, s.CreatureId));
+                nonBossByElement.TryGetValue(e, out int n);
+                nonBossByElement[e] = n + 1;
+            }
+
+            var questCandidates = new List<Element>();
+            foreach (Element e in planetType.ElementBias)
+            {
+                if (nonBossByElement.TryGetValue(e, out int n) && n >= DefeatWildCount && !questCandidates.Contains(e))
+                {
+                    questCandidates.Add(e);
+                }
+            }
+
+            Element questElement = questCandidates.Count > 0
+                ? questCandidates[(int)rng.NextUInt((uint)questCandidates.Count)]
+                : MostCommon(nonBossByElement, MainElement(bossSpecies));
+            int defeatCount = math.min(DefeatWildCount, nonBossByElement.TryGetValue(questElement, out int have) ? have : 0);
             var quest = new[]
             {
                 new RunQuestStep(QuestStepKind.ReachPoi, firstStop, 1, questElement, -1),
-                new RunQuestStep(QuestStepKind.DefeatWild, firstStop, 3, questElement, -1),
-                new RunQuestStep(QuestStepKind.DefeatElite, eliteRegion, 1, questElement, eliteByRegion[eliteRegion]),
+                new RunQuestStep(QuestStepKind.DefeatWild, firstStop, defeatCount, questElement, -1),
+                new RunQuestStep(QuestStepKind.DefeatElite, eliteRegion, 1, questElement, eliteTarget),
                 new RunQuestStep(QuestStepKind.CaptureOne, eliteRegion, 1, questElement, -1),
                 new RunQuestStep(QuestStepKind.DefeatBoss, boss, 1, questElement, bossSpawn),
             };
@@ -491,6 +525,37 @@ namespace Cosmimera.WorldGen
                 if (math.dot(sites[i], dir) > math.dot(sites[best], dir))
                 {
                     best = i;
+                }
+            }
+
+            return best;
+        }
+
+        private static CreatureDef FindById(IReadOnlyList<CreatureDef> pool, string id)
+        {
+            foreach (CreatureDef c in pool)
+            {
+                if (c.Id == id)
+                {
+                    return c;
+                }
+            }
+
+            Contract.Ensures(false, "every spawn comes from the wild pool");
+            return null;
+        }
+
+        // Iterates the enum in value order, not the dictionary, so ties resolve the same on every runtime.
+        private static Element MostCommon(Dictionary<Element, int> counts, Element fallback)
+        {
+            Element best = fallback;
+            int bestCount = 0;
+            for (int v = 0; v <= (int)Element.Shadow; v++)
+            {
+                if (counts.TryGetValue((Element)v, out int n) && n > bestCount)
+                {
+                    best = (Element)v;
+                    bestCount = n;
                 }
             }
 
