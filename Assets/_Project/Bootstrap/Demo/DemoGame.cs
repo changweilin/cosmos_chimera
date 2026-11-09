@@ -218,7 +218,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 // Same predicate EvolveButton draws with: a budget short of the drawn buttons strands focus before
                 // start-run on a gamepad (SOL r2 R2-03).
-                if (EvolveRequirementFor(_save.Owned[i], out _))
+                if (HasEvolveButton(_save.Owned[i]))
                 {
                     count++;
                 }
@@ -512,24 +512,20 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: creatures.md#進化 — lobby only; level and every material shortfall are listed at once, nothing is consumed
         // on refusal (EvolutionRules). A final form, or a species missing from the database, gets no button.
-        private bool EvolveRequirementFor(OwnedCreature o, out EvolutionRequirement req)
-        {
-            req = default;
-            if (!_database.TryGet(o.SpeciesId, out CreatureDef def))
-            {
-                return false;
-            }
-
-            req = EvolutionRequirement.FromDef(def);
-            return !req.IsFinal;
-        }
+        // Allocation-free (Update calls it through MenuButtonCount every frame, SOL r3 R3-01); FromDef is final exactly
+        // when EvolvesTo is null, so this is the same predicate EvolveButton draws with.
+        private bool HasEvolveButton(OwnedCreature o) =>
+            _database.TryGet(o.SpeciesId, out CreatureDef def) && def.EvolvesTo != null;
 
         private void EvolveButton(OwnedCreature o)
         {
-            if (!EvolveRequirementFor(o, out EvolutionRequirement req))
+            if (!HasEvolveButton(o))
             {
                 return;
             }
+
+            _database.TryGet(o.SpeciesId, out CreatureDef def);
+            EvolutionRequirement req = EvolutionRequirement.FromDef(def);
 
             if (!MenuButton(_copy.Ui("ui.lobby.evolve"), GUILayout.Width(90)))
             {
