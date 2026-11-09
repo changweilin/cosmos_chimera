@@ -397,7 +397,7 @@
   "ui.hud.gamepad_help": {
     "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n選單：方向鍵或左搖桿移動，下方按鈕確認，右方按鈕返回。",
     "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nMenus: D-pad or left stick to move, bottom button to confirm, right button to go back.",
-    "ja": "左スティックで移動、右スティックで視点操作。\n左スティック押し込みでダッシュ、右押し込みで視点切り替え。\n下のボタンでジャンプ、上のボタンで捕獲。\n右のボタンで捕獲道具を切り替え。\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づいて捕獲。各対象1回限り。\n復活も戦闘外の回復もありません。\n3秒以内にStartを2回押すと終了。\nメニューは方向キー／左スティックで移動、下ボタンで決定、右ボタンで戻る。"
+    "ja": "左スティックで移動、右スティックで視点操作。\n左スティック押し込みでダッシュ、右押し込みで視点切り替え。\n下のボタンでジャンプ、上のボタンで捕獲。\n右のボタンで捕獲道具を切り替え。\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づいて捕獲。各対象1回限り。\n復活も戦闘外の回復もありません。\n3秒以内にStartを2回押すと終了。\nメニュー：十字キー／左スティックで移動、下のボタンで決定、右のボタンで戻る。"
   },
   "ui.lobby.language": {
     "zh-TW": "語言",

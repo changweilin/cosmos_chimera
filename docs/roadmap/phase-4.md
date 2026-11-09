@@ -16,6 +16,8 @@
 | P4-08 | UI 文案與本地化（繁中/英/日） | TERRA | FLASH（交叉）+ 人工 | 字串全部外部化 | 🟦 |
 
 ## 交接紀錄
+- 2026-11-09 · Gemini Flash（agy） · done · P4-08 Terra 第二批 2 個 ja 鍵複核，1 處修正 · 下一步：OPUS 執行 check.py 與 merge.py 重新 staging
+- 2026-11-09 · Claude Opus（驗收）· done · Terra `9e43cfb`（DemoMenu 選單手把導航、ja 執行期＋en fallback、語言切換）審閱後合併入 `p2-12/level-rewards`；Flash 複核 1 處修正後重跑 `check.py` 164/164、`merge.py` 重新 staging（只動 strings.json，GeoTemplates 36 個 .meta 保留）。合併後全跑 EditMode 901/901（-nographics）、GPU PlayMode 63/63、0 編譯警告 · 下一步：人工驗收實體手把／Steam Deck、日文字型排版；重新打包 demo
 - 2026-11-09 · ChatGPT Terra（Codex） · done · P4-08 demo 日文接線、英文 fallback 與不持久化語言切換完成；三語 164 欄檢查、Python 175 項、兩種 EditMode 各 898 項及 GPU PlayMode 63 項通過 · 下一步：FLASH 複核新增語言鍵與日文手把提示；人工驗收字型與排版
 - 2026-11-09 · Gemini Flash（agy） · done · P4-08 Terra 代寫的 14 個 ja 鍵交叉審核，3 處修正，報告 docs/reviews/P4-08-ja-flash.md · 下一步：OPUS 執行 check.py 驗收；TERRA 接線日文執行期
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P4-08：新增手把操作及 binding 提示，三語 163 欄結構／數字／佔位符檢查通過，繁中／英文已 staging；日文仍未接執行期 · 下一步：FLASH 交叉審核日文；人工驗收按鈕提示與排版
