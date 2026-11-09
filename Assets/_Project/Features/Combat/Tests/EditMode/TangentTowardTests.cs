@@ -69,6 +69,31 @@ namespace Cosmimera.Combat.Tests
             Assert.That(math.dot(e.TangentToward(from, from, up), north), Is.GreaterThan(0.9999f));
         }
 
+        // SOL D0-E4-and-seams DS-01: pins the conservative factor. tau is the proposal's spec value
+        // 16·2^-24·S·(1+|d|/|r|); at 0.5·tau the fallback (+Z) must be kept, at 2·tau the target (+X) faced. A factor of 1
+        // instead of 16 turns the 0.5·tau case towards +X (Sol witness: R=640, lateral 0.000306 m).
+        [TestCase(640f, 0f, 0f, 0f, 0.5, false)]
+        [TestCase(640f, 0f, 0f, 0f, 2.0, true)]
+        [TestCase(1280f, 16000f, -16000f, 8000f, 0.5, false)]
+        [TestCase(1280f, 16000f, -16000f, 8000f, 2.0, true)]
+        public void Tau_boundary_keeps_the_heading_below_and_faces_the_target_above(
+            float radius, float cx, float cy, float cz, double tauFactor, bool facesTarget)
+        {
+            var center = new float3(cx, cy, cz);
+            Encounter e = At(radius, center);
+            float3 from = center + new float3(0f, radius + 1f, 0f);
+            double r = math.length((double3)from - (double3)center);
+            double scale = math.max(r, math.max(math.cmax(math.abs((double3)from)), math.cmax(math.abs((double3)center))));
+            double tau = 16.0 * 5.9604644775390625e-8 * scale;
+            float3 to = from + new float3((float)(tau * tauFactor), 0f, 0f);
+            double lateral = math.length((double3)to - (double3)from);
+            Assume.That(lateral, Is.GreaterThan(tau * tauFactor * 0.5).And.LessThan(tau * tauFactor * 1.5),
+                "float rounding of 'to' keeps the offset on the intended side of tau");
+            float3 forward = e.TangentToward(from, to, new float3(0f, 0f, 1f));
+            AssertTangentUnit(forward, from, center);
+            Assert.That(math.dot(forward, facesTarget ? new float3(1f, 0f, 0f) : new float3(0f, 0f, 1f)), Is.GreaterThan(0.999f));
+        }
+
         // Above tau (~0.6 mm at R=640, tens of mm with a 16 km centre) the target bearing wins.
         [TestCase(640f, 0f, 0f, 0f, 0.01f)]
         [TestCase(640f, 0f, 0f, 0f, 6f)]
