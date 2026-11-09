@@ -5,15 +5,18 @@
       "variants": [
         {
           "zh-TW": "前往 {poi}。",
-          "en": "Reach {poi}."
+          "en": "Reach {poi}.",
+          "ja": "{poi} へ向かう。"
         },
         {
           "zh-TW": "找到通往 {poi} 的路。",
-          "en": "Find your way to {poi}."
+          "en": "Find your way to {poi}.",
+          "ja": "{poi} への道を探す。"
         },
         {
           "zh-TW": "抵達 {poi}，繼續探索。",
-          "en": "Continue your exploration at {poi}."
+          "en": "Continue your exploration at {poi}.",
+          "ja": "{poi} に到達し、探索を続ける。"
         }
       ]
     },
@@ -22,15 +25,18 @@
       "variants": [
         {
           "zh-TW": "擊敗 {count} 隻{element}屬性野生宙獸。",
-          "en": "Defeat {count} wild {element} Cosmimera."
+          "en": "Defeat {count} wild {element} Cosmimera.",
+          "ja": "{element}属性の野生の宙獣を {count} 体倒す。"
         },
         {
           "zh-TW": "與野外的{element}屬性宙獸交戰，擊敗 {count} 隻。",
-          "en": "Battle and defeat {count} wild {element} Cosmimera."
+          "en": "Battle and defeat {count} wild {element} Cosmimera.",
+          "ja": "野生の{element}属性宙獣と交戦し、{count} 体倒す。"
         },
         {
           "zh-TW": "在這片土地上擊敗 {count} 隻{element}屬性野生宙獸。",
-          "en": "Defeat {count} wild {element} Cosmimera in the field."
+          "en": "Defeat {count} wild {element} Cosmimera in the field.",
+          "ja": "この地で{element}属性の野生の宙獣を {count} 体倒す。"
         }
       ]
     },
@@ -39,15 +45,18 @@
       "variants": [
         {
           "zh-TW": "擊敗菁英宙獸。",
-          "en": "Defeat the elite Cosmimera."
+          "en": "Defeat the elite Cosmimera.",
+          "ja": "エリート宙獣を倒す。"
         },
         {
           "zh-TW": "迎戰眼前的菁英宙獸。",
-          "en": "Take on the elite Cosmimera."
+          "en": "Take on the elite Cosmimera.",
+          "ja": "立ちはだかるエリート宙獣に立ち向かう。"
         },
         {
           "zh-TW": "擊倒擋路的菁英宙獸。",
-          "en": "Defeat the elite Cosmimera blocking your way."
+          "en": "Defeat the elite Cosmimera blocking your way.",
+          "ja": "道を阻むエリート宙獣を撃破する。"
         }
       ]
     },
@@ -56,15 +65,18 @@
       "variants": [
         {
           "zh-TW": "收服一隻宙獸。",
-          "en": "Capture a Cosmimera."
+          "en": "Capture a Cosmimera.",
+          "ja": "宙獣を 1 体捕獲する。"
         },
         {
           "zh-TW": "在野外收服一隻宙獸。",
-          "en": "Capture a wild Cosmimera."
+          "en": "Capture a wild Cosmimera.",
+          "ja": "フィールドで宙獣を 1 体捕獲する。"
         },
         {
           "zh-TW": "尋找並收服一隻宙獸。",
-          "en": "Find and capture a Cosmimera."
+          "en": "Find and capture a Cosmimera.",
+          "ja": "宙獣を見つけて捕獲する。"
         }
       ]
     },
@@ -73,15 +85,18 @@
       "variants": [
         {
           "zh-TW": "擊敗 {boss}。",
-          "en": "Defeat {boss}."
+          "en": "Defeat {boss}.",
+          "ja": "{boss} を倒す。"
         },
         {
           "zh-TW": "迎戰這顆星球的 BOSS：{boss}。",
-          "en": "Face {boss}, the planet's boss."
+          "en": "Face {boss}, the planet's boss.",
+          "ja": "この惑星のボス：{boss} に立ち向かう。"
         },
         {
           "zh-TW": "與 {boss} 決一勝負。",
-          "en": "Confront {boss}."
+          "en": "Confront {boss}.",
+          "ja": "{boss} と決着をつける。"
         }
       ]
     }
@@ -91,33 +106,39 @@
       "id": "starward_trail",
       "title": {
         "zh-TW": "循星之途",
-        "en": "A Trail Among Stars"
+        "en": "A Trail Among Stars",
+        "ja": "星を辿る道"
       },
       "intro": {
         "zh-TW": "這顆星球還有許多未知。踏上旅途，親自調查它的風貌。",
-        "en": "This planet holds countless unknowns. Set out and discover what lies ahead."
+        "en": "This planet holds countless unknowns. Set out and discover what lies ahead.",
+        "ja": "この惑星には多くの未知が眠っている。旅に出て、その全貌を自らの目で確かめよう。"
       }
     },
     {
       "id": "traces_on_the_wind",
       "title": {
         "zh-TW": "風中的線索",
-        "en": "Traces on the Wind"
+        "en": "Traces on the Wind",
+        "ja": "風が運ぶ手掛かり"
       },
       "intro": {
         "zh-TW": "陌生的地景與宙獸引人好奇。循著線索，調查這顆星球吧。",
-        "en": "Strange landscapes and unfamiliar Cosmimera await. Follow the clues and investigate this planet."
+        "en": "Strange landscapes and unfamiliar Cosmimera await. Follow the clues and investigate this planet.",
+        "ja": "見知らぬ景色と宙獣が好奇心を刺激する。手掛かりを追い、この惑星を調査しよう。"
       }
     },
     {
       "id": "beyond_the_horizon",
       "title": {
         "zh-TW": "地平線彼端",
-        "en": "Beyond the Horizon"
+        "en": "Beyond the Horizon",
+        "ja": "地平線の彼方へ"
       },
       "intro": {
         "zh-TW": "從降落點望去，地平線之外藏著什麼？帶上夥伴，探索這顆星球。",
-        "en": "What waits beyond the horizon? Take your companions and explore this planet."
+        "en": "What waits beyond the horizon? Take your companions and explore this planet.",
+        "ja": "着地点から見渡す地平線の向こうには、何が隠されているのか？仲間を連れて、この惑星を探索しよう。"
       }
     }
   ]

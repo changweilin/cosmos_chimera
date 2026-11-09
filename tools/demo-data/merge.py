@@ -83,12 +83,37 @@ def stage_geo(root: Path) -> int:
     return count
 
 
+def _merge_ja(base, translated, path):
+    """Merge translation leaves while checking identity and rejecting collisions."""
+    if isinstance(base, dict) and isinstance(translated, dict):
+        for key, value in translated.items():
+            if key == "ja":
+                if key in base:
+                    raise ValueError(f"{path}: duplicate translation key: ja")
+                base[key] = value
+            elif key in ("en", "zh-TW", "zh"):
+                raise ValueError(f"{path}: duplicate translation key: {key}")
+            elif key not in base:
+                raise ValueError(f"{path}: unknown key: {key}")
+            else:
+                _merge_ja(base[key], value, f"{path}.{key}")
+    elif isinstance(base, list) and isinstance(translated, list):
+        if len(base) != len(translated):
+            raise ValueError(f"{path}: list lengths differ")
+        for i, (left, right) in enumerate(zip(base, translated)):
+            _merge_ja(left, right, f"{path}[{i}]")
+    elif base != translated:
+        raise ValueError(f"{path}: identity mismatch")
+
+
 def _prepare_copy(root):
     files = {}
     incoming = root / "_incoming" / "d0-copy-terra"
     for name in D0_COPY:
         data, value = _read_json(incoming / f"{name}.json")
-        files[f"{name}.json"] = data
+        _, translated = _read_json(root / "_incoming" / "d0-copy-flash-ja" / f"{name}.json")
+        _merge_ja(value, translated, name)
+        files[f"{name}.json"] = (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         if name == "strings":
             strings = value
     # Supplement keys are additive UI strings; a key collision would silently shadow reviewed copy, so fail loudly.
@@ -96,6 +121,8 @@ def _prepare_copy(root):
     clash = sorted(set(strings) & set(supplement))
     if clash:
         raise SystemExit(f"error: demo-ui-supplement.json overrides strings.json keys: {clash}")
+    _, translated_supplement = _read_json(root / "_incoming" / "d0-copy-flash-ja" / "demo-ui-supplement.json")
+    _merge_ja(supplement, translated_supplement, "demo-ui-supplement")
     strings.update(supplement)
     files["strings.json"] = (json.dumps(strings, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     files["balance.json"], _ = _read_json(root / "balance.json")

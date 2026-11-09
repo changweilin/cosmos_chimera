@@ -16,6 +16,7 @@
 | P4-08 | UI 文案與本地化（繁中/英/日） | TERRA | FLASH（交叉）+ 人工 | 字串全部外部化 | 🟦 |
 
 ## 交接紀錄
+- 2026-11-09 · ChatGPT Terra（Codex） · done · P4-08 demo 日文接線、英文 fallback 與不持久化語言切換完成；三語 164 欄檢查、Python 175 項、兩種 EditMode 各 898 項及 GPU PlayMode 63 項通過 · 下一步：FLASH 複核新增語言鍵與日文手把提示；人工驗收字型與排版
 - 2026-11-09 · Gemini Flash（agy） · done · P4-08 Terra 代寫的 14 個 ja 鍵交叉審核，3 處修正，報告 docs/reviews/P4-08-ja-flash.md · 下一步：OPUS 執行 check.py 驗收；TERRA 接線日文執行期
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P4-08：新增手把操作及 binding 提示，三語 163 欄結構／數字／佔位符檢查通過，繁中／英文已 staging；日文仍未接執行期 · 下一步：FLASH 交叉審核日文；人工驗收按鈕提示與排版
 - 2026-11-09 · ChatGPT Terra（Codex） · partial · P4-08 新增九個 demo 操作／導航／收服鍵並修正前 2／4／6 隊伍提示，繁中／英文已接線、日文初稿同步；驗收腳本納入 supplement 與跨語佔位符，三語 160 欄通過。日文執行期與跨廠商審查尚未完成 · 下一步：FLASH 交叉審核本次日文；SONNET 後續接線日文，人工試玩

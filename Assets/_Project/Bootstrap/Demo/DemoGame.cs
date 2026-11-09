@@ -67,6 +67,12 @@ namespace Cosmimera.Bootstrap.Demo
         private Camera _lobbyCamera;
         private Vector2 _partyScroll;
         private string _partyMsg = string.Empty;
+        private InputActionMap _menuInput;
+        private readonly MenuFocus _menuFocus = new MenuFocus();
+        private int _menuButtonCount;
+        private bool _confirmPending;
+        private bool _scrollToFocus;
+        private bool _insidePartyScroll;
         private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
         private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
 
@@ -78,6 +84,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            var menu = _actions.FindActionMap("DemoMenu", true);
+            _menuInput = menu.Clone();
+            if (isActiveAndEnabled)
+            {
+                _menuInput.Enable();
+            }
+
             _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
             _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
             _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
@@ -85,8 +98,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void LoadData()
         {
-            _copy = new DemoCopy(_language, _strings.text, _names.text, _affixes.text, _themes.text, _quests.text,
-                _epithets.text);
+            RebuildCopy();
             _combatBalance = CombatBalance.FromJson(_balance.text);
             _progression = Progression.FromJson(_balance.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
@@ -112,6 +124,126 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
             }
+        }
+
+        private void RebuildCopy()
+        {
+            _copy = new DemoCopy(_language, _strings.text, _names.text, _affixes.text, _themes.text, _quests.text,
+                _epithets.text);
+        }
+
+        private void OnEnable()
+        {
+            if (_screen != Screen.Running && _menuInput != null && !_menuInput.enabled)
+            {
+                _menuInput.Enable();
+            }
+        }
+
+        private void OnDisable()
+        {
+            _menuInput?.Disable();
+            _confirmPending = false;
+        }
+
+        private void OnDestroy() => _menuInput?.Dispose();
+
+        private void Update()
+        {
+            if (_menuInput == null || !_menuInput.enabled)
+            {
+                return;
+            }
+
+            _menuFocus.SetCount(MenuButtonCount());
+            if (_menuInput.FindAction("Up").WasPressedThisFrame() || _menuInput.FindAction("Left").WasPressedThisFrame())
+            {
+                _menuFocus.Move(-1);
+                _scrollToFocus = true;
+            }
+            else if (_menuInput.FindAction("Down").WasPressedThisFrame() || _menuInput.FindAction("Right").WasPressedThisFrame())
+            {
+                _menuFocus.Move(1);
+                _scrollToFocus = true;
+            }
+
+            if (_menuInput.FindAction("Cancel").WasPressedThisFrame())
+            {
+                if (_screen == Screen.StarSelect || _screen == Screen.Results)
+                {
+                    _screen = Screen.Lobby;
+                    _menuFocus.SetCount(0);
+                }
+                _confirmPending = false;
+            }
+            else if (_menuInput.FindAction("Submit").WasPressedThisFrame())
+            {
+                if (_screen == Screen.Lobby && _menuFocus.Index == 0)
+                {
+                    CycleLanguage();
+                }
+                else
+                {
+                    _confirmPending = true;
+                }
+            }
+        }
+
+        private int MenuButtonCount()
+        {
+            if (_screen == Screen.Results) return 1;
+            if (_screen == Screen.StarSelect) return _options.Count + 1;
+            if (_save.StarterLine == null) return 1 + _starters.Count;
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 2;
+            for (int i = 0; i < _save.Owned.Count; i++)
+            {
+                bool inParty = false;
+                for (int j = 0; j < _save.Party.Count; j++)
+                {
+                    if (_save.Party[j] == _save.Owned[i].InstanceId)
+                    {
+                        inParty = true;
+                        break;
+                    }
+                }
+                if (!inParty)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private void CycleLanguage()
+        {
+            _language = _language == "zh-TW" ? "en" : _language == "en" ? "ja" : "zh-TW";
+            RebuildCopy();
+            _partyMsg = string.Empty;
+        }
+
+        private bool MenuButton(string label, params GUILayoutOption[] options)
+        {
+            bool selectable = GUI.enabled;
+            int index = selectable ? _menuButtonCount++ : -1;
+            bool focused = selectable && index == _menuFocus.Index;
+            Color oldColor = GUI.backgroundColor;
+            if (focused)
+            {
+                GUI.backgroundColor = new Color(0.55f, 0.85f, 1f);
+            }
+            bool clicked = GUILayout.Button((focused ? "> " : "") + label, options);
+            GUI.backgroundColor = oldColor;
+            if (focused && _insidePartyScroll && _scrollToFocus && Event.current.type == EventType.Repaint)
+            {
+                GUI.ScrollTo(GUILayoutUtility.GetLastRect());
+            }
+            bool confirmed = focused && _confirmPending && Event.current.type == EventType.Repaint;
+            if (clicked || confirmed)
+            {
+                _confirmPending = false;
+                return true;
+            }
+            return false;
         }
 
         // P3-10: `Cosmimera.exe -batchmode -reproProbe <file>` writes the probe report and quits, so the shipped player
@@ -189,6 +321,13 @@ namespace Cosmimera.Bootstrap.Demo
             _text ??= new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
             var area = new Rect(UnityEngine.Screen.width / 2f - 320, 60, 640, UnityEngine.Screen.height - 120);
             GUILayout.BeginArea(area);
+            _menuButtonCount = 0;
+            _insidePartyScroll = false;
+            if (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseUp)
+            {
+                _confirmPending = false;
+            }
+            Screen previousScreen = _screen;
             switch (_screen)
             {
                 case Screen.Lobby:
@@ -203,20 +342,39 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             GUILayout.EndArea();
+            if (Event.current.type == EventType.Repaint)
+            {
+                _confirmPending = false;
+                _scrollToFocus = false;
+                if (_screen != previousScreen)
+                {
+                    _menuFocus.SetCount(0);
+                }
+                else
+                {
+                    _menuFocus.SetCount(_menuButtonCount);
+                }
+            }
         }
 
         private void DrawLobby()
         {
             GUILayout.Label(_copy.Ui("ui.lobby.title"), _title, GUILayout.Height(60));
+            if (MenuButton(_copy.Ui("ui.lobby.language") + ": " + _language, GUILayout.Height(36)))
+            {
+                CycleLanguage();
+                GUIUtility.ExitGUI();
+            }
             if (_save.StarterLine == null)
             {
                 GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
                 foreach (CreatureDef s in _starters)
                 {
-                    if (GUILayout.Button(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
+                    if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
                         _save.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
                         _save.Write(_savePath);
+                        GUIUtility.ExitGUI();
                     }
                 }
 
@@ -225,15 +383,18 @@ namespace Cosmimera.Bootstrap.Demo
 
             DrawPartyEditor();
             GUILayout.Space(20);
-            if (GUILayout.Button(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
+            if (MenuButton(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
             {
                 RollOptions();
                 _screen = Screen.StarSelect;
+                _menuFocus.SetCount(0);
+                GUIUtility.ExitGUI();
             }
 
-            if (GUILayout.Button(_copy.Ui("ui.lobby.quit"), GUILayout.Height(36)))
+            if (MenuButton(_copy.Ui("ui.lobby.quit"), GUILayout.Height(36)))
             {
                 Application.Quit();
+                GUIUtility.ExitGUI();
             }
         }
 
@@ -242,6 +403,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             GUILayout.Label($"{_copy.Ui("ui.lobby.team")} ({_save.Party.Count}/{LobbySave.MaxParty})", _text);
             GUILayout.Label(_copy.Ui("ui.lobby.party_hint"), _text);
+            _insidePartyScroll = true;
             _partyScroll = GUILayout.BeginScrollView(_partyScroll, GUILayout.Height(Mathf.Min(300, UnityEngine.Screen.height - 340)));
             // Snapshot: mutating the save while iterating Party would break the foreach.
             var party = new List<int>(_save.Party);
@@ -251,14 +413,15 @@ namespace Cosmimera.Bootstrap.Demo
                 GUILayout.BeginHorizontal();
                 GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(330));
                 GUI.enabled = i > 0;
-                if (GUILayout.Button(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
+                if (MenuButton(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
                 {
                     (party[i - 1], party[i]) = (party[i], party[i - 1]);
                     CommitParty(party);
+                    GUIUtility.ExitGUI();
                 }
 
                 GUI.enabled = true;
-                if (GUILayout.Button(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
+                if (MenuButton(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
                 {
                     if (party.Count <= 1)
                     {
@@ -269,6 +432,7 @@ namespace Cosmimera.Bootstrap.Demo
                         party.RemoveAt(i);
                         CommitParty(party);
                     }
+                    GUIUtility.ExitGUI();
                 }
 
                 GUILayout.EndHorizontal();
@@ -284,7 +448,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(330));
-                if (GUILayout.Button(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
+                if (MenuButton(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
                 {
                     if (party.Count >= LobbySave.MaxParty)
                     {
@@ -295,12 +459,14 @@ namespace Cosmimera.Bootstrap.Demo
                         party.Add(o.InstanceId);
                         CommitParty(party);
                     }
+                    GUIUtility.ExitGUI();
                 }
 
                 GUILayout.EndHorizontal();
             }
 
             GUILayout.EndScrollView();
+            _insidePartyScroll = false;
             if (!string.IsNullOrEmpty(_partyMsg))
             {
                 GUILayout.Label(_partyMsg, _text);
@@ -332,18 +498,20 @@ namespace Cosmimera.Bootstrap.Demo
                 string elements = string.Join(" / ", elementNames);
                 GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {size} (R={o.Radius:0} m)\n" +
                                 $"{_copy.Ui("ui.star_select.main_elements")}：{elements}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
-                if (GUILayout.Button(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
+                if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
                     Launch(o);
+                    GUIUtility.ExitGUI();
                     return;
                 }
 
                 GUILayout.Space(12);
             }
 
-            if (GUILayout.Button(_copy.Ui("ui.star_select.reroll"), GUILayout.Height(36)))
+            if (MenuButton(_copy.Ui("ui.star_select.reroll"), GUILayout.Height(36)))
             {
                 RollOptions();
+                GUIUtility.ExitGUI();
             }
         }
 
@@ -366,9 +534,11 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             GUILayout.Space(20);
-            if (GUILayout.Button(_copy.Ui("ui.results.return_lobby"), GUILayout.Height(52)))
+            if (MenuButton(_copy.Ui("ui.results.return_lobby"), GUILayout.Height(52)))
             {
                 _screen = Screen.Lobby;
+                _menuFocus.SetCount(0);
+                GUIUtility.ExitGUI();
             }
         }
 
@@ -416,6 +586,8 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            _menuInput.Disable();
+            _confirmPending = false;
             _lobbyCamera.gameObject.SetActive(false);
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
@@ -455,6 +627,11 @@ namespace Cosmimera.Bootstrap.Demo
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             _screen = Screen.Results;
+            _menuFocus.SetCount(0);
+            if (isActiveAndEnabled && !_menuInput.enabled)
+            {
+                _menuInput.Enable();
+            }
         }
 
         private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"
