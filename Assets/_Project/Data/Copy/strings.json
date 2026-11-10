@@ -483,5 +483,15 @@
     "zh-TW": "重試",
     "en": "Retry",
     "ja": "再試行"
+  },
+  "ui.hud.target_cycle": {
+    "zh-TW": "{key} 切換目標：{target}",
+    "en": "{key} Cycle target: {target}",
+    "ja": "{key} ターゲット切替：{target}"
+  },
+  "ui.hud.target_none": {
+    "zh-TW": "無",
+    "en": "None",
+    "ja": "なし"
   }
 }

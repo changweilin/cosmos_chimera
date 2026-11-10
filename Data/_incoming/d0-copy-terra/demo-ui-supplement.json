@@ -222,5 +222,13 @@
   "ui.results.retry": {
     "zh-TW": "重試",
     "en": "Retry"
+  },
+  "ui.hud.target_cycle": {
+    "zh-TW": "{key} 切換目標：{target}",
+    "en": "{key} Cycle target: {target}"
+  },
+  "ui.hud.target_none": {
+    "zh-TW": "無",
+    "en": "None"
   }
 }

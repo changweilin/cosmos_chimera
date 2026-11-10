@@ -100,6 +100,22 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: the run landed. Post: as a Focus press. Side effects: command and encounter state.</remarks>
         internal void FocusNearestForTests() => FocusNearest();
 
+        /// <summary>Runs the CycleTarget input's action (combat.md#指定目標, D0-W4).</summary>
+        /// <remarks>Pre: the run landed. Post: as a CycleTarget press. Side effects: lock, command and encounter state.</remarks>
+        internal void CycleTargetForTests() => CycleTarget();
+
+        /// <summary>Observes the locked wild unit id.</summary>
+        /// <remarks>Pre: Configure ran. Post: a wild unit id, or -1 when nothing is locked. Side effects: none.</remarks>
+        internal int LockedTargetForTests => _lockedTarget;
+
+        /// <summary>Observes the current command's target.</summary>
+        /// <remarks>Pre: Configure ran. Post: >= 0 iff CommandForTests == Focus. Side effects: none.</remarks>
+        internal int CommandTargetForTests => _command.TargetId;
+
+        /// <summary>Observes the player character's feet position.</summary>
+        /// <remarks>Pre: the run landed. Post: world position. Side effects: none.</remarks>
+        internal float3 PlayerPositionForTests => PlayerPosition();
+
         /// <summary>Observes the player character's HP.</summary>
         /// <remarks>Pre: Configure ran. Post: 0..max HP. Side effects: none.</remarks>
         internal int PlayerHpForTests => _vitals.Hp;

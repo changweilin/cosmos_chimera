@@ -140,6 +140,7 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _selectSecondAction;
         private InputAction _switchAction;
         private InputAction _focusAction;
+        private InputAction _cycleTargetAction;
         private InputAction _freeAction;
         private InputAction _followAction;
         private InputAction _retreatAction;
@@ -183,6 +184,9 @@ namespace Cosmimera.Bootstrap.Demo
         private float _accumulator;
         private long _nextAffixMs;
         private int _mainId = CombatAi.NoTarget;
+        // Wild unit chosen with CycleTarget (combat.md#指定目標, D0-W4); -1 when nothing is locked.
+        private int _lockedTarget = -1;
+        private readonly List<int> _targetBuffer = new List<int>(16);
         private AiCommand _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
         private VesselKind _vessel = VesselKind.TalismanCard;
         private int _region = -1;
@@ -193,6 +197,7 @@ namespace Cosmimera.Bootstrap.Demo
         private string _toast = string.Empty;
         private long _toastUntilMs;
         private GUIStyle _label;
+        private GUIStyle _markerStyle;
         private Material _terrainMaterial;
         private Material _playerMaterial;
 
@@ -267,7 +272,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; actions contains the DemoRun map and its ten actions;
+        /// Pre: all arguments non-null; actions contains the DemoRun map and its eleven actions;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
         ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
@@ -297,6 +302,7 @@ namespace Cosmimera.Bootstrap.Demo
             _selectSecondAction = _runInput.FindAction("SelectSecond", true);
             _switchAction = _runInput.FindAction("Switch", true);
             _focusAction = _runInput.FindAction("Focus", true);
+            _cycleTargetAction = _runInput.FindAction("CycleTarget", true);
             _freeAction = _runInput.FindAction("Free", true);
             _followAction = _runInput.FindAction("Follow", true);
             _retreatAction = _runInput.FindAction("Retreat", true);
@@ -468,6 +474,7 @@ namespace Cosmimera.Bootstrap.Demo
             BeforeTickForTests?.Invoke();
 #endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            ValidateLock(player);
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
             {
@@ -669,6 +676,11 @@ namespace Cosmimera.Bootstrap.Demo
                 FocusNearest();
             }
 
+            if (_cycleTargetAction.WasPressedThisFrame())
+            {
+                CycleTarget();
+            }
+
             if (_freeAction.WasPressedThisFrame())
             {
                 _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
@@ -705,7 +717,7 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(actions != null, "actions are required");
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
-            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "Free", "Follow",
+            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
                          "Retreat", "CycleVessel", "Capture", "Abandon" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
@@ -971,37 +983,116 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
+        // REQ: combat.md#指定目標 (D0-W4) — Focus attacks the locked target when there is one, else the nearest candidate
+        // (which then becomes the lock).
         private void FocusNearest()
         {
-            int target = NearestFocusTarget(PlayerPosition());
-            if (target >= 0 && !_encounter.Units[target].Engaged)
+            float3 player = PlayerPosition();
+            int target = IsFocusCandidate(_lockedTarget, player) ? _lockedTarget : NearestFocusTarget(player);
+            if (target < 0)
+            {
+                return;
+            }
+
+            _lockedTarget = target;
+            FocusOn(target);
+        }
+
+        private void FocusOn(int target)
+        {
+            if (!_encounter.Units[target].Engaged)
             {
                 // Focusing a wild that has not noticed you starts the fight: the only way to battle a timid one.
                 _encounter.Provoke(target);
             }
 
-            _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
+            _command = new AiCommand(AiCommandKind.Focus, target);
         }
 
-        // Nearest active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
+        // Locks the next candidate by (distance, id) after the current lock, wrapping. While the main is already under a
+        // Focus command the new lock is attacked at once, so cycling mid-fight retargets without a second key press;
+        // otherwise it only marks the target and nothing is provoked.
+        private void CycleTarget()
+        {
+            float3 player = PlayerPosition();
+            _targetBuffer.Clear();
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                if (IsFocusCandidate(kv.Key, player))
+                {
+                    _targetBuffer.Add(kv.Key);
+                }
+            }
+
+            if (_targetBuffer.Count == 0)
+            {
+                _lockedTarget = -1;
+                return;
+            }
+
+            // Insertion sort: a handful of candidates, and no allocation (List.Sort with a lambda would allocate).
+            for (int i = 1; i < _targetBuffer.Count; i++)
+            {
+                int id = _targetBuffer[i];
+                float d = math.distance(_encounter.Units[id].Position, player);
+                int j = i - 1;
+                while (j >= 0 && Before(id, d, _targetBuffer[j], player))
+                {
+                    _targetBuffer[j + 1] = _targetBuffer[j];
+                    j--;
+                }
+
+                _targetBuffer[j + 1] = id;
+            }
+
+            int at = _targetBuffer.IndexOf(_lockedTarget);
+            _lockedTarget = _targetBuffer[(at + 1) % _targetBuffer.Count];
+            if (_command.Kind == AiCommandKind.Focus)
+            {
+                FocusOn(_lockedTarget);
+            }
+        }
+
+        private bool Before(int id, float distance, int other, float3 player)
+        {
+            float od = math.distance(_encounter.Units[other].Position, player);
+            return distance < od || (distance == od && id < other);
+        }
+
+        // Active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
+        private bool IsFocusCandidate(int id, float3 player)
+        {
+            if (id < 0 || !_wild.TryGetValue(id, out WildInfo info) || info.Gone)
+            {
+                return false;
+            }
+
+            EncounterUnit u = _encounter.Units[id];
+            return u.IsActive && (u.Engaged || math.distance(u.Position, player) <= Encounter.ProvokeRadiusM);
+        }
+
+        // A lock that stops being a candidate (knocked out, captured, or out of reach) is dropped, so the marker never
+        // points at something Focus would refuse.
+        private void ValidateLock(float3 player)
+        {
+            if (_lockedTarget >= 0 && !IsFocusCandidate(_lockedTarget, player))
+            {
+                _lockedTarget = -1;
+            }
+        }
+
         private int NearestFocusTarget(float3 player)
         {
             int best = -1;
             float bestDist = float.MaxValue;
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
-                EncounterUnit u = _encounter.Units[kv.Key];
-                if (!u.IsActive)
+                if (!IsFocusCandidate(kv.Key, player))
                 {
                     continue;
                 }
 
-                float d = math.distance(u.Position, player);
-                if (!u.Engaged && d > Encounter.ProvokeRadiusM)
-                {
-                    continue;
-                }
-
+                float d = math.distance(_encounter.Units[kv.Key].Position, player);
                 if (d < bestDist)
                 {
                     bestDist = d;
@@ -1147,6 +1238,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             DrawWorldBars();
+            DrawLockMarker();
             DrawQuestPanel();
             DrawTeamPanel();
             DrawControlsPanel();
@@ -1155,6 +1247,32 @@ namespace Cosmimera.Bootstrap.Demo
                 GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
                     "<b>" + _toast + "</b>", new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontSize = 24 });
             }
+        }
+
+        // REQ: combat.md#指定目標 (D0-W4). Drawn for idle targets too (DrawWorldBars skips those), above where the HP bar
+        // and name sit, so the lock is visible before the fight starts.
+        private void DrawLockMarker()
+        {
+            if (_lockedTarget < 0 || !_views[_lockedTarget].Root.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            EncounterUnit u = _encounter.Units[_lockedTarget];
+            Vector3 head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
+            Vector3 sp = _rig.Camera.WorldToScreenPoint(head);
+            if (sp.z <= 0f)
+            {
+                return;
+            }
+
+            _markerStyle ??= new GUIStyle(_label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 28,
+                normal = { textColor = new Color(1f, 0.85f, 0.2f) },
+            };
+            GUI.Label(new Rect(sp.x - 20, Screen.height - sp.y - 58, 40, 32), "▼", _markerStyle);
         }
 
         private void DrawWorldBars()
@@ -1362,6 +1480,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.Label($"[{BindingLabel(_selectFirstAction)} / {BindingLabel(_selectSecondAction)}] ★ {_copy.Ui("ui.hud.select_active")}  " +
                 $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
                 $"{commands}（{cmd}）\n" +
+                _copy.Ui("ui.hud.target_cycle").Replace("{key}", BindingLabel(_cycleTargetAction))
+                    .Replace("{target}", _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id) : _copy.Ui("ui.hud.target_none")) + "\n" +
                 $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });

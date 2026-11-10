@@ -166,5 +166,11 @@
   },
   "ui.results.retry": {
     "ja": "再試行"
+  },
+  "ui.hud.target_cycle": {
+    "ja": "{key} ターゲット切替：{target}"
+  },
+  "ui.hud.target_none": {
+    "ja": "なし"
   }
 }

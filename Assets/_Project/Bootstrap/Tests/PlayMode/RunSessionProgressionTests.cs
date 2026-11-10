@@ -238,6 +238,73 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 10, 20, 20, 10, 10, 10 }), "battle 2 pays {1,2}, not battle 1's {0,1}");
         }
 
+        // REQ: combat.md#指定目標 (D0-W4) — CycleTarget walks candidates by (distance, id) and wraps without provoking;
+        // Focus attacks the lock; cycling under Focus retargets; a knocked-out lock is dropped.
+        [UnityTest]
+        public IEnumerator W4_cycle_locks_by_distance_and_focus_attacks_the_lock()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => PackPair(p) != null);
+            RunPlan plan = PlanFor(env, seed);
+            int a = PackPair(plan).Value.Item1;
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+
+            ParkAt(s, Beside(s.DirectionForTests(s.UnitForTests(a).Position)));
+            float3 player = s.PlayerPositionForTests;
+            List<int> expected = s.UnitsForTests
+                .Where(u => u.Side == EncounterSide.Wild && !u.IsFainted && math.distance(u.Position, player) <= Encounter.ProvokeRadiusM)
+                .OrderBy(u => math.distance(u.Position, player)).ThenBy(u => u.Id)
+                .Select(u => u.Id).ToList();
+            Assert.That(expected.Count, Is.GreaterThanOrEqualTo(2), "a pack pair sits within provoke reach");
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(-1), "nothing locked at landing");
+
+            for (int i = 0; i < expected.Count; i++)
+            {
+                s.CycleTargetForTests();
+                Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[i]), "cycle step " + i);
+                Assert.That(s.CommandForTests, Is.Not.EqualTo(AiCommandKind.Focus), "cycling alone does not command");
+            }
+
+            s.CycleTargetForTests();
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[0]), "wraps to the nearest");
+
+            s.FocusNearestForTests();
+            Assert.That(s.CommandForTests, Is.EqualTo(AiCommandKind.Focus));
+            Assert.That(s.CommandTargetForTests, Is.EqualTo(expected[0]), "Focus attacks the lock");
+
+            s.CycleTargetForTests();
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[1]));
+            Assert.That(s.CommandTargetForTests, Is.EqualTo(expected[1]), "cycling under Focus retargets");
+
+            Step(s);
+            Assert.That(s.InCombatForTests, Is.True, "the retargeted lock was provoked");
+
+            Kill(s, env, expected[1]);
+            s.InjectFaintForTests(expected[1]);
+            Step(s);
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(-1), "a knocked-out lock is dropped");
+        }
+
+        // Two Normal spawns of one pack (RunPlanner scatters pack members ≤ 5 m from its centre). Unit id == spawn index.
+        private static (int, int)? PackPair(RunPlan p)
+        {
+            for (int i = 0; i < p.Spawns.Count; i++)
+            {
+                for (int j = i + 1; j < p.Spawns.Count; j++)
+                {
+                    if (p.Spawns[i].Role == SpawnRole.Normal && p.Spawns[j].Role == SpawnRole.Normal &&
+                        p.Spawns[i].Group == p.Spawns[j].Group)
+                    {
+                        return (i, j);
+                    }
+                }
+            }
+
+            return null;
+        }
+
         // ---------------------------------------------------------------------------------------------------------
         // P2-05 — material drops (Q-C32 option B)
         // ---------------------------------------------------------------------------------------------------------
