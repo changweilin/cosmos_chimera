@@ -6,8 +6,8 @@ namespace Cosmimera.WorldGen
 {
     /// <summary>
     /// Decides a planet's boss stage before anything else, and the planet size that follows from it.
-    /// REQ: docs/design/planet-world.md#boss-尺寸 (D0-B2, 2026-11-10): juvenile → small, adolescent → medium,
-    /// adult → large; stages unlock with player level and are drawn uniformly among the unlocked ones.
+    /// REQ: docs/design/planet-world.md#boss-尺寸 (D0-B2, 2026-11-10): juvenile → asteroid, adolescent → moon,
+    /// adult → planet (overload → supergiant, pending Q-C12); stages unlock with player level and are drawn uniformly among the unlocked ones.
     /// </summary>
     /// <remarks>
     /// Own stream Pcg32(seed, 'B') so the draw never shifts RunPlanner's 'R' or TemplatePlanner's 'T' sequences.
@@ -31,7 +31,8 @@ namespace Cosmimera.WorldGen
 
         /// <summary>Planet size implied by the boss stage.</summary>
         /// <remarks>
-        /// Pre: stage is Juvenile, Adolescent or Adult. Post: Small / Medium / Large respectively. Side effects: none.
+        /// Pre: stage is Juvenile, Adolescent or Adult. Post: Asteroid / Moon / Planet respectively. Side effects: none.
+        /// Supergiant is reserved for the overload boss (Q-C12) and is not reachable until that stage exists.
         /// </remarks>
         public static PlanetSize SizeFor(CreatureStage stage)
         {
@@ -39,11 +40,11 @@ namespace Cosmimera.WorldGen
             switch (stage)
             {
                 case CreatureStage.Juvenile:
-                    return PlanetSize.Small;
+                    return PlanetSize.Asteroid;
                 case CreatureStage.Adolescent:
-                    return PlanetSize.Medium;
+                    return PlanetSize.Moon;
                 default:
-                    return PlanetSize.Large;
+                    return PlanetSize.Planet;
             }
         }
     }

@@ -23,7 +23,7 @@ namespace Cosmimera.WorldGen
 
         /// <summary>Template count for a planet size (planet-world.md: 3–8 per planet).</summary>
         /// <remarks>Pre: none. Post: 4 for small/medium, 6 for large. Side effects: none.</remarks>
-        public static int CountFor(GameData.PlanetSize size) => size == GameData.PlanetSize.Large ? 6 : 4;
+        public static int CountFor(GameData.PlanetSize size) => size >= GameData.PlanetSize.Planet ? 6 : 4;
 
         /// <summary>Places <paramref name="count"/> templates.</summary>
         /// <remarks>

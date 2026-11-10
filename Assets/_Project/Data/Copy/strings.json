@@ -39,20 +39,25 @@
     "en": "Planet Type",
     "ja": "惑星タイプ"
   },
-  "ui.star_select.size_small": {
-    "zh-TW": "小型",
-    "en": "Small",
-    "ja": "小型"
+  "ui.star_select.size_asteroid": {
+    "zh-TW": "小行星",
+    "en": "Asteroid",
+    "ja": "小惑星"
   },
-  "ui.star_select.size_medium": {
-    "zh-TW": "中型",
-    "en": "Medium",
-    "ja": "中型"
+  "ui.star_select.size_moon": {
+    "zh-TW": "衛星",
+    "en": "Moon",
+    "ja": "衛星"
   },
-  "ui.star_select.size_large": {
-    "zh-TW": "大型",
-    "en": "Large",
-    "ja": "大型"
+  "ui.star_select.size_planet": {
+    "zh-TW": "行星",
+    "en": "Planet",
+    "ja": "惑星"
+  },
+  "ui.star_select.size_supergiant": {
+    "zh-TW": "超巨星",
+    "en": "Supergiant",
+    "ja": "超巨星"
   },
   "ui.star_select.main_elements": {
     "zh-TW": "主屬性",

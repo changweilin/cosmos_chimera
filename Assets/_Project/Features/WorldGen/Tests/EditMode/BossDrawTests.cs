@@ -47,9 +47,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Size_follows_the_boss_stage()
         {
-            Assert.AreEqual(PlanetSize.Small, BossDraw.SizeFor(CreatureStage.Juvenile));
-            Assert.AreEqual(PlanetSize.Medium, BossDraw.SizeFor(CreatureStage.Adolescent));
-            Assert.AreEqual(PlanetSize.Large, BossDraw.SizeFor(CreatureStage.Adult));
+            Assert.AreEqual(PlanetSize.Asteroid, BossDraw.SizeFor(CreatureStage.Juvenile));
+            Assert.AreEqual(PlanetSize.Moon, BossDraw.SizeFor(CreatureStage.Adolescent));
+            Assert.AreEqual(PlanetSize.Planet, BossDraw.SizeFor(CreatureStage.Adult));
         }
 
         [Test]

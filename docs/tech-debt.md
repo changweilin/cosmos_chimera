@@ -10,7 +10,7 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Combat/Runtime/Model/Encounter.cs` | D0-W2 | low | 推開在每 tick 全部移動與施招之後執行：本 tick 招式用的是推開前位置（偏差 ≤ 一個身體寬）；推開不看海面／地形，可把單位推進水面；人群每 tick 只掃 2 輪，重疊靠後續 tick 收斂 |
 | `Bootstrap/Demo/RunSession.cs` | D0-W2 | low | 角色被推開是直接改 Rigidbody／transform 位置（瞬移），不經物理；夥伴 Follow 貼身時角色可能被持續推擠，待人工試玩確認手感 |
 | `Bootstrap/Demo/RunSession.cs` | D0-W3 | low | 互動選單為 IMGUI，開啟時停用角色移動輸入但戰鬥時間照走；目標遊蕩超過 2× 互動距離即自動關閉 |
-| `Bootstrap/Demo/DemoGame.cs` | D0-B2 | low | 小型星球（幼年 BOSS）在 Q-D1 定案前仍以 R=640 遊玩，與中型只差 BOSS 階段與型態封頂（模板數同為 4）；BOSS 等級仍由固定 d=1 決定，不隨階段變化 |
+| `Bootstrap/Demo/DemoGame.cs` | D0-B2 | low | 小行星（幼年 BOSS）在 Q-D1 定案前仍以 R=640 遊玩，與衛星只差 BOSS 階段與型態封頂（模板數同為 4）；BOSS 等級仍由固定 d=1 決定，不隨階段變化 |
 | `Bootstrap/Demo/ReproProbe.cs` | D0-B2 | low | 重現探針固定成年 BOSS（大型、R=1280、6 模板），不覆蓋幼／少年星球的 R=640 組合 |
 | `Data/balance.json#capture` | D0-B1 | — | 收服率 60% / BOSS 100% 為佔位值，待 SOL 平衡模型（P5-07）定案 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-U1 | med | 探索及大廳／選星／結算已支援手把；尚無遊戲內重綁，仍需實體手把與 Steam Deck／Proton 實機驗收（P7-07） |

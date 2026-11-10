@@ -102,9 +102,10 @@ namespace Cosmimera.GameData
         RangeModPercent = 5, HealPercentMaxHp = 6,
     }
 
-    /// <summary>Planet size class. Numeric radius belongs to P3 and is not stored here.</summary>
+    /// <summary>Planet size class: asteroid / moon / planet / supergiant = 320 / 640 / 960 / 1280 m. Numeric radius is not stored here.</summary>
+    /// <remarks>REQ: docs/design/planet-world.md#星球尺度 — one size per creature form (juvenile, adolescent, adult, overload).</remarks>
     public enum PlanetSize
     {
-        Small = 0, Medium = 1, Large = 2,
+        Asteroid = 0, Moon = 1, Planet = 2, Supergiant = 3,
     }
 }

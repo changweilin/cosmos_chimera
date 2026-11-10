@@ -740,9 +740,17 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        // REQ: planet-world.md#星球尺度 says small = 320 m, but combat geometry is approved only for R >= 640
-        // (MoveGeometry.MinSupportedRadiusM). D0 plays small planets at 640 m; tracked as open question Q-D1.
-        internal static float RadiusFor(PlanetSize size) => size == PlanetSize.Large ? 1280f : MoveGeometry.MinSupportedRadiusM;
+        // REQ: planet-world.md#星球尺度 says asteroid = 320 m, but combat geometry is approved only for R >= 640
+        // (MoveGeometry.MinSupportedRadiusM). D0 plays asteroids at 640 m; tracked as open question Q-D1.
+        internal static float RadiusFor(PlanetSize size)
+        {
+            switch (size)
+            {
+                case PlanetSize.Planet: return 960f;
+                case PlanetSize.Supergiant: return 1280f;
+                default: return MoveGeometry.MinSupportedRadiusM; // Asteroid (Q-D1 clamp) and Moon
+            }
+        }
 
         private void Launch(PlanetOption o)
         {
