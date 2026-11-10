@@ -31,7 +31,7 @@
 | ID | 項目 | 主責 | 規格 | 狀態 |
 |---|---|---|---|---|
 | D0-B2 | BOSS 階段決定星球尺寸（幼→小行星 320、少→衛星 640、成→行星 960、超載→超巨星 1280，超載待 Q-C12）；選星卡片顯示 BOSS 階段與尺寸；`planet-types.size` 退役；玩家等級解鎖 BOSS 階段 | OPUS（實作）＋FLASH（ja） | `planet-world.md#boss-尺寸`、`level-progression.md#玩家等級`；R=320 阻塞於 Q-D1 | 🟨 |
-| D0-W1 | 野生在生成點附近依性格遊蕩 | OPUS | `combat.md#遊蕩`；數值 Q-D2 暫定 | 🟨 |
+| D0-W1 | 野生在生成點附近依性格遊蕩 | OPUS | `combat.md#遊蕩`；數值 Q-D2 已定案 | 🟨 |
 | D0-W2 | 角色／宙獸實體碰撞 | OPUS | `combat.md#實體碰撞` | 🟨 |
 | D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋FLASH（ja） | `combat.md#近身互動` | 🟨 |
 | D0-W4 | 指定攻擊目標：目標切換＋鎖定標記 | OPUS | `combat.md#指定目標` | 🟨 |

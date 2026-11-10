@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Cosmimera.Combat.Tests
 {
-    // REQ: docs/design/combat.md#實體碰撞 (D0-W2, decided 2026-11-10; radii provisional, Q-D2).
+    // REQ: docs/design/combat.md#實體碰撞 (D0-W2, decided 2026-11-10; radii confirmed, Q-D2).
     public sealed class EncounterCollisionTests
     {
         private sealed class FlatSurface : IEncounterSurface

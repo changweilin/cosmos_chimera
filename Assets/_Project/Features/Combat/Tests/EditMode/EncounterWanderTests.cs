@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Cosmimera.Combat.Tests
 {
-    // REQ: docs/design/combat.md#遊蕩 (D0-W1, decided 2026-11-10; values provisional, Q-D2).
+    // REQ: docs/design/combat.md#遊蕩 (D0-W1, decided 2026-11-10; values confirmed, Q-D2).
     public sealed class EncounterWanderTests
     {
         private sealed class FlatSurface : IEncounterSurface

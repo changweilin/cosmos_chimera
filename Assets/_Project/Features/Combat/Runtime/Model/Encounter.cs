@@ -653,7 +653,7 @@ namespace Cosmimera.Combat
 
         /// <summary>
         /// Reach (m) for close interaction with an idle wild (observe / provoke / pet), measured between body edges.
-        /// REQ: combat.md#近身互動 (D0-W3); 3 m is the provisional Q-D2 value.
+        /// REQ: combat.md#近身互動 (D0-W3); 3 m is the value decided in Q-D2 (2026-11-10).
         /// </summary>
         public const float InteractRadiusM = 3f;
 

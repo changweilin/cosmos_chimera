@@ -50,7 +50,7 @@ namespace Cosmimera.Combat
 
     /// <summary>
     /// Idle wandering of wild units around their spawn point (<c>Data/balance.json#ai.wander_*</c>). REQ: combat.md#遊蕩
-    /// (D0-W1, 2026-11-10); the values themselves are provisional (Q-D2).
+    /// (D0-W1, 2026-11-10); the values were confirmed by the user (Q-D2, 2026-11-10).
     /// </summary>
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public sealed class WanderTuning
@@ -112,7 +112,7 @@ namespace Cosmimera.Combat
 
     /// <summary>
     /// Body radii that keep characters and creatures from passing through each other (<c>Data/balance.json#ai.body_mm</c>).
-    /// REQ: combat.md#實體碰撞 (D0-W2, 2026-11-10); the values themselves are provisional (Q-D2).
+    /// REQ: combat.md#實體碰撞 (D0-W2, 2026-11-10); the values were confirmed by the user (Q-D2, 2026-11-10).
     /// </summary>
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public sealed class CollisionTuning

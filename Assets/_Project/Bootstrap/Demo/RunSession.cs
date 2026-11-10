@@ -874,7 +874,7 @@ namespace Cosmimera.Bootstrap.Demo
                     _lockedTarget = id;
                     return;
                 case InteractChoice.Pet:
-                    // Q-D2: petting has no rule effect yet.
+                    // Q-D2 (decided 2026-11-10): petting has no rule effect.
                     CloseInteract();
                     Toast(_copy.Ui("ui.interact.pet_reaction").Replace("{target}", _copy.Name(u.Def.Id)));
                     return;

@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Cosmimera.Combat.Tests
 {
-    // REQ: docs/design/combat.md#近身互動 (D0-W3, decided 2026-11-10; reach provisional, Q-D2).
+    // REQ: docs/design/combat.md#近身互動 (D0-W3, decided 2026-11-10; reach confirmed, Q-D2).
     public sealed class EncounterInteractTests
     {
         private sealed class FlatSurface : IEncounterSurface
