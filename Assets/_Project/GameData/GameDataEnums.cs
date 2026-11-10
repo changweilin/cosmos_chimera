@@ -72,7 +72,7 @@ namespace Cosmimera.GameData
     /// enum; kinds provisional, Q-C35).
     /// </summary>
     /// <remarks>
-    /// Pre: imported from normal|timid|fierce. Post: stable serialized values; Normal is 0 so an asset imported before
+    /// Pre: imported from timid|cautious|normal|territorial|fierce|apex. Post: stable serialized values; Normal is 0 so an asset imported before
     /// the field existed reads as the middle temperament rather than as one that never fights.
     /// Side effects: none.
     /// </remarks>

@@ -411,7 +411,8 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while no
         ///      active unit is Engaged (stats must not change mid-fight, Q-C31).
-        /// Post: Level == level; volumes and stats equal those AddCreature would build at that level; Hp grows by the MaxHp
+        /// Post: Level == level; volumes and stats equal those AddCreature (or AddBoss when IsBoss, keeping its HP and melee
+        ///       multipliers) would build at that level; Hp grows by the MaxHp
         ///       increase; position, cooldowns and effects unchanged. level == Level is a no-op.
         /// Side effects: mutates the unit.
         /// </remarks>
@@ -647,13 +648,13 @@ namespace Cosmimera.Combat
                 int due = timeline.TicksDue(nowMs - 1, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, true);
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
                 }
 
                 return;
             }
 
-            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, false);
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
 
             if (volume.DashDistanceMm > 0)
             {
@@ -665,14 +666,15 @@ namespace Cosmimera.Combat
         }
 
         private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
-            float3 anchor, float3 forward, long nowMs, bool field)
+            float3 anchor, float3 forward, long nowMs)
         {
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit t = _units[i];
-                // A field hits every enemy inside it (combat.md#場地), including a wild unit that has disengaged; the
-                // Engaged gate only governs AI target choice (SOL D0-E1-01).
-                bool eligible = field ? t.Side != side && t.IsActive : IsValidEnemy(side, t.Id);
+                // Any hostile volume hits every active enemy it touches (combat.md#場地 for fields; "被擊中即開戰" for the
+                // rest), including a wild unit that has not engaged; the Engaged gate only governs AI target choice
+                // (SOL D0-E1-01 for fields, D0-E2 E2-SOL-01 for caster/front volumes).
+                bool eligible = t.Side != side && t.IsActive;
                 if (!eligible ||
                     !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
                 {
@@ -687,9 +689,10 @@ namespace Cosmimera.Combat
                 {
                     _events.Add(new EncounterEvent(EncounterEventKind.Faint, casterId, t.Id, slot, 0));
                 }
-                else if (t.Side == EncounterSide.Wild)
+                else if (hit && t.Side == EncounterSide.Wild)
                 {
-                    // Being attacked starts the fight even outside its territory (timid only fights back, Q-C35).
+                    // Being hit starts the fight even outside its territory (timid only fights back, Q-C35); a MISS does
+                    // not, or a timid unit would join from a roll it never felt (E2-SOL-02).
                     t.Engaged = true;
                 }
             }
@@ -724,6 +727,10 @@ namespace Cosmimera.Combat
             }
         }
 
+        /// <summary>Copy of the combat stream, for draw-count oracles (SOL E2-SOL-05).</summary>
+        /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
+        internal Pcg32 RngForTests => _rng;
+
         private bool PlayerTargetable() => _player != null && !_player.IsDowned;
 
         private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter : _units[id].Position;
@@ -740,7 +747,7 @@ namespace Cosmimera.Combat
                 int due = tl.TicksDue(previousMs, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs, true);
+                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs);
                 }
 
                 // Kept for its whole life [placed, placed + life), not just until its last resolution (SOL D0-E1-02).

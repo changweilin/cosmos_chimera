@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Core.Contracts;
+using Cosmimera.Core.Random;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
 using NUnit.Framework;
@@ -145,6 +146,169 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => e.Provoke(99));
             e.Remove(timid.Id);
             Assert.Throws<ContractException>(() => e.Provoke(timid.Id), "removed units are inactive");
+        }
+
+        private MoveDef ShapedMove(string id, MoveShape shape, RangeClass range, int baseRangeMm, int accuracy, int fieldMs)
+        {
+            var m = ScriptableObject.CreateInstance<MoveDef>();
+            _created.Add(m);
+            m.SetId(id);
+            m.Set(Element.Fire, MoveKind.Damage, 1, null, 0, fieldMs, 1500, accuracy, range, shape, baseRangeMm,
+                MoveMovement.None, BurstOrigin.Caster);
+            return m;
+        }
+
+        // E2-SOL-01: a non-field volume aimed at an engaged wild must also hit (and so engage) a timid one it touches.
+        [Test]
+        public void A_burst_aimed_at_an_engaged_wild_also_hits_and_engages_a_timid_one_in_reach()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player,
+                Creature("m", Temperament.Normal, ShapedMove("burst_m", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
+                null, AtMeters(0f), 10);
+            EncounterUnit normal = e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.Field(mine.Id, AtMeters(0f), false, 0);
+            bool timidHit = false;
+            for (int t = 1; t <= 40 && !timidHit; t++)
+            {
+                Assert.That(timid.Engaged, Is.False, "timid stays out until something actually hits it");
+                e.Tick(t * 50L, 50, Feet(0f), Free, mine.Id);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    timidHit |= ev.Kind == EncounterEventKind.Hit && ev.SourceId == mine.Id && ev.TargetId == timid.Id;
+                }
+            }
+
+            Assert.That(normal.Engaged, Is.True, "the normal wild engaged by territory and drew the burst");
+            Assert.That(timidHit, Is.True, "the burst reached the timid wild it overlaps");
+            Assert.That(timid.Engaged || timid.Combatant.IsFainted, Is.True, "being hit starts the fight");
+        }
+
+        // E2-SOL-02: a field roll that misses must not engage a timid wild; the first Hit does.
+        [Test]
+        public void A_field_miss_does_not_engage_a_timid_wild_but_a_hit_does()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player,
+                Creature("m", Temperament.Normal, ShapedMove("field_m", MoveShape.Field, RangeClass.Mid, 12000, 1, 3500)),
+                null, AtMeters(0f), 10);
+            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.Field(mine.Id, AtMeters(0f), false, 0);
+            int misses = 0;
+            bool hit = false;
+            for (int t = 1; t <= 200 && !hit; t++)
+            {
+                e.Tick(t * 50L, 50, Feet(0f), Free, mine.Id);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    if (ev.SourceId == mine.Id && ev.TargetId == timid.Id)
+                    {
+                        misses += ev.Kind == EncounterEventKind.Miss ? 1 : 0;
+                        hit |= ev.Kind == EncounterEventKind.Hit;
+                    }
+                }
+
+                if (!hit)
+                {
+                    Assert.That(timid.Engaged, Is.False, "tick " + t + ": only misses so far");
+                }
+            }
+
+            Assert.That(misses, Is.GreaterThan(0), "accuracy 1 % produced at least one MISS on the timid wild");
+            if (hit)
+            {
+                Assert.That(timid.Engaged || timid.Combatant.IsFainted, Is.True, "the first Hit engages it");
+            }
+        }
+
+        // E2-SOL-05: each geometric contact with a vulnerable player costs exactly one bounded combat draw
+        // (NextUInt(1000)); an i-frame dodge costs none. Same-seed self-replay cannot see an extra draw, so compare a
+        // run that dodges the first contact against one that takes it.
+        [Test]
+        public void A_player_contact_costs_one_combat_draw_and_an_iframe_dodge_costs_none()
+        {
+            long contactAt = -1;
+            Encounter taken = NewPlayerFight(out _);
+            for (int t = 1; t <= 400 && contactAt < 0; t++)
+            {
+                taken.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
+                foreach (EncounterEvent ev in taken.Events)
+                {
+                    if (ev.TargetId == Encounter.PlayerCharacterId &&
+                        (ev.Kind == EncounterEventKind.Hit || ev.Kind == EncounterEventKind.Miss))
+                    {
+                        contactAt = t;
+                    }
+                }
+            }
+
+            Assert.That(contactAt, Is.GreaterThan(0), "the wild reached the player");
+            Encounter dodged = NewPlayerFight(out PlayerVitals vitals);
+            Pcg32 beforeContact = default;
+            for (long t = 1; t <= contactAt; t++)
+            {
+                if (t == contactAt)
+                {
+                    Assert.That(vitals.TryRoll(t * 50L), Is.EqualTo(RollResult.Ok));
+                    beforeContact = dodged.RngForTests;
+                }
+
+                dodged.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
+            }
+
+            // Absolute half: the only roll in the contact tick is the player's, so a dodge leaves the stream untouched.
+            // The relative half below cannot see an extra draw added on both paths.
+            Pcg32 afterDodge = dodged.RngForTests;
+            Assert.That(afterDodge.NextUInt(), Is.EqualTo(beforeContact.NextUInt()), "an i-frame dodge costs no draw");
+
+            Pcg32 expected = dodged.RngForTests;
+            expected.NextUInt(1000);
+            Pcg32 actual = taken.RngForTests;
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.That(actual.NextUInt(), Is.EqualTo(expected.NextUInt()), "stream position after the contact, draw " + i);
+            }
+        }
+
+        private Encounter NewPlayerFight(out PlayerVitals vitals)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+            e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            vitals = new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800));
+            e.AttachPlayer(vitals);
+            return e;
+        }
+
+        // E2-SOL-07: the 40 m disengage test is inclusive. The player is placed at the exact float chord the encounter
+        // computes, so arc/chord and body-height differences cannot blur the boundary.
+        [TestCase(0f, true)]
+        [TestCase(0.01f, false)]
+        public void Disengage_distance_is_inclusive_at_40_m(float beyond, bool staysEngaged)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Timid), null, AtMeters(0f), 10);
+            e.Provoke(wild.Id);
+            e.Tick(50, 50, Feet(30f), Free, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+
+            float3 east = PlanetFrame.FromUp(math.normalize(wild.Position)).East;
+            float s = Encounter.DisengageRadiusM + beyond;
+            float3 player = wild.Position + east * s;
+            for (int i = 0; i < 64 && beyond == 0f && math.distance(wild.Position, player) != Encounter.DisengageRadiusM; i++)
+            {
+                s = math.asfloat(math.asint(s) + (math.distance(wild.Position, player) > Encounter.DisengageRadiusM ? -1 : 1));
+                player = wild.Position + east * s;
+            }
+
+            if (beyond == 0f)
+            {
+                Assert.That(math.distance(wild.Position, player), Is.EqualTo(Encounter.DisengageRadiusM), "exact boundary");
+            }
+
+            e.Tick(100, 50, player, Free, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.EqualTo(staysEngaged));
         }
 
         [Test]

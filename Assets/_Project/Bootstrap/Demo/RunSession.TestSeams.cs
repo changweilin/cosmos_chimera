@@ -93,7 +93,7 @@ namespace Cosmimera.Bootstrap.Demo
         internal bool InCombatForTests => _team.InCombat;
 
         /// <summary>Starts a fight with one wild unit, as Focus does for the nearest one (D0-E2 territory).</summary>
-        /// <remarks>Pre: Configure ran; id is an active wild unit. Post: it is Engaged. Side effects: encounter state.</remarks>
+        /// <remarks>Pre: Configure ran; id is an active wild unit. Post: queued as Provoked; Engaged from the next Tick (Encounter.Provoke). Side effects: encounter state.</remarks>
         internal void ProvokeForTests(int id) => _encounter.Provoke(id);
 
         /// <summary>Runs the Focus input's action (nearest wild, provoking it if needed).</summary>
