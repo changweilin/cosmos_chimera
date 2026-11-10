@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/character.schema.json",
+  "title": "Character file (array of characters)",
+  "description": "REQ: docs/design/characters.md. Shared format with cosmos_chimera_forge catalog.js and tasks.js.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/character" },
+  "$defs": {
+    "character": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name_zh",
+        "name_en",
+        "role",
+        "ethnicity",
+        "gender",
+        "age_band",
+        "age",
+        "height_cm",
+        "personality",
+        "vessel"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "name_zh": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "name_en": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "role": { "type": "string" },
+        "pose": { "type": "string" },
+        "ethnicity": { "type": "string" },
+        "region": { "type": "string" },
+        "timeline": { "type": "string" },
+        "gender": { "enum": ["男", "女", "未知"] },
+        "age_band": { "enum": ["兒童", "青少年", "青年", "中年", "長者", "未知"] },
+        "age": { "type": "integer", "minimum": 0, "maximum": 150 },
+        "height_cm": { "type": "integer", "minimum": 30, "maximum": 300 },
+        "weight_kg": { "type": "integer", "minimum": 10, "maximum": 500 },
+        "body_fat": { "type": "string" },
+        "cup_size": { "enum": ["A", "B", "C", "D", "E", "F+", "未知"] },
+        "body_type": { "type": "string" },
+        "outfit_palette": { "type": "array", "items": { "type": "string" } },
+        "hair_palette": { "type": "array", "items": { "type": "string" } },
+        "eye_palette": { "type": "array", "items": { "type": "string" } },
+        "personality": { "type": "array", "items": { "type": "string" } },
+        "style": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "dislikes": { "type": "array", "items": { "type": "string" } },
+        "vessel": { "enum": ["talisman_card", "glass_orb", "glass_bead", "magic_cube", "未知"] },
+        "palette_hex": { "type": "array", "items": { "type": "string" } },
+        "silhouette_keywords": { "type": "array", "items": { "type": "string" } },
+        "outfit_breakdown": { "type": "array", "items": { "type": "object" } },
+        "biography": { "type": "string" },
+        "backstory_zh": { "type": "string" },
+        "voice_lines_zh": { "type": "object" },
+        "sensitivity": { "enum": ["review", "ok"] },
+        "sensitivity_note": { "type": "string" },
+        "production_notes": { "type": "string" },
+        "height": { "type": "string" },
+        "concept": {
+          "type": "object",
+          "properties": {
+            "sensitivity": { "enum": ["review", "ok"] },
+            "note": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

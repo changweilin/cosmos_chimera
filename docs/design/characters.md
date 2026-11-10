@@ -12,7 +12,16 @@
 | 定位 | 玩家角色預設、隊友 NPC、大廳 NPC、星球原住民 NPC、對手 |
 | 慣用收服道具 | 符籙卡片 / 琉璃珠 / 魔術方塊（影響道具外觀與投擲動作，見 `lobby-meta.md#收服道具`） |
 
-選項池與權重的唯一來源：`tools/prompt-forge/catalog.js`。
+選項池與權重的唯一來源：`../cosmos_chimera_forge/catalog.js`。
+資料格式唯一規範：`Data/schemas/character.schema.json`。
+
+## 數據格式與跨專案共同維護
+- **格式一致性**：角色數據結構與 `cosmos_chimera_forge`（立繪鍛造台 `catalog.js`、`tasks.js` 與交付包 `concept.json`）完全相同。
+- **規範定義**：`Data/schemas/character.schema.json`（定義 `id`、姓名中英、`role`、`ethnicity`、`gender`、`age_band`、`age`、`height_cm`、`personality`、`vessel`、`biography` 等標準欄位）。
+- **共同維護協定**：
+  1. `cosmos_chimera`（本專案）與 `cosmos_chimera_forge` 雙向同步 `Data/schemas/`、`Data/_incoming/` 及基礎資料。
+  2. 任何一邊改動角色或宙獸資料／Schema，必須在同一次作業中同步至另一專案。
+  3. 驗證標準：兩邊執行 `tools/validate-data` 皆須為 0 error，且 forge 跑 `python gen_designed.py` 產出正常。
 
 ## 文化呈現準則
 - 原住民與各族裔服飾取**當代與傳統融合**的意象，不做刻板化（羽毛頭飾＝印第安人、斗笠＝亞洲人之類）的符號堆疊。

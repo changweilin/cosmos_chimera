@@ -33,8 +33,9 @@ KINDS = {
     "traits": "trait",
     "relations": "relation",
     "planet-types": "planet-type",
+    "characters": "character",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters")
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 
 

@@ -32,6 +32,7 @@ EXPECTED = {
     "traits/unknown_trigger.json": ("schema", "/0/trigger/type"),
     "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
     "traits/heal_max_stacks.json": ("schema", "/0/effects/0"),
+    "characters/missing_vessel.json": ("schema", "/0"),
 }
 
 
