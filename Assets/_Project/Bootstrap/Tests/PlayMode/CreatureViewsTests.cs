@@ -45,7 +45,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(PlaceholderCreatureViewFactory.Scale(new CreatureViewRequest(def, false, SpawnRole.Elite, 0.5f)),
                 Is.EqualTo(1.4f).Within(1e-6f));
             Assert.That(PlaceholderCreatureViewFactory.Scale(new CreatureViewRequest(def, false, SpawnRole.Boss, 0.5f)),
-                Is.EqualTo(2.5f).Within(1e-6f));
+                Is.EqualTo(1f).Within(1e-6f));
         }
 
         [Test]

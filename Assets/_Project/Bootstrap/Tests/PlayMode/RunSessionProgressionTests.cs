@@ -213,7 +213,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(Pool(env.Progression, BaseWild, WildLevelOf(env, plan, e1), false), Is.EqualTo(80), "tier-0 normal pool");
             int questRegion = plan.Quest[0].Region;
 
-            ParkAt(s, Beside(plan.Spawns[e1].Direction));
+            EngageAt(s, plan, e1);
             Step(s);
             Assert.That(s.InCombatForTests, Is.True, "battle 1 starts through real engagement");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }), "opening pair");
@@ -280,7 +280,7 @@ namespace Cosmimera.Bootstrap.Tests
             var run = new Run();
             yield return Launch(env, seed, env.Progression.XpThreshold(50), run);
             RunSession s = run.Session;
-            ParkAt(s, Beside(plan.Spawns[target].Direction));
+            EngageAt(s, plan, target);
             for (int i = 0; i < 2000; i++)
             {
                 int[] before = Exp(s);
@@ -519,7 +519,7 @@ namespace Cosmimera.Bootstrap.Tests
             int[] before = Exp(s);
             int[] levelsAtTick = null;
             s.BeforeTickForTests = () => levelsAtTick = s.PartyUnitsForTests.Select(id => s.UnitForTests(id).Level).ToArray();
-            ParkAt(s, Beside(plan.Spawns[spawn].Direction));
+            EngageAt(s, plan, spawn);
             Step(s);
             Assert.That(levelsAtTick, Is.EqualTo(Enumerable.Repeat(11, PartySize).ToArray()), "levels at the first Tick");
 
@@ -557,7 +557,7 @@ namespace Cosmimera.Bootstrap.Tests
             RunSession s = run.Session;
             AssertSpawnUnits(s, plan, e1);
 
-            ParkAt(s, Beside(plan.Spawns[e1].Direction));
+            EngageAt(s, plan, e1);
             Step(s);
             Assert.That(s.InCombatForTests, Is.True, "battle in progress");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }));
@@ -603,7 +603,7 @@ namespace Cosmimera.Bootstrap.Tests
             Progression progression = env.Progression;
 
             // Battle A: real engagement, then the elite falls inside it.
-            ParkAt(s, Beside(plan.Spawns[a].Direction));
+            EngageAt(s, plan, a);
             Step(s);
             Assert.That(s.InCombatForTests, Is.True, "battle A");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }));
@@ -623,7 +623,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 1, 2 }));
 
             // Battle B: real engagement on another pack, then the party enters the quest region.
-            ParkAt(s, Beside(plan.Spawns[b].Direction));
+            EngageAt(s, plan, b);
             Step(s);
             Assert.That(s.InCombatForTests, Is.True, "battle B");
             MovePlayer(s, plan.Regions[questRegion].Center);
@@ -876,7 +876,16 @@ namespace Cosmimera.Bootstrap.Tests
             s.MovePlayerForTests(direction);
         }
 
-        // A point 6 m north of a wild spawn: inside Encounter.AggroRadiusM (18 m) so the pack engages, but not on top of
+        // Parks beside a spawn and starts the fight with it the way the Focus input does. D0-E2 territory: tier-0
+        // juveniles are timid (0 m), so standing next to them no longer starts a fight by itself. Unit id == spawn
+        // index (AssertSpawnUnits).
+        private static void EngageAt(RunSession s, RunPlan plan, int spawn)
+        {
+            ParkAt(s, Beside(plan.Spawns[spawn].Direction));
+            s.ProvokeForTests(spawn);
+        }
+
+        // A point 6 m north of a wild spawn, close enough to provoke (Encounter.ProvokeRadiusM 18 m) but not on top of
         // it. Parking exactly on the spawn direction puts the target straight above/below the caster; the tangent toward
         // it is then float noise and trips MoveGeometry's unit-tangent Pre (see tech-debt D0-E4).
         private static float3 Beside(float3 spawnDirection)
@@ -990,7 +999,7 @@ namespace Cosmimera.Bootstrap.Tests
                     ""migration_stage_floor_levels"":[10,20,35],""appeared_weight"":4,""reserve_weight"":2,
                     ""rewards"":{""base_xp"":{""wild"":80,""capture"":40,""quest_step"":80,""quest_chain"":160,""boss"":640},
                     ""reference_level"":10,""elite_multiplier"":2,
-                    ""wild_level"":{""base"":10,""per_difficulty"":10,""per_tier"":2,
+                    ""wild_level"":{""boss_level_min"":19,""boss_level_max"":100,""per_tier"":2,
                     ""role_bonus"":{""normal"":0,""elite"":3,""boss"":5}},""sidekick_share_divisor"":2}}}"),
                 Actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
             };

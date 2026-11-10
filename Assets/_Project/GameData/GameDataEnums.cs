@@ -67,6 +67,20 @@ namespace Cosmimera.GameData
         KeepDistance = 0, Flank = 1, Charge = 2, Hold = 3,
     }
 
+    /// <summary>
+    /// Species temperament: sets a wild creature's territory radius. REQ: docs/design/combat.md#野生領域 (D0-E2, closed
+    /// enum; kinds provisional, Q-C35).
+    /// </summary>
+    /// <remarks>
+    /// Pre: imported from normal|timid|fierce. Post: stable serialized values; Normal is 0 so an asset imported before
+    /// the field existed reads as the middle temperament rather than as one that never fights.
+    /// Side effects: none.
+    /// </remarks>
+    public enum Temperament
+    {
+        Normal = 0, Timid = 1, Fierce = 2,
+    }
+
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>
     public enum RelationKind
     {

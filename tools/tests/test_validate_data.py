@@ -317,6 +317,17 @@ class CrossFileRules(unittest.TestCase):
         del creatures[0]["ai_style"]
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
 
+    def test_temperament_is_required_and_closed(self):
+        # D0-E2: territory radius comes from the species temperament; a missing value must not default silently.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        for value in ("normal", "timid", "fierce"):
+            creatures[0]["temperament"] = value
+            self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        creatures[0]["temperament"] = "shy"
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        del creatures[0]["temperament"]
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))

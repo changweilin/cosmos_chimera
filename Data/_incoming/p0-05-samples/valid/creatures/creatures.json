@@ -42,6 +42,7 @@
       "archetype": "trickster"
     },
     "ai_style": "charge",
+    "temperament": "timid",
     "size_class": "S"
   },
   {
@@ -88,6 +89,7 @@
       "archetype": "magical beast"
     },
     "ai_style": "hold",
+    "temperament": "normal",
     "size_class": "M"
   },
   {
@@ -125,6 +127,7 @@
       "archetype": "solar guardian"
     },
     "ai_style": "keep_distance",
+    "temperament": "fierce",
     "size_class": "L"
   }
 ]

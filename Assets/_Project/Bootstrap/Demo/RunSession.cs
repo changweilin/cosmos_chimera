@@ -153,6 +153,7 @@ namespace Cosmimera.Bootstrap.Demo
         private RunPlan _plan;
         private QuestTracker _quest;
         private Encounter _encounter;
+        private PlayerVitals _vitals;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
@@ -359,6 +360,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
+            // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
+            _vitals = new PlayerVitals(balance.Player);
+            _encounter.AttachPlayer(_vitals);
             _captureRng = new Pcg32(setup.Seed, 'K');
             // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
             _materialRng = new Pcg32(setup.Seed, 'D');
@@ -368,7 +372,9 @@ namespace Cosmimera.Bootstrap.Demo
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
+                EncounterUnit u = spawn.Role == SpawnRole.Boss
+                    ? _encounter.AddBoss(def, null, spawn.Direction, level)
+                    : _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
                 _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
@@ -470,11 +476,16 @@ namespace Cosmimera.Bootstrap.Demo
 
             RecordAppearances();
 
+            bool playerDowned = false;
             foreach (EncounterEvent ev in _encounter.Events)
             {
                 if (ev.Kind == EncounterEventKind.Faint)
                 {
                     OnFaint(ev.TargetId);
+                }
+                else if (ev.Kind == EncounterEventKind.PlayerDowned)
+                {
+                    playerDowned = true;
                 }
             }
 
@@ -491,6 +502,14 @@ namespace Cosmimera.Bootstrap.Demo
             if (!engaged && _team.InCombat)
             {
                 _team.EndCombat();
+            }
+
+            if (playerDowned)
+            {
+                // Q-C33 (2026-11-10): Downed settles the run as a defeat; captures, XP and materials earned so far
+                // (including knock-outs in this same tick, paid above) still return to the lobby (RunOutcome).
+                End(false, false);
+                return;
             }
 
             ApplyLevelUps();
@@ -647,8 +666,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_focusAction.WasPressedThisFrame())
             {
-                int target = NearestEngaged(PlayerPosition());
-                _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
+                FocusNearest();
             }
 
             if (_freeAction.WasPressedThisFrame())
@@ -953,19 +971,37 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
-        private int NearestEngaged(float3 player)
+        private void FocusNearest()
+        {
+            int target = NearestFocusTarget(PlayerPosition());
+            if (target >= 0 && !_encounter.Units[target].Engaged)
+            {
+                // Focusing a wild that has not noticed you starts the fight: the only way to battle a timid one.
+                _encounter.Provoke(target);
+            }
+
+            _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
+        }
+
+        // Nearest active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
+        private int NearestFocusTarget(float3 player)
         {
             int best = -1;
             float bestDist = float.MaxValue;
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 EncounterUnit u = _encounter.Units[kv.Key];
-                if (!u.Engaged || !u.IsActive)
+                if (!u.IsActive)
                 {
                     continue;
                 }
 
                 float d = math.distance(u.Position, player);
+                if (!u.Engaged && d > Encounter.ProvokeRadiusM)
+                {
+                    continue;
+                }
+
                 if (d < bestDist)
                 {
                     bestDist = d;
@@ -1297,6 +1333,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
+            GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}", new GUIStyle(_label) { fontSize = 14 },
+                GUILayout.Width(120));
             foreach (int id in _team.Pool)
             {
                 EncounterUnit u = _encounter.Units[id];

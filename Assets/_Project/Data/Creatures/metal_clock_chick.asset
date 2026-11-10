@@ -17,6 +17,7 @@ MonoBehaviour:
   stage: 0
   sizeClass: 0
   aiStyle: 3
+  temperament: 1
   evolvesTo: {fileID: 11400000, guid: 25068b496a2013e45911826301db9198, type: 2}
   evolutionLevel: 28
   evolutionMaterials:

@@ -34,6 +34,7 @@
       "archetype": "solar guardian"
     },
     "ai_style": "keep_distance",
+    "temperament": "fierce",
     "size_class": "L"
   }
 ]

@@ -1,9 +1,44 @@
 using System;
 using Cosmimera.Core.Contracts;
+using Cosmimera.GameData;
 using UnityEngine;
 
 namespace Cosmimera.Combat
 {
+    /// <summary>
+    /// Wild territory radius per temperament (<c>Data/balance.json#ai.territory_mm</c>). REQ: combat.md#野生領域
+    /// (D0-E2, 2026-11-10); the radii themselves are provisional (Q-C35).
+    /// </summary>
+    /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
+    public sealed class TerritoryTuning
+    {
+        /// <summary>Creates validated radii.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= each radius &lt; Encounter.DisengageRadiusM (in mm); a radius at or beyond the disengage
+        ///      distance would re-engage the moment a fight ends.
+        /// Post: RadiusMm returns the matching argument. Side effects: allocates this instance.
+        /// </remarks>
+        public TerritoryTuning(int timidMm, int normalMm, int fierceMm)
+        {
+            const int limitMm = (int)(Encounter.DisengageRadiusM * 1000f);
+            Contract.Requires(timidMm >= 0 && timidMm < limitMm, "territory_mm.timid must be 0..disengage");
+            Contract.Requires(normalMm >= 0 && normalMm < limitMm, "territory_mm.normal must be 0..disengage");
+            Contract.Requires(fierceMm >= 0 && fierceMm < limitMm, "territory_mm.fierce must be 0..disengage");
+            _radiusMm = new[] { normalMm, timidMm, fierceMm };
+        }
+
+        // Indexed by the Temperament value (Normal 0, Timid 1, Fierce 2).
+        private readonly int[] _radiusMm;
+
+        /// <summary>Territory radius in mm for <paramref name="temperament"/>.</summary>
+        /// <remarks>Pre: temperament defined. Post: >= 0. Side effects: none.</remarks>
+        public int RadiusMm(Temperament temperament)
+        {
+            Contract.Requires(temperament >= Temperament.Normal && temperament <= Temperament.Fierce, "undefined Temperament");
+            return _radiusMm[(int)temperament];
+        }
+    }
+
     /// <summary>All combat tunables parsed from <c>Data/balance.json</c> (the single source; the importer copies the text).</summary>
     /// <remarks>
     /// Pre: build through <see cref="FromJson"/>. Post: every member non-null and validated by its own constructor.
@@ -12,8 +47,10 @@ namespace Cosmimera.Combat
     public sealed class CombatBalance
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
-            int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent)
+            int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
+            TerritoryTuning territory)
         {
+            Territory = territory;
             Stats = stats;
             Hit = hit;
             Effects = effects;
@@ -23,6 +60,10 @@ namespace Cosmimera.Combat
             CaptureBasePercent = captureBasePercent;
             CaptureBossPercent = captureBossPercent;
         }
+
+        /// <summary>Wild territory radii by temperament.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public TerritoryTuning Territory { get; }
 
         /// <summary>Derived-stat model.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
@@ -68,7 +109,7 @@ namespace Cosmimera.Combat
             Dto d = JsonUtility.FromJson<Dto>(json);
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
-                d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null &&
+                d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
                 d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100, "capture percents must be 0..100");
@@ -90,8 +131,9 @@ namespace Cosmimera.Combat
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
                 d.player.roll_cooldown_ms);
             Contract.Requires(d.team.switch_cooldown_ms >= 0, "switch cooldown must be >= 0");
+            var territory = new TerritoryTuning(d.ai.territory_mm.timid, d.ai.territory_mm.normal, d.ai.territory_mm.fierce);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent);
+                d.capture.base_percent, d.capture.boss_percent, territory);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
@@ -155,6 +197,14 @@ namespace Cosmimera.Combat
             public int close_in_permille;
             public int hold_permille;
             public int follow_leash_mm;
+            public TerritoryDto territory_mm;
+        }
+
+        [Serializable] private sealed class TerritoryDto
+        {
+            public int timid;
+            public int normal;
+            public int fierce;
         }
 #pragma warning restore 0649, IDE1006
     }

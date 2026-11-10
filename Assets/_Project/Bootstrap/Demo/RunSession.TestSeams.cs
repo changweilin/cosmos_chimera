@@ -92,6 +92,22 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: Configure ran. Post: current flag. Side effects: none.</remarks>
         internal bool InCombatForTests => _team.InCombat;
 
+        /// <summary>Starts a fight with one wild unit, as Focus does for the nearest one (D0-E2 territory).</summary>
+        /// <remarks>Pre: Configure ran; id is an active wild unit. Post: it is Engaged. Side effects: encounter state.</remarks>
+        internal void ProvokeForTests(int id) => _encounter.Provoke(id);
+
+        /// <summary>Runs the Focus input's action (nearest wild, provoking it if needed).</summary>
+        /// <remarks>Pre: the run landed. Post: as a Focus press. Side effects: command and encounter state.</remarks>
+        internal void FocusNearestForTests() => FocusNearest();
+
+        /// <summary>Observes the player character's HP.</summary>
+        /// <remarks>Pre: Configure ran. Post: 0..max HP. Side effects: none.</remarks>
+        internal int PlayerHpForTests => _vitals.Hp;
+
+        /// <summary>Observes the player character's max HP.</summary>
+        /// <remarks>Pre: Configure ran. Post: >= 1. Side effects: none.</remarks>
+        internal int PlayerMaxHpForTests => _vitals.MaxHp;
+
         /// <summary>Copies the active team ids.</summary>
         /// <remarks>Pre: Configure ran. Post: detached list. Side effects: allocates a snapshot.</remarks>
         internal IReadOnlyList<int> ActiveUnitsForTests => new List<int>(_team.Active).ToArray();

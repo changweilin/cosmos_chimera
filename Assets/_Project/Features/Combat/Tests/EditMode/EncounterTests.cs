@@ -48,12 +48,13 @@ namespace Cosmimera.Combat.Tests
             return m;
         }
 
-        private CreatureDef Creature(string id, MoveDef move, AiStyle style)
+        // Fierce (20 m) keeps the pre-territory tests' 18 m engagement geometry valid.
+        private CreatureDef Creature(string id, MoveDef move, AiStyle style, Temperament temperament = Temperament.Fierce)
         {
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, style, null, 0,
+            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, style, temperament, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
             return c;

@@ -174,8 +174,9 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
-            // Teleport next to the nearest normal pack so the 18 m aggro radius engages it. Nearest, because the
-            // character's motor rejects an up vector that turns > 90° in one step (a far teleport is not gameplay).
+            // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its temperament (D0-E2:
+            // tier-0 juveniles are timid). Nearest, because the character's motor rejects an up vector that turns > 90°
+            // in one step (a far teleport is not gameplay).
             float3 target = float3.zero;
             float best = -2f;
             foreach (RunSpawn s in session.SpawnsForTests)
@@ -189,6 +190,8 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             session.MovePlayerForTests(target);
+            yield return null;
+            session.FocusNearestForTests();
 
             bool hit = false;
             deadline = Time.realtimeSinceStartup + 60f;
@@ -199,10 +202,13 @@ namespace Cosmimera.Bootstrap.Tests
                     hit |= u.Fielded && u.Hp < u.MaxHp;
                 }
 
+                // Q-C33: the character is a target too; damage to it proves the pack engaged just as well.
+                hit |= session.PlayerHpForTests < session.PlayerMaxHpForTests;
+
                 yield return null;
             }
 
-            Assert.That(hit, Is.True, "some fielded creature took damage within 60 s");
+            Assert.That(hit, Is.True, "some fielded creature or the character took damage within 60 s");
 
             // P3-09 acceptance: scatter exists around the player and nothing floats or sinks into the ground.
             var scatter = session.GetComponent<ScatterField>();

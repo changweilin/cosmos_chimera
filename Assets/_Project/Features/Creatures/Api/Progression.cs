@@ -114,8 +114,8 @@ namespace Cosmimera.Creatures
         private readonly int[] _baseXp;
         private readonly int _referenceLevel;
         private readonly int _eliteMultiplier;
-        private readonly int _levelBase;
-        private readonly int _levelPerDifficulty;
+        private readonly int _bossLevelMin;
+        private readonly int _bossLevelMax;
         private readonly int _levelPerTier;
         private readonly int[] _roleBonus;
         private readonly int _appearedWeight;
@@ -151,8 +151,8 @@ namespace Cosmimera.Creatures
             _baseXp = new[] { r.base_xp.wild, r.base_xp.capture, r.base_xp.quest_step, r.base_xp.quest_chain, r.base_xp.boss };
             _referenceLevel = r.reference_level;
             _eliteMultiplier = r.elite_multiplier;
-            _levelBase = r.wild_level.@base;
-            _levelPerDifficulty = r.wild_level.per_difficulty;
+            _bossLevelMin = r.wild_level.boss_level_min;
+            _bossLevelMax = r.wild_level.boss_level_max;
             _levelPerTier = r.wild_level.per_tier;
             _roleBonus = new[] { r.wild_level.role_bonus.normal, r.wild_level.role_bonus.elite, r.wild_level.role_bonus.boss };
             _appearedWeight = d.appeared_weight;
@@ -209,6 +209,8 @@ namespace Cosmimera.Creatures
             // The ledger counts sidekick entitlement in half points; another divisor needs a different ledger unit.
             Check(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
             Check(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
+            Check(r.wild_level.boss_level_min >= MinLevel && r.wild_level.boss_level_min <= r.wild_level.boss_level_max &&
+                r.wild_level.boss_level_max <= d.level_max, "boss levels must satisfy 1 <= min <= max <= level_max");
             var progression = new Progression(d);
             // SourceXp is monotonic in level and elite, so its largest value per source is at C(MaxLevel−1) with the
             // multiplier. Bounding that by Int32 here also bounds SourceXp's Int64 product (< 2^31 · C(ref) < 2^62), so
@@ -271,7 +273,12 @@ namespace Cosmimera.Creatures
             return _thresholds[_floorLevels[(int)stage]];
         }
 
-        /// <summary>Level of a wild encounter: clamp(10 + 10(d−1) + 2t + role bonus 0/3/5, 1, MaxLevel).</summary>
+        /// <summary>
+        /// Level of a wild encounter. The boss level B(d) runs linearly from boss_level_min (d=1) to boss_level_max (d=10),
+        /// rounded half up; every role is derived down from it with the boss standing at tier 2:
+        /// clamp(B(d) − bonus(boss) − per_tier·(2 − t) + bonus(role), 1, MaxLevel). REQ: docs/design/level-progression.md
+        /// (D0-X3, 2026-11-10: boss LV5–75).
+        /// </summary>
         /// <remarks>
         /// Pre: 1 &lt;= difficulty &lt;= 10; 0 &lt;= tier &lt;= 2; role defined. Post: 1..MaxLevel. Side effects: none.
         /// </remarks>
@@ -280,7 +287,9 @@ namespace Cosmimera.Creatures
             Contract.Requires(difficulty >= 1 && difficulty <= 10, "difficulty must be 1..10");
             Contract.Requires(tier >= 0 && tier <= 2, "tier must be 0..2");
             Contract.Requires(Enum.IsDefined(typeof(WorldGen.SpawnRole), role), "role must be defined");
-            int level = _levelBase + _levelPerDifficulty * (difficulty - 1) + _levelPerTier * tier + _roleBonus[(int)role];
+            // Integer half-up of span·(d−1)/9 — no float, so every peer derives the same level (tools/balance golden).
+            int boss = _bossLevelMin + (2 * (_bossLevelMax - _bossLevelMin) * (difficulty - 1) + 9) / 18;
+            int level = boss - _roleBonus[(int)WorldGen.SpawnRole.Boss] - _levelPerTier * (2 - tier) + _roleBonus[(int)role];
             return Math.Min(MaxLevel, Math.Max(MinLevel, level));
         }
 
@@ -497,8 +506,8 @@ namespace Cosmimera.Creatures
 
         [Serializable] private sealed class WildLevelDto
         {
-            public int @base;
-            public int per_difficulty;
+            public int boss_level_min;
+            public int boss_level_max;
             public int per_tier;
             public RoleBonusDto role_bonus;
         }

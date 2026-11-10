@@ -41,6 +41,9 @@ OPUS 概念與數值初配；命名與圖鑑文案由 TERRA 補在 `copy-terra.j
 5. 星成年的突進招 `range_class: mid`、路徑 12 m：大於近戰突進，仍遠小於 Q-C19 的 36 m 上限。範圍放電由少年招式（caster burst）負責；幼年與成年精通招皆為直線突進。三階 `concept.role` 已逐階對齊（2026-11-08，P5-08 A8）。
 6. 中英名稱與圖鑑文案在 `copy-terra.json`（TERRA）。Opus 驗收：數量 9/9/3、id 一致、不含原型真名／音譯、繁中 49–52 字、英文 30–33 字；`star_blaze_foal` 英文名原案 Voltrot 與既有作品角色過近，改為 Voltfoal。TERRA 另指出月成年外觀原寫「瞬間消失、從背後現身」與招式（直線突進）不符，已改成雪幕掩護下貼地疾衝。
 
+## temperament（2026-11-10，D0-E2 / Q-C35，待人工）
+Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少年 `normal`、成年 `fierce`。領域半徑見 `Data/balance.json#ai.territory_mm`。
+
 ## ai_style（2026-11-07，P2-10 / Q-C21，待人工）
 三線依使用者定案逐階一致：日 `keep_distance`、月 `flank`、星 `charge`（`docs/design/combat.md#戰鬥-ai`）。
 

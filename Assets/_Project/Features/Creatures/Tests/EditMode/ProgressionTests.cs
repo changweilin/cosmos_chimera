@@ -237,6 +237,10 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
             Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
             Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
+            // D0-X3: the boss level range must be ordered and inside 1..level_max.
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_min\": 5", "\"boss_level_min\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_min\": 5", "\"boss_level_min\": 76")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_max\": 75", "\"boss_level_max\": 101")));
         }
 
         // The bands live in the schema, CreatureDef and balance.json; tools/tests checks schema == balance.json.

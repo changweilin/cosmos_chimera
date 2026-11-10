@@ -75,8 +75,10 @@ class LevelRewards:
             self.sidekick_divisor = _integer(rewards["sidekick_share_divisor"],
                                              "sidekick_share_divisor", 1)
             wild = rewards["wild_level"]
-            for key in ("base", "per_difficulty", "per_tier"):
+            for key in ("boss_level_min", "boss_level_max", "per_tier"):
                 _integer(wild[key], f"wild_level.{key}")
+            if not 1 <= wild["boss_level_min"] <= wild["boss_level_max"] <= self.curve.level_max:
+                raise ValueError("boss levels must satisfy 1 <= min <= max <= level_max")
             for role in ("normal", "elite", "boss"):
                 _integer(wild["role_bonus"][role], f"role_bonus.{role}")
         else:
@@ -119,9 +121,13 @@ class LevelRewards:
         if role not in ("normal", "elite", "boss"):
             raise ValueError("unknown encounter role")
         if self.option == "A":
+            # D0-X3 (2026-11-10): d=1..10 maps linearly onto boss LV min..max (half-up), and every
+            # other role is derived down from it with the boss standing at the top tier (2).
             wild = self.rules["wild_level"]
-            level = (wild["base"] + wild["per_difficulty"] * (difficulty - 1)
-                     + wild["per_tier"] * tier + wild["role_bonus"][role])
+            span = wild["boss_level_max"] - wild["boss_level_min"]
+            boss = wild["boss_level_min"] + (2 * span * (difficulty - 1) + 9) // 18
+            level = (boss - wild["role_bonus"]["boss"] - wild["per_tier"] * (2 - tier)
+                     + wild["role_bonus"][role])
         else:
             floor = self.stage_floors[stage]
             level = floor + 5 * (difficulty - 1) + tier

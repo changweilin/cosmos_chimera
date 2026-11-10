@@ -40,7 +40,7 @@ namespace Cosmimera.WorldGen.Tests
                     _created.Add(c);
                     c.SetId(line + "_" + stage);
                     Element e = line == "wood" ? Element.Wood : line == "fire" ? Element.Fire : Element.Water;
-                    c.Set(line, (CreatureStage)stage, CreatureSizeClass.M, AiStyle.Charge, null, 0,
+                    c.Set(line, (CreatureStage)stage, CreatureSizeClass.M, AiStyle.Charge, Temperament.Normal, null, 0,
                         new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(e, 15) },
                         new CreatureStats(25, 25, 25, 25), null, null, "{}", false);
                     _pool.Add(c);

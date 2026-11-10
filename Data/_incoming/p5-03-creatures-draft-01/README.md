@@ -75,5 +75,8 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 ## 命名與文案（TERRA）
 中英名稱與圖鑑文案在 `copy-terra.json`。TERRA 指出 15 隻的 `concept.role` 承諾了戰鬥系統沒有的機制（牽引、屏障、聚怪、減速、持續治癒）或與精通招式射程不符；Opus 已把 21 隻的 `role` 改寫成與實際招式／特性一致（上表同步）。若要保留原本的定位構想，需換精通招式或等 effect 招式（P5-05 batch 05 類）指派，**待人工決定**。
 
+## temperament（2026-11-10，D0-E2 / Q-C35，待人工）
+Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少年 `normal`、成年 `fierce`。領域半徑見 `Data/balance.json#ai.territory_mm`。
+
 ## ai_style（2026-11-07，P2-10 / Q-C21，待人工）
 Claude Opus 依精通招式機械式指定（非設計定稿）：dash → `charge`；long → `keep_distance`；melee 非 dash → AGI ≥ STR 為 `flank`、否則 `hold`；mid 非 dash → `hold`。結果：金 hold/hold/charge、木 charge/keep_distance/hold、水 hold/hold/keep_distance、火 hold/charge/keep_distance、土 hold/hold/charge、冰 hold/keep_distance/keep_distance、風 flank/keep_distance/keep_distance。同一線跨階換風格是因為精通招式射程本身逐階改變；若希望每線一致，需人工選定並換招。

@@ -59,6 +59,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.close_in_permille` | P2-10 突進 / 繞背站位 = 最短敵對可及距離 × 此值 / 1000（1–1000） |
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
+| `ai.territory_mm.{timid,normal,fierce}` | D0-E2 野生領域半徑（依物種 `temperament`）；入侵者進入即開戰；0＝不主動開戰（暫定值，Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
 
 ## progression
 
@@ -75,7 +76,7 @@ P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與
 | `progression.rewards.base_xp.*` | 來源基數：wild／capture／quest_step／quest_chain／boss |
 | `progression.rewards.reference_level` | E = floor(base × C(min(L,99)) × r / C(reference_level)) 的分母等級（10） |
 | `progression.rewards.elite_multiplier` | 擊倒菁英的 r（2）；只用於野戰擊倒 |
-| `progression.rewards.wild_level.*` | 野生等級 = clamp(base + per_difficulty×(d−1) + per_tier×tier + role_bonus, 1, 100) |
+| `progression.rewards.wild_level.*` | BOSS 等級 B(d) = boss_level_min + round_half_up((boss_level_max − boss_level_min)×(d−1)/9)；野生等級 = clamp(B(d) − role_bonus.boss − per_tier×(2−tier) + role_bonus, 1, 100)（D0-X3） |
 | `progression.rewards.sidekick_share_divisor` | 副手組共分 floor(主力實得 / 此值)；目前只支援 2 |
 
 ## materials
