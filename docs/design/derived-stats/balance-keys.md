@@ -60,6 +60,9 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
 | `ai.territory_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-E2 野生領域半徑（依物種 `temperament` 取 0/4/8/14/20/28 m）；入侵者進入即開戰；0＝不主動開戰（Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.wander_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-W1 野生未開戰時在生成點附近的遊蕩半徑（暫定 3/4/6/8/10/12 m，Q-D2）；0＝原地不動（0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.wander_pause_min_ms`／`ai.wander_pause_max_ms` | D0-W1 每段遊蕩之間的停頓（含兩端，暫定 2000–5000，Q-D2；0 ≤ min ≤ max） |
+| `ai.wander_speed_permille` | D0-W1 遊蕩步行速度 = 戰鬥移速 × 此值 / 1000（暫定 400，Q-D2；1–1000） |
 
 ## progression
 

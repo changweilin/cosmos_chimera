@@ -165,6 +165,12 @@ namespace Cosmimera.Combat
 
         internal bool Provoked { get; set; }
 
+        // Idle wander state (combat.md#遊蕩, D0-W1). WanderResumeMs == Encounter.WanderUnscheduled means "decide on the next
+        // idle tick" — the unit was just spawned or just disengaged.
+        internal bool HasWanderTarget { get; set; }
+        internal float3 WanderTarget { get; set; }
+        internal long WanderResumeMs { get; set; } = Encounter.WanderUnscheduled;
+
         /// <summary>Last AI target id, or NoTarget.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public int TargetId { get; internal set; } = CombatAi.NoTarget;
@@ -218,6 +224,7 @@ namespace Cosmimera.Combat
 
         private const float ArriveM = 0.4f;
         private const int MaxSlots = 2;
+        internal const long WanderUnscheduled = long.MinValue;
 
         private readonly PlanetConfig _planet;
         private readonly CombatBalance _balance;
@@ -228,6 +235,8 @@ namespace Cosmimera.Combat
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
         private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private Pcg32 _rng;
+        // Separate stream so wandering never shifts the combat roll order (hit/crit/capture replays stay identical).
+        private Pcg32 _wanderRng;
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
         private float3 _playerCenter;
@@ -266,7 +275,7 @@ namespace Cosmimera.Combat
         /// <summary>Creates an empty encounter.</summary>
         /// <remarks>
         /// Pre: planet.Radius >= MoveGeometry.MinSupportedRadiusM; balance and surface non-null.
-        /// Post: no units; RNG seeded from (seed, 'C') so all peers replay the same rolls.
+        /// Post: no units; combat RNG seeded from (seed, 'C') and wander RNG from (seed, 'W') so all peers replay the same rolls.
         /// Side effects: allocates buffers.
         /// </remarks>
         public Encounter(in PlanetConfig planet, CombatBalance balance, IEncounterSurface surface, ulong seed)
@@ -278,6 +287,7 @@ namespace Cosmimera.Combat
             _balance = balance;
             _surface = surface;
             _rng = new Pcg32(seed, 'C');
+            _wanderRng = new Pcg32(seed, 'W');
         }
 
         /// <summary>All units in id order.</summary>
@@ -534,14 +544,20 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it never starts a fight by proximity. Side effects: none.</remarks>
         public float TerritoryRadiusM(int unitId) => _balance.Territory.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
 
+        /// <summary>Wander radius (m) of a unit around its spawn point, from its species temperament (combat.md#遊蕩).</summary>
+        /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it holds its spawn point. Side effects: none.</remarks>
+        public float WanderRadiusM(int unitId) => _balance.Wander.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
+
         /// <summary>Advances the fight to <paramref name="nowMs"/>.</summary>
         /// <remarks>
         /// Pre: nowMs > previous tick's nowMs (strictly increasing CombatTime); 0 &lt; dtMs &lt;= 1000; mainId is a fielded
         ///      Player unit or NoTarget; player position inside the combat shell.
         /// Post: Events lists, in order: resolutions of fields placed in earlier ticks (fields in placement order, targets
         ///       in id order), then each acting unit's cast and its resolutions in unit-id order (a new field resolves
-        ///       at once); positions stay on the ground.
-        /// Side effects: mutates units, RNG and Events. No allocation after warm-up.
+        ///       at once); positions stay on the ground. Idle (not engaged) wild units wander (combat.md#遊蕩): pause
+        ///       PauseMinMs..PauseMaxMs, then walk at SpeedPermille of their move speed to a seeded point within
+        ///       WanderRadiusM of Home; one outside that radius (just disengaged) first walks straight back to Home.
+        /// Side effects: mutates units, both RNG streams and Events. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
         {
@@ -570,7 +586,8 @@ namespace Cosmimera.Combat
                 bool player = u.Side == EncounterSide.Player;
                 if (!player && !u.Engaged)
                 {
-                    continue; // idle wild units hold position; presentation may animate them
+                    Wander(u, nowMs, dtMs);
+                    continue;
                 }
 
                 EncounterUnit partner = PartnerOf(u);
@@ -590,7 +607,7 @@ namespace Cosmimera.Combat
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
-                Steer(u, d.DestinationDirection, dtMs);
+                Steer(u, d.DestinationDirection, dtMs, 1000);
                 if (d.TargetId != CombatAi.NoTarget)
                 {
                     u.Forward = TangentToward(u.Position, TargetPosition(d.TargetId), u.Forward);
@@ -797,7 +814,68 @@ namespace Cosmimera.Combat
                     ? nearest <= DisengageRadiusM
                     : w.Provoked || (territoryMm > 0 && nearest <= territoryMm * 0.001f);
                 w.Provoked = false;
+                if (w.Engaged)
+                {
+                    // Re-decide from scratch after the fight: the old leg may now be far behind (combat.md#遊蕩).
+                    w.HasWanderTarget = false;
+                    w.WanderResumeMs = WanderUnscheduled;
+                }
             }
+        }
+
+        // REQ: combat.md#遊蕩 (D0-W1). Engagement for this tick was already decided from the pre-move positions, so a
+        // wander step can only bring a unit into someone's territory on the next tick — same as any other movement.
+        private void Wander(EncounterUnit u, long nowMs, int dtMs)
+        {
+            WanderTuning t = _balance.Wander;
+            float radiusM = t.RadiusMm(u.Def.Temperament) * 0.001f;
+            if (!u.HasWanderTarget)
+            {
+                if (u.WanderResumeMs == WanderUnscheduled)
+                {
+                    float fromHome = math.distance(u.Position, u.Home);
+                    if (fromHome <= radiusM + ArriveM)
+                    {
+                        u.WanderResumeMs = nowMs + NextWanderPause(t);
+                        return;
+                    }
+
+                    u.WanderTarget = Up(u.Home);
+                    u.HasWanderTarget = true;
+                }
+                else if (nowMs < u.WanderResumeMs)
+                {
+                    return;
+                }
+                else
+                {
+                    u.WanderTarget = WanderPoint(u.Home, radiusM);
+                    u.HasWanderTarget = true;
+                }
+            }
+
+            if (Steer(u, u.WanderTarget, dtMs, t.SpeedPermille))
+            {
+                u.HasWanderTarget = false;
+                u.WanderResumeMs = nowMs + NextWanderPause(t);
+            }
+        }
+
+        private int NextWanderPause(WanderTuning t)
+        {
+            return t.PauseMinMs + (int)_wanderRng.NextUInt((uint)(t.PauseMaxMs - t.PauseMinMs + 1));
+        }
+
+        // Uniform over the disk (sqrt of the radial draw); the disk is laid on the sphere by arc length, which differs from
+        // the flat disk by < 0.01 % at r ≤ 40 m, R ≥ 320.
+        private float3 WanderPoint(float3 home, float radiusM)
+        {
+            float3 up = Up(home);
+            float theta = _wanderRng.NextFloat() * 2f * math.PI;
+            float arc = radiusM * math.sqrt(_wanderRng.NextFloat()) / _planet.Radius;
+            PlanetFrame f = PlanetFrame.FromUp(up);
+            float3 heading = f.East * math.cos(theta) + f.North * math.sin(theta);
+            return math.normalize(up * math.cos(arc) + heading * math.sin(arc));
         }
 
         private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
@@ -877,7 +955,8 @@ namespace Cosmimera.Combat
             return null;
         }
 
-        private void Steer(EncounterUnit u, float3 destinationDirection, int dtMs)
+        // Returns true when the unit is (already or now) within ArriveM of the destination.
+        private bool Steer(EncounterUnit u, float3 destinationDirection, int dtMs, int speedPermille)
         {
             float3 up = Up(u.Position);
             float3 dest = math.normalize(destinationDirection);
@@ -885,15 +964,16 @@ namespace Cosmimera.Combat
             float r = _planet.Radius;
             if (angle * r <= ArriveM)
             {
-                return;
+                return true;
             }
 
-            float speedMs = _balance.Stats.MoveSpeedMmS(u.Agi) * 0.001f;
+            float speedMs = _balance.Stats.MoveSpeedMmS(u.Agi) * 0.001f * speedPermille / 1000f;
             float step = math.min(angle, speedMs * dtMs * 0.001f / r);
             float3 heading = Tangent(up, dest - up);
             float3 next = math.normalize(up * math.cos(step) + heading * math.sin(step));
             u.Position = GroundPoint(next, u.BodyRadiusM);
             u.Forward = Tangent(next, heading);
+            return (angle - step) * r <= ArriveM;
         }
 
         private float3 GroundPoint(float3 direction, float bodyRadius)
