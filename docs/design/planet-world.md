@@ -45,4 +45,5 @@ PlanetSeed + PlanetType + GeneratorVersion
 （暫定，數值與清單以 `Data/planet-types/` 為準）
 
 ## 目標與結束條件
+- BOSS 戰數值（2026-11-10 定案，D0-R2）：BOSS 的 HP 上限 ×2；模型與 STR 判定體同乘 1.5（較易被命中、近戰觸及也更遠）。等級見 [level-progression.md#獎勵量](level-progression.md)（D0-X3）。
 - 每顆星球：主任務鏈 + 1 個星球 BOSS（+ 隨機菁英）。完成任務或擊敗 BOSS → 收服機會或取得蛋（見 `lobby-meta.md`）。
