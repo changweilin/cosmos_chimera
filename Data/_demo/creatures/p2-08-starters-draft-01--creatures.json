@@ -60,7 +60,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "temperament": "normal",
+    "temperament": "cautious",
     "evolves_to": "sun_array_skyheron",
     "evolution": {
       "level": 42,
@@ -115,7 +115,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "fierce",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -162,7 +162,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
-    "temperament": "timid",
+    "temperament": "cautious",
     "evolves_to": "moon_shade_wolf",
     "evolution": {
       "level": 23,
@@ -375,7 +375,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "temperament": "normal",
+    "temperament": "cautious",
     "evolves_to": "star_skyhoof_steed",
     "evolution": {
       "level": 45,
@@ -432,7 +432,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "temperament": "fierce",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {

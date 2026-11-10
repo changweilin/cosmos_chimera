@@ -66,3 +66,4 @@
 - 2026-11-08 · ChatGPT Codex · done（使用者裁決）· P5-08 A10／Q-C27：採保留全部數值，creatures.md 明定外觀意象、屬性專精與抗性各自設計，不強制一一對應；金成年土副專精及其餘三獸數值沿用，更新裁決報告並移除 Q-C27，只改文件，P5-08 維持待審 · 下一步：A11 母題欄位語意裁決；變更尚未提交
 
 - 2026-11-10 · ChatGPT Terra（Codex）→ Claude Opus 驗收 · partial · Q-C35 30 物種性格提案（`Data/_incoming/q-c35-temperament-terra/`，confirmed=false；timid 8／cautious 7／normal 4／territorial 8／fierce 2／apex 1，同線不降階，火成年霸獅為唯一 apex）；Terra 自跑 check.py ALL PASS，validate_data 因 Codex 沙箱禁讀 site-packages 無法自跑，Opus 代跑 0 錯誤 · 下一步：人工審定後套用 Data/_demo 並重匯入；D0 難度試玩
+- 2026-11-10 · Claude Opus · done · Q-C35 逐物種性格：使用者採用 Terra 提案，套用至 `_incoming/p2-08…`／`p5-03…` 來源（17／30 物種變更，30 筆逐一比對 proposed），`merge.py` 重新 staging、`ImportAllBatch -dataRoot Data/_demo`（只 17 個 .asset 變動，GeoTemplates 36 .meta 保留）；validate-data Data 與 _demo 0 錯誤；EditMode 1011/1011、PlayMode 87/87、pytest 192/192 · 下一步：人工試玩 D0（cautious／territorial 野生開戰距離、火線 apex BOSS 壓力）
