@@ -311,6 +311,119 @@ namespace Cosmimera.Combat.Tests
             Assert.That(wild.Engaged, Is.EqualTo(staysEngaged));
         }
 
+        // E2-SOL-01 (r2): the rect (front) path must not regain the Engaged gate either.
+        [Test]
+        public void A_front_strike_aimed_at_an_engaged_wild_also_hits_and_engages_a_timid_one_behind_it()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player,
+                Creature("m", Temperament.Normal, ShapedMove("front_m", MoveShape.Front, RangeClass.Melee, 4000, 100, 0)),
+                null, AtMeters(0f), 10);
+            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.Field(mine.Id, AtMeters(0f), false, 0);
+            bool timidHit = false;
+            for (int t = 1; t <= 40 && !timidHit; t++)
+            {
+                Assert.That(timid.Engaged, Is.False, "timid stays out until something actually hits it");
+                e.Tick(t * 50L, 50, Feet(0f), Free, mine.Id);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    timidHit |= ev.Kind == EncounterEventKind.Hit && ev.SourceId == mine.Id && ev.TargetId == timid.Id;
+                }
+            }
+
+            Assert.That(timidHit, Is.True, "the front rect reached the timid wild behind the target");
+            Assert.That(timid.Engaged || timid.Combatant.IsFainted, Is.True, "being hit starts the fight");
+        }
+
+        // E2-SOL-02 (r2): the positive half must always run — a field that does hit engages a timid wild, even with
+        // zero damage (the hit, not the damage, starts the fight).
+        [TestCase(1)]
+        [TestCase(0)]
+        public void A_field_hit_engages_a_timid_wild(int power)
+        {
+            var field = ScriptableObject.CreateInstance<MoveDef>();
+            _created.Add(field);
+            field.SetId("field_hit_m");
+            field.Set(Element.Fire, MoveKind.Damage, power, null, 0, 3500, 1500, 100, RangeClass.Mid, MoveShape.Field, 12000,
+                MoveMovement.None, BurstOrigin.Caster);
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Temperament.Normal, field), null, AtMeters(0f), 10);
+            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.Field(mine.Id, AtMeters(0f), false, 0);
+            bool hit = false;
+            for (int t = 1; t <= 200 && !hit; t++)
+            {
+                e.Tick(t * 50L, 50, Feet(0f), Free, mine.Id);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    hit |= ev.Kind == EncounterEventKind.Hit && ev.SourceId == mine.Id && ev.TargetId == timid.Id;
+                }
+            }
+
+            Assert.That(hit, Is.True, "accuracy 100 % field reached the timid wild");
+            Assert.That(timid.Engaged || timid.Combatant.IsFainted, Is.True, "the Hit engaged it");
+        }
+
+        // E2-SOL-05 (r2): once the character is Downed and nothing else can fight, ticks consume no combat draws.
+        [Test]
+        public void After_the_player_is_downed_a_lone_wild_draws_nothing()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+            e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            var vitals = new PlayerVitals(new PlayerVitalsConfig(1, 600, 400, 800));
+            e.AttachPlayer(vitals);
+            int t = 1;
+            for (; t <= 400 && !vitals.IsDowned; t++)
+            {
+                e.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
+            }
+
+            Assert.That(vitals.IsDowned, Is.True);
+            Pcg32 before = e.RngForTests;
+            for (int k = 0; k < 40; k++, t++)
+            {
+                e.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
+                Assert.That(e.Events, Is.Empty, "no target left");
+            }
+
+            Pcg32 after = e.RngForTests;
+            Assert.That(after.NextUInt(), Is.EqualTo(before.NextUInt()), "the stream did not move after Downed");
+        }
+
+        // E2-SOL-05 (r2): one wild burst over several targets resolves units in ascending id, the character last. A
+        // replay of the same seed would faithfully repeat a reversed order, so pin the order itself.
+        [Test]
+        public void A_wild_burst_resolves_targets_in_id_order_with_the_player_last()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
+            EncounterUnit a = e.AddCreature(EncounterSide.Player, Creature("a", Temperament.Normal), null, AtMeters(1f), 10);
+            EncounterUnit b = e.AddCreature(EncounterSide.Player, Creature("b", Temperament.Normal), null, AtMeters(-1f), 10);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild,
+                Creature("w", Temperament.Fierce, ShapedMove("burst_w", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
+                null, AtMeters(0f), 50);
+            e.Field(a.Id, AtMeters(1f), false, 0);
+            e.Field(b.Id, AtMeters(-1f), false, 0);
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            var order = new List<int>();
+            for (int t = 1; t <= 200 && order.Count == 0; t++)
+            {
+                e.Tick(t * 50L, 50, Feet(0.5f), Free, a.Id);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    if (ev.SourceId == wild.Id && (ev.Kind == EncounterEventKind.Hit || ev.Kind == EncounterEventKind.Miss))
+                    {
+                        order.Add(ev.TargetId);
+                    }
+                }
+            }
+
+            Assert.That(order, Is.EqualTo(new[] { a.Id, b.Id, Encounter.PlayerCharacterId }),
+                "every target touched, ascending id, character last");
+        }
+
         [Test]
         public void Wild_attacks_the_player_character_and_downs_it_once()
         {
