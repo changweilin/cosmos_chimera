@@ -1,0 +1,1253 @@
+{
+  "spec": "cosmimera-rig-spec/1",
+  "template": "character-model-rig@4.3.0",
+  "subject_id": "chr_1286",
+  "source_pack": "chr-20261106-1286-1855",
+  "character_name_zh": "雨森澄羽",
+  "character_name_en": "Amemori Sumiha",
+  "coordinate_system": {
+    "scale": 1.0,
+    "up_axis": "+Y",
+    "forward_axis": "-Z",
+    "right_axis": "-X",
+    "origin": "ground_center_feet_y0",
+    "height_m": 1.63
+  },
+  "topology_and_textures": {
+    "triangles": 23352,
+    "vertices": 13589,
+    "triangle_budget": [
+      15000,
+      25000
+    ],
+    "pbr_resolution": [
+      2048,
+      2048
+    ],
+    "maps": [
+      "baseColorTexture",
+      "normalTexture",
+      "metallicRoughnessTexture"
+    ]
+  },
+  "skeleton": {
+    "avatar_type": "Unity_Humanoid",
+    "total_bones": 67,
+    "max_bones_limit": 75,
+    "root_bone": "Hips",
+    "humanoid_mapping": {
+      "Hips": "Hips",
+      "Spine": "Spine",
+      "Chest": "Chest",
+      "UpperChest": "UpperChest",
+      "Neck": "Neck",
+      "Head": "Head",
+      "LeftEye": "LeftEye",
+      "RightEye": "RightEye",
+      "Jaw": "Jaw",
+      "LeftShoulder": "LeftShoulder",
+      "LeftUpperArm": "LeftUpperArm",
+      "LeftLowerArm": "LeftLowerArm",
+      "LeftHand": "LeftHand",
+      "LeftThumbProximal": "LeftThumbProximal",
+      "LeftThumbIntermediate": "LeftThumbIntermediate",
+      "LeftThumbDistal": "LeftThumbDistal",
+      "LeftIndexProximal": "LeftIndexProximal",
+      "LeftIndexIntermediate": "LeftIndexIntermediate",
+      "LeftIndexDistal": "LeftIndexDistal",
+      "LeftMiddleProximal": "LeftMiddleProximal",
+      "LeftMiddleIntermediate": "LeftMiddleIntermediate",
+      "LeftMiddleDistal": "LeftMiddleDistal",
+      "LeftRingProximal": "LeftRingProximal",
+      "LeftRingIntermediate": "LeftRingIntermediate",
+      "LeftRingDistal": "LeftRingDistal",
+      "LeftLittleProximal": "LeftLittleProximal",
+      "LeftLittleIntermediate": "LeftLittleIntermediate",
+      "LeftLittleDistal": "LeftLittleDistal",
+      "RightShoulder": "RightShoulder",
+      "RightUpperArm": "RightUpperArm",
+      "RightLowerArm": "RightLowerArm",
+      "RightHand": "RightHand",
+      "RightThumbProximal": "RightThumbProximal",
+      "RightThumbIntermediate": "RightThumbIntermediate",
+      "RightThumbDistal": "RightThumbDistal",
+      "RightIndexProximal": "RightIndexProximal",
+      "RightIndexIntermediate": "RightIndexIntermediate",
+      "RightIndexDistal": "RightIndexDistal",
+      "RightMiddleProximal": "RightMiddleProximal",
+      "RightMiddleIntermediate": "RightMiddleIntermediate",
+      "RightMiddleDistal": "RightMiddleDistal",
+      "RightRingProximal": "RightRingProximal",
+      "RightRingIntermediate": "RightRingIntermediate",
+      "RightRingDistal": "RightRingDistal",
+      "RightLittleProximal": "RightLittleProximal",
+      "RightLittleIntermediate": "RightLittleIntermediate",
+      "RightLittleDistal": "RightLittleDistal",
+      "LeftUpperLeg": "LeftUpperLeg",
+      "LeftLowerLeg": "LeftLowerLeg",
+      "LeftFoot": "LeftFoot",
+      "LeftToes": "LeftToes",
+      "RightUpperLeg": "RightUpperLeg",
+      "RightLowerLeg": "RightLowerLeg",
+      "RightFoot": "RightFoot",
+      "RightToes": "RightToes"
+    },
+    "extra_bones": [
+      "Extra_Hair_01",
+      "Extra_Hair_02",
+      "Extra_Hair_03",
+      "Extra_Accessory_L",
+      "Extra_Accessory_R",
+      "Extra_Hem_L",
+      "Extra_Hem_R"
+    ],
+    "socket_bones": [
+      "Socket_HandR_Prop",
+      "Socket_HandL_Prop",
+      "Socket_Back_Pack",
+      "Socket_Throw",
+      "Socket_Head_FX"
+    ],
+    "bones": [
+      {
+        "index": 0,
+        "name": "Hips",
+        "parent": -1,
+        "parent_name": null,
+        "humanoid_role": "Hips",
+        "head_pos": [
+          0.0,
+          0.86933,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.86933,
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "name": "Spine",
+        "parent": 0,
+        "parent_name": "Hips",
+        "humanoid_role": "Spine",
+        "head_pos": [
+          0.0,
+          0.98788,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.11855,
+          0.0
+        ]
+      },
+      {
+        "index": 2,
+        "name": "Chest",
+        "parent": 1,
+        "parent_name": "Spine",
+        "humanoid_role": "Chest",
+        "head_pos": [
+          0.0,
+          1.10642,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.11855,
+          0.0
+        ]
+      },
+      {
+        "index": 3,
+        "name": "UpperChest",
+        "parent": 2,
+        "parent_name": "Chest",
+        "humanoid_role": "UpperChest",
+        "head_pos": [
+          0.0,
+          1.22497,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.11855,
+          0.0
+        ]
+      },
+      {
+        "index": 4,
+        "name": "Neck",
+        "parent": 3,
+        "parent_name": "UpperChest",
+        "humanoid_role": "Neck",
+        "head_pos": [
+          0.0,
+          1.33364,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.10867,
+          0.0
+        ]
+      },
+      {
+        "index": 5,
+        "name": "Head",
+        "parent": 4,
+        "parent_name": "Neck",
+        "humanoid_role": "Head",
+        "head_pos": [
+          0.0,
+          1.41267,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.07903,
+          0.0
+        ]
+      },
+      {
+        "index": 6,
+        "name": "LeftEye",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": "LeftEye",
+        "head_pos": [
+          0.03161,
+          1.48182,
+          -0.07705
+        ],
+        "local_pos": [
+          0.03161,
+          0.06915,
+          -0.07705
+        ]
+      },
+      {
+        "index": 7,
+        "name": "RightEye",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": "RightEye",
+        "head_pos": [
+          -0.03161,
+          1.48182,
+          -0.07705
+        ],
+        "local_pos": [
+          -0.03161,
+          0.06915,
+          -0.07705
+        ]
+      },
+      {
+        "index": 8,
+        "name": "Jaw",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": "Jaw",
+        "head_pos": [
+          0.0,
+          1.42255,
+          -0.05433
+        ],
+        "local_pos": [
+          0.0,
+          0.00988,
+          -0.05433
+        ]
+      },
+      {
+        "index": 9,
+        "name": "LeftShoulder",
+        "parent": 3,
+        "parent_name": "UpperChest",
+        "humanoid_role": "LeftShoulder",
+        "head_pos": [
+          0.05927,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          0.05927,
+          0.06915,
+          0.0
+        ]
+      },
+      {
+        "index": 10,
+        "name": "LeftUpperArm",
+        "parent": 9,
+        "parent_name": "LeftShoulder",
+        "humanoid_role": "LeftUpperArm",
+        "head_pos": [
+          0.13336,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          0.07409,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 11,
+        "name": "LeftLowerArm",
+        "parent": 10,
+        "parent_name": "LeftUpperArm",
+        "humanoid_role": "LeftLowerArm",
+        "head_pos": [
+          0.34576,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          0.21239,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 12,
+        "name": "LeftHand",
+        "parent": 11,
+        "parent_name": "LeftLowerArm",
+        "humanoid_role": "LeftHand",
+        "head_pos": [
+          0.54333,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          0.19758,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 13,
+        "name": "LeftThumbProximal",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": "LeftThumbProximal",
+        "head_pos": [
+          0.56309,
+          1.28424,
+          -0.02371
+        ],
+        "local_pos": [
+          0.01976,
+          -0.00988,
+          -0.02371
+        ]
+      },
+      {
+        "index": 14,
+        "name": "LeftThumbIntermediate",
+        "parent": 13,
+        "parent_name": "LeftThumbProximal",
+        "humanoid_role": "LeftThumbIntermediate",
+        "head_pos": [
+          0.58779,
+          1.2793,
+          -0.03754
+        ],
+        "local_pos": [
+          0.0247,
+          -0.00494,
+          -0.01383
+        ]
+      },
+      {
+        "index": 15,
+        "name": "LeftThumbDistal",
+        "parent": 14,
+        "parent_name": "LeftThumbIntermediate",
+        "humanoid_role": "LeftThumbDistal",
+        "head_pos": [
+          0.60755,
+          1.27436,
+          -0.04742
+        ],
+        "local_pos": [
+          0.01976,
+          -0.00494,
+          -0.00988
+        ]
+      },
+      {
+        "index": 16,
+        "name": "LeftIndexProximal",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": "LeftIndexProximal",
+        "head_pos": [
+          0.60261,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          0.05927,
+          0.00198,
+          -0.01976
+        ]
+      },
+      {
+        "index": 17,
+        "name": "LeftIndexIntermediate",
+        "parent": 16,
+        "parent_name": "LeftIndexProximal",
+        "humanoid_role": "LeftIndexIntermediate",
+        "head_pos": [
+          0.63224,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          0.02964,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 18,
+        "name": "LeftIndexDistal",
+        "parent": 17,
+        "parent_name": "LeftIndexIntermediate",
+        "humanoid_role": "LeftIndexDistal",
+        "head_pos": [
+          0.65694,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          0.0247,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 19,
+        "name": "LeftMiddleProximal",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": "LeftMiddleProximal",
+        "head_pos": [
+          0.60458,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          0.06125,
+          0.00395,
+          -0.00593
+        ]
+      },
+      {
+        "index": 20,
+        "name": "LeftMiddleIntermediate",
+        "parent": 19,
+        "parent_name": "LeftMiddleProximal",
+        "humanoid_role": "LeftMiddleIntermediate",
+        "head_pos": [
+          0.63718,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          0.0326,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 21,
+        "name": "LeftMiddleDistal",
+        "parent": 20,
+        "parent_name": "LeftMiddleIntermediate",
+        "humanoid_role": "LeftMiddleDistal",
+        "head_pos": [
+          0.66385,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          0.02667,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 22,
+        "name": "LeftRingProximal",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": "LeftRingProximal",
+        "head_pos": [
+          0.60261,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          0.05927,
+          0.00198,
+          0.00889
+        ]
+      },
+      {
+        "index": 23,
+        "name": "LeftRingIntermediate",
+        "parent": 22,
+        "parent_name": "LeftRingProximal",
+        "humanoid_role": "LeftRingIntermediate",
+        "head_pos": [
+          0.63224,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          0.02964,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 24,
+        "name": "LeftRingDistal",
+        "parent": 23,
+        "parent_name": "LeftRingIntermediate",
+        "humanoid_role": "LeftRingDistal",
+        "head_pos": [
+          0.65595,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          0.02371,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 25,
+        "name": "LeftLittleProximal",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": "LeftLittleProximal",
+        "head_pos": [
+          0.59767,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          0.05433,
+          -0.00198,
+          0.02173
+        ]
+      },
+      {
+        "index": 26,
+        "name": "LeftLittleIntermediate",
+        "parent": 25,
+        "parent_name": "LeftLittleProximal",
+        "humanoid_role": "LeftLittleIntermediate",
+        "head_pos": [
+          0.62236,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          0.0247,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 27,
+        "name": "LeftLittleDistal",
+        "parent": 26,
+        "parent_name": "LeftLittleIntermediate",
+        "humanoid_role": "LeftLittleDistal",
+        "head_pos": [
+          0.64212,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          0.01976,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 28,
+        "name": "RightShoulder",
+        "parent": 3,
+        "parent_name": "UpperChest",
+        "humanoid_role": "RightShoulder",
+        "head_pos": [
+          -0.05927,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          -0.05927,
+          0.06915,
+          0.0
+        ]
+      },
+      {
+        "index": 29,
+        "name": "RightUpperArm",
+        "parent": 28,
+        "parent_name": "RightShoulder",
+        "humanoid_role": "RightUpperArm",
+        "head_pos": [
+          -0.13336,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          -0.07409,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 30,
+        "name": "RightLowerArm",
+        "parent": 29,
+        "parent_name": "RightUpperArm",
+        "humanoid_role": "RightLowerArm",
+        "head_pos": [
+          -0.34576,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          -0.21239,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 31,
+        "name": "RightHand",
+        "parent": 30,
+        "parent_name": "RightLowerArm",
+        "humanoid_role": "RightHand",
+        "head_pos": [
+          -0.54333,
+          1.29412,
+          0.0
+        ],
+        "local_pos": [
+          -0.19758,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 32,
+        "name": "RightThumbProximal",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": "RightThumbProximal",
+        "head_pos": [
+          -0.56309,
+          1.28424,
+          -0.02371
+        ],
+        "local_pos": [
+          -0.01976,
+          -0.00988,
+          -0.02371
+        ]
+      },
+      {
+        "index": 33,
+        "name": "RightThumbIntermediate",
+        "parent": 32,
+        "parent_name": "RightThumbProximal",
+        "humanoid_role": "RightThumbIntermediate",
+        "head_pos": [
+          -0.58779,
+          1.2793,
+          -0.03754
+        ],
+        "local_pos": [
+          -0.0247,
+          -0.00494,
+          -0.01383
+        ]
+      },
+      {
+        "index": 34,
+        "name": "RightThumbDistal",
+        "parent": 33,
+        "parent_name": "RightThumbIntermediate",
+        "humanoid_role": "RightThumbDistal",
+        "head_pos": [
+          -0.60755,
+          1.27436,
+          -0.04742
+        ],
+        "local_pos": [
+          -0.01976,
+          -0.00494,
+          -0.00988
+        ]
+      },
+      {
+        "index": 35,
+        "name": "RightIndexProximal",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": "RightIndexProximal",
+        "head_pos": [
+          -0.60261,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          -0.05927,
+          0.00198,
+          -0.01976
+        ]
+      },
+      {
+        "index": 36,
+        "name": "RightIndexIntermediate",
+        "parent": 35,
+        "parent_name": "RightIndexProximal",
+        "humanoid_role": "RightIndexIntermediate",
+        "head_pos": [
+          -0.63224,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          -0.02964,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 37,
+        "name": "RightIndexDistal",
+        "parent": 36,
+        "parent_name": "RightIndexIntermediate",
+        "humanoid_role": "RightIndexDistal",
+        "head_pos": [
+          -0.65694,
+          1.2961,
+          -0.01976
+        ],
+        "local_pos": [
+          -0.0247,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 38,
+        "name": "RightMiddleProximal",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": "RightMiddleProximal",
+        "head_pos": [
+          -0.60458,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          -0.06125,
+          0.00395,
+          -0.00593
+        ]
+      },
+      {
+        "index": 39,
+        "name": "RightMiddleIntermediate",
+        "parent": 38,
+        "parent_name": "RightMiddleProximal",
+        "humanoid_role": "RightMiddleIntermediate",
+        "head_pos": [
+          -0.63718,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          -0.0326,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 40,
+        "name": "RightMiddleDistal",
+        "parent": 39,
+        "parent_name": "RightMiddleIntermediate",
+        "humanoid_role": "RightMiddleDistal",
+        "head_pos": [
+          -0.66385,
+          1.29807,
+          -0.00593
+        ],
+        "local_pos": [
+          -0.02667,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 41,
+        "name": "RightRingProximal",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": "RightRingProximal",
+        "head_pos": [
+          -0.60261,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          -0.05927,
+          0.00198,
+          0.00889
+        ]
+      },
+      {
+        "index": 42,
+        "name": "RightRingIntermediate",
+        "parent": 41,
+        "parent_name": "RightRingProximal",
+        "humanoid_role": "RightRingIntermediate",
+        "head_pos": [
+          -0.63224,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          -0.02964,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 43,
+        "name": "RightRingDistal",
+        "parent": 42,
+        "parent_name": "RightRingIntermediate",
+        "humanoid_role": "RightRingDistal",
+        "head_pos": [
+          -0.65595,
+          1.2961,
+          0.00889
+        ],
+        "local_pos": [
+          -0.02371,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 44,
+        "name": "RightLittleProximal",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": "RightLittleProximal",
+        "head_pos": [
+          -0.59767,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          -0.05433,
+          -0.00198,
+          0.02173
+        ]
+      },
+      {
+        "index": 45,
+        "name": "RightLittleIntermediate",
+        "parent": 44,
+        "parent_name": "RightLittleProximal",
+        "humanoid_role": "RightLittleIntermediate",
+        "head_pos": [
+          -0.62236,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          -0.0247,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 46,
+        "name": "RightLittleDistal",
+        "parent": 45,
+        "parent_name": "RightLittleIntermediate",
+        "humanoid_role": "RightLittleDistal",
+        "head_pos": [
+          -0.64212,
+          1.29215,
+          0.02173
+        ],
+        "local_pos": [
+          -0.01976,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "index": 47,
+        "name": "LeftUpperLeg",
+        "parent": 0,
+        "parent_name": "Hips",
+        "humanoid_role": "LeftUpperLeg",
+        "head_pos": [
+          0.08693,
+          0.82982,
+          0.0
+        ],
+        "local_pos": [
+          0.08693,
+          -0.03952,
+          0.0
+        ]
+      },
+      {
+        "index": 48,
+        "name": "LeftLowerLeg",
+        "parent": 47,
+        "parent_name": "LeftUpperLeg",
+        "humanoid_role": "LeftLowerLeg",
+        "head_pos": [
+          0.08693,
+          0.45442,
+          0.00988
+        ],
+        "local_pos": [
+          0.0,
+          -0.37539,
+          0.00988
+        ]
+      },
+      {
+        "index": 49,
+        "name": "LeftFoot",
+        "parent": 48,
+        "parent_name": "LeftLowerLeg",
+        "humanoid_role": "LeftFoot",
+        "head_pos": [
+          0.08693,
+          0.08891,
+          0.01976
+        ],
+        "local_pos": [
+          0.0,
+          -0.36552,
+          0.00988
+        ]
+      },
+      {
+        "index": 50,
+        "name": "LeftToes",
+        "parent": 49,
+        "parent_name": "LeftFoot",
+        "humanoid_role": "LeftToes",
+        "head_pos": [
+          0.08693,
+          0.0247,
+          -0.08891
+        ],
+        "local_pos": [
+          0.0,
+          -0.06421,
+          -0.10867
+        ]
+      },
+      {
+        "index": 51,
+        "name": "RightUpperLeg",
+        "parent": 0,
+        "parent_name": "Hips",
+        "humanoid_role": "RightUpperLeg",
+        "head_pos": [
+          -0.08693,
+          0.82982,
+          0.0
+        ],
+        "local_pos": [
+          -0.08693,
+          -0.03952,
+          0.0
+        ]
+      },
+      {
+        "index": 52,
+        "name": "RightLowerLeg",
+        "parent": 51,
+        "parent_name": "RightUpperLeg",
+        "humanoid_role": "RightLowerLeg",
+        "head_pos": [
+          -0.08693,
+          0.45442,
+          0.00988
+        ],
+        "local_pos": [
+          0.0,
+          -0.37539,
+          0.00988
+        ]
+      },
+      {
+        "index": 53,
+        "name": "RightFoot",
+        "parent": 52,
+        "parent_name": "RightLowerLeg",
+        "humanoid_role": "RightFoot",
+        "head_pos": [
+          -0.08693,
+          0.08891,
+          0.01976
+        ],
+        "local_pos": [
+          0.0,
+          -0.36552,
+          0.00988
+        ]
+      },
+      {
+        "index": 54,
+        "name": "RightToes",
+        "parent": 53,
+        "parent_name": "RightFoot",
+        "humanoid_role": "RightToes",
+        "head_pos": [
+          -0.08693,
+          0.0247,
+          -0.08891
+        ],
+        "local_pos": [
+          0.0,
+          -0.06421,
+          -0.10867
+        ]
+      },
+      {
+        "index": 55,
+        "name": "Extra_Hair_01",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.03952,
+          1.56085,
+          0.04939
+        ],
+        "local_pos": [
+          -0.03952,
+          0.14818,
+          0.04939
+        ]
+      },
+      {
+        "index": 56,
+        "name": "Extra_Hair_02",
+        "parent": 55,
+        "parent_name": "Extra_Hair_01",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.09879,
+          1.50158,
+          0.11855
+        ],
+        "local_pos": [
+          -0.05927,
+          -0.05927,
+          0.06915
+        ]
+      },
+      {
+        "index": 57,
+        "name": "Extra_Hair_03",
+        "parent": 56,
+        "parent_name": "Extra_Hair_02",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.14818,
+          1.40279,
+          0.15806
+        ],
+        "local_pos": [
+          -0.04939,
+          -0.09879,
+          0.03952
+        ]
+      },
+      {
+        "index": 58,
+        "name": "Extra_Accessory_L",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": null,
+        "head_pos": [
+          0.06915,
+          1.56085,
+          -0.01976
+        ],
+        "local_pos": [
+          0.06915,
+          0.14818,
+          -0.01976
+        ]
+      },
+      {
+        "index": 59,
+        "name": "Extra_Accessory_R",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.06915,
+          1.56085,
+          -0.01976
+        ],
+        "local_pos": [
+          -0.06915,
+          0.14818,
+          -0.01976
+        ]
+      },
+      {
+        "index": 60,
+        "name": "Extra_Hem_L",
+        "parent": 0,
+        "parent_name": "Hips",
+        "humanoid_role": null,
+        "head_pos": [
+          0.11855,
+          0.81006,
+          -0.03952
+        ],
+        "local_pos": [
+          0.11855,
+          -0.05927,
+          -0.03952
+        ]
+      },
+      {
+        "index": 61,
+        "name": "Extra_Hem_R",
+        "parent": 0,
+        "parent_name": "Hips",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.11855,
+          0.81006,
+          -0.03952
+        ],
+        "local_pos": [
+          -0.11855,
+          -0.05927,
+          -0.03952
+        ]
+      },
+      {
+        "index": 62,
+        "name": "Socket_HandR_Prop",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.59273,
+          1.304,
+          -0.02964
+        ],
+        "local_pos": [
+          -0.04939,
+          0.00988,
+          -0.02964
+        ]
+      },
+      {
+        "index": 63,
+        "name": "Socket_HandL_Prop",
+        "parent": 12,
+        "parent_name": "LeftHand",
+        "humanoid_role": null,
+        "head_pos": [
+          0.59273,
+          1.304,
+          -0.02964
+        ],
+        "local_pos": [
+          0.04939,
+          0.00988,
+          -0.02964
+        ]
+      },
+      {
+        "index": 64,
+        "name": "Socket_Back_Pack",
+        "parent": 3,
+        "parent_name": "UpperChest",
+        "humanoid_role": null,
+        "head_pos": [
+          0.0,
+          1.18545,
+          0.10867
+        ],
+        "local_pos": [
+          0.0,
+          -0.03952,
+          0.10867
+        ]
+      },
+      {
+        "index": 65,
+        "name": "Socket_Throw",
+        "parent": 31,
+        "parent_name": "RightHand",
+        "humanoid_role": null,
+        "head_pos": [
+          -0.62236,
+          1.304,
+          -0.04939
+        ],
+        "local_pos": [
+          -0.07903,
+          0.00988,
+          -0.04939
+        ]
+      },
+      {
+        "index": 66,
+        "name": "Socket_Head_FX",
+        "parent": 5,
+        "parent_name": "Head",
+        "humanoid_role": null,
+        "head_pos": [
+          0.0,
+          1.63988,
+          0.0
+        ],
+        "local_pos": [
+          0.0,
+          0.22721,
+          0.0
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "id": "chr_amemori_sumiha",
+  "name_zh": "雨森澄羽",
+  "name_en": "Amemori Sumiha",
+  "role": "大廳 NPC：孵蛋師",
+  "ethnicity": "東亞體系",
+  "region": "日本",
+  "gender": "女",
+  "age": 22,
+  "height_cm": 163,
+  "body_type": "纖細結實；窄肩、長腿，重心穩定，適合長時間巡檢孵化艙",
+  "personality": [
+    "冷靜",
+    "好奇"
+  ],
+  "style": "傳統民族服融合現代剪裁",
+  "interests": [
+    "釣魚",
+    "電子遊戲"
+  ],
+  "likes": [
+    "毛茸茸的生物",
+    "辣的食物"
+  ],
+  "dislikes": [
+    "等待",
+    "被小看"
+  ],
+  "vessel": "talisman_card",
+  "palette_hex": [
+    "#383049",
+    "#F4E9D9",
+    "#D36E55",
+    "#D9B66D",
+    "#A9D9DF"
+  ],
+  "silhouette_keywords": [
+    "側後高髮髻與短散髮",
+    "外擴短版寬袖",
+    "大型卵形孵化背包",
+    "高腰短褲與雙側短垂片",
+    "厚底短靴與右腰卡匣"
+  ],
+  "outfit_breakdown": [
+    {
+      "part": "後束短髮、橘紅雙葉髮飾",
+      "material": "低面數髮束 + 兩個可擺動骨節；霧面布蝴蝶結",
+      "color_hex": "#383049"
+    },
+    {
+      "part": "短版和式輪廓機能外套、分片寬袖",
+      "material": "不透明厚織物；袖口收窄以露出手腕",
+      "color_hex": "#F4E9D9"
+    },
+    {
+      "part": "貼身高領內搭及高腰短褲",
+      "material": "耐磨彈性機能布",
+      "color_hex": "#383049"
+    },
+    {
+      "part": "腰帶、短垂片、袖口蛋形抽象圖樣",
+      "material": "厚織物 + 印花（非傳統宗教紋樣）",
+      "color_hex": "#D36E55"
+    },
+    {
+      "part": "孵蛋包主機外殼、背帶扣具",
+      "material": "硬殼聚合物、磨砂金屬",
+      "color_hex": "#D9B66D"
+    },
+    {
+      "part": "孵化觀測窗、操作指示",
+      "material": "半透明效果由單片不透明 emissive 材質表現",
+      "color_hex": "#A9D9DF"
+    },
+    {
+      "part": "中筒襪、低多邊形厚底靴",
+      "material": "棉混紡與霧面橡膠",
+      "color_hex": "#383049"
+    },
+    {
+      "part": "符籙卡片與右腰硬式卡匣",
+      "material": "複合樹脂卡、鍍銅導電印刷電路",
+      "color_hex": "#D36E55"
+    },
+    {
+      "part": "釣魚浮標與掌機吊飾",
+      "material": "硬塑膠與金屬圈，與腰帶固定",
+      "color_hex": "#D9B66D"
+    }
+  ],
+  "backstory_zh": "澄羽在小行星孵化站長大，習慣用釣魚時的耐性觀察卵殼微光，卻總嫌機器等待太久。她把遊戲中的連鎖操作改成孵化卡校準法；看似冷淡，遇上毛茸茸的幼宙獸就會不自覺放柔聲音。",
+  "voice_lines_zh": [
+    "別急著戳蛋殼。讓我先讀它的脈動。",
+    "三秒就能校準……嗯，這次兩秒。",
+    "這孩子毛茸茸的？先讓我抱一下，然後再談手續。"
+  ],
+  "sensitivity": "review",
+  "sensitivity_note": "僅取日本層疊服裝線條、日常結繩與配色意象；不借用神社儀式服、神祇名、護符文字或宗教符號。符籙卡片以孵化電路與蛋形圓環取代可辨識的神聖書符。主立繪局部印花、攜帶配件請文化顧問於量產前再次審閱。",
+  "production_notes": {
+    "model_target": "Unity 6 URP / PC + Steam Deck；15k–25k triangles (LOD0)",
+    "orthographic_note": "技術視圖為根據主立繪程式繪製的簡化示意，未達專業原畫正交一致性；image-to-3D 自動建模前需美術校正與人工監修。",
+    "recommended_triangles": {
+      "body_hair_face": 8700,
+      "outfit": 6500,
+      "backpack": 4400,
+      "props": 1400
+    },
+    "bones": "後髮與蝴蝶結 2–3 根輔助骨；兩片衣襬 2 根；背包視為單一剛體；無透明長披風。",
+    "attachment_sockets": {
+      "backpack": "spine_03_back",
+      "card_holster": "pelvis_r",
+      "card_in_hand": "hand_r",
+      "fishing_charm": "pelvis_l"
+    },
+    "rig_notes": "T-pose 雙臂水平張開，手部裸露；袖片縮至上臂，腋下保持 10 cm 以上空隙，跨下不使用連續布片。",
+    "card_size_cm": [
+      11,
+      7,
+      0.3
+    ],
+    "backpack_size_cm": [
+      43,
+      32,
+      17
+    ]
+  },
+  "timeline": "晶石賽博/霓虹魔導義體紀元",
+  "age_band": "青年",
+  "height": 163,
+  "cup_size": "C",
+  "outfit_palette": [
+    "海軍深藍",
+    "象牙米白",
+    "黃銅金",
+    "珊瑚鮮橘",
+    "以太水藍"
+  ],
+  "hair_palette": [
+    "曜石純黑",
+    "清透天藍"
+  ],
+  "eye_palette": [
+    "琥珀金"
+  ],
+  "biography": "雨森澄羽誕生於霓虹交織的小行星軌道孵化基地，家族代代皆是專注於以太生命律動的調律技師。在漫天數據流與冰冷機房中長大的她，年少時便能單憑指尖微觸感知卵殼內最纖細的以太震顫。面對外界對其年輕資歷的質疑，她以近乎偏執的冷靜與釣魚般的耐性，研發出將古老符籙轉譯為微電路脈衝的校準卡片。平日看似寡言疏離、行事雷厲風行，唯獨在破殼而出的毛茸茸幼獸將溫熱鼻尖湊向掌心時，澄羽才會卸下心防，露出只屬於守護者的溫柔笑意。",
+  "weight_kg": 48,
+  "weight": "48 kg",
+  "body_fat": "17.5%"
+}
