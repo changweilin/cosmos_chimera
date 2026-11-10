@@ -108,6 +108,17 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: Configure ran. Post: >= 1. Side effects: none.</remarks>
         internal int PlayerMaxHpForTests => _vitals.MaxHp;
 
+        /// <summary>Lowers the player character to <paramref name="hp"/> outside any Tick, so the next real hit downs it.</summary>
+        /// <remarks>
+        /// Pre: Configure ran; 1 &lt;= hp &lt;= current Hp. Post: PlayerHpForTests == hp; no PlayerDowned event is raised.
+        /// Side effects: player HP; advances the vitals time watermark to NowMsForTests.
+        /// </remarks>
+        internal void WoundPlayerForTests(int hp)
+        {
+            Contract.Requires(_vitals != null && hp >= 1 && hp <= _vitals.Hp, "1 <= hp <= current player HP");
+            _vitals.ApplyDamage(_vitals.Hp - hp, _nowMs);
+        }
+
         /// <summary>Copies the active team ids.</summary>
         /// <remarks>Pre: Configure ran. Post: detached list. Side effects: allocates a snapshot.</remarks>
         internal IReadOnlyList<int> ActiveUnitsForTests => new List<int>(_team.Active).ToArray();

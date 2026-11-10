@@ -101,11 +101,12 @@ namespace Cosmimera.Combat.Tests
             EncounterUnit fierce = e.AddCreature(EncounterSide.Wild, Creature("f", Temperament.Fierce), null, AtMeters(100f), 10);
             EncounterUnit apex = e.AddCreature(EncounterSide.Wild, Creature("a", Temperament.Apex), null, AtMeters(125f), 10);
             Assert.That(e.TerritoryRadiusM(timid.Id), Is.EqualTo(0f));
-            Assert.That(e.TerritoryRadiusM(cautious.Id), Is.EqualTo(4f).Within(1e-6f));
-            Assert.That(e.TerritoryRadiusM(normal.Id), Is.EqualTo(8f).Within(1e-6f));
-            Assert.That(e.TerritoryRadiusM(territorial.Id), Is.EqualTo(14f).Within(1e-6f));
-            Assert.That(e.TerritoryRadiusM(fierce.Id), Is.EqualTo(20f).Within(1e-6f));
-            Assert.That(e.TerritoryRadiusM(apex.Id), Is.EqualTo(28f).Within(1e-6f));
+            // mm × 0.001f is not exact in float (28000 × 0.001f = 28.0000019); 1e-5 m covers that rounding at 28 m.
+            Assert.That(e.TerritoryRadiusM(cautious.Id), Is.EqualTo(4f).Within(1e-5f));
+            Assert.That(e.TerritoryRadiusM(normal.Id), Is.EqualTo(8f).Within(1e-5f));
+            Assert.That(e.TerritoryRadiusM(territorial.Id), Is.EqualTo(14f).Within(1e-5f));
+            Assert.That(e.TerritoryRadiusM(fierce.Id), Is.EqualTo(20f).Within(1e-5f));
+            Assert.That(e.TerritoryRadiusM(apex.Id), Is.EqualTo(28f).Within(1e-5f));
             Assert.That(e.TerritoryRadiusM(apex.Id), Is.LessThan(Encounter.DisengageRadiusM));
             Assert.Throws<ContractException>(() => e.TerritoryRadiusM(99));
         }

@@ -414,11 +414,11 @@ namespace Cosmimera.Bootstrap.Tests
         // REQ: docs/reviews/P2-05-wiring-sol.md W-03 — every end path hands its drops to the lobby (Q-C32: win, loss and
         // abandon all keep materials). The seed makes the boss's knock-out the stream's first, successful roll, so the
         // test does not depend on balance.json's chance values.
-        public enum EndPath { Victory, Defeat, Abandon }
+        public enum EndPath { Victory, Defeat, Abandon, Downed }
 
         [UnityTest]
         public IEnumerator Every_end_path_hands_the_run_materials_to_the_lobby(
-            [Values(EndPath.Victory, EndPath.Defeat, EndPath.Abandon)] EndPath path)
+            [Values(EndPath.Victory, EndPath.Defeat, EndPath.Abandon, EndPath.Downed)] EndPath path)
         {
             Env env = LoadEnv();
             MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
@@ -464,6 +464,22 @@ namespace Cosmimera.Bootstrap.Tests
                     s.AbandonForTests();
                     Assert.That(s.EndedForTests, Is.False, "the first press only arms");
                     s.AbandonForTests();
+                    break;
+                case EndPath.Downed:
+                    // Q-C33: a real wild hit through Encounter.Tick (not a seam) must raise PlayerDowned and settle the
+                    // run as a defeat. The party stays parked >40 m away so the player is the only intruder in reach.
+                    RunSession.UnitSnapshot target = s.UnitsForTests.First(u =>
+                        u.Side == EncounterSide.Wild && u.Fielded && !u.IsFainted && u.Id != boss);
+                    float3 wildUp = s.DirectionForTests(target.Position);
+                    MovePlayer(s, math.normalize(wildUp * Radius + PlanetFrame.FromUp(wildUp).East * 3f));
+                    s.WoundPlayerForTests(1);
+                    s.ProvokeForTests(target.Id);
+                    for (int i = 0; i < 2000 && !s.EndedForTests; i++)
+                    {
+                        Step(s);
+                    }
+
+                    Assert.That(s.PlayerHpForTests, Is.EqualTo(0), "the run ended because the player was downed");
                     break;
             }
 
