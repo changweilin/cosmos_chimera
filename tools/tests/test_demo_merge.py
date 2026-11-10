@@ -62,10 +62,9 @@ def test_geo_preserves_unity_meta_and_removes_retired(inputs):
     before = unchanged.stat().st_mtime_ns
     assert merge.stage_geo(inputs) == 1
     assert unchanged.stat().st_mtime_ns == before
-    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('active.*.meta'))
-    assert all(p.read_text(encoding="utf-8") == 'guid: old' for p in merge.GEO_OUT.glob('retired.*.meta'))
-    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 6
-    assert all(p.name.endswith('.meta') for p in merge.GEO_OUT.glob('retired.*'))
+    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('*.meta'))
+    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 3
+    assert not list(merge.GEO_OUT.glob('retired.*'))
     assert (merge.GEO_OUT / "handmade.txt").read_text() == 'KEEP'
 
 
