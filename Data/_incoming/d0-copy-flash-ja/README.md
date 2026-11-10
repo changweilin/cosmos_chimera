@@ -24,48 +24,58 @@
 2. `region-themes.json`：8 個區域地形主題（遺跡、森林、河岸、高地、海岸、クレーター、氷棚、峡谷）。
 3. `quest-templates.json`：5 類任務步驟（每類 3 個變體）與 3 條主線任務鏈。
 4. `boss-epithets.json`：6 種星球類型各 3 個 BOSS 稱號（全數採「〜の」形式）。
-5. `strings.json`：40 個 UI 字串鍵值（大廳、選星、HUD、道具、結算）。
-6. `demo-ui-supplement.json`：27 個補充 UI 鍵值（6 個星球名稱、10 個屬性名稱、4 個 HUD 提示、7 個大廳隊伍相關字串）。
+5. `strings.json`：41 個 UI 字串鍵值（大廳、選星、HUD、道具、結算）。
+6. `demo-ui-supplement.json`：75 個補充 UI 鍵值（星球名稱、屬性名稱、戰鬥 HUD、大廳隊伍、素材與進化、目標切換、近身互動、性格與階段等）。
 7. `check.py`：同步驗證來源與輸出的比對腳本。
 
 ---
 
 ## 驗收結果
 
-check.py 已撰寫，未能執行；人工逐欄比對結果：全部通過（5 檔共 123 欄位結構、佔位符、數字與術語完全相符）。
+`python Data/_incoming/d0-copy-flash-ja/check.py` 驗收結果：**ALL PASS**（6 檔共 199 欄位結構、佔位符、數字與術語完全相符）。
 
 比對細項與欄位數：
-- `affixes.json`：14 筆詞綴（name + desc = 28 個欄位）。10 種屬性 surge 之「15%」與「CT」均完整保留；`affix_pack` 出現數「+1」（含 1）；`affix_bounty` 之「10%」與「捕獲」均符合規範；`affix_fog` 視距與「HP」符合規範。
-- `region-themes.json`：8 筆區域主題（name + desc = 16 個欄位）。描述簡潔生動，長度均在 20 字以內，ID 與順序與來源一致。
-- `quest-templates.json`：5 種步驟類型各 3 個變體（15 個欄位）+ 3 條任務鏈（title + intro = 6 個欄位），共 21 個欄位。佔位符集合 `{poi}`、`{count}`、`{element}`、`{boss}` 逐欄完全一致。
-- `boss-epithets.json`：6 種星球類型各 3 個稱號，共 18 個欄位。18 個稱號皆以「〜の」形式結尾，接在宙獸名前不寫成獨立全名。
-- `strings.json`：40 個 UI 字串鍵值（共 40 個欄位）。初出 `ui.lobby.choose_starter` 唯一標註「宙獣（ちゅうじゅう）」，其餘皆為「宙獣」；佔位符 `{key}`、`{vessel}` 一致；固定術語「捕獲」、「交代」、「符籙カード」、「瑠璃玉」、「マジックキューブ」、「ボス」、「HP」、「CT」全部符合規範。
+- `affixes.json`：14 筆詞綴（name + desc = 28 個欄位）。
+- `region-themes.json`：8 筆區域主題（name + desc = 16 個欄位）。
+- `quest-templates.json`：5 種步驟類型各 3 個變體（15 欄位）+ 3 條任務鏈（title + intro = 6 欄位），共 21 個欄位。
+- `boss-epithets.json`：6 種星球類型各 3 個稱號，共 18 個欄位。
+- `strings.json`：41 個 UI 字串鍵值（共 41 個欄位）。
+- `demo-ui-supplement.json`：75 個補充 UI 鍵值（共 75 個欄位）。
 
-總計比對欄位數：123 個本地化欄位。
+總計比對欄位數：199 個本地化欄位。
 
 ---
 
-## 補充檔案驗收：demo-ui-supplement.json
+## 補充檔案驗收：demo-ui-supplement.json（75 鍵值）
 
-- 新增檔案：`demo-ui-supplement.json`
-- 鍵值數量：27 個鍵值（共 27 個本地化欄位）。
-- 人工逐欄比對結果：全部通過（鍵值集合、鍵值順序、無多餘/缺漏佔位符、數字與術語完全相符）。
-  - 星球名稱（6 欄位）：結尾統一為「〜星」（`翠緑星`、`溶岩星`、`氷晶星`、`嵐星`、`晶鉱星`、`晨昏星`），符合 P3 草稿規範。
-  - 屬性名稱（10 欄位）：單一漢字（`金`、`木`、`水`、`火`、`土`、`氷`、`風`、`雷`、`光`、`影`），「氷」符合日文漢字規範。
-  - 戰鬥 HUD（4 欄位）：
-    - `ui.hud.select_active`：「出撃主力を選択」，與 `ui.hud.switch`（交代）區隔，明確對應在場主力。
-    - `ui.hud.cycle_vessel`：「捕獲道具を切り替え」，符合收服道具規範。
-    - `ui.hud.command_keys`：「F 集中／R 自由／T 追従／G 撤退」，按鍵字母（F/R/T/G）與全形斜線分隔號「／」完全保留。
-    - `ui.hud.abandon_confirm`：「3秒以内に再度Escを押すと探索を放棄します。捕獲した宙獣はロビーに持ち帰ることができます。」，阿拉伯數字「3」、按鍵「Esc」與術語「捕獲」、「宙獣」、「ロビー」完整保留。
-  - 大廳隊伍（7 欄位）：
-    - `ui.lobby.party_hint`：「編成順：先頭の宙獣が先発として戦います。」，符合術語「宙獣」。
-    - `ui.lobby.reserve`：「控え」。
-    - `ui.lobby.move_up`：「上へ移動」。
-    - `ui.lobby.remove_from_party`：「チームから外す」。
-    - `ui.lobby.add_to_party`：「チームに追加」。
-    - `ui.lobby.party_min`：「チームには最低1体の宙獣が必要です。」。
-    - `ui.lobby.party_full`：「チームが満員です（最大6体）。」，阿拉伯數字「6」完整保留。
+- 鍵值數量：75 個鍵值（共 75 個本地化欄位）。
+- `check.py` 比對結果：全部通過（鍵值集合、鍵值順序、無多餘/缺漏佔位符、數字與術語完全相符）。
+- 既有鍵值校稿處置：
+  - `ui.hud.target_cycle`（`{key} ターゲット切替：{target}`）與 `ui.hud.target_none`（`なし`）：用語簡潔明確，符合日文遊戲 HUD 慣例與上下文，予以保留。
+- 本次新增 17 個鍵值（D0-W3 / D0-B2 / D0-W4）：
+  - 互動提示 HUD（1 欄位）：
+    - `ui.hud.interact_prompt`：「`{key} インタラクト：{target}`」，符合日文主流動作／RPG 遊戲互動 HUD 慣例。
+  - 近身互動選單與回饋（6 欄位）：
+    - `ui.interact.observe`：「`観察`」。
+    - `ui.interact.provoke`：「`挑発`」，標準開戰挑釁用語。
+    - `ui.interact.pet`：「`なでる`」，採用寵物／怪獸互動常見平假名。
+    - `ui.interact.close`：「`閉じる`」。
+    - `ui.interact.observe_detail`：「`{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}`」，佔位符與全形分隔號完整保留。
+    - `ui.interact.pet_reaction`：「`{target}は静かにあなたの手にすり寄ってきた。`」，通順自然之動物親暱反應。
+  - 成長階段（3 欄位）：
+    - `ui.stage.juvenile`：「`幼年期`」。
+    - `ui.stage.adolescent`：「`少年期`」。
+    - `ui.stage.adult`：「`成年期`」。
+    - 均統一以「〜期」三字對齊，符合怪獸成長階段日文慣例，避免「少年」或「成年」單詞在日文中產生物種指涉歧義。
+  - 野生性格梯度（6 欄位，timid 0m → apex 28m）：
+    - `ui.temperament.timid`：「`臆病`」（0m 不主動開戰）。
+    - `ui.temperament.cautious`：「`警戒`」（4m 近身警戒自衛）。
+    - `ui.temperament.normal`：「`沈着`」（8m 常規沉穩守備）。
+    - `ui.temperament.territorial`：「`縄張り`」（14m 強烈領域防衛，日文生態與遊戲標準用語）。
+    - `ui.temperament.fierce`：「`凶暴`」（20m 主動遠距獵捕）。
+    - `ui.temperament.apex`：「`覇者`」（28m 頂級掠食霸主威脅）。
+    - 6 階性格梯度強弱分明，符合野生領域 AI 設計梯度。
+  - 選星卡片 BOSS 階段（1 欄位）：
+    - `ui.star_select.boss_stage`：「`ボス：{stage}`」，術語「ボス」與佔位符完整保留。
 
-累計總比對欄位數：150 個本地化欄位（既有 123 + 補充 27）。
-
-- 2026-11-09 · FLASH · done · 存檔失敗／素材上限／重試 4 鍵 ja · 下一步：OPUS 驗收
+- 2026-11-10 · FLASH · done · 完成 D0-W3/B2/W4 17 鍵 ja 初稿，校稿保留 target_cycle/none，check.py 199 欄 ALL PASS · 下一步：OPUS 驗收

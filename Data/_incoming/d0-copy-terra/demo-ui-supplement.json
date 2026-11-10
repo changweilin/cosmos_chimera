@@ -230,5 +230,73 @@
   "ui.hud.target_none": {
     "zh-TW": "無",
     "en": "None"
+  },
+  "ui.hud.interact_prompt": {
+    "zh-TW": "{key} 互動：{target}",
+    "en": "{key} Interact: {target}"
+  },
+  "ui.interact.observe": {
+    "zh-TW": "觀察",
+    "en": "Observe"
+  },
+  "ui.interact.provoke": {
+    "zh-TW": "挑釁",
+    "en": "Provoke"
+  },
+  "ui.interact.pet": {
+    "zh-TW": "撫摸",
+    "en": "Pet"
+  },
+  "ui.interact.close": {
+    "zh-TW": "關閉",
+    "en": "Close"
+  },
+  "ui.interact.observe_detail": {
+    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}",
+    "en": "{species} | {stage} | {element} | Temperament: {temperament} | Lv {level}"
+  },
+  "ui.interact.pet_reaction": {
+    "zh-TW": "{target} 安靜地蹭了蹭你的手。",
+    "en": "{target} nuzzles your hand quietly."
+  },
+  "ui.stage.juvenile": {
+    "zh-TW": "幼年",
+    "en": "Juvenile"
+  },
+  "ui.stage.adolescent": {
+    "zh-TW": "少年",
+    "en": "Adolescent"
+  },
+  "ui.stage.adult": {
+    "zh-TW": "成年",
+    "en": "Adult"
+  },
+  "ui.temperament.timid": {
+    "zh-TW": "膽怯",
+    "en": "Timid"
+  },
+  "ui.temperament.cautious": {
+    "zh-TW": "警惕",
+    "en": "Cautious"
+  },
+  "ui.temperament.normal": {
+    "zh-TW": "沉穩",
+    "en": "Steady"
+  },
+  "ui.temperament.territorial": {
+    "zh-TW": "領地",
+    "en": "Territorial"
+  },
+  "ui.temperament.fierce": {
+    "zh-TW": "凶悍",
+    "en": "Fierce"
+  },
+  "ui.temperament.apex": {
+    "zh-TW": "霸主",
+    "en": "Apex"
+  },
+  "ui.star_select.boss_stage": {
+    "zh-TW": "BOSS：{stage}",
+    "en": "Boss: {stage}"
   }
 }

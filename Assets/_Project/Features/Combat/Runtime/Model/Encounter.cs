@@ -141,6 +141,13 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
         public float BodyRadiusM { get; }
 
+        /// <summary>
+        /// Separation radius (m) on the sphere: no other active body's circle may overlap it (combat.md#實體碰撞). Distinct
+        /// from <see cref="BodyRadiusM"/>, which sizes the hit-test sphere.
+        /// </summary>
+        /// <remarks>Pre: none. Post: > 0; boss = BossSizePermille/1000 × balance body_mm. Side effects: none.</remarks>
+        public float CollisionRadiusM { get; internal set; }
+
         internal int Agi { get; set; }
 
         /// <summary>Leash anchor for wild units (their spawn point); unused for the player's side.</summary>
@@ -240,6 +247,7 @@ namespace Cosmimera.Combat
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
         private float3 _playerCenter;
+        private float3 _playerPush;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -297,6 +305,19 @@ namespace Cosmimera.Combat
         /// <summary>Events of the last tick.</summary>
         /// <remarks>Pre: none. Post: cleared at the start of each Tick. Side effects: none.</remarks>
         public IReadOnlyList<EncounterEvent> Events => _events;
+
+        /// <summary>
+        /// World-space displacement the caller must apply to the player character's feet after the last Tick so it no
+        /// longer overlaps an active unit (combat.md#實體碰撞). The character is driven by Unity physics outside this
+        /// model, hence the push is reported rather than applied.
+        /// </summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: zero before the first Tick and when the character overlapped nothing; otherwise a move along the sphere
+        ///       that keeps the feet's distance from the planet centre.
+        /// Side effects: none.
+        /// </remarks>
+        public float3 PlayerPush => _playerPush;
 
         /// <summary>Hit-test radius for a size class (m): ~0.35 × the class's representative height (creatures.md#體型級距).</summary>
         /// <remarks>Pre: sizeClass defined. Post: > 0. Side effects: none.</remarks>
@@ -381,10 +402,13 @@ namespace Cosmimera.Combat
             EffectBook book = BookFor(def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
             float radius = BodyRadiusFor(def.SizeClass);
+            int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
             if (boss)
             {
                 combatant.MultiplyMaxHp(BossHpMultiplier);
                 radius = radius * BossSizePermille / 1000f;
+                // REQ: combat.md#實體碰撞 — a boss's body grows with its hit volume.
+                collisionMm = ScaleBoss(collisionMm);
             }
 
             float3 position = GroundPoint(direction, radius);
@@ -392,6 +416,7 @@ namespace Cosmimera.Combat
             {
                 Level = level,
                 IsBoss = boss,
+                CollisionRadiusM = collisionMm * 0.001f,
                 MoveDefs = defs,
                 Position = position,
                 Forward = PlanetFrame.FromUp(direction).North,
@@ -557,7 +582,11 @@ namespace Cosmimera.Combat
         ///       at once); positions stay on the ground. Idle (not engaged) wild units wander (combat.md#遊蕩): pause
         ///       PauseMinMs..PauseMaxMs, then walk at SpeedPermille of their move speed to a seeded point within
         ///       WanderRadiusM of Home; one outside that radius (just disengaged) first walks straight back to Home.
-        /// Side effects: mutates units, both RNG streams and Events. No allocation after warm-up.
+        ///       Last, overlapping bodies are pushed apart (combat.md#實體碰撞): active units (CollisionRadiusM) and the
+        ///       character at playerPosition (balance body_mm.character), each pair split by inverse footprint area, in
+        ///       <see cref="SeparationPasses"/> sweeps in unit-id order; the character's share is in PlayerPush. A pair
+        ///       can still overlap afterwards only when a third body pushed it back (crowds settle over later ticks).
+        /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
         {
@@ -618,6 +647,152 @@ namespace Cosmimera.Combat
                     TryCast(u, partner, d.CastSlot, d.TargetId, nowMs);
                 }
             }
+
+            Separate(playerPosition);
+        }
+
+        /// <summary>
+        /// Reach (m) for close interaction with an idle wild (observe / provoke / pet), measured between body edges.
+        /// REQ: combat.md#近身互動 (D0-W3); 3 m is the provisional Q-D2 value.
+        /// </summary>
+        public const float InteractRadiusM = 3f;
+
+        /// <summary>The idle wild unit the character at <paramref name="playerPosition"/> can interact with, if any.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: returns the id of the active, not Engaged and not Provoked Wild unit whose body edge is within
+        ///       InteractRadiusM of the character's body edge (arc on the sphere minus both collision radii), the
+        ///       smallest such gap winning and ties going to the lower id; -1 when there is none.
+        /// Side effects: none.
+        /// </remarks>
+        public int NearestInteractable(float3 playerPosition)
+        {
+            float3 here = Up(playerPosition);
+            float character = _balance.Collision.CharacterMm * 0.001f;
+            int best = -1;
+            float bestGap = float.MaxValue;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked)
+                {
+                    continue;
+                }
+
+                float gap = ArcM(here, Up(u.Position), _planet.Radius) - u.CollisionRadiusM - character;
+                if (gap <= InteractRadiusM && gap < bestGap)
+                {
+                    best = i;
+                    bestGap = gap;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Sweeps of the pairwise push-out per Tick.</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
+        public const int SeparationPasses = 2;
+
+        // REQ: combat.md#實體碰撞 (D0-W2). Runs after every move of the tick, so this tick's casts used un-separated
+        // positions; the shift is at most a body width. Two sweeps settle a pair and most 3-body pile-ups; residual overlap
+        // in a crowd is left to later ticks rather than iterating to convergence, keeping the cost O(passes × n²), n ≤ 32.
+        private void Separate(float3 playerPosition)
+        {
+            float r = _planet.Radius;
+            float3 playerStart = Up(playerPosition);
+            float3 playerDir = playerStart;
+            float playerRadius = _balance.Collision.CharacterMm * 0.001f;
+            for (int pass = 0; pass < SeparationPasses; pass++)
+            {
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit a = _units[i];
+                    if (!a.IsActive)
+                    {
+                        continue;
+                    }
+
+                    for (int j = i + 1; j < _units.Count; j++)
+                    {
+                        EncounterUnit b = _units[j];
+                        if (!b.IsActive)
+                        {
+                            continue;
+                        }
+
+                        float3 da = Up(a.Position);
+                        float3 db = Up(b.Position);
+                        if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
+                        {
+                            Place(a, da);
+                            Place(b, db);
+                        }
+                    }
+
+                    float3 d = Up(a.Position);
+                    if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
+                    {
+                        Place(a, d);
+                    }
+                }
+            }
+
+            // Rotating the feet about the centre keeps their altitude; the character's ground probe re-seats it.
+            _playerPush = math.all(playerDir == playerStart)
+                ? float3.zero
+                : _planet.Center + playerDir * math.length(playerPosition - _planet.Center) - playerPosition;
+        }
+
+        // atan2(|a×b|, a·b) instead of acos(a·b): body-scale arcs at R ≥ 320 are ~1e-3 rad, where float acos near 1 is off
+        // by ~2 cm (dθ ≈ ε/θ); the cross-product form keeps sub-millimetre accuracy.
+        private static float ArcM(float3 a, float3 b, float planetRadius)
+        {
+            return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
+        }
+
+        private void Place(EncounterUnit u, float3 direction)
+        {
+            u.Position = GroundPoint(direction, u.BodyRadiusM);
+            u.Forward = Tangent(direction, u.Forward);
+        }
+
+        // Moves two unit directions apart along their great circle until the arc between them is ra + rb; the larger
+        // footprint (radius²) yields less. Coincident directions fall back to a's East (b) and its opposite (a), so the pair
+        // still separates deterministically. Returns whether they overlapped.
+        private static bool PushApart(ref float3 da, float ra, ref float3 db, float rb, float planetRadius)
+        {
+            float overlap = ra + rb - ArcM(da, db, planetRadius);
+            if (overlap <= 0f)
+            {
+                return false;
+            }
+
+            // Tangent at a pointing to b, and tangent at b pointing to a; each body moves against its own.
+            float3 toB = db - math.dot(db, da) * da;
+            float lenToB = math.length(toB);
+            float3 toA = da - math.dot(da, db) * db;
+            float lenToA = math.length(toA);
+            float3 headingB;
+            float3 headingA;
+            if (lenToB > 1e-7f && lenToA > 1e-7f)
+            {
+                headingA = -toB / lenToB;
+                headingB = -toA / lenToA;
+            }
+            else
+            {
+                headingB = PlanetFrame.FromUp(da).East;
+                headingA = -headingB;
+            }
+
+            float wa = ra * ra;
+            float wb = rb * rb;
+            float turnA = overlap * wb / (wa + wb) / planetRadius;
+            float turnB = overlap * wa / (wa + wb) / planetRadius;
+            da = math.normalize(da * math.cos(turnA) + headingA * math.sin(turnA));
+            db = math.normalize(db * math.cos(turnB) + headingB * math.sin(turnB));
+            return true;
         }
 
         private void TryCast(EncounterUnit u, EncounterUnit partner, int slot, int targetId, long nowMs)

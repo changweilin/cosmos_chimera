@@ -32,8 +32,8 @@
 |---|---|---|---|---|
 | D0-B2 | BOSS 階段決定星球尺寸（幼→小、少→中、成/超載→大）；選星卡片顯示 BOSS 階段與尺寸；`planet-types.size` 退役 | OPUS | `planet-world.md#boss-尺寸`；R=320 阻塞於 Q-D1 | ⬜ |
 | D0-W1 | 野生在生成點附近依性格遊蕩 | OPUS | `combat.md#遊蕩`；數值 Q-D2 暫定 | 🟨 |
-| D0-W2 | 角色／宙獸實體碰撞 | OPUS | `combat.md#實體碰撞` | ⬜ |
-| D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋TERRA（文案） | `combat.md#近身互動` | ⬜ |
+| D0-W2 | 角色／宙獸實體碰撞 | OPUS | `combat.md#實體碰撞` | 🟨 |
+| D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋FLASH（ja） | `combat.md#近身互動` | 🟨 |
 | D0-W4 | 指定攻擊目標：目標切換＋鎖定標記 | OPUS | `combat.md#指定目標` | 🟨 |
 - 2026-11-08 · ChatGPT Terra（Codex CLI） · done · D0 繁中及英文文案初稿與自行驗收完成 · 下一步：SONNET 審核、FLASH 製作日文初稿
 - 2026-11-08 · Gemini Flash（agy） · done · D0 日文翻譯初稿 5 檔與 check.py 完成，123 處本地化欄位人工比對通過 · 下一步：OPUS 驗收
@@ -43,3 +43,4 @@
 - 2026-11-09 · Claude Opus（派工/驗收）＋ ChatGPT Sol/Terra（Codex）＋ Gemini Flash（agy） · partial · 批次模式補驗 P4-08/P4-07/P3-09：EditMode 862/862、PlayMode 62/62。Sol 唯讀審查 `14ebb9e..ba6ea89`（`docs/reviews/D0-r2-sol.md`）fail：S1 high `merge.py` rmtree GeoTemplates 刪 .meta → Terra 改為就地更新、只清退役產生檔＋其 .meta，並一併修 S3（先驗證後寫入）、S4（拒絕同檔重複鍵），新增 `tools/tests/test_demo_merge.py`（Python 104/104）；Opus 實跑 merge：36 個 .meta 保留、strings.json 與手修版逐位元相同。S2 七個隊伍字串問號 → Terra 修 zh-TW；Flash 補 supplement ja（check.py 150 欄 PASS）。S5 low 記入 tech-debt。P1-08 星空完成（見 phase-1）。P2-05 進化接線**阻塞於 Q-C29**（經驗獎勵量與素材來源未定）。merge.py 不再需要 `git checkout -- GeoTemplates` · 下一步：人工試玩（夜空、隊伍編成）；決定 Q-C29
 - 2026-11-10 · Claude Opus · done（待審）· D0-W1 遊蕩：`Encounter` 未開戰野生依性格在生成點附近遊蕩（`WanderTuning`、`balance.json#ai.wander_*` 暫定值 Q-D2），獨立亂數串流 (seed,'W') 不動戰鬥擲骰；脫戰在半徑外先直接走回；開戰取消路段。新增 `EncounterWanderTests`（12 案例）。EditMode 1021/1021、PlayMode 87/87。未人工試玩；遊蕩不避海面（tech-debt D0-W1）· 下一步：人工試玩看遊蕩手感；SOL 審查；D0-W4／W2
 - 2026-11-10 · Claude Opus · done（待審）· D0-W4 指定目標：`RunSession` 新增 `CycleTarget` 動作（Q／手把 LB），依（距離, id）循環鎖定、集火打鎖定目標、集火中切換即改打、失效自動解除；OnGUI 黃色 ▼ 標記與 HUD「切換目標：名稱」。新字串 `ui.hud.target_cycle`／`target_none`（zh-TW／en／ja 初稿，Opus 撰寫，待 TERRA／FLASH 校稿），`merge.py` 重產、ja check.py 182 欄 PASS。新增 PlayMode `W4_cycle_locks_by_distance_and_focus_attacks_the_lock`。EditMode 1021/1021、PlayMode 88/88。未人工試玩 · 下一步：人工試玩；SOL 審查；D0-W2 實體碰撞
+- 2026-11-10 · Claude Opus（實作／派工）＋ Gemini Flash（agy，ja 文案） · done（待審）· D0-W2 實體碰撞：`balance.json#ai.body_mm`（Q-D2 暫定值 XS 0.2／S 0.4／M 0.7／L 1.1／XL 1.6、角色 0.35 m；`CollisionTuning`，缺鍵所有 build 拋 ContractException）、`EncounterUnit.CollisionRadiusM`（BOSS ×1.5）、`Encounter.Separate`（大圓推開、足跡面積反比、2 輪、atan2 弧長避免 float acos 在 1e-3 rad 的 ~2 cm 誤差）、`Encounter.PlayerPush` → `RunSession.ApplyPlayerPush`。D0-W3 近身互動：DemoRun 新增 `Interact`（E／手把 X，動作數 11→12）、`Encounter.NearestInteractable`、RunSession 選單（觀察／挑釁／撫摸／關閉）。文案：Opus 起稿 zh-TW／en 17 鍵（互動、階段、性格、選星 BOSS 階段），FLASH 翻 ja 並校稿 W4 兩鍵（保留），Flash 自跑 check.py ALL PASS，Opus 重跑 6 檔 199 欄 ALL PASS 後 merge.py。新增 `EncounterCollisionTests`（11）、`EncounterInteractTests`（4）、PlayMode `W2_W3_party_is_pushed_off_the_character_and_close_interaction_provokes`。EditMode 1036/1036、PlayMode 89/89、0 警告、validate-data 0 錯誤（tools pytest 36 個 fixture error 為既有環境問題，未改動前相同）。未人工試玩；tech-debt D0-W2／D0-W3 · 下一步：人工試玩（推擠手感、互動選單）；SOL 審查 W1–W4；D0-B2（`ui.star_select.boss_stage` 文案已備）

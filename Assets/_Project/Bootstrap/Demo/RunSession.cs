@@ -186,6 +186,23 @@ namespace Cosmimera.Bootstrap.Demo
         private int _mainId = CombatAi.NoTarget;
         // Wild unit chosen with CycleTarget (combat.md#指定目標, D0-W4); -1 when nothing is locked.
         private int _lockedTarget = -1;
+        // Close interaction (combat.md#近身互動, D0-W3): the idle wild offered by the HUD prompt, and the one whose menu is
+        // open (-1 = none). While the menu is open the character stands still and only the menu reads input.
+        private int _interactable = -1;
+        private int _interactTarget = -1;
+        private InteractChoice _interactChoice;
+        private string _observeText;
+        private InputAction _interactAction;
+        private InputActionMap _menuInput;
+        private InputAction _menuUp;
+        private InputAction _menuDown;
+        private InputAction _menuSubmit;
+        private InputAction _menuCancel;
+
+        private enum InteractChoice
+        {
+            Observe = 0, Provoke = 1, Pet = 2, Close = 3,
+        }
         private readonly List<int> _targetBuffer = new List<int>(16);
         private AiCommand _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
         private VesselKind _vessel = VesselKind.TalismanCard;
@@ -272,11 +289,13 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; actions contains the DemoRun map and its eleven actions;
+        /// Pre: all arguments non-null; actions contains the DemoRun map and its twelve actions and the DemoMenu map
+        ///      with Up/Down/Submit/Cancel;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
         ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
-        /// Side effects: creates GameObjects and a private input map, enabled while the component is enabled.
+        /// Side effects: creates GameObjects and private input maps (DemoRun enabled while the component is enabled;
+        ///      DemoMenu only while an interaction menu is open).
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
@@ -309,6 +328,12 @@ namespace Cosmimera.Bootstrap.Demo
             _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
             _captureAction = _runInput.FindAction("Capture", true);
             _abandonAction = _runInput.FindAction("Abandon", true);
+            _interactAction = _runInput.FindAction("Interact", true);
+            _menuInput = actions.FindActionMap("DemoMenu", true).Clone();
+            _menuUp = _menuInput.FindAction("Up", true);
+            _menuDown = _menuInput.FindAction("Down", true);
+            _menuSubmit = _menuInput.FindAction("Submit", true);
+            _menuCancel = _menuInput.FindAction("Cancel", true);
             if (isActiveAndEnabled)
             {
                 _runInput.Enable();
@@ -474,7 +499,9 @@ namespace Cosmimera.Bootstrap.Demo
             BeforeTickForTests?.Invoke();
 #endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            ApplyPlayerPush();
             ValidateLock(player);
+            UpdateInteraction(PlayerPosition());
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
             {
@@ -656,6 +683,18 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            // The menu owns input while open: its Cancel (Esc / B) must not also abandon the run or cycle the vessel.
+            if (_interactTarget >= 0)
+            {
+                ReadInteractMenu();
+                return;
+            }
+
+            if (_interactAction.WasPressedThisFrame())
+            {
+                OpenInteract();
+            }
+
             if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
@@ -718,12 +757,129 @@ namespace Cosmimera.Bootstrap.Demo
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
             foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
-                         "Retreat", "CycleVessel", "Capture", "Abandon" })
+                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
             }
 
+            InputActionMap menu = actions.FindActionMap("DemoMenu");
+            Core.Contracts.Contract.Requires(menu != null, "actions must contain the DemoMenu map");
+            foreach (string name in new[] { "Up", "Down", "Submit", "Cancel" })
+            {
+                Core.Contracts.Contract.Requires(menu.FindAction(name) != null, "DemoMenu is missing " + name);
+            }
+
             return map;
+        }
+
+        // REQ: combat.md#近身互動 (D0-W3). The prompt follows the nearest idle wild; an open menu closes once its target
+        // starts fighting, is gone, or wanders past twice the reach (hysteresis so a step of wandering does not flicker it).
+        private void UpdateInteraction(float3 player)
+        {
+            if (_interactTarget >= 0)
+            {
+                EncounterUnit u = _encounter.Units[_interactTarget];
+                float limit = 2f * Encounter.InteractRadiusM + u.CollisionRadiusM;
+                if (!u.IsActive || u.Engaged || math.distance(u.Position, player) > limit)
+                {
+                    CloseInteract();
+                }
+            }
+
+            _interactable = _interactTarget < 0 ? _encounter.NearestInteractable(player) : -1;
+        }
+
+        private void OpenInteract()
+        {
+            int id = _encounter.NearestInteractable(PlayerPosition());
+            if (id < 0)
+            {
+                return;
+            }
+
+            _interactTarget = id;
+            _interactable = -1;
+            _interactChoice = InteractChoice.Observe;
+            _observeText = null;
+            _menuInput.Enable();
+            // Disabling the driver stops reading the stick, but the motor keeps its last input; zero it so the character
+            // does not keep walking while the menu is up.
+            _rig.Input.enabled = false;
+            _rig.Character.SetInput(Vector2.zero, _rig.Character.Facing, false, false);
+        }
+
+        private void CloseInteract()
+        {
+            _interactTarget = -1;
+            _observeText = null;
+            _menuInput.Disable();
+            _rig.Input.enabled = true;
+        }
+
+        private void ReadInteractMenu()
+        {
+            if (_menuCancel.WasPressedThisFrame() || _interactAction.WasPressedThisFrame())
+            {
+                CloseInteract();
+                return;
+            }
+
+            if (_menuUp.WasPressedThisFrame())
+            {
+                _interactChoice = (InteractChoice)(((int)_interactChoice + 3) % 4);
+            }
+
+            if (_menuDown.WasPressedThisFrame())
+            {
+                _interactChoice = (InteractChoice)(((int)_interactChoice + 1) % 4);
+            }
+
+            if (_menuSubmit.WasPressedThisFrame())
+            {
+                ChooseInteract(_interactChoice);
+            }
+        }
+
+        private void ChooseInteract(InteractChoice choice)
+        {
+            int id = _interactTarget;
+            EncounterUnit u = _encounter.Units[id];
+            switch (choice)
+            {
+                case InteractChoice.Observe:
+                    _observeText = ObserveText(u);
+                    return;
+                case InteractChoice.Provoke:
+                    // REQ: equals Provoke (works on timid too); locking it lets Focus and the marker follow the fight.
+                    CloseInteract();
+                    _encounter.Provoke(id);
+                    _lockedTarget = id;
+                    return;
+                case InteractChoice.Pet:
+                    // Q-D2: petting has no rule effect yet.
+                    CloseInteract();
+                    Toast(_copy.Ui("ui.interact.pet_reaction").Replace("{target}", _copy.Name(u.Def.Id)));
+                    return;
+                default:
+                    CloseInteract();
+                    return;
+            }
+        }
+
+        private string ObserveText(EncounterUnit u)
+        {
+            var elements = new List<string>(u.Def.Mastery.Count);
+            foreach (ElementValue ev in u.Def.Mastery)
+            {
+                elements.Add(_copy.Element(ev.Element.ToString()));
+            }
+
+            return _copy.Ui("ui.interact.observe_detail")
+                .Replace("{species}", _copy.Name(u.Def.Id))
+                .Replace("{stage}", _copy.Ui("ui.stage." + u.Def.Stage.ToString().ToLowerInvariant()))
+                .Replace("{element}", string.Join("/", elements))
+                .Replace("{temperament}", _copy.Ui("ui.temperament." + u.Def.Temperament.ToString().ToLowerInvariant()))
+                .Replace("{level}", u.Level.ToString());
         }
 
         private static string BindingLabel(InputAction action) =>
@@ -1144,6 +1300,22 @@ namespace Cosmimera.Bootstrap.Demo
             _onEnd(_outcome);
         }
 
+        // REQ: combat.md#實體碰撞 (D0-W2). Writes the transform as well as the body: PlayerPosition reads the transform, and
+        // a second catch-up tick in the same frame must see the pushed position or it would push again.
+        private void ApplyPlayerPush()
+        {
+            float3 push = _encounter.PlayerPush;
+            if (math.all(push == float3.zero))
+            {
+                return;
+            }
+
+            Transform t = _rig.Character.transform;
+            Vector3 moved = t.position + new Vector3(push.x, push.y, push.z);
+            t.position = moved;
+            _rig.Character.GetComponent<Rigidbody>().position = moved;
+        }
+
         private float3 PlayerPosition()
         {
             Vector3 p = _rig.Character.transform.position;
@@ -1242,6 +1414,7 @@ namespace Cosmimera.Bootstrap.Demo
             DrawQuestPanel();
             DrawTeamPanel();
             DrawControlsPanel();
+            DrawInteraction();
             if (_nowMs < _toastUntilMs)
             {
                 GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
@@ -1273,6 +1446,42 @@ namespace Cosmimera.Bootstrap.Demo
                 normal = { textColor = new Color(1f, 0.85f, 0.2f) },
             };
             GUI.Label(new Rect(sp.x - 20, Screen.height - sp.y - 58, 40, 32), "▼", _markerStyle);
+        }
+
+        private void DrawInteraction()
+        {
+            var style = new GUIStyle(_label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            if (_interactTarget < 0)
+            {
+                if (_interactable < 0)
+                {
+                    return;
+                }
+
+                string prompt = _copy.Ui("ui.hud.interact_prompt").Replace("{key}", BindingLabel(_interactAction))
+                    .Replace("{target}", _copy.Name(_encounter.Units[_interactable].Def.Id));
+                GUI.Box(new Rect(Screen.width / 2f - 180, Screen.height - 330, 360, 40), GUIContent.none);
+                GUI.Label(new Rect(Screen.width / 2f - 175, Screen.height - 328, 350, 36), prompt, style);
+                return;
+            }
+
+            var box = new Rect(Screen.width / 2f - 230, Screen.height * 0.35f, 460, 230);
+            GUI.Box(box, GUIContent.none);
+            GUI.Label(new Rect(box.x + 10, box.y + 8, box.width - 20, 30),
+                "<b>" + _copy.Name(_encounter.Units[_interactTarget].Def.Id) + "</b>", style);
+            string[] keys = { "ui.interact.observe", "ui.interact.provoke", "ui.interact.pet", "ui.interact.close" };
+            for (int i = 0; i < keys.Length; i++)
+            {
+                string text = _copy.Ui(keys[i]);
+                GUI.Label(new Rect(box.x + 10, box.y + 42 + i * 30, box.width - 20, 28),
+                    (int)_interactChoice == i ? "▶ <b>" + text + "</b> ◀" : text, style);
+            }
+
+            if (_observeText != null)
+            {
+                GUI.Label(new Rect(box.x + 10, box.y + 164, box.width - 20, 60), _observeText,
+                    new GUIStyle(style) { fontSize = 14 });
+            }
         }
 
         private void DrawWorldBars()
@@ -1515,11 +1724,16 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnEnable() => _runInput?.Enable();
 
-        private void OnDisable() => _runInput?.Disable();
+        private void OnDisable()
+        {
+            _runInput?.Disable();
+            _menuInput?.Disable();
+        }
 
         private void OnDestroy()
         {
             _runInput?.Dispose();
+            _menuInput?.Dispose();
             _rig?.Dispose();
             if (_terrainMaterial != null)
             {

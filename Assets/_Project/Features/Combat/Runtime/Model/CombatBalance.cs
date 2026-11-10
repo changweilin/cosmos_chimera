@@ -110,6 +110,56 @@ namespace Cosmimera.Combat
         }
     }
 
+    /// <summary>
+    /// Body radii that keep characters and creatures from passing through each other (<c>Data/balance.json#ai.body_mm</c>).
+    /// REQ: combat.md#實體碰撞 (D0-W2, 2026-11-10); the values themselves are provisional (Q-D2).
+    /// </summary>
+    /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
+    public sealed class CollisionTuning
+    {
+        // Twice the widest wander radius would already be absurd for a body; this only rejects unit mix-ups (m vs mm).
+        private const int MaxBodyMm = 10000;
+
+        /// <summary>Creates validated body radii.</summary>
+        /// <remarks>
+        /// Pre: every radius 1..10000 mm.
+        /// Post: BodyMm returns the matching argument; CharacterMm == characterMm.
+        /// Side effects: allocates this instance.
+        /// </remarks>
+        public CollisionTuning(int xsMm, int sMm, int mMm, int lMm, int xlMm, int characterMm)
+        {
+            Contract.Requires(xsMm >= 1 && xsMm <= MaxBodyMm, "body_mm.xs must be 1..10000");
+            Contract.Requires(sMm >= 1 && sMm <= MaxBodyMm, "body_mm.s must be 1..10000");
+            Contract.Requires(mMm >= 1 && mMm <= MaxBodyMm, "body_mm.m must be 1..10000");
+            Contract.Requires(lMm >= 1 && lMm <= MaxBodyMm, "body_mm.l must be 1..10000");
+            Contract.Requires(xlMm >= 1 && xlMm <= MaxBodyMm, "body_mm.xl must be 1..10000");
+            Contract.Requires(characterMm >= 1 && characterMm <= MaxBodyMm, "body_mm.character must be 1..10000");
+            _bodyMm = new int[5];
+            _bodyMm[(int)CreatureSizeClass.XS] = xsMm;
+            _bodyMm[(int)CreatureSizeClass.S] = sMm;
+            _bodyMm[(int)CreatureSizeClass.M] = mMm;
+            _bodyMm[(int)CreatureSizeClass.L] = lMm;
+            _bodyMm[(int)CreatureSizeClass.XL] = xlMm;
+            CharacterMm = characterMm;
+        }
+
+        // Indexed by the CreatureSizeClass value (XS == 4, see its remarks).
+        private readonly int[] _bodyMm;
+
+        /// <summary>Body radius (mm) of the player character.</summary>
+        /// <remarks>Pre: none. Post: 1..10000. Side effects: none.</remarks>
+        public int CharacterMm { get; }
+
+        /// <summary>Body radius (mm) of a creature of <paramref name="sizeClass"/> (before the boss scale).</summary>
+        /// <remarks>Pre: sizeClass defined. Post: 1..10000. Side effects: none.</remarks>
+        public int BodyMm(CreatureSizeClass sizeClass)
+        {
+            Contract.Requires(sizeClass >= CreatureSizeClass.S && sizeClass <= CreatureSizeClass.XS,
+                "undefined CreatureSizeClass");
+            return _bodyMm[(int)sizeClass];
+        }
+    }
+
     /// <summary>All combat tunables parsed from <c>Data/balance.json</c> (the single source; the importer copies the text).</summary>
     /// <remarks>
     /// Pre: build through <see cref="FromJson"/>. Post: every member non-null and validated by its own constructor.
@@ -119,8 +169,9 @@ namespace Cosmimera.Combat
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
-            TerritoryTuning territory, WanderTuning wander)
+            TerritoryTuning territory, WanderTuning wander, CollisionTuning collision)
         {
+            Collision = collision;
             Territory = territory;
             Wander = wander;
             Stats = stats;
@@ -140,6 +191,10 @@ namespace Cosmimera.Combat
         /// <summary>Idle wandering of wild units.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public WanderTuning Wander { get; }
+
+        /// <summary>Body radii for character/creature separation.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public CollisionTuning Collision { get; }
 
         /// <summary>Derived-stat model.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
@@ -186,7 +241,7 @@ namespace Cosmimera.Combat
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
                 d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
-                d.ai.wander_mm != null &&
+                d.ai.wander_mm != null && d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
                 d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100, "capture percents must be 0..100");
@@ -226,8 +281,11 @@ namespace Cosmimera.Combat
                 d.ai.wander_pause_min_ms,
                 d.ai.wander_pause_max_ms,
                 d.ai.wander_speed_permille);
+            // An absent body_mm key parses as 0 and is rejected by CollisionTuning.
+            BodyDto b = d.ai.body_mm;
+            var collision = new CollisionTuning(b.xs, b.s, b.m, b.l, b.xl, b.character);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent, territory, wander);
+                d.capture.base_percent, d.capture.boss_percent, territory, wander, collision);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
@@ -296,6 +354,17 @@ namespace Cosmimera.Combat
             public int wander_pause_min_ms;
             public int wander_pause_max_ms;
             public int wander_speed_permille;
+            public BodyDto body_mm;
+        }
+
+        [Serializable] private sealed class BodyDto
+        {
+            public int xs;
+            public int s;
+            public int m;
+            public int l;
+            public int xl;
+            public int character;
         }
 
         [Serializable] private sealed class TerritoryDto

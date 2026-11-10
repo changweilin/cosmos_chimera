@@ -493,5 +493,90 @@
     "zh-TW": "無",
     "en": "None",
     "ja": "なし"
+  },
+  "ui.hud.interact_prompt": {
+    "zh-TW": "{key} 互動：{target}",
+    "en": "{key} Interact: {target}",
+    "ja": "{key} インタラクト：{target}"
+  },
+  "ui.interact.observe": {
+    "zh-TW": "觀察",
+    "en": "Observe",
+    "ja": "観察"
+  },
+  "ui.interact.provoke": {
+    "zh-TW": "挑釁",
+    "en": "Provoke",
+    "ja": "挑発"
+  },
+  "ui.interact.pet": {
+    "zh-TW": "撫摸",
+    "en": "Pet",
+    "ja": "なでる"
+  },
+  "ui.interact.close": {
+    "zh-TW": "關閉",
+    "en": "Close",
+    "ja": "閉じる"
+  },
+  "ui.interact.observe_detail": {
+    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}",
+    "en": "{species} | {stage} | {element} | Temperament: {temperament} | Lv {level}",
+    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}"
+  },
+  "ui.interact.pet_reaction": {
+    "zh-TW": "{target} 安靜地蹭了蹭你的手。",
+    "en": "{target} nuzzles your hand quietly.",
+    "ja": "{target}は静かにあなたの手にすり寄ってきた。"
+  },
+  "ui.stage.juvenile": {
+    "zh-TW": "幼年",
+    "en": "Juvenile",
+    "ja": "幼年期"
+  },
+  "ui.stage.adolescent": {
+    "zh-TW": "少年",
+    "en": "Adolescent",
+    "ja": "少年期"
+  },
+  "ui.stage.adult": {
+    "zh-TW": "成年",
+    "en": "Adult",
+    "ja": "成年期"
+  },
+  "ui.temperament.timid": {
+    "zh-TW": "膽怯",
+    "en": "Timid",
+    "ja": "臆病"
+  },
+  "ui.temperament.cautious": {
+    "zh-TW": "警惕",
+    "en": "Cautious",
+    "ja": "警戒"
+  },
+  "ui.temperament.normal": {
+    "zh-TW": "沉穩",
+    "en": "Steady",
+    "ja": "沈着"
+  },
+  "ui.temperament.territorial": {
+    "zh-TW": "領地",
+    "en": "Territorial",
+    "ja": "縄張り"
+  },
+  "ui.temperament.fierce": {
+    "zh-TW": "凶悍",
+    "en": "Fierce",
+    "ja": "凶暴"
+  },
+  "ui.temperament.apex": {
+    "zh-TW": "霸主",
+    "en": "Apex",
+    "ja": "覇者"
+  },
+  "ui.star_select.boss_stage": {
+    "zh-TW": "BOSS：{stage}",
+    "en": "Boss: {stage}",
+    "ja": "ボス：{stage}"
   }
 }

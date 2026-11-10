@@ -116,6 +116,38 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: the run landed. Post: world position. Side effects: none.</remarks>
         internal float3 PlayerPositionForTests => PlayerPosition();
 
+        /// <summary>Observes the idle wild offered by the interaction prompt (combat.md#近身互動, D0-W3).</summary>
+        /// <remarks>Pre: Configure ran. Post: a wild unit id, or -1 (none, or a menu is open). Side effects: none.</remarks>
+        internal int InteractableForTests => _interactable;
+
+        /// <summary>Observes the wild unit whose interaction menu is open.</summary>
+        /// <remarks>Pre: Configure ran. Post: a wild unit id, or -1 when closed. Side effects: none.</remarks>
+        internal int InteractTargetForTests => _interactTarget;
+
+        /// <summary>Observes the text the Observe choice put in the menu.</summary>
+        /// <remarks>Pre: Configure ran. Post: null until Observe was chosen in the open menu. Side effects: none.</remarks>
+        internal string ObserveTextForTests => _observeText;
+
+        /// <summary>Whether the character's movement input driver is enabled.</summary>
+        /// <remarks>Pre: the run landed. Post: false exactly while a menu is open. Side effects: none.</remarks>
+        internal bool CharacterInputEnabledForTests => _rig.Input.enabled;
+
+        /// <summary>Runs the Interact input's action with no menu open.</summary>
+        /// <remarks>Pre: the run landed; no menu open. Post: as an Interact press. Side effects: menu and input state.</remarks>
+        internal void OpenInteractForTests()
+        {
+            Contract.Requires(_started && _interactTarget < 0, "landed run with no open menu required");
+            OpenInteract();
+        }
+
+        /// <summary>Submits menu entry <paramref name="choice"/> (0 observe, 1 provoke, 2 pet, 3 close).</summary>
+        /// <remarks>Pre: a menu is open; 0 &lt;= choice &lt;= 3. Post: as Submit on that entry. Side effects: as the choice.</remarks>
+        internal void ChooseInteractForTests(int choice)
+        {
+            Contract.Requires(_interactTarget >= 0 && choice >= 0 && choice <= 3, "open menu and choice 0..3 required");
+            ChooseInteract((InteractChoice)choice);
+        }
+
         /// <summary>Observes the player character's HP.</summary>
         /// <remarks>Pre: Configure ran. Post: 0..max HP. Side effects: none.</remarks>
         internal int PlayerHpForTests => _vitals.Hp;

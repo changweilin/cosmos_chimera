@@ -34,8 +34,9 @@ namespace Cosmimera.Bootstrap.Tests
                 sharedMap.Disable();
                 InputActionMap map = RunSession.RequireRunMap(asset);
                 Assert.That(map.enabled, Is.False, "validation does not enable the shared asset");
-                Assert.That(map.actions.Count, Is.EqualTo(11));
+                Assert.That(map.actions.Count, Is.EqualTo(12));
                 Assert.That(map.FindAction("CycleTarget"), Is.Not.Null, "D0-W4 target cycling");
+                Assert.That(map.FindAction("Interact"), Is.Not.Null, "D0-W3 close interaction");
             }
             finally
             {

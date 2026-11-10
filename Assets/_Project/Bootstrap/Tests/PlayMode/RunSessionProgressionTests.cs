@@ -287,6 +287,67 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(s.LockedTargetForTests, Is.EqualTo(-1), "a knocked-out lock is dropped");
         }
 
+        // REQ: combat.md#實體碰撞 (D0-W2) — the party fielded on the character's own spot is pushed apart from it, and the
+        // character's share reaches the physics body (Encounter.PlayerPush applied by RunSession).
+        // REQ: combat.md#近身互動 (D0-W3) — an idle wild within reach is offered; the open menu freezes the character's
+        // input; Observe fills the detail; Provoke closes the menu, locks the target and starts the fight.
+        [UnityTest]
+        public IEnumerator W2_W3_party_is_pushed_off_the_character_and_close_interaction_provokes()
+        {
+            Env env = LoadEnv();
+            // Tier-0 juveniles are timid (D0-E2), so standing 2 m away does not start a fight by itself.
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count >= 1);
+            RunPlan plan = PlanFor(env, seed);
+            int a = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+
+            float3 wild = s.DirectionForTests(s.UnitForTests(a).Position);
+            float angle = 2f / Radius;
+            float3 spot = math.normalize(wild * math.cos(angle) + PlanetFrame.FromUp(wild).North * math.sin(angle));
+            ParkAt(s, spot);
+            Step(s);
+
+            // Smallest body (XS 0.2 m) + character 0.35 m, less float slack: before D0-W2 the party stood on the spot.
+            float3 player = s.DirectionForTests(s.PlayerPositionForTests);
+            foreach (int id in s.ActiveUnitsForTests)
+            {
+                float3 d = s.DirectionForTests(s.UnitForTests(id).Position);
+                Assert.That(math.atan2(math.length(math.cross(player, d)), math.dot(player, d)) * Radius, Is.GreaterThan(0.54f),
+                    "party unit " + id + " pushed off the character");
+            }
+
+            Assert.That(s.InCombatForTests, Is.False, "parking next to a timid wild starts no fight");
+
+            // The push above moved the character up to ~2 m; stand 1.5 m south of the wild (the party is north of it).
+            wild = s.DirectionForTests(s.UnitForTests(a).Position);
+            MovePlayer(s, math.normalize(wild * math.cos(1.5f / Radius) - PlanetFrame.FromUp(wild).North * math.sin(1.5f / Radius)));
+            Step(s);
+            int offered = s.InteractableForTests;
+            Assert.That(offered, Is.GreaterThanOrEqualTo(0), "an idle wild 1.5 m away is offered");
+            RunSession.UnitSnapshot target = s.UnitForTests(offered);
+            Assert.That(target.Side, Is.EqualTo(EncounterSide.Wild));
+
+            s.OpenInteractForTests();
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(offered));
+            Assert.That(s.InteractableForTests, Is.EqualTo(-1), "no prompt while the menu is open");
+            Assert.That(s.CharacterInputEnabledForTests, Is.False, "the character stands still");
+
+            s.ChooseInteractForTests(0);
+            Assert.That(s.ObserveTextForTests, Is.Not.Null.And.Not.Contains("{"), "observe fills every placeholder");
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(offered), "observe keeps the menu open");
+
+            s.ChooseInteractForTests(1);
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(-1), "provoke closes the menu");
+            Assert.That(s.CharacterInputEnabledForTests, Is.True);
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(offered), "the provoked wild is locked");
+
+            Step(s);
+            Assert.That(s.InCombatForTests, Is.True, "provoke starts the fight");
+            Assert.That(s.InteractableForTests, Is.Not.EqualTo(offered), "an engaged wild is no longer offered");
+        }
+
         // Two Normal spawns of one pack (RunPlanner scatters pack members ≤ 5 m from its centre). Unit id == spawn index.
         private static (int, int)? PackPair(RunPlan p)
         {
