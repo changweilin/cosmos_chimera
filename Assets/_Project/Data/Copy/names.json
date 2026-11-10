@@ -3,352 +3,422 @@
   {
    "id": "earth_auric_sovereign",
    "zh": "金塵岩偶",
-   "en": "Gildumara"
+   "en": "Gildumara",
+   "ja": "ギルドマラ"
   },
   {
    "id": "earth_gilded_warden",
    "zh": "金塵衛",
-   "en": "Gildumant"
+   "en": "Gildumant",
+   "ja": "ギルドマント"
   },
   {
    "id": "earth_pebble_pawn",
    "zh": "金塵偶",
-   "en": "Gilduma"
+   "en": "Gilduma",
+   "ja": "ギルドマ"
   },
   {
    "id": "earth_pebble_shot",
    "zh": "礫紋彈",
-   "en": "Pebblegrain Shot"
+   "en": "Pebblegrain Shot",
+   "ja": "礫紋弾"
   },
   {
    "id": "earth_rampart_rush",
    "zh": "岩壘馳",
-   "en": "Rampartborne Rush"
+   "en": "Rampartborne Rush",
+   "ja": "岩塁駆"
   },
   {
    "id": "earth_seismic_slam",
    "zh": "地脈震",
-   "en": "Faultpulse Slam"
+   "en": "Faultpulse Slam",
+   "ja": "地脈震"
   },
   {
    "id": "fire_blaze_charge",
    "zh": "焰鬃突",
-   "en": "Blazemane Drive"
+   "en": "Blazemane Drive",
+   "ja": "焔鬣突"
   },
   {
    "id": "fire_ember_cub",
    "zh": "燼鬃仔",
-   "en": "Cindrel"
+   "en": "Cindrel",
+   "ja": "シンドレル"
   },
   {
    "id": "fire_ember_lash",
    "zh": "燼尾掃",
-   "en": "Embertail Sweep"
+   "en": "Embertail Sweep",
+   "ja": "燼尾払い"
   },
   {
    "id": "fire_inferno_cataclysm",
    "zh": "熾墜界",
-   "en": "Pyrefall Expanse"
+   "en": "Pyrefall Expanse",
+   "ja": "熾墜界"
   },
   {
    "id": "fire_mane_stalker",
    "zh": "燼鬃獅",
-   "en": "Cindrava"
+   "en": "Cindrava",
+   "ja": "シンドラバ"
   },
   {
    "id": "fire_pyre_monarch",
    "zh": "燼鬃焰獅",
-   "en": "Cindraval"
+   "en": "Cindraval",
+   "ja": "シンドラバル"
   },
   {
    "id": "ice_blizzard_vortex",
    "zh": "雪渦綻",
-   "en": "Snowwhorl Bloom"
+   "en": "Snowwhorl Bloom",
+   "ja": "雪渦綻"
   },
   {
    "id": "ice_frost_fledgling",
    "zh": "霜角雛",
-   "en": "Rimbril"
+   "en": "Rimbril",
+   "ja": "リムブリル"
   },
   {
    "id": "ice_glacier_lance",
    "zh": "冰川矛",
-   "en": "Glaciergrain Lance"
+   "en": "Glaciergrain Lance",
+   "ja": "氷川矛"
   },
   {
    "id": "ice_rime_strider",
    "zh": "霜角獵獸",
-   "en": "Rimbraven"
+   "en": "Rimbraven",
+   "ja": "リムブラベン"
   },
   {
    "id": "ice_shard_flurry",
    "zh": "霜晶扇",
-   "en": "Rimeglass Fan"
+   "en": "Rimeglass Fan",
+   "ja": "霜晶扇"
   },
   {
    "id": "ice_tundra_dreadnought",
    "zh": "霜角巨獸",
-   "en": "Rimbragard"
+   "en": "Rimbragard",
+   "ja": "リムブラガルド"
   },
   {
    "id": "light_heliostat_beam",
    "zh": "追日光束",
-   "en": "Suntrack Beam"
+   "en": "Suntrack Beam",
+   "ja": "追日光線"
   },
   {
    "id": "light_mirror_glint",
    "zh": "鏡閃",
-   "en": "Mirrorflash"
+   "en": "Mirrorflash",
+   "ja": "鏡閃"
   },
   {
    "id": "light_solar_array_lance",
    "zh": "日環光槍",
-   "en": "Solar Array Lance"
+   "en": "Solar Array Lance",
+   "ja": "日環光槍"
   },
   {
    "id": "metal_chronos_engine",
    "zh": "漏輪巨象",
-   "en": "Clepsarche"
+   "en": "Clepsarche",
+   "ja": "クレプサルケ"
   },
   {
    "id": "metal_clock_chick",
    "zh": "漏輪雛",
-   "en": "Clepspro"
+   "en": "Clepspro",
+   "ja": "クレプスプロ"
   },
   {
    "id": "metal_gear_strider",
    "zh": "漏輪衛",
-   "en": "Clepsward"
+   "en": "Clepsward",
+   "ja": "クレプスワード"
   },
   {
    "id": "metal_iron_cleave",
    "zh": "鐵輪斬",
-   "en": "Ironwheel Cleave"
+   "en": "Ironwheel Cleave",
+   "ja": "鉄輪斬"
   },
   {
    "id": "metal_lance_charge",
    "zh": "鉚槍馳",
-   "en": "Rivetlance Rush"
+   "en": "Rivetlance Rush",
+   "ja": "鋲槍駆"
   },
   {
    "id": "metal_needle_thrust",
    "zh": "針輪刺",
-   "en": "Needlewheel Thrust"
+   "en": "Needlewheel Thrust",
+   "ja": "針輪突き"
   },
   {
    "id": "moon_longnight_wolf",
    "zh": "夜痕霜狼",
-   "en": "Nivervast"
+   "en": "Nivervast",
+   "ja": "ニヴェルバスト"
   },
   {
    "id": "moon_night_pup",
    "zh": "夜痕仔",
-   "en": "Nivetch"
+   "en": "Nivetch",
+   "ja": "ニヴェッチ"
   },
   {
    "id": "moon_shade_wolf",
    "zh": "夜痕狼",
-   "en": "Niverren"
+   "en": "Niverren",
+   "ja": "ニヴェレン"
   },
   {
    "id": "shadow_lone_hunter_ambush",
    "zh": "孤影伏襲",
-   "en": "Loneshade Ambush"
+   "en": "Loneshade Ambush",
+   "ja": "孤影伏襲"
   },
   {
    "id": "shadow_longnight_lunge",
    "zh": "長夜突",
-   "en": "Longnight Lunge"
+   "en": "Longnight Lunge",
+   "ja": "長夜突"
   },
   {
    "id": "shadow_nightpaw_swipe",
    "zh": "夜爪擊",
-   "en": "Nightpaw Strike"
+   "en": "Nightpaw Strike",
+   "ja": "夜爪撃"
   },
   {
    "id": "star_blaze_foal",
    "zh": "星蹄駒",
-   "en": "Voltfoal"
+   "en": "Voltfoal",
+   "ja": "ボルトフォル"
   },
   {
    "id": "star_skyhoof_steed",
    "zh": "星蹄天驥",
-   "en": "Voltrazent"
+   "en": "Voltrazent",
+   "ja": "ボルトラゼント"
   },
   {
    "id": "star_storm_colt",
    "zh": "星蹄騏",
-   "en": "Voltrmane"
+   "en": "Voltrmane",
+   "ja": "ボルトルメイン"
   },
   {
    "id": "sun_array_skyheron",
    "zh": "鏡環天鷺",
-   "en": "Mirravault"
+   "en": "Mirravault",
+   "ja": "ミラヴォルト"
   },
   {
    "id": "sun_heliostat_heron",
    "zh": "鏡羽鷺",
-   "en": "Mirravel"
+   "en": "Mirravel",
+   "ja": "ミラヴェル"
   },
   {
    "id": "sun_mirror_chick",
    "zh": "鏡芽雀",
-   "en": "Mirrill"
+   "en": "Mirrill",
+   "ja": "ミラリル"
   },
   {
    "id": "thunder_galloping_discharge",
    "zh": "奔雷散電",
-   "en": "Galloping Discharge"
+   "en": "Galloping Discharge",
+   "ja": "奔雷散電"
   },
   {
    "id": "thunder_skyhoof_stampede",
    "zh": "天蹄雷馳",
-   "en": "Skyhoof Stampede"
+   "en": "Skyhoof Stampede",
+   "ja": "天蹄雷駆"
   },
   {
    "id": "thunder_starblaze_charge",
    "zh": "星火衝",
-   "en": "Starspark Charge"
+   "en": "Starspark Charge",
+   "ja": "星火衝"
   },
   {
    "id": "trait_earth_tectonic_rebound",
    "zh": "地脈回應",
-   "en": "Faultline Answer"
+   "en": "Faultline Answer",
+   "ja": "地脈の応答"
   },
   {
    "id": "trait_fire_thermal_recharge",
    "zh": "受焰回充",
-   "en": "Flamefed Renewal"
+   "en": "Flamefed Renewal",
+   "ja": "受熱充填"
   },
   {
    "id": "trait_ice_flash_freeze",
    "zh": "初霜護性",
-   "en": "Firstfrost Temper"
+   "en": "Firstfrost Temper",
+   "ja": "初霜の加護"
   },
   {
    "id": "trait_light_heliostat_focus",
    "zh": "逐光聚焦",
-   "en": "Sunward Focus"
+   "en": "Sunward Focus",
+   "ja": "追光集束"
   },
   {
    "id": "trait_metal_dense_alloy",
    "zh": "密金軀",
-   "en": "Densemetal Frame"
+   "en": "Densemetal Frame",
+   "ja": "密金の躯"
   },
   {
    "id": "trait_shadow_longnight_stalker",
    "zh": "夜行初步",
-   "en": "Nightstalk Arrival"
+   "en": "Nightstalk Arrival",
+   "ja": "夜行の初歩"
   },
   {
    "id": "trait_thunder_storm_gallop",
    "zh": "迎擊雷鬃",
-   "en": "Stormmane Resolve"
+   "en": "Stormmane Resolve",
+   "ja": "迎撃の雷鬣"
   },
   {
    "id": "trait_water_torrent_flow",
    "zh": "水脈迴轉",
-   "en": "Watercourse Cycle"
+   "en": "Watercourse Cycle",
+   "ja": "水脈の循環"
   },
   {
    "id": "trait_wind_tailwind_glide",
    "zh": "換風輕行",
-   "en": "Turnwind Glide"
+   "en": "Turnwind Glide",
+   "ja": "換風の滑翔"
   },
   {
    "id": "trait_wood_photosynthesis",
    "zh": "初陽滋養",
-   "en": "Firstlight Nourish"
+   "en": "Firstlight Nourish",
+   "ja": "初陽の恵み"
   },
   {
    "id": "water_catamaran_serpent",
    "zh": "潮帆巨鰻",
-   "en": "Brinamar"
+   "en": "Brinamar",
+   "ja": "ブライナマール"
   },
   {
    "id": "water_crest_slicer",
    "zh": "漣刃線",
-   "en": "Rippleedge Ray"
+   "en": "Rippleedge Ray",
+   "ja": "漣刃線"
   },
   {
    "id": "water_deluge_crater",
    "zh": "瀾坑爆",
-   "en": "Deluge Hollow"
+   "en": "Deluge Hollow",
+   "ja": "瀾坑爆"
   },
   {
    "id": "water_skiff_eel",
    "zh": "潮帆舟鰻",
-   "en": "Brinavela"
+   "en": "Brinavela",
+   "ja": "ブライナヴェラ"
   },
   {
    "id": "water_torrent_burst",
    "zh": "湍流扇",
-   "en": "Torrentfan Surge"
+   "en": "Torrentfan Surge",
+   "ja": "湍流扇"
   },
   {
    "id": "water_wave_elver",
    "zh": "潮帆鰻",
-   "en": "Brinelle"
+   "en": "Brinelle",
+   "ja": "ブライネル"
   },
   {
    "id": "wind_flute_cruiser",
    "zh": "笛風巡舟",
-   "en": "Reevilane"
+   "en": "Reevilane",
+   "ja": "リーヴィレイン"
   },
   {
    "id": "wind_gale_claw",
    "zh": "颯爪掃",
-   "en": "Galepaw Sweep"
+   "en": "Galepaw Sweep",
+   "ja": "颯爪払い"
   },
   {
    "id": "wind_monsoon_galeon",
    "zh": "笛風天舟",
-   "en": "Reevilora"
+   "en": "Reevilora",
+   "ja": "リーヴィローラ"
   },
   {
    "id": "wind_reed_skiff",
    "zh": "笛風舟",
-   "en": "Reevilo"
+   "en": "Reevilo",
+   "ja": "リーヴィロ"
   },
   {
    "id": "wind_tempest_sphere",
    "zh": "風球綻",
-   "en": "Stormsphere Bloom"
+   "en": "Stormsphere Bloom",
+   "ja": "風球綻"
   },
   {
    "id": "wind_vacuum_blade",
    "zh": "空鳴刃",
-   "en": "Hollowwind Edge"
+   "en": "Hollowwind Edge",
+   "ja": "空鳴刃"
   },
   {
    "id": "wood_briar_dash",
    "zh": "棘芽突",
-   "en": "Briarsprout Dash"
+   "en": "Briarsprout Dash",
+   "ja": "棘芽突"
   },
   {
    "id": "wood_canopy_crush",
    "zh": "翠冠墜",
-   "en": "Verdant Crownfall"
+   "en": "Verdant Crownfall",
+   "ja": "翠冠墜"
   },
   {
    "id": "wood_canopy_regent",
    "zh": "蔓冠虹禽",
-   "en": "Vireloria"
+   "en": "Vireloria",
+   "ja": "ヴィレローリア"
   },
   {
    "id": "wood_fern_chick",
    "zh": "蔓冠雛",
-   "en": "Virellet"
+   "en": "Virellet",
+   "ja": "ヴィレレット"
   },
   {
    "id": "wood_plume_peafowl",
    "zh": "蔓冠翎",
-   "en": "Virelume"
+   "en": "Virelume",
+   "ja": "ヴィレルーム"
   },
   {
    "id": "wood_root_spear",
    "zh": "根紋槍",
-   "en": "Rootgrain Spear"
+   "en": "Rootgrain Spear",
+   "ja": "根紋槍"
   }
  ]
 }

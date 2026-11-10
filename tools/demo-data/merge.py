@@ -59,9 +59,6 @@ def _write_geo(files):
     for path in GEO_OUT.iterdir():
         if path.is_file() and path.name.endswith((".meta.json", ".height.bytes", ".water.bytes")) and path.name not in files:
             path.unlink()
-            meta = path.with_name(path.name + ".meta")
-            if meta.is_file():
-                meta.unlink()
     for name, data in files.items():
         path = GEO_OUT / name
         if not path.is_file() or path.read_bytes() != data:
@@ -75,7 +72,7 @@ def stage_geo(root: Path) -> int:
     Why no rmtree: Demo.unity references these assets by the GUIDs in their .meta files (Sol D0-r2 S1).
 
     Pre: root contains complete templates with valid JSON metadata.
-    Post: generated files match sources; retired files and their metadata are removed.
+    Post: generated files match sources; retired files are removed and metadata is preserved.
     Side effects: reads templates and updates GEO_OUT.
     """
     files, count = _prepare_geo(root)
@@ -131,8 +128,29 @@ def _prepare_copy(root):
         _, copy = _read_json(root / "_incoming" / batch / "copy-terra.json")
         for section in ("creatures", "moves", "traits"):
             for entry in copy.get(section, []):
-                names[entry["id"]] = {"zh-TW": entry.get("name_zh", entry["id"]), "en": entry.get("name_en", entry["id"])}
-    entries = [{"id": k, "zh": v["zh-TW"], "en": v["en"]} for k, v in sorted(names.items())]
+                if entry["id"] in names:
+                    raise ValueError(f"names: duplicate id: {entry['id']}")
+                names[entry["id"]] = {"zh": entry.get("name_zh", entry["id"]), "en": entry.get("name_en", entry["id"])}
+    path = root / "_incoming" / "d0-names-flash-ja" / "names-ja.json"
+    _, translated = _read_json(path)
+    ja_names = {}
+    for entry in translated["entries"]:
+        id = entry["id"]
+        if id in ja_names:
+            raise ValueError(f"{path}: duplicate id: {id}")
+        ja_names[id] = entry
+    if set(names) != set(ja_names):
+        raise ValueError(f"{path}: id sets differ: missing={sorted(set(names) - set(ja_names))}, extra={sorted(set(ja_names) - set(names))}")
+    for id, name in names.items():
+        translated_name = ja_names[id]
+        for lang in ("zh", "en"):
+            if translated_name.get(lang) != name[lang]:
+                raise ValueError(f"{path}: {id}: {lang} identity mismatch")
+        ja = translated_name.get("ja")
+        if not isinstance(ja, str) or not ja.strip():
+            raise ValueError(f"{path}: {id}: missing or empty ja")
+        name["ja"] = ja
+    entries = [{"id": k, **v} for k, v in sorted(names.items())]
     files["names.json"] = (json.dumps({"entries": entries}, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
     return files
 

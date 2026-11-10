@@ -34,6 +34,10 @@ def inputs(tmp_path, monkeypatch):
     names = root / "_incoming" / "names"
     names.mkdir()
     (names / "copy-terra.json").write_text('{"creatures":[{"id":"a","name_zh":"甲","name_en":"A"}]}', encoding="utf-8")
+    translated_names = root / "_incoming" / "d0-names-flash-ja"
+    translated_names.mkdir()
+    (translated_names / "names-ja.json").write_text(
+        json.dumps({"entries": [{"id": "a", "zh": "\u7532", "en": "A", "ja": "\u30a2"}]}, ensure_ascii=False), encoding="utf-8")
     batch = root / "_incoming" / "batch" / "moves"
     batch.mkdir(parents=True)
     (batch / "one.json").write_text('{"id":"one"}', encoding="utf-8")
@@ -58,9 +62,10 @@ def test_geo_preserves_unity_meta_and_removes_retired(inputs):
     before = unchanged.stat().st_mtime_ns
     assert merge.stage_geo(inputs) == 1
     assert unchanged.stat().st_mtime_ns == before
-    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('*.meta'))
-    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 3
-    assert not list(merge.GEO_OUT.glob('retired.*'))
+    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('active.*.meta'))
+    assert all(p.read_text(encoding="utf-8") == 'guid: old' for p in merge.GEO_OUT.glob('retired.*.meta'))
+    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 6
+    assert all(p.name.endswith('.meta') for p in merge.GEO_OUT.glob('retired.*'))
     assert (merge.GEO_OUT / "handmade.txt").read_text() == 'KEEP'
 
 
@@ -93,7 +98,7 @@ def test_normal_output(inputs):
     assert json.loads((merge.COPY_OUT / 'strings.json').read_text(encoding='utf-8')) == {
         'base': {'en': 'base', 'ja': 'base-ja'}, 'new': {'en': 'new', 'ja': 'new-ja'}}
     assert json.loads((merge.COPY_OUT / 'names.json').read_text(encoding='utf-8')) == {
-        'entries': [{'id': 'a', 'zh': '甲', 'en': 'A'}]}
+        'entries': [{'id': 'a', 'zh': '甲', 'en': 'A', 'ja': '\u30a2'}]}
     assert (merge.COPY_OUT / 'balance.json').read_bytes() == b'{"x":1}'
     assert (inputs / '_demo' / 'moves' / 'batch--one.json').read_bytes() == b'{"id":"one"}'
     assert (merge.GEO_OUT / 'active.height.bytes').read_bytes() == b'height'
@@ -140,3 +145,32 @@ def test_ja_nested_entries_merge_and_identity_mismatch_preserves_outputs(inputs)
     with pytest.raises(ValueError, match="identity mismatch"):
         merge.stage_copy(inputs)
     assert (merge.COPY_OUT / "affixes.json").read_bytes() == old
+
+
+@pytest.mark.parametrize("entries", [
+    [],
+    [{"id": "a", "zh": "\u7532", "en": "A", "ja": "\u30a2"}, {"id": "extra", "zh": "\u4e59", "en": "B", "ja": "\u30a4"}],
+    [{"id": "a", "zh": "\u7532", "en": "A", "ja": "\u30a2"}, {"id": "a", "zh": "\u7532", "en": "A", "ja": "\u30a2"}],
+    [{"id": "a", "zh": "wrong", "en": "A", "ja": "\u30a2"}],
+    [{"id": "a", "zh": "\u7532", "en": "wrong", "ja": "\u30a2"}],
+    [{"id": "a", "zh": "\u7532", "en": "A"}],
+    [{"id": "a", "zh": "\u7532", "en": "A", "ja": ""}],
+    [{"id": "a", "zh": "\u7532", "en": "A", "ja": "  "}],
+    [{"id": "a", "zh": "\u7532", "en": "A", "ja": None}],
+])
+def test_invalid_ja_names_preserve_all_outputs(inputs, entries):
+    path = inputs / "_incoming" / "d0-names-flash-ja" / "names-ja.json"
+    path.write_text(json.dumps({"entries": entries}, ensure_ascii=False), encoding="utf-8")
+    merge.COPY_OUT.mkdir()
+    old = merge.COPY_OUT / "names.json"
+    old.write_bytes(b"old")
+    demo = inputs / "_demo"
+    demo.mkdir()
+    (demo / "old").write_bytes(b"old")
+    merge.GEO_OUT.mkdir()
+    (merge.GEO_OUT / "old.meta").write_bytes(b"old")
+    with pytest.raises(ValueError):
+        merge.main()
+    assert old.read_bytes() == b"old"
+    assert (demo / "old").read_bytes() == b"old"
+    assert (merge.GEO_OUT / "old.meta").read_bytes() == b"old"
