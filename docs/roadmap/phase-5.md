@@ -64,3 +64,5 @@
 - 2026-11-08 · ChatGPT Codex · done（使用者裁決）· P5-08 A5／Q-C26：light_aureole_halo→light_crown_radiance，README 四處引用同步、舊 ID 退役，其他共用詞根保留；結構比對只有招式 ID 改變，正式資料與 13 批合併草稿驗證 0 錯誤／0 警告；N8 同步 forge 並重產，designed.js 無變化，incoming／退役 ID 忽略 CRLF 比對一致、兩專案 diff 檢查通過；定案移入 combat.md，複驗見 docs/reviews/P5-08-A5-followup-codex.md，P5-08 維持待審 · 下一步：A10 等剩餘內容裁決；兩專案變更尚未提交
 - 2026-11-08 · ChatGPT Codex · partial · P5-08 A10：核實四獸外觀／專精／抗性差異，金線成年現有四個合法副手來源為金／土／火／冰，土副專精可加成既有 mentor 借招、水副專精目前無對應借招；整理保留數值並解除強制綁定、或僅金成年土副專精改水兩方案，新增 Q-C27 與 docs/reviews/P5-08-A10-followup-codex.md，未改資料，P5-08 維持待審 · 下一步：使用者裁決 A10
 - 2026-11-08 · ChatGPT Codex · done（使用者裁決）· P5-08 A10／Q-C27：採保留全部數值，creatures.md 明定外觀意象、屬性專精與抗性各自設計，不強制一一對應；金成年土副專精及其餘三獸數值沿用，更新裁決報告並移除 Q-C27，只改文件，P5-08 維持待審 · 下一步：A11 母題欄位語意裁決；變更尚未提交
+
+- 2026-11-10 · ChatGPT Terra（Codex）→ Claude Opus 驗收 · partial · Q-C35 30 物種性格提案（`Data/_incoming/q-c35-temperament-terra/`，confirmed=false；timid 8／cautious 7／normal 4／territorial 8／fierce 2／apex 1，同線不降階，火成年霸獅為唯一 apex）；Terra 自跑 check.py ALL PASS，validate_data 因 Codex 沙箱禁讀 site-packages 無法自跑，Opus 代跑 0 錯誤 · 下一步：人工審定後套用 Data/_demo 並重匯入；D0 難度試玩
