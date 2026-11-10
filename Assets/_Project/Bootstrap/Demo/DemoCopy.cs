@@ -126,7 +126,7 @@ namespace Cosmimera.Bootstrap.Demo
             Ui("ui.material.label").Replace("{element}", Element(key.Element.ToString())).Replace("{tier}", key.Tier.ToString());
 
         /// <summary>Display name of a creature/move/trait id.</summary>
-        /// <remarks>Pre: none. Post: the selected name, English fallback, or the id if absent in both. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: the selected name (including ja), English fallback, or the id if absent in both. Side effects: none.</remarks>
         public string Name(string id) => id != null && _names.TryGetValue(id, out string s) && !string.IsNullOrEmpty(s) ? s : id;
 
         /// <summary>Affix name, or empty for null.</summary>
