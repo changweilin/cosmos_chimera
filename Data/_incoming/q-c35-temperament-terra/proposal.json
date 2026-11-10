@@ -1,0 +1,185 @@
+{
+  "confirmed": false,
+  "entries": [
+    {
+      "id": "sun_mirror_chick",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "圓滾雛鳥追逐太陽，光鏡尚小；S 體型以被動反擊呈現初生的溫馴。"
+    },
+    {
+      "id": "sun_heliostat_heron",
+      "current": "normal",
+      "proposed": "cautious",
+      "reason_zh": "單腳佇立並展翼聚光的 M 鷺鳥偏向定點控距，僅近身時自衛。"
+    },
+    {
+      "id": "sun_array_skyheron",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 天空鷺背負環形鏡陣合焦光束；以守護聚光空間的中距警戒取代主動追獵。"
+    },
+    {
+      "id": "moon_night_pup",
+      "current": "timid",
+      "proposed": "cautious",
+      "reason_zh": "S 小狼投下大影並繞背揮爪，已有近身戰本能，但只在極近距離警戒。"
+    },
+    {
+      "id": "moon_shade_wolf",
+      "current": "normal",
+      "proposed": "normal",
+      "reason_zh": "M 孤狼疾衝時拖出影子殘像，影屬近戰獵手採標準感應距離。"
+    },
+    {
+      "id": "moon_longnight_wolf",
+      "current": "fierce",
+      "proposed": "fierce",
+      "reason_zh": "L 巨狼身形如雪丘、長尾震地且貼地疾衝，孤行掠食形象支持遠距進攻。"
+    },
+    {
+      "id": "star_blaze_foal",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 馬駒蹄下冒火花卻跌跌撞撞，雷光與衝鋒不必解讀為主動獵殺。"
+    },
+    {
+      "id": "star_storm_colt",
+      "current": "normal",
+      "proposed": "cautious",
+      "reason_zh": "M 駿馬電弧長鬃與未展開翼芽暗示成長中的力量，近身才以雷電自衛。"
+    },
+    {
+      "id": "star_skyhoof_steed",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 金翼天馬以月角導雷、衝鋒拖出雷鳴，適合較大的警戒圈但非掠食霸主。"
+    },
+    {
+      "id": "metal_clock_chick",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 齒輪幼雛胸口僅有微型漏刻水槽，機關與清脆步聲沒有主動敵意。"
+    },
+    {
+      "id": "metal_gear_strider",
+      "current": "normal",
+      "proposed": "cautious",
+      "reason_zh": "M 機關獸半披重甲、肩載盤龍連桿，偏守備的前排只對近身者反應。"
+    },
+    {
+      "id": "metal_chronos_engine",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 重裝巨象雙足如鐵樁屹立，金屬守備形象支持守住周邊而非遠距追獵。"
+    },
+    {
+      "id": "wood_fern_chick",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 蓬鬆幼鳥僅萌出捲曲蕨冠，踏著雕花底座，較適合受攻擊才反擊。"
+    },
+    {
+      "id": "wood_plume_peafowl",
+      "current": "normal",
+      "proposed": "cautious",
+      "reason_zh": "M 錦鳥舒展羽翼、爪覆木質硬鱗；有防護能力但描述未顯示掠食性。"
+    },
+    {
+      "id": "wood_canopy_regent",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 神禽盤踞巨木頂端、長尾垂藤，木屬冠層棲位適合明確領地警戒。"
+    },
+    {
+      "id": "water_wave_elver",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 銀色小鰻以水膜小翼在波浪間滑行，尚無主動捕獵描述。"
+    },
+    {
+      "id": "water_skiff_eel",
+      "current": "normal",
+      "proposed": "normal",
+      "reason_zh": "M 海鰻長出雙浮筒外甲和蟹爪帆、破浪滑翔，採水域常規警戒。"
+    },
+    {
+      "id": "water_catamaran_serpent",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 巨鰻舟巨大如浮島、乘季風怒濤疾航；以較廣水域警戒表現其存在感。"
+    },
+    {
+      "id": "fire_ember_cub",
+      "current": "timid",
+      "proposed": "cautious",
+      "reason_zh": "S 小獅爪尖踏出火星、餘燼頸毛滾燙，幼小掠食者近身時自衛。"
+    },
+    {
+      "id": "fire_mane_stalker",
+      "current": "normal",
+      "proposed": "territorial",
+      "reason_zh": "M 荒原獅肌肉結實、鬃如火浪且能直線突進，具火屬掠食者的領地壓力。"
+    },
+    {
+      "id": "fire_pyre_monarch",
+      "current": "fierce",
+      "proposed": "apex",
+      "reason_zh": "L 三面烈火霸獅咆哮引動砂岩爆震，成年霸獅可作稀少 BOSS 候選及廣域威脅。"
+    },
+    {
+      "id": "earth_pebble_pawn",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 小石偶圓潤敦實，胸嵌微光綠寶石，受擊後增強的設定適合被動反擊。"
+    },
+    {
+      "id": "earth_gilded_warden",
+      "current": "normal",
+      "proposed": "normal",
+      "reason_zh": "M 岩土行者佩金面甲、肩背層疊黏土與金晶，以標準範圍守備。"
+    },
+    {
+      "id": "earth_auric_sovereign",
+      "current": "fierce",
+      "proposed": "territorial",
+      "reason_zh": "L 重岩金祭聖偶雙臂如立柱、巍然屹立；土屬祭偶以守護位置為主。"
+    },
+    {
+      "id": "ice_frost_fledgling",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 白絨幼雛只有冰晶小角與防滑掌爪，冰原生存特徵不必視為侵略。"
+    },
+    {
+      "id": "ice_rime_strider",
+      "current": "normal",
+      "proposed": "territorial",
+      "reason_zh": "M 冰原獵獸以分叉巨角導引寒氣，冰屬獵手可提早警戒入侵者。"
+    },
+    {
+      "id": "ice_tundra_dreadnought",
+      "current": "fierce",
+      "proposed": "fierce",
+      "reason_zh": "L 霜獸披永凍裝甲，破冰尖爪能粉碎凍土；成年獵獸採高侵略而非預設霸主。"
+    },
+    {
+      "id": "wind_reed_skiff",
+      "current": "timid",
+      "proposed": "timid",
+      "reason_zh": "S 浮空小舟隨微風以竹笛鳴響，風屬游擊能力不等於主動敵意。"
+    },
+    {
+      "id": "wind_flute_cruiser",
+      "current": "normal",
+      "proposed": "cautious",
+      "reason_zh": "M 飛舟展刺繡滑翔翼、乘疾風巡航，僅對極近入侵者反應。"
+    },
+    {
+      "id": "wind_monsoon_galeon",
+      "current": "fierce",
+      "proposed": "normal",
+      "reason_zh": "L 御風天舟風門全開噴湧颶風，威力雖大但描述偏航行而非佔地獵殺。"
+    }
+  ]
+}
