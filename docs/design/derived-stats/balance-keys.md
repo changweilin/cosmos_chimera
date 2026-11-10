@@ -59,7 +59,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.close_in_permille` | P2-10 突進 / 繞背站位 = 最短敵對可及距離 × 此值 / 1000（1–1000） |
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
-| `ai.territory_mm.{timid,normal,fierce}` | D0-E2 野生領域半徑（依物種 `temperament`）；入侵者進入即開戰；0＝不主動開戰（暫定值，Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.territory_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-E2 野生領域半徑（依物種 `temperament` 取 0/4/8/14/20/28 m）；入侵者進入即開戰；0＝不主動開戰（Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
 
 ## progression
 

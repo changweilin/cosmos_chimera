@@ -320,7 +320,7 @@ class CrossFileRules(unittest.TestCase):
     def test_temperament_is_required_and_closed(self):
         # D0-E2: territory radius comes from the species temperament; a missing value must not default silently.
         creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
-        for value in ("normal", "timid", "fierce"):
+        for value in ("timid", "cautious", "normal", "territorial", "fierce", "apex"):
             creatures[0]["temperament"] = value
             self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
         creatures[0]["temperament"] = "shy"

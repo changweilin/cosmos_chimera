@@ -76,6 +76,12 @@ namespace Cosmimera.Combat.Tests
         [TestCase(Temperament.Fierce, 19f, true)]
         [TestCase(Temperament.Fierce, 21f, false)]
         [TestCase(Temperament.Timid, 0.5f, false)]
+        [TestCase(Temperament.Cautious, 3.5f, true)]
+        [TestCase(Temperament.Cautious, 4.5f, false)]
+        [TestCase(Temperament.Territorial, 13f, true)]
+        [TestCase(Temperament.Territorial, 15f, false)]
+        [TestCase(Temperament.Apex, 27f, true)]
+        [TestCase(Temperament.Apex, 29f, false)]
         public void Proximity_engagement_follows_the_species_territory(Temperament temperament, float meters, bool engaged)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
@@ -89,12 +95,18 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(0f), 10);
+            EncounterUnit cautious = e.AddCreature(EncounterSide.Wild, Creature("c", Temperament.Cautious), null, AtMeters(25f), 10);
             EncounterUnit normal = e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(50f), 10);
+            EncounterUnit territorial = e.AddCreature(EncounterSide.Wild, Creature("tr", Temperament.Territorial), null, AtMeters(75f), 10);
             EncounterUnit fierce = e.AddCreature(EncounterSide.Wild, Creature("f", Temperament.Fierce), null, AtMeters(100f), 10);
+            EncounterUnit apex = e.AddCreature(EncounterSide.Wild, Creature("a", Temperament.Apex), null, AtMeters(125f), 10);
             Assert.That(e.TerritoryRadiusM(timid.Id), Is.EqualTo(0f));
+            Assert.That(e.TerritoryRadiusM(cautious.Id), Is.EqualTo(4f).Within(1e-6f));
             Assert.That(e.TerritoryRadiusM(normal.Id), Is.EqualTo(8f).Within(1e-6f));
+            Assert.That(e.TerritoryRadiusM(territorial.Id), Is.EqualTo(14f).Within(1e-6f));
             Assert.That(e.TerritoryRadiusM(fierce.Id), Is.EqualTo(20f).Within(1e-6f));
-            Assert.That(e.TerritoryRadiusM(normal.Id), Is.LessThan(Encounter.DisengageRadiusM));
+            Assert.That(e.TerritoryRadiusM(apex.Id), Is.EqualTo(28f).Within(1e-6f));
+            Assert.That(e.TerritoryRadiusM(apex.Id), Is.LessThan(Encounter.DisengageRadiusM));
             Assert.Throws<ContractException>(() => e.TerritoryRadiusM(99));
         }
 
@@ -240,13 +252,16 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void TerritoryTuning_preconditions()
         {
-            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(-1, 8000, 20000));
-            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 40000, 20000), "must stay below disengage");
-            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 8000, 40000));
-            var t = new TerritoryTuning(1, 2, 3);
+            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(-1, 4000, 8000, 14000, 20000, 28000));
+            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 40000, 8000, 14000, 20000, 28000), "must stay below disengage");
+            Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 4000, 8000, 14000, 40000, 28000));
+            var t = new TerritoryTuning(1, 2, 3, 4, 5, 6);
             Assert.That(t.RadiusMm(Temperament.Timid), Is.EqualTo(1));
-            Assert.That(t.RadiusMm(Temperament.Normal), Is.EqualTo(2));
-            Assert.That(t.RadiusMm(Temperament.Fierce), Is.EqualTo(3));
+            Assert.That(t.RadiusMm(Temperament.Cautious), Is.EqualTo(2));
+            Assert.That(t.RadiusMm(Temperament.Normal), Is.EqualTo(3));
+            Assert.That(t.RadiusMm(Temperament.Territorial), Is.EqualTo(4));
+            Assert.That(t.RadiusMm(Temperament.Fierce), Is.EqualTo(5));
+            Assert.That(t.RadiusMm(Temperament.Apex), Is.EqualTo(6));
             Assert.Throws<ContractException>(() => t.RadiusMm((Temperament)7));
         }
 

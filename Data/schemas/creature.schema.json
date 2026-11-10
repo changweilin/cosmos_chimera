@@ -20,8 +20,8 @@
           "enum": ["keep_distance", "flank", "charge", "hold"]
         },
         "temperament": {
-          "description": "Wild territory radius class. REQ: docs/design/combat.md#野生領域 (D0-E2); radii in balance.json#ai.territory_mm (provisional, Q-C35).",
-          "enum": ["normal", "timid", "fierce"]
+          "description": "Wild territory radius class. REQ: docs/design/combat.md#野生領域 (D0-E2); radii in balance.json#ai.territory_mm (Q-C35).",
+          "enum": ["timid", "cautious", "normal", "territorial", "fierce", "apex"]
         },
         "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
         "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },

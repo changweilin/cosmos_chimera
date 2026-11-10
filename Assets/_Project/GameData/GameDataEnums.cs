@@ -78,7 +78,7 @@ namespace Cosmimera.GameData
     /// </remarks>
     public enum Temperament
     {
-        Normal = 0, Timid = 1, Fierce = 2,
+        Normal = 0, Timid = 1, Fierce = 2, Cautious = 3, Territorial = 4, Apex = 5,
     }
 
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>

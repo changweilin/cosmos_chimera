@@ -18,23 +18,32 @@ namespace Cosmimera.Combat
         ///      distance would re-engage the moment a fight ends.
         /// Post: RadiusMm returns the matching argument. Side effects: allocates this instance.
         /// </remarks>
-        public TerritoryTuning(int timidMm, int normalMm, int fierceMm)
+        public TerritoryTuning(int timidMm, int cautiousMm, int normalMm, int territorialMm, int fierceMm, int apexMm)
         {
             const int limitMm = (int)(Encounter.DisengageRadiusM * 1000f);
             Contract.Requires(timidMm >= 0 && timidMm < limitMm, "territory_mm.timid must be 0..disengage");
+            Contract.Requires(cautiousMm >= 0 && cautiousMm < limitMm, "territory_mm.cautious must be 0..disengage");
             Contract.Requires(normalMm >= 0 && normalMm < limitMm, "territory_mm.normal must be 0..disengage");
+            Contract.Requires(territorialMm >= 0 && territorialMm < limitMm, "territory_mm.territorial must be 0..disengage");
             Contract.Requires(fierceMm >= 0 && fierceMm < limitMm, "territory_mm.fierce must be 0..disengage");
-            _radiusMm = new[] { normalMm, timidMm, fierceMm };
+            Contract.Requires(apexMm >= 0 && apexMm < limitMm, "territory_mm.apex must be 0..disengage");
+            _radiusMm = new int[6];
+            _radiusMm[(int)Temperament.Normal] = normalMm;
+            _radiusMm[(int)Temperament.Timid] = timidMm;
+            _radiusMm[(int)Temperament.Fierce] = fierceMm;
+            _radiusMm[(int)Temperament.Cautious] = cautiousMm;
+            _radiusMm[(int)Temperament.Territorial] = territorialMm;
+            _radiusMm[(int)Temperament.Apex] = apexMm;
         }
 
-        // Indexed by the Temperament value (Normal 0, Timid 1, Fierce 2).
+        // Indexed by the Temperament value (Normal 0, Timid 1, Fierce 2, Cautious 3, Territorial 4, Apex 5).
         private readonly int[] _radiusMm;
 
         /// <summary>Territory radius in mm for <paramref name="temperament"/>.</summary>
         /// <remarks>Pre: temperament defined. Post: >= 0. Side effects: none.</remarks>
         public int RadiusMm(Temperament temperament)
         {
-            Contract.Requires(temperament >= Temperament.Normal && temperament <= Temperament.Fierce, "undefined Temperament");
+            Contract.Requires(temperament >= Temperament.Normal && temperament <= Temperament.Apex, "undefined Temperament");
             return _radiusMm[(int)temperament];
         }
     }
@@ -131,7 +140,13 @@ namespace Cosmimera.Combat
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
                 d.player.roll_cooldown_ms);
             Contract.Requires(d.team.switch_cooldown_ms >= 0, "switch cooldown must be >= 0");
-            var territory = new TerritoryTuning(d.ai.territory_mm.timid, d.ai.territory_mm.normal, d.ai.territory_mm.fierce);
+            var territory = new TerritoryTuning(
+                d.ai.territory_mm.timid,
+                d.ai.territory_mm.cautious,
+                d.ai.territory_mm.normal,
+                d.ai.territory_mm.territorial,
+                d.ai.territory_mm.fierce,
+                d.ai.territory_mm.apex);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
                 d.capture.base_percent, d.capture.boss_percent, territory);
         }
@@ -203,8 +218,11 @@ namespace Cosmimera.Combat
         [Serializable] private sealed class TerritoryDto
         {
             public int timid;
+            public int cautious;
             public int normal;
+            public int territorial;
             public int fierce;
+            public int apex;
         }
 #pragma warning restore 0649, IDE1006
     }
