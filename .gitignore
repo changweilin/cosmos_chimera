@@ -1,4 +1,6 @@
-# Unity generated — regenerated on open; committing them causes merge noise and stale caches
+# ==============================================================================
+# Unity Generated
+# ==============================================================================
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -9,11 +11,25 @@
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
 /Assets/Plugins/Editor/JetBrains*
+
+# Unity meta files for ignored artifacts
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# ==============================================================================
+# IDEs & Build Systems (Visual Studio, Rider, VS Code)
+# ==============================================================================
+.vs/
+.idea/
+.vscode/
 *.csproj
+*.unityproj
 *.sln
 *.slnx
 *.suo
 *.user
+*.userprefs
 *.pidb
 *.booproj
 *.svd
@@ -21,31 +37,71 @@
 *.mdb
 *.opendb
 *.VC.db
-*.pidb.meta
-*.pdb.meta
-*.mdb.meta
-.vs/
-.idea/
-.vscode/
-crashlytics-build.properties
-sysinfo.txt
+
+# Rider / ReSharper
+*.sln.DotSettings.user
+
+# ==============================================================================
+# Unity Builds & Packages
+# ==============================================================================
 *.apk
 *.aab
 *.unitypackage
 *.app
+crashlytics-build.properties
+sysinfo.txt
 
+# ==============================================================================
+# Python & Tooling
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments & package manager caches
+.venv/
+venv/
+ENV/
+env/
+.cache/
+.tmp/
+
+# ==============================================================================
+# Operating System Files
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+[Tt]humbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# ==============================================================================
+# Local AI Agent State
+# ==============================================================================
+.ai_working
+.claude/settings.local.json
+.claude/worktrees/
+
+# ==============================================================================
+# Project-Specific Pipelines & Staging
+# ==============================================================================
 # Offline-baked geodata intermediates (P3-02); only the final template packs are committed
 /tools/geodata/_cache/
 
 # AI batch staging is reviewed before promotion; raw batches can be large
 /Data/_incoming/**/raw/
 
-# Local AI tool state
-.ai_working
-.claude/settings.local.json
+# D0 demo staging of draft batches (tools/demo-data/merge.py); regenerate, never edit
+/Data/_demo/
 
 # Unreviewed AI art deliveries (tools/prompt-forge); only promoted assets under Assets/ are committed
 /Art/_incoming/*
 !/Art/_incoming/README.md
-# D0 demo staging of draft batches (tools/demo-data/merge.py); regenerate, never edit
-/Data/_demo/
