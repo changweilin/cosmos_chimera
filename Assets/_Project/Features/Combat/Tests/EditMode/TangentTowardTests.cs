@@ -11,6 +11,8 @@ namespace Cosmimera.Combat.Tests
         private sealed class FlatSurface : IEncounterSurface
         {
             public float GroundAltitude(float3 direction) => 0f;
+
+            public bool IsSea(float3 direction) => false;
         }
 
         private CombatBalance _balance;

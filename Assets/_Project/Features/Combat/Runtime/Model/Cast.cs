@@ -453,6 +453,20 @@ namespace Cosmimera.Combat
             return CastResult.Accepted;
         }
 
+        /// <summary>Move speed (mm/s) at <paramref name="nowMs"/> after AGI and the active move_speed_mod_percent.</summary>
+        /// <remarks>
+        /// REQ: combat.md#效果疊加 — modifiers are summed first, then applied once with the [10%, 300%] clamp.
+        /// Pre: nowMs in CombatTime and >= Book's watermark.
+        /// Post: result >= 0; equals EffectMath.MoveSpeedMmS(stats, agi, Σ move_speed deltas active at nowMs, rules), so it
+        ///       equals stats.MoveSpeedMmS(agi) when no modifier is active.
+        /// Side effects: overwrites the internal modifier buffer only; no allocation.
+        /// </remarks>
+        public int MoveSpeedMmS(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return EffectMath.MoveSpeedMmS(_stats, _agi, _totals.MoveSpeedPercent, _rules);
+        }
+
         /// <summary>Resolves an enemy-targeted move (any shape except self/ally) landing on this combatant.</summary>
         /// <remarks>
         /// Call once per (cast or field tick, target), in the host's deterministic target order.

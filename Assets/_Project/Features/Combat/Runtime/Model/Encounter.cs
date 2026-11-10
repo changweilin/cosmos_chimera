@@ -24,6 +24,13 @@ namespace Cosmimera.Combat
         /// <summary>Terrain altitude (m above Radius) under unit <paramref name="direction"/>.</summary>
         /// <remarks>Pre: direction unit length. Post: finite. Side effects: none.</remarks>
         float GroundAltitude(float3 direction);
+
+        /// <summary>Whether unit <paramref name="direction"/> is sea, where wild units may not stand.</summary>
+        /// <remarks>
+        /// REQ: combat.md#只在陸地. Pre: direction unit length. Post: deterministic for a given direction on one host.
+        /// Side effects: none.
+        /// </remarks>
+        bool IsSea(float3 direction);
     }
 
     /// <summary>What happened during one tick, for presentation (VFX, numbers, HUD) only.</summary>
@@ -636,7 +643,7 @@ namespace Cosmimera.Combat
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
-                Steer(u, d.DestinationDirection, dtMs, 1000);
+                Steer(u, d.DestinationDirection, nowMs, dtMs, 1000);
                 if (d.TargetId != CombatAi.NoTarget)
                 {
                     u.Forward = TangentToward(u.Position, TargetPosition(d.TargetId), u.Forward);
@@ -725,15 +732,15 @@ namespace Cosmimera.Combat
                         float3 db = Up(b.Position);
                         if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
                         {
-                            Place(a, da);
-                            Place(b, db);
+                            PlaceUnlessSea(a, da);
+                            PlaceUnlessSea(b, db);
                         }
                     }
 
                     float3 d = Up(a.Position);
                     if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
                     {
-                        Place(a, d);
+                        PlaceUnlessSea(a, d);
                     }
                 }
             }
@@ -749,6 +756,18 @@ namespace Cosmimera.Combat
         private static float ArcM(float3 a, float3 b, float planetRadius)
         {
             return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
+        }
+
+        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea; its share of the overlap stays unresolved and later
+        // ticks (or the other body's own share) settle it.
+        private void PlaceUnlessSea(EncounterUnit u, float3 direction)
+        {
+            if (u.Side == EncounterSide.Wild && _surface.IsSea(direction))
+            {
+                return;
+            }
+
+            Place(u, direction);
         }
 
         private void Place(EncounterUnit u, float3 direction)
@@ -1024,12 +1043,19 @@ namespace Cosmimera.Combat
                 }
                 else
                 {
-                    u.WanderTarget = WanderPoint(u.Home, radiusM);
+                    if (!TryLandWanderPoint(u.Home, radiusM, out float3 target))
+                    {
+                        u.WanderResumeMs = nowMs + NextWanderPause(t);
+                        return;
+                    }
+
+                    u.WanderTarget = target;
                     u.HasWanderTarget = true;
                 }
             }
 
-            if (Steer(u, u.WanderTarget, dtMs, t.SpeedPermille))
+            // A blocked step (sea ahead) ends the leg like an arrival, so the unit pauses and draws a new destination.
+            if (Steer(u, u.WanderTarget, nowMs, dtMs, t.SpeedPermille) != SteerResult.Moving)
             {
                 u.HasWanderTarget = false;
                 u.WanderResumeMs = nowMs + NextWanderPause(t);
@@ -1039,6 +1065,27 @@ namespace Cosmimera.Combat
         private int NextWanderPause(WanderTuning t)
         {
             return t.PauseMinMs + (int)_wanderRng.NextUInt((uint)(t.PauseMaxMs - t.PauseMinMs + 1));
+        }
+
+        /// <summary>Destination draws per wander leg before giving up on a disk that is (almost) all sea.</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
+        public const int WanderSeaRetries = 8;
+
+        // REQ: combat.md#只在陸地. Redraws come from the same (seed,'W') stream, so the count of draws is still a pure
+        // function of seed and positions; a coast-hugging spawn just pauses again instead of walking into the water.
+        private bool TryLandWanderPoint(float3 home, float radiusM, out float3 target)
+        {
+            for (int i = 0; i < WanderSeaRetries; i++)
+            {
+                target = WanderPoint(home, radiusM);
+                if (!_surface.IsSea(target))
+                {
+                    return true;
+                }
+            }
+
+            target = default;
+            return false;
         }
 
         // Uniform over the disk (sqrt of the radial draw); the disk is laid on the sphere by arc length, which differs from
@@ -1130,8 +1177,16 @@ namespace Cosmimera.Combat
             return null;
         }
 
-        // Returns true when the unit is (already or now) within ArriveM of the destination.
-        private bool Steer(EncounterUnit u, float3 destinationDirection, int dtMs, int speedPermille)
+        private enum SteerResult
+        {
+            Moving,
+            Arrived,
+            Blocked,
+        }
+
+        // Arrived when the unit is (already or now) within ArriveM of the destination; Blocked when a wild's next step
+        // would land on the sea (combat.md#只在陸地), in which case it does not move this tick.
+        private SteerResult Steer(EncounterUnit u, float3 destinationDirection, long nowMs, int dtMs, int speedPermille)
         {
             float3 up = Up(u.Position);
             float3 dest = math.normalize(destinationDirection);
@@ -1139,16 +1194,22 @@ namespace Cosmimera.Combat
             float r = _planet.Radius;
             if (angle * r <= ArriveM)
             {
-                return true;
+                return SteerResult.Arrived;
             }
 
-            float speedMs = _balance.Stats.MoveSpeedMmS(u.Agi) * 0.001f * speedPermille / 1000f;
+            // REQ: combat.md#效果疊加 (tech-debt D0-E3): move_speed_mod_percent scales both combat and wander steps.
+            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f;
             float step = math.min(angle, speedMs * dtMs * 0.001f / r);
             float3 heading = Tangent(up, dest - up);
             float3 next = math.normalize(up * math.cos(step) + heading * math.sin(step));
+            if (u.Side == EncounterSide.Wild && _surface.IsSea(next))
+            {
+                return SteerResult.Blocked;
+            }
+
             u.Position = GroundPoint(next, u.BodyRadiusM);
             u.Forward = Tangent(next, heading);
-            return (angle - step) * r <= ArriveM;
+            return (angle - step) * r <= ArriveM ? SteerResult.Arrived : SteerResult.Moving;
         }
 
         private float3 GroundPoint(float3 direction, float bodyRadius)

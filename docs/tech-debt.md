@@ -5,9 +5,8 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | 來源 | ID | 嚴重度 | 內容 |
 |---|---|---|---|
 | `docs/reviews/P1-review-r17-sol.md` 之後 | r18 | — | P1 第 18 輪複審因 Codex 額度中斷未執行；p1/r5-fixes 已於 2026-11-08 合併（EditMode 825/825） |
-| `Combat/Runtime/Model/Encounter.cs` | D0-E3 | low | steering 為直線大圓移動，無障礙迴避；移速未套 move_speed 效果 |
-| `Combat/Runtime/Model/Encounter.cs` | D0-W1 | low | 遊蕩目的地不檢查海面／障礙（與 D0-E3 相同的直線 steering）；生成點靠海時可能走進水面 |
-| `Combat/Runtime/Model/Encounter.cs` | D0-W2 | low | 推開在每 tick 全部移動與施招之後執行：本 tick 招式用的是推開前位置（偏差 ≤ 一個身體寬）；推開不看海面／地形，可把單位推進水面；人群每 tick 只掃 2 輪，重疊靠後續 tick 收斂 |
+| `Combat/Runtime/Model/Encounter.cs` | D0-E3 | low | steering 為直線大圓移動，無障礙迴避：野生遇海只停在岸邊，不繞行海灣（2026-11-11 已接 move_speed 效果、野生只在陸地） |
+| `Combat/Runtime/Model/Encounter.cs` | D0-W2 | low | 推開在每 tick 全部移動與施招之後執行：本 tick 招式用的是推開前位置（偏差 ≤ 一個身體寬）；推開不看地形起伏（海面已擋野生，玩家宙獸仍可被推入水面）；人群每 tick 只掃 2 輪，重疊靠後續 tick 收斂 |
 | `Bootstrap/Demo/RunSession.cs` | D0-W2 | low | 角色被推開是直接改 Rigidbody／transform 位置（瞬移），不經物理；夥伴 Follow 貼身時角色可能被持續推擠，待人工試玩確認手感 |
 | `Bootstrap/Demo/RunSession.cs` | D0-W3 | low | 互動選單為 IMGUI，開啟時停用角色移動輸入但戰鬥時間照走；目標遊蕩超過 2× 互動距離即自動關閉 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-B2 | low | 小行星（幼年 BOSS）在 Q-D1 定案前仍以 R=640 遊玩，與衛星只差 BOSS 階段與型態封頂（模板數同為 4）；BOSS 等級仍由固定 d=1 決定，不隨階段變化 |

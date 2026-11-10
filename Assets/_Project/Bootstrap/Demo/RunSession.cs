@@ -132,6 +132,9 @@ namespace Cosmimera.Bootstrap.Demo
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
+
+            // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
+            public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
         }
 
         private sealed class WildInfo
