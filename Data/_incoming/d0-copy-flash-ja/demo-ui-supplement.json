@@ -223,5 +223,14 @@
   },
   "ui.star_select.boss_stage": {
     "ja": "ボス：{stage}"
+  },
+  "ui.lobby.player_level": {
+    "ja": "プレイヤーレベル LV{level}（EXP {exp}／{next}）"
+  },
+  "ui.results.player_exp": {
+    "ja": "プレイヤーEXP +{exp}（LV{level}）"
+  },
+  "ui.star_select.boss_unlock_hint": {
+    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放"
   }
 }

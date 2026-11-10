@@ -25,14 +25,14 @@
 3. `quest-templates.json`：5 類任務步驟（每類 3 個變體）與 3 條主線任務鏈。
 4. `boss-epithets.json`：6 種星球類型各 3 個 BOSS 稱號（全數採「〜の」形式）。
 5. `strings.json`：41 個 UI 字串鍵值（大廳、選星、HUD、道具、結算）。
-6. `demo-ui-supplement.json`：75 個補充 UI 鍵值（星球名稱、屬性名稱、戰鬥 HUD、大廳隊伍、素材與進化、目標切換、近身互動、性格與階段等）。
+6. `demo-ui-supplement.json`：78 個補充 UI 鍵值（星球名稱、屬性名稱、戰鬥 HUD、大廳隊伍、素材與進化、目標切換、近身互動、性格與階段、玩家等級與 BOSS 解鎖提示等）。
 7. `check.py`：同步驗證來源與輸出的比對腳本。
 
 ---
 
 ## 驗收結果
 
-`python Data/_incoming/d0-copy-flash-ja/check.py` 驗收結果：**ALL PASS**（6 檔共 199 欄位結構、佔位符、數字與術語完全相符）。
+`python Data/_incoming/d0-copy-flash-ja/check.py` 驗收結果：**ALL PASS**（6 檔共 202 欄位結構、佔位符、數字與術語完全相符）。
 
 比對細項與欄位數：
 - `affixes.json`：14 筆詞綴（name + desc = 28 個欄位）。
@@ -40,19 +40,26 @@
 - `quest-templates.json`：5 種步驟類型各 3 個變體（15 欄位）+ 3 條任務鏈（title + intro = 6 欄位），共 21 個欄位。
 - `boss-epithets.json`：6 種星球類型各 3 個稱號，共 18 個欄位。
 - `strings.json`：41 個 UI 字串鍵值（共 41 個欄位）。
-- `demo-ui-supplement.json`：75 個補充 UI 鍵值（共 75 個欄位）。
+- `demo-ui-supplement.json`：78 個補充 UI 鍵值（共 78 個欄位）。
 
-總計比對欄位數：199 個本地化欄位。
+總計比對欄位數：202 個本地化欄位。
 
 ---
 
-## 補充檔案驗收：demo-ui-supplement.json（75 鍵值）
+## 補充檔案驗收：demo-ui-supplement.json（78 鍵值）
 
-- 鍵值數量：75 個鍵值（共 75 個本地化欄位）。
+- 鍵值數量：78 個鍵值（共 78 個本地化欄位）。
 - `check.py` 比對結果：全部通過（鍵值集合、鍵值順序、無多餘/缺漏佔位符、數字與術語完全相符）。
 - 既有鍵值校稿處置：
   - `ui.hud.target_cycle`（`{key} ターゲット切替：{target}`）與 `ui.hud.target_none`（`なし`）：用語簡潔明確，符合日文遊戲 HUD 慣例與上下文，予以保留。
-- 本次新增 17 個鍵值（D0-W3 / D0-B2 / D0-W4）：
+- 本次新增 3 個鍵值（D0-B2 玩家等級 / BOSS 階段解鎖提示）：
+  - 玩家等級（1 欄位）：
+    - `ui.lobby.player_level`：「`プレイヤーレベル LV{level}（EXP {exp}／{next}）`」。「玩家」依規譯為「プレイヤー」，「經驗」比照 HP、CT 及 LV 等 UI 縮寫規範對齊 en 版之「EXP」，佔位符與全形分隔號完整保留。
+  - 結算玩家經驗（1 欄位）：
+    - `ui.results.player_exp`：「`プレイヤーEXP +{exp}（LV{level}）`」。「玩家經驗」精簡對齊為「プレイヤーEXP」，符合結果畫面呈現慣例。
+  - 選星 BOSS 階段解鎖提示（1 欄位）：
+    - `ui.star_select.boss_unlock_hint`：「`プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放`」。「玩家」譯「プレイヤー」，BOSS 譯「ボス」，階段沿用既有 `ui.stage` 規範「少年期」「成年期」，解鎖採標準日系遊戲提示語態「〜で…が解放」。
+- 既往新增 17 個鍵值（D0-W3 / D0-B2 / D0-W4）：
   - 互動提示 HUD（1 欄位）：
     - `ui.hud.interact_prompt`：「`{key} インタラクト：{target}`」，符合日文主流動作／RPG 遊戲互動 HUD 慣例。
   - 近身互動選單與回饋（6 欄位）：
@@ -79,3 +86,4 @@
     - `ui.star_select.boss_stage`：「`ボス：{stage}`」，術語「ボス」與佔位符完整保留。
 
 - 2026-11-10 · FLASH · done · 完成 D0-W3/B2/W4 17 鍵 ja 初稿，校稿保留 target_cycle/none，check.py 199 欄 ALL PASS · 下一步：OPUS 驗收
+- 2026-11-10 · FLASH · done · 完成 D0-B2 玩家等級與 BOSS 階段解鎖提示 3 鍵 ja 初稿，check.py 202 欄 ALL PASS · 下一步：OPUS 驗收

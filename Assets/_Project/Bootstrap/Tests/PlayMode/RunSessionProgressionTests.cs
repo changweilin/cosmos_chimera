@@ -221,11 +221,14 @@ namespace Cosmimera.Bootstrap.Tests
             Kill(s, env, e1);
             ParkAt(s, Quiet(s, questRegion));
             int[] before = Exp(s);
+            int playerBefore = s.PlayerExpForTests;
             s.InjectFaintForTests(e1);
             s.InjectFaintForTests(e1);
             Step(s);
             Assert.That(s.InCombatForTests, Is.False, "battle 1 over");
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 20, 20, 10, 10, 10, 10 }), "duplicate faint pays {0,1} once");
+            // REQ: level-progression.md#玩家等級 — the player earns the sum the mains actually gained.
+            Assert.That(s.PlayerExpForTests - playerBefore, Is.EqualTo(80), "player XP = sum of main gains");
 
             s.SwitchMainForTests();
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 1, 2 }), "slot 0 swapped for slot 2 out of combat");
@@ -913,7 +916,7 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         private static RunPlan PlanFor(Env env, ulong seed) =>
-            RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), seed, env.Type, env.Wild, env.Vocab, null);
+            RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), seed, env.Type, CreatureStage.Adult, env.Wild, env.Vocab, null);
 
         // Same inputs as RunSession.Configure with no geo-templates, so the session builds exactly this plan.
         private static ulong FindSeed(Env env, System.Func<RunPlan, bool> suitable)
@@ -1144,7 +1147,8 @@ namespace Cosmimera.Bootstrap.Tests
                     ""rewards"":{""base_xp"":{""wild"":80,""capture"":40,""quest_step"":80,""quest_chain"":160,""boss"":640},
                     ""reference_level"":10,""elite_multiplier"":2,
                     ""wild_level"":{""boss_level_min"":19,""boss_level_max"":100,""per_tier"":2,
-                    ""role_bonus"":{""normal"":0,""elite"":3,""boss"":5}},""sidekick_share_divisor"":2}}}"),
+                    ""role_bonus"":{""normal"":0,""elite"":3,""boss"":5}},""sidekick_share_divisor"":2},
+                    ""player"":{""xp_multiplier"":6,""boss_stage_unlock_levels"":[1,20,35]}}}"),
                 Actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
             };
             foreach (GameDef d in db.All)
@@ -1186,7 +1190,7 @@ namespace Cosmimera.Bootstrap.Tests
             session.Configure(env.Copy, env.Balance, env.Actions, Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    PlanetType = env.Type, Seed = seed, Radius = Radius, Party = party,
+                    PlanetType = env.Type, Seed = seed, Radius = Radius, BossStage = CreatureStage.Adult, Party = party,
                     PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),

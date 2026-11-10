@@ -81,6 +81,8 @@ P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與
 | `progression.rewards.elite_multiplier` | 擊倒菁英的 r（2）；只用於野戰擊倒 |
 | `progression.rewards.wild_level.*` | BOSS 等級 B(d) = boss_level_min + round_half_up((boss_level_max − boss_level_min)×(d−1)/9)；野生等級 = clamp(B(d) − role_bonus.boss − per_tier×(2−tier) + role_bonus, 1, 100)（D0-X3） |
 | `progression.rewards.sidekick_share_divisor` | 副手組共分 floor(主力實得 / 此值)；目前只支援 2 |
+| `progression.player.xp_multiplier` | 玩家等級曲線 = 此值 × T(L)（6；D0-B2，[level-progression.md#玩家等級](../level-progression.md#玩家等級)） |
+| `progression.player.boss_stage_unlock_levels` | `[1, 少年解鎖, 成年解鎖]` = `[1, 20, 35]`；已解鎖 BOSS 階段均等抽（[planet-world.md#boss-尺寸](../planet-world.md#boss-尺寸)） |
 
 ## materials
 

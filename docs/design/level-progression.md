@@ -69,6 +69,14 @@ W = sum(w(i))
 
 `allocate_main_xp` 使用精確分數；整數結算採最大餘額法（見下節），存檔只存整數累計經驗。
 
+## <a id="玩家等級"></a>玩家等級（2026-11-10 定案，D0-B2）
+
+- 玩家等級 P 為 LV1–100，新存檔 **LV1**；需求曲線為宙獸的 **6 倍**：`T_player(L) = 6 × T(L)`（`balance.json#progression.player.xp_multiplier`）。
+- 玩家經驗 = 每個事件中**各主力實得**經驗之和（整數結算且套 LV100 上限後的實際增加量）；副手額外份額**不計入**；死亡主力為 0。上限 `6 × T(100)`，超出丟棄。
+- 宙獸經驗分配不變（主力 4／2 權重、副手額外 `floor(a/2)`，見〈經驗分配〉與〈獎勵量〉）。
+- 用途：決定星球 BOSS 階段的抽選範圍，見 [planet-world.md#boss-尺寸](planet-world.md#boss-尺寸)。
+- 實作：`Progression.PlayerXpThreshold/PlayerLevelOf/MaxBossStage`；存檔 `LobbySave` 格式 4 `player_exp`（格式 1–3 載入為 0，不回溯）。
+
 ## 實作狀態（2026-11-09）
 
 - 已接線：`Progression`（門檻表、LevelOf、野生等級、來源經驗、結算）、`CreatureStats.AtLevel`、進化改為等級門檻（schema `evolution.level`、importer、`EvolutionRequirement.RequiredLevel`／`EvolutionCheck.LevelShortBy`／`EvolutionRules` 讀 `Progression.LevelOf(Exp)`）、存檔格式 2（v1 一次遷移並備份 `.v1.bak`）、D0 run 戰鬥／收服／任務發放經驗與 HUD 等級顯示。

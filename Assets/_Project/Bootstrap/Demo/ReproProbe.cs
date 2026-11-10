@@ -69,7 +69,7 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v3\n");
+            sb.Append("# cosmimera repro-probe v4\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
@@ -81,12 +81,17 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 foreach (ulong seed in Seeds)
                 {
-                    AppendLine(sb, type, seed, radiusFor(type.Size), wildPool, vocabulary, templates, templateTags, sampleDump);
+                    AppendLine(sb, type, seed, radiusFor(BossDraw.SizeFor(ProbeBossStage)), wildPool, vocabulary, templates, templateTags, sampleDump);
                 }
             }
 
             return sb.ToString();
         }
+
+        // v4 (D0-B2): size comes from the boss stage, not the type. The probe pins the adult boss — the largest planet and
+        // the full-pool plan — so one row per (type, seed) still exercises every generator stage; it does not mirror the
+        // player-level draw, which would make the report depend on save state.
+        private const CreatureStage ProbeBossStage = CreatureStage.Adult;
 
         private static void AppendLine(StringBuilder sb, PlanetTypeDef type, ulong seed, float radius,
             IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, IReadOnlyList<TemplateSource> templates,
@@ -100,7 +105,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (templates.Count > 0)
             {
                 List<TemplatePlacement> placements = TemplatePlanner.Choose(seed, type.TerrainTags, templateTags,
-                    TemplatePlanner.CountFor(type.Size));
+                    TemplatePlanner.CountFor(BossDraw.SizeFor(ProbeBossStage)));
                 planetTemplates = PlanetTemplates.Create(config, templates, placements);
             }
 
@@ -114,7 +119,7 @@ namespace Cosmimera.Bootstrap.Demo
                     isLand = d => !view.IsSea(d);
                 }
 
-                RunPlan plan = RunPlanner.Generate(config, seed, type, wildPool, vocabulary, isLand);
+                RunPlan plan = RunPlanner.Generate(config, seed, type, ProbeBossStage, wildPool, vocabulary, isLand);
 
                 ulong baseBits = Fnv.Offset, baseMm = Fnv.Offset, surfBits = Fnv.Offset, surfMm = Fnv.Offset;
                 int sea = 0;

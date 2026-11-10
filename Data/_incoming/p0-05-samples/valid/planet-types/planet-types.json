@@ -1,7 +1,6 @@
 [
   {
     "id": "sample_lava_planet",
-    "size": "small",
     "terrain_tags": ["volcano", "rift"],
     "element_bias": ["fire", "earth"]
   }

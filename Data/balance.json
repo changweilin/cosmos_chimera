@@ -48,6 +48,7 @@
       "elite_multiplier": 2,
       "wild_level": {"boss_level_min": 5, "boss_level_max": 75, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},
       "sidekick_share_divisor": 2
-    }
+    },
+    "player": {"xp_multiplier": 6, "boss_stage_unlock_levels": [1, 20, 35]}
   }
 }

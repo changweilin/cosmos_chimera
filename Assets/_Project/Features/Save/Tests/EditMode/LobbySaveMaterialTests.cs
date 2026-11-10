@@ -36,13 +36,13 @@ namespace Cosmimera.Save.Tests
         }
 
         [Test]
-        public void Format_2_loads_with_an_empty_stock_and_writes_format_3()
+        public void Format_2_loads_with_an_empty_stock_and_writes_the_current_format()
         {
             LobbySave r = Parse("{\"version\":2,\"next_instance_id\":2," + Owned +
                 ",\"materials\":[{\"element\":\"light\",\"tier\":1,\"qty\":5}]}");
             Assert.That(r.LoadedFormatVersion, Is.EqualTo(2));
             Assert.That(r.Materials.Snapshot().Count, Is.EqualTo(0), "a v2 file never had a stock; nothing is reconstructed");
-            Assert.That(r.ToJson(), Does.Contain("\"version\": 3"));
+            Assert.That(r.ToJson(), Does.Contain("\"version\": " + LobbySave.FormatVersion));
         }
 
         [TestCase("{\"element\":\"plasma\",\"tier\":1,\"qty\":1}", TestName = "Unknown element is refused")]

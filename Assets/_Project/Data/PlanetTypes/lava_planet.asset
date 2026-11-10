@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: lava_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: lava_planet
-  size: 0
   terrainTags:
   - volcano
   - rift_valley

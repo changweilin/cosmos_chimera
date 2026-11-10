@@ -28,6 +28,7 @@ namespace Cosmimera.Bootstrap.Demo
             public PlanetTypeDef Type;
             public ulong Seed;
             public float Radius;
+            public CreatureStage BossStage;
         }
 
         [SerializeField] private GameDatabase _database;
@@ -64,6 +65,7 @@ namespace Cosmimera.Bootstrap.Demo
         // open, because leaving would drop rewards the player was shown.
         private string _settleError;
         private readonly List<string> _xpLines = new List<string>();
+        private string _playerXpLine = string.Empty;
         private readonly List<int> _runPartyIds = new List<int>();
         private Pcg32 _menuRng;
         private GUIStyle _title;
@@ -423,6 +425,7 @@ namespace Cosmimera.Bootstrap.Demo
         // P4-07 minimal: order + add/remove only. Vessel/sub-hand pairing rules are not in D0 (vessel is shown, not enforced).
         private void DrawPartyEditor()
         {
+            GUILayout.Label(PlayerLevelLabel(), _text);
             GUILayout.Label($"{_copy.Ui("ui.lobby.team")} ({_save.Party.Count}/{LobbySave.MaxParty})", _text);
             GUILayout.Label(_copy.Ui("ui.lobby.party_hint"), _text);
             _insidePartyScroll = true;
@@ -612,12 +615,27 @@ namespace Cosmimera.Bootstrap.Demo
             CommitLobby(candidate);
         }
 
+        private string PlayerLevelLabel()
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            int level = _progression.PlayerLevelOf(_save.PlayerExp);
+            string next = level < _progression.MaxLevel ? _progression.PlayerXpThreshold(level + 1).ToString(inv) : "-";
+            return _copy.Ui("ui.lobby.player_level").Replace("{level}", level.ToString(inv))
+                .Replace("{exp}", _save.PlayerExp.ToString(inv)).Replace("{next}", next);
+        }
+
         private void DrawStarSelect()
         {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
             GUILayout.Label(_copy.Ui("ui.star_select.title"), _title, GUILayout.Height(60));
+            GUILayout.Label(PlayerLevelLabel() + "\n" + _copy.Ui("ui.star_select.boss_unlock_hint")
+                .Replace("{adolescent}", _progression.BossStageUnlockLevel(CreatureStage.Adolescent).ToString(inv))
+                .Replace("{adult}", _progression.BossStageUnlockLevel(CreatureStage.Adult).ToString(inv)), _text);
             foreach (PlanetOption o in _options)
             {
-                string size = _copy.Ui("ui.star_select.size_" + o.Type.Size.ToString().ToLowerInvariant());
+                string size = _copy.Ui("ui.star_select.size_" + WorldGen.BossDraw.SizeFor(o.BossStage).ToString().ToLowerInvariant());
+                string boss = _copy.Ui("ui.star_select.boss_stage")
+                    .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
                 var elementNames = new List<string>();
                 foreach (Element e in o.Type.ElementBias)
                 {
@@ -625,7 +643,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 string elements = string.Join(" / ", elementNames);
-                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {size} (R={o.Radius:0} m)\n" +
+                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
                                 $"{_copy.Ui("ui.star_select.main_elements")}：{elements}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
@@ -668,6 +686,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             GUILayout.Space(10);
+            GUILayout.Label(_playerXpLine, _text);
             GUILayout.Label(_copy.Ui("ui.lobby.team"), _text);
             foreach (string line in _xpLines)
             {
@@ -707,10 +726,17 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
+            CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
             for (int i = 0; i < 3 && types.Count > 0; i++)
             {
                 PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
-                _options.Add(new PlanetOption { Type = t, Seed = _menuRng.NextUInt(), Radius = RadiusFor(t.Size) });
+                ulong seed = _menuRng.NextUInt();
+                CreatureStage stage = WorldGen.BossDraw.Stage(seed, maxStage);
+                _options.Add(new PlanetOption
+                {
+                    Type = t, Seed = seed, BossStage = stage, Radius = RadiusFor(WorldGen.BossDraw.SizeFor(stage)),
+                });
             }
         }
 
@@ -746,7 +772,8 @@ namespace Cosmimera.Bootstrap.Demo
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
                 new RunSetup
                 {
-                    PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, Party = party,
+                    PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
+                    PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops,
                     Templates = _templates, TemplateTags = _templateTags,
@@ -758,6 +785,10 @@ namespace Cosmimera.Bootstrap.Demo
         {
             // Q-M4: the run itself is never saved; only what it brought back is written to the lobby save.
             _xpLines.Clear();
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            _playerXpLine = _copy.Ui("ui.results.player_exp")
+                .Replace("{exp}", (outcome.PlayerExp - _save.PlayerExp).ToString(inv))
+                .Replace("{level}", _progression.PlayerLevelOf(outcome.PlayerExp).ToString(inv));
             for (int i = 0; i < _runPartyIds.Count; i++)
             {
                 OwnedCreature o = _save.Get(_runPartyIds[i]);

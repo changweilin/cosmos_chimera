@@ -19,13 +19,15 @@ namespace Cosmimera.Save
     /// so it is not converted: a v1 creature restarts at T(stage floor) (option A, level-progression.md#獎勵量).
     /// Version 3 (P2-05, Q-C32): root <c>materials</c> — the lobby-wide evolution material stock. Older saves load with an
     /// empty stock; no past run's drops are reconstructed.
+    /// Version 4 (D0-B2): root <c>player_exp</c> — cumulative player XP. Older saves load with 0 (player LV1); no past
+    /// run's XP is reconstructed.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 3;
+        public const int FormatVersion = 4;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -35,6 +37,10 @@ namespace Cosmimera.Save
         private readonly List<int> _party = new List<int>();
         private int _nextInstanceId = 1;
         private readonly MaterialInventory _materials = new MaterialInventory();
+
+        /// <summary>Cumulative player XP (level-progression.md#玩家等級).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int PlayerExp { get; private set; }
 
         /// <summary>Format version the save was read from (FormatVersion for a new save); lower means it was migrated.</summary>
         /// <remarks>Pre: none. Post: 1..FormatVersion. Side effects: none.</remarks>
@@ -152,6 +158,7 @@ namespace Cosmimera.Save
             var c = new LobbySave
             {
                 StarterLine = StarterLine, _nextInstanceId = _nextInstanceId, LoadedFormatVersion = LoadedFormatVersion,
+                PlayerExp = PlayerExp,
             };
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
@@ -281,6 +288,7 @@ namespace Cosmimera.Save
                 starter_line = StarterLine ?? string.Empty,
                 party = _party.ToArray(),
                 owned = new CreatureDto[_owned.Count],
+                player_exp = PlayerExp,
             };
             IReadOnlyList<MaterialStack> stock = _materials.Snapshot();
             dto.materials = new MaterialDto[stock.Count];
@@ -309,7 +317,7 @@ namespace Cosmimera.Save
             return JsonUtility.ToJson(dto, true);
         }
 
-        /// <summary>Parses a save, migrating formats 1 and 2 to the current format.</summary>
+        /// <summary>Parses a save, migrating formats 1–3 to the current format.</summary>
         /// <remarks>
         /// Pre: json non-empty; progression non-null; stageOf non-null (returns null for an unknown species).
         /// Post: the save it encodes with every Exp in 0..progression.MaxExp (higher values are clipped, never earned);
@@ -321,7 +329,9 @@ namespace Cosmimera.Save
         ///       a party empty while creatures are owned (or non-empty without any), or a format-1 species stageOf
         ///       does not know (it cannot be migrated without guessing), and — format 3 only — a material entry with an
         ///       unknown element id, a tier outside 1..MaterialDrops.MaxTier, a qty below 1, or an (element, tier) listed
-        ///       twice. Formats 1–2 load with an empty material stock (their materials field is ignored).
+        ///       twice, and — format 4 only — a negative player_exp. Formats 1–2 load with an empty material stock (their
+        ///       materials field is ignored); formats 1–3 load with PlayerExp 0. PlayerExp above
+        ///       progression.PlayerMaxExp is clipped.
         /// Side effects: allocates.
         /// </remarks>
         public static LobbySave FromJson(string json, Progression progression, Func<string, CreatureStage?> stageOf)
@@ -372,6 +382,12 @@ namespace Cosmimera.Save
             }
 
             save._party.AddRange(party);
+            if (dto.version >= 4)
+            {
+                Check(dto.player_exp >= 0, "player_exp must be >= 0");
+                save.PlayerExp = Math.Min(dto.player_exp, progression.PlayerMaxExp);
+            }
+
             if (dto.version >= 3)
             {
                 var keys = new HashSet<MaterialKey>();
@@ -442,6 +458,14 @@ namespace Cosmimera.Save
             return save;
         }
 
+        /// <summary>Sets cumulative player XP.</summary>
+        /// <remarks>Pre: exp &gt;= 0. Post: PlayerExp == exp. Side effects: mutates this save.</remarks>
+        public void SetPlayerExp(int exp)
+        {
+            Contract.Requires(exp >= 0, "player exp must be >= 0");
+            PlayerExp = exp;
+        }
+
         /// <summary>Writes atomically to <paramref name="path"/> (temp file + replace, so a crash never leaves half a save).</summary>
         /// <remarks>Pre: path non-empty; directory writable. Post: Load(path) equals this. Side effects: writes files.</remarks>
         public void Write(string path)
@@ -474,6 +498,7 @@ namespace Cosmimera.Save
             public int[] party;
             public CreatureDto[] owned;
             public MaterialDto[] materials;
+            public int player_exp;
         }
 
         [Serializable] private sealed class MaterialDto

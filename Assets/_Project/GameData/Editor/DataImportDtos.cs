@@ -45,7 +45,6 @@ namespace Cosmimera.GameData.Editor
     internal sealed class PlanetTypeDto
     {
         [JsonProperty("id", Required = Required.Always)] public string Id;
-        [JsonProperty("size", Required = Required.Always)] public string Size;
         [JsonProperty("terrain_tags", Required = Required.Always)] public List<string> TerrainTags;
         [JsonProperty("element_bias", Required = Required.Always)] public List<string> ElementBias;
     }

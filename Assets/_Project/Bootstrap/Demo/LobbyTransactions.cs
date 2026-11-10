@@ -92,7 +92,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Banks a finished run (XP, captures, materials) into the lobby save and persists it, or changes nothing.</summary>
         /// <remarks>
         /// Pre: live, partyIds and outcome non-null; partyIds owned by live and outcome.PartyExp.Count == partyIds.Count;
-        ///      path non-empty.
+        ///      outcome.PlayerExp &gt;= live.PlayerExp (a run never takes player XP away); path non-empty.
         /// Post: Committed → <paramref name="next"/> holds the outcome and the file holds next. StockFull → banking would
         ///       push <paramref name="overflow"/> past int.MaxValue; nothing applied, nothing written (never truncated).
         ///       WriteFailed → <paramref name="error"/> set. Otherwise next == live; live is never mutated, so after a
@@ -106,6 +106,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(live != null && partyIds != null && outcome != null, "live, partyIds and outcome are required");
             Contract.Requires(outcome.PartyExp.Count == partyIds.Count, "one PartyExp entry per party slot");
+            Contract.Requires(outcome.PlayerExp >= live.PlayerExp, "outcome.PlayerExp must not be below live.PlayerExp");
             // Before the StockFull early return, so a caller bug is never masked by a data refusal (SOL r2 R2-04).
             Contract.Requires(!string.IsNullOrEmpty(path), "path must not be empty");
             for (int i = 0; i < partyIds.Count; i++)
@@ -127,6 +128,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 candidate.SetExp(partyIds[i], outcome.PartyExp[i]);
             }
+
+            candidate.SetPlayerExp(outcome.PlayerExp);
 
             try
             {

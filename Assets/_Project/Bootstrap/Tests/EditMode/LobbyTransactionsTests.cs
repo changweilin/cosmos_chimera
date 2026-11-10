@@ -147,6 +147,25 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(Reload().ToJson(), Is.EqualTo(next.ToJson()));
         }
 
+        // REQ: level-progression.md#玩家等級 (D0-B2): the run's cumulative player XP is banked with the creatures'.
+        [Test]
+        public void Settle_banks_player_exp()
+        {
+            LobbySave live = Ready();
+            live.SetPlayerExp(100);
+            RunOutcome outcome = Outcome(P.XpThreshold(21));
+            outcome.PlayerExp = 700;
+            CommitStatus st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out LobbySave next, out _, out _);
+            Assert.That(st, Is.EqualTo(CommitStatus.Committed));
+            Assert.That(next.PlayerExp, Is.EqualTo(700));
+            Assert.That(live.PlayerExp, Is.EqualTo(100), "the live save is never mutated");
+            Assert.That(Reload().PlayerExp, Is.EqualTo(700));
+
+            outcome.PlayerExp = 99;
+            Assert.Throws<ContractException>(() =>
+                LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out _, out _, out _), "a run never lowers player XP");
+        }
+
         [Test]
         public void Settle_write_failure_is_retryable_without_double_banking()
         {

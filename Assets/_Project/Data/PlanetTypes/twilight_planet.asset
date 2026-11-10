@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: twilight_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: twilight_planet
-  size: 2
   terrainTags:
   - eternal_day
   - eternal_night

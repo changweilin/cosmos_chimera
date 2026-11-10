@@ -18,6 +18,9 @@
 | 三階（成年 `adult`）或超載 | 大 |
 
 - 每顆星球先由 seed 決定 BOSS（物種＋階段），尺寸由上表推導；**星球類型不再決定尺寸**，只決定地貌與屬性偏好。
+- 階段抽選（2026-11-10 使用者定案）：依[玩家等級](level-progression.md#玩家等級)解鎖，已解鎖階段**均等**抽：P&lt;20 只有幼年；P≥20 幼／少各 1/2；P≥35 幼／少／成各 1/3（`balance.json#progression.player.boss_stage_unlock_levels` = `[1, 20, 35]`，沿用進化門檻 H）。抽選用獨立亂數串流 `Pcg32(seed,'B')`（`WorldGen.BossDraw`），選星卡片抽定後帶入 run，不在降落時重抽。
+- 型態封頂（2026-11-10 使用者定案）：該星球所有野生與菁英的型態**不高於 BOSS 階段**（`RunPlanner` v3）。
+- 同 seed 在不同玩家等級可能抽到不同階段；分享 seed（Q-M1）時需一併分享階段。
 - 星海選星時，星球卡片顯示 BOSS 階段與星球尺寸，讓玩家依難度選星（P4-02）。
 - 超載 BOSS 待 Q-C12 定案後才加入抽選；在此之前大型星球的 BOSS 一律成年。
 
@@ -54,7 +57,7 @@ PlanetSeed + PlanetType + GeneratorVersion
 | 風暴星 | 高原、群島 | 雷、風 |
 | 晶礦星 | 峽谷、洞窟 | 金、土 |
 | 晨昏星 | 半永晝/半永夜 | 光、影 |
-（暫定，數值與清單以 `Data/planet-types/` 為準。尺寸改由 BOSS 決定，見〈BOSS 決定星球尺寸〉；`planet-types` 的 `size` 欄待 D0-B2 實作時退役。）
+（暫定，數值與清單以 `Data/planet-types/` 為準。尺寸改由 BOSS 決定，見〈BOSS 決定星球尺寸〉；`planet-types` 的 `size` 欄已於 D0-B2 退役。）
 
 ## 目標與結束條件
 - BOSS 戰數值（2026-11-10 定案，D0-R2）：BOSS 的 HP 上限 ×2；模型與 STR 判定體同乘 1.5（較易被命中、近戰觸及也更遠）。等級見 [level-progression.md#獎勵量](level-progression.md)（D0-X3）。

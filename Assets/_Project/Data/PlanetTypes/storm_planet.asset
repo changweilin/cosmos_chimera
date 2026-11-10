@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: storm_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: storm_planet
-  size: 2
   terrainTags:
   - plateau
   - archipelago

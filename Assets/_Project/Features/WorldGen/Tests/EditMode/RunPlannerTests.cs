@@ -13,7 +13,8 @@ namespace Cosmimera.WorldGen.Tests
         // Pinned digest of seed 12345 on the fixture below; update only with a GeneratorVersion bump (testing.md).
         // v1 → v2 left this fixture's digest unchanged: its bias elements are all in the pool, so the quest element and the
         // RNG stream are the same; only twilight/storm-like biases change.
-        private const ulong SnapshotSeed12345V2 = 3196599958287516450UL;
+        // v2 → v3 (D0-B2) also left it unchanged: the fixture plans an adult boss, where the stage cap never binds.
+        private const ulong SnapshotSeed12345V3 = 3196599958287516450UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -28,7 +29,7 @@ namespace Cosmimera.WorldGen.Tests
             _type = ScriptableObject.CreateInstance<PlanetTypeDef>();
             _created.Add(_type);
             _type.SetId("verdant_planet");
-            _type.Set(PlanetSize.Medium, new List<string> { "forest", "river_valley" },
+            _type.Set(new List<string> { "forest", "river_valley" },
                 new List<Element> { Element.Wood, Element.Water });
             _pool = new List<CreatureDef>();
             string[] lines = { "wood", "fire", "water" };
@@ -65,7 +66,7 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         private RunPlan Plan(ulong seed, float radius = 640f, System.Func<float3, bool> isLand = null) =>
-            RunPlanner.Generate(new PlanetConfig(radius, float3.zero), seed, _type, _pool, _vocab, isLand);
+            RunPlanner.Generate(new PlanetConfig(radius, float3.zero), seed, _type, CreatureStage.Adult, _pool, _vocab, isLand);
 
         [Test]
         public void Boss_is_reachable_by_the_main_route_for_1000_seeds()
@@ -157,8 +158,8 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(2), "bump the snapshot with GeneratorVersion");
-            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V2));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(3), "bump the snapshot with GeneratorVersion");
+            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V3));
         }
 
         // REQ: SOL P2-12 D0 calibration (2026-11-09) — twilight (light/shadow) and storm (thunder) biases have no wild
@@ -169,7 +170,7 @@ namespace Cosmimera.WorldGen.Tests
         {
             if (biasAbsent)
             {
-                _type.Set(PlanetSize.Medium, new List<string> { "ruins" }, new List<Element> { Element.Light, Element.Shadow });
+                _type.Set(new List<string> { "ruins" }, new List<Element> { Element.Light, Element.Shadow });
             }
 
             var byId = new Dictionary<string, Element>();
@@ -249,11 +250,61 @@ namespace Cosmimera.WorldGen.Tests
             }
         }
 
+        // REQ: planet-world.md#boss-尺寸 (user 2026-11-10): spawn forms are capped at the boss stage.
+        [TestCase(CreatureStage.Juvenile)]
+        [TestCase(CreatureStage.Adolescent)]
+        [TestCase(CreatureStage.Adult)]
+        public void Boss_has_the_requested_stage_and_no_spawn_outranks_it(CreatureStage bossStage)
+        {
+            var stageOf = new Dictionary<string, CreatureStage>();
+            foreach (CreatureDef c in _pool)
+            {
+                stageOf[c.Id] = c.Stage;
+            }
+
+            for (ulong seed = 1; seed <= 20; seed++)
+            {
+                RunPlan p = RunPlanner.Generate(_planet, seed, _type, bossStage, _pool, _vocab, null);
+                int bosses = 0;
+                foreach (RunSpawn s in p.Spawns)
+                {
+                    Assert.That(stageOf[s.CreatureId], Is.LessThanOrEqualTo(bossStage), $"seed {seed} {s.Role} {s.CreatureId}");
+                    if (s.Role == SpawnRole.Boss)
+                    {
+                        bosses++;
+                        Assert.AreEqual(bossStage, stageOf[s.CreatureId], $"seed {seed}");
+                    }
+                }
+
+                Assert.AreEqual(1, bosses);
+            }
+        }
+
+        [Test]
+        public void Lower_boss_stage_changes_spawns_but_not_the_region_graph()
+        {
+            RunPlan adult = RunPlanner.Generate(_planet, 7, _type, CreatureStage.Adult, _pool, _vocab, null);
+            RunPlan juvenile = RunPlanner.Generate(_planet, 7, _type, CreatureStage.Juvenile, _pool, _vocab, null);
+            Assert.AreEqual(adult.Regions.Count, juvenile.Regions.Count);
+            Assert.AreEqual(adult.BossRegion, juvenile.BossRegion);
+            Assert.That(RunPlanner.Hash(juvenile), Is.Not.EqualTo(RunPlanner.Hash(adult)));
+        }
+
+        [Test]
+        public void Pool_without_a_boss_stage_form_is_rejected()
+        {
+            List<CreatureDef> noJuvenile = _pool.FindAll(c => c.Stage != CreatureStage.Juvenile);
+            Assert.Throws<ContractException>(() =>
+                RunPlanner.Generate(_planet, 1, _type, CreatureStage.Juvenile, noJuvenile, _vocab, null));
+            Assert.Throws<ContractException>(() =>
+                RunPlanner.Generate(_planet, 1, _type, (CreatureStage)3, _pool, _vocab, null));
+        }
+
         [Test]
         public void Empty_pool_is_rejected()
         {
             Assert.Throws<ContractException>(() =>
-                RunPlanner.Generate(_planet, 1, _type, new List<CreatureDef>(), _vocab, null));
+                RunPlanner.Generate(_planet, 1, _type, CreatureStage.Adult, new List<CreatureDef>(), _vocab, null));
         }
     }
 }

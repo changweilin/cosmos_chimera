@@ -253,5 +253,73 @@ namespace Cosmimera.Creatures.Tests
             Assert.AreEqual((int)bands["adolescent"][0], CreatureDef.EvolutionLevelMin[1]);
             Assert.AreEqual((int)bands["adolescent"][1], CreatureDef.EvolutionLevelMax[1]);
         }
+
+        // REQ: level-progression.md#玩家等級 (2026-11-10): player curve = creature curve ×6, starting at LV1.
+        [Test]
+        public void Player_curve_is_six_times_the_creature_curve()
+        {
+            for (int level = 1; level <= P.MaxLevel; level++)
+            {
+                Assert.AreEqual(6 * P.XpThreshold(level), P.PlayerXpThreshold(level), $"level {level}");
+            }
+
+            Assert.AreEqual(6 * P.MaxExp, P.PlayerMaxExp);
+            Assert.AreEqual(1, P.PlayerLevelOf(0));
+        }
+
+        [Test]
+        public void PlayerLevelOf_switches_exactly_at_each_threshold()
+        {
+            for (int level = 2; level <= P.MaxLevel; level++)
+            {
+                int t = P.PlayerXpThreshold(level);
+                Assert.AreEqual(level - 1, P.PlayerLevelOf(t - 1), $"just below LV{level}");
+                Assert.AreEqual(level, P.PlayerLevelOf(t), $"at LV{level}");
+            }
+
+            Assert.AreEqual(P.MaxLevel, P.PlayerLevelOf(int.MaxValue));
+            Assert.Throws<ContractException>(() => P.PlayerLevelOf(-1));
+            Assert.Throws<ContractException>(() => P.PlayerXpThreshold(0));
+            Assert.Throws<ContractException>(() => P.PlayerXpThreshold(P.MaxLevel + 1));
+        }
+
+        // REQ: planet-world.md#boss-尺寸 (2026-11-10): adolescent bosses unlock at player LV20, adult at LV35.
+        [TestCase(1, CreatureStage.Juvenile)]
+        [TestCase(19, CreatureStage.Juvenile)]
+        [TestCase(20, CreatureStage.Adolescent)]
+        [TestCase(34, CreatureStage.Adolescent)]
+        [TestCase(35, CreatureStage.Adult)]
+        [TestCase(100, CreatureStage.Adult)]
+        public void MaxBossStage_unlocks_by_player_level(int level, CreatureStage expected)
+        {
+            Assert.AreEqual(expected, P.MaxBossStage(level));
+        }
+
+        [Test]
+        public void Boss_stage_unlock_levels_and_contracts()
+        {
+            Assert.AreEqual(1, P.BossStageUnlockLevel(CreatureStage.Juvenile));
+            Assert.AreEqual(20, P.BossStageUnlockLevel(CreatureStage.Adolescent));
+            Assert.AreEqual(35, P.BossStageUnlockLevel(CreatureStage.Adult));
+            Assert.Throws<ContractException>(() => P.MaxBossStage(0));
+            Assert.Throws<ContractException>(() => P.MaxBossStage(P.MaxLevel + 1));
+            Assert.Throws<ContractException>(() => P.BossStageUnlockLevel((CreatureStage)3));
+        }
+
+        [Test]
+        public void Player_section_is_validated()
+        {
+            string json = BalanceJson();
+            const string section = "\"player\": {\"xp_multiplier\": 6, \"boss_stage_unlock_levels\": [1, 20, 35]}";
+            StringAssert.Contains(section, json);
+            // JsonUtility ignores unknown keys, so a renamed section reads as a missing one.
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"player\":", "\"player_renamed\":")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_multiplier\": 6", "\"xp_multiplier\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_multiplier\": 6", "\"xp_multiplier\": 9000")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[2, 20, 35]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 35, 20]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 20]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 20, 101]")));
+        }
     }
 }

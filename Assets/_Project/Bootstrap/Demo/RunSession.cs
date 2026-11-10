@@ -33,6 +33,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
         public readonly List<int> PartyExp = new List<int>();
 
+        /// <summary>Cumulative player XP when the run ended (level-progression.md#玩家等級).</summary>
+        /// <remarks>Pre: none. Post: &gt;= RunSetup.PlayerExp and &lt;= Progression.PlayerMaxExp. Side effects: none.</remarks>
+        public int PlayerExp;
+
         /// <summary>Evolution materials dropped by wild knock-outs, in drop order (Q-C32 option B).</summary>
         /// <remarks>
         /// Pre: none. Post: non-null; at most one entry per spawn. Kept on victory, defeat and abandon alike, like
@@ -76,6 +80,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Cumulative XP of each party slot; its level scales the slot's stats for the whole run.</summary>
         /// <remarks>Pre: same count as Party; each &gt;= 0. Post: none. Side effects: none.</remarks>
         public List<int> PartyExp;
+
+        /// <summary>Cumulative player XP at the start of the run.</summary>
+        /// <remarks>Pre: 0..Progression.PlayerMaxExp. Post: none. Side effects: none.</remarks>
+        public int PlayerExp;
+
+        /// <summary>Boss stage drawn on the star card (BossDraw.Stage); decides planet size together with Radius.</summary>
+        /// <remarks>Pre: Juvenile..Adult; the wild pool has a form of it. Post: none. Side effects: none.</remarks>
+        public CreatureStage BossStage;
 
         /// <summary>Approved level curve and XP rewards (balance.json#progression).</summary>
         /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
@@ -171,6 +183,7 @@ namespace Cosmimera.Bootstrap.Demo
 #endif
         private Progression _progression;
         private int[] _partyExp;
+        private int _playerExp;
         private bool[] _questPaid;
         private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
@@ -238,6 +251,8 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Cumulative XP of one party slot right now.</summary>
         /// <remarks>Pre: 0 &lt;= slot &lt; party size. Post: &gt;= the slot's starting XP. Side effects: none.</remarks>
         internal int PartyExpForTests(int slot) => _partyExp[slot];
+
+        internal int PlayerExpForTests => _playerExp;
 
         /// <summary>Runs exactly one fixed combat step, the same code Update runs per 50 ms tick.</summary>
         /// <remarks>
@@ -309,11 +324,14 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
                 setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
                 "progression, party ids and party exp are required, one per party slot");
+            Core.Contracts.Contract.Requires(setup.PlayerExp >= 0 && setup.PlayerExp <= setup.Progression.PlayerMaxExp,
+                "player exp must be 0..PlayerMaxExp");
             Core.Contracts.Contract.Requires(setup.Materials != null, "material drop rules are required");
             _copy = copy;
             _progression = setup.Progression;
             _drops = setup.Materials;
             _partyExp = setup.PartyExp.ToArray();
+            _playerExp = setup.PlayerExp;
             _balance = balance;
             _actions = actions;
             _runInput = runMap.Clone();
@@ -347,7 +365,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (setup.Templates.Count > 0)
             {
                 List<TemplatePlacement> placements = TemplatePlanner.Choose(setup.Seed, setup.PlanetType.TerrainTags,
-                    setup.TemplateTags, TemplatePlanner.CountFor(setup.PlanetType.Size));
+                    setup.TemplateTags, TemplatePlanner.CountFor(BossDraw.SizeFor(setup.BossStage)));
                 templates = PlanetTemplates.Create(config, setup.Templates, placements);
             }
 
@@ -359,7 +377,7 @@ namespace Cosmimera.Bootstrap.Demo
                 isLand = d => !view.IsSea(d);
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
+            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -1046,6 +1064,9 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 int before = _progression.LevelOf(_partyExp[i]);
                 _partyExp[i] += settled.Paid[i];
+                // REQ: level-progression.md#玩家等級 — the player earns what the mains actually gained (after the LV100
+                // cap), sidekicks excluded. Long sum: six mains near the cap can pass Int32 before the clamp.
+                _playerExp = (int)Math.Min((long)_playerExp + settled.Paid[i], _progression.PlayerMaxExp);
                 int after = _progression.LevelOf(_partyExp[i]);
                 if (after > before)
                 {
@@ -1295,6 +1316,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _ended = true;
             _outcome.PartyExp.AddRange(_partyExp);
+            _outcome.PlayerExp = _playerExp;
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _onEnd(_outcome);

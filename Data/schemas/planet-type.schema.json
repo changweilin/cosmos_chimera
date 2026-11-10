@@ -2,17 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cosmimera.local/schemas/planet-type.schema.json",
   "title": "Planet type file (array of planet types)",
-  "description": "REQ: docs/design/planet-world.md#星球類型. Structure only; radius and drop weights belong to P3 (user decision 2026-11-06).",
+  "description": "REQ: docs/design/planet-world.md#星球類型. Structure only; radius and drop weights belong to P3 (user decision 2026-11-06). Size is not a type property: the boss stage decides it (planet-world.md#boss-尺寸, D0-B2).",
   "type": "array",
   "items": { "$ref": "#/$defs/planetType" },
   "$defs": {
     "planetType": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "size", "terrain_tags", "element_bias"],
+      "required": ["id", "terrain_tags", "element_bias"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
-        "size": { "enum": ["small", "medium", "large"] },
         "terrain_tags": {
           "type": "array",
           "minItems": 1,

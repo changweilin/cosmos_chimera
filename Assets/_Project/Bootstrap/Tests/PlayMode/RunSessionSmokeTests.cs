@@ -74,7 +74,9 @@ namespace Cosmimera.Bootstrap.Tests
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
+                    // Adolescent boss = medium planet (R=640, 4 templates), the combination this smoke run always played.
+                    PlanetType = type, Seed = 2026, Radius = 640f, BossStage = CreatureStage.Adolescent, Party = party,
+                    Templates = templates, TemplateTags = tags,
                     PartyIds = Enumerable.Range(1, party.Count).ToList(),
                     PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
                     Progression = progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),

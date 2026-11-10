@@ -298,5 +298,17 @@
   "ui.star_select.boss_stage": {
     "zh-TW": "BOSS：{stage}",
     "en": "Boss: {stage}"
+  },
+  "ui.lobby.player_level": {
+    "zh-TW": "玩家等級 LV{level}（經驗 {exp}／{next}）",
+    "en": "Player LV{level} (EXP {exp}/{next})"
+  },
+  "ui.results.player_exp": {
+    "zh-TW": "玩家經驗 +{exp}（LV{level}）",
+    "en": "Player EXP +{exp} (LV{level})"
+  },
+  "ui.star_select.boss_unlock_hint": {
+    "zh-TW": "玩家 LV{adolescent} 解鎖少年 BOSS、LV{adult} 解鎖成年 BOSS",
+    "en": "Player LV{adolescent} unlocks Adolescent bosses; LV{adult} unlocks Adult bosses"
   }
 }

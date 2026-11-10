@@ -352,7 +352,6 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<PlanetTypeDto> p in planets)
             {
                 Claim(p.Where, p.Dto.Id, "planet-type");
-                RequireEnum<PlanetSize>(p.Where, "size", p.Dto.Size);
                 foreach (string e in p.Dto.ElementBias)
                 {
                     RequireEnum<Element>(p.Where, "element_bias", e);
@@ -492,7 +491,7 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<PlanetTypeDto> s in planets)
             {
                 PlanetTypeDto d = s.Dto;
-                planetDefs[d.Id].Set(ParseEnum<PlanetSize>(d.Size), new List<string>(d.TerrainTags),
+                planetDefs[d.Id].Set(new List<string>(d.TerrainTags),
                     d.ElementBias.Select(ParseEnum<Element>).ToList());
             }
 

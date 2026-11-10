@@ -86,7 +86,7 @@ namespace Cosmimera.Bootstrap.Tests
                 string[] columns = row.Split(' ');
                 ulong seed = ulong.Parse(columns[1], CultureInfo.InvariantCulture);
                 RunPlan plan = RunPlanner.Generate(new PlanetConfig(640f, float3.zero), seed, _type,
-                    new[] { _adult }, _vocabulary, null);
+                    CreatureStage.Adult, new[] { _adult }, _vocabulary, null);
                 string expected = math.asuint(plan.LandingDirection.x).ToString("x8") + "," +
                     math.asuint(plan.LandingDirection.y).ToString("x8") + "," + math.asuint(plan.LandingDirection.z).ToString("x8");
                 Assert.That(columns[10], Is.EqualTo(expected));

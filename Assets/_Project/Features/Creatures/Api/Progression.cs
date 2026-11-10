@@ -121,6 +121,8 @@ namespace Cosmimera.Creatures
         private readonly int _appearedWeight;
         private readonly int _reserveWeight;
         private readonly int _sidekickDivisor;
+        private readonly int _playerXpMultiplier;
+        private readonly int[] _bossStageUnlock;
 
         private Progression(Dto d)
         {
@@ -158,6 +160,8 @@ namespace Cosmimera.Creatures
             _appearedWeight = d.appeared_weight;
             _reserveWeight = d.reserve_weight;
             _sidekickDivisor = r.sidekick_share_divisor;
+            _playerXpMultiplier = d.player.xp_multiplier;
+            _bossStageUnlock = d.player.boss_stage_unlock_levels;
         }
 
         /// <summary>Highest level (100).</summary>
@@ -190,6 +194,7 @@ namespace Cosmimera.Creatures
             Check(d != null && d.migration_stage_floor_levels != null && d.rewards != null &&
                 d.rewards.base_xp != null && d.rewards.wild_level != null && d.rewards.wild_level.role_bonus != null,
                 "balance json is missing the progression section");
+            Check(d.player != null && d.player.boss_stage_unlock_levels != null, "balance json is missing progression.player");
             Check(d.level_max >= 2 && d.level_max <= 1000, "level_max out of range");
             Check(d.starter_level >= MinLevel && d.starter_level <= d.level_max, "starter_level out of range");
             Check(d.xp_first_level_cost >= 1 && d.xp_growth_denominator >= 1 &&
@@ -211,7 +216,13 @@ namespace Cosmimera.Creatures
             Check(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
             Check(r.wild_level.boss_level_min >= MinLevel && r.wild_level.boss_level_min <= r.wild_level.boss_level_max &&
                 r.wild_level.boss_level_max <= d.level_max, "boss levels must satisfy 1 <= min <= max <= level_max");
+            // T(100) = 248,528; the multiplier keeps the player cap far inside Int32 (checked again after the curve).
+            Check(d.player.xp_multiplier >= 1 && d.player.xp_multiplier <= 1000, "player xp_multiplier must be 1..1000");
+            int[] unlock = d.player.boss_stage_unlock_levels;
+            Check(unlock.Length == 3 && unlock[0] == MinLevel && unlock[0] <= unlock[1] && unlock[1] <= unlock[2] &&
+                unlock[2] <= d.level_max, "boss_stage_unlock_levels must be [1, a, b] with 1 <= a <= b <= level_max");
             var progression = new Progression(d);
+            Check((long)progression.MaxExp * d.player.xp_multiplier <= int.MaxValue, "player xp cap exceeds Int32");
             // SourceXp is monotonic in level and elite, so its largest value per source is at C(MaxLevel−1) with the
             // multiplier. Bounding that by Int32 here also bounds SourceXp's Int64 product (< 2^31 · C(ref) < 2^62), so
             // SourceXp can never wrap negative at run time (SOL P2-12 R5: base and elite at Int32.Max gave −1982292521).
@@ -260,6 +271,57 @@ namespace Cosmimera.Creatures
             Contract.Requires(exp >= 0, "exp must be >= 0");
             int index = Array.BinarySearch(_thresholds, 1, MaxLevel, exp);
             return index >= 0 ? index : ~index - 1;
+        }
+
+        /// <summary>
+        /// Player XP needed for <paramref name="level"/>: xp_multiplier × T(L). REQ: level-progression.md#玩家等級
+        /// (2026-11-10: the player curve is the creature curve ×6).
+        /// </summary>
+        /// <remarks>Pre: 1 &lt;= level &lt;= MaxLevel. Post: 0 at level 1; strictly increasing. Side effects: none.</remarks>
+        public int PlayerXpThreshold(int level)
+        {
+            Contract.Requires(level >= MinLevel && level <= MaxLevel, "level out of range");
+            return _thresholds[level] * _playerXpMultiplier;
+        }
+
+        /// <summary>Player XP cap, PlayerXpThreshold(MaxLevel); XP beyond it is discarded.</summary>
+        /// <remarks>Pre: none. Post: == PlayerXpThreshold(MaxLevel). Side effects: none.</remarks>
+        public int PlayerMaxExp => _thresholds[MaxLevel] * _playerXpMultiplier;
+
+        /// <summary>Player level reached with <paramref name="exp"/> cumulative player XP.</summary>
+        /// <remarks>
+        /// Pre: exp &gt;= 0. Post: largest L with PlayerXpThreshold(L) &lt;= exp; MaxLevel for exp &gt;= PlayerMaxExp.
+        /// Side effects: none.
+        /// </remarks>
+        public int PlayerLevelOf(int exp)
+        {
+            Contract.Requires(exp >= 0, "exp must be >= 0");
+            // floor(exp / m) keeps the comparison exact: m·T(L) <= exp  <=>  T(L) <= floor(exp / m) for integers.
+            return LevelOf(exp / _playerXpMultiplier);
+        }
+
+        /// <summary>
+        /// Highest boss stage a player of <paramref name="playerLevel"/> can meet (unlock levels 1 / 20 / 35).
+        /// REQ: planet-world.md#boss-尺寸 (2026-11-10: stages unlock with player level and are drawn uniformly).
+        /// </summary>
+        /// <remarks>Pre: 1 &lt;= playerLevel &lt;= MaxLevel. Post: a defined CreatureStage. Side effects: none.</remarks>
+        public CreatureStage MaxBossStage(int playerLevel)
+        {
+            Contract.Requires(playerLevel >= MinLevel && playerLevel <= MaxLevel, "playerLevel out of range");
+            if (playerLevel >= _bossStageUnlock[2])
+            {
+                return CreatureStage.Adult;
+            }
+
+            return playerLevel >= _bossStageUnlock[1] ? CreatureStage.Adolescent : CreatureStage.Juvenile;
+        }
+
+        /// <summary>Player level at which <paramref name="stage"/> bosses start to appear.</summary>
+        /// <remarks>Pre: stage is Juvenile, Adolescent or Adult. Post: 1..MaxLevel. Side effects: none.</remarks>
+        public int BossStageUnlockLevel(CreatureStage stage)
+        {
+            Contract.Requires(stage >= CreatureStage.Juvenile && stage <= CreatureStage.Adult, "stage must be juvenile..adult");
+            return _bossStageUnlock[(int)stage];
         }
 
         /// <summary>
@@ -484,6 +546,13 @@ namespace Cosmimera.Creatures
             public int appeared_weight;
             public int reserve_weight;
             public RewardsDto rewards;
+            public PlayerDto player;
+        }
+
+        [Serializable] private sealed class PlayerDto
+        {
+            public int xp_multiplier;
+            public int[] boss_stage_unlock_levels;
         }
 
         [Serializable] private sealed class RewardsDto
