@@ -75,11 +75,18 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: spawnIndex valid for the plan. Post: counts toward DefeatWild (matching element, any role), completes
         /// DefeatElite on its target now or when that step becomes current; the boss completes the quest, earning only
-        /// the DefeatBoss step (if any) besides those already earned. Side effects: may advance.
+        /// the DefeatBoss step (if any) besides those already earned. A repeat for an
+        /// already knocked-out spawn is a no-op. Side effects: may advance.
         /// </remarks>
         public void OnKnockedOut(int spawnIndex, Element mainElement)
         {
             Contract.Requires(spawnIndex >= 0 && spawnIndex < _plan.Spawns.Count, "unknown spawn");
+            // A spawn falls once per run; a resent event must not count twice toward DefeatWild (SOL P2-12 R6).
+            if (_down[spawnIndex])
+            {
+                return;
+            }
+
             _down[spawnIndex] = true;
             if (_plan.Spawns[spawnIndex].Role == SpawnRole.Boss)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
@@ -25,6 +26,8 @@ namespace Cosmimera.Creatures
         /// <remarks>Pre: see type. Post: properties equal the arguments. Side effects: none.</remarks>
         public XpRecipient(int instanceId, int exp, bool dead, bool appeared, int owner)
         {
+            Contract.Requires(instanceId >= 1, "instance id must be >= 1");
+            Contract.Requires(exp >= 0, "exp must be >= 0");
             InstanceId = instanceId;
             Exp = exp;
             Dead = dead;
@@ -59,15 +62,16 @@ namespace Cosmimera.Creatures
     {
         internal XpSettlement(int[] paid, int[] assigned, long mainLoss, long sidekickEntitlementHalves, long sidekickPaid)
         {
-            Paid = paid;
-            Assigned = assigned;
+            // Read-only wrappers: a raw int[] behind IReadOnlyList can be cast back and mutated (SOL P2-12 R7).
+            Paid = Array.AsReadOnly(paid);
+            Assigned = Array.AsReadOnly(assigned);
             MainLoss = mainLoss;
             SidekickEntitlementHalves = sidekickEntitlementHalves;
             SidekickPaid = sidekickPaid;
         }
 
         /// <summary>XP credited per recipient (same order as the input), after the LV100 cap.</summary>
-        /// <remarks>Pre: none. Post: each &gt;= 0 and Exp + Paid &lt;= MaxExp. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: each &gt;= 0 and min(Exp, MaxExp) + Paid &lt;= MaxExp. Side effects: none.</remarks>
         public IReadOnlyList<int> Paid { get; }
 
         /// <summary>XP assigned per recipient before the cap (mains: integer share; sidekicks: group share).</summary>
@@ -110,13 +114,15 @@ namespace Cosmimera.Creatures
         private readonly int[] _baseXp;
         private readonly int _referenceLevel;
         private readonly int _eliteMultiplier;
-        private readonly int _levelBase;
-        private readonly int _levelPerDifficulty;
+        private readonly int _bossLevelMin;
+        private readonly int _bossLevelMax;
         private readonly int _levelPerTier;
         private readonly int[] _roleBonus;
         private readonly int _appearedWeight;
         private readonly int _reserveWeight;
         private readonly int _sidekickDivisor;
+        private readonly int _playerXpMultiplier;
+        private readonly int[] _bossStageUnlock;
 
         private Progression(Dto d)
         {
@@ -133,10 +139,10 @@ namespace Cosmimera.Creatures
                 // compounding the rounding would drift from the approved table (level-progression.md#指數經驗曲線).
                 BigInteger scaled = d.xp_first_level_cost * num;
                 BigInteger cost = BigInteger.Divide(scaled + den - 1, den);
-                Contract.Requires(cost <= int.MaxValue, "xp cost exceeds Int32");
+                Check(cost <= int.MaxValue, "xp cost exceeds Int32");
                 _costs[level] = (int)cost;
                 total += (int)cost;
-                Contract.Requires(total <= int.MaxValue, "cumulative xp exceeds Int32");
+                Check(total <= int.MaxValue, "cumulative xp exceeds Int32");
                 _thresholds[level + 1] = (int)total;
                 num *= d.xp_growth_numerator;
                 den *= d.xp_growth_denominator;
@@ -147,13 +153,15 @@ namespace Cosmimera.Creatures
             _baseXp = new[] { r.base_xp.wild, r.base_xp.capture, r.base_xp.quest_step, r.base_xp.quest_chain, r.base_xp.boss };
             _referenceLevel = r.reference_level;
             _eliteMultiplier = r.elite_multiplier;
-            _levelBase = r.wild_level.@base;
-            _levelPerDifficulty = r.wild_level.per_difficulty;
+            _bossLevelMin = r.wild_level.boss_level_min;
+            _bossLevelMax = r.wild_level.boss_level_max;
             _levelPerTier = r.wild_level.per_tier;
             _roleBonus = new[] { r.wild_level.role_bonus.normal, r.wild_level.role_bonus.elite, r.wild_level.role_bonus.boss };
             _appearedWeight = d.appeared_weight;
             _reserveWeight = d.reserve_weight;
             _sidekickDivisor = r.sidekick_share_divisor;
+            _playerXpMultiplier = d.player.xp_multiplier;
+            _bossStageUnlock = d.player.boss_stage_unlock_levels;
         }
 
         /// <summary>Highest level (100).</summary>
@@ -173,37 +181,48 @@ namespace Cosmimera.Creatures
         /// Pre: json is Data/balance.json content with a complete progression section (curve growth &gt; 1, positive
         ///      costs, 3 stage floors inside 1..MaxLevel, 5 base XP values &gt;= 0, elite multiplier 1..100, every
         ///      source's reward at C(MaxLevel−1) within Int32, weights &gt;= 1, divisor 2).
-        /// Post: thresholds strictly increase and fit Int32. ContractException on any violation.
+        /// Post: thresholds strictly increase and fit Int32. <see cref="InvalidDataException"/> on any violation, in
+        ///       every build: these are data checks, and a Release build that strips them would let an unapproved
+        ///       config make SourceXp negative (tech-debt R5-01).
         /// Side effects: allocates.
         /// </remarks>
         public static Progression FromJson(string json)
         {
-            Contract.Requires(!string.IsNullOrEmpty(json), "balance json must not be empty");
+            Check(!string.IsNullOrEmpty(json), "balance json must not be empty");
             Root root = JsonUtility.FromJson<Root>(json);
             Dto d = root?.progression;
-            Contract.Requires(d != null && d.migration_stage_floor_levels != null && d.rewards != null &&
+            Check(d != null && d.migration_stage_floor_levels != null && d.rewards != null &&
                 d.rewards.base_xp != null && d.rewards.wild_level != null && d.rewards.wild_level.role_bonus != null,
                 "balance json is missing the progression section");
-            Contract.Requires(d.level_max >= 2 && d.level_max <= 1000, "level_max out of range");
-            Contract.Requires(d.starter_level >= MinLevel && d.starter_level <= d.level_max, "starter_level out of range");
-            Contract.Requires(d.xp_first_level_cost >= 1 && d.xp_growth_denominator >= 1 &&
+            Check(d.player != null && d.player.boss_stage_unlock_levels != null, "balance json is missing progression.player");
+            Check(d.level_max >= 2 && d.level_max <= 1000, "level_max out of range");
+            Check(d.starter_level >= MinLevel && d.starter_level <= d.level_max, "starter_level out of range");
+            Check(d.xp_first_level_cost >= 1 && d.xp_growth_denominator >= 1 &&
                 d.xp_growth_numerator > d.xp_growth_denominator, "xp curve must start >= 1 and grow");
-            Contract.Requires(d.migration_stage_floor_levels.Length == 3, "three stage floor levels are required");
+            Check(d.migration_stage_floor_levels.Length == 3, "three stage floor levels are required");
             foreach (int f in d.migration_stage_floor_levels)
             {
-                Contract.Requires(f >= MinLevel && f <= d.level_max, "stage floor level out of range");
+                Check(f >= MinLevel && f <= d.level_max, "stage floor level out of range");
             }
 
             RewardsDto r = d.rewards;
-            Contract.Requires(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
+            Check(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
                 r.base_xp.quest_chain >= 0 && r.base_xp.boss >= 0, "base xp must be >= 0");
-            Contract.Requires(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
+            Check(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
             // Same envelope as tools/balance/level_rewards.py (SOL P2-12 R5): C# and Python must accept the same configs.
-            Contract.Requires(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
+            Check(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
             // The ledger counts sidekick entitlement in half points; another divisor needs a different ledger unit.
-            Contract.Requires(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
-            Contract.Requires(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
+            Check(r.sidekick_share_divisor == 2, "only the approved half share (divisor 2) is supported");
+            Check(d.appeared_weight >= 1 && d.reserve_weight >= 1, "weights must be >= 1");
+            Check(r.wild_level.boss_level_min >= MinLevel && r.wild_level.boss_level_min <= r.wild_level.boss_level_max &&
+                r.wild_level.boss_level_max <= d.level_max, "boss levels must satisfy 1 <= min <= max <= level_max");
+            // T(100) = 248,528; the multiplier keeps the player cap far inside Int32 (checked again after the curve).
+            Check(d.player.xp_multiplier >= 1 && d.player.xp_multiplier <= 1000, "player xp_multiplier must be 1..1000");
+            int[] unlock = d.player.boss_stage_unlock_levels;
+            Check(unlock.Length == 3 && unlock[0] == MinLevel && unlock[0] <= unlock[1] && unlock[1] <= unlock[2] &&
+                unlock[2] <= d.level_max, "boss_stage_unlock_levels must be [1, a, b] with 1 <= a <= b <= level_max");
             var progression = new Progression(d);
+            Check((long)progression.MaxExp * d.player.xp_multiplier <= int.MaxValue, "player xp cap exceeds Int32");
             // SourceXp is monotonic in level and elite, so its largest value per source is at C(MaxLevel−1) with the
             // multiplier. Bounding that by Int32 here also bounds SourceXp's Int64 product (< 2^31 · C(ref) < 2^62), so
             // SourceXp can never wrap negative at run time (SOL P2-12 R5: base and elite at Int32.Max gave −1982292521).
@@ -212,11 +231,20 @@ namespace Cosmimera.Creatures
             {
                 int multiplier = s == (int)XpSource.Wild ? progression._eliteMultiplier : 1;
                 BigInteger top = progression._baseXp[s] * maxCost * multiplier / progression._costs[progression._referenceLevel];
-                Contract.Requires(top <= int.MaxValue, "base xp makes a source reward exceed Int32 at the level cap");
+                Check(top <= int.MaxValue, "base xp makes a source reward exceed Int32 at the level cap");
             }
 
             return progression;
         }
+
+        private static void Check(bool condition, string message)
+        {
+            if (!condition)
+            {
+                throw new InvalidDataException("balance progression: " + message);
+            }
+        }
+
 
         /// <summary>Minimum cumulative XP for <paramref name="level"/>, T(L).</summary>
         /// <remarks>Pre: 1 &lt;= level &lt;= MaxLevel. Post: T(1) == 0; strictly increasing. Side effects: none.</remarks>
@@ -246,6 +274,57 @@ namespace Cosmimera.Creatures
         }
 
         /// <summary>
+        /// Player XP needed for <paramref name="level"/>: xp_multiplier × T(L). REQ: level-progression.md#玩家等級
+        /// (2026-11-10: the player curve is the creature curve ×6).
+        /// </summary>
+        /// <remarks>Pre: 1 &lt;= level &lt;= MaxLevel. Post: 0 at level 1; strictly increasing. Side effects: none.</remarks>
+        public int PlayerXpThreshold(int level)
+        {
+            Contract.Requires(level >= MinLevel && level <= MaxLevel, "level out of range");
+            return _thresholds[level] * _playerXpMultiplier;
+        }
+
+        /// <summary>Player XP cap, PlayerXpThreshold(MaxLevel); XP beyond it is discarded.</summary>
+        /// <remarks>Pre: none. Post: == PlayerXpThreshold(MaxLevel). Side effects: none.</remarks>
+        public int PlayerMaxExp => _thresholds[MaxLevel] * _playerXpMultiplier;
+
+        /// <summary>Player level reached with <paramref name="exp"/> cumulative player XP.</summary>
+        /// <remarks>
+        /// Pre: exp &gt;= 0. Post: largest L with PlayerXpThreshold(L) &lt;= exp; MaxLevel for exp &gt;= PlayerMaxExp.
+        /// Side effects: none.
+        /// </remarks>
+        public int PlayerLevelOf(int exp)
+        {
+            Contract.Requires(exp >= 0, "exp must be >= 0");
+            // floor(exp / m) keeps the comparison exact: m·T(L) <= exp  <=>  T(L) <= floor(exp / m) for integers.
+            return LevelOf(exp / _playerXpMultiplier);
+        }
+
+        /// <summary>
+        /// Highest boss stage a player of <paramref name="playerLevel"/> can meet (unlock levels 1 / 20 / 35).
+        /// REQ: planet-world.md#boss-尺寸 (2026-11-10: stages unlock with player level and are drawn uniformly).
+        /// </summary>
+        /// <remarks>Pre: 1 &lt;= playerLevel &lt;= MaxLevel. Post: a defined CreatureStage. Side effects: none.</remarks>
+        public CreatureStage MaxBossStage(int playerLevel)
+        {
+            Contract.Requires(playerLevel >= MinLevel && playerLevel <= MaxLevel, "playerLevel out of range");
+            if (playerLevel >= _bossStageUnlock[2])
+            {
+                return CreatureStage.Adult;
+            }
+
+            return playerLevel >= _bossStageUnlock[1] ? CreatureStage.Adolescent : CreatureStage.Juvenile;
+        }
+
+        /// <summary>Player level at which <paramref name="stage"/> bosses start to appear.</summary>
+        /// <remarks>Pre: stage is Juvenile, Adolescent or Adult. Post: 1..MaxLevel. Side effects: none.</remarks>
+        public int BossStageUnlockLevel(CreatureStage stage)
+        {
+            Contract.Requires(stage >= CreatureStage.Juvenile && stage <= CreatureStage.Adult, "stage must be juvenile..adult");
+            return _bossStageUnlock[(int)stage];
+        }
+
+        /// <summary>
         /// Cumulative XP a pre-level save (format 1) is migrated to: T(stage floor 10/20/35). Old evolution XP is not
         /// converted (option A), because its meaning differs from cumulative level XP.
         /// </summary>
@@ -256,7 +335,12 @@ namespace Cosmimera.Creatures
             return _thresholds[_floorLevels[(int)stage]];
         }
 
-        /// <summary>Level of a wild encounter: clamp(10 + 10(d−1) + 2t + role bonus 0/3/5, 1, MaxLevel).</summary>
+        /// <summary>
+        /// Level of a wild encounter. The boss level B(d) runs linearly from boss_level_min (d=1) to boss_level_max (d=10),
+        /// rounded half up; every role is derived down from it with the boss standing at tier 2:
+        /// clamp(B(d) − bonus(boss) − per_tier·(2 − t) + bonus(role), 1, MaxLevel). REQ: docs/design/level-progression.md
+        /// (D0-X3, 2026-11-10: boss LV5–75).
+        /// </summary>
         /// <remarks>
         /// Pre: 1 &lt;= difficulty &lt;= 10; 0 &lt;= tier &lt;= 2; role defined. Post: 1..MaxLevel. Side effects: none.
         /// </remarks>
@@ -265,7 +349,9 @@ namespace Cosmimera.Creatures
             Contract.Requires(difficulty >= 1 && difficulty <= 10, "difficulty must be 1..10");
             Contract.Requires(tier >= 0 && tier <= 2, "tier must be 0..2");
             Contract.Requires(Enum.IsDefined(typeof(WorldGen.SpawnRole), role), "role must be defined");
-            int level = _levelBase + _levelPerDifficulty * (difficulty - 1) + _levelPerTier * tier + _roleBonus[(int)role];
+            // Integer half-up of span·(d−1)/9 — no float, so every peer derives the same level (tools/balance golden).
+            int boss = _bossLevelMin + (2 * (_bossLevelMax - _bossLevelMin) * (difficulty - 1) + 9) / 18;
+            int level = boss - _roleBonus[(int)WorldGen.SpawnRole.Boss] - _levelPerTier * (2 - tier) + _roleBonus[(int)role];
             return Math.Min(MaxLevel, Math.Max(MinLevel, level));
         }
 
@@ -298,8 +384,8 @@ namespace Cosmimera.Creatures
         /// Pre: pool &gt;= 0; 1..6 mains (Owner == -1) listed before their sidekicks; each sidekick's Owner indexes a
         ///      main; instance ids &gt;= 1 and unique; Exp &gt;= 0.
         /// Post: sum(main Paid) + MainLoss == pool; a dead recipient gets 0; when any main lives,
-        ///       sum(main Assigned) == pool; Exp + Paid &lt;= MaxExp for every recipient (Exp above MaxExp is
-        ///       treated as MaxExp, earning nothing); identical inputs give identical outputs.
+        ///       sum(main Assigned) == pool; min(Exp, MaxExp) + Paid &lt;= MaxExp for every recipient (Exp
+        ///       above MaxExp earns nothing); identical inputs give identical outputs.
         /// Side effects: allocates the result.
         /// </remarks>
         public XpSettlement Settle(int pool, IReadOnlyList<XpRecipient> recipients)
@@ -460,6 +546,13 @@ namespace Cosmimera.Creatures
             public int appeared_weight;
             public int reserve_weight;
             public RewardsDto rewards;
+            public PlayerDto player;
+        }
+
+        [Serializable] private sealed class PlayerDto
+        {
+            public int xp_multiplier;
+            public int[] boss_stage_unlock_levels;
         }
 
         [Serializable] private sealed class RewardsDto
@@ -482,8 +575,8 @@ namespace Cosmimera.Creatures
 
         [Serializable] private sealed class WildLevelDto
         {
-            public int @base;
-            public int per_difficulty;
+            public int boss_level_min;
+            public int boss_level_max;
             public int per_tier;
             public RoleBonusDto role_bonus;
         }

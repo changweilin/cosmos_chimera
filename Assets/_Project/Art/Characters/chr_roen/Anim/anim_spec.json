@@ -1,0 +1,550 @@
+{
+  "spec": "cosmimera-anim-spec/1",
+  "template": "character-model-rig@4.3.0",
+  "subject_id": "chr_3d04",
+  "source_pack": "chr-20261106-3d04-2100",
+  "fps": 30,
+  "total_clips": 32,
+  "clips": [
+    {
+      "clip": "chr_idle",
+      "description": "待機",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": true,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_idle.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_walk",
+      "description": "走路",
+      "fps": 30,
+      "frames": 32,
+      "duration_sec": 1.0667,
+      "loop": true,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_footstep",
+          "frame": 8,
+          "time_sec": 0.2667
+        },
+        {
+          "name": "ev_footstep",
+          "frame": 24,
+          "time_sec": 0.8
+        }
+      ],
+      "file": "anims/chr_walk.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 17
+    },
+    {
+      "clip": "chr_run",
+      "description": "奔跑",
+      "fps": 30,
+      "frames": 22,
+      "duration_sec": 0.7333,
+      "loop": true,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_footstep",
+          "frame": 5,
+          "time_sec": 0.1667
+        },
+        {
+          "name": "ev_footstep",
+          "frame": 16,
+          "time_sec": 0.5333
+        }
+      ],
+      "file": "anims/chr_run.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 12
+    },
+    {
+      "clip": "chr_sneak_idle",
+      "description": "潛行待機",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": true,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_sneak_idle.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_sneak_move",
+      "description": "潛行移動",
+      "fps": 30,
+      "frames": 40,
+      "duration_sec": 1.3333,
+      "loop": true,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_sneak_move.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_roll_dodge",
+      "description": "翻滾閃避（無敵幀）",
+      "fps": 30,
+      "frames": 20,
+      "duration_sec": 0.6667,
+      "loop": false,
+      "root_motion": true,
+      "events": [
+        {
+          "name": "ev_end_lock",
+          "frame": 16,
+          "time_sec": 0.5333
+        }
+      ],
+      "file": "anims/chr_roll_dodge.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 11
+    },
+    {
+      "clip": "chr_jump",
+      "description": "跳躍（起跳/滯空/落地）",
+      "fps": 30,
+      "frames": 30,
+      "duration_sec": 1.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_jump.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 16
+    },
+    {
+      "clip": "chr_block",
+      "description": "格擋（舉起→維持→放下）",
+      "fps": 30,
+      "frames": 30,
+      "duration_sec": 1.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_block.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 16
+    },
+    {
+      "clip": "chr_hit_react",
+      "description": "受擊",
+      "fps": 30,
+      "frames": 15,
+      "duration_sec": 0.5,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_hit_react.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 9
+    },
+    {
+      "clip": "chr_knockdown",
+      "description": "倒地",
+      "fps": 30,
+      "frames": 30,
+      "duration_sec": 1.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_knockdown.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 16
+    },
+    {
+      "clip": "chr_getup",
+      "description": "起身",
+      "fps": 30,
+      "frames": 30,
+      "duration_sec": 1.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_getup.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 16
+    },
+    {
+      "clip": "chr_command_point",
+      "description": "命令：指向目標",
+      "fps": 30,
+      "frames": 24,
+      "duration_sec": 0.8,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 10,
+          "time_sec": 0.3333
+        }
+      ],
+      "file": "anims/chr_command_point.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 13
+    },
+    {
+      "clip": "chr_command_attack",
+      "description": "命令：全力進攻",
+      "fps": 30,
+      "frames": 24,
+      "duration_sec": 0.8,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 10,
+          "time_sec": 0.3333
+        }
+      ],
+      "file": "anims/chr_command_attack.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 13
+    },
+    {
+      "clip": "chr_command_recall",
+      "description": "命令：後退集合",
+      "fps": 30,
+      "frames": 24,
+      "duration_sec": 0.8,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 10,
+          "time_sec": 0.3333
+        }
+      ],
+      "file": "anims/chr_command_recall.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 13
+    },
+    {
+      "clip": "chr_summon",
+      "description": "召喚宙獸",
+      "fps": 30,
+      "frames": 36,
+      "duration_sec": 1.2,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 18,
+          "time_sec": 0.6
+        }
+      ],
+      "file": "anims/chr_summon.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 19
+    },
+    {
+      "clip": "chr_recall",
+      "description": "收回宙獸",
+      "fps": 30,
+      "frames": 30,
+      "duration_sec": 1.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 14,
+          "time_sec": 0.4667
+        }
+      ],
+      "file": "anims/chr_recall.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 16
+    },
+    {
+      "clip": "chr_item_use_self",
+      "description": "使用道具（自身）",
+      "fps": 30,
+      "frames": 40,
+      "duration_sec": 1.3333,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 24,
+          "time_sec": 0.8
+        }
+      ],
+      "file": "anims/chr_item_use_self.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_item_use_other",
+      "description": "使用道具（他者/宙獸）",
+      "fps": 30,
+      "frames": 40,
+      "duration_sec": 1.3333,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 20,
+          "time_sec": 0.6667
+        }
+      ],
+      "file": "anims/chr_item_use_other.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_field_deploy",
+      "description": "佈署場地",
+      "fps": 30,
+      "frames": 48,
+      "duration_sec": 1.6,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 30,
+          "time_sec": 1.0
+        }
+      ],
+      "file": "anims/chr_field_deploy.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 25
+    },
+    {
+      "clip": "chr_backpack_open",
+      "description": "使用背包（取下→翻找→收回）",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_backpack_open.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_talk_idle",
+      "description": "對話待機",
+      "fps": 30,
+      "frames": 90,
+      "duration_sec": 3.0,
+      "loop": true,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_talk_idle.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 31
+    },
+    {
+      "clip": "chr_talk_gesture",
+      "description": "對話手勢",
+      "fps": 30,
+      "frames": 45,
+      "duration_sec": 1.5,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_talk_gesture.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 24
+    },
+    {
+      "clip": "chr_pet_xs",
+      "description": "撫摸 XS 體型（托在掌心輕撫）",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 30,
+          "time_sec": 1.0
+        }
+      ],
+      "file": "anims/chr_pet_xs.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_pet_s",
+      "description": "撫摸 S 體型（蹲下摸頭）",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 30,
+          "time_sec": 1.0
+        }
+      ],
+      "file": "anims/chr_pet_s.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_pet_m",
+      "description": "撫摸 M 體型（彎腰）",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 30,
+          "time_sec": 1.0
+        }
+      ],
+      "file": "anims/chr_pet_m.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_pet_l",
+      "description": "撫摸 L 體型（抬手摸頸）",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 30,
+          "time_sec": 1.0
+        }
+      ],
+      "file": "anims/chr_pet_l.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_pet_xl",
+      "description": "撫摸 XL 體型（宙獸低頭，角色雙手撫摸）",
+      "fps": 30,
+      "frames": 72,
+      "duration_sec": 2.4,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_spawn_fx",
+          "frame": 36,
+          "time_sec": 1.2
+        }
+      ],
+      "file": "anims/chr_pet_xl.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 25
+    },
+    {
+      "clip": "chr_throw_card",
+      "description": "投擲：符籙卡片（雙指甩出）",
+      "fps": 30,
+      "frames": 24,
+      "duration_sec": 0.8,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 12,
+          "time_sec": 0.4
+        }
+      ],
+      "file": "anims/chr_throw_card.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 13
+    },
+    {
+      "clip": "chr_throw_bead",
+      "description": "投擲：琉璃珠（下手拋擲）",
+      "fps": 30,
+      "frames": 28,
+      "duration_sec": 0.9333,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 15,
+          "time_sec": 0.5
+        }
+      ],
+      "file": "anims/chr_throw_bead.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 15
+    },
+    {
+      "clip": "chr_throw_cube",
+      "description": "投擲：魔術方塊（轉動後上手投）",
+      "fps": 30,
+      "frames": 32,
+      "duration_sec": 1.0667,
+      "loop": false,
+      "root_motion": false,
+      "events": [
+        {
+          "name": "ev_release",
+          "frame": 18,
+          "time_sec": 0.6
+        }
+      ],
+      "file": "anims/chr_throw_cube.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 17
+    },
+    {
+      "clip": "chr_victory",
+      "description": "勝利",
+      "fps": 30,
+      "frames": 60,
+      "duration_sec": 2.0,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_victory.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 21
+    },
+    {
+      "clip": "chr_defeated",
+      "description": "戰敗",
+      "fps": 30,
+      "frames": 45,
+      "duration_sec": 1.5,
+      "loop": false,
+      "root_motion": false,
+      "events": [],
+      "file": "anims/chr_defeated.fbx",
+      "animated_bones_count": 28,
+      "keyframe_samples": 24
+    }
+  ]
+}

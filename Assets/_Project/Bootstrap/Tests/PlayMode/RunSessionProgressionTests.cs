@@ -8,6 +8,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -19,11 +20,8 @@ using UnityEngine.TestTools;
 namespace Cosmimera.Bootstrap.Tests
 {
     /// <summary>
-    /// Regression for the four XP-flow fixes in RunSession (SOL P2-12 R1, R3-01, R3-02, R3-03). Each test drives the real
-    /// StepCombat through <c>StepCombatForTests</c> on a real planet; only two things are staged by the test:
-    /// where the party/player stand (so a wild pack is or is not engaged) and which wild units are already at 0 HP when
-    /// the step runs (their knock-out is then settled by the same OnFaint a Tick event reaches). Fighting itself is
-    /// not relied on, because a real kill on a chosen tick would depend on hit rolls and AI timing.
+    /// XP-flow regressions drive StepCombat on a real planet. Staged faints exercise settlement ordering; a separate
+    /// combat case verifies the real Tick dispatch.
     /// REQ: docs/design/level-progression.md#經驗分配.
     /// </summary>
     public sealed class RunSessionProgressionTests
@@ -77,6 +75,8 @@ namespace Cosmimera.Bootstrap.Tests
             public readonly List<CreatureViewRequest> Requests = new List<CreatureViewRequest>();
             public readonly List<GameObject> Roots = new List<GameObject>();
             public int Disposed;
+            public int Fainted;
+            public readonly HashSet<GameObject> FaintedRoots = new HashSet<GameObject>();
 
             public ICreatureView Create(in CreatureViewRequest request)
             {
@@ -99,7 +99,12 @@ namespace Cosmimera.Bootstrap.Tests
 
                 public Transform Root => _inner.Root;
 
-                public void ShowFainted() => _inner.ShowFainted();
+                public void ShowFainted()
+                {
+                    _owner.Fainted++;
+                    _owner.FaintedRoots.Add(Root.gameObject);
+                    _inner.ShowFainted();
+                }
 
                 public void Dispose()
                 {
@@ -116,13 +121,13 @@ namespace Cosmimera.Bootstrap.Tests
             var views = new RecordingViews();
             var run = new Run();
             yield return Launch(env, 2026, env.Progression.XpThreshold(env.Progression.StarterLevel), run, views);
-            Encounter encounter = run.Session.EncounterForTests;
+            IReadOnlyList<RunSession.UnitSnapshot> units = run.Session.UnitsForTests;
 
-            Assert.That(views.Requests.Count, Is.EqualTo(encounter.Units.Count), "one view per encounter unit");
-            for (int i = 0; i < encounter.Units.Count; i++)
+            Assert.That(views.Requests.Count, Is.EqualTo(units.Count), "one view per encounter unit");
+            for (int i = 0; i < units.Count; i++)
             {
-                EncounterUnit u = encounter.Units[i];
-                Assert.That(views.Requests[i].Def, Is.SameAs(u.Def));
+                RunSession.UnitSnapshot u = units[i];
+                Assert.That(views.Requests[i].Def.Id, Is.EqualTo(u.CreatureId));
                 Assert.That(views.Requests[i].Ally, Is.EqualTo(u.Side == EncounterSide.Player));
                 Assert.That(views.Requests[i].BodyRadiusM, Is.EqualTo(u.BodyRadiusM));
             }
@@ -131,10 +136,53 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<Core.Contracts.ContractException>(() => run.Session.UseViewFactory(new RecordingViews()),
                 "the factory is fixed once the run is configured");
 
+            int ally = run.Session.PartyUnitsForTests[0];
+            Kill(run.Session, env, ally);
+            run.Session.SyncViewsForTests();
+            Assert.That(views.Fainted, Is.GreaterThan(0), "SyncViews shows the fielded fainted ally");
+            Assert.That(views.Roots[ally].GetComponent<Renderer>().sharedMaterial.color, Is.EqualTo(Color.gray));
+
             Object.Destroy(run.Session.gameObject);
             yield return null;
             Assert.That(views.Disposed, Is.EqualTo(views.Requests.Count), "OnDestroy calls Dispose on every view");
             Assert.That(views.Roots.All(r => r == null), Is.True, "every view root is gone");
+        }
+
+        [UnityTest]
+        public IEnumerator Enabled_run_Update_shows_a_fielded_fainted_unit_on_the_next_frame()
+        {
+            Env env = LoadEnv();
+            var views = new RecordingViews();
+            var run = new Run();
+            yield return Launch(env, 2026, env.Progression.XpThreshold(10), run, views, keepEnabled: true);
+            RunSession session = run.Session;
+            int ally = session.PartyUnitsForTests[0];
+            RunSession.UnitSnapshot before = session.UnitForTests(ally);
+            GameObject root = views.Roots[ally];
+            Assert.That(session.isActiveAndEnabled, Is.True);
+            Assert.That(before.Fielded && !before.IsFainted, Is.True);
+            Assert.That(root.GetComponent<Renderer>().sharedMaterial.color, Is.Not.EqualTo(Color.gray));
+            Assert.That(views.FaintedRoots.Contains(root), Is.False);
+
+            Kill(session, env, ally);
+            long now = session.NowMsForTests;
+            float deadline = Time.realtimeSinceStartup + 2f;
+            // Only Unity drives the enabled session: no StepCombatForTests or SyncViewsForTests.
+            do
+            {
+                yield return null;
+            }
+            while (session.NowMsForTests == now && Time.realtimeSinceStartup < deadline);
+
+            Assert.That(session.isActiveAndEnabled, Is.True);
+            Assert.That(session.NowMsForTests, Is.GreaterThan(now), "Unity Update advanced combat time");
+            RunSession.UnitSnapshot after = session.UnitForTests(ally);
+            Assert.That(after.Fielded && after.IsFainted, Is.True, "the fainted ally remains fielded");
+            Assert.That(before.IsFainted, Is.False, "the earlier unit snapshot stays detached");
+            Assert.That(views.FaintedRoots.Contains(root), Is.True, "Unity Update must show this ally fainted");
+            Assert.That(root.activeSelf, Is.True, "the fielded fainted ally stays visible");
+            Assert.That(root.GetComponent<Renderer>().sharedMaterial.color, Is.EqualTo(Color.gray));
+            Assert.That(Vector3.Distance(root.transform.position, after.Position), Is.LessThan(1e-5f));
         }
 
         // ---------------------------------------------------------------------------------------------------------
@@ -165,18 +213,22 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(Pool(env.Progression, BaseWild, WildLevelOf(env, plan, e1), false), Is.EqualTo(80), "tier-0 normal pool");
             int questRegion = plan.Quest[0].Region;
 
-            ParkAt(s, Beside(plan.Spawns[e1].Direction));
+            EngageAt(s, plan, e1);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle 1 starts through real engagement");
+            Assert.That(s.InCombatForTests, Is.True, "battle 1 starts through real engagement");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }), "opening pair");
 
             Kill(s, env, e1);
             ParkAt(s, Quiet(s, questRegion));
             int[] before = Exp(s);
+            int playerBefore = s.PlayerExpForTests;
+            s.InjectFaintForTests(e1);
             s.InjectFaintForTests(e1);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.False, "battle 1 over");
-            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 20, 20, 10, 10, 10, 10 }), "battle 1 pays {0,1}");
+            Assert.That(s.InCombatForTests, Is.False, "battle 1 over");
+            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 20, 20, 10, 10, 10, 10 }), "duplicate faint pays {0,1} once");
+            // REQ: level-progression.md#玩家等級 — the player earns the sum the mains actually gained.
+            Assert.That(s.PlayerExpForTests - playerBefore, Is.EqualTo(80), "player XP = sum of main gains");
 
             s.SwitchMainForTests();
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 1, 2 }), "slot 0 swapped for slot 2 out of combat");
@@ -185,8 +237,136 @@ namespace Cosmimera.Bootstrap.Tests
             before = Exp(s);
             s.InjectFaintForTests(e2);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.False, "battle 2 opened and closed inside one step");
+            Assert.That(s.InCombatForTests, Is.False, "battle 2 opened and closed inside one step");
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 10, 20, 20, 10, 10, 10 }), "battle 2 pays {1,2}, not battle 1's {0,1}");
+        }
+
+        // REQ: combat.md#指定目標 (D0-W4) — CycleTarget walks candidates by (distance, id) and wraps without provoking;
+        // Focus attacks the lock; cycling under Focus retargets; a knocked-out lock is dropped.
+        [UnityTest]
+        public IEnumerator W4_cycle_locks_by_distance_and_focus_attacks_the_lock()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => PackPair(p) != null);
+            RunPlan plan = PlanFor(env, seed);
+            int a = PackPair(plan).Value.Item1;
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+
+            ParkAt(s, Beside(s.DirectionForTests(s.UnitForTests(a).Position)));
+            float3 player = s.PlayerPositionForTests;
+            List<int> expected = s.UnitsForTests
+                .Where(u => u.Side == EncounterSide.Wild && !u.IsFainted && math.distance(u.Position, player) <= Encounter.ProvokeRadiusM)
+                .OrderBy(u => math.distance(u.Position, player)).ThenBy(u => u.Id)
+                .Select(u => u.Id).ToList();
+            Assert.That(expected.Count, Is.GreaterThanOrEqualTo(2), "a pack pair sits within provoke reach");
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(-1), "nothing locked at landing");
+
+            for (int i = 0; i < expected.Count; i++)
+            {
+                s.CycleTargetForTests();
+                Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[i]), "cycle step " + i);
+                Assert.That(s.CommandForTests, Is.Not.EqualTo(AiCommandKind.Focus), "cycling alone does not command");
+            }
+
+            s.CycleTargetForTests();
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[0]), "wraps to the nearest");
+
+            s.FocusNearestForTests();
+            Assert.That(s.CommandForTests, Is.EqualTo(AiCommandKind.Focus));
+            Assert.That(s.CommandTargetForTests, Is.EqualTo(expected[0]), "Focus attacks the lock");
+
+            s.CycleTargetForTests();
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(expected[1]));
+            Assert.That(s.CommandTargetForTests, Is.EqualTo(expected[1]), "cycling under Focus retargets");
+
+            Step(s);
+            Assert.That(s.InCombatForTests, Is.True, "the retargeted lock was provoked");
+
+            Kill(s, env, expected[1]);
+            s.InjectFaintForTests(expected[1]);
+            Step(s);
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(-1), "a knocked-out lock is dropped");
+        }
+
+        // REQ: combat.md#實體碰撞 (D0-W2) — the party fielded on the character's own spot is pushed apart from it, and the
+        // character's share reaches the physics body (Encounter.PlayerPush applied by RunSession).
+        // REQ: combat.md#近身互動 (D0-W3) — an idle wild within reach is offered; the open menu freezes the character's
+        // input; Observe fills the detail; Provoke closes the menu, locks the target and starts the fight.
+        [UnityTest]
+        public IEnumerator W2_W3_party_is_pushed_off_the_character_and_close_interaction_provokes()
+        {
+            Env env = LoadEnv();
+            // Tier-0 juveniles are timid (D0-E2), so standing 2 m away does not start a fight by itself.
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count >= 1);
+            RunPlan plan = PlanFor(env, seed);
+            int a = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+
+            float3 wild = s.DirectionForTests(s.UnitForTests(a).Position);
+            float angle = 2f / Radius;
+            float3 spot = math.normalize(wild * math.cos(angle) + PlanetFrame.FromUp(wild).North * math.sin(angle));
+            ParkAt(s, spot);
+            Step(s);
+
+            // Smallest body (XS 0.2 m) + character 0.35 m, less float slack: before D0-W2 the party stood on the spot.
+            float3 player = s.DirectionForTests(s.PlayerPositionForTests);
+            foreach (int id in s.ActiveUnitsForTests)
+            {
+                float3 d = s.DirectionForTests(s.UnitForTests(id).Position);
+                Assert.That(math.atan2(math.length(math.cross(player, d)), math.dot(player, d)) * Radius, Is.GreaterThan(0.54f),
+                    "party unit " + id + " pushed off the character");
+            }
+
+            Assert.That(s.InCombatForTests, Is.False, "parking next to a timid wild starts no fight");
+
+            // The push above moved the character up to ~2 m; stand 1.5 m south of the wild (the party is north of it).
+            wild = s.DirectionForTests(s.UnitForTests(a).Position);
+            MovePlayer(s, math.normalize(wild * math.cos(1.5f / Radius) - PlanetFrame.FromUp(wild).North * math.sin(1.5f / Radius)));
+            Step(s);
+            int offered = s.InteractableForTests;
+            Assert.That(offered, Is.GreaterThanOrEqualTo(0), "an idle wild 1.5 m away is offered");
+            RunSession.UnitSnapshot target = s.UnitForTests(offered);
+            Assert.That(target.Side, Is.EqualTo(EncounterSide.Wild));
+
+            s.OpenInteractForTests();
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(offered));
+            Assert.That(s.InteractableForTests, Is.EqualTo(-1), "no prompt while the menu is open");
+            Assert.That(s.CharacterInputEnabledForTests, Is.False, "the character stands still");
+
+            s.ChooseInteractForTests(0);
+            Assert.That(s.ObserveTextForTests, Is.Not.Null.And.Not.Contains("{"), "observe fills every placeholder");
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(offered), "observe keeps the menu open");
+
+            s.ChooseInteractForTests(1);
+            Assert.That(s.InteractTargetForTests, Is.EqualTo(-1), "provoke closes the menu");
+            Assert.That(s.CharacterInputEnabledForTests, Is.True);
+            Assert.That(s.LockedTargetForTests, Is.EqualTo(offered), "the provoked wild is locked");
+
+            Step(s);
+            Assert.That(s.InCombatForTests, Is.True, "provoke starts the fight");
+            Assert.That(s.InteractableForTests, Is.Not.EqualTo(offered), "an engaged wild is no longer offered");
+        }
+
+        // Two Normal spawns of one pack (RunPlanner scatters pack members ≤ 5 m from its centre). Unit id == spawn index.
+        private static (int, int)? PackPair(RunPlan p)
+        {
+            for (int i = 0; i < p.Spawns.Count; i++)
+            {
+                for (int j = i + 1; j < p.Spawns.Count; j++)
+                {
+                    if (p.Spawns[i].Role == SpawnRole.Normal && p.Spawns[j].Role == SpawnRole.Normal &&
+                        p.Spawns[i].Group == p.Spawns[j].Group)
+                    {
+                        return (i, j);
+                    }
+                }
+            }
+
+            return null;
         }
 
         // ---------------------------------------------------------------------------------------------------------
@@ -196,6 +376,112 @@ namespace Cosmimera.Bootstrap.Tests
         // REQ: creatures.md#進化 — one roll per knocked-out spawn on the run's own 'D' stream, tier by role, element from the
         // planet type's bias. The oracle replays the same knock-out order on a fresh stream; the boss is injected twice
         // before one step to show a re-sent faint cannot roll a second drop (tech-debt R5-01).
+        [UnityTest]
+        public IEnumerator Knockout_excludes_fainted_member_and_breaks_ties_by_persistent_id()
+        {
+            Env env = LoadEnv();
+            ulong seed = FindSeed(env, p => Tier0Normals(p, null).Count > 0);
+            RunPlan plan = PlanFor(env, seed);
+            int target = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run, ids: new[] { 6, 5, 4, 3, 2, 1 });
+            RunSession s = run.Session;
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            Kill(s, env, s.PartyUnitsForTests[0]);
+            Kill(s, env, target);
+            int[] before = Exp(s);
+            s.InjectFaintForTests(target);
+            Step(s);
+            Assert.That(Delta(before, Exp(s)), Is.EqualTo(new[] { 0, 27, 13, 13, 13, 14 }));
+        }
+
+        [UnityTest]
+        public IEnumerator Real_tick_knockout_pays_xp()
+        {
+            Env env = LoadEnv();
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return Tier0Normals(p, null).Count > 0 &&
+                    rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out _);
+            });
+            RunPlan plan = PlanFor(env, seed);
+            int target = Tier0Normals(plan, null)[0];
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(50), run);
+            RunSession s = run.Session;
+            EngageAt(s, plan, target);
+            for (int i = 0; i < 2000; i++)
+            {
+                int[] before = Exp(s);
+                Step(s);
+                if (s.EventsForTests.Any(e => e.Kind == EncounterEventKind.Faint && e.TargetId == target))
+                {
+                    var events = (EncounterEvent[])s.EventsForTests;
+                    int faint = System.Array.FindIndex(events, e => e.Kind == EncounterEventKind.Faint && e.TargetId == target);
+                    events[faint] = default;
+                    Assert.That(s.EventsForTests[faint].Kind, Is.EqualTo(EncounterEventKind.Faint), "event snapshot is detached");
+                    var rng = new Pcg32(seed, 'D');
+                    Assert.That(rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out MaterialStack expected), Is.True);
+                    Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1), "real faint dispatch awards the drop");
+                    Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
+                    Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
+                    Assert.That(Delta(before, Exp(s)).Sum(), Is.GreaterThan(0), "real faint dispatch pays XP");
+                    yield break;
+                }
+            }
+
+            Assert.Fail("the wild creature was not knocked out by Encounter.Tick");
+        }
+
+        [UnityTest]
+        public IEnumerator Elite_knockout_drops_elite_material()
+        {
+            Env env = LoadEnv();
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return p.Spawns.Any(sp => sp.Role == SpawnRole.Elite) &&
+                    rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref rng, out _);
+            });
+            RunPlan plan = PlanFor(env, seed);
+            int elite = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Elite);
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run);
+            RunSession s = run.Session;
+            Kill(s, env, elite);
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            s.InjectFaintForTests(elite);
+            Step(s);
+
+            var oracle = new Pcg32(seed, 'D');
+            Assert.That(rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref oracle, out MaterialStack expected), Is.True);
+            Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1));
+            Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
+            Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
+            Assert.That(s.MaterialsForTests[0].Key.Tier, Is.EqualTo(rules.TierFor(SpawnRole.Elite)));
+            var snapshot = (MaterialStack[])s.MaterialsForTests;
+            snapshot[0] = default;
+            Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key), "the snapshot cannot alter the run");
+            var party = (int[])s.PartyUnitsForTests;
+            int first = party[0];
+            party[0] = -1;
+            Assert.That(s.PartyUnitsForTests[0], Is.EqualTo(first), "the party snapshot cannot alter the run");
+            var units = (RunSession.UnitSnapshot[])s.UnitsForTests;
+            string creature = units[elite].CreatureId;
+            units[elite] = default;
+            Assert.That(s.UnitForTests(elite).CreatureId, Is.EqualTo(creature), "unit snapshot is detached");
+            var spawns = (RunSpawn[])s.SpawnsForTests;
+            spawns[elite] = default;
+            Assert.That(s.SpawnsForTests[elite].CreatureId, Is.EqualTo(plan.Spawns[elite].CreatureId), "plan snapshot is detached");
+            var active = (int[])s.ActiveUnitsForTests;
+            int activeId = active[0];
+            active[0] = -1;
+            Assert.That(s.ActiveUnitsForTests[0], Is.EqualTo(activeId), "team snapshot is detached");
+        }
+
         [UnityTest]
         public IEnumerator Knockouts_drop_one_roll_per_spawn_from_the_planet_bias()
         {
@@ -256,6 +542,109 @@ namespace Cosmimera.Bootstrap.Tests
         // combat pays one quest step to an all-reserve record (weights 2 each): pool/6 each, ≥ 1 → LV11 for all six.
         // In the same step a wild pack next to the arrival point engages, so that step starts a new battle. The old code
         // applied level-ups only after Tick, saw InCombat, and left every unit at LV10 for the whole fight.
+        // REQ: docs/reviews/P2-05-wiring-sol.md W-03 — every end path hands its drops to the lobby (Q-C32: win, loss and
+        // abandon all keep materials). The seed makes the boss's knock-out the stream's first, successful roll, so the
+        // test does not depend on balance.json's chance values.
+        public enum EndPath { Victory, Defeat, Abandon, Downed }
+
+        [UnityTest]
+        public IEnumerator Every_end_path_hands_the_run_materials_to_the_lobby(
+            [Values(EndPath.Victory, EndPath.Defeat, EndPath.Abandon, EndPath.Downed)] EndPath path)
+        {
+            Env env = LoadEnv();
+            MaterialDrops rules = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            ulong seed = FindSeed(env, p =>
+            {
+                var rng = new Pcg32(p.Seed, 'D');
+                return rules.TryRoll(SpawnRole.Boss, env.Type.ElementBias, ref rng, out _);
+            });
+            RunPlan plan = PlanFor(env, seed);
+            int boss = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Boss);
+            RunOutcome outcome = null;
+            int ends = 0;
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(10), run, onEnd: o => { outcome = o; ends++; });
+            RunSession s = run.Session;
+            Kill(s, env, boss);
+            ParkAt(s, Quiet(s, plan.Quest[0].Region));
+            s.InjectFaintForTests(boss);
+            Step(s);
+            MaterialStack[] dropped = s.MaterialsForTests.ToArray();
+            Assert.That(dropped.Length, Is.EqualTo(1), "the boss drop is banked in the run");
+            Assert.That(s.EndedForTests, Is.False, "the boss stays capturable for its knocked-out window");
+
+            switch (path)
+            {
+                case EndPath.Victory:
+                    // The window closes with no capture throw: the boss is gone and the run is won.
+                    for (int i = 0; i < 2000 && !s.EndedForTests; i++)
+                    {
+                        Step(s);
+                    }
+
+                    break;
+                case EndPath.Defeat:
+                    foreach (int id in s.PartyUnitsForTests)
+                    {
+                        Kill(s, env, id);
+                    }
+
+                    Step(s);
+                    break;
+                case EndPath.Abandon:
+                    s.AbandonForTests();
+                    Assert.That(s.EndedForTests, Is.False, "the first press only arms");
+                    s.AbandonForTests();
+                    break;
+                case EndPath.Downed:
+                    // Q-C33: a real wild hit through Encounter.Tick (not a seam) must raise PlayerDowned and settle the
+                    // run as a defeat. The party stays parked >40 m away so the player is the only intruder in reach.
+                    RunSession.UnitSnapshot target = s.UnitsForTests.First(u =>
+                        u.Side == EncounterSide.Wild && u.Fielded && !u.IsFainted && u.Id != boss);
+                    float3 wildUp = s.DirectionForTests(target.Position);
+                    MovePlayer(s, math.normalize(wildUp * Radius + PlanetFrame.FromUp(wildUp).East * 3f));
+                    s.WoundPlayerForTests(1);
+                    s.ProvokeForTests(target.Id);
+                    for (int i = 0; i < 2000 && !s.EndedForTests; i++)
+                    {
+                        Step(s);
+                    }
+
+                    Assert.That(s.PlayerHpForTests, Is.EqualTo(0), "the run ended because the player was downed");
+                    break;
+            }
+
+            Assert.That(ends, Is.EqualTo(1), "End fires exactly once");
+            Assert.That(outcome.Victory, Is.EqualTo(path == EndPath.Victory));
+            Assert.That(outcome.Abandoned, Is.EqualTo(path == EndPath.Abandon));
+            Assert.That(outcome.Materials, Is.EqualTo(dropped), "the outcome carries exactly what dropped");
+            Assert.That(outcome.PartyExp.Count, Is.EqualTo(PartySize));
+
+            // DemoGame.OnRunEnded banks every outcome through LobbyTransactions.Settle; the same call here proves the
+            // drop reaches the save on this path (the Settle rules themselves are LobbyTransactionsTests' job).
+            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cosmimera-endpath-" + System.Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(dir);
+            try
+            {
+                var live = new LobbySave();
+                live.ChooseStarter(env.Starters[0].LineId, env.Starters[0].Id, env.Progression.XpThreshold(10));
+                for (int i = 1; i < PartySize; i++)
+                {
+                    live.Add(env.Starters[i % env.Starters.Count].Id, VesselKind.TalismanCard, env.Progression.XpThreshold(10));
+                }
+
+                List<int> ids = live.Owned.Select(o => o.InstanceId).Take(PartySize).ToList();
+                CommitStatus st = LobbyTransactions.Settle(live, ids, outcome, System.IO.Path.Combine(dir, "lobby.json"),
+                    out LobbySave next, out _, out System.Exception error);
+                Assert.That(st, Is.EqualTo(CommitStatus.Committed), error?.ToString());
+                Assert.That(next.Materials.Count(dropped[0].Key), Is.EqualTo(dropped[0].Qty));
+            }
+            finally
+            {
+                System.IO.Directory.Delete(dir, true);
+            }
+        }
+
         [UnityTest]
         public IEnumerator R3_01_a_level_earned_outside_combat_is_applied_even_when_the_same_step_starts_a_battle()
         {
@@ -268,24 +657,26 @@ namespace Cosmimera.Bootstrap.Tests
             var run = new Run();
             yield return Launch(env, seed, startExp, run);
             RunSession s = run.Session;
-            Encounter enc = s.EncounterForTests;
             foreach (int id in s.PartyUnitsForTests)
             {
-                Assert.That(enc.Units[id].Level, Is.EqualTo(10), "starts one XP short of LV11");
+                Assert.That(s.UnitForTests(id).Level, Is.EqualTo(10), "starts one XP short of LV11");
             }
 
             int pool = Pool(progression, BaseQuestStep, QuestLevel(env, plan, 0), false);
             int[] before = Exp(s);
-            ParkAt(s, Beside(plan.Spawns[spawn].Direction));
+            int[] levelsAtTick = null;
+            s.BeforeTickForTests = () => levelsAtTick = s.PartyUnitsForTests.Select(id => s.UnitForTests(id).Level).ToArray();
+            EngageAt(s, plan, spawn);
             Step(s);
+            Assert.That(levelsAtTick, Is.EqualTo(Enumerable.Repeat(11, PartySize).ToArray()), "levels at the first Tick");
 
-            Assert.That(s.TeamForTests.InCombat, Is.True, "this step starts a battle");
+            Assert.That(s.InCombatForTests, Is.True, "this step starts a battle");
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(Split(pool, new int[0])),
                 "ReachPoi paid once, all-reserve: pool " + pool + " over weights 2×6");
             for (int slot = 0; slot < PartySize; slot++)
             {
                 Assert.That(progression.LevelOf(s.PartyExpForTests(slot)), Is.EqualTo(11), "XP crossed T(11), slot " + slot);
-                Assert.That(enc.Units[s.PartyUnitsForTests[slot]].Level, Is.EqualTo(11),
+                Assert.That(s.UnitForTests(s.PartyUnitsForTests[slot]).Level, Is.EqualTo(11),
                     "level-up applied before the battle began, slot " + slot);
             }
         }
@@ -313,9 +704,9 @@ namespace Cosmimera.Bootstrap.Tests
             RunSession s = run.Session;
             AssertSpawnUnits(s, plan, e1);
 
-            ParkAt(s, Beside(plan.Spawns[e1].Direction));
+            EngageAt(s, plan, e1);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle in progress");
+            Assert.That(s.InCombatForTests, Is.True, "battle in progress");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }));
 
             s.SwitchMainForTests();
@@ -326,7 +717,7 @@ namespace Cosmimera.Bootstrap.Tests
             int[] before = Exp(s);
             Step(s);
 
-            Assert.That(s.TeamForTests.InCombat, Is.True, "still the same battle");
+            Assert.That(s.InCombatForTests, Is.True, "still the same battle");
             Assert.That(Delta(before, Exp(s)), Is.EqualTo(Split(pool, new[] { 0, 1, 2 })),
                 "ReachPoi pays the record {0,1,2}: pool " + pool);
         }
@@ -359,34 +750,34 @@ namespace Cosmimera.Bootstrap.Tests
             Progression progression = env.Progression;
 
             // Battle A: real engagement, then the elite falls inside it.
-            ParkAt(s, Beside(plan.Spawns[a].Direction));
+            EngageAt(s, plan, a);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle A");
+            Assert.That(s.InCombatForTests, Is.True, "battle A");
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 0, 1 }));
             Kill(s, env, elite);
             s.InjectFaintForTests(elite);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle A continues after the elite fell");
-            Assert.That(s.QuestForTests.StepIndex, Is.EqualTo(0), "elite fell before the ReachPoi step");
+            Assert.That(s.InCombatForTests, Is.True, "battle A continues after the elite fell");
+            Assert.That(s.QuestIndexForTests, Is.EqualTo(0), "elite fell before the ReachPoi step");
 
             // Battle A ends; outside combat slot 0 is swapped for slot 2.
             Kill(s, env, a);
             ParkAt(s, Quiet(s, questRegion));
             s.InjectFaintForTests(a);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.False, "battle A over");
+            Assert.That(s.InCombatForTests, Is.False, "battle A over");
             s.SwitchMainForTests();
             Assert.That(ActiveSlots(s), Is.EqualTo(new[] { 1, 2 }));
 
             // Battle B: real engagement on another pack, then the party enters the quest region.
-            ParkAt(s, Beside(plan.Spawns[b].Direction));
+            EngageAt(s, plan, b);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle B");
+            Assert.That(s.InCombatForTests, Is.True, "battle B");
             MovePlayer(s, plan.Regions[questRegion].Center);
             int[] before = Exp(s);
             Step(s);
-            Assert.That(s.TeamForTests.InCombat, Is.True, "battle B continues in the region");
-            Assert.That(s.QuestForTests.StepIndex, Is.EqualTo(1), "ReachPoi done, DefeatWild current");
+            Assert.That(s.InCombatForTests, Is.True, "battle B continues in the region");
+            Assert.That(s.QuestIndexForTests, Is.EqualTo(1), "ReachPoi done, DefeatWild current");
             int[] recordB = { 1, 2 };
             int[] recordA = { 0, 1 };
             Assert.That(Delta(before, Exp(s)),
@@ -401,17 +792,17 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Step(s);
-            Assert.That(s.QuestForTests.StepIndex, Is.EqualTo(1));
-            Assert.That(s.QuestForTests.Progress, Is.EqualTo(count - 1), "all but the last matching knock-out counted");
+            Assert.That(s.QuestIndexForTests, Is.EqualTo(1));
+            Assert.That(s.QuestProgressForTests, Is.EqualTo(count - 1), "all but the last matching knock-out counted");
 
             int last = matching[count - 1];
             Kill(s, env, last);
             s.InjectFaintForTests(last);
             before = Exp(s);
             Step(s);
-            Assert.That(s.QuestForTests.IsEarned(1), Is.True, "DefeatWild completed by the last knock-out");
-            Assert.That(s.QuestForTests.IsEarned(2), Is.True, "DefeatElite credited retroactively (Q-E1)");
-            Assert.That(s.QuestForTests.StepIndex, Is.EqualTo(3));
+            Assert.That(s.QuestEarnedForTests(1), Is.True, "DefeatWild completed by the last knock-out");
+            Assert.That(s.QuestEarnedForTests(2), Is.True, "DefeatElite credited retroactively (Q-E1)");
+            Assert.That(s.QuestIndexForTests, Is.EqualTo(3));
 
             int wildPool = Pool(progression, BaseWild, WildLevelOf(env, plan, last), false);
             int wildStepPool = Pool(progression, BaseQuestStep, QuestLevel(env, plan, 1), false);
@@ -525,7 +916,7 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         private static RunPlan PlanFor(Env env, ulong seed) =>
-            RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), seed, env.Type, env.Wild, env.Vocab, null);
+            RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), seed, env.Type, CreatureStage.Adult, env.Wild, env.Vocab, null);
 
         // Same inputs as RunSession.Configure with no geo-templates, so the session builds exactly this plan.
         private static ulong FindSeed(Env env, System.Func<RunPlan, bool> suitable)
@@ -542,51 +933,38 @@ namespace Cosmimera.Bootstrap.Tests
             return 0;
         }
 
+        // Golden vectors for the synthetic fixture, calculated independently of Progression.
         private static int WildLevelOf(Env env, RunPlan plan, int spawn) =>
-            env.Progression.WildLevel(1, plan.Regions[plan.Spawns[spawn].Region].Tier, plan.Spawns[spawn].Role);
+            10 + 2 * plan.Regions[plan.Spawns[spawn].Region].Tier +
+            (plan.Spawns[spawn].Role == SpawnRole.Elite ? 3 : plan.Spawns[spawn].Role == SpawnRole.Boss ? 5 : 0);
 
-        // A quest step pays at its region's normal wild level (RunSession.PayQuest, level-progression.md#獎勵量).
-        private static int QuestLevel(Env env, RunPlan plan, int step) =>
-            env.Progression.WildLevel(1, plan.Regions[plan.Quest[step].Region].Tier, SpawnRole.Normal);
+        private static int QuestLevel(Env env, RunPlan plan, int step) => 10 + 2 * plan.Regions[plan.Quest[step].Region].Tier;
 
-        // ---------------------------------------------------------------------------------------------------------
-        // XP oracle (level-progression.md#獎勵量 / #經驗分配), independent of Progression.Settle
-        // ---------------------------------------------------------------------------------------------------------
+        private static int Pool(Progression progression, int baseXp, int level, bool elite)
+        {
+            int[] costs = { 156, 163, 172, 180, 189, 198, 208, 219, 230, 241 };
+            return baseXp * costs[level - 10] * (elite ? 2 : 1) / 156;
+        }
 
-        // E = floor(base × C(min(L,99)) × r / C(10)); r = 1 here (no elite pool is asserted).
-        private static int Pool(Progression progression, int baseXp, int level, bool elite) =>
-            (int)((long)baseXp * progression.XpToNext(System.Math.Min(level, 99)) * (elite ? 2 : 1) / progression.XpToNext(10));
-
-        // All six alive: weight 4 if the slot appeared in the record, else 2; floor the exact share, give the leftover
-        // points by larger remainder, ties to the smaller persistent id (slot + 1).
         private static int[] Split(int pool, int[] appeared)
         {
-            var weight = new long[PartySize];
-            long total = 0;
-            for (int i = 0; i < PartySize; i++)
+            string key = pool + ":" + string.Join(",", appeared);
+            return key switch
             {
-                weight[i] = appeared.Contains(i) ? 4 : 2;
-                total += weight[i];
-            }
-
-            var share = new int[PartySize];
-            var remainder = new long[PartySize];
-            int given = 0;
-            for (int i = 0; i < PartySize; i++)
-            {
-                long exact = (long)pool * weight[i];
-                share[i] = (int)(exact / total);
-                remainder[i] = exact % total;
-                given += share[i];
-            }
-
-            int[] order = Enumerable.Range(0, PartySize).OrderByDescending(i => remainder[i]).ThenBy(i => i).ToArray();
-            for (int k = 0; k < pool - given; k++)
-            {
-                share[order[k]]++;
-            }
-
-            return share;
+                "80:" => new[] { 14, 14, 13, 13, 13, 13 },
+                "80:0,1" => new[] { 20, 20, 10, 10, 10, 10 },
+                "80:1,2" => new[] { 10, 20, 20, 10, 10, 10 },
+                "80:0,1,2" => new[] { 18, 18, 17, 9, 9, 9 },
+                "88:" => new[] { 15, 15, 15, 15, 14, 14 },
+                "88:0,1" => new[] { 22, 22, 11, 11, 11, 11 },
+                "88:1,2" => new[] { 11, 22, 22, 11, 11, 11 },
+                "88:0,1,2" => new[] { 20, 19, 19, 10, 10, 10 },
+                "96:" => new[] { 16, 16, 16, 16, 16, 16 },
+                "96:0,1" => new[] { 24, 24, 12, 12, 12, 12 },
+                "96:1,2" => new[] { 12, 24, 24, 12, 12, 12 },
+                "96:0,1,2" => new[] { 21, 21, 21, 11, 11, 11 },
+                _ => throw new System.InvalidOperationException("No golden split for " + key),
+            };
         }
 
         private static string Show(int[] values) => "[" + string.Join(",", values) + "]";
@@ -622,7 +1000,7 @@ namespace Cosmimera.Bootstrap.Tests
         private static int[] ActiveSlots(RunSession s)
         {
             var slots = new List<int>();
-            foreach (int unit in s.TeamForTests.Active)
+            foreach (int unit in s.ActiveUnitsForTests)
             {
                 slots.Add(s.PartyUnitsForTests.ToList().IndexOf(unit));
             }
@@ -636,20 +1014,25 @@ namespace Cosmimera.Bootstrap.Tests
         {
             foreach (int i in spawns)
             {
-                Assert.That(s.EncounterForTests.Units[i].Def.Id, Is.EqualTo(plan.Spawns[i].CreatureId), "spawn " + i);
+                Assert.That(s.UnitForTests(i).CreatureId, Is.EqualTo(plan.Spawns[i].CreatureId), "spawn " + i);
             }
         }
 
         private static void MovePlayer(RunSession s, float3 direction)
         {
-            PlanetRig rig = s.RigForTests;
-            var rb = rig.Character.GetComponent<Rigidbody>();
-            Vector3 at = rig.Config.ToWorld(direction, rig.Height.Sample(direction) + 1f);
-            rb.position = at;
-            rig.Character.transform.position = at;
+            s.MovePlayerForTests(direction);
         }
 
-        // A point 6 m north of a wild spawn: inside Encounter.AggroRadiusM (18 m) so the pack engages, but not on top of
+        // Parks beside a spawn and starts the fight with it the way the Focus input does. D0-E2 territory: tier-0
+        // juveniles are timid (0 m), so standing next to them no longer starts a fight by itself. Unit id == spawn
+        // index (AssertSpawnUnits).
+        private static void EngageAt(RunSession s, RunPlan plan, int spawn)
+        {
+            ParkAt(s, Beside(plan.Spawns[spawn].Direction));
+            s.ProvokeForTests(spawn);
+        }
+
+        // A point 6 m north of a wild spawn, close enough to provoke (Encounter.ProvokeRadiusM 18 m) but not on top of
         // it. Parking exactly on the spawn direction puts the target straight above/below the caster; the tangent toward
         // it is then float noise and trips MoveGeometry's unit-tangent Pre (see tech-debt D0-E4).
         private static float3 Beside(float3 spawnDirection)
@@ -662,18 +1045,7 @@ namespace Cosmimera.Bootstrap.Tests
         // Moves the fielded party and the player together; nothing steps in between, so physics never sees the jump.
         private static void ParkAt(RunSession s, float3 direction)
         {
-            Encounter enc = s.EncounterForTests;
-            foreach (int id in s.PartyUnitsForTests)
-            {
-                if (!enc.Units[id].Fielded)
-                {
-                    continue;
-                }
-
-                enc.Unfield(id);
-                enc.Field(id, direction, false, s.NowMsForTests);
-            }
-
+            s.RepositionPartyForTests(direction);
             MovePlayer(s, direction);
         }
 
@@ -681,14 +1053,12 @@ namespace Cosmimera.Bootstrap.Tests
         // beyond Encounter.DisengageRadiusM (40 m), so it must beat that with margin.
         private static float3 Quiet(RunSession s, int excludedRegion)
         {
-            PlanetRig rig = s.RigForTests;
-            RunPlan plan = s.PlanForTests;
             var wild = new List<float3>();
-            foreach (EncounterUnit u in s.EncounterForTests.Units)
+            foreach (RunSession.UnitSnapshot u in s.UnitsForTests)
             {
-                if (u.Side == EncounterSide.Wild && !u.Combatant.IsFainted)
+                if (u.Side == EncounterSide.Wild && !u.IsFainted)
                 {
-                    wild.Add(rig.Config.ToDirection(u.Position));
+                    wild.Add(s.DirectionForTests(u.Position));
                 }
             }
 
@@ -701,7 +1071,7 @@ namespace Cosmimera.Bootstrap.Tests
                 float y = 1f - 2f * (i + 0.5f) / Candidates;
                 float r = math.sqrt(1f - y * y);
                 var d = new float3(math.cos(golden * i) * r, y, math.sin(golden * i) * r);
-                if (RunPlanner.RegionAt(plan, d) == excludedRegion)
+                if (s.RegionAtForTests(d) == excludedRegion)
                 {
                     continue;
                 }
@@ -709,7 +1079,7 @@ namespace Cosmimera.Bootstrap.Tests
                 float nearest = float.MaxValue;
                 foreach (float3 w in wild)
                 {
-                    nearest = math.min(nearest, math.acos(math.clamp(math.dot(d, w), -1f, 1f)) * rig.Config.Radius);
+                    nearest = math.min(nearest, math.acos(math.clamp(math.dot(d, w), -1f, 1f)) * Radius);
                 }
 
                 if (nearest > bestDistance)
@@ -727,7 +1097,6 @@ namespace Cosmimera.Bootstrap.Tests
         // The Faint event is then supplied by InjectFaintForTests because Encounter only emits it from inside Tick.
         private static void Kill(RunSession s, Env env, int unitId)
         {
-            Combatant target = s.EncounterForTests.Units[unitId].Combatant;
             long now = s.NowMsForTests;
             var mastery = new int[10];
             for (int i = 0; i < mastery.Length; i++)
@@ -736,18 +1105,18 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Pcg32 rng = new Pcg32(99UL, 'T');
-            for (int e = 0; e < 10 && !target.IsFainted; e++)
+            for (int e = 0; e < 10 && !s.UnitForTests(unitId).IsFainted; e++)
             {
                 var attacker = new Combatant(env.Balance.Stats, env.Balance.Effects, 0, 0, 0, mastery, new int[10], new EffectBook(), 1);
                 var move = new CastMove("test_nuke", (Element)e, MoveKind.Damage, DamageModel.MaxPower, 100, 0, false, default, 0);
                 Assert.That(attacker.BeginCast(0, move, now, out CastContext cast), Is.EqualTo(CastResult.Accepted));
-                for (int hit = 0; hit < 64 && !target.IsFainted; hit++)
+                for (int hit = 0; hit < 64 && !s.UnitForTests(unitId).IsFainted; hit++)
                 {
-                    target.ReceiveHostile(cast, true, ref rng, now);
+                    s.ReceiveHostileForTests(unitId, cast, ref rng);
                 }
             }
 
-            Assert.That(target.IsFainted, Is.True, "unit " + unitId + " taken to 0 HP");
+            Assert.That(s.UnitForTests(unitId).IsFainted, Is.True, "unit " + unitId + " taken to 0 HP");
         }
 
         // ---------------------------------------------------------------------------------------------------------
@@ -770,7 +1139,16 @@ namespace Cosmimera.Bootstrap.Tests
                     Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
                     Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text),
                 Balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text),
-                Progression = Progression.FromJson(Load<TextAsset>(Copy + "balance.json").text),
+                Progression = Progression.FromJson(@"{""progression"":{
+                    ""level_max"":100,""starter_level"":10,""xp_first_level_cost"":100,
+                    ""xp_growth_numerator"":105,""xp_growth_denominator"":100,
+                    ""evolution_level_bands"":{""juvenile"":[20,30],""adolescent"":[35,50]},
+                    ""migration_stage_floor_levels"":[10,20,35],""appeared_weight"":4,""reserve_weight"":2,
+                    ""rewards"":{""base_xp"":{""wild"":80,""capture"":40,""quest_step"":80,""quest_chain"":160,""boss"":640},
+                    ""reference_level"":10,""elite_multiplier"":2,
+                    ""wild_level"":{""boss_level_min"":19,""boss_level_max"":100,""per_tier"":2,
+                    ""role_bonus"":{""normal"":0,""elite"":3,""boss"":5}},""sidekick_share_divisor"":2},
+                    ""player"":{""xp_multiplier"":6,""boss_stage_unlock_levels"":[1,20,35]}}}"),
                 Actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
             };
             foreach (GameDef d in db.All)
@@ -791,9 +1169,9 @@ namespace Cosmimera.Bootstrap.Tests
             return env;
         }
 
-        // Six main slots (the starters repeat if the data has fewer than six), ids 1..6, equal starting XP. The session is
-        // disabled as soon as it has landed: Update would otherwise run its own ticks between the test's steps.
-        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null)
+        // Staged-step cases disable the session after landing; the per-frame wiring regression keeps it enabled.
+        private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null,
+            System.Action<RunOutcome> onEnd = null, bool keepEnabled = false)
         {
             var party = new List<CreatureDef>();
             for (int i = 0; i < PartySize; i++)
@@ -812,11 +1190,11 @@ namespace Cosmimera.Bootstrap.Tests
             session.Configure(env.Copy, env.Balance, env.Actions, Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    PlanetType = env.Type, Seed = seed, Radius = Radius, Party = party,
-                    PartyIds = Enumerable.Range(1, PartySize).ToList(),
+                    PlanetType = env.Type, Seed = seed, Radius = Radius, BossStage = CreatureStage.Adult, Party = party,
+                    PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
-                }, env.Wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
+                }, env.Wild, onEnd ?? (o => { }), Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
             float deadline = Time.realtimeSinceStartup + 60f;
@@ -826,11 +1204,11 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(session.StartedForTests, Is.True, "terrain colliders under the landing point within 60 s");
-            session.enabled = false;
+            session.enabled = keepEnabled;
             // The tests teleport the character across the planet between frames; the camera's one-frame continuity
             // contract (ViewOrbit: up turns < 90° per step) would then fire in the frame between a test's end and the
             // deferred Destroy, and be reported against the next test.
-            session.RigForTests.CameraRig.enabled = false;
+            session.SuspendCameraForTests();
         }
     }
 }

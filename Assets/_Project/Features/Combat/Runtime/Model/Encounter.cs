@@ -24,6 +24,13 @@ namespace Cosmimera.Combat
         /// <summary>Terrain altitude (m above Radius) under unit <paramref name="direction"/>.</summary>
         /// <remarks>Pre: direction unit length. Post: finite. Side effects: none.</remarks>
         float GroundAltitude(float3 direction);
+
+        /// <summary>Whether unit <paramref name="direction"/> is sea, where wild units may not stand.</summary>
+        /// <remarks>
+        /// REQ: combat.md#只在陸地. Pre: direction unit length. Post: deterministic for a given direction on one host.
+        /// Side effects: none.
+        /// </remarks>
+        bool IsSea(float3 direction);
     }
 
     /// <summary>What happened during one tick, for presentation (VFX, numbers, HUD) only.</summary>
@@ -47,8 +54,11 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: a unit id. Side effects: none.</remarks>
         public int SourceId { get; }
 
-        /// <summary>Receiving unit id, or <see cref="CombatAi.NoTarget"/> for Cast.</summary>
-        /// <remarks>Pre: none. Post: a unit id or NoTarget. Side effects: none.</remarks>
+        /// <summary>Receiving unit id, <see cref="Encounter.PlayerCharacterId"/>, or <see cref="CombatAi.NoTarget"/> for Cast.</summary>
+        /// <remarks>
+        /// Pre: none. Post: a unit id, PlayerCharacterId (Cast/Hit/Miss/PlayerDowned aimed at the player character) or
+        /// NoTarget. Side effects: none.
+        /// </remarks>
         public int TargetId { get; }
 
         /// <summary>Move slot of the cast.</summary>
@@ -74,6 +84,8 @@ namespace Cosmimera.Combat
         Support = 3,
         /// <summary>The target reached 0 HP.</summary>
         Faint = 4,
+        /// <summary>The player character reached 0 HP (TargetId == Encounter.PlayerCharacterId); the run is lost (Q-C33).</summary>
+        PlayerDowned = 5,
     }
 
     /// <summary>One creature taking part in an encounter.</summary>
@@ -114,6 +126,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 1..100; never decreases. Side effects: none.</remarks>
         public int Level { get; internal set; }
 
+        /// <summary>Whether this unit is a planet boss (HP ×2, body and melee volumes ×1.5 — D0-R2).</summary>
+        /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss. Side effects: none.</remarks>
+        public bool IsBoss { get; internal set; }
+
         internal MoveDef[] MoveDefs { get; set; }
 
         /// <summary>HP, cooldowns and effects.</summary>
@@ -131,6 +147,13 @@ namespace Cosmimera.Combat
         /// <summary>Hit-test sphere radius (m), from the size class.</summary>
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
         public float BodyRadiusM { get; }
+
+        /// <summary>
+        /// Separation radius (m) on the sphere: no other active body's circle may overlap it (combat.md#實體碰撞). Distinct
+        /// from <see cref="BodyRadiusM"/>, which sizes the hit-test sphere.
+        /// </summary>
+        /// <remarks>Pre: none. Post: > 0; boss = BossSizePermille/1000 × balance body_mm. Side effects: none.</remarks>
+        public float CollisionRadiusM { get; internal set; }
 
         internal int Agi { get; set; }
 
@@ -154,6 +177,14 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Engaged { get; internal set; }
 
+        internal bool Provoked { get; set; }
+
+        // Idle wander state (combat.md#遊蕩, D0-W1). WanderResumeMs == Encounter.WanderUnscheduled means "decide on the next
+        // idle tick" — the unit was just spawned or just disengaged.
+        internal bool HasWanderTarget { get; set; }
+        internal float3 WanderTarget { get; set; }
+        internal long WanderResumeMs { get; set; } = Encounter.WanderUnscheduled;
+
         /// <summary>Last AI target id, or NoTarget.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public int TargetId { get; internal set; } = CombatAi.NoTarget;
@@ -169,22 +200,45 @@ namespace Cosmimera.Combat
     /// </summary>
     /// <remarks>
     /// Field moves persist for field_duration_ms and resolve on <see cref="FieldTimeline"/> ticks (combat.md#場地).
-    /// D0 simplifications (recorded in docs/tech-debt.md): the player character is not a target; steering is direct great-circle movement without obstacle avoidance; movement
-    /// speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
+    /// Wild units engage by territory (combat.md#野生領域, D0-E2): an intruder — the player character or an active
+    /// player-side creature — inside the species' temperament radius starts the fight, and the nearest enemy, the player
+    /// character included once attached through <see cref="AttachPlayer"/>, is the target.
+    /// D0 simplifications (recorded in docs/tech-debt.md): steering is direct great-circle movement without obstacle
+    /// avoidance; movement speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
     /// Pre: one owner, main thread. Side effects: owns its units and RNG stream.
     /// </remarks>
     public sealed class Encounter
     {
-        /// <summary>Wild units within this distance (m) of any player-side unit or the player get engaged.</summary>
+        /// <summary>
+        /// How far (m) the player may reach to pick a not-yet-engaged wild unit as a Focus target and so start the fight
+        /// with it (<see cref="Provoke"/>). Kept at the pre-territory aggro radius so timid creatures stay catchable.
+        /// </summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const float AggroRadiusM = 18f;
+        public const float ProvokeRadiusM = 18f;
 
-        /// <summary>Engaged wild units disengage when nothing of the player's side is within this distance (m).</summary>
-        /// <remarks>Pre: none. Post: constant > AggroRadiusM (hysteresis). Side effects: none.</remarks>
+        /// <summary>Engaged wild units disengage when no intruder is within this distance (m).</summary>
+        /// <remarks>Pre: none. Post: constant > every territory radius (TerritoryTuning Pre). Side effects: none.</remarks>
         public const float DisengageRadiusM = 40f;
+
+        /// <summary>Target id of the player character in AI decisions and events (never a Units index).</summary>
+        /// <remarks>Pre: none. Post: constant; above every unit id, so distance ties prefer creatures. Side effects: none.</remarks>
+        public const int PlayerCharacterId = int.MaxValue;
+
+        /// <summary>Hit-test sphere radius (m) of the player character: ~0.35 × 1.8 m, the BodyRadiusFor convention.</summary>
+        /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
+        public const float PlayerBodyRadiusM = 0.6f;
+
+        /// <summary>Boss MaxHp multiplier. REQ: docs/design/planet-world.md (D0-R2, 2026-11-10).</summary>
+        /// <remarks>Pre: none. Post: constant >= 1. Side effects: none.</remarks>
+        public const int BossHpMultiplier = 2;
+
+        /// <summary>Boss body radius and melee hit-volume scale, in permille. REQ: planet-world.md (D0-R2).</summary>
+        /// <remarks>Pre: none. Post: constant >= 1000. Side effects: none.</remarks>
+        public const int BossSizePermille = 1500;
 
         private const float ArriveM = 0.4f;
         private const int MaxSlots = 2;
+        internal const long WanderUnscheduled = long.MinValue;
 
         private readonly PlanetConfig _planet;
         private readonly CombatBalance _balance;
@@ -195,7 +249,12 @@ namespace Cosmimera.Combat
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
         private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private Pcg32 _rng;
+        // Separate stream so wandering never shifts the combat roll order (hit/crit/capture replays stay identical).
+        private Pcg32 _wanderRng;
         private long _lastTickMs = long.MinValue;
+        private PlayerVitals _player;
+        private float3 _playerCenter;
+        private float3 _playerPush;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -231,7 +290,7 @@ namespace Cosmimera.Combat
         /// <summary>Creates an empty encounter.</summary>
         /// <remarks>
         /// Pre: planet.Radius >= MoveGeometry.MinSupportedRadiusM; balance and surface non-null.
-        /// Post: no units; RNG seeded from (seed, 'C') so all peers replay the same rolls.
+        /// Post: no units; combat RNG seeded from (seed, 'C') and wander RNG from (seed, 'W') so all peers replay the same rolls.
         /// Side effects: allocates buffers.
         /// </remarks>
         public Encounter(in PlanetConfig planet, CombatBalance balance, IEncounterSurface surface, ulong seed)
@@ -243,6 +302,7 @@ namespace Cosmimera.Combat
             _balance = balance;
             _surface = surface;
             _rng = new Pcg32(seed, 'C');
+            _wanderRng = new Pcg32(seed, 'W');
         }
 
         /// <summary>All units in id order.</summary>
@@ -252,6 +312,19 @@ namespace Cosmimera.Combat
         /// <summary>Events of the last tick.</summary>
         /// <remarks>Pre: none. Post: cleared at the start of each Tick. Side effects: none.</remarks>
         public IReadOnlyList<EncounterEvent> Events => _events;
+
+        /// <summary>
+        /// World-space displacement the caller must apply to the player character's feet after the last Tick so it no
+        /// longer overlaps an active unit (combat.md#實體碰撞). The character is driven by Unity physics outside this
+        /// model, hence the push is reported rather than applied.
+        /// </summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: zero before the first Tick and when the character overlapped nothing; otherwise a move along the sphere
+        ///       that keeps the feet's distance from the planet centre.
+        /// Side effects: none.
+        /// </remarks>
+        public float3 PlayerPush => _playerPush;
 
         /// <summary>Hit-test radius for a size class (m): ~0.35 × the class's representative height (creatures.md#體型級距).</summary>
         /// <remarks>Pre: sizeClass defined. Post: > 0. Side effects: none.</remarks>
@@ -281,6 +354,28 @@ namespace Cosmimera.Combat
         /// </remarks>
         public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level)
         {
+            return AddUnit(side, def, partnerMove, direction, level, false);
+        }
+
+        /// <summary>
+        /// Adds the planet boss: a wild unit like <see cref="AddCreature"/>, with MaxHp × <see cref="BossHpMultiplier"/>
+        /// and body radius and melee move volumes × <see cref="BossSizePermille"/>/1000. REQ: planet-world.md (D0-R2).
+        /// </summary>
+        /// <remarks>
+        /// Pre: as AddCreature.
+        /// Post: as AddCreature with side Wild, plus IsBoss; MaxHp == BossHpMultiplier × the AddCreature MaxHp at that
+        ///       level; BodyRadiusM == BossSizePermille/1000 × BodyRadiusFor(def.SizeClass). Mid/long and dash volumes are
+        ///       unchanged (the decision names melee reach only).
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddBoss(CreatureDef def, MoveDef partnerMove, float3 direction, int level)
+        {
+            return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, true);
+        }
+
+        private EncounterUnit AddUnit(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            bool boss)
+        {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(math.abs(math.lengthsq(direction) - 1f) <= 2e-3f, "direction must be unit length");
@@ -295,7 +390,7 @@ namespace Cosmimera.Combat
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMove;
                 defs[i] = m;
                 moves[i] = CastMove.FromDef(m);
-                volumes[i] = BuildVolume(m, s.Str);
+                volumes[i] = BuildVolume(m, s.Str, boss);
                 ranges[i] = m.RangeClass;
             }
 
@@ -314,10 +409,21 @@ namespace Cosmimera.Combat
             EffectBook book = BookFor(def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
             float radius = BodyRadiusFor(def.SizeClass);
+            int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
+            if (boss)
+            {
+                combatant.MultiplyMaxHp(BossHpMultiplier);
+                radius = radius * BossSizePermille / 1000f;
+                // REQ: combat.md#實體碰撞 — a boss's body grows with its hit volume.
+                collisionMm = ScaleBoss(collisionMm);
+            }
+
             float3 position = GroundPoint(direction, radius);
             var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Agi, position)
             {
                 Level = level,
+                IsBoss = boss,
+                CollisionRadiusM = collisionMm * 0.001f,
                 MoveDefs = defs,
                 Position = position,
                 Forward = PlanetFrame.FromUp(direction).North,
@@ -327,14 +433,28 @@ namespace Cosmimera.Combat
             return unit;
         }
 
+        private bool AnyActiveEngaged()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].Engaged && _units[i].IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Raises a unit to <paramref name="level"/> between battles: CON/SPI/AGI and STR-scaled hit volumes are re-derived
         /// from the form's LV100 basis. REQ: Q-C31 (2026-11-09) — level-up effects settle when the battle ends.
         /// </summary>
         /// <remarks>
-        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while the
-        ///      unit is out of combat (the caller owns battle state; stats must not change mid-fight, Q-C31).
-        /// Post: Level == level; volumes and stats equal those AddCreature would build at that level; Hp grows by the MaxHp
+        /// Pre: unitId indexes Units; unit not fainted; unit.Level &lt;= level &lt;= 100; called between Ticks while no
+        ///      active unit is Engaged (stats must not change mid-fight, Q-C31).
+        /// Post: Level == level; volumes and stats equal those AddCreature (or AddBoss when IsBoss, keeping its HP and melee
+        ///       multipliers) would build at that level; Hp grows by the MaxHp
         ///       increase; position, cooldowns and effects unchanged. level == Level is a no-op.
         /// Side effects: mutates the unit.
         /// </remarks>
@@ -344,6 +464,9 @@ namespace Cosmimera.Combat
             EncounterUnit u = _units[unitId];
             Contract.Requires(level >= u.Level && level <= 100, "level must be in Level..100");
             Contract.Requires(!u.Combatant.IsFainted, "a fainted unit cannot level up");
+            // The Pre "between battles" is checkable here: a battle exists exactly while an active wild is engaged
+            // (RunSession.AnyEngaged), so a mid-fight call is a caller bug rather than a rule we can only document.
+            Contract.Requires(!AnyActiveEngaged(), "stats must not change mid-fight (Q-C31)");
             if (level == u.Level)
             {
                 return;
@@ -352,7 +475,7 @@ namespace Cosmimera.Combat
             CreatureStats s = u.Def.Stats.AtLevel(level);
             for (int i = 0; i < u.Volumes.Length; i++)
             {
-                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str);
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str, u.IsBoss);
             }
 
             u.Combatant.Rescale(s.Con, s.Spi, s.Agi);
@@ -360,12 +483,24 @@ namespace Cosmimera.Combat
             u.Level = level;
         }
 
-        private HitVolume BuildVolume(MoveDef m, int str)
+        private HitVolume BuildVolume(MoveDef m, int str, bool boss)
         {
             // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
             BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
-            return MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats, _balance.Hit);
+            HitVolume v = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats,
+                _balance.Hit);
+            // Melee volumes are already "the body's reach" scaled by STR (combat.md#射程), so a larger boss body scales
+            // them the same way. Ranged caps (36 m) and data-authored dash lengths stay untouched.
+            if (!boss || m.RangeClass != RangeClass.Melee || v.DashDistanceMm > 0)
+            {
+                return v;
+            }
+
+            return new HitVolume(v.Kind, v.Anchor, ScaleBoss(v.ReachMm), ScaleBoss(v.WidthMm), v.HalfAngleDeciDeg,
+                ScaleBoss(v.HalfHeightMm), ScaleBoss(v.CastDistanceMm), v.DashDistanceMm);
         }
+
+        private static int ScaleBoss(int mm) => (int)((long)mm * BossSizePermille / 1000);
 
         /// <summary>Puts a player-side unit on the field at <paramref name="direction"/> and fires on_summon.</summary>
         /// <remarks>
@@ -402,7 +537,48 @@ namespace Cosmimera.Combat
             Contract.Requires(u.Side == EncounterSide.Wild, "only wild units are removed");
             u.Fielded = false;
             u.Engaged = false;
+            u.Provoked = false;
         }
+
+        /// <summary>
+        /// Makes the player character a target of wild units from now on (Q-C33, 2026-11-10). Hits on it go through
+        /// <paramref name="vitals"/> (dodge-roll i-frames apply); reaching 0 HP raises one PlayerDowned event.
+        /// </summary>
+        /// <remarks>
+        /// Pre: vitals non-null; no player attached yet.
+        /// Post: wild units may target <see cref="PlayerCharacterId"/> while !vitals.IsDowned.
+        /// Side effects: keeps a reference to vitals; Tick mutates it through ApplyDamage.
+        /// </remarks>
+        public void AttachPlayer(PlayerVitals vitals)
+        {
+            Contract.Requires(vitals != null, "vitals must not be null");
+            Contract.Requires(_player == null, "a player is already attached");
+            _player = vitals;
+        }
+
+        /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its temperament.</summary>
+        /// <remarks>
+        /// Pre: unitId is an active Wild unit.
+        /// Post: Engaged from the next Tick (if still active); then it stays engaged until no intruder is within
+        ///       DisengageRadiusM. Engaged itself is unchanged until then.
+        /// Side effects: mutates the unit.
+        /// </remarks>
+        public void Provoke(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Wild && u.IsActive, "only an active wild unit can be provoked");
+            // Deferred to the Tick: input is read before the host's between-battles step, and an Engaged flag set here
+            // would make that step's level-ups look mid-fight (SetLevel's Q-C31 guard).
+            u.Provoked = true;
+        }
+
+        /// <summary>Territory radius (m) of a unit, from its species temperament (combat.md#野生領域).</summary>
+        /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it never starts a fight by proximity. Side effects: none.</remarks>
+        public float TerritoryRadiusM(int unitId) => _balance.Territory.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
+
+        /// <summary>Wander radius (m) of a unit around its spawn point, from its species temperament (combat.md#遊蕩).</summary>
+        /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it holds its spawn point. Side effects: none.</remarks>
+        public float WanderRadiusM(int unitId) => _balance.Wander.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
 
         /// <summary>Advances the fight to <paramref name="nowMs"/>.</summary>
         /// <remarks>
@@ -410,8 +586,14 @@ namespace Cosmimera.Combat
         ///      Player unit or NoTarget; player position inside the combat shell.
         /// Post: Events lists, in order: resolutions of fields placed in earlier ticks (fields in placement order, targets
         ///       in id order), then each acting unit's cast and its resolutions in unit-id order (a new field resolves
-        ///       at once); positions stay on the ground.
-        /// Side effects: mutates units, RNG and Events. No allocation after warm-up.
+        ///       at once); positions stay on the ground. Idle (not engaged) wild units wander (combat.md#遊蕩): pause
+        ///       PauseMinMs..PauseMaxMs, then walk at SpeedPermille of their move speed to a seeded point within
+        ///       WanderRadiusM of Home; one outside that radius (just disengaged) first walks straight back to Home.
+        ///       Last, overlapping bodies are pushed apart (combat.md#實體碰撞): active units (CollisionRadiusM) and the
+        ///       character at playerPosition (balance body_mm.character), each pair split by inverse footprint area, in
+        ///       <see cref="SeparationPasses"/> sweeps in unit-id order; the character's share is in PlayerPush. A pair
+        ///       can still overlap afterwards only when a third body pushed it back (crowds settle over later ticks).
+        /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
         {
@@ -420,6 +602,9 @@ namespace Cosmimera.Combat
             long previousMs = _lastTickMs;
             _lastTickMs = nowMs;
             _events.Clear();
+            // Units stand with their body centre one radius above the ground (GroundPoint); the character's position is
+            // its feet, so lift it the same way to keep MoveGeometry's height test consistent.
+            _playerCenter = playerPosition + Up(playerPosition) * PlayerBodyRadiusM;
             UpdateEngagement(playerPosition);
 
             // Fields placed in earlier ticks resolve before any unit acts, in placement order, so every peer sees the same
@@ -437,7 +622,8 @@ namespace Cosmimera.Combat
                 bool player = u.Side == EncounterSide.Player;
                 if (!player && !u.Engaged)
                 {
-                    continue; // idle wild units hold position; presentation may animate them
+                    Wander(u, nowMs, dtMs);
+                    continue;
                 }
 
                 EncounterUnit partner = PartnerOf(u);
@@ -457,10 +643,10 @@ namespace Cosmimera.Combat
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
-                Steer(u, d.DestinationDirection, dtMs);
+                Steer(u, d.DestinationDirection, nowMs, dtMs, 1000);
                 if (d.TargetId != CombatAi.NoTarget)
                 {
-                    u.Forward = TangentToward(u.Position, _units[d.TargetId].Position, u.Forward);
+                    u.Forward = TangentToward(u.Position, TargetPosition(d.TargetId), u.Forward);
                 }
 
                 if (d.CastSlot != CombatAi.NoCast)
@@ -468,6 +654,164 @@ namespace Cosmimera.Combat
                     TryCast(u, partner, d.CastSlot, d.TargetId, nowMs);
                 }
             }
+
+            Separate(playerPosition);
+        }
+
+        /// <summary>
+        /// Reach (m) for close interaction with an idle wild (observe / provoke / pet), measured between body edges.
+        /// REQ: combat.md#近身互動 (D0-W3); 3 m is the value decided in Q-D2 (2026-11-10).
+        /// </summary>
+        public const float InteractRadiusM = 3f;
+
+        /// <summary>The idle wild unit the character at <paramref name="playerPosition"/> can interact with, if any.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: returns the id of the active, not Engaged and not Provoked Wild unit whose body edge is within
+        ///       InteractRadiusM of the character's body edge (arc on the sphere minus both collision radii), the
+        ///       smallest such gap winning and ties going to the lower id; -1 when there is none.
+        /// Side effects: none.
+        /// </remarks>
+        public int NearestInteractable(float3 playerPosition)
+        {
+            float3 here = Up(playerPosition);
+            float character = _balance.Collision.CharacterMm * 0.001f;
+            int best = -1;
+            float bestGap = float.MaxValue;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked)
+                {
+                    continue;
+                }
+
+                float gap = ArcM(here, Up(u.Position), _planet.Radius) - u.CollisionRadiusM - character;
+                if (gap <= InteractRadiusM && gap < bestGap)
+                {
+                    best = i;
+                    bestGap = gap;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Sweeps of the pairwise push-out per Tick.</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
+        public const int SeparationPasses = 2;
+
+        // REQ: combat.md#實體碰撞 (D0-W2). Runs after every move of the tick, so this tick's casts used un-separated
+        // positions; the shift is at most a body width. Two sweeps settle a pair and most 3-body pile-ups; residual overlap
+        // in a crowd is left to later ticks rather than iterating to convergence, keeping the cost O(passes × n²), n ≤ 32.
+        private void Separate(float3 playerPosition)
+        {
+            float r = _planet.Radius;
+            float3 playerStart = Up(playerPosition);
+            float3 playerDir = playerStart;
+            float playerRadius = _balance.Collision.CharacterMm * 0.001f;
+            for (int pass = 0; pass < SeparationPasses; pass++)
+            {
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit a = _units[i];
+                    if (!a.IsActive)
+                    {
+                        continue;
+                    }
+
+                    for (int j = i + 1; j < _units.Count; j++)
+                    {
+                        EncounterUnit b = _units[j];
+                        if (!b.IsActive)
+                        {
+                            continue;
+                        }
+
+                        float3 da = Up(a.Position);
+                        float3 db = Up(b.Position);
+                        if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
+                        {
+                            PlaceUnlessSea(a, da);
+                            PlaceUnlessSea(b, db);
+                        }
+                    }
+
+                    float3 d = Up(a.Position);
+                    if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
+                    {
+                        PlaceUnlessSea(a, d);
+                    }
+                }
+            }
+
+            // Rotating the feet about the centre keeps their altitude; the character's ground probe re-seats it.
+            _playerPush = math.all(playerDir == playerStart)
+                ? float3.zero
+                : _planet.Center + playerDir * math.length(playerPosition - _planet.Center) - playerPosition;
+        }
+
+        // atan2(|a×b|, a·b) instead of acos(a·b): body-scale arcs at R ≥ 320 are ~1e-3 rad, where float acos near 1 is off
+        // by ~2 cm (dθ ≈ ε/θ); the cross-product form keeps sub-millimetre accuracy.
+        private static float ArcM(float3 a, float3 b, float planetRadius)
+        {
+            return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
+        }
+
+        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea; its share of the overlap stays unresolved and later
+        // ticks (or the other body's own share) settle it.
+        private void PlaceUnlessSea(EncounterUnit u, float3 direction)
+        {
+            if (u.Side == EncounterSide.Wild && _surface.IsSea(direction))
+            {
+                return;
+            }
+
+            Place(u, direction);
+        }
+
+        private void Place(EncounterUnit u, float3 direction)
+        {
+            u.Position = GroundPoint(direction, u.BodyRadiusM);
+            u.Forward = Tangent(direction, u.Forward);
+        }
+
+        // Moves two unit directions apart along their great circle until the arc between them is ra + rb; the larger
+        // footprint (radius²) yields less. Coincident directions fall back to a's East (b) and its opposite (a), so the pair
+        // still separates deterministically. Returns whether they overlapped.
+        private static bool PushApart(ref float3 da, float ra, ref float3 db, float rb, float planetRadius)
+        {
+            float overlap = ra + rb - ArcM(da, db, planetRadius);
+            if (overlap <= 0f)
+            {
+                return false;
+            }
+
+            // Tangent at a pointing to b, and tangent at b pointing to a; each body moves against its own.
+            float3 toB = db - math.dot(db, da) * da;
+            float lenToB = math.length(toB);
+            float3 toA = da - math.dot(da, db) * db;
+            float lenToA = math.length(toA);
+            float3 headingB;
+            float3 headingA;
+            if (lenToB > 1e-7f && lenToA > 1e-7f)
+            {
+                headingA = -toB / lenToB;
+                headingB = -toA / lenToA;
+            }
+            else
+            {
+                headingB = PlanetFrame.FromUp(da).East;
+                headingA = -headingB;
+            }
+
+            float wa = ra * ra;
+            float wb = rb * rb;
+            float turnA = overlap * wb / (wa + wb) / planetRadius;
+            float turnB = overlap * wa / (wa + wb) / planetRadius;
+            da = math.normalize(da * math.cos(turnA) + headingA * math.sin(turnA));
+            db = math.normalize(db * math.cos(turnB) + headingB * math.sin(turnB));
+            return true;
         }
 
         private void TryCast(EncounterUnit u, EncounterUnit partner, int slot, int targetId, long nowMs)
@@ -502,7 +846,7 @@ namespace Cosmimera.Combat
             float3 anchor = u.Position;
             if (volume.Anchor == HitVolumeAnchor.AimPoint)
             {
-                float3 aim = targetId >= 0 ? _units[targetId].Position : u.Position + u.Forward * (volume.CastDistanceMm * 0.001f);
+                float3 aim = targetId >= 0 ? TargetPosition(targetId) : u.Position + u.Forward * (volume.CastDistanceMm * 0.001f);
                 anchor = MoveGeometry.ResolveAnchor(volume, _planet, u.Position, aim);
             }
 
@@ -515,13 +859,13 @@ namespace Cosmimera.Combat
                 int due = timeline.TicksDue(nowMs - 1, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, true);
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
                 }
 
                 return;
             }
 
-            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs, false);
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
 
             if (volume.DashDistanceMm > 0)
             {
@@ -533,14 +877,15 @@ namespace Cosmimera.Combat
         }
 
         private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
-            float3 anchor, float3 forward, long nowMs, bool field)
+            float3 anchor, float3 forward, long nowMs)
         {
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit t = _units[i];
-                // A field hits every enemy inside it (combat.md#場地), including a wild unit that has disengaged; the
-                // Engaged gate only governs AI target choice (SOL D0-E1-01).
-                bool eligible = field ? t.Side != side && t.IsActive : IsValidEnemy(side, t.Id);
+                // Any hostile volume hits every active enemy it touches (combat.md#場地 for fields; "被擊中即開戰" for the
+                // rest), including a wild unit that has not engaged; the Engaged gate only governs AI target choice
+                // (SOL D0-E1-01 for fields, D0-E2 E2-SOL-01 for caster/front volumes).
+                bool eligible = t.Side != side && t.IsActive;
                 if (!eligible ||
                     !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
                 {
@@ -555,8 +900,51 @@ namespace Cosmimera.Combat
                 {
                     _events.Add(new EncounterEvent(EncounterEventKind.Faint, casterId, t.Id, slot, 0));
                 }
+                else if (hit && t.Side == EncounterSide.Wild)
+                {
+                    // Being hit starts the fight even outside its territory (timid only fights back, Q-C35); a MISS does
+                    // not, or a timid unit would join from a roll it never felt (E2-SOL-02).
+                    t.Engaged = true;
+                }
+            }
+
+            // The player character resolves last: its id is above every unit id, and targets resolve in id order.
+            if (side == EncounterSide.Wild && PlayerTargetable() &&
+                MoveGeometry.Overlaps(volume, _planet, anchor, forward, _playerCenter, PlayerBodyRadiusM))
+            {
+                HitPlayer(casterId, slot, ctx, nowMs);
             }
         }
+
+        // Provisional player defence (Q-C35): evasion 0 and resist 0, so only accuracy and dodge-roll i-frames stand
+        // between a move and the fixed player HP; timed effects are not applied (the character has no EffectBook).
+        private void HitPlayer(int casterId, int slot, in CastContext ctx, long nowMs)
+        {
+            CastMove move = ctx.Move;
+            int chance = _balance.Stats.HitChancePermille(move.AccuracyPercent, 0);
+            HitOutcome outcome = HitResolver.Resolve(true, _player.IsInvulnerable(nowMs), chance, ref _rng);
+            int dealt = 0;
+            if (outcome == HitOutcome.Hit && move.DealsDamage)
+            {
+                dealt = _player.ApplyDamage(DamageModel.Compute(move.Power, ctx.MasteryPercent, 0), nowMs);
+            }
+
+            // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
+            _events.Add(new EncounterEvent(outcome == HitOutcome.Hit ? EncounterEventKind.Hit : EncounterEventKind.Miss,
+                casterId, PlayerCharacterId, slot, dealt));
+            if (_player.IsDowned)
+            {
+                _events.Add(new EncounterEvent(EncounterEventKind.PlayerDowned, casterId, PlayerCharacterId, slot, 0));
+            }
+        }
+
+        /// <summary>Copy of the combat stream, for draw-count oracles (SOL E2-SOL-05).</summary>
+        /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
+        internal Pcg32 RngForTests => _rng;
+
+        private bool PlayerTargetable() => _player != null && !_player.IsDowned;
+
+        private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter : _units[id].Position;
 
         private void ResolveFields(long previousMs, long nowMs)
         {
@@ -570,7 +958,7 @@ namespace Cosmimera.Combat
                 int due = tl.TicksDue(previousMs, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs, true);
+                    ResolveVolume(f.CasterId, f.Side, f.Slot, f.Ctx, f.Volume, f.Anchor, f.Forward, nowMs);
                 }
 
                 // Kept for its whole life [placed, placed + life), not just until its last resolution (SOL D0-E1-02).
@@ -614,14 +1002,113 @@ namespace Cosmimera.Combat
                 }
 
                 // Chord distance is fine at these ranges (≤ 40 m on R ≥ 640: chord/arc differ by < 0.01 %).
-                w.Engaged = w.Engaged ? nearest <= DisengageRadiusM : nearest <= AggroRadiusM;
+                // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
+                int territoryMm = _balance.Territory.RadiusMm(w.Def.Temperament);
+                w.Engaged = w.Engaged
+                    ? nearest <= DisengageRadiusM
+                    : w.Provoked || (territoryMm > 0 && nearest <= territoryMm * 0.001f);
+                w.Provoked = false;
+                if (w.Engaged)
+                {
+                    // Re-decide from scratch after the fight: the old leg may now be far behind (combat.md#遊蕩).
+                    w.HasWanderTarget = false;
+                    w.WanderResumeMs = WanderUnscheduled;
+                }
             }
+        }
+
+        // REQ: combat.md#遊蕩 (D0-W1). Engagement for this tick was already decided from the pre-move positions, so a
+        // wander step can only bring a unit into someone's territory on the next tick — same as any other movement.
+        private void Wander(EncounterUnit u, long nowMs, int dtMs)
+        {
+            WanderTuning t = _balance.Wander;
+            float radiusM = t.RadiusMm(u.Def.Temperament) * 0.001f;
+            if (!u.HasWanderTarget)
+            {
+                if (u.WanderResumeMs == WanderUnscheduled)
+                {
+                    float fromHome = math.distance(u.Position, u.Home);
+                    if (fromHome <= radiusM + ArriveM)
+                    {
+                        u.WanderResumeMs = nowMs + NextWanderPause(t);
+                        return;
+                    }
+
+                    u.WanderTarget = Up(u.Home);
+                    u.HasWanderTarget = true;
+                }
+                else if (nowMs < u.WanderResumeMs)
+                {
+                    return;
+                }
+                else
+                {
+                    if (!TryLandWanderPoint(u.Home, radiusM, out float3 target))
+                    {
+                        u.WanderResumeMs = nowMs + NextWanderPause(t);
+                        return;
+                    }
+
+                    u.WanderTarget = target;
+                    u.HasWanderTarget = true;
+                }
+            }
+
+            // A blocked step (sea ahead) ends the leg like an arrival, so the unit pauses and draws a new destination.
+            if (Steer(u, u.WanderTarget, nowMs, dtMs, t.SpeedPermille) != SteerResult.Moving)
+            {
+                u.HasWanderTarget = false;
+                u.WanderResumeMs = nowMs + NextWanderPause(t);
+            }
+        }
+
+        private int NextWanderPause(WanderTuning t)
+        {
+            return t.PauseMinMs + (int)_wanderRng.NextUInt((uint)(t.PauseMaxMs - t.PauseMinMs + 1));
+        }
+
+        /// <summary>Destination draws per wander leg before giving up on a disk that is (almost) all sea.</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
+        public const int WanderSeaRetries = 8;
+
+        // REQ: combat.md#只在陸地. Redraws come from the same (seed,'W') stream, so the count of draws is still a pure
+        // function of seed and positions; a coast-hugging spawn just pauses again instead of walking into the water.
+        private bool TryLandWanderPoint(float3 home, float radiusM, out float3 target)
+        {
+            for (int i = 0; i < WanderSeaRetries; i++)
+            {
+                target = WanderPoint(home, radiusM);
+                if (!_surface.IsSea(target))
+                {
+                    return true;
+                }
+            }
+
+            target = default;
+            return false;
+        }
+
+        // Uniform over the disk (sqrt of the radial draw); the disk is laid on the sphere by arc length, which differs from
+        // the flat disk by < 0.01 % at r ≤ 40 m, R ≥ 320.
+        private float3 WanderPoint(float3 home, float radiusM)
+        {
+            float3 up = Up(home);
+            float theta = _wanderRng.NextFloat() * 2f * math.PI;
+            float arc = radiusM * math.sqrt(_wanderRng.NextFloat()) / _planet.Radius;
+            PlanetFrame f = PlanetFrame.FromUp(up);
+            float3 heading = f.East * math.cos(theta) + f.North * math.sin(theta);
+            return math.normalize(up * math.cos(arc) + heading * math.sin(arc));
         }
 
         private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
 
         private bool IsValidEnemy(EncounterSide side, int id)
         {
+            if (id == PlayerCharacterId)
+            {
+                return side == EncounterSide.Wild && PlayerTargetable();
+            }
+
             if (id < 0 || id >= _units.Count)
             {
                 return false;
@@ -646,6 +1133,14 @@ namespace Cosmimera.Combat
                     EncounterUnit t = _units[i];
                     _enemyBuffer.Add(new AiEnemy(t.Id, t.Position, t.Forward, true));
                 }
+            }
+
+            if (IsValidEnemy(self, PlayerCharacterId))
+            {
+                // The rule layer has no character facing; North is a deterministic stand-in that only affects where a
+                // flank-style creature circles to.
+                _enemyBuffer.Add(new AiEnemy(PlayerCharacterId, _playerCenter, PlanetFrame.FromUp(Up(_playerCenter)).North,
+                    true));
             }
         }
 
@@ -682,7 +1177,16 @@ namespace Cosmimera.Combat
             return null;
         }
 
-        private void Steer(EncounterUnit u, float3 destinationDirection, int dtMs)
+        private enum SteerResult
+        {
+            Moving,
+            Arrived,
+            Blocked,
+        }
+
+        // Arrived when the unit is (already or now) within ArriveM of the destination; Blocked when a wild's next step
+        // would land on the sea (combat.md#只在陸地), in which case it does not move this tick.
+        private SteerResult Steer(EncounterUnit u, float3 destinationDirection, long nowMs, int dtMs, int speedPermille)
         {
             float3 up = Up(u.Position);
             float3 dest = math.normalize(destinationDirection);
@@ -690,15 +1194,22 @@ namespace Cosmimera.Combat
             float r = _planet.Radius;
             if (angle * r <= ArriveM)
             {
-                return;
+                return SteerResult.Arrived;
             }
 
-            float speedMs = _balance.Stats.MoveSpeedMmS(u.Agi) * 0.001f;
+            // REQ: combat.md#效果疊加 (tech-debt D0-E3): move_speed_mod_percent scales both combat and wander steps.
+            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f;
             float step = math.min(angle, speedMs * dtMs * 0.001f / r);
             float3 heading = Tangent(up, dest - up);
             float3 next = math.normalize(up * math.cos(step) + heading * math.sin(step));
+            if (u.Side == EncounterSide.Wild && _surface.IsSea(next))
+            {
+                return SteerResult.Blocked;
+            }
+
             u.Position = GroundPoint(next, u.BodyRadiusM);
             u.Forward = Tangent(next, heading);
+            return (angle - step) * r <= ArriveM ? SteerResult.Arrived : SteerResult.Moving;
         }
 
         private float3 GroundPoint(float3 direction, float bodyRadius)
@@ -708,9 +1219,28 @@ namespace Cosmimera.Combat
 
         private float3 Up(float3 position) => _planet.ToDirection(position);
 
-        private float3 TangentToward(float3 from, float3 to, float3 fallback)
+        // REQ: tech-debt D0-E4 · docs/reviews/D0-E4-proposal-sol.md. In float, a target almost straight above/below left a
+        // ~4e-6 residue after removing the radial part; normalising it gave a forward 0.0135 off the tangent plane and
+        // tripped MoveGeometry's unit-tangent Pre. Promoting before the subtraction keeps the projection exact enough, and
+        // a projected offset below the float position uncertainty (tau) is treated as "no bearing" (keep the heading).
+        internal float3 TangentToward(float3 from, float3 to, float3 fallback)
         {
-            return Tangent(Up(from), to - from, fallback);
+            double3 offset = (double3)from - (double3)_planet.Center;
+            double radius = math.length(offset);
+            double3 up = offset / radius;
+            double3 delta = (double3)to - (double3)from;
+            double3 tangent = math.cross(math.cross(up, delta), up);
+            double length = math.length(tangent);
+
+            const double FloatUnitRoundoff = 5.9604644775390625e-8; // 2^-24
+            double scale = math.max(1.0, math.max(radius, math.max(math.cmax(math.abs((double3)from)),
+                math.max(math.cmax(math.abs((double3)to)), math.cmax(math.abs((double3)_planet.Center))))));
+            // 16·u·S bounds per-axis coordinate rounding with margin; (1 + |d|/|r|) adds the error of the up estimate
+            // itself, which the projection scales by |d| (derivation in the proposal).
+            double tau = 16.0 * FloatUnitRoundoff * scale * (1.0 + math.length(delta) / radius);
+            float3 candidate = length > tau ? (float3)(tangent / length) : fallback;
+            // ProjectOnTangent re-orthogonalises against the float up and maps a zero/radial fallback to North.
+            return PlanetFrame.FromUp((float3)up).ProjectOnTangent(candidate);
         }
 
         private static float3 Tangent(float3 up, float3 v) => Tangent(up, v, v);

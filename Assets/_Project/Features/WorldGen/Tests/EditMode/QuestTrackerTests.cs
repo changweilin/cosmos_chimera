@@ -19,6 +19,8 @@ namespace Cosmimera.WorldGen.Tests
                 new RunSpawn(1, 0, new float3(1, 0, 0), "w", SpawnRole.Normal),
                 new RunSpawn(1, 1, new float3(1, 0, 0), "e", SpawnRole.Elite),
                 new RunSpawn(2, 2, new float3(0, -1, 0), "b", SpawnRole.Boss),
+                new RunSpawn(1, 0, new float3(1, 0, 0), "w", SpawnRole.Normal),
+                new RunSpawn(1, 0, new float3(1, 0, 0), "w", SpawnRole.Normal),
             };
             var quest = new[]
             {
@@ -41,7 +43,9 @@ namespace Cosmimera.WorldGen.Tests
             q.OnKnockedOut(0, Element.Fire);
             Assert.That(q.Progress, Is.EqualTo(0), "wrong element does not count");
             q.OnKnockedOut(0, Element.Wood);
-            q.OnKnockedOut(0, Element.Wood);
+            Assert.That(q.Progress, Is.EqualTo(0), "a spawn already down never counts again");
+            q.OnKnockedOut(3, Element.Wood);
+            q.OnKnockedOut(4, Element.Wood);
             Assert.That(q.Current.Kind, Is.EqualTo(QuestStepKind.DefeatElite));
             q.OnKnockedOut(0, Element.Wood);
             Assert.That(q.Current.Kind, Is.EqualTo(QuestStepKind.DefeatElite), "only the target elite counts");
@@ -71,7 +75,7 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(q.StepIndex, Is.EqualTo(0));
             q.OnRegionEntered(1);
             q.OnKnockedOut(0, Element.Wood);
-            q.OnKnockedOut(0, Element.Wood);
+            q.OnKnockedOut(3, Element.Wood);
             Assert.That(q.Current.Kind, Is.EqualTo(QuestStepKind.CaptureOne));
             Assert.That(q.IsEarned(2), Is.True);
         }

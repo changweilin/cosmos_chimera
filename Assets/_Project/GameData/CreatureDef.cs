@@ -137,6 +137,7 @@ namespace Cosmimera.GameData
         [SerializeField] private CreatureStage stage;
         [SerializeField] private CreatureSizeClass sizeClass;
         [SerializeField] private AiStyle aiStyle;
+        [SerializeField] private Temperament temperament;
         [SerializeField] private CreatureDef evolvesTo;
         [SerializeField] private int evolutionLevel;
         [SerializeField] private List<EvolutionMaterial> evolutionMaterials = new List<EvolutionMaterial>();
@@ -163,6 +164,10 @@ namespace Cosmimera.GameData
         /// <summary>Combat AI positioning style of this form (P2-10).</summary>
         /// <remarks>Pre: none. Post: a defined AiStyle. Side effects: none.</remarks>
         public AiStyle AiStyle => aiStyle;
+
+        /// <summary>Temperament of this form: its wild territory radius (D0-E2, combat.md#野生領域).</summary>
+        /// <remarks>Pre: none. Post: a defined Temperament. Side effects: none.</remarks>
+        public Temperament Temperament => temperament;
 
         /// <summary>The next form, or null for an adult.</summary>
         /// <remarks>Pre: none. Post: null iff Stage == Adult; otherwise same LineId, next stage. Side effects: none.</remarks>
@@ -212,7 +217,8 @@ namespace Cosmimera.GameData
             return resist[(int)element];
         }
 
-        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle, CreatureDef evolvesTo,
+        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle,
+            Temperament temperament, CreatureDef evolvesTo,
             int evolutionLevel,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
@@ -222,6 +228,7 @@ namespace Cosmimera.GameData
             this.stage = stage;
             this.sizeClass = sizeClass;
             this.aiStyle = aiStyle;
+            this.temperament = temperament;
             this.evolvesTo = evolvesTo;
             this.evolutionLevel = evolutionLevel;
             this.evolutionMaterials = evolutionMaterials;

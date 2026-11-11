@@ -26,7 +26,7 @@
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
   "capture": {"base_percent": 60, "boss_percent": 100},
   "materials": {"normal": {"tier": 1, "chance_percent": 10, "qty": 1}, "elite": {"tier": 2, "chance_percent": 60, "qty": 1}, "boss": {"tier": 3, "chance_percent": 100, "qty": 1}},
-  "ai": {"keep_distance_permille": 800, "close_in_permille": 500, "hold_permille": 900, "follow_leash_mm": 6000},
+  "ai": {"keep_distance_permille": 800, "close_in_permille": 500, "hold_permille": 900, "follow_leash_mm": 6000, "territory_mm": {"timid": 0, "cautious": 4000, "normal": 8000, "territorial": 14000, "fierce": 20000, "apex": 28000}, "wander_mm": {"timid": 3000, "cautious": 4000, "normal": 6000, "territorial": 8000, "fierce": 10000, "apex": 12000}, "wander_pause_min_ms": 2000, "wander_pause_max_ms": 5000, "wander_speed_permille": 400, "body_mm": {"xs": 200, "s": 400, "m": 700, "l": 1100, "xl": 1600, "character": 350}},
   "stage_bands": {
     "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},
     "adolescent": {"min_stat": 25, "max_stat": 100, "total_stats": 200},
@@ -46,8 +46,9 @@
       "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640},
       "reference_level": 10,
       "elite_multiplier": 2,
-      "wild_level": {"base": 10, "per_difficulty": 10, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},
+      "wild_level": {"boss_level_min": 5, "boss_level_max": 75, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},
       "sidekick_share_divisor": 2
-    }
+    },
+    "player": {"xp_multiplier": 6, "boss_stage_unlock_levels": [1, 20, 35]}
   }
 }

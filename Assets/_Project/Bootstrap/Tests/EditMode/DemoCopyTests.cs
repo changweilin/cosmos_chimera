@@ -6,6 +6,18 @@ namespace Cosmimera.Bootstrap.Tests
     public sealed class DemoCopyTests
     {
         [Test]
+        public void Japanese_names_use_translation_or_english_fallback()
+        {
+            var copy = new DemoCopy("ja", "{}",
+                "{\"entries\":[{\"id\":\"creature\",\"zh\":\"\u7378\",\"en\":\"Beast\",\"ja\":\"\u7363\"},{\"id\":\"move\",\"en\":\"Move\"},{\"id\":\"trait\",\"en\":\"Trait\",\"ja\":\"\"}]}",
+                "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            Assert.That(copy.Name("creature"), Is.EqualTo("\u7363"));
+            Assert.That(copy.Name("move"), Is.EqualTo("Move"));
+            Assert.That(copy.Name("trait"), Is.EqualTo("Trait"));
+            Assert.That(copy.Name("unknown"), Is.EqualTo("unknown"));
+        }
+
+        [Test]
         public void Japanese_falls_back_per_entry_to_English()
         {
             var copy = new DemoCopy("ja", "{\"translated\":{\"en\":\"English\",\"ja\":\"日本語\"},\"missing\":{\"en\":\"Fallback\"}}",

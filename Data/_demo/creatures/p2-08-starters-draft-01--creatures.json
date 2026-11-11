@@ -5,6 +5,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "keep_distance",
+    "temperament": "timid",
     "evolves_to": "sun_heliostat_heron",
     "evolution": {
       "level": 25,
@@ -59,6 +60,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
+    "temperament": "cautious",
     "evolves_to": "sun_array_skyheron",
     "evolution": {
       "level": 42,
@@ -113,6 +115,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -159,6 +162,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
+    "temperament": "cautious",
     "evolves_to": "moon_shade_wolf",
     "evolution": {
       "level": 23,
@@ -213,6 +217,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "flank",
+    "temperament": "normal",
     "evolves_to": "moon_longnight_wolf",
     "evolution": {
       "level": 40,
@@ -267,6 +272,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "flank",
+    "temperament": "fierce",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -313,6 +319,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
+    "temperament": "timid",
     "evolves_to": "star_storm_colt",
     "evolution": {
       "level": 27,
@@ -368,6 +375,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
+    "temperament": "cautious",
     "evolves_to": "star_skyhoof_steed",
     "evolution": {
       "level": 45,
@@ -424,6 +432,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {

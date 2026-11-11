@@ -1,0 +1,14 @@
+[
+  {
+    "id": "sample_character_invalid",
+    "name_zh": "測試角色",
+    "name_en": "Test Character",
+    "role": "玩家角色預設外觀",
+    "ethnicity": "東亞體系",
+    "gender": "男",
+    "age_band": "青少年",
+    "age": 16,
+    "height_cm": 170,
+    "personality": ["冷靜"]
+  }
+]

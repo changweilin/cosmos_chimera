@@ -32,6 +32,7 @@ EXPECTED = {
     "traits/unknown_trigger.json": ("schema", "/0/trigger/type"),
     "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
     "traits/heal_max_stacks.json": ("schema", "/0/effects/0"),
+    "characters/missing_vessel.json": ("schema", "/0"),
 }
 
 
@@ -315,6 +316,17 @@ class CrossFileRules(unittest.TestCase):
         creatures[0]["ai_style"] = "kite"
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
         del creatures[0]["ai_style"]
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
+    def test_temperament_is_required_and_closed(self):
+        # D0-E2: territory radius comes from the species temperament; a missing value must not default silently.
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        for value in ("timid", "cautious", "normal", "territorial", "fierce", "apex"):
+            creatures[0]["temperament"] = value
+            self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        creatures[0]["temperament"] = "shy"
+        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        del creatures[0]["temperament"]
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
 
     def test_cli_exit_codes(self):

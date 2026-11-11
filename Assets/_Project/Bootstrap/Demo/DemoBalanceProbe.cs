@@ -31,6 +31,10 @@ namespace Cosmimera.EditorTools
             /// <summary>Returns sea-level ground for isolated matchups.</summary>
             /// <remarks>Pre: direction unit length. Post: zero. Side effects: none.</remarks>
             public float GroundAltitude(float3 direction) => 0f;
+
+            /// <summary>Isolated matchups have no sea.</summary>
+            /// <remarks>Pre: direction unit length. Post: false. Side effects: none.</remarks>
+            public bool IsSea(float3 direction) => false;
         }
 
         /// <summary>Batchmode entry that writes Logs/d0-balance.json and exits with an explicit status.</summary>

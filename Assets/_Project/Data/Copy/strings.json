@@ -39,20 +39,25 @@
     "en": "Planet Type",
     "ja": "惑星タイプ"
   },
-  "ui.star_select.size_small": {
-    "zh-TW": "小型",
-    "en": "Small",
-    "ja": "小型"
+  "ui.star_select.size_asteroid": {
+    "zh-TW": "小行星",
+    "en": "Asteroid",
+    "ja": "小惑星"
   },
-  "ui.star_select.size_medium": {
-    "zh-TW": "中型",
-    "en": "Medium",
-    "ja": "中型"
+  "ui.star_select.size_moon": {
+    "zh-TW": "衛星",
+    "en": "Moon",
+    "ja": "衛星"
   },
-  "ui.star_select.size_large": {
-    "zh-TW": "大型",
-    "en": "Large",
-    "ja": "大型"
+  "ui.star_select.size_planet": {
+    "zh-TW": "行星",
+    "en": "Planet",
+    "ja": "惑星"
+  },
+  "ui.star_select.size_supergiant": {
+    "zh-TW": "超巨星",
+    "en": "Supergiant",
+    "ja": "超巨星"
   },
   "ui.star_select.main_elements": {
     "zh-TW": "主屬性",
@@ -483,5 +488,115 @@
     "zh-TW": "重試",
     "en": "Retry",
     "ja": "再試行"
+  },
+  "ui.hud.target_cycle": {
+    "zh-TW": "{key} 切換目標：{target}",
+    "en": "{key} Cycle target: {target}",
+    "ja": "{key} ターゲット切替：{target}"
+  },
+  "ui.hud.target_none": {
+    "zh-TW": "無",
+    "en": "None",
+    "ja": "なし"
+  },
+  "ui.hud.interact_prompt": {
+    "zh-TW": "{key} 互動：{target}",
+    "en": "{key} Interact: {target}",
+    "ja": "{key} インタラクト：{target}"
+  },
+  "ui.interact.observe": {
+    "zh-TW": "觀察",
+    "en": "Observe",
+    "ja": "観察"
+  },
+  "ui.interact.provoke": {
+    "zh-TW": "挑釁",
+    "en": "Provoke",
+    "ja": "挑発"
+  },
+  "ui.interact.pet": {
+    "zh-TW": "撫摸",
+    "en": "Pet",
+    "ja": "なでる"
+  },
+  "ui.interact.close": {
+    "zh-TW": "關閉",
+    "en": "Close",
+    "ja": "閉じる"
+  },
+  "ui.interact.observe_detail": {
+    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}",
+    "en": "{species} | {stage} | {element} | Temperament: {temperament} | Lv {level}",
+    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}"
+  },
+  "ui.interact.pet_reaction": {
+    "zh-TW": "{target} 安靜地蹭了蹭你的手。",
+    "en": "{target} nuzzles your hand quietly.",
+    "ja": "{target}は静かにあなたの手にすり寄ってきた。"
+  },
+  "ui.stage.juvenile": {
+    "zh-TW": "幼年",
+    "en": "Juvenile",
+    "ja": "幼年期"
+  },
+  "ui.stage.adolescent": {
+    "zh-TW": "少年",
+    "en": "Adolescent",
+    "ja": "少年期"
+  },
+  "ui.stage.adult": {
+    "zh-TW": "成年",
+    "en": "Adult",
+    "ja": "成年期"
+  },
+  "ui.temperament.timid": {
+    "zh-TW": "膽怯",
+    "en": "Timid",
+    "ja": "臆病"
+  },
+  "ui.temperament.cautious": {
+    "zh-TW": "警惕",
+    "en": "Cautious",
+    "ja": "警戒"
+  },
+  "ui.temperament.normal": {
+    "zh-TW": "沉穩",
+    "en": "Steady",
+    "ja": "沈着"
+  },
+  "ui.temperament.territorial": {
+    "zh-TW": "領地",
+    "en": "Territorial",
+    "ja": "縄張り"
+  },
+  "ui.temperament.fierce": {
+    "zh-TW": "凶悍",
+    "en": "Fierce",
+    "ja": "凶暴"
+  },
+  "ui.temperament.apex": {
+    "zh-TW": "霸主",
+    "en": "Apex",
+    "ja": "覇者"
+  },
+  "ui.star_select.boss_stage": {
+    "zh-TW": "BOSS：{stage}",
+    "en": "Boss: {stage}",
+    "ja": "ボス：{stage}"
+  },
+  "ui.lobby.player_level": {
+    "zh-TW": "玩家等級 LV{level}（經驗 {exp}／{next}）",
+    "en": "Player LV{level} (EXP {exp}/{next})",
+    "ja": "プレイヤーレベル LV{level}（EXP {exp}／{next}）"
+  },
+  "ui.results.player_exp": {
+    "zh-TW": "玩家經驗 +{exp}（LV{level}）",
+    "en": "Player EXP +{exp} (LV{level})",
+    "ja": "プレイヤーEXP +{exp}（LV{level}）"
+  },
+  "ui.star_select.boss_unlock_hint": {
+    "zh-TW": "玩家 LV{adolescent} 解鎖少年 BOSS、LV{adult} 解鎖成年 BOSS",
+    "en": "Player LV{adolescent} unlocks Adolescent bosses; LV{adult} unlocks Adult bosses",
+    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放"
   }
 }

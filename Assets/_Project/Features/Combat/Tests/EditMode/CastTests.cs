@@ -908,5 +908,44 @@ namespace Cosmimera.Combat.Tests
             HitReport second = self.ReceiveSupport(Cast(self, Damage(power: 10), 0, slot: 1), 0);
             Assert.AreEqual(System.Math.Min(self.Hp + second.Damage, DamageModel.Compute(10, 0, 40)), second.Damage);
         }
+
+        // ---- MoveSpeedMmS (tech-debt D0-E3) ----
+
+        [Test]
+        public void MoveSpeed_without_modifiers_equals_the_agi_derived_value()
+        {
+            Combatant c = Make(agi: 40);
+            Assert.AreEqual(_stats.MoveSpeedMmS(40), c.MoveSpeedMmS(0));
+        }
+
+        [Test]
+        public void MoveSpeed_follows_an_always_trait_in_both_directions()
+        {
+            var always = new TriggerSpec(TriggerType.Always, false, default, 0, 0);
+            Combatant fast = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, 30)), agi: 40);
+            Combatant slow = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, -30)), agi: 40);
+            int baseline = _stats.MoveSpeedMmS(40);
+            Assert.AreEqual(EffectMath.MoveSpeedMmS(_stats, 40, 30, _cfg), fast.MoveSpeedMmS(0));
+            Assert.AreEqual(EffectMath.MoveSpeedMmS(_stats, 40, -30, _cfg), slow.MoveSpeedMmS(0));
+            Assert.Greater(fast.MoveSpeedMmS(0), baseline);
+            Assert.Less(slow.MoveSpeedMmS(0), baseline);
+        }
+
+        [Test]
+        public void MoveSpeed_timed_modifier_expires()
+        {
+            Combatant c = Make(agi: 40);
+            c.Book.Apply("s", 0, Mod(EffectType.MoveSpeedModPercent, -20), 1000, 0);
+            Assert.Less(c.MoveSpeedMmS(999), _stats.MoveSpeedMmS(40));
+            Assert.AreEqual(_stats.MoveSpeedMmS(40), c.MoveSpeedMmS(1000));
+        }
+
+        [Test]
+        public void MoveSpeed_rejects_time_before_the_watermark()
+        {
+            Combatant c = Make(agi: 40);
+            c.Book.Apply("s", 0, Mod(EffectType.MoveSpeedModPercent, -20), 1000, 500);
+            Assert.Throws<ContractException>(() => c.MoveSpeedMmS(499));
+        }
     }
 }

@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: mineral_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: mineral_planet
-  size: 0
   terrainTags:
   - canyon
   - cave

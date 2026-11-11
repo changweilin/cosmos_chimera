@@ -59,6 +59,10 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.close_in_permille` | P2-10 突進 / 繞背站位 = 最短敵對可及距離 × 此值 / 1000（1–1000） |
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
+| `ai.territory_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-E2 野生領域半徑（依物種 `temperament` 取 0/4/8/14/20/28 m）；入侵者進入即開戰；0＝不主動開戰（Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.wander_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-W1 野生未開戰時在生成點附近的遊蕩半徑（3/4/6/8/10/12 m，Q-D2 2026-11-10 定案）；0＝原地不動（0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.wander_pause_min_ms`／`ai.wander_pause_max_ms` | D0-W1 每段遊蕩之間的停頓（含兩端，2000–5000，Q-D2 2026-11-10 定案；0 ≤ min ≤ max） |
+| `ai.wander_speed_permille` | D0-W1 遊蕩步行速度 = 戰鬥移速 × 此值 / 1000（400，Q-D2 2026-11-10 定案；1–1000） |
 
 ## progression
 
@@ -75,8 +79,10 @@ P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與
 | `progression.rewards.base_xp.*` | 來源基數：wild／capture／quest_step／quest_chain／boss |
 | `progression.rewards.reference_level` | E = floor(base × C(min(L,99)) × r / C(reference_level)) 的分母等級（10） |
 | `progression.rewards.elite_multiplier` | 擊倒菁英的 r（2）；只用於野戰擊倒 |
-| `progression.rewards.wild_level.*` | 野生等級 = clamp(base + per_difficulty×(d−1) + per_tier×tier + role_bonus, 1, 100) |
+| `progression.rewards.wild_level.*` | BOSS 等級 B(d) = boss_level_min + round_half_up((boss_level_max − boss_level_min)×(d−1)/9)；野生等級 = clamp(B(d) − role_bonus.boss − per_tier×(2−tier) + role_bonus, 1, 100)（D0-X3） |
 | `progression.rewards.sidekick_share_divisor` | 副手組共分 floor(主力實得 / 此值)；目前只支援 2 |
+| `progression.player.xp_multiplier` | 玩家等級曲線 = 此值 × T(L)（6；D0-B2，[level-progression.md#玩家等級](../level-progression.md#玩家等級)） |
+| `progression.player.boss_stage_unlock_levels` | `[1, 少年解鎖, 成年解鎖]` = `[1, 20, 35]`；已解鎖 BOSS 階段均等抽（[planet-world.md#boss-尺寸](../planet-world.md#boss-尺寸)） |
 
 ## materials
 

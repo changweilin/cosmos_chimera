@@ -5,6 +5,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
+    "temperament": "timid",
     "evolves_to": "metal_gear_strider",
     "evolution": {
       "level": 28,
@@ -59,6 +60,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
+    "temperament": "cautious",
     "evolves_to": "metal_chronos_engine",
     "evolution": {
       "level": 48,
@@ -113,6 +115,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -159,6 +162,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
+    "temperament": "timid",
     "evolves_to": "wood_plume_peafowl",
     "evolution": {
       "level": 24,
@@ -213,6 +217,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
+    "temperament": "cautious",
     "evolves_to": "wood_canopy_regent",
     "evolution": {
       "level": 40,
@@ -267,6 +272,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "hold",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -312,6 +318,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
+    "temperament": "timid",
     "evolves_to": "water_skiff_eel",
     "evolution": {
       "level": 22,
@@ -366,6 +373,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
+    "temperament": "normal",
     "evolves_to": "water_catamaran_serpent",
     "evolution": {
       "level": 38,
@@ -420,6 +428,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -466,6 +475,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
+    "temperament": "cautious",
     "evolves_to": "fire_mane_stalker",
     "evolution": {
       "level": 26,
@@ -520,6 +530,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
+    "temperament": "territorial",
     "evolves_to": "fire_pyre_monarch",
     "evolution": {
       "level": 44,
@@ -574,6 +585,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
+    "temperament": "apex",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -619,6 +631,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
+    "temperament": "timid",
     "evolves_to": "earth_gilded_warden",
     "evolution": {
       "level": 30,
@@ -673,6 +686,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
+    "temperament": "normal",
     "evolves_to": "earth_auric_sovereign",
     "evolution": {
       "level": 50,
@@ -727,6 +741,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
+    "temperament": "territorial",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -772,6 +787,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
+    "temperament": "timid",
     "evolves_to": "ice_rime_strider",
     "evolution": {
       "level": 25,
@@ -826,6 +842,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
+    "temperament": "territorial",
     "evolves_to": "ice_tundra_dreadnought",
     "evolution": {
       "level": 43,
@@ -880,6 +897,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
+    "temperament": "fierce",
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -926,6 +944,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
+    "temperament": "timid",
     "evolves_to": "wind_flute_cruiser",
     "evolution": {
       "level": 20,
@@ -980,6 +999,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
+    "temperament": "cautious",
     "evolves_to": "wind_monsoon_galeon",
     "evolution": {
       "level": 35,
@@ -1034,6 +1054,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
+    "temperament": "normal",
     "evolves_to": null,
     "evolution": null,
     "resist": {

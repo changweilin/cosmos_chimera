@@ -97,7 +97,9 @@ namespace Cosmimera.Bootstrap.Demo
         public static float Scale(in CreatureViewRequest request)
         {
             Contract.Requires(request.BodyRadiusM > 0f, "body radius must be positive");
-            float roleScale = request.Role == SpawnRole.Boss ? 2.5f : request.Role == SpawnRole.Elite ? 1.4f : 1f;
+            // A boss's BodyRadiusM already carries the rule-layer ×1.5 (Encounter.AddBoss, D0-R2), so the model matches
+            // its hitbox instead of adding a visual-only factor on top. Elite size is still presentation-only.
+            float roleScale = request.Role == SpawnRole.Elite ? 1.4f : 1f;
             return request.BodyRadiusM * 2f * roleScale;
         }
 

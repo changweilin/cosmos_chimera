@@ -74,7 +74,9 @@ namespace Cosmimera.Bootstrap.Tests
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    PlanetType = type, Seed = 2026, Radius = 640f, Party = party, Templates = templates, TemplateTags = tags,
+                    // Adolescent boss = medium planet (R=640, 4 templates), the combination this smoke run always played.
+                    PlanetType = type, Seed = 2026, Radius = 640f, BossStage = CreatureStage.Adolescent, Party = party,
+                    Templates = templates, TemplateTags = tags,
                     PartyIds = Enumerable.Range(1, party.Count).ToList(),
                     PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
                     Progression = progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
@@ -89,8 +91,8 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(session.StartedForTests, Is.True, "terrain colliders under the landing point within 60 s");
 
-            Assert.That(session.TryQuestTarget(session.PlanForTests.Quest[0], out float3 questTarget), Is.True);
-            Assert.That(math.distance(questTarget, session.PlanForTests.Regions[session.PlanForTests.Quest[0].Region].Center),
+            Assert.That(session.TryQuestTarget(session.QuestStepForTests(0), out float3 questTarget), Is.True);
+            Assert.That(math.distance(questTarget, session.RegionCenterForTests(session.QuestStepForTests(0).Region)),
                 Is.LessThan(1e-5f), "the reach-region guide points at the quest region");
 
             Keyboard previousKeyboard = Keyboard.current;
@@ -107,14 +109,14 @@ namespace Cosmimera.Bootstrap.Tests
             keyboard.MakeCurrent();
             try
             {
-                bool view = session.RigForTests.CameraRig.IsFirstPerson;
+                bool view = session.FirstPersonForTests;
                 var vessel = session.VesselForTests;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.B));
                 yield return null;
                 yield return null;
                 Assert.That(keyboard.bKey.isPressed, Is.True, "the synthetic keyboard event reached InputSystem");
                 Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "B cycles the capture vessel");
-                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.EqualTo(view), "B leaves the view alone");
+                Assert.That(session.FirstPersonForTests, Is.EqualTo(view), "B leaves the view alone");
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
@@ -122,14 +124,14 @@ namespace Cosmimera.Bootstrap.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.V));
                 yield return null;
                 yield return null;
-                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.Not.EqualTo(view), "V toggles the view");
+                Assert.That(session.FirstPersonForTests, Is.Not.EqualTo(view), "V toggles the view");
                 Assert.That(session.VesselForTests, Is.EqualTo(vessel), "V leaves the vessel alone");
-                session.RigForTests.CameraRig.ToggleView();
+                session.ToggleViewForTests();
 
                 vessel = session.VesselForTests;
                 yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
                 Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "gamepad east cycles vessels");
-                Assert.That(session.RigForTests.CameraRig.IsFirstPerson, Is.EqualTo(view), "vessel input leaves the view alone");
+                Assert.That(session.FirstPersonForTests, Is.EqualTo(view), "vessel input leaves the view alone");
 
                 int main = session.MainForTests;
                 yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadRight));
@@ -174,14 +176,14 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
-            // Teleport next to the nearest normal pack so the 18 m aggro radius engages it. Nearest, because the
-            // character's motor rejects an up vector that turns > 90° in one step (a far teleport is not gameplay).
-            RunPlan plan = session.PlanForTests;
+            // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its temperament (D0-E2:
+            // tier-0 juveniles are timid). Nearest, because the character's motor rejects an up vector that turns > 90°
+            // in one step (a far teleport is not gameplay).
             float3 target = float3.zero;
             float best = -2f;
-            foreach (RunSpawn s in plan.Spawns)
+            foreach (RunSpawn s in session.SpawnsForTests)
             {
-                float d = math.dot(s.Direction, plan.LandingDirection);
+                float d = math.dot(s.Direction, session.LandingDirectionForTests);
                 if (s.Role == SpawnRole.Normal && d > best)
                 {
                     best = d;
@@ -189,25 +191,26 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
-            PlanetRig rig = session.RigForTests;
-            Encounter encounter = session.EncounterForTests;
-            var rb = rig.Character.GetComponent<Rigidbody>();
-            rb.position = rig.Config.ToWorld(target, rig.Height.Sample(target) + 1f);
-            rig.Character.transform.position = rb.position;
+            session.MovePlayerForTests(target);
+            yield return null;
+            session.FocusNearestForTests();
 
             bool hit = false;
             deadline = Time.realtimeSinceStartup + 60f;
             while (!hit && outcome == null && Time.realtimeSinceStartup < deadline)
             {
-                foreach (EncounterUnit u in encounter.Units)
+                foreach (RunSession.UnitSnapshot u in session.UnitsForTests)
                 {
-                    hit |= u.Fielded && u.Combatant.Hp < u.Combatant.MaxHp;
+                    hit |= u.Fielded && u.Hp < u.MaxHp;
                 }
+
+                // Q-C33: the character is a target too; damage to it proves the pack engaged just as well.
+                hit |= session.PlayerHpForTests < session.PlayerMaxHpForTests;
 
                 yield return null;
             }
 
-            Assert.That(hit, Is.True, "some fielded creature took damage within 60 s");
+            Assert.That(hit, Is.True, "some fielded creature or the character took damage within 60 s");
 
             // P3-09 acceptance: scatter exists around the player and nothing floats or sinks into the ground.
             var scatter = session.GetComponent<ScatterField>();
@@ -216,8 +219,8 @@ namespace Cosmimera.Bootstrap.Tests
             foreach (Transform root in scatter.transform)
             {
                 float3 p = (float3)root.position;
-                float3 dir = rig.Config.ToDirection(p);
-                Assert.That(rig.Config.Altitude(p), Is.EqualTo(rig.SurfaceHeight(dir) - 0.1f).Within(0.15f),
+                float3 dir = session.DirectionForTests(p);
+                Assert.That(session.AltitudeForTests(p), Is.EqualTo(session.SurfaceHeightForTests(dir) - 0.1f).Within(0.15f),
                     "scatter root sits on the ground: " + root.name);
             }
 
@@ -227,14 +230,14 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(stars.Visibility, Is.InRange(0f, 1f));
             // Relative bound: -nographics never fires beginCameraRendering, so only the LateUpdate placement (one
             // Cinemachine frame behind) is observable here; 1e-3 of the shell radius is far below one pixel of parallax.
-            Assert.That(Vector3.Distance(stars.Shell.position, rig.Camera.transform.position),
+            Assert.That(Vector3.Distance(stars.Shell.position, session.CameraPositionForTests),
                 Is.LessThan(stars.Shell.localScale.x * 1e-3f), "star shell follows the camera");
 
             if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") == "1")
             {
                 // Visual proof for reviewers (needs a GPU: run without -nographics). Waits for the LOD to settle first.
                 deadline = Time.realtimeSinceStartup + 20f;
-                while (!rig.Terrain.IsSettled && Time.realtimeSinceStartup < deadline)
+                while (!session.TerrainSettledForTests && Time.realtimeSinceStartup < deadline)
                 {
                     yield return null;
                 }
@@ -244,41 +247,7 @@ namespace Cosmimera.Bootstrap.Tests
                     yield return null;
                 }
 
-                // Frame the fight: from above/behind the player toward the nearest fielded wild creature.
-                float3 player = (float3)rig.Character.transform.position;
-                float3 look = player;
-                float bestD = float.MaxValue;
-                foreach (EncounterUnit u in encounter.Units)
-                {
-                    float dd = math.distance(u.Position, player);
-                    if (u.Side == EncounterSide.Wild && u.Fielded && dd < bestD)
-                    {
-                        bestD = dd;
-                        look = u.Position;
-                    }
-                }
-
-                float3 upv = rig.Config.ToDirection(player);
-                Renderer terrainRenderer = rig.Terrain.GetComponentInChildren<Renderer>();
-                Material terrainMaterial = terrainRenderer != null ? terrainRenderer.sharedMaterial : null;
-                Shader terrainShader = terrainMaterial != null ? terrainMaterial.shader : null;
-                string shaderName = terrainShader != null ? terrainShader.name : null;
-                Debug.Log($"CAPTURE type={type.Id} lat={math.abs(upv.y):0.000} h={rig.SurfaceHeight(upv):0.00} " +
-                          $"relief={rig.Height.MaxAbsHeight:0.0} sea={rig.IsSea(upv)} mat={shaderName}");
-                float3 toward = math.normalize(look - player - math.dot(look - player, upv) * upv + upv * 1e-4f);
-                rig.Camera.transform.position = player - toward * 7f + upv * 4f;
-                rig.Camera.transform.rotation = Quaternion.LookRotation(look - (float3)rig.Camera.transform.position, upv);
-                var rt = new RenderTexture(1280, 720, 24);
-                rig.Camera.targetTexture = rt;
-                rig.Camera.Render();
-                RenderTexture.active = rt;
-                var tex = new Texture2D(1280, 720, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
-                tex.Apply();
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.dataPath, "..", "Logs", "demo-shot.png"),
-                    tex.EncodeToPNG());
-                rig.Camera.targetTexture = null;
-                RenderTexture.active = null;
+                session.CaptureFightForTests(System.IO.Path.Combine(Application.dataPath, "..", "Logs", "demo-shot.png"));
             }
 
             Object.Destroy(session.gameObject);

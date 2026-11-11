@@ -33,6 +33,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
         public readonly List<int> PartyExp = new List<int>();
 
+        /// <summary>Cumulative player XP when the run ended (level-progression.md#玩家等級).</summary>
+        /// <remarks>Pre: none. Post: &gt;= RunSetup.PlayerExp and &lt;= Progression.PlayerMaxExp. Side effects: none.</remarks>
+        public int PlayerExp;
+
         /// <summary>Evolution materials dropped by wild knock-outs, in drop order (Q-C32 option B).</summary>
         /// <remarks>
         /// Pre: none. Post: non-null; at most one entry per spawn. Kept on victory, defeat and abandon alike, like
@@ -77,6 +81,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: same count as Party; each &gt;= 0. Post: none. Side effects: none.</remarks>
         public List<int> PartyExp;
 
+        /// <summary>Cumulative player XP at the start of the run.</summary>
+        /// <remarks>Pre: 0..Progression.PlayerMaxExp. Post: none. Side effects: none.</remarks>
+        public int PlayerExp;
+
+        /// <summary>Boss stage drawn on the star card (BossDraw.Stage); decides planet size together with Radius.</summary>
+        /// <remarks>Pre: Juvenile..Adult; the wild pool has a form of it. Post: none. Side effects: none.</remarks>
+        public CreatureStage BossStage;
+
         /// <summary>Approved level curve and XP rewards (balance.json#progression).</summary>
         /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
         public Progression Progression;
@@ -95,7 +107,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// Side effects: owns every object it creates and destroys them in OnDestroy.
     /// Run actions are cloned per session so enabling or disposing a run never changes the shared input asset.
     /// </remarks>
-    public sealed class RunSession : MonoBehaviour
+    public sealed partial class RunSession : MonoBehaviour
     {
         private const int TickMs = 50;
         private const long KnockedOutWindowMs = 20000;
@@ -120,6 +132,9 @@ namespace Cosmimera.Bootstrap.Demo
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
+
+            // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
+            public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
         }
 
         private sealed class WildInfo
@@ -140,6 +155,7 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _selectSecondAction;
         private InputAction _switchAction;
         private InputAction _focusAction;
+        private InputAction _cycleTargetAction;
         private InputAction _freeAction;
         private InputAction _followAction;
         private InputAction _retreatAction;
@@ -153,12 +169,24 @@ namespace Cosmimera.Bootstrap.Demo
         private RunPlan _plan;
         private QuestTracker _quest;
         private Encounter _encounter;
+        private PlayerVitals _vitals;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
+        /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
+        /// <remarks>Pre: observer must not mutate the run. Post: called before each tick. Side effects: invokes the observer.</remarks>
+        internal Action BeforeTickForTests;
+        /// <summary>Synchronizes views for isolated view tests; per-frame wiring tests must use Unity Update.</summary>
+        /// <remarks>Pre: Configure ran. Post: views reflect current units. Side effects: view transforms and materials.</remarks>
+        internal void SyncViewsForTests() => SyncViews();
+        internal void AbandonForTests() => RequestAbandon();
+        internal bool EndedForTests => _ended;
+#endif
         private Progression _progression;
         private int[] _partyExp;
+        private int _playerExp;
         private bool[] _questPaid;
         private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
@@ -172,6 +200,26 @@ namespace Cosmimera.Bootstrap.Demo
         private float _accumulator;
         private long _nextAffixMs;
         private int _mainId = CombatAi.NoTarget;
+        // Wild unit chosen with CycleTarget (combat.md#指定目標, D0-W4); -1 when nothing is locked.
+        private int _lockedTarget = -1;
+        // Close interaction (combat.md#近身互動, D0-W3): the idle wild offered by the HUD prompt, and the one whose menu is
+        // open (-1 = none). While the menu is open the character stands still and only the menu reads input.
+        private int _interactable = -1;
+        private int _interactTarget = -1;
+        private InteractChoice _interactChoice;
+        private string _observeText;
+        private InputAction _interactAction;
+        private InputActionMap _menuInput;
+        private InputAction _menuUp;
+        private InputAction _menuDown;
+        private InputAction _menuSubmit;
+        private InputAction _menuCancel;
+
+        private enum InteractChoice
+        {
+            Observe = 0, Provoke = 1, Pet = 2, Close = 3,
+        }
+        private readonly List<int> _targetBuffer = new List<int>(16);
         private AiCommand _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
         private VesselKind _vessel = VesselKind.TalismanCard;
         private int _region = -1;
@@ -182,15 +230,11 @@ namespace Cosmimera.Bootstrap.Demo
         private string _toast = string.Empty;
         private long _toastUntilMs;
         private GUIStyle _label;
+        private GUIStyle _markerStyle;
         private Material _terrainMaterial;
         private Material _playerMaterial;
 
-        internal Encounter EncounterForTests => _encounter;
-
-        internal RunPlan PlanForTests => _plan;
-
-        internal PlanetRig RigForTests => _rig;
-
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         internal bool StartedForTests => _started;
 
         internal VesselKind VesselForTests => _vessel;
@@ -199,28 +243,19 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal AiCommandKind CommandForTests => _command.Kind;
 
-        // Seams for RunSessionProgressionTests (P2-12 regression). They expose state or call existing private flow; none
-        // changes behaviour while _injectedFaints stays empty.
-
-        /// <summary>Team rule state, so a test can read Active/InCombat without re-deriving them.</summary>
-        /// <remarks>Pre: Configure ran. Post: the live TeamState (callers must not drive it). Side effects: none.</remarks>
-        internal TeamState TeamForTests => _team;
-
-        /// <summary>The quest tracker of this run.</summary>
-        /// <remarks>Pre: Configure ran. Post: the live QuestTracker (read only for callers). Side effects: none.</remarks>
-        internal QuestTracker QuestForTests => _quest;
-
         /// <summary>Simulation time of the last <see cref="StepCombatForTests"/> (ms).</summary>
         /// <remarks>Pre: none. Post: &gt;= 1000, equals the nowMs of the last Encounter.Tick. Side effects: none.</remarks>
         internal long NowMsForTests => _nowMs;
 
         /// <summary>Encounter unit id of each party slot, in party order.</summary>
         /// <remarks>Pre: Configure ran. Post: one id per RunSetup.Party slot. Side effects: none.</remarks>
-        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits;
+        internal IReadOnlyList<int> PartyUnitsForTests => _partyUnits.ToArray();
 
         /// <summary>Cumulative XP of one party slot right now.</summary>
         /// <remarks>Pre: 0 &lt;= slot &lt; party size. Post: &gt;= the slot's starting XP. Side effects: none.</remarks>
         internal int PartyExpForTests(int slot) => _partyExp[slot];
+
+        internal int PlayerExpForTests => _playerExp;
 
         /// <summary>Runs exactly one fixed combat step, the same code Update runs per 50 ms tick.</summary>
         /// <remarks>
@@ -229,6 +264,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: everything StepCombat does (encounter tick, XP, level-ups, quest, end check).
         /// </remarks>
         internal void StepCombatForTests() => StepCombat();
+#endif
 
         /// <summary>Replaces the placeholder view factory (model-replacement seam, art-asset-pipeline.md#佔位模型).</summary>
         /// <remarks>Pre: factory != null; called before Configure. Post: Configure builds every unit view with it. Side effects: replaces the selected factory.</remarks>
@@ -239,9 +275,10 @@ namespace Cosmimera.Bootstrap.Demo
             _viewFactory = factory;
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         /// <summary>Materials dropped so far this run (the list RunOutcome hands to the lobby).</summary>
         /// <remarks>Pre: none. Post: non-null, drop order. Side effects: none.</remarks>
-        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials;
+        internal IReadOnlyList<MaterialStack> MaterialsForTests => _outcome.Materials.ToArray();
 
         /// <summary>Swaps the main for the first eligible reserve, exactly as the Switch input does.</summary>
         /// <remarks>Pre: Configure ran. Post: as SwitchMain. Side effects: as SwitchMain (team, encounter, toast).</remarks>
@@ -251,7 +288,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: wildUnitId is a wild unit with 0 HP whose knock-out has not been settled yet.
         /// Post: the next StepCombat settles it like an Encounter Faint event (after that tick's real events).
-        /// Side effects: appends to the queue; nothing else until the next step.
+        /// Side effects: appends to the queue unless already queued; nothing else until the next step.
         /// </remarks>
         internal void InjectFaintForTests(int wildUnitId)
         {
@@ -260,16 +297,23 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(_encounter.Units[wildUnitId].Side == EncounterSide.Wild &&
                 _encounter.Units[wildUnitId].Combatant.IsFainted && _wild[wildUnitId].KnockedOutAtMs < 0,
                 "only an unsettled fainted wild unit can be injected");
-            _injectedFaints.Add(wildUnitId);
+            if (!_injectedFaints.Contains(wildUnitId))
+            {
+                _injectedFaints.Add(wildUnitId);
+            }
         }
+
+#endif
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; actions contains the DemoRun map and its ten actions;
+        /// Pre: all arguments non-null; actions contains the DemoRun map and its twelve actions and the DemoMenu map
+        ///      with Up/Down/Submit/Cancel;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
         ///      matching PartyIds/PartyExp; setup.Progression non-null.
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
-        /// Side effects: creates GameObjects and a private input map, enabled while the component is enabled.
+        /// Side effects: creates GameObjects and private input maps (DemoRun enabled while the component is enabled;
+        ///      DemoMenu only while an interaction menu is open).
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
@@ -283,11 +327,14 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
                 setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
                 "progression, party ids and party exp are required, one per party slot");
+            Core.Contracts.Contract.Requires(setup.PlayerExp >= 0 && setup.PlayerExp <= setup.Progression.PlayerMaxExp,
+                "player exp must be 0..PlayerMaxExp");
             Core.Contracts.Contract.Requires(setup.Materials != null, "material drop rules are required");
             _copy = copy;
             _progression = setup.Progression;
             _drops = setup.Materials;
             _partyExp = setup.PartyExp.ToArray();
+            _playerExp = setup.PlayerExp;
             _balance = balance;
             _actions = actions;
             _runInput = runMap.Clone();
@@ -295,12 +342,19 @@ namespace Cosmimera.Bootstrap.Demo
             _selectSecondAction = _runInput.FindAction("SelectSecond", true);
             _switchAction = _runInput.FindAction("Switch", true);
             _focusAction = _runInput.FindAction("Focus", true);
+            _cycleTargetAction = _runInput.FindAction("CycleTarget", true);
             _freeAction = _runInput.FindAction("Free", true);
             _followAction = _runInput.FindAction("Follow", true);
             _retreatAction = _runInput.FindAction("Retreat", true);
             _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
             _captureAction = _runInput.FindAction("Capture", true);
             _abandonAction = _runInput.FindAction("Abandon", true);
+            _interactAction = _runInput.FindAction("Interact", true);
+            _menuInput = actions.FindActionMap("DemoMenu", true).Clone();
+            _menuUp = _menuInput.FindAction("Up", true);
+            _menuDown = _menuInput.FindAction("Down", true);
+            _menuSubmit = _menuInput.FindAction("Submit", true);
+            _menuCancel = _menuInput.FindAction("Cancel", true);
             if (isActiveAndEnabled)
             {
                 _runInput.Enable();
@@ -314,7 +368,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (setup.Templates.Count > 0)
             {
                 List<TemplatePlacement> placements = TemplatePlanner.Choose(setup.Seed, setup.PlanetType.TerrainTags,
-                    setup.TemplateTags, TemplatePlanner.CountFor(setup.PlanetType.Size));
+                    setup.TemplateTags, TemplatePlanner.CountFor(BossDraw.SizeFor(setup.BossStage)));
                 templates = PlanetTemplates.Create(config, setup.Templates, placements);
             }
 
@@ -326,7 +380,7 @@ namespace Cosmimera.Bootstrap.Demo
                 isLand = d => !view.IsSea(d);
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, wildPool, vocab, isLand);
+            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -358,6 +412,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
+            // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
+            _vitals = new PlayerVitals(balance.Player);
+            _encounter.AttachPlayer(_vitals);
             _captureRng = new Pcg32(setup.Seed, 'K');
             // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
             _materialRng = new Pcg32(setup.Seed, 'D');
@@ -367,7 +424,9 @@ namespace Cosmimera.Bootstrap.Demo
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
+                EncounterUnit u = spawn.Role == SpawnRole.Boss
+                    ? _encounter.AddBoss(def, null, spawn.Direction, level)
+                    : _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
                 _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
@@ -457,7 +516,13 @@ namespace Cosmimera.Bootstrap.Demo
             // SOL P2-12 R3-01: XP earned out of combat (capture input, region step) must level up before a new battle
             // can start this tick; otherwise the growth would wait for that battle to end.
             ApplyLevelUps();
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            BeforeTickForTests?.Invoke();
+#endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            ApplyPlayerPush();
+            ValidateLock(player);
+            UpdateInteraction(PlayerPosition());
             bool engaged = AnyEngaged();
             if (engaged && !_team.InCombat)
             {
@@ -466,14 +531,20 @@ namespace Cosmimera.Bootstrap.Demo
 
             RecordAppearances();
 
+            bool playerDowned = false;
             foreach (EncounterEvent ev in _encounter.Events)
             {
                 if (ev.Kind == EncounterEventKind.Faint)
                 {
                     OnFaint(ev.TargetId);
                 }
+                else if (ev.Kind == EncounterEventKind.PlayerDowned)
+                {
+                    playerDowned = true;
+                }
             }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             // Test seam: empty in play. A knock-out a test produced out of band settles exactly like a Tick event.
             for (int i = 0; i < _injectedFaints.Count; i++)
             {
@@ -481,10 +552,19 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _injectedFaints.Clear();
+#endif
 
             if (!engaged && _team.InCombat)
             {
                 _team.EndCombat();
+            }
+
+            if (playerDowned)
+            {
+                // Q-C33 (2026-11-10): Downed settles the run as a defeat; captures, XP and materials earned so far
+                // (including knock-outs in this same tick, paid above) still return to the lobby (RunOutcome).
+                End(false, false);
+                return;
             }
 
             ApplyLevelUps();
@@ -624,6 +704,18 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            // The menu owns input while open: its Cancel (Esc / B) must not also abandon the run or cycle the vessel.
+            if (_interactTarget >= 0)
+            {
+                ReadInteractMenu();
+                return;
+            }
+
+            if (_interactAction.WasPressedThisFrame())
+            {
+                OpenInteract();
+            }
+
             if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
@@ -641,8 +733,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_focusAction.WasPressedThisFrame())
             {
-                int target = NearestEngaged(PlayerPosition());
-                _command = target >= 0 ? new AiCommand(AiCommandKind.Focus, target) : _command;
+                FocusNearest();
+            }
+
+            if (_cycleTargetAction.WasPressedThisFrame())
+            {
+                CycleTarget();
             }
 
             if (_freeAction.WasPressedThisFrame())
@@ -672,15 +768,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_abandonAction.WasPressedThisFrame())
             {
-                if (_nowMs <= _abandonArmedUntilMs)
-                {
-                    End(false, true);
-                }
-                else
-                {
-                    _abandonArmedUntilMs = _nowMs + 3000;
-                    Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
-                }
+                RequestAbandon();
             }
         }
 
@@ -689,13 +777,130 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(actions != null, "actions are required");
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
-            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "Free", "Follow",
-                         "Retreat", "CycleVessel", "Capture", "Abandon" })
+            foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
+                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
             }
 
+            InputActionMap menu = actions.FindActionMap("DemoMenu");
+            Core.Contracts.Contract.Requires(menu != null, "actions must contain the DemoMenu map");
+            foreach (string name in new[] { "Up", "Down", "Submit", "Cancel" })
+            {
+                Core.Contracts.Contract.Requires(menu.FindAction(name) != null, "DemoMenu is missing " + name);
+            }
+
             return map;
+        }
+
+        // REQ: combat.md#近身互動 (D0-W3). The prompt follows the nearest idle wild; an open menu closes once its target
+        // starts fighting, is gone, or wanders past twice the reach (hysteresis so a step of wandering does not flicker it).
+        private void UpdateInteraction(float3 player)
+        {
+            if (_interactTarget >= 0)
+            {
+                EncounterUnit u = _encounter.Units[_interactTarget];
+                float limit = 2f * Encounter.InteractRadiusM + u.CollisionRadiusM;
+                if (!u.IsActive || u.Engaged || math.distance(u.Position, player) > limit)
+                {
+                    CloseInteract();
+                }
+            }
+
+            _interactable = _interactTarget < 0 ? _encounter.NearestInteractable(player) : -1;
+        }
+
+        private void OpenInteract()
+        {
+            int id = _encounter.NearestInteractable(PlayerPosition());
+            if (id < 0)
+            {
+                return;
+            }
+
+            _interactTarget = id;
+            _interactable = -1;
+            _interactChoice = InteractChoice.Observe;
+            _observeText = null;
+            _menuInput.Enable();
+            // Disabling the driver stops reading the stick, but the motor keeps its last input; zero it so the character
+            // does not keep walking while the menu is up.
+            _rig.Input.enabled = false;
+            _rig.Character.SetInput(Vector2.zero, _rig.Character.Facing, false, false);
+        }
+
+        private void CloseInteract()
+        {
+            _interactTarget = -1;
+            _observeText = null;
+            _menuInput.Disable();
+            _rig.Input.enabled = true;
+        }
+
+        private void ReadInteractMenu()
+        {
+            if (_menuCancel.WasPressedThisFrame() || _interactAction.WasPressedThisFrame())
+            {
+                CloseInteract();
+                return;
+            }
+
+            if (_menuUp.WasPressedThisFrame())
+            {
+                _interactChoice = (InteractChoice)(((int)_interactChoice + 3) % 4);
+            }
+
+            if (_menuDown.WasPressedThisFrame())
+            {
+                _interactChoice = (InteractChoice)(((int)_interactChoice + 1) % 4);
+            }
+
+            if (_menuSubmit.WasPressedThisFrame())
+            {
+                ChooseInteract(_interactChoice);
+            }
+        }
+
+        private void ChooseInteract(InteractChoice choice)
+        {
+            int id = _interactTarget;
+            EncounterUnit u = _encounter.Units[id];
+            switch (choice)
+            {
+                case InteractChoice.Observe:
+                    _observeText = ObserveText(u);
+                    return;
+                case InteractChoice.Provoke:
+                    // REQ: equals Provoke (works on timid too); locking it lets Focus and the marker follow the fight.
+                    CloseInteract();
+                    _encounter.Provoke(id);
+                    _lockedTarget = id;
+                    return;
+                case InteractChoice.Pet:
+                    // Q-D2 (decided 2026-11-10): petting has no rule effect.
+                    CloseInteract();
+                    Toast(_copy.Ui("ui.interact.pet_reaction").Replace("{target}", _copy.Name(u.Def.Id)));
+                    return;
+                default:
+                    CloseInteract();
+                    return;
+            }
+        }
+
+        private string ObserveText(EncounterUnit u)
+        {
+            var elements = new List<string>(u.Def.Mastery.Count);
+            foreach (ElementValue ev in u.Def.Mastery)
+            {
+                elements.Add(_copy.Element(ev.Element.ToString()));
+            }
+
+            return _copy.Ui("ui.interact.observe_detail")
+                .Replace("{species}", _copy.Name(u.Def.Id))
+                .Replace("{stage}", _copy.Ui("ui.stage." + u.Def.Stage.ToString().ToLowerInvariant()))
+                .Replace("{element}", string.Join("/", elements))
+                .Replace("{temperament}", _copy.Ui("ui.temperament." + u.Def.Temperament.ToString().ToLowerInvariant()))
+                .Replace("{level}", u.Level.ToString());
         }
 
         private static string BindingLabel(InputAction action) =>
@@ -862,6 +1067,9 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 int before = _progression.LevelOf(_partyExp[i]);
                 _partyExp[i] += settled.Paid[i];
+                // REQ: level-progression.md#玩家等級 — the player earns what the mains actually gained (after the LV100
+                // cap), sidekicks excluded. Long sum: six mains near the cap can pass Int32 before the clamp.
+                _playerExp = (int)Math.Min((long)_playerExp + settled.Paid[i], _progression.PlayerMaxExp);
                 int after = _progression.LevelOf(_partyExp[i]);
                 if (after > before)
                 {
@@ -955,19 +1163,116 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
-        private int NearestEngaged(float3 player)
+        // REQ: combat.md#指定目標 (D0-W4) — Focus attacks the locked target when there is one, else the nearest candidate
+        // (which then becomes the lock).
+        private void FocusNearest()
+        {
+            float3 player = PlayerPosition();
+            int target = IsFocusCandidate(_lockedTarget, player) ? _lockedTarget : NearestFocusTarget(player);
+            if (target < 0)
+            {
+                return;
+            }
+
+            _lockedTarget = target;
+            FocusOn(target);
+        }
+
+        private void FocusOn(int target)
+        {
+            if (!_encounter.Units[target].Engaged)
+            {
+                // Focusing a wild that has not noticed you starts the fight: the only way to battle a timid one.
+                _encounter.Provoke(target);
+            }
+
+            _command = new AiCommand(AiCommandKind.Focus, target);
+        }
+
+        // Locks the next candidate by (distance, id) after the current lock, wrapping. While the main is already under a
+        // Focus command the new lock is attacked at once, so cycling mid-fight retargets without a second key press;
+        // otherwise it only marks the target and nothing is provoked.
+        private void CycleTarget()
+        {
+            float3 player = PlayerPosition();
+            _targetBuffer.Clear();
+            foreach (KeyValuePair<int, WildInfo> kv in _wild)
+            {
+                if (IsFocusCandidate(kv.Key, player))
+                {
+                    _targetBuffer.Add(kv.Key);
+                }
+            }
+
+            if (_targetBuffer.Count == 0)
+            {
+                _lockedTarget = -1;
+                return;
+            }
+
+            // Insertion sort: a handful of candidates, and no allocation (List.Sort with a lambda would allocate).
+            for (int i = 1; i < _targetBuffer.Count; i++)
+            {
+                int id = _targetBuffer[i];
+                float d = math.distance(_encounter.Units[id].Position, player);
+                int j = i - 1;
+                while (j >= 0 && Before(id, d, _targetBuffer[j], player))
+                {
+                    _targetBuffer[j + 1] = _targetBuffer[j];
+                    j--;
+                }
+
+                _targetBuffer[j + 1] = id;
+            }
+
+            int at = _targetBuffer.IndexOf(_lockedTarget);
+            _lockedTarget = _targetBuffer[(at + 1) % _targetBuffer.Count];
+            if (_command.Kind == AiCommandKind.Focus)
+            {
+                FocusOn(_lockedTarget);
+            }
+        }
+
+        private bool Before(int id, float distance, int other, float3 player)
+        {
+            float od = math.distance(_encounter.Units[other].Position, player);
+            return distance < od || (distance == od && id < other);
+        }
+
+        // Active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
+        private bool IsFocusCandidate(int id, float3 player)
+        {
+            if (id < 0 || !_wild.TryGetValue(id, out WildInfo info) || info.Gone)
+            {
+                return false;
+            }
+
+            EncounterUnit u = _encounter.Units[id];
+            return u.IsActive && (u.Engaged || math.distance(u.Position, player) <= Encounter.ProvokeRadiusM);
+        }
+
+        // A lock that stops being a candidate (knocked out, captured, or out of reach) is dropped, so the marker never
+        // points at something Focus would refuse.
+        private void ValidateLock(float3 player)
+        {
+            if (_lockedTarget >= 0 && !IsFocusCandidate(_lockedTarget, player))
+            {
+                _lockedTarget = -1;
+            }
+        }
+
+        private int NearestFocusTarget(float3 player)
         {
             int best = -1;
             float bestDist = float.MaxValue;
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
-                EncounterUnit u = _encounter.Units[kv.Key];
-                if (!u.Engaged || !u.IsActive)
+                if (!IsFocusCandidate(kv.Key, player))
                 {
                     continue;
                 }
 
-                float d = math.distance(u.Position, player);
+                float d = math.distance(_encounter.Units[kv.Key].Position, player);
                 if (d < bestDist)
                 {
                     bestDist = d;
@@ -991,6 +1296,20 @@ namespace Cosmimera.Bootstrap.Demo
             return -1;
         }
 
+        // Two presses within 3 s: the first only arms and explains, so a stray press cannot throw away a run.
+        private void RequestAbandon()
+        {
+            if (_nowMs <= _abandonArmedUntilMs)
+            {
+                End(false, true);
+            }
+            else
+            {
+                _abandonArmedUntilMs = _nowMs + 3000;
+                Toast(_copy.Ui("ui.hud.abandon_binding_confirm").Replace("{key}", BindingLabel(_abandonAction)));
+            }
+        }
+
         private void End(bool victory, bool abandoned)
         {
             if (_ended)
@@ -1000,9 +1319,26 @@ namespace Cosmimera.Bootstrap.Demo
 
             _ended = true;
             _outcome.PartyExp.AddRange(_partyExp);
+            _outcome.PlayerExp = _playerExp;
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _onEnd(_outcome);
+        }
+
+        // REQ: combat.md#實體碰撞 (D0-W2). Writes the transform as well as the body: PlayerPosition reads the transform, and
+        // a second catch-up tick in the same frame must see the pushed position or it would push again.
+        private void ApplyPlayerPush()
+        {
+            float3 push = _encounter.PlayerPush;
+            if (math.all(push == float3.zero))
+            {
+                return;
+            }
+
+            Transform t = _rig.Character.transform;
+            Vector3 moved = t.position + new Vector3(push.x, push.y, push.z);
+            t.position = moved;
+            _rig.Character.GetComponent<Rigidbody>().position = moved;
         }
 
         private float3 PlayerPosition()
@@ -1099,13 +1435,77 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             DrawWorldBars();
+            DrawLockMarker();
             DrawQuestPanel();
             DrawTeamPanel();
             DrawControlsPanel();
+            DrawInteraction();
             if (_nowMs < _toastUntilMs)
             {
                 GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
                     "<b>" + _toast + "</b>", new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontSize = 24 });
+            }
+        }
+
+        // REQ: combat.md#指定目標 (D0-W4). Drawn for idle targets too (DrawWorldBars skips those), above where the HP bar
+        // and name sit, so the lock is visible before the fight starts.
+        private void DrawLockMarker()
+        {
+            if (_lockedTarget < 0 || !_views[_lockedTarget].Root.gameObject.activeSelf)
+            {
+                return;
+            }
+
+            EncounterUnit u = _encounter.Units[_lockedTarget];
+            Vector3 head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
+            Vector3 sp = _rig.Camera.WorldToScreenPoint(head);
+            if (sp.z <= 0f)
+            {
+                return;
+            }
+
+            _markerStyle ??= new GUIStyle(_label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 28,
+                normal = { textColor = new Color(1f, 0.85f, 0.2f) },
+            };
+            GUI.Label(new Rect(sp.x - 20, Screen.height - sp.y - 58, 40, 32), "▼", _markerStyle);
+        }
+
+        private void DrawInteraction()
+        {
+            var style = new GUIStyle(_label) { fontSize = 16, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            if (_interactTarget < 0)
+            {
+                if (_interactable < 0)
+                {
+                    return;
+                }
+
+                string prompt = _copy.Ui("ui.hud.interact_prompt").Replace("{key}", BindingLabel(_interactAction))
+                    .Replace("{target}", _copy.Name(_encounter.Units[_interactable].Def.Id));
+                GUI.Box(new Rect(Screen.width / 2f - 180, Screen.height - 330, 360, 40), GUIContent.none);
+                GUI.Label(new Rect(Screen.width / 2f - 175, Screen.height - 328, 350, 36), prompt, style);
+                return;
+            }
+
+            var box = new Rect(Screen.width / 2f - 230, Screen.height * 0.35f, 460, 230);
+            GUI.Box(box, GUIContent.none);
+            GUI.Label(new Rect(box.x + 10, box.y + 8, box.width - 20, 30),
+                "<b>" + _copy.Name(_encounter.Units[_interactTarget].Def.Id) + "</b>", style);
+            string[] keys = { "ui.interact.observe", "ui.interact.provoke", "ui.interact.pet", "ui.interact.close" };
+            for (int i = 0; i < keys.Length; i++)
+            {
+                string text = _copy.Ui(keys[i]);
+                GUI.Label(new Rect(box.x + 10, box.y + 42 + i * 30, box.width - 20, 28),
+                    (int)_interactChoice == i ? "▶ <b>" + text + "</b> ◀" : text, style);
+            }
+
+            if (_observeText != null)
+            {
+                GUI.Label(new Rect(box.x + 10, box.y + 164, box.width - 20, 60), _observeText,
+                    new GUIStyle(style) { fontSize = 14 });
             }
         }
 
@@ -1285,6 +1685,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
+            GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}", new GUIStyle(_label) { fontSize = 14 },
+                GUILayout.Width(120));
             foreach (int id in _team.Pool)
             {
                 EncounterUnit u = _encounter.Units[id];
@@ -1312,6 +1714,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.Label($"[{BindingLabel(_selectFirstAction)} / {BindingLabel(_selectSecondAction)}] ★ {_copy.Ui("ui.hud.select_active")}  " +
                 $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
                 $"{commands}（{cmd}）\n" +
+                _copy.Ui("ui.hud.target_cycle").Replace("{key}", BindingLabel(_cycleTargetAction))
+                    .Replace("{target}", _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id) : _copy.Ui("ui.hud.target_none")) + "\n" +
                 $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
@@ -1345,11 +1749,16 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnEnable() => _runInput?.Enable();
 
-        private void OnDisable() => _runInput?.Disable();
+        private void OnDisable()
+        {
+            _runInput?.Disable();
+            _menuInput?.Disable();
+        }
 
         private void OnDestroy()
         {
             _runInput?.Dispose();
+            _menuInput?.Dispose();
             _rig?.Dispose();
             if (_terrainMaterial != null)
             {

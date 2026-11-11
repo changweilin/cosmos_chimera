@@ -314,6 +314,7 @@ namespace Cosmimera.Combat
         private readonly int[] _mastery = new int[ElementCount];
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
+        private int _hpMultiplier = 1;
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -361,9 +362,10 @@ namespace Cosmimera.Combat
         /// the battle ends). The damage already taken is kept: Hp rises by exactly the MaxHp increase.
         /// </summary>
         /// <remarks>
-        /// Pre: !IsFainted (a fainted creature earns no XP); con, spi, agi >= 0; stats.MaxHp(con) >= MaxHp (levels never
-        ///      go down, and the stat curves are monotone).
-        /// Post: MaxHp == stats.MaxHp(con); Hp == old Hp + (new MaxHp − old MaxHp); SPI/AGI-derived values use the new
+        /// Pre: !IsFainted (a fainted creature earns no XP); con, spi, agi >= 0; stats.MaxHp(con) × HP multiplier >= MaxHp
+        ///      (levels never go down, and the stat curves are monotone).
+        /// Post: MaxHp == stats.MaxHp(con) × the multiplier set by <see cref="MultiplyMaxHp"/> (1 if never set);
+        ///       Hp == old Hp + (new MaxHp − old MaxHp); SPI/AGI-derived values use the new
         ///       stats from the next query; cooldowns, effects and mastery/resist unchanged.
         /// Side effects: mutates this combatant.
         /// </remarks>
@@ -371,12 +373,29 @@ namespace Cosmimera.Combat
         {
             Contract.Requires(!IsFainted, "a fainted combatant cannot level up");
             Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
-            int maxHp = _stats.MaxHp(con);
+            int maxHp = _stats.MaxHp(con) * _hpMultiplier;
             Contract.Requires(maxHp >= MaxHp, "a level-up never lowers MaxHp");
             Hp += maxHp - MaxHp;
             MaxHp = maxHp;
             _spi = spi;
             _agi = agi;
+        }
+
+        /// <summary>Multiplies MaxHp for this combatant's whole life (boss fights: HP ×2, D0-R2) and refills HP.</summary>
+        /// <remarks>
+        /// Pre: called once, right after construction (Hp == MaxHp, never multiplied before); 1 &lt;= multiplier;
+        ///      MaxHp × multiplier fits Int32.
+        /// Post: MaxHp == old MaxHp × multiplier; Hp == MaxHp; later <see cref="Rescale"/> calls keep the multiplier.
+        /// Side effects: mutates this combatant.
+        /// </remarks>
+        internal void MultiplyMaxHp(int multiplier)
+        {
+            Contract.Requires(multiplier >= 1, "multiplier must be >= 1");
+            Contract.Requires(_hpMultiplier == 1 && Hp == MaxHp, "multiply MaxHp once, before any damage");
+            Contract.Requires((long)MaxHp * multiplier <= int.MaxValue, "MaxHp would exceed Int32");
+            _hpMultiplier = multiplier;
+            MaxHp *= multiplier;
+            Hp = MaxHp;
         }
 
         /// <summary>Current HP.</summary>
@@ -432,6 +451,20 @@ namespace Cosmimera.Combat
             Cooldowns.Start(slot, nowMs, cd);
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs);
             return CastResult.Accepted;
+        }
+
+        /// <summary>Move speed (mm/s) at <paramref name="nowMs"/> after AGI and the active move_speed_mod_percent.</summary>
+        /// <remarks>
+        /// REQ: combat.md#效果疊加 — modifiers are summed first, then applied once with the [10%, 300%] clamp.
+        /// Pre: nowMs in CombatTime and >= Book's watermark.
+        /// Post: result >= 0; equals EffectMath.MoveSpeedMmS(stats, agi, Σ move_speed deltas active at nowMs, rules), so it
+        ///       equals stats.MoveSpeedMmS(agi) when no modifier is active.
+        /// Side effects: overwrites the internal modifier buffer only; no allocation.
+        /// </remarks>
+        public int MoveSpeedMmS(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return EffectMath.MoveSpeedMmS(_stats, _agi, _totals.MoveSpeedPercent, _rules);
         }
 
         /// <summary>Resolves an enemy-targeted move (any shape except self/ally) landing on this combatant.</summary>

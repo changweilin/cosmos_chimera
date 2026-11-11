@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: ice_crystal_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: ice_crystal_planet
-  size: 1
   terrainTags:
   - ice_field
   - fjord

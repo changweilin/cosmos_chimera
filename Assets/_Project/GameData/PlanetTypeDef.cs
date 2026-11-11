@@ -7,13 +7,8 @@ namespace Cosmimera.GameData
     /// <remarks>Pre: filled by the importer. Post: TerrainTags >= 1; ElementBias 1..3, unique. Side effects: none.</remarks>
     public sealed class PlanetTypeDef : GameDef
     {
-        [SerializeField] private PlanetSize size;
         [SerializeField] private List<string> terrainTags = new List<string>();
         [SerializeField] private List<Element> elementBias = new List<Element>();
-
-        /// <summary>Size class.</summary>
-        /// <remarks>Pre: none. Post: a defined PlanetSize. Side effects: none.</remarks>
-        public PlanetSize Size => size;
 
         /// <summary>Terrain tag ids.</summary>
         /// <remarks>Pre: none. Post: Count >= 1. Side effects: none.</remarks>
@@ -23,9 +18,9 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: 1..3 unique entries. Side effects: none.</remarks>
         public IReadOnlyList<Element> ElementBias => elementBias;
 
-        internal void Set(PlanetSize size, List<string> terrainTags, List<Element> elementBias)
+        // No size: since D0-B2 the boss stage decides planet size (planet-world.md#boss-尺寸), WorldGen.BossDraw.SizeFor.
+        internal void Set(List<string> terrainTags, List<Element> elementBias)
         {
-            this.size = size;
             this.terrainTags = terrainTags;
             this.elementBias = elementBias;
         }

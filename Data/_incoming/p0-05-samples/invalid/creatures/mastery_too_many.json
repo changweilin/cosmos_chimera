@@ -45,6 +45,7 @@
       "archetype": "trickster"
     },
     "ai_style": "charge",
+    "temperament": "timid",
     "size_class": "S"
   }
 ]

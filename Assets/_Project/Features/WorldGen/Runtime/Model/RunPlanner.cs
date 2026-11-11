@@ -21,9 +21,11 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 2;
+        public const int GeneratorVersion = 3;
 
         // v2 (2026-11-09): the DefeatWild element is restricted to elements that have enough non-boss spawns.
+        // v3 (2026-11-10, D0-B2): the boss stage is an input; every spawn's form is capped at it. Adult-boss plans are
+        //     bit-identical to v2 (the cap never binds and the draw order is unchanged).
         private const int DefeatWildCount = 3;
         private const double SurfaceKm2PerRegion = 0.42;
         private const int MinRegions = 8;
@@ -49,30 +51,34 @@ namespace Cosmimera.WorldGen
         /// <summary>Generates the run plan.</summary>
         /// <remarks>
         /// Pre: planet valid; planetType non-null; wildPool non-empty, no nulls, each with ≥ 1 mastery entry, and at
-        ///      least one Adult form (boss); vocabulary non-null; isLand null (all land) or deterministic.
+        ///      least one form of exactly bossStage (Juvenile..Adult); vocabulary non-null; isLand null (all land) or
+        ///      deterministic.
         /// Post: regions in [8, 32] scaled by surface area; region graph connected; MainRoute is a shortest path from
-        ///       LandingRegion to BossRegion; BossRegion maximizes hops from landing; exactly one Boss spawn (an Adult
-        ///       form whose main element is in the type's bias when one exists) in the boss region; one Elite per
+        ///       LandingRegion to BossRegion; BossRegion maximizes hops from landing; exactly one Boss spawn (a bossStage
+        ///       form whose main element is in the type's bias when one exists) in the boss region; no spawn's form is
+        ///       above bossStage (REQ: planet-world.md#boss-尺寸, user 2026-11-10: a juvenile boss is never outclassed); one Elite per
         ///       route region strictly between landing and boss (at least one overall); quest ends with DefeatBoss;
         ///       the DefeatWild step's Element has ≥ its Count (1..3) spawns that are neither the boss nor the
         ///       DefeatElite target, preferring the type's bias.
         ///       Same inputs → same plan.
         /// Side effects: allocates.
         /// </remarks>
-        public static RunPlan Generate(in PlanetConfig planet, ulong seed, PlanetTypeDef planetType,
+        public static RunPlan Generate(in PlanetConfig planet, ulong seed, PlanetTypeDef planetType, CreatureStage bossStage,
             IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, Func<float3, bool> isLand)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(planetType != null && vocabulary != null, "planetType and vocabulary must not be null");
             Contract.Requires(wildPool != null && wildPool.Count > 0, "wild pool must not be empty");
-            bool hasAdult = false;
+            Contract.Requires(bossStage >= CreatureStage.Juvenile && bossStage <= CreatureStage.Adult,
+                "bossStage must be juvenile..adult");
+            bool hasBossForm = false;
             foreach (CreatureDef c in wildPool)
             {
                 Contract.Requires(c != null && c.Mastery.Count > 0, "wild pool entries need a main element");
-                hasAdult |= c.Stage == CreatureStage.Adult;
+                hasBossForm |= c.Stage == bossStage;
             }
 
-            Contract.Requires(hasAdult, "wild pool needs an adult form for the boss");
+            Contract.Requires(hasBossForm, "wild pool needs a form of the boss stage");
             var rng = new Pcg32(seed, 'R');
 
             float3[] sites = Sites(planet, ref rng);
@@ -123,7 +129,8 @@ namespace Cosmimera.WorldGen
                     int members = 1 + (int)rng.NextUInt(regions[i].Tier == 0 ? 2u : 3u);
                     for (int m = 0; m < members; m++)
                     {
-                        CreatureDef species = PickSpecies(wildPool, planetType, (CreatureStage)regions[i].Tier, ref rng);
+                        CreatureDef species = PickSpecies(wildPool, planetType, (CreatureStage)regions[i].Tier, bossStage,
+                            ref rng);
                         float3 dir = Scatter(packCenter, 5f / planet.Radius, isLand, ref rng);
                         spawns.Add(new RunSpawn(i, group, dir, species.Id, SpawnRole.Normal));
                     }
@@ -137,7 +144,7 @@ namespace Cosmimera.WorldGen
             {
                 int region = route[r];
                 CreatureStage stage = (CreatureStage)math.min(2, regions[region].Tier + 1);
-                CreatureDef species = PickSpecies(wildPool, planetType, stage, ref rng);
+                CreatureDef species = PickSpecies(wildPool, planetType, stage, bossStage, ref rng);
                 eliteByRegion[region] = spawns.Count;
                 spawns.Add(new RunSpawn(region, group++, Scatter(sites[region], spacing * 0.2f, isLand, ref rng),
                     species.Id, SpawnRole.Elite));
@@ -146,13 +153,13 @@ namespace Cosmimera.WorldGen
             if (eliteByRegion.Count == 0)
             {
                 // A two-region route has no middle region; the elite then guards the landing region's edge.
-                CreatureDef species = PickSpecies(wildPool, planetType, CreatureStage.Adolescent, ref rng);
+                CreatureDef species = PickSpecies(wildPool, planetType, CreatureStage.Adolescent, bossStage, ref rng);
                 eliteByRegion[landing] = spawns.Count;
                 spawns.Add(new RunSpawn(landing, group++, Scatter(sites[landing], spacing * 0.3f, isLand, ref rng),
                     species.Id, SpawnRole.Elite));
             }
 
-            CreatureDef bossSpecies = PickSpecies(wildPool, planetType, CreatureStage.Adult, ref rng);
+            CreatureDef bossSpecies = PickSpecies(wildPool, planetType, bossStage, bossStage, ref rng);
             int bossSpawn = spawns.Count;
             spawns.Add(new RunSpawn(boss, group, Scatter(sites[boss], 0f, isLand, ref rng), bossSpecies.Id, SpawnRole.Boss));
 
@@ -437,15 +444,22 @@ namespace Cosmimera.WorldGen
         }
 
         private static CreatureDef PickSpecies(IReadOnlyList<CreatureDef> pool, PlanetTypeDef type, CreatureStage stage,
-            ref Pcg32 rng)
+            CreatureStage cap, ref Pcg32 rng)
         {
-            // Weight 3 for the planet's elements, 1 otherwise; fall back to the nearest available stage.
+            // Weight 3 for the planet's elements, 1 otherwise; fall back to the nearest available stage not above cap.
+            // Asking for min(stage, cap) first keeps a capped tier on the boss stage instead of drifting further down.
+            // Generate's Pre guarantees a cap-stage form, so some delta in 0..2 always has a positive total.
+            if (stage > cap)
+            {
+                stage = cap;
+            }
+
             for (int delta = 0; delta <= 2; delta++)
             {
                 uint total = 0;
                 foreach (CreatureDef c in pool)
                 {
-                    total += Weight(c, type, stage, delta);
+                    total += Weight(c, type, stage, cap, delta);
                 }
 
                 if (total == 0)
@@ -456,7 +470,7 @@ namespace Cosmimera.WorldGen
                 uint pick = rng.NextUInt(total);
                 foreach (CreatureDef c in pool)
                 {
-                    uint w = Weight(c, type, stage, delta);
+                    uint w = Weight(c, type, stage, cap, delta);
                     if (pick < w)
                     {
                         return c;
@@ -469,9 +483,9 @@ namespace Cosmimera.WorldGen
             return pool[0];
         }
 
-        private static uint Weight(CreatureDef c, PlanetTypeDef type, CreatureStage stage, int delta)
+        private static uint Weight(CreatureDef c, PlanetTypeDef type, CreatureStage stage, CreatureStage cap, int delta)
         {
-            if (math.abs((int)c.Stage - (int)stage) != delta)
+            if (c.Stage > cap || math.abs((int)c.Stage - (int)stage) != delta)
             {
                 return 0;
             }

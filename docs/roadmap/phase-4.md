@@ -2,7 +2,7 @@
 
 **出口條件**：地球大廳 → 星海選星 → 遊玩 → 收服/得蛋 → 返回大廳孵化/進化/編隊 → 再出發，完整循環並可存讀檔。
 讀：`../design/lobby-meta.md`、`../design/creatures.md`
-**開工前需定案**：Q-M1、Q-M3、Q-M4
+**開工前需定案**：Q-M3、Q-M4（Q-M1 已於 2026-11-10 定案）
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
@@ -26,3 +26,5 @@
 - 2026-11-09 · ChatGPT Codex · partial · P4-08：依 D0 實際畫面補星球／屬性名稱與操作提示雙語草稿，記錄內部 ID、按鍵說明和日文接線缺口；尚未接入遊戲或翻譯日文 · 下一步：SONNET 接線、FLASH 翻譯及交叉審查、人工試玩
 - 2026-11-09 · Claude Sonnet · partial · P4-07 最低限度：大廳 DemoGame.DrawPartyEditor 可調整隊伍順序（首位為出戰主力）、移出／加入待命區（1..6 隻，變更即寫存檔）；未做輪替／副手配對規則與提示；字串在 demo-ui-supplement.json（zh-TW 為 Sonnet 草稿）；未編譯、未測試（Editor 開啟中） · 下一步：人工在 Editor 編譯試玩；TERRA 審字串、FLASH 補日文
 - 2026-11-09 · ChatGPT Sol（唯讀 D0-r2）→ ChatGPT Terra 修正 → Claude Opus 驗收 · partial · P4-07 七個隊伍編成 zh-TW 字串在 `a4554be` 寫成問號（Sol S2），Terra 已同步修正 supplement 與 `strings.json`；Flash 補 ja（`d0-copy-flash-ja/demo-ui-supplement.json`，check.py 6 檔 150 欄 PASS）。批次模式驗證：EditMode 862/862、PlayMode 62/62。報告 `docs/reviews/D0-r2-sol.md` · 下一步：人工試玩隊伍編成
+- 2026-11-10 · Gemini Flash（agy）→ Claude Opus 驗收 · done · names.json 70 筆宙獸／招式／特性名稱日文初稿（`Data/_incoming/d0-names-flash-ja/`，宙獸片假名、招式/特性漢字＋假名）；Flash 無 shell，逐筆人工自檢 70/70，Opus 重跑 check.py ALL PASS · 下一步：TERRA 接線 `name_ja`（merge.py＋DemoCopy ja）；人工定稿
+- 2026-11-10 · ChatGPT Terra（Codex） · done · P4-08 日文名稱 70 筆接入 demo；pytest 192、EditMode 1006、PlayMode 87 全過，資料驗證 0 錯誤，突變測試有效 · 下一步：人工驗收日文名稱與排版

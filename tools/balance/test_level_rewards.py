@@ -86,7 +86,7 @@ class LevelRewardsTests(unittest.TestCase):
         c["rewards"].update(base_xp={"wild": 17, "capture": 19, "quest_step": 23,
                                     "quest_chain": 29, "boss": 31},
                             reference_level=9, elite_multiplier=3, sidekick_share_divisor=3,
-                            wild_level={"base": 12, "per_difficulty": 7, "per_tier": 4,
+                            wild_level={"boss_level_min": 12, "boss_level_max": 75, "per_tier": 4,
                                         "role_bonus": {"normal": 1, "elite": 2, "boss": 6}})
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "balance.json"
@@ -103,7 +103,7 @@ class LevelRewardsTests(unittest.TestCase):
                 role = "boss" if source == "boss" else "normal"
                 self.assertEqual(base, model.source_xp(source, 9, 0, role=role))
             self.assertEqual(51, model.source_xp("wild", 9, 0, role="elite"))
-            self.assertEqual(43, model.initial_level(4, 2, 0, "elite"))
+            self.assertEqual(29, model.initial_level(4, 2, 0, "elite"))
             for stage, floor in enumerate((11, 22, 36)):
                 self.assertEqual(model.curve.xp_threshold(floor), model.migrate_xp(999, stage))
             result = model.settle(10, [Creature(1, 0), Creature(2, 0)], [True, False],
@@ -147,9 +147,13 @@ class LevelRewardsTests(unittest.TestCase):
 
     def test_initial_levels_capture_thresholds_and_difficulty_clamp(self):
         a, b = self.models
-        self.assertEqual([10, 12, 14], [a.initial_level(1, tier, tier) for tier in range(3)])
-        self.assertEqual(15, a.initial_level(1, 1, 2, "elite"))
-        self.assertEqual(19, a.initial_level(1, 2, 2, "boss"))
+        self.assertEqual([1, 1, 1], [a.initial_level(1, tier, tier) for tier in range(3)])
+        self.assertEqual(1, a.initial_level(1, 1, 2, "elite"))
+        self.assertEqual(5, a.initial_level(1, 2, 2, "boss"))
+        # D0-X3: boss LV5..75 across d=1..10, half-up.
+        self.assertEqual([5, 13, 21, 28, 36, 44, 52, 59, 67, 75],
+                         [a.initial_level(d, 2, 2, "boss") for d in range(1, 11)])
+        self.assertEqual([66, 68, 70], [a.initial_level(10, t, 0) for t in range(3)])
         self.assertEqual([10, 21, 37], [b.initial_level(1, tier, tier) for tier in range(3)])
         self.assertEqual(36, b.initial_level(1, 1, 2, "elite"))
         for model in self.models:
@@ -160,7 +164,7 @@ class LevelRewardsTests(unittest.TestCase):
                     self.assertGreaterEqual(level, previous)
                     self.assertEqual(level, model.curve.level_from_xp(model.curve.xp_threshold(level)))
                     previous = level
-        self.assertEqual(100, a.initial_level(10, 2, 2, "boss"))
+        self.assertEqual(75, a.initial_level(10, 2, 2, "boss"))
 
     def test_migration_is_one_time_cumulative_and_int32_safe(self):
         a, b = self.models
@@ -352,7 +356,7 @@ class LevelRewardsTests(unittest.TestCase):
             declared = run["expected_total_captures_for_these_attempts"]
             self.assertEqual(expected, Fraction(declared["numerator"], declared["denominator"]))
             self.assertEqual(13, sum(run["normal_victims_by_region_tier"]))
-            self.assertEqual(3171 if model.option == "A" else 5280, sum(xp for _, xp in events))
+            self.assertEqual(1726 if model.option == "A" else 5280, sum(xp for _, xp in events))
 
     def test_boss_auto_skipped_steps_and_incomplete_chain_never_pay(self):
         for model in self.models:
@@ -366,8 +370,8 @@ class LevelRewardsTests(unittest.TestCase):
                     model.d0_events(flags)
 
     def test_pacing_gate_counts_against_independent_threshold_and_repetition(self):
-        expected = {("A", 1): (3171, 24, (1, 2, 2)), ("A", 2): (1587, 18, (2, 3, 4)),
-                    ("A", 6): (793, 14, (3, 5, 7)), ("B", 1): (5280, 30, (1, 1, 1)),
+        expected = {("A", 1): (1726, 19, (2, 2, 3)), ("A", 2): (874, 15, (3, 4, 6)),
+                    ("A", 6): (437, 12, (5, 8, 12)), ("B", 1): (5280, 30, (1, 1, 1)),
                     ("B", 2): (2640, 22, (1, 2, 2)), ("B", 6): (1320, 17, (2, 3, 4))}
         for (option, party), (gain, level, gates) in expected.items():
             result = simulate(option, party)
@@ -381,11 +385,8 @@ class LevelRewardsTests(unittest.TestCase):
         for bad in (0, 7, True, INT32_MAX):
             with self.assertRaises((TypeError, ValueError)):
                 simulate("A", bad)
-        target = self.models[0].document["pacing_target"]
-        result = simulate(target["recommended_option"], target["party_size"])
-        self.assertEqual(target["first_run_active_main_xp"], result["active_xp"])
-        for gate in (20, 25, 30):
-            self.assertEqual(target[f"runs_to_level_{gate}"], result["gates"][gate])
+        # The proposal's pacing_target was computed with the pre-D0-X3 wild levels (boss LV19 at d=1); it stays
+        # as history in Data/_incoming and no longer has to match the approved config (2026-11-10).
 
     def test_printed_pacing_table_is_identical_to_doc_table(self):
         table = pacing_table()

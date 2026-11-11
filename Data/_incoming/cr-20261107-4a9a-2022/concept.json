@@ -1,0 +1,233 @@
+{
+  "line_id": "starter_sun_line",
+  "elements": [
+    "light（光）",
+    "fire（火，成年起）"
+  ],
+  "base_parents": [
+    "生物·鳥類",
+    "器械·天文/測量儀器",
+    "科幻機械·能量/量子構裝"
+  ],
+  "bases": [
+    "大白鷺",
+    "太陽鏡陣飛行器",
+    "能量/量子構裝·浮游感應磁軌砲陣列"
+  ],
+  "appearance_palette": [
+    "象牙白",
+    "晨金",
+    "苔綠",
+    "熔火赤金"
+  ],
+  "timeline": "近代科幻想像（20 世紀初）",
+  "region": "南亞",
+  "height_m": "2.2 m",
+  "weight_kg": "95 kg",
+  "body_fat_pct": "12%",
+  "archetype": {
+    "name": "arch_sultanas_dream",
+    "region": "南亞",
+    "timeline": "近代科幻想像（20 世紀初）",
+    "motifs_used": [
+      "聚光太陽鏡陣",
+      "汲雲氣球管道",
+      "苔絨花園"
+    ],
+    "how_adapted": "從南亞早期科幻想像提取太陽能驅動、雲水收集與空中綠園的科技／自然共生意象，轉譯為鷺鳥自然生長的鏡質羽毛、氣囊毛細管及苔絨尾羽；只借概念，不重製神聖紋樣、傳統服飾、人物或具識別性的文化圖符。"
+  },
+  "sensitivity": "ok",
+  "role": "後排輸出、控距：遠距直線光束",
+  "temperament": "沉穩專注、喜歡曬太陽",
+  "stages": [
+    {
+      "stage": "juvenile",
+      "creature_id": "sun_mirror_chick",
+      "name_zh": "鏡芽雀",
+      "name_en": "Mirrill",
+      "size_class": "S",
+      "height_m": 0.46,
+      "look": "太陽鳥雛鳥 × 頭頂一面圓形聚光小鏡；圓滾雛鳥，鏡面冠羽會追著太陽轉",
+      "dex_zh": "圓滾滾的身子披著象牙白絨羽，頭頂的小圓鏡總追著日光轉。牠喜歡站在苔地上練習聚光，隔著遠遠的距離射出細細的光束。",
+      "silhouette": "直立蛋形雛鳥，頭略大於身，翼短如水滴；頭頂偏後一枚能俯仰的圓鏡冠羽，兩條短小苔綠足。",
+      "key_features": [
+        "太陽鏡冠羽為單枚圓盤，晨金鑲緣，中央象牙白鏡面帶暖金亮點；隨日光偏轉",
+        "喉胸兩枚相接的苔綠 V 形絨羽，作為全進化線辨識花紋",
+        "小而尖的晨金鳥喙、深苔綠玻璃質虹膜；短翼內側嵌三片半透明鏡羽芽",
+        "象牙白細絨毛與無機械接縫的鏡羽基部，避免可拆卸配件感"
+      ],
+      "palette_hex": [
+        "#F3EFDD",
+        "#E5B452",
+        "#68876B"
+      ],
+      "petted_reaction": "被摸頭時先把小圓鏡歪向手心，眨眼後展開兩片短翼，胸前的雙 V 苔絨微微蓬起。",
+      "signature_move": {
+        "move_id": "light_mirror_glint",
+        "name_zh": "鏡閃",
+        "element": "light",
+        "range_class": "long",
+        "shape": "line",
+        "movement": "none",
+        "visual": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人並暫時降低其閃避率。"
+      },
+      "target_tris": "5–8k",
+      "model_notes": "立繪採絨羽大形體；造模保持低密度羽束與單枚冠鏡，避免細碎飾件。"
+    },
+    {
+      "stage": "adolescent",
+      "creature_id": "sun_heliostat_heron",
+      "name_zh": "鏡羽鷺",
+      "name_en": "Mirravel",
+      "size_class": "M",
+      "height_m": 1.23,
+      "look": "鷺鳥 × 翅羽化為可調角度的鏡片陣列；單腳佇立、雙翼展開成扇形鏡陣聚光",
+      "dex_zh": "牠常單腳佇立，讓扇形鏡羽隨日影緩緩轉動。發現威脅時，牠會退到夥伴後方調整鏡面，將聚攏的光芒化作筆直遠射的光束。",
+      "silhouette": "細長 S 曲鷺頸、修長單腳佇立，兩翼展開為左右各五片可調角度扇形長鏡羽；頭冠圓鏡縮為晨金冠盤。",
+      "key_features": [
+        "保留單枚聚光圓鏡冠羽，邊框加大、冠鏡隨頭部日照旋轉",
+        "胸部苔綠雙 V 花紋延長成兩道苔絨流線，向背部肩羽延伸",
+        "左右翼鏡羽是自然羽片的鏡質角蛋白，五瓣扇形弧線，晨金羽軸、象牙白反射面",
+        "長喙、可折頸與一足站姿，尾端三枚苔綠收束羽片"
+      ],
+      "palette_hex": [
+        "#F3EFDD",
+        "#E5B452",
+        "#68876B"
+      ],
+      "petted_reaction": "被輕梳頸羽時維持單腳平衡，收起扇鏡半圈，將頭冠向觸碰處輕輕傾斜。",
+      "signature_move": {
+        "move_id": "light_heliostat_beam",
+        "name_zh": "追日光束",
+        "element": "light",
+        "range_class": "long",
+        "shape": "line",
+        "movement": "none",
+        "visual": "調轉鏡面追聚日光，向遠方射出直線光束，傷害路徑上的敵人。"
+      },
+      "target_tris": "8–15k",
+      "model_notes": "每側鏡羽五片可獨立樞轉；束狀幾何羽片優先於透明層疊貼圖。"
+    },
+    {
+      "stage": "adult",
+      "creature_id": "sun_array_skyheron",
+      "name_zh": "鏡環天鷺",
+      "name_en": "Mirravault",
+      "size_class": "L",
+      "height_m": 2.2,
+      "look": "鷺鳥 × 太陽鏡陣飛行器（生物＋器械）；背負環形鏡陣與汲雲氣球管的天空鷺，鏡陣合焦射出光束",
+      "dex_zh": "環形鏡陣環繞著牠的背，細長管道汲取雲間水氣。牠在高空盤旋尋找日光，遭遇敵人便於遠處合攏鏡面，射出貫穿長空的光束。",
+      "silhouette": "高大鷺鳥，長頸前伸，背肩自羽骨長出九片可折疊葉狀鏡片構成偏後方環形鏡陣；翼收束時呈後掠飛行翼，腹側有兩條輕盈汲雲管，尾羽形似苔絨苗圃。",
+      "key_features": [
+        "九瓣非完美圓形太陽鏡環從背部活體羽軸生長，中心留大片負空間；晨金邊線、象牙鏡面",
+        "冠鏡仍為小圓盤，與翼部環形鏡陣同心合焦，形成三代共通的頭頂聚光標誌",
+        "喉胸苔綠雙 V 花紋延伸至側腹，背尾苔絨呈小片羽狀苗圃，無任何宗教符號",
+        "兩根半透明苔綠汲雲氣球軟管由肩胛囊延出，尾端接微型浮囊狀氣泡；以曲線解釋飛行升力",
+        "象牙白為主羽、晨金為鏡軸及翼尖、苔綠為胸紋與苗圃；無固定外掛金屬框"
+      ],
+      "palette_hex": [
+        "#F3EFDD",
+        "#E5B452",
+        "#68876B"
+      ],
+      "petted_reaction": "將長頸低垂到可觸及的高度，鏡環緩緩轉成背光角度，汲雲管冒出一串清涼微霧。",
+      "signature_move": {
+        "move_id": "light_solar_array_lance",
+        "name_zh": "日環光槍",
+        "element": "light",
+        "range_class": "long",
+        "shape": "line",
+        "movement": "none",
+        "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。"
+      },
+      "target_tris": "15–25k",
+      "model_notes": "環陣九瓣帶關節可變型；兩條軟管用骨架曲線，超載共用拓樸；發光遮罩與材質分區由 URP Shader Graph 實作。"
+    },
+    {
+      "stage": "overload",
+      "creature_id": "sun_coronavault_skyheron",
+      "name_zh": "鏡冕天鷺",
+      "name_en": "Mirracorona",
+      "size_class": "XL",
+      "height_m": 5.6,
+      "look": "太陽鏡陣飛行器與天鷺完全共鳴；背部環形鏡陣激發為三層旋轉日冕光環，光羽噴射耀眼金炎，以太管道引導星雲光子流",
+      "dex_zh": "當以太能量在鏡陣中超載激盪，背部的聚光環便會如初升之日般耀眼綻放。合攏所有鏡面射出的神聖日冕光柱，能在一瞬間照亮整顆星球的夜空。",
+      "silhouette": "保留成年鷺鳥長頸、長喙與雙 V 苔綠胸紋；巨大的前後雙層偏心鏡環如展翅日冕包圍背部，翼尖化為長三角光羽，汲雲囊在背側形成數枚浮升水滴，巨大但非人形。",
+      "key_features": [
+        "與成年同一九瓣背環，各瓣沿活體羽軸裂成長短交錯的雙層鏡羽，不新增宗教或王權形制",
+        "冠鏡顯露熾亮金色焦點，仍可讀作原型單片頭冠",
+        "喉胸苔綠雙 V 紋加亮，苔絨尾羽在熱氣上升流中展為狹長流蘇",
+        "汲雲管發出蒸騰的水汽光暈，環外形成無實體的薄金色能量弧，不能誤作裝甲零件",
+        "維持長距離直射光束的戰術識別，強化聚焦軌道和沿直線的熾金粒子；短暫型態不變成獨立生物"
+      ],
+      "palette_hex": [
+        "#F3EFDD",
+        "#E5B452",
+        "#68876B"
+      ],
+      "petted_reaction": "高能量時不立即接受撫摸；感知親近後降低翼鏡亮度、收起外層日冕，讓頭頸緩緩靠近。",
+      "signature_move": {
+        "move_id": "light_coronavault_burst",
+        "name_zh": "日冕貫天神光",
+        "name_en": "Coronal Burst",
+        "element": "light",
+        "range_class": "long",
+        "shape": "line",
+        "movement": "none",
+        "visual": "全鏡面合攏聚光鎖定，射出貫穿天際的金色日冕光柱，伴隨刺目光波震盪。"
+      },
+      "target_tris": "25–35k",
+      "model_notes": "由成年變形而非新寵物；第二鏡環盡量重用九瓣 mesh；發光與薄光弧用 VFX Graph/Shader，避免物理面數暴增。",
+      "approval_status": "待人工確認：Q-C12；形象與名稱都屬提案。",
+      "naming_note": "鏡陣大成，日冕登冠。",
+      "dex_en": "When ether energy surges beyond limits in its array, the corona ring on its back blazes like the rising sun. Focusing every mirror into a divine coronal pillar, it can instantly banish night from the entire planetary sky."
+    }
+  ],
+  "evolution_story_zh": "晨光裡，鏡芽雀練習以冠鏡留住第一線陽光；成長為鏡羽鷺後，牠學會用扇形鏡羽追逐日影。成年鏡環天鷺讓背上的日環與汲雲管協作，從雲海中遠距守護夥伴。若日光奔湧，鏡環短暫綻為熾金雙冕，終又在薄霧裡安靜收攏。",
+  "signature_move": {
+    "move_id": "light_solar_array_lance",
+    "name_zh": "日環光槍",
+    "element": "light",
+    "range_class": "long",
+    "shape": "line",
+    "movement": "none",
+    "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。"
+  },
+  "stage_moves": [
+    {
+      "stage": "juvenile",
+      "move_id": "light_mirror_glint",
+      "visual": "凝聚鏡中微光，向遠方射出筆直光束，傷害路徑上的敵人並暫時降低其閃避率。"
+    },
+    {
+      "stage": "adolescent",
+      "move_id": "light_heliostat_beam",
+      "visual": "調轉鏡面追聚日光，向遠方射出直線光束，傷害路徑上的敵人。"
+    },
+    {
+      "stage": "adult",
+      "move_id": "light_solar_array_lance",
+      "visual": "將鏡陣光芒合為長槍般的光束，向遠方直射，傷害路徑上的敵人並暫時降低其光抗性。"
+    }
+  ],
+  "trait": {
+    "trait_id": "trait_light_heliostat_focus",
+    "name_zh": "逐光聚焦",
+    "idea_zh": "使用光屬性招式後，鏡光暫時延伸招式範圍，此效果可疊加。"
+  },
+  "overload_visual": "待定案 Q-C12：成年環形鏡陣九瓣展成前後雙層偏心日冕，鏡羽側緣溢出熾金光邊；汲雲氣球管被光熱蒸汽撐起，苔絨尾羽流線化，頸與喙仍保留鷺鳥辨識；並非永久進化。",
+  "continuity_anchors": [
+    "單枚晨金緣圓形頭冠聚光鏡",
+    "喉胸雙 V 苔綠絨羽紋",
+    "象牙白／晨金／苔綠鏡羽的活體連續結構"
+  ],
+  "art_direction": {
+    "render": "2–3 階柔和卡通著色、深苔色乾淨描邊、暖金柔邊緣光；水彩背景不描邊，鏡羽清楚大片面",
+    "turnaround": "正面／右側／背面／左前 3/4 四視圖，灰色無描邊正交底，無文字與 UI",
+    "front_for_image_to_3d": "純正面正交、左右對稱中性站姿、全身置中、單一均勻中性灰底、無光束及透視變形",
+    "technical": "Unity 6 URP / PC / Steam Deck：盡量使用單一描邊反相殼與 2–3 階階調；獨立鏡質與苔絨材質，鏡片反射採假高光貼圖而非即時反射；薄霧／光束以低 overdraw 程序特效實作",
+    "outline_hex": "#33413D",
+    "warm_highlight_hex": "#FFF2C5"
+  },
+  "measurements_note": "各階段 height_m 為自然站立時最高實體構造（不計漂浮光暈）；成年 2.2m／95kg／體脂 12% 依輸入鎖定，超載以短暫光熱膨張及浮升表示。"
+}

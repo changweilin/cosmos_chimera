@@ -166,5 +166,71 @@
   },
   "ui.results.retry": {
     "ja": "再試行"
+  },
+  "ui.hud.target_cycle": {
+    "ja": "{key} ターゲット切替：{target}"
+  },
+  "ui.hud.target_none": {
+    "ja": "なし"
+  },
+  "ui.hud.interact_prompt": {
+    "ja": "{key} インタラクト：{target}"
+  },
+  "ui.interact.observe": {
+    "ja": "観察"
+  },
+  "ui.interact.provoke": {
+    "ja": "挑発"
+  },
+  "ui.interact.pet": {
+    "ja": "なでる"
+  },
+  "ui.interact.close": {
+    "ja": "閉じる"
+  },
+  "ui.interact.observe_detail": {
+    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}"
+  },
+  "ui.interact.pet_reaction": {
+    "ja": "{target}は静かにあなたの手にすり寄ってきた。"
+  },
+  "ui.stage.juvenile": {
+    "ja": "幼年期"
+  },
+  "ui.stage.adolescent": {
+    "ja": "少年期"
+  },
+  "ui.stage.adult": {
+    "ja": "成年期"
+  },
+  "ui.temperament.timid": {
+    "ja": "臆病"
+  },
+  "ui.temperament.cautious": {
+    "ja": "警戒"
+  },
+  "ui.temperament.normal": {
+    "ja": "沈着"
+  },
+  "ui.temperament.territorial": {
+    "ja": "縄張り"
+  },
+  "ui.temperament.fierce": {
+    "ja": "凶暴"
+  },
+  "ui.temperament.apex": {
+    "ja": "覇者"
+  },
+  "ui.star_select.boss_stage": {
+    "ja": "ボス：{stage}"
+  },
+  "ui.lobby.player_level": {
+    "ja": "プレイヤーレベル LV{level}（EXP {exp}／{next}）"
+  },
+  "ui.results.player_exp": {
+    "ja": "プレイヤーEXP +{exp}（LV{level}）"
+  },
+  "ui.star_select.boss_unlock_hint": {
+    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放"
   }
 }

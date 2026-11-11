@@ -134,18 +134,18 @@ B：在雙偏好目標星球，tier1 3 個的 `ceil(E)` 為 6 run、P80 為 7；
 
 | 方案 | 線／目標星球 | 階段 | LV | 等級 run（1／2／6 主力） | 素材 run：ceil(均值)／P80 | 滿編規劃 run／距上階段 |
 |---|---|---|---|---|---|---|
-| A | starter_moon_line/twilight_planet | juvenile | 23 | 1 / 2 / 4 | 不可達 / 不可達 | 不可達 |
-| A | starter_moon_line/twilight_planet | adolescent | 40 | 4 / 7 / 14 | 不可達 / 不可達 | 不可達 |
-| A | starter_star_line/storm_planet | juvenile | 27 | 2 / 3 / 6 | 不可達 / 不可達 | 不可達 |
-| A | starter_star_line/storm_planet | adolescent | 45 | 5 / 9 / 18 | 不可達 / 不可達 | 不可達 |
-| A | starter_sun_line/twilight_planet | juvenile | 25 | 2 / 3 / 5 | 不可達 / 不可達 | 不可達 |
-| A | starter_sun_line/twilight_planet | adolescent | 42 | 4 / 8 / 15 | 不可達 / 不可達 | 不可達 |
-| B | starter_moon_line/twilight_planet | juvenile | 23 | 1 / 2 / 4 | 6 / 7 | 6 / +6 |
-| B | starter_moon_line/twilight_planet | adolescent | 40 | 4 / 7 / 14 | 17 / 21 | 17 / +11 |
-| B | starter_star_line/storm_planet | juvenile | 27 | 2 / 3 / 6 | 6 / 7 | 6 / +6 |
-| B | starter_star_line/storm_planet | adolescent | 45 | 5 / 9 / 18 | 17 / 21 | 18 / +12 |
-| B | starter_sun_line/twilight_planet | juvenile | 25 | 2 / 3 / 5 | 6 / 7 | 6 / +6 |
-| B | starter_sun_line/twilight_planet | adolescent | 42 | 4 / 8 / 15 | 17 / 21 | 17 / +11 |
+| A | starter_moon_line/twilight_planet | juvenile | 23 | 2 / 4 / 7 | 不可達 / 不可達 | 不可達 |
+| A | starter_moon_line/twilight_planet | adolescent | 40 | 6 / 12 / 24 | 不可達 / 不可達 | 不可達 |
+| A | starter_star_line/storm_planet | juvenile | 27 | 3 / 5 / 10 | 不可達 / 不可達 | 不可達 |
+| A | starter_star_line/storm_planet | adolescent | 45 | 9 / 17 / 33 | 不可達 / 不可達 | 不可達 |
+| A | starter_sun_line/twilight_planet | juvenile | 25 | 2 / 4 / 8 | 不可達 / 不可達 | 不可達 |
+| A | starter_sun_line/twilight_planet | adolescent | 42 | 7 / 14 / 27 | 不可達 / 不可達 | 不可達 |
+| B | starter_moon_line/twilight_planet | juvenile | 23 | 2 / 4 / 7 | 6 / 7 | 7 / +7 |
+| B | starter_moon_line/twilight_planet | adolescent | 40 | 6 / 12 / 24 | 17 / 21 | 24 / +17 |
+| B | starter_star_line/storm_planet | juvenile | 27 | 3 / 5 / 10 | 6 / 7 | 10 / +10 |
+| B | starter_star_line/storm_planet | adolescent | 45 | 9 / 17 / 33 | 17 / 21 | 33 / +23 |
+| B | starter_sun_line/twilight_planet | juvenile | 25 | 2 / 4 / 8 | 6 / 7 | 8 / +8 |
+| B | starter_sun_line/twilight_planet | adolescent | 42 | 7 / 14 / 27 | 17 / 21 | 27 / +19 |
 <!-- CLI-END -->
 
 ## 驗收

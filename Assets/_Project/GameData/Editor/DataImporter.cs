@@ -352,7 +352,6 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<PlanetTypeDto> p in planets)
             {
                 Claim(p.Where, p.Dto.Id, "planet-type");
-                RequireEnum<PlanetSize>(p.Where, "size", p.Dto.Size);
                 foreach (string e in p.Dto.ElementBias)
                 {
                     RequireEnum<Element>(p.Where, "element_bias", e);
@@ -373,6 +372,7 @@ namespace Cosmimera.GameData.Editor
                     errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be XS, S, M, L or XL");
                 }
                 RequireEnum<AiStyle>(c.Where, "ai_style", d.AiStyle);
+                RequireEnum<Temperament>(c.Where, "temperament", d.Temperament);
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
@@ -491,7 +491,7 @@ namespace Cosmimera.GameData.Editor
             foreach (Sourced<PlanetTypeDto> s in planets)
             {
                 PlanetTypeDto d = s.Dto;
-                planetDefs[d.Id].Set(ParseEnum<PlanetSize>(d.Size), new List<string>(d.TerrainTags),
+                planetDefs[d.Id].Set(new List<string>(d.TerrainTags),
                     d.ElementBias.Select(ParseEnum<Element>).ToList());
             }
 
@@ -516,6 +516,7 @@ namespace Cosmimera.GameData.Editor
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
                 creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
+                    ParseEnum<Temperament>(d.Temperament),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),

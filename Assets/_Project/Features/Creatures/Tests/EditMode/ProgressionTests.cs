@@ -205,20 +205,42 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => P.Settle(1, new[] { new XpRecipient(2, 0, false, false, 0), main }), "mains first");
         }
 
+        // SOL core-contracts CC-01: the Settle assertions above would still pass if only Settle validated.
+        [Test]
+        public void XpRecipient_rejects_bad_id_or_exp_at_construction()
+        {
+            Assert.Throws<ContractException>(() => new XpRecipient(0, 0, false, true, -1));
+            Assert.Throws<ContractException>(() => new XpRecipient(1, -1, false, true, -1));
+            Assert.DoesNotThrow(() => new XpRecipient(1, 0, false, true, -1));
+        }
+
+        [Test]
+        public void Settlement_lists_cannot_be_cast_back_and_mutated()
+        {
+            XpSettlement s = P.Settle(10, new[] { new XpRecipient(1, 0, false, true, -1) });
+            Assert.IsNotInstanceOf<int[]>(s.Paid);
+            Assert.IsNotInstanceOf<int[]>(s.Assigned);
+            Assert.Throws<System.NotSupportedException>(() => ((IList<int>)s.Paid)[0] = 99);
+        }
+
         [Test]
         public void FromJson_rejects_missing_or_unsupported_sections()
         {
-            Assert.Throws<ContractException>(() => Progression.FromJson(""));
-            Assert.Throws<ContractException>(() => Progression.FromJson("{}"));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(""));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson("{}"));
             string json = BalanceJson();
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"sidekick_share_divisor\": 2", "\"sidekick_share_divisor\": 3")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"xp_growth_numerator\": 105", "\"xp_growth_numerator\": 100")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"starter_level\": 10", "\"starter_level\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"sidekick_share_divisor\": 2", "\"sidekick_share_divisor\": 3")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_growth_numerator\": 105", "\"xp_growth_numerator\": 100")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"starter_level\": 10", "\"starter_level\": 0")));
             Assert.AreEqual(10, Progression.FromJson(json).StarterLevel);
             // SOL P2-12 R5: the Python envelope (elite 1..100) and no config whose source reward overflows Int32.
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
-            Assert.Throws<ContractException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"elite_multiplier\": 2", "\"elite_multiplier\": 101")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"wild\": 80, \"capture\"", "\"wild\": 2147483647, \"capture\"")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss\": 640", "\"boss\": 2147483647")));
+            // D0-X3: the boss level range must be ordered and inside 1..level_max.
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_min\": 5", "\"boss_level_min\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_min\": 5", "\"boss_level_min\": 76")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"boss_level_max\": 75", "\"boss_level_max\": 101")));
         }
 
         // The bands live in the schema, CreatureDef and balance.json; tools/tests checks schema == balance.json.
@@ -230,6 +252,74 @@ namespace Cosmimera.Creatures.Tests
             Assert.AreEqual((int)bands["juvenile"][1], CreatureDef.EvolutionLevelMax[0]);
             Assert.AreEqual((int)bands["adolescent"][0], CreatureDef.EvolutionLevelMin[1]);
             Assert.AreEqual((int)bands["adolescent"][1], CreatureDef.EvolutionLevelMax[1]);
+        }
+
+        // REQ: level-progression.md#玩家等級 (2026-11-10): player curve = creature curve ×6, starting at LV1.
+        [Test]
+        public void Player_curve_is_six_times_the_creature_curve()
+        {
+            for (int level = 1; level <= P.MaxLevel; level++)
+            {
+                Assert.AreEqual(6 * P.XpThreshold(level), P.PlayerXpThreshold(level), $"level {level}");
+            }
+
+            Assert.AreEqual(6 * P.MaxExp, P.PlayerMaxExp);
+            Assert.AreEqual(1, P.PlayerLevelOf(0));
+        }
+
+        [Test]
+        public void PlayerLevelOf_switches_exactly_at_each_threshold()
+        {
+            for (int level = 2; level <= P.MaxLevel; level++)
+            {
+                int t = P.PlayerXpThreshold(level);
+                Assert.AreEqual(level - 1, P.PlayerLevelOf(t - 1), $"just below LV{level}");
+                Assert.AreEqual(level, P.PlayerLevelOf(t), $"at LV{level}");
+            }
+
+            Assert.AreEqual(P.MaxLevel, P.PlayerLevelOf(int.MaxValue));
+            Assert.Throws<ContractException>(() => P.PlayerLevelOf(-1));
+            Assert.Throws<ContractException>(() => P.PlayerXpThreshold(0));
+            Assert.Throws<ContractException>(() => P.PlayerXpThreshold(P.MaxLevel + 1));
+        }
+
+        // REQ: planet-world.md#boss-尺寸 (2026-11-10): adolescent bosses unlock at player LV20, adult at LV35.
+        [TestCase(1, CreatureStage.Juvenile)]
+        [TestCase(19, CreatureStage.Juvenile)]
+        [TestCase(20, CreatureStage.Adolescent)]
+        [TestCase(34, CreatureStage.Adolescent)]
+        [TestCase(35, CreatureStage.Adult)]
+        [TestCase(100, CreatureStage.Adult)]
+        public void MaxBossStage_unlocks_by_player_level(int level, CreatureStage expected)
+        {
+            Assert.AreEqual(expected, P.MaxBossStage(level));
+        }
+
+        [Test]
+        public void Boss_stage_unlock_levels_and_contracts()
+        {
+            Assert.AreEqual(1, P.BossStageUnlockLevel(CreatureStage.Juvenile));
+            Assert.AreEqual(20, P.BossStageUnlockLevel(CreatureStage.Adolescent));
+            Assert.AreEqual(35, P.BossStageUnlockLevel(CreatureStage.Adult));
+            Assert.Throws<ContractException>(() => P.MaxBossStage(0));
+            Assert.Throws<ContractException>(() => P.MaxBossStage(P.MaxLevel + 1));
+            Assert.Throws<ContractException>(() => P.BossStageUnlockLevel((CreatureStage)3));
+        }
+
+        [Test]
+        public void Player_section_is_validated()
+        {
+            string json = BalanceJson();
+            const string section = "\"player\": {\"xp_multiplier\": 6, \"boss_stage_unlock_levels\": [1, 20, 35]}";
+            StringAssert.Contains(section, json);
+            // JsonUtility ignores unknown keys, so a renamed section reads as a missing one.
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"player\":", "\"player_renamed\":")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_multiplier\": 6", "\"xp_multiplier\": 0")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("\"xp_multiplier\": 6", "\"xp_multiplier\": 9000")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[2, 20, 35]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 35, 20]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 20]")));
+            Assert.Throws<InvalidDataException>(() => Progression.FromJson(json.Replace("[1, 20, 35]", "[1, 20, 101]")));
         }
     }
 }

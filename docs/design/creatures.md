@@ -7,6 +7,7 @@
 | `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載待 Q-C12／P2-05（見〈超載〉） |
 | `size_class` | 體型級距 `XS` / `S` / `M` / `L` / `XL`（見〈體型級距〉） |
 | `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
+| `temperament` | 性格，決定野生時的領域距離；逐階固定、不隨機（2026-11-10 定案，D0-E2；種類與距離見 Q-C35、[combat.md#野生領域](combat.md)）。schema 必填 `timid` (0m)／`cautious` (4m)／`normal` (8m)／`territorial` (14m)／`fierce` (20m)／`apex` (28m)；D0 30 物種逐一指定（2026-11-10 使用者採用 `Data/_incoming/q-c35-temperament-terra/proposal.json`：timid 8／cautious 7／normal 4／territorial 8／fierce 2／apex 1；同線不降階，apex 僅火成年霸獅）；新物種批次須逐隻填寫 |
 | `evolves_to` | 下一階段 ID（成年為 null） |
 | `evolution` | 現行契約 `{exp, materials: [{element, tier, qty}]}`；P2-12 待改為等級門檻，成年仍為 null（見〈進化〉） |
 | `resist` | 十屬性抗性：`{metal, wood, water, fire, earth, ice, wind, thunder, light, shadow}` 整數 % |

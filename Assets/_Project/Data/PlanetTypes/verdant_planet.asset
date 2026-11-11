@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: verdant_planet
   m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.PlanetTypeDef
   id: verdant_planet
-  size: 1
   terrainTags:
   - forest
   - river_valley

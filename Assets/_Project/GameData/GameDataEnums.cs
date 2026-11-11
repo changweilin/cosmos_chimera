@@ -67,6 +67,20 @@ namespace Cosmimera.GameData
         KeepDistance = 0, Flank = 1, Charge = 2, Hold = 3,
     }
 
+    /// <summary>
+    /// Species temperament: sets a wild creature's territory radius. REQ: docs/design/combat.md#野生領域 (D0-E2, closed
+    /// enum; kinds provisional, Q-C35).
+    /// </summary>
+    /// <remarks>
+    /// Pre: imported from timid|cautious|normal|territorial|fierce|apex. Post: stable serialized values; Normal is 0 so an asset imported before
+    /// the field existed reads as the middle temperament rather than as one that never fights.
+    /// Side effects: none.
+    /// </remarks>
+    public enum Temperament
+    {
+        Normal = 0, Timid = 1, Fierce = 2, Cautious = 3, Territorial = 4, Apex = 5,
+    }
+
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>
     public enum RelationKind
     {
@@ -88,9 +102,10 @@ namespace Cosmimera.GameData
         RangeModPercent = 5, HealPercentMaxHp = 6,
     }
 
-    /// <summary>Planet size class. Numeric radius belongs to P3 and is not stored here.</summary>
+    /// <summary>Planet size class: asteroid / moon / planet / supergiant = 320 / 640 / 960 / 1280 m. Numeric radius is not stored here.</summary>
+    /// <remarks>REQ: docs/design/planet-world.md#星球尺度 — one size per creature form (juvenile, adolescent, adult, overload).</remarks>
     public enum PlanetSize
     {
-        Small = 0, Medium = 1, Large = 2,
+        Asteroid = 0, Moon = 1, Planet = 2, Supergiant = 3,
     }
 }

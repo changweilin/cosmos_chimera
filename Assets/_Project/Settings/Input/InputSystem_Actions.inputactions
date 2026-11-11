@@ -1032,6 +1032,24 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "CycleTarget",
+                    "type": "Button",
+                    "id": "f78f2c4a-776e-4fa5-9296-1936b5a46677",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Interact",
+                    "type": "Button",
+                    "id": "65813e4e-cb82-49d0-bc34-569ad6ec4203",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Free",
                     "type": "Button",
                     "id": "e87c7ce7-1319-46e2-b924-c02a50a8cf9c",
@@ -1172,6 +1190,50 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Focus",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0cb0f4d5-637b-4f32-b3e3-1c71fbcb0484",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1453af85-8dfc-4e4b-8b5b-d9787f120fcc",
+                    "path": "<Gamepad>/buttonWest",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Interact",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cba039b8-ebd3-49ff-8c57-8bb69effeb4b",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "CycleTarget",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "472cce55-ad6b-4e4c-ac37-d57cf163a1f3",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "CycleTarget",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
