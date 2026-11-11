@@ -62,7 +62,7 @@ P2-01 封閉詞彙：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{per
 ## 進化（Q-C3 定案；新增等級條件見〈等級與成長〉）
 - 幼年 → 少年 → 成年，每段需要：**等級達該物種門檻** ＋ **屬性素材**。
 - 素材由星球掉落，屬性對應星球類型的屬性偏好（見 `planet-world.md`），所以玩家要去不同類型的星球才能讓不同宙獸進化。
-- 掉落規則（Q-C32，方案 B）：只在**擊倒野生**時判定，每個 spawn 一次、角色不疊加——普通 tier1 10%、精英 tier2 60%、BOSS tier3 100%，成功各給 1 個；屬性從該星球類型的 `element_bias` 等機率抽一種。收服、任務、區域拾取不給素材。素材為整份大廳存檔共用的庫存，與經驗、收服一樣在 run 結束（勝、敗、放棄）時帶回；可提早囤積高 tier。數值在 `Data/balance.json#materials`，提案與節奏模型見 `Data/_incoming/p2-05-material-proposal/proposal.md`。
+- 掉落規則（Q-C32，方案 B）：**擊倒野生**時判定，每個 spawn 一次、角色不疊加——普通 tier1 10%、精英 tier2 60%、BOSS tier3 100%，成功各給 1 個；屬性從該星球類型的 `element_bias` 等機率抽一種。另一個來源是**破壞場景物件**：tier1 素材與 tier3 珠寶，屬性依物件的物質（見 [destructibles.md#破壞與掉落](destructibles.md)）；節奏模型需把這個來源算進去重估。收服、任務不給素材。素材為整份大廳存檔共用的庫存，與經驗、收服一樣在 run 結束（勝、敗、放棄）時帶回；可提早囤積高 tier。數值在 `Data/balance.json#materials`，提案與節奏模型見 `Data/_incoming/p2-05-material-proposal/proposal.md`。
 - 庫存上限（Q-C34）：每種素材上限 int.MaxValue。結算時若任一種會超過上限，**整場獎勵（經驗、收服、素材）都不入帳**，不截斷、不丟棄超量；結算頁停留並指出哪種素材已滿，可重試。正常流程不可達。實作：`LobbySave.WouldOverflow`、`Bootstrap/Demo/LobbyTransactions.Settle`。
 - 所需素材屬性＝該宙獸的專精屬性，`tier` 隨階段提高；**只在大廳執行**（Q-C9）。
 - 進化保留等級與經驗，不消耗經驗；素材在成功時才扣除，任一不足時一次列出所有缺少項（等級差額、每種素材的持有/需求），不扣任何東西。高階素材不能代替低階。規則層：`Features/Creatures`（`EvolutionRules`、`MaterialDrops`）。
