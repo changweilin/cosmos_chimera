@@ -9,9 +9,9 @@
 | 超巨星 `supergiant` | 1280 m | 8.0 km | 20.6 km² | ~26.8 分 |
 
 > 表面積隨 R² 成長：超巨星內容量是小行星的 16 倍。內容密度預算以「每 km² 的 POI 數」定義，而非固定總數。
-> 半徑 320／640／960／1280 m 四級（對應宙獸四型態：幼／少／成／超載）於 2026-11-10 由使用者定案（取代同日稍早的 320／640／1280 三級）；小行星以 R=320 實際遊玩；戰鬥射程依地平線收斂（[星球射程上限](derived-stats.md#星球射程上限)，Q-D1 2026-11-11）。
+> 半徑 320／640／960／1280 m 四級（對應宙獸四型態：幼／少／成／超載）；小行星以 R=320 實際遊玩；戰鬥射程依地平線收斂（[星球射程上限](derived-stats.md#星球射程上限)，Q-D1）。
 
-## <a id="boss-尺寸"></a>BOSS 決定星球尺寸（2026-11-10 定案，D0-B2）
+## <a id="boss-尺寸"></a>BOSS 決定星球尺寸（D0-B2）
 | BOSS 型態 | 星球尺寸 |
 |---|---|
 | 一階（幼年 `juvenile`） | 小行星（320 m） |
@@ -20,9 +20,9 @@
 | 四階（超載） | 超巨星（1280 m）— 待 Q-C12 |
 
 - 每顆星球先由 seed 決定 BOSS（物種＋階段），尺寸由上表推導；**星球類型不再決定尺寸**，只決定地貌與屬性偏好。
-- 階段抽選（2026-11-10 使用者定案）：依[玩家等級](level-progression.md#玩家等級)解鎖，已解鎖階段**均等**抽：P&lt;20 只有幼年；P≥20 幼／少各 1/2；P≥35 幼／少／成各 1/3（`balance.json#progression.player.boss_stage_unlock_levels` = `[1, 20, 35]`，沿用進化門檻 H）。抽選用獨立亂數串流 `Pcg32(seed,'B')`（`WorldGen.BossDraw`），選星卡片抽定後帶入 run，不在降落時重抽。
-- 型態封頂（2026-11-10 使用者定案）：該星球所有野生與菁英的型態**不高於 BOSS 階段**（`RunPlanner` v3）。
-- 同 seed 在不同玩家等級可能抽到不同階段；分享 seed 時需一併分享階段（2026-11-10 Q-M1 定案）。
+- 階段抽選：依[玩家等級](level-progression.md#玩家等級)解鎖，已解鎖階段**均等**抽：P&lt;20 只有幼年；P≥20 幼／少各 1/2；P≥35 幼／少／成各 1/3（`balance.json#progression.player.boss_stage_unlock_levels` = `[1, 20, 35]`，沿用進化門檻 H）。抽選用獨立亂數串流 `Pcg32(seed,'B')`（`WorldGen.BossDraw`），選星卡片抽定後帶入 run，不在降落時重抽。
+- 型態封頂：該星球所有野生與菁英的型態**不高於 BOSS 階段**（`RunPlanner` v3）。
+- 同 seed 在不同玩家等級可能抽到不同階段；分享 seed 時需一併分享階段（Q-M1）。
 - 星海選星時，星球卡片顯示 BOSS 階段與星球尺寸，讓玩家依難度選星（P4-02）。
 - 超載 BOSS 待 Q-C12 定案後才加入抽選；在此之前超巨星尺寸已定義（`PlanetSize.Supergiant`、R=1280）但抽不到，行星（成年）為最大。
 - 地貌印章數（`TemplatePlanner.CountFor`）：小行星／衛星 4、行星／超巨星 6（面積密度待 P3 調整）。
@@ -41,7 +41,7 @@ PlanetSeed + PlanetType + GeneratorVersion
   └─ 7. 散佈 Scatter       植被、岩石、可互動物件（依 biome 表）
 ```
 
-## <a id="1-骨架層程序化地貌"></a>1. 骨架層：程序化地貌（2026-11-11 定案，ADR-0008）
+## <a id="1-骨架層程序化地貌"></a>1. 骨架層：程序化地貌（ADR-0008）
 - **植被、地貌、道路、建築全部由遊戲隨機生成**；不使用任何真實地圖資料（原 P3-01／P3-02 真實 DEM 模板已退役、資料與工具已刪除）。
 - 地貌印章：`WorldGen.LandformSynth` 依地貌標籤合成 256×256 高程＋水系（海／河）格網，一顆星球 4／6 塊，以 gnomonic 投影貼到球面（`PlanetTemplates`），外緣 35 % 混入全球噪聲，所以沒有接縫斷崖。
 - 選種：與星球類型地貌偏好相符的種類優先（`TemplatePlanner`，`Pcg32(seed,'T')`）；每塊印章各自以 seed＋序號生成，同星球兩塊同類地貌也不相同。
@@ -63,7 +63,7 @@ PlanetSeed + PlanetType + GeneratorVersion
 
 （形狀參數在 `LandformSynth`；調整時升 `LandformSynth.GeneratorVersion`。）
 
-## <a id="道路與建築"></a>道路與建築（2026-11-11 定案，規則層；數值暫定）
+## <a id="道路與建築"></a>道路與建築（規則層；數值暫定）
 - 規則層 `WorldGen.SettlementPlanner` → `RunLayout`，`Pcg32(seed,'S')`；只讀區域圖與陸地判定，不讀地形高度（ADR-0007）。表現層（路面網格、建築模型）尚未實作。
 - **道路**＝區域圖的生成樹：主路線相鄰區域之間是主路（寬 4 m）；其餘每個區域以小徑（寬 2.5 m）接到較靠近降落點的鄰區。路線為大圓＋兩個低頻擺動，每 ≤ 8 m 一個頂點；經過海面的頂點標為橋。
 - **聚落**：
@@ -92,5 +92,5 @@ PlanetSeed + PlanetType + GeneratorVersion
 （暫定，數值與清單以 `Data/planet-types/` 為準。尺寸改由 BOSS 決定，見〈BOSS 決定星球尺寸〉；`planet-types` 的 `size` 欄已於 D0-B2 退役。）
 
 ## 目標與結束條件
-- BOSS 戰數值（2026-11-10 定案，D0-R2）：BOSS 的 HP 上限 ×2；模型與 STR 判定體同乘 1.5（較易被命中、近戰觸及也更遠）。等級見 [level-progression.md#獎勵量](level-progression.md)（D0-X3）。
+- BOSS 戰數值（D0-R2）：BOSS 的 HP 上限 ×2；模型與 STR 判定體同乘 1.5（較易被命中、近戰觸及也更遠）。等級見 [level-progression.md#獎勵量](level-progression.md)（D0-X3）。
 - 每顆星球：主任務鏈 + 1 個星球 BOSS（+ 隨機菁英）。完成任務或擊敗 BOSS → 收服機會或取得蛋（見 `lobby-meta.md`）。

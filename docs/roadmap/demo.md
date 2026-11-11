@@ -1,9 +1,9 @@
 # D0 初始 Demo（優先於各 phase 出口條件）
 
 **出口條件**：地球大廳選御三家 → 星海選一顆星球（seed）→ 降落在程序化地貌印章 + 噪聲細節的 cube-sphere → 依區域圖探索、遇野生宙獸戰鬥（2 隻在場、輪替、施招、HUD）→ 擊倒後可投擲道具收服 → 完成主線任務鏈 → 擊敗星球 BOSS（野外巢穴）→ 結算返回大廳，收服的宙獸存入大廳存檔。
-定案日：2026-11-08（使用者）。各項仍以原 phase 項目 ID 追蹤狀態與交接；本檔只定義 demo 子集與簡化。
+各項以原 phase 項目 ID 追蹤狀態；本檔只定義 demo 子集與簡化。
 
-2026-11-09 使用者優先順序：可 demo 的工作 → 遊戲系統完整性 → 宙獸／角色文案、畫面及 3D 建模。操作提示與任務引導屬 demo 必需 UI；內容擴量與美術製作後置。
+優先順序：可 demo 的工作 → 遊戲系統完整性 → 宙獸／角色文案、畫面及 3D 建模。操作提示與任務引導屬 demo 必需 UI；內容擴量與美術製作後置。
 
 ## 範圍決定
 | 決定 | 內容 | 寫入 |
@@ -27,14 +27,14 @@
 | 文案 | 區域主題/詞綴/任務/BOSS/UI 字串 zh-TW + en | TERRA（Codex） | `Data/_incoming/d0-copy-terra/` |
 | 文案 | 上項 ja 翻譯初稿 | FLASH（agy） | `Data/_incoming/d0-copy-flash-ja/` |
 
-### 2026-11-10 使用者新增需求
+### 追加項目
 | ID | 項目 | 主責 | 規格 | 狀態 |
 |---|---|---|---|---|
-| D0-B2 | BOSS 階段決定星球尺寸（幼→小行星 320、少→衛星 640、成→行星 960、超載→超巨星 1280，超載待 Q-C12）；選星卡片顯示 BOSS 階段與尺寸；`planet-types.size` 退役；玩家等級解鎖 BOSS 階段 | OPUS（實作）＋FLASH（ja） | `planet-world.md#boss-尺寸`、`level-progression.md#玩家等級`；R=320 依 Q-D1 定案（2026-11-11） | 🟨 |
-| D0-W1 | 野生在生成點附近依性格遊蕩 | OPUS | `combat.md#遊蕩`；數值 Q-D2 已定案 | 🟨 |
-| D0-W2 | 角色／宙獸實體碰撞 | OPUS | `combat.md#實體碰撞` | 🟨 |
-| D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋FLASH（ja） | `combat.md#近身互動` | 🟨 |
-| D0-W4 | 指定攻擊目標：目標切換＋鎖定標記 | OPUS | `combat.md#指定目標` | 🟨 |
+| D0-B2 | BOSS 階段決定星球尺寸（幼→小行星 320、少→衛星 640、成→行星 960、超載→超巨星 1280，超載待 Q-C12）；選星卡片顯示 BOSS 階段與尺寸；`planet-types.size` 退役；玩家等級解鎖 BOSS 階段 | OPUS（實作）＋FLASH（ja） | `planet-world.md#boss-尺寸`、`level-progression.md#玩家等級`；R=320 依 Q-D1 定案（2026-11-11） | ✅ |
+| D0-W1 | 野生在生成點附近依性格遊蕩 | OPUS | `combat.md#遊蕩`；數值 Q-D2 已定案 | ✅ |
+| D0-W2 | 角色／宙獸實體碰撞 | OPUS | `combat.md#實體碰撞` | ✅ |
+| D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋FLASH（ja） | `combat.md#近身互動` | ✅ |
+| D0-W4 | 指定攻擊目標：目標切換＋鎖定標記 | OPUS | `combat.md#指定目標` | ✅ |
 
-## 交接紀錄
-見 [log/demo.md](log/demo.md)（只追加）。
+## 未收尾紀錄
+[log/demo.md](log/demo.md)（partial／blocked 才寫；舊紀錄為封存）。

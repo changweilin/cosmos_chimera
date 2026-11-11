@@ -24,5 +24,6 @@ paths:
 - `log/` 既有內容為封存，不改寫、不必讀。
 
 ## 決策
+- `docs/design/` 只寫現行規格（不寫誰在何時決定）；其內容皆已定案，要改先問使用者。
 - 設計決定一旦定案：從 `docs/open-questions.md` 移除，寫進對應設計文件，必要時新增 ADR。
 - ADR 格式：`docs/decisions/ADR-XXXX-<slug>.md`，章節：狀態 / 背景 / 決定 / 後果 / 替代方案。

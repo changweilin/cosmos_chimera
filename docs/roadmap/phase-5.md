@@ -11,10 +11,10 @@
 | P5-03 | 宙獸批次初稿（每批 20–50） | FLASH / TERRA | SONNET | 每批通過驗證工具 | 🟦 |
 | P5-04 | 概念圖 prompt 與美術生產（依 Q-T3），經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
 | P5-05 | 招式/特性批次 | FLASH | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
-| P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | 🟨 |
+| P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | ✅ |
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | 🟦 |
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | 🟨 |
-| P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | 🟨 |
+| P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | ✅ |
 
-## 交接紀錄
-見 [log/phase-5.md](log/phase-5.md)（只追加）。
+## 未收尾紀錄
+[log/phase-5.md](log/phase-5.md)（partial／blocked 才寫；舊紀錄為封存）。

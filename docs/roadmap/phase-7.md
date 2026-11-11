@@ -12,5 +12,5 @@
 | P7-05 | 發行建置管線與版本號 | SONNET | OPUS | CI 產出可安裝建置 | 🟦 |
 | P7-06 | 全域程式碼審查：契約、FENCE 標記、測試覆蓋 | OPUS | SOL | 無未標記 workaround；public API 契約 100% | ⬜ |
 
-## 交接紀錄
-見 [log/phase-7.md](log/phase-7.md)（只追加）。
+## 未收尾紀錄
+[log/phase-7.md](log/phase-7.md)（partial／blocked 才寫；舊紀錄為封存）。

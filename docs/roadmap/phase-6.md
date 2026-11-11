@@ -13,5 +13,5 @@
 | P6-05 | 對抗模式（Q-N2） | SONNET | OPUS + SOL（平衡） | 4 人對戰完整一局 | ⬜ |
 | P6-06 | 房間 UI 與大廳整合 | SONNET | 人工 | 從大廳建立/加入房間 | ⬜ |
 
-## 交接紀錄
-見 [log/phase-6.md](log/phase-6.md)（只追加）。
+## 未收尾紀錄
+[log/phase-6.md](log/phase-6.md)（partial／blocked 才寫；舊紀錄為封存）。
