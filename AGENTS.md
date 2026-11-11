@@ -13,7 +13,7 @@
 ## 2. 工作邊界
 - 只改項目範圍內的檔案；diff 越小越好，不順手重構。
 - 同一 feature 同時只有一個寫入者；不動標記 `🔒 <agent>` 的項目。
-- 需求不明：查 `docs/open-questions.md`。有「暫定」且只影響 `Data/` 數值 → 照暫定做並在 commit 註明；否則新增問題、**只停該項目**，改做下一個不受影響的項目。
+- 需求不明：查 `docs/open-questions.html`。有「暫定」且只影響 `Data/` 數值 → 照暫定做並在 commit 註明；否則新增問題、**只停該項目**，改做下一個不受影響的項目。
 
 ## 3. 完成定義與交接
 完成 = 相關測試全綠（EditMode；動到場景／物理加 PlayMode；動到 `Data/` 加 `tools/validate-data`）。然後：
