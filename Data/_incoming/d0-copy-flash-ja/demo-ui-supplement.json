@@ -232,5 +232,17 @@
   },
   "ui.star_select.boss_unlock_hint": {
     "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが出現可能"
+  },
+  "ui.object.tree": {
+    "ja": "木"
+  },
+  "ui.object.rock": {
+    "ja": "岩"
+  },
+  "ui.object.crystal": {
+    "ja": "結晶柱"
+  },
+  "ui.object.building": {
+    "ja": "建物"
   }
 }

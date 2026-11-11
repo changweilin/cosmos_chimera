@@ -140,6 +140,38 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
+        /// <summary>UI copy key naming what <paramref name="candidate"/> is (target HUD line).</summary>
+        /// <remarks>
+        /// Pre: candidate came from this instance's Query. Post: one of ui.object.building / tree / rock / crystal.
+        /// Side effects: caches scatter cells; allocates nothing beyond Query's own caching.
+        /// </remarks>
+        public string NameKey(in DestructibleCandidate candidate)
+        {
+            if (IsBuilding(candidate.Id))
+            {
+                return "ui.object.building";
+            }
+
+            _items.Clear();
+            _scatter.Query(_planet.ToDirection(candidate.Center), 1f, _items);
+            foreach (ScatterItem it in _items)
+            {
+                if (it.CellKey == candidate.Id)
+                {
+                    return it.Shape switch
+                    {
+                        ScatterShape.Rock => "ui.object.rock",
+                        ScatterShape.Crystal => "ui.object.crystal",
+                        ScatterShape.Tree => "ui.object.tree",
+                        _ => throw new ArgumentOutOfRangeException(nameof(candidate), it.Shape, "unnamed scatter shape"),
+                    };
+                }
+            }
+
+            Contract.Requires(false, "candidate " + candidate.Id + " is not a scatter item of this run");
+            return "ui.object.tree";
+        }
+
         /// <summary>Applies a destruction to generation-side state: a destroyed building stops blocking.</summary>
         /// <remarks>
         /// Pre: id was reported destroyed by the encounter. Post: IsBlocked ignores it (scatter reads the table directly).

@@ -108,6 +108,22 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: Configure ran. Post: a wild unit id, or -1 when nothing is locked. Side effects: none.</remarks>
         internal int LockedTargetForTests => _lockedTarget;
 
+        /// <summary>Observes the locked scene object id (destructibles.md#誰能打).</summary>
+        /// <remarks>Pre: Configure ran. Post: an object id, or -1; never >= 0 together with LockedTargetForTests. Side effects: none.</remarks>
+        internal long LockedObjectForTests => _lockedObjectId;
+
+        /// <summary>Observes the object the encounter's object focus points at.</summary>
+        /// <remarks>Pre: Configure ran. Post: Encounter.FocusedObjectId. Side effects: none.</remarks>
+        internal long FocusedObjectForTests => _encounter.FocusedObjectId;
+
+        /// <summary>Observes the main creature's current AI target.</summary>
+        /// <remarks>Pre: Configure ran. Post: a unit id, PlayerCharacterId, ObjectTargetId or NoTarget. Side effects: none.</remarks>
+        internal int MainTargetForTests => _mainId >= 0 ? _encounter.Units[_mainId].TargetId : CombatAi.NoTarget;
+
+        /// <summary>Whether a move has touched (or destroyed) object <paramref name="id"/>.</summary>
+        /// <remarks>Pre: destructibles attached (RunSetup.EnvMaterials set). Post: true once registered or destroyed. Side effects: none.</remarks>
+        internal bool ObjectTouchedForTests(long id) => _objectTable.IndexOf(id) >= 0 || _objectTable.IsDestroyed(id);
+
         /// <summary>Observes the current command's target.</summary>
         /// <remarks>Pre: Configure ran. Post: >= 0 iff CommandForTests == Focus. Side effects: none.</remarks>
         internal int CommandTargetForTests => _command.TargetId;

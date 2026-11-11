@@ -310,5 +310,21 @@
   "ui.star_select.boss_unlock_hint": {
     "zh-TW": "玩家 LV{adolescent} 可抽到少年 BOSS，LV{adult} 可抽到成年 BOSS",
     "en": "Adolescent bosses can appear at player LV{adolescent}; Adult bosses at LV{adult}"
+  },
+  "ui.object.tree": {
+    "zh-TW": "樹",
+    "en": "Tree"
+  },
+  "ui.object.rock": {
+    "zh-TW": "岩石",
+    "en": "Rock"
+  },
+  "ui.object.crystal": {
+    "zh-TW": "晶柱",
+    "en": "Crystal"
+  },
+  "ui.object.building": {
+    "zh-TW": "建築",
+    "en": "Building"
   }
 }

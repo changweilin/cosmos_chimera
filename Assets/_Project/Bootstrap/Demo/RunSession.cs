@@ -186,6 +186,7 @@ namespace Cosmimera.Bootstrap.Demo
         private QuestTracker _quest;
         private Encounter _encounter;
         private WorldObjects _worldObjects;
+        private DestructibleTable _objectTable;
         private SettlementView _settlementView;
         private ScatterField _scatterField;
         private PlayerVitals _vitals;
@@ -221,6 +222,11 @@ namespace Cosmimera.Bootstrap.Demo
         private int _mainId = CombatAi.NoTarget;
         // Wild unit chosen with CycleTarget (combat.md#指定目標, D0-W4); -1 when nothing is locked.
         private int _lockedTarget = -1;
+        // Scene object chosen with CycleTarget (destructibles.md#誰能打); -1 when none. Never set together with
+        // _lockedTarget. Objects do not move, so the candidate captured at lock time stays valid until destroyed.
+        private long _lockedObjectId = -1;
+        private DestructibleCandidate _lockedObject;
+        private string _lockedObjectNameKey;
         // Close interaction (combat.md#近身互動, D0-W3): the idle wild offered by the HUD prompt, and the one whose menu is
         // open (-1 = none). While the menu is open the character stands still and only the menu reads input.
         private int _interactable = -1;
@@ -238,7 +244,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Observe = 0, Provoke = 1, Pet = 2, Close = 3,
         }
-        private readonly List<int> _targetBuffer = new List<int>(16);
+        private readonly List<LockOption> _lockOptions = new List<LockOption>(32);
+        private readonly List<DestructibleCandidate> _objectCandidates = new List<DestructibleCandidate>(32);
         private AiCommand _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
         private VesselKind _vessel = VesselKind.TalismanCard;
         private int _region = -1;
@@ -413,6 +420,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (setup.EnvMaterials != null)
             {
                 objects = new DestructibleTable(setup.EnvMaterials);
+                _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
                     setup.EnvMaterials, objects);
                 surface.Objects = _worldObjects;
@@ -921,6 +929,7 @@ namespace Cosmimera.Bootstrap.Demo
                     CloseInteract();
                     _encounter.Provoke(id);
                     _lockedTarget = id;
+                    _lockedObjectId = -1;
                     return;
                 case InteractChoice.Pet:
                     // Q-D2 (decided 2026-11-10): petting has no rule effect.
@@ -1210,10 +1219,17 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         // REQ: combat.md#指定目標 (D0-W4) — Focus attacks the locked target when there is one, else the nearest candidate
-        // (which then becomes the lock).
+        // (which then becomes the lock). The nearest fallback stays wild-only: destructibles.md#誰能打 lets the player
+        // pick an object, never the AI.
         private void FocusNearest()
         {
             float3 player = PlayerPosition();
+            if (_lockedObjectId >= 0 && IsObjectCandidate(_lockedObject, player))
+            {
+                FocusOnObject();
+                return;
+            }
+
             int target = IsFocusCandidate(_lockedTarget, player) ? _lockedTarget : NearestFocusTarget(player);
             if (target < 0)
             {
@@ -1221,6 +1237,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _lockedTarget = target;
+            _lockedObjectId = -1;
             FocusOn(target);
         }
 
@@ -1232,58 +1249,144 @@ namespace Cosmimera.Bootstrap.Demo
                 _encounter.Provoke(target);
             }
 
+            _encounter.ClearObjectFocus();
             _command = new AiCommand(AiCommandKind.Focus, target);
         }
 
-        // Locks the next candidate by (distance, id) after the current lock, wrapping. While the main is already under a
-        // Focus command the new lock is attacked at once, so cycling mid-fight retargets without a second key press;
-        // otherwise it only marks the target and nothing is provoked.
+        // REQ: destructibles.md#誰能打 — hitting an object provokes nobody.
+        private void FocusOnObject()
+        {
+            _encounter.FocusObject(_lockedObject);
+            _command = new AiCommand(AiCommandKind.Focus, Encounter.ObjectTargetId);
+        }
+
+        // A CycleTarget candidate: a wild unit (Unit >= 0) or _objectCandidates[ObjectIndex].
+        private readonly struct LockOption
+        {
+            internal LockOption(int unit, int objectIndex, float distance, long id)
+            {
+                Unit = unit;
+                ObjectIndex = objectIndex;
+                Distance = distance;
+                Id = id;
+            }
+
+            internal readonly int Unit;
+            internal readonly int ObjectIndex;
+            internal readonly float Distance;
+            internal readonly long Id;
+
+            // (distance, wild before object, id): unit and object ids come from different spaces, so the kind breaks
+            // ties before the id does.
+            internal bool Before(in LockOption other)
+            {
+                if (Distance != other.Distance)
+                {
+                    return Distance < other.Distance;
+                }
+
+                bool wild = Unit >= 0;
+                bool otherWild = other.Unit >= 0;
+                return wild != otherWild ? wild : Id < other.Id;
+            }
+        }
+
+        // Locks the next candidate by (distance, id) after the current lock, wrapping. Candidates are focusable wilds and
+        // intact scene objects whose surface lies within ProvokeRadiusM (destructibles.md#誰能打); objects count from
+        // their hit-sphere surface so a large building next to the player is not out of reach by its centre. While the
+        // main is already under a Focus command the new lock is attacked at once, so cycling mid-fight retargets without
+        // a second key press; otherwise it only marks the target and nothing is provoked.
         private void CycleTarget()
         {
             float3 player = PlayerPosition();
-            _targetBuffer.Clear();
+            _lockOptions.Clear();
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 if (IsFocusCandidate(kv.Key, player))
                 {
-                    _targetBuffer.Add(kv.Key);
+                    _lockOptions.Add(new LockOption(kv.Key, -1,
+                        math.distance(_encounter.Units[kv.Key].Position, player), kv.Key));
                 }
             }
 
-            if (_targetBuffer.Count == 0)
+            _objectCandidates.Clear();
+            if (_worldObjects != null)
+            {
+                _worldObjects.Query(player, Encounter.ProvokeRadiusM + _worldObjects.MaxHitRadiusM, _objectCandidates);
+                for (int i = 0; i < _objectCandidates.Count; i++)
+                {
+                    DestructibleCandidate c = _objectCandidates[i];
+                    if (IsObjectCandidate(c, player))
+                    {
+                        _lockOptions.Add(new LockOption(-1, i, ObjectDistance(c, player), c.Id));
+                    }
+                }
+            }
+
+            if (_lockOptions.Count == 0)
             {
                 _lockedTarget = -1;
+                _lockedObjectId = -1;
                 return;
             }
 
-            // Insertion sort: a handful of candidates, and no allocation (List.Sort with a lambda would allocate).
-            for (int i = 1; i < _targetBuffer.Count; i++)
+            // Insertion sort: a few dozen candidates at most, and no allocation (List.Sort with a lambda would allocate).
+            for (int i = 1; i < _lockOptions.Count; i++)
             {
-                int id = _targetBuffer[i];
-                float d = math.distance(_encounter.Units[id].Position, player);
+                LockOption o = _lockOptions[i];
                 int j = i - 1;
-                while (j >= 0 && Before(id, d, _targetBuffer[j], player))
+                while (j >= 0 && o.Before(_lockOptions[j]))
                 {
-                    _targetBuffer[j + 1] = _targetBuffer[j];
+                    _lockOptions[j + 1] = _lockOptions[j];
                     j--;
                 }
 
-                _targetBuffer[j + 1] = id;
+                _lockOptions[j + 1] = o;
             }
 
-            int at = _targetBuffer.IndexOf(_lockedTarget);
-            _lockedTarget = _targetBuffer[(at + 1) % _targetBuffer.Count];
+            int at = -1;
+            for (int i = 0; i < _lockOptions.Count; i++)
+            {
+                LockOption o = _lockOptions[i];
+                if (o.Unit >= 0 ? o.Unit == _lockedTarget : o.Id == _lockedObjectId)
+                {
+                    at = i;
+                    break;
+                }
+            }
+
+            LockOption next = _lockOptions[(at + 1) % _lockOptions.Count];
+            if (next.Unit >= 0)
+            {
+                _lockedTarget = next.Unit;
+                _lockedObjectId = -1;
+            }
+            else
+            {
+                _lockedTarget = -1;
+                _lockedObject = _objectCandidates[next.ObjectIndex];
+                _lockedObjectId = _lockedObject.Id;
+                _lockedObjectNameKey = _worldObjects.NameKey(_lockedObject);
+            }
+
             if (_command.Kind == AiCommandKind.Focus)
             {
-                FocusOn(_lockedTarget);
+                if (_lockedTarget >= 0)
+                {
+                    FocusOn(_lockedTarget);
+                }
+                else
+                {
+                    FocusOnObject();
+                }
             }
         }
 
-        private bool Before(int id, float distance, int other, float3 player)
-        {
-            float od = math.distance(_encounter.Units[other].Position, player);
-            return distance < od || (distance == od && id < other);
-        }
+        private static float ObjectDistance(in DestructibleCandidate c, float3 player) =>
+            math.max(0f, math.distance(c.Center, player) - c.HitRadiusM);
+
+        private bool IsObjectCandidate(in DestructibleCandidate c, float3 player) =>
+            !_objectTable.IsDestroyed(c.Id) && ObjectDistance(c, player) <= Encounter.ProvokeRadiusM;
 
         // Active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
         private bool IsFocusCandidate(int id, float3 player)
@@ -1297,13 +1400,20 @@ namespace Cosmimera.Bootstrap.Demo
             return u.IsActive && (u.Engaged || math.distance(u.Position, player) <= Encounter.ProvokeRadiusM);
         }
 
-        // A lock that stops being a candidate (knocked out, captured, or out of reach) is dropped, so the marker never
-        // points at something Focus would refuse.
+        // A lock that stops being a candidate (knocked out, captured, destroyed, or out of reach) is dropped, so the
+        // marker never points at something Focus would refuse. An object has no fight to keep the main on it once the
+        // player walks off, so its Focus ends with the lock (a wild's Focus outlives the lock while the wild is engaged).
         private void ValidateLock(float3 player)
         {
             if (_lockedTarget >= 0 && !IsFocusCandidate(_lockedTarget, player))
             {
                 _lockedTarget = -1;
+            }
+
+            if (_lockedObjectId >= 0 && !IsObjectCandidate(_lockedObject, player))
+            {
+                _lockedObjectId = -1;
+                _encounter.ClearObjectFocus();
             }
         }
 
@@ -1530,13 +1640,23 @@ namespace Cosmimera.Bootstrap.Demo
         // and name sit, so the lock is visible before the fight starts.
         private void DrawLockMarker()
         {
-            if (_lockedTarget < 0 || !_views[_lockedTarget].Root.gameObject.activeSelf)
+            Vector3 head;
+            if (_lockedObjectId >= 0)
+            {
+                // Over the top of the hit sphere: the drawn object roughly fills it.
+                head = (Vector3)_lockedObject.Center +
+                    (Vector3)_rig.Config.ToDirection(_lockedObject.Center) * (_lockedObject.HitRadiusM + 0.3f);
+            }
+            else if (_lockedTarget >= 0 && _views[_lockedTarget].Root.gameObject.activeSelf)
+            {
+                EncounterUnit u = _encounter.Units[_lockedTarget];
+                head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
+            }
+            else
             {
                 return;
             }
 
-            EncounterUnit u = _encounter.Units[_lockedTarget];
-            Vector3 head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
             Vector3 sp = _rig.Camera.WorldToScreenPoint(head);
             if (sp.z <= 0f)
             {
@@ -1551,6 +1671,11 @@ namespace Cosmimera.Bootstrap.Demo
             };
             GUI.Label(new Rect(sp.x - 20, Screen.height - sp.y - 58, 40, 32), "▼", _markerStyle);
         }
+
+        private string LockedTargetName() =>
+            _lockedObjectId >= 0 ? _copy.Ui(_lockedObjectNameKey)
+            : _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id)
+            : _copy.Ui("ui.hud.target_none");
 
         private void DrawInteraction()
         {
@@ -1794,7 +1919,7 @@ namespace Cosmimera.Bootstrap.Demo
                 $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
                 $"{commands}（{cmd}）\n" +
                 _copy.Ui("ui.hud.target_cycle").Replace("{key}", BindingLabel(_cycleTargetAction))
-                    .Replace("{target}", _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id) : _copy.Ui("ui.hud.target_none")) + "\n" +
+                    .Replace("{target}", LockedTargetName()) + "\n" +
                 $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });

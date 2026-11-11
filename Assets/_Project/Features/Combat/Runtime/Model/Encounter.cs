@@ -237,6 +237,13 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: constant; above every unit id, so distance ties prefer creatures. Side effects: none.</remarks>
         public const int PlayerCharacterId = int.MaxValue;
 
+        /// <summary>Target id the main creature carries while it attacks the focused object (<see cref="FocusObject"/>); never a Units index.</summary>
+        /// <remarks>
+        /// REQ: destructibles.md#誰能打. Pre: none. Post: constant, distinct from PlayerCharacterId and every unit id.
+        /// Side effects: none. A Focus command with this target attacks the focused object.
+        /// </remarks>
+        public const int ObjectTargetId = int.MaxValue - 1;
+
         /// <summary>Hit-test sphere radius (m) of the player character: ~0.35 × 1.8 m, the BodyRadiusFor convention.</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
         public const float PlayerBodyRadiusM = 0.6f;
@@ -277,6 +284,10 @@ namespace Cosmimera.Combat
         private readonly List<ObjectEvent> _objectEvents = new List<ObjectEvent>(16);
         private readonly List<DestructibleCandidate> _candidateBuffer = new List<DestructibleCandidate>(32);
         private readonly List<int> _burntBuffer = new List<int>(8);
+        private bool _hasObjectFocus;
+        private DestructibleCandidate _objectFocus;
+        // Edge point of the focused object's hit sphere nearest the main creature, refreshed each time it decides.
+        private float3 _objectAim;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -350,6 +361,31 @@ namespace Cosmimera.Combat
             _objectIndex = index;
             _isNight = isNight;
         }
+
+        /// <summary>Sets the object a <c>Focus(ObjectTargetId)</c> command attacks. REQ: destructibles.md#誰能打.</summary>
+        /// <remarks>
+        /// Pre: destructibles attached; target from the attached index (objects never move, so its centre stays valid).
+        /// Post: FocusedObjectId == target.Id. While the command is Focus(ObjectTargetId) and the object is not
+        ///       destroyed, the main creature decides by CombatAi against the object alone, as an immobile enemy at the
+        ///       edge of its hit sphere nearest the creature (so reach and stand-off count from the object's surface);
+        ///       its TargetId is ObjectTargetId and it aims there. Once destroyed, the command acts as Free. The support
+        ///       never takes the object (it is absent from its enemy list), and nothing is provoked.
+        /// Side effects: replaces any previous object focus.
+        /// </remarks>
+        public void FocusObject(in DestructibleCandidate target)
+        {
+            Contract.Requires(_objects != null, "attach destructibles before focusing an object");
+            _objectFocus = target;
+            _hasObjectFocus = true;
+        }
+
+        /// <summary>Forgets the focused object.</summary>
+        /// <remarks>Pre: none. Post: FocusedObjectId == -1; Focus(ObjectTargetId) acts as Free. Side effects: none beyond that.</remarks>
+        public void ClearObjectFocus() => _hasObjectFocus = false;
+
+        /// <summary>Id of the object <see cref="FocusObject"/> set, or -1.</summary>
+        /// <remarks>Pre: none. Post: -1 when none is set (a destroyed object stays set until cleared). Side effects: none.</remarks>
+        public long FocusedObjectId => _hasObjectFocus ? _objectFocus.Id : -1;
 
         /// <summary>Object events of the last tick, in resolution order.</summary>
         /// <remarks>Pre: none. Post: cleared at the start of each Tick; empty when nothing is attached. Side effects: none.</remarks>
@@ -688,14 +724,23 @@ namespace Cosmimera.Combat
                 EncounterUnit partner = PartnerOf(u);
                 AiRole role = !player || u.Id == mainId || mainId == CombatAi.NoTarget ? AiRole.Main : AiRole.Support;
                 AiCommand cmd = player && role == AiRole.Main ? command : new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
-                if (cmd.Kind == AiCommandKind.Focus && !IsValidEnemy(u, cmd.TargetId))
+                bool onObject = cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
+                if (cmd.Kind == AiCommandKind.Focus && !onObject && !IsValidEnemy(u, cmd.TargetId))
                 {
                     cmd = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
                 }
 
                 int mainTarget = role == AiRole.Support && mainId >= 0 ? _units[mainId].TargetId : CombatAi.NoTarget;
                 float3 leashAnchor = player ? playerPosition : u.Home;
-                FillEnemies(u);
+                if (onObject)
+                {
+                    FillObjectEnemy(u);
+                }
+                else
+                {
+                    FillEnemies(u);
+                }
+
                 FillOptions(u, nowMs);
                 var input = new AiInput(u.Position, u.Def.AiStyle, role, cmd, mainTarget, leashAnchor,
                     partner != null, partner != null ? partner.Position : float3.zero);
@@ -1097,7 +1142,29 @@ namespace Cosmimera.Combat
 
         private bool PlayerTargetable() => _player != null && !_player.IsDowned;
 
-        private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter : _units[id].Position;
+        private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter
+            : id == ObjectTargetId ? _objectAim : _units[id].Position;
+
+        private bool ObjectFocusIntact() => _hasObjectFocus && !_objects.IsDestroyed(_objectFocus.Id);
+
+        // CombatAi measures reach to a zero-radius centre; a building's hit sphere can be wider than every move's reach,
+        // so the creature would stand at the wall forever without casting. Presenting the nearest surface point instead
+        // makes reach, stand-off and aim count from the object's edge. Facing points into the object, so a flank-style
+        // creature circles to the side it is already on rather than into the object.
+        private void FillObjectEnemy(EncounterUnit self)
+        {
+            float3 c = _objectFocus.Center;
+            float3 upC = Up(c);
+            float3 rel = self.Position - c;
+            float3 tangent = rel - math.dot(rel, upC) * upC;
+            float h = math.length(tangent);
+            _objectAim = h > 1e-4f ? c + tangent * (math.min(_objectFocus.HitRadiusM, h) / h) : c;
+            float3 upA = Up(_objectAim);
+            float3 inward = -tangent - math.dot(-tangent, upA) * upA;
+            float3 forward = math.lengthsq(inward) > 1e-12f ? math.normalize(inward) : PlanetFrame.FromUp(upA).North;
+            _enemyBuffer.Clear();
+            _enemyBuffer.Add(new AiEnemy(ObjectTargetId, _objectAim, forward, true));
+        }
 
         private void ResolveFields(long previousMs, long nowMs)
         {

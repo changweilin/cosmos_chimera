@@ -21,11 +21,26 @@ namespace Cosmimera.Combat.Tests
             public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
+        // A building footprint: blocks bodies within FootprintM of its ground point, like LayoutClearance.
+        private sealed class WallSurface : IEncounterSurface
+        {
+            public float3 Center;
+            public float FootprintM;
+            public float Radius;
+
+            public float GroundAltitude(float3 direction) => 0f;
+
+            public bool IsSea(float3 direction) => false;
+
+            public bool IsBlocked(float3 direction, float clearanceM) =>
+                math.distance(direction, Center) * Radius < FootprintM + clearanceM;
+        }
+
         private sealed class ListIndex : IDestructibleIndex
         {
             public readonly List<DestructibleCandidate> Items = new List<DestructibleCandidate>();
 
-            public float MaxHitRadiusM => 1f;
+            public float MaxHitRadiusM { get; set; } = 1f;
 
             public void Query(float3 worldPoint, float radiusM, List<DestructibleCandidate> into)
             {
@@ -212,6 +227,103 @@ namespace Cosmimera.Combat.Tests
             started.Tick(Dt, Dt, player, Free, CombatAi.NoTarget);
             Assert.Throws<ContractException>(() => started.AttachDestructibles(table, index, _ => false));
             Assert.That(started.ObjectEvents.Count, Is.EqualTo(0));
+        }
+
+        private static readonly AiCommand OnObject = new AiCommand(AiCommandKind.Focus, Encounter.ObjectTargetId);
+
+        // Main at 0 m, support at -2 m, character at -3 m; nothing wild, so only the focused object can be fought.
+        private Encounter Team(IEncounterSurface surface, out float3 player, out int main, out int support)
+        {
+            var e = new Encounter(_planet, _balance, surface, 7);
+            main = e.AddCreature(EncounterSide.Player, FireBrawler(), null, At(0f), 10).Id;
+            e.Field(main, At(0f), false, 0);
+            support = e.AddCreature(EncounterSide.Player, FireBrawler(), null, At(-2f), 10).Id;
+            e.Field(support, At(-2f), false, 0);
+            player = _planet.ToWorld(At(-3f), 0f);
+            return e;
+        }
+
+        private static List<ObjectEvent> RunFocus(Encounter e, float3 player, int main, long fromMs, long untilMs)
+        {
+            var all = new List<ObjectEvent>();
+            for (long now = fromMs; now <= untilMs; now += Dt)
+            {
+                e.Tick(now, Dt, player, OnObject, main);
+                all.AddRange(e.ObjectEvents);
+            }
+
+            return all;
+        }
+
+        [Test]
+        public void Focus_on_an_object_sends_the_main_to_hit_it_and_the_support_never_does()
+        {
+            Encounter e = Team(new FlatSurface(), out float3 player, out int main, out int support);
+            var index = new ListIndex();
+            index.Items.Add(new DestructibleCandidate(42, Ground(10f), 0.5f, Composition.Of(Wood()), 100_000));
+            e.AttachDestructibles(new DestructibleTable(Env()), index, _ => false);
+            e.FocusObject(index.Items[0]);
+            Assert.That(e.FocusedObjectId, Is.EqualTo(42));
+
+            List<ObjectEvent> events = RunFocus(e, player, main, Dt, 8000);
+            Assert.That(events.Exists(ev => ev.Kind == ObjectEventKind.Hit && ev.ObjectId == 42 && ev.SourceId == main),
+                Is.True, "the main walks 10 m and swings at the tree");
+            Assert.That(events.Exists(ev => ev.SourceId == support), Is.False, "the support never takes the object");
+            Assert.That(e.Units[main].TargetId, Is.EqualTo(Encounter.ObjectTargetId));
+            Assert.That(e.Units[support].TargetId, Is.EqualTo(CombatAi.NoTarget));
+        }
+
+        // FENCE check for FillObjectEnemy: reach counts from the hit sphere's surface. The footprint keeps the main 5 m
+        // from the centre and the move reaches 1.5 m, so aiming at the centre would never cast.
+        [Test]
+        public void A_building_wider_than_the_reach_is_hit_from_its_wall()
+        {
+            var wall = new WallSurface { Center = At(15f), FootprintM = 5f, Radius = R };
+            Encounter e = Team(wall, out float3 player, out int main, out _);
+            var index = new ListIndex { MaxHitRadiusM = 6f };
+            index.Items.Add(new DestructibleCandidate(BuildingId, Ground(15f, 1f), 6f, Composition.Of(Wood()), 1_000_000));
+            e.AttachDestructibles(new DestructibleTable(Env()), index, _ => false);
+            e.FocusObject(index.Items[0]);
+
+            List<ObjectEvent> events = RunFocus(e, player, main, Dt, 10_000);
+            Assert.That(events.Exists(ev => ev.Kind == ObjectEventKind.Hit && ev.SourceId == main), Is.True);
+            Assert.That(wall.IsBlocked(_planet.ToDirection(e.Units[main].Position), 0f), Is.False, "stayed outside");
+        }
+
+        private const long BuildingId = 1L << 40;
+
+        [Test]
+        public void A_destroyed_or_cleared_object_focus_acts_as_free()
+        {
+            Encounter e = Team(new FlatSurface(), out float3 player, out int main, out _);
+            var index = new ListIndex();
+            index.Items.Add(new DestructibleCandidate(5, Ground(2f), 0.5f, Composition.Of(Wood()), 50));
+            var table = new DestructibleTable(Env());
+            e.AttachDestructibles(table, index, _ => false);
+            e.FocusObject(index.Items[0]);
+
+            RunFocus(e, player, main, Dt, 6000);
+            Assert.That(table.IsDestroyed(5), Is.True);
+            Assert.That(e.Units[main].TargetId, Is.EqualTo(CombatAi.NoTarget), "no enemy left to fight");
+            Assert.That(e.FocusedObjectId, Is.EqualTo(5), "stays set until cleared");
+
+            index.Items.Add(new DestructibleCandidate(6, Ground(2f), 0.5f, Composition.Of(Wood()), 100_000));
+            e.FocusObject(index.Items[1]);
+            RunFocus(e, player, main, 6000 + Dt, 6000 + 2 * Dt);
+            Assert.That(e.Units[main].TargetId, Is.EqualTo(Encounter.ObjectTargetId));
+            e.ClearObjectFocus();
+            Assert.That(e.FocusedObjectId, Is.EqualTo(-1));
+            RunFocus(e, player, main, 6000 + 3 * Dt, 6000 + 3 * Dt);
+            Assert.That(e.Units[main].TargetId, Is.EqualTo(CombatAi.NoTarget));
+        }
+
+        [Test]
+        public void FocusObject_before_attaching_throws()
+        {
+            Encounter e = Team(new FlatSurface(), out _, out _, out _);
+            var c = new DestructibleCandidate(1, Ground(2f), 0.5f, Composition.Of(Wood()), 50);
+            Assert.Throws<ContractException>(() => e.FocusObject(c));
+            Assert.That(e.FocusedObjectId, Is.EqualTo(-1));
         }
     }
 }

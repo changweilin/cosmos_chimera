@@ -164,6 +164,30 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
+            // P3-12 / destructibles.md#誰能打: CycleTarget offers nearby objects; Focus on one sends the main at it (and
+            // nothing else) until a move lands. Done at the landing site, where the party was just fielded beside the character.
+            for (int i = 0; i < 64 && session.LockedObjectForTests < 0; i++)
+            {
+                session.CycleTargetForTests();
+            }
+
+            long lockedObject = session.LockedObjectForTests;
+            Assert.That(lockedObject, Is.GreaterThanOrEqualTo(0), "a tree, rock or building within provoke reach");
+            Assert.That(session.LockedTargetForTests, Is.EqualTo(-1), "one lock at a time");
+            session.FocusNearestForTests();
+            Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Focus));
+            Assert.That(session.CommandTargetForTests, Is.EqualTo(Encounter.ObjectTargetId));
+            Assert.That(session.FocusedObjectForTests, Is.EqualTo(lockedObject));
+            bool touched = false;
+            float lockDeadline = Time.realtimeSinceStartup + 30f;
+            while (!touched && outcome == null && Time.realtimeSinceStartup < lockDeadline)
+            {
+                touched = session.ObjectTouchedForTests(lockedObject);
+                yield return null;
+            }
+
+            Assert.That(touched, Is.True, "the main's move reached the locked object within 30 s");
+
             // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its temperament (D0-E2:
             // tier-0 juveniles are timid). Nearest, because the character's motor rejects an up vector that turns > 90°
             // in one step (a far teleport is not gameplay).
@@ -199,6 +223,7 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(hit, Is.True, "some fielded creature or the character took damage within 60 s");
+
 
             // P3-09 acceptance: scatter exists around the player and nothing floats or sinks into the ground.
             var scatter = session.GetComponent<ScatterField>();
