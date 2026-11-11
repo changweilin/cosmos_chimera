@@ -30,6 +30,8 @@ namespace Cosmimera.Combat.Tests
                 float m = math.atan2(direction.x, direction.y) * R;
                 return m >= _fromM && m < _toM;
             }
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         private const float R = 640f;
@@ -138,6 +140,8 @@ namespace Cosmimera.Combat.Tests
 
             public bool IsSea(float3 direction) =>
                 _east.IsSea(direction) || _east.IsSea(new float3(-direction.x, direction.y, direction.z));
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         [Test]

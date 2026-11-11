@@ -18,6 +18,8 @@ namespace Cosmimera.Bootstrap.Demo
     /// only on (layout, ground function), so every client draws the same village.
     /// Why build everything at once, unlike ScatterField: a run has ≈ 10 roads and ≤ 60 buildings — a few thousand
     /// vertices total, cheaper than streaming bookkeeping.
+    /// Building parts keep their primitive colliders (they block the character); road ribbons have none, so the terrain
+    /// stays the only walking surface.
     /// Side effects: creates GameObjects, meshes and materials under this component and destroys them with it.
     /// </remarks>
     public sealed class SettlementView : MonoBehaviour
@@ -256,10 +258,9 @@ namespace Cosmimera.Bootstrap.Demo
         private void Part(Transform parent, PrimitiveType type, Color color, Vector3 scale, Vector3 localPos,
             Quaternion? rotation = null)
         {
+            // Keeps the primitive's collider: buildings block the character (REQ: planet-world.md#道路與建築); creatures
+            // get the same footprints through IEncounterSurface.IsBlocked.
             GameObject go = GameObject.CreatePrimitive(type);
-            // Decorative, like ScatterField: creatures walk the ground function, not colliders, so a blocking
-            // wall would stop the character but not wild creatures (REQ: planet-world.md#道路與建築 — 建築無碰撞).
-            Destroy(go.GetComponent<Collider>());
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPos;
             go.transform.localScale = scale;

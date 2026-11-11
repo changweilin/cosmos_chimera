@@ -13,6 +13,8 @@ namespace Cosmimera.Combat.Tests
             public float GroundAltitude(float3 direction) => 0f;
 
             public bool IsSea(float3 direction) => false;
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         private CombatBalance _balance;

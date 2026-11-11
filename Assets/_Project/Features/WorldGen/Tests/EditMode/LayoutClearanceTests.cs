@@ -92,6 +92,18 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Inside_building_ignores_roads_and_the_constructor_margin()
+        {
+            var c = new LayoutClearance(Planet, Layout(), 5f);
+            float3 facing = new float3(1, 0, 0);
+            Assert.That(c.IsInsideBuilding(OnRoad(Step, 0f), 0f), Is.False, "roads are not buildings");
+            Assert.That(c.IsInsideBuilding(new float3(0, 1, 0), 0f), Is.True);
+            Assert.That(c.IsInsideBuilding(NearHouse(facing * 2.3f), 0f), Is.False);
+            Assert.That(c.IsInsideBuilding(NearHouse(facing * 2.3f), 0.5f), Is.True);
+            Assert.That(c.IsInsideBuilding(new float3(0, -1, 0), 0.5f), Is.False, "antipode");
+        }
+
+        [Test]
         public void Contract_violations_throw()
         {
             RunLayout layout = Layout();
@@ -102,6 +114,9 @@ namespace Cosmimera.WorldGen.Tests
             var c = new LayoutClearance(Planet, layout, 0f);
             Assert.Throws<ContractException>(() => c.IsClear(float3.zero));
             Assert.Throws<ContractException>(() => c.IsClear(new float3(float.NaN, 0f, 1f)));
+            Assert.Throws<ContractException>(() => c.IsInsideBuilding(float3.zero, 0f));
+            Assert.Throws<ContractException>(() => c.IsInsideBuilding(new float3(0, 1, 0), -1f));
+            Assert.Throws<ContractException>(() => c.IsInsideBuilding(new float3(0, 1, 0), float.PositiveInfinity));
         }
     }
 }

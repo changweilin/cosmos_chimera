@@ -137,6 +137,7 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(Planet.Altitude((float3)t.position), Is.LessThan(lowest), $"building {i}");
                 Assert.That(math.dot((float3)t.up, b.Direction), Is.GreaterThan(0.999f), $"building {i} upright");
                 Assert.That(math.dot((float3)t.forward, b.Facing), Is.GreaterThan(0.999f), $"building {i} faces its road");
+                Assert.That(t.GetComponentsInChildren<Collider>(), Is.Not.Empty, $"building {i} blocks the character");
             }
         }
     }

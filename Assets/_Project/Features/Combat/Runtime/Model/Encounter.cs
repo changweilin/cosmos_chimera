@@ -31,6 +31,14 @@ namespace Cosmimera.Combat
         /// Side effects: none.
         /// </remarks>
         bool IsSea(float3 direction);
+
+        /// <summary>Whether a body of radius <paramref name="clearanceM"/> centred at <paramref name="direction"/> overlaps a building.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#道路與建築 (buildings collide with the character and creatures).
+        /// Pre: direction unit length; clearanceM finite and ≥ 0. Post: deterministic for a given input on one host.
+        /// Side effects: none.
+        /// </remarks>
+        bool IsBlocked(float3 direction, float clearanceM);
     }
 
     /// <summary>What happened during one tick, for presentation (VFX, numbers, HUD) only.</summary>
@@ -184,6 +192,10 @@ namespace Cosmimera.Combat
         internal bool HasWanderTarget { get; set; }
         internal float3 WanderTarget { get; set; }
         internal long WanderResumeMs { get; set; } = Encounter.WanderUnscheduled;
+
+        // Side (+1 left of heading, −1 right) of the last wall slide that moved. Sticky so a unit keeps rounding a building
+        // the same way; re-choosing every tick made it zigzag along the near wall (heading re-aims at the target each tick).
+        internal int SlideSide { get; set; } = 1;
 
         /// <summary>Last AI target id, or NoTarget.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -599,6 +611,10 @@ namespace Cosmimera.Combat
         ///       character at playerPosition (balance body_mm.character), each pair split by inverse footprint area, in
         ///       <see cref="SeparationPasses"/> sweeps in unit-id order; the character's share is in PlayerPush. A pair
         ///       can still overlap afterwards only when a third body pushed it back (crowds settle over later ticks).
+        ///       No step, dash or push moves a unit from outside a building (IEncounterSurface.IsBlocked at its
+        ///       CollisionRadiusM) to inside one; a step into a wall slides along it (heading turned 45°, 90°, then 135°,
+        ///       toward the unit's last slide side, then the other side) or, if every turn is walled, does not move.
+        ///       A unit already inside (spawned or pushed there) may move freely.
         /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
@@ -738,15 +754,15 @@ namespace Cosmimera.Combat
                         float3 db = Up(b.Position);
                         if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
                         {
-                            PlaceUnlessSea(a, da);
-                            PlaceUnlessSea(b, db);
+                            PlaceIfAllowed(a, da);
+                            PlaceIfAllowed(b, db);
                         }
                     }
 
                     float3 d = Up(a.Position);
                     if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
                     {
-                        PlaceUnlessSea(a, d);
+                        PlaceIfAllowed(a, d);
                     }
                 }
             }
@@ -764,16 +780,28 @@ namespace Cosmimera.Combat
             return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
         }
 
-        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea; its share of the overlap stays unresolved and later
-        // ticks (or the other body's own share) settle it.
-        private void PlaceUnlessSea(EncounterUnit u, float3 direction)
+        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea, nor any unit into a building; its share of the
+        // overlap stays unresolved and later ticks (or the other body's own share) settle it.
+        private void PlaceIfAllowed(EncounterUnit u, float3 direction)
         {
             if (u.Side == EncounterSide.Wild && _surface.IsSea(direction))
             {
                 return;
             }
 
+            if (EntersBuilding(u, Up(u.Position), direction))
+            {
+                return;
+            }
+
             Place(u, direction);
+        }
+
+        // REQ: planet-world.md#道路與建築. Only entering is refused: a unit that starts inside a footprint (a spawn on a lot,
+        // a push from a third body) must be able to walk out, or it would be frozen for the rest of the run.
+        private bool EntersBuilding(EncounterUnit u, float3 from, float3 to)
+        {
+            return _surface.IsBlocked(to, u.CollisionRadiusM) && !_surface.IsBlocked(from, u.CollisionRadiusM);
         }
 
         private void Place(EncounterUnit u, float3 direction)
@@ -882,6 +910,12 @@ namespace Cosmimera.Combat
                 // REQ: combat.md#只在陸地. A wild dash ending on the sea keeps the hits (already resolved) but not the
                 // displacement, matching the "a step onto the sea does not move" steering rule (SOL W-B2-SOL-02).
                 if (u.Side == EncounterSide.Wild && _surface.IsSea(endDirection))
+                {
+                    return;
+                }
+
+                // Same rule for a wall: a dash may not end inside a building it started outside of.
+                if (EntersBuilding(u, Up(u.Position), endDirection))
                 {
                     return;
                 }
@@ -1063,7 +1097,7 @@ namespace Cosmimera.Combat
                 }
                 else
                 {
-                    if (!TryLandWanderPoint(u.Home, radiusM, out float3 target))
+                    if (!TryLandWanderPoint(u.Home, radiusM, u.CollisionRadiusM, out float3 target))
                     {
                         u.WanderResumeMs = nowMs + NextWanderPause(t);
                         return;
@@ -1093,12 +1127,13 @@ namespace Cosmimera.Combat
 
         // REQ: combat.md#只在陸地. Redraws come from the same (seed,'W') stream, so the count of draws is still a pure
         // function of seed and positions; a coast-hugging spawn just pauses again instead of walking into the water.
-        private bool TryLandWanderPoint(float3 home, float radiusM, out float3 target)
+        // A destination inside a building is redrawn the same way (planet-world.md#道路與建築).
+        private bool TryLandWanderPoint(float3 home, float radiusM, float clearanceM, out float3 target)
         {
             for (int i = 0; i < WanderSeaRetries; i++)
             {
                 target = WanderPoint(home, radiusM);
-                if (!_surface.IsSea(target))
+                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, clearanceM))
                 {
                     return true;
                 }
@@ -1209,7 +1244,8 @@ namespace Cosmimera.Combat
         }
 
         // Arrived when the unit is (already or now) within ArriveM of the destination; Blocked when a wild's next step
-        // would land on the sea (combat.md#只在陸地), in which case it does not move this tick.
+        // would land on the sea (combat.md#只在陸地), or every slide around a wall is walled too, in which case it does not
+        // move this tick.
         private SteerResult Steer(EncounterUnit u, float3 destinationDirection, long nowMs, int dtMs, int speedPermille)
         {
             float3 up = Up(u.Position);
@@ -1231,9 +1267,62 @@ namespace Cosmimera.Combat
                 return SteerResult.Blocked;
             }
 
+            if (EntersBuilding(u, up, next))
+            {
+                if (!TrySlide(u, up, step, ref heading, ref next))
+                {
+                    return SteerResult.Blocked;
+                }
+
+                u.Position = GroundPoint(next, u.BodyRadiusM);
+                u.Forward = Tangent(next, heading);
+                // A slide does not head at the destination, so measure what is actually left.
+                float left = math.acos(math.clamp(math.dot(next, dest), -1f, 1f));
+                return left * r <= ArriveM ? SteerResult.Arrived : SteerResult.Moving;
+            }
+
             u.Position = GroundPoint(next, u.BodyRadiusM);
             u.Forward = Tangent(next, heading);
             return (angle - step) * r <= ArriveM ? SteerResult.Arrived : SteerResult.Moving;
+        }
+
+        // cos/sin of the slide turns on one side: 45° keeps most of the progress along a wall met at an angle; 90° follows
+        // a wall met head-on; 135° is needed once the target is past the wall's middle, where the heading tilts back toward
+        // the wall and a 90° turn on the sticky side still points into it (without it the unit flipped sides each tick).
+        private static readonly float2[] SlideTurns =
+        {
+            new float2(0.70710678f, 0.70710678f), new float2(0f, 1f), new float2(-0.70710678f, 0.70710678f),
+        };
+
+        // REQ: planet-world.md#道路與建築. Sliding (rather than stopping) keeps a chasing creature from pinning itself on
+        // the near wall of a house the character walked around. The unit's last slide side is tried first, then the other;
+        // sea rules still apply to every turned step.
+        private bool TrySlide(EncounterUnit u, float3 up, float step, ref float3 heading, ref float3 next)
+        {
+            float3 left = math.cross(up, heading);
+            for (int k = 0; k < 2; k++)
+            {
+                int sideSign = k == 0 ? u.SlideSide : -u.SlideSide;
+                foreach (float2 turn in SlideTurns)
+                {
+                    float3 h = heading * turn.x + left * (turn.y * sideSign);
+                    float3 n = math.normalize(up * math.cos(step) + h * math.sin(step));
+                    if (u.Side == EncounterSide.Wild && _surface.IsSea(n))
+                    {
+                        continue;
+                    }
+
+                    if (!EntersBuilding(u, up, n))
+                    {
+                        heading = h;
+                        next = n;
+                        u.SlideSide = sideSign;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private float3 GroundPoint(float3 direction, float bodyRadius)

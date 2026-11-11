@@ -126,18 +126,9 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
                 "direction must be finite and non-zero");
             float3 p = math.normalize(direction);
-
-            foreach (Footprint f in _buildings)
+            if (InsideBuilding(p, _marginM))
             {
-                float3 d = (p - f.Center) * _radius;
-                // The tangent-plane test alone also accepts the antipode (p − c is radial there, with zero tangent
-                // components), so the hemisphere check is required.
-                if (math.abs(math.dot(d, f.Facing)) <= f.HalfDepthM + _marginM &&
-                    math.abs(math.dot(d, f.Across)) <= f.HalfWidthM + _marginM &&
-                    math.dot(p, f.Center) > 0f)
-                {
-                    return false;
-                }
+                return false;
             }
 
             for (int r = 0; r < _roadCenters.Length; r++)
@@ -158,6 +149,39 @@ namespace Cosmimera.WorldGen
             }
 
             return true;
+        }
+
+        /// <summary>True when <paramref name="direction"/> lies inside a building footprint grown by <paramref name="marginM"/>.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#道路與建築 (建築與角色、宙獸碰撞): a body of radius marginM centred here would overlap a wall.
+        /// Pre: direction finite and non-zero (normalized internally); marginM finite and ≥ 0.
+        /// Post: independent of the constructor margin and of roads; same footprint test IsClear uses.
+        /// Side effects: none.
+        /// </remarks>
+        public bool IsInsideBuilding(float3 direction, float marginM)
+        {
+            Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
+                "direction must be finite and non-zero");
+            Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
+            return InsideBuilding(math.normalize(direction), marginM);
+        }
+
+        private bool InsideBuilding(float3 p, float marginM)
+        {
+            foreach (Footprint f in _buildings)
+            {
+                float3 d = (p - f.Center) * _radius;
+                // The tangent-plane test alone also accepts the antipode (p − c is radial there, with zero tangent
+                // components), so the hemisphere check is required.
+                if (math.abs(math.dot(d, f.Facing)) <= f.HalfDepthM + marginM &&
+                    math.abs(math.dot(d, f.Across)) <= f.HalfWidthM + marginM &&
+                    math.dot(p, f.Center) > 0f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static float DistanceToSegment(float3 p, float3 a, float3 b)

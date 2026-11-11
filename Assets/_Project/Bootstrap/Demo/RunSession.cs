@@ -121,11 +121,13 @@ namespace Cosmimera.Bootstrap.Demo
         {
             private readonly PlanetHeight _height;
             private readonly PlanetTemplates _templates;
+            private readonly LayoutClearance _layout;
 
-            public HeightSurface(PlanetHeight height, PlanetTemplates templates)
+            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout)
             {
                 _height = height;
                 _templates = templates;
+                _layout = layout;
             }
 
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
@@ -134,6 +136,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
+
+            // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
+            public bool IsBlocked(float3 direction, float clearanceM) => _layout.IsInsideBuilding(direction, clearanceM);
         }
 
         private sealed class WildInfo
@@ -381,6 +386,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
+            // passes its own body radius to IsInsideBuilding).
+            var clearance = new LayoutClearance(config, _layout, 1.5f);
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -405,19 +413,17 @@ namespace Cosmimera.Bootstrap.Demo
                 // Runtime primitives keep the built-in material, which renders magenta under URP.
                 _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
                 _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
-                var surface = new HeightSurface(height, templates);
+                var surface = new HeightSurface(height, templates, clearance);
                 System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
                 // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
                 var settlements = new GameObject("Settlements");
                 settlements.transform.SetParent(transform, false);
                 settlements.AddComponent<SettlementView>().Configure(config, _layout, surface.GroundAltitude, toonShader);
-                // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways.
-                var clearance = new LayoutClearance(config, _layout, 1.5f);
                 gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
                     surface.GroundAltitude, isSea, PlayerPosition, toonShader, clearance.IsClear);
             }
 
-            _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
+            _encounter = new Encounter(config, balance, new HeightSurface(height, templates, clearance), setup.Seed);
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
             _vitals = new PlayerVitals(balance.Player);
             _encounter.AttachPlayer(_vitals);
