@@ -204,11 +204,22 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(scatter.LiveCount, Is.GreaterThan(0), "some scatter near the player");
             foreach (Transform root in scatter.transform)
             {
+                if (!root.name.StartsWith("Scatter_"))
+                {
+                    continue; // the Settlements child (P3-11) shares this transform
+                }
+
                 float3 p = (float3)root.position;
                 float3 dir = session.DirectionForTests(p);
                 Assert.That(session.AltitudeForTests(p), Is.EqualTo(session.SurfaceHeightForTests(dir) - 0.1f).Within(0.15f),
                     "scatter root sits on the ground: " + root.name);
             }
+
+            // P3-11: roads and buildings are drawn, and kept apart from scatter roots.
+            var settlementView = session.GetComponentInChildren<SettlementView>();
+            Assert.That(settlementView, Is.Not.Null, "settlement view is attached");
+            Assert.That(settlementView.Roads.Count, Is.GreaterThan(0), "roads are drawn");
+            Assert.That(settlementView.transform, Is.Not.EqualTo(scatter.transform), "settlements are not scatter roots");
 
             // P1-08 star shell: attached, centred on the camera, opacity in range.
             var stars = session.GetComponent<StarField>();

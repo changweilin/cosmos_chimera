@@ -93,6 +93,7 @@ namespace Cosmimera.Bootstrap.Demo
         private int _cellsPerFace;
         private Func<float3, float> _groundAltitude;
         private Func<float3, bool> _isSea;
+        private Func<float3, bool> _isClear;
         private Func<float3> _focus;
         private Shader _shader;
         private readonly Dictionary<long, List<GameObject>> _live = new Dictionary<long, List<GameObject>>();
@@ -121,11 +122,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Starts scattering around <paramref name="focus"/>.</summary>
         /// <remarks>
-        /// Pre: groundAltitude, focus and shader non-null; isSea may be null (no sea mask on pure-noise planets).
-        /// Post: Update streams cells in and out. Side effects: none until Update.
+        /// Pre: groundAltitude, focus and shader non-null; isSea may be null (no sea mask on pure-noise planets);
+        ///      isClear may be null (no roads or buildings to avoid) and must be deterministic.
+        /// Post: Update streams cells in and out; no item stands where isClear is false. Side effects: none until Update.
         /// </remarks>
         public void Configure(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
-            Func<float3, bool> isSea, Func<float3> focus, Shader shader)
+            Func<float3, bool> isSea, Func<float3> focus, Shader shader, Func<float3, bool> isClear = null)
         {
             Contract.Requires(groundAltitude != null && focus != null && shader != null,
                 "groundAltitude, focus and shader are required");
@@ -142,6 +144,7 @@ namespace Cosmimera.Bootstrap.Demo
             _cellsPerFace = math.max(1, (int)math.ceil(config.Radius * math.PI * 0.5f / CellM));
             _groundAltitude = groundAltitude;
             _isSea = isSea;
+            _isClear = isClear;
             _focus = focus;
             _shader = shader;
             _configured = true;
@@ -177,6 +180,12 @@ namespace Cosmimera.Bootstrap.Demo
             float yaw = rng.NextFloat() * 360f;
             float3 dir = CubeSphere.FaceToDirection(face, u, v);
             if (_isSea != null && _isSea(dir))
+            {
+                return;
+            }
+
+            // REQ: planet-world.md#道路與建築 (P3-11) — after every draw, so a road only removes items, never moves others.
+            if (_isClear != null && !_isClear(dir))
             {
                 return;
             }

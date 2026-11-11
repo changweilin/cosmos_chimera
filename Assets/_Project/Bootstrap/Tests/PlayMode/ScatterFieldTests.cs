@@ -15,7 +15,7 @@ namespace Cosmimera.Bootstrap.Tests
         private readonly List<GameObject> _roots = new List<GameObject>();
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
-        private ScatterField Field(float radius, float3 centre, float3 up)
+        private ScatterField Field(float radius, float3 centre, float3 up, System.Func<float3, bool> isClear = null)
         {
             var root = new GameObject("scatter-test");
             _roots.Add(root);
@@ -24,7 +24,7 @@ namespace Cosmimera.Bootstrap.Tests
             var config = new PlanetConfig(radius, centre);
             Shader shader = Shader.Find("Cosmimera/ToonOutlined");
             Assert.That(shader, Is.Not.Null);
-            field.Configure(config, 12345, "verdant_planet", _ => 0f, null, () => config.ToWorld(up, 0f), shader);
+            field.Configure(config, 12345, "verdant_planet", _ => 0f, null, () => config.ToWorld(up, 0f), shader, isClear);
             return field;
         }
 
@@ -81,6 +81,37 @@ namespace Cosmimera.Bootstrap.Tests
                         Assert.That(wanted.Count, Is.LessThan(6 * n * n), "must remain a local stream");
                     }
                 }
+            }
+        }
+
+        [Test]
+        public void Blocked_ground_only_removes_items_and_leaves_the_rest_unchanged()
+        {
+            float3 up = math.normalize(new float3(0f, 1f, 0.2f));
+            ScatterField open = Field(640f, float3.zero, up);
+            ScatterField blocked = Field(640f, float3.zero, up, d => d.x > 0f);
+            float3 focus = new PlanetConfig(640f, float3.zero).ToWorld(up, 0f);
+            Call(open, "Refresh", focus);
+            Call(blocked, "Refresh", focus);
+            SortedDictionary<long, string> all = Snapshot(open);
+            SortedDictionary<long, string> kept = Snapshot(blocked);
+            int removed = 0;
+            int survived = 0;
+            foreach (var pair in Get<Dictionary<long, List<GameObject>>>(open, "_live"))
+            {
+                foreach (GameObject root in pair.Value)
+                {
+                    if (root.transform.position.x > 0f) survived++;
+                    else removed++;
+                }
+            }
+
+            Assert.That(removed, Is.GreaterThan(0), "fixture must straddle the blocked half");
+            Assert.That(survived, Is.GreaterThan(0), "fixture must straddle the blocked half");
+            Assert.That(blocked.LiveCount, Is.EqualTo(survived));
+            foreach (var pair in kept)
+            {
+                if (pair.Value.Length > 0) Assert.That(all[pair.Key], Is.EqualTo(pair.Value), $"cell {pair.Key}");
             }
         }
 

@@ -166,6 +166,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private PlanetRig _rig;
         private RunPlan _plan;
+        private RunLayout _layout;
         private QuestTracker _quest;
         private Encounter _encounter;
         private PlayerVitals _vitals;
@@ -379,6 +380,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
+            _layout = SettlementPlanner.Generate(config, _plan, isLand);
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -405,8 +407,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
                 var surface = new HeightSurface(height, templates);
                 System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+                // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
+                var settlements = new GameObject("Settlements");
+                settlements.transform.SetParent(transform, false);
+                settlements.AddComponent<SettlementView>().Configure(config, _layout, surface.GroundAltitude, toonShader);
+                // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways.
+                var clearance = new LayoutClearance(config, _layout, 1.5f);
                 gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
-                    surface.GroundAltitude, isSea, PlayerPosition, toonShader);
+                    surface.GroundAltitude, isSea, PlayerPosition, toonShader, clearance.IsClear);
             }
 
             _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
