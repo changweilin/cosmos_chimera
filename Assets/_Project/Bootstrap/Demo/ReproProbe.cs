@@ -33,11 +33,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Builds the probe report.</summary>
         /// <remarks>
         /// Pre: all arguments non-null (environment and sampleDump optional); types non-empty with no null elements;
-        ///      wildPool non-empty, no nulls, each with mastery, including an Adult; templates.Count == templateTags.Count; radiusFor returns a
-        ///      radius RunPlanner accepts for every type.
+        ///      wildPool non-empty, no nulls, each with mastery, including a form of every stage in <see cref="BossStages"/>;
+        ///      templates.Count == templateTags.Count; radiusFor returns a radius RunPlanner accepts for every boss size.
         /// Post: deterministic text for identical inputs and identical floating-point behaviour; one header block,
-        ///      then one line per (planet type sorted by Id ordinal, seed) in <see cref="Seeds"/> order.
-        ///       When <paramref name="sampleDump"/> is non-null, one "type seed k baseBits surfBits" line per sample is
+        ///      then one line per (planet type sorted by Id ordinal, boss stage in <see cref="BossStages"/> order, seed in
+        ///      <see cref="Seeds"/> order).
+        ///       When <paramref name="sampleDump"/> is non-null, one "type stage seed k baseBits surfBits" line per sample is
         ///       appended to it (raw float bits as hex) so the size of a divergence can be measured, not just detected.
         /// Side effects: allocates (planet generation per line); appends to sampleDump; no I/O.
         /// </remarks>
@@ -56,44 +57,57 @@ namespace Cosmimera.Bootstrap.Demo
                 Core.Contracts.Contract.Requires(type != null, "types must not contain null elements");
             }
 
-            bool hasAdult = false;
+            var poolStages = new HashSet<CreatureStage>();
             foreach (CreatureDef creature in wildPool)
             {
                 Core.Contracts.Contract.Requires(creature != null && creature.Mastery.Count > 0,
                     "wild pool entries need a main element");
-                hasAdult |= creature.Stage == CreatureStage.Adult;
+                poolStages.Add(creature.Stage);
             }
 
-            Core.Contracts.Contract.Requires(hasAdult, "wild pool needs an adult form for the boss");
+            foreach (CreatureStage stage in BossStages)
+            {
+                Core.Contracts.Contract.Requires(poolStages.Contains(stage), "wild pool needs a form of every probed boss stage");
+            }
 
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v4\n");
+            sb.Append("# cosmimera repro-probe v5\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" templates ").Append(templates.Count.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
-            sb.Append("# type seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete landingBits\n");
+            sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete landingBits\n");
             foreach (PlanetTypeDef type in sorted)
             {
-                foreach (ulong seed in Seeds)
+                foreach (CreatureStage stage in BossStages)
                 {
-                    AppendLine(sb, type, seed, radiusFor(BossDraw.SizeFor(ProbeBossStage)), wildPool, vocabulary, templates, templateTags, sampleDump);
+                    foreach (ulong seed in Seeds)
+                    {
+                        AppendLine(sb, type, stage, seed, radiusFor(BossDraw.SizeFor(stage)), wildPool, vocabulary, templates,
+                            templateTags, sampleDump);
+                    }
                 }
             }
 
             return sb.ToString();
         }
 
-        // v4 (D0-B2): size comes from the boss stage, not the type. The probe pins the adult boss — the largest planet and
-        // the full-pool plan — so one row per (type, seed) still exercises every generator stage; it does not mirror the
-        // player-level draw, which would make the report depend on save state.
-        private const CreatureStage ProbeBossStage = CreatureStage.Adult;
+        /// <summary>Boss stages probed for every (type, seed); each one fixes a planet size, template count and form cap.</summary>
+        /// <remarks>
+        /// Pre: none. Post: every stage BossDraw can return, ascending; changing it invalidates stored reports.
+        /// Side effects: none.
+        /// </remarks>
+        // v5 (tech-debt D0-B2): v4 pinned the adult boss, so the R=640 asteroid/moon planets and the capped wild pools that
+        // low-level players actually get were never measured. All stages are probed rather than mirroring the player-level
+        // draw, which would make the report depend on save state.
+        public static readonly CreatureStage[] BossStages =
+            { CreatureStage.Juvenile, CreatureStage.Adolescent, CreatureStage.Adult };
 
-        private static void AppendLine(StringBuilder sb, PlanetTypeDef type, ulong seed, float radius,
+        private static void AppendLine(StringBuilder sb, PlanetTypeDef type, CreatureStage stage, ulong seed, float radius,
             IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, IReadOnlyList<TemplateSource> templates,
             IReadOnlyList<IReadOnlyList<string>> templateTags, StringBuilder sampleDump)
         {
@@ -105,7 +119,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (templates.Count > 0)
             {
                 List<TemplatePlacement> placements = TemplatePlanner.Choose(seed, type.TerrainTags, templateTags,
-                    TemplatePlanner.CountFor(BossDraw.SizeFor(ProbeBossStage)));
+                    TemplatePlanner.CountFor(BossDraw.SizeFor(stage)));
                 planetTemplates = PlanetTemplates.Create(config, templates, placements);
             }
 
@@ -119,7 +133,7 @@ namespace Cosmimera.Bootstrap.Demo
                     isLand = d => !view.IsSea(d);
                 }
 
-                RunPlan plan = RunPlanner.Generate(config, seed, type, ProbeBossStage, wildPool, vocabulary, isLand);
+                RunPlan plan = RunPlanner.Generate(config, seed, type, stage, wildPool, vocabulary, isLand);
 
                 ulong baseBits = Fnv.Offset, baseMm = Fnv.Offset, surfBits = Fnv.Offset, surfMm = Fnv.Offset;
                 int sea = 0;
@@ -133,7 +147,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Fnv.Mix(ref baseMm, (uint)(int)math.round(b * 1000f));
                     Fnv.Mix(ref surfBits, math.asuint(s));
                     Fnv.Mix(ref surfMm, (uint)(int)math.round(s * 1000f));
-                    sampleDump?.Append(type.Id).Append(' ').Append(seed.ToString(CultureInfo.InvariantCulture)).Append(' ')
+                    sampleDump?.Append(type.Id).Append(' ').Append(StageToken(stage)).Append(' ').Append(seed.ToString(CultureInfo.InvariantCulture)).Append(' ')
                         .Append(k.ToString(CultureInfo.InvariantCulture)).Append(' ')
                         .Append(math.asuint(b).ToString("x8")).Append(' ').Append(math.asuint(s).ToString("x8")).Append('\n');
                     if (planetTemplates != null && planetTemplates.View.IsSea(d))
@@ -143,6 +157,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 sb.Append(type.Id).Append(' ')
+                    .Append(StageToken(stage)).Append(' ')
                     .Append(seed.ToString(CultureInfo.InvariantCulture)).Append(' ')
                     .Append(radius.ToString("R", CultureInfo.InvariantCulture)).Append(' ')
                     .Append(baseBits.ToString("x16")).Append(' ')
@@ -161,6 +176,18 @@ namespace Cosmimera.Bootstrap.Demo
             finally
             {
                 planetTemplates?.Dispose();
+            }
+        }
+
+        // Spelled out rather than Enum.ToString so renaming an enum member cannot silently change the report format.
+        private static string StageToken(CreatureStage stage)
+        {
+            switch (stage)
+            {
+                case CreatureStage.Juvenile: return "juvenile";
+                case CreatureStage.Adolescent: return "adolescent";
+                case CreatureStage.Adult: return "adult";
+                default: throw new ArgumentOutOfRangeException(nameof(stage), stage, "not a boss stage");
             }
         }
 

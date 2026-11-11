@@ -10,7 +10,6 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Bootstrap/Demo/RunSession.cs` | D0-W2 | low | 角色被推開是直接改 Rigidbody／transform 位置（瞬移），不經物理；夥伴 Follow 貼身時角色可能被持續推擠，待人工試玩確認手感 |
 | `Bootstrap/Demo/RunSession.cs` | D0-W3 | low | 互動選單為 IMGUI，開啟時停用角色移動輸入但戰鬥時間照走；目標遊蕩超過 2× 互動距離即自動關閉 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-B2 | low | 小行星（幼年 BOSS）在 Q-D1 定案前仍以 R=640 遊玩，與衛星只差 BOSS 階段與型態封頂（模板數同為 4）；BOSS 等級仍由固定 d=1 決定，不隨階段變化 |
-| `Bootstrap/Demo/ReproProbe.cs` | D0-B2 | low | 重現探針固定成年 BOSS（大型、R=1280、6 模板），不覆蓋幼／少年星球的 R=640 組合 |
 | `Data/balance.json#capture` | D0-B1 | — | 收服率 60% / BOSS 100% 為佔位值，待 SOL 平衡模型（P5-07）定案 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-U1 | med | 探索及大廳／選星／結算已支援手把；尚無遊戲內重綁，仍需實體手把與 Steam Deck／Proton 實機驗收（P7-07） |
 | 同上 | D0-R1 | low | 昏厥持續整場 run 已定案為規則（combat.md）；治療道具／NPC 待 Q-C36 |

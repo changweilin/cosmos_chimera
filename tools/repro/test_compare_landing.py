@@ -13,7 +13,7 @@ spec.loader.exec_module(rc)
 def report(angle=0.0, radius=640, bits=None):
     if bits is None:
         bits = ",".join(struct.pack(">f", v).hex() for v in (math.cos(angle), math.sin(angle), 0))
-    return f"# cosmimera repro-probe v3\nlava 1 {radius} a b c d 5 p q {bits}\n"
+    return f"# cosmimera repro-probe v5\nlava adult 1 {radius} a b c d 5 p q {bits}\n"
 
 
 @pytest.mark.parametrize("radius", [320, 640, 1280])
@@ -41,7 +41,7 @@ def test_cli_policy_b_checks_landing_even_with_identical_height_samples(tmp_path
     a, b = tmp_path / "a.txt", tmp_path / "b.txt"
     a.write_text(report(), encoding="utf-8")
     b.write_text(report(metres / 640), encoding="utf-8")
-    samples = "".join(f"lava 1 {k} 00000000 00000000\n" for k in range(rc.SAMPLES_PER_ROW))
+    samples = "".join(f"lava adult 1 {k} 00000000 00000000\n" for k in range(rc.SAMPLES_PER_ROW))
     for path in (a, b):
         Path(str(path) + ".samples").write_text(samples, encoding="utf-8")
     assert rc.main(["compare.py", str(a), str(b)]) == 1

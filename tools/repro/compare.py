@@ -17,10 +17,17 @@ DISCRETE_COLUMNS = ["seaCount", "planDiscrete"]
 TOLERANCE_M = 0.003
 # Must equal ReproProbe.SampleCount: policy b only counts as evidence when every report row has its full sample set.
 SAMPLES_PER_ROW = 2048
+# v5 rows: type stage seed radius <COLUMNS>; samples: type stage seed k baseBits surfBits. A row key without the
+# boss stage would collide, since juvenile and adolescent bosses share R=640 (ReproProbe.BossStages).
+KEY_COLUMNS = 4
+RADIUS_INDEX = 3
+SAMPLE_KEY_COLUMNS = 3  # type stage seed
+SAMPLE_K_INDEX = 3
+SAMPLE_COLUMNS = 6
 
 
 def parse(text):
-    """Returns (header lines without '# env', {(type, seed, radius): [column values]})."""
+    """Returns (header lines without '# env', {(type, stage, seed, radius): [column values]})."""
     header, rows = [], {}
     for line in text.splitlines():
         if not line.strip():
@@ -30,16 +37,16 @@ def parse(text):
                 header.append(line)
             continue
         parts = line.split()
-        if len(parts) != 3 + len(COLUMNS):
+        if len(parts) != KEY_COLUMNS + len(COLUMNS):
             raise ValueError(f"malformed row: {line!r}")
-        key = tuple(parts[:3])
+        key = tuple(parts[:KEY_COLUMNS])
         if key in rows:
             raise ValueError(f"duplicate row: {key}")
         _landing(parts[-1])
-        radius = float(key[2])
+        radius = float(key[RADIUS_INDEX])
         if not math.isfinite(radius) or radius <= 0:
-            raise ValueError(f"invalid radius: {key[2]}")
-        rows[key] = parts[3:]
+            raise ValueError(f"invalid radius: {key[RADIUS_INDEX]}")
+        rows[key] = parts[KEY_COLUMNS:]
     # Two empty or header-only files would otherwise compare IDENTICAL (SOL P3-10 S3).
     if not header or not header[0].startswith("# cosmimera repro-probe "):
         raise ValueError("not a repro-probe report (missing magic header)")
@@ -88,7 +95,7 @@ def landing_max_distance(a_text, b_text):
     _, rb = parse(b_text)
     if ra.keys() != rb.keys():
         raise ValueError("landing row keys differ")
-    return max(float(key[2]) * math.dist(_landing(ra[key][-1]), _landing(rb[key][-1])) for key in ra)
+    return max(float(key[RADIUS_INDEX]) * math.dist(_landing(ra[key][-1]), _landing(rb[key][-1])) for key in ra)
 
 
 def sample_stats(a_text, b_text):
@@ -102,15 +109,15 @@ def sample_stats(a_text, b_text):
         raise ValueError(f"sample dumps differ in length: {len(la)} vs {len(lb)}")
     for x, y in zip(la, lb):
         pa, pb = x.split(), y.split()
-        if len(pa) != 5 or len(pb) != 5:
+        if len(pa) != SAMPLE_COLUMNS or len(pb) != SAMPLE_COLUMNS:
             raise ValueError(f"malformed sample line: {x!r} / {y!r}")
-        if pa[:3] != pb[:3]:
-            raise ValueError(f"sample keys differ: {pa[:3]} vs {pb[:3]}")
-        for col, name in ((3, "base"), (4, "surf")):
+        if pa[:-2] != pb[:-2]:
+            raise ValueError(f"sample keys differ: {pa[:-2]} vs {pb[:-2]}")
+        for col, name in ((-2, "base"), (-1, "surf")):
             va, vb = _f32(pa[col]), _f32(pb[col])
             # max() silently drops NaN, which would report a broken height as "0 m apart" (SOL P3-10 S4).
             if not (math.isfinite(va) and math.isfinite(vb)):
-                raise ValueError(f"non-finite {name} height in sample {pa[:3]}")
+                raise ValueError(f"non-finite {name} height in sample {pa[:-2]}")
             if pa[col] == pb[col]:
                 continue
             d = abs(va - vb)
@@ -128,19 +135,20 @@ def check_sample_coverage(report_text, samples_text):
     otherwise "pass" the height tolerance with no evidence (SOL P2-12 R2). Side effects: none.
     """
     _, rows = parse(report_text)
-    expected = {(t, s) for (t, s, _) in rows}
+    expected = {key[:SAMPLE_KEY_COLUMNS] for key in rows}
     seen = {}
     for line in samples_text.splitlines():
         parts = line.split()
-        if len(parts) != 5:
+        if len(parts) != SAMPLE_COLUMNS:
             raise ValueError(f"malformed sample line: {line!r}")
-        key = (parts[0], parts[1])
+        key = tuple(parts[:SAMPLE_KEY_COLUMNS])
         if key not in expected:
             raise ValueError(f"sample for {key} has no report row")
         ks = seen.setdefault(key, set())
-        if parts[2] in ks:
-            raise ValueError(f"duplicate sample {key} k={parts[2]}")
-        ks.add(parts[2])
+        k = parts[SAMPLE_K_INDEX]
+        if k in ks:
+            raise ValueError(f"duplicate sample {key} k={k}")
+        ks.add(k)
     want = {str(k) for k in range(SAMPLES_PER_ROW)}
     for key in expected:
         if seen.get(key) != want:
