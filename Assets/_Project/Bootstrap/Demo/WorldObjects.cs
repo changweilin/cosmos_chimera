@@ -91,9 +91,7 @@ namespace Cosmimera.Bootstrap.Demo
             _scatter.Query(up, radiusM, _items);
             foreach (ScatterItem it in _items)
             {
-                into.Add(new DestructibleCandidate(it.CellKey,
-                    _planet.ToWorld(it.Direction, it.AltitudeM + HitHeight(it.Shape, it.SizeM)),
-                    HitRadius(it.Shape, it.SizeM), _kindComposition[it.KindIndex], it.VolumeL));
+                into.Add(ScatterCandidate(it));
             }
 
             for (int i = 0; i < _layout.Buildings.Count; i++)
@@ -104,12 +102,48 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
-                float storeyH = b.Storeys * StoreyM;
-                long volumeL = (long)math.round(b.WidthM * b.DepthM * storeyH * 1000f);
-                into.Add(new DestructibleCandidate(BuildingIdBase + i,
-                    _planet.ToWorld(b.Direction, _groundAltitude(b.Direction) + storeyH * 0.5f),
-                    BuildingHitRadius(b), _env.Building(MaterialOf(i)), (int)math.min(volumeL, int.MaxValue)));
+                into.Add(BuildingCandidate(i));
             }
+        }
+
+        /// <summary>The candidate Query would report for <paramref name="id"/>, if that object exists in this run.</summary>
+        /// <remarks>
+        /// Pre: none. Post: true iff id is a building index or a scatter cell holding an item (destroyed ones included);
+        ///      the candidate equals Query's for that id. Side effects: may cache the scatter cell.
+        /// </remarks>
+        public bool TryGet(long id, out DestructibleCandidate candidate)
+        {
+            if (IsBuilding(id))
+            {
+                long index = id - BuildingIdBase;
+                bool ok = index < _layout.Buildings.Count;
+                candidate = ok ? BuildingCandidate((int)index) : default;
+                return ok;
+            }
+
+            if (id >= 0 && id < 6L * _scatter.CellsPerFace * _scatter.CellsPerFace &&
+                _scatter.TryGetItem(id, out ScatterItem it))
+            {
+                candidate = ScatterCandidate(it);
+                return true;
+            }
+
+            candidate = default;
+            return false;
+        }
+
+        private DestructibleCandidate ScatterCandidate(in ScatterItem it) =>
+            new DestructibleCandidate(it.CellKey, _planet.ToWorld(it.Direction, it.AltitudeM + HitHeight(it.Shape, it.SizeM)),
+                HitRadius(it.Shape, it.SizeM), _kindComposition[it.KindIndex], it.VolumeL);
+
+        private DestructibleCandidate BuildingCandidate(int i)
+        {
+            RunBuilding b = _layout.Buildings[i];
+            float storeyH = b.Storeys * StoreyM;
+            long volumeL = (long)math.round(b.WidthM * b.DepthM * storeyH * 1000f);
+            return new DestructibleCandidate(BuildingIdBase + i,
+                _planet.ToWorld(b.Direction, _groundAltitude(b.Direction) + storeyH * 0.5f),
+                BuildingHitRadius(b), _env.Building(MaterialOf(i)), (int)math.min(volumeL, int.MaxValue));
         }
 
         /// <summary>Whether a body of radius <paramref name="clearanceM"/> at <paramref name="direction"/> overlaps an intact building, tree, rock or crystal.</summary>

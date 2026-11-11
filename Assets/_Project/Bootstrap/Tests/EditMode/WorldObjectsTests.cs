@@ -101,6 +101,29 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void TryGet_answers_like_Query_and_rejects_unknown_ids()
+        {
+            Rig r = Build();
+            ScatterItem tree = FirstTree(r.Scatter);
+            var found = new List<DestructibleCandidate>();
+            r.Objects.Query(Planet.ToWorld(VillageAt, 0f), 5f, found);
+            r.Objects.Query(Planet.ToWorld(tree.Direction, 0f), 1f, found);
+            foreach (DestructibleCandidate q in found)
+            {
+                Assert.That(r.Objects.TryGet(q.Id, out DestructibleCandidate g), Is.True, "id " + q.Id);
+                Assert.That(g.Center, Is.EqualTo(q.Center));
+                Assert.That(g.HitRadiusM, Is.EqualTo(q.HitRadiusM));
+                Assert.That(g.VolumeL, Is.EqualTo(q.VolumeL));
+                Assert.That(g.Composition, Is.SameAs(q.Composition));
+            }
+
+            Assert.That(found.Exists(c => c.Id == tree.CellKey), Is.True);
+            Assert.That(r.Objects.TryGet(WorldObjects.BuildingIdBase + 2, out _), Is.False, "only two buildings");
+            Assert.That(r.Objects.TryGet(-1, out _), Is.False);
+            Assert.That(r.Objects.TryGet(6L * r.Scatter.CellsPerFace * r.Scatter.CellsPerFace, out _), Is.False);
+        }
+
+        [Test]
         public void A_destroyed_building_stops_blocking()
         {
             Rig r = Build();

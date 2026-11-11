@@ -78,7 +78,7 @@ namespace Cosmimera.Combat
     public readonly struct ObjectEvent
     {
         internal ObjectEvent(ObjectEventKind kind, long objectId, int sourceId, int damage, ObjectReaction reactions,
-            DestroyCause cause, ObjectDrop drop)
+            DestroyCause cause, ObjectDrop drop, int power)
         {
             Kind = kind;
             ObjectId = objectId;
@@ -87,6 +87,7 @@ namespace Cosmimera.Combat
             Reactions = reactions;
             Cause = cause;
             Drop = drop;
+            Power = power;
         }
 
         /// <summary>Event kind.</summary>
@@ -116,5 +117,9 @@ namespace Cosmimera.Combat
         /// <summary>Drop roll result (Destroyed only).</summary>
         /// <remarks>Pre: none. Post: stable. Side effects: none.</remarks>
         public ObjectDrop Drop { get; }
+
+        /// <summary>Power of the move that hit (or broke) the object; 0 for burn-outs. Presentation sizes the shove with it.</summary>
+        /// <remarks>Pre: none. Post: 0..DamageModel.MaxPower. Side effects: none.</remarks>
+        public int Power { get; }
     }
 }

@@ -774,7 +774,7 @@ namespace Cosmimera.Combat
             _objects.Tick(nowMs, _burntBuffer);
             foreach (int index in _burntBuffer)
             {
-                EmitDestroyed(index, NoSource);
+                EmitDestroyed(index, NoSource, 0);
             }
         }
 
@@ -807,20 +807,20 @@ namespace Cosmimera.Combat
 
                 ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element, ctx.Move.Power, ctx.MasteryPercent, nowMs);
                 _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
-                    default));
+                    default, ctx.Move.Power));
                 if (r.Destroyed)
                 {
-                    EmitDestroyed(index, casterId);
+                    EmitDestroyed(index, casterId, ctx.Move.Power);
                 }
             }
         }
 
-        private void EmitDestroyed(int index, int sourceId)
+        private void EmitDestroyed(int index, int sourceId, int power)
         {
             // REQ: destructibles.md#影素材 — night is judged where the object stood.
             ObjectDrop drop = _objects.RollDrop(index, _isNight(_planet.ToDirection(_objects.CenterOf(index))), ref _objectRng);
             _objectEvents.Add(new ObjectEvent(ObjectEventKind.Destroyed, _objects.IdOf(index), sourceId, 0,
-                ObjectReaction.None, _objects.CauseOf(index), drop));
+                ObjectReaction.None, _objects.CauseOf(index), drop, power));
         }
 
         /// <summary>

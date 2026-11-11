@@ -189,6 +189,8 @@ namespace Cosmimera.Bootstrap.Demo
         private DestructibleTable _objectTable;
         private SettlementView _settlementView;
         private ScatterField _scatterField;
+        private ObjectPhysics _objectPhysics;
+        private EnvMaterials _envMaterials;
         private PlayerVitals _vitals;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
@@ -420,6 +422,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (setup.EnvMaterials != null)
             {
                 objects = new DestructibleTable(setup.EnvMaterials);
+                _envMaterials = setup.EnvMaterials;
                 _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
                     setup.EnvMaterials, objects);
@@ -457,6 +460,17 @@ namespace Cosmimera.Bootstrap.Demo
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
                     objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
+                if (objects != null)
+                {
+                    // REQ: destructibles.md#物理 (ADR-0009) — only where something is drawn: headless runs have no bodies.
+                    var gravity = gameObject.AddComponent<PlanetGravity>();
+                    gravity.Configure(config, _rig.Character.Gravity);
+                    var loose = new GameObject("LooseObjects");
+                    loose.transform.SetParent(transform, false);
+                    _objectPhysics = loose.AddComponent<ObjectPhysics>();
+                    _objectPhysics.Configure(config, gravity, surface.GroundAltitude,
+                        _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default);
+                }
             }
 
             _encounter = new Encounter(config, balance, surface, setup.Seed);
@@ -1490,10 +1504,12 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 if (ev.Kind != ObjectEventKind.Destroyed)
                 {
+                    ShoveObject(ev);
                     continue;
                 }
 
                 _worldObjects.OnDestroyed(ev.ObjectId);
+                ShatterObject(ev);
                 if (WorldObjects.IsBuilding(ev.ObjectId))
                 {
                     _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
@@ -1503,6 +1519,87 @@ namespace Cosmimera.Bootstrap.Demo
                     _scatterField?.Remove(ev.ObjectId);
                 }
             }
+        }
+
+        // REQ: destructibles.md#物理 — a hit shoves the object (first hit wakes it into a rigidbody); presentation only.
+        private void ShoveObject(in ObjectEvent ev)
+        {
+            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
+                !TryCasterPosition(ev.SourceId, out float3 source))
+            {
+                return;
+            }
+
+            float massKg = ObjectImpulse.MassKg(c.Composition, c.VolumeL);
+            float3 impulse = ImpulseFor(ev, c, source, massKg);
+            if (math.lengthsq(impulse) == 0f)
+            {
+                return;
+            }
+
+            GameObject root = ObjectRoot(ev.ObjectId);
+            if (root != null)
+            {
+                _objectPhysics.Wake(ev.ObjectId, root, math.max(massKg, 1f), impulse, c.Center);
+            }
+        }
+
+        // REQ: destructibles.md#破壞與掉落 — the object is replaced by debris where it stands now (a woken one may have
+        // rolled away from its generated spot). The drawn scatter root is ours after ObjectRoot detaches it.
+        private void ShatterObject(in ObjectEvent ev)
+        {
+            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c))
+            {
+                return;
+            }
+
+            float massKg = ObjectImpulse.MassKg(c.Composition, c.VolumeL);
+            float3 impulse = TryCasterPosition(ev.SourceId, out float3 source) ? ImpulseFor(ev, c, source, massKg) : float3.zero;
+            GameObject woken = _objectPhysics.WokenRoot(ev.ObjectId);
+            GameObject root = ObjectRoot(ev.ObjectId);
+            float3 center = woken != null ? (float3)woken.GetComponent<Rigidbody>().worldCenterOfMass : c.Center;
+            _objectPhysics.Shatter(ev.ObjectId, root, center, c.HitRadiusM, massKg, impulse);
+            if (root != null && !WorldObjects.IsBuilding(ev.ObjectId))
+            {
+                Destroy(root);
+            }
+        }
+
+        private float3 ImpulseFor(in ObjectEvent ev, in DestructibleCandidate c, float3 source, float massKg)
+        {
+            int gust = (ev.Reactions & ObjectReaction.Gust) != 0 ? _envMaterials.GustImpulsePercent : 100;
+            return ObjectImpulse.Compute(_rig.Config, source, c.Center, ev.Power, gust, massKg, _objectPhysics.Tuning);
+        }
+
+        // The drawn root of an object: its woken body, its building, or its scatter item (detached from streaming, since
+        // the caller is about to turn it into a rigidbody or debris). Null when nothing is drawn there.
+        private GameObject ObjectRoot(long id)
+        {
+            GameObject woken = _objectPhysics.WokenRoot(id);
+            if (woken != null)
+            {
+                return woken;
+            }
+
+            if (WorldObjects.IsBuilding(id))
+            {
+                GameObject b = _settlementView != null ? _settlementView.Buildings[(int)(id - WorldObjects.BuildingIdBase)] : null;
+                return b != null && b.activeSelf ? b : null;
+            }
+
+            return _scatterField != null ? _scatterField.Detach(id) : null;
+        }
+
+        private bool TryCasterPosition(int sourceId, out float3 position)
+        {
+            if (sourceId < 0 || sourceId >= _encounter.Units.Count)
+            {
+                position = default;
+                return false;
+            }
+
+            position = _encounter.Units[sourceId].Position;
+            return true;
         }
 
         private bool IsNight(float3 direction)
@@ -1589,6 +1686,7 @@ namespace Cosmimera.Bootstrap.Demo
                     t.gameObject.SetActive(visible);
                 }
 
+                _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
                 if (!visible)
                 {
                     continue;

@@ -60,6 +60,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Dictionary<long, List<GameObject>> _live = new Dictionary<long, List<GameObject>>();
         private readonly HashSet<long> _wanted = new HashSet<long>();
         private readonly List<long> _stale = new List<long>();
+        // Items handed to ObjectPhysics (woken rigidbodies): no longer streamed, never rebuilt at their home spot.
+        private readonly HashSet<long> _detached = new HashSet<long>();
         private readonly Dictionary<Color, Material> _materials = new Dictionary<Color, Material>();
         private float3 _lastFocus;
         private float _nextRefresh;
@@ -138,6 +140,26 @@ namespace Cosmimera.Bootstrap.Demo
             objects.Clear();
         }
 
+        /// <summary>Hands the drawn item of cell <paramref name="key"/> to the caller; the cell never draws it again.</summary>
+        /// <remarks>
+        /// REQ: ADR-0009 §3 — a woken object becomes a rigidbody that may roll out of its cell, so streaming must neither
+        /// destroy it with the cell nor rebuild a second copy at home. Pre: Configure called.
+        /// Post: returns the item's root (null when the cell is not drawn or holds nothing); key is never built again;
+        ///       the caller owns the root. Side effects: stops tracking it.
+        /// </remarks>
+        public GameObject Detach(long key)
+        {
+            _detached.Add(key);
+            if (!_live.TryGetValue(key, out List<GameObject> objects) || objects.Count == 0)
+            {
+                return null;
+            }
+
+            GameObject root = objects[0];
+            objects.Clear();
+            return root;
+        }
+
         /// <summary>Spawns the item of one cell, or none.</summary>
         /// <remarks>
         /// Pre: Configure called; key encodes (face, j, i). Post: ≤ 1 item rooted at the ground of that cell.
@@ -147,7 +169,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             var objects = new List<GameObject>();
             _live[key] = objects;
-            if (!_planner.TryGetItem(key, out ScatterItem item) || (_isDestroyed != null && _isDestroyed(key)))
+            if (_detached.Contains(key) || !_planner.TryGetItem(key, out ScatterItem item) ||
+                (_isDestroyed != null && _isDestroyed(key)))
             {
                 return;
             }
