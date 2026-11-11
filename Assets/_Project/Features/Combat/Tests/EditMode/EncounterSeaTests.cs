@@ -160,6 +160,59 @@ namespace Cosmimera.Combat.Tests
             Assert.That(MetersOf(wild.Position), Is.GreaterThan(1f), "it did charge up to the shore");
         }
 
+        private CreatureDef Dasher()
+        {
+            var m = ScriptableObject.CreateInstance<MoveDef>();
+            _created.Add(m);
+            m.SetId("dash_d");
+            m.Set(Element.Fire, MoveKind.Damage, 40, null, 0, 0, 1500, 100, RangeClass.Melee, MoveShape.Line, 2000,
+                MoveMovement.Dash, BurstOrigin.Caster);
+            var c = ScriptableObject.CreateInstance<CreatureDef>();
+            _created.Add(c);
+            c.SetId("d");
+            c.Set("line_d", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, Temperament.Apex, null, 0,
+                new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
+                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+            return c;
+        }
+
+        // SOL W-B2-SOL-02: TryCast wrote the dash end straight to the position, bypassing the sea check.
+        [Test]
+        public void A_wild_dash_never_ends_on_the_sea()
+        {
+            // The character stands 1 m east; a 2 m dash from 0 m ends near 2 m.
+            float RunDash(IEncounterSurface surface, out bool cast)
+            {
+                var e = new Encounter(_planet, _balance, surface, 3);
+                EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Dasher(), null, AtMeters(0f), 10);
+                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+                e.Provoke(wild.Id);
+                float3 player = _planet.ToWorld(AtMeters(1f), 0f);
+                cast = false;
+                float maxM = MetersOf(wild.Position);
+                for (long now = Dt; now <= 2_000; now += Dt)
+                {
+                    e.Tick(now, Dt, player, Free, CombatAi.NoTarget);
+                    foreach (EncounterEvent ev in e.Events)
+                    {
+                        cast |= ev.Kind == EncounterEventKind.Cast && ev.SourceId == wild.Id;
+                    }
+
+                    maxM = math.max(maxM, MetersOf(wild.Position));
+                }
+
+                return maxM;
+            }
+
+            float dry = RunDash(new BandSea(1000f, 1000f), out bool dryCast);
+            Assert.That(dryCast, Is.True);
+            Assert.That(dry, Is.GreaterThan(1.5f), "without the sea the dash crosses 1.5 m");
+
+            float wet = RunDash(new BandSea(1.5f, 1000f), out bool wetCast);
+            Assert.That(wetCast, Is.True, "the wild still casts; only the displacement is withheld");
+            Assert.That(wet, Is.LessThan(1.5f));
+        }
+
         [Test]
         public void Separation_never_pushes_a_wild_onto_the_sea()
         {

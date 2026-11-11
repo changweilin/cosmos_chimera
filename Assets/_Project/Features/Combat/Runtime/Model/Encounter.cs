@@ -787,17 +787,17 @@ namespace Cosmimera.Combat
                 return false;
             }
 
-            // Tangent at a pointing to b, and tangent at b pointing to a; each body moves against its own.
-            float3 toB = db - math.dot(db, da) * da;
-            float lenToB = math.length(toB);
-            float3 toA = da - math.dot(da, db) * db;
-            float lenToA = math.length(toA);
+            // Tangent at a pointing to b is n×a, tangent at b pointing to a is −(n×b), with n = a×b; each body moves against
+            // its own. Gate on |n| = sin θ rather than on the projection residual b − (a·b)a: for identical non-axial float
+            // directions |a| ≠ 1 by ~1e-7, the residual is radial (not tangent) and passed a 1e-7 gate, so both headings
+            // pointed the same way and the pair never separated (SOL W-B2-SOL-01). 1e-6 rad ≤ 1.3 mm at R = 1280.
+            float3 n = math.cross(da, db);
             float3 headingB;
             float3 headingA;
-            if (lenToB > 1e-7f && lenToA > 1e-7f)
+            if (math.length(n) > 1e-6f)
             {
-                headingA = -toB / lenToB;
-                headingB = -toA / lenToA;
+                headingA = -math.normalize(math.cross(n, da));
+                headingB = math.normalize(math.cross(n, db));
             }
             else
             {
@@ -871,7 +871,15 @@ namespace Cosmimera.Combat
             {
                 // Hits are tested from the start position (the rect covers the whole path), then the caster moves.
                 float3 end = MoveGeometry.ResolveDashEnd(volume, _planet, u.Position, u.Forward);
-                u.Position = GroundPoint(_planet.ToDirection(end), u.BodyRadiusM);
+                float3 endDirection = _planet.ToDirection(end);
+                // REQ: combat.md#只在陸地. A wild dash ending on the sea keeps the hits (already resolved) but not the
+                // displacement, matching the "a step onto the sea does not move" steering rule (SOL W-B2-SOL-02).
+                if (u.Side == EncounterSide.Wild && _surface.IsSea(endDirection))
+                {
+                    return;
+                }
+
+                u.Position = GroundPoint(endDirection, u.BodyRadiusM);
                 u.Forward = Tangent(Up(u.Position), u.Forward);
             }
         }

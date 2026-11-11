@@ -16,4 +16,6 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Bootstrap/Demo/PlanetLook.cs` | D0-V1 | low | 生物群系只在 shader 依高度/坡度/緯度上色；無規則層 biome 表、無散佈（P3-09） |
 | `Bootstrap/Demo/RunSession.cs` | D0-X2 | low | 副手經驗只在 `Progression.Settle` 規則層；D0 無副手編成，run 只結算主力 |
 | 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1（BOSS LV5、普通野生 LV1）；等級公式已實作 |
+| `docs/reviews/D0-W-B2-sol.md` | W-B2-SOL-04 | low | `LobbySave.SetPlayerExp` 接受 > 玩家滿級經驗的值，存讀後被截限（round-trip 不一致）；RunSession 正常獎勵已夾限 |
+| 同上 | W-B2-SOL-05 | low | 遊蕩 (seed,'W')、BossDraw (seed,'B') 缺獨立黃金向量；RunPlanner 快照雜湊不含 LandingDirection 與方向原始位元，「成年計畫與 v2 逐位元相同」只由 SOL 一次性比對證明 |
 | `docs/decisions/ADR-0007-generation-reproducibility.md` | Q-T6-R1 | med | 生成點選陸地（`IsSea(direction)`）與 Scatter 讀浮點方向，格界附近跨後端可能翻轉；P6 握手比對 `planDiscrete` 偵測，不一致時改以主機計畫下發 |
