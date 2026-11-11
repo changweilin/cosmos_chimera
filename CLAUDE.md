@@ -39,14 +39,11 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 需求有歧義 | `docs/open-questions.md`（先查，沒有就新增並停下來問） |
 
 # 硬性規則
-- `.claude/rules/code-contracts.md` 永遠適用：
-  - **Design by Contract**：所有 public 介面寫明 Pre / Post / Side effects。
-  - **Why, Not What**：行內註解只寫原因；禁止複述語法。
-  - **Chesterton's Fence**：硬體、效能、引擎 bug、舊版相容的 workaround（`// FENCE:`）未經明確指示不重構。
+- 程式碼三原則（改 `.cs` 時自動載入 `.claude/rules/code-contracts.md`）：public 介面寫 Pre/Post/Side effects · 註解只寫 Why · `// FENCE:` 未經指示不重構。
 - 其餘規則依路徑自動載入（`.claude/rules/`：`unity-csharp`、`testing`、`data-content`、`docs-and-progress`）。
 - 球面世界中**禁止**用 `Vector3.up` / `Physics.gravity` 表示「上方」或重力；一律透過 `PlanetFrame` 取當地 up（見 planet-tech.md）。
 - 星球半徑只有一個來源：`PlanetConfig.Radius`。其他尺寸由它推導。
 - 程序生成必須**可重現**：同 seed + 同 `GeneratorVersion` → 同結果（連線時客戶端各自生成）。禁用 `UnityEngine.Random` 於生成邏輯。
-- 需求不明確時：停下、記錄到 `docs/open-questions.md`、詢問使用者。不寫「先湊合」的 fallback。
+- 需求不明確時：記錄到 `docs/open-questions.md`、詢問使用者，只停該項目、改做其他項目。不寫「先湊合」的 fallback（例外：該問題已有「暫定」且只影響 `Data/` 數值，見 `AGENTS.md` §2）。
 - 不沿用參考作 sakura-crossing 的等距圓柱投影（極區壓縮）；本作用 cube-sphere。遠景靠大氣與高地標，不靠拉遠攝影機。理由見 planet-tech.md。
-- 完成 roadmap 項目後更新該項狀態欄並寫交接（格式見 `.claude/rules/docs-and-progress.md`）。
+- 完成定義與交接見 `AGENTS.md` §3（commit message 即交接；只更新狀態欄）。

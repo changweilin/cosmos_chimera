@@ -1,4 +1,8 @@
-# Comment & Architecture Rules（永遠適用）
+---
+paths:
+  - "Assets/**/*.cs"
+---
+# Comment & Architecture Rules（所有 C#）
 
 ## 1. Design by Contract — 所有 public 介面
 每個 `public` / `protected` 型別成員（以及 feature `Api/` 內所有型別）必須在 XML doc 中寫明：
@@ -23,7 +27,7 @@ public static int ComputeDamage(in CombatantStats attacker, in CombatantStats ta
 ```
 
 - 前置條件在 Editor / Development build 以 `Contract.Requires(...)`（`Core/Contracts`，P0-04 建立）檢查；Release build 剝除。不要用 `Debug.Assert` 取代，因為它不會在測試中失敗。
-- 契約改變 = 破壞性變更：同步更新呼叫端與測試，並在交接紀錄註明。
+- 契約改變 = 破壞性變更：同步更新呼叫端與測試，並在 commit message 註明。
 
 ## 2. Why, Not What — 行內註解
 - 只寫**為何**：非顯而易見的取捨、數學推導、平台怪癖、效能理由、需求出處。
@@ -42,4 +46,4 @@ public static int ComputeDamage(in CombatantStats attacker, in CombatantStats ta
   ```csharp
   // FENCE: <為何存在> · <如何驗證它仍需要> · <參考：issue/ADR/連結>
   ```
-- 發現未標記但疑似圍籬的程式碼：保持原樣，在交接紀錄中提出，由人決定。
+- 發現未標記但疑似圍籬的程式碼：保持原樣，在 commit message 中提出，由人決定。

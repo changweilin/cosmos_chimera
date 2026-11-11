@@ -15,8 +15,15 @@
 | **ARGON** | Gemini 4 Argon（agy） | 前沿，長上下文/除錯強，寫碼不及 Opus | 文化原型考據、整份資料集一致性掃描、大型規格閱讀摘要、效能剖析報告的除錯分析、**第三方審查**（安全/遷移/重現性） | 直接寫入核心程式碼 |
 | **FLASH** | Gemini Flash（3.8，agy） | 低成本大量，需要 harness 與驗證 | 宙獸/招式/特性 JSON 大量初稿（在 schema 約束下）、格式轉換、翻譯、資料清洗 | 任何需要判斷的審核、長時程 agentic 任務、未經查證的事實考據 |
 
+## 審查政策（省 token、不阻塞）
+P1 曾跑到 17+ 輪複審，成本遠高於它抓到的問題；因此：
+- **必審**（完成後標 🟨）：ADR／Api 契約、球面數學、生成重現性、netcode、存檔格式／遷移、資安、數值定案。其餘項目測試全綠即 ✅，審查欄僅表示「有空時誰可抽查」。
+- **一輪為原則**：只有 high 阻擋；med／low 進 `tech-debt.md`。修完 high 後的複核只看該 diff，最多再一輪。
+- 突變測試只用於重現性與 netcode。
+- 🟨 不阻擋下游項目開工；審查與實作平行。
+
 ## 任務類型 → 派工矩陣
-主責 = 寫；審查 = 必須與主責**不同廠商**（同廠不同層級不算）。
+主責 = 寫；必審類別的審查者必須與主責**不同廠商**（同廠不同層級不算）。
 
 | 任務類型 | 主責 | 審查 | 備註 |
 |---|---|---|---|
@@ -35,7 +42,7 @@
 | 美術 prompt、概念圖 | TERRA（圖像）/ ARGON | 人工 | 見 Q-T3 |
 
 ## 派工原則
-1. **一個項目一個主責**；審查者必須是不同廠商的模型（降低同源盲點）。SONNET-AGY 與 SONNET/OPUS 同源。
+1. **一個項目一個主責**；必審項目的審查者必須是不同廠商的模型（降低同源盲點）。SONNET-AGY 與 SONNET/OPUS 同源。
 2. 核心程式碼只由 OPUS/SONNET 寫入；其他模型產出以「提案/patch」形式交 SONNET 合併。
 3. 資料批次：FLASH/TERRA/LUNA 產初稿 → `tools/validate-data` → SONNET 一致性 → 人工定稿。
 4. 一切涉及「定案」（ADR、數值、文化敏感）都要人工最後確認。
@@ -54,7 +61,7 @@
 換版或質疑層級時才讀：`research/ai-agent-evidence.md`（2026-11-06 查詢；含 agy headless 實務）。
 
 ## 交接格式
-見 `AGENTS.md` §3（寫入 `roadmap/log/`）。非 Claude 工具務必先讀 `AGENTS.md`，因為它們不會自動載入 `.claude/rules/`。
+見 `AGENTS.md` §3（commit message 即交接）。派工給非 Claude 工具時，prompt 第一句要求它先讀 `AGENTS.md`。
 
 ## Claude Code 執行建議
 - 長任務用 `docs/roadmap/phase-N.md` 項目 ID 開新 session，只載入該項目需要的文件（遵循 CLAUDE.md 索引）。
