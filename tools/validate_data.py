@@ -2,7 +2,7 @@
 """Validate game data under a data root against Data/schemas plus cross-file rules.
 
 Usage: tools/validate-data [--root DIR] [--schemas DIR]
-  --root     data root containing creatures/ moves/ traits/ relations/ planet-types/ (default: Data)
+  --root     data root containing creatures/ moves/ traits/ relations/ planet-types/ characters/ env-materials/ (default: Data)
   --schemas  schema directory (default: Data/schemas)
 Exit: 0 = no errors (warnings allowed), 1 = errors found, 2 = usage / environment error.
 Every finding is printed as `<level> [<code>] <file>:<json-pointer>: <message>`.
@@ -37,6 +37,9 @@ KINDS = {
 }
 ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters")
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
+ENV_MATERIALS_FOLDER = "env-materials"
+ENV_MATERIALS_SCHEMA = "env-materials"
+NINE_ELEMENTS = ("metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light")
 
 
 @dataclass(frozen=True)
@@ -162,7 +165,7 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
     """
     findings: list[Finding] = []
     registry, schemas = _registry(schema_dir)
-    missing = [s for s in KINDS.values() if s not in schemas]
+    missing = [s for s in list(KINDS.values()) + [ENV_MATERIALS_SCHEMA] if s not in schemas]
     if missing:
         raise FileNotFoundError(f"missing schemas in {schema_dir}: {missing}")
 
@@ -184,8 +187,19 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
                         records[folder].append(Record(folder, rel, i, item))
 
     _check_cross_refs(records, findings, retired_ids_path)
+    _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
     return findings
+
+
+def _load_retired_ids(retired_ids_path: Path | None) -> set[str]:
+    retired = set()
+    if retired_ids_path and retired_ids_path.exists():
+        for line in retired_ids_path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line:
+                retired.add(line)
+    return retired
 
 
 def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding], retired_ids_path: Path | None) -> None:
@@ -202,12 +216,7 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             else:
                 by_id[rid] = r
 
-    retired = set()
-    if retired_ids_path and retired_ids_path.exists():
-        for line in retired_ids_path.read_text(encoding="utf-8").splitlines():
-            line = line.split("#", 1)[0].strip()
-            if line:
-                retired.add(line)
+    retired = _load_retired_ids(retired_ids_path)
     for rid, r in by_id.items():
         if rid in retired:
             findings.append(Finding("error", "retired_id", r.file, f"/{r.index}/id",
@@ -295,6 +304,164 @@ def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
         if isinstance(el, str) and el not in mastery:
             findings.append(Finding("error", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
                                     f"'{el}' is not one of this creature's mastery elements {sorted(mastery)} (Q-C9)"))
+
+
+def _check_env_materials(
+    root: Path,
+    schema: dict,
+    registry: Registry,
+    records: dict[str, list[Record]],
+    findings: list[Finding],
+    retired_ids_path: Path | None,
+) -> None:
+    folder = root / ENV_MATERIALS_FOLDER
+    if not folder.is_dir():
+        return
+    paths = sorted(folder.glob("*.json"))
+    if not paths:
+        return
+
+    # env_materials_multiple: more than one *.json in env-materials/ (report on the second file, pointer "").
+    if len(paths) > 1:
+        for extra in paths[1:]:
+            findings.append(
+                Finding("error", "env_materials_multiple", extra.relative_to(root).as_posix(), "",
+                        f"more than one *.json in {ENV_MATERIALS_FOLDER}/")
+            )
+
+    target_path = paths[0]
+    rel = target_path.relative_to(root).as_posix()
+    doc = _load_json(target_path, rel, findings)
+    if doc is None:
+        return
+
+    validator = Draft202012Validator(schema, registry=registry)
+    for err in sorted(validator.iter_errors(doc), key=lambda e: list(e.absolute_path)):
+        for leaf in _leaf_errors(err):
+            findings.append(Finding("error", "schema", rel, _pointer(leaf.absolute_path), _schema_message(leaf)))
+
+    if not isinstance(doc, dict):
+        return
+
+    id_kinds_records: dict[str, Record] = {}
+    for kind in ID_KINDS:
+        for r in records.get(kind, []):
+            rid = r.data.get("id")
+            if isinstance(rid, str) and rid not in id_kinds_records:
+                id_kinds_records[rid] = r
+
+    retired = _load_retired_ids(retired_ids_path)
+
+    substances = doc.get("substances")
+    seen_substance_ids: dict[str, int] = {}
+    defined_substances: dict[str, dict] = {}
+    elements_present: set[str] = set()
+
+    if isinstance(substances, list):
+        for i, s in enumerate(substances):
+            if not isinstance(s, dict):
+                continue
+            sid = s.get("id")
+            if isinstance(sid, str):
+                if sid in seen_substance_ids:
+                    first_idx = seen_substance_ids[sid]
+                    findings.append(
+                        Finding("error", "duplicate_id", rel, f"/substances/{i}/id",
+                                f"id '{sid}' already defined in this file at /substances/{first_idx}/id; ids are global")
+                    )
+                else:
+                    seen_substance_ids[sid] = i
+                    defined_substances[sid] = s
+                    if sid in id_kinds_records:
+                        other = id_kinds_records[sid]
+                        findings.append(
+                            Finding("error", "duplicate_id", rel, f"/substances/{i}/id",
+                                    f"id '{sid}' already defined in {other.file}/{other.index}; ids are global")
+                        )
+                if sid in retired:
+                    findings.append(
+                        Finding("error", "retired_id", rel, f"/substances/{i}/id",
+                                f"id '{sid}' is retired (Data/retired-ids.txt); ids are never reused")
+                    )
+            el = s.get("element")
+            if isinstance(el, str):
+                elements_present.add(el)
+
+    for el in NINE_ELEMENTS:
+        if el not in elements_present:
+            findings.append(
+                Finding("error", "element_without_source", rel, "/substances",
+                        f"element '{el}' has no substance source")
+            )
+
+    drops = doc.get("drops")
+    if isinstance(drops, dict):
+        for name in ("material", "gem"):
+            item = drops.get(name)
+            if isinstance(item, dict):
+                base = item.get("base_permille")
+                cap = item.get("cap_permille")
+                if (isinstance(base, int) and not isinstance(base, bool)
+                        and isinstance(cap, int) and not isinstance(cap, bool)):
+                    if cap < base:
+                        findings.append(
+                            Finding("error", "drop_cap_below_base", rel, f"/drops/{name}",
+                                    f"drops/{name} cap_permille ({cap}) is less than base_permille ({base})")
+                        )
+
+    buildings = doc.get("buildings")
+    seen_building_kinds: set[str] = set()
+    if isinstance(buildings, list):
+        for i, b in enumerate(buildings):
+            if not isinstance(b, dict):
+                continue
+            bkind = b.get("kind")
+            if isinstance(bkind, str):
+                if bkind in seen_building_kinds:
+                    findings.append(
+                        Finding("error", "building_duplicate", rel, f"/buildings/{i}/kind",
+                                f"building kind '{bkind}' repeated")
+                    )
+                else:
+                    seen_building_kinds.add(bkind)
+            composition = b.get("composition")
+            if isinstance(composition, list):
+                seen_comp_substances: set[str] = set()
+                for j, comp in enumerate(composition):
+                    if not isinstance(comp, dict):
+                        continue
+                    csub = comp.get("substance")
+                    if isinstance(csub, str):
+                        if csub not in defined_substances:
+                            findings.append(
+                                Finding("error", "dangling_ref", rel, f"/buildings/{i}/composition/{j}/substance",
+                                        f"'{csub}' is not a known substance id in this file")
+                            )
+                        if csub in seen_comp_substances:
+                            findings.append(
+                                Finding("error", "building_duplicate", rel, f"/buildings/{i}/composition/{j}/substance",
+                                        f"substance '{csub}' repeated in composition of building '{bkind}'")
+                            )
+                        else:
+                            seen_comp_substances.add(csub)
+
+    ground = doc.get("ground_materials")
+    if isinstance(ground, dict):
+        for key, gsub in ground.items():
+            if not isinstance(gsub, str):
+                continue
+            if gsub not in defined_substances:
+                findings.append(
+                    Finding("error", "dangling_ref", rel, f"/ground_materials/{key}",
+                            f"'{gsub}' is not a known substance id in this file")
+                )
+            elif key != "gem":
+                sub_el = defined_substances[gsub].get("element")
+                if isinstance(sub_el, str) and sub_el != key:
+                    findings.append(
+                        Finding("error", "ground_element_mismatch", rel, f"/ground_materials/{key}",
+                                f"ground material for '{key}' points to substance '{gsub}' with element '{sub_el}'")
+                    )
 
 
 def main(argv: list[str] | None = None) -> int:

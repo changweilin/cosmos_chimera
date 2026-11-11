@@ -1,0 +1,516 @@
+{
+  "substances": [
+    {
+      "id": "metal",
+      "element": "metal",
+      "flammable": "none",
+      "conductive": true,
+      "brittle": "never",
+      "opacity_permille": 900,
+      "density_kg_m3": 7800,
+      "hp_per_m3": 3000,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": -50,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "wire",
+      "element": "thunder",
+      "flammable": "none",
+      "conductive": true,
+      "brittle": "never",
+      "opacity_permille": 500,
+      "density_kg_m3": 2500,
+      "hp_per_m3": 1500,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": -50,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "chip",
+      "element": "thunder",
+      "flammable": "none",
+      "conductive": true,
+      "brittle": "always",
+      "opacity_permille": 900,
+      "density_kg_m3": 900,
+      "hp_per_m3": 600,
+      "resist": {
+        "metal": -50,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": -50,
+        "ice": 0,
+        "wind": 0,
+        "thunder": -50,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "wood",
+      "element": "wood",
+      "flammable": "slow",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 900,
+      "density_kg_m3": 900,
+      "hp_per_m3": 1000,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "plant",
+      "element": "wood",
+      "flammable": "fast",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 500,
+      "density_kg_m3": 400,
+      "hp_per_m3": 300,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "sap",
+      "element": "wood",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 250,
+      "density_kg_m3": 900,
+      "hp_per_m3": 300,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "pectin",
+      "element": "water",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 250,
+      "density_kg_m3": 900,
+      "hp_per_m3": 300,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "kerosene",
+      "element": "fire",
+      "flammable": "blast",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 500,
+      "density_kg_m3": 900,
+      "hp_per_m3": 400,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "stone",
+      "element": "earth",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "frozen",
+      "opacity_permille": 900,
+      "density_kg_m3": 2500,
+      "hp_per_m3": 2000,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "crystal",
+      "element": "earth",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "always",
+      "opacity_permille": 250,
+      "density_kg_m3": 900,
+      "hp_per_m3": 800,
+      "resist": {
+        "metal": -50,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": -50,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "ice",
+      "element": "ice",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "always",
+      "opacity_permille": 250,
+      "density_kg_m3": 900,
+      "hp_per_m3": 500,
+      "resist": {
+        "metal": -50,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": -50,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "glass",
+      "element": "ice",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "always",
+      "opacity_permille": 50,
+      "density_kg_m3": 900,
+      "hp_per_m3": 200,
+      "resist": {
+        "metal": -50,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": -50,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "cloth",
+      "element": "wind",
+      "flammable": "fast",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 500,
+      "density_kg_m3": 100,
+      "hp_per_m3": 150,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "bulb",
+      "element": "light",
+      "flammable": "none",
+      "conductive": true,
+      "brittle": "always",
+      "opacity_permille": 50,
+      "density_kg_m3": 400,
+      "hp_per_m3": 100,
+      "resist": {
+        "metal": -50,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": -50,
+        "ice": 0,
+        "wind": 0,
+        "thunder": -50,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "fiber",
+      "element": "light",
+      "flammable": "none",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 250,
+      "density_kg_m3": 400,
+      "hp_per_m3": 400,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": 0,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    },
+    {
+      "id": "charcoal",
+      "element": "fire",
+      "flammable": "slow",
+      "conductive": false,
+      "brittle": "never",
+      "opacity_permille": 900,
+      "density_kg_m3": 400,
+      "hp_per_m3": 300,
+      "resist": {
+        "metal": 0,
+        "wood": 0,
+        "water": 0,
+        "fire": -50,
+        "earth": 0,
+        "ice": 0,
+        "wind": 0,
+        "thunder": 0,
+        "light": 0,
+        "shadow": 0
+      }
+    }
+  ],
+  "reactions": {
+    "burn_slow_permille_per_s": 100,
+    "burn_fast_permille_per_s": 250,
+    "melt_percent": 150,
+    "freeze_ms": 5000,
+    "shatter_percent": 200,
+    "conduct_percent": 150,
+    "gust_impulse_percent": 200
+  },
+  "drops": {
+    "material": {
+      "base_permille": 50,
+      "per_m3_permille": 20,
+      "cap_permille": 600
+    },
+    "gem": {
+      "base_permille": 0,
+      "per_m3_permille": 1,
+      "cap_permille": 20
+    },
+    "shadow": {
+      "per_m2_permille": 30,
+      "cap_permille": 500
+    }
+  },
+  "buildings": [
+    {
+      "kind": "tent",
+      "composition": [
+        {
+          "substance": "cloth",
+          "weight": 3
+        },
+        {
+          "substance": "wood",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "kind": "house",
+      "composition": [
+        {
+          "substance": "wood",
+          "weight": 4
+        },
+        {
+          "substance": "stone",
+          "weight": 3
+        },
+        {
+          "substance": "glass",
+          "weight": 2
+        },
+        {
+          "substance": "wire",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "kind": "hall",
+      "composition": [
+        {
+          "substance": "wood",
+          "weight": 4
+        },
+        {
+          "substance": "stone",
+          "weight": 4
+        },
+        {
+          "substance": "glass",
+          "weight": 2
+        },
+        {
+          "substance": "wire",
+          "weight": 1
+        },
+        {
+          "substance": "bulb",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "kind": "tower",
+      "composition": [
+        {
+          "substance": "stone",
+          "weight": 4
+        },
+        {
+          "substance": "metal",
+          "weight": 3
+        },
+        {
+          "substance": "wire",
+          "weight": 2
+        },
+        {
+          "substance": "fiber",
+          "weight": 1
+        },
+        {
+          "substance": "bulb",
+          "weight": 1
+        },
+        {
+          "substance": "chip",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "kind": "pillar",
+      "composition": [
+        {
+          "substance": "stone",
+          "weight": 4
+        },
+        {
+          "substance": "crystal",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "kind": "ruin_wall",
+      "composition": [
+        {
+          "substance": "stone",
+          "weight": 5
+        },
+        {
+          "substance": "metal",
+          "weight": 2
+        },
+        {
+          "substance": "chip",
+          "weight": 1
+        },
+        {
+          "substance": "fiber",
+          "weight": 1
+        }
+      ]
+    }
+  ],
+  "ground_materials": {
+    "metal": "wood",
+    "wood": "wood",
+    "water": "pectin",
+    "fire": "charcoal",
+    "earth": "stone",
+    "ice": "ice",
+    "wind": "cloth",
+    "thunder": "chip",
+    "gem": "crystal"
+  }
+}
