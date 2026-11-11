@@ -105,7 +105,7 @@ namespace Cosmimera.Bootstrap.Demo
         // FENCE: Cinemachine moves the camera later in LateUpdate than this component, so the LateUpdate placement
         //   lags one frame (~5 cm at walking speed, measured in RunSessionSmokeTests) and stars would swim. Re-pinning
         //   just before the camera renders removes the lag. · Verify: delete this, walk at night, watch stars jitter.
-        //   · Ref: docs/roadmap/phase-1.md P1-08 handoff 2026-11-09.
+        //   · Ref: docs/roadmap/log/phase-1.md P1-08 handoff 2026-11-09.
         private void OnBeginCamera(UnityEngine.Rendering.ScriptableRenderContext context, Camera camera)
         {
             if (_shell != null && camera == _camera)

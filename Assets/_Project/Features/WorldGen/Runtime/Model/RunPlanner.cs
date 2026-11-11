@@ -183,7 +183,7 @@ namespace Cosmimera.WorldGen
             int bossSpawn = spawns.Count;
             spawns.Add(new RunSpawn(boss, group, Scatter(sites[boss], 0f, isLand, ref rng), bossSpecies.Id, SpawnRole.Boss));
 
-            // REQ: docs/roadmap/phase-2.md (SOL P2-12 D0 calibration, 2026-11-09): picking straight from ElementBias made
+            // REQ: docs/roadmap/log/phase-2.md (SOL P2-12 D0 calibration, 2026-11-09): picking straight from ElementBias made
             // DefeatWild impossible when no wild form has that element (twilight light/shadow, storm thunder). The
             // element must have ≥ DefeatWildCount non-boss spawns; the boss ends the run, so it can never count.
             // The next step's elite is excluded too (SOL P3-10 S1): QuestTracker gives no pre-credit, so killing it to
