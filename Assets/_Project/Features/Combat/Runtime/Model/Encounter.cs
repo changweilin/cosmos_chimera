@@ -1167,10 +1167,13 @@ namespace Cosmimera.Combat
         private void FillOptions(EncounterUnit u, long nowMs)
         {
             _optionBuffer.Clear();
+            long rangePercent = u.Combatant.RangePercent(nowMs);
             for (int s = 0; s < u.Moves.Count; s++)
             {
-                // The AI must judge reach on what the cast will actually use, or it fires from beyond the cap (SOL Q-D1 B).
-                HitVolume v = MoveGeometry.ApplyPlanetCap(u.Volumes[s], u.RangeClasses[s], _rangeCapMm);
+                // The AI must judge reach on what the cast will actually use — same range modifiers, then the planet cap,
+                // in TryCast's order — or it fires from beyond reach (SOL Q-D1 B, Q-D1-IMPL-01).
+                HitVolume v = MoveGeometry.ApplyPlanetCap(EffectMath.ApplyRange(u.Volumes[s], u.RangeClasses[s],
+                    rangePercent, _balance.Stats, _balance.Effects), u.RangeClasses[s], _rangeCapMm);
                 AiMoveTargeting targeting = v.Kind == HitVolumeKind.Caster ? AiMoveTargeting.Self
                     : v.Kind == HitVolumeKind.Ally ? AiMoveTargeting.Ally : AiMoveTargeting.Hostile;
                 int reach = targeting == AiMoveTargeting.Self ? 0 : CombatAi.ReachMmOf(v);

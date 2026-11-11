@@ -145,6 +145,16 @@ namespace Cosmimera.Combat.Tests
 
             HitVolume shortDash = Build(MoveShape.Line, RangeClass.Melee, 2000, 0, MoveMovement.Dash);
             Assert.That(MoveGeometry.ApplyPlanetCap(shortDash, RangeClass.Melee, cap), Is.EqualTo(shortDash));
+
+            // SOL Q-D1-IMPL-02 M4: a melee-tagged arc/field is still thrown to an aim point; only that distance is capped.
+            foreach (MoveShape shape in new[] { MoveShape.Arc, MoveShape.Field })
+            {
+                HitVolume raw = Build(shape, RangeClass.Melee, 36000, 100);
+                Assert.That(raw.CastDistanceMm, Is.GreaterThan(cap), shape.ToString());
+                HitVolume capped = MoveGeometry.ApplyPlanetCap(raw, RangeClass.Melee, cap);
+                Assert.That(capped.CastDistanceMm, Is.EqualTo(cap), shape.ToString());
+                Assert.That(capped.ReachMm, Is.EqualTo(raw.ReachMm), shape + " landing radius is an AoE size");
+            }
         }
 
         // SOL Q-D1 A: the planet cap comes after range modifiers; capping first would make a −50 % debuff land at 12.8 m.
@@ -248,6 +258,44 @@ namespace Cosmimera.Combat.Tests
             }
 
             Assert.That(cast, Is.EqualTo(expectCast));
+        }
+
+        // SOL Q-D1-IMPL-01: with −50 % range the sniper reaches 18 m. At 23 m the AI used to judge 25.6 m, stand still and
+        // fire short forever; at 15 m (inside 18 m, outside the 12.8 m a cap-before-modifier order gives) every cast must
+        // land, which also pins TryCast's order end to end (M3).
+        [TestCase(23f)]
+        [TestCase(15f)]
+        public void A_range_debuffed_ai_closes_in_and_lands_every_cast(float startM)
+        {
+            const float radius = 320f;
+            var planet = new PlanetConfig(radius, float3.zero);
+            float3 At(float meters)
+            {
+                float a = meters / radius;
+                return math.normalize(new float3(math.sin(a), math.cos(a), 0f));
+            }
+
+            var e = new Encounter(planet, _balance, new FlatSurface(), 5);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Sniper(), null, At(0f), 10);
+            wild.Combatant.Book.Apply("short", 0, new EffectSpec(EffectType.RangeModPercent, false, Element.Fire, -50, 0, 1),
+                600_000, 0);
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            e.Provoke(wild.Id);
+            float3 player = planet.ToWorld(At(startM), 0f);
+            var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
+            int casts = 0, hits = 0;
+            for (long now = Dt; now <= 10_000; now += Dt)
+            {
+                e.Tick(now, Dt, player, free, CombatAi.NoTarget);
+                foreach (EncounterEvent ev in e.Events)
+                {
+                    casts += ev.Kind == EncounterEventKind.Cast && ev.SourceId == wild.Id ? 1 : 0;
+                    hits += ev.Kind == EncounterEventKind.Hit && ev.SourceId == wild.Id ? 1 : 0;
+                }
+            }
+
+            Assert.That(casts, Is.GreaterThan(0));
+            Assert.That(hits, Is.EqualTo(casts));
         }
 
         // End to end through Encounter.Tick: a 36 m dash travels 36 m on a moon but only the cap on an asteroid.

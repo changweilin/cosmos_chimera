@@ -467,6 +467,22 @@ namespace Cosmimera.Combat
             return EffectMath.MoveSpeedMmS(_stats, _agi, _totals.MoveSpeedPercent, _rules);
         }
 
+        /// <summary>Σ range_mod_percent active at <paramref name="nowMs"/>, as a cast starting now would see it before its own on_move_used.</summary>
+        /// <remarks>
+        /// REQ: SOL Q-D1-IMPL-01 — AI reach must use the same range modifiers as BeginCast, or a debuffed caster stands
+        /// still and fires short forever. Unlike BeginCast this does not fire on_move_used (a preview must not spend
+        /// triggers), so a range buff the cast itself would grant is missing; every on_move_used range trait in Data is
+        /// positive (2026-11-11), so the preview errs short and the AI steps closer instead of firing out of reach.
+        /// Pre: nowMs in CombatTime and >= Book's watermark.
+        /// Post: equals the RangePercentSum BeginCast(…, nowMs) would report when the move's on_move_used grants no range.
+        /// Side effects: overwrites the internal modifier buffer only; no allocation.
+        /// </remarks>
+        public long RangePercent(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return _totals.RangePercent;
+        }
+
         /// <summary>Resolves an enemy-targeted move (any shape except self/ally) landing on this combatant.</summary>
         /// <remarks>
         /// Call once per (cast or field tick, target), in the host's deterministic target order.
