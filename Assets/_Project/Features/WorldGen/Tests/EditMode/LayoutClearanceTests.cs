@@ -104,6 +104,18 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Removed_building_stops_blocking_but_still_keeps_scatter_clear()
+        {
+            var c = new LayoutClearance(Planet, Layout(), 0f);
+            c.RemoveBuilding(0);
+            c.RemoveBuilding(0);
+            Assert.That(c.IsInsideBuilding(new float3(0, 1, 0), 0f), Is.False);
+            Assert.That(c.IsClear(new float3(0, 1, 0)), Is.False, "placement must not depend on destruction");
+            Assert.Throws<ContractException>(() => c.RemoveBuilding(1));
+            Assert.Throws<ContractException>(() => c.RemoveBuilding(-1));
+        }
+
+        [Test]
         public void Contract_violations_throw()
         {
             RunLayout layout = Layout();

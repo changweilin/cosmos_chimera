@@ -17,13 +17,14 @@ BATCHES = [
     "p5-05-moves-draft-01", "p5-05-moves-draft-02", "p5-05-moves-draft-03", "p5-05-moves-draft-04",
     "p5-05-moves-draft-05", "p5-05-moves-draft-06",
     "p5-05-traits-draft-01", "p5-05-traits-draft-02", "p5-05-traits-draft-03",
-    "p5-06-relations-draft-01",
+    "p5-06-relations-draft-01", "p3-12-env-materials-draft-01",
 ]
-KINDS = ["creatures", "moves", "traits", "relations", "planet-types"]
+KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials"]
 # Runtime copy for the demo UI. Unity cannot read Data/ in a build, so the text is staged as TextAssets.
 COPY_OUT = Path("Assets/_Project/Data/Copy")
 D0_COPY = ["affixes", "region-themes", "quest-templates", "boss-epithets", "strings"]
 NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01"]
+ENV_MATERIALS_BATCH = "p3-12-env-materials-draft-01"
 
 
 def _read_json(path):
@@ -82,6 +83,12 @@ def _prepare_copy(root):
     strings.update(supplement)
     files["strings.json"] = (json.dumps(strings, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     files["balance.json"], _ = _read_json(root / "balance.json")
+    folder = root / "_incoming" / ENV_MATERIALS_BATCH / "env-materials"
+    candidates = sorted(folder.glob("*.json")) if folder.is_dir() else []
+    n = len(candidates)
+    if n != 1:
+        raise ValueError(f"{folder}: expected exactly one env-materials file, found {n}")
+    files["env-materials.json"], _ = _read_json(candidates[0])
     names = {}
     for batch in NAME_SOURCES:
         _, copy = _read_json(root / "_incoming" / batch / "copy-terra.json")

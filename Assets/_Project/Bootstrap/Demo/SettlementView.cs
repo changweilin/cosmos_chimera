@@ -255,6 +255,17 @@ namespace Cosmimera.Bootstrap.Demo
             return root;
         }
 
+        /// <summary>Hides building <paramref name="index"/> and its colliders (it was destroyed; destructibles.md#碰撞).</summary>
+        /// <remarks>
+        /// Pre: Configure ran; 0 &lt;= index &lt; Buildings.Count. Post: Buildings[index] is inactive (indices stay aligned
+        ///      with RunLayout.Buildings). Side effects: deactivates a GameObject.
+        /// </remarks>
+        public void RemoveBuilding(int index)
+        {
+            Contract.Requires(index >= 0 && index < _buildings.Count, "index out of range");
+            _buildings[index].SetActive(false);
+        }
+
         private void Part(Transform parent, PrimitiveType type, Color color, Vector3 scale, Vector3 localPos,
             Quaternion? rotation = null)
         {

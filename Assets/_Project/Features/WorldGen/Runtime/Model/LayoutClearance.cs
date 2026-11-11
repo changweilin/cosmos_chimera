@@ -58,6 +58,7 @@ namespace Cosmimera.WorldGen
         private readonly Footprint[] _buildings;
         private readonly float _radius;
         private readonly float _marginM;
+        private bool[] _removed;
 
         /// <summary>Indexes <paramref name="layout"/> on <paramref name="planet"/> with a clearance of <paramref name="marginM"/>.</summary>
         /// <remarks>
@@ -126,7 +127,7 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
                 "direction must be finite and non-zero");
             float3 p = math.normalize(direction);
-            if (InsideBuilding(p, _marginM))
+            if (InsideBuilding(p, _marginM, false))
             {
                 return false;
             }
@@ -163,13 +164,34 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
                 "direction must be finite and non-zero");
             Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
-            return InsideBuilding(math.normalize(direction), marginM);
+            return InsideBuilding(math.normalize(direction), marginM, true);
         }
 
-        private bool InsideBuilding(float3 p, float marginM)
+        /// <summary>Stops building <paramref name="index"/> from blocking bodies (it was destroyed).</summary>
+        /// <remarks>
+        /// REQ: docs/design/destructibles.md#碰撞 — a destroyed building's footprint no longer blocks.
+        /// Pre: 0 &lt;= index &lt; layout.Buildings.Count.
+        /// Post: IsInsideBuilding ignores that footprint; IsClear is unchanged, because scatter placement reads it and
+        ///       must not depend on what was destroyed (same seed → same scatter whenever a cell streams in).
+        /// Side effects: mutates this index (idempotent).
+        /// </remarks>
+        public void RemoveBuilding(int index)
         {
-            foreach (Footprint f in _buildings)
+            Contract.Requires(index >= 0 && index < _buildings.Length, "index out of range");
+            _removed ??= new bool[_buildings.Length];
+            _removed[index] = true;
+        }
+
+        private bool InsideBuilding(float3 p, float marginM, bool skipRemoved)
+        {
+            for (int i = 0; i < _buildings.Length; i++)
             {
+                if (skipRemoved && _removed != null && _removed[i])
+                {
+                    continue;
+                }
+
+                Footprint f = _buildings[i];
                 float3 d = (p - f.Center) * _radius;
                 // The tangent-plane test alone also accepts the antipode (p − c is radial there, with zero tangent
                 // components), so the hemisphere check is required.

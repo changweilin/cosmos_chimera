@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
@@ -268,6 +269,14 @@ namespace Cosmimera.Combat
         private PlayerVitals _player;
         private float3 _playerCenter;
         private float3 _playerPush;
+        private DestructibleTable _objects;
+        private IDestructibleIndex _objectIndex;
+        private Func<float3, bool> _isNight;
+        // Separate stream: object drops must not shift combat, wander, capture or creature-material rolls.
+        private Pcg32 _objectRng;
+        private readonly List<ObjectEvent> _objectEvents = new List<ObjectEvent>(16);
+        private readonly List<DestructibleCandidate> _candidateBuffer = new List<DestructibleCandidate>(32);
+        private readonly List<int> _burntBuffer = new List<int>(8);
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -316,8 +325,35 @@ namespace Cosmimera.Combat
             _surface = surface;
             _rng = new Pcg32(seed, 'C');
             _wanderRng = new Pcg32(seed, 'W');
+            _objectRng = new Pcg32(seed, 'O');
             _rangeCapMm = balance.Horizon.CapMm(planet.Radius);
         }
+
+        /// <summary><see cref="ObjectEvent.SourceId"/> of an object that burnt out on its own.</summary>
+        /// <remarks>Pre: none. Post: constant; never a unit id. Side effects: none.</remarks>
+        public const int NoSource = -1;
+
+        /// <summary>Lets moves hit generated scene objects. REQ: docs/design/destructibles.md, ADR-0009.</summary>
+        /// <remarks>
+        /// Pre: table, index and isNight non-null; called at most once, before the first Tick; isNight(direction) answers
+        ///      "sun below the horizon there" at the host's current time.
+        /// Post: every damaging hostile volume (any side, fields included) applies to each object it overlaps; burning
+        ///       objects tick each Tick; destroyed objects roll drops on the object stream (seed, 'O').
+        /// Side effects: stores the references.
+        /// </remarks>
+        public void AttachDestructibles(DestructibleTable table, IDestructibleIndex index, Func<float3, bool> isNight)
+        {
+            Contract.Requires(table != null && index != null && isNight != null, "table, index and isNight are required");
+            Contract.Requires(_objects == null, "destructibles already attached");
+            Contract.Requires(_lastTickMs == long.MinValue, "attach before the first Tick");
+            _objects = table;
+            _objectIndex = index;
+            _isNight = isNight;
+        }
+
+        /// <summary>Object events of the last tick, in resolution order.</summary>
+        /// <remarks>Pre: none. Post: cleared at the start of each Tick; empty when nothing is attached. Side effects: none.</remarks>
+        public IReadOnlyList<ObjectEvent> ObjectEvents => _objectEvents;
 
         /// <summary>Ranged-distance cap on this planet (mm), from balance.Horizon and planet.Radius.</summary>
         /// <remarks>Pre: none. Post: 1..ranged_distance.cap_mm; fixed for the encounter's lifetime. Side effects: none.</remarks>
@@ -624,6 +660,7 @@ namespace Cosmimera.Combat
             long previousMs = _lastTickMs;
             _lastTickMs = nowMs;
             _events.Clear();
+            _objectEvents.Clear();
             // Units stand with their body centre one radius above the ground (GroundPoint); the character's position is
             // its feet, so lift it the same way to keep MoveGeometry's height test consistent.
             _playerCenter = playerPosition + Up(playerPosition) * PlayerBodyRadiusM;
@@ -677,7 +714,68 @@ namespace Cosmimera.Combat
                 }
             }
 
+            BurnObjects(nowMs);
             Separate(playerPosition);
+        }
+
+        private void BurnObjects(long nowMs)
+        {
+            if (_objects == null)
+            {
+                return;
+            }
+
+            _burntBuffer.Clear();
+            _objects.Tick(nowMs, _burntBuffer);
+            foreach (int index in _burntBuffer)
+            {
+                EmitDestroyed(index, NoSource);
+            }
+        }
+
+        // REQ: destructibles.md#誰能打 — every damaging volume resolves against every object it touches; objects never roll
+        // and never draw from the combat stream (destructibles.md#傷害), so attaching them leaves combat replays unchanged.
+        private void ResolveObjects(int casterId, in CastContext ctx, in HitVolume volume, float3 anchor, float3 forward,
+            long nowMs)
+        {
+            if (_objects == null || !ctx.Move.DealsDamage)
+            {
+                return;
+            }
+
+            float reachM = ((long)volume.ReachMm + volume.WidthMm + volume.HalfHeightMm) * 0.001f + _objectIndex.MaxHitRadiusM;
+            _candidateBuffer.Clear();
+            _objectIndex.Query(anchor, reachM, _candidateBuffer);
+            foreach (DestructibleCandidate c in _candidateBuffer)
+            {
+                if (_objects.IsDestroyed(c.Id) ||
+                    !MoveGeometry.Overlaps(volume, _planet, anchor, forward, c.Center, c.HitRadiusM))
+                {
+                    continue;
+                }
+
+                int index = _objects.IndexOf(c.Id);
+                if (index < 0)
+                {
+                    index = _objects.Register(c.Id, c.Composition, c.VolumeL, c.Center);
+                }
+
+                ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element, ctx.Move.Power, ctx.MasteryPercent, nowMs);
+                _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
+                    default));
+                if (r.Destroyed)
+                {
+                    EmitDestroyed(index, casterId);
+                }
+            }
+        }
+
+        private void EmitDestroyed(int index, int sourceId)
+        {
+            // REQ: destructibles.md#影素材 — night is judged where the object stood.
+            ObjectDrop drop = _objects.RollDrop(index, _isNight(_planet.ToDirection(_objects.CenterOf(index))), ref _objectRng);
+            _objectEvents.Add(new ObjectEvent(ObjectEventKind.Destroyed, _objects.IdOf(index), sourceId, 0,
+                ObjectReaction.None, _objects.CauseOf(index), drop));
         }
 
         /// <summary>
@@ -963,6 +1061,8 @@ namespace Cosmimera.Combat
             {
                 HitPlayer(casterId, slot, ctx, nowMs);
             }
+
+            ResolveObjects(casterId, ctx, volume, anchor, forward, nowMs);
         }
 
         // Provisional player defence (Q-C35): evasion 0 and resist 0, so only accuracy and dodge-roll i-frames stand

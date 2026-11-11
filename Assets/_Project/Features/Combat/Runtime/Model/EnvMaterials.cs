@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
+using UnityEngine;
 
 namespace Cosmimera.Combat
 {
@@ -215,19 +217,21 @@ namespace Cosmimera.Combat
     {
         private readonly Composition[] _buildings;
         private readonly Substance[] _ground;
+        private readonly Dictionary<string, Substance> _byId = new Dictionary<string, Substance>(StringComparer.Ordinal);
 
         /// <summary>Creates the table.</summary>
         /// <remarks>
         /// Pre: burn rates 1..1000; melt/shatter/conduct/gust percent 100..1000; freezeMs &gt;= 1;
         ///      shadow terms 0..1000; buildings has one non-null entry per <see cref="BuildingMaterial"/> value;
         ///      ground has 10 entries indexed by Element: non-null for Metal..Thunder (each of that element), null for
-        ///      Light and Shadow (they float and cannot be destroyed); gem non-null.
-        /// Post: properties echo the arguments.
+        ///      Light and Shadow (they float and cannot be destroyed); gem non-null; substances may be null, else ids unique.
+        /// Post: properties echo the arguments; TryGetSubstance finds every listed substance.
         /// Side effects: allocates (copies arrays).
         /// </remarks>
         public EnvMaterials(int burnSlowPermillePerS, int burnFastPermillePerS, int meltPercent, int freezeMs,
             int shatterPercent, int conductPercent, int gustImpulsePercent, VolumeChance material, VolumeChance gem,
-            int shadowPerM2Permille, int shadowCapPermille, Composition[] buildings, Substance[] ground, Substance gemSubstance)
+            int shadowPerM2Permille, int shadowCapPermille, Composition[] buildings, Substance[] ground, Substance gemSubstance,
+            IReadOnlyList<Substance> substances = null)
         {
             Contract.Requires(burnSlowPermillePerS >= 1 && burnSlowPermillePerS <= 1000
                               && burnFastPermillePerS >= 1 && burnFastPermillePerS <= 1000, "burn rates must be in 1..1000");
@@ -261,7 +265,232 @@ namespace Cosmimera.Combat
             _buildings = (Composition[])buildings.Clone();
             _ground = (Substance[])ground.Clone();
             GemSubstance = gemSubstance;
+            if (substances != null)
+            {
+                foreach (Substance sub in substances)
+                {
+                    Contract.Requires(sub != null && !_byId.ContainsKey(sub.Id), "substances must be non-null with unique ids");
+                    _byId.Add(sub.Id, sub);
+                }
+            }
         }
+
+        /// <summary>Looks up a substance by data id.</summary>
+        /// <remarks>Pre: id non-null. Post: true iff the table was built with that substance. Side effects: none.</remarks>
+        public bool TryGetSubstance(string id, out Substance substance)
+        {
+            Contract.Requires(id != null, "id must be non-null");
+            return _byId.TryGetValue(id, out substance);
+        }
+
+        /// <summary>Parses the text of Data/env-materials (staged as a TextAsset for builds).</summary>
+        /// <remarks>
+        /// Pre: json passed tools/validate-data against env-materials.schema.json (one object; every building kind present).
+        /// Post: a table whose substances are all findable by id; unknown enum strings, dangling substance refs or a
+        ///       missing building kind fail with ContractException rather than defaulting.
+        /// Side effects: allocates.
+        /// </remarks>
+        public static EnvMaterials FromJson(string json)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(json), "env-materials json must not be empty");
+            Dto d = JsonUtility.FromJson<Dto>(json);
+            Contract.Requires(d != null && d.substances != null && d.substances.Length > 0 && d.reactions != null &&
+                d.drops != null && d.drops.material != null && d.drops.gem != null && d.drops.shadow != null &&
+                d.buildings != null && d.ground_materials != null, "env-materials json is missing a section");
+
+            var byId = new Dictionary<string, Substance>(StringComparer.Ordinal);
+            var list = new List<Substance>(d.substances.Length);
+            foreach (SubstanceDto s in d.substances)
+            {
+                Contract.Requires(s != null && s.resist != null, "substance row and its resist are required");
+                var sub = new Substance(s.id, ParseElement(s.element), ParseFlammable(s.flammable), s.conductive,
+                    ParseBrittle(s.brittle), s.opacity_permille, s.density_kg_m3, s.hp_per_m3, s.resist.ToArray());
+                Contract.Requires(!byId.ContainsKey(sub.Id), "duplicate substance id " + sub.Id);
+                byId.Add(sub.Id, sub);
+                list.Add(sub);
+            }
+
+            Substance Ref(string id)
+            {
+                Contract.Requires(id != null && byId.ContainsKey(id), "unknown substance id " + id);
+                return byId[id];
+            }
+
+            var buildings = new Composition[BuildingMaterialCount];
+            foreach (BuildingDto b in d.buildings)
+            {
+                Contract.Requires(b != null && b.composition != null && b.composition.Length > 0, "building composition required");
+                int kind = (int)ParseBuilding(b.kind);
+                Contract.Requires(buildings[kind] == null, "duplicate building kind " + b.kind);
+                var parts = new Substance[b.composition.Length];
+                var weights = new int[b.composition.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    parts[i] = Ref(b.composition[i].substance);
+                    weights[i] = b.composition[i].weight;
+                }
+
+                buildings[kind] = new Composition(parts, weights);
+            }
+
+            GroundDto g = d.ground_materials;
+            var ground = new[]
+            {
+                Ref(g.metal), Ref(g.wood), Ref(g.water), Ref(g.fire), Ref(g.earth), Ref(g.ice), Ref(g.wind), Ref(g.thunder),
+                null, null,
+            };
+            ReactionsDto r = d.reactions;
+            DropsDto dr = d.drops;
+            return new EnvMaterials(r.burn_slow_permille_per_s, r.burn_fast_permille_per_s, r.melt_percent, r.freeze_ms,
+                r.shatter_percent, r.conduct_percent, r.gust_impulse_percent,
+                new VolumeChance(dr.material.base_permille, dr.material.per_m3_permille, dr.material.cap_permille),
+                new VolumeChance(dr.gem.base_permille, dr.gem.per_m3_permille, dr.gem.cap_permille),
+                dr.shadow.per_m2_permille, dr.shadow.cap_permille, buildings, ground, Ref(g.gem), list);
+        }
+
+        private static Element ParseElement(string s)
+        {
+            switch (s)
+            {
+                case "metal": return Element.Metal;
+                case "wood": return Element.Wood;
+                case "water": return Element.Water;
+                case "fire": return Element.Fire;
+                case "earth": return Element.Earth;
+                case "ice": return Element.Ice;
+                case "wind": return Element.Wind;
+                case "thunder": return Element.Thunder;
+                case "light": return Element.Light;
+                default:
+                    Contract.Requires(false, "unknown substance element " + s);
+                    return default;
+            }
+        }
+
+        private static Flammability ParseFlammable(string s)
+        {
+            switch (s)
+            {
+                case "none": return Flammability.None;
+                case "slow": return Flammability.Slow;
+                case "fast": return Flammability.Fast;
+                case "blast": return Flammability.Blast;
+                default:
+                    Contract.Requires(false, "unknown flammable " + s);
+                    return default;
+            }
+        }
+
+        private static Brittleness ParseBrittle(string s)
+        {
+            switch (s)
+            {
+                case "never": return Brittleness.Never;
+                case "frozen": return Brittleness.Frozen;
+                case "always": return Brittleness.Always;
+                default:
+                    Contract.Requires(false, "unknown brittle " + s);
+                    return default;
+            }
+        }
+
+        private static BuildingMaterial ParseBuilding(string s)
+        {
+            switch (s)
+            {
+                case "tent": return BuildingMaterial.Tent;
+                case "house": return BuildingMaterial.House;
+                case "hall": return BuildingMaterial.Hall;
+                case "tower": return BuildingMaterial.Tower;
+                case "pillar": return BuildingMaterial.Pillar;
+                case "ruin_wall": return BuildingMaterial.RuinWall;
+                default:
+                    Contract.Requires(false, "unknown building kind " + s);
+                    return default;
+            }
+        }
+
+#pragma warning disable 0649 // assigned by JsonUtility
+        [Serializable]
+        private sealed class Dto
+        {
+            public SubstanceDto[] substances;
+            public ReactionsDto reactions;
+            public DropsDto drops;
+            public BuildingDto[] buildings;
+            public GroundDto ground_materials;
+        }
+
+        [Serializable]
+        private sealed class SubstanceDto
+        {
+            public string id;
+            public string element;
+            public string flammable;
+            public bool conductive;
+            public string brittle;
+            public int opacity_permille;
+            public int density_kg_m3;
+            public int hp_per_m3;
+            public ResistDto resist;
+        }
+
+        [Serializable]
+        private sealed class ResistDto
+        {
+            public int metal, wood, water, fire, earth, ice, wind, thunder, light, shadow;
+
+            // Element order (GameDataEnums.Element), which Substance indexes resist by.
+            public int[] ToArray() => new[] { metal, wood, water, fire, earth, ice, wind, thunder, light, shadow };
+        }
+
+        [Serializable]
+        private sealed class ReactionsDto
+        {
+            public int burn_slow_permille_per_s, burn_fast_permille_per_s, melt_percent, freeze_ms, shatter_percent,
+                conduct_percent, gust_impulse_percent;
+        }
+
+        [Serializable]
+        private sealed class ChanceDto
+        {
+            public int base_permille, per_m3_permille, cap_permille;
+        }
+
+        [Serializable]
+        private sealed class ShadowDto
+        {
+            public int per_m2_permille, cap_permille;
+        }
+
+        [Serializable]
+        private sealed class DropsDto
+        {
+            public ChanceDto material;
+            public ChanceDto gem;
+            public ShadowDto shadow;
+        }
+
+        [Serializable]
+        private sealed class PartDto
+        {
+            public string substance;
+            public int weight;
+        }
+
+        [Serializable]
+        private sealed class BuildingDto
+        {
+            public string kind;
+            public PartDto[] composition;
+        }
+
+        [Serializable]
+        private sealed class GroundDto
+        {
+            public string metal, wood, water, fire, earth, ice, wind, thunder, gem;
+        }
+#pragma warning restore 0649
 
         /// <summary>Number of <see cref="BuildingMaterial"/> values.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>

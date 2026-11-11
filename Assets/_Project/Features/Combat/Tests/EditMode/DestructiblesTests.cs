@@ -3,6 +3,7 @@ using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.GameData;
 using NUnit.Framework;
+using Unity.Mathematics;
 
 namespace Cosmimera.Combat.Tests
 {
@@ -57,8 +58,8 @@ namespace Cosmimera.Combat.Tests
         public void Hp_scales_with_volume_and_has_a_floor_of_one()
         {
             DestructibleTable t = Table();
-            int a = t.Register(1, Composition.Of(Wood), 2000);
-            int b = t.Register(2, Composition.Of(Cloth), 1);
+            int a = t.Register(1, Composition.Of(Wood), 2000, float3.zero);
+            int b = t.Register(2, Composition.Of(Cloth), 1, float3.zero);
             Assert.AreEqual(2000, t.MaxHp(a));
             Assert.AreEqual(t.MaxHp(a), t.Hp(a));
             Assert.AreEqual(1, t.MaxHp(b));
@@ -69,10 +70,10 @@ namespace Cosmimera.Combat.Tests
         public void Register_contract_violations_throw()
         {
             DestructibleTable t = Table();
-            Assert.Throws<ContractException>(() => t.Register(1, null, 10));
-            Assert.Throws<ContractException>(() => t.Register(1, Composition.Of(Wood), 0));
-            t.Register(1, Composition.Of(Wood), 10);
-            Assert.Throws<ContractException>(() => t.Register(1, Composition.Of(Wood), 10));
+            Assert.Throws<ContractException>(() => t.Register(1, null, 10, float3.zero));
+            Assert.Throws<ContractException>(() => t.Register(1, Composition.Of(Wood), 0, float3.zero));
+            t.Register(1, Composition.Of(Wood), 10, float3.zero);
+            Assert.Throws<ContractException>(() => t.Register(1, Composition.Of(Wood), 10, float3.zero));
             Assert.Throws<ContractException>(() => t.Unregister(99));
             Assert.Throws<ContractException>(() => new DestructibleTable(null));
         }
@@ -81,11 +82,11 @@ namespace Cosmimera.Combat.Tests
         public void Destroyed_id_is_not_regrown_after_a_lod_rebuild()
         {
             DestructibleTable t = Table();
-            int i = t.Register(7, Composition.Of(Wood), 100);
+            int i = t.Register(7, Composition.Of(Wood), 100, float3.zero);
             ObjectHitResult r = t.ApplyHit(i, Element.Earth, 100_000, 0, 0);
             Assert.IsTrue(r.Destroyed);
             t.Unregister(7);
-            Assert.AreEqual(-1, t.Register(7, Composition.Of(Wood), 100));
+            Assert.AreEqual(-1, t.Register(7, Composition.Of(Wood), 100, float3.zero));
             Assert.IsTrue(t.IsDestroyed(7));
             Assert.AreEqual(-1, t.IndexOf(7));
         }
@@ -94,11 +95,11 @@ namespace Cosmimera.Combat.Tests
         public void Damaged_object_keeps_its_hp_across_unload_and_reload()
         {
             DestructibleTable t = Table();
-            int i = t.Register(3, Composition.Of(Stone), 1000);
+            int i = t.Register(3, Composition.Of(Stone), 1000, float3.zero);
             int dealt = t.ApplyHit(i, Element.Wind, 50, 0, 0).Damage;
             t.Unregister(3);
             Assert.AreEqual(-1, t.IndexOf(3));
-            int j = t.Register(3, Composition.Of(Stone), 1000);
+            int j = t.Register(3, Composition.Of(Stone), 1000, float3.zero);
             Assert.AreEqual(i, j);
             Assert.AreEqual(t.MaxHp(j) - dealt, t.Hp(j));
         }
@@ -107,7 +108,7 @@ namespace Cosmimera.Combat.Tests
         public void Plain_hit_uses_the_damage_formula_with_substance_resist()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Stone), 10_000);
+            int i = t.Register(1, Composition.Of(Stone), 10_000, float3.zero);
             ObjectHitResult r = t.ApplyHit(i, Element.Wind, 60, 50, 0);
             Assert.AreEqual(DamageModel.Compute(60, 50, 0), r.Damage);
             Assert.AreEqual(ObjectReaction.Gust, r.Reactions);
@@ -118,7 +119,7 @@ namespace Cosmimera.Combat.Tests
         public void Fire_ignites_wood_and_burning_destroys_it_as_charcoal()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Wood), 1000);
+            int i = t.Register(1, Composition.Of(Wood), 1000, float3.zero);
             ObjectHitResult r = t.ApplyHit(i, Element.Fire, 10, 0, 0);
             Assert.IsTrue((r.Reactions & ObjectReaction.Ignited) != 0);
             Assert.IsTrue(t.IsBurning(i));
@@ -142,8 +143,8 @@ namespace Cosmimera.Combat.Tests
         public void Fast_burner_burns_faster_than_slow()
         {
             DestructibleTable t = Table();
-            int slow = t.Register(1, Composition.Of(Wood), 1000);
-            int fast = t.Register(2, Composition.Of(Plant), 3334);
+            int slow = t.Register(1, Composition.Of(Wood), 1000, float3.zero);
+            int fast = t.Register(2, Composition.Of(Plant), 3334, float3.zero);
             t.ApplyHit(slow, Element.Fire, 1, 0, 0);
             t.ApplyHit(fast, Element.Fire, 1, 0, 0);
             var destroyed = new List<int>();
@@ -156,8 +157,8 @@ namespace Cosmimera.Combat.Tests
         public void Water_and_ice_extinguish()
         {
             DestructibleTable t = Table();
-            int a = t.Register(1, Composition.Of(Wood), 1000);
-            int b = t.Register(2, Composition.Of(Wood), 1000);
+            int a = t.Register(1, Composition.Of(Wood), 1000, float3.zero);
+            int b = t.Register(2, Composition.Of(Wood), 1000, float3.zero);
             t.ApplyHit(a, Element.Fire, 1, 0, 0);
             t.ApplyHit(b, Element.Fire, 1, 0, 0);
             Assert.IsTrue((t.ApplyHit(a, Element.Water, 1, 0, 10).Reactions & ObjectReaction.Extinguished) != 0);
@@ -173,7 +174,7 @@ namespace Cosmimera.Combat.Tests
         public void Kerosene_blasts_on_ignition()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Kerosene), 100_000);
+            int i = t.Register(1, Composition.Of(Kerosene), 100_000, float3.zero);
             ObjectHitResult r = t.ApplyHit(i, Element.Fire, 1, 0, 0);
             Assert.IsTrue(r.Destroyed);
             Assert.AreEqual(DestroyCause.Burnt, r.Cause);
@@ -185,15 +186,15 @@ namespace Cosmimera.Combat.Tests
         public void Fire_melts_ice_for_bonus_damage_and_drops_water()
         {
             DestructibleTable t = Table();
-            int ice = t.Register(1, Composition.Of(Ice), 100_000);
-            int glass = t.Register(2, Composition.Of(Glass), 100_000);
+            int ice = t.Register(1, Composition.Of(Ice), 100_000, float3.zero);
+            int glass = t.Register(2, Composition.Of(Glass), 100_000, float3.zero);
             ObjectHitResult melt = t.ApplyHit(ice, Element.Fire, 40, 0, 0);
             ObjectHitResult plain = t.ApplyHit(glass, Element.Fire, 40, 0, 0);
             Assert.IsTrue((melt.Reactions & ObjectReaction.Melted) != 0);
             Assert.AreEqual(ObjectReaction.None, plain.Reactions);
             Assert.AreEqual(plain.Damage * 3 / 2, melt.Damage);
 
-            int small = t.Register(3, Composition.Of(Ice), 10);
+            int small = t.Register(3, Composition.Of(Ice), 10, float3.zero);
             ObjectHitResult kill = t.ApplyHit(small, Element.Fire, 40, 0, 0);
             Assert.AreEqual(DestroyCause.Melted, kill.Cause);
             var rng = new Pcg32(5, 5);
@@ -204,7 +205,7 @@ namespace Cosmimera.Combat.Tests
         public void Freeze_makes_stone_brittle_only_inside_the_window()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Stone), 1_000_000);
+            int i = t.Register(1, Composition.Of(Stone), 1_000_000, float3.zero);
             Assert.AreEqual(ObjectReaction.None, t.ApplyHit(i, Element.Earth, 10, 0, 0).Reactions);
 
             ObjectHitResult freeze = t.ApplyHit(i, Element.Ice, 10, 0, 100);
@@ -220,7 +221,7 @@ namespace Cosmimera.Combat.Tests
         public void Ice_does_not_freeze_ice_or_glass_but_they_are_brittle()
         {
             DestructibleTable t = Table();
-            int g = t.Register(1, Composition.Of(Glass), 1_000_000);
+            int g = t.Register(1, Composition.Of(Glass), 1_000_000, float3.zero);
             Assert.IsTrue((t.ApplyHit(g, Element.Ice, 10, 0, 0).Reactions & ObjectReaction.Froze) == 0);
             Assert.IsTrue((t.ApplyHit(g, Element.Metal, 10, 0, 0).Reactions & ObjectReaction.Shattered) != 0);
         }
@@ -229,8 +230,8 @@ namespace Cosmimera.Combat.Tests
         public void Thunder_conducts_through_metal()
         {
             DestructibleTable t = Table();
-            int m = t.Register(1, Composition.Of(Metal), 1_000_000);
-            int s = t.Register(2, Composition.Of(Stone), 1_000_000);
+            int m = t.Register(1, Composition.Of(Metal), 1_000_000, float3.zero);
+            int s = t.Register(2, Composition.Of(Stone), 1_000_000, float3.zero);
             ObjectHitResult rm = t.ApplyHit(m, Element.Thunder, 100, 0, 0);
             ObjectHitResult rs = t.ApplyHit(s, Element.Thunder, 100, 0, 0);
             Assert.IsTrue((rm.Reactions & ObjectReaction.Conducted) != 0);
@@ -242,7 +243,7 @@ namespace Cosmimera.Combat.Tests
         public void ApplyHit_contract_violations_throw()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Cloth), 1);
+            int i = t.Register(1, Composition.Of(Cloth), 1, float3.zero);
             Assert.Throws<ContractException>(() => t.ApplyHit(5, Element.Fire, 1, 0, 0));
             Assert.Throws<ContractException>(() => t.ApplyHit(i, Element.Fire, -1, 0, 0));
             Assert.Throws<ContractException>(() => t.ApplyHit(i, Element.Fire, 1, 0, -1));
@@ -255,7 +256,7 @@ namespace Cosmimera.Combat.Tests
         public void RollDrop_requires_a_destroyed_object()
         {
             DestructibleTable t = Table();
-            int i = t.Register(1, Composition.Of(Stone), 100);
+            int i = t.Register(1, Composition.Of(Stone), 100, float3.zero);
             var rng = new Pcg32(1, 1);
             Assert.Throws<ContractException>(() => t.RollDrop(i, false, ref rng));
         }
@@ -268,7 +269,7 @@ namespace Cosmimera.Combat.Tests
             for (int seed = 0; seed < 200; seed++)
             {
                 DestructibleTable a = Table(), b = Table();
-                int ia = a.Register(1, house, 50_000), ib = b.Register(1, house, 50_000);
+                int ia = a.Register(1, house, 50_000, float3.zero), ib = b.Register(1, house, 50_000, float3.zero);
                 a.ApplyHit(ia, Element.Wind, 100_000, 0, 0);
                 b.ApplyHit(ib, Element.Wind, 100_000, 0, 0);
                 var ra = new Pcg32((ulong)seed, 9);
@@ -290,7 +291,7 @@ namespace Cosmimera.Combat.Tests
             var env = new EnvMaterials(100, 250, 150, 5000, 200, 150, 200, new VolumeChance(1000, 0, 1000),
                 new VolumeChance(1000, 0, 1000), 1000, 1000, Buildings(), Ground(), Crystal);
             var t = new DestructibleTable(env);
-            int i = t.Register(1, Composition.Of(Cloth), 1_000_000);
+            int i = t.Register(1, Composition.Of(Cloth), 1_000_000, float3.zero);
             t.ApplyHit(i, Element.Wind, 100_000, 0, 0);
             Assert.IsTrue(t.ApplyHit(i, Element.Wind, 100_000, 0, 0).Destroyed);
             var rng = new Pcg32(3, 3);
@@ -351,6 +352,41 @@ namespace Cosmimera.Combat.Tests
                 new VolumeChance(0, 0, 0), new VolumeChance(0, 0, 0), 0, 0, Buildings(), wrong, Crystal));
             Assert.Throws<ContractException>(() => new EnvMaterials(100, 250, 99, 5000, 200, 150, 200,
                 new VolumeChance(0, 0, 0), new VolumeChance(0, 0, 0), 0, 0, Buildings(), Ground(), Crystal));
+        }
+
+        private static string DraftJson() => System.IO.File.ReadAllText(BalanceFixture.RepoPath("Data", "_incoming",
+            "p3-12-env-materials-draft-01", "env-materials", "env-materials.json"));
+
+        [Test]
+        public void FromJson_reads_the_env_materials_draft()
+        {
+            EnvMaterials env = EnvMaterials.FromJson(DraftJson());
+            Assert.IsTrue(env.TryGetSubstance("kerosene", out Substance k));
+            Assert.AreEqual(Flammability.Blast, k.Flammable);
+            Assert.IsTrue(env.TryGetSubstance("glass", out Substance g));
+            Assert.AreEqual(Element.Ice, g.Element);
+            Assert.AreEqual(-50, g.Resist(Element.Fire));
+            Assert.AreEqual("ice", env.Ice.Id);
+            Assert.AreEqual("charcoal", env.Ground(Element.Fire).Id);
+            Assert.AreEqual("crystal", env.GemSubstance.Id);
+            Assert.AreEqual("wood", env.Building(BuildingMaterial.House).Dominant.Id);
+            Assert.AreEqual("stone", env.Building(BuildingMaterial.RuinWall).Dominant.Id);
+            Assert.IsFalse(env.TryGetSubstance("unobtainium", out _));
+            foreach (string id in new[] { "wood", "stone", "crystal", "ice" })
+            {
+                Assert.IsTrue(env.TryGetSubstance(id, out _), id + " is used by the scatter tables");
+            }
+        }
+
+        [Test]
+        public void FromJson_fails_loudly_on_bad_data()
+        {
+            string json = DraftJson();
+            Assert.Throws<ContractException>(() => EnvMaterials.FromJson(""));
+            Assert.Throws<ContractException>(() => EnvMaterials.FromJson("{}"));
+            Assert.Throws<ContractException>(() => EnvMaterials.FromJson(json.Replace("\"element\": \"light\"", "\"element\": \"shadow\"")));
+            Assert.Throws<ContractException>(() => EnvMaterials.FromJson(json.Replace("\"kind\": \"tent\"", "\"kind\": \"igloo\"")));
+            Assert.Throws<ContractException>(() => EnvMaterials.FromJson(json.Replace("\"fire\": \"charcoal\"", "\"fire\": \"lava\"")));
         }
 
         [Test]

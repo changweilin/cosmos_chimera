@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.GameData;
+using Unity.Mathematics;
 
 namespace Cosmimera.Combat
 {
@@ -111,6 +112,7 @@ namespace Cosmimera.Combat
         private struct Slot
         {
             public long Id;
+            public float3 Center;
             public Composition Composition;
             public int VolumeL;
             public int MaxHp;
@@ -142,16 +144,17 @@ namespace Cosmimera.Combat
 
         /// <summary>Registers an object produced by generation, unless its id was destroyed earlier this run.</summary>
         /// <remarks>
-        /// Pre: composition non-null; 1 &lt;= volumeL (litres = dm³); id not currently registered; a re-registered id
-        ///      comes from the same generation result (same composition and volume).
+        /// Pre: composition non-null; 1 &lt;= volumeL (litres = dm³); center finite (world hit centre); id not currently
+        ///      registered; a re-registered id comes from the same generation result (same composition, volume, centre).
         /// Post: returns -1 iff id is in the destroyed set (a LOD rebuild must not regrow it); a previously
         ///       unregistered id gets its old slot back with HP, burning and frozen state intact; a new id gets a slot
         ///       with Hp == MaxHp == max(1, Dominant.HpPerM3 × volumeL / 1000).
         /// Side effects: may append a slot.
         /// </remarks>
-        public int Register(long id, Composition composition, int volumeL)
+        public int Register(long id, Composition composition, int volumeL, float3 center)
         {
             Contract.Requires(composition != null, "composition must be non-null");
+            Contract.Requires(math.all(math.isfinite(center)), "center must be finite");
             Contract.Requires(volumeL >= 1, "volumeL must be >= 1");
             if (_destroyed.Contains(id))
             {
@@ -169,7 +172,7 @@ namespace Cosmimera.Combat
 
             long hp = (long)composition.Dominant.HpPerM3 * volumeL / 1000;
             int maxHp = hp < 1 ? 1 : hp > int.MaxValue ? int.MaxValue : (int)hp;
-            _slots.Add(new Slot { Id = id, Composition = composition, VolumeL = volumeL, MaxHp = maxHp, Hp = maxHp, Registered = true });
+            _slots.Add(new Slot { Id = id, Center = center, Composition = composition, VolumeL = volumeL, MaxHp = maxHp, Hp = maxHp, Registered = true });
             _byId.Add(id, _slots.Count - 1);
             return _slots.Count - 1;
         }
@@ -196,6 +199,18 @@ namespace Cosmimera.Combat
         /// <summary>Whether <paramref name="id"/> was destroyed this run.</summary>
         /// <remarks>Pre: none. Post: stable once true. Side effects: none.</remarks>
         public bool IsDestroyed(long id) => _destroyed.Contains(id);
+
+        /// <summary>Id of slot <paramref name="index"/>.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: the registered id. Side effects: none.</remarks>
+        public long IdOf(int index) => Get(index).Id;
+
+        /// <summary>World hit centre of slot <paramref name="index"/>.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: as registered. Side effects: none.</remarks>
+        public float3 CenterOf(int index) => Get(index).Center;
+
+        /// <summary>Why slot <paramref name="index"/> was destroyed.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: meaningful only once destroyed. Side effects: none.</remarks>
+        public DestroyCause CauseOf(int index) => Get(index).Cause;
 
         /// <summary>Current HP of slot <paramref name="index"/>.</summary>
         /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: 0..MaxHp; 0 iff destroyed. Side effects: none.</remarks>

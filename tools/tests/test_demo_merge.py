@@ -1,8 +1,21 @@
 ﻿import importlib.util
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import pytest
+import _pytest.tmpdir
+
+def _safe_getbasetemp(self):
+    if self._basetemp is not None:
+        return self._basetemp
+    temp_dir = (Path(tempfile.gettempdir()) / "pytest-demo-merge").resolve()
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    self._basetemp = temp_dir
+    return temp_dir
+
+_pytest.tmpdir.TempPathFactory.getbasetemp = _safe_getbasetemp
 
 
 spec = importlib.util.spec_from_file_location("demo_merge", Path(__file__).parents[1] / "demo-data" / "merge.py")
@@ -16,6 +29,7 @@ def inputs(tmp_path, monkeypatch):
     monkeypatch.setattr(merge, "COPY_OUT", tmp_path / "Copy")
     monkeypatch.setattr(merge, "NAME_SOURCES", ["names"])
     monkeypatch.setattr(merge, "BATCHES", ["batch"])
+    monkeypatch.setattr(merge, "ENV_MATERIALS_BATCH", "env")
     root = tmp_path / "Data"
     incoming = root / "_incoming" / "d0-copy-terra"
     incoming.mkdir(parents=True)
@@ -40,6 +54,9 @@ def inputs(tmp_path, monkeypatch):
     batch = root / "_incoming" / "batch" / "moves"
     batch.mkdir(parents=True)
     (batch / "one.json").write_text('{"id":"one"}', encoding="utf-8")
+    env = root / "_incoming" / "env" / "env-materials"
+    env.mkdir(parents=True)
+    (env / "env-materials.json").write_text('{"substances":[]}', encoding="utf-8")
     return root
 
 
@@ -140,3 +157,33 @@ def test_invalid_ja_names_preserve_all_outputs(inputs, entries):
         merge.main()
     assert old.read_bytes() == b"old"
     assert (demo / "old").read_bytes() == b"old"
+
+
+def test_stage_copy_env_materials_byte_identical(inputs):
+    src = inputs / "_incoming" / "env" / "env-materials" / "env-materials.json"
+    raw = b'{\n  "substances": [\n    {"id": "metal"}\n  ]\n}\n'
+    src.write_bytes(raw)
+    merge.stage_copy(inputs)
+    assert (merge.COPY_OUT / "env-materials.json").read_bytes() == raw
+
+
+@pytest.mark.parametrize("file_count", [0, 2])
+def test_env_materials_file_count_validation(inputs, file_count):
+    env_dir = inputs / "_incoming" / "env" / "env-materials"
+    for f in env_dir.glob("*.json"):
+        f.unlink()
+    for i in range(file_count):
+        (env_dir / f"env_{i}.json").write_text('{"substances":[]}', encoding="utf-8")
+    with pytest.raises(ValueError, match="exactly one"):
+        merge.stage_copy(inputs)
+
+
+def test_main_stages_env_materials_kind(inputs, monkeypatch):
+    batch_dir = inputs / "_incoming" / "env-batch" / "env-materials"
+    batch_dir.mkdir(parents=True)
+    raw = b'{"substances":[{"id":"stone"}]}'
+    (batch_dir / "env-materials.json").write_bytes(raw)
+    monkeypatch.setattr(merge, "BATCHES", ["batch", "env-batch"])
+    assert merge.main() == 0
+    staged = inputs / "_demo" / "env-materials" / "env-batch--env-materials.json"
+    assert staged.read_bytes() == raw

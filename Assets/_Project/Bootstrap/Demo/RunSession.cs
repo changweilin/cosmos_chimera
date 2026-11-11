@@ -95,6 +95,13 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Approved evolution material drop rules (balance.json#materials).</summary>
         /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
         public MaterialDrops Materials;
+
+        /// <summary>Destructible substances (Data/env-materials, P3-12); null = scene objects cannot be hit or block creatures.</summary>
+        /// <remarks>
+        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor) exists in it. Post: none. Side effects: none.
+        /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
+        /// </remarks>
+        public EnvMaterials EnvMaterials;
     }
 
     /// <summary>
@@ -130,6 +137,9 @@ namespace Cosmimera.Bootstrap.Demo
                 _layout = layout;
             }
 
+            // Set once the scatter planner exists (it needs GroundAltitude first); null = buildings only.
+            public WorldObjects Objects { get; set; }
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
@@ -138,7 +148,8 @@ namespace Cosmimera.Bootstrap.Demo
             public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
 
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
-            public bool IsBlocked(float3 direction, float clearanceM) => _layout.IsInsideBuilding(direction, clearanceM);
+            public bool IsBlocked(float3 direction, float clearanceM) =>
+                Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM);
         }
 
         private sealed class WildInfo
@@ -174,6 +185,9 @@ namespace Cosmimera.Bootstrap.Demo
         private RunLayout _layout;
         private QuestTracker _quest;
         private Encounter _encounter;
+        private WorldObjects _worldObjects;
+        private SettlementView _settlementView;
+        private ScatterField _scatterField;
         private PlayerVitals _vitals;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
@@ -389,6 +403,20 @@ namespace Cosmimera.Bootstrap.Demo
             // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
             // passes its own body radius to IsInsideBuilding).
             var clearance = new LayoutClearance(config, _layout, 1.5f);
+            var surface = new HeightSurface(height, templates, clearance);
+            System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+            // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
+            // whether or not anything is drawn.
+            var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
+                clearance.IsClear);
+            DestructibleTable objects = null;
+            if (setup.EnvMaterials != null)
+            {
+                objects = new DestructibleTable(setup.EnvMaterials);
+                _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
+                    setup.EnvMaterials, objects);
+                surface.Objects = _worldObjects;
+            }
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -413,17 +441,22 @@ namespace Cosmimera.Bootstrap.Demo
                 // Runtime primitives keep the built-in material, which renders magenta under URP.
                 _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
                 _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
-                var surface = new HeightSurface(height, templates, clearance);
-                System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
                 // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
                 var settlements = new GameObject("Settlements");
                 settlements.transform.SetParent(transform, false);
-                settlements.AddComponent<SettlementView>().Configure(config, _layout, surface.GroundAltitude, toonShader);
-                gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
-                    surface.GroundAltitude, isSea, PlayerPosition, toonShader, clearance.IsClear);
+                _settlementView = settlements.AddComponent<SettlementView>();
+                _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader);
+                _scatterField = gameObject.AddComponent<ScatterField>();
+                _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
+                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
             }
 
-            _encounter = new Encounter(config, balance, new HeightSurface(height, templates, clearance), setup.Seed);
+            _encounter = new Encounter(config, balance, surface, setup.Seed);
+            if (objects != null)
+            {
+                // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
+                _encounter.AttachDestructibles(objects, _worldObjects, d => IsNight(d));
+            }
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
             _vitals = new PlayerVitals(balance.Player);
             _encounter.AttachPlayer(_vitals);
@@ -532,6 +565,7 @@ namespace Cosmimera.Bootstrap.Demo
             BeforeTickForTests?.Invoke();
 #endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            ApplyObjectEvents();
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
@@ -1339,6 +1373,39 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: combat.md#實體碰撞 (D0-W2). Writes the transform as well as the body: PlayerPosition reads the transform, and
         // a second catch-up tick in the same frame must see the pushed position or it would push again.
+        // Generation-side and presentation-side effects of a destruction; drops wait for the pickup rule (Q-M6).
+        private void ApplyObjectEvents()
+        {
+            foreach (ObjectEvent ev in _encounter.ObjectEvents)
+            {
+                if (ev.Kind != ObjectEventKind.Destroyed)
+                {
+                    continue;
+                }
+
+                _worldObjects.OnDestroyed(ev.ObjectId);
+                if (WorldObjects.IsBuilding(ev.ObjectId))
+                {
+                    _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
+                }
+                else
+                {
+                    _scatterField?.Remove(ev.ObjectId);
+                }
+            }
+        }
+
+        private bool IsNight(float3 direction)
+        {
+            if (_rig == null || _rig.Sun == null)
+            {
+                return false;
+            }
+
+            float3 toSun = -(float3)_rig.Sun.transform.forward;
+            return math.dot(math.normalize(direction), toSun) < 0f;
+        }
+
         private void ApplyPlayerPush()
         {
             float3 push = _encounter.PlayerPush;

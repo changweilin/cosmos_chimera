@@ -35,6 +35,7 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private InputActionAsset _actions;
         [SerializeField] private Material _terrainMaterial;
         [SerializeField] private TextAsset _balance;
+        [SerializeField] private TextAsset _envMaterials;
         [SerializeField] private TextAsset _strings;
         [SerializeField] private TextAsset _names;
         [SerializeField] private TextAsset _affixes;
@@ -50,6 +51,7 @@ namespace Cosmimera.Bootstrap.Demo
         private CombatBalance _combatBalance;
         private Progression _progression;
         private MaterialDrops _materialDrops;
+        private EnvMaterials _env;
         private LobbySave _save;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
@@ -105,6 +107,7 @@ namespace Cosmimera.Bootstrap.Demo
             BalanceIntegerGuard.RequireIntegers(_balance.text, "materials", "progression");
             _progression = Progression.FromJson(_balance.text);
             _materialDrops = MaterialDrops.FromJson(_balance.text);
+            _env = EnvMaterials.FromJson(_envMaterials.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
@@ -780,7 +783,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
-                    Materials = _materialDrops,
+                    Materials = _materialDrops, EnvMaterials = _env,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
         }
@@ -863,11 +866,12 @@ namespace Cosmimera.Bootstrap.Demo
             game._themes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "region-themes.json");
             game._quests = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "quest-templates.json");
             game._epithets = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "boss-epithets.json");
+            game._envMaterials = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "env-materials.json");
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
-                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets })
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {
                 if (o == null)
                 {

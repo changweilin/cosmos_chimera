@@ -8,7 +8,7 @@
       "brittle": "never",
       "opacity_permille": 900,
       "density_kg_m3": 7800,
-      "hp_per_m3": 3000,
+      "hp_per_m3": 60,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -30,7 +30,7 @@
       "brittle": "never",
       "opacity_permille": 500,
       "density_kg_m3": 2500,
-      "hp_per_m3": 1500,
+      "hp_per_m3": 30,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -52,7 +52,7 @@
       "brittle": "always",
       "opacity_permille": 900,
       "density_kg_m3": 900,
-      "hp_per_m3": 600,
+      "hp_per_m3": 12,
       "resist": {
         "metal": -50,
         "wood": 0,
@@ -74,7 +74,7 @@
       "brittle": "never",
       "opacity_permille": 900,
       "density_kg_m3": 900,
-      "hp_per_m3": 1000,
+      "hp_per_m3": 20,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -96,7 +96,7 @@
       "brittle": "never",
       "opacity_permille": 500,
       "density_kg_m3": 400,
-      "hp_per_m3": 300,
+      "hp_per_m3": 6,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -118,7 +118,7 @@
       "brittle": "never",
       "opacity_permille": 250,
       "density_kg_m3": 900,
-      "hp_per_m3": 300,
+      "hp_per_m3": 6,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -140,7 +140,7 @@
       "brittle": "never",
       "opacity_permille": 250,
       "density_kg_m3": 900,
-      "hp_per_m3": 300,
+      "hp_per_m3": 6,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -162,7 +162,7 @@
       "brittle": "never",
       "opacity_permille": 500,
       "density_kg_m3": 900,
-      "hp_per_m3": 400,
+      "hp_per_m3": 8,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -184,7 +184,7 @@
       "brittle": "frozen",
       "opacity_permille": 900,
       "density_kg_m3": 2500,
-      "hp_per_m3": 2000,
+      "hp_per_m3": 40,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -206,7 +206,7 @@
       "brittle": "always",
       "opacity_permille": 250,
       "density_kg_m3": 900,
-      "hp_per_m3": 800,
+      "hp_per_m3": 16,
       "resist": {
         "metal": -50,
         "wood": 0,
@@ -228,7 +228,7 @@
       "brittle": "always",
       "opacity_permille": 250,
       "density_kg_m3": 900,
-      "hp_per_m3": 500,
+      "hp_per_m3": 10,
       "resist": {
         "metal": -50,
         "wood": 0,
@@ -250,7 +250,7 @@
       "brittle": "always",
       "opacity_permille": 50,
       "density_kg_m3": 900,
-      "hp_per_m3": 200,
+      "hp_per_m3": 4,
       "resist": {
         "metal": -50,
         "wood": 0,
@@ -272,7 +272,7 @@
       "brittle": "never",
       "opacity_permille": 500,
       "density_kg_m3": 100,
-      "hp_per_m3": 150,
+      "hp_per_m3": 3,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -294,7 +294,7 @@
       "brittle": "always",
       "opacity_permille": 50,
       "density_kg_m3": 400,
-      "hp_per_m3": 100,
+      "hp_per_m3": 2,
       "resist": {
         "metal": -50,
         "wood": 0,
@@ -316,7 +316,7 @@
       "brittle": "never",
       "opacity_permille": 250,
       "density_kg_m3": 400,
-      "hp_per_m3": 400,
+      "hp_per_m3": 8,
       "resist": {
         "metal": 0,
         "wood": 0,
@@ -338,7 +338,7 @@
       "brittle": "never",
       "opacity_permille": 900,
       "density_kg_m3": 400,
-      "hp_per_m3": 300,
+      "hp_per_m3": 6,
       "resist": {
         "metal": 0,
         "wood": 0,

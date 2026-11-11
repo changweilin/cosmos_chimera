@@ -115,6 +115,41 @@ namespace Cosmimera.Bootstrap.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator A_removed_item_is_gone_and_never_streams_back()
+        {
+            float3 up = math.normalize(new float3(0f, 1f, 0.2f));
+            var config = new PlanetConfig(640f, float3.zero);
+            var planner = new Cosmimera.WorldGen.ScatterPlanner(config, 12345, "verdant_planet", _ => 0f, null, null);
+            var destroyed = new HashSet<long>();
+            var root = new GameObject("scatter-remove-test");
+            _roots.Add(root);
+            ScatterField field = root.AddComponent<ScatterField>();
+            field.enabled = false;
+            field.Configure(config, planner, "verdant_planet", () => config.ToWorld(up, 0f),
+                Shader.Find("Cosmimera/ToonOutlined"), destroyed.Contains);
+            Call(field, "Refresh", config.ToWorld(up, 0f));
+            yield return null; // crown colliders are removed with Destroy, which lands at the end of the frame
+            long key = -1;
+            foreach (var pair in Get<Dictionary<long, List<GameObject>>>(field, "_live"))
+            {
+                if (pair.Value.Count > 0) { key = pair.Key; break; }
+            }
+
+            Assert.That(key, Is.GreaterThanOrEqualTo(0));
+            GameObject item = Get<Dictionary<long, List<GameObject>>>(field, "_live")[key][0];
+            Assert.That(item.GetComponentsInChildren<Collider>().Length, Is.EqualTo(1), "only the trunk/body collides");
+            int before = field.LiveCount;
+            destroyed.Add(key);
+            field.Remove(key);
+            yield return null;
+            Assert.That(item == null, Is.True);
+            Assert.That(field.LiveCount, Is.EqualTo(before - 1));
+            Call(field, "Refresh", config.ToWorld(-up, 0f));
+            Call(field, "Refresh", config.ToWorld(up, 0f));
+            Assert.That(field.LiveCount, Is.EqualTo(before - 1), "a destroyed item never streams back");
+        }
+
         private static HashSet<long> LegacyKeys(float3 up, float radius, int n)
         {
             var keys = new HashSet<long>();

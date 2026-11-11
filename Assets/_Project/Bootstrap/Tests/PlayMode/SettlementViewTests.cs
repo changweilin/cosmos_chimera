@@ -64,6 +64,29 @@ namespace Cosmimera.Bootstrap.Tests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator A_removed_building_no_longer_collides()
+        {
+            RunLayout layout = SettlementPlanner.Generate(Planet, Plan(7), null);
+            SettlementView view = View(layout, _ => 0f);
+            Assert.That(view.Buildings.Count, Is.GreaterThan(0));
+            GameObject first = view.Buildings[0];
+            Assert.That(first.GetComponentsInChildren<Collider>().Length, Is.GreaterThan(0));
+            yield return new WaitForFixedUpdate();
+            Vector3 centre = first.GetComponentInChildren<Collider>().bounds.center;
+            Assert.That(Physics.OverlapSphere(centre, 0.2f).Length, Is.GreaterThan(0));
+            view.RemoveBuilding(0);
+            yield return new WaitForFixedUpdate();
+            Assert.That(first.activeSelf, Is.False);
+            foreach (Collider c in Physics.OverlapSphere(centre, 0.2f))
+            {
+                Assert.That(c.transform.IsChildOf(first.transform), Is.False, "a destroyed building must not block");
+            }
+
+            Assert.That(view.Buildings.Count, Is.EqualTo(layout.Buildings.Count), "indices stay aligned with the layout");
+            Assert.Throws<Core.Contracts.ContractException>(() => view.RemoveBuilding(view.Buildings.Count));
+        }
+
         [Test]
         public void Roads_drape_over_the_ground_and_face_the_sky()
         {
