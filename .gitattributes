@@ -16,6 +16,8 @@
 # Shell scripts: CRLF breaks the shebang and `sh` parsing
 *.sh                text eol=lf
 tools/validate-data text eol=lf
+.gitignore          text eol=lf
+.gitattributes      text eol=lf
 
 # Binary assets via LFS
 *.png filter=lfs diff=lfs merge=lfs -text
