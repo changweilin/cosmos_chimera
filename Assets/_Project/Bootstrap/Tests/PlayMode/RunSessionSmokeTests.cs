@@ -55,28 +55,14 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             party.RemoveAll(c => c.Stage != CreatureStage.Adult);
-            var meta = new List<TextAsset>();
-            var heights = new List<TextAsset>();
-            var water = new List<TextAsset>();
-            foreach (string id in new[] { "etna_volcano", "sognefjord", "olympic_forest", "kenya_rift" })
-            {
-                meta.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".meta.json"));
-                heights.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".height.bytes"));
-                water.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".water.bytes"));
-            }
-
-            var templates = new List<Planet.TemplateSource>();
-            var tags = new List<IReadOnlyList<string>>();
-            GeoTemplateLoader.Load(meta.ToArray(), heights.ToArray(), water.ToArray(), templates, tags);
             RunOutcome outcome = null;
             var session = new GameObject("Run").AddComponent<RunSession>();
             session.Configure(copy, balance, actions,
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    // Adolescent boss = medium planet (R=640, 4 templates), the combination this smoke run always played.
+                    // Adolescent boss = medium planet (R=640, 4 landform stamps), the combination this smoke run always played.
                     PlanetType = type, Seed = 2026, Radius = 640f, BossStage = CreatureStage.Adolescent, Party = party,
-                    Templates = templates, TemplateTags = tags,
                     PartyIds = Enumerable.Range(1, party.Count).ToList(),
                     PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
                     Progression = progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
@@ -228,6 +214,17 @@ namespace Cosmimera.Bootstrap.Tests
             var stars = session.GetComponent<StarField>();
             Assert.That(stars, Is.Not.Null, "star field is attached");
             Assert.That(stars.Visibility, Is.InRange(0f, 1f));
+            // The pack can hit within frames of the teleport above, while Cinemachine is still damping toward the
+            // character tens of metres away; the shell trails by one frame, so let the camera settle before measuring.
+            Vector3 lastCamera = session.CameraPositionForTests;
+            deadline = Time.realtimeSinceStartup + 10f;
+            do
+            {
+                lastCamera = session.CameraPositionForTests;
+                yield return null;
+            }
+            while (Vector3.Distance(lastCamera, session.CameraPositionForTests) > stars.Shell.localScale.x * 2e-4f
+                   && Time.realtimeSinceStartup < deadline);
             // Relative bound: -nographics never fires beginCameraRendering, so only the LateUpdate placement (one
             // Cinemachine frame behind) is observable here; 1e-3 of the shell radius is far below one pixel of parallax.
             Assert.That(Vector3.Distance(stars.Shell.position, session.CameraPositionForTests),

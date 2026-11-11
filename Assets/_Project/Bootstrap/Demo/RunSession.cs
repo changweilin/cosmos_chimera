@@ -61,13 +61,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: >= MoveGeometry.MinSupportedRadiusM. Post: none. Side effects: none.</remarks>
         public float Radius;
 
-        /// <summary>Baked geo-templates available to this run (P3-02 output), with their terrain tags; may be empty.</summary>
-        /// <remarks>Pre: Templates.Count == TemplateTags.Count. Post: none. Side effects: none.</remarks>
-        public List<TemplateSource> Templates = new List<TemplateSource>();
-
-        /// <summary>Terrain tags per template.</summary>
-        /// <remarks>Pre: see Templates. Post: none. Side effects: none.</remarks>
-        public List<IReadOnlyList<string>> TemplateTags = new List<IReadOnlyList<string>>();
+        /// <summary>Whether procedural landform stamps (TemplatePlanner.Build) shape the terrain; false = noise only.</summary>
+        /// <remarks>
+        /// Pre: none. Post: none. Side effects: none.
+        /// Tests that pin a plan built with isLand == null turn this off so the session builds exactly that plan.
+        /// </remarks>
+        public bool Landforms = true;
 
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
@@ -365,11 +364,10 @@ namespace Cosmimera.Bootstrap.Demo
             var config = new PlanetConfig(setup.Radius, float3.zero);
             PlanetHeight height = PlanetHeight.ForPlanet(config, setup.Seed);
             PlanetTemplates templates = null;
-            if (setup.Templates.Count > 0)
+            if (setup.Landforms)
             {
-                List<TemplatePlacement> placements = TemplatePlanner.Choose(setup.Seed, setup.PlanetType.TerrainTags,
-                    setup.TemplateTags, TemplatePlanner.CountFor(BossDraw.SizeFor(setup.BossStage)));
-                templates = PlanetTemplates.Create(config, setup.Templates, placements);
+                templates = TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
+                    BossDraw.SizeFor(setup.BossStage));
             }
 
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);

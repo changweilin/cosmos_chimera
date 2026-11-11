@@ -1,14 +1,15 @@
 # P3 世界生成
 
-**出口條件**：選定 seed 與星球類型 → 生成含真實地貌骨架、生物群系、區域圖、地城、BOSS 的星球；可從降落玩到 BOSS 結束。
+**出口條件**：選定 seed 與星球類型 → 生成含程序化地貌、道路與聚落、生物群系、區域圖、地城、BOSS 的星球；可從降落玩到 BOSS 結束。
 讀：`../design/planet-world.md`、`../architecture/planet-tech.md`
-**開工前需定案**：Q-W1（授權）、Q-M2
+**開工前需定案**：Q-M2（Q-W1 已因 ADR-0008 不再需要）
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
-| P3-01 | 真實地圖資料授權調查與署名方案（Q-W1） | ARGON | OPUS + 人工 | 授權摘要與採用清單 | 🟨 |
-| P3-02 | 離線烘焙工具：DEM（Copernicus GLO-90，Q-W1 方案 A）→ 地理模板包（遮罩/高程/水系） | SONNET | OPUS | 產出 ≥ 12 個模板，含預覽圖 | 🟨 |
-| P3-03 | 模板 gnomonic 投影拼貼 + 接縫山脈 | OPUS | SOL | 模板內真實地貌可辨識；接縫無斷崖 | 🟨 |
+| P3-01 | ~~真實地圖資料授權調查與署名方案（Q-W1）~~ 退役：地貌改程序化（ADR-0008） | ARGON | OPUS + 人工 | — | ⛔ |
+| P3-02 | 程序化地貌合成 `LandformSynth`（12 種地貌標籤 → 高程/水系格網，整數運算；取代 DEM 烘焙，ADR-0008） | OPUS | SOL | 每種標籤可辨識；同輸入跨後端逐位元相同 | 🟨 |
+| P3-03 | 地貌印章 gnomonic 投影拼貼 + 外緣混合 | OPUS | SOL | 印章內地貌可辨識；接縫無斷崖 | 🟨 |
+| P3-11 | 道路與建築：規則層 `SettlementPlanner`（生成樹道路、聚落地塊）＋表現層 | OPUS（規則）+ SONNET（表現） | SOL | 每區域道路可達；建築不落海、不互相重疊；快照測試 | 🟨 |
 | P3-04 | 生物群系（緯度×海拔×濕度×星球類型） | SONNET | SOL | 6 種星球類型視覺差異明顯 | 🟦 |
 | P3-05 | 區域圖（Voronoi + 連通保證）+ 區域詞綴 | OPUS | SONNET | 1000 個 seed 測試：100% 可達 BOSS | 🟨 |
 | P3-06 | POI 佈置、宙獸棲地、野生宙獸生成（依 Q-M2） | SONNET | OPUS | POI 密度符合每 km² 預算 | 🟨 |
@@ -31,3 +32,4 @@
 - 2026-11-09 · Claude Opus · partial · Q-T6 使用者定案 (b) → ADR-0007（同後端逐位元、跨後端高度 ≤ 3 mm、內容決策不讀浮點高度、握手比對離散內容雜湊）；`compare.py --policy b` 給 PASS/FAIL（缺 `.samples` 判不可比），同時修 S4（樣本 NaN／Inf／欄數不足改為拒絕）；本機 Mono 對 IL2CPP 報告 `--policy b` = PASS。Q-E1 使用者定案「是」：`QuestTracker` 對已擊倒的菁英，在 DefeatElite 成為當前步驟時直接完成，另新增 `IsEarned(step)`（BOSS 捷徑跳過的步驟不算），供 P2-12 任務經驗只發真正完成的步驟。pytest `test_repro_compare` 20/20 · 下一步：人工在第二台 Windows x64 跑 `Builds/Repro/il2cpp` 探針並 `--policy b` 比對
 - 2026-11-10 · SOL（ChatGPT Sol，Codex） · done · P3-10 技術債 S6／S7 與 D0-r2 S5 結案：散佈改為保守枚舉球冠相交格範圍後距離篩選，接縫／角點完整覆蓋且保留原有格的物件結果；探針 v3 新增 landingBits，policy b 以正規化方向在星球半徑上的弦長套用 3 mm 容差，不混入 planDiscrete；拒絕 null 型別、無 Adult 的野生池及非 batchmode 建置。Unity 6000.3.28f1 EditMode 947/947、GPU PlayMode 78/78、編譯警告 0；pytest tools/repro＋tools/tests 115/115（另 75 subtests）通過；本機兩次 Editor 探針（Logs/repro-editor-1.txt／repro-editor-2.txt）30 列逐位元相同，61440 組高度樣本與降落點位移最大差均為 0 m，compare.py --policy b PASS。RunPlanner 與 GeneratorVersion 未變，降落點已由探針幾何欄位覆蓋，無需改動核心 Hash；Q-T6-R1 與其餘範圍外債務保留，P3-10 因第二台機器待驗而維持進行中 · 下一步：OPUS 審查本次修正；人工在第二台 Windows x64 重建 v3 探針並執行 policy b 比對
 - 2026-11-11 · Claude Opus · done（待審）· P3-10 探針 v5（清 tech-debt D0-B2 探針項）：v4 固定成年 BOSS，玩家低等級實際會玩到的幼／少年星球（R=640、4 模板、型態封頂的野生池）未被量測 → 每個（類型, seed）對 `ReproProbe.BossStages`（幼／少／成）各出一列，列格式 `type stage seed radius …`、`.samples` 為 `type stage seed k base surf`（幼與少同為 R=640，列鍵必須含階段）；Pre 改為野生池需含三階段各一型態。`compare.py` 列鍵 4 欄、樣本 6 欄，v4 報告因欄數不符判 NOT COMPARABLE。測試：`ReproProbeTests` 新增逐階段列／半徑／樣本鍵案例、缺幼／缺少年野生池拒絕案例；pytest repro 44/44。本機 Editor 探針 `Logs/repro-v5-editor.txt` 90 列（幼 30／少 30 R=640、成 30 R=960）、184320 樣本，自比 policy b PASS。EditMode 1075/1075、PlayMode 89/89、0 警告。舊 v2–v4 報告與新格式不可比 · 下一步：人工在第二台 Windows x64 以 v5 重建 Mono／IL2CPP 探針並 `--policy b` 比對；SOL 審查
+- 2026-11-11 · Claude Opus · done（待審）· 使用者定案「植被、地貌、道路、建築全部隨機生成」→ ADR-0008：真實 DEM 模板完全移除（`Data/geo-templates/`、`tools/geodata/`、`Assets/_Project/Data/GeoTemplates/`、`GeoTemplateLoader`、demo 包 `ATTRIBUTION.md`、`test_geodata.py`）。P3-02 改為 `WorldGen/LandformSynth`（12 種地貌標籤，256² 高程＋水系，純整數 Q16，`Pcg32(seed, 0x4C460000+i)`，`GeneratorVersion 1`）；`TemplatePlanner.Build` 取代載入＋`Choose`，`PlanetTemplates` 印章機制不變。`RunSetup.Templates/TemplateTags` → `Landforms`（預設 true；`RunSessionProgressionTests` 設 false 以維持 isLand == null 的釘選計畫）。P3-11 新增 `WorldGen/SettlementPlanner` → `RunLayout`（道路＝區域圖生成樹：主路 4 m／小徑 2.5 m、海上頂點標 Bridge；聚落 Outpost／Village／Lair／Ruins，建築沿路兩側、落海捨棄、RNG 不受陸地判定影響；`Pcg32(seed,'S')`，v1），尚未接表現層。repro 探針 v6（標頭改記 LandformSynth 版本，所有列帶程序化印章；v5 報告不可比）。快照：LandformSynth seed 12345＝15533561194335027287（Python 移植版逐位元相符）、SettlementPlanner seed 12345＝16082388079742046734；RunPlanner 快照不變（v4）。EditMode 1132/1132、PlayMode 89/89（0 警告）、pytest 81/81。`RunSessionSmokeTests` 星殼斷言改為先等攝影機穩定：新地形下 seed 2026 傳送到 25–60 m 外的獸群，命中可能早於 Cinemachine 追上（3/3 重跑通過） · 下一步：P3-11 表現層（路面、建築模型、散佈避開道路／建築）；人工試玩地貌；第二台機器重跑 v6 探針

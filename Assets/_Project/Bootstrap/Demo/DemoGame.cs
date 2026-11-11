@@ -45,9 +45,6 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
-        [SerializeField] private TextAsset[] _geoMeta;
-        [SerializeField] private TextAsset[] _geoHeights;
-        [SerializeField] private TextAsset[] _geoWater;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
@@ -79,8 +76,6 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _confirmPending;
         private bool _scrollToFocus;
         private bool _insidePartyScroll;
-        private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
-        private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
 
         private void Awake()
         {
@@ -113,7 +108,6 @@ namespace Cosmimera.Bootstrap.Demo
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
-            GeoTemplateLoader.Load(_geoMeta, _geoHeights, _geoWater, _templates, _templateTags);
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
             foreach (GameDef def in _database.All)
@@ -323,7 +317,7 @@ namespace Cosmimera.Bootstrap.Demo
             string env = backend + " " + Application.platform + " editor=" + Application.isEditor + " cpu="
                 + SystemInfo.processorType.Replace(' ', '_');
             var vocab = new WorldGen.RunPlanVocabulary(_copy.ThemeIds, _copy.GenericAffixIds, _copy.ChainIds);
-            return ReproProbe.Report(types, _wildPool, vocab, _templates, _templateTags, RadiusFor, env, samples);
+            return ReproProbe.Report(types, _wildPool, vocab, RadiusFor, env, samples);
         }
 
         private void OnGUI()
@@ -787,7 +781,6 @@ namespace Cosmimera.Bootstrap.Demo
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops,
-                    Templates = _templates, TemplateTags = _templateTags,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
         }
@@ -870,34 +863,9 @@ namespace Cosmimera.Bootstrap.Demo
             game._themes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "region-themes.json");
             game._quests = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "quest-templates.json");
             game._epithets = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "boss-epithets.json");
-            var meta = new List<TextAsset>();
-            var heights = new List<TextAsset>();
-            var water = new List<TextAsset>();
-            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:TextAsset", new[] { GeoTemplateLoader.Folder.TrimEnd('/') });
-            var paths = new List<string>();
-            foreach (string g in guids)
-            {
-                paths.Add(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
-            }
-
-            paths.Sort(System.StringComparer.Ordinal);
-            foreach (string path in paths)
-            {
-                if (path.EndsWith(".meta.json"))
-                {
-                    string stem = path.Substring(0, path.Length - ".meta.json".Length);
-                    meta.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(path));
-                    heights.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".height.bytes"));
-                    water.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".water.bytes"));
-                }
-            }
-
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
-            game._geoMeta = meta.ToArray();
-            game._geoHeights = heights.ToArray();
-            game._geoWater = water.ToArray();
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
                          game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets })
             {

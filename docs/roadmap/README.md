@@ -9,7 +9,7 @@ AI 代號（OPUS / SONNET / SONNET-AGY / SOL / TERRA / LUNA / ARGON / FLASH）�
 | P0 基礎建設 | Unity 專案、規範、資料 schema、CI 可跑測試 | 🟦 | [phase-0.md](phase-0.md) |
 | P1 星球垂直切片 | 可在 R=640 m 的程序化 cube-sphere 上繞一圈，卡通渲染 | ⬜ | [phase-1.md](phase-1.md) |
 | P2 宙獸與戰鬥核心 | 御三家可召喚、輪替、施招，對木樁/簡單敵人戰鬥 | ⬜ | [phase-2.md](phase-2.md) |
-| P3 世界生成 | 真實地圖模板 + 程序化區域/地城/BOSS，一場完整 run | ⬜ | [phase-3.md](phase-3.md) |
+| P3 世界生成 | 程序化地貌/道路建築 + 區域/地城/BOSS，一場完整 run | ⬜ | [phase-3.md](phase-3.md) |
 | P4 Meta 循環 | 地球大廳選星、圖鑑/各表、收服/蛋/進化、存檔 | ⬜ | [phase-4.md](phase-4.md) |
 | P5 內容擴量 | AI 批次宙獸管線產出 ≥ 60 條進化線並平衡 | ⬜ | [phase-5.md](phase-5.md) |
 | P6 多人 | LAN/自建伺服器 1–4 人合作 + 對抗 | ⬜ | [phase-6.md](phase-6.md) |

@@ -1,6 +1,6 @@
 # 宙獸紀 · COSMIMERA
 
-開放世界宙獸收集動作 RPG。每場遊戲隨機生成一顆**球形星球**（環境以真實世界地圖為骨架 + 暗黑破壞神式程序化生成），玩家召喚宙獸輔助戰鬥。單機為主，可 LAN / 玩家自建伺服器 1–4 人合作或對抗。
+開放世界宙獸收集動作 RPG。每場遊戲隨機生成一顆**球形星球**（地貌、植被、道路、建築全部程序化隨機生成，暗黑破壞神式），玩家召喚宙獸輔助戰鬥。單機為主，可 LAN / 玩家自建伺服器 1–4 人合作或對抗。
 引擎：Unity 6 LTS · URP（卡通渲染）· C#。非 Claude 的 AI agent 入口見 `AGENTS.md`。
 
 > **目前階段：Phase 0。** 進度與下一步：`docs/roadmap/README.md`
@@ -26,7 +26,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 不確定現在該做什麼 / 要更新進度 | `docs/roadmap/README.md` → 對應 `phase-N.md` |
 | 選擇哪個 AI 執行任務、交接 | `docs/ai-agents.md` |
 | 動到球形星球、重力、地形、區塊 LOD | `docs/architecture/planet-tech.md` + `docs/decisions/ADR-0001-cube-sphere.md` |
-| 動到星球內容生成（真實地圖、程序化、BOSS、任務） | `docs/design/planet-world.md` |
+| 動到星球內容生成（地貌、道路建築、程序化、BOSS、任務） | `docs/design/planet-world.md` |
 | 宙獸資料、屬性、能力值、進化、副手、關係表 | `docs/design/creatures.md` |
 | 戰鬥、招式、CD、命中、召喚輪替 | `docs/design/combat.md` |
 | 大廳、星海選星、圖鑑、收服/取蛋 | `docs/design/lobby-meta.md` |

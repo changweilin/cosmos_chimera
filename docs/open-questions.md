@@ -14,7 +14,7 @@
 
 > Q-C1～Q-C8、Q-T4 已於 2026-11-06 定案，內容寫入 `design/creatures.md`、`design/combat.md`、`design/vision.md`。
 > Q-C9、Q-C10、Q-C17 與 P2-09 疊加/觸發規則已於 2026-11-06 定案，見 `design/creatures.md#進化`、`#隊伍規則`、`design/combat.md#場地`、`#效果疊加`、`#特性觸發`。
-> Q-M2、Q-M4、Q-W1（方案 A）、Q-T1（steering）已於 2026-11-08 定案，見 `design/lobby-meta.md`、`design/planet-world.md`、`architecture/planet-tech.md`。Q-M3 延後（D0 不做孵蛋）。
+> Q-M2、Q-M4、Q-W1（方案 A；2026-11-11 因地貌全程序化而作廢，見 ADR-0008）、Q-T1（steering）已於 2026-11-08 定案，見 `design/lobby-meta.md`、`design/planet-world.md`、`architecture/planet-tech.md`。Q-M3 延後（D0 不做孵蛋）。
 > Q-C19（dash 資料上限 36000 mm）已於 2026-11-07 定案，見 `design/combat.md`。
 > Q-C14～Q-C16 已於 2026-11-06 定案：九種形狀及遷移、每招 base_range_mm、必填體型／超載延後，見 `design/combat.md`、`design/creatures.md`。
 > Q-C28 與 Q-C29 的曲線／取整／進化部分已於 2026-11-08 定案，見 `design/level-progression.md`；Q-C10 的副手不成長規則已由同日使用者修訂取代。
@@ -40,7 +40,7 @@
 | ID | 問題 | 影響項目 | 暫定 |
 |---|---|---|---|
 | Q-T3 | 概念圖/貼圖/3D 模型由哪個工具產出？ | P5-04 | 概念圖、三視圖、特效分鏡：ChatGPT（圖像生成）/ Gemini Argon 任務模式，經 `tools/prompt-forge`。**3D 網格/綁骨/動畫仍未定**：對話式 AI 只保證交付三視圖 + 骨架規格 + Blender 腳本，真正的 image-to-3D 工具待選 |
-| Q-T5 | `PlanetFrame` 規定 cross(East, North) == Up（右手公式），但 Unity 是左手系：面向 North 時 East 在**畫面左邊**，等於鏡像地圖。要 (a) 改成 cross(North, East) == Up 讓 East 在右邊（P1-01 契約破壞性變更，`LatLon` 經度方向一併翻轉），還是 (b) 維持數學慣例、由 P3 貼真實地圖模板時鏡像？ | P1-01、P3-03（真實地圖會左右顛倒）、HUD 指南針 | 建議 (a)；P1-05 移動與攝影機只用 cross(up, forward)，不受影響 |
+| Q-T5 | `PlanetFrame` 規定 cross(East, North) == Up（右手公式），但 Unity 是左手系：面向 North 時 East 在**畫面左邊**，等於鏡像地圖。要 (a) 改成 cross(North, East) == Up 讓 East 在右邊（P1-01 契約破壞性變更，`LatLon` 經度方向一併翻轉），還是 (b) 維持數學慣例、由 P3 貼真實地圖模板時鏡像？ | P1-01、HUD 指南針（地貌已改程序化，ADR-0008，不再有真實地圖鏡像問題） | 建議 (a)；P1-05 移動與攝影機只用 cross(up, forward)，不受影響 |
 
 > Q-D2（全採暫定值：遊蕩半徑依性格、停頓 2–5 s、步行 40%、身體半徑依體型、角色 0.35 m、互動距離 3 m、撫摸無效果）、Q-M1（可輸入／分享 seed，連同 BOSS 階段）、Q-A1（角色概念預設外觀與 NPC 共用，玩家可捏臉）已於 2026-11-10 定案，見 `design/combat.md#遊蕩`、`#實體碰撞`、`#近身互動`、`design/derived-stats/balance-keys.md`、`design/lobby-meta.md`、`design/planet-world.md`、`design/characters.md`。
 > Q-T7 已於 2026-11-10 定案：enum 成員由型別層級契約涵蓋，見 `.claude/rules/code-contracts.md` §1。

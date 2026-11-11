@@ -73,7 +73,6 @@ def package(root, name, build_log, editmode, playmode, preview=None):
             raise ValueError("Missing IL2CPP player file: " + required)
     attachments = [
         (root / "docs/demo-runbook.md", "README.md"),
-        (root / "Data/geo-templates/ATTRIBUTION.md", "ATTRIBUTION.md"),
     ]
     if preview is not None:
         attachments.append((preview, "demo-preview.png"))

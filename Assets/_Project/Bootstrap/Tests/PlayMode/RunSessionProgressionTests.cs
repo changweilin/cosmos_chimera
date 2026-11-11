@@ -918,7 +918,7 @@ namespace Cosmimera.Bootstrap.Tests
         private static RunPlan PlanFor(Env env, ulong seed) =>
             RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), seed, env.Type, CreatureStage.Adult, env.Wild, env.Vocab, null);
 
-        // Same inputs as RunSession.Configure with no geo-templates, so the session builds exactly this plan.
+        // Same inputs as RunSession.Configure with Landforms off (isLand == null), so the session builds exactly this plan.
         private static ulong FindSeed(Env env, System.Func<RunPlan, bool> suitable)
         {
             for (ulong seed = 1; seed <= 600; seed++)
@@ -1120,7 +1120,7 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         // ---------------------------------------------------------------------------------------------------------
-        // Session setup (same data and actions as RunSessionSmokeTests; no geo-templates so the plan is reproducible)
+        // Session setup (same data and actions as RunSessionSmokeTests; Landforms off so the plan is reproducible)
         // ---------------------------------------------------------------------------------------------------------
 
         private static T Load<T>(string path) where T : Object
@@ -1191,6 +1191,7 @@ namespace Cosmimera.Bootstrap.Tests
                 new RunSetup
                 {
                     PlanetType = env.Type, Seed = seed, Radius = Radius, BossStage = CreatureStage.Adult, Party = party,
+                    Landforms = false,
                     PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),

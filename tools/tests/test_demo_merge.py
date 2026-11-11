@@ -14,7 +14,6 @@ spec.loader.exec_module(merge)
 def inputs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(merge, "COPY_OUT", tmp_path / "Copy")
-    monkeypatch.setattr(merge, "GEO_OUT", tmp_path / "Geo")
     monkeypatch.setattr(merge, "NAME_SOURCES", ["names"])
     monkeypatch.setattr(merge, "BATCHES", ["batch"])
     root = tmp_path / "Data"
@@ -41,31 +40,7 @@ def inputs(tmp_path, monkeypatch):
     batch = root / "_incoming" / "batch" / "moves"
     batch.mkdir(parents=True)
     (batch / "one.json").write_text('{"id":"one"}', encoding="utf-8")
-    geo = root / "geo-templates" / "active"
-    geo.mkdir(parents=True)
-    (geo / "meta.json").write_text('{}', encoding="utf-8")
-    (geo / "height.r16").write_bytes(b'height')
-    (geo / "water.u8").write_bytes(b'water')
     return root
-
-
-def test_geo_preserves_unity_meta_and_removes_retired(inputs):
-    merge.GEO_OUT.mkdir()
-    for suffix, data in (("meta.json", b'{}'), ("height.bytes", b'height'), ("water.bytes", b'water')):
-        (merge.GEO_OUT / f"active.{suffix}").write_bytes(data)
-        (merge.GEO_OUT / f"active.{suffix}.meta").write_text('guid: fixed', encoding="utf-8")
-        (merge.GEO_OUT / f"retired.{suffix}").write_bytes(b'old')
-        (merge.GEO_OUT / f"retired.{suffix}.meta").write_text('guid: old', encoding="utf-8")
-    (merge.GEO_OUT / "handmade.txt").write_text('KEEP', encoding="utf-8")
-    unchanged = merge.GEO_OUT / "active.height.bytes"
-    unchanged.touch()
-    before = unchanged.stat().st_mtime_ns
-    assert merge.stage_geo(inputs) == 1
-    assert unchanged.stat().st_mtime_ns == before
-    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('*.meta'))
-    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 3
-    assert not list(merge.GEO_OUT.glob('retired.*'))
-    assert (merge.GEO_OUT / "handmade.txt").read_text() == 'KEEP'
 
 
 def test_conflict_preserves_all_outputs(inputs):
@@ -81,7 +56,6 @@ def test_conflict_preserves_all_outputs(inputs):
         merge.main()
     assert old.read_text() == '{"old_reviewed_key":{}}'
     assert (demo / "old").read_text() == 'old'
-    assert not merge.GEO_OUT.exists()
 
 
 def test_nested_duplicate_rejected_before_writes(inputs):
@@ -100,7 +74,6 @@ def test_normal_output(inputs):
         'entries': [{'id': 'a', 'zh': '甲', 'en': 'A', 'ja': '\u30a2'}]}
     assert (merge.COPY_OUT / 'balance.json').read_bytes() == b'{"x":1}'
     assert (inputs / '_demo' / 'moves' / 'batch--one.json').read_bytes() == b'{"id":"one"}'
-    assert (merge.GEO_OUT / 'active.height.bytes').read_bytes() == b'height'
 
 
 def test_ja_collision_fails_before_writes(inputs):
@@ -109,7 +82,6 @@ def test_ja_collision_fails_before_writes(inputs):
     with pytest.raises(ValueError, match="duplicate translation key"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
     assert not (inputs / "_demo").exists()
 
 
@@ -119,7 +91,6 @@ def test_ja_cannot_repeat_an_existing_language(inputs):
     with pytest.raises(ValueError, match="duplicate translation key: en"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
 
 
 def test_ja_duplicate_json_key_fails_before_writes(inputs):
@@ -128,7 +99,6 @@ def test_ja_duplicate_json_key_fails_before_writes(inputs):
     with pytest.raises(ValueError, match="duplicate key: ja"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
 
 
 def test_ja_nested_entries_merge_and_identity_mismatch_preserves_outputs(inputs):
@@ -166,10 +136,7 @@ def test_invalid_ja_names_preserve_all_outputs(inputs, entries):
     demo = inputs / "_demo"
     demo.mkdir()
     (demo / "old").write_bytes(b"old")
-    merge.GEO_OUT.mkdir()
-    (merge.GEO_OUT / "old.meta").write_bytes(b"old")
     with pytest.raises(ValueError):
         merge.main()
     assert old.read_bytes() == b"old"
     assert (demo / "old").read_bytes() == b"old"
-    assert (merge.GEO_OUT / "old.meta").read_bytes() == b"old"
