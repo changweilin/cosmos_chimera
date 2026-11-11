@@ -257,8 +257,8 @@ namespace Cosmimera.Bootstrap.Demo
             Quaternion? rotation = null)
         {
             GameObject go = GameObject.CreatePrimitive(type);
-            // Decorative for now, like ScatterField: creatures walk the ground function, not colliders, so a blocking
-            // wall would stop the character but not wild creatures (building collision is undecided, planet-world.md).
+            // Decorative, like ScatterField: creatures walk the ground function, not colliders, so a blocking
+            // wall would stop the character but not wild creatures (REQ: planet-world.md#道路與建築 — 建築無碰撞).
             Destroy(go.GetComponent<Collider>());
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPos;
