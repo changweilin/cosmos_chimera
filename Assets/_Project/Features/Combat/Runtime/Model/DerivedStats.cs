@@ -109,7 +109,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
         public int RangedHalfStat { get; }
 
-        /// <summary>Hard cap on scaled ranged distance in mm; valid for planets with R >= 640 m only.</summary>
+        /// <summary>Planet-independent cap on scaled ranged distance in mm; smaller planets lower it further (HorizonRangeTuning).</summary>
         /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
         public int RangedCapMm { get; }
 

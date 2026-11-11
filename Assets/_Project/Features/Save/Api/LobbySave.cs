@@ -459,10 +459,14 @@ namespace Cosmimera.Save
         }
 
         /// <summary>Sets cumulative player XP.</summary>
-        /// <remarks>Pre: exp &gt;= 0. Post: PlayerExp == exp. Side effects: mutates this save.</remarks>
-        public void SetPlayerExp(int exp)
+        /// <remarks>
+        /// Pre: progression non-null; 0 &lt;= exp &lt;= progression.PlayerMaxExp (the same domain FromJson keeps, so
+        ///      Write/Load and Clone agree — SOL W-B2-SOL-04). Post: PlayerExp == exp. Side effects: mutates this save.
+        /// </remarks>
+        public void SetPlayerExp(int exp, Progression progression)
         {
-            Contract.Requires(exp >= 0, "player exp must be >= 0");
+            Contract.Requires(progression != null, "progression is required");
+            Contract.Requires(exp >= 0 && exp <= progression.PlayerMaxExp, "player exp must be in [0, PlayerMaxExp]");
             PlayerExp = exp;
         }
 

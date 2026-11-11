@@ -740,15 +740,18 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        // REQ: planet-world.md#星球尺度 says asteroid = 320 m, but combat geometry is approved only for R >= 640
-        // (MoveGeometry.MinSupportedRadiusM). D0 plays asteroids at 640 m; tracked as open question Q-D1.
+        // REQ: planet-world.md#星球尺度 (Q-D1 settled 2026-11-11: asteroids play at 320 m). Explicit per size so a
+        // tier never inherits the combat minimum by default (SOL Q-D1 B: Moon would silently fall to 320).
         internal static float RadiusFor(PlanetSize size)
         {
             switch (size)
             {
+                case PlanetSize.Asteroid: return 320f;
+                case PlanetSize.Moon: return 640f;
                 case PlanetSize.Planet: return 960f;
                 case PlanetSize.Supergiant: return 1280f;
-                default: return MoveGeometry.MinSupportedRadiusM; // Asteroid (Q-D1 clamp) and Moon
+                default:
+                    throw new System.ArgumentOutOfRangeException(nameof(size), size, "undefined PlanetSize");
             }
         }
 
@@ -825,7 +828,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TrySettle()
         {
-            CommitStatus status = LobbyTransactions.Settle(_save, _runPartyIds, _outcome, _savePath,
+            CommitStatus status = LobbyTransactions.Settle(_save, _runPartyIds, _outcome, _progression, _savePath,
                 out LobbySave next, out MaterialKey overflow, out System.Exception error);
             if (status == CommitStatus.Committed)
             {

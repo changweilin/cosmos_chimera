@@ -16,6 +16,11 @@ namespace Cosmimera.WorldGen.Tests
         // v2 → v3 (D0-B2) also left it unchanged: the fixture plans an adult boss, where the stage cap never binds.
         private const ulong SnapshotSeed12345V3 = 3196599958287516450UL;
 
+        // SOL W-B2-SOL-05: RunPlanner.Hash quantizes directions to 1e-4 and skips LandingDirection, so it cannot back the
+        // "adult plan bit-identical to v2" claim. This digest covers every direction's raw float bits, landing included.
+        // Pinned on this EditMode backend only; cross-backend float drift is ADR-0007's handshake, not this test's job.
+        private const ulong RawBitsSeed12345V3 = 1601242826727298640UL;
+
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
         private List<CreatureDef> _pool;
@@ -160,6 +165,49 @@ namespace Cosmimera.WorldGen.Tests
         {
             Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(3), "bump the snapshot with GeneratorVersion");
             Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V3));
+        }
+
+        [Test]
+        public void Raw_bits_snapshot_seed_12345_is_pinned()
+        {
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(3), "bump the snapshot with GeneratorVersion");
+            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V3));
+        }
+
+        private static ulong RawBitsDigest(RunPlan plan)
+        {
+            ulong h = 14695981039346656037UL;
+            void Mix(uint v)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    h ^= (v >> (i * 8)) & 0xFF;
+                    h *= 1099511628211UL;
+                }
+            }
+
+            void MixDir(float3 d)
+            {
+                uint3 b = math.asuint(d);
+                Mix(b.x);
+                Mix(b.y);
+                Mix(b.z);
+            }
+
+            Mix((uint)RunPlanner.Hash(plan));
+            Mix((uint)(RunPlanner.Hash(plan) >> 32));
+            MixDir(plan.LandingDirection);
+            foreach (RunRegion r in plan.Regions)
+            {
+                MixDir(r.Center);
+            }
+
+            foreach (RunSpawn s in plan.Spawns)
+            {
+                MixDir(s.Direction);
+            }
+
+            return h;
         }
 
         // REQ: SOL P2-12 D0 calibration (2026-11-09) — twilight (light/shadow) and storm (thunder) biases have no wild

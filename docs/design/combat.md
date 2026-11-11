@@ -90,7 +90,7 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 | field | 圓 | 瞄準點，限制在射程 base_range 內 | `field_radius_mm` | 壽命＝招式 `field_duration_ms`，結算見〈場地〉 |
 | self / ally | 無 / 隊友距離 ≤ 射程 | — | — | ally 不看高度 |
 
-- **STR 縮放**：melee 所有尺寸（長、寬、高、半徑）乘 `MeleeLinearPermille`；mid/long 只把長度 / 射程 / 施法距離換成 `RangedDistanceMm`（含 36 m 上限），寬度、角度、AoE 半徑不變；dash 的路徑長度與位移固定等於 base_range，不縮放。
+- **STR 縮放**：melee 所有尺寸（長、寬、高、半徑）乘 `MeleeLinearPermille`；mid/long 只把長度 / 射程 / 施法距離換成 `RangedDistanceMm`（含 36 m 上限），寬度、角度、AoE 半徑不變；dash 的路徑長度與位移固定等於 base_range，不縮放。小星球最後再依地平線收斂所有遠距距離與 dash（[星球射程上限](derived-stats.md#星球射程上限)）。
 - **球面量測**：水平距離是以施放者半徑量的大圓距離（等距方位座標），高度是到球心距離的差（`height_mm/2` + 目標半徑內算命中）。R=640 時 36 m 外的地面比切平面低約 1 m，用平面判定會漏掉站在同一地面上的目標。
 - **兩段命中**：`HitResolver.Resolve`；只有幾何碰到、且目標不在翻滾無敵幀時才擲骰，並且只用掉戰鬥 stream 的一次抽樣，讓各端依相同碰撞順序重播時保持同步。
 
@@ -107,7 +107,7 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 ## 效果疊加（P2-09，2026-11-06 使用者確認）
 - 疊加鍵＝（來源招式/特性 id, 效果序號），**與施放者無關**：兩隻同招的隊友不會讓同一增益翻倍；不同來源一律相加。
 - 每個效果可在資料填 `max_stacks`（1..10，預設 1）。1＝重複施加只刷新時間；>1＝每次 +1 層直到上限，之後只刷新。刷新會重置整疊的剩餘時間（整疊一起消失）。治療是瞬間效果，不可填 `max_stacks`。
-- 單位：`mastery_mod` / `resist_mod` 是百分點（直接加到專精/抗性）；`cd_mod_percent` / `evasion_mod_percent` / `move_speed_mod_percent` / `range_mod_percent` 是衍生值的**相對**百分比：同類全部先加總，倍率 100+Σ 夾在 `Data/balance.json#effects` 的 [10%, 300%]，只乘一次，再套回原本的上下限（閃避上限、射程 36 m 上限、CD 下限 250 ms）。先加總再乘，讓結果與施加順序無關（各端施加順序不保證一致）。
+- 單位：`mastery_mod` / `resist_mod` 是百分點（直接加到專精/抗性）；`cd_mod_percent` / `evasion_mod_percent` / `move_speed_mod_percent` / `range_mod_percent` 是衍生值的**相對**百分比：同類全部先加總，倍率 100+Σ 夾在 `Data/balance.json#effects` 的 [10%, 300%]，只乘一次，再套回原本的上下限（閃避上限、射程 36 m 上限、CD 下限 250 ms），之後才套星球射程上限。先加總再乘，讓結果與施加順序無關（各端施加順序不保證一致）。
 - 有效專精夾在 0..1000（傷害 API 域）；有效抗性夾在 ±100。CD 乘完後向上取整（與 P2-02 相同：CD 不得提早轉好）。
 - `range_mod_percent` 只改「打多遠」：front/line/sweep/cone 的長度，以及瞄準點/友方招式的施法距離；AoE 半徑、寬度、角度不變；dash 不受影響。
 - 規則層：`EffectBook`（每個戰鬥單位一份）、`EffectMath`。

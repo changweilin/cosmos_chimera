@@ -3,7 +3,7 @@
   "stat_effective_cap": 10000,
   "hp": {"base": 600, "gain": 900, "half_stat": 100},
   "melee_volume": {"gain_permille": 1000, "half_stat": 100},
-  "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000},
+  "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000, "horizon_factor_permille": 775, "horizon_eye_height_mm": 1700},
   "cd": {"min_permille": 400, "half_stat": 100, "floor_ms": 250},
   "speed": {"base_mm_s": 4000, "gain_mm_s": 2000, "half_stat": 100},
   "evasion": {"cap_permille": 400, "half_stat": 150},

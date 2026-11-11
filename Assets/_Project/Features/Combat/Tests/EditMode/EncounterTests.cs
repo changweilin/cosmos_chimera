@@ -245,7 +245,8 @@ namespace Cosmimera.Combat.Tests
         public void Combat_rejects_planets_below_the_supported_radius()
         {
             Assert.Throws<ContractException>(() =>
-                new Encounter(new PlanetConfig(320f, float3.zero), _balance, new FlatSurface(), 1));
+                new Encounter(new PlanetConfig(319f, float3.zero), _balance, new FlatSurface(), 1));
+            Assert.DoesNotThrow(() => new Encounter(new PlanetConfig(320f, float3.zero), _balance, new FlatSurface(), 1));
         }
 
         [Test]

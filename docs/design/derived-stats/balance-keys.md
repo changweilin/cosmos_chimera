@@ -16,6 +16,8 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ranged_distance.gain_permille` | 遠程距離在基礎 1000 之上的漸近增益 |
 | `ranged_distance.half_stat` | 遠程距離增益達一半時的 STR |
 | `ranged_distance.cap_mm` | 乘完倍率後的最終距離硬上限；包含過大的基礎射程 |
+| `ranged_distance.horizon_factor_permille` | 星球射程上限 K：可及距離占眼高地平線的千分比（1..1000，定案 775）；見 [星球射程上限](../derived-stats.md#星球射程上限) |
+| `ranged_distance.horizon_eye_height_mm` | 星球射程上限 H：平衡基準眼高（1..10000 mm，定案 1700），非即時攝影機高度 |
 | `cd.min_permille` | SPI 很大時 CD 倍率的下界；不是固定減掉的毫秒數 |
 | `cd.half_stat` | CD 倍率減少量達一半時的 SPI |
 | `cd.floor_ms` | 乘完倍率、向上取整後的絕對 CD 下限，原始 CD=0 也適用 |

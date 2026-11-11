@@ -634,7 +634,7 @@ namespace Cosmimera.Bootstrap.Tests
                 }
 
                 List<int> ids = live.Owned.Select(o => o.InstanceId).Take(PartySize).ToList();
-                CommitStatus st = LobbyTransactions.Settle(live, ids, outcome, System.IO.Path.Combine(dir, "lobby.json"),
+                CommitStatus st = LobbyTransactions.Settle(live, ids, outcome, env.Progression, System.IO.Path.Combine(dir, "lobby.json"),
                     out LobbySave next, out _, out System.Exception error);
                 Assert.That(st, Is.EqualTo(CommitStatus.Committed), error?.ToString());
                 Assert.That(next.Materials.Count(dropped[0].Key), Is.EqualTo(dropped[0].Qty));

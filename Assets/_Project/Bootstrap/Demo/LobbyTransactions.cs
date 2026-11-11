@@ -91,7 +91,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Banks a finished run (XP, captures, materials) into the lobby save and persists it, or changes nothing.</summary>
         /// <remarks>
-        /// Pre: live, partyIds and outcome non-null; partyIds owned by live and outcome.PartyExp.Count == partyIds.Count;
+        /// Pre: live, partyIds, outcome and progression non-null; outcome.PlayerExp &lt;= progression.PlayerMaxExp; partyIds owned by live and outcome.PartyExp.Count == partyIds.Count;
         ///      outcome.PlayerExp &gt;= live.PlayerExp (a run never takes player XP away); path non-empty.
         /// Post: Committed → <paramref name="next"/> holds the outcome and the file holds next. StockFull → banking would
         ///       push <paramref name="overflow"/> past int.MaxValue; nothing applied, nothing written (never truncated).
@@ -101,10 +101,12 @@ namespace Cosmimera.Bootstrap.Demo
         ///       callers submit an outcome until its first Committed and never after.
         /// Side effects: writes files on success.
         /// </remarks>
-        public static CommitStatus Settle(LobbySave live, IReadOnlyList<int> partyIds, RunOutcome outcome, string path,
-            out LobbySave next, out MaterialKey overflow, out Exception error)
+        public static CommitStatus Settle(LobbySave live, IReadOnlyList<int> partyIds, RunOutcome outcome, Progression progression,
+            string path, out LobbySave next, out MaterialKey overflow, out Exception error)
         {
-            Contract.Requires(live != null && partyIds != null && outcome != null, "live, partyIds and outcome are required");
+            Contract.Requires(live != null && partyIds != null && outcome != null && progression != null,
+                "live, partyIds, outcome and progression are required");
+            Contract.Requires(outcome.PlayerExp <= progression.PlayerMaxExp, "outcome.PlayerExp must not exceed PlayerMaxExp");
             Contract.Requires(outcome.PartyExp.Count == partyIds.Count, "one PartyExp entry per party slot");
             Contract.Requires(outcome.PlayerExp >= live.PlayerExp, "outcome.PlayerExp must not be below live.PlayerExp");
             // Before the StockFull early return, so a caller bug is never masked by a data refusal (SOL r2 R2-04).
@@ -129,7 +131,7 @@ namespace Cosmimera.Bootstrap.Demo
                 candidate.SetExp(partyIds[i], outcome.PartyExp[i]);
             }
 
-            candidate.SetPlayerExp(outcome.PlayerExp);
+            candidate.SetPlayerExp(outcome.PlayerExp, progression);
 
             try
             {

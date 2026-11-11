@@ -1,6 +1,6 @@
 # P2-02 能力值 → 衍生值提案
 
-狀態：**2026-11-06 使用者定案**（係數、點數帶、上限、取整規約）。下文殘留的「提議中」字樣指當時的提案原文；數值之後仍可調，但改動須重產黃金向量並重新審查。射程上限維持固定 36 m：**只支援 R≥640**（R=320 時地平線約 33 m，小星球另議）。
+狀態：**2026-11-06 使用者定案**（係數、點數帶、上限、取整規約）。下文殘留的「提議中」字樣指當時的提案原文；數值之後仍可調，但改動須重產黃金向量並重新審查。射程上限 36 m 為全域上限；小星球再依地平線收斂，見〈[星球射程上限](#星球射程上限)〉（Q-D1，2026-11-11）。
 需求來源：[四大能力值](creatures.md#四大能力值)、[戰鬥](combat.md)。傷害仍只由威力 × 專精 × 抗性決定；本提案不引入 ATK / DEF，不修改正式 schema 或 C#。
 係數唯一來源：[Data/balance.json](../../Data/balance.json)（鍵值說明：[balance-keys.md](derived-stats/balance-keys.md)）。C# 移植：`Combat/Runtime/Model/DerivedStats.cs`，以黃金向量逐位元比對。
 
@@ -54,6 +54,23 @@ hit_p    = clamp(floor(move.accuracy * (P - evasion_p) / 100), hit.floor_permill
 `mid / long` 均只延長可達距離 / 最長彈道；AoE 半徑與判定厚度維持招式定義。`dash` 的位移與攻擊判定必須分離，不把體積倍率再乘位移。具體判定體資料與 dash 行為交 P2-01 / P2-04 定義。
 
 射程以球面地表路徑長度解讀；36 m 低於既有 R≈640 m、眼高≈1.7 m 的約 47 m 地平線，留約 23% 餘量。半徑仍只讀 `PlanetConfig.Radius`，不在平衡 JSON 複製。地形、遮蔽或不同攝影機可讓實際可見距離更短，施招端仍須檢查視線 / 可見目標，不能把 36 m 當作「保證看得到」。高度或範圍特性不得略過這個射程上限。
+### <a id="星球射程上限"></a>星球射程上限（Q-D1，2026-11-11 使用者定案，含 K、H）
+小行星 R=320 m 實際遊玩，其眼高地平線約 33 m，低於 36 m。使用者定案：上限**依地平線推導**、**R≥640 維持 36 m**、套用到**全部遠距距離**。
+
+```text
+r      = floor(PlanetConfig.Radius × 1000)                      // mm
+N      = 2·r·H + H²                                              // H = ranged_distance.horizon_eye_height_mm
+cap_R  = min(ranged_distance.cap_mm, isqrt(K²·N) / 1000)         // K = ranged_distance.horizon_factor_permille
+```
+- 全整數（Int64 checked、二分 isqrt），各端同半徑得同值；**不可先把地平線取整**（R=320 會差 1 mm）。實作：`HorizonRangeTuning.CapMm`。
+- K=775‰、H=1700 mm（2026-11-11 使用者採 SOL 提案）。H 是設計基準眼高，刻意不跟攝影機 pivot（1.6 m）連動，避免視角或體型切換改變射程。R≥640 維持 36 m 的條件為 K≥772。依據：`docs/reviews/Q-D1-R320-sol.md` §A。
+
+| R（m） | 320 | 640 | 960 | 1280 |
+|---|---|---|---|---|
+| cap_R（mm） | 25597 | 36000 | 36000 | 36000 |
+
+套用（`MoveGeometry.ApplyPlanetCap`，於 STR 縮放與 `EffectMath.ApplyRange` **之後**最後一步，原始判定體保留給修正計算）：mid／long 的 front／line／sweep／cone 長度、arc／field／目標點 burst 的施放距離（任何距離類別）、mid／long ally 距離、dash 的路徑長與位移（同時取 min，任何距離類別）。AoE 半徑、寬度、角度、高度與 melee 判定體不變。AI 以收斂後的判定體估算可及距離。
+
 SPI 不縮短前搖、後搖或碰撞生效時間。最短 CD=250 ms 代表每隻最多每秒 4 次 CD 就緒，兩隻最多 8 次；這不是動畫或 AI 可無條件完成的施招率。`cooldown_ms=0` 也得到下限，不表示免 CD。
 命中仍是先幾何碰撞再擲骰；此處 `hit_p` 僅為碰撞後的條件機率，accuracy=0 也受 5% 下限。是否碰到、翻滾無敵幀與 RNG 不在參考模型內。
 

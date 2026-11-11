@@ -136,7 +136,7 @@ namespace Cosmimera.Bootstrap.Tests
         {
             LobbySave live = Ready();
             CommitStatus st = LobbyTransactions.Settle(live, new[] { 1 }, Outcome(P.XpThreshold(21), new MaterialStack(Light1, 2)),
-                _path, out LobbySave next, out _, out Exception error);
+                P, _path, out LobbySave next, out _, out Exception error);
             Assert.That(st, Is.EqualTo(CommitStatus.Committed));
             Assert.IsNull(error);
             Assert.That(next.Get(1).Exp, Is.EqualTo(P.XpThreshold(21)));
@@ -152,10 +152,10 @@ namespace Cosmimera.Bootstrap.Tests
         public void Settle_banks_player_exp()
         {
             LobbySave live = Ready();
-            live.SetPlayerExp(100);
+            live.SetPlayerExp(100, P);
             RunOutcome outcome = Outcome(P.XpThreshold(21));
             outcome.PlayerExp = 700;
-            CommitStatus st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out LobbySave next, out _, out _);
+            CommitStatus st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, P, _path, out LobbySave next, out _, out _);
             Assert.That(st, Is.EqualTo(CommitStatus.Committed));
             Assert.That(next.PlayerExp, Is.EqualTo(700));
             Assert.That(live.PlayerExp, Is.EqualTo(100), "the live save is never mutated");
@@ -163,7 +163,13 @@ namespace Cosmimera.Bootstrap.Tests
 
             outcome.PlayerExp = 99;
             Assert.Throws<ContractException>(() =>
-                LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out _, out _, out _), "a run never lowers player XP");
+                LobbyTransactions.Settle(live, new[] { 1 }, outcome, P, _path, out _, out _, out _), "a run never lowers player XP");
+
+            outcome.PlayerExp = P.PlayerMaxExp + 1;
+            Assert.Throws<ContractException>(() =>
+                LobbyTransactions.Settle(live, new[] { 1 }, outcome, P, _path, out _, out _, out _), "above the player cap");
+            Assert.Throws<ContractException>(() =>
+                LobbyTransactions.Settle(live, new[] { 1 }, Outcome(P.XpThreshold(21)), null, _path, out _, out _, out _));
         }
 
         [Test]
@@ -176,7 +182,7 @@ namespace Cosmimera.Bootstrap.Tests
             LobbySave next;
             using (LockSave())
             {
-                st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out next, out _, out _);
+                st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, P, _path, out next, out _, out _);
             }
 
             Assert.That(st, Is.EqualTo(CommitStatus.WriteFailed));
@@ -184,7 +190,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(live.Owned.Count, Is.EqualTo(1));
             Assert.That(Reload().Materials.Count(Light1), Is.EqualTo(3));
 
-            st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, _path, out next, out _, out _);
+            st = LobbyTransactions.Settle(live, new[] { 1 }, outcome, P, _path, out next, out _, out _);
             Assert.That(st, Is.EqualTo(CommitStatus.Committed));
             Assert.That(next.Owned.Count, Is.EqualTo(2), "one capture, not two");
             Assert.That(next.Materials.Count(Light1), Is.EqualTo(5), "materials banked once");
@@ -198,7 +204,7 @@ namespace Cosmimera.Bootstrap.Tests
             string before = File.ReadAllText(_path);
             CommitStatus st = LobbyTransactions.Settle(live, new[] { 1 },
                 Outcome(P.XpThreshold(21), new MaterialStack(new MaterialKey(Element.Fire, 1), 1), new MaterialStack(Light1, 1)),
-                _path, out LobbySave next, out MaterialKey overflow, out _);
+                P, _path, out LobbySave next, out MaterialKey overflow, out _);
             Assert.That(st, Is.EqualTo(CommitStatus.StockFull));
             Assert.That(overflow, Is.EqualTo(Light1));
             Assert.That(next, Is.SameAs(live));
@@ -216,17 +222,17 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() =>
                 LobbyTransactions.Evolve(null, 1, Req(), P, _path, out _, out _, out _));
             Assert.Throws<ContractException>(() =>
-                LobbyTransactions.Settle(live, new[] { 1 }, new RunOutcome(), _path, out _, out _, out _), "PartyExp count");
+                LobbyTransactions.Settle(live, new[] { 1 }, new RunOutcome(), P, _path, out _, out _, out _), "PartyExp count");
             Assert.Throws<ContractException>(() =>
-                LobbyTransactions.Settle(live, null, Outcome(0), _path, out _, out _, out _));
+                LobbyTransactions.Settle(live, null, Outcome(0), P, _path, out _, out _, out _));
             // R2-04: a data refusal (Refused / StockFull) must not mask a caller bug.
             Assert.Throws<ContractException>(() =>
                 LobbyTransactions.Evolve(Ready(lightQty: 1), 1, Req(), P, "", out _, out _, out _), "refused with empty path");
             LobbySave full = Ready(lightQty: int.MaxValue);
             Assert.Throws<ContractException>(() => LobbyTransactions.Settle(full, new[] { 99 },
-                Outcome(0, new MaterialStack(Light1, 1)), _path, out _, out _, out _), "stock full with unowned party id");
+                Outcome(0, new MaterialStack(Light1, 1)), P, _path, out _, out _, out _), "stock full with unowned party id");
             Assert.Throws<ContractException>(() => LobbyTransactions.Settle(full, new[] { 1 },
-                Outcome(0, new MaterialStack(Light1, 1)), "", out _, out _, out _), "stock full with empty path");
+                Outcome(0, new MaterialStack(Light1, 1)), P, "", out _, out _, out _), "stock full with empty path");
         }
     }
 }

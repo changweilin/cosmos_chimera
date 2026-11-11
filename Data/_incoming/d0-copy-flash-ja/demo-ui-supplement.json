@@ -189,7 +189,7 @@
     "ja": "閉じる"
   },
   "ui.interact.observe_detail": {
-    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}"
+    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}"
   },
   "ui.interact.pet_reaction": {
     "ja": "{target}は静かにあなたの手にすり寄ってきた。"
@@ -231,6 +231,6 @@
     "ja": "プレイヤーEXP +{exp}（LV{level}）"
   },
   "ui.star_select.boss_unlock_hint": {
-    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放"
+    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが出現可能"
   }
 }

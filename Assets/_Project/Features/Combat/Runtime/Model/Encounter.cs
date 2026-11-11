@@ -251,6 +251,7 @@ namespace Cosmimera.Combat
         private Pcg32 _rng;
         // Separate stream so wandering never shifts the combat roll order (hit/crit/capture replays stay identical).
         private Pcg32 _wanderRng;
+        private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
         private float3 _playerCenter;
@@ -303,7 +304,12 @@ namespace Cosmimera.Combat
             _surface = surface;
             _rng = new Pcg32(seed, 'C');
             _wanderRng = new Pcg32(seed, 'W');
+            _rangeCapMm = balance.Horizon.CapMm(planet.Radius);
         }
+
+        /// <summary>Ranged-distance cap on this planet (mm), from balance.Horizon and planet.Radius.</summary>
+        /// <remarks>Pre: none. Post: 1..ranged_distance.cap_mm; fixed for the encounter's lifetime. Side effects: none.</remarks>
+        public int RangeCapMm => _rangeCapMm;
 
         /// <summary>All units in id order.</summary>
         /// <remarks>Pre: none. Post: Units[i].Id == i. Side effects: none.</remarks>
@@ -823,8 +829,9 @@ namespace Cosmimera.Combat
             }
 
             _events.Add(new EncounterEvent(EncounterEventKind.Cast, u.Id, targetId, slot, 0));
-            HitVolume volume = EffectMath.ApplyRange(u.Volumes[slot], u.RangeClasses[slot], ctx.RangePercentSum,
-                _balance.Stats, _balance.Effects);
+            // u.Volumes stays unbounded so range modifiers scale the raw value; the planet cap comes last (Q-D1).
+            HitVolume volume = MoveGeometry.ApplyPlanetCap(EffectMath.ApplyRange(u.Volumes[slot], u.RangeClasses[slot],
+                ctx.RangePercentSum, _balance.Stats, _balance.Effects), u.RangeClasses[slot], _rangeCapMm);
 
             if (volume.Kind == HitVolumeKind.Caster)
             {
@@ -950,6 +957,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
         internal Pcg32 RngForTests => _rng;
 
+        /// <summary>Copy of the wander stream, for golden-vector oracles (SOL W-B2-SOL-05).</summary>
+        /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
+        internal Pcg32 WanderRngForTests => _wanderRng;
+
         private bool PlayerTargetable() => _player != null && !_player.IsDowned;
 
         private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter : _units[id].Position;
@@ -1009,7 +1020,8 @@ namespace Cosmimera.Combat
                     }
                 }
 
-                // Chord distance is fine at these ranges (≤ 40 m on R ≥ 640: chord/arc differ by < 0.01 %).
+                // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
+                // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
                 // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
                 int territoryMm = _balance.Territory.RadiusMm(w.Def.Temperament);
                 w.Engaged = w.Engaged
@@ -1097,7 +1109,7 @@ namespace Cosmimera.Combat
         }
 
         // Uniform over the disk (sqrt of the radial draw); the disk is laid on the sphere by arc length, which differs from
-        // the flat disk by < 0.01 % at r ≤ 40 m, R ≥ 320.
+        // the flat disk's area by ≈ θ²/12: < 0.012 % for the ≤ 12 m wander radii at R ≥ 320 (SOL Q-D1 B).
         private float3 WanderPoint(float3 home, float radiusM)
         {
             float3 up = Up(home);
@@ -1157,7 +1169,8 @@ namespace Cosmimera.Combat
             _optionBuffer.Clear();
             for (int s = 0; s < u.Moves.Count; s++)
             {
-                HitVolume v = u.Volumes[s];
+                // The AI must judge reach on what the cast will actually use, or it fires from beyond the cap (SOL Q-D1 B).
+                HitVolume v = MoveGeometry.ApplyPlanetCap(u.Volumes[s], u.RangeClasses[s], _rangeCapMm);
                 AiMoveTargeting targeting = v.Kind == HitVolumeKind.Caster ? AiMoveTargeting.Self
                     : v.Kind == HitVolumeKind.Ally ? AiMoveTargeting.Ally : AiMoveTargeting.Hostile;
                 int reach = targeting == AiMoveTargeting.Self ? 0 : CombatAi.ReachMmOf(v);

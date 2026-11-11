@@ -31,17 +31,21 @@
     "zh-TW": "星球類型",
     "en": "Planet Type"
   },
-  "ui.star_select.size_small": {
-    "zh-TW": "小型",
-    "en": "Small"
+  "ui.star_select.size_asteroid": {
+    "zh-TW": "小行星",
+    "en": "Asteroid"
   },
-  "ui.star_select.size_medium": {
-    "zh-TW": "中型",
-    "en": "Medium"
+  "ui.star_select.size_moon": {
+    "zh-TW": "衛星",
+    "en": "Moon"
   },
-  "ui.star_select.size_large": {
-    "zh-TW": "大型",
-    "en": "Large"
+  "ui.star_select.size_planet": {
+    "zh-TW": "行星",
+    "en": "Planet"
+  },
+  "ui.star_select.size_supergiant": {
+    "zh-TW": "超巨星",
+    "en": "Supergiant"
   },
   "ui.star_select.main_elements": {
     "zh-TW": "主屬性",
