@@ -140,4 +140,4 @@ hit_chance = clamp(move.accuracy / 100 × (1 − target.evasion), hit_floor, 1)
 150 招初稿遷移：近戰 line→front（10）、近戰 cone→sweep（13）、中遠距 line/cone 保留（52）、aoe→burst（37，近戰 caster／其餘 target）、dash→line＋movement=dash（38）。保留 ID、威力、CD、準確率與 range_class。
 
 ## 屬性 × 環境互動（加分項，P5 以後）
-水 + 雷 → 導電範圍擴大；火 + 木 → 燃燒地形；冰 + 水 → 結冰路面。以資料表驅動。
+水 + 雷 → 導電範圍擴大；火 + 木 → 燃燒地形；冰 + 水 → 結冰路面。以資料表驅動。單一物件的材質反應（點燃、凍結、粉碎）已在第一版，見 [destructibles.md](destructibles.md)；本節只剩蔓延與傳導。

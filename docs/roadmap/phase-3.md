@@ -16,6 +16,7 @@
 | P3-07 | 暗黑式地城：房間模組 + 拼接規則 + 詞綴 | OPUS（規則）+ SONNET（實作） | SOL | 快照測試；無封死房間 | ⬜ |
 | P3-08 | 任務鏈生成與 BOSS 戰框架 | SONNET | OPUS | 每星球至少 1 主線 + 1 BOSS | ✅ |
 | P3-09 | 散佈系統（植被/岩石/互動物件 per biome） | SONNET | — | 無浮空/穿地物件 | ✅ |
+| P3-12 | 可破壞場景物件（`design/destructibles.md`、ADR-0009）：規則層物件表／材質反應／破壞集合；表現層剛體喚醒、球面重力、碎片；目標切換可鎖定物件。掉落待 Q-M6 | OPUS（規則）+ SONNET（表現） | SOL | 七種材質各有測試；同 seed 破壞後 LOD 重建不復活；PlayMode：建築破壞後角色與宙獸可通過 | ⬜ |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

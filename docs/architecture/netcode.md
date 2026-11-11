@@ -12,6 +12,7 @@
 | 傷害、HP、CD、收服判定、掉落 | 地形生成與 LOD、植被、特效 |
 | 宙獸 AI 決策 | 自己角色的移動預測（主機校正） |
 | 任務/BOSS 狀態 | UI |
+| 場景物件 HP、破壞、剛體運動（ADR-0009） | 碎片休眠前的細節 |
 
 ## 握手
 `{protocol_version, generator_version, data_hash, planet_seed, planet_type}` — 任一版本/雜湊不符即拒絕，避免兩端星球或數值不同步。
