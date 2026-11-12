@@ -46,6 +46,7 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
+        [SerializeField] private BgmTable _bgmTable;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
@@ -70,6 +71,7 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _title;
         private GUIStyle _text;
         private Camera _lobbyCamera;
+        private BgmPlayer _bgm;
         private Vector2 _partyScroll;
         private string _partyMsg = string.Empty;
         private InputActionMap _menuInput;
@@ -97,6 +99,16 @@ namespace Cosmimera.Bootstrap.Demo
             _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
             _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
             _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+            if (_lobbyCamera.GetComponent<AudioListener>() == null)
+            {
+                _lobbyCamera.gameObject.AddComponent<AudioListener>();
+            }
+
+            var bgmGo = new GameObject("BgmPlayer");
+            bgmGo.transform.SetParent(transform, false);
+            _bgm = bgmGo.AddComponent<BgmPlayer>();
+            _bgm.Initialize(_bgmTable);
+            _bgm.Play(BgmResolver.Space);
         }
 
         private void LoadData()
@@ -810,6 +822,10 @@ namespace Cosmimera.Bootstrap.Demo
             Destroy(_run.gameObject);
             _run = null;
             _lobbyCamera.gameObject.SetActive(true);
+            if (_bgm != null)
+            {
+                _bgm.Play(BgmResolver.Space);
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             _screen = Screen.Results;
@@ -870,6 +886,7 @@ namespace Cosmimera.Bootstrap.Demo
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
+            game._bgmTable = UnityEditor.AssetDatabase.LoadAssetAtPath<BgmTable>("Assets/_Project/Audio/BgmTable.asset");
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
                          game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {

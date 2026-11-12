@@ -527,6 +527,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     _started = true;
                     SummonOpening();
+                    UpdateBgm();
                 }
 
                 return;
@@ -681,6 +682,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
+                UpdateBgm();
             }
 
             // REQ: creatures.md#進化 (Q-C32 B) — one roll per spawn; the flag also stops a re-sent faint from paying twice.
@@ -1097,7 +1099,35 @@ namespace Cosmimera.Bootstrap.Demo
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
                 PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
+                UpdateBgm();
             }
+        }
+
+        private void UpdateBgm()
+        {
+            if (BgmPlayer.Instance == null || _plan == null)
+            {
+                return;
+            }
+
+            int region = _region >= 0 ? _region : _plan.LandingRegion;
+            if (region < 0 || region >= _plan.Regions.Count)
+            {
+                return;
+            }
+
+            if (region == _plan.BossRegion && _bossDownAtMs < 0)
+            {
+                PlanetSize size = BossDraw.SizeFor(BossDraw.Stage(_plan.Seed, CreatureStage.Adult));
+                string bossTrack = BgmResolver.ResolveBossBgm(size);
+                BgmPlayer.Instance.Play(bossTrack);
+                return;
+            }
+
+            RunRegion r = _plan.Regions[region];
+            IReadOnlyList<string> tags = (_setup != null && _setup.PlanetType != null) ? _setup.PlanetType.TerrainTags : null;
+            string track = BgmResolver.ResolveRegionBgm(r.ThemeId, tags);
+            BgmPlayer.Instance.Play(track);
         }
 
         // REQ: level-progression.md#經驗分配 — each battle keeps its own appearance record, reset when the next starts.
