@@ -28,7 +28,7 @@
     },
     {
       "id": "bgm_mountain",
-      "scene": "高山 (High Mountain)",
+      "scene": "高山 (Mountain)",
       "mood": "calm",
       "prompt": "Airy, expansive alpine mountain theme. Sparse resonant piano, distant French horn, breathy panpipes, shimmering high strings, vast open sky and wind."
     },
@@ -75,8 +75,8 @@
       "prompt": "Echoing, tranquil red-rock canyon theme. Warm slide acoustic guitar, low wooden flute, sparse soft percussion, wide canyon breeze."
     },
     {
-      "id": "bgm_lobby",
-      "scene": "地球大廳 / 星海 (Lobby / Starfield)",
+      "id": "bgm_space",
+      "scene": "太空 (Space)",
       "mood": "calm",
       "prompt": "Dreamy, nostalgic starry-sky observatory theme. Gentle solo piano, warm chamber strings, soft celesta sparkles, peaceful anticipation."
     },
@@ -97,6 +97,30 @@
       "scene": "深海 (Deep Sea)",
       "mood": "calm",
       "prompt": "Tranquil, weightless deep-sea abyss theme. Warm deep ambient pads, slow distant cello swells, shimmering celesta chimes, serene submerged drift."
+    },
+    {
+      "id": "bgm_volcano",
+      "scene": "火山 (Volcano)",
+      "mood": "calm",
+      "prompt": "Smoldering, calm yet solemn volcanic field theme. Low reverberant bass drone, muted tribal percussion, breathy earthen woodwinds, subtle metallic friction, slow heat haze atmosphere."
+    },
+    {
+      "id": "bgm_tower",
+      "scene": "高塔 (Tower)",
+      "mood": "calm",
+      "prompt": "Lofty, soaring ancient spire theme. Echoing harp arpeggios, airy solitary flute, gentle high-register string pads, vast vertical breeze, calm ascending wonder."
+    },
+    {
+      "id": "bgm_laboratory",
+      "scene": "研究室 (Laboratory)",
+      "mood": "calm",
+      "prompt": "Focused, contemplative scientific research facility theme. Gentle rhythmic synthesizer pulses, delicate celesta, subtle soft clockwork percussion, warm minimalist piano, quiet analytical curiosity."
+    },
+    {
+      "id": "bgm_ice_cap",
+      "scene": "冰冠 (Ice Cap)",
+      "mood": "calm",
+      "prompt": "Majestic, pristine glacial ice cap theme. Crystal glass harp, shimmering celesta, sustained frozen string harmonics, breathy low flutes, serene polar isolation."
     },
     {
       "id": "bgm_boss_asteroid",
