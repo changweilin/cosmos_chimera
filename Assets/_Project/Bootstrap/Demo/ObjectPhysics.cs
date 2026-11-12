@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Combat;
 using Cosmimera.Core.Contracts;
+using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Unity.Mathematics;
 using UnityEngine;
@@ -111,9 +112,46 @@ namespace Cosmimera.Bootstrap.Demo
         }
     }
 
+    /// <summary>What a drop lying on the ground is. REQ: destructibles.md#地上的素材.</summary>
+    public enum GroundDropKind
+    {
+        /// <summary>Tier-1 material: a rigidbody of its element's ground substance.</summary>
+        Material = 0,
+
+        /// <summary>Tier-3 gem: a rigidbody of the gem substance.</summary>
+        Gem = 1,
+
+        /// <summary>Light or shadow material: a floating wisp, no collider, no body.</summary>
+        Wisp = 2,
+    }
+
+    /// <summary>One drop lying on the ground, drawn until picked up (Q-M6).</summary>
+    /// <remarks>Pre: none. Post: immutable value. Side effects: none.</remarks>
+    public readonly struct GroundDrop
+    {
+        internal GroundDrop(Element element, GroundDropKind kind, GameObject root)
+        {
+            Element = element;
+            Kind = kind;
+            Root = root;
+        }
+
+        /// <summary>The material's element (Light or Shadow for a wisp).</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public Element Element { get; }
+
+        /// <summary>Material, gem or wisp.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public GroundDropKind Kind { get; }
+
+        /// <summary>The drawn object; carries a Rigidbody unless Kind is Wisp.</summary>
+        /// <remarks>Pre: none. Post: null once destroyed by someone else. Side effects: none.</remarks>
+        public GameObject Root { get; }
+    }
+
     /// <summary>
-    /// Rigidbody side of destructible objects: wakes hit objects, shatters destroyed ones into debris, and moves the
-    /// creatures' kinematic pushers. REQ: destructibles.md#物理, #破壞與掉落; ADR-0009.
+    /// Rigidbody side of destructible objects: wakes hit objects, shatters destroyed ones into debris and ground drops,
+    /// and moves the creatures' kinematic pushers. REQ: destructibles.md#物理, #破壞與掉落, #地上的素材; ADR-0009.
     /// </summary>
     /// <remarks>
     /// Pre: <see cref="Configure"/> before any other member; main thread. Post: per member.
@@ -127,6 +165,11 @@ namespace Cosmimera.Bootstrap.Demo
         // Below the sampled ground by more than this, the terrain under the body has no collider (streamed out).
         private const float FallThroughM = 2f;
         private const int MaxPiecesPerObject = 8;
+        // Placeholder sizes: a material should read as a pick-up, not as debris, so it is fixed rather than object-sized.
+        private const float MaterialEdgeM = 0.35f;
+        private const float GemEdgeM = 0.25f;
+        private const float WispDiameterM = 0.4f;
+        private const float WispHoverM = 1f;
 
         private readonly struct Awake
         {
@@ -151,23 +194,30 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Dictionary<long, Rigidbody> _byId = new Dictionary<long, Rigidbody>();
         private readonly List<Piece> _debris = new List<Piece>(96);
         private readonly Dictionary<int, Rigidbody> _pushers = new Dictionary<int, Rigidbody>();
+        private readonly List<GroundDrop> _ground = new List<GroundDrop>(32);
+        // Keyed by element * 3 + kind; one shared material per look, released in OnDestroy.
+        private readonly Dictionary<int, Material> _dropLooks = new Dictionary<int, Material>();
         private PlanetConfig _planet;
         private PlanetGravity _gravity;
         private Func<float3, float> _groundAltitude;
         private Collider[] _ignore;
         private ObjectPhysicsTuning _tuning;
+        private EnvMaterials _env;
+        private Shader _toonShader;
         private bool _configured;
 
-        /// <summary>Binds the planet, gravity and terrain.</summary>
+        /// <summary>Binds the planet, gravity, terrain and the substances ground drops are made of.</summary>
         /// <remarks>
-        /// Pre: gravity and groundAltitude non-null; tuning.IsValid; ignore non-null (colliders pushers must not touch:
-        ///      the character's, whose body collision is rule-side, combat.md#實體碰撞); called once.
+        /// Pre: gravity, groundAltitude and env non-null; tuning.IsValid; ignore non-null (colliders pushers must not
+        ///      touch: the character's, whose body collision is rule-side, combat.md#實體碰撞); toonShader may be null
+        ///      (ground drops keep the primitive's material); called once.
         /// Post: the other members work. Side effects: stores references.
         /// </remarks>
         public void Configure(in PlanetConfig planet, PlanetGravity gravity, Func<float3, float> groundAltitude,
-            Collider[] ignore, in ObjectPhysicsTuning tuning)
+            Collider[] ignore, in ObjectPhysicsTuning tuning, EnvMaterials env, Shader toonShader)
         {
-            Contract.Requires(gravity != null && groundAltitude != null && ignore != null, "gravity, groundAltitude, ignore required");
+            Contract.Requires(gravity != null && groundAltitude != null && ignore != null && env != null,
+                "gravity, groundAltitude, ignore, env required");
             Contract.Requires(tuning.IsValid, "tuning must be valid");
             Contract.Requires(!_configured, "Configure must be called once");
             _planet = planet;
@@ -175,8 +225,14 @@ namespace Cosmimera.Bootstrap.Demo
             _groundAltitude = groundAltitude;
             _ignore = ignore;
             _tuning = tuning;
+            _env = env;
+            _toonShader = toonShader;
             _configured = true;
         }
+
+        /// <summary>Drops lying on the ground, oldest first. They stay for the whole run (destructibles.md#地上的素材).</summary>
+        /// <remarks>Pre: none. Post: entries whose Root was destroyed elsewhere are pruned on the next physics step. Side effects: none.</remarks>
+        public IReadOnlyList<GroundDrop> GroundDrops => _ground;
 
         /// <summary>The tuning in use.</summary>
         /// <remarks>Pre: Configure ran. Post: as configured. Side effects: none.</remarks>
@@ -247,28 +303,30 @@ namespace Cosmimera.Bootstrap.Demo
             return true;
         }
 
-        /// <summary>Breaks object <paramref name="id"/> into debris where <paramref name="root"/> stands.</summary>
+        /// <summary>Breaks object <paramref name="id"/> into debris and its drops where <paramref name="root"/> stands.</summary>
         /// <remarks>
-        /// Pre: Configure ran; root null (not drawn: nothing to show) or the object's drawn root; hitRadiusM &gt; 0;
-        ///      massKg &gt;= 0; impulse from ObjectImpulse.Compute (zero for burn-outs and immovable objects).
-        /// Post: 3..8 pieces (more for bigger objects) in the root's first material spread inside the hit sphere,
-        ///       flying outward plus impulse / massKg (capped); the object is no longer tracked as woken. The root is
-        ///       left for the caller to remove. Oldest pieces beyond MaxDebris disappear.
-        /// Side effects: creates GameObjects; UnityEngine.Random for spread (presentation-only, not replayed).
+        /// Pre: Configure ran; root null (not drawn) or the object's drawn root; hitRadiusM &gt; 0; massKg &gt;= 0;
+        ///      impulse from ObjectImpulse.Compute (zero for burn-outs and immovable objects); drop is the rule layer's
+        ///      roll for this destruction (ObjectEvent.Drop), Element defined.
+        /// Post: 3..8 pieces (more for bigger objects) spread inside the hit sphere, flying outward plus impulse / massKg
+        ///       (capped). A rolled material and a rolled gem each replace one piece (destructibles.md#破壞與掉落) and
+        ///       join <see cref="GroundDrops"/> as a rigidbody of their ground substance that never despawns, except a
+        ///       light material, which is a floating wisp and replaces nothing; a rolled shadow adds a shadow wisp. Wisps
+        ///       hover WispHoverM above the sampled ground at the object. Drops appear even when root is null (the roll
+        ///       stands whether or not the object was drawn); debris only when root is drawn, in its first material.
+        ///       The object is no longer tracked as woken; the root is left for the caller to remove. Oldest debris
+        ///       beyond MaxDebris disappears (ground drops are not debris).
+        /// Side effects: creates GameObjects and, on first use per look, Materials; UnityEngine.Random for spread
+        /// (presentation-only, not replayed).
         /// </remarks>
-        public void Shatter(long id, GameObject root, float3 center, float hitRadiusM, float massKg, float3 impulse)
+        public void Shatter(long id, GameObject root, float3 center, float hitRadiusM, float massKg, float3 impulse,
+            in ObjectDrop drop)
         {
             Contract.Requires(_configured, "Configure first");
             Contract.Requires(math.isfinite(hitRadiusM) && hitRadiusM > 0f && math.isfinite(massKg) && massKg >= 0f,
                 "hitRadiusM > 0, massKg >= 0");
+            Contract.Requires((int)drop.Element >= 0 && (int)drop.Element <= (int)Element.Shadow, "drop element must be defined");
             Forget(id);
-            if (root == null)
-            {
-                return;
-            }
-
-            Renderer look = root.GetComponentInChildren<Renderer>();
-            Material material = look != null ? look.sharedMaterial : null;
             int count = math.clamp((int)math.ceil(hitRadiusM * 2.5f), 3, MaxPiecesPerObject);
             float edge = math.clamp(hitRadiusM * 0.45f, 0.15f, 1.5f);
             float pieceKg = math.max(1f, massKg / count);
@@ -280,25 +338,49 @@ namespace Cosmimera.Bootstrap.Demo
                 carried = math.normalize(carried) * 6f;
             }
 
+            if (drop.Material)
+            {
+                // Null exactly for light (shadow has no substance, so never rolls a material): it floats instead.
+                Substance substance = _env.Ground(drop.Element);
+                if (substance == null)
+                {
+                    SpawnWisp(drop.Element, up);
+                }
+                else
+                {
+                    SpawnGroundBody(drop.Element, GroundDropKind.Material, substance, MaterialEdgeM, center, hitRadiusM,
+                        carried, up);
+                    count--;
+                }
+            }
+
+            if (drop.Gem)
+            {
+                SpawnGroundBody(drop.Element, GroundDropKind.Gem, _env.GemSubstance, GemEdgeM, center, hitRadiusM, carried, up);
+                count--;
+            }
+
+            if (drop.Shadow)
+            {
+                SpawnWisp(Element.Shadow, up);
+            }
+
+            if (root == null)
+            {
+                return;
+            }
+
+            Renderer look = root.GetComponentInChildren<Renderer>();
+            Material material = look != null ? look.sharedMaterial : null;
             for (int i = 0; i < count; i++)
             {
-                float3 offset = (float3)UnityEngine.Random.insideUnitSphere * (hitRadiusM * 0.6f);
-                GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.name = "Debris";
-                go.transform.SetParent(transform, false);
-                go.transform.SetPositionAndRotation((Vector3)(center + offset), UnityEngine.Random.rotationUniform);
-                go.transform.localScale = Vector3.one * edge;
+                GameObject go = SpawnPiece("Debris", center, hitRadiusM, edge, carried, up, out Rigidbody body);
                 if (material != null)
                 {
                     go.GetComponent<Renderer>().sharedMaterial = material;
                 }
 
-                Rigidbody body = go.AddComponent<Rigidbody>();
                 body.mass = pieceKg;
-                body.maxDepenetrationVelocity = MaxDepenetrationMs;
-                float3 outward = math.lengthsq(offset) > 1e-6f ? math.normalize(offset) : up;
-                body.linearVelocity = (Vector3)(carried + outward * 1.5f + up);
-                _gravity.Register(body);
                 _debris.Add(new Piece { Body = body, BornAt = Time.time, RestingSince = -1f });
             }
 
@@ -306,6 +388,69 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 DestroyPiece(0);
             }
+        }
+
+        private GameObject SpawnPiece(string name, float3 center, float hitRadiusM, float edge, float3 carried, float3 up,
+            out Rigidbody body)
+        {
+            float3 offset = (float3)UnityEngine.Random.insideUnitSphere * (hitRadiusM * 0.6f);
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            go.transform.SetParent(transform, false);
+            go.transform.SetPositionAndRotation((Vector3)(center + offset), UnityEngine.Random.rotationUniform);
+            go.transform.localScale = Vector3.one * edge;
+            body = go.AddComponent<Rigidbody>();
+            body.maxDepenetrationVelocity = MaxDepenetrationMs;
+            float3 outward = math.lengthsq(offset) > 1e-6f ? math.normalize(offset) : up;
+            body.linearVelocity = (Vector3)(carried + outward * 1.5f + up);
+            _gravity.Register(body);
+            return go;
+        }
+
+        // REQ: destructibles.md#地上的素材 — a material behaves as its element's representative substance (mass here;
+        // hits and reactions on it are rule-side and not wired yet).
+        private void SpawnGroundBody(Element element, GroundDropKind kind, Substance substance, float edge, float3 center,
+            float hitRadiusM, float3 carried, float3 up)
+        {
+            GameObject go = SpawnPiece(kind == GroundDropKind.Gem ? "Gem" : "Material", center, hitRadiusM, edge, carried, up,
+                out Rigidbody body);
+            body.mass = math.max(0.2f, substance.DensityKgM3 * edge * edge * edge);
+            Paint(go, element, kind);
+            _ground.Add(new GroundDrop(element, kind, go));
+        }
+
+        private void SpawnWisp(Element element, float3 up)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            go.name = element == Element.Light ? "LightWisp" : "ShadowWisp";
+            // REQ: destructibles.md#碰撞 — light and shadow materials collide with nothing.
+            Destroy(go.GetComponent<Collider>());
+            go.transform.SetParent(transform, false);
+            go.transform.SetPositionAndRotation((Vector3)_planet.ToWorld(up, _groundAltitude(up) + WispHoverM),
+                Quaternion.FromToRotation(Vector3.up, (Vector3)up));
+            go.transform.localScale = Vector3.one * WispDiameterM;
+            Paint(go, element, GroundDropKind.Wisp);
+            _ground.Add(new GroundDrop(element, GroundDropKind.Wisp, go));
+        }
+
+        private void Paint(GameObject go, Element element, GroundDropKind kind)
+        {
+            if (_toonShader == null)
+            {
+                return;
+            }
+
+            int key = (int)element * 3 + (int)kind;
+            if (!_dropLooks.TryGetValue(key, out Material m))
+            {
+                Color color = PlaceholderCreatureViewFactory.ColorOf(element);
+                // Gems read brighter than the plain material of the same element.
+                m = PlanetLook.CreatureMaterial(_toonShader, kind == GroundDropKind.Gem ? Color.Lerp(color, Color.white, 0.5f) : color,
+                    0.02f);
+                _dropLooks[key] = m;
+            }
+
+            go.GetComponent<Renderer>().sharedMaterial = m;
         }
 
         /// <summary>Moves (or shows / hides) the kinematic pusher of creature <paramref name="unitId"/>.</summary>
@@ -435,6 +580,35 @@ namespace Cosmimera.Bootstrap.Demo
                     _awake.RemoveAt(i);
                 }
             }
+
+            for (int i = _ground.Count - 1; i >= 0; i--)
+            {
+                GameObject root = _ground[i].Root;
+                if (root == null)
+                {
+                    _ground.RemoveAt(i);
+                    continue;
+                }
+
+                // Unlike debris, a drop must outlive a missing collider (it stays all run): park it on the sampled ground.
+                Rigidbody b = _ground[i].Kind == GroundDropKind.Wisp ? null : root.GetComponent<Rigidbody>();
+                if (b != null && !b.isKinematic && FellThrough(b.position))
+                {
+                    float3 dir = _planet.ToDirection(b.position);
+                    b.position = (Vector3)_planet.ToWorld(dir, _groundAltitude(dir) + root.transform.localScale.x * 0.5f);
+                    Freeze(b);
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            foreach (Material m in _dropLooks.Values)
+            {
+                Destroy(m);
+            }
+
+            _dropLooks.Clear();
         }
 
         private bool FellThrough(Vector3 position)

@@ -469,7 +469,8 @@ namespace Cosmimera.Bootstrap.Demo
                     loose.transform.SetParent(transform, false);
                     _objectPhysics = loose.AddComponent<ObjectPhysics>();
                     _objectPhysics.Configure(config, gravity, surface.GroundAltitude,
-                        _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default);
+                        _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default, setup.EnvMaterials,
+                        toonShader);
                 }
             }
 
@@ -1497,7 +1498,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: combat.md#實體碰撞 (D0-W2). Writes the transform as well as the body: PlayerPosition reads the transform, and
         // a second catch-up tick in the same frame must see the pushed position or it would push again.
-        // Generation-side and presentation-side effects of a destruction; drops wait for the pickup rule (Q-M6).
+        // Generation-side and presentation-side effects of a destruction; drops lie on the ground until the pickup rule
+        // (Q-M6) exists.
         private void ApplyObjectEvents()
         {
             foreach (ObjectEvent ev in _encounter.ObjectEvents)
@@ -1558,7 +1560,7 @@ namespace Cosmimera.Bootstrap.Demo
             GameObject woken = _objectPhysics.WokenRoot(ev.ObjectId);
             GameObject root = ObjectRoot(ev.ObjectId);
             float3 center = woken != null ? (float3)woken.GetComponent<Rigidbody>().worldCenterOfMass : c.Center;
-            _objectPhysics.Shatter(ev.ObjectId, root, center, c.HitRadiusM, massKg, impulse);
+            _objectPhysics.Shatter(ev.ObjectId, root, center, c.HitRadiusM, massKg, impulse, ev.Drop);
             if (root != null && !WorldObjects.IsBuilding(ev.ObjectId))
             {
                 Destroy(root);
