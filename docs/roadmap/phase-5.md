@@ -6,7 +6,7 @@
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
-| P5-01 | 批次 prompt 模板 `tools/prompts/*.md` + 配額矩陣 | SONNET | OPUS | 模板產出可直接通過 schema | ⬜ |
+| P5-01 | 批次 prompt 模板 `tools/prompts/*.md` + 配額矩陣 | SONNET | OPUS | 模板產出可直接通過 schema | ✅ |
 | P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | 🟨 |
 | P5-03 | 宙獸批次初稿（每批 20–50） | FLASH / TERRA | SONNET | 每批通過驗證工具 | 🟦 |
 | P5-04 | 概念圖 prompt 與美術生產（依 Q-T3），經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
