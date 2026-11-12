@@ -441,7 +441,7 @@ namespace Cosmimera.Bootstrap.Demo
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
-                PlanetLook.Sky(setup.PlanetType.Id), 600f);
+                PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
             if (starShader != null)
             {
                 gameObject.AddComponent<StarField>().Configure(_rig.Camera, _rig.Sun, config, setup.Seed, starShader);

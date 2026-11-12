@@ -227,6 +227,39 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: the run landed. Post: camera mode toggled. Side effects: camera rig state.</remarks>
         internal void ToggleViewForTests() => _rig.CameraRig.ToggleView();
 
+        /// <summary>Observes the render camera's right axis.</summary>
+        /// <remarks>Pre: Configure ran. Post: copied unit vector. Side effects: none.</remarks>
+        internal Vector3 CameraRightForTests => _rig.Camera.transform.right;
+
+        /// <summary>Observes whether the character motor stands on ground.</summary>
+        /// <remarks>Pre: the run landed. Post: current flag. Side effects: none.</remarks>
+        internal bool GroundedForTests => _rig.Character.IsGrounded;
+
+        /// <summary>The planet radius this run was built with.</summary>
+        /// <remarks>Pre: Configure ran. Post: > 0. Side effects: none.</remarks>
+        internal float RadiusForTests => _rig.Config.Radius;
+
+        /// <summary>World point <paramref name="above"/> metres over the rendered ground (templates included).</summary>
+        /// <remarks>Pre: Configure ran; direction unit; above finite. Post: on the ray from the center through direction. Side effects: none.</remarks>
+        internal float3 SurfacePointForTests(float3 direction, float above) =>
+            _rig.Config.ToWorld(direction, _rig.SurfaceHeight(direction) + above);
+
+        /// <summary>Places the character one metre above the rendered ground, at rest.</summary>
+        /// <remarks>
+        /// Unlike MovePlayerForTests (bare height field), this follows template terrain, so a staged walk over landform
+        /// stamps never starts inside the ground; velocity is cleared so a frame-by-frame walk does not build up fall speed.
+        /// Pre: the run landed; direction unit. Post: body and transform agree; body velocity zero. Side effects: player position.
+        /// </remarks>
+        internal void PlaceCharacterForTests(float3 direction)
+        {
+            Contract.Requires(_started && math.abs(math.lengthsq(direction) - 1f) < 1e-4f, "landed run and unit direction required");
+            var body = _rig.Character.GetComponent<Rigidbody>();
+            Vector3 at = SurfacePointForTests(direction, 1f);
+            body.linearVelocity = Vector3.zero;
+            body.position = at;
+            _rig.Character.transform.position = at;
+        }
+
         /// <summary>Disables camera continuity checks before a staged cross-planet teleport.</summary>
         /// <remarks>Pre: the run landed. Post: camera rig disabled. Side effects: disables camera updates.</remarks>
         internal void SuspendCameraForTests() => _rig.CameraRig.enabled = false;

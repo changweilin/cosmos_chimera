@@ -7,8 +7,18 @@ using UnityEngine.TestTools;
 
 namespace Cosmimera.Player.Tests
 {
+    // R=320 (asteroid) since Q-D1 (2026-11-11); SOL Q-D1-R3 asked for the native run at that size too.
+    [TestFixture(640f)]
+    [TestFixture(320f)]
     public sealed class SphericalCharacterTests
     {
+        private readonly float _radius;
+
+        public SphericalCharacterTests(float radius)
+        {
+            _radius = radius;
+        }
+
         private GameObject _root;
         private PlanetConfig _config;
         private PlanetHeight _height;
@@ -18,7 +28,7 @@ namespace Cosmimera.Player.Tests
         [SetUp]
         public void SetUp()
         {
-            _config = new PlanetConfig(640f, new float3(10f, -20f, 30f));
+            _config = new PlanetConfig(_radius, new float3(10f, -20f, 30f));
             _height = PlanetHeight.ForPlanet(_config, 42UL);
             _root = new GameObject("SphericalCharacterTest");
             var planet = new GameObject("Planet");

@@ -7,8 +7,18 @@ using UnityEngine.TestTools;
 
 namespace Cosmimera.Planet.Tests
 {
+    // R=320 (asteroid) since Q-D1 (2026-11-11); SOL Q-D1-R3 asked for the native run at that size too.
+    [TestFixture(640f)]
+    [TestFixture(320f)]
     public sealed class PlanetTerrainTests
     {
+        private readonly float _radius;
+
+        public PlanetTerrainTests(float radius)
+        {
+            _radius = radius;
+        }
+
         private const float EyeHeight = 1.7f;
         private GameObject _root;
         private PlanetConfig _config;
@@ -19,7 +29,7 @@ namespace Cosmimera.Planet.Tests
         [SetUp]
         public void SetUp()
         {
-            _config = new PlanetConfig(640f, new float3(10f, -20f, 30f));
+            _config = new PlanetConfig(_radius, new float3(10f, -20f, 30f));
             _height = PlanetHeight.ForPlanet(_config, 42UL);
             _root = new GameObject("PlanetTerrainTest");
             _viewer = new GameObject("Viewer").transform;
@@ -91,6 +101,7 @@ namespace Cosmimera.Planet.Tests
                 PlaceViewer(math.mul(quaternion.AxisAngle(axis, angle), start));
                 yield return null;
                 frameMs.Add(_terrain.LastFrameMs);
+                Assert.AreEqual(0, _terrain.CountEmptyColliders(), $"frame {f}: an enabled collider lost its mesh");
                 _terrain.CountColliders(out float farthest);
                 maxFarthest = math.max(maxFarthest, farthest);
             }
