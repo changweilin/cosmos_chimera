@@ -1,0 +1,126 @@
+{
+  "default_model": "lyria-3-pro-preview",
+  "global_prefix": "Instrumental only, no vocals, seamless looping video game background music.",
+  "tracks": [
+    {
+      "id": "bgm_town",
+      "scene": "城鎮 (Town)",
+      "mood": "calm",
+      "prompt": "Warm, peaceful fantasy town theme. Gentle acoustic lute, soft woodwind flute melody, light pizzicato strings, cozy sunlit cobblestone market atmosphere, relaxed tempo."
+    },
+    {
+      "id": "bgm_village",
+      "scene": "農村 (Village)",
+      "mood": "calm",
+      "prompt": "Pastoral, soothing countryside village theme. Rustic fingerstyle acoustic guitar, gentle ocarina and tin whistle, soft warm accordion pad, unhurried rural charm."
+    },
+    {
+      "id": "bgm_forest",
+      "scene": "森林 (Forest)",
+      "mood": "calm",
+      "prompt": "Serene, dappled-sunlight woodland theme. Delicate harp arpeggios, airy solo flute, soft marimba and wooden chimes, gentle sustained strings, Breath of the Wild inspired exploration."
+    },
+    {
+      "id": "bgm_rainforest",
+      "scene": "雨林 (Rainforest)",
+      "mood": "calm",
+      "prompt": "Lush, tranquil tropical rainforest theme. Warm kalimba, soft hand percussion, wooden pan flute, gentle ambient synth pads, misty canopy atmosphere."
+    },
+    {
+      "id": "bgm_mountain",
+      "scene": "高山 (High Mountain)",
+      "mood": "calm",
+      "prompt": "Airy, expansive alpine mountain theme. Sparse resonant piano, distant French horn, breathy panpipes, shimmering high strings, vast open sky and wind."
+    },
+    {
+      "id": "bgm_grassland",
+      "scene": "草原 (Grassland)",
+      "mood": "calm",
+      "prompt": "Breezy, peaceful open grassland theme. Strumming acoustic guitar, warm solo violin, light flute, gentle swaying 3/4 or 4/4 rhythm, sense of quiet freedom."
+    },
+    {
+      "id": "bgm_desert",
+      "scene": "沙漠 (Desert)",
+      "mood": "calm",
+      "prompt": "Tranquil, sun-baked desert exploration theme. Gentle oud, expressive ney flute, soft frame drum pulse, warm low string drone, calm mirage atmosphere."
+    },
+    {
+      "id": "bgm_icefield",
+      "scene": "冰原 (Icefield)",
+      "mood": "calm",
+      "prompt": "Crystalline, still frozen tundra theme. Delicate celesta, glass harp, sparse high-register piano, soft icy ambient strings, quiet winter night."
+    },
+    {
+      "id": "bgm_swamp",
+      "scene": "沼澤 (Swamp)",
+      "mood": "calm",
+      "prompt": "Misty, calm yet mysterious marshland theme. Low clarinet and bassoon, gentle plucked harp, soft water-drop marimba, muted atmospheric pads."
+    },
+    {
+      "id": "bgm_beach",
+      "scene": "海灘 (Beach)",
+      "mood": "calm",
+      "prompt": "Relaxed, sunlit coastal beach theme. Warm nylon-string guitar, gentle steelpan and marimba, soft ukulele, unhurried ocean-wave rhythm."
+    },
+    {
+      "id": "bgm_ruins",
+      "scene": "遺跡 (Ruins)",
+      "mood": "calm",
+      "prompt": "Quiet, ancient stone ruins theme. Reverberant solo piano, harp harmonics, soft ethereal pad, contemplative and timeless."
+    },
+    {
+      "id": "bgm_canyon",
+      "scene": "峽谷 (Canyon)",
+      "mood": "calm",
+      "prompt": "Echoing, tranquil red-rock canyon theme. Warm slide acoustic guitar, low wooden flute, sparse soft percussion, wide canyon breeze."
+    },
+    {
+      "id": "bgm_lobby",
+      "scene": "地球大廳 / 星海 (Lobby / Starfield)",
+      "mood": "calm",
+      "prompt": "Dreamy, nostalgic starry-sky observatory theme. Gentle solo piano, warm chamber strings, soft celesta sparkles, peaceful anticipation."
+    },
+    {
+      "id": "bgm_cave",
+      "scene": "洞穴 (Cave)",
+      "mood": "calm",
+      "prompt": "Quiet, echoing subterranean cave theme. Resonant sparse piano, water-drop marimba, subtle low bowed strings, soft cavern reverb, calm mineral stillness."
+    },
+    {
+      "id": "bgm_labyrinth",
+      "scene": "迷宮 (Labyrinth)",
+      "mood": "calm",
+      "prompt": "Calm yet mysterious ancient labyrinth theme. Delicate plucked harp, understated steady pizzicato strings, soft clarinet motif, enigmatic and focused atmosphere."
+    },
+    {
+      "id": "bgm_deep_sea",
+      "scene": "深海 (Deep Sea)",
+      "mood": "calm",
+      "prompt": "Tranquil, weightless deep-sea abyss theme. Warm deep ambient pads, slow distant cello swells, shimmering celesta chimes, serene submerged drift."
+    },
+    {
+      "id": "bgm_boss_asteroid",
+      "scene": "BOSS戰 - 小行星 (Boss: Asteroid)",
+      "mood": "rousing",
+      "prompt": "Nimble, energetic mid-scale boss battle theme. Crisp fast chamber strings, punchy snare and tom percussion, sharp horn accents, agile heroic skirmish energy."
+    },
+    {
+      "id": "bgm_boss_dwarf_planet",
+      "scene": "BOSS戰 - 矮行星 (Boss: Dwarf Planet)",
+      "mood": "rousing",
+      "prompt": "Dramatic, urgent orchestral boss battle theme. Driving full string ostinato, bold trumpets and French horns, heavy timpani and taiko drums, rising heroic tension."
+    },
+    {
+      "id": "bgm_boss_planet",
+      "scene": "BOSS戰 - 行星 (Boss: Planet)",
+      "mood": "rousing",
+      "prompt": "Grand, epic, high-stakes orchestral boss battle theme. Massive symphony orchestra, blazing brass fanfares, relentless low-string rhythm, thunderous war drums, soaring triumphant melody."
+    },
+    {
+      "id": "bgm_boss_supergiant",
+      "scene": "BOSS戰 - 超巨星 (Boss: Supergiant)",
+      "mood": "rousing",
+      "prompt": "Colossal, cataclysmic cosmic climax boss battle theme. Monumental full orchestra with pipe organ, ferocious rapid strings, overwhelming brass, earth-shaking percussion, shimmering cosmic bells, transcendent final-battle intensity."
+    }
+  ]
+}
