@@ -1,0 +1,122 @@
+[
+  {
+    "a": "metal_gate_calf",
+    "b": "metal_winged_bull",
+    "kind": "evolution_family",
+    "note": "同進化線：亞述王城銅牛幼年→少年"
+  },
+  {
+    "a": "metal_citadel_colossus",
+    "b": "metal_winged_bull",
+    "kind": "evolution_family",
+    "note": "同進化線：亞述王城銅牛少年→成年"
+  },
+  {
+    "a": "wood_betel_sprout",
+    "b": "wood_garland_serpent",
+    "kind": "evolution_family",
+    "note": "同進化線：檳榔花冠蛇幼年→少年"
+  },
+  {
+    "a": "wood_garland_serpent",
+    "b": "wood_lotus_wyrm",
+    "kind": "evolution_family",
+    "note": "同進化線：檳榔花冠蛇少年→成年"
+  },
+  {
+    "a": "water_harpoon_cetacean",
+    "b": "water_ivory_calf",
+    "kind": "evolution_family",
+    "note": "同進化線：傷痕白鯨幼年→少年"
+  },
+  {
+    "a": "water_abyssal_leviathan",
+    "b": "water_harpoon_cetacean",
+    "kind": "evolution_family",
+    "note": "同進化線：傷痕白鯨少年→成年"
+  },
+  {
+    "a": "fire_ember_crocodilian",
+    "b": "fire_spark_barkling",
+    "kind": "evolution_family",
+    "note": "同進化線：熔炭巨鱷幼年→少年"
+  },
+  {
+    "a": "fire_ember_crocodilian",
+    "b": "fire_hearth_monolith",
+    "kind": "evolution_family",
+    "note": "同進化線：熔炭巨鱷少年→成年"
+  },
+  {
+    "a": "earth_lotus_cub",
+    "b": "earth_pillar_chimera",
+    "kind": "evolution_family",
+    "note": "同進化線：神廟石雕獅象幼年→少年"
+  },
+  {
+    "a": "earth_pillar_chimera",
+    "b": "earth_temple_tuskbeast",
+    "kind": "evolution_family",
+    "note": "同進化線：神廟石雕獅象少年→成年"
+  },
+  {
+    "a": "ice_hull_cutter",
+    "b": "ice_sled_buoy",
+    "kind": "evolution_family",
+    "note": "同進化線：極地破冰船幼年→少年"
+  },
+  {
+    "a": "ice_hull_cutter",
+    "b": "ice_polar_icebreaker",
+    "kind": "evolution_family",
+    "note": "同進化線：極地破冰船少年→成年"
+  },
+  {
+    "a": "wind_bergglider_gull",
+    "b": "wind_crossbow_fledgling",
+    "kind": "evolution_family",
+    "note": "同進化線：穿霧信天翁幼年→少年"
+  },
+  {
+    "a": "wind_bergglider_gull",
+    "b": "wind_pelagic_soarer",
+    "kind": "evolution_family",
+    "note": "同進化線：穿霧信天翁少年→成年"
+  },
+  {
+    "a": "thunder_crimson_crawler",
+    "b": "thunder_dune_larva",
+    "kind": "evolution_family",
+    "note": "同進化線：戈壁放電沙蟲幼年→少年"
+  },
+  {
+    "a": "thunder_crimson_crawler",
+    "b": "thunder_gobi_voltwyrm",
+    "kind": "evolution_family",
+    "note": "同進化線：戈壁放電沙蟲少年→成年"
+  },
+  {
+    "a": "light_foil_spark",
+    "b": "light_orbit_beacon",
+    "kind": "evolution_family",
+    "note": "同進化線：金箔散射稜鏡幼年→少年"
+  },
+  {
+    "a": "light_orbit_beacon",
+    "b": "light_radiant_cyclotron",
+    "kind": "evolution_family",
+    "note": "同進化線：金箔散射稜鏡少年→成年"
+  },
+  {
+    "a": "shadow_reverb_charger",
+    "b": "shadow_tundra_foal",
+    "kind": "evolution_family",
+    "note": "同進化線：玄鐵重鎧黑駒幼年→少年"
+  },
+  {
+    "a": "shadow_iron_cavalier",
+    "b": "shadow_reverb_charger",
+    "kind": "evolution_family",
+    "note": "同進化線：玄鐵重鎧黑駒少年→成年"
+  }
+]

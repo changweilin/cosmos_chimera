@@ -111,3 +111,4 @@ ALL PASS: 6 files, 202 localized fields match perfectly.
 ```
 
 - 2026-11-11 · FLASH · done · 同步 3 鍵 ja 文案（1 改等級標記、1 改出現可能語意、1 保留縄張り），check.py 202 欄 ALL PASS · 下一步：OPUS 驗收
+- 2026-11-12 · FLASH · done · 複核 P3-12 目標物件 4 鍵 ja 初稿（`ui.object.tree`「木」／`rock`「岩」／`crystal`「結晶柱」／`building`「建物」皆符合日文 HUD 慣例，予以保留），check.py 6 檔 207 欄 ALL PASS · 下一步：人工試玩驗收
