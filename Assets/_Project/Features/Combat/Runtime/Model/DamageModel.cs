@@ -54,5 +54,29 @@ namespace Cosmimera.Combat
             long damage = (scaled + 5_000) / 10_000;
             return damage < 1 ? 1 : (int)damage;
         }
+
+        /// <summary>Scales base move power by an environmental percentage delta (e.g. weather elemental synergy).</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= power &lt;= MaxPower; -90 &lt;= deltaPercent &lt;= 100.
+        /// Post: 0 if power == 0; otherwise in [1, MaxPower].
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static int ScalePower(int power, int deltaPercent)
+        {
+            Contract.Requires(power >= 0 && power <= MaxPower, "power must be in 0..MaxPower");
+            Contract.Requires(deltaPercent >= -90 && deltaPercent <= 100, "deltaPercent must be in -90..100");
+            if (power == 0 || deltaPercent == 0)
+            {
+                return power;
+            }
+
+            long scaled = ((long)power * (100 + deltaPercent) + 50L) / 100L;
+            if (scaled < 1)
+            {
+                return 1;
+            }
+
+            return scaled > MaxPower ? MaxPower : (int)scaled;
+        }
     }
 }

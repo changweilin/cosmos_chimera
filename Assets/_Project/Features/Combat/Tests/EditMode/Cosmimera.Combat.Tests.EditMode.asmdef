@@ -4,6 +4,7 @@
     "references": [
         "Cosmimera.Core",
         "Cosmimera.Combat",
+        "Cosmimera.WorldGen",
         "Cosmimera.GameData",
         "Cosmimera.Planet",
         "Unity.Mathematics",
