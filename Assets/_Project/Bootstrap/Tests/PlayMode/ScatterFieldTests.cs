@@ -261,7 +261,7 @@ namespace Cosmimera.Bootstrap.Tests
         private static Color Hex(int rgb) =>
             new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f);
 
-        private static void Shoot(Camera camera, string path)
+        internal static void Shoot(Camera camera, string path)
         {
             var rt = new RenderTexture(1280, 720, 24);
             var texture = new Texture2D(1280, 720, TextureFormat.RGB24, false);

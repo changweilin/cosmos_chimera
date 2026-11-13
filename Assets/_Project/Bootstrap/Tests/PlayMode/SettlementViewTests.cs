@@ -45,14 +45,17 @@ namespace Cosmimera.Bootstrap.Tests
             return RunPlanner.Generate(Planet, seed, type, CreatureStage.Adult, wild, vocab, null);
         }
 
-        private SettlementView View(RunLayout layout, System.Func<float3, float> ground)
+        private SettlementView View(RunLayout layout, System.Func<float3, float> ground, bool scenery = false,
+            string planetTypeId = null, ulong seed = 0)
         {
             var root = new GameObject("settlement-test");
             _roots.Add(root);
             SettlementView view = root.AddComponent<SettlementView>();
             Shader shader = Shader.Find("Cosmimera/ToonOutlined");
             Assert.That(shader, Is.Not.Null);
-            view.Configure(Planet, layout, ground, shader);
+            Shader props = scenery ? Shader.Find("Cosmimera/ToonScenery") : null;
+            Assert.That(!scenery || props != null, Is.True);
+            view.Configure(Planet, layout, ground, shader, props, planetTypeId, seed);
             return view;
         }
 
@@ -133,6 +136,183 @@ namespace Cosmimera.Bootstrap.Tests
                     {
                         Assert.That(alt, Is.GreaterThanOrEqualTo(BridgeDeckM - 2e-3f), road.name);
                     }
+                }
+            }
+        }
+
+        [Test]
+        public void Bridges_get_masonry_only_where_the_road_crosses_the_sea()
+        {
+            RunPlan plan = Plan(11);
+            RunLayout wet = SettlementPlanner.Generate(Planet, plan, d => d.x > 0f);
+            bool anyBridge = false;
+            foreach (RunRoad r in wet.Roads) foreach (bool b in r.Bridge) anyBridge |= b;
+            Assume.That(anyBridge, Is.True, "fixture needs a road over the sea half");
+
+            SettlementView view = View(wet, d => d.x > 0f ? 1f : -4f, scenery: true);
+            int bridges = 0;
+            for (int i = 0; i < wet.Roads.Count; i++)
+            {
+                Transform bridge = view.Roads[i].transform.Find("Bridge");
+                int run = 0, longest = 0;
+                foreach (bool b in wet.Roads[i].Bridge)
+                {
+                    run = b ? run + 1 : 0;
+                    longest = math.max(longest, run);
+                }
+
+                if (longest == 0)
+                {
+                    Assert.That(bridge, Is.Null, "a road on land has no bridge");
+                    continue;
+                }
+
+                if (bridge == null) continue; // a single wet vertex is too short to span
+                bridges++;
+                Assert.That(bridge.GetComponentInChildren<Collider>(), Is.Null, "the terrain stays the only walking surface");
+                Mesh mesh = bridge.GetComponent<MeshFilter>().sharedMesh;
+                Assert.That(bridge.GetComponent<MeshRenderer>().sharedMaterials.Length, Is.EqualTo(mesh.subMeshCount));
+                float highest = float.MinValue, lowest = float.MaxValue;
+                foreach (Vector3 v in mesh.vertices)
+                {
+                    float alt = Planet.Altitude((float3)bridge.TransformPoint(v));
+                    highest = math.max(highest, alt);
+                    lowest = math.min(lowest, alt);
+                }
+
+                Assert.That(highest, Is.GreaterThan(BridgeDeckM + 0.5f), "parapets stand above the deck");
+                Assert.That(lowest, Is.LessThan(0f), "arches and piers reach into the water");
+                Assert.That(lowest, Is.GreaterThan(-4f - 1.5f), "piers stop just under the sea floor");
+            }
+
+            Assert.That(bridges, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Buildings_are_one_styled_mesh_with_a_footprint_collider()
+        {
+            RunLayout layout = SettlementPlanner.Generate(Planet, Plan(3), null);
+            SettlementView view = View(layout, Hills, scenery: true, planetTypeId: "twilight_planet", seed: 3);
+            Shader props = Shader.Find("Cosmimera/ToonScenery");
+            for (int i = 0; i < layout.Buildings.Count; i++)
+            {
+                RunBuilding b = layout.Buildings[i];
+                GameObject go = view.Buildings[i];
+                Mesh mesh = go.GetComponent<MeshFilter>().sharedMesh;
+                Material[] materials = go.GetComponent<MeshRenderer>().sharedMaterials;
+                Assert.That(mesh.subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount), $"building {i}");
+                Assert.That(materials.Length, Is.EqualTo(ArchitectureMeshes.SubMeshCount), $"building {i}");
+                foreach (Material m in materials) Assert.That(m.shader, Is.SameAs(props));
+                Assert.That(materials[ArchitectureMeshes.GlowSubMesh].GetFloat("_Glow"), Is.GreaterThan(0f));
+                Collider[] colliders = go.GetComponentsInChildren<Collider>();
+                Assert.That(colliders.Length, Is.EqualTo(1), $"building {i}: one collider");
+                var box = (BoxCollider)colliders[0];
+                Assert.That(box.size.x, Is.LessThanOrEqualTo(b.WidthM + 1e-4f));
+                Assert.That(box.size.z, Is.LessThanOrEqualTo(b.DepthM + 1e-4f));
+                Assert.That(box.center.y, Is.EqualTo(box.size.y * 0.5f).Within(1e-4f), "the box stands on the sunk base");
+            }
+
+            // Same inputs, same village; another seed or planet type, another one.
+            SettlementView again = View(layout, Hills, scenery: true, planetTypeId: "twilight_planet", seed: 3);
+            SettlementView reseeded = View(layout, Hills, scenery: true, planetTypeId: "twilight_planet", seed: 4);
+            SettlementView elsewhere = View(layout, Hills, scenery: true, planetTypeId: "ice_crystal_planet", seed: 3);
+            bool seedDiffers = false, regionDiffers = false;
+            for (int i = 0; i < layout.Buildings.Count; i++)
+            {
+                Vector3[] v = view.Buildings[i].GetComponent<MeshFilter>().sharedMesh.vertices;
+                Assert.That(again.Buildings[i].GetComponent<MeshFilter>().sharedMesh.vertices, Is.EqualTo(v), $"building {i}");
+                seedDiffers |= !SameVertices(reseeded.Buildings[i].GetComponent<MeshFilter>().sharedMesh.vertices, v);
+                regionDiffers |= !SameVertices(elsewhere.Buildings[i].GetComponent<MeshFilter>().sharedMesh.vertices, v);
+            }
+
+            Assert.That(seedDiffers, Is.True);
+            Assert.That(regionDiffers, Is.True);
+        }
+
+        private static bool SameVertices(Vector3[] a, Vector3[] b)
+        {
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return false;
+            }
+
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator Capture_architecture_lineup_when_requested()
+        {
+            if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") != "1")
+            {
+                Assert.Ignore("visual proof only: set COSMIMERA_CAPTURE=1 and run without -nographics");
+            }
+
+            var stage = new GameObject("architecture-lineup");
+            _roots.Add(stage);
+            Shader scenery = Shader.Find("Cosmimera/ToonScenery");
+            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.transform.SetParent(stage.transform, false);
+            ground.transform.localPosition = new Vector3(40f, 0.55f, 150f);
+            ground.transform.localScale = new Vector3(40f, 1f, 60f);
+            ground.GetComponent<Renderer>().sharedMaterial =
+                PlanetLook.SceneryMaterial(scenery, new Color(0.43f, 0.69f, 0.29f), Color.white, 0f, 0f, 0f, 0f);
+            var sun = new GameObject("sun").AddComponent<Light>();
+            sun.transform.SetParent(stage.transform, false);
+            sun.type = LightType.Directional;
+            sun.shadows = LightShadows.Soft;
+            sun.intensity = 1.2f;
+            sun.color = new Color(1f, 0.96f, 0.88f);
+            sun.transform.rotation = Quaternion.Euler(42f, -35f, 0f);
+            RenderSettings.ambientLight = new Color(0.55f, 0.78f, 0.94f) * 0.6f;
+
+            (BuildingKind kind, ArchEra era, float w, float d, int storeys)[] columns =
+            {
+                (BuildingKind.Tent, ArchEra.Primal, 3f, 3f, 1), (BuildingKind.House, ArchEra.Primal, 5f, 4f, 1),
+                (BuildingKind.House, ArchEra.Agrarian, 5f, 4f, 1), (BuildingKind.Hall, ArchEra.Agrarian, 7f, 6f, 2),
+                (BuildingKind.House, ArchEra.Mercantile, 5f, 5f, 2), (BuildingKind.Tower, ArchEra.Mercantile, 3f, 3f, 4),
+                (BuildingKind.House, ArchEra.Industrial, 6f, 5f, 2), (BuildingKind.Tower, ArchEra.Industrial, 3f, 3f, 5),
+                (BuildingKind.House, ArchEra.Ancient, 5f, 4f, 1), (BuildingKind.Pillar, ArchEra.Ancient, 1.2f, 1.2f, 3),
+            };
+            var regions = (ArchRegion[])System.Enum.GetValues(typeof(ArchRegion));
+            const float rowGap = 50f, colGap = 9.5f;
+            for (int r = 0; r < regions.Length; r++)
+            {
+                for (int c = 0; c < columns.Length; c++)
+                {
+                    var col = columns[c];
+                    var spec = new ArchSpec(col.kind, regions[r], col.era, col.w, col.d, col.storeys, 0.55f, (ulong)(r * 31 + c));
+                    ArchPalette p = ArchitectureMeshes.PaletteFor(regions[r], col.era, col.kind);
+                    var go = new GameObject(regions[r] + "_" + col.kind + "_" + col.era);
+                    go.transform.SetParent(stage.transform, false);
+                    go.transform.localPosition = new Vector3(c * colGap, 0f, r * rowGap);
+                    go.transform.localRotation = Quaternion.Euler(0f, 180f + 28f, 0f);
+                    go.AddComponent<MeshFilter>().sharedMesh = ArchitectureMeshes.Build(spec);
+                    go.AddComponent<MeshRenderer>().sharedMaterials = new[]
+                    {
+                        PlanetLook.SceneryMaterial(scenery, p.Wall, p.Weathering, p.WeatheringStrength, 0f, 0f, 0f),
+                        PlanetLook.SceneryMaterial(scenery, p.Roof, p.Weathering, p.WeatheringStrength, 0f, 0f, 0f),
+                        PlanetLook.SceneryMaterial(scenery, p.Trim, p.Trim, 0f, 0f, 0f, 0f),
+                        PlanetLook.SceneryMaterial(scenery, p.Glow, p.Glow, 0f, 0f, 0f, 0.9f),
+                    };
+                }
+            }
+
+            var camera = new GameObject("camera").AddComponent<Camera>();
+            camera.transform.SetParent(stage.transform, false);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.55f, 0.78f, 0.94f);
+            camera.fieldOfView = 36f;
+            string dir = System.IO.Path.Combine(Application.dataPath, "..", "Logs");
+            yield return null;
+            for (int r = 0; r < regions.Length; r++)
+            {
+                for (int half = 0; half < 2; half++)
+                {
+                    float centre = (half == 0 ? 2f : 7f) * colGap;
+                    camera.transform.position = new Vector3(centre + 3f, 9f, r * rowGap - 40f);
+                    camera.transform.LookAt(new Vector3(centre, 4.2f, r * rowGap));
+                    ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "arch-" + regions[r] + "-" + (half == 0 ? "a" : "b") + ".png"));
                 }
             }
         }

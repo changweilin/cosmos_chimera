@@ -523,7 +523,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         /// <summary>An indexed piece of geometry before its normals are decided.</summary>
-        private sealed class Part
+        internal sealed class Part
         {
             public readonly List<float3> P = new List<float3>();
             public readonly List<Color> C = new List<Color>();
@@ -556,15 +556,28 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private delegate (float3 normal, Color color) Finish(float3 position, float3 normal, Color color);
+        internal delegate (float3 normal, Color color) Finish(float3 position, float3 normal, Color color);
 
-        private sealed class MeshData
+        internal sealed class MeshData
         {
             private readonly List<Vector3> _positions = new List<Vector3>();
             private readonly List<Vector3> _normals = new List<Vector3>();
             private readonly List<Color> _colors = new List<Color>();
             private readonly List<Vector2> _wind = new List<Vector2>();
-            private readonly List<int>[] _triangles = { new List<int>(), new List<int>() };
+            private readonly List<int>[] _triangles;
+            private readonly int _fixedSubMeshes;
+
+            // fixedSubMeshes 0 = scenery props: wood, plus foliage only when a tree filled it. ArchitectureMeshes passes
+            // its own count so every building has the same material slots, used or not.
+            public MeshData(int fixedSubMeshes = 0)
+            {
+                _fixedSubMeshes = fixedSubMeshes;
+                _triangles = new List<int>[math.max(2, fixedSubMeshes)];
+                for (int i = 0; i < _triangles.Length; i++)
+                {
+                    _triangles[i] = new List<int>();
+                }
+            }
 
             // Shared vertices, area-weighted normals: one continuous surface.
             public void EmitSmooth(Part part, int subMesh, Finish finish)
@@ -657,7 +670,7 @@ namespace Cosmimera.Bootstrap.Demo
                 mesh.SetNormals(_normals);
                 mesh.SetColors(_colors);
                 mesh.SetUVs(1, _wind);
-                mesh.subMeshCount = _triangles[1].Count > 0 ? 2 : 1;
+                mesh.subMeshCount = _fixedSubMeshes > 0 ? _fixedSubMeshes : _triangles[1].Count > 0 ? 2 : 1;
                 for (int s = 0; s < mesh.subMeshCount; s++)
                 {
                     mesh.SetTriangles(_triangles[s], s);
