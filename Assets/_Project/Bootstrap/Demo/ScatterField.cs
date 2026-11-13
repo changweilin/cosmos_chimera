@@ -195,16 +195,37 @@ namespace Cosmimera.Bootstrap.Demo
                 case ScatterShape.Tree:
                     Part(parent, PrimitiveType.Cylinder, kind.Accent, new Vector3(size * 0.12f, size * 0.25f, size * 0.12f),
                         new Vector3(0f, size * 0.25f, 0f), null, true);
-                    Part(parent, PrimitiveType.Sphere, kind.Color, new Vector3(size * 0.6f, size * 0.55f, size * 0.6f),
-                        new Vector3(0f, size * 0.7f, 0f));
+                    // A crown of overlapping lobes in three tones (shaded underside, body, sunlit top) reads as foliage
+                    // masses; one sphere reads as a lollipop. Lobes are decorative: only the trunk collides.
+                    Color under = Tone(kind.Color, 0.8f);
+                    Color top = Color.Lerp(Tone(kind.Color, 1.18f), new Color(0.85f, 0.9f, 0.45f), 0.14f);
+                    Part(parent, PrimitiveType.Sphere, kind.Color, new Vector3(size * 0.56f, size * 0.46f, size * 0.56f),
+                        new Vector3(0f, size * 0.68f, 0f));
+                    Part(parent, PrimitiveType.Sphere, under, new Vector3(size * 0.42f, size * 0.32f, size * 0.42f),
+                        new Vector3(size * 0.2f, size * 0.56f, size * 0.08f));
+                    Part(parent, PrimitiveType.Sphere, under, new Vector3(size * 0.38f, size * 0.3f, size * 0.4f),
+                        new Vector3(-size * 0.19f, size * 0.58f, -size * 0.12f));
+                    Part(parent, PrimitiveType.Sphere, kind.Color, new Vector3(size * 0.36f, size * 0.3f, size * 0.36f),
+                        new Vector3(-size * 0.06f, size * 0.62f, size * 0.21f));
+                    Part(parent, PrimitiveType.Sphere, top, new Vector3(size * 0.36f, size * 0.3f, size * 0.36f),
+                        new Vector3(size * 0.05f, size * 0.9f, -size * 0.03f));
                     break;
                 case ScatterShape.Rock:
                     Part(parent, PrimitiveType.Sphere, kind.Color, new Vector3(size, size * 0.65f, size * 0.85f),
                         new Vector3(0f, size * 0.25f, 0f), null, true);
+                    // A lighter cap and a half-buried shoulder break the egg silhouette (decorative, no collider).
+                    Part(parent, PrimitiveType.Sphere, Tone(kind.Color, 1.12f), new Vector3(size * 0.62f, size * 0.42f, size * 0.55f),
+                        new Vector3(size * 0.1f, size * 0.46f, -size * 0.05f), Quaternion.Euler(0f, 30f, 14f));
+                    Part(parent, PrimitiveType.Sphere, Tone(kind.Color, 0.86f), new Vector3(size * 0.5f, size * 0.36f, size * 0.46f),
+                        new Vector3(-size * 0.38f, size * 0.08f, size * 0.22f), Quaternion.Euler(0f, 55f, -10f));
                     break;
                 default:
                     Part(parent, PrimitiveType.Cube, kind.Color, new Vector3(size * 0.28f, size, size * 0.28f),
                         new Vector3(0f, size * 0.5f, 0f), Quaternion.Euler(0f, 45f, 8f), true);
+                    Part(parent, PrimitiveType.Cube, Tone(kind.Color, 1.15f), new Vector3(size * 0.16f, size * 0.55f, size * 0.16f),
+                        new Vector3(size * 0.2f, size * 0.24f, size * 0.06f), Quaternion.Euler(14f, 20f, -22f));
+                    Part(parent, PrimitiveType.Cube, Tone(kind.Color, 0.85f), new Vector3(size * 0.13f, size * 0.4f, size * 0.13f),
+                        new Vector3(-size * 0.17f, size * 0.17f, -size * 0.1f), Quaternion.Euler(-10f, 60f, 26f));
                     break;
             }
         }
@@ -229,7 +250,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (!_materials.TryGetValue(color, out Material m))
             {
-                m = PlanetLook.CreatureMaterial(_shader, color, 0.03f);
+                // Hairline only: vision.md keeps outlines for characters and creatures; scenery stays soft.
+                m = PlanetLook.CreatureMaterial(_shader, color, 0.012f);
                 _materials[color] = m;
             }
 
@@ -300,6 +322,8 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
         }
+
+        private static Color Tone(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
 
         private static Color C(int rgb) =>
             new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f);

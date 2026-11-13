@@ -381,14 +381,15 @@ namespace Cosmimera.Bootstrap.Demo
         /// Pre: all arguments non-null; actions contains the DemoRun map and its twelve actions and the DemoMenu map
         ///      with Up/Down/Submit/Cancel;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
-        ///      matching PartyIds/PartyExp; setup.Progression non-null.
+        ///      matching PartyIds/PartyExp; setup.Progression non-null. The shaders and scenery may be null: each
+        ///      null one skips its visual layer (headless runs pass none).
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
         /// Side effects: creates GameObjects and private input maps (DemoRun enabled while the component is enabled;
         ///      DemoMenu only while an interaction menu is open).
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
-            Shader toonShader = null, Shader starShader = null)
+            Shader toonShader = null, Shader starShader = null, SceneryShaders scenery = null)
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
@@ -469,9 +470,10 @@ namespace Cosmimera.Bootstrap.Demo
             TerrainProfile terrainProfile = TerrainProfiles.ForPlanetType(setup.PlanetType.Id);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
+            System.Func<float3, bool> isOpenGround =
+                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
             var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear,
-                terrainProfile.ScatterDensity);
+                isOpenGround, terrainProfile.ScatterDensity);
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {
@@ -485,9 +487,9 @@ namespace Cosmimera.Bootstrap.Demo
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
+            float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
             if (terrainShader != null)
             {
-                float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
                 _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief);
                 terrainMaterial = _terrainMaterial;
             }
@@ -510,8 +512,36 @@ namespace Cosmimera.Bootstrap.Demo
                 volume.sharedProfile = setup.VolumeProfile;
             }
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
-            gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
+            AtmosphereDriver atmosphere = gameObject.AddComponent<AtmosphereDriver>();
+            atmosphere.Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
+            (float grassDensity, float snowLine, float polarLat, float cloudCover, float wind) =
+                PlanetLook.Scenery(setup.PlanetType.Id);
+            atmosphere.SetWeather(cloudCover, wind);
+            if (scenery != null)
+            {
+                if (scenery.Sky != null)
+                {
+                    gameObject.AddComponent<SkyDome>().Configure(config, scenery.Sky);
+                }
+
+                if (scenery.Water != null)
+                {
+                    // Just past where the linear fog turns opaque: the rim of the disc is never visible.
+                    gameObject.AddComponent<WaterSurface>().Configure(config,
+                        PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief),
+                        RenderSettings.fogEndDistance * 1.15f);
+                }
+
+                if (scenery.Grass != null && grassDensity > 0f)
+                {
+                    // Stop a little short of the shader's snow line and polar cap, whose edges are noise-jittered.
+                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isOpenGround,
+                        PlayerPosition,
+                        PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM),
+                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));
+                }
+            }
             if (starShader != null)
             {
                 gameObject.AddComponent<StarField>().Configure(_rig.Camera, _rig.Sun, config, setup.Seed, starShader);

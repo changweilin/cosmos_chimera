@@ -47,6 +47,10 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
+        // Optional scenery layers: an unassigned one is skipped (RunSession), so older scenes still run.
+        [SerializeField] private Shader _skyShader;
+        [SerializeField] private Shader _grassShader;
+        [SerializeField] private Shader _waterShader;
         [SerializeField] private BgmTable _bgmTable;
         [SerializeField] private CharacterModelTable _characterModels;
         [SerializeField] private ConceptPortraitTable _portraits;
@@ -835,7 +839,8 @@ namespace Cosmimera.Bootstrap.Demo
                     Materials = _materialDrops, EnvMaterials = _env,
                     CharacterModelPrefab = SelectedCharacterPrefab(),
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
-                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
+                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
+                new SceneryShaders(_skyShader, _grassShader, _waterShader));
             _screen = Screen.Running;
         }
 
@@ -977,6 +982,9 @@ namespace Cosmimera.Bootstrap.Demo
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
+            game._skyShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonSky.shader");
+            game._grassShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonGrass.shader");
+            game._waterShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonWater.shader");
             game._bgmTable = UnityEditor.AssetDatabase.LoadAssetAtPath<BgmTable>("Assets/_Project/Audio/BgmTable.asset");
             game._characterModels = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterModelTable>(
                 CharacterModelTableBuilder.TableAssetPath);
@@ -986,7 +994,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ?? UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
                     "Assets/_Project/Settings/Rendering/DefaultVolumeProfile.asset");
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
-                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._skyShader, game._grassShader, game._waterShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {
                 if (o == null)
                 {
