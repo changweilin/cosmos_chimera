@@ -197,5 +197,38 @@ namespace Cosmimera.Combat.Tests
 
             Assert.Throws<ContractException>(() => e.SetPlayerMoveSpeedMs(-0.1f));
         }
+
+        [Test]
+        public void Encounter_SetExplorationUtilityModifiers_and_ForceDisengageAllWild_apply_stealth_and_escape()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 17);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire, Temperament.Apex),
+                null, AtMeters(0f), 10);
+            EncounterUnit boss = e.AddBoss(MakeCreature(Element.Fire, Temperament.Apex),
+                null, AtMeters(200f), 10);
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+
+            // PartyStealth halves Apex 28 m territory to 14 m. At 18 m, wild does not engage.
+            e.SetExplorationUtilityModifiers(500, preventWildEscape: true);
+            e.Tick(Dt, Dt, AtMeters(18f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.False);
+
+            // Within 14 m (10 m), wild engages; with preventWildEscape=true, moving to 45 m stays engaged (< 60 m).
+            e.Tick(Dt * 2, Dt, AtMeters(10f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+            e.Tick(Dt * 3, Dt, AtMeters(45f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+
+            // QuickEscape disengages non-boss wild units, leaving boss untouched.
+            Assert.That(e.ForceDisengageAllWild(), Is.True);
+            Assert.That(wild.Engaged, Is.False);
+
+            e.Tick(Dt * 4, Dt, AtMeters(205f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(boss.Engaged, Is.True);
+            Assert.That(e.ForceDisengageAllWild(), Is.False);
+            Assert.That(boss.Engaged, Is.True);
+
+            Assert.Throws<ContractException>(() => e.SetExplorationUtilityModifiers(50, false));
+        }
     }
 }

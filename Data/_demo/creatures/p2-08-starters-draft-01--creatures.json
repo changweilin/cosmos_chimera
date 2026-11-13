@@ -40,7 +40,7 @@
     },
     "signature_move": "light_mirror_glint",
     "trait": "trait_light_heliostat_focus",
-    "field_utility": "none",
+    "field_utility": "scout_potential",
     "concept": {
       "base": "太陽鳥雛鳥 × 頭頂一面圓形聚光小鏡",
       "stage_look": "圓滾雛鳥，鏡面冠羽會追著太陽轉",
@@ -96,7 +96,7 @@
     },
     "signature_move": "light_heliostat_beam",
     "trait": "trait_light_heliostat_focus",
-    "field_utility": "none",
+    "field_utility": "fly",
     "concept": {
       "base": "鷺鳥 × 翅羽化為可調角度的鏡片陣列",
       "stage_look": "單腳佇立、雙翼展開成扇形鏡陣聚光",
@@ -144,7 +144,7 @@
     },
     "signature_move": "light_solar_array_lance",
     "trait": "trait_light_heliostat_focus",
-    "field_utility": "none",
+    "field_utility": "immune_temple",
     "concept": {
       "base": "鷺鳥 × 太陽鏡陣飛行器（生物＋器械）",
       "stage_look": "背負環形鏡陣與汲雲氣球管的天空鷺，鏡陣合焦射出光束",
@@ -200,7 +200,7 @@
     },
     "signature_move": "shadow_nightpaw_swipe",
     "trait": "trait_shadow_longnight_stalker",
-    "field_utility": "none",
+    "field_utility": "party_stealth",
     "concept": {
       "base": "灰狼幼崽 × 尾尖一點星光",
       "stage_look": "尾尖閃著星光的小狼投下比本體更大的影子，繞到背後揮爪拍擊。",
@@ -256,7 +256,7 @@
     },
     "signature_move": "shadow_longnight_lunge",
     "trait": "trait_shadow_longnight_stalker",
-    "field_utility": "none",
+    "field_utility": "steal_item",
     "concept": {
       "base": "孤狼 × 極夜冰原的星光斑紋",
       "stage_look": "墨藍孤狼身上的星斑隨呼吸明滅，向前疾衝時拖出影子殘像。",
@@ -304,7 +304,7 @@
     },
     "signature_move": "shadow_lone_hunter_ambush",
     "trait": "trait_shadow_longnight_stalker",
-    "field_utility": "none",
+    "field_utility": "immune_labyrinth",
     "concept": {
       "base": "極夜巨狼 × 震地長尾",
       "stage_look": "身形如雪丘的巨灰狼拖著震地長尾，繞背後貼地向前疾衝。",
@@ -360,7 +360,7 @@
     },
     "signature_move": "thunder_starblaze_charge",
     "trait": "trait_thunder_storm_gallop",
-    "field_utility": "none",
+    "field_utility": "quick_escape",
     "concept": {
       "base": "小馬駒 × 額頭星形白斑會放電",
       "stage_look": "蹄下冒火花、跌跌撞撞往前衝的小馬",
@@ -418,7 +418,7 @@
     },
     "signature_move": "thunder_galloping_discharge",
     "trait": "trait_thunder_storm_gallop",
-    "field_utility": "none",
+    "field_utility": "mount",
     "concept": {
       "base": "駿馬 × 疾風長鬃化為電弧",
       "stage_look": "長鬃是持續跳動的電弧，肩胛冒出未展開的金色翼芽",
@@ -467,7 +467,7 @@
     },
     "signature_move": "thunder_skyhoof_stampede",
     "trait": "trait_thunder_storm_gallop",
-    "field_utility": "none",
+    "field_utility": "immune_tower",
     "concept": {
       "base": "金翼天馬 × 彎月額角與雷雲",
       "stage_look": "黃金雙翼展開時翼緣串著星點電光，額上彎月角導引落雷，衝鋒時拖出雷鳴長軌",

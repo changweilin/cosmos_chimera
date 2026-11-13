@@ -102,24 +102,49 @@ namespace Cosmimera.Creatures
         /// Side effects: advances <paramref name="rng"/> by exactly one bounded draw on failure and two on success. Callers
         ///       pass a stream reserved for materials so adding drops never shifts combat or capture rolls.
         /// </remarks>
-        public bool TryRoll(SpawnRole role, IReadOnlyList<Element> planetBias, ref Pcg32 rng, out MaterialStack drop)
+        public bool TryRoll(SpawnRole role, IReadOnlyList<Element> planetBias, ref Pcg32 rng, out MaterialStack drop) =>
+            TryRoll(role, planetBias, ref rng, 0, 1, out drop);
+
+        /// <summary>
+        /// Rolls the drop for one knock-out with field-utility modifiers (<c>drop_rate_up</c> bonus and <c>magnet_pickup_double</c> multiplier).
+        /// </summary>
+        /// <remarks>
+        /// Pre: role defined; planetBias non-null with &gt;= 1 defined element; dropRateBonusPercent &gt;= 0; pickupMultiplier &gt;= 1; rng seeded.
+        /// Post: true iff the boosted chance roll succeeded; then drop.Qty == QtyFor(role) * pickupMultiplier.
+        /// Side effects: advances <paramref name="rng"/> by 1 draw on failure, 2 draws on success.
+        /// </remarks>
+        public bool TryRoll(
+            SpawnRole role,
+            IReadOnlyList<Element> planetBias,
+            ref Pcg32 rng,
+            int dropRateBonusPercent,
+            int pickupMultiplier,
+            out MaterialStack drop)
         {
             Contract.Requires(Enum.IsDefined(typeof(SpawnRole), role), "role must be defined");
             Contract.Requires(planetBias != null && planetBias.Count >= 1, "planet type must have an element bias");
+            Contract.Requires(dropRateBonusPercent >= 0, "dropRateBonusPercent must be >= 0");
+            Contract.Requires(pickupMultiplier >= 1, "pickupMultiplier must be >= 1");
             for (int i = 0; i < planetBias.Count; i++)
             {
                 Contract.Requires(Enum.IsDefined(typeof(Element), planetBias[i]), "planet bias elements must be defined");
             }
 
             drop = default;
+            int chance = _chancePercent[(int)role] + dropRateBonusPercent;
+            if (chance > 100)
+            {
+                chance = 100;
+            }
+
             // Always draw the chance, even at 100%: the stream position then depends only on the knock-out sequence.
-            if (rng.NextUInt(100) >= (uint)_chancePercent[(int)role])
+            if (rng.NextUInt(100) >= (uint)chance)
             {
                 return false;
             }
 
             Element element = planetBias[(int)rng.NextUInt((uint)planetBias.Count)];
-            drop = new MaterialStack(new MaterialKey(element, _tier[(int)role]), _qty[(int)role]);
+            drop = new MaterialStack(new MaterialKey(element, _tier[(int)role]), _qty[(int)role] * pickupMultiplier);
             return true;
         }
 

@@ -303,7 +303,7 @@
     },
     "signature_move": "wood_canopy_crush",
     "trait": "trait_wood_photosynthesis",
-    "field_utility": "produce_milk",
+    "field_utility": "return_village",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
       "stage_look": "盤踞巨木頂端的七彩神禽，雙重虹彩長尾如垂藤流光，周身綻放翠玉繁花",
@@ -893,7 +893,7 @@
     },
     "signature_move": "ice_glacier_lance",
     "trait": "trait_ice_flash_freeze",
-    "field_utility": "campfire_revive",
+    "field_utility": "mount",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
       "stage_look": "雙翼裝配鍛鐵鉸鏈與金箔鞍軛的冰原獵獸，冰柱狀分叉巨角能導引寒氣",

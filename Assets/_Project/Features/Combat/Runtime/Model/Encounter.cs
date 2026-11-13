@@ -351,6 +351,8 @@ namespace Cosmimera.Combat
         private WeatherProfile _weather = WeatherProfiles.Clear;
         private Func<float3, long, WeatherProfile> _weatherProvider;
         private float _playerMoveSpeedMs = 5.0f;
+        private int _partyDetectionPermille = 1000;
+        private bool _preventWildEscape;
 
         /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for fog stealth (Q-C37).</summary>
         /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
@@ -406,6 +408,51 @@ namespace Cosmimera.Combat
         {
             Contract.Requires(math.isfinite(speedMs) && speedMs >= 0f, "speedMs must be finite and >= 0");
             _playerMoveSpeedMs = speedMs;
+        }
+
+        /// <summary>
+        /// Configures team field-utility modifiers for wild territory detection (<c>party_stealth</c>) and escape prevention (<c>prevent_escape</c>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/field-utilities.md.
+        /// Pre: <paramref name="partyDetectionPermille"/> in 100..1000.
+        /// Post: subsequent ticks scale wild territory radius by <paramref name="partyDetectionPermille"/>/1000 and extend disengage range when <paramref name="preventWildEscape"/> is true.
+        /// Side effects: updates stored field-utility modifiers.
+        /// </remarks>
+        public void SetExplorationUtilityModifiers(int partyDetectionPermille, bool preventWildEscape)
+        {
+            Contract.Requires(partyDetectionPermille >= 100 && partyDetectionPermille <= 1000,
+                "partyDetectionPermille must be 100..1000");
+            _partyDetectionPermille = partyDetectionPermille;
+            _preventWildEscape = preventWildEscape;
+        }
+
+        /// <summary>
+        /// Forces all currently engaged non-boss wild units to disengage (<c>quick_escape</c>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/field-utilities.md.
+        /// Pre: none.
+        /// Post: non-boss active wild units have Engaged=false and Provoked=false; boss units remain unchanged. Returns true iff at least one unit disengaged.
+        /// Side effects: mutates wild engagement flags.
+        /// </remarks>
+        public bool ForceDisengageAllWild()
+        {
+            bool disengagedAny = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked))
+                {
+                    w.Engaged = false;
+                    w.Provoked = false;
+                    w.HasWanderTarget = false;
+                    w.WanderResumeMs = WanderUnscheduled;
+                    disengagedAny = true;
+                }
+            }
+
+            return disengagedAny;
         }
 
         /// <summary>Lets moves hit generated scene objects. REQ: docs/design/destructibles.md, ADR-0009.</summary>
@@ -1296,8 +1343,10 @@ namespace Cosmimera.Combat
                 // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
                 // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
                 // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
-                // REQ: planet-world.md#天氣影響 (Q-C37) — weather scales territory radius, and fog halves detection for slow/stationary targets.
-                int territoryMm = (int)((long)_balance.Territory.RadiusMm(w.Def.Temperament) * weather.TerritoryRadiusPermille / 1000L);
+                // REQ: planet-world.md#天氣影響 (Q-C37), field-utilities.md (party_stealth) — weather and party stealth scale territory radius.
+                int territoryMm = (int)((long)_balance.Territory.RadiusMm(w.Def.Temperament)
+                    * weather.TerritoryRadiusPermille / 1000L
+                    * _partyDetectionPermille / 1000L);
                 bool intruderInRange = false;
                 if (territoryMm > 0)
                 {
@@ -1330,8 +1379,9 @@ namespace Cosmimera.Combat
                     }
                 }
 
+                float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
                 w.Engaged = w.Engaged
-                    ? nearest <= DisengageRadiusM
+                    ? nearest <= disengageRadiusM
                     : w.Provoked || intruderInRange;
                 w.Provoked = false;
                 if (w.Engaged)

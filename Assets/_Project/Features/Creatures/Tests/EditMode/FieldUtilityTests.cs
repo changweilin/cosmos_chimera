@@ -97,5 +97,88 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => FieldUtilityRules.CollectTeamUtilities(null, null, lookup));
             Assert.Throws<ContractException>(() => FieldUtilityRules.CollectTeamUtilities(Array.Empty<OwnedCreature>(), null, null));
         }
+
+        [Test]
+        public void TryRequiredElementForTerrain_And_CanEnterTerrain_CoverAllTenTerrainsAndAliases()
+        {
+            Assert.IsTrue(FieldUtilityRules.TryRequiredElementForTerrain("laboratory", out Element labEl));
+            Assert.AreEqual(Element.Metal, labEl);
+            Assert.IsTrue(FieldUtilityRules.TryRequiredElementForTerrain("server_room", out Element aliasEl));
+            Assert.AreEqual(Element.Metal, aliasEl);
+            Assert.IsTrue(FieldUtilityRules.TryRequiredElementForTerrain("temple", out Element templeEl));
+            Assert.AreEqual(Element.Light, templeEl);
+            Assert.IsFalse(FieldUtilityRules.TryRequiredElementForTerrain("grassland", out _));
+            Assert.IsFalse(FieldUtilityRules.TryRequiredElementForTerrain(null, out _));
+
+            var utilities = new HashSet<FieldUtility> { FieldUtility.ImmuneVolcano };
+            Assert.IsTrue(FieldUtilityRules.CanEnterTerrain(utilities, "grassland"));
+            Assert.IsTrue(FieldUtilityRules.CanEnterTerrain(utilities, "volcano"));
+            Assert.IsTrue(FieldUtilityRules.CanEnterTerrain(utilities, "caldera"));
+            Assert.IsFalse(FieldUtilityRules.CanEnterTerrain(utilities, "temple"));
+
+            Assert.Throws<ContractException>(() => FieldUtilityRules.CanEnterTerrain(null, "volcano"));
+            Assert.Throws<ContractException>(() => FieldUtilityRules.CanEnterTerrain(utilities, ""));
+        }
+
+        [Test]
+        public void ComputeTeamModifiers_AggregatesActiveUtilities()
+        {
+            var utilities = new HashSet<FieldUtility>
+            {
+                FieldUtility.CatchRateUp,
+                FieldUtility.DropRateUp,
+                FieldUtility.MagnetPickupDouble,
+                FieldUtility.PartyStealth,
+                FieldUtility.Mount,
+                FieldUtility.PreventEscape,
+                FieldUtility.WeatherControl,
+                FieldUtility.CookFire,
+                FieldUtility.ForageBerries,
+            };
+
+            TeamUtilityModifiers mods = FieldUtilityRules.ComputeTeamModifiers(utilities);
+            Assert.AreEqual(FieldUtilityRules.CatchRateBonusPercentValue, mods.CatchRateBonusPercent);
+            Assert.AreEqual(FieldUtilityRules.DropRateBonusPercentValue, mods.DropRateBonusPercent);
+            Assert.AreEqual(2, mods.PickupMultiplier);
+            Assert.AreEqual(FieldUtilityRules.StealthDetectionPermille, mods.WildDetectionPermille);
+            Assert.AreEqual(FieldUtilityRules.MountSpeedPermille, mods.MoveSpeedPermille);
+            Assert.IsTrue(mods.IgnoresTerrainSlow);
+            Assert.IsTrue(mods.PreventsWildEscape);
+            Assert.IsTrue(mods.CanWeatherControl);
+            Assert.IsTrue(mods.CanCookFire);
+            Assert.IsTrue(mods.CanForageBerries);
+            Assert.IsFalse(mods.CanDive);
+
+            Assert.Throws<ContractException>(() => FieldUtilityRules.ComputeTeamModifiers(null));
+        }
+
+        [Test]
+        public void IsElementAligned_ChecksThematicCompatibility()
+        {
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.None, Element.Fire));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.Mount, Element.Thunder));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.Mount, Element.Ice));
+            Assert.IsFalse(FieldUtilityRules.IsElementAligned(FieldUtility.CampfireRevive, Element.Ice));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.CampfireRevive, Element.Fire));
+            Assert.IsFalse(FieldUtilityRules.IsElementAligned(FieldUtility.ProduceMilk, Element.Fire));
+            Assert.Throws<ContractException>(() => FieldUtilityRules.IsElementAligned((FieldUtility)999, Element.Fire));
+            Assert.Throws<ContractException>(() => FieldUtilityRules.IsElementAligned(FieldUtility.CookFire, (Element)999));
+        }
+
+        [Test]
+        public void TryEvaluateCookedMeal_RequiresCookFireAndMatchingIngredient()
+        {
+            var missingCook = new HashSet<FieldUtility> { FieldUtility.ForageBerries };
+            Assert.IsFalse(FieldUtilityRules.TryEvaluateCookedMeal(missingCook, FieldUtility.ForageBerries, out _, out _, out _));
+
+            var complete = new HashSet<FieldUtility> { FieldUtility.CookFire, FieldUtility.Fishing };
+            Assert.IsTrue(FieldUtilityRules.TryEvaluateCookedMeal(complete, FieldUtility.Fishing, out Element el, out int mastery, out int heal));
+            Assert.AreEqual(Element.Water, el);
+            Assert.Greater(mastery, 0);
+            Assert.Greater(heal, 0);
+            Assert.IsFalse(FieldUtilityRules.TryEvaluateCookedMeal(complete, FieldUtility.ForageBerries, out _, out _, out _));
+
+            Assert.Throws<ContractException>(() => FieldUtilityRules.TryEvaluateCookedMeal(null, FieldUtility.Fishing, out _, out _, out _));
+        }
     }
 }
