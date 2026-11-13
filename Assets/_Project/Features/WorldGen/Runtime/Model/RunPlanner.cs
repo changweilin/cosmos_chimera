@@ -21,7 +21,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 4;
+        public const int GeneratorVersion = 5;
 
         /// <summary>Smallest land cap (rad) the nearest-land sweep is guaranteed to find; isLand must contain one.</summary>
         /// <remarks>
@@ -145,8 +145,21 @@ namespace Cosmimera.WorldGen
             }
 
             float spacing = math.sqrt(4f * math.PI / sites.Length); // mean angular site spacing (rad)
+            float3 landingDir = Scatter(sites[landing], spacing * 0.1f, isLand, ref rng);
             var spawns = new List<RunSpawn>();
             int group = 0;
+
+            // Guarantee at least one wild pack within initial visible range (~18 m) of the landing spot.
+            float3 sightCenter = Scatter(landingDir, 18f / planet.Radius, isLand, ref rng);
+            int sightMembers = 1 + (int)rng.NextUInt(2);
+            for (int m = 0; m < sightMembers; m++)
+            {
+                CreatureDef species = PickSpecies(wildPool, planetType, CreatureStage.Juvenile, bossStage, ref rng);
+                float3 dir = Scatter(sightCenter, 4f / planet.Radius, isLand, ref rng);
+                spawns.Add(new RunSpawn(landing, group, dir, species.Id, SpawnRole.Normal));
+            }
+            group++;
+
             for (int i = 0; i < sites.Length; i++)
             {
                 if (i == boss)
@@ -154,11 +167,11 @@ namespace Cosmimera.WorldGen
                     continue;
                 }
 
-                int packs = 2 + (int)rng.NextUInt(2);
+                int packs = 4 + (int)rng.NextUInt(3);
                 for (int p = 0; p < packs; p++)
                 {
                     float3 packCenter = Scatter(sites[i], spacing * 0.3f, isLand, ref rng);
-                    int members = 1 + (int)rng.NextUInt(regions[i].Tier == 0 ? 2u : 3u);
+                    int members = 2 + (int)rng.NextUInt(regions[i].Tier == 0 ? 2u : 3u);
                     for (int m = 0; m < members; m++)
                     {
                         CreatureDef species = PickSpecies(wildPool, planetType, (CreatureStage)regions[i].Tier, bossStage,
@@ -241,7 +254,6 @@ namespace Cosmimera.WorldGen
             };
 
             string chain = vocabulary.ChainIds[(int)rng.NextUInt((uint)vocabulary.ChainIds.Count)];
-            float3 landingDir = Scatter(sites[landing], spacing * 0.1f, isLand, ref rng);
             return new RunPlan(seed, planetType.Id, chain, regions, landing, boss, route, spawns.ToArray(), quest,
                 landingDir);
         }

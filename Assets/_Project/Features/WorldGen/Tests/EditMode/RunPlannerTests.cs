@@ -15,12 +15,13 @@ namespace Cosmimera.WorldGen.Tests
         // RNG stream are the same; only twilight/storm-like biases change.
         // v2 → v3 (D0-B2) also left it unchanged: the fixture plans an adult boss, where the stage cap never binds.
         // v3 → v4 (Q-D1-R1) left both digests unchanged: the fixture has no land predicate, so the sea sweep never runs.
-        private const ulong SnapshotSeed12345V3 = 3196599958287516450UL;
+        // v4 → v5: increased wild pack density and guaranteed an opening-sight pack within ~18 m of LandingDirection.
+        private const ulong SnapshotSeed12345V5 = 10964688219190373120UL;
 
         // SOL W-B2-SOL-05: RunPlanner.Hash quantizes directions to 1e-4 and skips LandingDirection, so it cannot back the
         // "adult plan bit-identical to v2" claim. This digest covers every direction's raw float bits, landing included.
         // Pinned on this EditMode backend only; cross-backend float drift is ADR-0007's handshake, not this test's job.
-        private const ulong RawBitsSeed12345V3 = 1601242826727298640UL;
+        private const ulong RawBitsSeed12345V5 = 17114966050337730899UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -164,15 +165,35 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(4), "bump the snapshot with GeneratorVersion");
-            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V3));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(5), "bump the snapshot with GeneratorVersion");
+            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V5));
         }
 
         [Test]
         public void Raw_bits_snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(4), "bump the snapshot with GeneratorVersion");
-            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V3));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(5), "bump the snapshot with GeneratorVersion");
+            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V5));
+        }
+
+        [Test]
+        public void Landing_sight_pack_spawns_within_visible_range()
+        {
+            for (ulong seed = 0; seed < 20; seed++)
+            {
+                RunPlan p = Plan(seed, 320f);
+                float nearest = float.MaxValue;
+                foreach (RunSpawn s in p.Spawns)
+                {
+                    float d = math.acos(math.clamp(math.dot(s.Direction, p.LandingDirection), -1f, 1f)) * 320f;
+                    if (d < nearest)
+                    {
+                        nearest = d;
+                    }
+                }
+
+                Assert.That(nearest, Is.LessThanOrEqualTo(25f), $"seed {seed} nearest spawn {nearest:F1}m");
+            }
         }
 
         private static ulong RawBitsDigest(RunPlan plan)

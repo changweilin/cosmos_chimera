@@ -127,6 +127,32 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(root == null, Is.True, "root destroyed");
             Assert.That(material == null, Is.True, "per-view material destroyed with the view");
         }
+
+        [UnityTest]
+        public IEnumerator Procedural_Create_BuildsMultiPartColliderFreeGreysOutAndDisposes([Values(true, false)] bool toon)
+        {
+            CreatureDef def = AnyCreature();
+            var factory = new ProceduralCreatureViewFactory(toon ? Toon() : null);
+            var request = new CreatureViewRequest(def, true, SpawnRole.Boss, 0.5f);
+            ICreatureView view = factory.Create(request);
+            GameObject root = view.Root.gameObject;
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            yield return null;
+
+            Assert.That(renderers.Length, Is.GreaterThan(1), "procedural 3D creature has multiple parts");
+            Assert.That(root.GetComponentsInChildren<Collider>(true), Is.Empty, "views never take part in physics");
+
+            view.ShowFainted();
+            view.ShowFainted();
+            Material firstMat = renderers[0].sharedMaterial;
+            AssertColor(toon ? firstMat.GetColor("_BaseColor") : firstMat.color, Color.gray);
+
+            view.Dispose();
+            view.Dispose();
+            yield return null;
+            Assert.That(root == null, Is.True, "root destroyed");
+            Assert.That(firstMat == null, Is.True, "owned material destroyed with the view");
+        }
     }
 }
 #endif

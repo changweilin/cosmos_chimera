@@ -481,7 +481,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
-            _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
+            _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
             if (terrainShader != null)
             {
                 float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
