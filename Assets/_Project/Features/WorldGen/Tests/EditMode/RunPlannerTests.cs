@@ -14,7 +14,13 @@ namespace Cosmimera.WorldGen.Tests
         // v1 → v2 left this fixture's digest unchanged: its bias elements are all in the pool, so the quest element and the
         // RNG stream are the same; only twilight/storm-like biases change.
         // v2 → v3 (D0-B2) also left it unchanged: the fixture plans an adult boss, where the stage cap never binds.
+        // v3 → v4 (Q-D1-R1) left both digests unchanged: the fixture has no land predicate, so the sea sweep never runs.
         private const ulong SnapshotSeed12345V3 = 3196599958287516450UL;
+
+        // SOL W-B2-SOL-05: RunPlanner.Hash quantizes directions to 1e-4 and skips LandingDirection, so it cannot back the
+        // "adult plan bit-identical to v2" claim. This digest covers every direction's raw float bits, landing included.
+        // Pinned on this EditMode backend only; cross-backend float drift is ADR-0007's handshake, not this test's job.
+        private const ulong RawBitsSeed12345V3 = 1601242826727298640UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -158,8 +164,51 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(3), "bump the snapshot with GeneratorVersion");
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(4), "bump the snapshot with GeneratorVersion");
             Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V3));
+        }
+
+        [Test]
+        public void Raw_bits_snapshot_seed_12345_is_pinned()
+        {
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(4), "bump the snapshot with GeneratorVersion");
+            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V3));
+        }
+
+        private static ulong RawBitsDigest(RunPlan plan)
+        {
+            ulong h = 14695981039346656037UL;
+            void Mix(uint v)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    h ^= (v >> (i * 8)) & 0xFF;
+                    h *= 1099511628211UL;
+                }
+            }
+
+            void MixDir(float3 d)
+            {
+                uint3 b = math.asuint(d);
+                Mix(b.x);
+                Mix(b.y);
+                Mix(b.z);
+            }
+
+            Mix((uint)RunPlanner.Hash(plan));
+            Mix((uint)(RunPlanner.Hash(plan) >> 32));
+            MixDir(plan.LandingDirection);
+            foreach (RunRegion r in plan.Regions)
+            {
+                MixDir(r.Center);
+            }
+
+            foreach (RunSpawn s in plan.Spawns)
+            {
+                MixDir(s.Direction);
+            }
+
+            return h;
         }
 
         // REQ: SOL P2-12 D0 calibration (2026-11-09) — twilight (light/shadow) and storm (thunder) biases have no wild
@@ -226,18 +275,115 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Spawns_respect_the_land_predicate()
         {
-            // Northern hemisphere is "sea": spawns must avoid it whenever a land point exists nearby.
-            RunPlan p = Plan(3, 640f, d => d.y < 0.2f);
-            int onLand = 0;
-            foreach (RunSpawn s in p.Spawns)
+            // Northern cap is "sea". SOL Q-D1-R320 witness: v3 left 6 spawns (the boss among them) at sea for seed 1.
+            System.Func<float3, bool> land = d => d.y < 0.2f;
+            foreach (ulong seed in new ulong[] { 1, 3 })
             {
-                if (s.Direction.y < 0.2f)
+                foreach (float radius in new[] { 320f, 640f, 1280f })
                 {
-                    onLand++;
+                    RunPlan p = Plan(seed, radius, land);
+                    foreach (RunSpawn s in p.Spawns)
+                    {
+                        Assert.That(land(s.Direction), Is.True, $"seed {seed} R {radius} {s.Role} region {s.Region}");
+                    }
+
+                    Assert.That(land(p.LandingDirection), Is.True, $"seed {seed} R {radius} landing");
+                }
+            }
+        }
+
+        [Test]
+        public void Sea_spawns_move_to_the_nearest_land_and_land_spawns_stay_put()
+        {
+            // Sites and the region graph never read isLand, so a sea disc centred on the dry plan's boss site keeps the
+            // boss region and puts its site (maxAngle 0, the v3 stuck case) at sea. The moved boss must sit just past
+            // the coast: within one sweep ring (0.01 rad) plus float slack of the disc edge.
+            const float SeaRadius = 0.3f;
+            RunPlan dry = Plan(1, 320f, d => true);
+            Assert.That(RunPlanner.Hash(dry), Is.EqualTo(RunPlanner.Hash(Plan(1, 320f))), "an always-land predicate changes nothing");
+            float3 site = dry.Regions[dry.BossRegion].Center;
+            System.Func<float3, bool> land = d => math.dot(d, site) < math.cos(SeaRadius);
+            RunPlan wet = Plan(1, 320f, land);
+            Assert.That(wet.BossRegion, Is.EqualTo(dry.BossRegion));
+            RunSpawn boss = wet.Spawns[wet.Quest[wet.Quest.Count - 1].TargetSpawn];
+            Assert.That(boss.Role, Is.EqualTo(SpawnRole.Boss));
+            Assert.That(land(boss.Direction), Is.True);
+            float moved = math.acos(math.clamp(math.dot(boss.Direction, site), -1f, 1f));
+            Assert.That(moved, Is.GreaterThanOrEqualTo(SeaRadius - 1e-3f).And.LessThanOrEqualTo(SeaRadius + 0.02f));
+        }
+
+        [Test]
+        public void All_sea_predicate_fails_loudly()
+        {
+            Assert.Throws<ContractException>(() => Plan(1, 320f, d => false));
+        }
+
+        // SOL Q-D1-IMPL-R2-01: a 0.001 rad island slipped between sweep rings and generation threw "all sea". The Pre now
+        // promises only caps ≥ MinLandCapRad are found; check that promise for lone islands at many offsets and bearings
+        // from a sea-locked boss site, which forces every spawn through the sweep.
+        [Test]
+        public void A_lone_island_of_the_minimum_cap_is_always_found()
+        {
+            RunPlan dry = Plan(1, 320f, d => true);
+            float3 site = dry.Regions[dry.BossRegion].Center;
+            float3 t = PlanetFrame.FromUp(site).East;
+            float3 b = math.cross(site, t);
+            float cosCap = math.cos(RunPlanner.MinLandCapRad);
+            int cases = 0;
+            foreach (float offset in new[] { 0.004f, 0.017f, 1.3f, 3.1f })
+            {
+                for (int k = 0; k < 5; k++)
+                {
+                    float a = 0.37f + k * 1.3f;
+                    float3 island = math.normalize(site * math.cos(offset)
+                        + (t * math.cos(a) + b * math.sin(a)) * math.sin(offset));
+                    System.Func<float3, bool> land = d => math.dot(d, island) >= cosCap;
+                    RunPlan p = Plan(1, 320f, land);
+                    foreach (RunSpawn s in p.Spawns)
+                    {
+                        Assert.That(land(s.Direction), Is.True, $"offset {offset} bearing {a}");
+                    }
+
+                    cases++;
                 }
             }
 
-            Assert.That(onLand, Is.GreaterThan(p.Spawns.Count / 2));
+            Assert.That(cases, Is.EqualTo(20));
+        }
+
+        // The coverage argument behind MinLandCapRad, checked directly on the sweep: seeded random search centres and caps,
+        // offsets weighted towards the first rings (where few points per ring make gaps likeliest) plus some far ones.
+        [Test]
+        public void The_sweep_finds_every_minimum_cap()
+        {
+            var rng = new Cosmimera.Core.Random.Pcg32(20261111UL, 0x4C414E44UL);
+            float cosCap = math.cos(RunPlanner.MinLandCapRad);
+            for (int i = 0; i < 3000; i++)
+            {
+                float3 center = RandomUnit(ref rng);
+                float3 side = math.normalize(math.cross(center, RandomUnit(ref rng)));
+                float offset = i < 2900 ? rng.NextFloat() * 0.3f : rng.NextFloat() * math.PI;
+                float3 island = math.normalize(center * math.cos(offset) + side * math.sin(offset));
+                float3 found = RunPlanner.NearestLand(center, d => math.dot(d, island) >= cosCap);
+                Assert.That(math.dot(found, island), Is.GreaterThanOrEqualTo(cosCap), $"case {i}");
+            }
+        }
+
+        private static float3 RandomUnit(ref Cosmimera.Core.Random.Pcg32 rng)
+        {
+            float z = rng.NextFloat() * 2f - 1f;
+            float a = rng.NextFloat() * 2f * math.PI;
+            float r = math.sqrt(math.max(0f, 1f - z * z));
+            return new float3(r * math.cos(a), r * math.sin(a), z);
+        }
+
+        [Test]
+        public void Land_narrower_than_the_minimum_cap_violates_the_pre()
+        {
+            RunPlan dry = Plan(1, 320f, d => true);
+            float3 c = dry.Regions[0].Center;
+            float3 island = math.normalize(c * math.cos(0.005f) + PlanetFrame.FromUp(c).East * math.sin(0.005f));
+            Assert.Throws<ContractException>(() => Plan(1, 320f, d => math.dot(d, island) > math.cos(0.001f)));
         }
 
         [Test]

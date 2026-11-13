@@ -9,8 +9,18 @@ using UnityEngine.TestTools;
 namespace Cosmimera.Player.Tests
 {
     // REQ: docs/reviews/P1-05-sol.md#F2 — the brain's world up must stay the local planet up while the view pitches.
+    // R=320 (asteroid) since Q-D1 (2026-11-11); SOL Q-D1-R3 asked for the native run at that size too.
+    [TestFixture(640f)]
+    [TestFixture(320f)]
     public sealed class PlayerCameraRigTests
     {
+        private readonly float _radius;
+
+        public PlayerCameraRigTests(float radius)
+        {
+            _radius = radius;
+        }
+
         private GameObject _root;
         private PlanetConfig _config;
         private Transform _target;
@@ -21,7 +31,7 @@ namespace Cosmimera.Player.Tests
         [SetUp]
         public void SetUp()
         {
-            _config = new PlanetConfig(640f, new float3(10f, -20f, 30f));
+            _config = new PlanetConfig(_radius, new float3(10f, -20f, 30f));
             _root = new GameObject("PlayerCameraRigTest");
             _target = new GameObject("Target").transform;
             _target.SetParent(_root.transform, false);

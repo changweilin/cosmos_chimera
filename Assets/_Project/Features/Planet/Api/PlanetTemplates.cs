@@ -7,7 +7,7 @@ using Unity.Mathematics;
 
 namespace Cosmimera.Planet
 {
-    /// <summary>One baked geo-template (tools/geodata output) in memory.</summary>
+    /// <summary>One landform stamp grid in memory (synthesized by WorldGen.LandformSynth, ADR-0008).</summary>
     /// <remarks>Pre: build with the constructor. Post: immutable. Side effects: none.</remarks>
     public sealed class TemplateSource
     {
@@ -170,7 +170,7 @@ namespace Cosmimera.Planet
                     continue; // beyond 60°: outside any stamp (half angle ≤ 0.6 rad ≈ 34°, corners ≤ ~45°)
                 }
 
-                // Gnomonic projection onto the tangent plane at Center: great circles stay straight, so real
+                // Gnomonic projection onto the tangent plane at Center: great circles stay straight, so
                 // rivers and coastlines keep their shape (planet-world.md: 模板 gnomonic 投影).
                 float3 p = dir / c;
                 float u = math.dot(p, s.Right) / s.TanHalf;
@@ -249,7 +249,7 @@ namespace Cosmimera.Planet
     /// <remarks>
     /// Pre: create with <see cref="Create"/> on the main thread; Dispose after every job using <see cref="View"/> finished.
     /// Post: View valid until Dispose. Side effects: allocates persistent native memory.
-    /// REQ: docs/roadmap/demo.md (P3-03 D0), docs/design/planet-world.md#1. 真實世界地圖骨架.
+    /// REQ: docs/roadmap/demo.md (P3-03 D0), docs/design/planet-world.md#1-骨架層程序化地貌.
     /// </remarks>
     public sealed class PlanetTemplates : IDisposable
     {
@@ -309,8 +309,8 @@ namespace Cosmimera.Planet
                 NativeArray<byte>.Copy(src.Water, 0, water, offset, src.Water.Length);
                 PlanetFrame f = PlanetFrame.FromUp(p.Center);
                 // Q-T5 (open): PlanetFrame's East lies to the screen-left of North in Unity's left-handed space, which
-                // would mirror real maps. D0 un-mirrors here by using −East as the template's +x; revisit when Q-T5 is
-                // decided (if PlanetFrame flips to cross(North, East) == Up, drop the minus).
+                // mirrored the retired real-map templates. Procedural stamps have no handedness, but the −East is kept so
+                // stamp output does not change with Q-T5's outcome (dropping it would mirror every planet's terrain).
                 float3 east = -f.East;
                 float cr = math.cos(p.RotationRad);
                 float sr = math.sin(p.RotationRad);

@@ -198,6 +198,29 @@ namespace Cosmimera.Planet.Tests
         }
 
         [Test]
+        public void Full_lap_at_every_size_tier_keeps_invariants()
+        {
+            // REQ: docs/roadmap/phase-1.md P1-10 — each tier must be walkable all the way round; steps scale with
+            // circumference (~8 m) so every tier crosses the same number of LOD transitions per metre.
+            foreach (float r in new[] { 320f, 960f, 1280f })
+            {
+                var config = new PlanetConfig(r, float3.zero);
+                ChunkQuadtree tree = NewTree(config);
+                int steps = (int)math.ceil(2f * math.PI * r / 8f);
+                for (int i = 0; i <= steps; i++)
+                {
+                    float3 dir = CirclePoint(i, steps);
+                    Update(tree, config.ToWorld(dir, 1.7f));
+                    Assert.AreEqual(tree.Settings.MaxLevel, tree.FindLeaf(dir).Level, $"R={r} step {i}: ground not finest");
+                    if (i % 4 == 0 || i == steps)
+                    {
+                        AssertInvariants(tree, $"R={r} step {i}");
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void Contract_violations_throw()
         {
             Assert.Throws<ContractException>(() => new ChunkQuadtree(default, ChunkLodSettings.ForPlanet(Planet640, 1f, 0f)));

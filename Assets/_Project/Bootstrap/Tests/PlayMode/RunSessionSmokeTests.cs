@@ -55,31 +55,19 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             party.RemoveAll(c => c.Stage != CreatureStage.Adult);
-            var meta = new List<TextAsset>();
-            var heights = new List<TextAsset>();
-            var water = new List<TextAsset>();
-            foreach (string id in new[] { "etna_volcano", "sognefjord", "olympic_forest", "kenya_rift" })
-            {
-                meta.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".meta.json"));
-                heights.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".height.bytes"));
-                water.Add(Load<TextAsset>(GeoTemplateLoader.Folder + id + ".water.bytes"));
-            }
-
-            var templates = new List<Planet.TemplateSource>();
-            var tags = new List<IReadOnlyList<string>>();
-            GeoTemplateLoader.Load(meta.ToArray(), heights.ToArray(), water.ToArray(), templates, tags);
             RunOutcome outcome = null;
             var session = new GameObject("Run").AddComponent<RunSession>();
             session.Configure(copy, balance, actions,
                 Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
                 new RunSetup
                 {
-                    // Adolescent boss = medium planet (R=640, 4 templates), the combination this smoke run always played.
+                    // Adolescent boss = medium planet (R=640, 4 landform stamps), the combination this smoke run always played.
                     PlanetType = type, Seed = 2026, Radius = 640f, BossStage = CreatureStage.Adolescent, Party = party,
-                    Templates = templates, TemplateTags = tags,
                     PartyIds = Enumerable.Range(1, party.Count).ToList(),
                     PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
                     Progression = progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
+                    // The demo path: trees, rocks and buildings block creatures and can be hit (P3-12).
+                    EnvMaterials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text),
                 }, wild, o => outcome = o, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 
@@ -176,6 +164,30 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
+            // P3-12 / destructibles.md#誰能打: CycleTarget offers nearby objects; Focus on one sends the main at it (and
+            // nothing else) until a move lands. Done at the landing site, where the party was just fielded beside the character.
+            for (int i = 0; i < 64 && session.LockedObjectForTests < 0; i++)
+            {
+                session.CycleTargetForTests();
+            }
+
+            long lockedObject = session.LockedObjectForTests;
+            Assert.That(lockedObject, Is.GreaterThanOrEqualTo(0), "a tree, rock or building within provoke reach");
+            Assert.That(session.LockedTargetForTests, Is.EqualTo(-1), "one lock at a time");
+            session.FocusNearestForTests();
+            Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Focus));
+            Assert.That(session.CommandTargetForTests, Is.EqualTo(Encounter.ObjectTargetId));
+            Assert.That(session.FocusedObjectForTests, Is.EqualTo(lockedObject));
+            bool touched = false;
+            float lockDeadline = Time.realtimeSinceStartup + 30f;
+            while (!touched && outcome == null && Time.realtimeSinceStartup < lockDeadline)
+            {
+                touched = session.ObjectTouchedForTests(lockedObject);
+                yield return null;
+            }
+
+            Assert.That(touched, Is.True, "the main's move reached the locked object within 30 s");
+
             // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its temperament (D0-E2:
             // tier-0 juveniles are timid). Nearest, because the character's motor rejects an up vector that turns > 90°
             // in one step (a far teleport is not gameplay).
@@ -212,22 +224,45 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(hit, Is.True, "some fielded creature or the character took damage within 60 s");
 
+
             // P3-09 acceptance: scatter exists around the player and nothing floats or sinks into the ground.
             var scatter = session.GetComponent<ScatterField>();
             Assert.That(scatter, Is.Not.Null, "scatter component is attached");
             Assert.That(scatter.LiveCount, Is.GreaterThan(0), "some scatter near the player");
             foreach (Transform root in scatter.transform)
             {
+                if (!root.name.StartsWith("Scatter_"))
+                {
+                    continue; // the Settlements child (P3-11) shares this transform
+                }
+
                 float3 p = (float3)root.position;
                 float3 dir = session.DirectionForTests(p);
                 Assert.That(session.AltitudeForTests(p), Is.EqualTo(session.SurfaceHeightForTests(dir) - 0.1f).Within(0.15f),
                     "scatter root sits on the ground: " + root.name);
             }
 
+            // P3-11: roads and buildings are drawn, and kept apart from scatter roots.
+            var settlementView = session.GetComponentInChildren<SettlementView>();
+            Assert.That(settlementView, Is.Not.Null, "settlement view is attached");
+            Assert.That(settlementView.Roads.Count, Is.GreaterThan(0), "roads are drawn");
+            Assert.That(settlementView.transform, Is.Not.EqualTo(scatter.transform), "settlements are not scatter roots");
+
             // P1-08 star shell: attached, centred on the camera, opacity in range.
             var stars = session.GetComponent<StarField>();
             Assert.That(stars, Is.Not.Null, "star field is attached");
             Assert.That(stars.Visibility, Is.InRange(0f, 1f));
+            // The pack can hit within frames of the teleport above, while Cinemachine is still damping toward the
+            // character tens of metres away; the shell trails by one frame, so let the camera settle before measuring.
+            Vector3 lastCamera = session.CameraPositionForTests;
+            deadline = Time.realtimeSinceStartup + 10f;
+            do
+            {
+                lastCamera = session.CameraPositionForTests;
+                yield return null;
+            }
+            while (Vector3.Distance(lastCamera, session.CameraPositionForTests) > stars.Shell.localScale.x * 2e-4f
+                   && Time.realtimeSinceStartup < deadline);
             // Relative bound: -nographics never fires beginCameraRendering, so only the LateUpdate placement (one
             // Cinemachine frame behind) is observable here; 1e-3 of the shell radius is far below one pixel of parallax.
             Assert.That(Vector3.Distance(stars.Shell.position, session.CameraPositionForTests),

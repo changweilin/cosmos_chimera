@@ -1,0 +1,170 @@
+[
+  {
+    "id": "bgm_town",
+    "filename": "bgm_town.mp3",
+    "title": "Cobblestones and Clover",
+    "scene": "town",
+    "description": "城鎮／大廳背景音樂"
+  },
+  {
+    "id": "bgm_village",
+    "filename": "bgm_village.mp3",
+    "title": "Sunlight on the Thatch",
+    "scene": "village",
+    "description": "村落／前哨／河岸"
+  },
+  {
+    "id": "bgm_forest",
+    "filename": "bgm_forest.mp3",
+    "title": "Beneath the Ancient Boughs",
+    "scene": "forest",
+    "description": "森林地貌"
+  },
+  {
+    "id": "bgm_rainforest",
+    "filename": "bgm_rainforest.mp3",
+    "title": "Beneath The Palms",
+    "scene": "rainforest",
+    "description": "雨林地貌"
+  },
+  {
+    "id": "bgm_mountain",
+    "filename": "bgm_mountain.mp3",
+    "title": "Above the Timberline",
+    "scene": "mountain",
+    "description": "高山／高地"
+  },
+  {
+    "id": "bgm_grassland",
+    "filename": "bgm_grassland.mp3",
+    "title": "Where the Tall Grass Bends",
+    "scene": "grassland",
+    "description": "草原"
+  },
+  {
+    "id": "bgm_desert",
+    "filename": "bgm_desert.mp3",
+    "title": "Across Sun Baked Paths",
+    "scene": "desert",
+    "description": "沙漠／隕坑"
+  },
+  {
+    "id": "bgm_icefield",
+    "filename": "bgm_icefield.mp3",
+    "title": "Winter’s Quiet Horizon",
+    "scene": "icefield",
+    "description": "冰原地貌"
+  },
+  {
+    "id": "bgm_swamp",
+    "filename": "bgm_swamp.mp3",
+    "title": "Where The Reeds Bend",
+    "scene": "swamp",
+    "description": "沼澤地貌"
+  },
+  {
+    "id": "bgm_beach",
+    "filename": "bgm_beach.mp3",
+    "title": "Tides at Noon",
+    "scene": "beach",
+    "description": "海岸／沙灘／群島"
+  },
+  {
+    "id": "bgm_ruins",
+    "filename": "bgm_ruins.mp3",
+    "title": "Where the Pillars Rest",
+    "scene": "ruins",
+    "description": "遺跡"
+  },
+  {
+    "id": "bgm_canyon",
+    "filename": "bgm_canyon.mp3",
+    "title": "Sunlight on Stone",
+    "scene": "canyon",
+    "description": "峽谷地貌"
+  },
+  {
+    "id": "bgm_space",
+    "filename": "bgm_space.mp3",
+    "title": "The Quiet Between Stars",
+    "scene": "space",
+    "description": "星海／星際選星"
+  },
+  {
+    "id": "bgm_cave",
+    "filename": "bgm_cave.mp3",
+    "title": "Sunless Mineral Bloom",
+    "scene": "cave",
+    "description": "洞穴／地下"
+  },
+  {
+    "id": "bgm_labyrinth",
+    "filename": "bgm_labyrinth.mp3",
+    "title": "Beneath the Sunken Arch",
+    "scene": "labyrinth",
+    "description": "迷宮"
+  },
+  {
+    "id": "bgm_deep_sea",
+    "filename": "bgm_deep_sea.mp3",
+    "title": "Midnight Current",
+    "scene": "deep_sea",
+    "description": "深海"
+  },
+  {
+    "id": "bgm_volcano",
+    "filename": "bgm_volcano.mp3",
+    "title": "Breath Of The Caldera",
+    "scene": "volcano",
+    "description": "火山／熔岩地貌"
+  },
+  {
+    "id": "bgm_tower",
+    "filename": "bgm_tower.mp3",
+    "title": "Where the Air Thins",
+    "scene": "tower",
+    "description": "高塔"
+  },
+  {
+    "id": "bgm_laboratory",
+    "filename": "bgm_laboratory.mp3",
+    "title": "A Quiet Hypothesis",
+    "scene": "laboratory",
+    "description": "研究室"
+  },
+  {
+    "id": "bgm_ice_cap",
+    "filename": "bgm_ice_cap.mp3",
+    "title": "Beneath the Permafrost",
+    "scene": "ice_cap",
+    "description": "冰棚／冰冠"
+  },
+  {
+    "id": "bgm_boss_asteroid",
+    "filename": "bgm_boss_asteroid.mp3",
+    "title": "Blade of the Valiant",
+    "scene": "boss_asteroid",
+    "description": "BOSS戰 - 小行星（幼年）"
+  },
+  {
+    "id": "bgm_boss_dwarf_planet",
+    "filename": "bgm_boss_dwarf_planet.mp3",
+    "title": "Upon the Iron Threshold",
+    "scene": "boss_dwarf",
+    "description": "BOSS戰 - 衛星／矮行星（少年）"
+  },
+  {
+    "id": "bgm_boss_planet",
+    "filename": "bgm_boss_planet.mp3",
+    "title": "Requiem for the Vanguard",
+    "scene": "boss_planet",
+    "description": "BOSS戰 - 行星（成年）"
+  },
+  {
+    "id": "bgm_boss_supergiant",
+    "filename": "bgm_boss_supergiant.mp3",
+    "title": "Throne of the Fallen Star",
+    "scene": "boss_supergiant",
+    "description": "BOSS戰 - 超巨星（超載）"
+  }
+]

@@ -392,8 +392,12 @@ namespace Cosmimera.Planet
                 // Skip leaves removed while baking; assigning sharedMesh reuses the baked data (no main-thread cook).
                 if (_shown.TryGetValue(chunk.Id.Key, out Chunk current) && ReferenceEquals(current, chunk))
                 {
-                    chunk.Collider.sharedMesh = chunk.Mesh;
+                    // FENCE: enable before assigning. On pooled leaves (Unity 6000.3.28f1) sharedMesh assigned to a disabled
+                    // MeshCollider can read back null with no error, leaving an enabled collider with no shape — the player
+                    // falls through a leaf marked ready. · Swap the two lines back and run PlanetTerrainTests(320) walking:
+                    // CountEmptyColliders > 0 within ~100 frames. · RunSessionAsteroidTests (Q-D1-R3), 2026-11-12.
                     chunk.Collider.enabled = true;
+                    chunk.Collider.sharedMesh = chunk.Mesh;
                     chunk.ColliderReady = true;
                 }
             }
@@ -401,6 +405,23 @@ namespace Cosmimera.Planet
             _bakeChunks.Clear();
             _bakeIds.Dispose();
             _baking = false;
+        }
+
+        /// <summary>Number of shown leaves whose collider is enabled but holds no mesh (the player would fall through).</summary>
+        /// <remarks>Pre: none. Post: 0 when every enabled collider has its leaf's mesh. Side effects: none (iterates shown leaves).</remarks>
+        internal int CountEmptyColliders()
+        {
+            int count = 0;
+            foreach (KeyValuePair<ulong, Chunk> pair in _shown)
+            {
+                Chunk chunk = pair.Value;
+                if (chunk.Collider.enabled && chunk.Collider.sharedMesh != chunk.Mesh)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         /// <summary>Number of leaves that currently have an enabled collider.</summary>

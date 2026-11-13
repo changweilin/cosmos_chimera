@@ -16,6 +16,8 @@ namespace Cosmimera.Combat.Tests
             public float GroundAltitude(float3 direction) => 0f;
 
             public bool IsSea(float3 direction) => false;
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         private readonly List<Object> _created = new List<Object>();
@@ -245,7 +247,8 @@ namespace Cosmimera.Combat.Tests
         public void Combat_rejects_planets_below_the_supported_radius()
         {
             Assert.Throws<ContractException>(() =>
-                new Encounter(new PlanetConfig(320f, float3.zero), _balance, new FlatSurface(), 1));
+                new Encounter(new PlanetConfig(319f, float3.zero), _balance, new FlatSurface(), 1));
+            Assert.DoesNotThrow(() => new Encounter(new PlanetConfig(320f, float3.zero), _balance, new FlatSurface(), 1));
         }
 
         [Test]

@@ -23,14 +23,17 @@
   "ui.star_select.planet_type": {
     "ja": "惑星タイプ"
   },
-  "ui.star_select.size_small": {
-    "ja": "小型"
+  "ui.star_select.size_asteroid": {
+    "ja": "小惑星"
   },
-  "ui.star_select.size_medium": {
-    "ja": "中型"
+  "ui.star_select.size_moon": {
+    "ja": "衛星"
   },
-  "ui.star_select.size_large": {
-    "ja": "大型"
+  "ui.star_select.size_planet": {
+    "ja": "惑星"
+  },
+  "ui.star_select.size_supergiant": {
+    "ja": "超巨星"
   },
   "ui.star_select.main_elements": {
     "ja": "主要属性"

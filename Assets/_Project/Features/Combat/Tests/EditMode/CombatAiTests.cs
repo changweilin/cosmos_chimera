@@ -610,7 +610,7 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => CombatAi.Decide(_planet, _tuning, Input(), null, m));
             Assert.Throws<ContractException>(() => CombatAi.Decide(_planet, _tuning, Input(), e, null));
 
-            var small = new PlanetConfig(320f, _planet.Center);
+            var small = new PlanetConfig(MoveGeometry.MinSupportedRadiusM - 1f, _planet.Center);
             Assert.Throws<ContractException>(() => CombatAi.Decide(small, _tuning, Input(), new AiEnemy[0], m));
 
             float3 deep = _planet.Center + _up * (R * 0.4f);

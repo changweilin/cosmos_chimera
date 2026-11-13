@@ -130,13 +130,36 @@ namespace Cosmimera.Bootstrap.Demo
         private Color _night;
         private float _dayLengthS;
 
+        /// <summary>Fog start on planets of R ≥ 640 m, where it was tuned.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float FogStartM = 40f;
+
+        /// <summary>Largest share of the eye-height horizon the fog may start at.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant in (0, 1). Side effects: none.
+        /// 40 m sat at 86% of R=640's 46.7 m horizon; keeping that share keeps a fade band before the horizon on
+        /// smaller planets, where a fixed 40 m would start past it (R=320 horizon 33 m, SOL Q-D1-R3).
+        /// </remarks>
+        public const float FogStartHorizonFraction = 0.86f;
+
+        /// <summary>Linear fog start distance on <paramref name="planet"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/architecture/planet-tech.md#地平線.
+        /// Pre: planet.IsValid; eyeHeight satisfies PlanetConfig.HorizonDistance's Pre.
+        /// Post: result == min(FogStartM, FogStartHorizonFraction × planet.HorizonDistance(eyeHeight)); so result == FogStartM
+        ///       for R ≥ 640 at eyeHeight 1.7 m, and result &lt; the horizon whenever eyeHeight &gt; 0.
+        /// Side effects: none.
+        /// </remarks>
+        public static float FogStartDistance(in PlanetConfig planet, float eyeHeight) =>
+            math.min(FogStartM, FogStartHorizonFraction * planet.HorizonDistance(eyeHeight));
+
         /// <summary>Starts driving the atmosphere.</summary>
         /// <remarks>
-        /// Pre: camera, sun non-null; poleAxis unit; dayLengthS > 0.
-        /// Post: fog enabled (linear, 40 m → horizon-scaled far distance). Side effects: RenderSettings.
+        /// Pre: camera, sun non-null; poleAxis unit; dayLengthS > 0; eyeHeight satisfies PlanetConfig.HorizonDistance's Pre.
+        /// Post: fog enabled (linear, FogStartDistance(planet, eyeHeight) → horizon-scaled far distance). Side effects: RenderSettings.
         /// </remarks>
         public void Configure(Camera camera, Light sun, in PlanetConfig planet, float3 poleAxis, (Color day, Color dusk, Color night) sky,
-            float dayLengthS)
+            float dayLengthS, float eyeHeight)
         {
             Contract.Requires(camera != null && sun != null && dayLengthS > 0f, "camera, sun and day length required");
             _camera = camera;
@@ -148,9 +171,8 @@ namespace Cosmimera.Bootstrap.Demo
             _camera.clearFlags = CameraClearFlags.SolidColor;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            // R ≈ 640: the eye-height horizon is ~47 m (CLAUDE.md 已知陷阱); fog well past it keeps distant
-            // landmarks readable while hiding LOD pop at the far end.
-            RenderSettings.fogStartDistance = 40f;
+            // Fog end well past the horizon keeps distant landmarks readable while hiding LOD pop at the far end.
+            RenderSettings.fogStartDistance = FogStartDistance(planet, eyeHeight);
             RenderSettings.fogEndDistance = math.max(250f, planet.Radius * 0.5f);
         }
 

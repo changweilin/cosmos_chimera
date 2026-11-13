@@ -190,10 +190,11 @@ namespace Cosmimera.Combat
         /// <summary>Smallest planet radius the combat geometry supports.</summary>
         /// <remarks>
         /// Pre: none. Post: constant. Side effects: none.
-        /// REQ: docs/design/derived-stats.md — ranged_distance.cap_mm is a fixed 36 m, approved for R >= 640 only
-        /// (at R = 320 the 1.7 m eye-height horizon is ~33 m, so the cap would reach past it).
+        /// REQ: Q-D1 (user 2026-11-11): asteroids play at 320 m. Ranged reach there is bounded by ApplyPlanetCap
+        /// (horizon-derived, 25.6 m at R = 320); SOL Q-D1-R320-sol.md audited ShellSlack, DegenerateSin, ResolveAnchor,
+        /// ResolveDashEnd and TangentToward at 320 without finding a counterexample.
         /// </remarks>
-        public const float MinSupportedRadiusM = 640f;
+        public const float MinSupportedRadiusM = 320f;
 
         /// <summary>Hit volume of a move cast with attacker strength <paramref name="str"/>.</summary>
         /// <remarks>
@@ -263,6 +264,42 @@ namespace Cosmimera.Combat
             }
         }
 
+        /// <summary>
+        /// <paramref name="volume"/> with every distance the caster can reach bounded by the planet's cap.
+        /// REQ: docs/design/derived-stats.md#星球射程上限 (Q-D1, user 2026-11-11).
+        /// </summary>
+        /// <remarks>
+        /// The last step before a volume is used (after STR and EffectMath.ApplyRange): bounding first and scaling a
+        /// debuff afterwards would shrink twice (36 m −50% must stay 18 m, not 12.8 m; SOL Q-D1 A). Callers keep the
+        /// raw volume for later modifier math and never store the result back.
+        /// Pre: capMm >= 1; rangeClass defined.
+        /// Post: dash → ReachMm == DashDistanceMm == min(volume.DashDistanceMm, capMm); otherwise a non-melee Rect /
+        ///       Sector reach and a non-melee cast distance become min(value, capMm), an AimPoint cast distance does
+        ///       so for any range class; every other field is unchanged (AoE radius, width, angle, height, melee reach).
+        ///       Equals volume when no distance exceeds capMm.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static HitVolume ApplyPlanetCap(in HitVolume volume, RangeClass rangeClass, int capMm)
+        {
+            Contract.Requires(capMm >= 1, "capMm must be >= 1");
+            Contract.Requires(rangeClass >= RangeClass.Melee && rangeClass <= RangeClass.Long, "undefined RangeClass");
+            if (volume.DashDistanceMm > 0)
+            {
+                // A dash's rect is its path, so path and displacement shrink together whatever its range class.
+                int d = System.Math.Min(volume.DashDistanceMm, capMm);
+                return new HitVolume(volume.Kind, volume.Anchor, d, volume.WidthMm, volume.HalfAngleDeciDeg,
+                    volume.HalfHeightMm, volume.CastDistanceMm, d);
+            }
+
+            bool ranged = rangeClass != RangeClass.Melee;
+            bool reachIsRange = ranged && (volume.Kind == HitVolumeKind.Rect || volume.Kind == HitVolumeKind.Sector);
+            bool castIsRange = ranged || volume.Anchor == HitVolumeAnchor.AimPoint;
+            int reach = reachIsRange ? System.Math.Min(volume.ReachMm, capMm) : volume.ReachMm;
+            int cast = castIsRange ? System.Math.Min(volume.CastDistanceMm, capMm) : volume.CastDistanceMm;
+            return new HitVolume(volume.Kind, volume.Anchor, reach, volume.WidthMm, volume.HalfAngleDeciDeg,
+                volume.HalfHeightMm, cast, volume.DashDistanceMm);
+        }
+
         /// <summary>Where an AimPoint-anchored volume lands for a caster aiming at <paramref name="aimPoint"/>.</summary>
         /// <remarks>
         /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.Anchor == AimPoint; caster and aimPoint
@@ -320,7 +357,7 @@ namespace Cosmimera.Combat
         /// Pre: planet.IsValid; planet.Radius >= MinSupportedRadiusM; volume.DashDistanceMm > 0 (built with
         ///      movement == Dash); caster inside the combat shell (same bounds and rounding slack as ResolveAnchor);
         ///      DashDistanceMm · 0.001 &lt;= rc · π/4, rc = |caster − planet.Center| (an eighth of a circumference:
-        ///      ≥ 251 m anywhere in the shell at R = 640);
+        ///      ≥ 125 m anywhere in the shell at R = 320);
         ///      forward is unit (±1e-3) and tangent at the caster (|dot(forward, up)| &lt;= 1e-3).
         /// Post: result is finite and inside the combat shell, so it can be passed to Overlaps; it lies on the great
         ///       circle through the caster along forward's tangent direction, at the caster's radius (clamped into the
@@ -528,7 +565,7 @@ namespace Cosmimera.Combat
         private static void RequirePlanet(in PlanetConfig planet)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");
-            Contract.Requires(planet.Radius >= MinSupportedRadiusM, "combat geometry supports planets with R >= 640 m only");
+            Contract.Requires(planet.Radius >= MinSupportedRadiusM, "combat geometry supports planets with R >= MinSupportedRadiusM only");
         }
 
         // Combat happens near the ground, so positions must lie within R/2..2R of the center. The bounded radius ratio

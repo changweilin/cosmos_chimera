@@ -21,11 +21,27 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 3;
+        public const int GeneratorVersion = 4;
+
+        /// <summary>Smallest land cap (rad) the nearest-land sweep is guaranteed to find; isLand must contain one.</summary>
+        /// <remarks>
+        /// SOL Q-D1-IMPL-R2-01: finite sampling cannot prove a black-box predicate all-sea, so the guarantee is stated as
+        /// a Pre instead. Demo masks always satisfy it (SOL Q-D1-IMPL-R3-01): sea exists only inside ≤ 6 template stamps,
+        /// each a gnomonic square of edge half angle 0.45 rad inside a cap of radius atan(√2·tan 0.45) ≈ 0.5993 rad. Six
+        /// caps grown by 0.02 rad cover at most 55.7 % of the sphere, so some point lies outside all of them and its whole
+        /// 0.02 rad cap is outside every stamp, where IsSea is false.
+        /// Pre: none. Post: constant == 2 × the sweep step. Side effects: none.
+        /// </remarks>
+        public const float MinLandCapRad = 2f * LandSweepStepRad;
+
+        private const float LandSweepStepRad = 0.01f;
 
         // v2 (2026-11-09): the DefeatWild element is restricted to elements that have enough non-boss spawns.
         // v3 (2026-11-10, D0-B2): the boss stage is an input; every spawn's form is capped at it. Adult-boss plans are
         //     bit-identical to v2 (the cap never binds and the draw order is unchanged).
+        // v4 (2026-11-11, Q-D1-R1): a spawn or landing point whose 8 random tries and region site are all sea moves to the
+        //     nearest land found by a deterministic ring sweep instead of staying at sea. Plans without such a point (and
+        //     every isLand == null plan) are bit-identical to v3.
         private const int DefeatWildCount = 3;
         private const double SurfaceKm2PerRegion = 0.42;
         private const int MinRegions = 8;
@@ -52,7 +68,8 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: planet valid; planetType non-null; wildPool non-empty, no nulls, each with ≥ 1 mastery entry, and at
         ///      least one form of exactly bossStage (Juvenile..Adult); vocabulary non-null; isLand null (all land) or
-        ///      deterministic.
+        ///      deterministic and accepting every direction of at least one spherical cap of angular radius
+        ///      <see cref="MinLandCapRad"/> (land narrower than that may be skipped).
         /// Post: regions in [8, 32] scaled by surface area; region graph connected; MainRoute is a shortest path from
         ///       LandingRegion to BossRegion; BossRegion maximizes hops from landing; exactly one Boss spawn (a bossStage
         ///       form whose main element is in the type's bias when one exists) in the boss region; no spawn's form is
@@ -60,8 +77,11 @@ namespace Cosmimera.WorldGen
         ///       route region strictly between landing and boss (at least one overall); quest ends with DefeatBoss;
         ///       the DefeatWild step's Element has ≥ its Count (1..3) spawns that are neither the boss nor the
         ///       DefeatElite target, preferring the type's bias.
+        ///       Every spawn direction and LandingDirection satisfies isLand (REQ: combat.md#只在陸地); a spawn that found
+        ///       no land near its region site takes the nearest land, which may lie across a Voronoi border.
         ///       Same inputs → same plan.
-        /// Side effects: allocates.
+        /// Side effects: allocates. Throws ContractException in every build when the land sweep finds no land (the isLand
+        ///          Pre is violated).
         /// </remarks>
         public static RunPlan Generate(in PlanetConfig planet, ulong seed, PlanetTypeDef planetType, CreatureStage bossStage,
             IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, Func<float3, bool> isLand)
@@ -163,7 +183,7 @@ namespace Cosmimera.WorldGen
             int bossSpawn = spawns.Count;
             spawns.Add(new RunSpawn(boss, group, Scatter(sites[boss], 0f, isLand, ref rng), bossSpecies.Id, SpawnRole.Boss));
 
-            // REQ: docs/roadmap/phase-2.md (SOL P2-12 D0 calibration, 2026-11-09): picking straight from ElementBias made
+            // REQ: docs/roadmap/log/phase-2.md (SOL P2-12 D0 calibration, 2026-11-09): picking straight from ElementBias made
             // DefeatWild impossible when no wild form has that element (twilight light/shadow, storm thunder). The
             // element must have ≥ DefeatWildCount non-boss spawns; the boss ends the run, so it can never count.
             // The next step's elite is excluded too (SOL P3-10 S1): QuestTracker gives no pre-credit, so killing it to
@@ -504,11 +524,10 @@ namespace Cosmimera.WorldGen
 
         private static float3 Scatter(float3 center, float maxAngle, Func<float3, bool> isLand, ref Pcg32 rng)
         {
-            float3 fallback = center;
+            float3 t = PlanetFrame.FromUp(center).East;
+            float3 b = math.cross(center, t);
             for (int attempt = 0; attempt < 8; attempt++)
             {
-                float3 t = PlanetFrame.FromUp(center).East;
-                float3 b = math.cross(center, t);
                 float a = rng.NextFloat() * 2f * math.PI;
                 float d = math.sqrt(rng.NextFloat()) * maxAngle;
                 float3 p = math.normalize(center * math.cos(d) + (t * math.cos(a) + b * math.sin(a)) * math.sin(d));
@@ -516,11 +535,54 @@ namespace Cosmimera.WorldGen
                 {
                     return p;
                 }
-
-                fallback = p;
             }
 
-            return isLand == null || isLand(center) ? center : fallback;
+            if (isLand(center))
+            {
+                return center;
+            }
+
+            return NearestLand(center, isLand);
+        }
+
+        // REQ: docs/design/combat.md#只在陸地, SOL Q-D1-R320 (Q-D1-R1): v3 returned the last sea sample here, and a boss
+        // (maxAngle 0) on a sea site could never move. The sweep draws no random numbers, so plans that found land in the
+        // 8 random attempts keep their exact RNG stream and output (v4 only changes plans that used to put a spawn at sea).
+        // Coverage (SOL Q-D1-IMPL-R3): every direction is within ~1 Step of a sample, so a cap of radius 2·Step
+        // (MinLandCapRad) always contains one. Mid-sphere: nearest ring ≤ Step/2 away, then along it to the nearest point
+        // ≤ Step/2. Within Step/2 of the centre: the first ring (n ≥ 7) is ≤ ~1.5 Step away. Near the antipode the last
+        // ring degenerates to points inside the cap. SOL measured a float bound of 0.0137 rad < 0.02 over 6e6 positions.
+        // Cost per exhausted sweep ≈ 4π/Step² ≈ 1.3e5 predicate calls.
+        /// <summary>First land direction met by rings of increasing angle around <paramref name="center"/>.</summary>
+        /// <remarks>
+        /// Pre: center unit length; isLand deterministic and accepting some cap of radius MinLandCapRad.
+        /// Post: isLand(result); result is the first land sample in ring order (not necessarily the closest land). Throws
+        ///       ContractException (every build) when the sweep finds no land.
+        /// Side effects: none besides isLand calls.
+        /// </remarks>
+        internal static float3 NearestLand(float3 center, Func<float3, bool> isLand)
+        {
+            const float Step = LandSweepStepRad;
+            float3 t = PlanetFrame.FromUp(center).East;
+            float3 b = math.cross(center, t);
+            int rings = (int)math.ceil(math.PI / Step);
+            for (int k = 1; k <= rings; k++)
+            {
+                float d = math.min(k * Step, math.PI);
+                int n = math.max(6, (int)math.ceil(2f * math.PI * math.sin(d) / Step));
+                for (int j = 0; j < n; j++)
+                {
+                    float a = 2f * math.PI * j / n;
+                    float3 p = math.normalize(center * math.cos(d) + (t * math.cos(a) + b * math.sin(a)) * math.sin(d));
+                    if (isLand(p))
+                    {
+                        return p;
+                    }
+                }
+            }
+
+            // Not a Contract.Requires: that is stripped in Release, and a sea spawn there is the silent failure this replaces.
+            throw new ContractException("Precondition failed: isLand must contain a land cap of radius MinLandCapRad");
         }
 
         private static float3 RandomUnit(ref Pcg32 rng)

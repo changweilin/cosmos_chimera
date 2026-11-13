@@ -525,9 +525,9 @@
     "ja": "閉じる"
   },
   "ui.interact.observe_detail": {
-    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}",
-    "en": "{species} | {stage} | {element} | Temperament: {temperament} | Lv {level}",
-    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}"
+    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}",
+    "en": "{species} | {stage} | {element} | Temperament: {temperament} | LV{level}",
+    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}"
   },
   "ui.interact.pet_reaction": {
     "zh-TW": "{target} 安靜地蹭了蹭你的手。",
@@ -565,7 +565,7 @@
     "ja": "沈着"
   },
   "ui.temperament.territorial": {
-    "zh-TW": "領地",
+    "zh-TW": "領地意識",
     "en": "Territorial",
     "ja": "縄張り"
   },
@@ -595,8 +595,28 @@
     "ja": "プレイヤーEXP +{exp}（LV{level}）"
   },
   "ui.star_select.boss_unlock_hint": {
-    "zh-TW": "玩家 LV{adolescent} 解鎖少年 BOSS、LV{adult} 解鎖成年 BOSS",
-    "en": "Player LV{adolescent} unlocks Adolescent bosses; LV{adult} unlocks Adult bosses",
-    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放"
+    "zh-TW": "玩家 LV{adolescent} 可抽到少年 BOSS，LV{adult} 可抽到成年 BOSS",
+    "en": "Adolescent bosses can appear at player LV{adolescent}; Adult bosses at LV{adult}",
+    "ja": "プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが出現可能"
+  },
+  "ui.object.tree": {
+    "zh-TW": "樹",
+    "en": "Tree",
+    "ja": "木"
+  },
+  "ui.object.rock": {
+    "zh-TW": "岩石",
+    "en": "Rock",
+    "ja": "岩"
+  },
+  "ui.object.crystal": {
+    "zh-TW": "晶柱",
+    "en": "Crystal",
+    "ja": "結晶柱"
+  },
+  "ui.object.building": {
+    "zh-TW": "建築",
+    "en": "Building",
+    "ja": "建物"
   }
 }

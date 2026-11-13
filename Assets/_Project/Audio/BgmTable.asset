@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54ecdb52f4489cd439c86ed5d2947b00, type: 3}
+  m_Name: BgmTable
+  m_EditorClassIdentifier: Cosmimera.Bootstrap::Cosmimera.Bootstrap.Demo.BgmTable
+  entries:
+  - id: bgm_beach
+    clip: {fileID: 8300000, guid: a2b960e9dc9b1974ba5119babb3af2bc, type: 3}
+  - id: bgm_boss_asteroid
+    clip: {fileID: 8300000, guid: 55e324aed6c74034e99620c28a5b0cc6, type: 3}
+  - id: bgm_boss_dwarf_planet
+    clip: {fileID: 8300000, guid: 5d4f826262901d64f8c2f4c7c14d8baa, type: 3}
+  - id: bgm_boss_planet
+    clip: {fileID: 8300000, guid: e66a30dfb1035ba4c8a389bcee16519f, type: 3}
+  - id: bgm_boss_supergiant
+    clip: {fileID: 8300000, guid: 592b88a27746ce24d9cebb9bbce35290, type: 3}
+  - id: bgm_canyon
+    clip: {fileID: 8300000, guid: 7997f7a8524ab7243a5b035eeb6abe3c, type: 3}
+  - id: bgm_cave
+    clip: {fileID: 8300000, guid: 9a4f7c82a7853694fbb4f766e9417583, type: 3}
+  - id: bgm_deep_sea
+    clip: {fileID: 8300000, guid: f7434513161f382499e7ea39b59312a2, type: 3}
+  - id: bgm_desert
+    clip: {fileID: 8300000, guid: 658eddac48892c84eb6216366913d0e1, type: 3}
+  - id: bgm_forest
+    clip: {fileID: 8300000, guid: 6f65bcc88873e6144abffe81456b204a, type: 3}
+  - id: bgm_grassland
+    clip: {fileID: 8300000, guid: 69feb3ddfba3fd043a2c67cde938aa9f, type: 3}
+  - id: bgm_ice_cap
+    clip: {fileID: 8300000, guid: ab2897cf42f86be48b061b772773117b, type: 3}
+  - id: bgm_icefield
+    clip: {fileID: 8300000, guid: 71bda42728a8d9640bf6cb4a6fc7417f, type: 3}
+  - id: bgm_laboratory
+    clip: {fileID: 8300000, guid: 9a3d18f4a8b1e69408a50828c5c961db, type: 3}
+  - id: bgm_labyrinth
+    clip: {fileID: 8300000, guid: 3653c86eb602116479a4fbdefc64cc02, type: 3}
+  - id: bgm_mountain
+    clip: {fileID: 8300000, guid: 89e4e36f82678a64496ed4cd38128af5, type: 3}
+  - id: bgm_rainforest
+    clip: {fileID: 8300000, guid: 344f8282e8fb72a47bf62c489e376672, type: 3}
+  - id: bgm_ruins
+    clip: {fileID: 8300000, guid: 14652285f9b4591409fadd60d791d078, type: 3}
+  - id: bgm_space
+    clip: {fileID: 8300000, guid: 41ef50e0e23741f46ba3d6338c4493a3, type: 3}
+  - id: bgm_swamp
+    clip: {fileID: 8300000, guid: 66cb86584a99ee747b82a8461fdab536, type: 3}
+  - id: bgm_tower
+    clip: {fileID: 8300000, guid: c5e1b451968c8a441b065fdecfb95c36, type: 3}
+  - id: bgm_town
+    clip: {fileID: 8300000, guid: f7e972e3c8ae2074cbb0976a583110bf, type: 3}
+  - id: bgm_village
+    clip: {fileID: 8300000, guid: e6b024dd6f70f854cbcc8595ee513416, type: 3}
+  - id: bgm_volcano
+    clip: {fileID: 8300000, guid: 2b2f1aa24e65599468dfd2087d4ca8c6, type: 3}

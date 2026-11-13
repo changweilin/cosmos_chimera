@@ -33,6 +33,12 @@ EXPECTED = {
     "traits/effect_bad_params.json": ("schema", "/0/effects/0/params/element"),
     "traits/heal_max_stacks.json": ("schema", "/0/effects/0"),
     "characters/missing_vessel.json": ("schema", "/0"),
+    "env-materials/dangling_substance.json": ("dangling_ref", "/buildings/0/composition/0/substance"),
+    "env-materials/building_duplicate.json": ("building_duplicate", "/buildings/1/kind"),
+    "env-materials/ground_element_mismatch.json": ("ground_element_mismatch", "/ground_materials/metal"),
+    "env-materials/element_without_source.json": ("element_without_source", "/substances"),
+    "env-materials/drop_cap_below_base.json": ("drop_cap_below_base", "/drops/material"),
+    "env-materials/substance_element_shadow.json": ("schema", "/substances/1/element"),
 }
 
 
@@ -53,6 +59,9 @@ class InvalidSamples(unittest.TestCase):
             shutil.copytree(SAMPLES / "valid", root)
             dest = root / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
+            if dest.parent.name == "env-materials":
+                for existing in dest.parent.glob("*.json"):
+                    existing.unlink()
             shutil.copy(SAMPLES / "invalid" / rel, dest)
             return validate_data.validate(root, SCHEMAS)
 
@@ -328,6 +337,43 @@ class CrossFileRules(unittest.TestCase):
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
         del creatures[0]["temperament"]
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+
+    def test_env_materials_multiple(self):
+        findings = self._with_valid({"env-materials/extra.json": "{}"})
+        self.assertIn("env_materials_multiple", self.codes(findings))
+        hits = [f for f in findings if f.code == "env_materials_multiple"]
+        self.assertEqual("env-materials/extra.json", hits[0].file)
+        self.assertEqual("", hits[0].pointer)
+
+    def test_substance_id_colliding_with_creature_id(self):
+        valid_text = (SAMPLES / "valid/env-materials/env-materials.json").read_text(encoding="utf-8")
+        data = json.loads(valid_text)
+        data["substances"][0]["id"] = "sample_fox_cub"
+        findings = self._with_valid({"env-materials/env-materials.json": json.dumps(data)})
+        self.assertIn("duplicate_id", self.codes(findings))
+        hits = [f for f in findings if f.code == "duplicate_id" and f.file == "env-materials/env-materials.json"]
+        self.assertEqual("/substances/0/id", hits[0].pointer)
+
+    def test_retired_substance_id(self):
+        findings = self._with_valid({}, retired="# header\nmetal\n")
+        self.assertIn("retired_id", self.codes(findings))
+        hits = [f for f in findings if f.code == "retired_id" and f.file == "env-materials/env-materials.json"]
+        self.assertEqual("/substances/0/id", hits[0].pointer)
+
+    def test_wrong_type_composition_entry_does_not_crash(self):
+        valid_text = (SAMPLES / "valid/env-materials/env-materials.json").read_text(encoding="utf-8")
+        data = json.loads(valid_text)
+        data["buildings"][0]["composition"][0] = "wrong_type"
+        findings = self._with_valid({"env-materials/env-materials.json": json.dumps(data)})
+        self.assertIn("schema", self.codes(findings))
+
+    def test_root_without_env_materials_is_valid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "data"
+            shutil.copytree(SAMPLES / "valid", root)
+            shutil.rmtree(root / "env-materials")
+            findings = validate_data.validate(root, SCHEMAS)
+            self.assertEqual([], [str(f) for f in findings])
 
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))

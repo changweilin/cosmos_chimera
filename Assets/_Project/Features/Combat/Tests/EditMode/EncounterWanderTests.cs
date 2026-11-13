@@ -19,6 +19,8 @@ namespace Cosmimera.Combat.Tests
             public float GroundAltitude(float3 direction) => 0f;
 
             public bool IsSea(float3 direction) => false;
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         private const float R = 640f;
@@ -175,6 +177,16 @@ namespace Cosmimera.Combat.Tests
             }
 
             Assert.That(diverged, Is.True, "another seed takes another path");
+        }
+
+        // SOL W-B2-SOL-05: self-replay cannot tell (seed,'W') from any other stream id. Literals come from an independent
+        // PCG32 (XSH-RR, stream << 1 | 1) reimplementation in Python, not from this codebase.
+        [TestCase(5UL, 3330189048u, 2709907303u, 3518766685u)]
+        [TestCase(42UL, 3744784469u, 971515108u, 15015028u)]
+        public void Wander_stream_is_seed_W(ulong seed, uint first, uint second, uint third)
+        {
+            Pcg32 rng = new Encounter(_planet, _balance, new FlatSurface(), seed).WanderRngForTests;
+            Assert.That(new[] { rng.NextUInt(), rng.NextUInt(), rng.NextUInt() }, Is.EqualTo(new[] { first, second, third }));
         }
 
         [Test]

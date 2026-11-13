@@ -128,6 +128,24 @@ namespace Cosmimera.Planet.Tests
         }
 
         [Test]
+        public void Horizon_follows_the_tangent_formula_for_every_size_tier()
+        {
+            // REQ: docs/roadmap/phase-1.md P1-10 — horizon = sqrt(2Rh + h²), verified against a double-precision oracle.
+            foreach (float r in new[] { 320f, 640f, 960f, 1280f })
+            {
+                var config = new PlanetConfig(r, float3.zero);
+                foreach (float h in new[] { 0.5f, 1.7f, 30f, 200f })
+                {
+                    double expected = System.Math.Sqrt(2.0 * r * h + (double)h * h);
+                    Assert.AreEqual(expected, config.HorizonDistance(h), expected * 1e-5, $"R={r} h={h}");
+                }
+
+                Assert.Greater(config.HorizonDistance(1.7f), new PlanetConfig(r * 0.5f, float3.zero).HorizonDistance(1.7f),
+                    $"R={r}: a larger planet must see farther");
+            }
+        }
+
+        [Test]
         public void World_direction_altitude_round_trip()
         {
             var config = new PlanetConfig(1280f, new float3(5f, 6f, 7f));

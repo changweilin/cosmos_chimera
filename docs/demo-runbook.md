@@ -72,13 +72,11 @@
 
 回報時附上 build-info.json、選星 seed、重現步驟，以及同目錄的 `Player.log`。公開分享前先檢查 log 內的個人路徑。
 
-地理資料署名附於 demo 包的 `ATTRIBUTION.md`，來源為既有 GLO-90 烘焙模板。
-
 ## 工程重建
 
 專案必須未在 Editor 中開啟。依 `CLAUDE.md` 執行 EditMode／PlayMode；Python 工具驗證使用 `python -m pytest tools/tests tools/balance` 與 `python tools/validate_data.py --root Data/_demo`。若沙箱暫存目錄不可寫，將該次程序的 TEMP／TMP 與 pytest `--basetemp` 設為 `Logs/` 下的專用目錄。
 
-重用現有 `Cosmimera.EditorTools.ReproBuild.BuildAll` 入口建置 Demo 場景，產出 `Builds/Repro/mono` 與 `Builds/Repro/il2cpp`。以 IL2CPP 輸出打包，排除 `*_DoNotShip` 偵錯資料夾，附上本手冊、既有 `Data/geo-templates/ATTRIBUTION.md` 與版本資訊。此流程尚未接入發行 CI。
+重用現有 `Cosmimera.EditorTools.ReproBuild.BuildAll` 入口建置 Demo 場景，產出 `Builds/Repro/mono` 與 `Builds/Repro/il2cpp`。以 IL2CPP 輸出打包，排除 `*_DoNotShip` 偵錯資料夾，附上本手冊與版本資訊（地貌為程序化生成，不含第三方地理資料，無需署名檔，ADR-0008）。此流程尚未接入發行 CI。
 
 同一 checkout 建置及測試完成後，可用正式工具打包；receipt 路徑改成該次實際輸出，版本名不可與既有包重複：
 
@@ -86,4 +84,4 @@
 python -B tools/demo/package.py --name COSMIMERA-D0-<version>-win64 --build-log Logs/<build>.log --editmode Logs/<editmode>.xml --playmode Logs/<playmode>.xml --preview Logs/demo-shot.png
 ```
 
-工具驗證完整 IL2CPP 必要檔案、成功的建置與測試紀錄、ZIP CRC 及逐檔 SHA-256；產出操作手冊、署名、`build-info.json`、`SHA256SUMS.txt` 與 ZIP 旁的 `.sha256`。它記錄打包當下 checkout，不能代替建置來源證明或實玩驗收。初始難度基線可用 `Cosmimera.EditorTools.DemoBalanceProbe.RunBatch` 在 batchmode 重跑，輸出 `Logs/d0-balance.json`。
+工具驗證完整 IL2CPP 必要檔案、成功的建置與測試紀錄、ZIP CRC 及逐檔 SHA-256；產出操作手冊、`build-info.json`、`SHA256SUMS.txt` 與 ZIP 旁的 `.sha256`。它記錄打包當下 checkout，不能代替建置來源證明或實玩驗收。初始難度基線可用 `Cosmimera.EditorTools.DemoBalanceProbe.RunBatch` 在 batchmode 重跑，輸出 `Logs/d0-balance.json`。

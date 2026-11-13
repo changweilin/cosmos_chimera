@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/env-materials.schema.json",
+  "title": "Environment materials file (one object per file; exactly one file per data root)",
+  "description": "REQ: docs/design/destructibles.md (物質／物質反應／掉落機率／建築的組成／影素材／地上的素材), ADR-0009. All numbers are tentative (Data/ only). Integers only: per-mille, percent, mm, ms, kg/m3.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["substances", "reactions", "drops", "buildings", "ground_materials"],
+  "properties": {
+    "substances": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/substance" }
+    },
+    "reactions": { "$ref": "#/$defs/reactions" },
+    "drops": { "$ref": "#/$defs/drops" },
+    "buildings": {
+      "description": "Composition per building kind. ruin_wall = buildings of a Ruins settlement (any BuildingKind).",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/building" }
+    },
+    "ground_materials": {
+      "description": "Representative substance of an uncollected material lying on the ground, per element. light and shadow are absent on purpose: they float, never collide and cannot be destroyed. gem = substance of every element's tier-3 gem (indestructible regardless of the substance flags).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "gem"],
+      "properties": {
+        "metal": { "$ref": "common.schema.json#/$defs/id" },
+        "wood": { "$ref": "common.schema.json#/$defs/id" },
+        "water": { "$ref": "common.schema.json#/$defs/id" },
+        "fire": { "$ref": "common.schema.json#/$defs/id" },
+        "earth": { "$ref": "common.schema.json#/$defs/id" },
+        "ice": { "$ref": "common.schema.json#/$defs/id" },
+        "wind": { "$ref": "common.schema.json#/$defs/id" },
+        "thunder": { "$ref": "common.schema.json#/$defs/id" },
+        "gem": { "$ref": "common.schema.json#/$defs/id" }
+      }
+    }
+  },
+  "$defs": {
+    "permille": { "type": "integer", "minimum": 0, "maximum": 1000 },
+    "boostPercent": {
+      "description": "Damage or impulse multiplier in percent (100 = unchanged). Cap is representability.",
+      "type": "integer", "minimum": 100, "maximum": 1000
+    },
+    "substance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "element", "flammable", "conductive", "brittle", "opacity_permille", "density_kg_m3", "hp_per_m3", "resist"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "element": {
+          "description": "Element of the material it drops. shadow is never a substance element (shadow comes only from the night rule).",
+          "enum": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light"]
+        },
+        "flammable": {
+          "description": "none | slow (normal burn) | fast (fast burn) | blast (destroys itself at once when ignited).",
+          "enum": ["none", "slow", "fast", "blast"]
+        },
+        "conductive": { "type": "boolean" },
+        "brittle": {
+          "description": "never | frozen (only while frozen) | always.",
+          "enum": ["never", "frozen", "always"]
+        },
+        "opacity_permille": { "$ref": "#/$defs/permille" },
+        "density_kg_m3": { "type": "integer", "minimum": 1, "maximum": 30000 },
+        "hp_per_m3": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "resist": {
+          "description": "Same meaning as creature resist (combat.md 傷害公式). All ten keys required.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"],
+          "properties": {
+            "metal": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "wood": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "water": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "fire": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "earth": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "ice": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "wind": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "thunder": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "light": { "$ref": "common.schema.json#/$defs/resistPercent" },
+            "shadow": { "$ref": "common.schema.json#/$defs/resistPercent" }
+          }
+        }
+      }
+    },
+    "reactions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["burn_slow_permille_per_s", "burn_fast_permille_per_s", "melt_percent", "freeze_ms", "shatter_percent", "conduct_percent", "gust_impulse_percent"],
+      "properties": {
+        "burn_slow_permille_per_s": { "description": "Max-HP fraction lost per second while burning (flammable=slow).", "type": "integer", "minimum": 1, "maximum": 1000 },
+        "burn_fast_permille_per_s": { "description": "Same, flammable=fast.", "type": "integer", "minimum": 1, "maximum": 1000 },
+        "melt_percent": { "description": "Fire hit on ice.", "$ref": "#/$defs/boostPercent" },
+        "freeze_ms": { "description": "Ice hit: brittle window.", "$ref": "common.schema.json#/$defs/durationMs" },
+        "shatter_percent": { "description": "Earth/metal hit on brittle (incl. frozen).", "$ref": "#/$defs/boostPercent" },
+        "conduct_percent": { "description": "Thunder hit on conductive.", "$ref": "#/$defs/boostPercent" },
+        "gust_impulse_percent": { "description": "Wind hit impulse (presentation only).", "$ref": "#/$defs/boostPercent" }
+      }
+    },
+    "volumeChance": {
+      "description": "chance = clamp(base + per_m3 * volume_m3, 0, cap), all per-mille.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_permille", "per_m3_permille", "cap_permille"],
+      "properties": {
+        "base_permille": { "$ref": "#/$defs/permille" },
+        "per_m3_permille": { "$ref": "#/$defs/permille" },
+        "cap_permille": { "$ref": "#/$defs/permille" }
+      }
+    },
+    "drops": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["material", "gem", "shadow"],
+      "properties": {
+        "material": { "description": "Tier-1 material roll.", "$ref": "#/$defs/volumeChance" },
+        "gem": { "description": "Tier-3 gem roll (very rare).", "$ref": "#/$defs/volumeChance" },
+        "shadow": {
+          "description": "Night-only roll: chance = clamp(per_m2 * volume^(2/3) * opacity / 1000, 0, cap).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["per_m2_permille", "cap_permille"],
+          "properties": {
+            "per_m2_permille": { "$ref": "#/$defs/permille" },
+            "cap_permille": { "$ref": "#/$defs/permille" }
+          }
+        }
+      }
+    },
+    "building": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "composition"],
+      "properties": {
+        "kind": { "enum": ["tent", "house", "hall", "tower", "pillar", "ruin_wall"] },
+        "composition": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["substance", "weight"],
+            "properties": {
+              "substance": { "$ref": "common.schema.json#/$defs/id" },
+              "weight": { "type": "integer", "minimum": 1, "maximum": 1000 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

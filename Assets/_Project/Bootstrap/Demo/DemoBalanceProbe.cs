@@ -35,6 +35,10 @@ namespace Cosmimera.EditorTools
             /// <summary>Isolated matchups have no sea.</summary>
             /// <remarks>Pre: direction unit length. Post: false. Side effects: none.</remarks>
             public bool IsSea(float3 direction) => false;
+
+            /// <summary>Isolated matchups have no buildings.</summary>
+            /// <remarks>Pre: direction unit length. Post: false. Side effects: none.</remarks>
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         /// <summary>Batchmode entry that writes Logs/d0-balance.json and exits with an explicit status.</summary>

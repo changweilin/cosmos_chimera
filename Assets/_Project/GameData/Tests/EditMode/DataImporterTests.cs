@@ -40,7 +40,7 @@ namespace Cosmimera.GameData.Tests
             // Windows Defender real-time scanning on, the just-deleted Assets/__DataImporterTests.meta stays
             // delete-pending while the scanner holds it, and the next test's CreateFolder failed with "Cannot open
             // file ... .meta for write" (a different test each run) · still needed if reverting to a fixed path
-            // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/phase-2.md (2026-11-07 flake).
+            // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/log/phase-2.md (2026-11-07 flake).
             Output = OutputRoot + "/run" + ++_run;
             _src = Path.Combine(Path.GetTempPath(), "cosmimera-import-" + System.Guid.NewGuid().ToString("N"));
             CopyDir(FixtureRoot, _src);

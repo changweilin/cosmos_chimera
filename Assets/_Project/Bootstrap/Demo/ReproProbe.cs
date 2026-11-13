@@ -34,7 +34,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: all arguments non-null (environment and sampleDump optional); types non-empty with no null elements;
         ///      wildPool non-empty, no nulls, each with mastery, including a form of every stage in <see cref="BossStages"/>;
-        ///      templates.Count == templateTags.Count; radiusFor returns a radius RunPlanner accepts for every boss size.
+        ///      radiusFor returns a radius RunPlanner accepts for every boss size.
         /// Post: deterministic text for identical inputs and identical floating-point behaviour; one header block,
         ///      then one line per (planet type sorted by Id ordinal, boss stage in <see cref="BossStages"/> order, seed in
         ///      <see cref="Seeds"/> order).
@@ -43,15 +43,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: allocates (planet generation per line); appends to sampleDump; no I/O.
         /// </remarks>
         public static string Report(IReadOnlyList<PlanetTypeDef> types, IReadOnlyList<CreatureDef> wildPool,
-            RunPlanVocabulary vocabulary, IReadOnlyList<TemplateSource> templates,
-            IReadOnlyList<IReadOnlyList<string>> templateTags, Func<PlanetSize, float> radiusFor, string environment,
+            RunPlanVocabulary vocabulary, Func<PlanetSize, float> radiusFor, string environment,
             StringBuilder sampleDump = null)
         {
             Core.Contracts.Contract.Requires(types != null && types.Count > 0, "types must not be empty");
             Core.Contracts.Contract.Requires(wildPool != null && vocabulary != null && radiusFor != null,
                 "wildPool, vocabulary and radiusFor are required");
-            Core.Contracts.Contract.Requires(templates != null && templateTags != null && templates.Count == templateTags.Count,
-                "templates and templateTags must be parallel lists");
             foreach (PlanetTypeDef type in types)
             {
                 Core.Contracts.Contract.Requires(type != null, "types must not contain null elements");
@@ -73,11 +70,11 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v5\n");
+            sb.Append("# cosmimera repro-probe v6\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
-                .Append(" templates ").Append(templates.Count.ToString(CultureInfo.InvariantCulture))
+                .Append(" LandformSynth.GeneratorVersion ").Append(LandformSynth.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
             sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete landingBits\n");
@@ -87,8 +84,8 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     foreach (ulong seed in Seeds)
                     {
-                        AppendLine(sb, type, stage, seed, radiusFor(BossDraw.SizeFor(stage)), wildPool, vocabulary, templates,
-                            templateTags, sampleDump);
+                        AppendLine(sb, type, stage, seed, radiusFor(BossDraw.SizeFor(stage)), wildPool, vocabulary,
+                            sampleDump);
                     }
                 }
             }
@@ -108,20 +105,13 @@ namespace Cosmimera.Bootstrap.Demo
             { CreatureStage.Juvenile, CreatureStage.Adolescent, CreatureStage.Adult };
 
         private static void AppendLine(StringBuilder sb, PlanetTypeDef type, CreatureStage stage, ulong seed, float radius,
-            IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, IReadOnlyList<TemplateSource> templates,
-            IReadOnlyList<IReadOnlyList<string>> templateTags, StringBuilder sampleDump)
+            IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, StringBuilder sampleDump)
         {
             // Mirrors RunSession.Configure exactly; if that composition changes, this must change with it or the
             // probe stops measuring what clients actually generate.
             var config = new PlanetConfig(radius, float3.zero);
             PlanetHeight height = PlanetHeight.ForPlanet(config, seed);
-            PlanetTemplates planetTemplates = null;
-            if (templates.Count > 0)
-            {
-                List<TemplatePlacement> placements = TemplatePlanner.Choose(seed, type.TerrainTags, templateTags,
-                    TemplatePlanner.CountFor(BossDraw.SizeFor(stage)));
-                planetTemplates = PlanetTemplates.Create(config, templates, placements);
-            }
+            PlanetTemplates planetTemplates = TemplatePlanner.Build(config, seed, type.TerrainTags, BossDraw.SizeFor(stage));
 
             // PlanetTemplates owns Persistent native buffers; in a run PlanetRig disposes them, here nobody else does.
             try

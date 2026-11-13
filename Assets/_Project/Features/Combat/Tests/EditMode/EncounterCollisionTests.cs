@@ -18,6 +18,8 @@ namespace Cosmimera.Combat.Tests
             public float GroundAltitude(float3 direction) => 0f;
 
             public bool IsSea(float3 direction) => false;
+
+            public bool IsBlocked(float3 direction, float clearanceM) => false;
         }
 
         private const float R = 640f;
@@ -192,6 +194,45 @@ namespace Cosmimera.Combat.Tests
             float3[] second = Run();
             Assert.That(second[0], Is.EqualTo(first[0]));
             Assert.That(second[1], Is.EqualTo(first[1]));
+        }
+
+        // SOL W-B2-SOL-01: identical non-axial float directions left a radial residual that passed the old 1e-7 tangent
+        // gate, so both bodies headed the same way and stayed coincident. Sweep radii, a non-zero centre and many
+        // directions, including SOL's witness.
+        [Test]
+        public void Coincident_bodies_separate_at_any_direction_radius_and_centre()
+        {
+            CreatureDef ca = Creature("a", CreatureSizeClass.M);
+            CreatureDef cb = Creature("b", CreatureSizeClass.M);
+            float3 witness = math.asfloat(new uint3(3170931051u, 3212826756u, 3161629975u));
+            var rng = new Unity.Mathematics.Random(0x5EEDu);
+            int failures = 0;
+            string first = null;
+            foreach (float radius in new[] { 640f, 960f, 1280f })
+            {
+                foreach (float3 centre in new[] { float3.zero, new float3(1234f, -5678f, 9101f) })
+                {
+                    var planet = new PlanetConfig(radius, centre);
+                    for (int k = 0; k < 300; k++)
+                    {
+                        float3 dir = k == 0 ? math.normalize(witness) : rng.NextFloat3Direction();
+                        var e = new Encounter(planet, _balance, new FlatSurface(), 3);
+                        EncounterUnit a = e.AddCreature(EncounterSide.Wild, ca, null, dir, 10);
+                        EncounterUnit b = e.AddCreature(EncounterSide.Wild, cb, null, dir, 10);
+                        e.Tick(Dt, Dt, planet.ToWorld(-dir, 0f), Free, CombatAi.NoTarget);
+                        float3 da = planet.ToDirection(a.Position);
+                        float3 db = planet.ToDirection(b.Position);
+                        float arc = math.atan2(math.length(math.cross(da, db)), math.dot(da, db)) * radius;
+                        if (math.abs(arc - (a.CollisionRadiusM + b.CollisionRadiusM)) > ArcTolM)
+                        {
+                            failures++;
+                            first ??= $"R={radius} c={centre} k={k} arc={arc}";
+                        }
+                    }
+                }
+            }
+
+            Assert.That(failures, Is.Zero, first);
         }
 
         [Test]

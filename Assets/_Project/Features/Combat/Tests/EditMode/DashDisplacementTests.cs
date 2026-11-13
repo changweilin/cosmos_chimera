@@ -261,9 +261,9 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => MoveGeometry.ResolveDashEnd(front, _planet, _caster, _forward));
             Assert.Throws<ContractException>(() => MoveGeometry.ResolveDashEnd(default, _planet, _caster, _forward));
 
-            var small = new PlanetConfig(320f, _planet.Center);
+            var small = new PlanetConfig(319f, _planet.Center);
             Assert.Throws<ContractException>(() =>
-                MoveGeometry.ResolveDashEnd(dash, small, small.Center + _up * 320f, _forward));
+                MoveGeometry.ResolveDashEnd(dash, small, small.Center + _up * 319f, _forward));
             Assert.Throws<ContractException>(() => MoveGeometry.ResolveDashEnd(dash, default, _caster, _forward));
 
             Assert.Throws<ContractException>(() =>

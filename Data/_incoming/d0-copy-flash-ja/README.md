@@ -87,3 +87,28 @@
 
 - 2026-11-10 · FLASH · done · 完成 D0-W3/B2/W4 17 鍵 ja 初稿，校稿保留 target_cycle/none，check.py 199 欄 ALL PASS · 下一步：OPUS 驗收
 - 2026-11-10 · FLASH · done · 完成 D0-B2 玩家等級與 BOSS 階段解鎖提示 3 鍵 ja 初稿，check.py 202 欄 ALL PASS · 下一步：OPUS 驗收
+
+---
+
+## 2026-11-11 文案同步校稿（對應 TERRA 2026-11-11 改動）
+
+對應 `Data/_incoming/d0-copy-terra/changed-keys-20261111.txt` 3 個鍵之日文同步處置：
+- `ui.interact.observe_detail`：「`{species}｜{stage}｜{element}｜性格：{temperament}｜Lv {level}`」→「`{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}`」，等級標記格式對齊全域統一規範（「Lv {level}」→「LV{level}」）。
+- `ui.temperament.territorial`：保留「`縄張り`」，日文「縄張り」在生態與遊戲 UI（置於「性格：」後）已明確表示領域意識習性，且 3 字簡潔符合野生性格梯度標籤規範。
+- `ui.star_select.boss_unlock_hint`：「`プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが解放`」→「`プレイヤー LV{adolescent} で少年期ボス、LV{adult} で成年期ボスが出現可能`」，語意由「解鎖（解放）」改為「可能出現（出現可能）」，忠實反映 BOSS 階段均等抽選機制並對齊 en（can appear）與繁中（可抽到）。
+
+### 驗收結果
+
+`python Data/_incoming/d0-copy-flash-ja/check.py` 輸出摘要：
+```text
+PASS: affixes.json (28 localized fields verified)
+PASS: region-themes.json (16 localized fields verified)
+PASS: quest-templates.json (21 localized fields verified)
+PASS: boss-epithets.json (18 localized fields verified)
+PASS: strings.json (41 localized fields verified)
+PASS: demo-ui-supplement.json (78 localized fields verified)
+ALL PASS: 6 files, 202 localized fields match perfectly.
+```
+
+- 2026-11-11 · FLASH · done · 同步 3 鍵 ja 文案（1 改等級標記、1 改出現可能語意、1 保留縄張り），check.py 202 欄 ALL PASS · 下一步：OPUS 驗收
+- 2026-11-12 · FLASH · done · 複核 P3-12 目標物件 4 鍵 ja 初稿（`ui.object.tree`「木」／`rock`「岩」／`crystal`「結晶柱」／`building`「建物」皆符合日文 HUD 慣例，予以保留），check.py 6 檔 207 欄 ALL PASS · 下一步：人工試玩驗收

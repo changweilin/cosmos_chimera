@@ -44,6 +44,21 @@ namespace Cosmimera.WorldGen.Tests
             }
         }
 
+        // SOL W-B2-SOL-05: uniformity and self-replay cannot tell (seed,'B') from any other stream id. Expected stages
+        // (0 juvenile, 1 adolescent, 2 adult) for seeds 0..15 come from an independent Python PCG32 reimplementation.
+        [TestCase(CreatureStage.Adolescent, new[] { 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0 })]
+        [TestCase(CreatureStage.Adult, new[] { 1, 1, 1, 2, 1, 0, 2, 2, 0, 0, 2, 0, 2, 0, 1, 1 })]
+        public void Golden_vector_pins_the_B_stream(CreatureStage cap, int[] expected)
+        {
+            var actual = new int[expected.Length];
+            for (int seed = 0; seed < expected.Length; seed++)
+            {
+                actual[seed] = (int)BossDraw.Stage((ulong)seed, cap);
+            }
+
+            Assert.That(actual, Is.EqualTo(expected));
+        }
+
         [Test]
         public void Size_follows_the_boss_stage()
         {

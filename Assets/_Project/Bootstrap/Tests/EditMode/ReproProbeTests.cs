@@ -53,7 +53,7 @@ namespace Cosmimera.Bootstrap.Tests
 
         private string Report(PlanetTypeDef[] types, CreatureDef[] pool, StringBuilder dump = null,
             Func<PlanetSize, float> radius = null) => ReproProbe.Report(types, pool, _vocabulary,
-            Array.Empty<TemplateSource>(), Array.Empty<IReadOnlyList<string>>(), radius ?? (_ => 640f), "test", dump);
+            radius ?? (_ => 640f), "test", dump);
 
         [Test]
         public void Null_type_is_rejected_before_generation_or_dump_mutation()
@@ -95,8 +95,11 @@ namespace Cosmimera.Bootstrap.Tests
                 string[] columns = row.Split(' ');
                 var stage = (CreatureStage)Array.IndexOf(new[] { "juvenile", "adolescent", "adult" }, columns[1]);
                 ulong seed = ulong.Parse(columns[2], CultureInfo.InvariantCulture);
-                RunPlan plan = RunPlanner.Generate(new PlanetConfig(640f, float3.zero), seed, _type,
-                    stage, pool, _vocabulary, null);
+                // The probe always stamps procedural landforms, so the expected plan uses the same land mask.
+                var config = new PlanetConfig(640f, float3.zero);
+                using PlanetTemplates landforms = TemplatePlanner.Build(config, seed, _type.TerrainTags, BossDraw.SizeFor(stage));
+                TemplateView view = landforms.View;
+                RunPlan plan = RunPlanner.Generate(config, seed, _type, stage, pool, _vocabulary, d => !view.IsSea(d));
                 string expected = math.asuint(plan.LandingDirection.x).ToString("x8") + "," +
                     math.asuint(plan.LandingDirection.y).ToString("x8") + "," + math.asuint(plan.LandingDirection.z).ToString("x8");
                 Assert.That(columns[11], Is.EqualTo(expected));

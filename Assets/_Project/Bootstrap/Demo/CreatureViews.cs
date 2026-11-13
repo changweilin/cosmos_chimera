@@ -108,7 +108,15 @@ namespace Cosmimera.Bootstrap.Demo
         public static Color ColorOf(CreatureDef def)
         {
             Contract.Requires(def != null, "def required");
-            return ElementColors[(int)RunPlanner.MainElement(def)];
+            return ColorOf(RunPlanner.MainElement(def));
+        }
+
+        /// <summary>The placeholder colour of <paramref name="element"/>, shared by creatures and ground materials.</summary>
+        /// <remarks>Pre: element is a defined value. Post: one of the ten element colours. Side effects: none (pure).</remarks>
+        public static Color ColorOf(Element element)
+        {
+            Contract.Requires((int)element >= 0 && (int)element < ElementColors.Length, "element must be defined");
+            return ElementColors[(int)element];
         }
 
         /// <inheritdoc/>

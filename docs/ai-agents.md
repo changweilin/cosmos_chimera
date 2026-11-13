@@ -1,7 +1,7 @@
 # AI Agent 分工
 
 ## 角色表
-> 2026-11-06 依官方發表、獨立評測與社群評論訂定（證據見下方「依據」）。原 Q-T2 的層級假設已以此取代。
+> 層級依據：`research/ai-agent-evidence.md`。
 > 模型版本會更新（例：GPT-5.6 → 6.1、Gemini 3.8 Flash），roadmap 只引用**代號**；換版時只改本表與「依據」。
 
 | 代號 | 模型（2026-11 版本） | 實測層級 | 擅長派工 | 不派 |
@@ -15,8 +15,14 @@
 | **ARGON** | Gemini 4 Argon（agy） | 前沿，長上下文/除錯強，寫碼不及 Opus | 文化原型考據、整份資料集一致性掃描、大型規格閱讀摘要、效能剖析報告的除錯分析、**第三方審查**（安全/遷移/重現性） | 直接寫入核心程式碼 |
 | **FLASH** | Gemini Flash（3.8，agy） | 低成本大量，需要 harness 與驗證 | 宙獸/招式/特性 JSON 大量初稿（在 schema 約束下）、格式轉換、翻譯、資料清洗 | 任何需要判斷的審核、長時程 agentic 任務、未經查證的事實考據 |
 
+## 審查政策（省 token、不阻塞）
+- **必審**（完成後標 🟨）：ADR／Api 契約、球面數學、生成重現性、netcode、存檔格式／遷移、資安、數值定案。其餘項目測試全綠即 ✅，審查欄僅表示「有空時誰可抽查」。
+- **一輪為原則**：只有 high 阻擋；med／low 進 `tech-debt.md`。修完 high 後的複核只看該 diff，最多再一輪。
+- 突變測試只用於重現性與 netcode。
+- 🟨 不阻擋下游項目開工；審查與實作平行。
+
 ## 任務類型 → 派工矩陣
-主責 = 寫；審查 = 必須與主責**不同廠商**（同廠不同層級不算）。
+主責 = 寫；必審類別的審查者必須與主責**不同廠商**（同廠不同層級不算）。
 
 | 任務類型 | 主責 | 審查 | 備註 |
 |---|---|---|---|
@@ -35,7 +41,7 @@
 | 美術 prompt、概念圖 | TERRA（圖像）/ ARGON | 人工 | 見 Q-T3 |
 
 ## 派工原則
-1. **一個項目一個主責**；審查者必須是不同廠商的模型（降低同源盲點）。SONNET-AGY 與 SONNET/OPUS 同源。
+1. **一個項目一個主責**；必審項目的審查者必須是不同廠商的模型（降低同源盲點）。SONNET-AGY 與 SONNET/OPUS 同源。
 2. 核心程式碼只由 OPUS/SONNET 寫入；其他模型產出以「提案/patch」形式交 SONNET 合併。
 3. 資料批次：FLASH/TERRA/LUNA 產初稿 → `tools/validate-data` → SONNET 一致性 → 人工定稿。
 4. 一切涉及「定案」（ADR、數值、文化敏感）都要人工最後確認。
@@ -50,19 +56,11 @@
 研究           ARGON 摘要（附來源）→ OPUS 決策
 ```
 
-## 依據（2026-11-06 查詢）
-分數多為廠商自報、各來源數字不一，只用來排**相對**層級；換版時重查。
-- **Opus vs Sonnet 5.5**：SWE-Bench Pro 89.9% vs 81.3%、FrontierCode 54.4% vs 46.2%；Terminal-Bench 4.0 反而 Sonnet 較高（70.6% vs 66.4%）。CodeRabbit 實測 13 個已知問題 Opus 抓到 8–10、Sonnet 6 → Sonnet 適合例行審查，高風險留 Opus。
-- **Sol / Terra / Luna（GPT-5.6）**：Terminal-Bench 2.1 88.8 / 87.4 / 84.7%；長上下文回想 MRCR 91.5 / 89.6 / **41.3%**；SWE-Bench Pro Sol 64.6%（低於 Claude）。社群結論「Sol 強在 agentic，不是寫碼」，Terra 是預設。GPT-6.1 Sol 獨立排行 Terminal-Bench 4.0 約 58%（Opus 5.5 64.8%）。
-- **Gemini 4 Argon**：Google 定位為複雜軟工/除錯/遷移/資安的前沿模型（內部回報 rollback −30%）；但 Terminal-Bench 4.0 57%，低於 Opus/Sonnet 5.5，評論標題「贏 12/18 項，寫碼不是其中之一」。分數為 Google 自算。
-- **Gemini 3.8 Flash**：DeepSWE ~74%、飽和的 Terminal-Bench 2.1 89%，但 Terminal-Bench 4.0 僅 ~19%；AA-Omniscience 不幻覺率約 45%；評論一致指出「品質依賴 harness」。本專案 agy headless 不能跑 shell（見 phase-5 P5-05 交接）。
-- **agy 內的 Claude Sonnet**：Antigravity 付費方案提供 Claude Sonnet/Opus 5.5；可用模型以 `agy models` 為準。
-- **agy headless 實務（2026-11-06）**：`--mode accept-edits` 單獨使用時，模型一嘗試 shell 就整個回合中止（"no output produced"）；加 `--settings '{"permissions":{"deny":["command(*)"]}}'` 讓 shell 被明確拒絕，模型會改用讀寫檔工具繼續。個人額度約可支撐兩個中型唯寫檔任務並行跑到一半，派工時把任務切小、讓每個段落都能獨立驗收。
-
-來源：[OpenAI GPT-5.6](https://openai.com/index/gpt-5-6/) · [Vellum: Sol vs Terra vs Luna](https://www.vellum.ai/blog/gpt-5-6-sol-terra-luna-explained) · [Codex GPT-6.1 Sol tracker](https://marginlab.ai/trackers/codex/) · [Antigravity: Gemini 4 Argon](https://antigravity.google/blog/gemini-4-argon-in-google-antigravity/) · [DEV: Argon wins 12 of 18](https://dev.to/max_quimby/gemini-4-argon-wins-12-of-18-benchmarks-code-isnt-one-2h70) · [Vellum: Gemini 3.8 Flash](https://www.vellum.ai/blog/gemini-3-8-flash-benchmarks-explained) · [MindStudio: Flash harness-dependent](https://www.mindstudio.ai/blog/gemini-3-8-flash-harness-demos) · [CodeRabbit: Sonnet 5.5 vs Opus 5.5](https://www.coderabbit.ai/blog/sonnet-5-5-model-review) · [Antigravity CLI models](https://www.codeagentswarm.com/en/guides/how-to-use-antigravity-cli)
+## 依據
+換版或質疑層級時才讀：`research/ai-agent-evidence.md`（2026-11-06 查詢；含 agy headless 實務）。
 
 ## 交接格式
-見 `AGENTS.md` §3。非 Claude 工具務必先讀 `AGENTS.md`，因為它們不會自動載入 `.claude/rules/`。
+見 `AGENTS.md` §3（commit message 即交接）。派工給非 Claude 工具時，prompt 第一句要求它先讀 `AGENTS.md`。
 
 ## Claude Code 執行建議
 - 長任務用 `docs/roadmap/phase-N.md` 項目 ID 開新 session，只載入該項目需要的文件（遵循 CLAUDE.md 索引）。

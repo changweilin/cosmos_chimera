@@ -35,6 +35,7 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private InputActionAsset _actions;
         [SerializeField] private Material _terrainMaterial;
         [SerializeField] private TextAsset _balance;
+        [SerializeField] private TextAsset _envMaterials;
         [SerializeField] private TextAsset _strings;
         [SerializeField] private TextAsset _names;
         [SerializeField] private TextAsset _affixes;
@@ -45,14 +46,13 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
-        [SerializeField] private TextAsset[] _geoMeta;
-        [SerializeField] private TextAsset[] _geoHeights;
-        [SerializeField] private TextAsset[] _geoWater;
+        [SerializeField] private BgmTable _bgmTable;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
         private Progression _progression;
         private MaterialDrops _materialDrops;
+        private EnvMaterials _env;
         private LobbySave _save;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
@@ -71,6 +71,7 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _title;
         private GUIStyle _text;
         private Camera _lobbyCamera;
+        private BgmPlayer _bgm;
         private Vector2 _partyScroll;
         private string _partyMsg = string.Empty;
         private InputActionMap _menuInput;
@@ -79,8 +80,6 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _confirmPending;
         private bool _scrollToFocus;
         private bool _insidePartyScroll;
-        private readonly List<Planet.TemplateSource> _templates = new List<Planet.TemplateSource>();
-        private readonly List<IReadOnlyList<string>> _templateTags = new List<IReadOnlyList<string>>();
 
         private void Awake()
         {
@@ -100,6 +99,16 @@ namespace Cosmimera.Bootstrap.Demo
             _lobbyCamera = new GameObject("Lobby Camera").AddComponent<Camera>();
             _lobbyCamera.clearFlags = CameraClearFlags.SolidColor;
             _lobbyCamera.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+            if (_lobbyCamera.GetComponent<AudioListener>() == null)
+            {
+                _lobbyCamera.gameObject.AddComponent<AudioListener>();
+            }
+
+            var bgmGo = new GameObject("BgmPlayer");
+            bgmGo.transform.SetParent(transform, false);
+            _bgm = bgmGo.AddComponent<BgmPlayer>();
+            _bgm.Initialize(_bgmTable);
+            _bgm.Play(BgmResolver.Space);
         }
 
         private void LoadData()
@@ -110,10 +119,10 @@ namespace Cosmimera.Bootstrap.Demo
             BalanceIntegerGuard.RequireIntegers(_balance.text, "materials", "progression");
             _progression = Progression.FromJson(_balance.text);
             _materialDrops = MaterialDrops.FromJson(_balance.text);
+            _env = EnvMaterials.FromJson(_envMaterials.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
-            GeoTemplateLoader.Load(_geoMeta, _geoHeights, _geoWater, _templates, _templateTags);
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
             foreach (GameDef def in _database.All)
@@ -323,7 +332,7 @@ namespace Cosmimera.Bootstrap.Demo
             string env = backend + " " + Application.platform + " editor=" + Application.isEditor + " cpu="
                 + SystemInfo.processorType.Replace(' ', '_');
             var vocab = new WorldGen.RunPlanVocabulary(_copy.ThemeIds, _copy.GenericAffixIds, _copy.ChainIds);
-            return ReproProbe.Report(types, _wildPool, vocab, _templates, _templateTags, RadiusFor, env, samples);
+            return ReproProbe.Report(types, _wildPool, vocab, RadiusFor, env, samples);
         }
 
         private void OnGUI()
@@ -740,15 +749,18 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        // REQ: planet-world.md#星球尺度 says asteroid = 320 m, but combat geometry is approved only for R >= 640
-        // (MoveGeometry.MinSupportedRadiusM). D0 plays asteroids at 640 m; tracked as open question Q-D1.
+        // REQ: planet-world.md#星球尺度 (Q-D1 settled 2026-11-11: asteroids play at 320 m). Explicit per size so a
+        // tier never inherits the combat minimum by default (SOL Q-D1 B: Moon would silently fall to 320).
         internal static float RadiusFor(PlanetSize size)
         {
             switch (size)
             {
+                case PlanetSize.Asteroid: return 320f;
+                case PlanetSize.Moon: return 640f;
                 case PlanetSize.Planet: return 960f;
                 case PlanetSize.Supergiant: return 1280f;
-                default: return MoveGeometry.MinSupportedRadiusM; // Asteroid (Q-D1 clamp) and Moon
+                default:
+                    throw new System.ArgumentOutOfRangeException(nameof(size), size, "undefined PlanetSize");
             }
         }
 
@@ -783,8 +795,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
-                    Materials = _materialDrops,
-                    Templates = _templates, TemplateTags = _templateTags,
+                    Materials = _materialDrops, EnvMaterials = _env,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
         }
@@ -811,6 +822,10 @@ namespace Cosmimera.Bootstrap.Demo
             Destroy(_run.gameObject);
             _run = null;
             _lobbyCamera.gameObject.SetActive(true);
+            if (_bgm != null)
+            {
+                _bgm.Play(BgmResolver.Space);
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             _screen = Screen.Results;
@@ -825,7 +840,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TrySettle()
         {
-            CommitStatus status = LobbyTransactions.Settle(_save, _runPartyIds, _outcome, _savePath,
+            CommitStatus status = LobbyTransactions.Settle(_save, _runPartyIds, _outcome, _progression, _savePath,
                 out LobbySave next, out MaterialKey overflow, out System.Exception error);
             if (status == CommitStatus.Committed)
             {
@@ -867,36 +882,13 @@ namespace Cosmimera.Bootstrap.Demo
             game._themes = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "region-themes.json");
             game._quests = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "quest-templates.json");
             game._epithets = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "boss-epithets.json");
-            var meta = new List<TextAsset>();
-            var heights = new List<TextAsset>();
-            var water = new List<TextAsset>();
-            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:TextAsset", new[] { GeoTemplateLoader.Folder.TrimEnd('/') });
-            var paths = new List<string>();
-            foreach (string g in guids)
-            {
-                paths.Add(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
-            }
-
-            paths.Sort(System.StringComparer.Ordinal);
-            foreach (string path in paths)
-            {
-                if (path.EndsWith(".meta.json"))
-                {
-                    string stem = path.Substring(0, path.Length - ".meta.json".Length);
-                    meta.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(path));
-                    heights.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".height.bytes"));
-                    water.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(stem + ".water.bytes"));
-                }
-            }
-
+            game._envMaterials = UnityEditor.AssetDatabase.LoadAssetAtPath<TextAsset>(copy + "env-materials.json");
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
-            game._geoMeta = meta.ToArray();
-            game._geoHeights = heights.ToArray();
-            game._geoWater = water.ToArray();
+            game._bgmTable = UnityEditor.AssetDatabase.LoadAssetAtPath<BgmTable>("Assets/_Project/Audio/BgmTable.asset");
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
-                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets })
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {
                 if (o == null)
                 {

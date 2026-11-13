@@ -1,8 +1,21 @@
 ﻿import importlib.util
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import pytest
+import _pytest.tmpdir
+
+def _safe_getbasetemp(self):
+    if self._basetemp is not None:
+        return self._basetemp
+    temp_dir = (Path(tempfile.gettempdir()) / "pytest-demo-merge").resolve()
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    self._basetemp = temp_dir
+    return temp_dir
+
+_pytest.tmpdir.TempPathFactory.getbasetemp = _safe_getbasetemp
 
 
 spec = importlib.util.spec_from_file_location("demo_merge", Path(__file__).parents[1] / "demo-data" / "merge.py")
@@ -14,9 +27,9 @@ spec.loader.exec_module(merge)
 def inputs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(merge, "COPY_OUT", tmp_path / "Copy")
-    monkeypatch.setattr(merge, "GEO_OUT", tmp_path / "Geo")
     monkeypatch.setattr(merge, "NAME_SOURCES", ["names"])
     monkeypatch.setattr(merge, "BATCHES", ["batch"])
+    monkeypatch.setattr(merge, "ENV_MATERIALS_BATCH", "env")
     root = tmp_path / "Data"
     incoming = root / "_incoming" / "d0-copy-terra"
     incoming.mkdir(parents=True)
@@ -41,31 +54,10 @@ def inputs(tmp_path, monkeypatch):
     batch = root / "_incoming" / "batch" / "moves"
     batch.mkdir(parents=True)
     (batch / "one.json").write_text('{"id":"one"}', encoding="utf-8")
-    geo = root / "geo-templates" / "active"
-    geo.mkdir(parents=True)
-    (geo / "meta.json").write_text('{}', encoding="utf-8")
-    (geo / "height.r16").write_bytes(b'height')
-    (geo / "water.u8").write_bytes(b'water')
+    env = root / "_incoming" / "env" / "env-materials"
+    env.mkdir(parents=True)
+    (env / "env-materials.json").write_text('{"substances":[]}', encoding="utf-8")
     return root
-
-
-def test_geo_preserves_unity_meta_and_removes_retired(inputs):
-    merge.GEO_OUT.mkdir()
-    for suffix, data in (("meta.json", b'{}'), ("height.bytes", b'height'), ("water.bytes", b'water')):
-        (merge.GEO_OUT / f"active.{suffix}").write_bytes(data)
-        (merge.GEO_OUT / f"active.{suffix}.meta").write_text('guid: fixed', encoding="utf-8")
-        (merge.GEO_OUT / f"retired.{suffix}").write_bytes(b'old')
-        (merge.GEO_OUT / f"retired.{suffix}.meta").write_text('guid: old', encoding="utf-8")
-    (merge.GEO_OUT / "handmade.txt").write_text('KEEP', encoding="utf-8")
-    unchanged = merge.GEO_OUT / "active.height.bytes"
-    unchanged.touch()
-    before = unchanged.stat().st_mtime_ns
-    assert merge.stage_geo(inputs) == 1
-    assert unchanged.stat().st_mtime_ns == before
-    assert all(p.read_text(encoding="utf-8") == 'guid: fixed' for p in merge.GEO_OUT.glob('*.meta'))
-    assert len(list(merge.GEO_OUT.glob('*.meta'))) == 3
-    assert not list(merge.GEO_OUT.glob('retired.*'))
-    assert (merge.GEO_OUT / "handmade.txt").read_text() == 'KEEP'
 
 
 def test_conflict_preserves_all_outputs(inputs):
@@ -81,7 +73,6 @@ def test_conflict_preserves_all_outputs(inputs):
         merge.main()
     assert old.read_text() == '{"old_reviewed_key":{}}'
     assert (demo / "old").read_text() == 'old'
-    assert not merge.GEO_OUT.exists()
 
 
 def test_nested_duplicate_rejected_before_writes(inputs):
@@ -100,7 +91,6 @@ def test_normal_output(inputs):
         'entries': [{'id': 'a', 'zh': '甲', 'en': 'A', 'ja': '\u30a2'}]}
     assert (merge.COPY_OUT / 'balance.json').read_bytes() == b'{"x":1}'
     assert (inputs / '_demo' / 'moves' / 'batch--one.json').read_bytes() == b'{"id":"one"}'
-    assert (merge.GEO_OUT / 'active.height.bytes').read_bytes() == b'height'
 
 
 def test_ja_collision_fails_before_writes(inputs):
@@ -109,7 +99,6 @@ def test_ja_collision_fails_before_writes(inputs):
     with pytest.raises(ValueError, match="duplicate translation key"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
     assert not (inputs / "_demo").exists()
 
 
@@ -119,7 +108,6 @@ def test_ja_cannot_repeat_an_existing_language(inputs):
     with pytest.raises(ValueError, match="duplicate translation key: en"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
 
 
 def test_ja_duplicate_json_key_fails_before_writes(inputs):
@@ -128,7 +116,6 @@ def test_ja_duplicate_json_key_fails_before_writes(inputs):
     with pytest.raises(ValueError, match="duplicate key: ja"):
         merge.main()
     assert not merge.COPY_OUT.exists()
-    assert not merge.GEO_OUT.exists()
 
 
 def test_ja_nested_entries_merge_and_identity_mismatch_preserves_outputs(inputs):
@@ -166,10 +153,37 @@ def test_invalid_ja_names_preserve_all_outputs(inputs, entries):
     demo = inputs / "_demo"
     demo.mkdir()
     (demo / "old").write_bytes(b"old")
-    merge.GEO_OUT.mkdir()
-    (merge.GEO_OUT / "old.meta").write_bytes(b"old")
     with pytest.raises(ValueError):
         merge.main()
     assert old.read_bytes() == b"old"
     assert (demo / "old").read_bytes() == b"old"
-    assert (merge.GEO_OUT / "old.meta").read_bytes() == b"old"
+
+
+def test_stage_copy_env_materials_byte_identical(inputs):
+    src = inputs / "_incoming" / "env" / "env-materials" / "env-materials.json"
+    raw = b'{\n  "substances": [\n    {"id": "metal"}\n  ]\n}\n'
+    src.write_bytes(raw)
+    merge.stage_copy(inputs)
+    assert (merge.COPY_OUT / "env-materials.json").read_bytes() == raw
+
+
+@pytest.mark.parametrize("file_count", [0, 2])
+def test_env_materials_file_count_validation(inputs, file_count):
+    env_dir = inputs / "_incoming" / "env" / "env-materials"
+    for f in env_dir.glob("*.json"):
+        f.unlink()
+    for i in range(file_count):
+        (env_dir / f"env_{i}.json").write_text('{"substances":[]}', encoding="utf-8")
+    with pytest.raises(ValueError, match="exactly one"):
+        merge.stage_copy(inputs)
+
+
+def test_main_stages_env_materials_kind(inputs, monkeypatch):
+    batch_dir = inputs / "_incoming" / "env-batch" / "env-materials"
+    batch_dir.mkdir(parents=True)
+    raw = b'{"substances":[{"id":"stone"}]}'
+    (batch_dir / "env-materials.json").write_bytes(raw)
+    monkeypatch.setattr(merge, "BATCHES", ["batch", "env-batch"])
+    assert merge.main() == 0
+    staged = inputs / "_demo" / "env-materials" / "env-batch--env-materials.json"
+    assert staged.read_bytes() == raw

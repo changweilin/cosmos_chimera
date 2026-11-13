@@ -160,6 +160,95 @@ namespace Cosmimera.Combat
         }
     }
 
+    /// <summary>
+    /// Planet-size bound on ranged distances, derived from the horizon (<c>Data/balance.json#ranged_distance</c>).
+    /// REQ: docs/design/derived-stats.md#星球射程上限 (Q-D1, user 2026-11-11; k and h proposed by SOL, Q-D1-R320-sol.md).
+    /// </summary>
+    /// <remarks>
+    /// All-integer so every peer derives the same cap from the same radius: cap = min(cap_mm, isqrt(K²(2rH + H²)) / 1000)
+    /// with r = floor(R × 1000) mm. The horizon is never rounded on its own first (that loses 1 mm at R=320).
+    /// </remarks>
+    public sealed class HorizonRangeTuning
+    {
+        /// <summary>Largest eye height accepted; keeps K²·N inside Int64 up to R = 8000 m.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxEyeHeightMm = 10000;
+
+        /// <summary>Creates a validated horizon bound.</summary>
+        /// <remarks>
+        /// Pre: 1 &lt;= factorPermille &lt;= 1000; 1 &lt;= eyeHeightMm &lt;= MaxEyeHeightMm; capMm >= 1.
+        /// Post: properties return the arguments. Side effects: allocates this instance.
+        /// </remarks>
+        public HorizonRangeTuning(int factorPermille, int eyeHeightMm, int capMm)
+        {
+            Contract.Requires(factorPermille >= 1 && factorPermille <= 1000,
+                "ranged_distance.horizon_factor_permille must be 1..1000");
+            Contract.Requires(eyeHeightMm >= 1 && eyeHeightMm <= MaxEyeHeightMm,
+                "ranged_distance.horizon_eye_height_mm must be 1..10000");
+            Contract.Requires(capMm >= 1, "cap_mm must be >= 1");
+            FactorPermille = factorPermille;
+            EyeHeightMm = eyeHeightMm;
+            GlobalCapMm = capMm;
+        }
+
+        /// <summary>k in permille: share of the horizon a ranged move may reach.</summary>
+        /// <remarks>Pre: none. Post: 1..1000. Side effects: none.</remarks>
+        public int FactorPermille { get; }
+
+        /// <summary>h: the balance reference eye height in mm (not the live camera height).</summary>
+        /// <remarks>Pre: none. Post: 1..MaxEyeHeightMm. Side effects: none.</remarks>
+        public int EyeHeightMm { get; }
+
+        /// <summary>The planet-independent cap (ranged_distance.cap_mm).</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
+        public int GlobalCapMm { get; }
+
+        /// <summary>Ranged-distance cap in mm on a planet of radius <paramref name="radiusM"/>.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt; radiusM &lt;= 8000 (PlanetConfig's range).
+        /// Post: 0 &lt;= result &lt;= GlobalCapMm; non-decreasing in radiusM; == floor(k·sqrt(2rH + H²)) when below the global cap.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public int CapMm(float radiusM)
+        {
+            Contract.Requires(radiusM > 0f && radiusM <= 8000f, "radius must be in (0, 8000] m");
+            // double × 1000 is exact for every float radius, so floor is the only quantization.
+            long r = (long)Math.Floor((double)radiusM * 1000d);
+            long h = EyeHeightMm;
+            long k = FactorPermille;
+            long n = checked(2L * r * h + h * h);
+            long t = checked(k * k * n);
+            long cap = IntSqrt(t) / 1000L;
+            return cap >= GlobalCapMm ? GlobalCapMm : (int)cap;
+        }
+
+        // Bisection on q with q <= t / q, so the search never forms q² and cannot overflow (SOL Q-D1 A).
+        private static long IntSqrt(long t)
+        {
+            if (t < 2L)
+            {
+                return t;
+            }
+
+            long lo = 1L;
+            long hi = Math.Min(t, 3037000499L) + 1L;
+            while (hi - lo > 1L)
+            {
+                long m = lo + (hi - lo) / 2L;
+                if (m <= t / m)
+                {
+                    lo = m;
+                }
+                else
+                {
+                    hi = m;
+                }
+            }
+
+            return lo;
+        }
+    }
+
     /// <summary>All combat tunables parsed from <c>Data/balance.json</c> (the single source; the importer copies the text).</summary>
     /// <remarks>
     /// Pre: build through <see cref="FromJson"/>. Post: every member non-null and validated by its own constructor.
@@ -169,8 +258,9 @@ namespace Cosmimera.Combat
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
-            TerritoryTuning territory, WanderTuning wander, CollisionTuning collision)
+            TerritoryTuning territory, WanderTuning wander, CollisionTuning collision, HorizonRangeTuning horizon)
         {
+            Horizon = horizon;
             Collision = collision;
             Territory = territory;
             Wander = wander;
@@ -195,6 +285,10 @@ namespace Cosmimera.Combat
         /// <summary>Body radii for character/creature separation.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public CollisionTuning Collision { get; }
+
+        /// <summary>Planet-size bound on ranged distances.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public HorizonRangeTuning Horizon { get; }
 
         /// <summary>Derived-stat model.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
@@ -284,8 +378,11 @@ namespace Cosmimera.Combat
             // An absent body_mm key parses as 0 and is rejected by CollisionTuning.
             BodyDto b = d.ai.body_mm;
             var collision = new CollisionTuning(b.xs, b.s, b.m, b.l, b.xl, b.character);
+            // Absent horizon keys parse as 0 and are rejected by HorizonRangeTuning.
+            var horizon = new HorizonRangeTuning(d.ranged_distance.horizon_factor_permille,
+                d.ranged_distance.horizon_eye_height_mm, d.ranged_distance.cap_mm);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent, territory, wander, collision);
+                d.capture.base_percent, d.capture.boss_percent, territory, wander, collision, horizon);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
@@ -312,7 +409,14 @@ namespace Cosmimera.Combat
 
         [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; }
         [Serializable] private sealed class GainDto { public int gain_permille; public int half_stat; }
-        [Serializable] private sealed class RangedDto { public int gain_permille; public int half_stat; public int cap_mm; }
+        [Serializable] private sealed class RangedDto
+        {
+            public int gain_permille;
+            public int half_stat;
+            public int cap_mm;
+            public int horizon_factor_permille;
+            public int horizon_eye_height_mm;
+        }
         [Serializable] private sealed class CdDto { public int min_permille; public int half_stat; public int floor_ms; }
         [Serializable] private sealed class SpeedDto { public int base_mm_s; public int gain_mm_s; public int half_stat; }
         [Serializable] private sealed class EvasionDto { public int cap_permille; public int half_stat; }

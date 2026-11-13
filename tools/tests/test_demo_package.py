@@ -17,7 +17,7 @@ def checkout(tmp_path, monkeypatch):
         path = tmp_path / "Builds/Repro/il2cpp" / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b"player payload")
-    for name in ("docs/demo-runbook.md", "Data/geo-templates/ATTRIBUTION.md", "ProjectSettings/ProjectVersion.txt"):
+    for name in ("docs/demo-runbook.md", "ProjectSettings/ProjectVersion.txt"):
         path = tmp_path / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("m_EditorVersion: 6000.3.28f1\n", encoding="utf-8")
@@ -60,12 +60,12 @@ def test_zip_is_complete_hash_verified_and_excludes_debug_payload(checkout):
         pack(checkout)
 
 
-@pytest.mark.parametrize("change", ["missing-player", "missing-license", "failed-build", "later-failed-build", "failed-test", "empty-test", "skipped-test", "reserved"])
+@pytest.mark.parametrize("change", ["missing-player", "missing-readme", "failed-build", "later-failed-build", "failed-test", "empty-test", "skipped-test", "reserved"])
 def test_invalid_inputs_publish_nothing(checkout, change):
     if change == "missing-player":
         (checkout / "Builds/Repro/il2cpp/GameAssembly.dll").unlink()
-    elif change == "missing-license":
-        (checkout / "Data/geo-templates/ATTRIBUTION.md").unlink()
+    elif change == "missing-readme":
+        (checkout / "docs/demo-runbook.md").unlink()
     elif change == "failed-build":
         (checkout / "build.log").write_text("ReproBuild il2cpp: Failed, 1 errors")
     elif change == "later-failed-build":

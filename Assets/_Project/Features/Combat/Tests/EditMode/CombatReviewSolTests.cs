@@ -356,15 +356,21 @@ namespace Cosmimera.Combat.Tests
 
         // ---- G3 ----
         [Test]
-        public void G3_planets_below_640_m_are_rejected_by_the_geometry()
+        // Q-D1 (2026-11-11) lowered the supported radius from 640 m to 320 m (asteroids).
+        public void G3_planets_below_the_supported_radius_are_rejected_by_the_geometry()
         {
-            var small = new PlanetConfig(320f, float3.zero);
-            float3 caster = new float3(0f, 320f, 0f);
             HitVolume line = Build(MoveShape.Line, RangeClass.Long, 1_000_000, 0);
             HitVolume arc = Build(MoveShape.Arc, RangeClass.Mid, 12000, 0);
+            var tooSmall = new PlanetConfig(319f, float3.zero);
+            float3 c319 = new float3(0f, 319f, 0f);
             Assert.Throws<ContractException>(() =>
-                MoveGeometry.Overlaps(line, small, caster, _forward, caster + _forward, 0f));
-            Assert.Throws<ContractException>(() => MoveGeometry.ResolveAnchor(arc, small, caster, caster));
+                MoveGeometry.Overlaps(line, tooSmall, c319, _forward, c319 + _forward, 0f));
+            Assert.Throws<ContractException>(() => MoveGeometry.ResolveAnchor(arc, tooSmall, c319, c319));
+
+            var asteroid = new PlanetConfig(320f, float3.zero);
+            float3 c320 = new float3(0f, 320f, 0f);
+            Assert.That(MoveGeometry.Overlaps(line, asteroid, c320, _forward, c320 + _forward, 0f), Is.True);
+            Assert.DoesNotThrow(() => MoveGeometry.ResolveAnchor(arc, asteroid, c320, c320));
             Assert.DoesNotThrow(() => Hits(line, AtXZ(0f, 1f)));
         }
 

@@ -61,13 +61,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: >= MoveGeometry.MinSupportedRadiusM. Post: none. Side effects: none.</remarks>
         public float Radius;
 
-        /// <summary>Baked geo-templates available to this run (P3-02 output), with their terrain tags; may be empty.</summary>
-        /// <remarks>Pre: Templates.Count == TemplateTags.Count. Post: none. Side effects: none.</remarks>
-        public List<TemplateSource> Templates = new List<TemplateSource>();
-
-        /// <summary>Terrain tags per template.</summary>
-        /// <remarks>Pre: see Templates. Post: none. Side effects: none.</remarks>
-        public List<IReadOnlyList<string>> TemplateTags = new List<IReadOnlyList<string>>();
+        /// <summary>Whether procedural landform stamps (TemplatePlanner.Build) shape the terrain; false = noise only.</summary>
+        /// <remarks>
+        /// Pre: none. Post: none. Side effects: none.
+        /// Tests that pin a plan built with isLand == null turn this off so the session builds exactly that plan.
+        /// </remarks>
+        public bool Landforms = true;
 
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
@@ -96,6 +95,13 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Approved evolution material drop rules (balance.json#materials).</summary>
         /// <remarks>Pre: non-null. Post: none. Side effects: none.</remarks>
         public MaterialDrops Materials;
+
+        /// <summary>Destructible substances (Data/env-materials, P3-12); null = scene objects cannot be hit or block creatures.</summary>
+        /// <remarks>
+        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor) exists in it. Post: none. Side effects: none.
+        /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
+        /// </remarks>
+        public EnvMaterials EnvMaterials;
     }
 
     /// <summary>
@@ -122,12 +128,17 @@ namespace Cosmimera.Bootstrap.Demo
         {
             private readonly PlanetHeight _height;
             private readonly PlanetTemplates _templates;
+            private readonly LayoutClearance _layout;
 
-            public HeightSurface(PlanetHeight height, PlanetTemplates templates)
+            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout)
             {
                 _height = height;
                 _templates = templates;
+                _layout = layout;
             }
+
+            // Set once the scatter planner exists (it needs GroundAltitude first); null = buildings only.
+            public WorldObjects Objects { get; set; }
 
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
@@ -135,6 +146,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
+
+            // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
+            public bool IsBlocked(float3 direction, float clearanceM) =>
+                Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM);
         }
 
         private sealed class WildInfo
@@ -167,8 +182,15 @@ namespace Cosmimera.Bootstrap.Demo
 
         private PlanetRig _rig;
         private RunPlan _plan;
+        private RunLayout _layout;
         private QuestTracker _quest;
         private Encounter _encounter;
+        private WorldObjects _worldObjects;
+        private DestructibleTable _objectTable;
+        private SettlementView _settlementView;
+        private ScatterField _scatterField;
+        private ObjectPhysics _objectPhysics;
+        private EnvMaterials _envMaterials;
         private PlayerVitals _vitals;
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
@@ -202,6 +224,11 @@ namespace Cosmimera.Bootstrap.Demo
         private int _mainId = CombatAi.NoTarget;
         // Wild unit chosen with CycleTarget (combat.md#指定目標, D0-W4); -1 when nothing is locked.
         private int _lockedTarget = -1;
+        // Scene object chosen with CycleTarget (destructibles.md#誰能打); -1 when none. Never set together with
+        // _lockedTarget. Objects do not move, so the candidate captured at lock time stays valid until destroyed.
+        private long _lockedObjectId = -1;
+        private DestructibleCandidate _lockedObject;
+        private string _lockedObjectNameKey;
         // Close interaction (combat.md#近身互動, D0-W3): the idle wild offered by the HUD prompt, and the one whose menu is
         // open (-1 = none). While the menu is open the character stands still and only the menu reads input.
         private int _interactable = -1;
@@ -219,7 +246,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Observe = 0, Provoke = 1, Pet = 2, Close = 3,
         }
-        private readonly List<int> _targetBuffer = new List<int>(16);
+        private readonly List<LockOption> _lockOptions = new List<LockOption>(32);
+        private readonly List<DestructibleCandidate> _objectCandidates = new List<DestructibleCandidate>(32);
         private AiCommand _command = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
         private VesselKind _vessel = VesselKind.TalismanCard;
         private int _region = -1;
@@ -365,11 +393,10 @@ namespace Cosmimera.Bootstrap.Demo
             var config = new PlanetConfig(setup.Radius, float3.zero);
             PlanetHeight height = PlanetHeight.ForPlanet(config, setup.Seed);
             PlanetTemplates templates = null;
-            if (setup.Templates.Count > 0)
+            if (setup.Landforms)
             {
-                List<TemplatePlacement> placements = TemplatePlanner.Choose(setup.Seed, setup.PlanetType.TerrainTags,
-                    setup.TemplateTags, TemplatePlanner.CountFor(BossDraw.SizeFor(setup.BossStage)));
-                templates = PlanetTemplates.Create(config, setup.Templates, placements);
+                templates = TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
+                    BossDraw.SizeFor(setup.BossStage));
             }
 
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
@@ -381,6 +408,26 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
+            _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
+            // passes its own body radius to IsInsideBuilding).
+            var clearance = new LayoutClearance(config, _layout, 1.5f);
+            var surface = new HeightSurface(height, templates, clearance);
+            System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+            // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
+            // whether or not anything is drawn.
+            var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
+                clearance.IsClear);
+            DestructibleTable objects = null;
+            if (setup.EnvMaterials != null)
+            {
+                objects = new DestructibleTable(setup.EnvMaterials);
+                _envMaterials = setup.EnvMaterials;
+                _objectTable = objects;
+                _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
+                    setup.EnvMaterials, objects);
+                surface.Objects = _worldObjects;
+            }
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
@@ -394,7 +441,7 @@ namespace Cosmimera.Bootstrap.Demo
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
-                PlanetLook.Sky(setup.PlanetType.Id), 600f);
+                PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
             if (starShader != null)
             {
                 gameObject.AddComponent<StarField>().Configure(_rig.Camera, _rig.Sun, config, setup.Seed, starShader);
@@ -405,13 +452,34 @@ namespace Cosmimera.Bootstrap.Demo
                 // Runtime primitives keep the built-in material, which renders magenta under URP.
                 _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
                 _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
-                var surface = new HeightSurface(height, templates);
-                System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
-                gameObject.AddComponent<ScatterField>().Configure(config, setup.Seed, setup.PlanetType.Id,
-                    surface.GroundAltitude, isSea, PlayerPosition, toonShader);
+                // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
+                var settlements = new GameObject("Settlements");
+                settlements.transform.SetParent(transform, false);
+                _settlementView = settlements.AddComponent<SettlementView>();
+                _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader);
+                _scatterField = gameObject.AddComponent<ScatterField>();
+                _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
+                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
+                if (objects != null)
+                {
+                    // REQ: destructibles.md#物理 (ADR-0009) — only where something is drawn: headless runs have no bodies.
+                    var gravity = gameObject.AddComponent<PlanetGravity>();
+                    gravity.Configure(config, _rig.Character.Gravity);
+                    var loose = new GameObject("LooseObjects");
+                    loose.transform.SetParent(transform, false);
+                    _objectPhysics = loose.AddComponent<ObjectPhysics>();
+                    _objectPhysics.Configure(config, gravity, surface.GroundAltitude,
+                        _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default, setup.EnvMaterials,
+                        toonShader);
+                }
             }
 
-            _encounter = new Encounter(config, balance, new HeightSurface(height, templates), setup.Seed);
+            _encounter = new Encounter(config, balance, surface, setup.Seed);
+            if (objects != null)
+            {
+                // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
+                _encounter.AttachDestructibles(objects, _worldObjects, d => IsNight(d));
+            }
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
             _vitals = new PlayerVitals(balance.Player);
             _encounter.AttachPlayer(_vitals);
@@ -459,6 +527,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     _started = true;
                     SummonOpening();
+                    UpdateBgm();
                 }
 
                 return;
@@ -520,6 +589,7 @@ namespace Cosmimera.Bootstrap.Demo
             BeforeTickForTests?.Invoke();
 #endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            ApplyObjectEvents();
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
@@ -612,6 +682,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
+                UpdateBgm();
             }
 
             // REQ: creatures.md#進化 (Q-C32 B) — one roll per spawn; the flag also stops a re-sent faint from paying twice.
@@ -875,6 +946,7 @@ namespace Cosmimera.Bootstrap.Demo
                     CloseInteract();
                     _encounter.Provoke(id);
                     _lockedTarget = id;
+                    _lockedObjectId = -1;
                     return;
                 case InteractChoice.Pet:
                     // Q-D2 (decided 2026-11-10): petting has no rule effect.
@@ -1027,7 +1099,35 @@ namespace Cosmimera.Bootstrap.Demo
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
                 PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
+                UpdateBgm();
             }
+        }
+
+        private void UpdateBgm()
+        {
+            if (BgmPlayer.Instance == null || _plan == null)
+            {
+                return;
+            }
+
+            int region = _region >= 0 ? _region : _plan.LandingRegion;
+            if (region < 0 || region >= _plan.Regions.Count)
+            {
+                return;
+            }
+
+            if (region == _plan.BossRegion && _bossDownAtMs < 0)
+            {
+                PlanetSize size = BossDraw.SizeFor(BossDraw.Stage(_plan.Seed, CreatureStage.Adult));
+                string bossTrack = BgmResolver.ResolveBossBgm(size);
+                BgmPlayer.Instance.Play(bossTrack);
+                return;
+            }
+
+            RunRegion r = _plan.Regions[region];
+            IReadOnlyList<string> tags = (_setup != null && _setup.PlanetType != null) ? _setup.PlanetType.TerrainTags : null;
+            string track = BgmResolver.ResolveRegionBgm(r.ThemeId, tags);
+            BgmPlayer.Instance.Play(track);
         }
 
         // REQ: level-progression.md#經驗分配 — each battle keeps its own appearance record, reset when the next starts.
@@ -1164,10 +1264,17 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         // REQ: combat.md#指定目標 (D0-W4) — Focus attacks the locked target when there is one, else the nearest candidate
-        // (which then becomes the lock).
+        // (which then becomes the lock). The nearest fallback stays wild-only: destructibles.md#誰能打 lets the player
+        // pick an object, never the AI.
         private void FocusNearest()
         {
             float3 player = PlayerPosition();
+            if (_lockedObjectId >= 0 && IsObjectCandidate(_lockedObject, player))
+            {
+                FocusOnObject();
+                return;
+            }
+
             int target = IsFocusCandidate(_lockedTarget, player) ? _lockedTarget : NearestFocusTarget(player);
             if (target < 0)
             {
@@ -1175,6 +1282,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _lockedTarget = target;
+            _lockedObjectId = -1;
             FocusOn(target);
         }
 
@@ -1186,58 +1294,144 @@ namespace Cosmimera.Bootstrap.Demo
                 _encounter.Provoke(target);
             }
 
+            _encounter.ClearObjectFocus();
             _command = new AiCommand(AiCommandKind.Focus, target);
         }
 
-        // Locks the next candidate by (distance, id) after the current lock, wrapping. While the main is already under a
-        // Focus command the new lock is attacked at once, so cycling mid-fight retargets without a second key press;
-        // otherwise it only marks the target and nothing is provoked.
+        // REQ: destructibles.md#誰能打 — hitting an object provokes nobody.
+        private void FocusOnObject()
+        {
+            _encounter.FocusObject(_lockedObject);
+            _command = new AiCommand(AiCommandKind.Focus, Encounter.ObjectTargetId);
+        }
+
+        // A CycleTarget candidate: a wild unit (Unit >= 0) or _objectCandidates[ObjectIndex].
+        private readonly struct LockOption
+        {
+            internal LockOption(int unit, int objectIndex, float distance, long id)
+            {
+                Unit = unit;
+                ObjectIndex = objectIndex;
+                Distance = distance;
+                Id = id;
+            }
+
+            internal readonly int Unit;
+            internal readonly int ObjectIndex;
+            internal readonly float Distance;
+            internal readonly long Id;
+
+            // (distance, wild before object, id): unit and object ids come from different spaces, so the kind breaks
+            // ties before the id does.
+            internal bool Before(in LockOption other)
+            {
+                if (Distance != other.Distance)
+                {
+                    return Distance < other.Distance;
+                }
+
+                bool wild = Unit >= 0;
+                bool otherWild = other.Unit >= 0;
+                return wild != otherWild ? wild : Id < other.Id;
+            }
+        }
+
+        // Locks the next candidate by (distance, id) after the current lock, wrapping. Candidates are focusable wilds and
+        // intact scene objects whose surface lies within ProvokeRadiusM (destructibles.md#誰能打); objects count from
+        // their hit-sphere surface so a large building next to the player is not out of reach by its centre. While the
+        // main is already under a Focus command the new lock is attacked at once, so cycling mid-fight retargets without
+        // a second key press; otherwise it only marks the target and nothing is provoked.
         private void CycleTarget()
         {
             float3 player = PlayerPosition();
-            _targetBuffer.Clear();
+            _lockOptions.Clear();
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 if (IsFocusCandidate(kv.Key, player))
                 {
-                    _targetBuffer.Add(kv.Key);
+                    _lockOptions.Add(new LockOption(kv.Key, -1,
+                        math.distance(_encounter.Units[kv.Key].Position, player), kv.Key));
                 }
             }
 
-            if (_targetBuffer.Count == 0)
+            _objectCandidates.Clear();
+            if (_worldObjects != null)
+            {
+                _worldObjects.Query(player, Encounter.ProvokeRadiusM + _worldObjects.MaxHitRadiusM, _objectCandidates);
+                for (int i = 0; i < _objectCandidates.Count; i++)
+                {
+                    DestructibleCandidate c = _objectCandidates[i];
+                    if (IsObjectCandidate(c, player))
+                    {
+                        _lockOptions.Add(new LockOption(-1, i, ObjectDistance(c, player), c.Id));
+                    }
+                }
+            }
+
+            if (_lockOptions.Count == 0)
             {
                 _lockedTarget = -1;
+                _lockedObjectId = -1;
                 return;
             }
 
-            // Insertion sort: a handful of candidates, and no allocation (List.Sort with a lambda would allocate).
-            for (int i = 1; i < _targetBuffer.Count; i++)
+            // Insertion sort: a few dozen candidates at most, and no allocation (List.Sort with a lambda would allocate).
+            for (int i = 1; i < _lockOptions.Count; i++)
             {
-                int id = _targetBuffer[i];
-                float d = math.distance(_encounter.Units[id].Position, player);
+                LockOption o = _lockOptions[i];
                 int j = i - 1;
-                while (j >= 0 && Before(id, d, _targetBuffer[j], player))
+                while (j >= 0 && o.Before(_lockOptions[j]))
                 {
-                    _targetBuffer[j + 1] = _targetBuffer[j];
+                    _lockOptions[j + 1] = _lockOptions[j];
                     j--;
                 }
 
-                _targetBuffer[j + 1] = id;
+                _lockOptions[j + 1] = o;
             }
 
-            int at = _targetBuffer.IndexOf(_lockedTarget);
-            _lockedTarget = _targetBuffer[(at + 1) % _targetBuffer.Count];
+            int at = -1;
+            for (int i = 0; i < _lockOptions.Count; i++)
+            {
+                LockOption o = _lockOptions[i];
+                if (o.Unit >= 0 ? o.Unit == _lockedTarget : o.Id == _lockedObjectId)
+                {
+                    at = i;
+                    break;
+                }
+            }
+
+            LockOption next = _lockOptions[(at + 1) % _lockOptions.Count];
+            if (next.Unit >= 0)
+            {
+                _lockedTarget = next.Unit;
+                _lockedObjectId = -1;
+            }
+            else
+            {
+                _lockedTarget = -1;
+                _lockedObject = _objectCandidates[next.ObjectIndex];
+                _lockedObjectId = _lockedObject.Id;
+                _lockedObjectNameKey = _worldObjects.NameKey(_lockedObject);
+            }
+
             if (_command.Kind == AiCommandKind.Focus)
             {
-                FocusOn(_lockedTarget);
+                if (_lockedTarget >= 0)
+                {
+                    FocusOn(_lockedTarget);
+                }
+                else
+                {
+                    FocusOnObject();
+                }
             }
         }
 
-        private bool Before(int id, float distance, int other, float3 player)
-        {
-            float od = math.distance(_encounter.Units[other].Position, player);
-            return distance < od || (distance == od && id < other);
-        }
+        private static float ObjectDistance(in DestructibleCandidate c, float3 player) =>
+            math.max(0f, math.distance(c.Center, player) - c.HitRadiusM);
+
+        private bool IsObjectCandidate(in DestructibleCandidate c, float3 player) =>
+            !_objectTable.IsDestroyed(c.Id) && ObjectDistance(c, player) <= Encounter.ProvokeRadiusM;
 
         // Active wild that is already fighting, or close enough (Encounter.ProvokeRadiusM) to start a fight with.
         private bool IsFocusCandidate(int id, float3 player)
@@ -1251,13 +1445,20 @@ namespace Cosmimera.Bootstrap.Demo
             return u.IsActive && (u.Engaged || math.distance(u.Position, player) <= Encounter.ProvokeRadiusM);
         }
 
-        // A lock that stops being a candidate (knocked out, captured, or out of reach) is dropped, so the marker never
-        // points at something Focus would refuse.
+        // A lock that stops being a candidate (knocked out, captured, destroyed, or out of reach) is dropped, so the
+        // marker never points at something Focus would refuse. An object has no fight to keep the main on it once the
+        // player walks off, so its Focus ends with the lock (a wild's Focus outlives the lock while the wild is engaged).
         private void ValidateLock(float3 player)
         {
             if (_lockedTarget >= 0 && !IsFocusCandidate(_lockedTarget, player))
             {
                 _lockedTarget = -1;
+            }
+
+            if (_lockedObjectId >= 0 && !IsObjectCandidate(_lockedObject, player))
+            {
+                _lockedObjectId = -1;
+                _encounter.ClearObjectFocus();
             }
         }
 
@@ -1327,6 +1528,123 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: combat.md#實體碰撞 (D0-W2). Writes the transform as well as the body: PlayerPosition reads the transform, and
         // a second catch-up tick in the same frame must see the pushed position or it would push again.
+        // Generation-side and presentation-side effects of a destruction; drops lie on the ground until the pickup rule
+        // (Q-M6) exists.
+        private void ApplyObjectEvents()
+        {
+            foreach (ObjectEvent ev in _encounter.ObjectEvents)
+            {
+                if (ev.Kind != ObjectEventKind.Destroyed)
+                {
+                    ShoveObject(ev);
+                    continue;
+                }
+
+                _worldObjects.OnDestroyed(ev.ObjectId);
+                ShatterObject(ev);
+                if (WorldObjects.IsBuilding(ev.ObjectId))
+                {
+                    _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
+                }
+                else
+                {
+                    _scatterField?.Remove(ev.ObjectId);
+                }
+            }
+        }
+
+        // REQ: destructibles.md#物理 — a hit shoves the object (first hit wakes it into a rigidbody); presentation only.
+        private void ShoveObject(in ObjectEvent ev)
+        {
+            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
+                !TryCasterPosition(ev.SourceId, out float3 source))
+            {
+                return;
+            }
+
+            float massKg = ObjectImpulse.MassKg(c.Composition, c.VolumeL);
+            float3 impulse = ImpulseFor(ev, c, source, massKg);
+            if (math.lengthsq(impulse) == 0f)
+            {
+                return;
+            }
+
+            GameObject root = ObjectRoot(ev.ObjectId);
+            if (root != null)
+            {
+                _objectPhysics.Wake(ev.ObjectId, root, math.max(massKg, 1f), impulse, c.Center);
+            }
+        }
+
+        // REQ: destructibles.md#破壞與掉落 — the object is replaced by debris where it stands now (a woken one may have
+        // rolled away from its generated spot). The drawn scatter root is ours after ObjectRoot detaches it.
+        private void ShatterObject(in ObjectEvent ev)
+        {
+            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c))
+            {
+                return;
+            }
+
+            float massKg = ObjectImpulse.MassKg(c.Composition, c.VolumeL);
+            float3 impulse = TryCasterPosition(ev.SourceId, out float3 source) ? ImpulseFor(ev, c, source, massKg) : float3.zero;
+            GameObject woken = _objectPhysics.WokenRoot(ev.ObjectId);
+            GameObject root = ObjectRoot(ev.ObjectId);
+            float3 center = woken != null ? (float3)woken.GetComponent<Rigidbody>().worldCenterOfMass : c.Center;
+            _objectPhysics.Shatter(ev.ObjectId, root, center, c.HitRadiusM, massKg, impulse, ev.Drop);
+            if (root != null && !WorldObjects.IsBuilding(ev.ObjectId))
+            {
+                Destroy(root);
+            }
+        }
+
+        private float3 ImpulseFor(in ObjectEvent ev, in DestructibleCandidate c, float3 source, float massKg)
+        {
+            int gust = (ev.Reactions & ObjectReaction.Gust) != 0 ? _envMaterials.GustImpulsePercent : 100;
+            return ObjectImpulse.Compute(_rig.Config, source, c.Center, ev.Power, gust, massKg, _objectPhysics.Tuning);
+        }
+
+        // The drawn root of an object: its woken body, its building, or its scatter item (detached from streaming, since
+        // the caller is about to turn it into a rigidbody or debris). Null when nothing is drawn there.
+        private GameObject ObjectRoot(long id)
+        {
+            GameObject woken = _objectPhysics.WokenRoot(id);
+            if (woken != null)
+            {
+                return woken;
+            }
+
+            if (WorldObjects.IsBuilding(id))
+            {
+                GameObject b = _settlementView != null ? _settlementView.Buildings[(int)(id - WorldObjects.BuildingIdBase)] : null;
+                return b != null && b.activeSelf ? b : null;
+            }
+
+            return _scatterField != null ? _scatterField.Detach(id) : null;
+        }
+
+        private bool TryCasterPosition(int sourceId, out float3 position)
+        {
+            if (sourceId < 0 || sourceId >= _encounter.Units.Count)
+            {
+                position = default;
+                return false;
+            }
+
+            position = _encounter.Units[sourceId].Position;
+            return true;
+        }
+
+        private bool IsNight(float3 direction)
+        {
+            if (_rig == null || _rig.Sun == null)
+            {
+                return false;
+            }
+
+            float3 toSun = -(float3)_rig.Sun.transform.forward;
+            return math.dot(math.normalize(direction), toSun) < 0f;
+        }
+
         private void ApplyPlayerPush()
         {
             float3 push = _encounter.PlayerPush;
@@ -1400,6 +1718,7 @@ namespace Cosmimera.Bootstrap.Demo
                     t.gameObject.SetActive(visible);
                 }
 
+                _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
                 if (!visible)
                 {
                     continue;
@@ -1451,13 +1770,23 @@ namespace Cosmimera.Bootstrap.Demo
         // and name sit, so the lock is visible before the fight starts.
         private void DrawLockMarker()
         {
-            if (_lockedTarget < 0 || !_views[_lockedTarget].Root.gameObject.activeSelf)
+            Vector3 head;
+            if (_lockedObjectId >= 0)
+            {
+                // Over the top of the hit sphere: the drawn object roughly fills it.
+                head = (Vector3)_lockedObject.Center +
+                    (Vector3)_rig.Config.ToDirection(_lockedObject.Center) * (_lockedObject.HitRadiusM + 0.3f);
+            }
+            else if (_lockedTarget >= 0 && _views[_lockedTarget].Root.gameObject.activeSelf)
+            {
+                EncounterUnit u = _encounter.Units[_lockedTarget];
+                head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
+            }
+            else
             {
                 return;
             }
 
-            EncounterUnit u = _encounter.Units[_lockedTarget];
-            Vector3 head = (Vector3)u.Position + (Vector3)_rig.Config.ToDirection(u.Position) * (u.BodyRadiusM * 2.6f + 0.3f);
             Vector3 sp = _rig.Camera.WorldToScreenPoint(head);
             if (sp.z <= 0f)
             {
@@ -1472,6 +1801,11 @@ namespace Cosmimera.Bootstrap.Demo
             };
             GUI.Label(new Rect(sp.x - 20, Screen.height - sp.y - 58, 40, 32), "▼", _markerStyle);
         }
+
+        private string LockedTargetName() =>
+            _lockedObjectId >= 0 ? _copy.Ui(_lockedObjectNameKey)
+            : _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id)
+            : _copy.Ui("ui.hud.target_none");
 
         private void DrawInteraction()
         {
@@ -1715,7 +2049,7 @@ namespace Cosmimera.Bootstrap.Demo
                 $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
                 $"{commands}（{cmd}）\n" +
                 _copy.Ui("ui.hud.target_cycle").Replace("{key}", BindingLabel(_cycleTargetAction))
-                    .Replace("{target}", _lockedTarget >= 0 ? _copy.Name(_encounter.Units[_lockedTarget].Def.Id) : _copy.Ui("ui.hud.target_none")) + "\n" +
+                    .Replace("{target}", LockedTargetName()) + "\n" +
                 $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });

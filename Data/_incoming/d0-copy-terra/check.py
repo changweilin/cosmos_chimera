@@ -60,7 +60,7 @@ print("PASS: 6 source planet types and 3 epithets each")
 
 required_strings = {
     "lobby": "title start_run team choose_starter starter_confirm quit",
-    "star_select": "title planet_type size_small size_medium size_large main_elements seed reroll launch loading",
+    "star_select": "title planet_type size_asteroid size_moon size_planet size_supergiant main_elements seed reroll launch loading",
     "hud": "hp cd_ready switch switch_cooldown command_focus command_free command_follow command_retreat capture_prompt capture_success capture_fail knocked_out quest_tracker boss_incoming player_down",
     "vessel": "talisman_card glass_bead magic_cube",
     "results": "victory defeat captured_list eggs_obtained return_lobby abandon_run",

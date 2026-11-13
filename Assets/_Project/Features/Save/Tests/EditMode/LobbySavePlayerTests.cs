@@ -28,11 +28,11 @@ namespace Cosmimera.Save.Tests
         {
             var s = new LobbySave();
             s.Add("a", VesselKind.TalismanCard, 0);
-            s.SetPlayerExp(12345);
+            s.SetPlayerExp(12345, P);
             Assert.That(Parse(s.ToJson()).PlayerExp, Is.EqualTo(12345));
             LobbySave c = s.Clone();
             Assert.That(c.PlayerExp, Is.EqualTo(12345));
-            c.SetPlayerExp(1);
+            c.SetPlayerExp(1, P);
             Assert.That(s.PlayerExp, Is.EqualTo(12345), "the clone is independent");
         }
 
@@ -56,7 +56,19 @@ namespace Cosmimera.Save.Tests
         public void Negative_player_exp_is_refused()
         {
             Assert.Throws<InvalidDataException>(() => Parse("{\"version\":4,\"next_instance_id\":2," + Owned + ",\"player_exp\":-1}"));
-            Assert.Throws<ContractException>(() => new LobbySave().SetPlayerExp(-1));
+            Assert.Throws<ContractException>(() => new LobbySave().SetPlayerExp(-1, P));
+        }
+
+        // SOL W-B2-SOL-04: the setter's domain equals what FromJson keeps, so a set value always survives Write/Load.
+        [Test]
+        public void Set_player_exp_accepts_the_cap_and_refuses_above_it()
+        {
+            var s = new LobbySave();
+            s.Add("a", VesselKind.TalismanCard, 0);
+            s.SetPlayerExp(P.PlayerMaxExp, P);
+            Assert.That(Parse(s.ToJson()).PlayerExp, Is.EqualTo(P.PlayerMaxExp));
+            Assert.Throws<ContractException>(() => s.SetPlayerExp(P.PlayerMaxExp + 1, P));
+            Assert.Throws<ContractException>(() => s.SetPlayerExp(0, null));
         }
     }
 }

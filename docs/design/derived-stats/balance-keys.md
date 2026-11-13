@@ -1,6 +1,6 @@
 # `Data/balance.json` 鍵值說明
 
-2026-11-06 使用者定案（SOL 主責、OPUS 審查）。完整公式、曲線與原因見 [derived-stats.md](../derived-stats.md)。
+完整公式、曲線與原因見 [derived-stats.md](../derived-stats.md)。
 
 JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accuracy 保留整數百分比；距離 mm、速度 mm/s、時間 ms。版本與統計點數也為整數。
 
@@ -16,6 +16,8 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ranged_distance.gain_permille` | 遠程距離在基礎 1000 之上的漸近增益 |
 | `ranged_distance.half_stat` | 遠程距離增益達一半時的 STR |
 | `ranged_distance.cap_mm` | 乘完倍率後的最終距離硬上限；包含過大的基礎射程 |
+| `ranged_distance.horizon_factor_permille` | 星球射程上限 K：可及距離占眼高地平線的千分比（1..1000，定案 775）；見 [星球射程上限](../derived-stats.md#星球射程上限) |
+| `ranged_distance.horizon_eye_height_mm` | 星球射程上限 H：平衡基準眼高（1..10000 mm，定案 1700），非即時攝影機高度 |
 | `cd.min_permille` | SPI 很大時 CD 倍率的下界；不是固定減掉的毫秒數 |
 | `cd.half_stat` | CD 倍率減少量達一半時的 SPI |
 | `cd.floor_ms` | 乘完倍率、向上取整後的絕對 CD 下限，原始 CD=0 也適用 |
@@ -38,7 +40,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `hit_volume.arc_landing_radius_mm` / `field_radius_mm` | arc 落點與 field 的圓半徑 |
 | `hit_volume.target_cast_mid_mm` / `target_cast_long_mm` | 目標點爆發的基礎施法距離，再乘 g(STR) |
 
-`hit_volume` 為 P2-04 的全域預設（2026-11-06 使用者確認），規則見 [combat.md#判定體](../combat.md)。
+`hit_volume` 為 P2-04 的全域預設，規則見 [combat.md#判定體](../combat.md)。
 
 `stage` 為 `juvenile / adolescent / adult`。階段不參與衍生值計算，避免進化時再乘一次倍率。半飽和值不必與軟設計帶上界相等。
 `P=1000` 與百分比單位 `100` 是移植協定，非可調平衡係數。參考實作對可移植係數範圍與正下限有明確檢查，見設計文件。
@@ -60,13 +62,13 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.hold_permille` | P2-10 站樁：目標在最長可及距離 × 此值 / 1000 內不移動（1–1000） |
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
 | `ai.territory_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-E2 野生領域半徑（依物種 `temperament` 取 0/4/8/14/20/28 m）；入侵者進入即開戰；0＝不主動開戰（Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
-| `ai.wander_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-W1 野生未開戰時在生成點附近的遊蕩半徑（3/4/6/8/10/12 m，Q-D2 2026-11-10 定案）；0＝原地不動（0 ≤ 值 < 40 m 脫戰距離） |
-| `ai.wander_pause_min_ms`／`ai.wander_pause_max_ms` | D0-W1 每段遊蕩之間的停頓（含兩端，2000–5000，Q-D2 2026-11-10 定案；0 ≤ min ≤ max） |
-| `ai.wander_speed_permille` | D0-W1 遊蕩步行速度 = 戰鬥移速 × 此值 / 1000（400，Q-D2 2026-11-10 定案；1–1000） |
+| `ai.wander_mm.{timid,cautious,normal,territorial,fierce,apex}` | D0-W1 野生未開戰時在生成點附近的遊蕩半徑（3/4/6/8/10/12 m，Q-D2）；0＝原地不動（0 ≤ 值 < 40 m 脫戰距離） |
+| `ai.wander_pause_min_ms`／`ai.wander_pause_max_ms` | D0-W1 每段遊蕩之間的停頓（含兩端，2000–5000，Q-D2；0 ≤ min ≤ max） |
+| `ai.wander_speed_permille` | D0-W1 遊蕩步行速度 = 戰鬥移速 × 此值 / 1000（400，Q-D2；1–1000） |
 
 ## progression
 
-P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與公式見 [level-progression.md](../level-progression.md)；C# `Creatures/Api/Progression.cs`。
+P2-12（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與公式見 [level-progression.md](../level-progression.md)；C# `Creatures/Api/Progression.cs`。
 
 | Key | 說明 |
 |---|---|
@@ -86,7 +88,7 @@ P2-12，2026-11-09 定案（Q-C28 曲線、Q-C29／Q-C30 方案 A）。規則與
 
 ## materials
 
-P2-05，2026-11-09 定案（Q-C32 方案 B）。規則見 [creatures.md#進化](../creatures.md#進化)；C# `Creatures/Api/MaterialDrops.cs`。
+P2-05（Q-C32 方案 B）。規則見 [creatures.md#進化](../creatures.md#進化)；C# `Creatures/Api/MaterialDrops.cs`。
 
 | Key | 說明 |
 |---|---|

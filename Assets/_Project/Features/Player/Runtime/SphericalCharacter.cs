@@ -52,6 +52,10 @@ namespace Cosmimera.Player
         /// <remarks>Pre: none. Post: finite. Side effects: none.</remarks>
         public Vector3 Velocity => _state.Velocity;
 
+        /// <summary>Gravity acceleration (m/s²) the motor applies; loose objects (PlanetGravity) fall at the same rate.</summary>
+        /// <remarks>Pre: none. Post: &gt; 0 (the motor default before Configure). Side effects: none.</remarks>
+        public float Gravity => _configured ? _settings.Gravity : MotorSettings.Default.Gravity;
+
         /// <summary>Current body forward, tangent to the planet.</summary>
         /// <remarks>Pre: Configure called. Post: unit, ⟂ local up. Side effects: none.</remarks>
         public Vector3 Facing

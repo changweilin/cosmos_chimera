@@ -7,11 +7,11 @@ using Unity.Mathematics;
 namespace Cosmimera.WorldGen
 {
     /// <summary>
-    /// Chooses which real-world geo-templates a planet uses and where they sit. REQ: planet-world.md#1
-    /// ("一顆星球由 3–8 塊模板拼貼"), docs/roadmap/demo.md (P3-03 D0).
+    /// Chooses which procedural landforms a planet uses and where they sit. REQ: planet-world.md#1
+    /// (骨架層程序化地貌; user 2026-11-11 replaced the real-world geo-templates), docs/roadmap/demo.md (P3-03 D0).
     /// </summary>
     /// <remarks>
-    /// Pure and deterministic: Pcg32(seed, 'T'). Templates whose terrain tags overlap the planet type's come first, so
+    /// Pure and deterministic: Pcg32(seed, 'T'). Landforms whose terrain tags overlap the planet type's come first, so
     /// a fjord planet is mostly fjords. Centers come from an evenly spaced, randomly rotated lattice, which keeps
     /// stamps apart without rejection sampling.
     /// </remarks>
@@ -24,6 +24,39 @@ namespace Cosmimera.WorldGen
         /// <summary>Template count for a planet size (planet-world.md: 3–8 per planet).</summary>
         /// <remarks>Pre: none. Post: 4 for small/medium, 6 for large. Side effects: none.</remarks>
         public static int CountFor(GameData.PlanetSize size) => size >= GameData.PlanetSize.Planet ? 6 : 4;
+
+        /// <summary>Synthesizes and places the landform stamps of one planet.</summary>
+        /// <remarks>
+        /// Pre: config valid; typeTags non-null, no null entries.
+        /// Post: CountFor(size) stamps; stamp i is LandformSynth.Generate(kind, seed, i) at Choose's i-th placement over
+        ///       the catalog LandformSynth.Kinds (one tag each). Same inputs → same stamps.
+        /// Side effects: allocates persistent native memory owned by the result (Dispose required).
+        /// </remarks>
+        public static PlanetTemplates Build(in PlanetConfig config, ulong seed, IReadOnlyList<string> typeTags,
+            GameData.PlanetSize size)
+        {
+            Contract.Requires(config.IsValid, "config must be valid");
+            Contract.Requires(typeTags != null, "typeTags must not be null");
+            IReadOnlyList<string> kinds = LandformSynth.Kinds;
+            var catalog = new List<IReadOnlyList<string>>(kinds.Count);
+            foreach (string kind in kinds)
+            {
+                catalog.Add(new[] { kind });
+            }
+
+            List<TemplatePlacement> chosen = Choose(seed, typeTags, catalog, CountFor(size));
+            var sources = new List<TemplateSource>(chosen.Count);
+            var placements = new List<TemplatePlacement>(chosen.Count);
+            for (int i = 0; i < chosen.Count; i++)
+            {
+                TemplatePlacement c = chosen[i];
+                // One grid per stamp (not per kind): two volcanoes on one planet must not be copies.
+                sources.Add(LandformSynth.Generate(kinds[c.Source], seed, i));
+                placements.Add(new TemplatePlacement(i, c.Center, c.RotationRad, c.HalfAngleRad));
+            }
+
+            return PlanetTemplates.Create(config, sources, placements);
+        }
 
         /// <summary>Places <paramref name="count"/> templates.</summary>
         /// <remarks>

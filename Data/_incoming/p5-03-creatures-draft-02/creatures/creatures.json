@@ -1,0 +1,1569 @@
+[
+  {
+    "id": "metal_gate_calf",
+    "line_id": "line_metal_citadelbull",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "temperament": "cautious",
+    "evolves_to": "metal_winged_bull",
+    "evolution": {
+      "level": 26,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 1,
+          "qty": 4
+        }
+      ]
+    },
+    "resist": {
+      "metal": 20,
+      "wood": 0,
+      "water": 0,
+      "fire": -20,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 5,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 15
+    },
+    "stats": {
+      "con": 38,
+      "str": 26,
+      "spi": 22,
+      "agi": 14
+    },
+    "signature_move": "metal_corrosion_edge",
+    "trait": "trait_metal_clockwork_precision",
+    "concept": {
+      "base": "青銅鑄造守護幼牛 × 城門浮雕銅環與小巧摺疊羽翼",
+      "stage_look": "四足短壯的青銅小牛，背脊嵌有迷你雙翼銅板與拱門紋章護額，踏步沉穩",
+      "archetype": "arch_lamassu",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "五足石雕公牛",
+        "雙重雄鷹巨翼",
+        "亞述王城拱門"
+      ],
+      "role": "前排固守：近距前方削弱金抗性（高血量時縮短金招 CD）",
+      "palette": "黃銅金、玄鐵青黑、象牙白"
+    }
+  },
+  {
+    "id": "metal_winged_bull",
+    "line_id": "line_metal_citadelbull",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "temperament": "normal",
+    "evolves_to": "metal_citadel_colossus",
+    "evolution": {
+      "level": 46,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 2,
+          "qty": 6
+        }
+      ]
+    },
+    "resist": {
+      "metal": 35,
+      "wood": 0,
+      "water": 0,
+      "fire": -30,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 10,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 25
+    },
+    "stats": {
+      "con": 76,
+      "str": 52,
+      "spi": 44,
+      "agi": 28
+    },
+    "signature_move": "metal_scrap_barrage",
+    "trait": "trait_metal_clockwork_precision",
+    "concept": {
+      "base": "五足雕像級銅甲公牛 × 展開半幅的疊層鐵羽與城門鎖扣",
+      "stage_look": "肩甲化為拱門門楣造型，雙翼可彈射金屬破片，靜止時呈現五足浮雕姿態",
+      "archetype": "arch_lamassu",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "蓄鬚人首角冠",
+        "五足石雕公牛",
+        "雙重雄鷹巨翼",
+        "亞述王城拱門"
+      ],
+      "role": "中排壓制：中距範圍爆發（高血量時縮短金招 CD）",
+      "palette": "黃銅金、鍍銀鋼白、玄鐵青黑"
+    }
+  },
+  {
+    "id": "metal_citadel_colossus",
+    "line_id": "line_metal_citadelbull",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "temperament": "territorial",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 0,
+      "water": 0,
+      "fire": -40,
+      "earth": 20,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 15,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 40,
+      "earth": 15
+    },
+    "stats": {
+      "con": 152,
+      "str": 104,
+      "spi": 88,
+      "agi": 56
+    },
+    "signature_move": "metal_anvil_drop",
+    "trait": "trait_metal_clockwork_precision",
+    "concept": {
+      "base": "巨型銅岩王城翼獸 × 雙重雄鷹鋼翼與五足承重柱構裝",
+      "stage_look": "體型如城門巨像，額戴角冠與青銅髭紋假面，雙重鋼翼可高拋重鐵砧轟擊遠距目標",
+      "archetype": "arch_lamassu",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "蓄鬚人首角冠",
+        "五足石雕公牛",
+        "雙重雄鷹巨翼",
+        "亞述王城拱門"
+      ],
+      "role": "後排砲擊、控距：遠距定點範圍墜擊（高血量時縮短金招 CD）",
+      "palette": "黃銅金、古銅綠、玄鐵青黑、鍍銀鋼白"
+    }
+  },
+  {
+    "id": "wood_betel_sprout",
+    "line_id": "line_wood_crownvine",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "temperament": "timid",
+    "evolves_to": "wood_garland_serpent",
+    "evolution": {
+      "level": 22,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": -20,
+      "wood": 20,
+      "water": 10,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 5,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 15
+    },
+    "stats": {
+      "con": 26,
+      "str": 24,
+      "spi": 32,
+      "agi": 18
+    },
+    "signature_move": "wood_splinter_thrust",
+    "trait": "trait_wood_spore_regeneration",
+    "concept": {
+      "base": "掌心大小的嫩芽小水蛇 × 頭頂含苞檳榔花枝",
+      "stage_look": "盤繞在枝條上的翡翠細蛇，頭頂綻開一束潔白檳榔小花與細絲飄帶",
+      "archetype": "arch_neang_neak",
+      "region": "東南亞",
+      "motifs_used": [
+        "七頭那伽冠冕",
+        "檳榔花枝",
+        "絲綢披肩"
+      ],
+      "role": "近戰續戰：貼身前方木刺打擊（施放木招回復自身生命）",
+      "palette": "蒼翡翠、嫩芽黃綠、象牙白"
+    }
+  },
+  {
+    "id": "wood_garland_serpent",
+    "line_id": "line_wood_crownvine",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "temperament": "cautious",
+    "evolves_to": "wood_lotus_wyrm",
+    "evolution": {
+      "level": 40,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": -30,
+      "wood": 35,
+      "water": 15,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 10,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 25
+    },
+    "stats": {
+      "con": 52,
+      "str": 48,
+      "spi": 64,
+      "agi": 36
+    },
+    "signature_move": "wood_thorn_snare",
+    "trait": "trait_wood_spore_regeneration",
+    "concept": {
+      "base": "修長藤蔓靈蛇 × 三瓣花枝冠冕與柔韌葉脈披肩",
+      "stage_look": "鱗片如青翠棕櫚葉交疊，頸側展開花枝與綢緞般半透明木葉領巾",
+      "archetype": "arch_neang_neak",
+      "region": "東南亞",
+      "motifs_used": [
+        "七頭那伽冠冕",
+        "檳榔花枝",
+        "絲綢披肩"
+      ],
+      "role": "中排牽制、續戰：中距直線荊棘減速敵方移速（施放木招回復自身生命）",
+      "palette": "翠綠、湖水綠、櫻花粉"
+    }
+  },
+  {
+    "id": "wood_lotus_wyrm",
+    "line_id": "line_wood_crownvine",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "temperament": "normal",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 20,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 15,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 40,
+      "water": 15
+    },
+    "stats": {
+      "con": 104,
+      "str": 96,
+      "spi": 128,
+      "agi": 72
+    },
+    "signature_move": "wood_timber_fall",
+    "trait": "trait_wood_spore_regeneration",
+    "concept": {
+      "base": "盤旋水林巨龍 × 七冠花枝頭飾與水波絲綢垂帶",
+      "stage_look": "七重繁花蛇冠高聳展開，修長軀體纏繞巨樹藤蔓與漩渦水花披肩，氣勢華麗",
+      "archetype": "arch_neang_neak",
+      "region": "東南亞",
+      "motifs_used": [
+        "七頭那伽冠冕",
+        "檳榔花枝",
+        "海底漩渦龍宮",
+        "絲綢披肩"
+      ],
+      "role": "後排輸出、續戰：遠距範圍巨木墜落轟擊（施放木招回復自身生命）",
+      "palette": "蒼翡翠、湖水綠、琥珀金、月華白"
+    }
+  },
+  {
+    "id": "water_ivory_calf",
+    "line_id": "line_water_whalemaelstrom",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "temperament": "cautious",
+    "evolves_to": "water_harpoon_cetacean",
+    "evolution": {
+      "level": 24,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 0,
+      "water": 20,
+      "fire": 0,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -20,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 15
+    },
+    "stats": {
+      "con": 34,
+      "str": 32,
+      "spi": 16,
+      "agi": 18
+    },
+    "signature_move": "water_cascade_jab",
+    "trait": "trait_water_cleansing_tide",
+    "concept": {
+      "base": "白膚抹香小鯨 × 背鰭插著一小截鈍化青銅魚叉",
+      "stage_look": "圓潤雪白的小鯨魚，額頭有淡淡舊傷痕與小型水花噴孔，魚叉飾角閃爍微光",
+      "archetype": "arch_moby_dick",
+      "region": "美洲",
+      "motifs_used": [
+        "傷痕白抹香鯨",
+        "斷裂魚叉"
+      ],
+      "role": "前排肉搏：近距前方水瀑衝撞（生命首次跌破門檻時回復 12%）",
+      "palette": "月華白、清透天藍、古銅綠"
+    }
+  },
+  {
+    "id": "water_harpoon_cetacean",
+    "line_id": "line_water_whalemaelstrom",
+    "stage": "adolescent",
+    "size_class": "L",
+    "ai_style": "charge",
+    "temperament": "territorial",
+    "evolves_to": "water_abyssal_leviathan",
+    "evolution": {
+      "level": 44,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 35,
+      "fire": 0,
+      "earth": 0,
+      "ice": 15,
+      "wind": 0,
+      "thunder": -30,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 25
+    },
+    "stats": {
+      "con": 68,
+      "str": 64,
+      "spi": 32,
+      "agi": 36
+    },
+    "signature_move": "water_undertow_rush",
+    "trait": "trait_water_cleansing_tide",
+    "concept": {
+      "base": "斑駁疤痕白鯨 × 嵌在背甲上的斷裂捕鯨木桅與繩索",
+      "stage_look": "體側布滿交錯暗藍海蝕疤痕，背上拖曳半截木桅與幾枚斷裂鐵叉，游動捲起暗流",
+      "archetype": "arch_moby_dick",
+      "region": "美洲",
+      "motifs_used": [
+        "傷痕白抹香鯨",
+        "斷裂魚叉",
+        "捕鯨木桅"
+      ],
+      "role": "中距突進：暗流直線衝鋒（生命首次跌破門檻時回復 12%）",
+      "palette": "象牙白、深海湛藍、卡其棕"
+    }
+  },
+  {
+    "id": "water_abyssal_leviathan",
+    "line_id": "line_water_whalemaelstrom",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "charge",
+    "temperament": "fierce",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 15,
+      "wood": 0,
+      "water": 50,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 0,
+      "thunder": -40,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 40
+    },
+    "stats": {
+      "con": 136,
+      "str": 128,
+      "spi": 64,
+      "agi": 72
+    },
+    "signature_move": "water_tsunami_charge",
+    "trait": "trait_water_cleansing_tide",
+    "concept": {
+      "base": "巨無霸白鯨海王 × 渦流繞身與殘破艦桅鐵叉冠",
+      "stage_look": "巨尾掀動咆哮大漩渦，額頭與脊背橫斜著數支鋼製斷叉與船桅殘骨，威壓迫人",
+      "archetype": "arch_moby_dick",
+      "region": "美洲",
+      "motifs_used": [
+        "傷痕白抹香鯨",
+        "斷裂魚叉",
+        "怒海大漩渦",
+        "捕鯨木桅"
+      ],
+      "role": "長距突進：遠距巨浪直線衝鋒（生命首次跌破門檻時回復 12%）",
+      "palette": "月華白、海軍深藍、玄鐵青黑、鍍銀鋼白"
+    }
+  },
+  {
+    "id": "fire_spark_barkling",
+    "line_id": "line_fire_baobabhearth",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "hold",
+    "temperament": "cautious",
+    "evolves_to": "fire_ember_crocodilian",
+    "evolution": {
+      "level": 23,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": -20,
+      "fire": 20,
+      "earth": 5,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 15
+    },
+    "stats": {
+      "con": 30,
+      "str": 28,
+      "spi": 22,
+      "agi": 20
+    },
+    "signature_move": "fire_spark_jab",
+    "trait": "trait_fire_cinder_screen",
+    "concept": {
+      "base": "炭木鱗甲幼鱷 × 背上冒出暖紅火芽",
+      "stage_look": "披著厚實木皮斑紋甲殼的小鱷魚，甲縫透出微弱紅火光澤與零星火星",
+      "archetype": "arch_ibonia",
+      "region": "非洲",
+      "motifs_used": [
+        "烈火誕生紅光",
+        "深潭巨鱷"
+      ],
+      "role": "前排纏鬥：近距前方火星直擊（施放火招短暫提高閃避率）",
+      "palette": "炭煙灰、熔岩赤紅、焦糖茶褐"
+    }
+  },
+  {
+    "id": "fire_ember_crocodilian",
+    "line_id": "line_fire_baobabhearth",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "temperament": "normal",
+    "evolves_to": "fire_hearth_monolith",
+    "evolution": {
+      "level": 42,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": -30,
+      "fire": 35,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 25
+    },
+    "stats": {
+      "con": 60,
+      "str": 56,
+      "spi": 44,
+      "agi": 40
+    },
+    "signature_move": "fire_cinder_slash",
+    "trait": "trait_fire_cinder_screen",
+    "concept": {
+      "base": "熔炭樹皮大顎鱷 × 背脊生出粗壯猴麵包樹瘤",
+      "stage_look": "背甲呈現猴麵包樹般圓碩樹瘤，內部燃燒熾紅火脈，橫掃尾擊揚起灼熱灰燼",
+      "archetype": "arch_ibonia",
+      "region": "非洲",
+      "motifs_used": [
+        "烈火誕生紅光",
+        "巨型猴麵包樹",
+        "深潭巨鱷"
+      ],
+      "role": "近戰清場、削弱：近距扇形橫掃降低敵方閃避（施放火招短暫提高閃避率）",
+      "palette": "烈焰紅、焦糖茶褐、琥珀金"
+    }
+  },
+  {
+    "id": "fire_hearth_monolith",
+    "line_id": "line_fire_baobabhearth",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "temperament": "territorial",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 20,
+      "water": -40,
+      "fire": 50,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 40
+    },
+    "stats": {
+      "con": 120,
+      "str": 112,
+      "spi": 88,
+      "agi": 80
+    },
+    "signature_move": "fire_caldera_burst",
+    "trait": "trait_fire_cinder_screen",
+    "concept": {
+      "base": "巨鱷石林熔爐獸 × 高地立石火口與巨大猴麵包樹冠甲殼",
+      "stage_look": "背負如高地立石與猴麵包巨樹共生的火山口甲盾，深淵大顎含著赤紅火球",
+      "archetype": "arch_ibonia",
+      "region": "非洲",
+      "motifs_used": [
+        "烈火誕生紅光",
+        "巨型猴麵包樹",
+        "深潭巨鱷",
+        "高地立石"
+      ],
+      "role": "後排砲擊、控距：遠距定點火山爆發（施放火招短暫提高閃避率）",
+      "palette": "熔岩赤紅、陶土磚紅、玄鐵青黑、晨曦金"
+    }
+  },
+  {
+    "id": "earth_lotus_cub",
+    "line_id": "line_earth_pillarbeast",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "charge",
+    "temperament": "normal",
+    "evolves_to": "earth_pillar_chimera",
+    "evolution": {
+      "level": 24,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 0,
+      "fire": 5,
+      "earth": 20,
+      "ice": 0,
+      "wind": -20,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 15
+    },
+    "stats": {
+      "con": 28,
+      "str": 34,
+      "spi": 16,
+      "agi": 22
+    },
+    "signature_move": "earth_stone_skate",
+    "trait": "trait_earth_landslide_charge",
+    "concept": {
+      "base": "石雕幼獅 × 卷曲短象鼻與浮雕蓮瓣項圈",
+      "stage_look": "灰褐砂岩雕塑般的小獅獸，鼻尖翹起小巧象牙，四爪踩踏碎石迅速滑步",
+      "archetype": "arch_yali",
+      "region": "南亞",
+      "motifs_used": [
+        "獅身象鼻長牙",
+        "蓮座浮雕"
+      ],
+      "role": "近戰突進：短距碎石直線突進（施放土招提高移動速度）",
+      "palette": "大地赭石、砂岩黃、卡其棕"
+    }
+  },
+  {
+    "id": "earth_pillar_chimera",
+    "line_id": "line_earth_pillarbeast",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "temperament": "territorial",
+    "evolves_to": "earth_temple_tuskbeast",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 15,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 35,
+      "ice": 0,
+      "wind": -30,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 25
+    },
+    "stats": {
+      "con": 56,
+      "str": 68,
+      "spi": 32,
+      "agi": 44
+    },
+    "signature_move": "earth_fault_dash",
+    "trait": "trait_earth_landslide_charge",
+    "concept": {
+      "base": "浮雕石獅象獸 × 肩胛鑲嵌廊柱石墩與修長石牙",
+      "stage_look": "雙肩扛著神廟石柱護甲，象鼻與利爪皆為硬質花崗岩構造，騰躍撲擊極具衝擊力",
+      "archetype": "arch_yali",
+      "region": "南亞",
+      "motifs_used": [
+        "獅身象鼻長牙",
+        "神廟石雕廊柱",
+        "騰躍利爪"
+      ],
+      "role": "中距突進：裂隙直線衝撞（施放土招提高移動速度）",
+      "palette": "大地赭石、陶土磚紅、象牙白"
+    }
+  },
+  {
+    "id": "earth_temple_tuskbeast",
+    "line_id": "line_earth_pillarbeast",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "temperament": "fierce",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 20,
+      "wood": 0,
+      "water": 0,
+      "fire": 15,
+      "earth": 50,
+      "ice": 0,
+      "wind": -40,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 40
+    },
+    "stats": {
+      "con": 112,
+      "str": 136,
+      "spi": 64,
+      "agi": 88
+    },
+    "signature_move": "earth_tectonic_lance",
+    "trait": "trait_earth_landslide_charge",
+    "concept": {
+      "base": "神廟守護巨雕獅象 × 蓮座浮雕肩盾與岩柱重砲象鼻",
+      "stage_look": "身披蓮座與神廟石柱雕刻的宏偉石獸，象牙如雙重岩槍向前延伸，能遠距貫穿岩脈",
+      "archetype": "arch_yali",
+      "region": "南亞",
+      "motifs_used": [
+        "獅身象鼻長牙",
+        "神廟石雕廊柱",
+        "騰躍利爪",
+        "蓮座浮雕"
+      ],
+      "role": "後排貫穿、控距：遠距直線地脈岩槍（施放土招提高移動速度）",
+      "palette": "大地赭石、陶土磚紅、砂岩黃、琥珀金"
+    }
+  },
+  {
+    "id": "ice_sled_buoy",
+    "line_id": "line_ice_driftvessel",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "charge",
+    "temperament": "timid",
+    "evolves_to": "ice_hull_cutter",
+    "evolution": {
+      "level": 21,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 5,
+      "water": 10,
+      "fire": 0,
+      "earth": -20,
+      "ice": 20,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 15
+    },
+    "stats": {
+      "con": 22,
+      "str": 28,
+      "spi": 20,
+      "agi": 30
+    },
+    "signature_move": "ice_glaze_slide",
+    "trait": "trait_ice_frostbite_edge",
+    "concept": {
+      "base": "微型極地木雪橇 × 懸掛深海採水瓶的浮冰探測儀",
+      "stage_look": "手掌大小的雙橇冰滑裝置，中央玻璃採水瓶閃著冰藍結晶，貼地滑行無聲",
+      "archetype": "arch_fridtjof_nansen",
+      "region": "極地",
+      "motifs_used": [
+        "深海採水瓶",
+        "極地雙板雪橇"
+      ],
+      "role": "近戰突進：短距冰面滑行撞擊（施放冰招暫時提高冰專精）",
+      "palette": "冰晶天藍、霜雪透白、卡其棕"
+    }
+  },
+  {
+    "id": "ice_hull_cutter",
+    "line_id": "line_ice_driftvessel",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "temperament": "cautious",
+    "evolves_to": "ice_polar_icebreaker",
+    "evolution": {
+      "level": 39,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": 15,
+      "fire": 0,
+      "earth": -30,
+      "ice": 35,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 25
+    },
+    "stats": {
+      "con": 44,
+      "str": 56,
+      "spi": 40,
+      "agi": 60
+    },
+    "signature_move": "ice_floe_crash",
+    "trait": "trait_ice_frostbite_edge",
+    "concept": {
+      "base": "抗冰圓底探險快艇 × 浮冰觀測儀與雙板滑冰龍骨",
+      "stage_look": "弧形木甲船身覆滿冰晶裝甲，桅頂架設旋轉觀測銅儀，能乘浮冰衝撞敵陣",
+      "archetype": "arch_fridtjof_nansen",
+      "region": "極地",
+      "motifs_used": [
+        "圓底抗冰木帆船",
+        "浮冰觀測儀",
+        "極地雙板雪橇"
+      ],
+      "role": "中距突進：浮冰直線衝撞（施放冰招暫時提高冰專精）",
+      "palette": "純淨冰藍、霜雪透白、卡其棕、黃銅金"
+    }
+  },
+  {
+    "id": "ice_polar_icebreaker",
+    "line_id": "line_ice_driftvessel",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "charge",
+    "temperament": "normal",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 20,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 40
+    },
+    "stats": {
+      "con": 88,
+      "str": 112,
+      "spi": 80,
+      "agi": 120
+    },
+    "signature_move": "ice_avalanche_charge",
+    "trait": "trait_ice_frostbite_edge",
+    "concept": {
+      "base": "極地抗冰巨型方舟 × 雪橇破冰撞角與觀測塔桅",
+      "stage_look": "圓弧重裝木船底配巨型冰刃雪橇，甲板列滿深海採水柱與天文觀測儀，破冰全速突襲",
+      "archetype": "arch_fridtjof_nansen",
+      "region": "極地",
+      "motifs_used": [
+        "圓底抗冰木帆船",
+        "深海採水瓶",
+        "浮冰觀測儀",
+        "極地雙板雪橇"
+      ],
+      "role": "長距突進：雪崩直線衝鋒（施放冰招暫時提高冰專精）",
+      "palette": "純淨冰藍、稜鏡淡紫、月華白、古銅綠"
+    }
+  },
+  {
+    "id": "wind_crossbow_fledgling",
+    "line_id": "line_wind_mistwing",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "charge",
+    "temperament": "timid",
+    "evolves_to": "wind_bergglider_gull",
+    "evolution": {
+      "level": 20,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 5,
+      "water": 10,
+      "fire": 0,
+      "earth": 0,
+      "ice": -20,
+      "wind": 20,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 15
+    },
+    "stats": {
+      "con": 18,
+      "str": 24,
+      "spi": 24,
+      "agi": 34
+    },
+    "signature_move": "wind_draft_step",
+    "trait": "trait_wind_aloft_vigilance",
+    "concept": {
+      "base": "海霧幼信天翁 × 翼緣帶著木質弩臂紋飾",
+      "stage_look": "白灰絨毛小海鳥，翼梢刻有細緻木弓張弦紋路，順著海風疾速貼地竄行",
+      "archetype": "arch_ancient_mariner_albatross",
+      "region": "極地",
+      "motifs_used": [
+        "穿霧巨翼信天翁",
+        "木柄十字弩"
+      ],
+      "role": "近戰突進：短距順風直線突襲（高血量時提高閃避率）",
+      "palette": "流線淡青、月華白、卡其棕"
+    }
+  },
+  {
+    "id": "wind_bergglider_gull",
+    "line_id": "line_wind_mistwing",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "temperament": "cautious",
+    "evolves_to": "wind_pelagic_soarer",
+    "evolution": {
+      "level": 37,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": 15,
+      "fire": 0,
+      "earth": 0,
+      "ice": -30,
+      "wind": 35,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 25
+    },
+    "stats": {
+      "con": 36,
+      "str": 48,
+      "spi": 48,
+      "agi": 68
+    },
+    "signature_move": "wind_cyclone_dart",
+    "trait": "trait_wind_aloft_vigilance",
+    "concept": {
+      "base": "巨翼寒霧海禽 × 翠綠冰山風帆翼膜",
+      "stage_look": "修長雙翼如古船橫帆展開，羽尖折射翠綠冰山霧光，俯衝如氣旋利箭",
+      "archetype": "arch_ancient_mariner_albatross",
+      "region": "極地",
+      "motifs_used": [
+        "穿霧巨翼信天翁",
+        "翠綠高聳冰山",
+        "冰封古帆船"
+      ],
+      "role": "中距突進：氣旋直線俯衝（高血量時提高閃避率）",
+      "palette": "薄荷淺青、青瓷灰綠、霜雪透白"
+    }
+  },
+  {
+    "id": "wind_pelagic_soarer",
+    "line_id": "line_wind_mistwing",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "temperament": "normal",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 20,
+      "fire": 0,
+      "earth": 0,
+      "ice": -40,
+      "wind": 50,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 40
+    },
+    "stats": {
+      "con": 72,
+      "str": 96,
+      "spi": 96,
+      "agi": 136
+    },
+    "signature_move": "wind_hurricane_sweep",
+    "trait": "trait_wind_aloft_vigilance",
+    "concept": {
+      "base": "遠洋巨翼信天翁 × 古帆船雙桅翼骨與十字弩尾舵",
+      "stage_look": "翼展蔽天、羽梢拖著幽海霧氣與破冰帆布流蘇，振翼即可掀出遠距扇形狂颶",
+      "archetype": "arch_ancient_mariner_albatross",
+      "region": "極地",
+      "motifs_used": [
+        "穿霧巨翼信天翁",
+        "翠綠高聳冰山",
+        "冰封古帆船",
+        "木柄十字弩"
+      ],
+      "role": "後排控場、高機動：遠距扇形颶風橫掃（高血量時提高閃避率）",
+      "palette": "薄荷淺青、青瓷灰綠、月華白、暮雲灰藍"
+    }
+  },
+  {
+    "id": "thunder_dune_larva",
+    "line_id": "line_thunder_redburrower",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "flank",
+    "temperament": "cautious",
+    "evolves_to": "thunder_crimson_crawler",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": -20,
+      "water": 0,
+      "fire": 10,
+      "earth": 5,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 20,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 15
+    },
+    "stats": {
+      "con": 26,
+      "str": 24,
+      "spi": 24,
+      "agi": 26
+    },
+    "signature_move": "thunder_pulse_ring",
+    "trait": "trait_thunder_fulgur_reach",
+    "concept": {
+      "base": "掌心大小的赤紅沙地電蟲 × 節環閃著靜電火花",
+      "stage_look": "圓潤鮮紅的沙漠幼蟲，身軀節環纏繞跳躍的明黃電弧，遇警即釋放近身電流環",
+      "archetype": "arch_olgoi_khorkhoi",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "戈壁紅沙丘",
+        "放電赤紅巨蟲"
+      ],
+      "role": "近戰繞側：近距自身周圍電流脈衝（施放雷招短暫延長攻擊距離）",
+      "palette": "熔岩赤紅、閃電熾黃、砂岩黃"
+    }
+  },
+  {
+    "id": "thunder_crimson_crawler",
+    "line_id": "line_thunder_redburrower",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "temperament": "normal",
+    "evolves_to": "thunder_gobi_voltwyrm",
+    "evolution": {
+      "level": 43,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": -30,
+      "water": 0,
+      "fire": 15,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 35,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 25
+    },
+    "stats": {
+      "con": 52,
+      "str": 48,
+      "spi": 48,
+      "agi": 52
+    },
+    "signature_move": "thunder_arc_discharge",
+    "trait": "trait_thunder_fulgur_reach",
+    "concept": {
+      "base": "砂岩棘皮赤蟲 × 頭冠發電雙顎與紅沙背脊",
+      "stage_look": "赤紅軀體佈滿荒原梭梭木般枯硬棘刺，張開雙顎可噴出扇形高壓電弧",
+      "archetype": "arch_olgoi_khorkhoi",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "戈壁紅沙丘",
+        "放電赤紅巨蟲",
+        "梭梭木荒原"
+      ],
+      "role": "中排輸出：中距扇形高壓電弧噴吐（施放雷招短暫延長攻擊距離）",
+      "palette": "烈焰紅、電弧青藍、雷電曜紫"
+    }
+  },
+  {
+    "id": "thunder_gobi_voltwyrm",
+    "line_id": "line_thunder_redburrower",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "temperament": "fierce",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": -40,
+      "water": 0,
+      "fire": 20,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 50,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 40,
+      "fire": 15
+    },
+    "stats": {
+      "con": 104,
+      "str": 96,
+      "spi": 96,
+      "agi": 104
+    },
+    "signature_move": "thunder_plasma_rail",
+    "trait": "trait_thunder_fulgur_reach",
+    "concept": {
+      "base": "巨型沙漠電磁沙蟲 × 灼熱沙暴尾渦與高壓電漿口器",
+      "stage_look": "龐大赤紅蟲軀半潛沙浪，背脊磁環對準遠方蓄能後轟出極長直線電漿雷射",
+      "archetype": "arch_olgoi_khorkhoi",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "戈壁紅沙丘",
+        "放電赤紅巨蟲",
+        "梭梭木荒原",
+        "灼熱沙暴"
+      ],
+      "role": "後排貫穿、控距：遠距直線高壓電漿炮擊（施放雷招短暫延長攻擊距離）",
+      "palette": "熔岩赤紅、閃電熾黃、雷電曜紫、大地赭石"
+    }
+  },
+  {
+    "id": "light_foil_spark",
+    "line_id": "line_light_foilprism",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "temperament": "timid",
+    "evolves_to": "light_orbit_beacon",
+    "evolution": {
+      "level": 21,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 10,
+      "light": 20,
+      "shadow": -20
+    },
+    "mastery": {
+      "light": 15
+    },
+    "stats": {
+      "con": 20,
+      "str": 28,
+      "spi": 34,
+      "agi": 18
+    },
+    "signature_move": "light_glint_jab",
+    "trait": "trait_light_halo_rebound",
+    "concept": {
+      "base": "迷你金箔稜鏡球儀 × 繞軸旋轉的雙點微光",
+      "stage_look": "漂浮在半空的金色薄箔稜鏡，表面不時閃爍螢光點點，近身以光刺自衛",
+      "archetype": "arch_ernest_rutherford",
+      "region": "大洋洲",
+      "motifs_used": [
+        "金箔散射光束",
+        "原子行星軌跡"
+      ],
+      "role": "近戰續戰：貼身前方閃光突刺（施放光招回復 6% 生命）",
+      "palette": "耀日光金、月華白、晨曦金"
+    }
+  },
+  {
+    "id": "light_orbit_beacon",
+    "line_id": "line_light_foilprism",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "hold",
+    "temperament": "cautious",
+    "evolves_to": "light_radiant_cyclotron",
+    "evolution": {
+      "level": 41,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 15,
+      "light": 35,
+      "shadow": -30
+    },
+    "mastery": {
+      "light": 25
+    },
+    "stats": {
+      "con": 40,
+      "str": 56,
+      "spi": 68,
+      "agi": 36
+    },
+    "signature_move": "light_optic_lance",
+    "trait": "trait_light_halo_rebound",
+    "concept": {
+      "base": "人形半身光學儀偶 × 環繞肩側的三重星軌光環與電磁線圈",
+      "stage_look": "外框為半圓閃爍螢光屏，胸口金箔核心射出筆直聚焦光槍",
+      "archetype": "arch_ernest_rutherford",
+      "region": "大洋洲",
+      "motifs_used": [
+        "金箔散射光束",
+        "原子行星軌跡",
+        "放射線閃爍屏"
+      ],
+      "role": "中排輸出、續戰：中距直線聚焦光槍（施放光招回復 6% 生命）",
+      "palette": "耀日光金、鍍銀鋼白、琥珀金"
+    }
+  },
+  {
+    "id": "light_radiant_cyclotron",
+    "line_id": "line_light_foilprism",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "temperament": "normal",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 15,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 20,
+      "light": 50,
+      "shadow": -40
+    },
+    "mastery": {
+      "light": 40,
+      "thunder": 15
+    },
+    "stats": {
+      "con": 80,
+      "str": 112,
+      "spi": 136,
+      "agi": 72
+    },
+    "signature_move": "light_chromatic_fan",
+    "trait": "trait_light_halo_rebound",
+    "concept": {
+      "base": "人形幾何磁環聖像 × 展開的扇形金箔折射螢幕與三重軌環",
+      "stage_look": "懸浮電磁線圈托起璀璨七彩散射光扇，行星軌環高速公轉，可向遠方傾瀉扇形稜鏡光束",
+      "archetype": "arch_ernest_rutherford",
+      "region": "大洋洲",
+      "motifs_used": [
+        "金箔散射光束",
+        "原子行星軌跡",
+        "放射線閃爍屏",
+        "電磁線圈"
+      ],
+      "role": "後排輸出、續戰：遠距扇形折射光束齊射（施放光招回復 6% 生命）",
+      "palette": "耀日光金、晨曦金、櫻花粉、閃電熾黃"
+    }
+  },
+  {
+    "id": "shadow_tundra_foal",
+    "line_id": "line_shadow_ironsteed",
+    "stage": "juvenile",
+    "size_class": "S",
+    "ai_style": "flank",
+    "temperament": "cautious",
+    "evolves_to": "shadow_reverb_charger",
+    "evolution": {
+      "level": 27,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": 0,
+      "light": -20,
+      "shadow": 20
+    },
+    "mastery": {
+      "shadow": 15
+    },
+    "stats": {
+      "con": 24,
+      "str": 26,
+      "spi": 22,
+      "agi": 28
+    },
+    "signature_move": "shadow_dusk_fang",
+    "trait": "trait_shadow_fade_step",
+    "concept": {
+      "base": "玄鐵色幼駒 × 頸繫迷你銀製口簧琴護符",
+      "stage_look": "墨黑短毛覆著冷硬青灰鐵斑的小馬駒，奔跑時頸側發出低沉共鳴震音",
+      "archetype": "arch_nyurgun_bootur",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "玄鐵重鎧黑駒",
+        "口簧琴音波"
+      ],
+      "role": "近戰繞側：近距前方暗牙咬擊（施放影招短暫提高移動速度）",
+      "palette": "暗影幽黑、玄鐵青黑、暮雲灰藍"
+    }
+  },
+  {
+    "id": "shadow_reverb_charger",
+    "line_id": "line_shadow_ironsteed",
+    "stage": "adolescent",
+    "size_class": "M",
+    "ai_style": "charge",
+    "temperament": "normal",
+    "evolves_to": "shadow_iron_cavalier",
+    "evolution": {
+      "level": 47,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 15,
+      "wind": 0,
+      "thunder": 0,
+      "light": -30,
+      "shadow": 35
+    },
+    "mastery": {
+      "shadow": 25
+    },
+    "stats": {
+      "con": 48,
+      "str": 52,
+      "spi": 44,
+      "agi": 56
+    },
+    "signature_move": "shadow_twilight_phase",
+    "trait": "trait_shadow_fade_step",
+    "concept": {
+      "base": "重甲黑戰馬 × 冰霜枝杈鬃飾與音波弦片肩鎧",
+      "stage_look": "披覆層疊玄鐵甲片的修長戰駒，鬃毛宛如世界巨樹枝枒結著黑霜，直線突進迅捷",
+      "archetype": "arch_nyurgun_bootur",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "玄鐵重鎧黑駒",
+        "繁枝世界巨樹",
+        "口簧琴音波"
+      ],
+      "role": "中距突進：暮影直線衝刺（施放影招短暫提高移動速度）",
+      "palette": "虛空深紫、暗影幽黑、純淨冰藍"
+    }
+  },
+  {
+    "id": "shadow_iron_cavalier",
+    "line_id": "line_shadow_ironsteed",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "charge",
+    "temperament": "territorial",
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 15,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 0,
+      "thunder": 0,
+      "light": -40,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 40
+    },
+    "stats": {
+      "con": 96,
+      "str": 104,
+      "spi": 88,
+      "agi": 112
+    },
+    "signature_move": "shadow_wraith_charge",
+    "trait": "trait_shadow_fade_step",
+    "concept": {
+      "base": "玄鐵重裝幽騎獸 × 凍土暗影鬃冠與共鳴琴弦鎧片",
+      "stage_look": "身披繁枝巨樹紋玄鐵重鎧的極寒黑馬，蹄踏霜影伴隨共鳴嘯音，發動超長距貫穿衝鋒",
+      "archetype": "arch_nyurgun_bootur",
+      "region": "中亞/北亞",
+      "motifs_used": [
+        "玄鐵重鎧黑駒",
+        "繁枝世界巨樹",
+        "口簧琴音波",
+        "極寒凍土"
+      ],
+      "role": "長距突進：遠距幽影直線衝鋒（施放影招短暫提高移動速度）",
+      "palette": "虛空深紫、暗影幽黑、玄鐵青黑、冰晶天藍"
+    }
+  }
+]
