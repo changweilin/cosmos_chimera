@@ -146,6 +146,7 @@ namespace Cosmimera.GameData
         [SerializeField] private CreatureStats stats;
         [SerializeField] private MoveDef signatureMove;
         [SerializeField] private TraitDef trait;
+        [SerializeField] private FieldUtility fieldUtility;
         [SerializeField] private string conceptJson;
         [SerializeField] private bool needsSensitivityReview;
 
@@ -197,6 +198,10 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public TraitDef Trait => trait;
 
+        /// <summary>Single life/field utility move or trait for this form (None if unassigned).</summary>
+        /// <remarks>Pre: none. Post: a defined FieldUtility. Side effects: none.</remarks>
+        public FieldUtility FieldUtility => fieldUtility;
+
         /// <summary>Concept block as compact JSON (authoring metadata, not read by game rules).</summary>
         /// <remarks>Pre: none. Post: a JSON object. Side effects: none.</remarks>
         public string ConceptJson => conceptJson;
@@ -222,6 +227,14 @@ namespace Cosmimera.GameData
             int evolutionLevel,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
+            => Set(lineId, stage, sizeClass, aiStyle, temperament, evolvesTo, evolutionLevel, evolutionMaterials,
+                resist, mastery, stats, signatureMove, trait, FieldUtility.None, conceptJson, needsSensitivityReview);
+
+        internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle,
+            Temperament temperament, CreatureDef evolvesTo,
+            int evolutionLevel,
+            List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
+            MoveDef signatureMove, TraitDef trait, FieldUtility fieldUtility, string conceptJson, bool needsSensitivityReview)
         {
             Contract.Requires(resist != null && resist.Length == ElementCount, "resist must have one entry per element");
             this.lineId = lineId;
@@ -237,6 +250,7 @@ namespace Cosmimera.GameData
             this.stats = stats;
             this.signatureMove = signatureMove;
             this.trait = trait;
+            this.fieldUtility = fieldUtility;
             this.conceptJson = conceptJson;
             this.needsSensitivityReview = needsSensitivityReview;
         }

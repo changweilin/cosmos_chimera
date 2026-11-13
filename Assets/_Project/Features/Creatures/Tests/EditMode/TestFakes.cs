@@ -41,9 +41,15 @@ namespace Cosmimera.Creatures.Tests
     {
         private readonly Dictionary<string, SpeciesInfo> _species = new Dictionary<string, SpeciesInfo>();
 
-        public FakeSpeciesLookup Add(string speciesId, string moveId, string traitId)
+        public FakeSpeciesLookup Add(string speciesId, string moveId, string traitId, FieldUtility utility = FieldUtility.None)
         {
-            _species[speciesId] = new SpeciesInfo(speciesId, moveId, traitId, CreatureStage.Juvenile);
+            _species[speciesId] = new SpeciesInfo(speciesId, moveId, traitId, CreatureStage.Juvenile, utility);
+            return this;
+        }
+
+        public FakeSpeciesLookup AddUtility(string speciesId, FieldUtility utility)
+        {
+            _species[speciesId] = new SpeciesInfo(speciesId, "move_" + speciesId, "trait_" + speciesId, CreatureStage.Juvenile, utility);
             return this;
         }
 

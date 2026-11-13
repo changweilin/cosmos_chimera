@@ -108,4 +108,54 @@ namespace Cosmimera.GameData
     {
         Asteroid = 0, Moon = 1, Planet = 2, Supergiant = 3,
     }
+
+    /// <summary>Whether a <see cref="FieldUtility"/> is an active field move or a passive field trait.</summary>
+    /// <remarks>Pre: none. Post: stable serialized values. Side effects: none.</remarks>
+    public enum FieldUtilityKind
+    {
+        None = 0,
+        Move = 1,
+        Trait = 2,
+    }
+
+    /// <summary>
+    /// Single out-of-combat life/field utility move or trait per creature form.
+    /// REQ: common.schema.json#/$defs/fieldUtility.
+    /// </summary>
+    /// <remarks>Pre: imported from field_utility (default None). Post: stable serialized values. Side effects: none.</remarks>
+    public enum FieldUtility
+    {
+        None = 0,
+        ImmuneLaboratory = 1,
+        ImmuneRainforest = 2,
+        ImmuneDeepSea = 3,
+        ImmuneVolcano = 4,
+        ImmuneCave = 5,
+        ImmuneIceCap = 6,
+        ImmuneTower = 7,
+        ImmuneSpace = 8,
+        ImmuneLabyrinth = 9,
+        ImmuneTemple = 10,
+        OpenObstacle = 11,
+        Dive = 12,
+        Fly = 13,
+        Levitate = 14,
+        CatchRateUp = 15,
+        StealItem = 16,
+        PreventEscape = 17,
+        QuickEscape = 18,
+        DropRateUp = 19,
+        ScoutPotential = 20,
+        Mount = 21,
+        ReturnVillage = 22,
+        PartyStealth = 23,
+        EggHatchBoost = 24,
+        MagnetPickupDouble = 25,
+        WeatherControl = 26,
+        Fishing = 27,
+        ForageBerries = 28,
+        CookFire = 29,
+        ProduceMilk = 30,
+        CampfireRevive = 31,
+    }
 }

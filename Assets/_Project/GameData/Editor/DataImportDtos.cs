@@ -85,6 +85,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("stats", Required = Required.Always)] public StatsDto Stats;
         [JsonProperty("signature_move", Required = Required.Always)] public string SignatureMove;
         [JsonProperty("trait", Required = Required.Always)] public string Trait;
+        [JsonProperty("field_utility", Required = Required.DisallowNull)] public string FieldUtility;
         [JsonProperty("concept", Required = Required.Always)] public JObject Concept;
     }
 
