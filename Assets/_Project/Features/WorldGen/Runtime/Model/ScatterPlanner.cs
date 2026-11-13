@@ -152,7 +152,7 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float CellM = 10f;
 
-        private const float PlaceChance = 0.55f;
+        private const float DefaultPlaceChance = 0.55f;
         private const float MaxSlope = 0.6f; // rise/run over the 3 m probe, ~31°
         private const float ProbeM = 1.5f;
         private const ulong Salt = 0x5CA77E5ul;
@@ -200,11 +200,12 @@ namespace Cosmimera.WorldGen
         private readonly Func<float3, float> _groundAltitude;
         private readonly Func<float3, bool> _isSea;
         private readonly Func<float3, bool> _isClear;
+        private readonly float _placeChance;
         private readonly Dictionary<long, ScatterItem> _items = new Dictionary<long, ScatterItem>();
         private readonly HashSet<long> _empty = new HashSet<long>();
         private readonly HashSet<long> _queryCells = new HashSet<long>();
 
-        /// <summary>Creates the planner.</summary>
+        /// <summary>Creates the planner with the default obstacle density.</summary>
         /// <remarks>
         /// Pre: config valid; groundAltitude non-null; isSea and isClear may be null (no sea mask / nothing to avoid);
         ///      all three are deterministic. planetTypeId may be null or unknown (falls back to verdant_planet).
@@ -212,9 +213,21 @@ namespace Cosmimera.WorldGen
         /// </remarks>
         public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
             Func<float3, bool> isSea, Func<float3, bool> isClear)
+            : this(config, seed, planetTypeId, groundAltitude, isSea, isClear, DefaultPlaceChance)
+        {
+        }
+
+        /// <summary>Creates the planner with an explicit landform obstacle density <paramref name="placeChance"/>.</summary>
+        /// <remarks>
+        /// Pre: config valid; groundAltitude non-null; placeChance finite in [0, 1]; isSea and isClear may be null.
+        /// Post: <see cref="Kinds"/> is the planet type's table; no cell evaluated yet. Side effects: none.
+        /// </remarks>
+        public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
+            Func<float3, bool> isSea, Func<float3, bool> isClear, float placeChance)
         {
             Contract.Requires(config.IsValid, "config must be valid");
             Contract.Requires(groundAltitude != null, "groundAltitude is required");
+            Contract.Requires(math.isfinite(placeChance) && placeChance >= 0f && placeChance <= 1f, "placeChance must be in [0, 1]");
             _config = config;
             _seed = seed;
             _kinds = KindsFor(planetTypeId);
@@ -228,6 +241,7 @@ namespace Cosmimera.WorldGen
             _groundAltitude = groundAltitude;
             _isSea = isSea;
             _isClear = isClear;
+            _placeChance = placeChance;
         }
 
         /// <summary>Scatter table of a planet type (the default table for null or unknown ids).</summary>
@@ -378,7 +392,7 @@ namespace Cosmimera.WorldGen
             int i = rem % n;
             // A per-cell stream: the same cell regenerates identically after being streamed out and back in.
             var rng = new Pcg32(_seed ^ Salt, (ulong)key);
-            if (rng.NextFloat() > PlaceChance)
+            if (rng.NextFloat() > _placeChance)
             {
                 return false;
             }

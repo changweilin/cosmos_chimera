@@ -344,6 +344,20 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: constant; never a unit id. Side effects: none.</remarks>
         public const int NoSource = -1;
 
+        private Func<float3, float> _terrainMoveSpeedMultiplier;
+
+        /// <summary>Sets a deterministic terrain move-speed multiplier queried at each unit's ground direction.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#地貌行動影響.
+        /// Pre: multiplierAt may be null (resets to 1.0); when non-null, returns a finite value &gt; 0.
+        /// Post: subsequent Steer steps scale creature movement speed by the returned factor.
+        /// Side effects: stores the callback.
+        /// </remarks>
+        public void SetTerrainMoveSpeedMultiplier(Func<float3, float> multiplierAt)
+        {
+            _terrainMoveSpeedMultiplier = multiplierAt;
+        }
+
         /// <summary>Lets moves hit generated scene objects. REQ: docs/design/destructibles.md, ADR-0009.</summary>
         /// <remarks>
         /// Pre: table, index and isNight non-null; called at most once, before the first Tick; isNight(direction) answers
@@ -1425,7 +1439,10 @@ namespace Cosmimera.Combat
             }
 
             // REQ: combat.md#效果疊加 (tech-debt D0-E3): move_speed_mod_percent scales both combat and wander steps.
-            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f;
+            // REQ: planet-world.md#地貌行動影響: landform movement multiplier scales creature ground speed.
+            float terrainScale = _terrainMoveSpeedMultiplier != null ? _terrainMoveSpeedMultiplier(up) : 1f;
+            Contract.Requires(math.isfinite(terrainScale) && terrainScale > 0f, "terrain move speed multiplier must be finite and > 0");
+            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f * terrainScale;
             float step = math.min(angle, speedMs * dtMs * 0.001f / r);
             float3 heading = Tangent(up, dest - up);
             float3 next = math.normalize(up * math.cos(step) + heading * math.sin(step));

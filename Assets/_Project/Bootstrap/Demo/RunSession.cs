@@ -70,13 +70,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public bool Landforms = true;
 
-        /// <summary>Whether the surface is a dungeon (DungeonPlanner): walls on region borders, gates, a locked boss room.</summary>
+        /// <summary>
+        /// Whether the surface is an enclosed dungeon (DungeonPlanner): walls on region borders, gates, a locked boss room.
+        /// Default false: general planet surfaces are open procedural terrain; only the 10 elemental advanced terrains are dungeons.
+        /// </summary>
         /// <remarks>
         /// Pre: none. Post: none. Side effects: none.
-        /// Tests that pin a plan or creature movement recorded before walls existed turn this off: it also keeps spawns
-        /// clear of the borders, which changes the plan.
         /// </remarks>
-        public bool Dungeon = true;
+        public bool Dungeon = false;
 
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
@@ -465,10 +466,12 @@ namespace Cosmimera.Bootstrap.Demo
             var surface = new HeightSurface(height, templates, clearance, walls, config.Radius);
             _surface = surface;
             System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+            TerrainProfile terrainProfile = TerrainProfiles.ForPlanetType(setup.PlanetType.Id);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
             var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear);
+                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear,
+                terrainProfile.ScatterDensity);
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {
@@ -552,7 +555,14 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            if (_rig != null && _rig.Character != null)
+            {
+                _rig.Character.SetTerrainModifiers(terrainProfile.MoveSpeedMultiplier,
+                    terrainProfile.SprintSpeedMultiplier, terrainProfile.GroundAccelerationMultiplier);
+            }
+
             _encounter = new Encounter(config, balance, surface, setup.Seed);
+            _encounter.SetTerrainMoveSpeedMultiplier(_ => terrainProfile.MoveSpeedMultiplier);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.

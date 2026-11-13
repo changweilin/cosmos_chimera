@@ -67,6 +67,45 @@ namespace Cosmimera.Player
             }
         }
 
+        private float _terrainMoveSpeedScale = 1f;
+        private float _terrainSprintSpeedScale = 1f;
+        private float _terrainGroundAccelScale = 1f;
+
+        /// <summary>Applies landform movement and friction multipliers (1 = neutral).</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#地貌行動影響.
+        /// Pre: all multipliers finite and &gt; 0.
+        /// Post: motor settings scale walk, sprint, and ground acceleration accordingly while remaining valid.
+        /// Side effects: updates motor settings.
+        /// </remarks>
+        public void SetTerrainModifiers(float moveSpeedMultiplier, float sprintSpeedMultiplier, float groundAccelerationMultiplier)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(moveSpeedMultiplier) && moveSpeedMultiplier > 0f &&
+                math.isfinite(sprintSpeedMultiplier) && sprintSpeedMultiplier > 0f &&
+                math.isfinite(groundAccelerationMultiplier) && groundAccelerationMultiplier > 0f,
+                "terrain multipliers must be finite and > 0");
+            _terrainMoveSpeedScale = moveSpeedMultiplier;
+            _terrainSprintSpeedScale = sprintSpeedMultiplier;
+            _terrainGroundAccelScale = groundAccelerationMultiplier;
+            if (_configured)
+            {
+                ApplyMotorSettings();
+            }
+        }
+
+        private void ApplyMotorSettings()
+        {
+            MotorSettings baseSettings = MotorSettings.Default;
+            _settings = baseSettings;
+            _settings.WalkSpeed = math.min(MotorSettings.MaxSpeed, _walkSpeed * _terrainMoveSpeedScale);
+            _settings.SprintSpeed = math.clamp(_sprintSpeed * _terrainSprintSpeedScale, _settings.WalkSpeed, MotorSettings.MaxSpeed);
+            _settings.GroundAcceleration = math.min(MotorSettings.MaxAcceleration, baseSettings.GroundAcceleration * _terrainGroundAccelScale);
+            _settings.JumpHeight = _jumpHeight;
+            _settings.MaxSlopeDegrees = _maxSlopeDegrees;
+            Cosmimera.Core.Contracts.Contract.Requires(_settings.IsValid, "serialized motor tuning is out of range (MotorSettings.IsValid)");
+        }
+
         /// <summary>Binds the character to <paramref name="planet"/> and resets motion, keeping the current position.</summary>
         /// <remarks>
         /// Pre: planet.IsValid; the transform is not at the planet centre.
@@ -89,12 +128,7 @@ namespace Cosmimera.Player
             // that press becomes drag and halves walking speed (measured 9.7 m instead of 25 m in 5 s).
             _capsule.sharedMaterial = Frictionless;
 
-            _settings = MotorSettings.Default;
-            _settings.WalkSpeed = _walkSpeed;
-            _settings.SprintSpeed = _sprintSpeed;
-            _settings.JumpHeight = _jumpHeight;
-            _settings.MaxSlopeDegrees = _maxSlopeDegrees;
-            Cosmimera.Core.Contracts.Contract.Requires(_settings.IsValid, "serialized motor tuning is out of range (MotorSettings.IsValid)");
+            ApplyMotorSettings();
 
             float3 up = PlanetFrame.At(planet, transform.position).Up;
             float3 facing = SphericalMotor.TangentOr(transform.forward, up, PlanetFrame.FromUp(up).North);
