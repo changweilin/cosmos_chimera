@@ -570,7 +570,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
-                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
+                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null, scenery?.Props);
                 if (objects != null)
                 {
                     // REQ: destructibles.md#物理 (ADR-0009) — only where something is drawn: headless runs have no bodies.

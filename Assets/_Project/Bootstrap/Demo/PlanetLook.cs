@@ -167,6 +167,27 @@ namespace Cosmimera.Bootstrap.Demo
             return m;
         }
 
+        /// <summary>Unoutlined toon material for a scenery prop built by <see cref="SceneryMeshes"/>.</summary>
+        /// <remarks>
+        /// Pre: shader (Cosmimera/ToonScenery) non-null; accentStrength and translucency in [0, 1]; swayM and glow ≥ 0.
+        /// Post: new material; accent is the colour the mesh's accent mask blends toward. Side effects: allocates a Material.
+        /// </remarks>
+        public static Material SceneryMaterial(Shader shader, Color color, Color accent, float accentStrength, float swayM,
+            float translucency, float glow)
+        {
+            Contract.Requires(shader != null, "shader required");
+            Contract.Requires(accentStrength >= 0f && accentStrength <= 1f && translucency >= 0f && translucency <= 1f &&
+                              swayM >= 0f && glow >= 0f, "strengths in [0,1]; sway and glow >= 0");
+            var m = new Material(shader);
+            m.SetColor("_BaseColor", color);
+            accent.a = accentStrength;
+            m.SetColor("_Accent", accent);
+            m.SetFloat("_Sway", swayM);
+            m.SetFloat("_Translucency", translucency);
+            m.SetFloat("_Glow", glow);
+            return m;
+        }
+
         /// <summary>Sky colours (day, dusk, night) for a planet type.</summary>
         /// <remarks>Pre: none. Post: three colours. Side effects: none.</remarks>
         public static (Color day, Color dusk, Color night) Sky(string planetTypeId)
@@ -180,7 +201,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static Color Hex(int rgb) => new Color(((rgb >> 16) & 0xFF) / 255f, ((rgb >> 8) & 0xFF) / 255f, (rgb & 0xFF) / 255f);
     }
 
-    /// <summary>Shaders of the optional scenery layers (sky dome, grass, liquid surface); any may be null to skip that layer.</summary>
+    /// <summary>Shaders of the optional scenery layers (sky dome, grass, liquid surface, props); any may be null to skip that layer.</summary>
     /// <remarks>Pre: none. Post: immutable. Side effects: none.</remarks>
     public sealed class SceneryShaders
     {
@@ -196,10 +217,15 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
         public Shader Water { get; }
 
+        /// <summary>Cosmimera/ToonScenery (trees, rocks, crystals), or null to draw them with the toon shader.</summary>
+        /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
+        public Shader Props { get; }
+
         /// <summary>Bundles the scenery shaders.</summary>
         /// <remarks>Pre: none (each may be null). Post: properties return the arguments. Side effects: none.</remarks>
-        public SceneryShaders(Shader sky, Shader grass, Shader water)
+        public SceneryShaders(Shader sky, Shader grass, Shader water, Shader props = null)
         {
+            Props = props;
             Sky = sky;
             Grass = grass;
             Water = water;

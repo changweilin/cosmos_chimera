@@ -166,6 +166,7 @@ MonoBehaviour:
   _skyShader: {fileID: 4800000, guid: c278b9aea0c177d4e88b21509a73ceb7, type: 3}
   _grassShader: {fileID: 4800000, guid: 3f224a198f50529478664d865095e9dc, type: 3}
   _waterShader: {fileID: 4800000, guid: 8051c9e88cd09f347a9a6fd3f0925fd0, type: 3}
+  _sceneryShader: {fileID: 4800000, guid: 7c1e5b0a94d24f6e8a3b6d2f5e9c4a17, type: 3}
   _bgmTable: {fileID: 11400000, guid: 72229fe6a2b235d4da1d845c1e25193e, type: 2}
   _characterModels: {fileID: 11400000, guid: 17eaa001b55dcc342b538cea3628a158, type: 2}
   _portraits: {fileID: 11400000, guid: c938fc242c063c246a1f39cd1c09cf16, type: 2}
