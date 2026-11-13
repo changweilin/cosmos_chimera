@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class SettlementPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v1).
-        private const ulong SnapshotSeed12345V1 = 16082388079742046734UL;
+        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v2).
+        private const ulong SnapshotSeed12345V2 = 12544250319596664072UL;
 
         private const float Radius = 640f;
         private readonly List<Object> _created = new List<Object>();
@@ -133,12 +133,14 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Settlements_cover_landing_route_and_boss()
         {
+            SettlementKind[] allowed = SettlementPlanner.AllowedTownKinds(PlanetSize.Moon);
             for (ulong seed = 0; seed < 100; seed++)
             {
                 RunPlan plan = Plan(seed);
                 RunLayout layout = SettlementPlanner.Generate(_planet, plan, null);
-                Assert.That(layout.Settlements[0].Kind, Is.EqualTo(SettlementKind.Outpost));
+                CollectionAssert.Contains(allowed, layout.Settlements[0].Kind, $"seed {seed}");
                 Assert.That(layout.Settlements[0].Region, Is.EqualTo(plan.LandingRegion));
+                Assert.That(math.distance(layout.Settlements[0].Center, plan.LandingDirection), Is.LessThan(1e-5f));
                 int villages = 0, lairs = 0;
                 for (int i = 0; i < layout.Settlements.Count; i++)
                 {
@@ -236,6 +238,29 @@ namespace Cosmimera.WorldGen.Tests
                 Is.Not.EqualTo(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(43), null))));
         }
 
+        [TestCase(PlanetSize.Asteroid, 320f, new[] { SettlementKind.Tribe })]
+        [TestCase(PlanetSize.Moon, 640f, new[] { SettlementKind.Tribe, SettlementKind.Town })]
+        [TestCase(PlanetSize.Planet, 960f, new[] { SettlementKind.Tribe, SettlementKind.Town, SettlementKind.City })]
+        [TestCase(PlanetSize.Supergiant, 1280f, new[] { SettlementKind.Tribe, SettlementKind.Town, SettlementKind.City, SettlementKind.CityState })]
+        public void Starting_town_kind_matches_planet_size(PlanetSize size, float radius, SettlementKind[] expected)
+        {
+            CollectionAssert.AreEqual(expected, SettlementPlanner.AllowedTownKinds(size));
+            var planet = new PlanetConfig(radius, float3.zero);
+            var seen = new HashSet<SettlementKind>();
+            for (ulong seed = 0; seed < 60; seed++)
+            {
+                RunPlan plan = RunPlanner.Generate(planet, seed, _type, CreatureStage.Adult, _pool, _vocab, null);
+                RunLayout layout = SettlementPlanner.Generate(planet, plan, null);
+                RunSettlement start = layout.Settlements[0];
+                Assert.That(start.Region, Is.EqualTo(plan.LandingRegion));
+                Assert.That(math.distance(start.Center, plan.LandingDirection), Is.LessThan(1e-5f));
+                CollectionAssert.Contains(expected, start.Kind, $"size {size} seed {seed}");
+                seen.Add(start.Kind);
+            }
+
+            Assert.That(seen.Count, Is.EqualTo(expected.Length), $"size {size} should produce all allowed town kinds");
+        }
+
         [Test]
         public void Contract_violations_throw()
         {
@@ -243,14 +268,15 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => SettlementPlanner.Generate(default, plan, null));
             Assert.Throws<ContractException>(() => SettlementPlanner.Generate(_planet, null, null));
             Assert.Throws<ContractException>(() => SettlementPlanner.Hash(null));
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => SettlementPlanner.AllowedTownKinds((PlanetSize)99));
         }
 
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(1), "bump the pin with the version");
+            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
             ulong h = SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(12345), null));
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V1), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
         }
     }
 }

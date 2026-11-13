@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class DungeonPlannerTests
     {
-        // Pinned discrete digest of seed 12345 at R = 640 on this fixture, isLand null (DungeonPlanner v1).
-        private const ulong SnapshotSeed12345V1 = 2481595102866819357UL;
+        // Pinned discrete digest of seed 12345 at R = 640 on this fixture, isLand null (DungeonPlanner v1, SettlementPlanner v2).
+        private const ulong SnapshotSeed12345V1 = 2328280189737537727UL;
 
         private static readonly float[] Radii = { 320f, 640f, 960f };
         private readonly List<Object> _created = new List<Object>();

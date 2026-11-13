@@ -17,14 +17,20 @@ namespace Cosmimera.WorldGen
     /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
     public enum SettlementKind
     {
-        /// <summary>Camp beside the landing point.</summary>
-        Outpost = 0,
-        /// <summary>Inhabited cluster on a main-route region.</summary>
-        Village = 1,
+        /// <summary>Tribe starting town (部落; Asteroid+).</summary>
+        Tribe = 0,
+        /// <summary>Small starting town (小鎮; Moon / Dwarf Planet+).</summary>
+        Town = 1,
+        /// <summary>City starting town (都市; Planet+).</summary>
+        City = 2,
+        /// <summary>City-state starting town (城邦; Supergiant).</summary>
+        CityState = 3,
+        /// <summary>Inhabited cluster on a main-route region (村落).</summary>
+        Village = 4,
         /// <summary>Abandoned cluster on an off-route region (聚落遺跡).</summary>
-        Ruins = 2,
+        Ruins = 5,
         /// <summary>Pillar ring around the boss spawn (BOSS 巢穴).</summary>
-        Lair = 3,
+        Lair = 6,
     }
 
     /// <summary>Building kind (rule-layer footprint only; art is chosen by the presentation layer).</summary>
@@ -184,7 +190,7 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: Count == regions − 1 (a spanning tree of the region graph). Side effects: none.</remarks>
         public IReadOnlyList<RunRoad> Roads { get; }
 
-        /// <summary>Settlements: outpost, villages in route order, lair, then ruins in region order.</summary>
+        /// <summary>Settlements: starting town, villages in route order, lair, then ruins in region order.</summary>
         /// <remarks>Pre: none. Post: Settlements[i].Index == i. Side effects: none.</remarks>
         public IReadOnlyList<RunSettlement> Settlements { get; }
 
