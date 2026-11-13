@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bcf3c541c8e2c44fb8db6ffe34a19c7, type: 3}
+  m_Name: ConceptPortraitTable
+  m_EditorClassIdentifier: Cosmimera.Bootstrap::Cosmimera.Bootstrap.Demo.ConceptPortraitTable
+  characterEntries:
+  - id: chr_amemori_sumiha
+    texture: {fileID: 2800000, guid: 01ac2752c5de00c4980d3a12aa47fc76, type: 3}
+  - id: chr_roen
+    texture: {fileID: 2800000, guid: bc2eaafd49b186145abd524f7f703bd5, type: 3}
+  - id: chr_yeh_chengxi
+    texture: {fileID: 2800000, guid: bff85bb241730404db92c515b9817566, type: 3}
+  creatureEntries:
+  - lineId: starter_sun_line
+    stage: 1
+    texture: {fileID: 2800000, guid: 56da347c977ddea428247100cb3ef348, type: 3}
+  - lineId: starter_sun_line
+    stage: 2
+    texture: {fileID: 2800000, guid: 4b65c21ca9e63db4c9b9b17ae0978707, type: 3}
+  - lineId: starter_sun_line
+    stage: 0
+    texture: {fileID: 2800000, guid: a55f4361de68ab04ab28a2e7816232cf, type: 3}

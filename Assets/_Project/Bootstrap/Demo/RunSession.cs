@@ -10,6 +10,8 @@ using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Cosmimera.Bootstrap.Demo
 {
@@ -114,6 +116,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Optional player character model prefab; null falls back to the placeholder capsule.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public GameObject CharacterModelPrefab;
+
+        /// <summary>Optional 2D concept portrait table for HUD team slots; null omits portraits.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public ConceptPortraitTable Portraits;
+
+        /// <summary>Optional URP VolumeProfile for post-processing during the run; null skips Volume setup.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public VolumeProfile VolumeProfile;
     }
 
     /// <summary>
@@ -288,6 +298,7 @@ namespace Cosmimera.Bootstrap.Demo
         private long _abandonArmedUntilMs = -1;
         private string _toast = string.Empty;
         private long _toastUntilMs;
+        private ConceptPortraitTable _portraits;
         private GUIStyle _label;
         private GUIStyle _markerStyle;
         private Material _terrainMaterial;
@@ -480,6 +491,21 @@ namespace Cosmimera.Bootstrap.Demo
 
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
                 setup.CharacterModelPrefab, walls);
+            _portraits = setup.Portraits;
+            if (setup.VolumeProfile != null)
+            {
+                UniversalAdditionalCameraData camData = _rig.Camera.GetUniversalAdditionalCameraData();
+                if (camData != null)
+                {
+                    camData.renderPostProcessing = true;
+                }
+
+                var volumeGo = new GameObject("PostProcessVolume");
+                volumeGo.transform.SetParent(transform, false);
+                Volume volume = volumeGo.AddComponent<Volume>();
+                volume.isGlobal = true;
+                volume.sharedProfile = setup.VolumeProfile;
+            }
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
@@ -2097,8 +2123,21 @@ namespace Cosmimera.Bootstrap.Demo
                 string cd = u.Combatant.Cooldowns.IsReady(0, _nowMs) ? _copy.Ui("ui.hud.cd_ready")
                     : $"{(u.Combatant.Cooldowns.ReadyAtMs(0) - _nowMs) / 1000f:0.0}s";
                 string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
-                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
-                    new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
+                Texture2D portrait = _portraits != null ? _portraits.FindCreature(u.Def.LineId, u.Def.Stage) : null;
+                if (portrait != null)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Width(175));
+                    Rect iconRect = GUILayoutUtility.GetRect(36f, 36f, GUILayout.ExpandWidth(false));
+                    GUI.DrawTexture(iconRect, portrait, ScaleMode.ScaleToFit, true);
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
+                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(135));
+                    GUILayout.EndHorizontal();
+                }
+                else
+                {
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
+                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
+                }
             }
 
             GUILayout.EndHorizontal();
