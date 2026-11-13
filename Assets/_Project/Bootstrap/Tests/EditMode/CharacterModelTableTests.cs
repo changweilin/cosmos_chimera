@@ -3,6 +3,7 @@ using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Player;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Tests.EditMode
@@ -59,6 +60,26 @@ namespace Cosmimera.Bootstrap.Tests.EditMode
             finally
             {
                 Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void Registered_provisional_prefabs_have_renderer_and_animator()
+        {
+            var table = AssetDatabase.LoadAssetAtPath<CharacterModelTable>(
+                CharacterModelTableBuilder.TableAssetPath);
+            Assert.That(table, Is.Not.Null);
+            Assert.That(table.Entries, Is.Not.Empty);
+
+            foreach (CharacterModelEntry entry in table.Entries)
+            {
+                Assert.That(entry.prefab, Is.Not.Null, $"Prefab missing for {entry.id}");
+                Assert.That(entry.prefab.GetComponentsInChildren<Renderer>(true), Is.Not.Empty,
+                    $"No Renderer found on {entry.id} prefab");
+                Animator animator = entry.prefab.GetComponentInChildren<Animator>(true);
+                Assert.That(animator, Is.Not.Null, $"No Animator found on {entry.id} prefab");
+                Assert.That(animator.runtimeAnimatorController, Is.Not.Null,
+                    $"No RuntimeAnimatorController assigned on {entry.id} prefab");
             }
         }
     }

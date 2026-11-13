@@ -53,8 +53,21 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 string assetDir = dir.Replace('\\', '/');
-                string modelPath = $"{assetDir}/Model/{charId}.fbx";
+                string glbPath = $"{assetDir}/Model/{charId}.glb";
+                string fbxPath = $"{assetDir}/Model/{charId}.fbx";
+                string modelPath = File.Exists(glbPath) ? glbPath : fbxPath;
+                if (modelPath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
+                {
+                    EnsureGltfMecanim(modelPath);
+                }
+
                 GameObject modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+                if (modelAsset == null && modelPath != fbxPath)
+                {
+                    modelPath = fbxPath;
+                    modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+                }
+
                 if (modelAsset == null)
                 {
                     continue;
@@ -63,7 +76,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ReadMetadata(assetDir, charId, out string displayName, out string sourceTaskId, out bool flipForward);
                 EnsureLoopSettings(assetDir);
 
-                AnimatorController controller = BuildController(assetDir, charId);
+                AnimatorController controller = BuildController(assetDir, charId, modelPath);
                 GameObject prefab = BuildPrefab(assetDir, charId, modelAsset, controller, flipForward);
 
                 entries.Add(new CharacterModelEntry(
@@ -161,7 +174,32 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private static AnimatorController BuildController(string assetDir, string charId)
+        private static void EnsureGltfMecanim(string glbPath)
+        {
+            AssetImporter importer = AssetImporter.GetAtPath(glbPath);
+            if (importer == null)
+            {
+                return;
+            }
+
+            // glTFast defaults to Legacy Animation; AnimatorController requires Mecanim (non-legacy) clips.
+            var so = new SerializedObject(importer);
+            SerializedProperty animProp = so.FindProperty("importSettings.animationMethod");
+            if (animProp == null || animProp.propertyType != SerializedPropertyType.Enum)
+            {
+                return;
+            }
+
+            int mecanimIndex = Array.IndexOf(animProp.enumNames, "Mecanim");
+            if (mecanimIndex >= 0 && animProp.enumValueIndex != mecanimIndex)
+            {
+                animProp.enumValueIndex = mecanimIndex;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static AnimatorController BuildController(string assetDir, string charId, string modelPath)
         {
             string controllerPath = $"{assetDir}/Anim/{charId}.controller";
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
@@ -194,10 +232,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             AnimatorStateMachine rootSm = controller.layers[0].stateMachine;
 
-            AnimationClip idleClip = LoadClip($"{assetDir}/Anim/chr_idle.fbx");
-            AnimationClip walkClip = LoadClip($"{assetDir}/Anim/chr_walk.fbx");
-            AnimationClip runClip = LoadClip($"{assetDir}/Anim/chr_run.fbx");
-            AnimationClip jumpClip = LoadClip($"{assetDir}/Anim/chr_jump.fbx");
+            AnimationClip idleClip = LoadClipByName(modelPath, "chr_idle") ?? LoadClip($"{assetDir}/Anim/chr_idle.fbx");
+            AnimationClip walkClip = LoadClipByName(modelPath, "chr_walk") ?? LoadClip($"{assetDir}/Anim/chr_walk.fbx");
+            AnimationClip runClip = LoadClipByName(modelPath, "chr_run") ?? LoadClip($"{assetDir}/Anim/chr_run.fbx");
+            AnimationClip jumpClip = LoadClipByName(modelPath, "chr_jump") ?? LoadClip($"{assetDir}/Anim/chr_jump.fbx");
 
             AnimatorState idle = rootSm.AddState("Idle");
             idle.motion = idleClip;
@@ -239,6 +277,22 @@ namespace Cosmimera.Bootstrap.Demo
             t.hasExitTime = false;
             t.duration = duration;
             t.AddCondition(mode, threshold, param);
+        }
+
+        private static AnimationClip LoadClipByName(string assetPath, string clipName)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is AnimationClip clip &&
+                    string.Equals(clip.name, clipName, StringComparison.Ordinal) &&
+                    !clip.legacy)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
         }
 
         private static AnimationClip LoadClip(string fbxPath)
