@@ -47,6 +47,9 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
         [SerializeField] private BgmTable _bgmTable;
+        [SerializeField] private CharacterModelTable _characterModels;
+
+        private int _selectedCharacterIndex;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
@@ -389,6 +392,15 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 CycleLanguage();
                 GUIUtility.ExitGUI();
+            }
+
+            if (_characterModels != null && _characterModels.Entries.Count > 0)
+            {
+                if (MenuButton(CharacterButtonLabel(), GUILayout.Height(36)))
+                {
+                    _selectedCharacterIndex = (_selectedCharacterIndex + 1) % (_characterModels.Entries.Count + 1);
+                    GUIUtility.ExitGUI();
+                }
             }
             if (_save.StarterLine == null)
             {
@@ -796,6 +808,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
+                    CharacterModelPrefab = SelectedCharacterPrefab(),
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
             _screen = Screen.Running;
         }
@@ -859,6 +872,29 @@ namespace Cosmimera.Bootstrap.Demo
             _settleError = _copy.Ui("ui.results.save_failed");
         }
 
+        private string CharacterButtonLabel()
+        {
+            if (_characterModels == null || _selectedCharacterIndex >= _characterModels.Entries.Count)
+            {
+                return "角色外觀: 佔位膠囊";
+            }
+
+            CharacterModelEntry entry = _characterModels.Entries[_selectedCharacterIndex];
+            string tag = entry.isProvisional ? " [暫時採用]" : string.Empty;
+            return $"角色外觀: {entry.displayName}{tag}";
+        }
+
+        private GameObject SelectedCharacterPrefab()
+        {
+            if (_characterModels == null || _selectedCharacterIndex < 0 ||
+                _selectedCharacterIndex >= _characterModels.Entries.Count)
+            {
+                return null;
+            }
+
+            return _characterModels.Entries[_selectedCharacterIndex].prefab;
+        }
+
         private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"
             : v == VesselKind.GlassBead ? "glass_bead" : "magic_cube";
 
@@ -887,6 +923,8 @@ namespace Cosmimera.Bootstrap.Demo
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
             game._bgmTable = UnityEditor.AssetDatabase.LoadAssetAtPath<BgmTable>("Assets/_Project/Audio/BgmTable.asset");
+            game._characterModels = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterModelTable>(
+                CharacterModelTableBuilder.TableAssetPath);
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
                          game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {

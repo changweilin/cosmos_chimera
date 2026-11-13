@@ -90,7 +90,7 @@ namespace Cosmimera.Bootstrap
         /// Side effects: creates GameObjects (planet, player, cameras, sun).
         /// </remarks>
         public static PlanetRig Build(in PlanetConfig config, in PlanetHeight height, float3 spawnDir,
-            Material terrainMaterial, PlanetTemplates templates = null)
+            Material terrainMaterial, PlanetTemplates templates = null, GameObject characterModelPrefab = null)
         {
             var terrain = new GameObject("Planet").AddComponent<PlanetTerrain>();
 
@@ -101,11 +101,31 @@ namespace Cosmimera.Bootstrap
             capsule.center = new Vector3(0f, 0.9f, 0f);
             body.AddComponent<Rigidbody>().isKinematic = true; // held until the ground colliders exist
             var character = body.AddComponent<SphericalCharacter>();
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            Object.Destroy(visual.GetComponent<Collider>());
-            visual.transform.SetParent(body.transform, false);
-            visual.transform.localPosition = capsule.center;
-            visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            if (characterModelPrefab != null)
+            {
+                GameObject visual = Object.Instantiate(characterModelPrefab, body.transform, false);
+                visual.name = characterModelPrefab.name;
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localRotation = Quaternion.identity;
+                foreach (Collider col in visual.GetComponentsInChildren<Collider>(true))
+                {
+                    Object.Destroy(col);
+                }
+
+                Animator animator = visual.GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    body.AddComponent<Demo.CharacterAnimatorDriver>().Configure(character, animator);
+                }
+            }
+            else
+            {
+                GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                Object.Destroy(visual.GetComponent<Collider>());
+                visual.transform.SetParent(body.transform, false);
+                visual.transform.localPosition = capsule.center;
+                visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+            }
 
             float spawnHeight = templates != null ? templates.Sample(height, spawnDir) : height.Sample(spawnDir);
             body.transform.SetPositionAndRotation(config.ToWorld(spawnDir, spawnHeight + 0.3f),

@@ -102,6 +102,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
         /// </remarks>
         public EnvMaterials EnvMaterials;
+
+        /// <summary>Optional player character model prefab; null falls back to the placeholder capsule.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public GameObject CharacterModelPrefab;
     }
 
     /// <summary>
@@ -438,7 +442,8 @@ namespace Cosmimera.Bootstrap.Demo
                 terrainMaterial = _terrainMaterial;
             }
 
-            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
+            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
+                setup.CharacterModelPrefab);
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
@@ -449,9 +454,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (toonShader != null)
             {
-                // Runtime primitives keep the built-in material, which renders magenta under URP.
-                _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
-                _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
+                if (setup.CharacterModelPrefab == null)
+                {
+                    // Runtime primitives keep the built-in material, which renders magenta under URP.
+                    _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
+                    _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
+                }
                 // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
                 var settlements = new GameObject("Settlements");
                 settlements.transform.SetParent(transform, false);

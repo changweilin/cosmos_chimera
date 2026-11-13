@@ -8,6 +8,7 @@
         "Cosmimera.Creatures",
         "Cosmimera.GameData",
         "Cosmimera.Planet",
+        "Cosmimera.Player",
         "Cosmimera.WorldGen",
         "Cosmimera.Save",
         "Unity.InputSystem",
