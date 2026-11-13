@@ -25,14 +25,14 @@
     "filename": "bgm_rainforest.mp3",
     "title": "Beneath The Palms",
     "scene": "rainforest",
-    "description": "雨林地貌"
+    "description": "雨林地貌（進階地形：木／Dwarf Planet）"
   },
   {
     "id": "bgm_mountain",
     "filename": "bgm_mountain.mp3",
     "title": "Above the Timberline",
     "scene": "mountain",
-    "description": "高山／高地"
+    "description": "高山／深山"
   },
   {
     "id": "bgm_grassland",
@@ -60,7 +60,7 @@
     "filename": "bgm_swamp.mp3",
     "title": "Where The Reeds Bend",
     "scene": "swamp",
-    "description": "沼澤地貌"
+    "description": "沼澤／湖泊／濕地"
   },
   {
     "id": "bgm_beach",
@@ -88,56 +88,63 @@
     "filename": "bgm_space.mp3",
     "title": "The Quiet Between Stars",
     "scene": "space",
-    "description": "星海／星際選星"
+    "description": "太空設施／浮空島（進階地形：風／Planet）"
   },
   {
     "id": "bgm_cave",
     "filename": "bgm_cave.mp3",
     "title": "Sunless Mineral Bloom",
     "scene": "cave",
-    "description": "洞穴／地下"
+    "description": "洞穴／礦坑／地底（進階地形：土／Dwarf Planet）"
   },
   {
     "id": "bgm_labyrinth",
     "filename": "bgm_labyrinth.mp3",
     "title": "Beneath the Sunken Arch",
     "scene": "labyrinth",
-    "description": "迷宮"
+    "description": "迷宮（進階地形：影／Supergiant）"
   },
   {
     "id": "bgm_deep_sea",
     "filename": "bgm_deep_sea.mp3",
     "title": "Midnight Current",
     "scene": "deep_sea",
-    "description": "深海"
+    "description": "深海（進階地形：水／Dwarf Planet）"
   },
   {
     "id": "bgm_volcano",
     "filename": "bgm_volcano.mp3",
     "title": "Breath Of The Caldera",
     "scene": "volcano",
-    "description": "火山／熔岩地貌"
+    "description": "火山／熔岩（進階地形：火／Dwarf Planet）"
   },
   {
     "id": "bgm_tower",
     "filename": "bgm_tower.mp3",
     "title": "Where the Air Thins",
     "scene": "tower",
-    "description": "高塔"
+    "description": "高塔／各式塔臺／摩天樓層（進階地形：雷／Planet）"
   },
   {
     "id": "bgm_laboratory",
     "filename": "bgm_laboratory.mp3",
     "title": "A Quiet Hypothesis",
     "scene": "laboratory",
-    "description": "研究室"
+    "description": "研究室／機房／工廠（進階地形：金／Dwarf Planet）"
   },
   {
     "id": "bgm_ice_cap",
     "filename": "bgm_ice_cap.mp3",
     "title": "Beneath the Permafrost",
     "scene": "ice_cap",
-    "description": "冰棚／冰冠"
+    "description": "冰棚／冰冠（進階地形：冰／Planet）"
+  },
+  {
+    "id": "bgm_temple",
+    "filename": "bgm_temple.mp3",
+    "title": "Beneath the Mountain Gate",
+    "scene": "temple",
+    "description": "神廟（進階地形：光／Supergiant）"
   },
   {
     "id": "bgm_boss_asteroid",

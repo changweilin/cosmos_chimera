@@ -82,6 +82,27 @@ PlanetSeed + PlanetType + GeneratorVersion
 - 區域圖保證：從降落點到 BOSS 至少一條主路線；每區域 1 種主題（遺跡、森林、洞窟…）。
 - 暗黑式詞綴：區域可帶詞綴（例：「雷暴」→ 雷屬性招式 CD −15%、場景閃電），影響當場戰術。
 
+### 進階地形與通行限制
+進階地形需要獲得擁有特定屬性招式的宙獸並攜帶於隊伍中方可進入。特定星球等級／尺寸才可取得擁有該屬性地形招式的宙獸：
+
+| 星球尺寸／階級 | 進階地形標籤（包含別名） | 必備招式屬性 | 對應 BGM |
+|---|---|---|---|
+| **Dwarf Planet 矮行星**（少年，R=640） | 機房／工廠／研究室 (`laboratory`, `factory`, `server_room`) | 金 (`Metal`) | `bgm_laboratory` |
+| | 雨林 (`rainforest`, `jungle`) | 木 (`Wood`) | `bgm_rainforest` |
+| | 深海 (`deep_sea`, `trench`) | 水 (`Water`) | `bgm_deep_sea` |
+| | 火山／火山口 (`volcano`, `caldera`) | 火 (`Fire`) | `bgm_volcano` |
+| | 礦坑／地底／洞穴 (`cave`, `mine`, `underground`) | 土 (`Earth`) | `bgm_cave` |
+| **Planet 行星**（成年，R=960） | 冰棚／冰冠／永久凍土 (`ice_cap`, `permafrost`) | 冰 (`Ice`) | `bgm_ice_cap` |
+| | 高塔／各式塔臺／摩天樓層 (`tower`, `spire`, `skyscraper`) | 雷 (`Thunder`) | `bgm_tower` |
+| | 太空設施／浮空島 (`space`, `floating_island`, `space_facility`) | 風 (`Wind`) | `bgm_space` |
+| **Supergiant 超巨星**（超載，R=1280） | 迷宮 (`labyrinth`, `maze`) | 影 (`Shadow`) | `bgm_labyrinth` |
+| | 神廟 (`temple`, `shrine`) | 光 (`Light`) | `bgm_temple` |
+
+- **基礎與環境 BGM 涵蓋**：
+  - `bgm_mountain`：涵蓋高山、深山 (`deep_mountain`)、台地 (`plateau`)
+  - `bgm_swamp`：涵蓋沼澤、湖泊 (`lake`)、濕地 (`wetland`)
+  - `bgm_town`：城鎮與大廳背景音樂（`bgm_space` 屬進階風屬性太空地形，不作為大廳音樂）
+
 ## 星球類型（大廳選擇）
 | 類型 | 地貌偏好 | 屬性偏好 |
 |---|---|---|

@@ -53,6 +53,8 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 41ef50e0e23741f46ba3d6338c4493a3, type: 3}
   - id: bgm_swamp
     clip: {fileID: 8300000, guid: 66cb86584a99ee747b82a8461fdab536, type: 3}
+  - id: bgm_temple
+    clip: {fileID: 8300000, guid: 7a1b3963ef40c7641b0ac20d19f5cbe5, type: 3}
   - id: bgm_tower
     clip: {fileID: 8300000, guid: c5e1b451968c8a441b065fdecfb95c36, type: 3}
   - id: bgm_town

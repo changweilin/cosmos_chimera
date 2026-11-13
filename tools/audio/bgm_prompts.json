@@ -123,6 +123,12 @@
       "prompt": "Majestic, pristine glacial ice cap theme. Crystal glass harp, shimmering celesta, sustained frozen string harmonics, breathy low flutes, serene polar isolation."
     },
     {
+      "id": "bgm_temple",
+      "scene": "神廟 (Temple)",
+      "mood": "calm",
+      "prompt": "Sacred, serene ancient temple sanctuary theme. Soft resonant singing bowls, airy bamboo flute, gentle plucked koto or harp, warm ethereal choral pads, peaceful spiritual stillness."
+    },
+    {
       "id": "bgm_boss_asteroid",
       "scene": "BOSS戰 - 小行星 (Boss: Asteroid)",
       "mood": "rousing",

@@ -1099,6 +1099,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
                 PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
+                if (_plan != null && region >= 0 && region < _plan.Regions.Count)
+                {
+                    RunRegion nextRegion = _plan.Regions[region];
+                    if (!BgmResolver.CanPartyEnterAdvancedTerrain(nextRegion.ThemeId, _setup?.Party, out Element req))
+                    {
+                        Toast($"需攜帶擁有【{req}】屬性招式的宙獸");
+                    }
+                }
                 UpdateBgm();
             }
         }

@@ -108,7 +108,7 @@ namespace Cosmimera.Bootstrap.Demo
             bgmGo.transform.SetParent(transform, false);
             _bgm = bgmGo.AddComponent<BgmPlayer>();
             _bgm.Initialize(_bgmTable);
-            _bgm.Play(BgmResolver.Space);
+            _bgm.Play(BgmResolver.Town);
         }
 
         private void LoadData()
@@ -824,7 +824,7 @@ namespace Cosmimera.Bootstrap.Demo
             _lobbyCamera.gameObject.SetActive(true);
             if (_bgm != null)
             {
-                _bgm.Play(BgmResolver.Space);
+                _bgm.Play(BgmResolver.Town);
             }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
