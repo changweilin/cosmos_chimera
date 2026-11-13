@@ -15,13 +15,15 @@ namespace Cosmimera.Bootstrap
     {
         private readonly GameObject[] _owned;
         private readonly PlanetTemplates _templates;
+        private readonly PlanetWalls _walls;
         private bool _spawned;
 
-        private PlanetRig(PlanetConfig config, PlanetHeight height, PlanetTemplates templates, float3 spawnDir,
+        private PlanetRig(PlanetConfig config, PlanetHeight height, PlanetTemplates templates, PlanetWalls walls, float3 spawnDir,
             PlanetTerrain terrain, SphericalCharacter character, PlayerCameraRig rig, PlayerInputDriver input,
             Camera camera, GameObject[] owned)
         {
             _templates = templates;
+            _walls = walls;
             Config = config;
             Height = height;
             SpawnDirection = spawnDir;
@@ -41,10 +43,11 @@ namespace Cosmimera.Bootstrap
         /// <remarks>Pre: none. Post: valid. Side effects: none.</remarks>
         public PlanetHeight Height { get; }
 
-        /// <summary>Ground altitude (m above Radius) under <paramref name="direction"/>, templates included.</summary>
+        /// <summary>Ground altitude (m above Radius) under <paramref name="direction"/>, templates and walls included.</summary>
         /// <remarks>Pre: not disposed; direction unit. Post: matches the rendered/collided terrain. Side effects: none.</remarks>
         public float SurfaceHeight(float3 direction) =>
-            _templates != null ? _templates.Sample(Height, direction) : Height.Sample(direction);
+            (_templates != null ? _templates.Sample(Height, direction) : Height.Sample(direction)) +
+            (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
 
         /// <summary>Whether <paramref name="direction"/> is template sea (false without templates).</summary>
         /// <remarks>Pre: not disposed; direction unit. Post: none. Side effects: none.</remarks>
@@ -84,13 +87,14 @@ namespace Cosmimera.Bootstrap
 
         /// <summary>Creates the rig.</summary>
         /// <remarks>
-        /// Pre: config/height valid; spawnDir unit length; terrainMaterial non-null; templates null or undisposed
-        ///      (ownership passes to the rig, which disposes it after the terrain's jobs are complete).
+        /// Pre: config/height valid; spawnDir unit length; terrainMaterial non-null; templates and walls each null or
+        ///      undisposed (ownership passes to the rig, which disposes them after the terrain's jobs are complete).
         /// Post: objects exist; character kinematic at the spawn point.
         /// Side effects: creates GameObjects (planet, player, cameras, sun).
         /// </remarks>
         public static PlanetRig Build(in PlanetConfig config, in PlanetHeight height, float3 spawnDir,
-            Material terrainMaterial, PlanetTemplates templates = null, GameObject characterModelPrefab = null)
+            Material terrainMaterial, PlanetTemplates templates = null, GameObject characterModelPrefab = null,
+            PlanetWalls walls = null)
         {
             var terrain = new GameObject("Planet").AddComponent<PlanetTerrain>();
 
@@ -127,12 +131,15 @@ namespace Cosmimera.Bootstrap
                 visual.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
             }
 
-            float spawnHeight = templates != null ? templates.Sample(height, spawnDir) : height.Sample(spawnDir);
+            float spawnHeight = (templates != null ? templates.Sample(height, spawnDir) : height.Sample(spawnDir)) +
+                                (walls != null ? walls.View.Height(math.normalize(spawnDir)) : 0f);
             body.transform.SetPositionAndRotation(config.ToWorld(spawnDir, spawnHeight + 0.3f),
                 quaternion.LookRotationSafe(PlanetFrame.FromUp(spawnDir).North, spawnDir));
-            if (templates != null)
+            if (templates != null || walls != null)
             {
-                terrain.Configure(config, height, body.transform, terrainMaterial, templates.View, templates.MaxAbsContribution);
+                terrain.Configure(config, height, body.transform, terrainMaterial,
+                    templates != null ? templates.View : default, templates != null ? templates.MaxAbsContribution : 0f,
+                    walls != null ? walls.View : default, walls != null ? walls.HeightM : 0f);
             }
             else
             {
@@ -164,7 +171,7 @@ namespace Cosmimera.Bootstrap
             sun.transform.rotation = Quaternion.LookRotation(-(Vector3)spawnDir + new Vector3(0.3f, 0f, 0.2f));
 
             var owned = new[] { terrain.gameObject, body, pivot.gameObject, cameraGo, third.gameObject, first.gameObject, sun.gameObject };
-            return new PlanetRig(config, height, templates, spawnDir, terrain, character, rig, input, camera, owned) { Sun = sun };
+            return new PlanetRig(config, height, templates, walls, spawnDir, terrain, character, rig, input, camera, owned) { Sun = sun };
         }
 
         /// <summary>Releases the character once a ground collider exists under the spawn point.</summary>
@@ -213,6 +220,7 @@ namespace Cosmimera.Bootstrap
             }
 
             _templates?.Dispose();
+            _walls?.Dispose();
             foreach (GameObject go in _owned)
             {
                 if (go != null)

@@ -144,6 +144,11 @@
     "en": "{name} reached LV{level} (applies after this battle)",
     "ja": "{name} が LV{level} に上がった（戦闘終了後に反映）"
   },
+  "ui.hud.gate_open": {
+    "zh-TW": "BOSS 房的封印解除了",
+    "en": "The seal on the boss room is broken",
+    "ja": "ボス部屋の封印が解けた"
+  },
   "ui.hud.knocked_out": {
     "zh-TW": "已擊倒",
     "en": "Knocked Out",

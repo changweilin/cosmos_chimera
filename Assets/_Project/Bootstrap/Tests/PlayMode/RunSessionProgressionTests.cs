@@ -1192,6 +1192,7 @@ namespace Cosmimera.Bootstrap.Tests
                 {
                     PlanetType = env.Type, Seed = seed, Radius = Radius, BossStage = CreatureStage.Adult, Party = party,
                     Landforms = false,
+                    Dungeon = false,
                     PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),

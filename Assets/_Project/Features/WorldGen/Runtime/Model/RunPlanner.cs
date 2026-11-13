@@ -42,6 +42,7 @@ namespace Cosmimera.WorldGen
         // v4 (2026-11-11, Q-D1-R1): a spawn or landing point whose 8 random tries and region site are all sea moves to the
         //     nearest land found by a deterministic ring sweep instead of staying at sea. Plans without such a point (and
         //     every isLand == null plan) are bit-identical to v3.
+        // (2026-11-13, Q-W2): borderClearanceRad is a new input, not a new version: 0 (the default) is bit-identical to v4.
         private const int DefeatWildCount = 3;
         private const double SurfaceKm2PerRegion = 0.42;
         private const int MinRegions = 8;
@@ -69,7 +70,8 @@ namespace Cosmimera.WorldGen
         /// Pre: planet valid; planetType non-null; wildPool non-empty, no nulls, each with ≥ 1 mastery entry, and at
         ///      least one form of exactly bossStage (Juvenile..Adult); vocabulary non-null; isLand null (all land) or
         ///      deterministic and accepting every direction of at least one spherical cap of angular radius
-        ///      <see cref="MinLandCapRad"/> (land narrower than that may be skipped).
+        ///      <see cref="MinLandCapRad"/> (land narrower than that may be skipped); 0 ≤ borderClearanceRad ≤ 0.1, and
+        ///      when > 0 that land cap must also lie farther than it from every region border.
         /// Post: regions in [8, 32] scaled by surface area; region graph connected; MainRoute is a shortest path from
         ///       LandingRegion to BossRegion; BossRegion maximizes hops from landing; exactly one Boss spawn (a bossStage
         ///       form whose main element is in the type's bias when one exists) in the boss region; no spawn's form is
@@ -79,13 +81,17 @@ namespace Cosmimera.WorldGen
         ///       DefeatElite target, preferring the type's bias.
         ///       Every spawn direction and LandingDirection satisfies isLand (REQ: combat.md#只在陸地); a spawn that found
         ///       no land near its region site takes the nearest land, which may lie across a Voronoi border.
+        ///       When borderClearanceRad > 0, every spawn direction and LandingDirection is also farther than it from
+        ///       every region border (REQ: planet-world.md#地表地牢 — nothing spawns on or inside a room wall).
         ///       Same inputs → same plan.
         /// Side effects: allocates. Throws ContractException in every build when the land sweep finds no land (the isLand
         ///          Pre is violated).
         /// </remarks>
         public static RunPlan Generate(in PlanetConfig planet, ulong seed, PlanetTypeDef planetType, CreatureStage bossStage,
-            IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, Func<float3, bool> isLand)
+            IReadOnlyList<CreatureDef> wildPool, RunPlanVocabulary vocabulary, Func<float3, bool> isLand,
+            float borderClearanceRad = 0f)
         {
+            Contract.Requires(borderClearanceRad >= 0f && borderClearanceRad <= 0.1f, "borderClearanceRad must be in [0, 0.1]");
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(planetType != null && vocabulary != null, "planetType and vocabulary must not be null");
             Contract.Requires(wildPool != null && wildPool.Count > 0, "wild pool must not be empty");
@@ -102,6 +108,12 @@ namespace Cosmimera.WorldGen
             var rng = new Pcg32(seed, 'R');
 
             float3[] sites = Sites(planet, ref rng);
+            if (borderClearanceRad > 0f)
+            {
+                Func<float3, bool> land = isLand;
+                isLand = d => (land == null || land(d)) && BorderDistanceRad(sites, d) > borderClearanceRad;
+            }
+
             int[][] adjacency = Gabriel(sites);
             int landing = Nearest(sites, RandomUnit(ref rng));
             int[] hops = Bfs(adjacency, landing, out int[] parent);
@@ -292,6 +304,25 @@ namespace Cosmimera.WorldGen
                 {
                     bestDot = d;
                     best = i;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Angular distance (rad) from <paramref name="direction"/> to the nearest border of its Voronoi cell.</summary>
+        /// <remarks>Pre: sites has ≥ 2 unit entries; direction unit length. Post: ≥ 0. Side effects: none.</remarks>
+        internal static float BorderDistanceRad(float3[] sites, float3 direction)
+        {
+            int a = Nearest(sites, direction);
+            float best = float.MaxValue;
+            for (int k = 0; k < sites.Length; k++)
+            {
+                if (k != a)
+                {
+                    // sine of the distance to the bisector great circle of (a, k); equal to the angle at wall scale.
+                    float3 diff = sites[a] - sites[k];
+                    best = math.min(best, math.dot(direction, diff) / math.length(diff));
                 }
             }
 

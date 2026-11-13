@@ -68,6 +68,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public bool Landforms = true;
 
+        /// <summary>Whether the surface is a dungeon (DungeonPlanner): walls on region borders, gates, a locked boss room.</summary>
+        /// <remarks>
+        /// Pre: none. Post: none. Side effects: none.
+        /// Tests that pin a plan or creature movement recorded before walls existed turn this off: it also keeps spawns
+        /// clear of the borders, which changes the plan.
+        /// </remarks>
+        public bool Dungeon = true;
+
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
@@ -133,27 +141,43 @@ namespace Cosmimera.Bootstrap.Demo
             private readonly PlanetHeight _height;
             private readonly PlanetTemplates _templates;
             private readonly LayoutClearance _layout;
+            private readonly PlanetWalls _walls;
+            private readonly float _radius;
 
-            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout)
+            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout, PlanetWalls walls,
+                float radius)
             {
                 _height = height;
                 _templates = templates;
                 _layout = layout;
+                _walls = walls;
+                _radius = radius;
             }
+
+            // REQ: planet-world.md#地表地牢 — true until the key elite is knocked out; locked gates then block like walls.
+            public bool LocksClosed { get; set; } = true;
 
             // Set once the scatter planner exists (it needs GroundAltitude first); null = buildings only.
             public WorldObjects Objects { get; set; }
 
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
-                _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
+                (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
+                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
 
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
+            // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
-                Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM);
+                (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
+                (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed));
+
+            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
+            public bool IsOffWalls(float3 direction) =>
+                _walls == null ||
+                _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius;
         }
 
         private sealed class WildInfo
@@ -187,6 +211,9 @@ namespace Cosmimera.Bootstrap.Demo
         private PlanetRig _rig;
         private RunPlan _plan;
         private RunLayout _layout;
+        private DungeonLayout _dungeon;
+        private HeightSurface _surface;
+        private DungeonView _dungeonView;
         private QuestTracker _quest;
         private Encounter _encounter;
         private WorldObjects _worldObjects;
@@ -411,17 +438,26 @@ namespace Cosmimera.Bootstrap.Demo
                 isLand = d => !view.IsSea(d);
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
+            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
+                setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            PlanetWalls walls = null;
+            if (setup.Dungeon)
+            {
+                _dungeon = DungeonPlanner.Generate(config, _plan, _layout, isLand);
+                walls = DungeonPlanner.BuildWalls(config, _plan, _dungeon);
+            }
+
             // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
             // passes its own body radius to IsInsideBuilding).
             var clearance = new LayoutClearance(config, _layout, 1.5f);
-            var surface = new HeightSurface(height, templates, clearance);
+            var surface = new HeightSurface(height, templates, clearance, walls, config.Radius);
+            _surface = surface;
             System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
             var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                clearance.IsClear);
+                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear);
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {
@@ -443,7 +479,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
-                setup.CharacterModelPrefab);
+                setup.CharacterModelPrefab, walls);
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
@@ -465,6 +501,14 @@ namespace Cosmimera.Bootstrap.Demo
                 settlements.transform.SetParent(transform, false);
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader);
+                if (_dungeon != null)
+                {
+                    var dungeonRoot = new GameObject("Dungeon");
+                    dungeonRoot.transform.SetParent(transform, false);
+                    _dungeonView = dungeonRoot.AddComponent<DungeonView>();
+                    _dungeonView.Configure(config, _plan, _dungeon, surface.GroundAltitude, toonShader);
+                }
+
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
                     objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
@@ -686,6 +730,14 @@ namespace Cosmimera.Bootstrap.Demo
                 w.AppearedAtKnockout);
             _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
             PayQuest(w.AppearedAtKnockout);
+            // REQ: planet-world.md#地表地牢 — the key elite's knock-out opens the boss room for the rest of the run.
+            if (_dungeon != null && w.Spawn == _dungeon.KeySpawn && _surface.LocksClosed)
+            {
+                _surface.LocksClosed = false;
+                _dungeonView?.OpenLocks();
+                Toast(_copy.Ui("ui.hud.gate_open"));
+            }
+
             if (spawn.Role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
