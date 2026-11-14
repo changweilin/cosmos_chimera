@@ -5,7 +5,9 @@
         "Cosmimera.Core",
         "Cosmimera.Combat",
         "Cosmimera.Creatures",
-        "Cosmimera.Planet"
+        "Cosmimera.Planet",
+        "Cosmimera.GameData",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

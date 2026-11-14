@@ -1,0 +1,29 @@
+{
+    "name": "Cosmimera.Net.Tests.EditMode",
+    "rootNamespace": "Cosmimera.Net.Tests",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.Net",
+        "Cosmimera.Combat",
+        "Cosmimera.GameData",
+        "Cosmimera.Planet",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
