@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.053243">
+  <test-suite type="TestSuite" id="1000" name="COSMIMERA" fullname="COSMIMERA" runstate="Runnable" testcasecount="2722" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.053243" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="3389" name="Cosmimera.Creatures.Tests.EditMode.dll" fullname="C:/Users/user/Documents/app/cosmos_chimera/Library/ScriptAssemblies/Cosmimera.Creatures.Tests.EditMode.dll" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.032703" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="131676" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="3390" name="Cosmimera" fullname="Cosmimera" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.031707" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="3391" name="Creatures" fullname="Cosmimera.Creatures" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.030892" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="3392" name="Tests" fullname="Cosmimera.Creatures.Tests" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.030060" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="3296" name="FieldUtilityTests" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.028413" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="3300" name="CanEnterAdvancedTerrain_ChecksRequiredImmunity" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.CanEnterAdvancedTerrain_ChecksRequiredImmunity" methodname="CanEnterAdvancedTerrain_ChecksRequiredImmunity" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="733008858" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.007196" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3299" name="CollectTeamUtilities_MainsContributeAnyKind_SubsRequireMatchingVessel" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.CollectTeamUtilities_MainsContributeAnyKind_SubsRequireMatchingVessel" methodname="CollectTeamUtilities_MainsContributeAnyKind_SubsRequireMatchingVessel" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="1599291297" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.004618" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3301" name="CollectTeamUtilities_RejectsNullArguments" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.CollectTeamUtilities_RejectsNullArguments" methodname="CollectTeamUtilities_RejectsNullArguments" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="682045252" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.001574" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3303" name="ComputeTeamModifiers_AggregatesActiveUtilities" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.ComputeTeamModifiers_AggregatesActiveUtilities" methodname="ComputeTeamModifiers_AggregatesActiveUtilities" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="367655808" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.002785" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3297" name="GetKind_ClassifiesNoneMovesAndTraits" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.GetKind_ClassifiesNoneMovesAndTraits" methodname="GetKind_ClassifiesNoneMovesAndTraits" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="535767206" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.000654" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3298" name="ImmunityForTerrain_MapsAllTenElements" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.ImmunityForTerrain_MapsAllTenElements" methodname="ImmunityForTerrain_MapsAllTenElements" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="932377653" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.000322" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3304" name="IsElementAligned_ChecksThematicCompatibility" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.IsElementAligned_ChecksThematicCompatibility" methodname="IsElementAligned_ChecksThematicCompatibility" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="228311147" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.000327" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3305" name="TryEvaluateCookedMeal_RequiresCookFireAndMatchingIngredient" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.TryEvaluateCookedMeal_RequiresCookFireAndMatchingIngredient" methodname="TryEvaluateCookedMeal_RequiresCookFireAndMatchingIngredient" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="916579050" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.000953" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="3302" name="TryRequiredElementForTerrain_And_CanEnterTerrain_CoverAllTenTerrainsAndAliases" fullname="Cosmimera.Creatures.Tests.FieldUtilityTests.TryRequiredElementForTerrain_And_CanEnterTerrain_CoverAllTenTerrainsAndAliases" methodname="TryRequiredElementForTerrain_And_CanEnterTerrain_CoverAllTenTerrainsAndAliases" classname="Cosmimera.Creatures.Tests.FieldUtilityTests" runstate="Runnable" seed="1374967986" result="Passed" start-time="2026-11-14 16:56:45Z" end-time="2026-11-14 16:56:45Z" duration="0.000590" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/user/AppData/LocalLow/DefaultCompany/COSMIMERA\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

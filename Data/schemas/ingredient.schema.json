@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/ingredient.schema.json",
+  "title": "Food ingredient definitions",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "category", "source", "element", "tier", "raw_heal_percent"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "$ref": "common.schema.json#/$defs/id" },
+      "category": {
+        "enum": ["meat_ground", "meat_sky", "seafood", "berry_herb", "grain_crop", "dairy", "spice_oil", "egg"]
+      },
+      "source": {
+        "enum": ["hunt_ground", "hunt_sky", "set_trap", "fishing", "cast_net", "forage_berries", "harvest_crops", "produce_milk"]
+      },
+      "element": { "$ref": "common.schema.json#/$defs/element" },
+      "tier": { "type": "integer", "minimum": 1, "maximum": 3 },
+      "raw_heal_percent": { "$ref": "common.schema.json#/$defs/percent" }
+    }
+  }
+}

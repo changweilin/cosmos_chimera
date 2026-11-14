@@ -171,6 +171,46 @@ namespace Cosmimera.Combat
             return dealt;
         }
 
+        /// <summary>Restores up to <paramref name="amount"/> HP to a living player.</summary>
+        /// <remarks>
+        /// Pre: amount >= 0; 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark.
+        /// Post: if IsDowned, returns 0 and Hp is unchanged; otherwise Hp increases by min(amount, MaxHp - Hp)
+        ///       and that value is returned. Hp never exceeds MaxHp.
+        /// Side effects: mutates Hp; advances the watermark to nowMs.
+        /// </remarks>
+        public int Heal(int amount, long nowMs)
+        {
+            Contract.Requires(amount >= 0, "heal amount must be >= 0");
+            AdvanceTime(nowMs);
+            if (IsDowned || amount == 0 || Hp == MaxHp)
+            {
+                return 0;
+            }
+
+            int missing = MaxHp - Hp;
+            int restored = amount < missing ? amount : missing;
+            Hp += restored;
+            return restored;
+        }
+
+        /// <summary>Restores <paramref name="percent"/>% of MaxHp (rounded via <see cref="EffectMath.HealAmount"/>) to a living player.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= percent &lt;= 100; 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark.
+        /// Post: if IsDowned or percent == 0, returns 0 and Hp is unchanged; otherwise returns HP restored (&gt;= 0).
+        /// Side effects: mutates Hp; advances the watermark to nowMs.
+        /// </remarks>
+        public int HealPercent(int percent, long nowMs)
+        {
+            Contract.Requires(percent >= 0 && percent <= 100, "heal percent must be 0..100");
+            if (percent == 0)
+            {
+                AdvanceTime(nowMs);
+                return 0;
+            }
+
+            return Heal(EffectMath.HealAmount(MaxHp, percent), nowMs);
+        }
+
         private bool InWindow(long nowMs, int lengthMs)
         {
             CombatTime.Require(nowMs, _lastNowMs);

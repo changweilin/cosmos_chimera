@@ -157,5 +157,62 @@ namespace Cosmimera.GameData
         CookFire = 29,
         ProduceMilk = 30,
         CampfireRevive = 31,
+        HuntGround = 32,
+        HuntSky = 33,
+        SetTrap = 34,
+        CastNet = 35,
+        HarvestCrops = 36,
+        CulinaryPrep = 37,
+    }
+
+    /// <summary>Life-skill methods for acquiring raw food ingredients.</summary>
+    /// <remarks>Pre: none. Post: stable serialized values. Side effects: none.</remarks>
+    public enum FoodAcquisitionMethod
+    {
+        HuntGround = 0,
+        HuntSky = 1,
+        SetTrap = 2,
+        Fishing = 3,
+        CastNet = 4,
+        ForageBerries = 5,
+        HarvestCrops = 6,
+        ProduceMilk = 7,
+    }
+
+    /// <summary>Culinary preparation methods for cooking ingredients into food.</summary>
+    /// <remarks>Pre: none. Post: stable serialized values. Side effects: none.</remarks>
+    public enum CookingMethod
+    {
+        Grill = 0,
+        Stew = 1,
+        StirFry = 2,
+        DeepFry = 3,
+        Steam = 4,
+        ColdMix = 5,
+        Grind = 6,
+    }
+
+    /// <summary>Broad culinary category of a raw food ingredient.</summary>
+    /// <remarks>Pre: none. Post: stable serialized values. Side effects: none.</remarks>
+    public enum IngredientCategory
+    {
+        MeatGround = 0,
+        MeatSky = 1,
+        Seafood = 2,
+        BerryHerb = 3,
+        GrainCrop = 4,
+        Dairy = 5,
+        SpiceOil = 6,
+        Egg = 7,
+    }
+
+    /// <summary>Who receives the healing and buff effects when a food item is eaten.</summary>
+    /// <remarks>Pre: none. Post: stable serialized values. Side effects: none.</remarks>
+    public enum FoodTarget
+    {
+        Player = 0,
+        ActiveCreatures = 1,
+        Party = 2,
+        PlayerAndParty = 3,
     }
 }

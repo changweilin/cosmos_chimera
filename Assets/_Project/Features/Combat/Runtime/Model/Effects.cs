@@ -449,6 +449,37 @@ namespace Cosmimera.Combat
             return 0;
         }
 
+        /// <summary>Removes all active timed effects whose modifier is harmful to the bearer at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// Pre: nowMs in CombatTime and >= watermark.
+        /// Post: returns count of removed negative timed slots; positive or neutral timed slots and traits remain.
+        /// Side effects: advances watermark to nowMs; mutates active slot list.
+        /// </remarks>
+        public int RemoveNegativeTimedEffects(long nowMs)
+        {
+            Advance(nowMs);
+            int removed = 0;
+            for (int i = _slots.Count - 1; i >= 0; i--)
+            {
+                Slot s = _slots[i];
+                if (s.ExpiresMs <= nowMs)
+                {
+                    _slots.RemoveAt(i);
+                    continue;
+                }
+
+                // For CD modifier, positive delta slows cooldowns (harmful); for all other stats, negative delta is harmful.
+                bool isNegative = s.Spec.Type == EffectType.CdModPercent ? s.Spec.Delta > 0 : s.Spec.Delta < 0;
+                if (isNegative)
+                {
+                    _slots.RemoveAt(i);
+                    removed++;
+                }
+            }
+
+            return removed;
+        }
+
         /// <summary>The creature entered the field (initial summon or switch-in): fires on_summon.</summary>
         /// <remarks>
         /// REQ: combat.md#特性觸發 — every entry counts as a summon. Pre: nowMs in CombatTime and >= watermark.

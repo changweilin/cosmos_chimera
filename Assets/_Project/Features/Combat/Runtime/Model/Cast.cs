@@ -707,6 +707,51 @@ namespace Cosmimera.Combat
             return Hp - hpBefore;
         }
 
+        /// <summary>Heals a living combatant by <paramref name="percent"/>% of MaxHp (e.g. from food or consumables).</summary>
+        /// <remarks>
+        /// Pre: !IsFainted; 0 &lt;= percent &lt;= 100; nowMs in CombatTime and >= every watermark of Book.
+        /// Post: returns HP restored (&gt;= 0); Hp == previous Hp + result &lt;= MaxHp.
+        /// Side effects: mutates Hp and notifies Book of the HP change.
+        /// </remarks>
+        public int HealByPercent(int percent, long nowMs)
+        {
+            Contract.Requires(!IsFainted, "cannot heal a fainted combatant; use ReviveByPercent");
+            Contract.Requires(percent >= 0 && percent <= 100, "percent must be 0..100");
+            Book.RequireTime(nowMs);
+            int hpBefore = Hp;
+            HealPercent(percent, nowMs);
+            return Hp - hpBefore;
+        }
+
+        /// <summary>Revives a fainted combatant with <paramref name="percent"/>% of MaxHp (minimum 1 HP).</summary>
+        /// <remarks>
+        /// Pre: IsFainted; 1 &lt;= percent &lt;= 100; nowMs in CombatTime and >= every watermark of Book.
+        /// Post: !IsFainted; 1 &lt;= Hp &lt;= MaxHp; returns restored HP.
+        /// Side effects: mutates Hp and advances Book watermark.
+        /// </remarks>
+        public int ReviveByPercent(int percent, long nowMs)
+        {
+            Contract.Requires(IsFainted, "combatant is not fainted");
+            Contract.Requires(percent >= 1 && percent <= 100, "percent must be 1..100");
+            int amount = EffectMath.HealAmount(MaxHp, percent);
+            if (amount < 1) amount = 1;
+            if (amount > MaxHp) amount = MaxHp;
+            Revive(amount, nowMs);
+            return Hp;
+        }
+
+        /// <summary>Cleanses all harmful timed effects from this combatant's <see cref="Book"/>.</summary>
+        /// <remarks>
+        /// Pre: !IsFainted; nowMs in CombatTime and >= every watermark of Book.
+        /// Post: returns number of negative timed effects removed (&gt;= 0).
+        /// Side effects: mutates Book.
+        /// </remarks>
+        public int CleanseNegativeEffects(long nowMs)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant cannot be cleansed");
+            return Book.RemoveNegativeTimedEffects(nowMs);
+        }
+
         private void HealPercent(int percent, long nowMs)
         {
             if (percent <= 0 || Hp == MaxHp)

@@ -32,7 +32,13 @@ namespace Cosmimera.Creatures
             bool canForageBerries,
             bool canProduceMilk,
             bool canReturnVillage,
-            bool hasEggHatchBoost)
+            bool hasEggHatchBoost,
+            bool canHuntGround = false,
+            bool canHuntSky = false,
+            bool canSetTrap = false,
+            bool canCastNet = false,
+            bool canHarvestCrops = false,
+            bool canCulinaryPrep = false)
         {
             CatchRateBonusPercent = catchRateBonusPercent;
             DropRateBonusPercent = dropRateBonusPercent;
@@ -54,6 +60,12 @@ namespace Cosmimera.Creatures
             CanProduceMilk = canProduceMilk;
             CanReturnVillage = canReturnVillage;
             HasEggHatchBoost = hasEggHatchBoost;
+            CanHuntGround = canHuntGround;
+            CanHuntSky = canHuntSky;
+            CanSetTrap = canSetTrap;
+            CanCastNet = canCastNet;
+            CanHarvestCrops = canHarvestCrops;
+            CanCulinaryPrep = canCulinaryPrep;
         }
 
         /// <summary>Flat bonus (percentage points) added to capture rolls.</summary>
@@ -135,6 +147,30 @@ namespace Cosmimera.Creatures
         /// <summary>True when the team accelerates egg hatching in the lobby.</summary>
         /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
         public bool HasEggHatchBoost { get; }
+
+        /// <summary>True when the team can hunt ground fauna for meat ingredients.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanHuntGround { get; }
+
+        /// <summary>True when the team can hunt aerial fauna for avian meat and eggs.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanHuntSky { get; }
+
+        /// <summary>True when the team can deploy wildlife/insect traps for ingredients.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanSetTrap { get; }
+
+        /// <summary>True when the team can cast fishing nets for batch seafood.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanCastNet { get; }
+
+        /// <summary>True when the team can harvest grain and oilseed crops.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanHarvestCrops { get; }
+
+        /// <summary>True when the team has culinary prep mastery for cold-mix, grinding, and quality bonuses.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanCulinaryPrep { get; }
     }
 
     /// <summary>
@@ -209,6 +245,11 @@ namespace Cosmimera.Creatures
                 case FieldUtility.Fishing:
                 case FieldUtility.CookFire:
                 case FieldUtility.CampfireRevive:
+                case FieldUtility.HuntGround:
+                case FieldUtility.HuntSky:
+                case FieldUtility.SetTrap:
+                case FieldUtility.CastNet:
+                case FieldUtility.HarvestCrops:
                     return FieldUtilityKind.Move;
 
                 default:
@@ -428,6 +469,12 @@ namespace Cosmimera.Creatures
             bool produceMilk = false;
             bool returnVillage = false;
             bool eggHatchBoost = false;
+            bool huntGround = false;
+            bool huntSky = false;
+            bool setTrap = false;
+            bool castNet = false;
+            bool harvestCrops = false;
+            bool culinaryPrep = false;
 
             foreach (FieldUtility u in activeUtilities)
             {
@@ -460,6 +507,12 @@ namespace Cosmimera.Creatures
                     case FieldUtility.ProduceMilk: produceMilk = true; break;
                     case FieldUtility.ReturnVillage: returnVillage = true; break;
                     case FieldUtility.EggHatchBoost: eggHatchBoost = true; break;
+                    case FieldUtility.HuntGround: huntGround = true; break;
+                    case FieldUtility.HuntSky: huntSky = true; break;
+                    case FieldUtility.SetTrap: setTrap = true; break;
+                    case FieldUtility.CastNet: castNet = true; break;
+                    case FieldUtility.HarvestCrops: harvestCrops = true; break;
+                    case FieldUtility.CulinaryPrep: culinaryPrep = true; break;
                 }
             }
 
@@ -483,7 +536,13 @@ namespace Cosmimera.Creatures
                 forageBerries,
                 produceMilk,
                 returnVillage,
-                eggHatchBoost);
+                eggHatchBoost,
+                huntGround,
+                huntSky,
+                setTrap,
+                castNet,
+                harvestCrops,
+                culinaryPrep);
         }
 
         /// <summary>Checks whether <paramref name="utility"/> aligns thematically and mechanically with <paramref name="element"/>.</summary>
@@ -531,6 +590,12 @@ namespace Cosmimera.Creatures
                 case FieldUtility.ReturnVillage: return element == Element.Light || element == Element.Wood || element == Element.Wind;
                 case FieldUtility.PartyStealth: return element == Element.Shadow || element == Element.Wood || element == Element.Wind;
                 case FieldUtility.StealItem: return element == Element.Shadow || element == Element.Thunder || element == Element.Wind;
+                case FieldUtility.HuntGround: return element == Element.Fire || element == Element.Earth || element == Element.Shadow || element == Element.Thunder;
+                case FieldUtility.HuntSky: return element == Element.Wind || element == Element.Light || element == Element.Thunder;
+                case FieldUtility.SetTrap: return element == Element.Earth || element == Element.Shadow || element == Element.Wood;
+                case FieldUtility.CastNet: return element == Element.Water || element == Element.Wind;
+                case FieldUtility.HarvestCrops: return element == Element.Wood || element == Element.Earth || element == Element.Metal;
+                case FieldUtility.CulinaryPrep: return element == Element.Ice || element == Element.Wood || element == Element.Metal || element == Element.Water;
                 default: return false;
             }
         }

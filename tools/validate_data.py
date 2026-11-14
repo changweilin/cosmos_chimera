@@ -34,8 +34,10 @@ KINDS = {
     "relations": "relation",
     "planet-types": "planet-type",
     "characters": "character",
+    "ingredients": "ingredient",
+    "foods": "food",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods")
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 ENV_MATERIALS_FOLDER = "env-materials"
 ENV_MATERIALS_SCHEMA = "env-materials"
@@ -269,6 +271,19 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             seen_edges[key] = r
         ref(r, "a", "creatures")
         ref(r, "b", "creatures")
+
+    for r in records["foods"]:
+        for i, ing in enumerate(r.data.get("ingredients") or []):
+            if not isinstance(ing, dict):
+                continue
+            ing_id = ing.get("ingredient_id")
+            if isinstance(ing_id, str):
+                hit = by_id.get(ing_id)
+                if hit is None or hit.kind != "ingredients":
+                    findings.append(
+                        Finding("error", "dangling_ref", r.file, f"/{r.index}/ingredients/{i}/ingredient_id",
+                                f"'{ing_id}' is not a known ingredient id")
+                    )
 
 
 def _check_material_sums(r: Record, findings: list[Finding]) -> None:

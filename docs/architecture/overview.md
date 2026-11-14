@@ -12,6 +12,7 @@ Assets/_Project/
 │   ├── Creatures/           # 宙獸模型、進化、隊伍、副手規則
 │   ├── Combat/              # 傷害、CD、命中、招式執行、AI 行為
 │   ├── Capture/             # 收服、蛋、孵化
+│   ├── Food/                # 食物獲取、料理、食用與 Buff 規則
 │   ├── Lobby/               # 地球大廳、星海選星
 │   ├── Codex/               # 圖鑑/招式表/特性表/關係表 UI
 │   ├── Net/                 # 連線、同步、房間
@@ -37,6 +38,7 @@ tools/                       # 資料驗證、匯入、AI prompt 模板
 Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet → Core
                  Net ──▶ (Combat, Creatures, Planet 的 Api)
                  Save ─▶ (Creatures, Capture 的 Api)
+                 Food ─▶ (Combat, Creatures 的 Api)
 ```
 `Core` 不引用任何 feature；`Planet` 不知道宙獸存在。
 `GameData` 只引用 Core；除了 Planet、Player 以外的 feature 都可以引用它（ADR-0004）。

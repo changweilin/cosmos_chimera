@@ -180,5 +180,40 @@ namespace Cosmimera.Creatures.Tests
 
             Assert.Throws<ContractException>(() => FieldUtilityRules.TryEvaluateCookedMeal(null, FieldUtility.Fishing, out _, out _, out _));
         }
+
+        [Test]
+        public void FoodLifeSkills_ClassifyAlignAndComputeModifiers()
+        {
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.HuntGround));
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.HuntSky));
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.SetTrap));
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.CastNet));
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.HarvestCrops));
+            Assert.AreEqual(FieldUtilityKind.Trait, FieldUtilityRules.GetKind(FieldUtility.CulinaryPrep));
+
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HuntGround, Element.Fire));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HuntSky, Element.Wind));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.SetTrap, Element.Shadow));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.CastNet, Element.Water));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HarvestCrops, Element.Wood));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.CulinaryPrep, Element.Ice));
+
+            var active = new HashSet<FieldUtility>
+            {
+                FieldUtility.HuntGround,
+                FieldUtility.HuntSky,
+                FieldUtility.SetTrap,
+                FieldUtility.CastNet,
+                FieldUtility.HarvestCrops,
+                FieldUtility.CulinaryPrep,
+            };
+            TeamUtilityModifiers mods = FieldUtilityRules.ComputeTeamModifiers(active);
+            Assert.IsTrue(mods.CanHuntGround);
+            Assert.IsTrue(mods.CanHuntSky);
+            Assert.IsTrue(mods.CanSetTrap);
+            Assert.IsTrue(mods.CanCastNet);
+            Assert.IsTrue(mods.CanHarvestCrops);
+            Assert.IsTrue(mods.CanCulinaryPrep);
+        }
     }
 }

@@ -1,0 +1,19 @@
+{
+    "name": "Cosmimera.Food",
+    "rootNamespace": "Cosmimera.Food",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.GameData",
+        "Cosmimera.Creatures",
+        "Cosmimera.Combat"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

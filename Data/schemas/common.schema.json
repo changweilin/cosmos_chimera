@@ -47,7 +47,13 @@
         "forage_berries",
         "cook_fire",
         "produce_milk",
-        "campfire_revive"
+        "campfire_revive",
+        "hunt_ground",
+        "hunt_sky",
+        "set_trap",
+        "cast_net",
+        "harvest_crops",
+        "culinary_prep"
       ]
     },
     "percent": { "type": "integer", "minimum": 0, "maximum": 100 },
