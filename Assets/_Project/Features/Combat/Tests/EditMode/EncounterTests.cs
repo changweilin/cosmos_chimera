@@ -257,5 +257,35 @@ namespace Cosmimera.Combat.Tests
             Assert.That(_balance.CaptureBasePercent, Is.InRange(0, 100));
             Assert.That(_balance.CaptureBossPercent, Is.InRange(0, 100));
         }
+
+        [Test]
+        public void CopyActiveFields_exposes_live_fields_and_checks_preconditions()
+        {
+            var field = ScriptableObject.CreateInstance<MoveDef>();
+            _created.Add(field);
+            field.SetId("fire_field");
+            field.Set(Element.Fire, MoveKind.Damage, 10, null, 0, 3500, 60000, 100, RangeClass.Mid, MoveShape.Field,
+                12000, MoveMovement.None, BurstOrigin.Caster);
+            MoveDef nibble = Move("fire_nibble", 1, MoveShape.Front, RangeClass.Melee, 2000);
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", field, AiStyle.Hold), null, Dir(0f), 100);
+            e.AddCreature(EncounterSide.Wild, Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
+            e.Field(mine.Id, Dir(0f), false, 0);
+
+            var list = new List<ActiveFieldSnapshot>();
+            Assert.Throws<ContractException>(() => e.CopyActiveFields(null, 50));
+            Assert.Throws<ContractException>(() => e.CopyActiveFields(list, -1));
+
+            var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
+            e.Tick(50, 50, _planet.ToWorld(Dir(-0.05f), 1f), free, mine.Id);
+            e.CopyActiveFields(list, 50);
+            Assert.That(list.Count, Is.EqualTo(1));
+            Assert.That(list[0].CasterId, Is.EqualTo(mine.Id));
+            Assert.That(list[0].Side, Is.EqualTo(EncounterSide.Player));
+            Assert.That(list[0].Element, Is.EqualTo(Element.Fire));
+            Assert.That(list[0].RadiusM, Is.GreaterThan(0f));
+            Assert.That(list[0].DurationMs, Is.EqualTo(3500));
+            Assert.That(list[0].RemainingMs, Is.EqualTo(3500));
+        }
     }
 }

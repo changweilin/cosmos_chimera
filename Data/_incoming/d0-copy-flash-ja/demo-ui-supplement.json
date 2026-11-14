@@ -244,5 +244,17 @@
   },
   "ui.object.building": {
     "ja": "建物"
+  },
+  "ui.hud.overload_prompt": {
+    "ja": "[{key}] オーバーロード"
+  },
+  "ui.hud.overload_active": {
+    "ja": "⚡オーバーロード"
+  },
+  "ui.hud.roll_prompt": {
+    "ja": "[{key}] 回避"
+  },
+  "ui.hud.trait_label": {
+    "ja": "特性：{trait}"
   }
 }

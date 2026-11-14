@@ -80,6 +80,51 @@ namespace Cosmimera.Combat
         public int Amount { get; }
     }
 
+    /// <summary>Snapshot of an active ground field for presentation (VFX, HUD) only.</summary>
+    /// <remarks>Pre: produced by <see cref="Encounter.CopyActiveFields"/>. Post: immutable. Side effects: none.</remarks>
+    public readonly struct ActiveFieldSnapshot
+    {
+        internal ActiveFieldSnapshot(int casterId, EncounterSide side, Element element, float3 anchor, float radiusM,
+            long remainingMs, int durationMs)
+        {
+            CasterId = casterId;
+            Side = side;
+            Element = element;
+            Anchor = anchor;
+            RadiusM = radiusM;
+            RemainingMs = remainingMs;
+            DurationMs = durationMs;
+        }
+
+        /// <summary>Unit that placed the field.</summary>
+        /// <remarks>Pre: none. Post: unit id. Side effects: none.</remarks>
+        public int CasterId { get; }
+
+        /// <summary>Side of the caster.</summary>
+        /// <remarks>Pre: none. Post: defined value. Side effects: none.</remarks>
+        public EncounterSide Side { get; }
+
+        /// <summary>Element of the field move.</summary>
+        /// <remarks>Pre: none. Post: defined value. Side effects: none.</remarks>
+        public Element Element { get; }
+
+        /// <summary>World-space anchor on the planet surface.</summary>
+        /// <remarks>Pre: none. Post: finite vector. Side effects: none.</remarks>
+        public float3 Anchor { get; }
+
+        /// <summary>Field radius in metres.</summary>
+        /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
+        public float RadiusM { get; }
+
+        /// <summary>Remaining lifetime in milliseconds (>= 0).</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public long RemainingMs { get; }
+
+        /// <summary>Total field duration in milliseconds (> 0).</summary>
+        /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
+        public int DurationMs { get; }
+    }
+
     /// <summary>Encounter event kinds.</summary>
     /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
     public enum EncounterEventKind
@@ -348,6 +393,38 @@ namespace Cosmimera.Combat
         /// <summary>Number of fields still alive after the last tick (presentation and tests).</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
         public int ActiveFieldCount => _fields.Count;
+
+        /// <summary>Copies snapshots of all currently active ground fields into <paramref name="destination"/>.</summary>
+        /// <remarks>
+        /// Pre: destination != null; nowMs in CombatTime.
+        /// Post: destination contains one snapshot per entry in _fields.
+        /// Side effects: clears and populates destination (no heap allocation when capacity suffices).
+        /// </remarks>
+        public void CopyActiveFields(List<ActiveFieldSnapshot> destination, long nowMs)
+        {
+            Contract.Requires(destination != null, "destination list required");
+            CombatTime.Require(nowMs, 0);
+            destination.Clear();
+            for (int i = 0; i < _fields.Count; i++)
+            {
+                PlacedField f = _fields[i];
+                long elapsed = nowMs - f.Timeline.PlacedMs;
+                long remaining = f.Timeline.LifetimeMs - elapsed;
+                if (remaining < 0)
+                {
+                    remaining = 0;
+                }
+
+                destination.Add(new ActiveFieldSnapshot(
+                    f.CasterId,
+                    f.Side,
+                    f.Ctx.Move.Element,
+                    f.Anchor,
+                    f.Volume.ReachMm * 0.001f,
+                    remaining,
+                    f.Timeline.LifetimeMs));
+            }
+        }
 
         /// <summary>Creates an empty encounter.</summary>
         /// <remarks>

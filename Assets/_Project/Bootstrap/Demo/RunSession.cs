@@ -221,7 +221,10 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _captureAction;
         private InputAction _abandonAction;
         private InputAction _rollAction;
+        private InputAction _overloadAction;
         private bool _rollRequested;
+        private long _lastRollAtMs = -1_000_000;
+        private bool _overloadRequested;
         private RunSetup _setup;
         private Action<RunOutcome> _onEnd;
 
@@ -244,6 +247,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
         private readonly List<GroundDrop> _pickupBuffer = new List<GroundDrop>(16);
+        private readonly List<ActiveFieldSnapshot> _activeFieldsBuffer = new List<ActiveFieldSnapshot>(8);
+        private CombatFeedback _feedback;
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -429,7 +434,9 @@ namespace Cosmimera.Bootstrap.Demo
             _captureAction = _runInput.FindAction("Capture", true);
             _abandonAction = _runInput.FindAction("Abandon", true);
             _rollAction = _runInput.FindAction("Roll", true);
+            _overloadAction = _runInput.FindAction("Overload", true);
             _interactAction = _runInput.FindAction("Interact", true);
+            _feedback = new CombatFeedback(gameObject);
             _menuInput = actions.FindActionMap("DemoMenu", true).Clone();
             _menuUp = _menuInput.FindAction("Up", true);
             _menuDown = _menuInput.FindAction("Down", true);
@@ -697,6 +704,12 @@ namespace Cosmimera.Bootstrap.Demo
                 _accumulator = 0f; // a long hitch drops time rather than spiralling (fixed-step catch-up cap)
             }
 
+            if (_feedback != null)
+            {
+                _encounter.CopyActiveFields(_activeFieldsBuffer, _nowMs);
+                _feedback.Update(Time.deltaTime, _activeFieldsBuffer, _rig.Config);
+            }
+
             SyncViews();
         }
 
@@ -738,7 +751,24 @@ namespace Cosmimera.Bootstrap.Demo
             if (_rollRequested)
             {
                 _rollRequested = false;
-                _vitals.TryRoll(_nowMs);
+                if (_vitals.TryRoll(_nowMs) == RollResult.Ok)
+                {
+                    _lastRollAtMs = _nowMs;
+                }
+            }
+
+            // REQ: combat.md (Q-C12) — Overload command for the main Adult creature during combat.
+            if (_overloadRequested)
+            {
+                _overloadRequested = false;
+                if (_mainId >= 0 && _encounter.TryTriggerOverload(_mainId, _team.InCombat, true) == OverloadResult.Ok)
+                {
+                    EncounterUnit overloaded = _encounter.Units[_mainId];
+                    float3 up = _rig.Config.ToDirection(overloaded.Position);
+                    string label = _copy.Ui("ui.hud.overload_active");
+                    _feedback?.ShowOverload(overloaded.Position, overloaded.Forward, up, overloaded.BodyRadiusM, label);
+                    Toast($"{_copy.Name(overloaded.Def.Id)} {label}");
+                }
             }
 
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
@@ -758,6 +788,7 @@ namespace Cosmimera.Bootstrap.Demo
             bool playerDowned = false;
             foreach (EncounterEvent ev in _encounter.Events)
             {
+                DispatchCombatFeedback(ev, player);
                 if (ev.Kind == EncounterEventKind.Faint)
                 {
                     OnFaint(ev.TargetId);
@@ -1008,6 +1039,11 @@ namespace Cosmimera.Bootstrap.Demo
                 _rollRequested = true;
             }
 
+            if (_overloadAction.WasPressedThisFrame())
+            {
+                _overloadRequested = true;
+            }
+
             if (_abandonAction.WasPressedThisFrame())
             {
                 RequestAbandon();
@@ -1020,7 +1056,7 @@ namespace Cosmimera.Bootstrap.Demo
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
             foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
-                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact", "Roll" })
+                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact", "Roll", "Overload" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
             }
@@ -1949,10 +1985,65 @@ namespace Cosmimera.Bootstrap.Demo
 
                 float3 up = _rig.Config.ToDirection(u.Position);
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
+                t.localScale = u.Combatant.IsOverloaded ? new Vector3(1.15f, 1.15f, 1.15f) : Vector3.one;
                 if (u.Combatant.IsFainted)
                 {
                     view.ShowFainted();
                 }
+            }
+        }
+
+        private void DispatchCombatFeedback(in EncounterEvent ev, float3 playerPos)
+        {
+            if (_feedback == null || ev.SourceId < 0 || ev.SourceId >= _encounter.Units.Count)
+            {
+                return;
+            }
+
+            EncounterUnit src = _encounter.Units[ev.SourceId];
+            MoveDef move = ev.Slot == 0 ? src.Def.SignatureMove : null;
+            Color elemColor = move != null ? PlaceholderCreatureViewFactory.ColorOf(move.Element) : Color.white;
+
+            if (ev.Kind == EncounterEventKind.Cast)
+            {
+                float3 up = _rig.Config.ToDirection(src.Position);
+                _feedback.ShowCast(src.Position, src.Forward, up, move, elemColor);
+                return;
+            }
+
+            float3 targetPos;
+            float3 targetFwd;
+            float targetRadius;
+            if (ev.TargetId == Encounter.PlayerCharacterId)
+            {
+                targetPos = playerPos;
+                targetFwd = _rig.Character != null ? (float3)_rig.Character.transform.forward : src.Forward;
+                targetRadius = _balance.Collision.CharacterMm * 0.001f;
+            }
+            else if (ev.TargetId >= 0 && ev.TargetId < _encounter.Units.Count)
+            {
+                EncounterUnit dst = _encounter.Units[ev.TargetId];
+                targetPos = dst.Position;
+                targetFwd = dst.Forward;
+                targetRadius = dst.BodyRadiusM;
+            }
+            else
+            {
+                return;
+            }
+
+            float3 targetUp = _rig.Config.ToDirection(targetPos);
+            if (ev.Kind == EncounterEventKind.Miss)
+            {
+                _feedback.ShowMiss(targetPos, targetFwd, targetUp, targetRadius);
+            }
+            else if (ev.Kind == EncounterEventKind.Hit)
+            {
+                _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor);
+            }
+            else if (ev.Kind == EncounterEventKind.Support)
+            {
+                _feedback.ShowSupport(targetPos, targetFwd, targetUp, targetRadius, ev.Amount);
             }
         }
 
@@ -1977,6 +2068,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             DrawWorldBars();
+            _feedback?.DrawFloatingTexts(_rig.Camera);
             DrawLockMarker();
             DrawQuestPanel();
             DrawTeamPanel();
@@ -2242,30 +2334,52 @@ namespace Cosmimera.Bootstrap.Demo
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}", new GUIStyle(_label) { fontSize = 14 },
-                GUILayout.Width(120));
+            long rollCdLeft = math.max(0L, _lastRollAtMs + _balance.Player.RollCooldownMs - _nowMs);
+            string rollText = _copy.Ui("ui.hud.roll_prompt").Replace("{key}", BindingLabel(_rollAction)) +
+                (rollCdLeft > 0 ? $" ({rollCdLeft / 1000f:0.0}s)" : $" {_copy.Ui("ui.hud.cd_ready")}");
+            GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}\n{rollText}",
+                new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(135));
             foreach (int id in _team.Pool)
             {
                 EncounterUnit u = _encounter.Units[id];
                 bool active = In(_team.Active, id);
                 string mark = id == _mainId ? "★" : active ? "●" : "○";
-                string cd = u.Combatant.Cooldowns.IsReady(0, _nowMs) ? _copy.Ui("ui.hud.cd_ready")
-                    : $"{(u.Combatant.Cooldowns.ReadyAtMs(0) - _nowMs) / 1000f:0.0}s";
+                string overloadTag = u.Combatant.IsOverloaded ? $" {_copy.Ui("ui.hud.overload_active")}" : string.Empty;
+                string cd = string.Empty;
+                if (active)
+                {
+                    int slots = u.Combatant.Cooldowns.SlotCount;
+                    for (int s = 0; s < slots; s++)
+                    {
+                        if (s > 0)
+                        {
+                            cd += " ";
+                        }
+
+                        cd += u.Combatant.Cooldowns.IsReady(s, _nowMs)
+                            ? $"S{s + 1}:{_copy.Ui("ui.hud.cd_ready")}"
+                            : $"S{s + 1}:{(u.Combatant.Cooldowns.ReadyAtMs(s) - _nowMs) / 1000f:0.0}s";
+                    }
+                }
+
                 string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
+                string traitHint = id == _mainId && u.Def.Trait != null
+                    ? "\n" + _copy.Ui("ui.hud.trait_label").Replace("{trait}", _copy.Name(u.Def.Trait.Id))
+                    : string.Empty;
                 Texture2D portrait = _portraits != null ? _portraits.FindCreature(u.Def.LineId, u.Def.Stage) : null;
                 if (portrait != null)
                 {
-                    GUILayout.BeginHorizontal(GUILayout.Width(175));
+                    GUILayout.BeginHorizontal(GUILayout.Width(185));
                     Rect iconRect = GUILayoutUtility.GetRect(36f, 36f, GUILayout.ExpandWidth(false));
                     GUI.DrawTexture(iconRect, portrait, ScaleMode.ScaleToFit, true);
-                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
-                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(135));
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
+                        new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(145));
                     GUILayout.EndHorizontal();
                 }
                 else
                 {
-                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
-                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
+                        new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(155));
                 }
             }
 
@@ -2281,14 +2395,18 @@ namespace Cosmimera.Bootstrap.Demo
             string commands = _copy.Ui("ui.hud.command_bindings")
                 .Replace("{focus}", BindingLabel(_focusAction)).Replace("{free}", BindingLabel(_freeAction))
                 .Replace("{follow}", BindingLabel(_followAction)).Replace("{retreat}", BindingLabel(_retreatAction));
+            string overloadPrompt = _mainId >= 0 && _team.InCombat && _encounter.Units[_mainId].Def.Stage == CreatureStage.Adult
+                && !_encounter.Units[_mainId].Combatant.IsOverloaded && !_encounter.Units[_mainId].Combatant.IsFainted
+                ? "  " + _copy.Ui("ui.hud.overload_prompt").Replace("{key}", BindingLabel(_overloadAction))
+                : string.Empty;
             GUILayout.Label($"[{BindingLabel(_selectFirstAction)} / {BindingLabel(_selectSecondAction)}] ★ {_copy.Ui("ui.hud.select_active")}  " +
-                $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}\n" +
+                $"[{BindingLabel(_switchAction)}] {_copy.Ui("ui.hud.switch")}{(cdLeft > 0 ? $" ({cdLeft / 1000f:0.0}s)" : string.Empty)}{overloadPrompt}\n" +
                 $"{commands}（{cmd}）\n" +
                 _copy.Ui("ui.hud.target_cycle").Replace("{key}", BindingLabel(_cycleTargetAction))
                     .Replace("{target}", LockedTargetName()) + "\n" +
                 $"[{BindingLabel(_cycleVesselAction)}] {_copy.Ui("ui.hud.cycle_vessel")}：{_copy.Ui("ui.vessel." + VesselKey(_vessel))}  " +
                 _copy.Ui("ui.hud.capture_prompt").Replace("{key}", BindingLabel(_captureAction)).Replace("{vessel}", _copy.Ui("ui.vessel." + VesselKey(_vessel))),
-                new GUIStyle(_label) { fontSize = 14, wordWrap = true });
+                new GUIStyle(_label) { fontSize = 13, wordWrap = true });
             GUILayout.EndArea();
         }
 
@@ -2329,6 +2447,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _runInput?.Dispose();
             _menuInput?.Dispose();
+            _feedback?.Dispose();
             _rig?.Dispose();
             if (_terrainMaterial != null)
             {

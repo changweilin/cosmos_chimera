@@ -326,5 +326,21 @@
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building"
+  },
+  "ui.hud.overload_prompt": {
+    "zh-TW": "[{key}] 超載",
+    "en": "[{key}] Overload"
+  },
+  "ui.hud.overload_active": {
+    "zh-TW": "⚡超載中",
+    "en": "⚡OVERLOAD"
+  },
+  "ui.hud.roll_prompt": {
+    "zh-TW": "[{key}] 翻滾",
+    "en": "[{key}] Roll"
+  },
+  "ui.hud.trait_label": {
+    "zh-TW": "特性：{trait}",
+    "en": "Trait: {trait}"
   }
 }
