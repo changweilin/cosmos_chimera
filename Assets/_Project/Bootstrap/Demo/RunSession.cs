@@ -194,12 +194,16 @@ namespace Cosmimera.Bootstrap.Demo
         private sealed class WildInfo
         {
             public int Spawn;
+            public int TreasureRegion = -1;
             public int Level;
             public HashSet<int> AppearedAtKnockout;
             public long KnockedOutAtMs = -1;
             public bool Gone;
             public bool Dropped;
         }
+
+        private SpawnRole RoleOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Role : SpawnRole.Elite;
+        private int RegionOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Region : w.TreasureRegion;
 
         private DemoCopy _copy;
         private CombatBalance _balance;
@@ -216,6 +220,8 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _cycleVesselAction;
         private InputAction _captureAction;
         private InputAction _abandonAction;
+        private InputAction _rollAction;
+        private bool _rollRequested;
         private RunSetup _setup;
         private Action<RunOutcome> _onEnd;
 
@@ -422,6 +428,7 @@ namespace Cosmimera.Bootstrap.Demo
             _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
             _captureAction = _runInput.FindAction("Capture", true);
             _abandonAction = _runInput.FindAction("Abandon", true);
+            _rollAction = _runInput.FindAction("Roll", true);
             _interactAction = _runInput.FindAction("Interact", true);
             _menuInput = actions.FindActionMap("DemoMenu", true).Clone();
             _menuUp = _menuInput.FindAction("Up", true);
@@ -482,7 +489,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _envMaterials = setup.EnvMaterials;
                 _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
-                    setup.EnvMaterials, objects);
+                    setup.EnvMaterials, objects, _dungeon);
                 surface.Objects = _worldObjects;
             }
             _quest = new QuestTracker(_plan);
@@ -619,6 +626,25 @@ namespace Cosmimera.Bootstrap.Demo
                 CreateView(u, spawn.Role);
             }
 
+            // REQ: planet-world.md (Q-W3) — treasure rooms hold a guarding elite alongside the breakable chest.
+            if (_dungeon != null && wildPool.Count > 0)
+            {
+                for (int r = 0; r < _dungeon.Rooms.Count; r++)
+                {
+                    if (_dungeon.Rooms[r] != RoomRole.Treasure)
+                    {
+                        continue;
+                    }
+
+                    CreatureDef guardDef = wildPool[r % wildPool.Count];
+                    int guardLevel = _progression.WildLevel(D0Difficulty, _plan.Regions[r].Tier, SpawnRole.Elite);
+                    float3 guardDir = BesidePlayer(_plan.Regions[r].Center, r);
+                    EncounterUnit guard = _encounter.AddCreature(EncounterSide.Wild, guardDef, null, guardDir, guardLevel);
+                    _wild[guard.Id] = new WildInfo { Spawn = -1, TreasureRegion = r, Level = guardLevel };
+                    CreateView(guard, SpawnRole.Elite);
+                }
+            }
+
             var roster = new List<int>();
             for (int i = 0; i < setup.Party.Count; i++)
             {
@@ -708,6 +734,13 @@ namespace Cosmimera.Bootstrap.Demo
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             BeforeTickForTests?.Invoke();
 #endif
+            // REQ: combat.md (Q-C33) — Space / Gamepad buttonSouth triggers player roll i-frames.
+            if (_rollRequested)
+            {
+                _rollRequested = false;
+                _vitals.TryRoll(_nowMs);
+            }
+
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
             CollectGroundPickups(player);
@@ -748,6 +781,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (!engaged && _team.InCombat)
             {
                 _team.EndCombat();
+                _encounter.EndCombatOverload();
             }
 
             if (playerDowned)
@@ -791,14 +825,17 @@ namespace Cosmimera.Bootstrap.Demo
 
             WildInfo w = _wild[unitId];
             w.KnockedOutAtMs = _nowMs;
-            RunSpawn spawn = _plan.Spawns[w.Spawn];
+            SpawnRole role = RoleOf(w);
             // The capture of this creature settles later but belongs to this battle's participants (per-event record).
             w.AppearedAtKnockout = new HashSet<int>(_appeared);
             // REQ: option A — a boss pays only its boss pool, never a second wild-defeat pool.
-            Reward(spawn.Role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, spawn.Role == SpawnRole.Elite,
+            Reward(role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, role == SpawnRole.Elite,
                 w.AppearedAtKnockout);
-            _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
-            PayQuest(w.AppearedAtKnockout);
+            if (w.Spawn >= 0)
+            {
+                _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
+                PayQuest(w.AppearedAtKnockout);
+            }
             // REQ: planet-world.md#地表地牢 — the key elite's knock-out opens the boss room for the rest of the run.
             if (_dungeon != null && w.Spawn == _dungeon.KeySpawn && _surface.LocksClosed)
             {
@@ -807,7 +844,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Toast(_copy.Ui("ui.hud.gate_open"));
             }
 
-            if (spawn.Role == SpawnRole.Boss)
+            if (role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
@@ -818,12 +855,12 @@ namespace Cosmimera.Bootstrap.Demo
             if (!w.Dropped)
             {
                 w.Dropped = true;
-                if (_drops.TryRoll(spawn.Role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
                 {
                     _outcome.Materials.Add(drop);
                     string msg = _copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key));
                     // One toast slot: keep the boss knock-out line visible instead of overwriting it.
-                    Toast(spawn.Role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
+                    Toast(role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
                 }
             }
         }
@@ -966,6 +1003,11 @@ namespace Cosmimera.Bootstrap.Demo
                 TryCapture();
             }
 
+            if (_rollAction.WasPressedThisFrame())
+            {
+                _rollRequested = true;
+            }
+
             if (_abandonAction.WasPressedThisFrame())
             {
                 RequestAbandon();
@@ -978,7 +1020,7 @@ namespace Cosmimera.Bootstrap.Demo
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
             foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
-                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact" })
+                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact", "Roll" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
             }
@@ -1148,21 +1190,23 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             WildInfo w = _wild[best];
-            RunSpawn spawn = _plan.Spawns[w.Spawn];
-            bool bounty = _plan.Regions[spawn.Region].AffixId == "affix_bounty";
-            int chance = CaptureRules.ChancePercent(spawn.Role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
+            SpawnRole role = RoleOf(w);
+            int region = RegionOf(w);
+            string creatureId = _encounter.Units[best].Def.Id;
+            bool bounty = _plan.Regions[region].AffixId == "affix_bounty";
+            int chance = CaptureRules.ChancePercent(role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
                 _balance.CaptureBossPercent);
             w.Gone = true; // one throw per knocked-out creature: a miss lets it escape (no re-roll farming)
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
             {
                 // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
-                _outcome.Captured.Add((spawn.CreatureId, _vessel, _progression.XpThreshold(w.Level)));
+                _outcome.Captured.Add((creatureId, _vessel, _progression.XpThreshold(w.Level)));
                 HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
                 Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
                 PayQuest(battle);
-                Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(spawn.CreatureId));
+                Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(creatureId));
             }
             else
             {
@@ -1204,7 +1248,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 int region = u.Side == EncounterSide.Player ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player))
-                    : _plan.Spawns[_wild[u.Id].Spawn].Region;
+                    : RegionOf(_wild[u.Id]);
                 string affix = _plan.Regions[region].AffixId;
                 if (affix == null || !affix.EndsWith("_surge"))
                 {
@@ -1625,7 +1669,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
-                if (_plan.Spawns[kv.Value.Spawn].Role == SpawnRole.Boss)
+                if (RoleOf(kv.Value) == SpawnRole.Boss)
                 {
                     return kv.Key;
                 }
@@ -1679,7 +1723,21 @@ namespace Cosmimera.Bootstrap.Demo
 
                 _worldObjects.OnDestroyed(ev.ObjectId);
                 ShatterObject(ev);
-                if (WorldObjects.IsBuilding(ev.ObjectId))
+                if (WorldObjects.IsTreasure(ev.ObjectId))
+            {
+                int region = (int)(ev.ObjectId - WorldObjects.TreasureIdBase);
+                _dungeonView?.RemoveMarker(region);
+                int rolls = 1 + _plan.Regions[region].Tier;
+                for (int i = 0; i < rolls; i++)
+                {
+                    if (_drops.TryRoll(SpawnRole.Elite, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                    {
+                        _outcome.Materials.Add(drop);
+                        Toast(_copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key)));
+                    }
+                }
+            }
+            else if (WorldObjects.IsBuilding(ev.ObjectId))
                 {
                     _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
                 }
@@ -1770,6 +1828,11 @@ namespace Cosmimera.Bootstrap.Demo
             if (woken != null)
             {
                 return woken;
+            }
+
+            if (WorldObjects.IsTreasure(id))
+            {
+                return _dungeonView?.MarkerFor((int)(id - WorldObjects.TreasureIdBase));
             }
 
             if (WorldObjects.IsBuilding(id))
@@ -2033,7 +2096,7 @@ namespace Cosmimera.Bootstrap.Demo
                 GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width * frac, rect.height), Texture2D.whiteTexture);
                 GUI.color = old;
                 string name = _copy.Name(u.Def.Id);
-                if (wild && _plan.Spawns[_wild[u.Id].Spawn].Role == SpawnRole.Boss)
+                if (wild && RoleOf(_wild[u.Id]) == SpawnRole.Boss)
                 {
                     name = _copy.Epithet(_plan.PlanetTypeId, (int)(_plan.Seed % 3)) + name;
                 }

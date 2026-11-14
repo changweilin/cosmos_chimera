@@ -9,7 +9,7 @@ namespace Cosmimera.Planet
     /// Post: values built by <see cref="FromDirection"/> satisfy −π/2 ≤ Latitude ≤ π/2 and −π &lt; Longitude ≤ π.
     /// Side effects: none (immutable value).
     /// Convention (matches <see cref="PlanetFrame"/>): (0,0) is +X, latitude +π/2 is <see cref="PlanetFrame.NorthPole"/>,
-    /// longitude +π/2 is −Z. At the poles longitude is undefined and <see cref="FromDirection"/> returns 0.
+    /// longitude +π/2 is +Z. At the poles longitude is undefined and <see cref="FromDirection"/> returns 0.
     /// </remarks>
     public readonly struct LatLon
     {
@@ -48,7 +48,7 @@ namespace Cosmimera.Planet
             // asin is ill-conditioned near ±1; atan2 on (y, horizontal length) keeps full precision at the poles.
             float horizontal = math.sqrt(direction.x * direction.x + direction.z * direction.z);
             float latitude = math.atan2(direction.y, horizontal);
-            float longitude = horizontal > 0f ? math.atan2(-direction.z, direction.x) : 0f;
+            float longitude = horizontal > 0f ? math.atan2(direction.z, direction.x) : 0f;
             // atan2(+0, −x) is +π but atan2(−0, −x) is −π; fold the antimeridian onto +π so the documented range
             // (−π, π] holds for both signed zeros (sol review F7).
             if (longitude <= -math.PI)
@@ -65,7 +65,7 @@ namespace Cosmimera.Planet
         {
             math.sincos(Latitude, out float sinLat, out float cosLat);
             math.sincos(Longitude, out float sinLon, out float cosLon);
-            return new float3(cosLat * cosLon, sinLat, -cosLat * sinLon);
+            return new float3(cosLat * cosLon, sinLat, cosLat * sinLon);
         }
     }
 }

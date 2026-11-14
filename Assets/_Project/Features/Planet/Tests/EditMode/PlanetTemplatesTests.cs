@@ -92,7 +92,7 @@ namespace Cosmimera.Planet.Tests
             Assert.Throws<ContractException>(() => new TemplatePlacement(0, Center, 0f, 0.7f));
         }
 
-        // The stamp's +x tangent: −East at rotation 0 (Q-T5 un-mirroring in PlanetTemplates.Create).
-        private static float3 StampRight(PlanetTemplates t) => -PlanetFrame.FromUp(Center).East;
+        // The stamp's +x tangent: East at rotation 0 (Q-T5 settled: East is screen-right when facing North).
+        private static float3 StampRight(PlanetTemplates t) => PlanetFrame.FromUp(Center).East;
     }
 }

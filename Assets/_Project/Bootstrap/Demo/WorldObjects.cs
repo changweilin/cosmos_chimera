@@ -23,7 +23,13 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const long BuildingIdBase = 1L << 40;
 
+        /// <summary>First treasure-chest id (Q-W3); above all building ids.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const long TreasureIdBase = 1L << 41;
+
         private const float StoreyM = 3f; // SettlementView.StoreyM: HP and drop odds follow the drawn volume
+        private const float TreasureHitRadiusM = 0.9f;
+        private const int TreasureVolumeL = 800;
 
         private readonly PlanetConfig _planet;
         private readonly ScatterPlanner _scatter;
@@ -35,6 +41,7 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Composition[] _kindComposition;
         private readonly float _maxBuildingHitM;
         private readonly List<ScatterItem> _items = new List<ScatterItem>(16);
+        private readonly List<int> _treasureRegions = new List<int>();
 
         /// <summary>Creates the bridge.</summary>
         /// <remarks>
@@ -44,7 +51,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: allocates.
         /// </remarks>
         public WorldObjects(in PlanetConfig planet, ScatterPlanner scatter, RunLayout layout, LayoutClearance clearance,
-            Func<float3, float> groundAltitude, EnvMaterials env, DestructibleTable table)
+            Func<float3, float> groundAltitude, EnvMaterials env, DestructibleTable table, DungeonLayout dungeon = null)
         {
             Contract.Requires(scatter != null && layout != null && clearance != null && groundAltitude != null &&
                 env != null && table != null, "every argument is required");
@@ -71,15 +78,30 @@ namespace Cosmimera.Bootstrap.Demo
                 _maxBuildingHitM = math.max(_maxBuildingHitM, BuildingHitRadius(b));
             }
 
-            MaxHitRadiusM = math.max(maxScatter, math.max(_maxBuildingHitM, 0.1f));
+            if (dungeon != null)
+            {
+                for (int r = 0; r < dungeon.Rooms.Count; r++)
+                {
+                    if (dungeon.Rooms[r] == RoomRole.Treasure)
+                    {
+                        _treasureRegions.Add(r);
+                    }
+                }
+            }
+
+            MaxHitRadiusM = math.max(maxScatter, math.max(_maxBuildingHitM, math.max(TreasureHitRadiusM, 0.1f)));
         }
 
         /// <inheritdoc />
         public float MaxHitRadiusM { get; }
 
         /// <summary>Whether <paramref name="id"/> names a building.</summary>
-        /// <remarks>Pre: none. Post: true iff id ≥ BuildingIdBase. Side effects: none.</remarks>
-        public static bool IsBuilding(long id) => id >= BuildingIdBase;
+        /// <remarks>Pre: none. Post: true iff BuildingIdBase ≤ id &lt; TreasureIdBase. Side effects: none.</remarks>
+        public static bool IsBuilding(long id) => id >= BuildingIdBase && id < TreasureIdBase;
+
+        /// <summary>Whether <paramref name="id"/> names a treasure chest (Q-W3).</summary>
+        /// <remarks>Pre: none. Post: true iff id ≥ TreasureIdBase. Side effects: none.</remarks>
+        public static bool IsTreasure(long id) => id >= TreasureIdBase;
 
         /// <inheritdoc />
         public void Query(float3 worldPoint, float radiusM, List<DestructibleCandidate> into)
@@ -104,6 +126,16 @@ namespace Cosmimera.Bootstrap.Demo
 
                 into.Add(BuildingCandidate(i));
             }
+
+            for (int i = 0; i < _treasureRegions.Count; i++)
+            {
+                int r = _treasureRegions[i];
+                float3 dir = _layout.Regions[r].Center;
+                if (math.distance(up, dir) * _planet.Radius <= radiusM + TreasureHitRadiusM)
+                {
+                    into.Add(TreasureCandidate(r));
+                }
+            }
         }
 
         /// <summary>The candidate Query would report for <paramref name="id"/>, if that object exists in this run.</summary>
@@ -113,6 +145,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public bool TryGet(long id, out DestructibleCandidate candidate)
         {
+            if (IsTreasure(id))
+            {
+                int region = (int)(id - TreasureIdBase);
+                bool ok = _treasureRegions.Contains(region);
+                candidate = ok ? TreasureCandidate(region) : default;
+                return ok;
+            }
+
             if (IsBuilding(id))
             {
                 long index = id - BuildingIdBase;
@@ -135,6 +175,14 @@ namespace Cosmimera.Bootstrap.Demo
         private DestructibleCandidate ScatterCandidate(in ScatterItem it) =>
             new DestructibleCandidate(it.CellKey, _planet.ToWorld(it.Direction, it.AltitudeM + HitHeight(it.Shape, it.SizeM)),
                 HitRadius(it.Shape, it.SizeM), _kindComposition[it.KindIndex], it.VolumeL);
+
+        private DestructibleCandidate TreasureCandidate(int region)
+        {
+            float3 dir = _layout.Regions[region].Center;
+            return new DestructibleCandidate(TreasureIdBase + region,
+                _planet.ToWorld(dir, _groundAltitude(dir) + 0.6f),
+                TreasureHitRadiusM, _env.Building(BuildingMaterial.House), TreasureVolumeL);
+        }
 
         private DestructibleCandidate BuildingCandidate(int i)
         {
@@ -171,6 +219,16 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            for (int i = 0; i < _treasureRegions.Count; i++)
+            {
+                int r = _treasureRegions[i];
+                if (math.distance(up, _layout.Regions[r].Center) * _planet.Radius <= TreasureHitRadiusM + clearanceM &&
+                    !_table.IsDestroyed(TreasureIdBase + r))
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -181,7 +239,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public string NameKey(in DestructibleCandidate candidate)
         {
-            if (IsBuilding(candidate.Id))
+            if (IsBuilding(candidate.Id) || IsTreasure(candidate.Id))
             {
                 return "ui.object.building";
             }

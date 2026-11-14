@@ -383,6 +383,18 @@ namespace Cosmimera.Combat
             return RemainingAt(nowMs) > 0 ? TeamResult.SwitchOnCooldown : TeamResult.Ok;
         }
 
+        /// <summary>Clears per-combat retirement for <paramref name="memberId"/> after a revive (Q-C36).</summary>
+        /// <remarks>
+        /// Pre: memberId is in Roster.
+        /// Post: result is true iff memberId was retired; memberId is no longer retired.
+        /// Side effects: mutates _retired.
+        /// </remarks>
+        public bool TryClearRetired(int memberId)
+        {
+            Contract.Requires(_roster.Contains(memberId), "memberId must be in Roster");
+            return _retired.Remove(memberId);
+        }
+
         // Elapsed-based instead of a stored end time: with nowMs in 0..CombatTime.MaxMs the subtraction cannot wrap.
         private long RemainingAt(long nowMs)
         {

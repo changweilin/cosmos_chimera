@@ -98,6 +98,30 @@ namespace Cosmimera.Combat
         PlayerDowned = 5,
     }
 
+    /// <summary>Outcome of a player overload command (Q-C12).</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum OverloadResult
+    {
+        /// <summary>Overload activated until combat ends.</summary>
+        Ok = 0,
+        /// <summary>Overload can only be triggered during combat.</summary>
+        NotInCombat = 1,
+        /// <summary>Unit is not on the player's side.</summary>
+        NotPlayerSide = 2,
+        /// <summary>Unit is not currently fielded.</summary>
+        NotFielded = 3,
+        /// <summary>Fainted units cannot overload.</summary>
+        Fainted = 4,
+        /// <summary>Only adult-stage creatures can overload (Q-C12).</summary>
+        NotAdult = 5,
+        /// <summary>Overload has not been unlocked via a MagicCube sub-partner.</summary>
+        NotUnlocked = 6,
+        /// <summary>Unit is already overloaded.</summary>
+        AlreadyOverloaded = 7,
+        /// <summary>Unit already used its once-per-combat overload.</summary>
+        AlreadyUsedThisCombat = 8,
+    }
+
     /// <summary>One creature taking part in an encounter.</summary>
     /// <remarks>
     /// Pre: build through <see cref="Encounter.AddCreature"/>. Post: Combatant and moves fixed for the unit's lifetime.
@@ -291,6 +315,8 @@ namespace Cosmimera.Combat
         private DestructibleCandidate _objectFocus;
         // Edge point of the focused object's hit sphere nearest the main creature, refreshed each time it decides.
         private float3 _objectAim;
+        private readonly HashSet<int> _overloadedThisCombat = new HashSet<int>();
+        private long _lastCombatReviveMs = -1;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -780,6 +806,126 @@ namespace Cosmimera.Combat
         /// <summary>Wander radius (m) of a unit around its spawn point, from its species temperament (combat.md#遊蕩).</summary>
         /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it holds its spawn point. Side effects: none.</remarks>
         public float WanderRadiusM(int unitId) => _balance.Wander.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
+
+        /// <summary>Triggers temporary combat overload for <paramref name="unitId"/> (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units.
+        /// Post: returns Ok and sets Combatant.IsOverloaded iff inCombat, player side, fielded, alive, Adult stage,
+        ///       overloadUnlocked, and not yet used in this combat; otherwise state unchanged.
+        /// Side effects: mutates Combatant and _overloadedThisCombat on Ok.
+        /// </remarks>
+        public OverloadResult TryTriggerOverload(int unitId, bool inCombat, bool overloadUnlocked)
+        {
+            EncounterUnit u = Get(unitId);
+            if (!inCombat)
+            {
+                return OverloadResult.NotInCombat;
+            }
+
+            if (u.Side != EncounterSide.Player)
+            {
+                return OverloadResult.NotPlayerSide;
+            }
+
+            if (!u.Fielded)
+            {
+                return OverloadResult.NotFielded;
+            }
+
+            if (u.Combatant.IsFainted)
+            {
+                return OverloadResult.Fainted;
+            }
+
+            if (u.Def.Stage != CreatureStage.Adult)
+            {
+                return OverloadResult.NotAdult;
+            }
+
+            if (!overloadUnlocked)
+            {
+                return OverloadResult.NotUnlocked;
+            }
+
+            if (u.Combatant.IsOverloaded)
+            {
+                return OverloadResult.AlreadyOverloaded;
+            }
+
+            if (_overloadedThisCombat.Contains(unitId))
+            {
+                return OverloadResult.AlreadyUsedThisCombat;
+            }
+
+            u.Combatant.BeginOverload();
+            _overloadedThisCombat.Add(unitId);
+            return OverloadResult.Ok;
+        }
+
+        /// <summary>Reverts all overloaded units and resets per-combat overload usage when combat ends (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: every unit has Combatant.IsOverloaded == false; once-per-combat lock cleared.
+        /// Side effects: mutates overloaded combatants and _overloadedThisCombat.
+        /// </remarks>
+        public void EndCombatOverload()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                _units[i].Combatant.EndOverload();
+            }
+
+            _overloadedThisCombat.Clear();
+        }
+
+        /// <summary>Remaining combat revive cooldown in ms at <paramref name="nowMs"/> (Q-C36).</summary>
+        /// <remarks>Pre: nowMs in CombatTime. Post: 0..ReviveRules.CombatCooldownMs. Side effects: none.</remarks>
+        public long ReviveCooldownRemainingMs(long nowMs)
+        {
+            CombatTime.Require(nowMs, 0);
+            if (_lastCombatReviveMs < 0)
+            {
+                return 0;
+            }
+
+            long elapsed = nowMs - _lastCombatReviveMs;
+            return elapsed >= ReviveRules.CombatCooldownMs ? 0 : ReviveRules.CombatCooldownMs - elapsed;
+        }
+
+        /// <summary>Revives a fainted player unit according to Q-C36 tier and combat rules.</summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units; sourceTier is a defined PlanetSize; nowMs in CombatTime and >= unit's Book watermark.
+        /// Post: returns InvalidUnit if not player side; NotFainted if alive; OnCooldown if inCombat within 60 s of
+        ///       previous combat revive; Ok and unit.Combatant.Hp == ReviveRules.ComputeReviveHp(...) otherwise.
+        /// Side effects: mutates Combatant and _lastCombatReviveMs on Ok.
+        /// </remarks>
+        public ReviveResult TryRevive(int unitId, ReviveSource source, PlanetSize sourceTier, bool inCombat, long nowMs)
+        {
+            EncounterUnit u = Get(unitId);
+            if (u.Side != EncounterSide.Player)
+            {
+                return ReviveResult.InvalidUnit;
+            }
+
+            if (!u.Combatant.IsFainted)
+            {
+                return ReviveResult.NotFainted;
+            }
+
+            if (inCombat && ReviveCooldownRemainingMs(nowMs) > 0)
+            {
+                return ReviveResult.OnCooldown;
+            }
+
+            int hp = ReviveRules.ComputeReviveHp(u.Combatant.MaxHp, sourceTier, inCombat);
+            u.Combatant.Revive(hp, nowMs);
+            if (inCombat)
+            {
+                _lastCombatReviveMs = nowMs;
+            }
+
+            return ReviveResult.Ok;
+        }
 
         /// <summary>Advances the fight to <paramref name="nowMs"/>.</summary>
         /// <remarks>

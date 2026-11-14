@@ -6,7 +6,7 @@ namespace Cosmimera.Planet
     /// <summary>Local east / north / up basis at one point on the planet; the only legal source of "up".</summary>
     /// <remarks>
     /// Pre: construct through <see cref="At"/> or <see cref="FromUp"/>; <c>default(PlanetFrame)</c> is all-zero and invalid.
-    /// Post: East, North, Up are unit length, mutually orthogonal, and right-handed: cross(East, North) == Up.
+    /// Post: East, North, Up are unit length, mutually orthogonal, and follow Q-T5: cross(North, East) == Up (facing North, East is on the right).
     /// Side effects: none (immutable value).
     /// REQ: CLAUDE.md#硬性規則 — never use Vector3.up / math.up() / Physics.gravity as "up" on the sphere.
     /// Convention: North points towards <see cref="NorthPole"/> along the meridian; longitude increases towards East
@@ -20,9 +20,9 @@ namespace Cosmimera.Planet
         /// <remarks>Pre: none. Post: constant (0, 1, 0). Side effects: none.</remarks>
         public static readonly float3 NorthPole = new float3(0f, 1f, 0f);
 
-        // East at the exact poles, where cross(NorthPole, up) vanishes. (0,0,-1) is the limit of East when
+        // East at the exact poles, where cross(up, NorthPole) vanishes. (0,0,1) is the limit of East when
         // approaching either pole along longitude 0, so the fallback is continuous along that meridian.
-        private static readonly float3 PoleEastFallback = new float3(0f, 0f, -1f);
+        private static readonly float3 PoleEastFallback = new float3(0f, 0f, 1f);
 
         // cross(NorthPole, up) has length cos(latitude). Below ~1e-5 (≈ 6 mm from the pole at R=640 m) its direction
         // is dominated by the rounding error in `up`, so the fallback is used instead.
@@ -75,7 +75,7 @@ namespace Cosmimera.Planet
         /// <remarks>
         /// Pre: up is finite and unit length (±1e-3).
         /// Post: Up == normalize(up) — the tolerance applies to the caller's input, never to the output; type
-        ///       invariant holds; at the exact poles East == (0,0,−1).
+        ///       invariant holds; at the exact poles East == (0,0,1).
         /// Side effects: none.
         /// </remarks>
         public static PlanetFrame FromUp(float3 up)
@@ -84,13 +84,14 @@ namespace Cosmimera.Planet
             // REQ: docs/reviews/P1-01-P1-02-sol.md#F2 — storing a 0.999-long up made North 0.999 long and skewed
             // every LocalToWorld by 0.1 %.
             up = math.normalize(up);
-            float3 eastRaw = math.cross(NorthPole, up);
+            // REQ: docs/architecture/planet-tech.md (Q-T5) — cross(North, East) == Up so East is on the right when facing North.
+            float3 eastRaw = math.cross(up, NorthPole);
             float3 east = math.lengthsq(eastRaw) > PoleThresholdSq
                 ? math.normalize(eastRaw)
                 : math.normalize(PoleEastFallback - up * math.dot(PoleEastFallback, up));
             // Derived rather than computed independently so orthogonality is exact up to rounding even when `up`
             // carries normalisation error.
-            float3 north = math.cross(up, east);
+            float3 north = math.cross(east, up);
             return new PlanetFrame(east, north, up);
         }
 

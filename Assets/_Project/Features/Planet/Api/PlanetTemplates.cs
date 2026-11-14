@@ -308,10 +308,8 @@ namespace Cosmimera.Planet
                 NativeArray<ushort>.Copy(src.Heights, 0, heights, offset, src.Heights.Length);
                 NativeArray<byte>.Copy(src.Water, 0, water, offset, src.Water.Length);
                 PlanetFrame f = PlanetFrame.FromUp(p.Center);
-                // Q-T5 (open): PlanetFrame's East lies to the screen-left of North in Unity's left-handed space, which
-                // mirrored the retired real-map templates. Procedural stamps have no handedness, but the −East is kept so
-                // stamp output does not change with Q-T5's outcome (dropping it would mirror every planet's terrain).
-                float3 east = -f.East;
+                // REQ: docs/architecture/planet-tech.md (Q-T5) — PlanetFrame.East is now screen-right when facing North.
+                float3 east = f.East;
                 float cr = math.cos(p.RotationRad);
                 float sr = math.sin(p.RotationRad);
                 float amp = config.Radius * AmplitudeFractionOfRadius * math.clamp(src.ReliefM / 2500f, 0.35f, 1f);

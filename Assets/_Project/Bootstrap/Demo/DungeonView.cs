@@ -34,6 +34,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private readonly List<GameObject> _seals = new List<GameObject>();
         private readonly List<GameObject> _markers = new List<GameObject>();
+        private readonly Dictionary<int, GameObject> _markersByRegion = new Dictionary<int, GameObject>();
         private readonly List<Material> _materials = new List<Material>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
 
@@ -111,6 +112,27 @@ namespace Cosmimera.Bootstrap.Demo
                 marker.transform.localRotation *= Quaternion.AngleAxis(r * MarkerTurnDeg, Vector3.up);
                 marker.transform.localScale = Vector3.one * MarkerM;
                 _markers.Add(marker);
+                _markersByRegion[r] = marker;
+            }
+        }
+
+        /// <summary>Treasure-room container GameObject for <paramref name="region"/>, or null if absent/destroyed.</summary>
+        /// <remarks>Pre: none. Post: null if not a treasure room or already removed. Side effects: none.</remarks>
+        public GameObject MarkerFor(int region) =>
+            _markersByRegion.TryGetValue(region, out GameObject go) ? go : null;
+
+        /// <summary>Removes the treasure container for <paramref name="region"/> once broken (Q-W3).</summary>
+        /// <remarks>Pre: none. Post: MarkerFor(region) == null. Side effects: destroys the marker object; idempotent.</remarks>
+        public void RemoveMarker(int region)
+        {
+            if (_markersByRegion.TryGetValue(region, out GameObject go))
+            {
+                _markersByRegion.Remove(region);
+                _markers.Remove(go);
+                if (go != null)
+                {
+                    Destroy(go);
+                }
             }
         }
 

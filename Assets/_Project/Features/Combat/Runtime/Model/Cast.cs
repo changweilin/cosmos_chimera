@@ -322,6 +322,7 @@ namespace Cosmimera.Combat
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
         private int _hpMultiplier = 1;
+        private int _preOverloadMaxHp;
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -412,6 +413,68 @@ namespace Cosmimera.Combat
         /// <summary>Whether HP is 0.</summary>
         /// <remarks>Pre: none. Post: true iff Hp == 0. Side effects: none.</remarks>
         public bool IsFainted => Hp == 0;
+
+        /// <summary>Whether this combatant is currently in temporary combat overload (Q-C12).</summary>
+        /// <remarks>Pre: none. Post: true between BeginOverload and EndOverload. Side effects: none.</remarks>
+        public bool IsOverloaded { get; private set; }
+
+        /// <summary>Enters temporary combat overload (+25% MaxHp, minimum +1; Q-C12).</summary>
+        /// <remarks>
+        /// Pre: !IsFainted &amp;&amp; !IsOverloaded.
+        /// Post: IsOverloaded == true; MaxHp increased; Hp increased by the same delta.
+        /// Side effects: mutates MaxHp, Hp, IsOverloaded.
+        /// </remarks>
+        internal void BeginOverload()
+        {
+            Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
+            _preOverloadMaxHp = MaxHp;
+            int bonus = MaxHp / 4;
+            if (bonus < 1)
+            {
+                bonus = 1;
+            }
+
+            MaxHp += bonus;
+            Hp += bonus;
+            IsOverloaded = true;
+        }
+
+        /// <summary>Reverts temporary combat overload when combat ends (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: none. Post: IsOverloaded == false; MaxHp restored and Hp clamped to MaxHp.
+        /// Side effects: mutates MaxHp, Hp, IsOverloaded when overloaded.
+        /// </remarks>
+        internal void EndOverload()
+        {
+            if (!IsOverloaded)
+            {
+                return;
+            }
+
+            MaxHp = _preOverloadMaxHp;
+            if (Hp > MaxHp)
+            {
+                Hp = MaxHp;
+            }
+
+            IsOverloaded = false;
+        }
+
+        /// <summary>Revives a fainted combatant with <paramref name="hp"/> (Q-C36).</summary>
+        /// <remarks>
+        /// Pre: IsFainted; 1 &lt;= hp &lt;= MaxHp; nowMs in CombatTime and >= Book watermark.
+        /// Post: !IsFainted; Hp == hp.
+        /// Side effects: mutates Hp and Book.
+        /// </remarks>
+        internal int Revive(int hp, long nowMs)
+        {
+            Contract.Requires(IsFainted, "must be fainted to revive");
+            Contract.Requires(hp >= 1 && hp <= MaxHp, "hp must be in 1..MaxHp");
+            Book.RequireTime(nowMs);
+            Hp = hp;
+            Book.NotifyHpChanged(0, Hp, MaxHp, nowMs, out _);
+            return Hp;
+        }
 
         /// <summary>This combatant's trait and timed effects.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
