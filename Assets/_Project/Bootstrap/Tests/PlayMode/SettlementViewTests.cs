@@ -253,8 +253,8 @@ namespace Cosmimera.Bootstrap.Tests
             Shader scenery = Shader.Find("Cosmimera/ToonScenery");
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.transform.SetParent(stage.transform, false);
-            ground.transform.localPosition = new Vector3(40f, 0.55f, 150f);
-            ground.transform.localScale = new Vector3(40f, 1f, 60f);
+            ground.transform.localPosition = new Vector3(60f, 0.55f, 250f);
+            ground.transform.localScale = new Vector3(50f, 1f, 90f);
             ground.GetComponent<Renderer>().sharedMaterial =
                 PlanetLook.SceneryMaterial(scenery, new Color(0.43f, 0.69f, 0.29f), Color.white, 0f, 0f, 0f, 0f);
             var sun = new GameObject("sun").AddComponent<Light>();
@@ -273,6 +273,20 @@ namespace Cosmimera.Bootstrap.Tests
                 (BuildingKind.House, ArchEra.Mercantile, 5f, 5f, 2), (BuildingKind.Tower, ArchEra.Mercantile, 3f, 3f, 4),
                 (BuildingKind.House, ArchEra.Industrial, 6f, 5f, 2), (BuildingKind.Tower, ArchEra.Industrial, 3f, 3f, 5),
                 (BuildingKind.House, ArchEra.Ancient, 5f, 4f, 1), (BuildingKind.Pillar, ArchEra.Ancient, 1.2f, 1.2f, 3),
+                (BuildingKind.House, ArchEra.Steampunk, 6f, 5f, 2), (BuildingKind.Tower, ArchEra.Steampunk, 3f, 3f, 5),
+                (BuildingKind.House, ArchEra.Future, 6f, 5f, 2), (BuildingKind.Tower, ArchEra.Future, 3f, 3f, 5),
+                (BuildingKind.House, ArchEra.Wasteland, 6f, 5f, 2), (BuildingKind.Tower, ArchEra.Wasteland, 3f, 3f, 4),
+            };
+
+            // One street per row: the same (tradition, era, mix) ten times over, so what is on show is only the
+            // per-building draw (shape, age, damage) and which secondary traits each house borrowed.
+            (string name, ArchRegion region, ArchEra era, ArchMix mix)[] streets =
+            {
+                ("verdant-mercantile", ArchRegion.Verdant, ArchEra.Mercantile, new ArchMix(ArchRegion.Twilight, ArchEra.Agrarian, 0.35f, 0.4f, 0.1f)),
+                ("ice-steampunk", ArchRegion.Ice, ArchEra.Steampunk, new ArchMix(ArchRegion.Storm, ArchEra.Industrial, 0.35f, 0.4f, 0.1f)),
+                ("crystal-future", ArchRegion.Crystal, ArchEra.Future, new ArchMix(ArchRegion.Lava, ArchEra.Steampunk, 0.3f, 0.1f, 0.03f)),
+                ("lava-wasteland", ArchRegion.Lava, ArchEra.Wasteland, new ArchMix(ArchRegion.Verdant, ArchEra.Industrial, 0.35f, 0.8f, 0.5f)),
+                ("twilight-agrarian-old", ArchRegion.Twilight, ArchEra.Agrarian, new ArchMix(ArchRegion.Verdant, ArchEra.Mercantile, 0.4f, 0.8f, 0.45f)),
             };
             var regions = (ArchRegion[])System.Enum.GetValues(typeof(ArchRegion));
             const float rowGap = 50f, colGap = 9.5f;
@@ -298,6 +312,34 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
+            for (int r = 0; r < streets.Length; r++)
+            {
+                var street = streets[r];
+                ArchPalette p = ArchitectureMeshes.PaletteFor(street.region, street.era, BuildingKind.House, street.mix);
+                var materials = new[]
+                {
+                    PlanetLook.SceneryMaterial(scenery, p.Wall, p.Weathering, p.WeatheringStrength, 0f, 0f, 0f),
+                    PlanetLook.SceneryMaterial(scenery, p.Roof, p.Weathering, p.WeatheringStrength, 0f, 0f, 0f),
+                    PlanetLook.SceneryMaterial(scenery, p.Trim, p.Trim, 0f, 0f, 0f, 0f),
+                    PlanetLook.SceneryMaterial(scenery, p.Glow, p.Glow, 0f, 0f, 0f, 0.9f),
+                };
+                for (int c = 0; c < 10; c++)
+                {
+                    BuildingKind kind = c == 4 ? BuildingKind.Hall : c == 8 ? BuildingKind.Tower : BuildingKind.House;
+                    var spec = kind == BuildingKind.Hall
+                        ? new ArchSpec(kind, street.region, street.era, 7f, 6f, 2, 0.55f, (ulong)(r * 101 + c), street.mix)
+                        : kind == BuildingKind.Tower
+                            ? new ArchSpec(kind, street.region, street.era, 3f, 3f, 4, 0.55f, (ulong)(r * 101 + c), street.mix)
+                            : new ArchSpec(kind, street.region, street.era, 5f + c % 2, 5f, 1 + c % 3 / 2 + c % 2, 0.55f, (ulong)(r * 101 + c), street.mix);
+                    var go = new GameObject("street_" + street.name + "_" + c);
+                    go.transform.SetParent(stage.transform, false);
+                    go.transform.localPosition = new Vector3(c * colGap, 0f, (regions.Length + r) * rowGap);
+                    go.transform.localRotation = Quaternion.Euler(0f, 180f + 28f, 0f);
+                    go.AddComponent<MeshFilter>().sharedMesh = ArchitectureMeshes.Build(spec);
+                    go.AddComponent<MeshRenderer>().sharedMaterials = materials;
+                }
+            }
+
             var camera = new GameObject("camera").AddComponent<Camera>();
             camera.transform.SetParent(stage.transform, false);
             camera.clearFlags = CameraClearFlags.SolidColor;
@@ -307,12 +349,23 @@ namespace Cosmimera.Bootstrap.Tests
             yield return null;
             for (int r = 0; r < regions.Length; r++)
             {
-                for (int half = 0; half < 2; half++)
+                for (int half = 0; half < 3; half++)
                 {
-                    float centre = (half == 0 ? 2f : 7f) * colGap;
+                    float centre = (half == 0 ? 2f : half == 1 ? 7f : 12.5f) * colGap;
                     camera.transform.position = new Vector3(centre + 3f, 9f, r * rowGap - 40f);
                     camera.transform.LookAt(new Vector3(centre, 4.2f, r * rowGap));
-                    ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "arch-" + regions[r] + "-" + (half == 0 ? "a" : "b") + ".png"));
+                    ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "arch-" + regions[r] + "-" + "abc"[half] + ".png"));
+                }
+            }
+
+            for (int r = 0; r < streets.Length; r++)
+            {
+                for (int half = 0; half < 2; half++)
+                {
+                    float centre = (half == 0 ? 2f : 7f) * colGap, z = (regions.Length + r) * rowGap;
+                    camera.transform.position = new Vector3(centre + 3f, 9f, z - 40f);
+                    camera.transform.LookAt(new Vector3(centre, 4.2f, z));
+                    ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "arch-street-" + streets[r].name + "-" + "ab"[half] + ".png"));
                 }
             }
         }

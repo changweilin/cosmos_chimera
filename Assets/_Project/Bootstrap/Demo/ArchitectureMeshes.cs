@@ -31,24 +31,135 @@ namespace Cosmimera.Bootstrap.Demo
         Twilight = 5,
     }
 
-    /// <summary>Building era (時間): how developed the settlement that raised the building is.</summary>
+    /// <summary>Building era (時間): one per planet, drawn from the seed; ruins and the lair are always Ancient.</summary>
     /// <remarks>Pre: none. Post: stable values (they seed the mesh streams). Side effects: none.</remarks>
     public enum ArchEra
     {
-        /// <summary>Tents, thatch and unglazed openings (部落).</summary>
+        /// <summary>Tents, thatch and unglazed openings.</summary>
         Primal = 0,
 
-        /// <summary>Timber frames on a low stone footing (村落).</summary>
+        /// <summary>Timber frames on a low stone footing.</summary>
         Agrarian = 1,
 
-        /// <summary>Jettied upper storeys, shutters and chimneys (小鎮).</summary>
+        /// <summary>Jettied upper storeys, shutters and chimneys.</summary>
         Mercantile = 2,
 
-        /// <summary>Brick, cornices, tall glazing and smokestacks (都市／城邦).</summary>
+        /// <summary>Brick, cornices, tall glazing and smokestacks.</summary>
         Industrial = 3,
 
-        /// <summary>What is left of any of the above: broken courses without a roof (遺跡), and the lair's megaliths.</summary>
+        /// <summary>What is left of any other era: broken courses without a roof (遺跡), and the lair's megaliths.</summary>
         Ancient = 4,
+
+        /// <summary>Brick and brass: bulging mansards, pipes up the walls, ember-topped stacks (蒸汽龐克).</summary>
+        Steampunk = 5,
+
+        /// <summary>Pale composite shells, strip glazing and light bands at every floor (未來／太空).</summary>
+        Future = 6,
+
+        /// <summary>Scrap-plated walls under sheet roofs, boarded openings (廢土).</summary>
+        Wasteland = 7,
+    }
+
+    /// <summary>
+    /// The secondary style a building borrows from, and how old and how damaged its settlement is on average.
+    /// Each building draws its own share, age and damage around these means (bounded normal), so one street holds
+    /// pure-primary houses next to hybrids, and fresh ones next to patched ones.
+    /// </summary>
+    /// <remarks>Pre: built by the constructor or <see cref="Pure"/>. Post: immutable. Side effects: none.</remarks>
+    public readonly struct ArchMix
+    {
+        /// <summary>Describes a settlement's style mix.</summary>
+        /// <remarks>
+        /// Pre: defined enums; weight, ageMean and damageMean in [0, 1]; 0.5 ≤ pitchScale ≤ 1.6; 0 ≤ plinthAddM ≤ 1.
+        /// Post: properties return the arguments. Side effects: none.
+        /// </remarks>
+        public ArchMix(ArchRegion secondaryRegion, ArchEra secondaryEra, float weight, float ageMean, float damageMean,
+            float pitchScale = 1f, float plinthAddM = 0f)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(ArchRegion), secondaryRegion) && Enum.IsDefined(typeof(ArchEra), secondaryEra),
+                "secondary region and era must be defined");
+            Contract.Requires(weight >= 0f && weight <= 1f && ageMean >= 0f && ageMean <= 1f && damageMean >= 0f && damageMean <= 1f,
+                "weight, ageMean and damageMean in [0, 1]");
+            Contract.Requires(pitchScale >= 0.5f && pitchScale <= 1.6f && plinthAddM >= 0f && plinthAddM <= 1f,
+                "pitchScale in [0.5, 1.6]; plinthAddM in [0, 1]");
+            SecondaryRegion = secondaryRegion;
+            SecondaryEra = secondaryEra;
+            Weight = weight;
+            AgeMean = ageMean;
+            DamageMean = damageMean;
+            PitchScale = pitchScale;
+            PlinthAddM = plinthAddM;
+        }
+
+        /// <summary>Tradition the secondary traits come from.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public ArchRegion SecondaryRegion { get; }
+
+        /// <summary>Era the secondary traits come from.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public ArchEra SecondaryEra { get; }
+
+        /// <summary>Mean share of secondary traits; 0 = every building is pure primary.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float Weight { get; }
+
+        /// <summary>Mean age: 0 = just built, 1 = generations of weather (grime, sag, lean, faded colour).</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float AgeMean { get; }
+
+        /// <summary>Mean damage: 0 = intact, 1 = boarded windows, holed roofs, broken chimneys, propped walls.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float DamageMean { get; }
+
+        /// <summary>Roof pitch multiplier from the region theme (steeper on highlands, lower on coasts).</summary>
+        /// <remarks>Pre: none. Post: in [0.5, 1.6]. Side effects: none.</remarks>
+        public float PitchScale { get; }
+
+        /// <summary>Extra stone footing from the region theme (riverbanks build above the flood), metres.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float PlinthAddM { get; }
+
+        /// <summary>A mix with no secondary style and the era's usual age and damage.</summary>
+        /// <remarks>Pre: defined arguments. Post: Weight == 0. Side effects: none.</remarks>
+        public static ArchMix Pure(ArchRegion region, ArchEra era)
+        {
+            (float age, float damage) = ArchitectureMeshes.EraWear(era);
+            return new ArchMix(region, era, 0f, age, damage);
+        }
+    }
+
+    /// <summary>The style axes of one planet: tradition and era, and the secondary of each that its towns lean toward.</summary>
+    /// <remarks>Pre: built by <see cref="ArchitectureMeshes.PlanetStyleFor"/>. Post: immutable. Side effects: none.</remarks>
+    public readonly struct ArchPlanetStyle
+    {
+        internal ArchPlanetStyle(ArchRegion region, ArchEra era, ArchRegion secondaryRegion, ArchEra secondaryEra, float weight)
+        {
+            Region = region;
+            Era = era;
+            SecondaryRegion = secondaryRegion;
+            SecondaryEra = secondaryEra;
+            Weight = weight;
+        }
+
+        /// <summary>Primary tradition (the planet type's).</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public ArchRegion Region { get; }
+
+        /// <summary>Era of every inhabited settlement on the planet.</summary>
+        /// <remarks>Pre: none. Post: defined, never Ancient. Side effects: none.</remarks>
+        public ArchEra Era { get; }
+
+        /// <summary>Secondary tradition.</summary>
+        /// <remarks>Pre: none. Post: defined, != Region. Side effects: none.</remarks>
+        public ArchRegion SecondaryRegion { get; }
+
+        /// <summary>Secondary era: one the primary era grew out of or is growing into.</summary>
+        /// <remarks>Pre: none. Post: defined, != Era, never Ancient. Side effects: none.</remarks>
+        public ArchEra SecondaryEra { get; }
+
+        /// <summary>Mean share of secondary traits before the region theme adjusts it.</summary>
+        /// <remarks>Pre: none. Post: in [0.15, 0.45]. Side effects: none.</remarks>
+        public float Weight { get; }
     }
 
     /// <summary>Everything that decides one building mesh.</summary>
@@ -63,6 +174,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public ArchSpec(BuildingKind kind, ArchRegion region, ArchEra era, float widthM, float depthM, int storeys,
             float foundationM, ulong seed)
+            : this(kind, region, era, widthM, depthM, storeys, foundationM, seed, ArchMix.Pure(region, era))
+        {
+        }
+
+        /// <summary>Describes one building of a settlement with a style mix.</summary>
+        /// <remarks>Pre: as the other constructor; mix built by its constructor. Post: properties return the arguments. Side effects: none.</remarks>
+        public ArchSpec(BuildingKind kind, ArchRegion region, ArchEra era, float widthM, float depthM, int storeys,
+            float foundationM, ulong seed, in ArchMix mix)
         {
             Contract.Requires(Enum.IsDefined(typeof(BuildingKind), kind) && Enum.IsDefined(typeof(ArchRegion), region) &&
                               Enum.IsDefined(typeof(ArchEra), era), "kind, region and era must be defined");
@@ -77,7 +196,12 @@ namespace Cosmimera.Bootstrap.Demo
             Storeys = storeys;
             FoundationM = foundationM;
             Seed = seed;
+            Mix = mix;
         }
+
+        /// <summary>Secondary style and mean wear of the settlement the building stands in.</summary>
+        /// <remarks>Pre: none. Post: as constructed (pure primary by default). Side effects: none.</remarks>
+        public ArchMix Mix { get; }
 
         /// <summary>Rule-layer building kind.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -197,6 +321,9 @@ namespace Cosmimera.Bootstrap.Demo
         private const float FacetCos = 0.8f; // same crease as SceneryMeshes: hard masonry edges, soft lathe surfaces
         private const float RuinKeep = 0.75f; // a ruin's tallest course, as a share of the storeys it keeps
         private const float TentPeakM = 3.2f;
+        // A roof is built to pass through the wall head exactly at the wall face; seated this much higher, the wall's
+        // top edge stays under the covering instead of drawing a line across it.
+        private const float RoofSeatM = 0.06f;
         private const float TentBodyM = 1.5f; // the lowest tent (the snow house) is just taller than this
 
         /// <summary>Regional tradition of a planet type.</summary>
@@ -211,19 +338,126 @@ namespace Cosmimera.Bootstrap.Demo
             _ => ArchRegion.Verdant,
         };
 
-        /// <summary>Era a settlement kind builds in.</summary>
-        /// <remarks>Pre: defined kind. Post: defined; Ruins and Lair are Ancient. Side effects: none.</remarks>
-        public static ArchEra EraFor(SettlementKind kind) => kind switch
+        private static readonly ArchEra[] InhabitedEras =
         {
-            SettlementKind.Tribe => ArchEra.Primal,
-            SettlementKind.Village => ArchEra.Agrarian,
-            SettlementKind.Town => ArchEra.Mercantile,
-            SettlementKind.City => ArchEra.Industrial,
-            SettlementKind.CityState => ArchEra.Industrial,
-            SettlementKind.Ruins => ArchEra.Ancient,
-            SettlementKind.Lair => ArchEra.Ancient,
-            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+            ArchEra.Primal, ArchEra.Agrarian, ArchEra.Mercantile, ArchEra.Industrial, ArchEra.Steampunk, ArchEra.Future,
+            ArchEra.Wasteland,
         };
+
+        // Eras a town can plausibly be halfway to or from: the secondary era is always one of these.
+        private static ArchEra[] Kin(ArchEra era) => era switch
+        {
+            ArchEra.Primal => new[] { ArchEra.Agrarian },
+            ArchEra.Agrarian => new[] { ArchEra.Primal, ArchEra.Mercantile },
+            ArchEra.Mercantile => new[] { ArchEra.Agrarian, ArchEra.Industrial },
+            ArchEra.Industrial => new[] { ArchEra.Mercantile, ArchEra.Steampunk },
+            ArchEra.Steampunk => new[] { ArchEra.Industrial, ArchEra.Future },
+            ArchEra.Future => new[] { ArchEra.Steampunk, ArchEra.Industrial },
+            _ => new[] { ArchEra.Industrial, ArchEra.Steampunk, ArchEra.Future },
+        };
+
+        /// <summary>Usual (age, damage) means of an era's buildings.</summary>
+        /// <remarks>Pre: defined era. Post: both in [0, 1]. Side effects: none.</remarks>
+        public static (float age, float damage) EraWear(ArchEra era) => era switch
+        {
+            ArchEra.Primal => (0.45f, 0.12f),
+            ArchEra.Agrarian => (0.45f, 0.1f),
+            ArchEra.Mercantile => (0.35f, 0.08f),
+            ArchEra.Industrial => (0.4f, 0.1f),
+            ArchEra.Steampunk => (0.4f, 0.1f),
+            ArchEra.Future => (0.1f, 0.03f),
+            ArchEra.Wasteland => (0.8f, 0.5f),
+            _ => (0.9f, 0.9f),
+        };
+
+        /// <summary>Style axes of a planet: the planet type gives the tradition, the seed draws the era and both secondaries.</summary>
+        /// <remarks>
+        /// REQ: settlement-structures.md#建築造型 (整顆星球同一時代，由 seed 獨立抽).
+        /// Pre: none (unknown or null ids read as verdant). Post: same arguments, same style on every client; Era and
+        /// SecondaryEra are never Ancient; SecondaryRegion != Region. Side effects: none.
+        /// </remarks>
+        public static ArchPlanetStyle PlanetStyleFor(string planetTypeId, ulong seed)
+        {
+            ArchRegion region = RegionFor(planetTypeId);
+            var rng = new Pcg32(Salt ^ seed, 0x455241ul);
+            ArchEra era = InhabitedEras[rng.NextUInt((uint)InhabitedEras.Length)];
+            // Skip over the primary: five other traditions, each equally likely.
+            var secondary = (ArchRegion)(((int)region + 1 + (int)rng.NextUInt(5)) % 6);
+            ArchEra[] kin = Kin(era);
+            return new ArchPlanetStyle(region, era, secondary, kin[rng.NextUInt((uint)kin.Length)], 0.15f + 0.3f * rng.NextFloat());
+        }
+
+        /// <summary>Era a settlement of <paramref name="kind"/> is drawn in on a planet of <paramref name="planet"/>.</summary>
+        /// <remarks>Pre: defined kind. Post: Ancient for Ruins and Lair, otherwise planet.Era. Side effects: none.</remarks>
+        public static ArchEra SettlementEra(in ArchPlanetStyle planet, SettlementKind kind)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(SettlementKind), kind), "kind must be defined");
+            return kind == SettlementKind.Ruins || kind == SettlementKind.Lair ? ArchEra.Ancient : planet.Era;
+        }
+
+        /// <summary>Style mix of one settlement: the planet's secondaries, nudged by the region theme and the settlement kind.</summary>
+        /// <remarks>
+        /// REQ: settlement-structures.md#建築造型 (星球類型為主、區域主題微調).
+        /// Pre: defined kind; settlementIndex ≥ 0; themeId may be null or unknown (no nudge).
+        /// Post: same arguments, same mix; Ruins and Lair get a pure Ancient mix; otherwise Weight ≤ 0.7 and the
+        ///       secondary era is the planet's or another kin of its era.
+        /// Side effects: none.
+        /// </remarks>
+        public static ArchMix MixFor(in ArchPlanetStyle planet, SettlementKind kind, string themeId, ulong seed, int settlementIndex)
+        {
+            Contract.Requires(settlementIndex >= 0, "settlementIndex must be >= 0");
+            ArchEra era = SettlementEra(planet, kind);
+            if (era == ArchEra.Ancient)
+            {
+                return ArchMix.Pure(planet.Region, era);
+            }
+
+            // What the land asks of a builder: the tradition it pulls toward, and how it wears what stands on it.
+            (int lean, float weight, float age, float damage, float pitch, float plinth) theme = themeId switch
+            {
+                "forest" => ((int)ArchRegion.Verdant, 0.1f, 0.1f, 0f, 1.05f, 0f),
+                "riverbank" => (-1, 0f, 0.05f, 0f, 1f, 0.5f),
+                "highland" => ((int)ArchRegion.Ice, 0.1f, 0f, 0f, 1.2f, 0f),
+                "coast" => ((int)ArchRegion.Storm, 0.1f, 0.05f, 0f, 0.9f, 0.2f),
+                "crater" => ((int)ArchRegion.Lava, 0.1f, 0f, 0.08f, 1f, 0f),
+                "ice_shelf" => ((int)ArchRegion.Ice, 0.15f, 0f, 0f, 1.15f, 0f),
+                "canyon" => ((int)ArchRegion.Crystal, 0.1f, 0.05f, 0f, 0.95f, 0f),
+                "ruins" => (-1, 0f, 0.2f, 0.15f, 1f, 0f),
+                _ => (-1, 0f, 0f, 0f, 1f, 0f),
+            };
+            // A capital is kept up; a hamlet makes do.
+            float upkeep = kind switch
+            {
+                SettlementKind.Tribe => 0.05f,
+                SettlementKind.Village => 0.1f,
+                SettlementKind.City => -0.05f,
+                SettlementKind.CityState => -0.1f,
+                _ => 0f,
+            };
+
+            var rng = new Pcg32(Salt ^ seed, 0x534554ul + (ulong)settlementIndex);
+            ArchRegion secondary = planet.SecondaryRegion;
+            bool leans = rng.NextFloat() < 0.6f;
+            if (theme.lean >= 0 && theme.lean != (int)planet.Region && leans)
+            {
+                secondary = (ArchRegion)theme.lean;
+            }
+
+            ArchEra[] kin = Kin(planet.Era);
+            ArchEra other = kin[rng.NextUInt((uint)kin.Length)];
+            ArchEra secondaryEra = rng.NextFloat() < 0.3f ? other : planet.SecondaryEra;
+            (float eraAge, float eraDamage) = EraWear(planet.Era);
+            return new ArchMix(secondary, secondaryEra,
+                math.clamp(planet.Weight + theme.weight + 0.12f * Gauss(ref rng), 0f, 0.7f),
+                math.saturate(eraAge + upkeep + theme.age + 0.08f * Gauss(ref rng)),
+                math.saturate(eraDamage + theme.damage + 0.04f * Gauss(ref rng)),
+                theme.pitch, theme.plinth);
+        }
+
+        // Irwin–Hall(4) scaled to unit variance: bounded (|g| ≤ 3.47), so no draw can push a roof past MaxOverhangM,
+        // and free of log/sqrt whose last bit could differ between clients.
+        private static float Gauss(ref Pcg32 rng) =>
+            (rng.NextFloat() + rng.NextFloat() + rng.NextFloat() + rng.NextFloat() - 2f) * 1.7320508f;
 
         /// <summary>Whether <paramref name="spec"/> is drawn as a roofless ruin.</summary>
         /// <remarks>Pre: none. Post: true iff Ancient and a house, hall or tower. Side effects: none.</remarks>
@@ -288,8 +522,51 @@ namespace Cosmimera.Bootstrap.Demo
                     Hex(c.glow), Hex(c.weather), 0.9f);
             }
 
-            return new ArchPalette(Hex(c.wall), Hex(c.roof), Hex(c.trim), Hex(c.glow), Hex(c.weather),
-                region == ArchRegion.Ice ? 0.9f : 0.65f);
+            float strength = region == ArchRegion.Ice ? 0.9f : 0.65f;
+            // The late eras bring their own materials; the region still shows through as a tint, so a brass town on
+            // an ice world does not look like one on a lava world.
+            switch (era)
+            {
+                case ArchEra.Steampunk:
+                    return new ArchPalette(Color.Lerp(Hex(0x8C4F3C), Hex(c.wall), 0.3f), Color.Lerp(Hex(0x3F5A55), Hex(c.roof), 0.3f),
+                        Color.Lerp(Hex(0xC8963C), Hex(c.trim), 0.15f), Color.Lerp(Hex(0xFFB04A), Hex(c.glow), 0.5f), Hex(c.weather), strength);
+                case ArchEra.Future:
+                    return new ArchPalette(Color.Lerp(Hex(0xE4EAEE), Hex(c.wall), 0.22f), Color.Lerp(Hex(0x36405A), Hex(c.roof), 0.4f),
+                        Color.Lerp(Hex(0x8D99AA), Hex(c.trim), 0.2f), Color.Lerp(Hex(0x7FF2FF), Hex(c.glow), 0.45f), Hex(c.weather),
+                        strength * 0.6f);
+                case ArchEra.Wasteland:
+                    return new ArchPalette(Color.Lerp(Hex(0x9C7E5E), Hex(c.wall), 0.35f), Color.Lerp(Hex(0x7C4A30), Hex(c.roof), 0.3f),
+                        Hex(0x4C4138), Color.Lerp(Hex(0xFF7A3C), Hex(c.glow), 0.5f), Color.Lerp(Hex(0x6B5A48), Hex(c.weather), 0.4f),
+                        math.max(strength, 0.85f));
+            }
+
+            return new ArchPalette(Hex(c.wall), Hex(c.roof), Hex(c.trim), Hex(c.glow), Hex(c.weather), strength);
+        }
+
+        /// <summary>Material colours of a settlement: its primary style washed toward the secondary by the mix weight.</summary>
+        /// <remarks>
+        /// Pre: defined arguments. Post: equals the primary palette when mix.Weight == 0 and mix.AgeMean is the era's
+        /// usual; megaliths and Ancient ignore the mix; older settlements weather more strongly. Side effects: none.
+        /// </remarks>
+        public static ArchPalette PaletteFor(ArchRegion region, ArchEra era, BuildingKind kind, in ArchMix mix)
+        {
+            ArchPalette a = PaletteFor(region, era, kind);
+            if (kind == BuildingKind.Pillar || era == ArchEra.Ancient)
+            {
+                return a;
+            }
+
+            float strength = math.saturate(a.WeatheringStrength + (mix.AgeMean - EraWear(era).age) * 0.5f);
+            if (mix.Weight <= 0f)
+            {
+                return new ArchPalette(a.Wall, a.Roof, a.Trim, a.Glow, a.Weathering, strength);
+            }
+
+            // Capped below half: a settlement must still read as its planet's from across a valley.
+            float t = mix.Weight * 0.7f;
+            ArchPalette b = PaletteFor(mix.SecondaryRegion, mix.SecondaryEra, kind);
+            return new ArchPalette(Color.Lerp(a.Wall, b.Wall, t), Color.Lerp(a.Roof, b.Roof, t), Color.Lerp(a.Trim, b.Trim, t),
+                Color.Lerp(a.Glow, b.Glow, t), Color.Lerp(a.Weathering, b.Weathering, t), strength);
         }
 
         /// <summary>Size of the box that blocks the character for <paramref name="spec"/>, standing on the mesh origin.</summary>
@@ -328,9 +605,10 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             bool ruin = IsRuin(spec);
+            Variation vary = Variation.Draw(spec, ref rng);
             if (spec.Kind == BuildingKind.Tent)
             {
-                BuildTent(g, spec, ref rng);
+                BuildTent(g, spec, vary, ref rng);
             }
             else if (spec.Kind == BuildingKind.Pillar)
             {
@@ -342,18 +620,26 @@ namespace Cosmimera.Bootstrap.Demo
             }
             else if (spec.Kind == BuildingKind.Tower)
             {
-                BuildTower(g, spec, StyleFor(spec.Region, spec.Era), ref rng);
+                BuildTower(g, spec, Shape(spec, vary, ref rng), vary, ref rng);
             }
             else
             {
-                BuildLodge(g, spec, StyleFor(spec.Region, spec.Era), ref rng);
+                BuildLodge(g, spec, Shape(spec, vary, ref rng), vary, ref rng);
             }
 
             float foundation = spec.FoundationM;
             float3 offset = new float3(rng.NextFloat(), rng.NextFloat(), rng.NextFloat()) * 41f;
+            if (spec.Kind != BuildingKind.Pillar)
+            {
+                Settle(g, spec, vary, offset);
+            }
+
             // Snow lies on far more of a roof than moss does; ruins are overgrown all the way up.
             float settle = spec.Region == ArchRegion.Ice ? 0.25f : 0f;
             float decay = ruin || spec.Kind == BuildingKind.Pillar ? 0.45f : 0f;
+            // What settles spreads with the years: a new roof is clean, an old wall is streaked to the eaves.
+            float aged = ruin ? 0f : vary.Age - 0.4f;
+            float3 tint = vary.Tint;
             var data = new SceneryMeshes.MeshData(SubMeshCount);
             data.EmitFaceted(g[WallSubMesh].Part, WallSubMesh, FacetCos, (p, n, c) =>
             {
@@ -362,21 +648,175 @@ namespace Cosmimera.Bootstrap.Demo
                 float foot = 1f - math.smoothstep(0.1f, 1.3f, p.y - foundation);
                 float ledge = math.smoothstep(0.6f, 0.9f, n.y);
                 float grime = foot * (0.5f + 0.6f * patch) + ledge * (0.35f + settle) +
-                              decay * math.smoothstep(0.45f, 0.7f, patch);
-                c.a = 1f - math.saturate(grime);
-                return (n, c);
+                              decay * math.smoothstep(0.45f, 0.7f, patch) +
+                              math.max(0f, aged) * 1.2f * math.smoothstep(0.5f, 0.75f, patch);
+                // min: planted parts (window boxes) arrive already fully in the accent colour.
+                c.a = math.min(c.a, 1f - math.saturate(grime));
+                return (n, Tinted(c, tint));
             });
             data.EmitFaceted(g[RoofSubMesh].Part, RoofSubMesh, FacetCos, (p, n, c) =>
             {
                 // Patches, not a coat: the roof's own colour is what tells one region's village from another's.
                 float patch = noise.snoise(p * 0.9f + offset) * 0.5f + 0.5f;
-                float settled = math.smoothstep(0.3f, 0.7f, n.y) * math.smoothstep(0.58f - settle, 0.76f - settle, patch);
+                float lie = settle + aged * 0.3f;
+                float settled = math.smoothstep(0.3f, 0.7f, n.y) * math.smoothstep(0.58f - lie, 0.76f - lie, patch);
                 c.a = 1f - settled;
-                return (n, c);
+                return (n, Tinted(c, tint));
             });
-            data.EmitFaceted(g[TrimSubMesh].Part, TrimSubMesh, FacetCos, null);
+            // Timber greys with the wall but keeps half its own colour: frames must stay readable against plaster.
+            float3 trimTint = math.lerp(new float3(1f), tint, 0.5f);
+            data.EmitFaceted(g[TrimSubMesh].Part, TrimSubMesh, FacetCos, (p, n, c) => (n, Tinted(c, trimTint)));
             data.EmitFaceted(g[GlowSubMesh].Part, GlowSubMesh, FacetCos, null);
             return data.ToMesh("Arch_" + spec.Kind + "_" + spec.Region + "_" + spec.Era);
+        }
+
+        private static Color Tinted(Color c, float3 tint)
+        {
+            // Upper bound keeps baked tone × tint inside what the toon ramp shows as a step rather than a blow-out.
+            c.r = math.min(c.r * tint.x, 1.29f);
+            c.g = math.min(c.g * tint.y, 1.29f);
+            c.b = math.min(c.b * tint.z, 1.29f);
+            return c;
+        }
+
+        // ---- per-building variation ----------------------------------------------------------------------------
+
+        // One building's draw around its settlement's means. Every field is a bounded normal, so most of a street sits
+        // near the mean and the odd house stands out, instead of every house being equally "random".
+        private struct Variation
+        {
+            public float Mix;      // share of secondary traits, 0..1
+            public float Age;      // 0..1
+            public float Damage;   // 0..1
+            public float3 Tint;    // multiplies the baked tone: value and a warm/cool shift
+            public float2 Lean;    // drift of the wall head, metres (x, z)
+            public float Warp;     // amplitude of the low-frequency settling field, metres
+
+            public static Variation Draw(in ArchSpec spec, ref Pcg32 rng)
+            {
+                ArchMix mix = spec.Mix;
+                var v = default(Variation);
+                float share = mix.Weight + 0.18f * Gauss(ref rng);
+                v.Mix = mix.Weight > 0f ? math.saturate(share) : 0f;
+                v.Age = math.saturate(mix.AgeMean + 0.15f * Gauss(ref rng));
+                v.Damage = math.saturate(mix.DamageMean + 0.12f * Gauss(ref rng));
+                // Limewash and thatch are remade a house at a time: neighbours never match, and old ones are duller.
+                float value = math.clamp(1f + 0.05f * Gauss(ref rng) - 0.12f * (v.Age - 0.4f), 0.8f, 1.08f);
+                float warm = math.clamp(0.025f * Gauss(ref rng), -0.06f, 0.06f);
+                v.Tint = new float3(value * (1f + warm), value, value * (1f - warm));
+                // A cast shell neither sags nor leans; everything hand-built does, more with every decade.
+                bool cast = spec.Era == ArchEra.Future;
+                float lean = cast ? 0f : v.Age * v.Age * 0.14f;
+                v.Lean = math.clamp(new float2(Gauss(ref rng), Gauss(ref rng)) * lean, -0.14f, 0.14f);
+                v.Warp = cast ? 0f : 0.015f + 0.04f * v.Age;
+                return v;
+            }
+        }
+
+        // The building's style: primary and secondary blended at this building's share, then its own proportions.
+        private static Style Shape(in ArchSpec spec, in Variation vary, ref Pcg32 rng)
+        {
+            ArchMix mix = spec.Mix;
+            Style st = StyleFor(spec.Region, spec.Era);
+            if (vary.Mix > 0f)
+            {
+                st = Blend(st, StyleFor(mix.SecondaryRegion, mix.SecondaryEra), vary.Mix, ref rng);
+            }
+
+            st.Roof.Pitch = math.clamp(st.Roof.Pitch * mix.PitchScale * (1f + 0.12f * Gauss(ref rng)), 0.3f, 1.9f);
+            st.Roof.OverhangM = math.clamp(st.Roof.OverhangM * (1f + 0.15f * Gauss(ref rng)), 0.15f, 0.95f);
+            // Rafters creep: only roofs that were framed in timber to begin with (Sag > 0) keep sagging.
+            st.Roof.Sag = st.Roof.Sag > 0f ? st.Roof.Sag * (0.6f + 1.4f * vary.Age) : 0f;
+            st.PlinthM = math.max(0f, (st.PlinthM + mix.PlinthAddM) * (1f + 0.2f * Gauss(ref rng)));
+            st.WindowH *= 1f + 0.07f * Gauss(ref rng);
+            // A clipped gable (jerkinhead) now and then: the cheapest way a carpenter varies a row of gables.
+            bool clipped = rng.NextFloat() < 0.2f;
+            if (st.Roof.Hip == 0f && clipped && !st.Flat)
+            {
+                st.Roof.Hip = 0.3f;
+            }
+
+            return st;
+        }
+
+        private static bool Pick(bool primary, bool secondary, float share, ref Pcg32 rng) =>
+            rng.NextFloat() < share ? secondary : primary;
+
+        // Proportions interpolate; features are taken whole from one side or the other, each on its own coin, so two
+        // hybrids of the same pair still differ in which traits they borrowed.
+        private static Style Blend(Style a, Style b, float m, ref Pcg32 rng)
+        {
+            Style s = a;
+            s.Roof.Pitch = math.lerp(a.Roof.Pitch, b.Roof.Pitch, m);
+            s.Roof.Curve = math.lerp(a.Roof.Curve, b.Roof.Curve, m);
+            s.Roof.Hip = math.lerp(a.Roof.Hip, b.Roof.Hip, m);
+            s.Roof.OverhangM = math.lerp(a.Roof.OverhangM, b.Roof.OverhangM, m);
+            s.Roof.Sag = math.lerp(a.Roof.Sag, b.Roof.Sag, m);
+            s.Roof.Upturn = math.lerp(a.Roof.Upturn, b.Roof.Upturn, m);
+            s.Roof.ThicknessM = math.lerp(a.Roof.ThicknessM, b.Roof.ThicknessM, m);
+            s.Taper = math.lerp(a.Taper, b.Taper, m);
+            s.PlinthM = math.lerp(a.PlinthM, b.PlinthM, m);
+            s.DormerMean = math.lerp(a.DormerMean, b.DormerMean, m);
+            bool glazing = Pick(false, true, m, ref rng);
+            if (a.WindowW > 0f && b.WindowW > 0f)
+            {
+                s.WindowW = math.lerp(a.WindowW, b.WindowW, m);
+                s.WindowH = math.lerp(a.WindowH, b.WindowH, m);
+            }
+            else if (glazing)
+            {
+                s.WindowW = b.WindowW;
+                s.WindowH = b.WindowH;
+            }
+
+            s.JettyM = Pick(false, true, m, ref rng) ? b.JettyM : a.JettyM;
+            s.Flat = Pick(a.Flat, b.Flat, m, ref rng);
+            s.Timber = Pick(a.Timber, b.Timber, m, ref rng);
+            s.Belt = Pick(a.Belt, b.Belt, m, ref rng);
+            s.Cornice = Pick(a.Cornice, b.Cornice, m, ref rng);
+            s.Chimney = Pick(a.Chimney, b.Chimney, m, ref rng);
+            s.Stack = Pick(a.Stack, b.Stack, m, ref rng);
+            s.Shutters = Pick(a.Shutters, b.Shutters, m, ref rng);
+            s.RoundTower = Pick(a.RoundTower, b.RoundTower, m, ref rng);
+            s.Battlement = Pick(a.Battlement, b.Battlement, m, ref rng);
+            s.Rod = Pick(a.Rod, b.Rod, m, ref rng);
+            s.Pipes = Pick(a.Pipes, b.Pipes, m, ref rng);
+            s.GlowBands = Pick(a.GlowBands, b.GlowBands, m, ref rng);
+            s.Scrap = Pick(a.Scrap, b.Scrap, m, ref rng);
+            s.Antenna = Pick(a.Antenna, b.Antenna, m, ref rng);
+            s.Strip = Pick(a.Strip, b.Strip, m, ref rng);
+            s.WindowBox = Pick(a.WindowBox, b.WindowBox, m, ref rng);
+            if (s.JettyM > 0f)
+            {
+                // Jetty and taper never combine (see BuildLodge.HalfAt): the overhanging storey must stay near the lot.
+                s.Taper = 1f;
+            }
+
+            return s;
+        }
+
+        // Moves every vertex sideways (never vertically: the base depth and wall height are contracts) by a field
+        // slow enough that a window and the wall behind it move together, then leans the whole building.
+        private static void Settle(Geo[] g, in ArchSpec spec, in Variation vary, float3 offset)
+        {
+            if (vary.Warp <= 0f && math.lengthsq(vary.Lean) <= 0f)
+            {
+                return;
+            }
+
+            float fnd = spec.FoundationM, height = spec.Storeys * StoreyM;
+            foreach (Geo geo in g)
+            {
+                List<float3> points = geo.Part.P;
+                for (int i = 0; i < points.Count; i++)
+                {
+                    float3 p = points[i];
+                    float rise = math.clamp((p.y - fnd) / height, 0f, 1.5f);
+                    p.x += noise.snoise(p * 0.15f + offset) * vary.Warp + vary.Lean.x * rise;
+                    p.z += noise.snoise(p * 0.15f + offset.zxy) * vary.Warp + vary.Lean.y * rise;
+                    points[i] = p;
+                }
+            }
         }
 
         // ---- styles --------------------------------------------------------------------------------------------
@@ -409,6 +849,14 @@ namespace Cosmimera.Bootstrap.Demo
             public bool Battlement;  // towers end in merlons and a beacon instead of a roof
             public float WindowW;    // 0 = unglazed
             public float WindowH;
+            public float DormerMean; // mean dormers per roof slope
+            public bool Rod;         // towers end in a tall rod with a charged tip (lightning rod, antenna)
+            public bool Pipes;       // pipes up the side walls, ember-lit stack
+            public bool GlowBands;   // a light band at every floor line
+            public bool Scrap;       // walls patched with plates, a sheet roof propped over the deck
+            public bool Antenna;     // a mast on the roof
+            public bool Strip;       // strip glazing: no mullions, no shutters, always lit
+            public bool WindowBox;   // planted boxes under some windows
         }
 
         private static Style StyleFor(ArchRegion region, ArchEra era)
@@ -435,6 +883,7 @@ namespace Cosmimera.Bootstrap.Demo
                     s.Roof = new RoofForm { Pitch = 0.6f, Curve = 1f, Hip = 1f, OverhangM = 0.7f };
                     s.RoundTower = true;
                     s.Taper = 0.95f;
+                    s.Rod = true; // storm towers are built to be struck
                     break;
                 case ArchRegion.Crystal:
                     s.Roof = new RoofForm { Pitch = 0.8f, Curve = 0.65f, Hip = 1f, OverhangM = 0.3f };
@@ -463,6 +912,8 @@ namespace Cosmimera.Bootstrap.Demo
                     s.Belt = s.Timber;
                     s.Shutters = s.Timber;
                     s.Chimney |= region == ArchRegion.Verdant;
+                    s.DormerMean = 0.25f;
+                    s.WindowBox = true;
                     break;
                 case ArchEra.Mercantile:
                     s.PlinthM = 0.8f;
@@ -470,6 +921,8 @@ namespace Cosmimera.Bootstrap.Demo
                     s.Belt = true;
                     s.Shutters = s.Timber;
                     s.Chimney = !s.Flat;
+                    s.DormerMean = 0.9f;
+                    s.WindowBox = true;
                     break;
                 case ArchEra.Industrial:
                     s.Timber = false;
@@ -483,6 +936,58 @@ namespace Cosmimera.Bootstrap.Demo
                     s.WindowH = 1.5f;
                     s.Chimney = !s.Flat;
                     s.Stack = true;
+                    s.DormerMean = 1.1f;
+                    break;
+                case ArchEra.Steampunk:
+                    // Every region's roof swells into a mansard: the attic is where the boiler's heat is put to use.
+                    s.Timber = false;
+                    s.Flat = false;
+                    s.Battlement = false;
+                    s.Taper = 1f;
+                    s.PlinthM = 0.9f;
+                    s.Belt = true;
+                    s.Cornice = false;
+                    s.Roof.Pitch = math.max(s.Roof.Pitch, 1.1f);
+                    s.Roof.Curve = 0.6f;
+                    s.Roof.Hip = math.max(s.Roof.Hip, 0.6f);
+                    s.Roof.Sag = 0f;
+                    s.Roof.OverhangM = math.min(s.Roof.OverhangM, 0.45f);
+                    s.WindowW = 0.75f;
+                    s.WindowH = 1.35f;
+                    s.Chimney = true;
+                    s.Stack = true;
+                    s.Pipes = true;
+                    s.DormerMean = 1.4f;
+                    break;
+                case ArchEra.Future:
+                    // A low shell with rounded shoulders; the region survives in the taper, the tower plan and the palette.
+                    s.Timber = false;
+                    s.Flat = false;
+                    s.Battlement = false;
+                    s.Chimney = false;
+                    s.Taper = math.min(s.Taper, 0.94f);
+                    s.PlinthM = 0.3f;
+                    s.Roof = new RoofForm { Pitch = 0.38f, Curve = 0.55f, Hip = 1f, OverhangM = 0.22f, ThicknessM = 0.1f };
+                    s.WindowW = 1.5f;
+                    s.WindowH = 0.55f;
+                    s.Strip = true;
+                    s.GlowBands = true;
+                    s.Antenna = true;
+                    s.RoundTower = true;
+                    s.Rod = true;
+                    break;
+                case ArchEra.Wasteland:
+                    // Whatever stood here before, roofed with what could be dragged home.
+                    s.Timber = false;
+                    s.Flat = true;
+                    s.Battlement = true;
+                    s.Chimney = false;
+                    s.Taper = 1f;
+                    s.PlinthM = 0.2f;
+                    s.WindowW = 0.6f;
+                    s.WindowH = 0.7f;
+                    s.Scrap = true;
+                    s.Antenna = true;
                     break;
             }
 
@@ -494,7 +999,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly float3[] FaceNormal = { new float3(0, 0, 1), new float3(0, 0, -1), new float3(1, 0, 0), new float3(-1, 0, 0) };
         private static readonly float3[] FaceRight = { new float3(1, 0, 0), new float3(-1, 0, 0), new float3(0, 0, -1), new float3(0, 0, 1) };
 
-        private static void BuildLodge(Geo[] g, ArchSpec spec, Style st, ref Pcg32 rng)
+        private static void BuildLodge(Geo[] g, ArchSpec spec, Style st, Variation vary, ref Pcg32 rng)
         {
             bool hall = spec.Kind == BuildingKind.Hall;
             float hx = spec.WidthM * 0.5f, hz = spec.DepthM * 0.5f, fnd = spec.FoundationM;
@@ -532,10 +1037,22 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
-            if (st.Cornice)
+            // A bulging roof starts below the wall head: a cornice there would poke through its skirt.
+            if (st.Cornice && (st.Flat || st.Roof.Curve >= 0.95f))
             {
                 float2 h = HalfAt(top - 0.01f);
                 Box(g[TrimSubMesh], new float3(0f, top - 0.3f, 0f), h.x + 0.14f, h.y + 0.14f, 0.3f, 0.85f, 1.02f);
+            }
+
+            if (st.GlowBands)
+            {
+                // One line of light per floor: at night a shell town reads as stacked rings, not as lit windows.
+                for (int i = 1; i <= storeys; i++)
+                {
+                    float y = i == storeys ? top - 0.22f : fnd + i * StoreyM;
+                    float2 h = HalfAt(y - 0.05f);
+                    Box(g[GlowSubMesh], new float3(0f, y - 0.06f, 0f), h.x + 0.035f, h.y + 0.035f, 0.09f, 1f, 1.05f);
+                }
             }
 
             float doorW = hall ? 1.8f : 1f, doorH = hall ? 2.4f : 2f;
@@ -543,6 +1060,8 @@ namespace Cosmimera.Bootstrap.Demo
             float frontDist = HalfAt(fnd + 1f).y;
             Door(g, FaceNormal[0], FaceRight[0], frontDist, doorT, fnd, doorW, doorH);
 
+            // Strip glazing is lit from within as one piece; elsewhere a wrecked house is a dark one.
+            float litShare = st.Strip ? 0.95f : 0.7f * (1f - 0.8f * vary.Damage);
             if (st.WindowW > 0f)
             {
                 for (int i = 0; i < storeys; i++)
@@ -556,12 +1075,26 @@ namespace Cosmimera.Bootstrap.Demo
                         for (int k = 0; k < count; k++)
                         {
                             float t = -len * 0.5f + len / count * (k + 0.5f);
-                            bool lit = rng.NextFloat() < 0.7f;
+                            bool lit = rng.NextFloat() < litShare;
                             bool bricked = !st.Cornice && rng.NextFloat() < 0.15f; // a hand-built street is not a grid
+                            bool boarded = rng.NextFloat() < vary.Damage * 0.7f;
+                            bool planted = st.WindowBox && rng.NextFloat() < 0.45f * (1f - vary.Age);
+                            bool unhinged = rng.NextFloat() < vary.Age * 0.3f; // shutters are the first thing to go
                             bool atDoor = i == 0 && f == 0 && math.abs(t - doorT) < doorW * 0.5f + st.WindowW * 0.5f + 0.45f;
-                            if (!bricked && !atDoor)
+                            if (bricked || atDoor)
                             {
-                                Window(g, FaceNormal[f], FaceRight[f], dist, t, sill, st.WindowW, st.WindowH, true, st.Shutters, lit);
+                                continue;
+                            }
+
+                            Window(g, FaceNormal[f], FaceRight[f], dist, t, sill, st.WindowW, st.WindowH, !st.Strip,
+                                st.Shutters && !st.Strip && !unhinged, lit && !boarded);
+                            if (boarded)
+                            {
+                                Boards(g[TrimSubMesh], FaceNormal[f], FaceRight[f], dist, t, sill, st.WindowW, st.WindowH);
+                            }
+                            else if (planted)
+                            {
+                                WindowBox(g, FaceNormal[f], FaceRight[f], dist, t, sill, st.WindowW);
                             }
                         }
                     }
@@ -577,16 +1110,26 @@ namespace Cosmimera.Bootstrap.Demo
 
             float2 roofHalf = HalfAt(top - 0.01f);
             bool alongX = roofHalf.x >= roofHalf.y;
+            // On a near-square lot either ridge is as cheap to frame: let the builder choose, so a row of equal lots
+            // does not show the street a row of equal gables.
+            bool turned = rng.NextFloat() < 0.5f;
+            if (math.abs(roofHalf.x - roofHalf.y) < 0.15f * math.max(roofHalf.x, roofHalf.y) && turned)
+            {
+                alongX = !alongX;
+            }
+
             float halfSpan = alongX ? roofHalf.y : roofHalf.x, halfLen = alongX ? roofHalf.x : roofHalf.y;
             float ridgeY;
             if (st.Flat)
             {
-                FlatRoof(g, top, roofHalf, hall);
-                ridgeY = top + 0.55f;
+                FlatRoof(g, top, roofHalf, hall, st.Scrap, vary.Damage, ref rng);
+                ridgeY = top + (st.Scrap ? 1.15f : 0.55f);
             }
             else
             {
-                ridgeY = Roof(g[RoofSubMesh], g[WallSubMesh], new float3(0f, top, 0f), halfSpan, halfLen, alongX, st.Roof, 0.35f);
+                ridgeY = Roof(g[RoofSubMesh], g[WallSubMesh], new float3(0f, top + RoofSeatM, 0f), halfSpan, halfLen, alongX, st.Roof,
+                    0.35f, vary.Damage, rng.NextFloat() * 50f);
+                Dormers(g, top + RoofSeatM, halfSpan, halfLen, alongX, st.Roof, st.DormerMean, litShare, ref rng);
                 if (st.Roof.Hip == 0f && (spec.Era == ArchEra.Primal || spec.Era == ArchEra.Agrarian || hall))
                 {
                     // Crossed barge boards over each gable: the one ornament a thatcher's ridge always had.
@@ -601,15 +1144,72 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
-            if (st.Chimney)
+            // A second flue on the long houses, where one hearth cannot warm both ends.
+            bool second = rng.NextFloat() < 0.3f;
+            int chimneys = st.Chimney ? (second && halfLen > 2.6f ? 2 : 1) : 0;
+            for (int n = 0; n < chimneys; n++)
             {
                 float u = halfSpan * 0.45f * (rng.NextFloat() < 0.5f ? -1f : 1f);
-                float v = (rng.NextFloat() * 2f - 1f) * halfLen * 0.55f;
+                float v = chimneys == 1
+                    ? (rng.NextFloat() * 2f - 1f) * halfLen * 0.55f
+                    : (n == 0 ? -1f : 1f) * halfLen * (0.35f + 0.3f * rng.NextFloat());
+                bool broken = rng.NextFloat() < (vary.Damage - 0.35f) * 1.5f;
                 float3 foot = Along(alongX, u, top - 0.2f, v);
                 float half = st.Stack ? 0.26f : 0.34f;
-                float height = ridgeY - top + (st.Stack ? 1.9f : 0.75f);
+                float height = ridgeY - top + (st.Stack ? 1.9f : 0.75f) * (1f + 0.15f * Gauss(ref rng));
+                if (broken)
+                {
+                    // Snapped a little above the roof line: no cap, no smoke.
+                    Box(g[WallSubMesh], foot, half, half, (ridgeY - top) * 0.6f + 0.35f, 0.78f, 0.9f, 0.94f);
+                    continue;
+                }
+
                 Box(g[WallSubMesh], foot, half, half, height, 0.78f, 0.96f, 0.88f);
                 Box(g[TrimSubMesh], foot + new float3(0f, height, 0f), half * 0.88f + 0.07f, half * 0.88f + 0.07f, 0.12f, 0.8f, 0.7f);
+                if (st.Pipes)
+                {
+                    Box(g[GlowSubMesh], foot + new float3(0f, height + 0.12f, 0f), half * 0.6f, half * 0.6f, 0.1f, 1f, 1.1f);
+                }
+                else if (st.Belt && !st.Stack)
+                {
+                    // Clay pots: one per hearth below.
+                    Box(g[RoofSubMesh], foot + new float3(0f, height + 0.12f, 0f), 0.11f, 0.11f, 0.3f, 0.85f, 1f, 0.8f);
+                }
+            }
+
+            float2 widest = math.max(HalfAt(fnd + 0.1f), HalfAt(top - 0.01f));
+            if (st.Pipes)
+            {
+                Pipe(g, 2 + (int)rng.NextUInt(2), widest.x, (rng.NextFloat() - 0.5f) * widest.y * 1.2f, fnd, wallH, storeys);
+            }
+
+            if (st.Scrap)
+            {
+                ScrapPlates(g, widest, fnd, wallH, doorT, doorW, ref rng);
+            }
+
+            if (st.Antenna)
+            {
+                // Lit at the tip: the one thing a shell roof or a sheet roof offers the night skyline.
+                float3 foot = Along(alongX, 0f, ridgeY - 0.3f, (rng.NextFloat() - 0.5f) * halfLen);
+                float3 tip = foot + new float3(st.Scrap ? 0.25f * Gauss(ref rng) : 0f, 2f + 0.5f * rng.NextFloat(), 0f);
+                float3 yard = math.lerp(foot, tip, 0.7f);
+                Beam(g[TrimSubMesh], foot, tip, 0.07f, 0.07f, new float3(0f, 0f, 1f), 0.8f, 1.05f);
+                Beam(g[TrimSubMesh], yard - new float3(0.35f, 0f, 0f), yard + new float3(0.35f, 0f, 0f), 0.05f, 0.05f,
+                    new float3(0f, 0f, 1f), 0.9f, 0.9f);
+                Box(g[GlowSubMesh], tip, 0.07f, 0.07f, 0.14f, 1f, 1.1f);
+            }
+
+            for (int e = -1; e <= 1; e += 2)
+            {
+                // Raking shores: what a street does for a wall it cannot afford to rebuild.
+                float z = (rng.NextFloat() - 0.5f) * hz;
+                bool shored = rng.NextFloat() < (vary.Damage - 0.5f) * 1.6f;
+                if (shored)
+                {
+                    Beam(g[TrimSubMesh], new float3(e * (hx + 0.85f), fnd - 0.2f, z), new float3(e * (HalfAt(fnd + 2.3f).x + 0.02f), fnd + 2.3f, z),
+                        0.16f, 0.16f, new float3(0f, 0f, 1f), 0.7f, 0.95f);
+                }
             }
 
             if (hall)
@@ -651,14 +1251,26 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private static void FlatRoof(Geo[] g, float top, float2 half, bool hall)
+        private static void FlatRoof(Geo[] g, float top, float2 half, bool hall, bool scrap, float damage, ref Pcg32 rng)
         {
             Box(g[RoofSubMesh], new float3(0f, top - 0.12f, 0f), half.x - 0.05f, half.y - 0.05f, 0.14f, 0.8f, 0.95f);
             for (int f = 0; f < 4; f++)
             {
                 float len = (f < 2 ? half.x : half.y) * 2f, dist = f < 2 ? half.y : half.x;
-                // Parapet: the wall carried up past the deck, rounded off by hand.
-                Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], dist - 0.3f, 0f, top - 0.05f, len, 0.6f, 0f, 0.3f, 0.95f, 1.05f);
+                // Parapet: the wall carried up past the deck, rounded off by hand. Damage bites a stretch out of it.
+                float gap = rng.NextFloat(), bite = (rng.NextFloat() - 0.5f) * len * 0.4f;
+                if (gap < (damage - 0.3f) * 1.2f && len > 3.4f)
+                {
+                    float left = bite - 0.6f + len * 0.5f, right = len * 0.5f - bite - 0.6f;
+                    Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], dist - 0.3f, -len * 0.5f + left * 0.5f, top - 0.05f, left, 0.6f, 0f, 0.3f, 0.95f, 1.05f);
+                    Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], dist - 0.3f, len * 0.5f - right * 0.5f, top - 0.05f, right, 0.6f, 0f, 0.3f, 0.95f, 1.05f);
+                    Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], dist - 0.3f, bite, top - 0.05f, 1.2f, 0.2f, 0f, 0.3f, 0.9f, 0.95f);
+                }
+                else
+                {
+                    Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], dist - 0.3f, 0f, top - 0.05f, len, 0.6f, 0f, 0.3f, 0.95f, 1.05f);
+                }
+
                 if (f < 2)
                 {
                     // Roof-beam ends poking through the front and back walls.
@@ -669,6 +1281,25 @@ namespace Cosmimera.Bootstrap.Demo
                         Panel(g[TrimSubMesh], FaceNormal[f], FaceRight[f], dist, t, top - 0.55f, 0.17f, 0.17f, -0.1f, 0.38f, 0.75f, 0.95f);
                     }
                 }
+            }
+
+            if (scrap)
+            {
+                // A salvaged sheet propped over the deck, tipped to shed rain off the back.
+                float x = half.x + 0.15f, z = half.y + 0.15f, front = top + 0.7f, back = top + 1.15f;
+                Hexa(g[RoofSubMesh], new[]
+                {
+                    new float3(-x, front - 0.07f, z), new float3(x, front - 0.07f, z), new float3(x, back - 0.07f, -z), new float3(-x, back - 0.07f, -z),
+                    new float3(-x, front, z), new float3(x, front, z), new float3(x, back, -z), new float3(-x, back, -z),
+                }, 0.8f, 1f, true, true);
+                for (int c = 0; c < 4; c++)
+                {
+                    float sx = (c & 1) == 0 ? 1f : -1f, sz = (c & 2) == 0 ? 1f : -1f;
+                    Box(g[TrimSubMesh], new float3(sx * (half.x - 0.25f), top, sz * (half.y - 0.25f)), 0.06f, 0.06f,
+                        (sz > 0f ? 0.7f : 1.15f) - 0.1f, 0.75f, 0.95f);
+                }
+
+                return;
             }
 
             if (hall)
@@ -711,9 +1342,116 @@ namespace Cosmimera.Bootstrap.Demo
             Roof(g[RoofSubMesh], g[TrimSubMesh], new float3(0f, eave, frontDist + depth * 0.5f - 0.1f), half, depth * 0.5f + 0.1f, false, form, 0.2f);
         }
 
+        // Small gabled windows standing on each roof slope; their count is drawn per slope, so the two sides differ.
+        private static void Dormers(Geo[] g, float top, float halfSpan, float halfLen, bool alongX, RoofForm f, float mean, float lit,
+            ref Pcg32 rng)
+        {
+            float g0 = Gauss(ref rng), g1 = Gauss(ref rng);
+            const float h = 0.85f, halfW = 0.42f;
+            float a = halfSpan + f.OverhangM, span = a * f.Pitch;
+            float eave = top - span * math.pow(f.OverhangM / a, f.Curve);
+            // The face stands back from the eave, over the room below rather than over the street.
+            float outer = halfSpan * 0.72f;
+            float yOuter = eave + span * math.pow(1f - outer / a, f.Curve);
+            var form = new RoofForm { Pitch = math.clamp(f.Pitch, 0.7f, 1.1f), Curve = 1f, OverhangM = 0.14f, ThicknessM = 0.1f };
+            float crest = yOuter + h + (halfW + form.OverhangM) * form.Pitch;
+            if (mean <= 0f || halfSpan < 1.6f || eave + span - crest < 0.25f)
+            {
+                return; // no room under the ridge: a dormer taller than its roof reads as a second house
+            }
+
+            // Runs back until its ridge meets the slope; the buried part is hidden inside the roof.
+            float inner = math.max(0.12f, outer - (h + 0.4f) / f.Pitch);
+            float b = halfLen + (f.Hip > 0f ? f.OverhangM : 0.35f);
+            float usable = math.min(halfLen, b - f.Hip * math.min(a, b * 0.98f) * (1f - (inner + outer) * 0.5f / a)) - 0.9f;
+            if (usable < 0f)
+            {
+                return;
+            }
+
+            int most = math.min(3, 1 + (int)(2f * usable / 1.7f));
+            for (int side = 0; side < 2; side++)
+            {
+                float sgn = side == 0 ? 1f : -1f;
+                int count = math.clamp((int)math.round(mean + 0.7f * (side == 0 ? g0 : g1)), 0, most);
+                for (int i = 0; i < count; i++)
+                {
+                    float v = count == 1 ? 0f : math.lerp(-usable, usable, i / (count - 1f));
+                    bool glows = rng.NextFloat() < lit;
+                    var c = new float3[8];
+                    for (int k = 0; k < 8; k++)
+                    {
+                        int q = k & 3;
+                        c[k] = Along(alongX, sgn * (q == 0 || q == 3 ? inner : outer), k < 4 ? yOuter - 0.1f : yOuter + h,
+                            v + (q < 2 ? -halfW : halfW));
+                    }
+
+                    Hexa(g[WallSubMesh], c, 0.92f, 1.02f, false, false);
+                    Window(g, Along(alongX, sgn, 0f, 0f), Along(alongX, 0f, 0f, 1f), outer, v, yOuter + 0.2f, 0.46f, 0.5f, true, false, glows);
+                    Roof(g[RoofSubMesh], g[WallSubMesh], Along(alongX, sgn * (inner + outer) * 0.5f, yOuter + h, v), halfW,
+                        (outer - inner) * 0.5f, !alongX, form, 0.12f);
+                }
+            }
+        }
+
+        // A riser up one wall into the attic, banded at every floor, with a lit gauge at eye level.
+        private static void Pipe(Geo[] g, int face, float dist, float t, float fnd, float wallH, int storeys)
+        {
+            float3 n = FaceNormal[face], r = FaceRight[face];
+            float run = wallH - 0.5f;
+            Panel(g[TrimSubMesh], n, r, dist, t, fnd - 0.2f, 0.18f, run + 0.2f, 0.06f, 0.24f, 0.8f, 1.05f);
+            Panel(g[TrimSubMesh], n, r, dist, t, fnd + run - 0.18f, 0.18f, 0.18f, -0.05f, 0.24f, 0.95f, 1.05f);
+            for (int i = 0; i < storeys; i++)
+            {
+                Panel(g[TrimSubMesh], n, r, dist, t, fnd + i * StoreyM + 0.6f, 0.28f, 0.1f, 0.03f, 0.28f, 1f, 1.08f);
+            }
+
+            Panel(g[TrimSubMesh], n, r, dist, t + 0.34f, fnd + 1.42f, 0.3f, 0.3f, 0f, 0.06f, 0.9f, 1f);
+            Panel(g[GlowSubMesh], n, r, dist, t + 0.34f, fnd + 1.47f, 0.2f, 0.2f, 0.02f, 0.09f, 1f, 1.1f);
+        }
+
+        // Plates over the holes: two metals, no two the same size.
+        private static void ScrapPlates(Geo[] g, float2 half, float fnd, float wallH, float doorT, float doorW, ref Pcg32 rng)
+        {
+            for (int f = 0; f < 4; f++)
+            {
+                float len = (f < 2 ? half.x : half.y) * 2f, dist = f < 2 ? half.y : half.x;
+                int plates = math.max(1, (int)(len * wallH / 7f));
+                for (int k = 0; k < plates; k++)
+                {
+                    float w = math.min(len - 0.3f, 0.7f + 0.7f * rng.NextFloat()), h = 0.6f + 0.6f * rng.NextFloat();
+                    float t = (rng.NextFloat() - 0.5f) * math.max(0f, len - w - 0.2f);
+                    float y = fnd + 0.3f + rng.NextFloat() * math.max(0f, wallH - h - 0.6f);
+                    float proud = 0.03f + 0.04f * rng.NextFloat(), tone = 0.85f + 0.25f * rng.NextFloat();
+                    int sub = rng.NextFloat() < 0.5f ? TrimSubMesh : RoofSubMesh;
+                    if (f == 0 && math.abs(t - doorT) < (doorW + w) * 0.5f + 0.2f)
+                    {
+                        continue;
+                    }
+
+                    Panel(g[sub], FaceNormal[f], FaceRight[f], dist, t, y, w, h, 0f, proud, tone * 0.92f, tone);
+                }
+            }
+        }
+
+        private static void Boards(Geo trim, float3 n, float3 r, float dist, float t, float y, float w, float h)
+        {
+            Panel(trim, n, r, dist, t, y + h * 0.3f, w + 0.34f, 0.13f, 0.1f, 0.15f, 0.7f, 0.8f);
+            float3 at = n * (dist + 0.17f) + r * t;
+            Beam(trim, at - r * (w * 0.5f + 0.12f) + new float3(0f, y + 0.08f, 0f), at + r * (w * 0.5f + 0.12f) + new float3(0f, y + h - 0.08f, 0f),
+                0.13f, 0.04f, n, 0.65f, 0.8f);
+        }
+
+        private static void WindowBox(Geo[] g, float3 n, float3 r, float dist, float t, float y, float w)
+        {
+            Panel(g[TrimSubMesh], n, r, dist, t, y - 0.42f, w + 0.24f, 0.2f, 0.04f, 0.32f, 0.8f, 0.95f);
+            // Accent-free 0: drawn wholly in the weathering colour, which is whatever grows (or settles) on this planet.
+            Panel(g[WallSubMesh], n, r, dist, t, y - 0.26f, w + 0.14f, 0.2f, 0.08f, 0.3f, 1f, 1.12f, 1f, 0f);
+        }
+
         // ---- towers --------------------------------------------------------------------------------------------
 
-        private static void BuildTower(Geo[] g, ArchSpec spec, Style st, ref Pcg32 rng)
+        private static void BuildTower(Geo[] g, ArchSpec spec, Style st, Variation vary, ref Pcg32 rng)
         {
             float r = math.min(spec.WidthM, spec.DepthM) * 0.5f, fnd = spec.FoundationM;
             float top = fnd + spec.Storeys * StoreyM;
@@ -763,7 +1501,39 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 int f = (firstFace + i) & 3;
                 float y = fnd + i * StoreyM + 0.9f;
-                Window(g, FaceNormal[f], FaceRight[f], RadiusAt(y + 0.5f), 0f, y, 0.28f, 1f, false, false, rng.NextFloat() < 0.75f);
+                Window(g, FaceNormal[f], FaceRight[f], RadiusAt(y + 0.5f), 0f, y, 0.28f, 1f, false, false,
+                    rng.NextFloat() < 0.75f * (1f - 0.8f * vary.Damage));
+                if (st.GlowBands)
+                {
+                    int ring = st.RoundTower ? sides : 4;
+                    // RadiusAt is the distance to a face; the lathe wants the distance to a corner.
+                    float band = fnd + i * StoreyM, at = (RadiusAt(band) + 0.03f) / math.cos(math.PI / ring);
+                    Lathe(g[GlowSubMesh], float3.zero, new[]
+                    {
+                        new float2(at - 0.03f, band - 0.01f), new float2(at, band), new float2(at, band + 0.09f), new float2(at - 0.03f, band + 0.1f),
+                    }, ring, st.RoundTower ? turn : math.PI * 0.25f, p => 1f, null, null);
+                }
+            }
+
+            if (st.Pipes)
+            {
+                // Hoops instead of a riser: a straight pipe would stand off a tapering shaft.
+                for (int i = 1; i + 1 < spec.Storeys; i++)
+                {
+                    int ring = st.RoundTower ? sides : 4;
+                    float band = fnd + i * StoreyM + 0.35f, at = (RadiusAt(band) + 0.05f) / math.cos(math.PI / ring);
+                    Lathe(g[TrimSubMesh], float3.zero, new[]
+                    {
+                        new float2(at - 0.05f, band - 0.01f), new float2(at, band), new float2(at, band + 0.14f), new float2(at - 0.05f, band + 0.15f),
+                    }, ring, st.RoundTower ? turn : math.PI * 0.25f, p => 0.95f, null, null);
+                }
+            }
+
+            if (st.Scrap && !st.RoundTower)
+            {
+                // Square shafts only: a plate wider than an octagon's face would hang off its corners.
+                float reach = RadiusAt(fnd + 0.5f);
+                ScrapPlates(g, new float2(reach, reach), fnd, shaftTop - fnd, 0f, 1f, ref rng);
             }
 
             for (int f = 0; f < 4; f++)
@@ -780,8 +1550,10 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     for (int k = -1; k <= 1; k++)
                     {
+                        // A fallen merlon leaves its stump: the crown turns jagged, never flat.
+                        bool fallen = rng.NextFloat() < vary.Damage * 0.6f;
                         Panel(g[WallSubMesh], FaceNormal[f], FaceRight[f], head - 0.3f, k * (head - 0.3f) * 0.8f, top - 0.02f,
-                            head * 0.42f, k == 0 ? 0.45f : 0.85f, 0f, 0.3f, 0.95f, 1.05f);
+                            head * 0.42f, fallen ? 0.2f : k == 0 ? 0.45f : 0.85f, 0f, 0.3f, 0.95f, 1.05f);
                     }
                 }
 
@@ -816,21 +1588,32 @@ namespace Cosmimera.Bootstrap.Demo
                 apex = Roof(g[RoofSubMesh], null, new float3(0f, top, 0f), head, head, false, form, 0f);
             }
 
-            float spike = spec.Region == ArchRegion.Storm ? 2.3f : 0.9f;
+            float spike = st.Rod ? 2.3f : 0.9f;
             Beam(g[TrimSubMesh], new float3(0f, apex - 0.25f, 0f), new float3(0f, apex + spike, 0f), 0.09f, 0.09f, new float3(0f, 0f, 1f), 0.8f, 1.05f);
-            if (spec.Region == ArchRegion.Storm)
+            if (st.Rod)
             {
-                // A lightning rod with a charged ball: storm towers are built to be struck.
+                // A lightning rod (or an aerial) with a charged ball.
                 Box(g[GlowSubMesh], new float3(0f, apex + spike - 0.05f, 0f), 0.11f, 0.11f, 0.22f, 1f, 1.1f);
             }
         }
 
         // ---- tents ---------------------------------------------------------------------------------------------
 
-        private static void BuildTent(Geo[] g, ArchSpec spec, ref Pcg32 rng)
+        private static void BuildTent(Geo[] g, ArchSpec spec, Variation vary, ref Pcg32 rng)
         {
             float r = math.min(spec.WidthM, spec.DepthM) * 0.5f, fnd = spec.FoundationM;
-            switch (spec.Region)
+            // A camp of mixed descent pitches both kinds of tent; a shell-era camp lands pods, whatever the planet.
+            bool borrowed = rng.NextFloat() < vary.Mix;
+            ArchRegion form = spec.Era == ArchEra.Future ? ArchRegion.Ice : borrowed ? spec.Mix.SecondaryRegion : spec.Region;
+            if (spec.Era == ArchEra.Future)
+            {
+                Lathe(g[GlowSubMesh], float3.zero, new[]
+                {
+                    new float2(r * 0.94f, fnd + 0.3f), new float2(r * 0.97f, fnd + 0.32f), new float2(r * 0.97f, fnd + 0.4f), new float2(r * 0.94f, fnd + 0.42f),
+                }, 9, 0f, i => 1f, null, null);
+            }
+
+            switch (form)
             {
                 case ArchRegion.Ice:
                 {
@@ -1080,15 +1863,27 @@ namespace Cosmimera.Bootstrap.Demo
         /// </summary>
         // u runs across the span, v along the ridge. The eave is lowered until the roof passes through the wall top at
         // the wall face, so a swept (Curve > 1) roof never lets the wall corners poke through it.
-        private static float Roof(Geo roof, Geo gable, float3 centre, float halfSpan, float halfLen, bool alongX, RoofForm f, float gableOverM)
+        private static float Roof(Geo roof, Geo gable, float3 centre, float halfSpan, float halfLen, bool alongX, RoofForm f, float gableOverM,
+            float damage = 0f, float phase = 0f)
         {
             const int K = 5, J = 6;
+
+            // Damage first slips tiles (darker patches), then opens holes; never at the eave, ridge or verge, which
+            // carry the silhouette.
+            float Wear(int side, int k, int j) => noise.snoise(new float2(phase + side * 7.3f + j * 0.55f, k * 0.55f));
+            bool Hole(int side, int k, int j) =>
+                damage > 0.45f && k >= 1 && k < K - 1 && j >= 1 && j < J - 1 && Wear(side, k, j) > 1.25f - damage * 1.3f;
+
             bool hipped = f.Hip > 0f;
             float a = halfSpan + f.OverhangM;
             float b = halfLen + (hipped ? f.OverhangM : gableOverM);
             float hipLen = f.Hip * math.min(a, b * 0.98f);
             float span = a * f.Pitch;
-            float eave = centre.y - span * math.pow(f.OverhangM / a, f.Curve);
+            // Measured on the K straight courses actually drawn, not on the curve: under a bulging roof (Curve < 1)
+            // the chords run below the curve, and the wall head would show through between two courses.
+            float at = f.OverhangM / a * K;
+            int course = math.min((int)at, K - 1);
+            float eave = centre.y - span * math.lerp(math.pow(course / (float)K, f.Curve), math.pow((course + 1) / (float)K, f.Curve), at - course);
 
             float Height(float s, float v, float vk)
             {
@@ -1132,8 +1927,14 @@ namespace Cosmimera.Bootstrap.Demo
                     float tone = (k & 1) == 0 ? 1.035f : 0.965f;
                     for (int j = 0; j < J; j++)
                     {
+                        if (Hole(side, k, j))
+                        {
+                            continue;
+                        }
+
+                        bool slipped = damage > 0.15f && Wear(side, k + 11, j) > 1.05f - damage;
                         roof.Quad(top[side, k, j], top[side, k, j + 1], top[side, k + 1, j + 1], top[side, k + 1, j],
-                            Along(alongX, sign * f.Pitch, 1f, 0f), tone);
+                            Along(alongX, sign * f.Pitch, 1f, 0f), slipped ? tone * 0.8f : tone);
                         roof.Quad(under[side, k, j], under[side, k, j + 1], under[side, k + 1, j + 1], under[side, k + 1, j],
                             Along(alongX, -sign * f.Pitch, -1f, 0f));
                     }
@@ -1242,7 +2043,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // A box standing on a wall face: `t` along the face, `y` its foot, from p0 to p1 out of the face.
         private static void Panel(Geo geo, float3 n, float3 r, float dist, float t, float y, float w, float h, float p0, float p1,
-            float toneBottom, float toneTop, float faceTone = 1f)
+            float toneBottom, float toneTop, float faceTone = 1f, float accentFree = 1f)
         {
             float3 origin = n * dist + r * t;
             float3 half = r * (w * 0.5f);
@@ -1252,7 +2053,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 back - half + foot, back + half + foot, front + half + foot, front - half + foot,
                 back - half + head, back + half + head, front + half + head, front - half + head,
-            }, toneBottom, toneTop, true, true, faceTone);
+            }, toneBottom, toneTop, true, true, faceTone, accentFree);
         }
 
         private static void Box(Geo geo, float3 baseCentre, float halfX, float halfZ, float height, float toneBottom, float toneTop,
@@ -1284,7 +2085,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         // Eight corners: a ring of four, then the ring above it in the same order. Opposite sides get slightly
         // different tones so a box still reads as a solid when the sun is straight overhead.
-        private static void Hexa(Geo geo, float3[] c, float toneBottom, float toneTop, bool cap, bool floor, float faceTone = 1f)
+        private static void Hexa(Geo geo, float3[] c, float toneBottom, float toneTop, bool cap, bool floor, float faceTone = 1f,
+            float accentFree = 1f)
         {
             float3 inside = float3.zero;
             foreach (float3 p in c)
@@ -1297,20 +2099,20 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 int n = (k + 1) & 3;
                 float3 hint = (c[k] + c[n] + c[4 + n] + c[4 + k]) * 0.25f - inside;
-                geo.Quad(geo.V(c[k], toneBottom), geo.V(c[n], toneBottom), geo.V(c[4 + n], toneTop), geo.V(c[4 + k], toneTop), hint,
+                geo.Quad(geo.V(c[k], toneBottom, accentFree), geo.V(c[n], toneBottom, accentFree), geo.V(c[4 + n], toneTop, accentFree), geo.V(c[4 + k], toneTop, accentFree), hint,
                     faceTone * ((k & 1) == 0 ? 1f : 0.95f));
             }
 
             if (cap)
             {
                 float3 hint = (c[4] + c[5] + c[6] + c[7]) * 0.25f - inside;
-                geo.Quad(geo.V(c[4], toneTop), geo.V(c[5], toneTop), geo.V(c[6], toneTop), geo.V(c[7], toneTop), hint, faceTone * 1.03f);
+                geo.Quad(geo.V(c[4], toneTop, accentFree), geo.V(c[5], toneTop, accentFree), geo.V(c[6], toneTop, accentFree), geo.V(c[7], toneTop, accentFree), hint, faceTone * 1.03f);
             }
 
             if (floor)
             {
                 float3 hint = (c[0] + c[1] + c[2] + c[3]) * 0.25f - inside;
-                geo.Quad(geo.V(c[0], toneBottom), geo.V(c[1], toneBottom), geo.V(c[2], toneBottom), geo.V(c[3], toneBottom), hint,
+                geo.Quad(geo.V(c[0], toneBottom, accentFree), geo.V(c[1], toneBottom, accentFree), geo.V(c[2], toneBottom, accentFree), geo.V(c[3], toneBottom, accentFree), hint,
                     faceTone * 0.8f);
             }
         }

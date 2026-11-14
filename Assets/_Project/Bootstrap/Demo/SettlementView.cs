@@ -11,7 +11,8 @@ namespace Cosmimera.Bootstrap.Demo
 {
     /// <summary>
     /// D0 presentation of a <see cref="RunLayout"/> (P3-11): draped road ribbons, stone bridges over the sea, and
-    /// buildings shaped by <see cref="ArchitectureMeshes"/> in the planet's regional tradition and the settlement's era.
+    /// buildings shaped by <see cref="ArchitectureMeshes"/> in the planet's tradition and era, each settlement mixing in
+    /// a secondary style nudged by its region theme.
     /// REQ: docs/design/planet-world.md#道路與建築.
     /// </summary>
     /// <remarks>
@@ -57,7 +58,8 @@ namespace Cosmimera.Bootstrap.Demo
         private Func<float3, float> _groundAltitude;
         private Shader _shader;
         private Shader _sceneryShader;
-        private ArchRegion _region;
+        private ArchPlanetStyle _style;
+        private ArchMix[] _mixes;
         private ulong _seed;
 
         /// <summary>Road meshes built, one per RunLayout road.</summary>
@@ -72,17 +74,19 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: config valid and the one the layout was generated for; layout, groundAltitude and shader non-null;
         ///      sceneryShader is Cosmimera/ToonScenery, or null to draw the same meshes with shader (flat colours, no
-        ///      weathering or glow); planetTypeId picks the regional tradition (null or unknown: verdant); called once.
+        ///      weathering or glow); planetTypeId picks the regional tradition (null or unknown: verdant) and seed the
+        ///      planet's era; plan, when given, is the plan the layout was generated from (its region themes nudge
+        ///      each settlement's style; null: no nudge); called once.
         /// Post: Roads.Count == layout.Roads.Count; Buildings.Count == layout.Buildings.Count. Road vertices sit
         ///       RoadLiftM above the ground (bridge rows: at least BridgeDeckM above sea level); a road with a run of
         ///       two or more bridge rows has a "Bridge" child (parapets, arches, piers, lamps); building bases sit below
         ///       the lowest corner of their footprint, so no wall floats on a slope. Each building root holds one mesh
         ///       with ArchitectureMeshes.SubMeshCount materials and one BoxCollider no wider than its footprint. The
-        ///       same (layout, ground, planetTypeId, seed) draws the same settlement on every client.
+        ///       same (layout, ground, planetTypeId, seed, plan) draws the same settlement on every client.
         /// Side effects: creates GameObjects, meshes and materials; calls groundAltitude.
         /// </remarks>
         public void Configure(in PlanetConfig config, RunLayout layout, Func<float3, float> groundAltitude, Shader shader,
-            Shader sceneryShader = null, string planetTypeId = null, ulong seed = 0)
+            Shader sceneryShader = null, string planetTypeId = null, ulong seed = 0, RunPlan plan = null)
         {
             Contract.Requires(config.IsValid, "config must be valid");
             Contract.Requires(layout != null && groundAltitude != null && shader != null,
@@ -92,8 +96,15 @@ namespace Cosmimera.Bootstrap.Demo
             _groundAltitude = groundAltitude;
             _shader = shader;
             _sceneryShader = sceneryShader;
-            _region = ArchitectureMeshes.RegionFor(planetTypeId);
+            _style = ArchitectureMeshes.PlanetStyleFor(planetTypeId, seed);
             _seed = seed;
+            _mixes = new ArchMix[layout.Settlements.Count];
+            for (int i = 0; i < _mixes.Length; i++)
+            {
+                RunSettlement s = layout.Settlements[i];
+                string theme = plan != null && s.Region < plan.Regions.Count ? plan.Regions[s.Region].ThemeId : null;
+                _mixes[i] = ArchitectureMeshes.MixFor(_style, s.Kind, theme, seed, i);
+            }
 
             foreach (RunRoad road in layout.Roads)
             {
@@ -103,7 +114,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int i = 0; i < layout.Buildings.Count; i++)
             {
                 RunBuilding building = layout.Buildings[i];
-                _buildings.Add(BuildBuilding(building, i, layout.Settlements[building.Settlement].Kind));
+                _buildings.Add(BuildBuilding(building, i, layout.Settlements[building.Settlement]));
             }
         }
 
@@ -385,7 +396,7 @@ namespace Cosmimera.Bootstrap.Demo
                 geo.V(c[7], toneHead, accentHead), (c[4] + c[5] + c[6] + c[7]) * 0.25f - inside, 1.04f);
         }
 
-        private GameObject BuildBuilding(RunBuilding b, int index, SettlementKind settlement)
+        private GameObject BuildBuilding(RunBuilding b, int index, RunSettlement settlement)
         {
             float3 up = b.Direction;
             float3 across = math.normalize(math.cross(up, b.Facing));
@@ -409,14 +420,14 @@ namespace Cosmimera.Bootstrap.Demo
 
             // Local frame: +Z = Facing (entrance), +Y = planet up, +X = across. The slope (hi − lo) is added below the
             // entrance floor so the uphill side still shows full storeys.
-            ArchEra era = ArchitectureMeshes.EraFor(settlement);
+            ArchEra era = ArchitectureMeshes.SettlementEra(_style, settlement.Kind);
             // Golden-ratio stride: neighbouring lots get unrelated variation streams from one planet seed.
-            var spec = new ArchSpec(b.Kind, _region, era, b.WidthM, b.DepthM, b.Storeys, hi - lo + SinkM,
-                _seed ^ ((ulong)(index + 1) * 0x9E3779B97F4A7C15ul));
+            var spec = new ArchSpec(b.Kind, _style.Region, era, b.WidthM, b.DepthM, b.Storeys, hi - lo + SinkM,
+                _seed ^ ((ulong)(index + 1) * 0x9E3779B97F4A7C15ul), _mixes[settlement.Index]);
             Mesh mesh = ArchitectureMeshes.Build(spec);
             _meshes.Add(mesh);
             root.AddComponent<MeshFilter>().sharedMesh = mesh;
-            root.AddComponent<MeshRenderer>().sharedMaterials = MaterialsFor(era, b.Kind);
+            root.AddComponent<MeshRenderer>().sharedMaterials = MaterialsFor(era, b.Kind, settlement.Index);
             // One box on the rule layer's footprint: the character stops where creatures do (planet-world.md#道路與建築);
             // roofs and porches overhang it without blocking.
             Vector3 body = ArchitectureMeshes.BodySize(spec);
@@ -437,16 +448,17 @@ namespace Cosmimera.Bootstrap.Demo
             _buildings[index].SetActive(false);
         }
 
-        private Material[] MaterialsFor(ArchEra era, BuildingKind kind)
+        private Material[] MaterialsFor(ArchEra era, BuildingKind kind, int settlement)
         {
-            // Megaliths share one stone in every era; everything else is coloured by (region, era).
-            int key = kind == BuildingKind.Pillar ? -1 : (int)era;
+            // Megaliths share one stone everywhere; everything else is coloured by its settlement's style mix (a
+            // building's own shade is baked into its vertex colours, so one material set serves the whole settlement).
+            int key = kind == BuildingKind.Pillar ? -1 : settlement;
             if (_styleMaterials.TryGetValue(key, out Material[] set))
             {
                 return set;
             }
 
-            ArchPalette p = ArchitectureMeshes.PaletteFor(_region, era, kind);
+            ArchPalette p = ArchitectureMeshes.PaletteFor(_style.Region, era, kind, _mixes[settlement]);
             set = new Material[ArchitectureMeshes.SubMeshCount];
             if (_sceneryShader != null)
             {

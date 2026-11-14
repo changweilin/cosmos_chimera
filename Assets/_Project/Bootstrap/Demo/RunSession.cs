@@ -560,7 +560,7 @@ namespace Cosmimera.Bootstrap.Demo
                 settlements.transform.SetParent(transform, false);
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
-                    setup.PlanetType.Id, setup.Seed);
+                    setup.PlanetType.Id, setup.Seed, _plan);
                 if (_dungeon != null)
                 {
                     var dungeonRoot = new GameObject("Dungeon");

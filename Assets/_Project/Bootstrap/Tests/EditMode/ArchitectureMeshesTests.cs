@@ -209,12 +209,13 @@ namespace Cosmimera.Bootstrap.Tests
         [Test]
         public void Every_settlement_kind_and_planet_type_maps_to_a_style()
         {
+            ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor("lava_planet", 5);
             foreach (SettlementKind kind in Enum.GetValues(typeof(SettlementKind)))
             {
-                Assert.That(Enum.IsDefined(typeof(ArchEra), ArchitectureMeshes.EraFor(kind)), Is.True, kind.ToString());
+                bool old = kind == SettlementKind.Ruins || kind == SettlementKind.Lair;
+                Assert.That(ArchitectureMeshes.SettlementEra(planet, kind), Is.EqualTo(old ? ArchEra.Ancient : planet.Era), kind.ToString());
             }
 
-            Assert.That(ArchitectureMeshes.EraFor(SettlementKind.Ruins), Is.EqualTo(ArchEra.Ancient));
             var seen = new HashSet<ArchRegion>();
             foreach (string id in new[] { "verdant_planet", "lava_planet", "ice_crystal_planet", "storm_planet", "mineral_planet", "twilight_planet" })
             {
@@ -243,6 +244,254 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(roofs.Count, Is.EqualTo(6));
+        }
+
+        // REQ: settlement-structures.md#建築造型 — 整顆星球同一時代，由 seed 獨立抽。
+        [Test]
+        public void The_era_of_a_planet_is_drawn_from_its_seed_and_is_never_ancient()
+        {
+            var eras = new HashSet<ArchEra>();
+            var secondaries = new HashSet<ArchRegion>();
+            for (ulong seed = 0; seed < 300; seed++)
+            {
+                ArchPlanetStyle a = ArchitectureMeshes.PlanetStyleFor("storm_planet", seed);
+                ArchPlanetStyle b = ArchitectureMeshes.PlanetStyleFor("storm_planet", seed);
+                Assert.That((b.Region, b.Era, b.SecondaryRegion, b.SecondaryEra, b.Weight),
+                    Is.EqualTo((a.Region, a.Era, a.SecondaryRegion, a.SecondaryEra, a.Weight)));
+                Assert.That(a.Region, Is.EqualTo(ArchRegion.Storm));
+                Assert.That(a.Era, Is.Not.EqualTo(ArchEra.Ancient));
+                Assert.That(a.SecondaryEra, Is.Not.EqualTo(ArchEra.Ancient).And.Not.EqualTo(a.Era));
+                Assert.That(a.SecondaryRegion, Is.Not.EqualTo(a.Region));
+                Assert.That(a.Weight, Is.InRange(0.15f, 0.45f));
+                eras.Add(a.Era);
+                secondaries.Add(a.SecondaryRegion);
+            }
+
+            Assert.That(eras.Count, Is.EqualTo(7), "every inhabited era turns up");
+            Assert.That(secondaries.Count, Is.EqualTo(5), "every other tradition turns up as a secondary");
+        }
+
+        // REQ: settlement-structures.md#建築造型 — 星球類型為主、區域主題微調。
+        [Test]
+        public void The_mix_of_a_settlement_follows_the_planet_and_is_nudged_by_its_theme()
+        {
+            ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor("verdant_planet", 11);
+            int leanIce = 0, differs = 0;
+            for (int i = 0; i < 200; i++)
+            {
+                ArchMix plain = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, null, 11, i);
+                ArchMix again = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, null, 11, i);
+                Assert.That((again.SecondaryRegion, again.SecondaryEra, again.Weight, again.AgeMean, again.DamageMean),
+                    Is.EqualTo((plain.SecondaryRegion, plain.SecondaryEra, plain.Weight, plain.AgeMean, plain.DamageMean)));
+                Assert.That(plain.Weight, Is.InRange(0f, 0.7f));
+                Assert.That(plain.SecondaryEra, Is.Not.EqualTo(ArchEra.Ancient));
+                Assert.That(plain.SecondaryRegion, Is.EqualTo(planet.SecondaryRegion), "no theme, no lean");
+                Assert.That(plain.PlinthAddM, Is.EqualTo(0f));
+
+                ArchMix high = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, "highland", 11, i);
+                Assert.That(high.PitchScale, Is.GreaterThan(1f), "highland roofs are steeper");
+                if (high.SecondaryRegion == ArchRegion.Ice) leanIce++;
+                if (ArchitectureMeshes.MixFor(planet, SettlementKind.Village, null, 11, i + 1).Weight != plain.Weight) differs++;
+
+                ArchMix wet = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, "riverbank", 11, i);
+                Assert.That(wet.PlinthAddM, Is.GreaterThan(0f), "riverbanks build above the flood");
+                ArchMix worn = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, "ruins", 11, i);
+                Assert.That(worn.AgeMean, Is.GreaterThanOrEqualTo(plain.AgeMean));
+            }
+
+            Assert.That(leanIce, Is.GreaterThan(60), "most highland settlements borrow from the ice tradition");
+            Assert.That(differs, Is.GreaterThan(150), "settlements of one planet do not share one mix");
+
+            ArchMix ruins = ArchitectureMeshes.MixFor(planet, SettlementKind.Ruins, "forest", 11, 3);
+            Assert.That(ruins.Weight, Is.EqualTo(0f));
+            Assert.That(ruins.SecondaryEra, Is.EqualTo(ArchEra.Ancient));
+        }
+
+        private static IEnumerable<TestCaseData> Mixed()
+        {
+            // Worst cases for the lot contract: every era against an unrelated secondary, old and wrecked.
+            foreach (BuildingKind kind in new[] { BuildingKind.Tent, BuildingKind.House, BuildingKind.Hall, BuildingKind.Tower })
+            {
+                foreach (ArchEra era in Enum.GetValues(typeof(ArchEra)))
+                {
+                    if (era == ArchEra.Ancient) continue;
+                    var region = (ArchRegion)((int)era % 6);
+                    var other = (ArchRegion)(((int)era + 3) % 6);
+                    ArchEra otherEra = era == ArchEra.Wasteland ? ArchEra.Future : (ArchEra)(((int)era + 2) % 4);
+                    yield return new TestCaseData(kind, region, era, new ArchMix(other, otherEra, 0.7f, 1f, 1f, 1.6f, 1f))
+                        .SetName($"Mixed_{kind}_{region}_{era}_x_{other}_{otherEra}");
+                }
+            }
+        }
+
+        [TestCaseSource(nameof(Mixed))]
+        public void A_mixed_old_wrecked_building_still_keeps_every_mesh_contract(BuildingKind kind, ArchRegion region, ArchEra era, ArchMix mix)
+        {
+            for (ulong seed = 0; seed < 12; seed++)
+            {
+                ArchSpec pure = Spec(kind, region, era, seed, 1.4f);
+                var spec = new ArchSpec(kind, region, era, pure.WidthM, pure.DepthM, pure.Storeys, pure.FoundationM, seed, mix);
+                Mesh mesh = Build(spec);
+                Assert.That(Build(spec).vertices, Is.EqualTo(mesh.vertices), "same spec, same mesh");
+                Vector3[] vertices = mesh.vertices;
+                Vector3[] normals = mesh.normals;
+                Color[] colors = mesh.colors;
+                Assert.That(vertices.Length, Is.GreaterThan(0).And.LessThan(65536));
+                Assert.That(mesh.subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount));
+                Vector3 body = ArchitectureMeshes.BodySize(spec);
+                float minY = float.MaxValue, maxY = float.MinValue, reachX = 0f, reachZ = 0f, tone = 0f, dark = 9f;
+                bool sound = true;
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 v = vertices[i];
+                    sound &= float.IsFinite(v.x + v.y + v.z) && Mathf.Abs(normals[i].magnitude - 1f) < 1e-3f &&
+                             colors[i].a >= 0f && colors[i].a <= 1f;
+                    reachX = Mathf.Max(reachX, Mathf.Abs(v.x));
+                    reachZ = Mathf.Max(reachZ, Mathf.Abs(v.z));
+                    tone = Mathf.Max(tone, colors[i].r);
+                    dark = Mathf.Min(dark, colors[i].r);
+                    minY = Mathf.Min(minY, v.y);
+                    maxY = Mathf.Max(maxY, v.y);
+                }
+
+                Assert.That(sound, Is.True, $"seed {seed}: finite vertices, unit normals, masks in [0, 1]");
+                Assert.That(tone, Is.LessThanOrEqualTo(1.3f), $"seed {seed}");
+                Assert.That(dark, Is.GreaterThanOrEqualTo(0.2f), $"seed {seed}");
+                Assert.That(reachX, Is.LessThanOrEqualTo(spec.WidthM * 0.5f + ArchitectureMeshes.MaxOverhangM), $"seed {seed}");
+                Assert.That(reachZ, Is.LessThanOrEqualTo(spec.DepthM * 0.5f + ArchitectureMeshes.MaxOverhangM), $"seed {seed}");
+                Assert.That(minY, Is.InRange(-0.5f - 1e-3f, 0f));
+                Assert.That(maxY, Is.GreaterThanOrEqualTo(body.y - 1e-3f), "nothing invisible blocks the character from above");
+                int inverted = 0;
+                for (int s = 0; s < mesh.subMeshCount; s++)
+                {
+                    int[] triangles = mesh.GetTriangles(s);
+                    for (int t = 0; t < triangles.Length; t += 3)
+                    {
+                        Vector3 face = Vector3.Cross(vertices[triangles[t + 1]] - vertices[triangles[t]], vertices[triangles[t + 2]] - vertices[triangles[t]]);
+                        if (Vector3.Dot(face, normals[triangles[t]]) <= 0f) inverted++;
+                    }
+                }
+
+                Assert.That(inverted, Is.EqualTo(0), $"seed {seed}: winding agrees with the shading normal");
+            }
+        }
+
+        [Test]
+        public void Buildings_of_one_style_cluster_around_a_mean_instead_of_repeating()
+        {
+            // 造型：ridge heights of one (region, era) are neither identical nor evenly spread — most sit near the mean.
+            const int n = 240;
+            var heights = new float[n];
+            var distinct = new HashSet<float>();
+            double sum = 0;
+            for (int i = 0; i < n; i++)
+            {
+                heights[i] = Build(Spec(BuildingKind.House, ArchRegion.Ice, ArchEra.Primal, (ulong)i * 977 + 1)).bounds.max.y;
+                distinct.Add(heights[i]);
+                sum += heights[i];
+            }
+
+            double mean = sum / n, variance = 0;
+            foreach (float h in heights) variance += (h - mean) * (h - mean);
+            double sigma = Math.Sqrt(variance / n);
+            int near = 0, far = 0;
+            foreach (float h in heights)
+            {
+                if (Math.Abs(h - mean) <= sigma) near++;
+                if (Math.Abs(h - mean) > 2 * sigma) far++;
+            }
+
+            Assert.That(distinct.Count, Is.GreaterThan(n * 0.9), "no two houses share a roof");
+            Assert.That(sigma, Is.GreaterThan(0.05), "the spread is visible");
+            // Uniform would put 58 % within one sigma and none beyond 1.73; a bell puts ~68 % and ~5 %.
+            Assert.That(near, Is.GreaterThan(n * 0.62));
+            Assert.That(far, Is.InRange(1, n * 0.1));
+        }
+
+        [Test]
+        public void Wrecked_settlements_are_darker_and_holed_and_old_ones_more_weathered()
+        {
+            // 毀損／新舊：the means of the settlement move the whole street, each building around them.
+            var kept = new ArchMix(ArchRegion.Verdant, ArchEra.Mercantile, 0f, 0.1f, 0f);
+            var wrecked = new ArchMix(ArchRegion.Verdant, ArchEra.Mercantile, 0f, 0.9f, 0.9f);
+            long glowKept = 0, glowWrecked = 0, roofKept = 0, roofWrecked = 0;
+            double cleanKept = 0, cleanWrecked = 0;
+            for (ulong seed = 0; seed < 40; seed++)
+            {
+                Mesh a = Build(new ArchSpec(BuildingKind.House, ArchRegion.Verdant, ArchEra.Mercantile, 6f, 5f, 2, 0.6f, seed, kept));
+                Mesh b = Build(new ArchSpec(BuildingKind.House, ArchRegion.Verdant, ArchEra.Mercantile, 6f, 5f, 2, 0.6f, seed, wrecked));
+                glowKept += a.GetTriangles(ArchitectureMeshes.GlowSubMesh).Length;
+                glowWrecked += b.GetTriangles(ArchitectureMeshes.GlowSubMesh).Length;
+                roofKept += a.GetTriangles(ArchitectureMeshes.RoofSubMesh).Length;
+                roofWrecked += b.GetTriangles(ArchitectureMeshes.RoofSubMesh).Length;
+                cleanKept += MeanMask(a);
+                cleanWrecked += MeanMask(b);
+            }
+
+            Assert.That(glowWrecked, Is.LessThan(glowKept * 0.75), "fewer lit windows");
+            Assert.That(roofWrecked, Is.LessThan(roofKept), "holes in the roofs");
+            Assert.That(cleanWrecked, Is.LessThan(cleanKept * 0.9), "more of the surface is weathered");
+        }
+
+        private static double MeanMask(Mesh mesh)
+        {
+            // Area-weighted: a wall is two triangles and a window box twelve, and it is the wall the eye reads.
+            double sum = 0, area = 0;
+            Color[] colors = mesh.colors;
+            Vector3[] vertices = mesh.vertices;
+            int[] triangles = mesh.GetTriangles(ArchitectureMeshes.WallSubMesh);
+            for (int t = 0; t < triangles.Length; t += 3)
+            {
+                int a = triangles[t], b = triangles[t + 1], c = triangles[t + 2];
+                double size = Vector3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]).magnitude;
+                sum += size * (colors[a].a + colors[b].a + colors[c].a) / 3.0;
+                area += size;
+            }
+
+            return sum / Math.Max(1e-9, area);
+        }
+
+        [Test]
+        public void A_secondary_style_changes_meshes_and_washes_the_palette()
+        {
+            var mix = new ArchMix(ArchRegion.Twilight, ArchEra.Industrial, 0.6f, 0.35f, 0.08f);
+            int changed = 0;
+            for (ulong seed = 0; seed < 20; seed++)
+            {
+                Mesh pure = Build(Spec(BuildingKind.House, ArchRegion.Verdant, ArchEra.Mercantile, seed));
+                Mesh mixed = Build(new ArchSpec(BuildingKind.House, ArchRegion.Verdant, ArchEra.Mercantile, 5f, 4f, 2, 0.6f, seed, mix));
+                if (mixed.vertexCount != pure.vertexCount) changed++;
+            }
+
+            Assert.That(changed, Is.GreaterThan(14), "most hybrids borrow at least one feature");
+
+            ArchPalette primary = ArchitectureMeshes.PaletteFor(ArchRegion.Verdant, ArchEra.Mercantile, BuildingKind.House);
+            ArchPalette same = ArchitectureMeshes.PaletteFor(ArchRegion.Verdant, ArchEra.Mercantile, BuildingKind.House,
+                ArchMix.Pure(ArchRegion.Verdant, ArchEra.Mercantile));
+            ArchPalette washed = ArchitectureMeshes.PaletteFor(ArchRegion.Verdant, ArchEra.Mercantile, BuildingKind.House, mix);
+            ArchPalette secondary = ArchitectureMeshes.PaletteFor(ArchRegion.Twilight, ArchEra.Industrial, BuildingKind.House);
+            Assert.That(same.Roof, Is.EqualTo(primary.Roof));
+            Assert.That(same.WeatheringStrength, Is.EqualTo(primary.WeatheringStrength).Within(1e-5f));
+            Assert.That(washed.Roof, Is.Not.EqualTo(primary.Roof));
+            Assert.That(Distance(washed.Roof, primary.Roof), Is.LessThan(Distance(washed.Roof, secondary.Roof)), "still reads as the primary");
+            Assert.That(washed.Wall.a * washed.Roof.a * washed.Trim.a * washed.Glow.a, Is.EqualTo(1f));
+        }
+
+        private static float Distance(Color a, Color b) => new Vector3(a.r - b.r, a.g - b.g, a.b - b.b).magnitude;
+
+        [Test]
+        public void Out_of_range_mix_violates_the_contract()
+        {
+            Assert.Throws<ContractException>(() => new ArchMix((ArchRegion)9, ArchEra.Agrarian, 0.2f, 0.2f, 0.2f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, (ArchEra)42, 0.2f, 0.2f, 0.2f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, ArchEra.Agrarian, 1.1f, 0.2f, 0.2f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, ArchEra.Agrarian, 0.2f, -0.1f, 0.2f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, ArchEra.Agrarian, 0.2f, 0.2f, 1.2f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, ArchEra.Agrarian, 0.2f, 0.2f, 0.2f, 0.4f));
+            Assert.Throws<ContractException>(() => new ArchMix(ArchRegion.Ice, ArchEra.Agrarian, 0.2f, 0.2f, 0.2f, 1f, 1.5f));
+            ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor(null, 0);
+            Assert.Throws<ContractException>(() => ArchitectureMeshes.MixFor(planet, SettlementKind.Town, null, 0, -1));
+            Assert.Throws<ContractException>(() => ArchitectureMeshes.SettlementEra(planet, (SettlementKind)77));
         }
 
         [Test]
