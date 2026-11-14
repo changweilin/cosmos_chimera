@@ -38,8 +38,8 @@
       "spi": 18,
       "agi": 14
     },
-    "signature_move": "metal_needle_thrust",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_escapement_jab",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "magnet_pickup_double",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -94,8 +94,8 @@
       "spi": 37,
       "agi": 28
     },
-    "signature_move": "metal_iron_cleave",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_ratchet_sweep",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "immune_laboratory",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -142,8 +142,8 @@
       "spi": 70,
       "agi": 55
     },
-    "signature_move": "metal_lance_charge",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "catch_rate_up",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -198,8 +198,8 @@
       "spi": 40,
       "agi": 16
     },
-    "signature_move": "wood_briar_dash",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_frond_dart",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "forage_berries",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -254,8 +254,8 @@
       "spi": 81,
       "agi": 32
     },
-    "signature_move": "wood_root_spear",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_plumage_volley",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "immune_rainforest",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -301,8 +301,8 @@
       "spi": 160,
       "agi": 65
     },
-    "signature_move": "wood_canopy_crush",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "return_village",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -357,8 +357,8 @@
       "spi": 18,
       "agi": 24
     },
-    "signature_move": "water_crest_slicer",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_wake_jet",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "fishing",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -413,8 +413,8 @@
       "spi": 35,
       "agi": 50
     },
-    "signature_move": "water_torrent_burst",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_spray_fan",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "immune_deep_sea",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -461,8 +461,8 @@
       "spi": 70,
       "agi": 100
     },
-    "signature_move": "water_deluge_crater",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_monsoon_swell",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "dive",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -517,8 +517,8 @@
       "spi": 12,
       "agi": 18
     },
-    "signature_move": "fire_ember_lash",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_cinder_claw",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "cook_fire",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -573,8 +573,8 @@
       "spi": 25,
       "agi": 35
     },
-    "signature_move": "fire_blaze_charge",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_mane_pounce",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "immune_volcano",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -620,8 +620,8 @@
       "spi": 55,
       "agi": 70
     },
-    "signature_move": "fire_inferno_cataclysm",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "egg_hatch_boost",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -676,8 +676,8 @@
       "spi": 30,
       "agi": 12
     },
-    "signature_move": "earth_pebble_shot",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_shale_bolt",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "drop_rate_up",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -732,8 +732,8 @@
       "spi": 59,
       "agi": 25
     },
-    "signature_move": "earth_seismic_slam",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_ritual_quake",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "immune_cave",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -779,8 +779,8 @@
       "spi": 120,
       "agi": 50
     },
-    "signature_move": "earth_rampart_rush",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_monolith_charge",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "open_obstacle",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -835,8 +835,8 @@
       "spi": 20,
       "agi": 30
     },
-    "signature_move": "ice_shard_flurry",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_rime_breath",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "prevent_escape",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -891,8 +891,8 @@
       "spi": 40,
       "agi": 60
     },
-    "signature_move": "ice_glacier_lance",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_antler_javelin",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "mount",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -939,8 +939,8 @@
       "spi": 80,
       "agi": 120
     },
-    "signature_move": "ice_blizzard_vortex",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "immune_ice_cap",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -995,8 +995,8 @@
       "spi": 18,
       "agi": 40
     },
-    "signature_move": "wind_gale_claw",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_flute_slash",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "weather_control",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
@@ -1051,8 +1051,8 @@
       "spi": 36,
       "agi": 80
     },
-    "signature_move": "wind_vacuum_blade",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_reed_crescent",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "levitate",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
@@ -1098,8 +1098,8 @@
       "spi": 70,
       "agi": 160
     },
-    "signature_move": "wind_tempest_sphere",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_gale_symphony",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "immune_space",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
