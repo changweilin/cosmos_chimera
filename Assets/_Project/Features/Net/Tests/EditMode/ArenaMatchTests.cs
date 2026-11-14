@@ -132,7 +132,7 @@ namespace Cosmimera.Net.Tests
             // Double Start fails
             Assert.Throws<ContractException>(() => match.Start(10));
             // Time going backwards fails
-            Assert.Throws<ContractException>(() => match.Tick(50, 50));
+            Assert.Throws<ContractException>(() => match.Tick(-1, 50));
             match.Tick(100, 50);
             Assert.Throws<ContractException>(() => match.Tick(99, 50));
         }
@@ -246,11 +246,14 @@ namespace Cosmimera.Net.Tests
             var match = new ArenaMatch(_planet, _balance, new FlatSurface(), cfg,
                 new[]
                 {
-                    MakeParticipant(0, 0, count: 1, level: 90, autoRefill: true),
-                    MakeParticipant(1, 1, count: 3, level: 5, autoRefill: true),
+                    MakeParticipant(0, 0, count: 2, level: 90, autoRefill: true),
+                    MakeParticipant(1, 1, count: 3, level: 1, autoRefill: true),
                 });
 
             match.Start(0);
+            // Keep Participant 1's player behind their creatures so the level-90 fighters down a creature first.
+            float3 p1Dir = match.Participants[1].Direction;
+            match.SetPlayerDirection(1, math.normalize(new float3(p1Dir.x * 1.6f, p1Dir.y, p1Dir.z * 1.6f)));
             bool sawReserveSummoned = false;
             int reserveUnitId = match.Participants[1].UnitIdForRosterIndex(2);
 

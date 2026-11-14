@@ -21,7 +21,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 5;
+        public const int GeneratorVersion = 6;
 
         /// <summary>Smallest land cap (rad) the nearest-land sweep is guaranteed to find; isLand must contain one.</summary>
         /// <remarks>

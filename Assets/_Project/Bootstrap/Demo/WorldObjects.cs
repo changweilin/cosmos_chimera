@@ -34,6 +34,7 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly PlanetConfig _planet;
         private readonly ScatterPlanner _scatter;
         private readonly RunLayout _layout;
+        private readonly RunPlan _plan;
         private readonly LayoutClearance _clearance;
         private readonly Func<float3, float> _groundAltitude;
         private readonly EnvMaterials _env;
@@ -51,14 +52,17 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: allocates.
         /// </remarks>
         public WorldObjects(in PlanetConfig planet, ScatterPlanner scatter, RunLayout layout, LayoutClearance clearance,
-            Func<float3, float> groundAltitude, EnvMaterials env, DestructibleTable table, DungeonLayout dungeon = null)
+            Func<float3, float> groundAltitude, EnvMaterials env, DestructibleTable table,
+            DungeonLayout dungeon = null, RunPlan plan = null)
         {
             Contract.Requires(scatter != null && layout != null && clearance != null && groundAltitude != null &&
                 env != null && table != null, "every argument is required");
+            Contract.Requires(dungeon == null || plan != null, "plan is required when dungeon is provided");
             _groundAltitude = groundAltitude;
             _planet = planet;
             _scatter = scatter;
             _layout = layout;
+            _plan = plan;
             _clearance = clearance;
             _env = env;
             _table = table;
@@ -130,7 +134,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int i = 0; i < _treasureRegions.Count; i++)
             {
                 int r = _treasureRegions[i];
-                float3 dir = _layout.Regions[r].Center;
+                float3 dir = _plan.Regions[r].Center;
                 if (math.distance(up, dir) * _planet.Radius <= radiusM + TreasureHitRadiusM)
                 {
                     into.Add(TreasureCandidate(r));
@@ -178,7 +182,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private DestructibleCandidate TreasureCandidate(int region)
         {
-            float3 dir = _layout.Regions[region].Center;
+            float3 dir = _plan.Regions[region].Center;
             return new DestructibleCandidate(TreasureIdBase + region,
                 _planet.ToWorld(dir, _groundAltitude(dir) + 0.6f),
                 TreasureHitRadiusM, _env.Building(BuildingMaterial.House), TreasureVolumeL);
@@ -223,7 +227,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int i = 0; i < _treasureRegions.Count; i++)
             {
                 int r = _treasureRegions[i];
-                if (math.distance(up, _layout.Regions[r].Center) * _planet.Radius <= TreasureHitRadiusM + clearanceM &&
+                if (math.distance(up, _plan.Regions[r].Center) * _planet.Radius <= TreasureHitRadiusM + clearanceM &&
                     !_table.IsDestroyed(TreasureIdBase + r))
                 {
                     return true;

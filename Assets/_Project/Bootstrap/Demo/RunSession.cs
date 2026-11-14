@@ -489,7 +489,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _envMaterials = setup.EnvMaterials;
                 _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
-                    setup.EnvMaterials, objects, _dungeon);
+                    setup.EnvMaterials, objects, _dungeon, _plan);
                 surface.Objects = _worldObjects;
             }
             _quest = new QuestTracker(_plan);

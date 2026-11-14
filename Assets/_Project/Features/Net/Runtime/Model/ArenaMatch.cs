@@ -260,7 +260,7 @@ namespace Cosmimera.Net.Runtime.Model
             _balance = balance;
             _surface = surface;
             _config = config;
-            _rangeCapMm = _balance.Horizon.RangedCapMm(_planet.Radius, _balance.Stats.RangedCapMm);
+            _rangeCapMm = _balance.Horizon.CapMm(_planet.Radius);
             _rng = new Pcg32(config.Seed, 0x4152454EUL);
 
             _participantsView = _participants.AsReadOnly();
@@ -505,7 +505,7 @@ namespace Cosmimera.Net.Runtime.Model
             }
 
             u.OverloadUsed = true;
-            u.Combatant.ActivateOverload();
+            u.Combatant.BeginOverload();
             return OverloadResult.Ok;
         }
 
@@ -613,7 +613,8 @@ namespace Cosmimera.Net.Runtime.Model
                 MoveDef m = i == 0 ? spec.Def.SignatureMove : spec.PartnerMove;
                 moveDefs[i] = m;
                 moves[i] = CastMove.FromDef(m);
-                volumes[i] = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, m.BurstOrigin, m.BaseRangeMm,
+                BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
+                volumes[i] = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm,
                     s.Str, _balance.Stats, _balance.Hit);
                 ranges[i] = m.RangeClass;
             }
@@ -656,15 +657,6 @@ namespace Cosmimera.Net.Runtime.Model
 
         private void TickEffectsAndFields(long prevMs, long nowMs)
         {
-            for (int i = 0; i < _units.Count; i++)
-            {
-                ArenaUnit u = _units[i];
-                if (u.IsActive)
-                {
-                    u.Combatant.Book.Tick(nowMs);
-                }
-            }
-
             for (int i = _fields.Count - 1; i >= 0; i--)
             {
                 PlacedField f = _fields[i];
@@ -674,7 +666,7 @@ namespace Cosmimera.Net.Runtime.Model
                     ResolveVolume(f.CasterUnitId, f.TeamIndex, f.Slot, f.Context, f.Volume, f.Anchor, f.Forward, nowMs);
                 }
 
-                if (f.Timeline.IsExpired(nowMs))
+                if (!f.Timeline.IsAlive(nowMs))
                 {
                     _fields.RemoveAt(i);
                 }
@@ -742,7 +734,7 @@ namespace Cosmimera.Net.Runtime.Model
             var input = new AiInput(u.Position, u.Def.AiStyle, role, command, mainTargetId, playerPos, hasPartner,
                 partnerPos, u.Combatant.Hp, u.Combatant.MaxHp, partnerHp, partnerMaxHp);
 
-            AiDecision decision = CombatAi.Decide(_planet, _balance.Ai, input, _movesBuffer, _enemiesBuffer);
+            AiDecision decision = CombatAi.Decide(_planet, _balance.Ai, input, _enemiesBuffer, _movesBuffer);
             MoveUnitToward(u, decision.DestinationDirection, nowMs, dtMs);
             if (decision.TargetId != CombatAi.NoTarget)
             {
@@ -784,7 +776,7 @@ namespace Cosmimera.Net.Runtime.Model
         private void TryCast(ArenaUnit u, ArenaUnit partner, int slot, int targetId, long nowMs)
         {
             CastMove move = u.Moves[slot];
-            if (u.Combatant.BeginCast(slot, move, nowMs, WeatherProfiles.Clear, out CastContext ctx) != CastResult.Accepted)
+            if (u.Combatant.BeginCast(slot, move, nowMs, out CastContext ctx) != CastResult.Accepted)
             {
                 return;
             }
@@ -908,7 +900,8 @@ namespace Cosmimera.Net.Runtime.Model
                 }
                 else if (outcome == HitOutcome.Hit && ctx.Move.DealsDamage)
                 {
-                    int dmg = DamageModel.Compute(ctx.Move.Power, ctx.MasteryPercent, 0, ctx.PowerDeltaPercent);
+                    int power = DamageModel.ScalePower(ctx.Move.Power, ctx.PowerDeltaPercent);
+                    int dmg = DamageModel.Compute(power, ctx.MasteryPercent, 0);
                     int dealt = p.Vitals.ApplyDamage(dmg, nowMs);
                     _events.Add(new ArenaEvent(ArenaEventKind.Hit, caster.ParticipantId, casterUnitId,
                         PlayerTargetBaseId + i, slot, dealt));

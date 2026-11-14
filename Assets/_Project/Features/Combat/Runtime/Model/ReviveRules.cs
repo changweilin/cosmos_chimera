@@ -32,7 +32,7 @@ namespace Cosmimera.Combat
     }
 
     /// <summary>
-    /// Faint recovery percentages and combat cooldown (Q-C36): DwarfPlanet 30%, Planet 60%, Supergiant 100%;
+    /// Faint recovery percentages and combat cooldown (Q-C36): Asteroid/Moon (dwarf tier) 30%, Planet 60%, Supergiant 100%;
     /// halved when used in combat, with a 60 s combat cooldown.
     /// REQ: docs/design/combat.md#召喚與輪替.
     /// </summary>
@@ -45,8 +45,8 @@ namespace Cosmimera.Combat
 
         /// <summary>HP percentage restored for <paramref name="sourceTier"/> and combat state.</summary>
         /// <remarks>
-        /// Pre: sourceTier is a defined PlanetSize (DwarfPlanet, Planet, Supergiant).
-        /// Post: 30/60/100 out of combat, 15/30/50 in combat.
+        /// Pre: sourceTier is a defined PlanetSize (Asteroid, Moon, Planet, Supergiant).
+        /// Post: 30/30/60/100 out of combat, 15/15/30/50 in combat.
         /// Side effects: none.
         /// </remarks>
         public static int RecoveryPercent(PlanetSize sourceTier, bool inCombat)
@@ -54,7 +54,8 @@ namespace Cosmimera.Combat
             int full;
             switch (sourceTier)
             {
-                case PlanetSize.DwarfPlanet:
+                case PlanetSize.Asteroid:
+                case PlanetSize.Moon:
                     full = 30;
                     break;
                 case PlanetSize.Planet:

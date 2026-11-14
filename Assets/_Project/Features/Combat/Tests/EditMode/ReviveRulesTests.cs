@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Core.Contracts;
+using Cosmimera.Core.Random;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
 using NUnit.Framework;
@@ -45,7 +46,7 @@ namespace Cosmimera.Combat.Tests
             var m = ScriptableObject.CreateInstance<MoveDef>();
             _created.Add(m);
             m.SetId(id + "_m");
-            m.Set(Element.Fire, MoveKind.Damage, 9999, null, 0, 0, 1500, 100, RangeClass.Melee, MoveShape.Front, 2000,
+            m.Set(Element.Fire, MoveKind.Damage, 9999, null, 0, 0, 100, 100, RangeClass.Melee, MoveShape.Front, 2000,
                 MoveMovement.None, BurstOrigin.Caster);
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
@@ -59,16 +60,18 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void RecoveryPercent_matches_Q_C36_tiers_and_combat_halving()
         {
-            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.DwarfPlanet, inCombat: false), Is.EqualTo(30));
+            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Asteroid, inCombat: false), Is.EqualTo(30));
+            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Moon, inCombat: false), Is.EqualTo(30));
             Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Planet, inCombat: false), Is.EqualTo(60));
             Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Supergiant, inCombat: false), Is.EqualTo(100));
 
-            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.DwarfPlanet, inCombat: true), Is.EqualTo(15));
+            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Asteroid, inCombat: true), Is.EqualTo(15));
+            Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Moon, inCombat: true), Is.EqualTo(15));
             Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Planet, inCombat: true), Is.EqualTo(30));
             Assert.That(ReviveRules.RecoveryPercent(PlanetSize.Supergiant, inCombat: true), Is.EqualTo(50));
 
             Assert.Throws<ContractException>(() => ReviveRules.RecoveryPercent((PlanetSize)99, false));
-            Assert.Throws<ContractException>(() => ReviveRules.ComputeReviveHp(0, PlanetSize.DwarfPlanet, false));
+            Assert.Throws<ContractException>(() => ReviveRules.ComputeReviveHp(0, PlanetSize.Moon, false));
         }
 
         [Test]
@@ -79,18 +82,17 @@ namespace Cosmimera.Combat.Tests
             EncounterUnit mine = enc.AddCreature(EncounterSide.Player, MakeCreature("mine"), null, up, 10);
             EncounterUnit wild = enc.AddCreature(EncounterSide.Wild, MakeCreature("wild"), null, up, 10);
 
-            Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.DwarfPlanet, false, 1000),
+            Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Moon, false, 1000),
                 Is.EqualTo(ReviveResult.NotFainted));
-            Assert.That(enc.TryRevive(wild.Id, ReviveSource.ConsumableItem, PlanetSize.DwarfPlanet, false, 1000),
+            Assert.That(enc.TryRevive(wild.Id, ReviveSource.ConsumableItem, PlanetSize.Moon, false, 1000),
                 Is.EqualTo(ReviveResult.InvalidUnit));
 
             // Faint mine via a hit from wild
             enc.Field(mine.Id, up, false, 1000);
-            enc.Field(wild.Id, up, false, 1000);
-            mine.Combatant.ReceiveHit(
-                new CastContext(new CastMove("k", Element.Fire, MoveKind.Damage, 9999, default, 0, 0, 1000, 100,
-                    RangeClass.Melee, MoveShape.Front, 2000, MoveMovement.None, BurstOrigin.Caster), 0, 0, 1000, 1000),
-                new Pcg32(1UL, 1UL), 1000);
+            var rng = new Pcg32(1UL, 1UL);
+            Assert.That(wild.Combatant.BeginCast(0, CastMove.FromDef(wild.Def.SignatureMove), 1000, out CastContext ctx1),
+                Is.EqualTo(CastResult.Accepted));
+            mine.Combatant.ReceiveHostile(ctx1, true, ref rng, 1000);
             Assert.That(mine.Combatant.IsFainted, Is.True);
 
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Planet, inCombat: true, nowMs: 2000),
@@ -99,20 +101,19 @@ namespace Cosmimera.Combat.Tests
             Assert.That(enc.ReviveCooldownRemainingMs(2000), Is.EqualTo(ReviveRules.CombatCooldownMs));
 
             // Faint again; second combat revive within 60 s is blocked
-            mine.Combatant.ReceiveHit(
-                new CastContext(new CastMove("k", Element.Fire, MoveKind.Damage, 9999, default, 0, 0, 1000, 100,
-                    RangeClass.Melee, MoveShape.Front, 2000, MoveMovement.None, BurstOrigin.Caster), 0, 0, 1000, 2000),
-                new Pcg32(2UL, 1UL), 2000);
+            Assert.That(wild.Combatant.BeginCast(0, CastMove.FromDef(wild.Def.SignatureMove), 2000, out CastContext ctx2),
+                Is.EqualTo(CastResult.Accepted));
+            mine.Combatant.ReceiveHostile(ctx2, true, ref rng, 2000);
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Planet, inCombat: true, nowMs: 61_999),
                 Is.EqualTo(ReviveResult.OnCooldown));
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Supergiant, inCombat: true, nowMs: 62_000),
                 Is.EqualTo(ReviveResult.Ok));
 
             var team = new TeamState(new[] { mine.Id }, 3000);
-            team.SetPool(new[] { mine.Id }, 0);
+            team.SetPool(new[] { mine.Id });
             team.Summon(mine.Id, 0);
             team.BeginCombat();
-            team.NotifyFainted(mine.Id);
+            team.Faint(mine.Id);
             Assert.That(team.TryClearRetired(mine.Id), Is.True);
             Assert.That(team.TryClearRetired(mine.Id), Is.False);
             Assert.Throws<ContractException>(() => team.TryClearRetired(999));

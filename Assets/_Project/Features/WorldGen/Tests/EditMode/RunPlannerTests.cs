@@ -16,12 +16,13 @@ namespace Cosmimera.WorldGen.Tests
         // v2 → v3 (D0-B2) also left it unchanged: the fixture plans an adult boss, where the stage cap never binds.
         // v3 → v4 (Q-D1-R1) left both digests unchanged: the fixture has no land predicate, so the sea sweep never runs.
         // v4 → v5: increased wild pack density and guaranteed an opening-sight pack within ~18 m of LandingDirection.
-        private const ulong SnapshotSeed12345V5 = 10964688219190373120UL;
+        // v5 → v6: PlanetFrame.FromUp flipped East (Q-T5), changing Scatter directions.
+        private const ulong SnapshotSeed12345V6 = 9633294100616350916UL;
 
         // SOL W-B2-SOL-05: RunPlanner.Hash quantizes directions to 1e-4 and skips LandingDirection, so it cannot back the
         // "adult plan bit-identical to v2" claim. This digest covers every direction's raw float bits, landing included.
         // Pinned on this EditMode backend only; cross-backend float drift is ADR-0007's handshake, not this test's job.
-        private const ulong RawBitsSeed12345V5 = 17114966050337730899UL;
+        private const ulong RawBitsSeed12345V6 = 3926658488885016152UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -165,15 +166,15 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(5), "bump the snapshot with GeneratorVersion");
-            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V5));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(6), "bump the snapshot with GeneratorVersion");
+            Assert.That(RunPlanner.Hash(Plan(12345)), Is.EqualTo(SnapshotSeed12345V6));
         }
 
         [Test]
         public void Raw_bits_snapshot_seed_12345_is_pinned()
         {
-            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(5), "bump the snapshot with GeneratorVersion");
-            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V5));
+            Assert.That(RunPlanner.GeneratorVersion, Is.EqualTo(6), "bump the snapshot with GeneratorVersion");
+            Assert.That(RawBitsDigest(Plan(12345)), Is.EqualTo(RawBitsSeed12345V6));
         }
 
         [Test]

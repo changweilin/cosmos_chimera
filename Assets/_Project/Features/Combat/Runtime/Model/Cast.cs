@@ -424,7 +424,7 @@ namespace Cosmimera.Combat
         /// Post: IsOverloaded == true; MaxHp increased; Hp increased by the same delta.
         /// Side effects: mutates MaxHp, Hp, IsOverloaded.
         /// </remarks>
-        internal void BeginOverload()
+        public void BeginOverload()
         {
             Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
             _preOverloadMaxHp = MaxHp;
@@ -444,7 +444,7 @@ namespace Cosmimera.Combat
         /// Pre: none. Post: IsOverloaded == false; MaxHp restored and Hp clamped to MaxHp.
         /// Side effects: mutates MaxHp, Hp, IsOverloaded when overloaded.
         /// </remarks>
-        internal void EndOverload()
+        public void EndOverload()
         {
             if (!IsOverloaded)
             {
