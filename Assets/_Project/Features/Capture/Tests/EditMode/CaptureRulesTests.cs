@@ -20,6 +20,14 @@ namespace Cosmimera.Capture.Tests
         {
             Assert.Throws<ContractException>(() => CaptureRules.ChancePercent(false, false, 101, 100));
             Assert.Throws<ContractException>(() => CaptureRules.ChancePercent(false, false, 50, -1));
+            Assert.Throws<ContractException>(() => CaptureRules.ChancePercent(false, false, 50, 100, -1));
+        }
+
+        [Test]
+        public void Chance_includes_utility_bonus_and_clamps()
+        {
+            Assert.That(CaptureRules.ChancePercent(false, false, 60, 100, 15), Is.EqualTo(75));
+            Assert.That(CaptureRules.ChancePercent(false, true, 85, 100, 15), Is.EqualTo(100));
         }
 
         [Test]

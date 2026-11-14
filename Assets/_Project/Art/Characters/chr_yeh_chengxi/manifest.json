@@ -1,0 +1,159 @@
+{
+  "spec": "cosmimera-art-task/1",
+  "task_header": "[COSMIMERA-TASK spec=1 tool=2.0.0 catalog=2.4.0 template=character-model-rig@4.3.0 task_id=mdl-20261109-f048-1847 seed=f048]",
+  "task_id": "mdl-20261109-f048-1847-chr_1286",
+  "task_type": "character-model-rig",
+  "subject_id": "chr_1286",
+  "produced_by": "Gemini Argon（任務模式）",
+  "source_pack": "chr-20261106-1286-2039",
+  "files": [
+    {
+      "path": "models/chr_1286.glb",
+      "kind": "model"
+    },
+    {
+      "path": "models/chr_1286.fbx",
+      "kind": "model"
+    },
+    {
+      "path": "rig/rig_spec.json",
+      "kind": "spec"
+    },
+    {
+      "path": "anims/anim_spec.json",
+      "kind": "spec"
+    },
+    {
+      "path": "anims/chr_idle.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_walk.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_run.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_sneak_idle.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_sneak_move.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_roll_dodge.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_jump.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_block.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_hit_react.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_knockdown.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_getup.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_command_point.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_command_attack.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_command_recall.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_summon.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_recall.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_item_use_self.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_item_use_other.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_field_deploy.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_backpack_open.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_talk_idle.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_talk_gesture.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_pet_xs.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_pet_s.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_pet_m.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_pet_l.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_pet_xl.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_throw_card.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_throw_bead.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_throw_cube.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_victory.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "anims/chr_defeated.fbx",
+      "kind": "anim"
+    },
+    {
+      "path": "images/chr_1286_model_front.png",
+      "kind": "view"
+    }
+  ]
+}

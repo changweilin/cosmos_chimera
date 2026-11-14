@@ -31,7 +31,7 @@ namespace Cosmimera.Planet.Tests
             math.normalize(new float3(0, -1, 3e-6f)), math.normalize(new float3(1e-3f, 1, -1e-3f)),
         };
 
-        private static void AssertOrthonormalRightHanded(PlanetFrame f, string label)
+        private static void AssertOrthonormalLeftHanded(PlanetFrame f, string label)
         {
             Assert.AreEqual(1f, math.length(f.East), Eps, label + " |East|");
             Assert.AreEqual(1f, math.length(f.North), Eps, label + " |North|");
@@ -39,7 +39,7 @@ namespace Cosmimera.Planet.Tests
             Assert.AreEqual(0f, math.dot(f.East, f.North), Eps, label + " East·North");
             Assert.AreEqual(0f, math.dot(f.East, f.Up), Eps, label + " East·Up");
             Assert.AreEqual(0f, math.dot(f.North, f.Up), Eps, label + " North·Up");
-            Assert.Less(math.distance(math.cross(f.East, f.North), f.Up), 1e-4f, label + " right-handed");
+            Assert.Less(math.distance(math.cross(f.North, f.East), f.Up), 1e-4f, label + " Q-T5 cross(North, East) == Up");
         }
 
         [Test]
@@ -52,14 +52,14 @@ namespace Cosmimera.Planet.Tests
                 float3 dir = RandomDirection(ref rng);
                 float3 pos = config.ToWorld(dir, rng.NextFloat() * 100f - 20f);
                 PlanetFrame f = PlanetFrame.At(config, pos);
-                AssertOrthonormalRightHanded(f, $"#{i}");
+                AssertOrthonormalLeftHanded(f, $"#{i}");
                 Assert.Greater(math.dot(f.Up, pos - config.Center), 0f, "up points away from centre");
                 Assert.Less(math.distance(f.Up, dir), 1e-4f);
             }
 
             foreach (float3 dir in SpecialDirections)
             {
-                AssertOrthonormalRightHanded(PlanetFrame.FromUp(dir), dir.ToString());
+                AssertOrthonormalLeftHanded(PlanetFrame.FromUp(dir), dir.ToString());
             }
         }
 
@@ -74,8 +74,8 @@ namespace Cosmimera.Planet.Tests
         [Test]
         public void Exact_pole_uses_the_documented_east_fallback()
         {
-            Assert.Less(math.distance(PlanetFrame.FromUp(new float3(0, 1, 0)).East, new float3(0, 0, -1)), Eps);
-            Assert.Less(math.distance(PlanetFrame.FromUp(new float3(0, -1, 0)).East, new float3(0, 0, -1)), Eps);
+            Assert.Less(math.distance(PlanetFrame.FromUp(new float3(0, 1, 0)).East, new float3(0, 0, 1)), Eps);
+            Assert.Less(math.distance(PlanetFrame.FromUp(new float3(0, -1, 0)).East, new float3(0, 0, 1)), Eps);
         }
 
         [Test]

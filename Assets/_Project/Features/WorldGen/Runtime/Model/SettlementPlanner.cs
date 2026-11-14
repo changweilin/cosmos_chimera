@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Unity.Mathematics;
 
@@ -21,7 +22,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
         /// <summary>Paved width of a main road (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -37,10 +38,32 @@ namespace Cosmimera.WorldGen
 
         private const float SegmentM = 7f;
         private const float SetbackM = 2f;
-        private const float OutpostOffsetM = 20f;
         private const float LairRadiusM = 16f;
         private const int LairPillars = 6;
         private const uint RuinsChancePercent = 50;
+
+        /// <summary>Returns the allowed starting-town kinds for <paramref name="size"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#道路與建築 — Asteroid: Tribe; Moon: Tribe/Town; Planet: Tribe/Town/City;
+        ///      Supergiant: Tribe/Town/City/CityState.
+        /// Pre: size is a defined PlanetSize. Post: non-empty array of starting-town kinds. Side effects: none.
+        /// </remarks>
+        public static SettlementKind[] AllowedTownKinds(PlanetSize size)
+        {
+            switch (size)
+            {
+                case PlanetSize.Asteroid:
+                    return new[] { SettlementKind.Tribe };
+                case PlanetSize.Moon:
+                    return new[] { SettlementKind.Tribe, SettlementKind.Town };
+                case PlanetSize.Planet:
+                    return new[] { SettlementKind.Tribe, SettlementKind.Town, SettlementKind.City };
+                case PlanetSize.Supergiant:
+                    return new[] { SettlementKind.Tribe, SettlementKind.Town, SettlementKind.City, SettlementKind.CityState };
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(size), size, "undefined PlanetSize");
+            }
+        }
 
         /// <summary>Generates the layout of <paramref name="plan"/>.</summary>
         /// <remarks>
@@ -48,10 +71,10 @@ namespace Cosmimera.WorldGen
         /// Post: Roads form a spanning tree of the region graph: one Main road per consecutive MainRoute pair, one Trail
         ///       from every off-route region to its BFS parent (fewer hops, smallest index). Every road vertex is unit, the
         ///       first/last equal the end sites, and Bridge[i] == (isLand != null &amp;&amp; !isLand(Points[i])).
-        ///       Settlements: one Outpost (landing region) beside LandingDirection, one Village per route region strictly
-        ///       between landing and boss, one Lair of 6 pillars around the boss spawn, and Ruins on about half the
-        ///       off-route regions. Every building satisfies isLand; buildings of one settlement do not overlap.
-        ///       Same inputs → same layout.
+        ///       Settlements: one starting town (Tribe/Town/City/CityState allowed by planet size) centred at
+        ///       LandingDirection, one Village per route region strictly between landing and boss, one Lair of 6
+        ///       pillars around the boss spawn, and Ruins on about half the off-route regions. Every building satisfies
+        ///       isLand; buildings of one settlement do not overlap. Same inputs → same layout.
         /// Side effects: allocates; calls isLand.
         /// </remarks>
         public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand)
@@ -83,10 +106,10 @@ namespace Cosmimera.WorldGen
 
             float3 landing = plan.LandingDirection;
             float3 toNext = Tangent(landing, regions[route[1]].Center);
-            float3 outpost = Offset(landing, toNext * OutpostOffsetM, radius);
-            int tents = 3 + (int)rng.NextUInt(2);
-            AddLots(settlements, buildings, plan.LandingRegion, SettlementKind.Outpost, outpost, Tangent(outpost, regions[route[1]].Center),
-                MainWidthM, tents, radius, isLand, ref rng);
+            SettlementKind townKind = PickTownKind(SizeForRadius(radius), ref rng);
+            int townLots = TownLotCount(townKind, ref rng);
+            AddLots(settlements, buildings, plan.LandingRegion, townKind, landing, toNext,
+                MainWidthM, townLots, radius, isLand, ref rng);
 
             for (int i = 1; i + 1 < route.Count; i++)
             {
@@ -273,13 +296,54 @@ namespace Cosmimera.WorldGen
             settlements.Add(new RunSettlement(index, plan.BossRegion, SettlementKind.Lair, center, first, buildings.Count - first));
         }
 
+        private static PlanetSize SizeForRadius(float radius)
+        {
+            if (radius <= 480f) return PlanetSize.Asteroid;
+            if (radius <= 800f) return PlanetSize.Moon;
+            if (radius <= 1120f) return PlanetSize.Planet;
+            return PlanetSize.Supergiant;
+        }
+
+        private static SettlementKind PickTownKind(PlanetSize size, ref Pcg32 rng)
+        {
+            SettlementKind[] allowed = AllowedTownKinds(size);
+            return allowed[(int)rng.NextUInt((uint)allowed.Length)];
+        }
+
+        private static int TownLotCount(SettlementKind kind, ref Pcg32 rng)
+        {
+            switch (kind)
+            {
+                case SettlementKind.Tribe:
+                    return 4 + (int)rng.NextUInt(2); // 4-5
+                case SettlementKind.Town:
+                    return 6 + (int)rng.NextUInt(3); // 6-8
+                case SettlementKind.City:
+                    return 9 + (int)rng.NextUInt(4); // 9-12
+                case SettlementKind.CityState:
+                    return 13 + (int)rng.NextUInt(4); // 13-16
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "not a starting town kind");
+            }
+        }
+
         private static BuildingKind KindFor(SettlementKind kind, int lot, ref Pcg32 rng)
         {
             uint roll = rng.NextUInt(100);
             switch (kind)
             {
-                case SettlementKind.Outpost:
-                    return BuildingKind.Tent;
+                case SettlementKind.Tribe:
+                    return lot == 0 ? BuildingKind.Hall : roll < 60 ? BuildingKind.Tent : BuildingKind.House;
+                case SettlementKind.Town:
+                    return lot == 0 ? BuildingKind.Hall : roll < 25 ? BuildingKind.Tower : BuildingKind.House;
+                case SettlementKind.City:
+                    if (lot == 0) return BuildingKind.Hall;
+                    if (lot == 1) return BuildingKind.Tower;
+                    return roll < 40 ? BuildingKind.Tower : BuildingKind.House;
+                case SettlementKind.CityState:
+                    if (lot == 0 || lot == 1) return BuildingKind.Hall;
+                    if (lot == 2) return BuildingKind.Tower;
+                    return roll < 50 ? BuildingKind.Tower : BuildingKind.House;
                 case SettlementKind.Village:
                     return lot == 0 ? BuildingKind.Hall : roll < 20 ? BuildingKind.Tower : BuildingKind.House;
                 default:

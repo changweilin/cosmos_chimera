@@ -1,6 +1,7 @@
 // P1-07 / P3-04 (D0): cel-shaded planet terrain coloured by altitude, slope and latitude.
 // Biome inputs are derived per pixel from the sphere itself (height = |p − centre| − R, up = normalize(p − centre)),
 // never from world +Y: on a planet "up" changes everywhere (CLAUDE.md#硬性規則).
+// Colour field: CosmiBiome.hlsl (shared with the grass). Light, cloud shadow, aerial perspective: CosmiAtmosphere.hlsl.
 Shader "Cosmimera/ToonTerrain"
 {
     Properties
@@ -17,10 +18,13 @@ Shader "Cosmimera/ToonTerrain"
         _High ("High", Color) = (0.55, 0.5, 0.42, 1)
         _Rock ("Rock", Color) = (0.45, 0.42, 0.4, 1)
         _Snow ("Snow", Color) = (0.94, 0.96, 1, 1)
+        _Patch ("Sunlit Patch Tint", Color) = (1.1, 1.06, 0.84, 1)
         _SnowLine ("Snow Line (0..1 of relief)", Float) = 0.8
         _PolarLat ("Polar Latitude (sin)", Float) = 0.85
         _Bands ("Light Bands", Float) = 3
         _Shadow ("Shadow Tint", Color) = (0.55, 0.6, 0.78, 1)
+        _Foam ("Surf Foam", Range(0, 1)) = 0
+        _SeaLevel ("Sea Level (m)", Float) = -0.12
     }
 
     SubShader
@@ -37,19 +41,10 @@ Shader "Cosmimera/ToonTerrain"
             #pragma fragment Frag
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _PlanetCenter;
-                float _Radius;
-                float _Relief;
-                float4 _PoleAxis;
-                half4 _DeepWater, _ShallowWater, _Shore, _Low, _Mid, _High, _Rock, _Snow, _Shadow;
-                float _SnowLine;
-                float _PolarLat;
-                float _Bands;
-            CBUFFER_END
+            #include "CosmiBiome.hlsl"
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
             struct Varyings
@@ -71,36 +66,19 @@ Shader "Cosmimera/ToonTerrain"
                 return o;
             }
 
-            half3 Biome(float h, float slope, float lat)
-            {
-                float t = saturate(h / max(_Relief, 1e-3));
-                if (h < 0.0)
-                {
-                    return lerp(_ShallowWater.rgb, _DeepWater.rgb, saturate(-h / (_Relief * 0.15)));
-                }
-
-                half3 c = h < 0.6 ? _Shore.rgb : (t < 0.35 ? lerp(_Low.rgb, _Mid.rgb, t / 0.35) : lerp(_Mid.rgb, _High.rgb, (t - 0.35) / 0.65));
-                c = lerp(c, _Rock.rgb, smoothstep(0.25, 0.4, slope));
-                float snow = max(step(_SnowLine, t), step(_PolarLat, lat));
-                return lerp(c, _Snow.rgb, snow * (1.0 - smoothstep(0.35, 0.55, slope)));
-            }
-
             half4 Frag(Varyings i) : SV_Target
             {
-                float3 rel = i.positionWS - _PlanetCenter.xyz;
-                float r = length(rel);
-                float3 up = rel / r;
                 float3 n = normalize(i.normalWS);
-                float h = r - _Radius;
-                float slope = 1.0 - saturate(dot(n, up));
-                float lat = abs(dot(up, normalize(_PoleAxis.xyz)));
-                half3 albedo = Biome(h, slope, lat);
+                CosmiGround g = CosmiGroundAt(i.positionWS, n);
+                float grass;
+                half3 albedo = CosmiBiomeColor(i.positionWS, g, grass);
 
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
-                float ndl = saturate(dot(n, light.direction)) * light.shadowAttenuation;
-                float band = floor(ndl * _Bands + 0.5) / _Bands; // cel steps instead of a smooth ramp (vision.md: 卡通)
-                half3 lit = albedo * lerp(_Shadow.rgb * 0.6, light.color, band) + albedo * SampleSH(n) * 0.25;
-                return half4(MixFog(lit, i.fog), 1);
+                // Hemisphere ambient: faces turned to the sky take the zenith colour, undersides the ground bounce.
+                half3 ambient = SampleSH(n) * lerp(0.75, 1.25, saturate(dot(n, g.up)));
+                half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
+                    _Shadow.rgb, _Bands, ambient);
+                return half4(CosmiAtmosphere(lit, i.positionWS, i.fog, light.direction), 1);
             }
             ENDHLSL
         }

@@ -10,6 +10,8 @@ using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Cosmimera.Bootstrap.Demo
 {
@@ -68,6 +70,15 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public bool Landforms = true;
 
+        /// <summary>
+        /// Whether the surface is an enclosed dungeon (DungeonPlanner): walls on region borders, gates, a locked boss room.
+        /// Default false: general planet surfaces are open procedural terrain; only the 10 elemental advanced terrains are dungeons.
+        /// </summary>
+        /// <remarks>
+        /// Pre: none. Post: none. Side effects: none.
+        /// </remarks>
+        public bool Dungeon = false;
+
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
@@ -98,10 +109,22 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Destructible substances (Data/env-materials, P3-12); null = scene objects cannot be hit or block creatures.</summary>
         /// <remarks>
-        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor) exists in it. Post: none. Side effects: none.
+        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor, UnderstoryKindsFor) exists in it. Post: none. Side effects: none.
         /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
         /// </remarks>
         public EnvMaterials EnvMaterials;
+
+        /// <summary>Optional player character model prefab; null falls back to the placeholder capsule.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public GameObject CharacterModelPrefab;
+
+        /// <summary>Optional 2D concept portrait table for HUD team slots; null omits portraits.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public ConceptPortraitTable Portraits;
+
+        /// <summary>Optional URP VolumeProfile for post-processing during the run; null skips Volume setup.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public VolumeProfile VolumeProfile;
     }
 
     /// <summary>
@@ -129,38 +152,58 @@ namespace Cosmimera.Bootstrap.Demo
             private readonly PlanetHeight _height;
             private readonly PlanetTemplates _templates;
             private readonly LayoutClearance _layout;
+            private readonly PlanetWalls _walls;
+            private readonly float _radius;
 
-            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout)
+            public HeightSurface(PlanetHeight height, PlanetTemplates templates, LayoutClearance layout, PlanetWalls walls,
+                float radius)
             {
                 _height = height;
                 _templates = templates;
                 _layout = layout;
+                _walls = walls;
+                _radius = radius;
             }
+
+            // REQ: planet-world.md#地表地牢 — true until the key elite is knocked out; locked gates then block like walls.
+            public bool LocksClosed { get; set; } = true;
 
             // Set once the scatter planner exists (it needs GroundAltitude first); null = buildings only.
             public WorldObjects Objects { get; set; }
 
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
-                _templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction);
+                (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
+                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
 
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
+            // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
-                Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM);
+                (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
+                (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed));
+
+            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
+            public bool IsOffWalls(float3 direction) =>
+                _walls == null ||
+                _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius;
         }
 
         private sealed class WildInfo
         {
             public int Spawn;
+            public int TreasureRegion = -1;
             public int Level;
             public HashSet<int> AppearedAtKnockout;
             public long KnockedOutAtMs = -1;
             public bool Gone;
             public bool Dropped;
         }
+
+        private SpawnRole RoleOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Role : SpawnRole.Elite;
+        private int RegionOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Region : w.TreasureRegion;
 
         private DemoCopy _copy;
         private CombatBalance _balance;
@@ -177,12 +220,17 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _cycleVesselAction;
         private InputAction _captureAction;
         private InputAction _abandonAction;
+        private InputAction _rollAction;
+        private bool _rollRequested;
         private RunSetup _setup;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
         private RunPlan _plan;
         private RunLayout _layout;
+        private DungeonLayout _dungeon;
+        private HeightSurface _surface;
+        private DungeonView _dungeonView;
         private QuestTracker _quest;
         private Encounter _encounter;
         private WorldObjects _worldObjects;
@@ -195,6 +243,7 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
+        private readonly List<GroundDrop> _pickupBuffer = new List<GroundDrop>(16);
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -257,6 +306,7 @@ namespace Cosmimera.Bootstrap.Demo
         private long _abandonArmedUntilMs = -1;
         private string _toast = string.Empty;
         private long _toastUntilMs;
+        private ConceptPortraitTable _portraits;
         private GUIStyle _label;
         private GUIStyle _markerStyle;
         private Material _terrainMaterial;
@@ -338,14 +388,15 @@ namespace Cosmimera.Bootstrap.Demo
         /// Pre: all arguments non-null; actions contains the DemoRun map and its twelve actions and the DemoMenu map
         ///      with Up/Down/Submit/Cancel;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
-        ///      matching PartyIds/PartyExp; setup.Progression non-null.
+        ///      matching PartyIds/PartyExp; setup.Progression non-null. The shaders and scenery may be null: each
+        ///      null one skips its visual layer (headless runs pass none).
         /// Post: planet, plan and wild spawns exist; party is summoned once the ground is ready.
         /// Side effects: creates GameObjects and private input maps (DemoRun enabled while the component is enabled;
         ///      DemoMenu only while an interaction menu is open).
         /// </remarks>
         public void Configure(DemoCopy copy, CombatBalance balance, InputActionAsset actions, Material terrainMaterial,
             RunSetup setup, IReadOnlyList<CreatureDef> wildPool, Action<RunOutcome> onEnd, Shader terrainShader = null,
-            Shader toonShader = null, Shader starShader = null)
+            Shader toonShader = null, Shader starShader = null, SceneryShaders scenery = null)
         {
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
@@ -377,6 +428,7 @@ namespace Cosmimera.Bootstrap.Demo
             _cycleVesselAction = _runInput.FindAction("CycleVessel", true);
             _captureAction = _runInput.FindAction("Capture", true);
             _abandonAction = _runInput.FindAction("Abandon", true);
+            _rollAction = _runInput.FindAction("Roll", true);
             _interactAction = _runInput.FindAction("Interact", true);
             _menuInput = actions.FindActionMap("DemoMenu", true).Clone();
             _menuUp = _menuInput.FindAction("Up", true);
@@ -407,17 +459,29 @@ namespace Cosmimera.Bootstrap.Demo
                 isLand = d => !view.IsSea(d);
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand);
+            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
+                setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            PlanetWalls walls = null;
+            if (setup.Dungeon)
+            {
+                _dungeon = DungeonPlanner.Generate(config, _plan, _layout, isLand);
+                walls = DungeonPlanner.BuildWalls(config, _plan, _dungeon);
+            }
+
             // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
             // passes its own body radius to IsInsideBuilding).
             var clearance = new LayoutClearance(config, _layout, 1.5f);
-            var surface = new HeightSurface(height, templates, clearance);
+            var surface = new HeightSurface(height, templates, clearance, walls, config.Radius);
+            _surface = surface;
             System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
+            TerrainProfile terrainProfile = TerrainProfiles.ForPlanetType(setup.PlanetType.Id);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
+            System.Func<float3, bool> isOpenGround =
+                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
             var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                clearance.IsClear);
+                isOpenGround, terrainProfile.ScatterDensity);
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {
@@ -425,23 +489,67 @@ namespace Cosmimera.Bootstrap.Demo
                 _envMaterials = setup.EnvMaterials;
                 _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
-                    setup.EnvMaterials, objects);
+                    setup.EnvMaterials, objects, _dungeon, _plan);
                 surface.Objects = _worldObjects;
             }
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
-            _viewFactory ??= new PlaceholderCreatureViewFactory(toonShader);
+            _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
+            float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
             if (terrainShader != null)
             {
-                float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
                 _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief);
                 terrainMaterial = _terrainMaterial;
             }
 
-            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates);
+            _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
+                setup.CharacterModelPrefab, walls);
+            _portraits = setup.Portraits;
+            if (setup.VolumeProfile != null)
+            {
+                UniversalAdditionalCameraData camData = _rig.Camera.GetUniversalAdditionalCameraData();
+                if (camData != null)
+                {
+                    camData.renderPostProcessing = true;
+                }
+
+                var volumeGo = new GameObject("PostProcessVolume");
+                volumeGo.transform.SetParent(transform, false);
+                Volume volume = volumeGo.AddComponent<Volume>();
+                volume.isGlobal = true;
+                volume.sharedProfile = setup.VolumeProfile;
+            }
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
-            gameObject.AddComponent<AtmosphereDriver>().Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
+            AtmosphereDriver atmosphere = gameObject.AddComponent<AtmosphereDriver>();
+            atmosphere.Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
+            (float grassDensity, float snowLine, float polarLat, float cloudCover, float wind) =
+                PlanetLook.Scenery(setup.PlanetType.Id);
+            atmosphere.SetWeather(cloudCover, wind);
+            if (scenery != null)
+            {
+                if (scenery.Sky != null)
+                {
+                    gameObject.AddComponent<SkyDome>().Configure(config, scenery.Sky);
+                }
+
+                if (scenery.Water != null)
+                {
+                    // Just past where the linear fog turns opaque: the rim of the disc is never visible.
+                    gameObject.AddComponent<WaterSurface>().Configure(config,
+                        PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief),
+                        RenderSettings.fogEndDistance * 1.15f);
+                }
+
+                if (scenery.Grass != null && grassDensity > 0f)
+                {
+                    // Stop a little short of the shader's snow line and polar cap, whose edges are noise-jittered.
+                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isOpenGround,
+                        PlayerPosition,
+                        PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM),
+                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));
+                }
+            }
             if (starShader != null)
             {
                 gameObject.AddComponent<StarField>().Configure(_rig.Camera, _rig.Sun, config, setup.Seed, starShader);
@@ -449,17 +557,29 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (toonShader != null)
             {
-                // Runtime primitives keep the built-in material, which renders magenta under URP.
-                _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
-                _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
+                if (setup.CharacterModelPrefab == null)
+                {
+                    // Runtime primitives keep the built-in material, which renders magenta under URP.
+                    _playerMaterial = PlanetLook.CreatureMaterial(toonShader, Color.white, 0.03f);
+                    _rig.Character.GetComponentInChildren<Renderer>().sharedMaterial = _playerMaterial;
+                }
                 // Own child, so building and road roots never mix with the scatter roots ScatterField parents to this transform.
                 var settlements = new GameObject("Settlements");
                 settlements.transform.SetParent(transform, false);
                 _settlementView = settlements.AddComponent<SettlementView>();
-                _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader);
+                _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
+                    setup.PlanetType.Id, setup.Seed, _plan);
+                if (_dungeon != null)
+                {
+                    var dungeonRoot = new GameObject("Dungeon");
+                    dungeonRoot.transform.SetParent(transform, false);
+                    _dungeonView = dungeonRoot.AddComponent<DungeonView>();
+                    _dungeonView.Configure(config, _plan, _dungeon, surface.GroundAltitude, toonShader, scenery?.Props);
+                }
+
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
-                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null);
+                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null, scenery?.Props);
                 if (objects != null)
                 {
                     // REQ: destructibles.md#物理 (ADR-0009) — only where something is drawn: headless runs have no bodies.
@@ -470,11 +590,18 @@ namespace Cosmimera.Bootstrap.Demo
                     _objectPhysics = loose.AddComponent<ObjectPhysics>();
                     _objectPhysics.Configure(config, gravity, surface.GroundAltitude,
                         _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default, setup.EnvMaterials,
-                        toonShader);
+                        toonShader, scenery?.Props);
                 }
             }
 
+            if (_rig != null && _rig.Character != null)
+            {
+                _rig.Character.SetTerrainModifiers(terrainProfile.MoveSpeedMultiplier,
+                    terrainProfile.SprintSpeedMultiplier, terrainProfile.GroundAccelerationMultiplier);
+            }
+
             _encounter = new Encounter(config, balance, surface, setup.Seed);
+            _encounter.SetTerrainMoveSpeedMultiplier(_ => terrainProfile.MoveSpeedMultiplier);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -497,6 +624,25 @@ namespace Cosmimera.Bootstrap.Demo
                     : _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
                 _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
+            }
+
+            // REQ: planet-world.md (Q-W3) — treasure rooms hold a guarding elite alongside the breakable chest.
+            if (_dungeon != null && wildPool.Count > 0)
+            {
+                for (int r = 0; r < _dungeon.Rooms.Count; r++)
+                {
+                    if (_dungeon.Rooms[r] != RoomRole.Treasure)
+                    {
+                        continue;
+                    }
+
+                    CreatureDef guardDef = wildPool[r % wildPool.Count];
+                    int guardLevel = _progression.WildLevel(D0Difficulty, _plan.Regions[r].Tier, SpawnRole.Elite);
+                    float3 guardDir = BesidePlayer(_plan.Regions[r].Center, r);
+                    EncounterUnit guard = _encounter.AddCreature(EncounterSide.Wild, guardDef, null, guardDir, guardLevel);
+                    _wild[guard.Id] = new WildInfo { Spawn = -1, TreasureRegion = r, Level = guardLevel };
+                    CreateView(guard, SpawnRole.Elite);
+                }
             }
 
             var roster = new List<int>();
@@ -588,8 +734,16 @@ namespace Cosmimera.Bootstrap.Demo
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             BeforeTickForTests?.Invoke();
 #endif
+            // REQ: combat.md (Q-C33) — Space / Gamepad buttonSouth triggers player roll i-frames.
+            if (_rollRequested)
+            {
+                _rollRequested = false;
+                _vitals.TryRoll(_nowMs);
+            }
+
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
+            CollectGroundPickups(player);
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
@@ -627,6 +781,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (!engaged && _team.InCombat)
             {
                 _team.EndCombat();
+                _encounter.EndCombatOverload();
             }
 
             if (playerDowned)
@@ -670,15 +825,26 @@ namespace Cosmimera.Bootstrap.Demo
 
             WildInfo w = _wild[unitId];
             w.KnockedOutAtMs = _nowMs;
-            RunSpawn spawn = _plan.Spawns[w.Spawn];
+            SpawnRole role = RoleOf(w);
             // The capture of this creature settles later but belongs to this battle's participants (per-event record).
             w.AppearedAtKnockout = new HashSet<int>(_appeared);
             // REQ: option A — a boss pays only its boss pool, never a second wild-defeat pool.
-            Reward(spawn.Role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, spawn.Role == SpawnRole.Elite,
+            Reward(role == SpawnRole.Boss ? XpSource.Boss : XpSource.Wild, w.Level, role == SpawnRole.Elite,
                 w.AppearedAtKnockout);
-            _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
-            PayQuest(w.AppearedAtKnockout);
-            if (spawn.Role == SpawnRole.Boss)
+            if (w.Spawn >= 0)
+            {
+                _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
+                PayQuest(w.AppearedAtKnockout);
+            }
+            // REQ: planet-world.md#地表地牢 — the key elite's knock-out opens the boss room for the rest of the run.
+            if (_dungeon != null && w.Spawn == _dungeon.KeySpawn && _surface.LocksClosed)
+            {
+                _surface.LocksClosed = false;
+                _dungeonView?.OpenLocks();
+                Toast(_copy.Ui("ui.hud.gate_open"));
+            }
+
+            if (role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
                 Toast(_copy.Ui("ui.hud.knocked_out"));
@@ -689,12 +855,12 @@ namespace Cosmimera.Bootstrap.Demo
             if (!w.Dropped)
             {
                 w.Dropped = true;
-                if (_drops.TryRoll(spawn.Role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
                 {
                     _outcome.Materials.Add(drop);
                     string msg = _copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key));
                     // One toast slot: keep the boss knock-out line visible instead of overwriting it.
-                    Toast(spawn.Role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
+                    Toast(role == SpawnRole.Boss ? _copy.Ui("ui.hud.knocked_out") + "  " + msg : msg);
                 }
             }
         }
@@ -837,6 +1003,11 @@ namespace Cosmimera.Bootstrap.Demo
                 TryCapture();
             }
 
+            if (_rollAction.WasPressedThisFrame())
+            {
+                _rollRequested = true;
+            }
+
             if (_abandonAction.WasPressedThisFrame())
             {
                 RequestAbandon();
@@ -849,7 +1020,7 @@ namespace Cosmimera.Bootstrap.Demo
             InputActionMap map = actions.FindActionMap("DemoRun");
             Core.Contracts.Contract.Requires(map != null, "actions must contain the DemoRun map");
             foreach (string name in new[] { "SelectFirst", "SelectSecond", "Switch", "Focus", "CycleTarget", "Free", "Follow",
-                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact" })
+                         "Retreat", "CycleVessel", "Capture", "Abandon", "Interact", "Roll" })
             {
                 Core.Contracts.Contract.Requires(map.FindAction(name) != null, "DemoRun is missing " + name);
             }
@@ -1019,21 +1190,23 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             WildInfo w = _wild[best];
-            RunSpawn spawn = _plan.Spawns[w.Spawn];
-            bool bounty = _plan.Regions[spawn.Region].AffixId == "affix_bounty";
-            int chance = CaptureRules.ChancePercent(spawn.Role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
+            SpawnRole role = RoleOf(w);
+            int region = RegionOf(w);
+            string creatureId = _encounter.Units[best].Def.Id;
+            bool bounty = _plan.Regions[region].AffixId == "affix_bounty";
+            int chance = CaptureRules.ChancePercent(role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
                 _balance.CaptureBossPercent);
             w.Gone = true; // one throw per knocked-out creature: a miss lets it escape (no re-roll farming)
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
             {
                 // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
-                _outcome.Captured.Add((spawn.CreatureId, _vessel, _progression.XpThreshold(w.Level)));
+                _outcome.Captured.Add((creatureId, _vessel, _progression.XpThreshold(w.Level)));
                 HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
                 Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
                 PayQuest(battle);
-                Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(spawn.CreatureId));
+                Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(creatureId));
             }
             else
             {
@@ -1075,7 +1248,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 int region = u.Side == EncounterSide.Player ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player))
-                    : _plan.Spawns[_wild[u.Id].Spawn].Region;
+                    : RegionOf(_wild[u.Id]);
                 string affix = _plan.Regions[region].AffixId;
                 if (affix == null || !affix.EndsWith("_surge"))
                 {
@@ -1496,7 +1669,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
-                if (_plan.Spawns[kv.Value.Spawn].Role == SpawnRole.Boss)
+                if (RoleOf(kv.Value) == SpawnRole.Boss)
                 {
                     return kv.Key;
                 }
@@ -1550,7 +1723,21 @@ namespace Cosmimera.Bootstrap.Demo
 
                 _worldObjects.OnDestroyed(ev.ObjectId);
                 ShatterObject(ev);
-                if (WorldObjects.IsBuilding(ev.ObjectId))
+                if (WorldObjects.IsTreasure(ev.ObjectId))
+            {
+                int region = (int)(ev.ObjectId - WorldObjects.TreasureIdBase);
+                _dungeonView?.RemoveMarker(region);
+                int rolls = 1 + _plan.Regions[region].Tier;
+                for (int i = 0; i < rolls; i++)
+                {
+                    if (_drops.TryRoll(SpawnRole.Elite, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                    {
+                        _outcome.Materials.Add(drop);
+                        Toast(_copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key)));
+                    }
+                }
+            }
+            else if (WorldObjects.IsBuilding(ev.ObjectId))
                 {
                     _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
                 }
@@ -1564,7 +1751,8 @@ namespace Cosmimera.Bootstrap.Demo
         // REQ: destructibles.md#物理 — a hit shoves the object (first hit wakes it into a rigidbody); presentation only.
         private void ShoveObject(in ObjectEvent ev)
         {
-            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
+            if (_objectPhysics == null || !_worldObjects.CanBeShoved(ev.ObjectId) ||
+                !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
                 !TryCasterPosition(ev.SourceId, out float3 source))
             {
                 return;
@@ -1611,6 +1799,28 @@ namespace Cosmimera.Bootstrap.Demo
             return ObjectImpulse.Compute(_rig.Config, source, c.Center, ev.Power, gust, massKg, _objectPhysics.Tuning);
         }
 
+        // REQ: docs/design/destructibles.md#地上的素材 (Q-M6) — 1 m auto-pickup into run materials.
+        private void CollectGroundPickups(float3 playerPosition)
+        {
+            if (_objectPhysics == null)
+            {
+                return;
+            }
+
+            _pickupBuffer.Clear();
+            if (_objectPhysics.CollectPickups(playerPosition, _pickupBuffer) == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _pickupBuffer.Count; i++)
+            {
+                GroundDrop drop = _pickupBuffer[i];
+                int tier = drop.Kind == GroundDropKind.Gem ? 3 : 1;
+                _outcome.Materials.Add(new MaterialStack(new MaterialKey(drop.Element, tier), 1));
+            }
+        }
+
         // The drawn root of an object: its woken body, its building, or its scatter item (detached from streaming, since
         // the caller is about to turn it into a rigidbody or debris). Null when nothing is drawn there.
         private GameObject ObjectRoot(long id)
@@ -1619,6 +1829,11 @@ namespace Cosmimera.Bootstrap.Demo
             if (woken != null)
             {
                 return woken;
+            }
+
+            if (WorldObjects.IsTreasure(id))
+            {
+                return _dungeonView?.MarkerFor((int)(id - WorldObjects.TreasureIdBase));
             }
 
             if (WorldObjects.IsBuilding(id))
@@ -1882,7 +2097,7 @@ namespace Cosmimera.Bootstrap.Demo
                 GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width * frac, rect.height), Texture2D.whiteTexture);
                 GUI.color = old;
                 string name = _copy.Name(u.Def.Id);
-                if (wild && _plan.Spawns[_wild[u.Id].Spawn].Role == SpawnRole.Boss)
+                if (wild && RoleOf(_wild[u.Id]) == SpawnRole.Boss)
                 {
                     name = _copy.Epithet(_plan.PlanetTypeId, (int)(_plan.Seed % 3)) + name;
                 }
@@ -2037,8 +2252,21 @@ namespace Cosmimera.Bootstrap.Demo
                 string cd = u.Combatant.Cooldowns.IsReady(0, _nowMs) ? _copy.Ui("ui.hud.cd_ready")
                     : $"{(u.Combatant.Cooldowns.ReadyAtMs(0) - _nowMs) / 1000f:0.0}s";
                 string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
-                GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
-                    new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
+                Texture2D portrait = _portraits != null ? _portraits.FindCreature(u.Def.LineId, u.Def.Stage) : null;
+                if (portrait != null)
+                {
+                    GUILayout.BeginHorizontal(GUILayout.Width(175));
+                    Rect iconRect = GUILayoutUtility.GetRect(36f, 36f, GUILayout.ExpandWidth(false));
+                    GUI.DrawTexture(iconRect, portrait, ScaleMode.ScaleToFit, true);
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
+                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(135));
+                    GUILayout.EndHorizontal();
+                }
+                else
+                {
+                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}\n{state}\n{(active ? cd : string.Empty)}",
+                        new GUIStyle(_label) { fontSize = 14 }, GUILayout.Width(145));
+                }
             }
 
             GUILayout.EndHorizontal();

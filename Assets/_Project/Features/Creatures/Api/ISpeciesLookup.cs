@@ -11,18 +11,27 @@ namespace Cosmimera.Creatures
     /// </remarks>
     public readonly struct SpeciesInfo
     {
-        /// <summary>Creates the info.</summary>
-        /// <remarks>Pre: all three ids non-empty; stage is a defined CreatureStage. Post: properties equal the arguments. Side effects: none.</remarks>
+        /// <summary>Creates the info with no field utility.</summary>
+        /// <remarks>Pre: all three ids non-empty; stage is a defined CreatureStage. Post: properties equal the arguments; FieldUtility == None. Side effects: none.</remarks>
         public SpeciesInfo(string speciesId, string signatureMoveId, string traitId, CreatureStage stage)
+            : this(speciesId, signatureMoveId, traitId, stage, FieldUtility.None)
+        {
+        }
+
+        /// <summary>Creates the info.</summary>
+        /// <remarks>Pre: all three ids non-empty; stage is a defined CreatureStage; fieldUtility is a defined FieldUtility. Post: properties equal the arguments. Side effects: none.</remarks>
+        public SpeciesInfo(string speciesId, string signatureMoveId, string traitId, CreatureStage stage, FieldUtility fieldUtility)
         {
             Contract.Requires(!string.IsNullOrEmpty(speciesId), "speciesId must be non-empty");
             Contract.Requires(!string.IsNullOrEmpty(signatureMoveId), "signatureMoveId must be non-empty");
             Contract.Requires(!string.IsNullOrEmpty(traitId), "traitId must be non-empty");
             Contract.Requires(Enum.IsDefined(typeof(CreatureStage), stage), "stage must be a defined CreatureStage");
+            Contract.Requires(Enum.IsDefined(typeof(FieldUtility), fieldUtility), "fieldUtility must be a defined FieldUtility");
             SpeciesId = speciesId;
             SignatureMoveId = signatureMoveId;
             TraitId = traitId;
             Stage = stage;
+            FieldUtility = fieldUtility;
         }
 
         /// <summary>CreatureDef id.</summary>
@@ -40,6 +49,10 @@ namespace Cosmimera.Creatures
         /// <summary>Evolution stage of this form (CreatureDef.Stage); the partner rules require sub stage &lt;= main stage.</summary>
         /// <remarks>Pre: none. Post: a defined CreatureStage (Juvenile for default(SpeciesInfo)). Side effects: none.</remarks>
         public CreatureStage Stage { get; }
+
+        /// <summary>Single life/field utility move or trait for this form (CreatureDef.FieldUtility).</summary>
+        /// <remarks>Pre: none. Post: a defined FieldUtility (None for default(SpeciesInfo)). Side effects: none.</remarks>
+        public FieldUtility FieldUtility { get; }
     }
 
     /// <summary>Species data access for the partner rules; an interface so tests need no ScriptableObjects.</summary>

@@ -20,11 +20,21 @@ namespace Cosmimera.Capture
         /// Post: (isBoss ? bossPercent : basePercent) + (bounty ? 10 : 0), clamped to 0..100.
         /// Side effects: none.
         /// </remarks>
-        public static int ChancePercent(bool isBoss, bool bounty, int basePercent, int bossPercent)
+        public static int ChancePercent(bool isBoss, bool bounty, int basePercent, int bossPercent) =>
+            ChancePercent(isBoss, bounty, basePercent, bossPercent, 0);
+
+        /// <summary>Capture chance in percent including field-utility bonus.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= basePercent, bossPercent &lt;= 100; utilityBonusPercent &gt;= 0.
+        /// Post: (isBoss ? bossPercent : basePercent) + (bounty ? 10 : 0) + utilityBonusPercent, clamped to 0..100.
+        /// Side effects: none.
+        /// </remarks>
+        public static int ChancePercent(bool isBoss, bool bounty, int basePercent, int bossPercent, int utilityBonusPercent)
         {
             Contract.Requires(basePercent >= 0 && basePercent <= 100 && bossPercent >= 0 && bossPercent <= 100,
                 "percents must be 0..100");
-            int chance = (isBoss ? bossPercent : basePercent) + (bounty ? BountyBonusPercent : 0);
+            Contract.Requires(utilityBonusPercent >= 0, "utilityBonusPercent must be >= 0");
+            int chance = (isBoss ? bossPercent : basePercent) + (bounty ? BountyBonusPercent : 0) + utilityBonusPercent;
             return chance > 100 ? 100 : chance;
         }
 

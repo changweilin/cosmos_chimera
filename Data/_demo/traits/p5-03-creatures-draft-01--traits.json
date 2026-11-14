@@ -1,0 +1,57 @@
+[
+  {
+    "id": "trait_metal_pendulum_cadence",
+    "trigger": { "type": "on_hp_above", "params": { "percent": 65 } },
+    "effects": [
+      { "type": "cd_mod_percent", "params": { "element": "metal", "delta": -12 } },
+      { "type": "resist_mod", "params": { "element": "earth", "delta": 15 } }
+    ]
+  },
+  {
+    "id": "trait_wood_crest_resilience",
+    "trigger": { "type": "on_hp_cross_below", "params": { "percent": 45, "duration_ms": 6000 } },
+    "effects": [
+      { "type": "cd_mod_percent", "params": { "element": "wood", "delta": -22 } },
+      { "type": "evasion_mod_percent", "params": { "delta": 12 } }
+    ]
+  },
+  {
+    "id": "trait_water_keel_momentum",
+    "trigger": { "type": "on_summon", "params": { "duration_ms": 5000 } },
+    "effects": [
+      { "type": "move_speed_mod_percent", "params": { "delta": 18 } },
+      { "type": "range_mod_percent", "params": { "delta": 12 } }
+    ]
+  },
+  {
+    "id": "trait_fire_furnace_escalation",
+    "trigger": { "type": "on_move_used", "params": { "element": "fire", "duration_ms": 5000 } },
+    "effects": [
+      { "type": "mastery_mod", "params": { "element": "fire", "delta": 10 }, "max_stacks": 3 }
+    ]
+  },
+  {
+    "id": "trait_earth_gilded_bulwark",
+    "trigger": { "type": "on_ally_swap", "params": { "duration_ms": 6000 } },
+    "effects": [
+      { "type": "resist_mod", "params": { "element": "earth", "delta": 20 } },
+      { "type": "resist_mod", "params": { "element": "metal", "delta": 15 } }
+    ]
+  },
+  {
+    "id": "trait_ice_antler_refraction",
+    "trigger": { "type": "on_move_used", "params": { "element": "ice", "duration_ms": 4000 } },
+    "effects": [
+      { "type": "range_mod_percent", "params": { "delta": 12 }, "max_stacks": 2 },
+      { "type": "evasion_mod_percent", "params": { "delta": 6 }, "max_stacks": 2 }
+    ]
+  },
+  {
+    "id": "trait_wind_reed_harmonics",
+    "trigger": { "type": "on_hp_above", "params": { "percent": 70 } },
+    "effects": [
+      { "type": "cd_mod_percent", "params": { "element": "wind", "delta": -12 } },
+      { "type": "mastery_mod", "params": { "element": "wind", "delta": 12 } }
+    ]
+  }
+]

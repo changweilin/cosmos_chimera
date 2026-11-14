@@ -38,8 +38,9 @@
       "spi": 18,
       "agi": 14
     },
-    "signature_move": "metal_needle_thrust",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_escapement_jab",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "magnet_pickup_double",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
       "stage_look": "圓弧青銅齒輪幼雛，胸口帶有微型浮碗漏刻水槽，步伐伴隨清脆齒輪發條聲",
@@ -93,8 +94,9 @@
       "spi": 37,
       "agi": 28
     },
-    "signature_move": "metal_iron_cleave",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_ratchet_sweep",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "immune_laboratory",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
       "stage_look": "半披重甲的機械機關獸，雙肩裝配盤龍青銅連桿與報時鳴鐘音板",
@@ -140,8 +142,9 @@
       "spi": 70,
       "agi": 55
     },
-    "signature_move": "metal_lance_charge",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "catch_rate_up",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
       "stage_look": "巍峨的重裝機械巨象機兵，軀幹內嵌沉水浮碗水力計時輪系，雙足如鐵樁般屹立",
@@ -195,8 +198,9 @@
       "spi": 40,
       "agi": 16
     },
-    "signature_move": "wood_briar_dash",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_frond_dart",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "forage_berries",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
       "stage_look": "蓬鬆翠綠幼鳥，頭頂生出初萌的捲曲蕨葉冠羽，雙足踏著金木雕花底座",
@@ -250,8 +254,9 @@
       "spi": 81,
       "agi": 32
     },
-    "signature_move": "wood_root_spear",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_plumage_volley",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "immune_rainforest",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
       "stage_look": "羽翼舒展的熱帶孔雀型錦鳥，背負流線捲紋蔓藤，雙爪覆蓋金屬木質硬鱗",
@@ -296,8 +301,9 @@
       "spi": 160,
       "agi": 65
     },
-    "signature_move": "wood_canopy_crush",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "return_village",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
       "stage_look": "盤踞巨木頂端的七彩神禽，雙重虹彩長尾如垂藤流光，周身綻放翠玉繁花",
@@ -351,8 +357,9 @@
       "spi": 18,
       "agi": 24
     },
-    "signature_move": "water_crest_slicer",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_wake_jet",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "fishing",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
       "stage_look": "身軀如銀色小鰻，背部生出半透明蟹爪形水膜小翼，在波浪間滑行",
@@ -406,8 +413,9 @@
       "spi": 35,
       "agi": 50
     },
-    "signature_move": "water_torrent_burst",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_spray_fan",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "immune_deep_sea",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
       "stage_look": "腹部長出木紋雙浮筒外甲的飛浪海鰻，脊背張開硬質蟹爪帆，能破浪滑翔",
@@ -453,8 +461,9 @@
       "spi": 70,
       "agi": 100
     },
-    "signature_move": "water_deluge_crater",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_monsoon_swell",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "dive",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
       "stage_look": "巨大如浮島的雙體風帆巨鰻舟，雙側連綴彩繪水流側舷，乘踏季風怒濤疾航",
@@ -508,8 +517,9 @@
       "spi": 12,
       "agi": 18
     },
-    "signature_move": "fire_ember_lash",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_cinder_claw",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "cook_fire",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
       "stage_look": "滾燙赤褐小獅，頸圈生有一圈暗紅餘燼絨毛，爪尖踏出微小火星",
@@ -563,8 +573,9 @@
       "spi": 25,
       "agi": 35
     },
-    "signature_move": "fire_blaze_charge",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_mane_pounce",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "immune_volcano",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
       "stage_look": "肌肉結實的烈焰荒原獅，鬃毛如翻騰火浪，額前凝結三道熔岩裂紋",
@@ -609,8 +620,9 @@
       "spi": 55,
       "agi": 70
     },
-    "signature_move": "fire_inferno_cataclysm",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "egg_hatch_boost",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
       "stage_look": "威儀萬丈的三面烈火霸獅，鬃毛化為熊熊金紅蓮華火冠，每聲咆哮皆引動砂岩爆震",
@@ -664,8 +676,9 @@
       "spi": 30,
       "agi": 12
     },
-    "signature_move": "earth_pebble_shot",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_shale_bolt",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "drop_rate_up",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
       "stage_look": "圓潤敦實的小石偶，周身覆蓋薄金微粒，胸膛嵌有一顆微光綠寶石晶核",
@@ -719,8 +732,9 @@
       "spi": 59,
       "agi": 25
     },
-    "signature_move": "earth_seismic_slam",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_ritual_quake",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "immune_cave",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
       "stage_look": "佩帶幾何金面甲的岩土行者，肩背覆蓋層疊板狀黏土與生長金晶",
@@ -765,8 +779,9 @@
       "spi": 120,
       "agi": 50
     },
-    "signature_move": "earth_rampart_rush",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_monolith_charge",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "open_obstacle",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
       "stage_look": "巍然屹立的重岩金祭聖偶，雙臂如立柱，通體鎏金結晶與翡翠石脈共鳴",
@@ -820,8 +835,9 @@
       "spi": 20,
       "agi": 30
     },
-    "signature_move": "ice_shard_flurry",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_rime_breath",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "prevent_escape",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
       "stage_look": "覆蓋厚實白絨的幼雛，額頂生有一對冰晶小角，四肢嵌有金屬防滑掌爪",
@@ -875,8 +891,9 @@
       "spi": 40,
       "agi": 60
     },
-    "signature_move": "ice_glacier_lance",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_antler_javelin",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "mount",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
       "stage_look": "雙翼裝配鍛鐵鉸鏈與金箔鞍軛的冰原獵獸，冰柱狀分叉巨角能導引寒氣",
@@ -922,8 +939,9 @@
       "spi": 80,
       "agi": 120
     },
-    "signature_move": "ice_blizzard_vortex",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "immune_ice_cap",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
       "stage_look": "永凍裝甲巨型鹿角霜獸，機械冰裂翼展覆蓋寒霜，破冰金屬尖爪能粉碎凍土",
@@ -977,8 +995,9 @@
       "spi": 18,
       "agi": 40
     },
-    "signature_move": "wind_gale_claw",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_flute_slash",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "weather_control",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
       "stage_look": "梭形浮空音管小舟，舟首飾有三孔細竹笛管，隨微風發出悠揚鳴響",
@@ -1032,8 +1051,9 @@
       "spi": 36,
       "agi": 80
     },
-    "signature_move": "wind_vacuum_blade",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_reed_crescent",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "levitate",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
       "stage_look": "張開彩繡刺繡滑翔翼的氣動巡航飛舟，兩側排列排笛風孔，能乘疾風滑行",
@@ -1078,8 +1098,9 @@
       "spi": 70,
       "agi": 160
     },
-    "signature_move": "wind_tempest_sphere",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_gale_symphony",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "immune_space",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
       "stage_look": "流線重層的御風天舟，舟翼懸垂繁複幾何刺繡雲帆，長笛風門全開噴湧颶風",

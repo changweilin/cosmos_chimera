@@ -155,6 +155,18 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => d.TierFor((SpawnRole)9));
             Assert.Throws<ContractException>(() => d.ChancePercent((SpawnRole)9));
             Assert.Throws<ContractException>(() => d.QtyFor((SpawnRole)9));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Normal, Twilight, ref rng, -1, 1, out _));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Normal, Twilight, ref rng, 0, 0, out _));
+        }
+
+        [Test]
+        public void TryRoll_with_utility_modifiers_boosts_chance_and_multiplies_qty()
+        {
+            MaterialDrops d = MaterialDrops.FromJson(Synthetic);
+            var rng = new Pcg32(77, 'U');
+            // Normal base chance is 10%, qty 1; +90 bonus guarantees 100%, multiplier 2 yields qty 2.
+            Assert.That(d.TryRoll(SpawnRole.Normal, Twilight, ref rng, 90, 2, out MaterialStack drop), Is.True);
+            Assert.That(drop.Qty, Is.EqualTo(2));
         }
     }
 }

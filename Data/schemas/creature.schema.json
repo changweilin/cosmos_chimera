@@ -52,6 +52,10 @@
         },
         "signature_move": { "$ref": "common.schema.json#/$defs/id" },
         "trait": { "$ref": "common.schema.json#/$defs/id" },
+        "field_utility": {
+          "description": "Single life/field utility move or trait for this creature form (defaults to none).",
+          "$ref": "common.schema.json#/$defs/fieldUtility"
+        },
         "concept": {
           "description": "Open by design: shaped by creature-concept-pipeline.md, not consumed by game rules.",
           "type": "object",

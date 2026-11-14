@@ -4,6 +4,7 @@ using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.WorldGen;
 using Unity.Mathematics;
 
 namespace Cosmimera.Combat
@@ -95,6 +96,30 @@ namespace Cosmimera.Combat
         Faint = 4,
         /// <summary>The player character reached 0 HP (TargetId == Encounter.PlayerCharacterId); the run is lost (Q-C33).</summary>
         PlayerDowned = 5,
+    }
+
+    /// <summary>Outcome of a player overload command (Q-C12).</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum OverloadResult
+    {
+        /// <summary>Overload activated until combat ends.</summary>
+        Ok = 0,
+        /// <summary>Overload can only be triggered during combat.</summary>
+        NotInCombat = 1,
+        /// <summary>Unit is not on the player's side.</summary>
+        NotPlayerSide = 2,
+        /// <summary>Unit is not currently fielded.</summary>
+        NotFielded = 3,
+        /// <summary>Fainted units cannot overload.</summary>
+        Fainted = 4,
+        /// <summary>Only adult-stage creatures can overload (Q-C12).</summary>
+        NotAdult = 5,
+        /// <summary>Overload has not been unlocked via a MagicCube sub-partner.</summary>
+        NotUnlocked = 6,
+        /// <summary>Unit is already overloaded.</summary>
+        AlreadyOverloaded = 7,
+        /// <summary>Unit already used its once-per-combat overload.</summary>
+        AlreadyUsedThisCombat = 8,
     }
 
     /// <summary>One creature taking part in an encounter.</summary>
@@ -198,6 +223,8 @@ namespace Cosmimera.Combat
         // the same way; re-choosing every tick made it zigzag along the near wall (heading re-aims at the target each tick).
         internal int SlideSide { get; set; } = 1;
 
+        internal float LastMoveSpeedMs { get; set; }
+
         /// <summary>Last AI target id, or NoTarget.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public int TargetId { get; internal set; } = CombatAi.NoTarget;
@@ -288,6 +315,8 @@ namespace Cosmimera.Combat
         private DestructibleCandidate _objectFocus;
         // Edge point of the focused object's hit sphere nearest the main creature, refreshed each time it decides.
         private float3 _objectAim;
+        private readonly HashSet<int> _overloadedThisCombat = new HashSet<int>();
+        private long _lastCombatReviveMs = -1;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
@@ -343,6 +372,114 @@ namespace Cosmimera.Combat
         /// <summary><see cref="ObjectEvent.SourceId"/> of an object that burnt out on its own.</summary>
         /// <remarks>Pre: none. Post: constant; never a unit id. Side effects: none.</remarks>
         public const int NoSource = -1;
+
+        private Func<float3, float> _terrainMoveSpeedMultiplier;
+        private WeatherProfile _weather = WeatherProfiles.Clear;
+        private Func<float3, long, WeatherProfile> _weatherProvider;
+        private float _playerMoveSpeedMs = 5.0f;
+        private int _partyDetectionPermille = 1000;
+        private bool _preventWildEscape;
+
+        /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for fog stealth (Q-C37).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
+        public const float SlowStealthSpeedThresholdMs = 2.0f;
+
+        /// <summary>Sets a deterministic terrain move-speed multiplier queried at each unit's ground direction.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#地貌行動影響.
+        /// Pre: multiplierAt may be null (resets to 1.0); when non-null, returns a finite value &gt; 0.
+        /// Post: subsequent Steer steps scale creature movement speed by the returned factor.
+        /// Side effects: stores the callback.
+        /// </remarks>
+        public void SetTerrainMoveSpeedMultiplier(Func<float3, float> multiplierAt)
+        {
+            _terrainMoveSpeedMultiplier = multiplierAt;
+        }
+
+        /// <summary>Sets a uniform active weather profile for the encounter.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#天氣影響.
+        /// Pre: <paramref name="weather"/> is a valid <see cref="WeatherProfile"/> from <see cref="WeatherProfiles"/>.
+        /// Post: clears any dynamic weather provider and applies <paramref name="weather"/> until changed.
+        /// Side effects: updates weather state.
+        /// </remarks>
+        public void SetWeather(in WeatherProfile weather)
+        {
+            Contract.Requires(weather.CreatureMoveSpeedMultiplier > 0f && weather.AdaptedCreatureMoveSpeedMultiplier > 0f
+                && weather.TerritoryRadiusPermille > 0, "weather profile must be valid");
+            _weatherProvider = null;
+            _weather = weather;
+        }
+
+        /// <summary>Sets a deterministic dynamic weather provider queried by ground direction and simulation time.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#天氣影響.
+        /// Pre: <paramref name="weatherAt"/> may be null (reverts to uniform <see cref="SetWeather"/> profile).
+        /// Post: subsequent ticks and casts query <paramref name="weatherAt"/> at the unit's ground direction and nowMs.
+        /// Side effects: stores the callback.
+        /// </remarks>
+        public void SetWeatherProvider(Func<float3, long, WeatherProfile> weatherAt)
+        {
+            _weatherProvider = weatherAt;
+        }
+
+        /// <summary>Updates the player character's current ground speed (m/s) for fog stealth checks (Q-C37).</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#天氣影響.
+        /// Pre: <paramref name="speedMs"/> &gt;= 0 and finite.
+        /// Post: stored speed is used on subsequent ticks to evaluate slow-moving fog stealth.
+        /// Side effects: updates stored player speed.
+        /// </remarks>
+        public void SetPlayerMoveSpeedMs(float speedMs)
+        {
+            Contract.Requires(math.isfinite(speedMs) && speedMs >= 0f, "speedMs must be finite and >= 0");
+            _playerMoveSpeedMs = speedMs;
+        }
+
+        /// <summary>
+        /// Configures team field-utility modifiers for wild territory detection (<c>party_stealth</c>) and escape prevention (<c>prevent_escape</c>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/field-utilities.md.
+        /// Pre: <paramref name="partyDetectionPermille"/> in 100..1000.
+        /// Post: subsequent ticks scale wild territory radius by <paramref name="partyDetectionPermille"/>/1000 and extend disengage range when <paramref name="preventWildEscape"/> is true.
+        /// Side effects: updates stored field-utility modifiers.
+        /// </remarks>
+        public void SetExplorationUtilityModifiers(int partyDetectionPermille, bool preventWildEscape)
+        {
+            Contract.Requires(partyDetectionPermille >= 100 && partyDetectionPermille <= 1000,
+                "partyDetectionPermille must be 100..1000");
+            _partyDetectionPermille = partyDetectionPermille;
+            _preventWildEscape = preventWildEscape;
+        }
+
+        /// <summary>
+        /// Forces all currently engaged non-boss wild units to disengage (<c>quick_escape</c>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/field-utilities.md.
+        /// Pre: none.
+        /// Post: non-boss active wild units have Engaged=false and Provoked=false; boss units remain unchanged. Returns true iff at least one unit disengaged.
+        /// Side effects: mutates wild engagement flags.
+        /// </remarks>
+        public bool ForceDisengageAllWild()
+        {
+            bool disengagedAny = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked))
+                {
+                    w.Engaged = false;
+                    w.Provoked = false;
+                    w.HasWanderTarget = false;
+                    w.WanderResumeMs = WanderUnscheduled;
+                    disengagedAny = true;
+                }
+            }
+
+            return disengagedAny;
+        }
 
         /// <summary>Lets moves hit generated scene objects. REQ: docs/design/destructibles.md, ADR-0009.</summary>
         /// <remarks>
@@ -670,6 +807,126 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it holds its spawn point. Side effects: none.</remarks>
         public float WanderRadiusM(int unitId) => _balance.Wander.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
 
+        /// <summary>Triggers temporary combat overload for <paramref name="unitId"/> (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units.
+        /// Post: returns Ok and sets Combatant.IsOverloaded iff inCombat, player side, fielded, alive, Adult stage,
+        ///       overloadUnlocked, and not yet used in this combat; otherwise state unchanged.
+        /// Side effects: mutates Combatant and _overloadedThisCombat on Ok.
+        /// </remarks>
+        public OverloadResult TryTriggerOverload(int unitId, bool inCombat, bool overloadUnlocked)
+        {
+            EncounterUnit u = Get(unitId);
+            if (!inCombat)
+            {
+                return OverloadResult.NotInCombat;
+            }
+
+            if (u.Side != EncounterSide.Player)
+            {
+                return OverloadResult.NotPlayerSide;
+            }
+
+            if (!u.Fielded)
+            {
+                return OverloadResult.NotFielded;
+            }
+
+            if (u.Combatant.IsFainted)
+            {
+                return OverloadResult.Fainted;
+            }
+
+            if (u.Def.Stage != CreatureStage.Adult)
+            {
+                return OverloadResult.NotAdult;
+            }
+
+            if (!overloadUnlocked)
+            {
+                return OverloadResult.NotUnlocked;
+            }
+
+            if (u.Combatant.IsOverloaded)
+            {
+                return OverloadResult.AlreadyOverloaded;
+            }
+
+            if (_overloadedThisCombat.Contains(unitId))
+            {
+                return OverloadResult.AlreadyUsedThisCombat;
+            }
+
+            u.Combatant.BeginOverload();
+            _overloadedThisCombat.Add(unitId);
+            return OverloadResult.Ok;
+        }
+
+        /// <summary>Reverts all overloaded units and resets per-combat overload usage when combat ends (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: every unit has Combatant.IsOverloaded == false; once-per-combat lock cleared.
+        /// Side effects: mutates overloaded combatants and _overloadedThisCombat.
+        /// </remarks>
+        public void EndCombatOverload()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                _units[i].Combatant.EndOverload();
+            }
+
+            _overloadedThisCombat.Clear();
+        }
+
+        /// <summary>Remaining combat revive cooldown in ms at <paramref name="nowMs"/> (Q-C36).</summary>
+        /// <remarks>Pre: nowMs in CombatTime. Post: 0..ReviveRules.CombatCooldownMs. Side effects: none.</remarks>
+        public long ReviveCooldownRemainingMs(long nowMs)
+        {
+            CombatTime.Require(nowMs, 0);
+            if (_lastCombatReviveMs < 0)
+            {
+                return 0;
+            }
+
+            long elapsed = nowMs - _lastCombatReviveMs;
+            return elapsed >= ReviveRules.CombatCooldownMs ? 0 : ReviveRules.CombatCooldownMs - elapsed;
+        }
+
+        /// <summary>Revives a fainted player unit according to Q-C36 tier and combat rules.</summary>
+        /// <remarks>
+        /// Pre: unitId indexes Units; sourceTier is a defined PlanetSize; nowMs in CombatTime and >= unit's Book watermark.
+        /// Post: returns InvalidUnit if not player side; NotFainted if alive; OnCooldown if inCombat within 60 s of
+        ///       previous combat revive; Ok and unit.Combatant.Hp == ReviveRules.ComputeReviveHp(...) otherwise.
+        /// Side effects: mutates Combatant and _lastCombatReviveMs on Ok.
+        /// </remarks>
+        public ReviveResult TryRevive(int unitId, ReviveSource source, PlanetSize sourceTier, bool inCombat, long nowMs)
+        {
+            EncounterUnit u = Get(unitId);
+            if (u.Side != EncounterSide.Player)
+            {
+                return ReviveResult.InvalidUnit;
+            }
+
+            if (!u.Combatant.IsFainted)
+            {
+                return ReviveResult.NotFainted;
+            }
+
+            if (inCombat && ReviveCooldownRemainingMs(nowMs) > 0)
+            {
+                return ReviveResult.OnCooldown;
+            }
+
+            int hp = ReviveRules.ComputeReviveHp(u.Combatant.MaxHp, sourceTier, inCombat);
+            u.Combatant.Revive(hp, nowMs);
+            if (inCombat)
+            {
+                _lastCombatReviveMs = nowMs;
+            }
+
+            return ReviveResult.Ok;
+        }
+
         /// <summary>Advances the fight to <paramref name="nowMs"/>.</summary>
         /// <remarks>
         /// Pre: nowMs > previous tick's nowMs (strictly increasing CombatTime); 0 &lt; dtMs &lt;= 1000; mainId is a fielded
@@ -700,7 +957,7 @@ namespace Cosmimera.Combat
             // Units stand with their body centre one radius above the ground (GroundPoint); the character's position is
             // its feet, so lift it the same way to keep MoveGeometry's height test consistent.
             _playerCenter = playerPosition + Up(playerPosition) * PlayerBodyRadiusM;
-            UpdateEngagement(playerPosition);
+            UpdateEngagement(playerPosition, nowMs);
 
             // Fields placed in earlier ticks resolve before any unit acts, in placement order, so every peer sees the same
             // RNG draw order. Their tick-0 resolution already happened inside the placing TryCast.
@@ -711,8 +968,11 @@ namespace Cosmimera.Combat
                 EncounterUnit u = _units[i];
                 if (!u.IsActive)
                 {
+                    u.LastMoveSpeedMs = 0f;
                     continue;
                 }
+
+                u.LastMoveSpeedMs = 0f;
 
                 bool player = u.Side == EncounterSide.Player;
                 if (!player && !u.Engaged)
@@ -743,7 +1003,9 @@ namespace Cosmimera.Combat
 
                 FillOptions(u, nowMs);
                 var input = new AiInput(u.Position, u.Def.AiStyle, role, cmd, mainTarget, leashAnchor,
-                    partner != null, partner != null ? partner.Position : float3.zero);
+                    partner != null, partner != null ? partner.Position : float3.zero,
+                    u.Combatant.Hp, u.Combatant.MaxHp,
+                    partner != null ? partner.Combatant.Hp : 1, partner != null ? partner.Combatant.MaxHp : 1);
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
@@ -805,7 +1067,8 @@ namespace Cosmimera.Combat
                     index = _objects.Register(c.Id, c.Composition, c.VolumeL, c.Center);
                 }
 
-                ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element, ctx.Move.Power, ctx.MasteryPercent, nowMs);
+                ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element,
+                    DamageModel.ScalePower(ctx.Move.Power, ctx.PowerDeltaPercent), ctx.MasteryPercent, nowMs);
                 _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
                     default, ctx.Move.Power));
                 if (r.Destroyed)
@@ -994,7 +1257,8 @@ namespace Cosmimera.Combat
         private void TryCast(EncounterUnit u, EncounterUnit partner, int slot, int targetId, long nowMs)
         {
             CastMove move = u.Moves[slot];
-            if (u.Combatant.BeginCast(slot, move, nowMs, out CastContext ctx) != CastResult.Accepted)
+            WeatherProfile weather = WeatherAt(Up(u.Position), nowMs);
+            if (u.Combatant.BeginCast(slot, move, nowMs, weather, out CastContext ctx) != CastResult.Accepted)
             {
                 return;
             }
@@ -1021,34 +1285,42 @@ namespace Cosmimera.Combat
                 return;
             }
 
+            float3 castForward = u.Forward;
+            if (weather.ProjectileDriftDegrees > 0f && u.RangeClasses[slot] != RangeClass.Melee)
+            {
+                float maxRad = math.radians(weather.ProjectileDriftDegrees);
+                float angleRad = ((_rng.NextInt(0, 2001) - 1000) / 1000f) * maxRad;
+                castForward = math.normalize(math.mul(quaternion.AxisAngle(Up(u.Position), angleRad), castForward));
+            }
+
             float3 anchor = u.Position;
             if (volume.Anchor == HitVolumeAnchor.AimPoint)
             {
-                float3 aim = targetId >= 0 ? TargetPosition(targetId) : u.Position + u.Forward * (volume.CastDistanceMm * 0.001f);
+                float3 aim = targetId >= 0 ? TargetPosition(targetId) : u.Position + castForward * (volume.CastDistanceMm * 0.001f);
                 anchor = MoveGeometry.ResolveAnchor(volume, _planet, u.Position, aim);
             }
 
             if (u.MoveDefs[slot].Shape == MoveShape.Field)
             {
                 var timeline = new FieldTimeline(nowMs, u.MoveDefs[slot].FieldDurationMs, _balance.Effects.FieldTickMs);
-                var field = new PlacedField(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, timeline);
+                var field = new PlacedField(u.Id, u.Side, slot, ctx, volume, anchor, castForward, timeline);
                 _fields.Add(field);
                 // nowMs - 1 makes the placement instant itself the first resolution (FieldTimeline.TicksDue contract).
                 int due = timeline.TicksDue(nowMs - 1, nowMs);
                 for (int k = 0; k < due; k++)
                 {
-                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
+                    ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, castForward, nowMs);
                 }
 
                 return;
             }
 
-            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, u.Forward, nowMs);
+            ResolveVolume(u.Id, u.Side, slot, ctx, volume, anchor, castForward, nowMs);
 
             if (volume.DashDistanceMm > 0)
             {
                 // Hits are tested from the start position (the rect covers the whole path), then the caster moves.
-                float3 end = MoveGeometry.ResolveDashEnd(volume, _planet, u.Position, u.Forward);
+                float3 end = MoveGeometry.ResolveDashEnd(volume, _planet, u.Position, castForward);
                 float3 endDirection = _planet.ToDirection(end);
                 // REQ: combat.md#只在陸地. A wild dash ending on the sea keeps the hits (already resolved) but not the
                 // displacement, matching the "a step onto the sea does not move" steering rule (SOL W-B2-SOL-02).
@@ -1120,7 +1392,8 @@ namespace Cosmimera.Combat
             int dealt = 0;
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
-                dealt = _player.ApplyDamage(DamageModel.Compute(move.Power, ctx.MasteryPercent, 0), nowMs);
+                int power = DamageModel.ScalePower(move.Power, ctx.PowerDeltaPercent);
+                dealt = _player.ApplyDamage(DamageModel.Compute(power, ctx.MasteryPercent, 0), nowMs);
             }
 
             // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
@@ -1201,7 +1474,7 @@ namespace Cosmimera.Combat
             }
         }
 
-        private void UpdateEngagement(float3 playerPosition)
+        private void UpdateEngagement(float3 playerPosition, long nowMs)
         {
             for (int i = 0; i < _units.Count; i++)
             {
@@ -1211,23 +1484,53 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                float nearest = math.distance(w.Position, playerPosition);
+                WeatherProfile weather = WeatherAt(Up(w.Position), nowMs);
+                float playerDist = math.distance(w.Position, playerPosition);
+                float nearest = playerDist;
+
+                // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
+                // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
+                // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
+                // REQ: planet-world.md#天氣影響 (Q-C37), field-utilities.md (party_stealth) — weather and party stealth scale territory radius.
+                int territoryMm = (int)((long)_balance.Territory.RadiusMm(w.Def.Temperament)
+                    * weather.TerritoryRadiusPermille / 1000L
+                    * _partyDetectionPermille / 1000L);
+                bool intruderInRange = false;
+                if (territoryMm > 0)
+                {
+                    int playerThresholdMm = weather.StealthEnabled && _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                        ? territoryMm / 2
+                        : territoryMm;
+                    if (playerDist <= playerThresholdMm * 0.001f)
+                    {
+                        intruderInRange = true;
+                    }
+                }
+
                 for (int j = 0; j < _units.Count; j++)
                 {
                     EncounterUnit p = _units[j];
                     if (p.Side == EncounterSide.Player && p.IsActive)
                     {
-                        nearest = math.min(nearest, math.distance(w.Position, p.Position));
+                        float d = math.distance(w.Position, p.Position);
+                        nearest = math.min(nearest, d);
+                        if (!intruderInRange && territoryMm > 0)
+                        {
+                            int petThresholdMm = weather.StealthEnabled && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                                ? territoryMm / 2
+                                : territoryMm;
+                            if (d <= petThresholdMm * 0.001f)
+                            {
+                                intruderInRange = true;
+                            }
+                        }
                     }
                 }
 
-                // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
-                // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
-                // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
-                int territoryMm = _balance.Territory.RadiusMm(w.Def.Temperament);
+                float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
                 w.Engaged = w.Engaged
-                    ? nearest <= DisengageRadiusM
-                    : w.Provoked || (territoryMm > 0 && nearest <= territoryMm * 0.001f);
+                    ? nearest <= disengageRadiusM
+                    : w.Provoked || intruderInRange;
                 w.Provoked = false;
                 if (w.Engaged)
                 {
@@ -1379,8 +1682,25 @@ namespace Cosmimera.Combat
                 AiMoveTargeting targeting = v.Kind == HitVolumeKind.Caster ? AiMoveTargeting.Self
                     : v.Kind == HitVolumeKind.Ally ? AiMoveTargeting.Ally : AiMoveTargeting.Hostile;
                 int reach = targeting == AiMoveTargeting.Self ? 0 : CombatAi.ReachMmOf(v);
-                _optionBuffer.Add(new AiMoveOption(s, targeting, reach, u.Moves[s].Power,
-                    u.Combatant.Cooldowns.IsReady(s, nowMs)));
+                CastMove move = u.Moves[s];
+                AiMoveCategory category = AiMoveCategory.Standard;
+                int healPercent = 0;
+                if (move.HasEffect && move.Effect.Type == EffectType.HealPercentMaxHp)
+                {
+                    category = AiMoveCategory.Heal;
+                    healPercent = move.Effect.Percent;
+                }
+                else if (targeting != AiMoveTargeting.Hostile && move.HasEffect)
+                {
+                    category = AiMoveCategory.Buff;
+                }
+                else if (targeting == AiMoveTargeting.Hostile && move.Power == 0 && move.HasEffect)
+                {
+                    category = AiMoveCategory.Control;
+                }
+
+                _optionBuffer.Add(new AiMoveOption(s, targeting, reach, move.Power,
+                    u.Combatant.Cooldowns.IsReady(s, nowMs), category, healPercent));
             }
         }
 
@@ -1425,7 +1745,14 @@ namespace Cosmimera.Combat
             }
 
             // REQ: combat.md#效果疊加 (tech-debt D0-E3): move_speed_mod_percent scales both combat and wander steps.
-            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f;
+            // REQ: planet-world.md#地貌行動影響: landform movement multiplier scales creature ground speed.
+            // REQ: planet-world.md#天氣影響: weather scales creature speed (adapted creatures ignore penalties).
+            float terrainScale = _terrainMoveSpeedMultiplier != null ? _terrainMoveSpeedMultiplier(up) : 1f;
+            Contract.Requires(math.isfinite(terrainScale) && terrainScale > 0f, "terrain move speed multiplier must be finite and > 0");
+            WeatherProfile weather = WeatherAt(up, nowMs);
+            float weatherScale = WeatherMoveSpeedScale(u, weather);
+            float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * speedPermille / 1000f * terrainScale * weatherScale;
+            u.LastMoveSpeedMs = speedMs;
             float step = math.min(angle, speedMs * dtMs * 0.001f / r);
             float3 heading = Tangent(up, dest - up);
             float3 next = math.normalize(up * math.cos(step) + heading * math.sin(step));
@@ -1495,6 +1822,33 @@ namespace Cosmimera.Combat
         private float3 GroundPoint(float3 direction, float bodyRadius)
         {
             return _planet.ToWorld(direction, _surface.GroundAltitude(direction) + bodyRadius);
+        }
+
+        private WeatherProfile WeatherAt(float3 up, long nowMs)
+        {
+            if (_weatherProvider == null)
+            {
+                return _weather;
+            }
+
+            WeatherProfile w = _weatherProvider(up, nowMs);
+            Contract.Requires(w.CreatureMoveSpeedMultiplier > 0f && w.AdaptedCreatureMoveSpeedMultiplier > 0f
+                && w.TerritoryRadiusPermille > 0, "weather provider returned invalid profile");
+            return w;
+        }
+
+        private static float WeatherMoveSpeedScale(EncounterUnit u, in WeatherProfile weather)
+        {
+            IReadOnlyList<ElementValue> mastery = u.Def.Mastery;
+            for (int i = 0; i < mastery.Count; i++)
+            {
+                if (weather.IsFavouredElement(mastery[i].Element))
+                {
+                    return weather.AdaptedCreatureMoveSpeedMultiplier;
+                }
+            }
+
+            return weather.CreatureMoveSpeedMultiplier;
         }
 
         private float3 Up(float3 position) => _planet.ToDirection(position);

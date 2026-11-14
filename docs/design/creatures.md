@@ -4,7 +4,7 @@
 | 欄位 | 說明 |
 |---|---|
 | `id` | 全域唯一 snake_case |
-| `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載待 Q-C12／P2-05（見〈超載〉） |
+| `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載見〈超載〉（待 P2-05 接線） |
 | `size_class` | 體型級距 `XS` / `S` / `M` / `L` / `XL`（見〈體型級距〉） |
 | `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
 | `temperament` | 性格，決定野生時的領域距離；逐階固定、不隨機（種類與距離見 Q-C35、[combat.md#野生領域](combat.md)）。schema 必填 `timid` (0m)／`cautious` (4m)／`normal` (8m)／`territorial` (14m)／`fierce` (20m)／`apex` (28m)；D0 30 物種逐一指定（`Data/_incoming/q-c35-temperament-terra/proposal.json`：timid 8／cautious 7／normal 4／territorial 8／fierce 2／apex 1；同線不降階，apex 僅火成年霸獅）；新物種批次須逐隻填寫 |
@@ -15,6 +15,7 @@
 | `stats` | `con` 體質 / `str` 力量 / `spi` 精神 / `agi` 敏捷 |
 | `signature_move` | 一個精通招式 ID |
 | `trait` | 一個特性 ID |
+| `field_utility` | 最多一個場外生活招式／特性（預設 `none`，規格見 [field-utilities.md](field-utilities.md)） |
 | `concept` | 外觀組合 + 文化原型（見 `creature-concept-pipeline.md`） |
 
 ## 十大屬性
@@ -34,7 +35,7 @@
 ## 等級與成長
 等級範圍、御三家起始等級、四維線性成長、各物種解鎖區間及指數經驗曲線統一定義於 [level-progression.md](level-progression.md)。只縮放 CON／STR／SPI／AGI；屬性、基礎抗性、專精與招式威力不隨等級改變。
 
-數值取整、經驗係數與分配（Q-C28～Q-C30）已定案並接入資料契約與執行期，見 [level-progression.md](level-progression.md)。超載其餘規則仍見 Q-C12。
+數值取整、經驗係數與分配（Q-C28～Q-C30）已定案並接入資料契約與執行期，見 [level-progression.md](level-progression.md)。超載規則見〈超載〉（Q-C12 定案）。
 
 ## 招式（`Data/moves/`）
 `id, element, kind(damage|effect|both), power, effect{...}, cooldown_ms, accuracy(%), range_class(melee|mid|long), shape, base_range_mm, movement?, origin?`
@@ -53,7 +54,7 @@ P2-01 封閉詞彙：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{per
 ## 隊伍規則
 - 一場遊戲最多攜帶 **6 隻主力**；其中最多 **4 隻**組成上場池，**同時最多 2 隻在場**，其餘在池中輪替（Q-C4 定案）。
 - 每隻主力可帶最多 **4 隻副手**，副手**從倉庫挑選**，不佔 6 隻主力名額（Q-C5 定案）。
-- 副手提供給主力的內容由它的**收服道具類別**決定（符籙卡片→招式／琉璃珠→特性／魔術方塊→超載），每隻副手只提供一項；作為主力時道具類別無差別。規則細節見 `lobby-meta.md#收服道具`。
+- 副手提供給主力的內容由它的**收服道具類別**決定（符籙卡片→招式／琉璃珠→特性／魔術方塊→超載），每隻副手只提供一項；作為主力時道具類別無差別。場外生活能力（`field_utility`）亦同：主力全數生效，副手僅於器皿類別匹配時生效（符籙卡片→Move、琉璃珠→Trait；詳見 [field-utilities.md](field-utilities.md)）。規則細節見 `lobby-meta.md#收服道具`。
 - **只有關係表有連線**的兩隻宙獸才能成為主/副搭配。
 - 同一隻宙獸不能同時是主力與副手，也不能同時當兩隻主力的副手；副手現在可取得經驗與升級，經驗以所屬主力的 1/2 為基準，分配細節見 [level-progression.md#經驗分配](level-progression.md#經驗分配)（取代 Q-C10 的不成長規則）。
 - **副手階段 ≤ 主力階段**（三種收服道具皆適用，P5-08 N3 方案 c）：傷害只看招式威力 × 專精 × 抗性，不擋的話幼年主力可直接借成年 95–120 威力招。等級提升不會自動切換型態；副手進化後必須重新檢查階段限制。
@@ -70,7 +71,7 @@ P2-01 封閉詞彙：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{per
 ## 超載
 - 第四型態，**只在戰鬥中短暫進化**，結束後回到原階段；不在 `evolves_to` 鏈上，以 `overload_of` 指向來源階段。
 - 主力需要至少一隻以**魔術方塊**收服的副手，才能解鎖**自己的**超載型態。
-- 觸發條件、持續時間、哪些階段可超載 → Q-C12。
+- **僅成年**（暫定）可超載，由**玩家指令**（暫定）觸發，**持續至戰鬥結束**、每場戰鬥一次（暫定）（Q-C12 定案）。
 
 ## 體型級距
 | 級距 | 身高/身長 | 典型階段 | 用途 |
@@ -85,7 +86,7 @@ P2-01 封閉詞彙：觸發 `always` / `on_hp_below{percent}` / `on_hp_above{per
 上表界線是唯一來源（P5-08 A9）；forge `catalog.js` 的 `SIZE_CLASSES` 身長範圍跟隨本表（catalog@2.2.0），改界線時兩邊同步。
 御三家月／星線的少年固定為 M、1.4 m，成年固定為 L、2.5 m（Q-C24 方案 1）；forge `gen_designed.py` 的 `adult_dims` 與 `stage_dims` 採相同尺寸。
 
-`size_class` 必填，JSON 使用大寫 XS／S／M／L／XL（XS：上限 0.3 m、面數與撫摸動作取自 forge `catalog.js`）；狐狸樣本三階段分別 S／M／L。體型由內容指定，不由階段自動推算；超載欄位留給 Q-C12／P2-05。
+`size_class` 必填，JSON 使用大寫 XS／S／M／L／XL（XS：上限 0.3 m、面數與撫摸動作取自 forge `catalog.js`）；狐狸樣本三階段分別 S／M／L。體型由內容指定，不由階段自動推算；超載欄位留給 P2-05（Q-C12 已定案）。
 
 ## 關係表（`Data/relations/edges.json`）
 無向圖：`{a, b, kind, note}`；`kind` 為封閉 enum：`evolution_family` 同進化線、`myth_kin` 神話同源、`rival_symbiosis` 天敵共生、`tool_kin` 同工具系、`mentor` 師徒；新增種類需改 `relation.schema.json`。用途：副手資格、圖鑑關係網、劇情台詞。

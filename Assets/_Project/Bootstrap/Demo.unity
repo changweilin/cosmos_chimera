@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &290378715
+--- !u!1 &1411203987
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 290378717}
-  - component: {fileID: 290378716}
+  - component: {fileID: 1411203989}
+  - component: {fileID: 1411203988}
   m_Layer: 0
   m_Name: DemoGame
   m_TagString: Untagged
@@ -136,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &290378716
+--- !u!114 &1411203988
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 290378715}
+  m_GameObject: {fileID: 1411203987}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52e13305c15de4c46aeb0d28aa72bd3a, type: 3}
@@ -163,14 +163,21 @@ MonoBehaviour:
   _terrainShader: {fileID: 4800000, guid: d09290f17421722418f56efbef4dbb9e, type: 3}
   _toonShader: {fileID: 4800000, guid: 839c81a2e4cc9664d8f6a223c32ac9c4, type: 3}
   _starShader: {fileID: 4800000, guid: 7c3f1a9e5b2d4e8fa61c0d93b47e2f15, type: 3}
+  _skyShader: {fileID: 4800000, guid: c278b9aea0c177d4e88b21509a73ceb7, type: 3}
+  _grassShader: {fileID: 4800000, guid: 3f224a198f50529478664d865095e9dc, type: 3}
+  _waterShader: {fileID: 4800000, guid: 8051c9e88cd09f347a9a6fd3f0925fd0, type: 3}
+  _sceneryShader: {fileID: 4800000, guid: 7c1e5b0a94d24f6e8a3b6d2f5e9c4a17, type: 3}
   _bgmTable: {fileID: 11400000, guid: 72229fe6a2b235d4da1d845c1e25193e, type: 2}
---- !u!4 &290378717
+  _characterModels: {fileID: 11400000, guid: 17eaa001b55dcc342b538cea3628a158, type: 2}
+  _portraits: {fileID: 11400000, guid: c938fc242c063c246a1f39cd1c09cf16, type: 2}
+  _volumeProfile: {fileID: 11400000, guid: 10fc4df2da32a41aaa32d77bc913491c, type: 2}
+--- !u!4 &1411203989
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 290378715}
+  m_GameObject: {fileID: 1411203987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -183,4 +190,4 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 290378717}
+  - {fileID: 1411203989}

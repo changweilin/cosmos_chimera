@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.GameData;
+using Cosmimera.WorldGen;
 
 namespace Cosmimera.Combat
 {
@@ -214,13 +215,15 @@ namespace Cosmimera.Combat
     /// </remarks>
     public readonly struct CastContext
     {
-        internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs)
+        internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs,
+            int powerDeltaPercent = 0)
         {
             Move = move;
             MasteryPercent = masteryPercent;
             RangePercentSum = rangePercentSum;
             CooldownMs = cooldownMs;
             CastAtMs = castAtMs;
+            PowerDeltaPercent = powerDeltaPercent;
         }
 
         /// <summary>The move cast.</summary>
@@ -242,6 +245,10 @@ namespace Cosmimera.Combat
         /// <summary>Time the cast went out.</summary>
         /// <remarks>Pre: none. Post: in CombatTime. Side effects: none.</remarks>
         public long CastAtMs { get; }
+
+        /// <summary>Weather percentage modifier on move power frozen at cast time.</summary>
+        /// <remarks>Pre: none. Post: in [-90, 100]. Side effects: none.</remarks>
+        public int PowerDeltaPercent { get; }
     }
 
     /// <summary>What one move did to one combatant.</summary>
@@ -315,6 +322,7 @@ namespace Cosmimera.Combat
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
         private int _hpMultiplier = 1;
+        private int _preOverloadMaxHp;
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -406,6 +414,68 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: true iff Hp == 0. Side effects: none.</remarks>
         public bool IsFainted => Hp == 0;
 
+        /// <summary>Whether this combatant is currently in temporary combat overload (Q-C12).</summary>
+        /// <remarks>Pre: none. Post: true between BeginOverload and EndOverload. Side effects: none.</remarks>
+        public bool IsOverloaded { get; private set; }
+
+        /// <summary>Enters temporary combat overload (+25% MaxHp, minimum +1; Q-C12).</summary>
+        /// <remarks>
+        /// Pre: !IsFainted &amp;&amp; !IsOverloaded.
+        /// Post: IsOverloaded == true; MaxHp increased; Hp increased by the same delta.
+        /// Side effects: mutates MaxHp, Hp, IsOverloaded.
+        /// </remarks>
+        public void BeginOverload()
+        {
+            Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
+            _preOverloadMaxHp = MaxHp;
+            int bonus = MaxHp / 4;
+            if (bonus < 1)
+            {
+                bonus = 1;
+            }
+
+            MaxHp += bonus;
+            Hp += bonus;
+            IsOverloaded = true;
+        }
+
+        /// <summary>Reverts temporary combat overload when combat ends (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: none. Post: IsOverloaded == false; MaxHp restored and Hp clamped to MaxHp.
+        /// Side effects: mutates MaxHp, Hp, IsOverloaded when overloaded.
+        /// </remarks>
+        public void EndOverload()
+        {
+            if (!IsOverloaded)
+            {
+                return;
+            }
+
+            MaxHp = _preOverloadMaxHp;
+            if (Hp > MaxHp)
+            {
+                Hp = MaxHp;
+            }
+
+            IsOverloaded = false;
+        }
+
+        /// <summary>Revives a fainted combatant with <paramref name="hp"/> (Q-C36).</summary>
+        /// <remarks>
+        /// Pre: IsFainted; 1 &lt;= hp &lt;= MaxHp; nowMs in CombatTime and >= Book watermark.
+        /// Post: !IsFainted; Hp == hp.
+        /// Side effects: mutates Hp and Book.
+        /// </remarks>
+        internal int Revive(int hp, long nowMs)
+        {
+            Contract.Requires(IsFainted, "must be fainted to revive");
+            Contract.Requires(hp >= 1 && hp <= MaxHp, "hp must be in 1..MaxHp");
+            Book.RequireTime(nowMs);
+            Hp = hp;
+            Book.NotifyHpChanged(0, Hp, MaxHp, nowMs, out _);
+            return Hp;
+        }
+
         /// <summary>This combatant's trait and timed effects.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public EffectBook Book { get; }
@@ -425,6 +495,20 @@ namespace Cosmimera.Combat
         /// Side effects: on Accepted, mutates Book, Hp (trait heal) and Cooldowns.
         /// </remarks>
         public CastResult BeginCast(int slot, in CastMove move, long nowMs, out CastContext context)
+        {
+            return BeginCast(slot, move, nowMs, WeatherProfiles.Clear, out context);
+        }
+
+        /// <summary>Starts casting <paramref name="move"/> in <paramref name="slot"/> under <paramref name="weather"/>.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= slot &lt; Cooldowns.SlotCount; move from the CastMove constructor; nowMs in CombatTime and >= every
+        ///      watermark of Book and Cooldowns.
+        /// Post: Fainted iff IsFainted on entry; else OnCooldown iff !Cooldowns.IsReady(slot, nowMs) on entry; on those two nothing
+        ///       changes; else Accepted, weather elemental CD and power deltas apply, on_move_used fires, context freezes the
+        ///       effective mastery, range, power delta and cooldown, and Cooldowns.ReadyAtMs(slot) == nowMs + context.CooldownMs.
+        /// Side effects: on Accepted, mutates Book, Hp (trait heal) and Cooldowns.
+        /// </remarks>
+        public CastResult BeginCast(int slot, in CastMove move, long nowMs, in WeatherProfile weather, out CastContext context)
         {
             Contract.Requires(move.Id != null, "move must come from the CastMove constructor");
             // Both checks run before any early return so a refused cast still enforces Pre (ARGON cast review K1).
@@ -446,10 +530,11 @@ namespace Cosmimera.Combat
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
             int mastery = EffectMath.EffectiveMastery(_mastery[(int)move.Element], _totals.MasteryDelta(move.Element));
-            int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _spi, _totals.CdPercent(move.Element),
-                _rules);
+            int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _spi,
+                _totals.CdPercent(move.Element) + weather.CdDeltaPercent(move.Element), _rules);
             Cooldowns.Start(slot, nowMs, cd);
-            context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs);
+            context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
+                weather.PowerDeltaPercent(move.Element));
             return CastResult.Accepted;
         }
 
@@ -515,7 +600,8 @@ namespace Cosmimera.Combat
             if (move.DealsDamage)
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-                int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist);
+                int power = DamageModel.ScalePower(move.Power, cast.PowerDeltaPercent);
+                int raw = DamageModel.Compute(power, cast.MasteryPercent, resist);
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)

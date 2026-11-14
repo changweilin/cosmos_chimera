@@ -1,0 +1,182 @@
+[
+  {
+    "a": "earth_auric_sovereign",
+    "b": "earth_lotus_cub",
+    "kind": "mentor",
+    "note": "直線突進破陣的重岩金祭聖偶指導踩踏碎石滑步的砂岩幼獅象掌握岩脈衝鋒"
+  },
+  {
+    "a": "earth_gilded_warden",
+    "b": "light_orbit_beacon",
+    "kind": "tool_kin",
+    "note": "佩帶幾何金面甲的鎏金岩偶與金箔核心半身光學儀偶同屬黃金構造人形偶"
+  },
+  {
+    "a": "earth_lotus_cub",
+    "b": "wood_betel_sprout",
+    "kind": "rival_symbiosis",
+    "note": "佩戴蓮瓣項圈的砂岩幼獅象與盤繞枝條的檳榔花小水蛇具叢林磐石與藤蛇共生意象"
+  },
+  {
+    "a": "earth_pillar_chimera",
+    "b": "metal_winged_bull",
+    "kind": "tool_kin",
+    "note": "肩扛神廟廊柱石墩的浮雕獅象與拱門門楣肩甲五足銅牛同屬建築門柱雕像系"
+  },
+  {
+    "a": "earth_pillar_chimera",
+    "b": "wood_garland_serpent",
+    "kind": "myth_kin",
+    "note": "南印度神廟石柱雅利與高棉七頭那伽花冠同屬印度化神廟守護造像傳統"
+  },
+  {
+    "a": "earth_temple_tuskbeast",
+    "b": "metal_gate_calf",
+    "kind": "mentor",
+    "note": "遠距岩槍貫穿敵陣的神廟巨雕獅象指導前排固守的王城青銅幼牛穩踏石基鎮守門戶"
+  },
+  {
+    "a": "earth_temple_tuskbeast",
+    "b": "wood_lotus_wyrm",
+    "kind": "rival_symbiosis",
+    "note": "身披蓮座石柱的神廟巨雕獅象與纏繞巨樹藤蔓的七冠水林巨龍具叢林盤繞古廟共生意象"
+  },
+  {
+    "a": "fire_ember_crocodilian",
+    "b": "wood_garland_serpent",
+    "kind": "rival_symbiosis",
+    "note": "背生猴麵包樹瘤的熔炭大顎鱷與棕櫚葉鱗藤蔓靈蛇具熱帶林潭競獵與木火共生意象"
+  },
+  {
+    "a": "fire_hearth_monolith",
+    "b": "thunder_gobi_voltwyrm",
+    "kind": "rival_symbiosis",
+    "note": "背負立石火山口的熔爐巨鱷與掀起灼熱沙暴的戈壁電漿巨蟲具旱地熔火雷暴共生意象"
+  },
+  {
+    "a": "fire_spark_barkling",
+    "b": "water_ivory_calf",
+    "kind": "rival_symbiosis",
+    "note": "披木皮甲殼冒火星的深潭幼鱷與噴水花的白膚抹香幼鯨具水域水火相抗對峙意象"
+  },
+  {
+    "a": "fire_spark_barkling",
+    "b": "wood_canopy_regent",
+    "kind": "mentor",
+    "note": "盤踞巨木穩守陣地的七彩神禽引導披木皮甲殼的炭木幼鱷固守前排陣線"
+  },
+  {
+    "a": "ice_frost_fledgling",
+    "b": "wind_crossbow_fledgling",
+    "kind": "rival_symbiosis",
+    "note": "北亞寒原覆絨冰角幼雛與極地海霧絨毛幼信天翁同處冰雪寒境，具寒原競棲意象"
+  },
+  {
+    "a": "ice_hull_cutter",
+    "b": "water_harpoon_cetacean",
+    "kind": "tool_kin",
+    "note": "抗冰圓底木甲探險快艇與背嵌捕鯨木桅繩索白鯨同具遠洋木帆船桅甲構造"
+  },
+  {
+    "a": "ice_hull_cutter",
+    "b": "wind_flute_cruiser",
+    "kind": "tool_kin",
+    "note": "桅頂架設觀測銅儀的抗冰探險快艇與彩繡滑翔翼巡航飛舟同屬中型航行載具"
+  },
+  {
+    "a": "ice_polar_icebreaker",
+    "b": "light_radiant_cyclotron",
+    "kind": "tool_kin",
+    "note": "列滿深海採水柱與觀測塔桅的科考方舟與電磁線圈散射光扇同屬近代科學巨構"
+  },
+  {
+    "a": "ice_polar_icebreaker",
+    "b": "wind_crossbow_fledgling",
+    "kind": "mentor",
+    "note": "破冰全速直線突襲的極地抗冰方舟引導貼地順風竄行的海霧幼信天翁衝破寒霧"
+  },
+  {
+    "a": "ice_sled_buoy",
+    "b": "light_foil_spark",
+    "kind": "tool_kin",
+    "note": "深海採水瓶浮冰探測儀與金箔散射稜鏡球儀同屬近代科學實驗觀測儀器"
+  },
+  {
+    "a": "ice_sled_buoy",
+    "b": "wind_reed_skiff",
+    "kind": "tool_kin",
+    "note": "微型極地雙板木雪橇與梭形浮空竹笛輕舟同屬輕型木造滑行載具系"
+  },
+  {
+    "a": "light_foil_spark",
+    "b": "metal_citadel_colossus",
+    "kind": "mentor",
+    "note": "高拋重鐵砧遠距砲擊的王城銅岩翼牛指導近身光刺自衛的金箔稜鏡球儀拉開射界"
+  },
+  {
+    "a": "light_radiant_cyclotron",
+    "b": "thunder_dune_larva",
+    "kind": "mentor",
+    "note": "環繞電磁線圈遠距齊射的磁環聖像引導近身釋放電弧環的赤紅幼蟲導引電磁脈衝"
+  },
+  {
+    "a": "metal_citadel_colossus",
+    "b": "shadow_iron_cavalier",
+    "kind": "tool_kin",
+    "note": "雙重鋼翼青銅假面王城翼牛與玄鐵重鎧琴弦鎧片幽騎獸同屬重裝金屬甲冑巨獸"
+  },
+  {
+    "a": "metal_gate_calf",
+    "b": "shadow_tundra_foal",
+    "kind": "tool_kin",
+    "note": "城門浮雕銅環青銅幼牛與佩銀製口簧琴護符玄鐵幼駒同具鍛造金屬獸甲佩飾"
+  },
+  {
+    "a": "moon_shade_wolf",
+    "b": "wind_bergglider_gull",
+    "kind": "rival_symbiosis",
+    "note": "極夜冰原疾衝的星斑孤狼與冰山寒霧俯衝的巨翼海禽同處極圈，具冰原空陸競獵意象"
+  },
+  {
+    "a": "shadow_iron_cavalier",
+    "b": "star_skyhoof_steed",
+    "kind": "myth_kin",
+    "note": "薩哈族奧隆霍玄鐵黑駒與哈薩克圖爾帕爾天馬同屬突厥英雄史詩神駒傳統"
+  },
+  {
+    "a": "shadow_reverb_charger",
+    "b": "thunder_crimson_crawler",
+    "kind": "rival_symbiosis",
+    "note": "北亞凍原奔馳的玄鐵重甲戰駒與戈壁荒原噴電的棘皮赤蟲具內亞荒漠凍土競存意象"
+  },
+  {
+    "a": "shadow_tundra_foal",
+    "b": "thunder_gobi_voltwyrm",
+    "kind": "mentor",
+    "note": "半潛沙浪遠距轟擊的戈壁電漿巨蟲引導低鳴繞側咬擊的凍土玄鐵幼駒伺機伏擊"
+  },
+  {
+    "a": "thunder_dune_larva",
+    "b": "wood_fern_chick",
+    "kind": "rival_symbiosis",
+    "note": "釋放靜電環自衛的掌心赤紅沙蟲與初萌蕨冠的翠綠幼鳥具林鳥覓蟲天敵對峙意象"
+  },
+  {
+    "a": "water_abyssal_leviathan",
+    "b": "wind_pelagic_soarer",
+    "kind": "tool_kin",
+    "note": "背負艦桅殘骨斷叉的白鯨海王與雙桅翼骨十字弩尾舵信天翁同具古帆船武備構造"
+  },
+  {
+    "a": "water_ivory_calf",
+    "b": "wood_lotus_wyrm",
+    "kind": "mentor",
+    "note": "披漩渦水花遠距控場的七冠水林巨龍指導前排肉搏的抹香幼鯨調息續戰與駕馭水流"
+  },
+  {
+    "a": "water_wave_elver",
+    "b": "wood_betel_sprout",
+    "kind": "rival_symbiosis",
+    "note": "波浪間滑行的銀色小鰻與盤繞水岸枝條的檳榔花小水蛇具熱帶水域共棲競食意象"
+  }
+]

@@ -375,6 +375,10 @@ namespace Cosmimera.GameData.Editor
                 RequireEnum<Temperament>(c.Where, "temperament", d.Temperament);
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
+                if (d.FieldUtility != null)
+                {
+                    RequireEnum<FieldUtility>(c.Where, "field_utility", d.FieldUtility);
+                }
                 if ((d.EvolvesTo == null) != (d.Evolution == null))
                 {
                     errors.Add($"{c.Where}: evolves_to and evolution must both be null or both be set");
@@ -515,11 +519,12 @@ namespace Cosmimera.GameData.Editor
                 string sensitivity = (string)d.Concept["sensitivity"];
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
+                FieldUtility fieldUtility = d.FieldUtility != null ? ParseEnum<FieldUtility>(d.FieldUtility) : FieldUtility.None;
                 creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
                     ParseEnum<Temperament>(d.Temperament),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
-                    moveDefs[d.SignatureMove], traitDefs[d.Trait], d.Concept.ToString(Formatting.None),
+                    moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
                     sensitivity == "review");
             }
 

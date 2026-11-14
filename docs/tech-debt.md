@@ -12,7 +12,7 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `Bootstrap/Demo/DemoGame.cs` | D0-B2 | low | BOSS 等級仍由固定 d=1 決定，不隨階段變化（小行星已於 2026-11-11 改以 R=320 遊玩，Q-D1） |
 | `Data/balance.json#capture` | D0-B1 | — | 收服率 60% / BOSS 100% 為佔位值，待 SOL 平衡模型（P5-07）定案 |
 | `Bootstrap/Demo/DemoGame.cs` | D0-U1 | med | 探索及大廳／選星／結算已支援手把；尚無遊戲內重綁，仍需實體手把與 Steam Deck／Proton 實機驗收（P7-07） |
-| 同上 | D0-R1 | low | 昏厥持續整場 run 已定案為規則（combat.md）；治療道具／NPC 待 Q-C36 |
+| 同上 | D0-R1 | low | 昏厥持續整場 run 已定案為規則（combat.md）；Q-C36 規則層（`ReviveRules`／`Encounter.TryRevive`）已實作，D0 道具／NPC／營火／救援表現層尚未實作 |
 | `Bootstrap/Demo/PlanetLook.cs` | D0-V1 | low | 生物群系只在 shader 依高度/坡度/緯度上色；無規則層 biome 表、無散佈（P3-09） |
 | `Bootstrap/Demo/RunSession.cs` | D0-X2 | low | 副手經驗只在 `Progression.Settle` 規則層；D0 無副手編成，run 只結算主力 |
 | 同上 | D0-X3 | low | 星球難度 d 尚無資料欄（planet-type schema），D0 固定 d=1（BOSS LV5、普通野生 LV1）；等級公式已實作 |

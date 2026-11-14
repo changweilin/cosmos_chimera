@@ -1,4 +1,5 @@
 using Cosmimera.Core.Contracts;
+using Cosmimera.WorldGen;
 
 namespace Cosmimera.Combat
 {
@@ -102,13 +103,27 @@ namespace Cosmimera.Combat
         /// </remarks>
         public RollResult TryRoll(long nowMs)
         {
+            return TryRoll(nowMs, WeatherProfiles.Clear);
+        }
+
+        /// <summary>Starts a dodge roll under <paramref name="weather"/>, scaling the roll cooldown.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark; weather.PlayerRollCooldownMultiplier &gt; 0.
+        /// Post: Downed if IsDowned (checked first, even during cooldown); else OnCooldown if a roll started within
+        ///       the weather-scaled RollCooldownMs; else Ok and a roll starts at nowMs. Refusals leave HP and roll state unchanged.
+        /// Side effects: records the roll start on Ok; advances the watermark to nowMs.
+        /// </remarks>
+        public RollResult TryRoll(long nowMs, in WeatherProfile weather)
+        {
+            Contract.Requires(weather.PlayerRollCooldownMultiplier > 0f, "weather roll cooldown multiplier must be > 0");
             AdvanceTime(nowMs);
             if (IsDowned)
             {
                 return RollResult.Downed;
             }
 
-            if (_hasRolled && nowMs - _rollStartMs < _config.RollCooldownMs)
+            long effectiveCooldownMs = (long)System.Math.Ceiling(_config.RollCooldownMs * weather.PlayerRollCooldownMultiplier);
+            if (_hasRolled && nowMs - _rollStartMs < effectiveCooldownMs)
             {
                 return RollResult.OnCooldown;
             }

@@ -67,80 +67,6 @@
 <p style="color:var(--muted);font-size:13px">選擇會自動存在這個瀏覽器（localStorage）。agent 讀不到——按「複製決策」貼回對話，或下載 JSON 存成 <code>docs/open-questions.answers.json</code>。</p>
 
 <section>
-<h2>宙獸 / 戰鬥</h2>
-<div class="cards">
-
-<article id="Q-C22">
-  <header><a class="id" href="#Q-C22">Q-C22</a><span class="tag">影響 P2-10</span></header>
-  <p><span class="label">問題</span>AI 施招效用：控制/減益招（power 0）與 self/ally 治療、增益要不要有自己的觸發條件（例如自身 HP 低於某值才治療、脫戰也可補血），而不是永遠排在傷害招之後？（SOL P2-10 A10/A11）</p>
-  <p><span class="label">暫定</span>現行：傷害招優先、無敵人不施招</p>
-</article>
-
-<article id="Q-C12">
-  <header><a class="id" href="#Q-C12">Q-C12</a><span class="tag">影響 P2-05、P5-04</span></header>
-  <p><span class="label">問題</span>超載的觸發條件（指令？能量條？HP 門檻？）、持續時間、CD；只有成年可超載，還是各階段都有超載型態？</p>
-  <p><span class="label">暫定</span>僅成年；指令觸發；持續 15 s；每場戰鬥一次</p>
-</article>
-
-<article id="Q-C13">
-  <header><a class="id" href="#Q-C13">Q-C13</a><span class="tag">影響 P4-03</span></header>
-  <p><span class="label">問題</span>收服道具類別轉換：「後期」何時解鎖、消耗哪些素材多少；蛋孵化的宙獸屬於哪個類別？</p>
-  <p><span class="label">暫定</span>大廳執行；消耗專精屬性素材；孵化時玩家選類別</p>
-</article>
-
-<article id="Q-C33">
-  <header><a class="id" href="#Q-C33">Q-C33</a><span class="tag">影響 P2-06、P3</span></header>
-  <p><span class="label">問題</span>玩家翻滾的輸入鍵（目標與 Downed 見 <code>design/combat.md#野生領域</code>）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C35">
-  <header><a class="id" href="#Q-C35">Q-C35</a><span class="tag">影響 P2-10、P5（資料批次）</span></header>
-  <p><span class="label">問題</span>性格（<code>temperament</code>）的種類與各自領域距離？<code>timid</code> 是否「被攻擊才還手」？脫離領域多遠會脫戰？各物種填哪種性格？玩家角色的防禦（閃避、抗性、招式效果）？</p>
-  <p><span class="label">暫定</span>已定案 6 階領域半徑：<code>timid</code> 0 m（被打或被集火才開戰）／<code>cautious</code> 4 m／<code>normal</code> 8 m／<code>territorial</code> 14 m／<code>fierce</code> 20 m／<code>apex</code> 28 m；脫戰 40 m；各物種性格 2026-11-10 定案（採 Terra 提案，見 creatures.md <code>temperament</code>）；角色閃避 0、抗性 0、不吃效果</p>
-</article>
-
-<article id="Q-C36">
-  <header><a class="id" href="#Q-C36">Q-C36</a><span class="tag">影響 P3、P4</span></header>
-  <p><span class="label">問題</span>昏厥恢復的道具與 NPC：種類、取得方式（掉落／商店／任務）、恢復量、能否在戰鬥中使用？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-</div>
-</section>
-
-<section>
-<h2>世界 / Meta</h2>
-<div class="cards">
-
-<article id="Q-M3">
-  <header><a class="id" href="#Q-M3">Q-M3</a><span class="tag">影響 P4-05</span></header>
-  <p><span class="label">問題</span>蛋的孵化條件？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-M6">
-  <header><a class="id" href="#Q-M6">Q-M6</a><span class="tag">影響 P3-12</span></header>
-  <p><span class="label">問題</span>地上素材怎麼拾取（<code>design/destructibles.md#地上的素材</code>）：走近自動拾取，還是按互動鍵（E／X 目前用於近身互動選單）？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C37">
-  <header><a class="id" href="#Q-C37">Q-C37</a><span class="tag">影響 P3-12</span></header>
-  <p><span class="label">問題</span>草叢與迷霧的隱蔽（<code>design/destructibles.md#碰撞</code>）：「靜止或緩行」的速度門檻？效果是野生宙獸看不到你（領域不觸發）、領域距離縮小，還是已開戰的敵人丟失目標？玩家宙獸也受益嗎？「迷霧」是散佈物件、區域詞綴，還是天氣？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-M7">
-  <header><a class="id" href="#Q-M7">Q-M7</a><span class="tag">影響 P3-12、Q-M6</span></header>
-  <p><span class="label">問題</span>地上素材的位置以誰為準（<code>design/destructibles.md#地上的素材</code>、ADR-0009 §5）？素材落地後是剛體，會被碰撞與宙獸推開而滾動；但 ADR-0009 規定剛體位置不回饋規則層，而招式擊中（木素材燒成火素材等）與拾取又以規則層素材表為準。三案：(a) 規則層固定記掉落點，剛體只是外觀——可測、連線一致，但素材滾開後，打中與拾取仍以原點判定，畫面上會對不上；(b) 素材落地即靜止（不是剛體），外觀與規則一致——但宙獸推不動，與〈碰撞〉表不符；(c) 主機在素材靜止（休眠）時把位置寫回規則層——畫面與判定一致，需新 ADR 修訂 ADR-0009 §5（單機與連線走同一路徑）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（建議 (c)：拾取時玩家走向看得到的位置，(a) 的落差最明顯）</p>
-</article>
-
-</div>
-</section>
-
-<section>
 <h2>多人</h2>
 <div class="cards">
 
@@ -150,10 +76,78 @@
   <p><span class="label">暫定</span>每人各自一份</p>
 </article>
 
-<article id="Q-N2">
-  <header><a class="id" href="#Q-N2">Q-N2</a><span class="tag">影響 P6-05</span></header>
-  <p><span class="label">問題</span>對抗模式的形式：競技場、野外 PvP、或搶 BOSS？</p>
-  <p><span class="label">暫定</span>競技場</p>
+</div>
+</section>
+
+<section>
+<h2>路人 NPC / 自然生物</h2>
+<div class="cards">
+
+<article id="Q-A2">
+  <header><a class="id" href="#Q-A2">Q-A2</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>聚落與道路上的路人 NPC 屬於哪一層？純表現層＝不擋路、不可互動、不進 <code>RunLayout</code> 雜湊（同建築造型的做法，同 seed 各客戶端畫出相同路人）；規則層＝有碰撞、可對話／治療／交易，要升 <code>GeneratorVersion</code>、多人要同步位置。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-A3">
+  <header><a class="id" href="#Q-A3">Q-A3</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>路人的外觀從哪裡來？程式產生的卡通網格（無美術匯入，與建築／樹同一套；能做到剪影、服飾層次、配色與體型差異，<b>臉與布料細節達不到曠野之息的角色水準</b>）；或走美術管線的角色基底模型（<code>CharacterModelTable</code>、捏臉滑桿）再由程式換體型／配色／服飾件。地區×時代的服飾是否沿用建築的六地區×七時代與主／副風格混合？</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-A4">
+  <header><a class="id" href="#Q-A4">Q-A4</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>路人的年齡與健康怎麼抽、影響什麼？<code>characters.md</code> 的年齡權重（青少年 50 %）是為玩家預設與具名角色訂的；路人若改用「聚落平均年齡＋每人常態偏移」，兩者會不一致。健康只影響外觀（姿態、步態、膚色、繃帶／拐杖），還是也影響規則（例如需要治療的 NPC 任務）？</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W9">
+  <header><a class="id" href="#Q-W9">Q-W9</a><span class="tag">影響 P3-19（新）、P3-09</span></header>
+  <p><span class="label">問題</span>「不同環境的自然生物」指哪些？目前世界裡的生物只有宙獸與植物（樹／灌木／草）。非宙獸的氛圍動物（鳥、魚、昆蟲、小獸）會讓「這個世界的動物就是宙獸」的設定變模糊，需要你決定是否存在、能否被招式打到。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+</div>
+</section>
+
+<section>
+<h2>世界細節（作物／地熱／海底／地質／城牆）與美術水準</h2>
+<div class="cards">
+
+<article id="Q-W10">
+  <header><a class="id" href="#Q-W10">Q-W10</a><span class="tag">影響 P3-21（新）</span></header>
+  <p><span class="label">問題</span>作物田（稻／麥／甘蔗／玉米／煙草／可可／咖啡／茶／樟樹／葡萄園／蘋果園／橄欖園）屬於哪一層、長在哪、誰種什麼？規則層＝聚落外圍的田地地塊進 <code>RunLayout</code>（升 <code>GeneratorVersion</code>、既有 seed 的聚落周邊會變），可被招式打壞掉素材，果樹與高稈作物擋路；純表現層＝不擋、打不到。作物與地區的對應目前沒有任何規格：一顆星球只有一種星球類型，「氣候帶」要靠緯度／海拔還是時代決定？</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W11">
+  <header><a class="id" href="#Q-W11">Q-W11</a><span class="tag">影響 P3-22（新）</span></header>
+  <p><span class="label">問題</span>火山地熱地物（熔岩流／火山灰原／泥火山／間歇噴泉／硫磺噴氣孔）只是外觀，還是會影響玩法的危險地形？熔岩若不可進入，等於第二種「海」（道路要架橋、生成點要避開，動到 <code>LandformSynth</code> 水系格網）；間歇泉若會傷害或擊飛，需要規則層的週期與判定（多人要同步）。也要決定它們出現在哪：熔岩星一般地表、<code>volcano_foothills</code> 印章、還是只在進階火山口地城。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W12">
+  <header><a class="id" href="#Q-W12">Q-W12</a><span class="tag">影響 P3-23（新）、P3-07</span></header>
+  <p><span class="label">問題</span>海底地物（珊瑚礁／深海火山／鯨落／沉船）玩家到得了嗎？目前海不可進入（生成點與建築避開海、道路過海變橋），<code>deep_sea</code> 是進階地形的獨立房間地城（P3-07，未開工）。三種做法成本差很多：只當從岸邊與橋上看得到的淺海布景；做成 <code>deep_sea</code> 地城的房間內容；或開放一般海域潛水（全新的水下移動、鏡頭、戰鬥與宙獸行為）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W13">
+  <header><a class="id" href="#Q-W13">Q-W13</a><span class="tag">影響 P3-24（新）、P3-02、P3-16</span></header>
+  <p><span class="label">問題</span>「各種地質的洞穴／山谷／山脈」要做到哪一層？(a) 只換岩石散佈與地表配色（石灰岩石林、玄武岩柱、花崗岩圓丘…），地形形狀與既有 seed 不變；(b) 在 <code>LandformSynth</code> 新增地貌標籤（冰斗 U 谷、方山、天坑…），要升 <code>GeneratorVersion</code>、重訂全部地形快照，<b>既有 seed 的星球會變</b>。洞穴另有限制：地形是高度場，不能挖洞（ADR-0001），洞穴只能是「洞口＋獨立場景」（P3-07／P3-16）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W14">
+  <header><a class="id" href="#Q-W14">Q-W14</a><span class="tag">影響 P3-14</span></header>
+  <p><span class="label">問題</span>城牆（<code>settlement-structures.md#城牆</code>）剩下的未定細項：城門數量與位置、各種牆的高度／厚度／物質、遺跡殘牆的缺口比例、是做成可逐段打壞的牆段物件還是沿用 <code>PlanetWalls</code> 地形牆（不可破壞，與「可被招式打壞」衝突）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-V1">
+  <header><a class="id" href="#Q-V1">Q-V1</a><span class="tag">影響 P1-07／08／09、P3 表現層全部</span></header>
+  <p><span class="label">問題</span>「曠野之息等級的美術」要靠什麼達成？現況：所有場景物件都是程式生成的網格＋頂點色卡通著色，沒有貼圖、沒有美術匯入；做得到剪影、配色、風擺與層次，<b>做不到</b>曠野之息的手繪貼圖質感、成片草海的植被密度、遠景 LOD 與體積光霧。差距主要在渲染與素材投資，不在生成規則。請選要投資的方向（每項都是獨立的工作量，Steam Deck 800p／30 fps 是效能下限）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
 </div>
@@ -169,12 +163,6 @@
   <p><span class="label">暫定</span>概念圖、三視圖、特效分鏡：ChatGPT（圖像生成）/ Gemini Argon 任務模式，經 <code>tools/prompt-forge</code>。<b>3D 網格/綁骨/動畫仍未定</b>：對話式 AI 只保證交付三視圖 + 骨架規格 + Blender 腳本，真正的 image-to-3D 工具待選</p>
 </article>
 
-<article id="Q-T5">
-  <header><a class="id" href="#Q-T5">Q-T5</a><span class="tag">影響 P1-01、HUD 指南針</span></header>
-  <p><span class="label">問題</span><code>PlanetFrame</code> 規定 cross(East, North) == Up（右手公式），但 Unity 是左手系：面向 North 時 East 在<b>畫面左邊</b>，等於鏡像地圖。要 (a) 改成 cross(North, East) == Up 讓 East 在右邊（P1-01 契約破壞性變更，<code>LatLon</code> 經度方向一併翻轉），還是 (b) 維持數學慣例、由 P3 貼真實地圖模板時鏡像？（地貌已改程序化，ADR-0008，不再有真實地圖鏡像問題）</p>
-  <p><span class="label">暫定</span>建議 (a)；P1-05 移動與攝影機只用 cross(up, forward)，不受影響</p>
-</article>
-
 </div>
 </section>
 </main>
@@ -184,36 +172,18 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C22':[R('policy','AI 施招策略',['維持現行（傷害招優先、無敵人不施招）','治療/增益/控制招各有自己的觸發條件','只有治療有條件，增益/控制維持現行']),
-          G('hp','自身 HP 低於多少才治療',5,90,5,40,'%'),
-          C('extra','附加規則',['脫戰也可補血','盟友 HP 低也觸發','控制/減益招只對高威脅目標施放'])],
- 'Q-C12':[R('trigger','觸發方式',['玩家指令（暫定）','能量條滿','HP 低於門檻','指令＋能量條']),
-          G('dur','持續時間',5,60,1,15,' s'),
-          G('cd','冷卻（0 = 每場戰鬥一次）',0,180,5,0,' s'),
-          R('stage','可超載階段',['僅成年（暫定）','各階段皆有超載型態'])],
- 'Q-C13':[R('egg','蛋孵化的宙獸類別',['孵化時玩家選類別（暫定）','承襲親代類別','隨機']),
-          G('mat','轉換消耗素材數量',1,50,1,10,' 個'),
-          T('unlock','「後期」解鎖條件','例：通關 Phase 3 BOSS／等級 20')],
- 'Q-C33':[R('key','翻滾輸入鍵',['Space','Left Ctrl','Left Alt','C','手把 B／圈','雙擊移動鍵']),T('other','其他按鍵','')],
- 'Q-C35':[C('ok','確認',['已定案內容無誤，可從清單移除']),T('rest','仍需補充（例：玩家角色防禦）','')],
- 'Q-C36':[C('item','恢復手段種類',['消耗道具','NPC 治療','定點營火／泉水','隊友救援（互動）']),
-          C('src','取得方式',['野怪掉落','商店購買','任務獎勵','大廳製作']),
-          G('heal','恢復量（佔最大 HP）',10,100,5,50,'%'),
-          R('combat','能否戰鬥中使用',['可以','不可以','可以，但有施放時間／冷卻'])],
- 'Q-M3':[C('cond','孵化條件',['步行距離','戰鬥次數','留在大廳經過時間','消耗素材／能量','指定地點（孵化場）']),
-         G('amt','所需量（依上列條件）',1,100,1,10,''),T('note2','具體說明','')],
- 'Q-M6':[R('mode','拾取方式',['走近自動拾取','按互動鍵','混合：自動拾取小素材，稀有需按鍵']),
-         G('rad','自動拾取半徑',0.5,6,0.5,2,' m')],
- 'Q-M7':[R('pos','地上素材位置權威',['(a) 規則層固定記掉落點，剛體只是外觀','(b) 素材落地即靜止，不做剛體','(c) 主機在素材休眠時寫回規則層（新 ADR，建議）']),
-         T('note','備註','')],
- 'Q-C37':[G('spd','「靜止或緩行」速度門檻',0.5,5,0.5,2,' m/s'),
-          R('eff','隱蔽效果',['野生宙獸看不到你（領域不觸發）','領域距離縮小','已開戰敵人丟失目標','以上皆是']),
-          R('pet','玩家宙獸是否受益',['受益','不受益']),
-          R('fog','「迷霧」形式',['散佈物件','區域詞綴','天氣'])],
+ 'Q-A2':[R('layer','路人 NPC 的層級',['純表現層氛圍路人（不擋路、不可互動）','表現層＋可推擠（不擋路徑、不可互動）','規則層實體（碰撞、可互動、多人同步）']),C('where','出現在哪裡',['聚落內','道路上','野外營地','大廳'])],
+ 'Q-A3':[R('source','外觀來源',['程式產生的卡通網格','美術基底模型＋程式換體型／配色／服飾件','先做程式網格，之後換成美術模型']),R('axes','服飾風格軸',['沿用建築的地區×時代＋主／副風格混合','另訂一套'])],
+ 'Q-A4':[R('age','路人年齡分佈',['聚落平均＋每人常態偏移（依時代／聚落種類）','沿用 characters.md 權重（青少年 50 %）']),R('health','健康影響範圍',['只影響外觀','外觀＋規則（治療任務等）']),G('elder','長者＋兒童合計上限',0,60,5,30,' %')],
+ 'Q-W9':[C('scope','自然生物包含',['植物／樹的年齡與健康變化（幼木、老樹、枯木）','非宙獸的氛圍動物（鳥、魚、昆蟲、小獸）','野生宙獸的個體差異（體型、年齡、傷病外觀）']),R('hit','氛圍動物能否被招式打到',['不能（純表現，靠近就逃）','能（可破壞物件，掉素材）','不做氛圍動物'])],
+ 'Q-W10':[R('layer','田地的層級',['規則層田地地塊（進 RunLayout、可打壞掉素材、果樹與高稈作物擋路）','純表現層（不擋、打不到）']),R('where','田地位置',['聚落外圍、沿道路兩側','村落與小鎮才有，都市／城邦沒有','野外也有零星梯田／果園']),R('map','誰種什麼',['依緯度×海拔（熱帶：甘蔗／可可／咖啡；溫帶：稻／麥／玉米／葡萄／蘋果／橄欖；高地：茶／樟）','依星球類型固定一組','依時代（原始無田，農耕起才有）＋緯度海拔','每個聚落隨機']),C('crops','第一批要做的作物',['稻田','麥田','甘蔗田','玉米田','煙草','可可','咖啡','茶園','樟樹林','葡萄園','蘋果園','橄欖園'])],
+ 'Q-W11':[R('hazard','地熱地物的性質',['純外觀（不擋、無傷害）','規則層危險地形（熔岩不可進入、間歇泉週期傷害／擊飛、硫磺減益）','外觀＋只給火／土屬性招式加成']),R('lava','熔岩流',['第二種「海」：不可進入，道路架橋','可走但持續傷害','只是發光的地表']),C('where','出現在哪',['熔岩星一般地表','volcano_foothills 地貌印章','進階火山口地城','其他星球零星出現']),C('feat','第一批要做的地物',['熔岩流','火山灰原','泥火山','間歇噴泉','硫磺噴氣孔','溫泉池'])],
+ 'Q-W12':[R('access','海底可及性',['淺海布景（岸邊與橋上看得到，不可進入）','deep_sea 進階地城的房間內容（等 P3-07）','一般海域可潛水（新的水下移動與戰鬥系統）']),C('feat','第一批要做的地物',['珊瑚礁','深海火山／熱泉','鯨落','沉船','海草林'])],
+ 'Q-W13':[R('scope','地質變體做到哪一層',['只換岩石散佈與地表配色（既有 seed 不變）','新增 LandformSynth 地貌標籤（既有 seed 的星球會變）','兩者都做，先做前者']),C('geo','第一批要做的地質',['石灰岩喀斯特（石林、天坑）','玄武岩柱','花崗岩圓丘','砂岩拱與方山','冰川 U 谷與冰斗','板岩斷崖']),R('cave','洞穴',['洞口＋獨立場景（等 P3-07／P3-16）','只做洞口外觀（不可進入）','先不做'])],
+ 'Q-W14':[R('impl','牆的做法',['牆段物件（規則層、可逐段打壞、不改地形）','PlanetWalls 地形牆（不可破壞）']),R('gates','城門',['每條穿過牆的道路一座','只有主路兩端各一座','主路城門＋每條小徑一座側門']),G('stoneH','城邦石牆高度',4,12,1,8,' m'),G('palisadeH','小鎮木柵高度',2,6,1,4,' m'),R('fence','村落籬笆',['擋角色與宙獸（只能走門）','只擋宙獸，角色可跳過','純裝飾不擋']),G('ruinGap','遺跡殘牆缺口比例',10,70,10,40,' %')],
+ 'Q-V1':[C('invest','要投資的方向',['GPU instancing 植被（草海、密度 ×10）','地形材質混合（岩／草／沙／雪依坡度與高度）','水面（岸邊泡沫、折射、焦散）','體積霧與光束','遠景 LOD／impostor','匯入美術模型與貼圖取代程序網格']),R('tex','貼圖政策',['維持無貼圖、純頂點色','允許程式生成的筆觸貼圖','允許匯入手繪貼圖（走美術管線）']),R('ref','驗收方式',['我提供參考截圖逐項比對','你先出測試台截圖，我挑要改的'])],
  'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])],
- 'Q-N2':[R('mode','對抗模式形式',['競技場（暫定）','野外 PvP','搶 BOSS','競技場＋搶 BOSS'])],
- 'Q-T3':[R('tool','image-to-3D 工具',['Meshy','Tripo','Rodin（Hyper3D）','手工 Blender','暫不決定']),T('other','其他工具／備註','')],
- 'Q-T5':[R('opt','PlanetFrame 手性',['(a) 改 cross(North, East) == Up，East 在右（建議）','(b) 維持數學慣例，貼圖時鏡像'])]
+ 'Q-T3':[R('tool','image-to-3D 工具',['Meshy','Tripo','Rodin（Hyper3D）','手工 Blender','暫不決定']),T('other','其他工具／備註','')]
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

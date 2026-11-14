@@ -84,7 +84,17 @@ namespace Cosmimera.Planet.Model
         /// Side effects: writes vertices. Burst-compatible.
         /// </remarks>
         public void Build(NativeArray<ChunkVertex> vertices, in TemplateView templates, out float3 boundsMin,
-            out float3 boundsMax)
+            out float3 boundsMax) => Build(vertices, templates, default, out boundsMin, out boundsMax);
+
+        /// <summary>As the template overload, with cell walls raised on top of the terrain.</summary>
+        /// <remarks>
+        /// Pre: as the other overloads; walls default (none) or a live PlanetWalls.View.
+        /// Post: positions use templates.Apply(dir, noise) + walls.Height(dir); with default walls identical to the
+        ///       template overload.
+        /// Side effects: writes vertices. Burst-compatible.
+        /// </remarks>
+        public void Build(NativeArray<ChunkVertex> vertices, in TemplateView templates, in WallView walls,
+            out float3 boundsMin, out float3 boundsMax)
         {
             int row = QuadsPerEdge + 1;
             boundsMin = new float3(float.MaxValue);
@@ -96,31 +106,43 @@ namespace Cosmimera.Planet.Model
                 {
                     float u = Min.x + i * Step;
                     float3 dir = CubeSphere.FaceToDirectionCore(Face, u, v);
-                    float3 p = Surface(dir, templates);
-                    vertices[j * row + i] = new ChunkVertex { Position = p, Normal = SurfaceNormal(dir, templates) };
+                    float3 p = Surface(dir, templates, walls);
+                    vertices[j * row + i] = new ChunkVertex { Position = p, Normal = SurfaceNormal(dir, templates, walls) };
                     boundsMin = math.min(boundsMin, p);
                     boundsMax = math.max(boundsMax, p);
                 }
             }
         }
 
-        private float3 Surface(float3 dir, in TemplateView templates)
+        private float3 Surface(float3 dir, in TemplateView templates, in WallView walls)
         {
             float h = Height.SampleCore(dir);
-            return dir * (Radius + (templates.Count > 0 ? templates.Apply(math.normalize(dir), h) : h));
+            if (templates.Count > 0)
+            {
+                h = templates.Apply(math.normalize(dir), h);
+            }
+
+            if (walls.Count > 0)
+            {
+                h += walls.Height(math.normalize(dir));
+            }
+
+            return dir * (Radius + h);
         }
 
         // Central differences of the displaced surface in an arbitrary tangent basis. The result is
         // basis-independent (up to rounding), so it agrees across cube faces without using PlanetFrame.
-        private float3 SurfaceNormal(float3 dir, in TemplateView templates)
+        private float3 SurfaceNormal(float3 dir, in TemplateView templates, in WallView walls)
         {
             // Reference axis only for building *a* tangent; it is not treated as "up" (CLAUDE.md#硬性規則).
             float3 reference = math.abs(dir.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
             float3 t1 = math.normalize(math.cross(reference, dir));
             float3 t2 = math.cross(dir, t1);
             float e = NormalEpsilon;
-            float3 du = Surface(math.normalize(dir + t1 * e), templates) - Surface(math.normalize(dir - t1 * e), templates);
-            float3 dv = Surface(math.normalize(dir + t2 * e), templates) - Surface(math.normalize(dir - t2 * e), templates);
+            float3 du = Surface(math.normalize(dir + t1 * e), templates, walls) -
+                        Surface(math.normalize(dir - t1 * e), templates, walls);
+            float3 dv = Surface(math.normalize(dir + t2 * e), templates, walls) -
+                        Surface(math.normalize(dir - t2 * e), templates, walls);
             // cross(t1, t2) == dir, so this orientation points away from the planet.
             return math.normalize(math.cross(du, dv));
         }
@@ -145,6 +167,7 @@ namespace Cosmimera.Planet.Model
         public Mesh.MeshDataArray Output;
         [WriteOnly] public NativeArray<float3x2> Bounds;
         public TemplateView Templates;
+        public WallView Walls;
 
         /// <summary>Sizes one leaf's vertex/index buffers on the main thread (the layout is a managed array, so not in Burst).</summary>
         /// <remarks>Pre: as the job. Post: buffers sized for the job. Side effects: allocates mesh-data buffers.</remarks>
@@ -162,7 +185,7 @@ namespace Cosmimera.Planet.Model
             Mesh.MeshData output = Output[index];
             int row = geometry.QuadsPerEdge + 1;
             NativeArray<ChunkVertex> vertices = output.GetVertexData<ChunkVertex>();
-            geometry.Build(vertices, Templates, out float3 min, out float3 max);
+            geometry.Build(vertices, Templates, Walls, out float3 min, out float3 max);
             output.GetIndexData<ushort>().CopyFrom(AllIndices.GetSubArray(range.x, range.y));
             output.subMeshCount = 1;
             var bounds = new Bounds((min + max) * 0.5f, max - min);

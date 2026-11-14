@@ -9,3 +9,4 @@ using System.Runtime.CompilerServices;
 // Combat tests build MoveDef in memory to pin CastMove.FromDef (ARGON cast review K5).
 [assembly: InternalsVisibleTo("Cosmimera.Combat.Tests.EditMode")]
 [assembly: InternalsVisibleTo("Cosmimera.WorldGen.Tests.EditMode")]
+[assembly: InternalsVisibleTo("Cosmimera.Net.Tests.EditMode")]

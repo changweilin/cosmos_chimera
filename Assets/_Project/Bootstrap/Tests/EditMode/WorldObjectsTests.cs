@@ -101,6 +101,33 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Tall_grass_can_be_hit_but_neither_blocks_nor_is_shoved()
+        {
+            Rig r = Build();
+            ScatterItem grass = default, shrub = default;
+            for (long k = 6L * r.Scatter.CellsPerFace * r.Scatter.CellsPerFace; k < r.Scatter.KeyCount; k++)
+            {
+                if (!r.Scatter.TryGetItem(k, out ScatterItem it)) continue;
+                if (it.Shape == ScatterShape.TallGrass && grass.SizeM == 0f) grass = it;
+                if (it.Shape == ScatterShape.Shrub && shrub.SizeM == 0f) shrub = it;
+                if (grass.SizeM > 0f && shrub.SizeM > 0f) break;
+            }
+
+            Assert.That(grass.SizeM, Is.GreaterThan(0f));
+            Assert.That(shrub.SizeM, Is.GreaterThan(0f));
+            Assert.That(r.Objects.IsBlocked(grass.Direction, 0f), Is.False, "grass does not block");
+            Assert.That(r.Objects.IsBlocked(shrub.Direction, 0f), Is.True, "a shrub blocks");
+            Assert.That(r.Objects.CanBeShoved(grass.CellKey), Is.False);
+            Assert.That(r.Objects.CanBeShoved(shrub.CellKey), Is.True);
+            Assert.That(r.Objects.CanBeShoved(WorldObjects.BuildingIdBase), Is.True);
+            Assert.That(r.Objects.TryGet(grass.CellKey, out DestructibleCandidate c), Is.True);
+            Assert.That(c.Composition.Dominant.Id, Is.EqualTo("plant"));
+            Assert.That(r.Objects.NameKey(c), Is.EqualTo("ui.object.tall_grass"));
+            Assert.That(r.Objects.TryGet(shrub.CellKey, out DestructibleCandidate s), Is.True);
+            Assert.That(r.Objects.NameKey(s), Is.EqualTo("ui.object.shrub"));
+        }
+
+        [Test]
         public void TryGet_answers_like_Query_and_rejects_unknown_ids()
         {
             Rig r = Build();
@@ -120,7 +147,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(found.Exists(c => c.Id == tree.CellKey), Is.True);
             Assert.That(r.Objects.TryGet(WorldObjects.BuildingIdBase + 2, out _), Is.False, "only two buildings");
             Assert.That(r.Objects.TryGet(-1, out _), Is.False);
-            Assert.That(r.Objects.TryGet(6L * r.Scatter.CellsPerFace * r.Scatter.CellsPerFace, out _), Is.False);
+            Assert.That(r.Objects.TryGet(r.Scatter.KeyCount, out _), Is.False);
         }
 
         [Test]

@@ -7,6 +7,7 @@ using Cosmimera.GameData;
 using Cosmimera.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 
 namespace Cosmimera.Bootstrap.Demo
 {
@@ -46,7 +47,17 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
+        // Optional scenery layers: an unassigned one is skipped (RunSession), so older scenes still run.
+        [SerializeField] private Shader _skyShader;
+        [SerializeField] private Shader _grassShader;
+        [SerializeField] private Shader _waterShader;
+        [SerializeField] private Shader _sceneryShader;
         [SerializeField] private BgmTable _bgmTable;
+        [SerializeField] private CharacterModelTable _characterModels;
+        [SerializeField] private ConceptPortraitTable _portraits;
+        [SerializeField] private VolumeProfile _volumeProfile;
+
+        private int _selectedCharacterIndex;
 
         private DemoCopy _copy;
         private CombatBalance _combatBalance;
@@ -390,11 +401,38 @@ namespace Cosmimera.Bootstrap.Demo
                 CycleLanguage();
                 GUIUtility.ExitGUI();
             }
+
+            if (_characterModels != null && _characterModels.Entries.Count > 0)
+            {
+                Texture2D charPortrait = SelectedCharacterPortrait();
+                GUILayout.BeginHorizontal();
+                if (charPortrait != null)
+                {
+                    Rect r = GUILayoutUtility.GetRect(56f, 56f, GUILayout.ExpandWidth(false));
+                    GUI.DrawTexture(r, charPortrait, ScaleMode.ScaleToFit, true);
+                }
+
+                if (MenuButton(CharacterButtonLabel(), GUILayout.Height(56)))
+                {
+                    _selectedCharacterIndex = (_selectedCharacterIndex + 1) % (_characterModels.Entries.Count + 1);
+                    GUIUtility.ExitGUI();
+                }
+
+                GUILayout.EndHorizontal();
+            }
             if (_save.StarterLine == null)
             {
                 GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
                 foreach (CreatureDef s in _starters)
                 {
+                    Texture2D starterPortrait = _portraits != null ? _portraits.FindCreature(s.LineId, s.Stage) : null;
+                    GUILayout.BeginHorizontal();
+                    if (starterPortrait != null)
+                    {
+                        Rect r = GUILayoutUtility.GetRect(48f, 48f, GUILayout.ExpandWidth(false));
+                        GUI.DrawTexture(r, starterPortrait, ScaleMode.ScaleToFit, true);
+                    }
+
                     if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
                         LobbySave candidate = _save.Clone();
@@ -402,6 +440,8 @@ namespace Cosmimera.Bootstrap.Demo
                         CommitLobby(candidate);
                         GUIUtility.ExitGUI();
                     }
+
+                    GUILayout.EndHorizontal();
                 }
 
                 // The party editor that normally shows _partyMsg is not drawn before a starter exists (SOL r2 R2-02).
@@ -445,7 +485,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 OwnedCreature o = _save.Get(party[i]);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(330));
+                float labelW = DrawCreaturePortrait(o.SpeciesId, 28f) ? 298f : 330f;
+                GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(labelW));
                 GUI.enabled = i > 0;
                 if (MenuButton(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
                 {
@@ -482,7 +523,8 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(330));
+                float reserveW = DrawCreaturePortrait(o.SpeciesId, 28f) ? 298f : 330f;
+                GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(reserveW));
                 EvolveButton(o);
                 if (MenuButton(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
                 {
@@ -796,7 +838,10 @@ namespace Cosmimera.Bootstrap.Demo
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
-                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader);
+                    CharacterModelPrefab = SelectedCharacterPrefab(),
+                    Portraits = _portraits, VolumeProfile = _volumeProfile,
+                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
+                new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _screen = Screen.Running;
         }
 
@@ -859,6 +904,58 @@ namespace Cosmimera.Bootstrap.Demo
             _settleError = _copy.Ui("ui.results.save_failed");
         }
 
+        private string CharacterButtonLabel()
+        {
+            if (_characterModels == null || _selectedCharacterIndex >= _characterModels.Entries.Count)
+            {
+                return "角色外觀: 佔位膠囊";
+            }
+
+            CharacterModelEntry entry = _characterModels.Entries[_selectedCharacterIndex];
+            string tag = entry.isProvisional ? " [暫時採用]" : string.Empty;
+            return $"角色外觀: {entry.displayName}{tag}";
+        }
+
+        private GameObject SelectedCharacterPrefab()
+        {
+            if (_characterModels == null || _selectedCharacterIndex < 0 ||
+                _selectedCharacterIndex >= _characterModels.Entries.Count)
+            {
+                return null;
+            }
+
+            return _characterModels.Entries[_selectedCharacterIndex].prefab;
+        }
+
+        private Texture2D SelectedCharacterPortrait()
+        {
+            if (_portraits == null || _characterModels == null || _selectedCharacterIndex < 0 ||
+                _selectedCharacterIndex >= _characterModels.Entries.Count)
+            {
+                return null;
+            }
+
+            return _portraits.FindCharacter(_characterModels.Entries[_selectedCharacterIndex].id);
+        }
+
+        private bool DrawCreaturePortrait(string speciesId, float size)
+        {
+            if (_portraits == null || !_database.TryGet(speciesId, out CreatureDef def))
+            {
+                return false;
+            }
+
+            Texture2D tex = _portraits.FindCreature(def.LineId, def.Stage);
+            if (tex == null)
+            {
+                return false;
+            }
+
+            Rect r = GUILayoutUtility.GetRect(size, size, GUILayout.ExpandWidth(false));
+            GUI.DrawTexture(r, tex, ScaleMode.ScaleToFit, true);
+            return true;
+        }
+
         private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"
             : v == VesselKind.GlassBead ? "glass_bead" : "magic_cube";
 
@@ -886,9 +983,20 @@ namespace Cosmimera.Bootstrap.Demo
             game._terrainShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader");
             game._toonShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader");
             game._starShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Stars.shader");
+            game._skyShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonSky.shader");
+            game._grassShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonGrass.shader");
+            game._waterShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonWater.shader");
+            game._sceneryShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/ToonScenery.shader");
             game._bgmTable = UnityEditor.AssetDatabase.LoadAssetAtPath<BgmTable>("Assets/_Project/Audio/BgmTable.asset");
+            game._characterModels = UnityEditor.AssetDatabase.LoadAssetAtPath<CharacterModelTable>(
+                CharacterModelTableBuilder.TableAssetPath);
+            game._portraits = ConceptPortraitTableBuilder.Build();
+            game._volumeProfile = UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                "Assets/_Project/Settings/Rendering/BootstrapVolumeProfile.asset")
+                ?? UnityEditor.AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                    "Assets/_Project/Settings/Rendering/DefaultVolumeProfile.asset");
             foreach (Object o in new Object[] { game._database, game._actions, game._terrainMaterial, game._balance,
-                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
+                         game._strings, game._names, game._terrainShader, game._toonShader, game._starShader, game._skyShader, game._grassShader, game._waterShader, game._sceneryShader, game._affixes, game._themes, game._quests, game._epithets, game._envMaterials })
             {
                 if (o == null)
                 {
