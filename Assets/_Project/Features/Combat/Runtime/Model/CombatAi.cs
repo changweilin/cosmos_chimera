@@ -149,17 +149,43 @@ namespace Cosmimera.Combat
         public bool IsAlive { get; }
     }
 
+    /// <summary>AI trigger category of a move. REQ: docs/design/combat.md#戰鬥-ai (Q-C22).</summary>
+    /// <remarks>Pre: none. Post: stable values; constructors reject undefined ones. Side effects: none.</remarks>
+    public enum AiMoveCategory
+    {
+        /// <summary>Default hostile damage or legacy untagged move.</summary>
+        Standard = 0,
+        /// <summary>Restores HP; triggers without overflow or whenever target HP &lt; 50%, even out of combat.</summary>
+        Heal = 1,
+        /// <summary>Self/ally status or stat buff; triggers in combat when ready.</summary>
+        Buff = 2,
+        /// <summary>Hostile control/debuff move; triggers in combat within reach.</summary>
+        Control = 3,
+    }
+
     /// <summary>One of the creature's moves, reduced to what target and cast choice need.</summary>
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public readonly struct AiMoveOption
     {
-        /// <summary>Creates a move option.</summary>
+        /// <summary>Creates a move option with <see cref="AiMoveCategory.Standard"/>.</summary>
         /// <remarks>
         /// Pre: 0 &lt;= slot &lt; MoveCooldowns.MaxSlots; targeting defined; reachMm >= 0, and reachMm == 0 when
         ///      targeting == Self; 0 &lt;= power &lt;= DamageModel.MaxPower.
-        /// Post: properties equal the arguments. Side effects: none.
+        /// Post: properties equal the arguments; Category == Standard, HealPercent == 0. Side effects: none.
         /// </remarks>
         public AiMoveOption(int slot, AiMoveTargeting targeting, int reachMm, int power, bool ready)
+            : this(slot, targeting, reachMm, power, ready, AiMoveCategory.Standard, 0)
+        {
+        }
+
+        /// <summary>Creates a move option with an explicit trigger category.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= slot &lt; MoveCooldowns.MaxSlots; targeting and category defined; reachMm >= 0, and reachMm == 0 when
+        ///      targeting == Self; 0 &lt;= power &lt;= DamageModel.MaxPower; 0 &lt;= healPercent &lt;= 100 (and &gt; 0 when category == Heal).
+        /// Post: properties equal the arguments. Side effects: none.
+        /// </remarks>
+        public AiMoveOption(int slot, AiMoveTargeting targeting, int reachMm, int power, bool ready,
+            AiMoveCategory category, int healPercent = 0)
         {
             Contract.Requires(slot >= 0 && slot < MoveCooldowns.MaxSlots, "slot must be 0..MaxSlots-1");
             Contract.Requires(targeting >= AiMoveTargeting.Hostile && targeting <= AiMoveTargeting.Ally,
@@ -167,11 +193,17 @@ namespace Cosmimera.Combat
             Contract.Requires(reachMm >= 0, "reachMm must be nonnegative");
             Contract.Requires(targeting != AiMoveTargeting.Self || reachMm == 0, "a self move has no reach");
             Contract.Requires(power >= 0 && power <= DamageModel.MaxPower, "power must be 0..MaxPower");
+            Contract.Requires(category >= AiMoveCategory.Standard && category <= AiMoveCategory.Control,
+                "undefined AiMoveCategory");
+            Contract.Requires(healPercent >= 0 && healPercent <= 100, "healPercent must be 0..100");
+            Contract.Requires(category != AiMoveCategory.Heal || healPercent > 0, "heal move must have healPercent > 0");
             Slot = slot;
             Targeting = targeting;
             ReachMm = reachMm;
             Power = power;
             IsReady = ready;
+            Category = category;
+            HealPercent = healPercent;
         }
 
         /// <summary>Cooldown slot, as passed to <see cref="Combatant.BeginCast"/>.</summary>
@@ -193,25 +225,50 @@ namespace Cosmimera.Combat
         /// <summary>True when the cooldown slot is ready now (<see cref="MoveCooldowns.IsReady"/>).</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
         public bool IsReady { get; }
+
+        /// <summary>Trigger category for Q-C22 priority rules.</summary>
+        /// <remarks>Pre: none. Post: defined value. Side effects: none.</remarks>
+        public AiMoveCategory Category { get; }
+
+        /// <summary>Max-HP heal percentage (1..100) for <see cref="AiMoveCategory.Heal"/>; 0 otherwise.</summary>
+        /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
+        public int HealPercent { get; }
     }
 
     /// <summary>Everything about the deciding creature itself.</summary>
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public readonly struct AiInput
     {
-        /// <summary>Creates the input.</summary>
+        /// <summary>Creates the input assuming full HP for self and partner.</summary>
         /// <remarks>
         /// Pre: style and role defined; mainTargetId >= CombatAi.NoTarget. Positions are checked by Decide.
         ///      partnerPosition is ignored when !hasPartner; command is ignored by Support and mainTargetId by Main
         ///      (Q-C11: only the main creature hears commands; only the support follows the main's target).
-        /// Post: properties equal the arguments. Side effects: none.
+        /// Post: properties equal the arguments; SelfHp == SelfMaxHp == 1, PartnerHp == PartnerMaxHp == 1. Side effects: none.
         /// </remarks>
         public AiInput(float3 selfPosition, AiStyle style, AiRole role, in AiCommand command, int mainTargetId,
             float3 playerPosition, bool hasPartner, float3 partnerPosition)
+            : this(selfPosition, style, role, command, mainTargetId, playerPosition, hasPartner, partnerPosition,
+                1, 1, 1, 1)
+        {
+        }
+
+        /// <summary>Creates the input with explicit HP values for Q-C22 heal trigger evaluation.</summary>
+        /// <remarks>
+        /// Pre: same as the 8-arg constructor, plus selfMaxHp >= 1, 0 &lt;= selfHp &lt;= selfMaxHp,
+        ///      and when hasPartner: partnerMaxHp >= 1, 0 &lt;= partnerHp &lt;= partnerMaxHp.
+        /// Post: properties equal the arguments. Side effects: none.
+        /// </remarks>
+        public AiInput(float3 selfPosition, AiStyle style, AiRole role, in AiCommand command, int mainTargetId,
+            float3 playerPosition, bool hasPartner, float3 partnerPosition,
+            int selfHp, int selfMaxHp, int partnerHp, int partnerMaxHp)
         {
             Contract.Requires(style >= AiStyle.KeepDistance && style <= AiStyle.Hold, "undefined AiStyle");
             Contract.Requires(role == AiRole.Main || role == AiRole.Support, "undefined AiRole");
             Contract.Requires(mainTargetId >= CombatAi.NoTarget, "mainTargetId must be an id or NoTarget");
+            Contract.Requires(selfMaxHp >= 1 && selfHp >= 0 && selfHp <= selfMaxHp, "invalid self HP");
+            Contract.Requires(!hasPartner || (partnerMaxHp >= 1 && partnerHp >= 0 && partnerHp <= partnerMaxHp),
+                "invalid partner HP");
             SelfPosition = selfPosition;
             Style = style;
             Role = role;
@@ -220,6 +277,10 @@ namespace Cosmimera.Combat
             PlayerPosition = playerPosition;
             HasPartner = hasPartner;
             PartnerPosition = partnerPosition;
+            SelfHp = selfHp;
+            SelfMaxHp = selfMaxHp;
+            PartnerHp = partnerHp;
+            PartnerMaxHp = partnerMaxHp;
         }
 
         /// <summary>The creature's world position.</summary>
@@ -253,6 +314,22 @@ namespace Cosmimera.Combat
         /// <summary>The partner's world position; meaningless when !HasPartner.</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
         public float3 PartnerPosition { get; }
+
+        /// <summary>Current HP of the deciding creature.</summary>
+        /// <remarks>Pre: none. Post: 0..SelfMaxHp. Side effects: none.</remarks>
+        public int SelfHp { get; }
+
+        /// <summary>Maximum HP of the deciding creature.</summary>
+        /// <remarks>Pre: none. Post: >= 1 (1 for 8-arg constructor). Side effects: none.</remarks>
+        public int SelfMaxHp { get; }
+
+        /// <summary>Current HP of the partner creature; meaningless when !HasPartner.</summary>
+        /// <remarks>Pre: none. Post: 0..PartnerMaxHp when HasPartner. Side effects: none.</remarks>
+        public int PartnerHp { get; }
+
+        /// <summary>Maximum HP of the partner creature; meaningless when !HasPartner.</summary>
+        /// <remarks>Pre: none. Post: >= 1 when HasPartner. Side effects: none.</remarks>
+        public int PartnerMaxHp { get; }
     }
 
     /// <summary>What the creature wants this tick.</summary>
@@ -441,7 +518,7 @@ namespace Cosmimera.Combat
                 partnerDistanceM = Angle(self, math.normalize((double3)input.PartnerPosition - center)) * radius;
             }
 
-            int castSlot = targetIndex >= 0 ? PickCast(moves, targetDistanceM, partnerDistanceM) : NoCast;
+            int castSlot = PickCast(moves, targetIndex >= 0, targetDistanceM, partnerDistanceM, input);
             int targetId = targetIndex >= 0 ? enemies[targetIndex].Id : NoTarget;
 
             bool hasHostile = HostileReach(moves, out int minReachMm, out int maxReachMm);
@@ -508,11 +585,18 @@ namespace Cosmimera.Combat
             return best;
         }
 
-        private static int PickCast(IReadOnlyList<AiMoveOption> moves, double targetDistanceM, double partnerDistanceM)
+        private static int PickCast(IReadOnlyList<AiMoveOption> moves, bool hasTarget, double targetDistanceM,
+            double partnerDistanceM, in AiInput input)
         {
+            // REQ: docs/design/combat.md#戰鬥-ai (Q-C22) — heals trigger out of combat too, without overflow or when HP < 50%,
+            // and take priority over damage when triggered; buffs trigger in combat; hostile picks max power (then smaller slot).
+            int heal = NoCast;
+            int buff = NoCast;
             int hostile = NoCast;
             int hostilePower = -1;
-            int support = NoCast;
+            int control = NoCast;
+            int legacySupport = NoCast;
+
             for (int i = 0; i < moves.Count; i++)
             {
                 AiMoveOption m = moves[i];
@@ -521,23 +605,101 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
+                if (m.Category == AiMoveCategory.Heal)
+                {
+                    bool inReach = m.Targeting == AiMoveTargeting.Self
+                        || (m.Targeting == AiMoveTargeting.Ally && input.HasPartner
+                            && partnerDistanceM <= m.ReachMm / 1000.0);
+                    if (!inReach)
+                    {
+                        continue;
+                    }
+
+                    int hp = m.Targeting == AiMoveTargeting.Ally ? input.PartnerHp : input.SelfHp;
+                    int maxHp = m.Targeting == AiMoveTargeting.Ally ? input.PartnerMaxHp : input.SelfMaxHp;
+                    if (ShouldHeal(hp, maxHp, m.HealPercent) && (heal == NoCast || m.Slot < heal))
+                    {
+                        heal = m.Slot;
+                    }
+
+                    continue;
+                }
+
+                if (!hasTarget)
+                {
+                    continue;
+                }
+
                 if (m.Targeting == AiMoveTargeting.Hostile)
                 {
-                    if (targetDistanceM <= m.ReachMm / 1000.0
-                        && (m.Power > hostilePower || (m.Power == hostilePower && m.Slot < hostile)))
+                    if (targetDistanceM > m.ReachMm / 1000.0)
+                    {
+                        continue;
+                    }
+
+                    if (m.Category == AiMoveCategory.Control)
+                    {
+                        if (control == NoCast || m.Slot < control)
+                        {
+                            control = m.Slot;
+                        }
+                    }
+                    else if (m.Power > hostilePower || (m.Power == hostilePower && m.Slot < hostile))
                     {
                         hostile = m.Slot;
                         hostilePower = m.Power;
                     }
                 }
-                else if ((m.Targeting == AiMoveTargeting.Self || partnerDistanceM <= m.ReachMm / 1000.0)
-                         && (support == NoCast || m.Slot < support))
+                else if (m.Targeting == AiMoveTargeting.Self
+                         || (input.HasPartner && partnerDistanceM <= m.ReachMm / 1000.0))
                 {
-                    support = m.Slot;
+                    if (m.Category == AiMoveCategory.Buff)
+                    {
+                        if (buff == NoCast || m.Slot < buff)
+                        {
+                            buff = m.Slot;
+                        }
+                    }
+                    else if (legacySupport == NoCast || m.Slot < legacySupport)
+                    {
+                        legacySupport = m.Slot;
+                    }
                 }
             }
 
-            return hostile != NoCast ? hostile : support;
+            if (heal != NoCast)
+            {
+                return heal;
+            }
+
+            if (buff != NoCast)
+            {
+                return buff;
+            }
+
+            if (hostile != NoCast)
+            {
+                return hostile;
+            }
+
+            return control != NoCast ? control : legacySupport;
+        }
+
+        private static bool ShouldHeal(int hp, int maxHp, int healPercent)
+        {
+            if (maxHp <= 0 || hp >= maxHp)
+            {
+                return false;
+            }
+
+            // Below 50% always heals; otherwise avoid overflowing MaxHp.
+            if (hp * 2L < maxHp)
+            {
+                return true;
+            }
+
+            long healAmount = (long)maxHp * healPercent / 100L;
+            return hp + healAmount <= maxHp;
         }
 
         private static bool HostileReach(IReadOnlyList<AiMoveOption> moves, out int minReachMm, out int maxReachMm)

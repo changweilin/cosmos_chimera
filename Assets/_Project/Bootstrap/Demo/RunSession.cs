@@ -237,6 +237,7 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamState _team;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
+        private readonly List<GroundDrop> _pickupBuffer = new List<GroundDrop>(16);
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -709,6 +710,7 @@ namespace Cosmimera.Bootstrap.Demo
 #endif
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
+            CollectGroundPickups(player);
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
@@ -1736,6 +1738,28 @@ namespace Cosmimera.Bootstrap.Demo
         {
             int gust = (ev.Reactions & ObjectReaction.Gust) != 0 ? _envMaterials.GustImpulsePercent : 100;
             return ObjectImpulse.Compute(_rig.Config, source, c.Center, ev.Power, gust, massKg, _objectPhysics.Tuning);
+        }
+
+        // REQ: docs/design/destructibles.md#地上的素材 (Q-M6) — 1 m auto-pickup into run materials.
+        private void CollectGroundPickups(float3 playerPosition)
+        {
+            if (_objectPhysics == null)
+            {
+                return;
+            }
+
+            _pickupBuffer.Clear();
+            if (_objectPhysics.CollectPickups(playerPosition, _pickupBuffer) == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _pickupBuffer.Count; i++)
+            {
+                GroundDrop drop = _pickupBuffer[i];
+                int tier = drop.Kind == GroundDropKind.Gem ? 3 : 1;
+                _outcome.Materials.Add(new MaterialStack(new MaterialKey(drop.Element, tier), 1));
+            }
         }
 
         // The drawn root of an object: its woken body, its building, or its scatter item (detached from streaming, since

@@ -632,5 +632,67 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => Decide(Input(), new[] { new AiEnemy(1, pos, new float3(float.NaN), true) }, m));
             Assert.DoesNotThrow(() => Decide(Input(), new[] { new AiEnemy(1, pos, float3.zero, false) }, m), "dead forward unchecked");
         }
+
+        [Test]
+        public void Heal_triggers_without_overflow_and_always_below_half_hp_even_out_of_combat()
+        {
+            var heal = new AiMoveOption(0, AiMoveTargeting.Self, 0, 0, true, AiMoveCategory.Heal, 30);
+            var attack = Hostile(1, 12000, 60);
+            var moves = new[] { heal, attack };
+            AiEnemy[] inCombat = { Enemy(1, At(5f, 0f)) };
+            AiEnemy[] outOfCombat = System.Array.Empty<AiEnemy>();
+
+            // Full HP: does not heal.
+            var full = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, false, default, 100, 100, 1, 1);
+            Assert.AreEqual(1, Decide(full, inCombat, moves).CastSlot);
+            Assert.AreEqual(CombatAi.NoCast, Decide(full, outOfCombat, moves).CastSlot);
+
+            // 80/100 HP with 30% heal would overflow: does not heal.
+            var eighty = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, false, default, 80, 100, 1, 1);
+            Assert.AreEqual(1, Decide(eighty, inCombat, moves).CastSlot);
+            Assert.AreEqual(CombatAi.NoCast, Decide(eighty, outOfCombat, moves).CastSlot);
+
+            // 70/100 HP with 30% heal (exact 100/100): heals even in combat and out of combat.
+            var seventy = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, false, default, 70, 100, 1, 1);
+            Assert.AreEqual(0, Decide(seventy, inCombat, moves).CastSlot);
+            Assert.AreEqual(0, Decide(seventy, outOfCombat, moves).CastSlot);
+
+            // 49/100 HP (< 50%): always heals even if a 80% heal would overflow.
+            var bigHeal = new AiMoveOption(0, AiMoveTargeting.Self, 0, 0, true, AiMoveCategory.Heal, 80);
+            var low = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, false, default, 49, 100, 1, 1);
+            Assert.AreEqual(0, Decide(low, inCombat, new[] { bigHeal, attack }).CastSlot);
+            Assert.AreEqual(0, Decide(low, outOfCombat, new[] { bigHeal, attack }).CastSlot);
+        }
+
+        [Test]
+        public void Ally_heal_triggers_when_partner_is_low_and_in_reach()
+        {
+            var allyHeal = new AiMoveOption(0, AiMoveTargeting.Ally, 8000, 0, true, AiMoveCategory.Heal, 30);
+            var attack = Hostile(1, 12000, 60);
+            var moves = new[] { allyHeal, attack };
+
+            var inReach = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, true, At(5f, 90f), 100, 100, 40, 100);
+            Assert.AreEqual(0, Decide(inReach, System.Array.Empty<AiEnemy>(), moves).CastSlot);
+
+            var outOfReach = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free), CombatAi.NoTarget,
+                _self, true, At(15f, 90f), 100, 100, 40, 100);
+            Assert.AreEqual(CombatAi.NoCast, Decide(outOfReach, System.Array.Empty<AiEnemy>(), moves).CastSlot);
+        }
+
+        [Test]
+        public void Qc22_contracts_reject_invalid_heal_and_hp_inputs()
+        {
+            Assert.Throws<ContractException>(() => _ = new AiMoveOption(0, AiMoveTargeting.Self, 0, 0, true, AiMoveCategory.Heal, 0));
+            Assert.Throws<ContractException>(() => _ = new AiMoveOption(0, AiMoveTargeting.Self, 0, 0, true, (AiMoveCategory)9, 0));
+            Assert.Throws<ContractException>(() => _ = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free),
+                CombatAi.NoTarget, _self, false, default, 101, 100, 1, 1));
+            Assert.Throws<ContractException>(() => _ = new AiInput(_self, AiStyle.Hold, AiRole.Main, Cmd(AiCommandKind.Free),
+                CombatAi.NoTarget, _self, true, _self, 10, 100, 0, 0));
+        }
     }
 }

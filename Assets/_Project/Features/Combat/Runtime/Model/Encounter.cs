@@ -857,7 +857,9 @@ namespace Cosmimera.Combat
 
                 FillOptions(u, nowMs);
                 var input = new AiInput(u.Position, u.Def.AiStyle, role, cmd, mainTarget, leashAnchor,
-                    partner != null, partner != null ? partner.Position : float3.zero);
+                    partner != null, partner != null ? partner.Position : float3.zero,
+                    u.Combatant.Hp, u.Combatant.MaxHp,
+                    partner != null ? partner.Combatant.Hp : 1, partner != null ? partner.Combatant.MaxHp : 1);
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
@@ -1534,8 +1536,25 @@ namespace Cosmimera.Combat
                 AiMoveTargeting targeting = v.Kind == HitVolumeKind.Caster ? AiMoveTargeting.Self
                     : v.Kind == HitVolumeKind.Ally ? AiMoveTargeting.Ally : AiMoveTargeting.Hostile;
                 int reach = targeting == AiMoveTargeting.Self ? 0 : CombatAi.ReachMmOf(v);
-                _optionBuffer.Add(new AiMoveOption(s, targeting, reach, u.Moves[s].Power,
-                    u.Combatant.Cooldowns.IsReady(s, nowMs)));
+                CastMove move = u.Moves[s];
+                AiMoveCategory category = AiMoveCategory.Standard;
+                int healPercent = 0;
+                if (move.HasEffect && move.Effect.Type == EffectType.HealPercentMaxHp)
+                {
+                    category = AiMoveCategory.Heal;
+                    healPercent = move.Effect.Percent;
+                }
+                else if (targeting != AiMoveTargeting.Hostile && move.HasEffect)
+                {
+                    category = AiMoveCategory.Buff;
+                }
+                else if (targeting == AiMoveTargeting.Hostile && move.Power == 0 && move.HasEffect)
+                {
+                    category = AiMoveCategory.Control;
+                }
+
+                _optionBuffer.Add(new AiMoveOption(s, targeting, reach, move.Power,
+                    u.Combatant.Cooldowns.IsReady(s, nowMs), category, healPercent));
             }
         }
 

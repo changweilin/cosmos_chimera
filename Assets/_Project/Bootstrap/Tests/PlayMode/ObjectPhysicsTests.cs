@@ -264,5 +264,43 @@ namespace Cosmimera.Bootstrap.Tests
             physics.SyncPusher(1, false, float3.zero, 0f);
             Assert.That(physics.transform.Find("Pusher_1").gameObject.activeSelf, Is.False);
         }
+
+        [UnityTest]
+        public IEnumerator Sleeping_drop_writes_back_rule_position_and_auto_picks_up_within_1m()
+        {
+            ObjectPhysics physics = Rig(R, ObjectPhysicsTuning.Default);
+            physics.Shatter(9, null, Planet.ToWorld(Top, 1.5f), 1.5f, 100f, float3.zero,
+                new ObjectDrop(Element.Fire, true, true, false));
+            Assert.That(physics.GroundDrops.Count, Is.EqualTo(2));
+
+            // Let drops fall and settle (force sleep after landing to keep the test deterministic in time).
+            yield return new WaitForSeconds(1.2f);
+            for (int i = 0; i < physics.GroundDrops.Count; i++)
+            {
+                Rigidbody rb = physics.GroundDrops[i].Root.GetComponent<Rigidbody>();
+                rb.Sleep();
+            }
+
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+
+            for (int i = 0; i < physics.GroundDrops.Count; i++)
+            {
+                GroundDrop d = physics.GroundDrops[i];
+                Assert.That(d.IsSettled, Is.True, "ADR-0010 / Q-M7: sleeping drop must settle");
+                Assert.That(math.distance(d.RulePosition, (float3)d.Root.transform.position), Is.LessThan(0.01f),
+                    "ADR-0010 / Q-M7: RulePosition matches resting rigidbody");
+            }
+
+            var picked = new System.Collections.Generic.List<GroundDrop>();
+            float3 farPos = Planet.ToWorld(Lane(10f, 0f), 0f);
+            Assert.That(physics.CollectPickups(farPos, picked), Is.EqualTo(0), "outside 1 m radius");
+
+            float3 nearPos = physics.GroundDrops[0].RulePosition + new float3(0.5f, 0f, 0f);
+            int collected = physics.CollectPickups(nearPos, picked);
+            Assert.That(collected, Is.GreaterThanOrEqualTo(1), "Q-M6: auto-pickup within 1 m");
+            Assert.That(picked.Count, Is.EqualTo(collected));
+            Assert.That(physics.GroundDrops.Count, Is.EqualTo(2 - collected));
+        }
     }
 }

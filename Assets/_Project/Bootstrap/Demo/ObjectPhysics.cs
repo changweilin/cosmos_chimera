@@ -129,11 +129,13 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>Pre: none. Post: immutable value. Side effects: none.</remarks>
     public readonly struct GroundDrop
     {
-        internal GroundDrop(Element element, GroundDropKind kind, GameObject root)
+        internal GroundDrop(Element element, GroundDropKind kind, GameObject root, float3 rulePosition, bool isSettled)
         {
             Element = element;
             Kind = kind;
             Root = root;
+            RulePosition = rulePosition;
+            IsSettled = isSettled;
         }
 
         /// <summary>The material's element (Light or Shadow for a wisp).</summary>
@@ -147,6 +149,17 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>The drawn object; carries a Rigidbody unless Kind is Wisp.</summary>
         /// <remarks>Pre: none. Post: null once destroyed by someone else. Side effects: none.</remarks>
         public GameObject Root { get; }
+
+        /// <summary>Authoritative rule-layer position; updated when the rigidbody sleeps (ADR-0010 / Q-M7).</summary>
+        /// <remarks>Pre: none. Post: finite world position. Side effects: none.</remarks>
+        public float3 RulePosition { get; }
+
+        /// <summary>True once the drop has settled (sleeping, frozen, or wisp) and written back to <see cref="RulePosition"/>.</summary>
+        /// <remarks>Pre: none. Post: boolean. Side effects: none.</remarks>
+        public bool IsSettled { get; }
+
+        internal GroundDrop WithSettlement(float3 rulePosition, bool isSettled) =>
+            new GroundDrop(Element, Kind, Root, rulePosition, isSettled);
     }
 
     /// <summary>
@@ -170,6 +183,8 @@ namespace Cosmimera.Bootstrap.Demo
         private const float GemEdgeM = 0.25f;
         private const float WispDiameterM = 0.4f;
         private const float WispHoverM = 1f;
+        /// <summary>Auto-pickup radius (m) for ground drops. REQ: docs/design/destructibles.md#地上的素材 (Q-M6).</summary>
+        public const float AutoPickupRadiusM = 1f;
 
         private readonly struct Awake
         {
@@ -233,6 +248,55 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Drops lying on the ground, oldest first. They stay for the whole run (destructibles.md#地上的素材).</summary>
         /// <remarks>Pre: none. Post: entries whose Root was destroyed elsewhere are pruned on the next physics step. Side effects: none.</remarks>
         public IReadOnlyList<GroundDrop> GroundDrops => _ground;
+
+        /// <summary>Collects any ground drop within <paramref name="radiusM"/> of <paramref name="playerPosition"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/destructibles.md#地上的素材 (Q-M6, ADR-0010).
+        /// Pre: Configure ran; radiusM &gt;= 0; playerPosition finite.
+        /// Post: matching drops are appended to <paramref name="pickedUp"/> (if non-null), removed from <see cref="GroundDrops"/>,
+        ///       and their GameObjects destroyed; returns the count collected.
+        /// Side effects: destroys picked-up GameObjects and unregisters their rigidbodies.
+        /// </remarks>
+        public int CollectPickups(float3 playerPosition, IList<GroundDrop> pickedUp, float radiusM = AutoPickupRadiusM)
+        {
+            Contract.Requires(_configured, "Configure first");
+            Contract.Requires(math.all(math.isfinite(playerPosition)), "playerPosition must be finite");
+            Contract.Requires(math.isfinite(radiusM) && radiusM >= 0f, "radiusM must be >= 0");
+
+            float radiusSq = radiusM * radiusM;
+            int count = 0;
+            for (int i = _ground.Count - 1; i >= 0; i--)
+            {
+                GroundDrop drop = _ground[i];
+                if (drop.Root == null)
+                {
+                    _ground.RemoveAt(i);
+                    continue;
+                }
+
+                float3 pos = drop.IsSettled ? drop.RulePosition : (float3)drop.Root.transform.position;
+                if (math.distancesq(pos, playerPosition) > radiusSq)
+                {
+                    continue;
+                }
+
+                if (drop.Kind != GroundDropKind.Wisp)
+                {
+                    Rigidbody body = drop.Root.GetComponent<Rigidbody>();
+                    if (body != null)
+                    {
+                        _gravity.Unregister(body);
+                    }
+                }
+
+                pickedUp?.Add(drop);
+                Destroy(drop.Root);
+                _ground.RemoveAt(i);
+                count++;
+            }
+
+            return count;
+        }
 
         /// <summary>The tuning in use.</summary>
         /// <remarks>Pre: Configure ran. Post: as configured. Side effects: none.</remarks>
@@ -416,7 +480,7 @@ namespace Cosmimera.Bootstrap.Demo
                 out Rigidbody body);
             body.mass = math.max(0.2f, substance.DensityKgM3 * edge * edge * edge);
             Paint(go, element, kind);
-            _ground.Add(new GroundDrop(element, kind, go));
+            _ground.Add(new GroundDrop(element, kind, go, (float3)go.transform.position, false));
         }
 
         private void SpawnWisp(Element element, float3 up)
@@ -426,11 +490,12 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: destructibles.md#碰撞 — light and shadow materials collide with nothing.
             Destroy(go.GetComponent<Collider>());
             go.transform.SetParent(transform, false);
-            go.transform.SetPositionAndRotation((Vector3)_planet.ToWorld(up, _groundAltitude(up) + WispHoverM),
+            float3 pos = _planet.ToWorld(up, _groundAltitude(up) + WispHoverM);
+            go.transform.SetPositionAndRotation((Vector3)pos,
                 Quaternion.FromToRotation(Vector3.up, (Vector3)up));
             go.transform.localScale = Vector3.one * WispDiameterM;
             Paint(go, element, GroundDropKind.Wisp);
-            _ground.Add(new GroundDrop(element, GroundDropKind.Wisp, go));
+            _ground.Add(new GroundDrop(element, GroundDropKind.Wisp, go, pos, true));
         }
 
         private void Paint(GameObject go, Element element, GroundDropKind kind)
@@ -583,7 +648,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             for (int i = _ground.Count - 1; i >= 0; i--)
             {
-                GameObject root = _ground[i].Root;
+                GroundDrop drop = _ground[i];
+                GameObject root = drop.Root;
                 if (root == null)
                 {
                     _ground.RemoveAt(i);
@@ -591,12 +657,26 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 // Unlike debris, a drop must outlive a missing collider (it stays all run): park it on the sampled ground.
-                Rigidbody b = _ground[i].Kind == GroundDropKind.Wisp ? null : root.GetComponent<Rigidbody>();
-                if (b != null && !b.isKinematic && FellThrough(b.position))
+                Rigidbody b = drop.Kind == GroundDropKind.Wisp ? null : root.GetComponent<Rigidbody>();
+                if (b != null)
                 {
-                    float3 dir = _planet.ToDirection(b.position);
-                    b.position = (Vector3)_planet.ToWorld(dir, _groundAltitude(dir) + root.transform.localScale.x * 0.5f);
-                    Freeze(b);
+                    if (!b.isKinematic && FellThrough(b.position))
+                    {
+                        float3 dir = _planet.ToDirection(b.position);
+                        b.position = (Vector3)_planet.ToWorld(dir, _groundAltitude(dir) + root.transform.localScale.x * 0.5f);
+                        Freeze(b);
+                    }
+
+                    // REQ: docs/decisions/ADR-0010-ground-material-authority.md (Q-M7) — write back position when sleeping/frozen.
+                    bool resting = b.IsSleeping() || b.isKinematic;
+                    if (resting && !drop.IsSettled)
+                    {
+                        _ground[i] = drop.WithSettlement((float3)b.position, true);
+                    }
+                    else if (!resting && drop.IsSettled)
+                    {
+                        _ground[i] = drop.WithSettlement(drop.RulePosition, false);
+                    }
                 }
             }
         }
