@@ -14,6 +14,7 @@ namespace Cosmimera.Bootstrap.Tests
     {
         private readonly List<GameObject> _roots = new List<GameObject>();
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+        private const string GrassRoot = "Scatter_TallGrass";
 
         private ScatterField Field(float radius, float3 centre, float3 up, System.Func<float3, bool> isClear = null)
         {
@@ -133,7 +134,7 @@ namespace Cosmimera.Bootstrap.Tests
             long key = -1;
             foreach (var pair in Get<Dictionary<long, List<GameObject>>>(field, "_live"))
             {
-                if (pair.Value.Count > 0) { key = pair.Key; break; }
+                if (pair.Value.Count > 0 && pair.Value[0].name != GrassRoot) { key = pair.Key; break; }
             }
 
             Assert.That(key, Is.GreaterThanOrEqualTo(0));
@@ -166,12 +167,15 @@ namespace Cosmimera.Bootstrap.Tests
                 Shader.Find("Cosmimera/ToonOutlined"), null, scenery);
             Call(field, "Refresh", config.ToWorld(up, 0f));
             yield return null;
-            int trees = 0, rocks = 0;
+            int trees = 0, rocks = 0, grass = 0;
             foreach (var pair in Get<Dictionary<long, List<GameObject>>>(field, "_live"))
             {
                 foreach (GameObject item in pair.Value)
                 {
-                    Assert.That(item.GetComponentsInChildren<Collider>().Length, Is.EqualTo(1), "only the trunk/body collides");
+                    // REQ: destructibles.md#碰撞 — grass never blocks the character; everything else has one body.
+                    bool isGrass = item.name == GrassRoot;
+                    if (isGrass) grass++;
+                    Assert.That(item.GetComponentsInChildren<Collider>().Length, Is.EqualTo(isGrass ? 0 : 1), item.name);
                     MeshRenderer renderer = item.GetComponentInChildren<MeshRenderer>();
                     Mesh mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
                     Assert.That(renderer.sharedMaterials.Length, Is.EqualTo(mesh.subMeshCount), "one material per sub-mesh");
@@ -184,6 +188,7 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(trees, Is.GreaterThan(0));
             Assert.That(rocks, Is.GreaterThan(0));
+            Assert.That(grass, Is.GreaterThan(0), "flat ground is lowland: tall grass grows there");
             Assert.That(Get<Dictionary<int, Mesh>>(field, "_meshes").Count, Is.LessThan(trees + rocks), "meshes are shared");
         }
 
@@ -220,11 +225,14 @@ namespace Cosmimera.Bootstrap.Tests
                 (SceneryArchetype.Umbrella, 6f, Hex(0x8A6AC8), Hex(0x3E3050), Hex(0xD0A8F0), 0f),
                 (SceneryArchetype.Boulder, 2.2f, Hex(0x6E6A62), Hex(0x6E6A62), Hex(0x5E8A3A), 0f),
                 (SceneryArchetype.CrystalCluster, 3.5f, Hex(0xFF8A1E), Hex(0xFF8A1E), Hex(0xFFE08A), 0.9f),
+                (SceneryArchetype.Shrub, 1.6f, Hex(0x4C8A3A), Hex(0x5A4630), Hex(0xA8C858), 0f),
+                (SceneryArchetype.CaneClump, 2.6f, Hex(0x6FA03C), Hex(0x9DB45A), Hex(0xC4D878), 0f),
+                (SceneryArchetype.PlumeGrass, 2f, Hex(0x7FA04A), Hex(0x7FA04A), Hex(0xEFE6CF), 0f),
             };
             for (int r = 0; r < rows.Length; r++)
             {
                 var row = rows[r];
-                bool tree = row.archetype <= SceneryArchetype.Conifer;
+                bool tree = row.archetype <= SceneryArchetype.Conifer || row.archetype == SceneryArchetype.Shrub;
                 for (int v = 0; v < 3; v++)
                 {
                     var go = new GameObject(row.archetype + "_" + v);
@@ -232,7 +240,19 @@ namespace Cosmimera.Bootstrap.Tests
                     go.transform.localPosition = new Vector3((v - 1) * 8f, 0f, r * 40f);
                     go.transform.localScale = Vector3.one * row.size;
                     go.AddComponent<MeshFilter>().sharedMesh = SceneryMeshes.Build(row.archetype, v);
-                    go.AddComponent<MeshRenderer>().sharedMaterials = tree
+                    go.AddComponent<MeshRenderer>().sharedMaterials = row.archetype == SceneryArchetype.CaneClump
+                        ? new[]
+                        {
+                            PlanetLook.SceneryMaterial(scenery, row.accent, row.accent * 0.6f, 0.7f, 0.1f, 0.2f, 0f),
+                            PlanetLook.SceneryMaterial(scenery, row.color, row.top, 0.85f, 0.06f, 0.55f, 0f),
+                        }
+                        : row.archetype == SceneryArchetype.PlumeGrass
+                        ? new[]
+                        {
+                            PlanetLook.SceneryMaterial(scenery, row.color, Color.Lerp(row.color, row.top, 0.6f), 0.8f, 0.16f, 0.6f, 0f),
+                            PlanetLook.SceneryMaterial(scenery, row.top, Color.white, 0.5f, 0.16f, 0.8f, 0f),
+                        }
+                        : tree
                         ? new[]
                         {
                             PlanetLook.SceneryMaterial(scenery, row.accent, row.accent * 0.72f, 0.8f, 0.06f, 0f, 0f),

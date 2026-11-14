@@ -13,13 +13,13 @@ namespace Cosmimera.Bootstrap.Demo
     /// blocking test creatures obey. REQ: docs/design/destructibles.md (碰撞, 狀態保留, 實作分層), ADR-0009.
     /// </summary>
     /// <remarks>
-    /// Ids: a scatter item is its cell key (≥ 0, below 6·n²); building i is <see cref="BuildingIdBase"/> + i. Both are
+    /// Ids: a scatter item is its cell key (≥ 0, below ScatterPlanner.KeyCount); building i is <see cref="BuildingIdBase"/> + i. Both are
     /// derived from the generation result, so every peer and every LOD rebuild agrees.
     /// Pre: built once per run on the host. Post: see members. Side effects: caches scatter cells (inside the planner).
     /// </remarks>
     public sealed class WorldObjects : IDestructibleIndex
     {
-        /// <summary>First building id; far above any scatter cell key (6·n² &lt; 2^32 for R ≤ 1e5 m).</summary>
+        /// <summary>First building id; far above any scatter cell key (KeyCount &lt; 2^34 for R ≤ 1e5 m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const long BuildingIdBase = 1L << 40;
 
@@ -161,7 +161,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return ok;
             }
 
-            if (id >= 0 && id < 6L * _scatter.CellsPerFace * _scatter.CellsPerFace &&
+            if (id >= 0 && id < _scatter.KeyCount &&
                 _scatter.TryGetItem(id, out ScatterItem it))
             {
                 candidate = ScatterCandidate(it);
@@ -194,9 +194,10 @@ namespace Cosmimera.Bootstrap.Demo
                 BuildingHitRadius(b), _env.Building(MaterialOf(i)), (int)math.min(volumeL, int.MaxValue));
         }
 
-        /// <summary>Whether a body of radius <paramref name="clearanceM"/> at <paramref name="direction"/> overlaps an intact building, tree, rock or crystal.</summary>
+        /// <summary>Whether a body of radius <paramref name="clearanceM"/> at <paramref name="direction"/> overlaps an intact building, tree, shrub, cane clump, rock or crystal.</summary>
         /// <remarks>
-        /// REQ: destructibles.md#碰撞 — whole trees/rocks block creatures (trunk/body radius), destroyed ones do not.
+        /// REQ: destructibles.md#碰撞 — whole trees/shrubs/rocks block creatures (trunk/body radius), destroyed ones and
+        /// grass do not.
         /// Pre: direction finite and non-zero; clearanceM finite and ≥ 0.
         /// Post: deterministic for a given input and destroyed set. Side effects: caches scatter cells.
         /// </remarks>
@@ -212,7 +213,7 @@ namespace Cosmimera.Bootstrap.Demo
             _scatter.Query(up, clearanceM + _scatter.MaxBlockRadiusM, _items);
             foreach (ScatterItem it in _items)
             {
-                if (math.distance(up, it.Direction) * _planet.Radius <= it.BlockRadiusM + clearanceM &&
+                if (it.Blocks && math.distance(up, it.Direction) * _planet.Radius <= it.BlockRadiusM + clearanceM &&
                     !_table.IsDestroyed(it.CellKey))
                 {
                     return true;
@@ -234,7 +235,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>UI copy key naming what <paramref name="candidate"/> is (target HUD line).</summary>
         /// <remarks>
-        /// Pre: candidate came from this instance's Query. Post: one of ui.object.building / tree / rock / crystal.
+        /// Pre: candidate came from this instance's Query.
+        /// Post: one of ui.object.building / tree / rock / crystal / shrub / bamboo / tall_grass.
         /// Side effects: caches scatter cells; allocates nothing beyond Query's own caching.
         /// </remarks>
         public string NameKey(in DestructibleCandidate candidate)
@@ -255,6 +257,9 @@ namespace Cosmimera.Bootstrap.Demo
                         ScatterShape.Rock => "ui.object.rock",
                         ScatterShape.Crystal => "ui.object.crystal",
                         ScatterShape.Tree => "ui.object.tree",
+                        ScatterShape.Shrub => "ui.object.shrub",
+                        ScatterShape.Bamboo => "ui.object.bamboo",
+                        ScatterShape.TallGrass => "ui.object.tall_grass",
                         _ => throw new ArgumentOutOfRangeException(nameof(candidate), it.Shape, "unnamed scatter shape"),
                     };
                 }
@@ -263,6 +268,14 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(false, "candidate " + candidate.Id + " is not a scatter item of this run");
             return "ui.object.tree";
         }
+
+        /// <summary>Whether a hit can knock object <paramref name="id"/> loose before it is destroyed.</summary>
+        /// <remarks>
+        /// Grass is rooted and has no body to roll: it only bends until it is destroyed (and has no collider to wake).
+        /// Pre: none. Post: false iff id is a non-blocking scatter item of this run. Side effects: may cache the scatter cell.
+        /// </remarks>
+        public bool CanBeShoved(long id) =>
+            id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem it) || it.Blocks;
 
         /// <summary>Applies a destruction to generation-side state: a destroyed building stops blocking.</summary>
         /// <remarks>
@@ -302,6 +315,9 @@ namespace Cosmimera.Bootstrap.Demo
         {
             ScatterShape.Tree => size * 0.3f,
             ScatterShape.Rock => size * 0.45f,
+            ScatterShape.Shrub => size * 0.45f,
+            ScatterShape.Bamboo => size * 0.3f,
+            ScatterShape.TallGrass => size * 0.35f,
             _ => size * 0.25f,
         };
 
@@ -309,6 +325,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             ScatterShape.Tree => size * 0.5f,
             ScatterShape.Rock => size * 0.25f,
+            ScatterShape.Shrub => size * 0.35f,
+            ScatterShape.TallGrass => size * 0.4f,
             _ => size * 0.5f,
         };
     }

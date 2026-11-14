@@ -61,8 +61,8 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(normals.Length, Is.EqualTo(vertices.Length));
             Assert.That(colors.Length, Is.EqualTo(vertices.Length));
             Assert.That(wind.Count, Is.EqualTo(vertices.Length));
-            bool tree = archetype <= SceneryArchetype.Conifer;
-            Assert.That(mesh.subMeshCount, Is.EqualTo(tree ? 2 : 1), "trees: wood + foliage");
+            bool plant = archetype != SceneryArchetype.Boulder && archetype != SceneryArchetype.CrystalCluster;
+            Assert.That(mesh.subMeshCount, Is.EqualTo(plant ? 2 : 1), "plants: stems + foliage");
             float maxSway = 0f;
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -74,7 +74,7 @@ namespace Cosmimera.Bootstrap.Tests
                 maxSway = Mathf.Max(maxSway, wind[i].x);
             }
 
-            Assert.That(maxSway > 0f, Is.EqualTo(tree), "only trees move in the wind");
+            Assert.That(maxSway > 0f, Is.EqualTo(plant), "only plants move in the wind");
         }
 
         [TestCaseSource(nameof(Every))]

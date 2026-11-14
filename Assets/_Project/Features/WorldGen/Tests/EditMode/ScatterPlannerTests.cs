@@ -17,7 +17,7 @@ namespace Cosmimera.WorldGen.Tests
 
         private static ulong Fold(ulong h, ulong v) => (h ^ v) * 1099511628211ul;
 
-        private static ulong Digest(ScatterPlanner p, float3 up)
+        private static ulong Digest(ScatterPlanner p, float3 up, bool understory = false)
         {
             var cells = new HashSet<long>();
             p.CollectCells(up, 90f, cells);
@@ -26,7 +26,7 @@ namespace Cosmimera.WorldGen.Tests
             ulong h = 14695981039346656037ul;
             foreach (long k in keys)
             {
-                if (!p.TryGetItem(k, out ScatterItem it)) continue;
+                if (p.IsUnderstoryKey(k) != understory || !p.TryGetItem(k, out ScatterItem it)) continue;
                 h = Fold(h, (ulong)k);
                 h = Fold(h, (ulong)it.KindIndex);
                 h = Fold(h, math.asuint(it.Direction.x));
@@ -50,17 +50,83 @@ namespace Cosmimera.WorldGen.Tests
             keys.Sort((x, y) => y.CompareTo(x));
             foreach (long k in keys) b.TryGetItem(k, out _);
             Assert.That(Digest(b, up), Is.EqualTo(Digest(a, up)));
+            Assert.That(Digest(b, up, true), Is.EqualTo(Digest(a, up, true)));
             Assert.That(Digest(a, up), Is.EqualTo(Digest(a, up)), "cached answers equal fresh ones");
         }
 
-        // Snapshot (testing.md): placement moved here from ScatterField unchanged; update only with a generator change.
+        // Snapshot (testing.md): update only with a ScatterPlanner.GeneratorVersion change. The canopy digest predates
+        // version 2 and must stay as it is: the understory layer was added without moving a single tree or rock.
         [Test]
         public void Snapshot_seed_12345()
         {
-            Assert.That(Digest(Planner(), math.normalize(new float3(1, 1, 1))), Is.EqualTo(SnapshotDigest));
+            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(2), "new version: re-pin the digests below");
+            float3 up = math.normalize(new float3(1, 1, 1));
+            Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
+            Assert.That(Digest(Planner(), up, true), Is.EqualTo(UnderstoryDigest));
         }
 
         private const ulong SnapshotDigest = 1236021966666354270ul;
+        private const ulong UnderstoryDigest = 14843648030852674448ul;
+
+        [Test]
+        public void Understory_kinds_follow_their_altitude_band_and_keep_off_the_canopy()
+        {
+            // Swells of ±12 m around the 7.68 m highland line, gentle enough to pass the slope test.
+            float Terraces(float3 d) => 12f * math.sin(d.x * 9f);
+            foreach (string type in new[] { "verdant_planet", "storm_planet", "twilight_planet" })
+            {
+                var p = new ScatterPlanner(Planet, 777, type, Terraces, null, null);
+                var seen = new HashSet<int>();
+                var near = new List<ScatterItem>();
+                int checkedForCanopy = 0;
+                for (long k = 6L * p.CellsPerFace * p.CellsPerFace; k < p.KeyCount; k += 5)
+                {
+                    if (!p.TryGetItem(k, out ScatterItem it)) continue;
+                    seen.Add(it.KindIndex);
+                    Assert.That(it.KindIndex, Is.GreaterThanOrEqualTo(p.CanopyKindCount));
+                    ScatterKind kind = p.Kinds[it.KindIndex];
+                    bool highland = it.AltitudeM >= ScatterPlanner.HighlandFractionOfRadius * Planet.Radius;
+                    Assert.That(kind.Habitat, Is.Not.EqualTo(highland ? ScatterHabitat.Lowland : ScatterHabitat.Highland));
+                    Assert.That(it.SizeM, Is.InRange(kind.MinSizeM, kind.MaxSizeM));
+                    Assert.That(it.Blocks, Is.EqualTo(it.Shape != ScatterShape.TallGrass));
+                    Assert.That(it.VolumeL, Is.GreaterThanOrEqualTo(1));
+                    if (checkedForCanopy++ % 20 != 0) continue;
+                    near.Clear();
+                    p.Query(it.Direction, 3f, near);
+                    foreach (ScatterItem other in near)
+                    {
+                        if (p.IsUnderstoryKey(other.CellKey)) continue;
+                        Assert.That(math.distance(it.Direction, other.Direction) * Planet.Radius,
+                            Is.GreaterThan(it.BlockRadiusM + other.BlockRadiusM), "nothing grows out of a trunk or rock");
+                    }
+                }
+
+                Assert.That(seen.Count, Is.EqualTo(p.Kinds.Count - p.CanopyKindCount), type + ": every understory kind appears");
+            }
+        }
+
+        [Test]
+        public void Every_planet_type_has_an_understory_with_a_kind_for_any_altitude()
+        {
+            foreach (string type in new[] { "verdant_planet", "lava_planet", "ice_crystal_planet", "storm_planet",
+                         "mineral_planet", "twilight_planet", null })
+            {
+                ScatterKind[] kinds = ScatterPlanner.UnderstoryKindsFor(type);
+                Assert.That(System.Array.Exists(kinds, k => k.Habitat == ScatterHabitat.Any), Is.True, type);
+                foreach (ScatterKind k in kinds)
+                {
+                    Assert.That(k.Shape >= ScatterShape.Shrub, Is.True, "understory shapes only");
+                }
+
+                var p = new ScatterPlanner(Planet, 1, type, Hills, null, null);
+                Assert.That(p.Kinds.Count, Is.EqualTo(ScatterPlanner.KindsFor(type).Length + kinds.Length));
+                Assert.That(p.KeyCount, Is.EqualTo(6L * p.CellsPerFace * p.CellsPerFace +
+                                                    6L * p.UnderstoryCellsPerFace * p.UnderstoryCellsPerFace));
+            }
+
+            Assert.That(ScatterPlanner.UnderstoryKindsFor("no_such_planet"),
+                Is.SameAs(ScatterPlanner.UnderstoryKindsFor("verdant_planet")));
+        }
 
         [Test]
         public void Items_respect_sea_clearance_and_kind_table()
@@ -125,7 +191,7 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => new ScatterPlanner(Planet, 1, null, null, null, null));
             ScatterPlanner p = Planner();
             Assert.Throws<ContractException>(() => p.TryGetItem(-1, out _));
-            Assert.Throws<ContractException>(() => p.TryGetItem(6L * p.CellsPerFace * p.CellsPerFace, out _));
+            Assert.Throws<ContractException>(() => p.TryGetItem(p.KeyCount, out _));
             Assert.Throws<ContractException>(() => p.CollectCells(new float3(0, 1, 0), 1f, null));
             Assert.Throws<ContractException>(() => p.CollectCells(new float3(0, 1, 0), -1f, new HashSet<long>()));
             Assert.Throws<ContractException>(() => p.Query(float3.zero, 1f, new List<ScatterItem>()));

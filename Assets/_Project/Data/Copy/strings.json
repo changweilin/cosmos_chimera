@@ -619,6 +619,21 @@
     "en": "Crystal",
     "ja": "結晶柱"
   },
+  "ui.object.shrub": {
+    "zh-TW": "灌木",
+    "en": "Shrub",
+    "ja": "低木"
+  },
+  "ui.object.bamboo": {
+    "zh-TW": "箭竹叢",
+    "en": "Cane Thicket",
+    "ja": "矢竹の茂み"
+  },
+  "ui.object.tall_grass": {
+    "zh-TW": "芒草",
+    "en": "Silvergrass",
+    "ja": "ススキ"
+  },
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",

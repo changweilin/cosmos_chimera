@@ -25,17 +25,26 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Cluster of pointed hexagonal shafts.</summary>
         CrystalCluster = 4,
+
+        /// <summary>Low bush (灌木): short stems under merged foliage lobes.</summary>
+        Shrub = 5,
+
+        /// <summary>Clump of thin jointed canes with drooping leaf whorls (箭竹).</summary>
+        CaneClump = 6,
+
+        /// <summary>Tussock of arching blades under plumed flower stalks (芒草).</summary>
+        PlumeGrass = 7,
     }
 
     /// <summary>
-    /// Asset-free meshes for scattered scenery (P3-09 presentation): trees, boulders and crystal clusters shaped in code,
+    /// Asset-free meshes for scattered scenery (P3-09 presentation): trees, boulders, crystal clusters and understory plants shaped in code,
     /// so every planet draws them without an art import and every client builds the same ones.
     /// REQ: vision.md#畫風與沉浸感; planet-world.md (7. 散佈). Drawn with Cosmimera/ToonScenery, whose channel layout
     /// (colour rgb = tint, a = 1 − accent mask; UV1 = sway weight, flutter phase) these meshes fill.
     /// </summary>
     /// <remarks>
-    /// Every mesh is one unit tall-ish (a tree's top is near y = 1, a boulder is ~1 wide, a crystal's main shaft is 1
-    /// tall) with its ground contact at y = 0 and a skirt below it, so a prop scaled by ScatterItem.SizeM matches the
+    /// Every mesh is one unit tall-ish (a tree's, cane clump's or grass tussock's top is near y = 1, a boulder or
+    /// shrub is ~1 wide, a crystal's main shaft is 1 tall) with its ground contact at y = 0 and a skirt below it, so a prop scaled by ScatterItem.SizeM matches the
     /// rule layer's collider and volume and never shows a gap on a slope.
     /// Pre: main thread (creates Unity objects). Post: results depend only on (archetype, variant). Side effects: allocates.
     /// </remarks>
@@ -53,14 +62,19 @@ namespace Cosmimera.Bootstrap.Demo
             SceneryArchetype.Conifer => 3,
             SceneryArchetype.Boulder => 5,
             SceneryArchetype.CrystalCluster => 4,
+            SceneryArchetype.Shrub => 4,
+            SceneryArchetype.CaneClump => 3,
+            SceneryArchetype.PlumeGrass => 4,
             _ => throw new ArgumentOutOfRangeException(nameof(archetype)),
         };
 
         /// <summary>Builds variant <paramref name="variant"/> of <paramref name="archetype"/>.</summary>
         /// <remarks>
         /// Pre: 0 ≤ variant &lt; VariantCount(archetype); main thread.
-        /// Post: a new mesh with normals, colours and UV1; trees have two sub-meshes (0 = wood, 1 = foliage), the rest
-        ///       one; the same arguments always give the same vertices; bounds include the wind sway.
+        /// Post: a new mesh with normals, colours and UV1; plants have two sub-meshes (trees and shrubs: 0 = wood,
+        ///       1 = foliage; cane clumps: 0 = canes, 1 = leaves; plume grass: 0 = blades and stalks, 1 = plumes),
+        ///       boulders and crystals one; the same arguments always give the same vertices; bounds include the wind
+        ///       sway.
         /// Side effects: allocates a Mesh the caller owns (and must destroy).
         /// </remarks>
         public static Mesh Build(SceneryArchetype archetype, int variant)
@@ -81,6 +95,15 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 case SceneryArchetype.Boulder:
                     BuildBoulder(data, ref rng, variant);
+                    break;
+                case SceneryArchetype.Shrub:
+                    BuildShrub(data, ref rng);
+                    break;
+                case SceneryArchetype.CaneClump:
+                    BuildCaneClump(data, ref rng);
+                    break;
+                case SceneryArchetype.PlumeGrass:
+                    BuildPlumeGrass(data, ref rng);
                     break;
                 default:
                     BuildCrystals(data, ref rng);
@@ -352,6 +375,234 @@ namespace Cosmimera.Bootstrap.Demo
                     c.a = 1f - sunlit;
                     return (soft, c);
                 });
+            }
+        }
+
+        // ---- understory ----------------------------------------------------------------------------------------
+
+        private const float GoldenAngle = 2.39996323f; // successive feet at this turn fill a clump without rows
+
+        private static void BuildShrub(MeshData data, ref Pcg32 rng)
+        {
+            // Unit = width: the foliage fills ScatterItem's shrub ellipsoid (semi-axes 0.5, 0.4, 0.5).
+            float3 crownCentre = new float3(0f, 0.3f, 0f);
+            var lobes = new List<Lobe> { new Lobe(crownCentre, new float3(0.32f, 0.27f, 0.32f), 2) };
+            int ring = 4 + (int)rng.NextUInt(3);
+            float turn = rng.NextFloat() * math.PI * 2f;
+            for (int i = 0; i < ring; i++)
+            {
+                float a = turn + (i + Signed(ref rng) * 0.25f) * math.PI * 2f / ring;
+                float r = 0.17f + rng.NextFloat() * 0.07f;
+                float reach = 0.22f + rng.NextFloat() * 0.08f;
+                lobes.Add(new Lobe(new float3(math.cos(a) * reach, 0.13f + rng.NextFloat() * 0.14f, math.sin(a) * reach),
+                    new float3(r, r * 0.85f, r), 1));
+            }
+
+            lobes.Add(new Lobe(new float3(Signed(ref rng) * 0.08f, 0.5f, Signed(ref rng) * 0.08f),
+                new float3(0.18f, 0.15f, 0.18f), 1));
+
+            // The lobes almost reach the ground; the stems only show in the gaps between them.
+            var wood = new Part();
+            for (int s = 0; s < 3; s++)
+            {
+                float3 end = lobes[1 + s * ring / 3].Centre;
+                var spine = new[]
+                {
+                    new float3(end.x * 0.15f, -0.06f, end.z * 0.15f),
+                    new float3(end.x * 0.5f, end.y * 0.45f, end.z * 0.5f),
+                    end,
+                };
+                Tube(wood, spine, 5, (i, k) => 0.03f * math.lerp(1f, 0.45f, i * 0.5f), BarkColor);
+            }
+
+            data.EmitSmooth(wood, 0, null);
+            EmitCrown(data, lobes, crownCentre, 0.02f, 0.68f, 0.2f, ref rng);
+        }
+
+        private static void BuildCaneClump(MeshData data, ref Pcg32 rng)
+        {
+            const int nodes = 5;
+            const float buried = 0.06f;
+            int canes = 9 + (int)rng.NextUInt(5);
+            float turn = rng.NextFloat() * math.PI * 2f;
+            var wood = new Part();
+            var leaves = new Part();
+            for (int c = 0; c < canes; c++)
+            {
+                float a = turn + c * GoldenAngle;
+                var outward = new float3(math.cos(a), 0f, math.sin(a));
+                // Feet stay inside the rule layer's 0.2 clump radius; outer canes lean further out.
+                float foot = 0.03f + 0.15f * math.sqrt((c + 0.5f) / canes);
+                float height = 0.62f + rng.NextFloat() * 0.36f;
+                float lean = 0.05f + foot * 0.9f + rng.NextFloat() * 0.06f;
+                float radius = 0.011f + rng.NextFloat() * 0.006f;
+
+                // Two rings per joint: one just under it at the cane's width, one on it, swollen and dark. Vertex
+                // colour alone cannot draw a joint between rings a fifth of the cane apart.
+                var spine = new float3[nodes * 2];
+                var swell = new float[nodes * 2];
+                for (int i = 0; i < spine.Length; i++)
+                {
+                    bool joint = (i & 1) == 0 && i > 0;
+                    float t = i == 0 ? 0f : i == spine.Length - 1 ? 1f : ((i + 1) / 2) / (float)nodes - (joint ? 0f : 0.035f);
+                    spine[i] = outward * (foot + lean * t * t) + new float3(0f, -buried + t * (height + buried), 0f);
+                    swell[i] = (joint ? 1.3f : 1f) * math.lerp(1f, 0.5f, t);
+                }
+
+                Tube(wood, spine, 5, (i, k) => radius * swell[i], (p, k) =>
+                {
+                    float along = (p.y + buried) / (height + buried) * nodes;
+                    bool joint = along > 0.5f && math.abs(along - math.round(along)) < 0.1f;
+                    float tone = math.lerp(0.72f, 1f, math.saturate(p.y / 0.15f)) * (joint ? 0.66f : 1f);
+                    return Tint(tone, joint ? 0.35f : 1f);
+                });
+
+                float phase = 0.1f + 0.9f * rng.NextFloat();
+                for (int w = 0; w < 3; w++)
+                {
+                    float3 node = SpineAt(spine, 0.55f + w * 0.17f + rng.NextFloat() * 0.05f);
+                    int count = 2 + (int)rng.NextUInt(2);
+                    float spin = rng.NextFloat() * math.PI * 2f;
+                    for (int l = 0; l < count; l++)
+                    {
+                        float la = spin + l * math.PI * 2f / count + Signed(ref rng) * 0.3f;
+                        float length = 0.13f + rng.NextFloat() * 0.07f;
+                        float tone = 0.9f + rng.NextFloat() * 0.16f;
+                        Blade(leaves, Arc(node, la, length, 0.35f, 0.75f, 4), Across(la), length * 0.13f, phase,
+                            t => Tint(tone * math.lerp(0.82f, 1.06f, t), 1f - 0.5f * t));
+                    }
+                }
+            }
+
+            data.EmitSmooth(wood, 0, null);
+            data.EmitFaceted(leaves, 1, FacetCos, null);
+        }
+
+        private static void BuildPlumeGrass(MeshData data, ref Pcg32 rng)
+        {
+            var blades = new Part();
+            var stalkWood = new Part();
+            var plumes = new Part();
+            float turn = rng.NextFloat() * math.PI * 2f;
+            int count = 26 + (int)rng.NextUInt(9);
+            for (int b = 0; b < count; b++)
+            {
+                float a = turn + b * GoldenAngle + Signed(ref rng) * 0.2f;
+                var outward = new float3(math.cos(a), 0f, math.sin(a));
+                float rise = 0.42f + rng.NextFloat() * 0.3f;
+                float reach = 0.22f + rng.NextFloat() * 0.26f;
+                float foot = 0.02f + rng.NextFloat() * 0.05f;
+                const int points = 5;
+                var spine = new float3[points];
+                for (int i = 0; i < points; i++)
+                {
+                    float s = i / (float)(points - 1);
+                    // A parabola peaking at s = 0.62: the outer third of the blade droops under its own weight.
+                    float fall = (s - 0.62f) / 0.62f;
+                    spine[i] = outward * (foot + reach * (0.5f * s + 0.5f * s * s)) +
+                               new float3(0f, -0.05f + (rise + 0.05f) * (1f - fall * fall), 0f);
+                }
+
+                float tone = 0.88f + rng.NextFloat() * 0.2f;
+                // Accent = the dry tone: tips bleach first.
+                Blade(blades, spine, Across(a), 0.03f + rng.NextFloat() * 0.014f, 0.1f + 0.9f * rng.NextFloat(),
+                    t => Tint(tone * math.lerp(0.74f, 1.06f, t), 1f - 0.85f * math.smoothstep(0.55f, 1f, t)));
+            }
+
+            int stalks = 4 + (int)rng.NextUInt(3);
+            for (int s = 0; s < stalks; s++)
+            {
+                float a = turn + 1.1f + s * math.PI * 2f / stalks + Signed(ref rng) * 0.5f;
+                var outward = new float3(math.cos(a), 0f, math.sin(a));
+                float height = 0.74f + rng.NextFloat() * 0.2f;
+                float lean = 0.06f + rng.NextFloat() * 0.12f;
+                var spine = new float3[5];
+                for (int i = 0; i < spine.Length; i++)
+                {
+                    float t = i / (float)(spine.Length - 1);
+                    spine[i] = outward * (0.02f + lean * t * t) + new float3(0f, -0.05f + t * (height + 0.05f), 0f);
+                }
+
+                Tube(stalkWood, spine, 4, (i, k) => 0.008f * math.lerp(1f, 0.6f, i / (float)(spine.Length - 1)),
+                    (p, k) => Tint(0.9f, 0.6f));
+
+                // The plume: a fan of drooping racemes, all swept to the side the stalk leans to.
+                int racemes = 7 + (int)rng.NextUInt(3);
+                float phase = 0.1f + 0.9f * rng.NextFloat();
+                for (int r = 0; r < racemes; r++)
+                {
+                    float ra = a + (r - (racemes - 1) * 0.5f) * 0.36f + Signed(ref rng) * 0.1f;
+                    float length = 0.2f + rng.NextFloat() * 0.09f;
+                    Blade(plumes, Arc(spine[spine.Length - 1], ra, length, 0.3f + rng.NextFloat() * 0.5f, 0.9f, 4),
+                        Across(ra), 0.024f, phase, t => Tint(math.lerp(0.9f, 1.1f, t), 1f - 0.7f * t));
+                }
+            }
+
+            data.EmitFaceted(blades, 0, FacetCos, null);
+            data.EmitSmooth(stalkWood, 0, null);
+            data.EmitFaceted(plumes, 1, FacetCos, null);
+        }
+
+        // Horizontal unit vector square to azimuth `a`: the width axis of a blade that grows outward along `a`.
+        private static float3 Across(float a) => new float3(-math.sin(a), 0f, math.cos(a));
+
+        // `points` along a leaf of `length` leaving `from` toward azimuth `a`: it lifts by `lift` and then falls by `droop`.
+        private static float3[] Arc(float3 from, float a, float length, float lift, float droop, int points)
+        {
+            var outward = new float3(math.cos(a), 0f, math.sin(a));
+            var spine = new float3[points];
+            for (int i = 0; i < points; i++)
+            {
+                float s = i / (float)(points - 1);
+                spine[i] = from + outward * (length * s) + new float3(0f, length * (lift * s - droop * s * s), 0f);
+            }
+
+            return spine;
+        }
+
+        // A closed, flattened blade along `spine` (whose last point is the tip): a diamond cross-section `halfWidth`
+        // across `across` and about a quarter of that thick. Two broad faces, yet nothing is single-sided, so the
+        // scenery shader needs no cull-off variant. `across` must not be parallel to the spine. Emit it faceted: the
+        // two halves of a broad face are within the crease angle and shade as one, while a smooth edge vertex would
+        // average the upper and lower faces into a normal lying in the blade's plane.
+        private static void Blade(Part part, float3[] spine, float3 across, float halfWidth, float phase, Func<float, Color> color)
+        {
+            int rings = spine.Length - 1;
+            int first = part.P.Count;
+            for (int i = 0; i < rings; i++)
+            {
+                float t = i / (float)rings;
+                float3 tangent = math.normalize(spine[i + 1] - spine[math.max(i - 1, 0)]);
+                float3 wide = math.normalize(across - tangent * math.dot(across, tangent));
+                float3 thick = math.cross(tangent, wide);
+                // Widest a third of the way up, like a leaf; the root keeps some width or its ring collapses.
+                float w = halfWidth * math.lerp(0.55f, 1f, math.saturate(t * 3f)) * (1f - 0.55f * t * t);
+                for (int k = 0; k < 4; k++)
+                {
+                    float3 offset = k switch { 0 => wide * w, 1 => thick * (w * 0.28f), 2 => -wide * w, _ => -thick * (w * 0.28f) };
+                    float3 p = spine[i] + offset;
+                    part.Add(p, color(t), Wind(p.y, math.length(p.xz), phase));
+                }
+            }
+
+            for (int i = 0; i < rings - 1; i++)
+            {
+                float3 inside = (spine[i] + spine[i + 1]) * 0.5f;
+                for (int k = 0; k < 4; k++)
+                {
+                    int a = first + i * 4 + k;
+                    int b = first + i * 4 + (k + 1) % 4;
+                    part.Tri(a, b, a + 4, inside);
+                    part.Tri(b, b + 4, a + 4, inside);
+                }
+            }
+
+            float3 end = spine[rings];
+            int tip = part.Add(end, color(1f), Wind(end.y, math.length(end.xz), phase));
+            int last = first + (rings - 1) * 4;
+            for (int k = 0; k < 4; k++)
+            {
+                part.Tri(last + k, last + (k + 1) % 4, tip, spine[rings - 1]);
             }
         }
 

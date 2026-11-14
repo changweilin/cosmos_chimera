@@ -109,7 +109,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Destructible substances (Data/env-materials, P3-12); null = scene objects cannot be hit or block creatures.</summary>
         /// <remarks>
-        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor) exists in it. Post: none. Side effects: none.
+        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor, UnderstoryKindsFor) exists in it. Post: none. Side effects: none.
         /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
         /// </remarks>
         public EnvMaterials EnvMaterials;
@@ -1751,7 +1751,8 @@ namespace Cosmimera.Bootstrap.Demo
         // REQ: destructibles.md#物理 — a hit shoves the object (first hit wakes it into a rigidbody); presentation only.
         private void ShoveObject(in ObjectEvent ev)
         {
-            if (_objectPhysics == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
+            if (_objectPhysics == null || !_worldObjects.CanBeShoved(ev.ObjectId) ||
+                !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c) ||
                 !TryCasterPosition(ev.SourceId, out float3 source))
             {
                 return;

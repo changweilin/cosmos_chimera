@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Cosmimera.Bootstrap.Demo
 {
     /// <summary>
-    /// D0 scatter (P3-09): draws the trees, rocks and crystals <see cref="ScatterPlanner"/> places around the player,
+    /// D0 scatter (P3-09): draws the trees, rocks, crystals and understory plants <see cref="ScatterPlanner"/> places around the player,
     /// as procedural meshes (<see cref="SceneryMeshes"/>) shaded by Cosmimera/ToonScenery.
     /// REQ: planet-world.md (7. 散佈); destructibles.md (placement lives in the rule layer, items block and can break).
     /// </summary>
@@ -18,17 +18,18 @@ namespace Cosmimera.Bootstrap.Demo
     /// cell always yields the same item whenever it streams in; items never float (altitude comes from the same
     /// ground function the terrain mesh uses) and never stand in water or on steep slopes.
     /// Why streaming and not baking the whole planet: R=640 m is ~5 Mm² of surface; only the horizon (~47 m) is visible.
-    /// The trunk, rock body or crystal shaft keeps its primitive collider (destructibles.md#碰撞: trees and rocks block the
-    /// character) on a "Block" child; the drawn "Model" child has none. Destroyed items (isDestroyed) are never drawn.
+    /// The trunk, rock body, crystal shaft, shrub core or cane clump keeps its primitive collider (destructibles.md#碰撞:
+    /// trees, shrubs and rocks block the character) on a "Block" child; the drawn "Model" child has none, and neither
+    /// does grass (草不擋). Destroyed items (isDestroyed) are never drawn.
     /// Side effects: creates/destroys GameObjects under this component; owns its materials and meshes.
     /// </remarks>
     public sealed class ScatterField : MonoBehaviour
     {
         private readonly struct Palette
         {
-            public readonly Color Color;  // crown, rock body or crystal
-            public readonly Color Accent; // trunk (trees only)
-            public readonly Color Top;    // what settles on upward faces: sunlit leaves, moss, snow, ash; crystal tips
+            public readonly Color Color;  // crown, rock body, crystal, leaves or grass blades
+            public readonly Color Accent; // trunk, shrub stems or canes
+            public readonly Color Top;    // what settles on upward faces: sunlit leaves, moss, snow, ash; crystal tips; grass plumes
             public readonly float Glow;   // self-lit crystals
 
             public Palette(Color color, Color accent, Color top, float glow = 0f)
@@ -46,6 +47,9 @@ namespace Cosmimera.Bootstrap.Demo
             Leaf = 1,
             Rock = 2,
             Crystal = 3,
+            Cane = 4,
+            Blade = 5,
+            Plume = 6,
         }
 
         private const float RadiusM = 90f;
@@ -54,6 +58,9 @@ namespace Cosmimera.Bootstrap.Demo
         // Metres of lean per metre of height in a full gust: a 6 m tree's crown travels ~0.4 m.
         private const float TreeSway = 0.06f;
         private const float GroveCellM = 45f;
+        // Thin stems travel further than a trunk: a 2 m tussock's plumes swing ~0.3 m.
+        private const float CaneSway = 0.1f;
+        private const float GrassSway = 0.16f;
 
         // Same order as ScatterPlanner.KindsFor(type): colour is presentation, the rest is rule layer.
         private static readonly Dictionary<string, Palette[]> Palettes = new Dictionary<string, Palette[]>
@@ -64,6 +71,40 @@ namespace Cosmimera.Bootstrap.Demo
             ["storm_planet"] = new[] { new Palette(C(0x5E7050), C(0x4A4038), C(0x8A9A6A)), new Palette(C(0x5C5A60), C(0x5C5A60), C(0x7A8A5A)) },
             ["mineral_planet"] = new[] { new Palette(C(0xE0B060), C(0xE0B060), C(0xFFF0C0), 0.3f), new Palette(C(0x8C4E36), C(0x8C4E36), C(0xC89868)) },
             ["twilight_planet"] = new[] { new Palette(C(0x8A6AC8), C(0x3E3050), C(0xD0A8F0)), new Palette(C(0xE070B0), C(0xE070B0), C(0xFFD0F0), 0.6f) },
+        };
+
+        // Same order as ScatterPlanner.UnderstoryKindsFor(type).
+        private static readonly Dictionary<string, Palette[]> UnderPalettes = new Dictionary<string, Palette[]>
+        {
+            ["verdant_planet"] = new[]
+            {
+                new Palette(C(0x4C8A3A), C(0x5A4630), C(0xA8C858)),
+                new Palette(C(0x7FA04A), C(0x7FA04A), C(0xEFE6CF)),
+                new Palette(C(0x6FA03C), C(0x9DB45A), C(0xC4D878)),
+            },
+            ["lava_planet"] = new[]
+            {
+                new Palette(C(0x8A7A4A), C(0x8A7A4A), C(0xF0D8B0)),
+                new Palette(C(0x5A4A3A), C(0x2E2422), C(0x8A6A4A)),
+            },
+            ["ice_crystal_planet"] = new[] { new Palette(C(0x5F7F78), C(0x4A4038), C(0xE8F4F8)) },
+            ["storm_planet"] = new[]
+            {
+                new Palette(C(0x8A9460), C(0x8A9460), C(0xE6E0D0)),
+                new Palette(C(0x55684A), C(0x4A4038), C(0x8A9A6A)),
+                new Palette(C(0x66784A), C(0x8C9460), C(0xA8B470)),
+            },
+            ["mineral_planet"] = new[]
+            {
+                new Palette(C(0x8A8048), C(0x6A4A34), C(0xC8B070)),
+                new Palette(C(0xB09A5A), C(0xB09A5A), C(0xF4E4C0)),
+            },
+            ["twilight_planet"] = new[]
+            {
+                new Palette(C(0x7A5AB8), C(0x3E3050), C(0xC8A0E8)),
+                new Palette(C(0x9A7AC8), C(0x9A7AC8), C(0xFFE0F8)),
+                new Palette(C(0x6A58B0), C(0x8A78C0), C(0xB8A0E0)),
+            },
         };
 
         private PlanetConfig _config;
@@ -133,7 +174,14 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(planner != null && focus != null && shader != null, "planner, focus and shader are required");
             _config = config;
             _planner = planner;
-            _palette = planetTypeId != null && Palettes.TryGetValue(planetTypeId, out Palette[] p) ? p : Palettes["verdant_planet"];
+            string paletteId = planetTypeId != null && Palettes.ContainsKey(planetTypeId) ? planetTypeId : "verdant_planet";
+            Palette[] canopy = Palettes[paletteId];
+            Palette[] under = UnderPalettes[paletteId];
+            Contract.Requires(canopy.Length == planner.CanopyKindCount && canopy.Length + under.Length == planner.Kinds.Count,
+                "planner kinds must match planetTypeId's tables");
+            _palette = new Palette[canopy.Length + under.Length];
+            canopy.CopyTo(_palette, 0);
+            under.CopyTo(_palette, canopy.Length);
             _cellsPerFace = planner.CellsPerFace;
             _isDestroyed = isDestroyed;
             _focus = focus;
@@ -240,6 +288,32 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 }
 
+                case ScatterShape.Shrub:
+                {
+                    SphereCollider core = Block<SphereCollider>(parent, new Vector3(0f, size * 0.3f, 0f), Quaternion.identity);
+                    core.radius = size * 0.3f;
+                    Model(parent, MeshFor(SceneryArchetype.Shrub, hash), new Vector3(size * girth, size, size * girth),
+                        MaterialFor(kind.Accent, Role.Bark, kind), MaterialFor(kind.Color, Role.Leaf, kind));
+                    break;
+                }
+
+                case ScatterShape.Bamboo:
+                {
+                    CapsuleCollider clump = Block<CapsuleCollider>(parent, new Vector3(0f, size * 0.45f, 0f), Quaternion.identity);
+                    clump.radius = size * 0.18f;
+                    clump.height = size * 0.9f;
+                    Model(parent, MeshFor(SceneryArchetype.CaneClump, hash), new Vector3(size * girth, size, size * girth),
+                        MaterialFor(kind.Accent, Role.Cane, kind), MaterialFor(kind.Color, Role.Leaf, kind));
+                    break;
+                }
+
+                case ScatterShape.TallGrass:
+                {
+                    Model(parent, MeshFor(SceneryArchetype.PlumeGrass, hash), new Vector3(size * girth, size, size * girth),
+                        MaterialFor(kind.Color, Role.Blade, kind), MaterialFor(kind.Top, Role.Plume, kind));
+                    break;
+                }
+
                 default:
                 {
                     BoxCollider shaft = Block<BoxCollider>(parent, new Vector3(0f, size * 0.5f, 0f), Quaternion.Euler(0f, 45f, 8f));
@@ -316,6 +390,10 @@ namespace Cosmimera.Bootstrap.Demo
                         Role.Bark => PlanetLook.SceneryMaterial(_sceneryShader, color, Tone(color, 0.72f), 0.8f, TreeSway, 0f, 0f),
                         Role.Leaf => PlanetLook.SceneryMaterial(_sceneryShader, color, kind.Top, 0.85f, TreeSway, 0.55f, 0f),
                         Role.Rock => PlanetLook.SceneryMaterial(_sceneryShader, color, kind.Top, 0.8f, 0f, 0f, 0f),
+                        Role.Cane => PlanetLook.SceneryMaterial(_sceneryShader, color, Tone(color, 0.6f), 0.7f, CaneSway, 0.2f, 0f),
+                        // Accent = the dry tone the blade tips fade to.
+                        Role.Blade => PlanetLook.SceneryMaterial(_sceneryShader, color, Color.Lerp(color, kind.Top, 0.6f), 0.8f, GrassSway, 0.6f, 0f),
+                        Role.Plume => PlanetLook.SceneryMaterial(_sceneryShader, color, Color.white, 0.5f, GrassSway, 0.8f, 0f),
                         _ => PlanetLook.SceneryMaterial(_sceneryShader, color, kind.Top, 0.7f, 0f, 0f, kind.Glow),
                     };
                 }
