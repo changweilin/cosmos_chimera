@@ -5,7 +5,7 @@
 |---|---|
 | R = 160 m，所有尺寸由單一 `R` 推導 | 沿用：`PlanetConfig.Radius` 單一來源 |
 | 內容在平面 XZ 上製作，再以等距圓柱投影包到球上（x→經度、z→緯度） | 適合「一條赤道帶」的城鎮；極區壓縮，所以參考作把玩家緯度夾在 ±0.24 圓周。本作要全球可走 → **不沿用**（ADR-0001） |
-| `basisAt(x,z)` 給 east/up/north 正交框架，攝影機 up 跟隨地表法線 | 沿用概念：`PlanetFrame.At(worldPos)` |
+| `basisAt(x,z)` 給 east/up/north 正交框架，攝影機 up 跟隨地表法線 | 沿用概念：`PlanetFrame.At(worldPos)`（手性依 Q-T5 定案為 `cross(North, East) == Up`，面向 North 時 East 在右；`P1-01` 待套用） |
 | 長邊三角形細分後再彎曲，避免弦切穿星球 | 沿用：大型手作物件放上球面前先細分 |
 | 遠景用 icosphere 避免極點擠壓 | 改為 cube-sphere，同樣無極點問題且易於四叉樹 LOD |
 | 卡通描邊：螢幕空間深度二階差分 + 主角物件反向外殼 | 參考：本作角色/宙獸用反向外殼描邊，地形不描邊 |

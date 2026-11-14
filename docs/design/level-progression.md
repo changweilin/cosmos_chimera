@@ -82,7 +82,7 @@ W = sum(w(i))
 - 已接線：`Progression`（門檻表、LevelOf、野生等級、來源經驗、結算）、`CreatureStats.AtLevel`、進化改為等級門檻（schema `evolution.level`、importer、`EvolutionRequirement.RequiredLevel`／`EvolutionCheck.LevelShortBy`／`EvolutionRules` 讀 `Progression.LevelOf(Exp)`）、存檔格式 2（v1 一次遷移並備份 `.v1.bak`）、D0 run 戰鬥／收服／任務發放經驗與 HUD 等級顯示。
 - 各物種門檻：D0 示範資料採用 SOL 提案 [evolution-levels.json](../../Data/_incoming/p2-12-level-proposal/evolution-levels.json)（**待人工確認**；`confirmed: false`）。
 - 野生等級改為 BOSS LV5–75 線性對應 d（D0-X3）：`balance.json#progression.rewards.wild_level`、`Progression.WildLevel`、`tools/balance` 黃金向量同步。
-- 未做：超載等級解鎖（Q-C12）；副手經驗只在規則層（D0 尚無副手編成）；星球難度 d 尚無資料欄，D0 固定 d=1（tech-debt D0-X3）。
+- 未做：超載等級解鎖（Q-C12 規則已定案、待 P2-05 接線）；副手經驗只在規則層（D0 尚無副手編成）；星球難度 d 尚無資料欄，D0 固定 d=1（tech-debt D0-X3）。
 - `PartnerLoadout.FindInvalidPairs` 仍假設副手不成長；副手進化接線時需更新（P2-07）。
 
 ## 獎勵量（Q-C29／Q-C30 定案）
