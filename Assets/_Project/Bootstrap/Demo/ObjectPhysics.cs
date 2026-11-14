@@ -178,7 +178,7 @@ namespace Cosmimera.Bootstrap.Demo
         // Below the sampled ground by more than this, the terrain under the body has no collider (streamed out).
         private const float FallThroughM = 2f;
         private const int MaxPiecesPerObject = 8;
-        // Placeholder sizes: a material should read as a pick-up, not as debris, so it is fixed rather than object-sized.
+        // A material should read as a pick-up, not as debris, so its size is fixed rather than object-sized.
         private const float MaterialEdgeM = 0.35f;
         private const float GemEdgeM = 0.25f;
         private const float WispDiameterM = 0.4f;
@@ -212,6 +212,9 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<GroundDrop> _ground = new List<GroundDrop>(32);
         // Keyed by element * 3 + kind; one shared material per look, released in OnDestroy.
         private readonly Dictionary<int, Material> _dropLooks = new Dictionary<int, Material>();
+        // Keyed by shape * 16 + variant; built on first use, released in OnDestroy.
+        private readonly Dictionary<int, Mesh> _meshes = new Dictionary<int, Mesh>();
+        private Shader _propsShader;
         private PlanetConfig _planet;
         private PlanetGravity _gravity;
         private Func<float3, float> _groundAltitude;
@@ -225,12 +228,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: gravity, groundAltitude and env non-null; tuning.IsValid; ignore non-null (colliders pushers must not
         ///      touch: the character's, whose body collision is rule-side, combat.md#實體碰撞); toonShader may be null
-        ///      (ground drops keep the primitive's material); called once.
+        ///      (ground drops are then drawn without a material: headless tests); propsShader (Cosmimera/ToonScenery)
+        ///      may be null (ground drops fall back to toonShader, losing glow and veins); called once.
         /// Post: the other members work. Side effects: stores references.
         /// </remarks>
         public void Configure(in PlanetConfig planet, PlanetGravity gravity, Func<float3, float> groundAltitude,
-            Collider[] ignore, in ObjectPhysicsTuning tuning, EnvMaterials env, Shader toonShader)
+            Collider[] ignore, in ObjectPhysicsTuning tuning, EnvMaterials env, Shader toonShader, Shader propsShader = null)
         {
+            _propsShader = propsShader;
             Contract.Requires(gravity != null && groundAltitude != null && ignore != null && env != null,
                 "gravity, groundAltitude, ignore, env required");
             Contract.Requires(tuning.IsValid, "tuning must be valid");
@@ -438,11 +443,8 @@ namespace Cosmimera.Bootstrap.Demo
             Material material = look != null ? look.sharedMaterial : null;
             for (int i = 0; i < count; i++)
             {
-                GameObject go = SpawnPiece("Debris", center, hitRadiusM, edge, carried, up, out Rigidbody body);
-                if (material != null)
-                {
-                    go.GetComponent<Renderer>().sharedMaterial = material;
-                }
+                GameObject go = SpawnPiece("Debris", PropShape.Shard, center, hitRadiusM, edge, carried, up, out Rigidbody body);
+                go.GetComponent<Renderer>().sharedMaterial = material;
 
                 body.mass = pieceKg;
                 _debris.Add(new Piece { Body = body, BornAt = Time.time, RestingSince = -1f });
@@ -454,12 +456,29 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private GameObject SpawnPiece(string name, float3 center, float hitRadiusM, float edge, float3 carried, float3 up,
-            out Rigidbody body)
+        private Mesh MeshOf(PropShape shape)
+        {
+            // Which variant a piece gets is presentation-only, like its spread.
+            int variant = UnityEngine.Random.Range(0, PropMeshes.VariantCount(shape));
+            int key = (int)shape * 16 + variant;
+            if (!_meshes.TryGetValue(key, out Mesh mesh))
+            {
+                mesh = PropMeshes.Build(shape, variant);
+                _meshes[key] = mesh;
+            }
+
+            return mesh;
+        }
+
+        private GameObject SpawnPiece(string name, PropShape shape, float3 center, float hitRadiusM, float edge, float3 carried,
+            float3 up, out Rigidbody body)
         {
             float3 offset = (float3)UnityEngine.Random.insideUnitSphere * (hitRadiusM * 0.6f);
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = name;
+            var go = new GameObject(name);
+            go.AddComponent<MeshFilter>().sharedMesh = MeshOf(shape);
+            go.AddComponent<MeshRenderer>();
+            // The unit box the placeholder cube had (PropMeshes fits loose pieces to it): mass, rest and roll are unchanged.
+            go.AddComponent<BoxCollider>();
             go.transform.SetParent(transform, false);
             go.transform.SetPositionAndRotation((Vector3)(center + offset), UnityEngine.Random.rotationUniform);
             go.transform.localScale = Vector3.one * edge;
@@ -476,8 +495,9 @@ namespace Cosmimera.Bootstrap.Demo
         private void SpawnGroundBody(Element element, GroundDropKind kind, Substance substance, float edge, float3 center,
             float hitRadiusM, float3 carried, float3 up)
         {
-            GameObject go = SpawnPiece(kind == GroundDropKind.Gem ? "Gem" : "Material", center, hitRadiusM, edge, carried, up,
-                out Rigidbody body);
+            bool gem = kind == GroundDropKind.Gem;
+            GameObject go = SpawnPiece(gem ? "Gem" : "Material", gem ? PropShape.Gem : PropShape.Nugget, center, hitRadiusM, edge,
+                carried, up, out Rigidbody body);
             body.mass = math.max(0.2f, substance.DensityKgM3 * edge * edge * edge);
             Paint(go, element, kind);
             _ground.Add(new GroundDrop(element, kind, go, (float3)go.transform.position, false));
@@ -485,10 +505,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void SpawnWisp(Element element, float3 up)
         {
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            go.name = element == Element.Light ? "LightWisp" : "ShadowWisp";
-            // REQ: destructibles.md#碰撞 — light and shadow materials collide with nothing.
-            Destroy(go.GetComponent<Collider>());
+            // REQ: destructibles.md#碰撞 — light and shadow materials collide with nothing: no collider is added.
+            var go = new GameObject(element == Element.Light ? "LightWisp" : "ShadowWisp");
+            go.AddComponent<MeshFilter>().sharedMesh = MeshOf(PropShape.Wisp);
+            go.AddComponent<MeshRenderer>();
             go.transform.SetParent(transform, false);
             float3 pos = _planet.ToWorld(up, _groundAltitude(up) + WispHoverM);
             go.transform.SetPositionAndRotation((Vector3)pos,
@@ -510,8 +530,23 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Color color = PlaceholderCreatureViewFactory.ColorOf(element);
                 // Gems read brighter than the plain material of the same element.
-                m = PlanetLook.CreatureMaterial(_toonShader, kind == GroundDropKind.Gem ? Color.Lerp(color, Color.white, 0.5f) : color,
-                    0.02f);
+                Color pale = Color.Lerp(color, Color.white, 0.5f);
+                if (_propsShader == null)
+                {
+                    m = PlanetLook.CreatureMaterial(_toonShader, kind == GroundDropKind.Gem ? pale : color, 0.02f);
+                }
+                else
+                {
+                    // Glow keeps a pick-up findable at night and in grass; a shadow wisp stays dark on purpose.
+                    m = kind switch
+                    {
+                        GroundDropKind.Gem => PlanetLook.SceneryMaterial(_propsShader, pale, Color.white, 0.7f, 0f, 0f, 0.7f),
+                        GroundDropKind.Wisp => PlanetLook.SceneryMaterial(_propsShader, color, pale, 0.9f, 0f, 0f,
+                            element == Element.Shadow ? 0.15f : 1.6f),
+                        _ => PlanetLook.SceneryMaterial(_propsShader, color, pale, 0.85f, 0f, 0f, 0.15f),
+                    };
+                }
+
                 _dropLooks[key] = m;
             }
 
@@ -689,6 +724,12 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _dropLooks.Clear();
+            foreach (Mesh mesh in _meshes.Values)
+            {
+                Destroy(mesh);
+            }
+
+            _meshes.Clear();
         }
 
         private bool FellThrough(Vector3 position)

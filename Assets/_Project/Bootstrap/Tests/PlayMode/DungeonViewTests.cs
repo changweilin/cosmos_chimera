@@ -114,6 +114,34 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(treasures, Is.GreaterThan(0));
             Assert.That(view.Markers.Count, Is.EqualTo(treasures));
+            foreach (GameObject marker in view.Markers)
+            {
+                Assert.That(marker.GetComponentInChildren<Collider>(), Is.Null, "no reward yet, so nothing to bump into");
+                Assert.That(marker.GetComponent<MeshFilter>().sharedMesh, Is.Not.Null);
+                // The chest's base sits on the sampled ground (0 here), not half a marker above it.
+                Assert.That(Planet.Altitude(marker.transform.position), Is.EqualTo(0f).Within(1e-2f));
+            }
+        }
+
+        [Test]
+        public void Seal_is_drawn_as_spires_inside_its_collider()
+        {
+            LockedDungeon(out RunPlan plan, out DungeonLayout dungeon);
+            DungeonView view = View(plan, dungeon);
+            MeshFilter spires = view.Seals[0].transform.Find("Spires").GetComponent<MeshFilter>();
+            Assert.That(spires.GetComponent<MeshRenderer>().sharedMaterial, Is.Not.Null);
+            float3 axis = dungeon.ArenaGate;
+            float reach = 0f, top = float.MinValue;
+            foreach (Vector3 v in spires.sharedMesh.vertices)
+            {
+                float3 world = spires.transform.TransformPoint(v);
+                float3 fromCentre = world - Planet.Center;
+                reach = math.max(reach, math.length(fromCentre - axis * math.dot(fromCentre, axis)));
+                top = math.max(top, Planet.Altitude(world));
+            }
+
+            Assert.That(reach, Is.InRange(DungeonPlanner.ArenaGateOuterM * 0.8f, DungeonPlanner.ArenaGateOuterM * 1.1f));
+            Assert.That(top, Is.EqualTo(DungeonPlanner.WallHeightM).Within(0.5f), "as tall as the walls beside it");
         }
 
         [Test]

@@ -687,7 +687,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         /// <summary>Unit icosphere, subdivided; shared read-only data.</summary>
-        private sealed class Ico
+        internal sealed class Ico
         {
             private static readonly Dictionary<int, Ico> Cache = new Dictionary<int, Ico>();
 

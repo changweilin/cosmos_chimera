@@ -80,6 +80,37 @@
 </section>
 
 <section>
+<h2>路人 NPC / 自然生物</h2>
+<div class="cards">
+
+<article id="Q-A2">
+  <header><a class="id" href="#Q-A2">Q-A2</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>聚落與道路上的路人 NPC 屬於哪一層？純表現層＝不擋路、不可互動、不進 <code>RunLayout</code> 雜湊（同建築造型的做法，同 seed 各客戶端畫出相同路人）；規則層＝有碰撞、可對話／治療／交易，要升 <code>GeneratorVersion</code>、多人要同步位置。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-A3">
+  <header><a class="id" href="#Q-A3">Q-A3</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>路人的外觀從哪裡來？程式產生的卡通網格（無美術匯入，與建築／樹同一套；能做到剪影、服飾層次、配色與體型差異，<b>臉與布料細節達不到曠野之息的角色水準</b>）；或走美術管線的角色基底模型（<code>CharacterModelTable</code>、捏臉滑桿）再由程式換體型／配色／服飾件。地區×時代的服飾是否沿用建築的六地區×七時代與主／副風格混合？</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-A4">
+  <header><a class="id" href="#Q-A4">Q-A4</a><span class="tag">影響 P3-18（新）</span></header>
+  <p><span class="label">問題</span>路人的年齡與健康怎麼抽、影響什麼？<code>characters.md</code> 的年齡權重（青少年 50 %）是為玩家預設與具名角色訂的；路人若改用「聚落平均年齡＋每人常態偏移」，兩者會不一致。健康只影響外觀（姿態、步態、膚色、繃帶／拐杖），還是也影響規則（例如需要治療的 NPC 任務）？</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W9">
+  <header><a class="id" href="#Q-W9">Q-W9</a><span class="tag">影響 P3-19（新）、P3-09</span></header>
+  <p><span class="label">問題</span>「不同環境的自然生物」指哪些？目前世界裡的生物只有宙獸與植物（樹／灌木／草）。非宙獸的氛圍動物（鳥、魚、昆蟲、小獸）會讓「這個世界的動物就是宙獸」的設定變模糊，需要你決定是否存在、能否被招式打到。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+</div>
+</section>
+
+<section>
 <h2>技術 / 工具</h2>
 <div class="cards">
 
@@ -98,6 +129,10 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
+ 'Q-A2':[R('layer','路人 NPC 的層級',['純表現層氛圍路人（不擋路、不可互動）','表現層＋可推擠（不擋路徑、不可互動）','規則層實體（碰撞、可互動、多人同步）']),C('where','出現在哪裡',['聚落內','道路上','野外營地','大廳'])],
+ 'Q-A3':[R('source','外觀來源',['程式產生的卡通網格','美術基底模型＋程式換體型／配色／服飾件','先做程式網格，之後換成美術模型']),R('axes','服飾風格軸',['沿用建築的地區×時代＋主／副風格混合','另訂一套'])],
+ 'Q-A4':[R('age','路人年齡分佈',['聚落平均＋每人常態偏移（依時代／聚落種類）','沿用 characters.md 權重（青少年 50 %）']),R('health','健康影響範圍',['只影響外觀','外觀＋規則（治療任務等）']),G('elder','長者＋兒童合計上限',0,60,5,30,' %')],
+ 'Q-W9':[C('scope','自然生物包含',['植物／樹的年齡與健康變化（幼木、老樹、枯木）','非宙獸的氛圍動物（鳥、魚、昆蟲、小獸）','野生宙獸的個體差異（體型、年齡、傷病外觀）']),R('hit','氛圍動物能否被招式打到',['不能（純表現，靠近就逃）','能（可破壞物件，掉素材）','不做氛圍動物'])],
  'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])],
  'Q-T3':[R('tool','image-to-3D 工具',['Meshy','Tripo','Rodin（Hyper3D）','手工 Blender','暫不決定']),T('other','其他工具／備註','')]
 };

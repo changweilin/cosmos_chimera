@@ -325,6 +325,12 @@ namespace Cosmimera.Bootstrap.Demo
         // top edge stays under the covering instead of drawing a line across it.
         private const float RoofSeatM = 0.06f;
         private const float TentBodyM = 1.5f; // the lowest tent (the snow house) is just taller than this
+        // REQ: settlement-structures.md#建築造型 (副風格的抽法). Shares of a planet's settlements whose secondary
+        // style departs from the planet's own; the rest keep it, so a planet still reads as one culture.
+        private const float ThemeLeanShare = 0.5f;
+        private const float ForeignRegionShare = 0.2f;
+        private const float OtherKinEraShare = 0.25f;
+        private const float DistantEraShare = 0.15f;
 
         /// <summary>Regional tradition of a planet type.</summary>
         /// <remarks>Pre: none (unknown or null ids read as verdant, like PlanetLook). Post: defined. Side effects: none.</remarks>
@@ -399,8 +405,9 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// REQ: settlement-structures.md#建築造型 (星球類型為主、區域主題微調).
         /// Pre: defined kind; settlementIndex ≥ 0; themeId may be null or unknown (no nudge).
-        /// Post: same arguments, same mix; Ruins and Lair get a pure Ancient mix; otherwise Weight ≤ 0.7 and the
-        ///       secondary era is the planet's or another kin of its era.
+        /// Post: same arguments, same mix; Ruins and Lair get a pure Ancient mix; otherwise Weight ≤ 0.7, the
+        ///       secondary region is never the planet's own (the planet's secondary, the theme's, or a third
+        ///       tradition), and the secondary era is any inhabited era but the planet's (mostly its kin).
         /// Side effects: none.
         /// </remarks>
         public static ArchMix MixFor(in ArchPlanetStyle planet, SettlementKind kind, string themeId, ulong seed, int settlementIndex)
@@ -436,16 +443,43 @@ namespace Cosmimera.Bootstrap.Demo
             };
 
             var rng = new Pcg32(Salt ^ seed, 0x534554ul + (ulong)settlementIndex);
+            // Every draw below is taken whether or not it is used, so one settlement's theme never shifts the
+            // stream of its age and damage.
+            float regionRoll = rng.NextFloat();
+            // A tradition that is neither the planet's own nor its usual secondary: settlers from somewhere else.
+            ArchRegion foreign = planet.Region;
+            for (int skip = (int)rng.NextUInt(4); ; foreign = (ArchRegion)(((int)foreign + 1) % 6))
+            {
+                if (foreign != planet.Region && foreign != planet.SecondaryRegion && skip-- == 0)
+                {
+                    break;
+                }
+            }
+
+            bool themed = theme.lean >= 0 && theme.lean != (int)planet.Region;
             ArchRegion secondary = planet.SecondaryRegion;
-            bool leans = rng.NextFloat() < 0.6f;
-            if (theme.lean >= 0 && theme.lean != (int)planet.Region && leans)
+            if (themed && regionRoll < ThemeLeanShare)
             {
                 secondary = (ArchRegion)theme.lean;
+            }
+            else if (regionRoll >= 1f - ForeignRegionShare)
+            {
+                secondary = foreign;
             }
 
             ArchEra[] kin = Kin(planet.Era);
             ArchEra other = kin[rng.NextUInt((uint)kin.Length)];
-            ArchEra secondaryEra = rng.NextFloat() < 0.3f ? other : planet.SecondaryEra;
+            float eraRoll = rng.NextFloat();
+            // An era with no lineage to the planet's: a relic dug up, or goods off a ship from elsewhere.
+            ArchEra distant = InhabitedEras[rng.NextUInt((uint)InhabitedEras.Length - 1)];
+            if (distant == planet.Era)
+            {
+                distant = InhabitedEras[InhabitedEras.Length - 1];
+            }
+
+            ArchEra secondaryEra = eraRoll < DistantEraShare ? distant
+                : eraRoll < DistantEraShare + OtherKinEraShare ? other
+                : planet.SecondaryEra;
             (float eraAge, float eraDamage) = EraWear(planet.Era);
             return new ArchMix(secondary, secondaryEra,
                 math.clamp(planet.Weight + theme.weight + 0.12f * Gauss(ref rng), 0f, 0.7f),

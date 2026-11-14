@@ -276,7 +276,9 @@ namespace Cosmimera.Bootstrap.Tests
         public void The_mix_of_a_settlement_follows_the_planet_and_is_nudged_by_its_theme()
         {
             ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor("verdant_planet", 11);
-            int leanIce = 0, differs = 0;
+            int leanIce = 0, differs = 0, ownSecondary = 0, ownSecondaryEra = 0;
+            var regions = new HashSet<ArchRegion>();
+            var eras = new HashSet<ArchEra>();
             for (int i = 0; i < 200; i++)
             {
                 ArchMix plain = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, null, 11, i);
@@ -284,9 +286,13 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That((again.SecondaryRegion, again.SecondaryEra, again.Weight, again.AgeMean, again.DamageMean),
                     Is.EqualTo((plain.SecondaryRegion, plain.SecondaryEra, plain.Weight, plain.AgeMean, plain.DamageMean)));
                 Assert.That(plain.Weight, Is.InRange(0f, 0.7f));
-                Assert.That(plain.SecondaryEra, Is.Not.EqualTo(ArchEra.Ancient));
-                Assert.That(plain.SecondaryRegion, Is.EqualTo(planet.SecondaryRegion), "no theme, no lean");
+                Assert.That(plain.SecondaryEra, Is.Not.EqualTo(ArchEra.Ancient).And.Not.EqualTo(planet.Era));
+                Assert.That(plain.SecondaryRegion, Is.Not.EqualTo(planet.Region));
                 Assert.That(plain.PlinthAddM, Is.EqualTo(0f));
+                regions.Add(plain.SecondaryRegion);
+                eras.Add(plain.SecondaryEra);
+                if (plain.SecondaryRegion == planet.SecondaryRegion) ownSecondary++;
+                if (plain.SecondaryEra == planet.SecondaryEra) ownSecondaryEra++;
 
                 ArchMix high = ArchitectureMeshes.MixFor(planet, SettlementKind.Village, "highland", 11, i);
                 Assert.That(high.PitchScale, Is.GreaterThan(1f), "highland roofs are steeper");
@@ -301,6 +307,11 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(leanIce, Is.GreaterThan(60), "most highland settlements borrow from the ice tradition");
             Assert.That(differs, Is.GreaterThan(150), "settlements of one planet do not share one mix");
+            // REQ: settlement-structures.md#建築造型 — 副風格的抽法：多數聚落沿用星球的副風格，少數借自第三個傳統或無淵源的時代。
+            Assert.That(regions.Count, Is.EqualTo(5), "every other tradition turns up in some settlement");
+            Assert.That(eras.Count, Is.EqualTo(6), "every other inhabited era turns up in some settlement");
+            Assert.That(ownSecondary, Is.GreaterThan(120), "most unthemed settlements keep the planet's secondary tradition");
+            Assert.That(ownSecondaryEra, Is.GreaterThan(100), "most settlements keep the planet's secondary era");
 
             ArchMix ruins = ArchitectureMeshes.MixFor(planet, SettlementKind.Ruins, "forest", 11, 3);
             Assert.That(ruins.Weight, Is.EqualTo(0f));

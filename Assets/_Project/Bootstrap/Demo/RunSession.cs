@@ -567,7 +567,7 @@ namespace Cosmimera.Bootstrap.Demo
                     var dungeonRoot = new GameObject("Dungeon");
                     dungeonRoot.transform.SetParent(transform, false);
                     _dungeonView = dungeonRoot.AddComponent<DungeonView>();
-                    _dungeonView.Configure(config, _plan, _dungeon, surface.GroundAltitude, toonShader);
+                    _dungeonView.Configure(config, _plan, _dungeon, surface.GroundAltitude, toonShader, scenery?.Props);
                 }
 
                 _scatterField = gameObject.AddComponent<ScatterField>();
@@ -583,7 +583,7 @@ namespace Cosmimera.Bootstrap.Demo
                     _objectPhysics = loose.AddComponent<ObjectPhysics>();
                     _objectPhysics.Configure(config, gravity, surface.GroundAltitude,
                         _rig.Character.GetComponentsInChildren<Collider>(), ObjectPhysicsTuning.Default, setup.EnvMaterials,
-                        toonShader);
+                        toonShader, scenery?.Props);
                 }
             }
 
