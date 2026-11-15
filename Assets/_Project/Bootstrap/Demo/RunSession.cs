@@ -283,6 +283,8 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
         private readonly Dictionary<int, ICreatureView> _views = new Dictionary<int, ICreatureView>();
+        private readonly Dictionary<int, CreatureDef> _viewDefs = new Dictionary<int, CreatureDef>();
+        private readonly Dictionary<int, SpawnRole> _viewRoles = new Dictionary<int, SpawnRole>();
         private ICreatureViewFactory _viewFactory;
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
@@ -1994,6 +1996,8 @@ namespace Cosmimera.Bootstrap.Demo
             ICreatureView view = _viewFactory.Create(
                 new CreatureViewRequest(u.Def, u.Side == EncounterSide.Player, role, u.BodyRadiusM));
             _views[u.Id] = view;
+            _viewDefs[u.Id] = u.Def;
+            _viewRoles[u.Id] = role;
             view.Root.gameObject.SetActive(u.Fielded);
         }
 
@@ -2001,6 +2005,12 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (EncounterUnit u in _encounter.Units)
             {
+                if (_viewDefs.TryGetValue(u.Id, out CreatureDef shownDef) && shownDef != u.Def)
+                {
+                    _views[u.Id].Dispose();
+                    CreateView(u, _viewRoles[u.Id]);
+                }
+
                 ICreatureView view = _views[u.Id];
                 Transform t = view.Root;
                 bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
@@ -2022,7 +2032,9 @@ namespace Cosmimera.Bootstrap.Demo
 
                 float3 up = _rig.Config.ToDirection(u.Position);
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
-                t.localScale = u.Combatant.IsOverloaded ? new Vector3(1.15f, 1.15f, 1.15f) : Vector3.one;
+                t.localScale = u.Combatant.IsOverloaded && u.Def == u.BaseDef
+                    ? new Vector3(1.15f, 1.15f, 1.15f)
+                    : Vector3.one;
                 if (u.Combatant.IsFainted)
                 {
                     view.ShowFainted();

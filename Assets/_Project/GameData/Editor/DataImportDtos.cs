@@ -75,6 +75,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("id", Required = Required.Always)] public string Id;
         [JsonProperty("line_id", Required = Required.Always)] public string LineId;
         [JsonProperty("stage", Required = Required.Always)] public string Stage;
+        [JsonProperty("overload_of")] public string OverloadOf;
         [JsonProperty("size_class", Required = Required.Always)] public string SizeClass;
         [JsonProperty("ai_style", Required = Required.Always)] public string AiStyle;
         [JsonProperty("temperament", Required = Required.Always)] public string Temperament;

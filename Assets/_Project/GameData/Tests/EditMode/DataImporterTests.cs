@@ -709,6 +709,50 @@ namespace Cosmimera.GameData.Tests
             Assert.Throws<ContractException>(() => Db.GetRelations(null));
         }
 
+        [Test]
+        public void Overload_form_imports_and_links_bidirectionally_with_adult()
+        {
+            string path = Path.Combine(_src, "creatures/creatures.json");
+            JArray creatures = JArray.Parse(File.ReadAllText(path));
+            var overload = (JObject)creatures[2].DeepClone();
+            overload["id"] = "sample_fox_overload";
+            overload["stage"] = "overload";
+            overload["overload_of"] = "sample_fox_lord";
+            overload["size_class"] = "XL";
+            overload["evolves_to"] = null;
+            overload["evolution"] = null;
+            creatures.Add(overload);
+            File.WriteAllText(path, creatures.ToString());
+
+            DataImporter.Import(_src, Output);
+
+            Assert.IsTrue(Db.TryGet("sample_fox_lord", out CreatureDef adult));
+            Assert.IsTrue(Db.TryGet("sample_fox_overload", out CreatureDef ov));
+            Assert.AreEqual(CreatureStage.Overload, ov.Stage);
+            Assert.AreEqual(CreatureSizeClass.XL, ov.SizeClass);
+            Assert.AreSame(adult, ov.OverloadOf);
+            Assert.AreSame(ov, adult.OverloadForm);
+            Assert.IsNull(ov.EvolvesTo);
+        }
+
+        [Test]
+        public void Overload_form_rejects_missing_or_invalid_target()
+        {
+            string path = Path.Combine(_src, "creatures/creatures.json");
+            JArray creatures = JArray.Parse(File.ReadAllText(path));
+            var overload = (JObject)creatures[2].DeepClone();
+            overload["id"] = "sample_fox_overload";
+            overload["stage"] = "overload";
+            overload["overload_of"] = "sample_fox_cub";
+            overload["evolves_to"] = null;
+            overload["evolution"] = null;
+            creatures.Add(overload);
+            File.WriteAllText(path, creatures.ToString());
+
+            var ex = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            StringAssert.Contains("must be an adult form", ex.Message);
+        }
+
         private void ReplaceInFile(string relative, string from, string to)
         {
             string path = Path.Combine(_src, relative);

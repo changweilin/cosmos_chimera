@@ -179,8 +179,10 @@ namespace Cosmimera.Combat
         {
             Id = id;
             Side = side;
+            BaseDef = def;
             Def = def;
             Combatant = combatant;
+            MoveSlots = moves;
             Moves = moves;
             Volumes = volumes;
             RangeClasses = rangeClasses;
@@ -197,9 +199,13 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public EncounterSide Side { get; }
 
-        /// <summary>Species form.</summary>
+        /// <summary>Base species form assigned at creation (never changes during temporary overload).</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
-        public CreatureDef Def { get; }
+        public CreatureDef BaseDef { get; }
+
+        /// <summary>Current active species form (equals <see cref="BaseDef"/> except while overloaded with an overload form).</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public CreatureDef Def { get; internal set; }
 
         /// <summary>Level its stats are currently scaled to (raised only by <see cref="Encounter.SetLevel"/>).</summary>
         /// <remarks>Pre: none. Post: 1..100; never decreases. Side effects: none.</remarks>
@@ -215,6 +221,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public Combatant Combatant { get; }
 
+        internal CastMove[] MoveSlots { get; }
+
         /// <summary>Moves by slot: signature followed by equipped talisman-card moves.</summary>
         /// <remarks>Pre: none. Post: length 1..5. Side effects: none.</remarks>
         public IReadOnlyList<CastMove> Moves { get; }
@@ -225,7 +233,7 @@ namespace Cosmimera.Combat
 
         /// <summary>Hit-test sphere radius (m), from the size class.</summary>
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
-        public float BodyRadiusM { get; }
+        public float BodyRadiusM { get; internal set; }
 
         /// <summary>
         /// Separation radius (m) on the sphere: no other active body's circle may overlap it (combat.md#實體碰撞). Distinct
@@ -340,6 +348,8 @@ namespace Cosmimera.Combat
         private readonly List<AiEnemy> _enemyBuffer = new List<AiEnemy>(32);
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
         private readonly List<PlacedField> _fields = new List<PlacedField>(16);
+        private readonly int[] _overloadMastery = new int[10];
+        private readonly int[] _overloadResist = new int[10];
         private Pcg32 _rng;
         // Separate stream so wandering never shifts the combat roll order (hit/crit/capture replays stay identical).
         private Pcg32 _wanderRng;
@@ -741,15 +751,7 @@ namespace Cosmimera.Combat
 
             var mastery = new int[10];
             var resist = new int[10];
-            foreach (ElementValue ev in def.Mastery)
-            {
-                mastery[(int)ev.Element] = ev.Value;
-            }
-
-            for (int e = 0; e < 10; e++)
-            {
-                resist[e] = def.GetResist((Element)e);
-            }
+            FillElementTables(def, mastery, resist);
 
             EffectBook book = BookFor(def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
@@ -955,7 +957,7 @@ namespace Cosmimera.Combat
                 return OverloadResult.Fainted;
             }
 
-            if (u.Def.Stage != CreatureStage.Adult)
+            if (u.BaseDef.Stage != CreatureStage.Adult)
             {
                 return OverloadResult.NotAdult;
             }
@@ -975,7 +977,18 @@ namespace Cosmimera.Combat
                 return OverloadResult.AlreadyUsedThisCombat;
             }
 
-            u.Combatant.BeginOverload();
+            CreatureDef overloadForm = u.BaseDef.OverloadForm;
+            if (overloadForm != null)
+            {
+                ApplyUnitForm(u, overloadForm, out CreatureStats scaled);
+                FillElementTables(overloadForm, _overloadMastery, _overloadResist);
+                u.Combatant.BeginOverload(scaled.Con, scaled.Spi, scaled.Agi, _overloadMastery, _overloadResist);
+            }
+            else
+            {
+                u.Combatant.BeginOverload();
+            }
+
             _overloadedThisCombat.Add(unitId);
             return OverloadResult.Ok;
         }
@@ -983,17 +996,74 @@ namespace Cosmimera.Combat
         /// <summary>Reverts all overloaded units and resets per-combat overload usage when combat ends (Q-C12).</summary>
         /// <remarks>
         /// Pre: none.
-        /// Post: every unit has Combatant.IsOverloaded == false; once-per-combat lock cleared.
-        /// Side effects: mutates overloaded combatants and _overloadedThisCombat.
+        /// Post: every unit has Combatant.IsOverloaded == false and Def == BaseDef; once-per-combat lock cleared.
+        /// Side effects: mutates overloaded combatants, unit forms and _overloadedThisCombat.
         /// </remarks>
         public void EndCombatOverload()
         {
             for (int i = 0; i < _units.Count; i++)
             {
-                _units[i].Combatant.EndOverload();
+                EncounterUnit u = _units[i];
+                u.Combatant.EndOverload();
+                if (u.Def != u.BaseDef)
+                {
+                    ApplyUnitForm(u, u.BaseDef, out _);
+                }
             }
 
             _overloadedThisCombat.Clear();
+        }
+
+        private static void FillElementTables(CreatureDef def, int[] mastery, int[] resist)
+        {
+            Array.Clear(mastery, 0, mastery.Length);
+            foreach (ElementValue ev in def.Mastery)
+            {
+                mastery[(int)ev.Element] = ev.Value;
+            }
+
+            for (int e = 0; e < 10; e++)
+            {
+                resist[e] = def.GetResist((Element)e);
+            }
+        }
+
+        private void ApplyUnitForm(EncounterUnit u, CreatureDef form, out CreatureStats scaled)
+        {
+            Contract.Requires(form != null && form.SignatureMove != null, "form needs a signature move");
+            scaled = form.Stats.AtLevel(u.Level);
+            u.MoveDefs[0] = form.SignatureMove;
+            u.MoveSlots[0] = CastMove.FromDef(form.SignatureMove);
+            u.RangeClasses[0] = form.SignatureMove.RangeClass;
+            for (int i = 0; i < u.Volumes.Length; i++)
+            {
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], scaled.Str, u.IsBoss);
+            }
+
+            float radius = BodyRadiusFor(form.SizeClass);
+            int collisionMm = _balance.Collision.BodyMm(form.SizeClass);
+            if (u.IsBoss)
+            {
+                radius = radius * BossSizePermille / 1000f;
+                collisionMm = ScaleBoss(collisionMm);
+            }
+
+            u.Def = form;
+            u.BodyRadiusM = radius;
+            u.CollisionRadiusM = collisionMm * 0.001f;
+            u.Agi = scaled.Agi;
+            float3 dir = math.normalizesafe(u.Position, new float3(0f, 1f, 0f));
+            u.Position = GroundPoint(dir, radius);
+            if (form.Trait != null)
+            {
+                var effects = new EffectSpec[form.Trait.Effects.Count];
+                for (int i = 0; i < effects.Length; i++)
+                {
+                    effects[i] = EffectSpec.FromDef(form.Trait.Effects[i]);
+                }
+
+                u.Combatant.Book.SetInnateTrait(form.Trait.Id, TriggerSpec.FromDef(form.Trait.Trigger), effects);
+            }
         }
 
         /// <summary>Remaining combat revive cooldown in ms at <paramref name="nowMs"/> (Q-C36).</summary>

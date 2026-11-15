@@ -12,7 +12,7 @@ namespace Cosmimera.GameData
     /// <summary>Evolution stage of a creature form.</summary>
     public enum CreatureStage
     {
-        Juvenile = 0, Adolescent = 1, Adult = 2,
+        Juvenile = 0, Adolescent = 1, Adult = 2, Overload = 3,
     }
 
     /// <summary>Whether a move deals damage, applies an effect, or both.</summary>

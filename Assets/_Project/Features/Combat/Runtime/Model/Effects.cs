@@ -346,9 +346,9 @@ namespace Cosmimera.Combat
         }
 
         private readonly List<Slot> _slots = new List<Slot>(16);
-        private readonly string _traitId;
-        private readonly TriggerSpec _trigger;
-        private readonly EffectSpec[] _traitEffects;
+        private string _traitId;
+        private TriggerSpec _trigger;
+        private EffectSpec[] _traitEffects;
         private long _watermarkMs;
         private bool _crossBelowSpent;
         private readonly List<EffectBook> _partnerTraits = new List<EffectBook>(4);
@@ -401,6 +401,31 @@ namespace Cosmimera.Combat
         /// <summary>Whether this combatant has a trait.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool HasTrait => _traitId != null || _partnerTraits.Count > 0;
+
+        /// <summary>Replaces the innate trait (e.g. during temporary overload form switching), keeping timed slots and partner traits.</summary>
+        /// <remarks>
+        /// Pre: traitId non-empty; traitEffects non-null with 1..TraitDef.MaxEffects entries, none instant unless event trigger.
+        /// Post: HasTrait true; innate trait updated; partner traits and active timed effects preserved.
+        /// Side effects: mutates innate trait fields and resets _crossBelowSpent for the new innate trait.
+        /// </remarks>
+        internal void SetInnateTrait(string traitId, in TriggerSpec trigger, IReadOnlyList<EffectSpec> traitEffects)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(traitId), "traitId must be non-empty");
+            Contract.Requires(traitEffects != null && traitEffects.Count >= 1 && traitEffects.Count <= TraitDef.MaxEffects,
+                "a trait has 1..TraitDef.MaxEffects effects");
+            var next = new EffectSpec[traitEffects.Count];
+            for (int i = 0; i < traitEffects.Count; i++)
+            {
+                Contract.Requires(!(traitEffects[i].IsInstant && trigger.IsContinuous),
+                    "a heal needs an event trigger");
+                next[i] = traitEffects[i];
+            }
+
+            _traitId = traitId;
+            _trigger = trigger;
+            _traitEffects = next;
+            _crossBelowSpent = false;
+        }
 
         /// <summary>
         /// Applies a timed effect from <paramref name="sourceId"/> (move or trait id) at <paramref name="nowMs"/>.

@@ -549,6 +549,11 @@
     "en": "Adult",
     "ja": "成年期"
   },
+  "ui.stage.overload": {
+    "zh-TW": "超載",
+    "en": "Overload",
+    "ja": "オーバーロード"
+  },
   "ui.temperament.timid": {
     "zh-TW": "膽怯",
     "en": "Timid",

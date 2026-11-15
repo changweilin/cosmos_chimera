@@ -231,10 +231,16 @@ class CrossFileRules(unittest.TestCase):
     def test_schema_bands_match_balance(self):
         schema = json.loads((REPO / "Data/schemas/creature.schema.json").read_text(encoding="utf-8"))
         bands = json.loads((REPO / "Data/balance.json").read_text(encoding="utf-8"))["progression"]["evolution_level_bands"]
+        checked = set()
         for rule in schema["$defs"]["creature"]["allOf"]:
+            then_props = rule.get("then", {}).get("properties", {})
+            if "evolution" not in then_props:
+                continue
             stage = rule["if"]["properties"]["stage"]["const"]
-            level = rule["then"]["properties"]["evolution"]["properties"]["level"]
+            level = then_props["evolution"]["properties"]["level"]
             self.assertEqual(bands[stage], [level["minimum"], level["maximum"]], stage)
+            checked.add(stage)
+        self.assertEqual(set(bands.keys()), checked)
 
     def test_move_geometry_contracts(self):
         source = json.loads((SAMPLES / "valid/moves/moves.json").read_text(encoding="utf-8"))[0]
@@ -378,6 +384,49 @@ class CrossFileRules(unittest.TestCase):
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))
+
+    def _overload_entry(self, creature_id="sample_fox_overload", target="sample_fox_lord", line_id="sample_line_a"):
+        valid = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        adult = dict(valid[-1])
+        adult["id"] = creature_id
+        adult["line_id"] = line_id
+        adult["stage"] = "overload"
+        adult["overload_of"] = target
+        adult["evolves_to"] = None
+        adult["evolution"] = None
+        return valid, adult
+
+    def test_overload_form_valid(self):
+        valid, ov = self._overload_entry()
+        valid.append(ov)
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertEqual([], [str(f) for f in findings])
+
+    def test_overload_requires_overload_of(self):
+        valid, ov = self._overload_entry()
+        ov.pop("overload_of")
+        valid.append(ov)
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertIn("schema", self.codes(findings))
+
+    def test_overload_rejects_non_adult_target(self):
+        valid, ov = self._overload_entry(target="sample_fox_cub")
+        valid.append(ov)
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertIn("overload_chain", self.codes(findings))
+
+    def test_overload_rejects_duplicate_target(self):
+        valid, ov1 = self._overload_entry(creature_id="sample_fox_overload_a")
+        _, ov2 = self._overload_entry(creature_id="sample_fox_overload_b")
+        valid.extend([ov1, ov2])
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertIn("overload_duplicate", self.codes(findings))
+
+    def test_non_overload_rejects_overload_of(self):
+        valid = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        valid[-1]["overload_of"] = "sample_fox_lord"
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertIn("schema", self.codes(findings))
 
 
 if __name__ == "__main__":

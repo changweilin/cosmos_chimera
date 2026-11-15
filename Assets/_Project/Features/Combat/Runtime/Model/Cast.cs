@@ -323,6 +323,11 @@ namespace Cosmimera.Combat
         private readonly ModifierTotals _totals = new ModifierTotals();
         private int _hpMultiplier = 1;
         private int _preOverloadMaxHp;
+        private int _preOverloadSpi;
+        private int _preOverloadAgi;
+        private int[] _preOverloadMastery;
+        private int[] _preOverloadResist;
+        private bool _hasOverloadFormStats;
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -418,7 +423,7 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: true between BeginOverload and EndOverload. Side effects: none.</remarks>
         public bool IsOverloaded { get; private set; }
 
-        /// <summary>Enters temporary combat overload (+25% MaxHp, minimum +1; Q-C12).</summary>
+        /// <summary>Enters temporary combat overload (+25% MaxHp, minimum +1; Q-C12 fallback when no 4th form exists).</summary>
         /// <remarks>
         /// Pre: !IsFainted &amp;&amp; !IsOverloaded.
         /// Post: IsOverloaded == true; MaxHp increased; Hp increased by the same delta.
@@ -428,6 +433,7 @@ namespace Cosmimera.Combat
         {
             Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
             _preOverloadMaxHp = MaxHp;
+            _hasOverloadFormStats = false;
             int bonus = MaxHp / 4;
             if (bonus < 1)
             {
@@ -439,10 +445,62 @@ namespace Cosmimera.Combat
             IsOverloaded = true;
         }
 
+        /// <summary>Enters temporary combat overload by switching to the overload form's stats, mastery and resist (Q-C12).</summary>
+        /// <remarks>
+        /// Pre: !IsFainted &amp;&amp; !IsOverloaded; con, spi, agi >= 0; masteryByElement and resistByElement have 10 valid entries.
+        /// Post: IsOverloaded == true; MaxHp == _stats.MaxHp(con) * _hpMultiplier; Hp grows by max(0, newMaxHp - oldMaxHp)
+        ///       and is clamped to 1..MaxHp; SPI/AGI/mastery/resist match the overload form.
+        /// Side effects: mutates MaxHp, Hp, SPI, AGI, mastery, resist and IsOverloaded; snapshots pre-overload values.
+        /// </remarks>
+        internal void BeginOverload(int con, int spi, int agi, IReadOnlyList<int> masteryByElement, IReadOnlyList<int> resistByElement)
+        {
+            Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
+            Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
+            Contract.Requires(masteryByElement != null && masteryByElement.Count == ElementCount,
+                "masteryByElement needs one entry per Element");
+            Contract.Requires(resistByElement != null && resistByElement.Count == ElementCount,
+                "resistByElement needs one entry per Element");
+
+            _preOverloadMaxHp = MaxHp;
+            _preOverloadSpi = _spi;
+            _preOverloadAgi = _agi;
+            _preOverloadMastery ??= new int[ElementCount];
+            _preOverloadResist ??= new int[ElementCount];
+            System.Array.Copy(_mastery, _preOverloadMastery, ElementCount);
+            System.Array.Copy(_resist, _preOverloadResist, ElementCount);
+            _hasOverloadFormStats = true;
+
+            for (int i = 0; i < ElementCount; i++)
+            {
+                Contract.Requires(masteryByElement[i] >= 0 && masteryByElement[i] <= DamageModel.MaxMasteryPercent,
+                    "mastery must be 0..MaxMasteryPercent");
+                Contract.Requires(resistByElement[i] >= -DamageModel.ResistClamp && resistByElement[i] <= DamageModel.ResistClamp,
+                    "resist must be -100..100");
+                _mastery[i] = masteryByElement[i];
+                _resist[i] = resistByElement[i];
+            }
+
+            int newMaxHp = _stats.MaxHp(con) * _hpMultiplier;
+            int delta = newMaxHp - MaxHp;
+            MaxHp = newMaxHp;
+            if (delta > 0)
+            {
+                Hp += delta;
+            }
+            else if (Hp > MaxHp)
+            {
+                Hp = MaxHp;
+            }
+
+            _spi = spi;
+            _agi = agi;
+            IsOverloaded = true;
+        }
+
         /// <summary>Reverts temporary combat overload when combat ends (Q-C12).</summary>
         /// <remarks>
-        /// Pre: none. Post: IsOverloaded == false; MaxHp restored and Hp clamped to MaxHp.
-        /// Side effects: mutates MaxHp, Hp, IsOverloaded when overloaded.
+        /// Pre: none. Post: IsOverloaded == false; MaxHp and any form-switched stats/mastery/resist restored and Hp clamped to MaxHp.
+        /// Side effects: mutates MaxHp, Hp, stats, mastery, resist, IsOverloaded when overloaded.
         /// </remarks>
         public void EndOverload()
         {
@@ -455,6 +513,15 @@ namespace Cosmimera.Combat
             if (Hp > MaxHp)
             {
                 Hp = MaxHp;
+            }
+
+            if (_hasOverloadFormStats)
+            {
+                _spi = _preOverloadSpi;
+                _agi = _preOverloadAgi;
+                System.Array.Copy(_preOverloadMastery, _mastery, ElementCount);
+                System.Array.Copy(_preOverloadResist, _resist, ElementCount);
+                _hasOverloadFormStats = false;
             }
 
             IsOverloaded = false;

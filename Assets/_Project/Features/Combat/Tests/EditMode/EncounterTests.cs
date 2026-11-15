@@ -312,5 +312,94 @@ namespace Cosmimera.Combat.Tests
             Assert.That(list[0].DurationMs, Is.EqualTo(3500));
             Assert.That(list[0].RemainingMs, Is.EqualTo(3500));
         }
+
+        [Test]
+        public void Overload_switches_to_overload_form_and_reverts_when_combat_ends()
+        {
+            MoveDef baseMove = Move("base_move", 20, MoveShape.Front, RangeClass.Melee, 2000);
+            MoveDef ovMove = Move("ov_move", 60, MoveShape.Line, RangeClass.Mid, 12000);
+            MoveDef partnerMove = Move("partner_move", 35, MoveShape.Burst, RangeClass.Mid, 8000);
+
+            var baseTrait = ScriptableObject.CreateInstance<TraitDef>();
+            _created.Add(baseTrait);
+            baseTrait.SetId("base_trait");
+            baseTrait.Set(new TriggerDef(TriggerType.Always, false, Element.Fire, 0, 0),
+                new List<EffectDef> { new EffectDef(EffectType.MasteryMod, false, Element.Fire, 10, 0, 1) });
+
+            var ovTrait = ScriptableObject.CreateInstance<TraitDef>();
+            _created.Add(ovTrait);
+            ovTrait.SetId("ov_trait");
+            ovTrait.Set(new TriggerDef(TriggerType.Always, false, Element.Fire, 0, 0),
+                new List<EffectDef> { new EffectDef(EffectType.MasteryMod, false, Element.Fire, 40, 0, 1) });
+
+            var partnerTrait = ScriptableObject.CreateInstance<TraitDef>();
+            _created.Add(partnerTrait);
+            partnerTrait.SetId("partner_trait");
+            partnerTrait.Set(new TriggerDef(TriggerType.Always, false, Element.Fire, 0, 0),
+                new List<EffectDef> { new EffectDef(EffectType.MasteryMod, false, Element.Fire, 15, 0, 1) });
+
+            var resist = new int[10];
+            var baseDef = ScriptableObject.CreateInstance<CreatureDef>();
+            _created.Add(baseDef);
+            baseDef.SetId("fox_adult");
+            baseDef.Set("fox", CreatureStage.Adult, CreatureSizeClass.L, AiStyle.Charge, Temperament.Normal, null, 0,
+                new List<EvolutionMaterial>(), resist,
+                new List<ElementValue> { new ElementValue(Element.Fire, 100) },
+                new CreatureStats(100, 100, 100, 100), baseMove, baseTrait, "{}", false);
+
+            var ovDef = ScriptableObject.CreateInstance<CreatureDef>();
+            _created.Add(ovDef);
+            ovDef.SetId("fox_overload");
+            ovDef.Set("fox", CreatureStage.Overload, CreatureSizeClass.XL, AiStyle.Charge, Temperament.Normal, null, 0,
+                new List<EvolutionMaterial>(), resist,
+                new List<ElementValue> { new ElementValue(Element.Fire, 150) },
+                new CreatureStats(200, 140, 120, 130), ovMove, ovTrait, "{}", false);
+
+            baseDef.SetOverloadLinks(null, ovDef);
+            ovDef.SetOverloadLinks(baseDef, null);
+
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit mine = e.AddEquippedCreature(baseDef, new[] { partnerMove }, new[] { partnerTrait }, Dir(0f), 100);
+            e.Field(mine.Id, Dir(0f), false, 0);
+
+            int baseMaxHp = mine.Combatant.MaxHp;
+            float baseRadius = mine.BodyRadiusM;
+            Assert.That(mine.Def, Is.SameAs(baseDef));
+            Assert.That(mine.Moves.Count, Is.EqualTo(2));
+            Assert.That(mine.Moves[0].Id, Is.EqualTo("base_move"));
+
+            // Refused outside combat or when not unlocked.
+            Assert.That(e.TryTriggerOverload(mine.Id, false, true), Is.EqualTo(OverloadResult.NotInCombat));
+            Assert.That(e.TryTriggerOverload(mine.Id, true, false), Is.EqualTo(OverloadResult.NotUnlocked));
+
+            // Triggering switches form, stats, signature move, size, and innate trait (keeping partner move & trait).
+            Assert.That(e.TryTriggerOverload(mine.Id, true, true), Is.EqualTo(OverloadResult.Ok));
+            Assert.That(mine.Combatant.IsOverloaded, Is.True);
+            Assert.That(mine.BaseDef, Is.SameAs(baseDef));
+            Assert.That(mine.Def, Is.SameAs(ovDef));
+            Assert.That(mine.Moves[0].Id, Is.EqualTo("ov_move"));
+            Assert.That(mine.Moves[1].Id, Is.EqualTo("partner_move"));
+            Assert.That(mine.BodyRadiusM, Is.GreaterThan(baseRadius));
+            Assert.That(mine.Combatant.MaxHp, Is.GreaterThan(baseMaxHp));
+            Assert.That(mine.Combatant.Hp, Is.EqualTo(mine.Combatant.MaxHp));
+            Assert.That(mine.Combatant.BeginCast(0, mine.Moves[0], 100, out CastContext ovCtx), Is.EqualTo(CastResult.Accepted));
+            // Overload mastery 150 + ovTrait 40 + partnerTrait 15 = 205.
+            Assert.That(ovCtx.MasteryPercent, Is.EqualTo(205));
+
+            // Re-triggering in the same combat is rejected.
+            Assert.That(e.TryTriggerOverload(mine.Id, true, true), Is.EqualTo(OverloadResult.AlreadyOverloaded));
+            e.EndCombatOverload();
+
+            // Reverted back to base adult form.
+            Assert.That(mine.Combatant.IsOverloaded, Is.False);
+            Assert.That(mine.Def, Is.SameAs(baseDef));
+            Assert.That(mine.Moves[0].Id, Is.EqualTo("base_move"));
+            Assert.That(mine.Moves[1].Id, Is.EqualTo("partner_move"));
+            Assert.That(mine.BodyRadiusM, Is.EqualTo(baseRadius).Within(1e-5f));
+            Assert.That(mine.Combatant.MaxHp, Is.EqualTo(baseMaxHp));
+            Assert.That(mine.Combatant.BeginCast(0, mine.Moves[0], 20000, out CastContext revertedCtx), Is.EqualTo(CastResult.Accepted));
+            // Base mastery 100 + baseTrait 10 + partnerTrait 15 = 125.
+            Assert.That(revertedCtx.MasteryPercent, Is.EqualTo(125));
+        }
     }
 }

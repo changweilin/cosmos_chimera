@@ -235,6 +235,7 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             return None
         return hit
 
+    overload_targets: dict[str, Record] = {}
     for r in records["creatures"]:
         ref(r, "signature_move", "moves")
         ref(r, "trait", "traits")
@@ -247,6 +248,21 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             if STAGE_NEXT.get(stage) != nxt.data.get("stage"):
                 findings.append(Finding("error", "evolution_chain", r.file, f"/{r.index}/evolves_to",
                                         f"{stage} must evolve into {STAGE_NEXT.get(stage)}, got {nxt.data.get('stage')}"))
+        ov_target = ref(r, "overload_of", "creatures")
+        if ov_target is not None:
+            if ov_target.data.get("line_id") != r.data.get("line_id"):
+                findings.append(Finding("error", "overload_chain", r.file, f"/{r.index}/overload_of",
+                                        f"'{ov_target.data.get('id')}' is in line '{ov_target.data.get('line_id')}', not '{r.data.get('line_id')}'"))
+            if ov_target.data.get("stage") != "adult":
+                findings.append(Finding("error", "overload_chain", r.file, f"/{r.index}/overload_of",
+                                        f"overload_of must point to an adult form, got {ov_target.data.get('stage')}"))
+            target_id = ov_target.data.get("id")
+            if target_id in overload_targets:
+                other = overload_targets[target_id]
+                findings.append(Finding("error", "overload_duplicate", r.file, f"/{r.index}/overload_of",
+                                        f"'{target_id}' already has overload form '{other.data.get('id')}'"))
+            elif isinstance(target_id, str):
+                overload_targets[target_id] = r
         _warn_material_elements(r, findings)
         _check_material_sums(r, findings)
 

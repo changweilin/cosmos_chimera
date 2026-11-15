@@ -139,6 +139,8 @@ namespace Cosmimera.GameData
         [SerializeField] private AiStyle aiStyle;
         [SerializeField] private Temperament temperament;
         [SerializeField] private CreatureDef evolvesTo;
+        [SerializeField] private CreatureDef overloadOf;
+        [SerializeField] private CreatureDef overloadForm;
         [SerializeField] private int evolutionLevel;
         [SerializeField] private List<EvolutionMaterial> evolutionMaterials = new List<EvolutionMaterial>();
         [SerializeField] private int[] resist = new int[ElementCount];
@@ -170,9 +172,17 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined Temperament. Side effects: none.</remarks>
         public Temperament Temperament => temperament;
 
-        /// <summary>The next form, or null for an adult.</summary>
-        /// <remarks>Pre: none. Post: null iff Stage == Adult; otherwise same LineId, next stage. Side effects: none.</remarks>
+        /// <summary>The next form, or null for an adult or overload form.</summary>
+        /// <remarks>Pre: none. Post: null iff Stage == Adult || Stage == Overload; otherwise same LineId, next stage. Side effects: none.</remarks>
         public CreatureDef EvolvesTo => evolvesTo;
+
+        /// <summary>Source adult form when this is an overload form; null otherwise (creatures.md#超載, Q-C12).</summary>
+        /// <remarks>Pre: none. Post: non-null iff Stage == Overload (same LineId, Adult). Side effects: none.</remarks>
+        public CreatureDef OverloadOf => overloadOf;
+
+        /// <summary>Overload form of this adult creature, or null if none is defined.</summary>
+        /// <remarks>Pre: none. Post: null unless Stage == Adult and an Overload form points to this form. Side effects: none.</remarks>
+        public CreatureDef OverloadForm => overloadForm;
 
         /// <summary>Level gate to evolve (fixed per species; juvenile 20–30, adolescent 35–50 — level-progression.md).</summary>
         /// <remarks>Pre: none. Post: 0 iff EvolvesTo == null, otherwise inside the stage's band. Side effects: none.</remarks>
@@ -253,6 +263,12 @@ namespace Cosmimera.GameData
             this.fieldUtility = fieldUtility;
             this.conceptJson = conceptJson;
             this.needsSensitivityReview = needsSensitivityReview;
+        }
+
+        internal void SetOverloadLinks(CreatureDef overloadOf, CreatureDef overloadForm)
+        {
+            this.overloadOf = overloadOf;
+            this.overloadForm = overloadForm;
         }
     }
 }

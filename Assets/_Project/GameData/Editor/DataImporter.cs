@@ -396,11 +396,17 @@ namespace Cosmimera.GameData.Editor
                 }
             }
 
+            var creatureById = new Dictionary<string, CreatureDto>(StringComparer.Ordinal);
             foreach (Sourced<CreatureDto> c in creatures)
             {
                 Claim(c.Where, c.Dto.Id, "creature");
+                if (c.Dto.Id != null && !creatureById.ContainsKey(c.Dto.Id))
+                {
+                    creatureById.Add(c.Dto.Id, c.Dto);
+                }
             }
 
+            var overloadTargets = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (Sourced<CreatureDto> c in creatures)
             {
                 CreatureDto d = c.Dto;
@@ -422,11 +428,51 @@ namespace Cosmimera.GameData.Editor
                     errors.Add($"{c.Where}: evolves_to and evolution must both be null or both be set");
                 }
 
+                bool hasStage = TryParseEnum(d.Stage, out CreatureStage stage);
+                if (hasStage && stage == CreatureStage.Overload)
+                {
+                    if (d.EvolvesTo != null || d.Evolution != null)
+                    {
+                        errors.Add($"{c.Where}: overload form cannot have evolves_to or evolution");
+                    }
+                    if (d.OverloadOf == null)
+                    {
+                        errors.Add($"{c.Where}: overload form must specify overload_of");
+                    }
+                    else
+                    {
+                        RequireRef(c.Where, "overload_of", d.OverloadOf, "creature");
+                        if (creatureById.TryGetValue(d.OverloadOf, out CreatureDto target))
+                        {
+                            if (target.LineId != d.LineId)
+                            {
+                                errors.Add($"{c.Where}: overload_of '{d.OverloadOf}' is in line '{target.LineId}', not '{d.LineId}'");
+                            }
+                            if (target.Stage != "adult")
+                            {
+                                errors.Add($"{c.Where}: overload_of '{d.OverloadOf}' must be an adult form, got '{target.Stage}'");
+                            }
+                            if (overloadTargets.TryGetValue(d.OverloadOf, out string existingId))
+                            {
+                                errors.Add($"{c.Where}: '{d.OverloadOf}' already has overload form '{existingId}'");
+                            }
+                            else
+                            {
+                                overloadTargets.Add(d.OverloadOf, d.Id);
+                            }
+                        }
+                    }
+                }
+                else if (d.OverloadOf != null)
+                {
+                    errors.Add($"{c.Where}: only overload stage may set overload_of");
+                }
+
                 if (d.EvolvesTo != null)
                 {
                     RequireRef(c.Where, "evolves_to", d.EvolvesTo, "creature");
-                    // An adult with evolves_to is reported by the chain checks; only non-adult gates have a band.
-                    if (d.Evolution != null && TryParseEnum(d.Stage, out CreatureStage stage) && stage != CreatureStage.Adult &&
+                    // An adult/overload with evolves_to is reported above / by chain checks; only juvenile/adolescent have a band.
+                    if (d.Evolution != null && hasStage && (stage == CreatureStage.Juvenile || stage == CreatureStage.Adolescent) &&
                         (d.Evolution.Level < CreatureDef.EvolutionLevelMin[(int)stage] ||
                          d.Evolution.Level > CreatureDef.EvolutionLevelMax[(int)stage]))
                     {
@@ -537,6 +583,15 @@ namespace Cosmimera.GameData.Editor
                     d.ElementBias.Select(ParseEnum<Element>).ToList());
             }
 
+            var overloadFormByAdult = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
+            foreach (Sourced<CreatureDto> s in creatures)
+            {
+                if (s.Dto.OverloadOf != null)
+                {
+                    overloadFormByAdult[s.Dto.OverloadOf] = creatureDefs[s.Dto.Id];
+                }
+            }
+
             foreach (Sourced<CreatureDto> s in creatures)
             {
                 CreatureDto d = s.Dto;
@@ -558,12 +613,16 @@ namespace Cosmimera.GameData.Editor
 
                 TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
                 FieldUtility fieldUtility = d.FieldUtility != null ? ParseEnum<FieldUtility>(d.FieldUtility) : FieldUtility.None;
-                creatureDefs[d.Id].Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
+                CreatureDef def = creatureDefs[d.Id];
+                def.Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
                     ParseEnum<Temperament>(d.Temperament),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
                     sensitivity == "review");
+                def.SetOverloadLinks(
+                    d.OverloadOf != null ? creatureDefs[d.OverloadOf] : null,
+                    overloadFormByAdult.TryGetValue(d.Id, out CreatureDef ovForm) ? ovForm : null);
             }
 
             var allDefs = new List<GameDef>();
