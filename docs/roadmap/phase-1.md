@@ -15,6 +15,12 @@
 | P1-08 | 天空：日夜循環 + 星海 skybox（與大廳共用） | SONNET | 人工 | 日夜轉換無接縫 | 🟦 |
 | P1-09 | 草/植被 GPU instancing + 風場 | SONNET | OPUS | 10 萬株草 60 fps | 🟨 |
 | P1-10 | 不同 R（320/640/1280）參數切換測試 | SONNET | — | 三種尺寸皆可繞行，地平線符合公式 | ✅ |
+| P1-11 | 地形材質混合＋程式生成筆觸貼圖（`design/vision.md#美術投資` 第 2 項）：`StrokeTexture`（r 筆觸／g 長紋／b 顆粒，可拼接）、`CosmiBiome.hlsl` 三平面取樣；草地雙色筆觸、沙紋、岩面鑿痕與裂紋、雪堆、草與岩之間的裸土帶 | FABLE | 人工 | 測試台截圖由使用者挑選；草與地面同一筆觸場；`_StrokeStrength` 0 時無筆觸 | 🟨 |
+| P1-12 | GPU instancing 植被：草海密度 ×10（第 1 項） | 待定 | OPUS | Steam Deck 800p ≥ 30 fps；截圖驗收 | ⬜ |
+| P1-13 | 水面：岸邊泡沫、折射、焦散（第 3 項） | 待定 | 人工 | 截圖驗收 | ⬜ |
+| P1-14 | 體積霧與光束（第 4 項） | 待定 | 人工 | 截圖驗收；Steam Deck ≥ 30 fps | ⬜ |
+| P1-15 | 遠景 LOD／impostor（第 5 項） | 待定 | OPUS | 90 m 外仍看得到樹與建築輪廓；截圖驗收 | ⬜ |
+| P1-16 | 匯入美術模型與貼圖取代程序網格（第 6 項；`design/art-asset-pipeline.md`，工具待 Q-T3） | 待定 | 人工 | 逐類資產驗收 | ⬜ |
 
 ## 未收尾紀錄
 [log/phase-1.md](log/phase-1.md)（partial／blocked 才寫；舊紀錄為封存）。

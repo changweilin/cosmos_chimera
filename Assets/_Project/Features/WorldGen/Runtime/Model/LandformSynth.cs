@@ -55,6 +55,20 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: 12 distinct ids, same order every call. Side effects: none.</remarks>
         public static IReadOnlyList<string> Kinds => KindIds;
 
+        /// <summary>The landform kind a stamp made by <see cref="Generate"/> belongs to.</summary>
+        /// <remarks>
+        /// Pre: sourceId is the <see cref="TemplateSource.Id"/> of a <see cref="Generate"/> result ("kind#index").
+        /// Post: one of <see cref="Kinds"/>. Side effects: allocates the substring.
+        /// </remarks>
+        public static string KindOf(string sourceId)
+        {
+            int hash = sourceId != null ? sourceId.IndexOf('#') : -1;
+            string kind = hash > 0 ? sourceId.Substring(0, hash) : null;
+            Contract.Requires(kind != null && System.Array.IndexOf(KindIds, kind) >= 0,
+                "sourceId must be the id of a LandformSynth.Generate result");
+            return kind;
+        }
+
         /// <summary>Builds one stamp grid of landform <paramref name="kind"/>.</summary>
         /// <remarks>
         /// Pre: kind is one of <see cref="Kinds"/>; 0 &lt;= index &lt;= MaxIndex.

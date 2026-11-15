@@ -221,6 +221,45 @@ namespace Cosmimera.Planet
             return false;
         }
 
+        /// <summary>Finds the stamp that shapes the ground most at <paramref name="dir"/>.</summary>
+        /// <remarks>
+        /// Pre: dir unit length.
+        /// Post: false (index −1, weight 0) outside every stamp and where Count == 0; otherwise index is the stamp with
+        ///       the largest blend weight (lowest index on a tie) and weight is that stamp's share in <see cref="Apply"/>:
+        ///       1 in the inner 65 % of the half extent, falling to 0 at the edge.
+        /// Side effects: none. Burst-compatible.
+        /// </remarks>
+        public bool TryGetStamp(float3 dir, out int index, out float weight)
+        {
+            index = -1;
+            weight = 0f;
+            for (int i = 0; i < _count; i++)
+            {
+                TemplateStamp s = _stamps[i];
+                float c = math.dot(dir, s.Center);
+                if (c <= 0.5f)
+                {
+                    continue;
+                }
+
+                float3 p = dir / c;
+                float m = math.max(math.abs(math.dot(p, s.Right)), math.abs(math.dot(p, s.Up))) / s.TanHalf;
+                if (m >= 1f)
+                {
+                    continue;
+                }
+
+                float w = 1f - math.smoothstep(BlendStart, 1f, m);
+                if (w > weight)
+                {
+                    index = i;
+                    weight = w;
+                }
+            }
+
+            return index >= 0;
+        }
+
         private float SampleStamp(in TemplateStamp s, float u, float v)
         {
             float fx = math.clamp((u * 0.5f + 0.5f) * (s.Size - 1), 0f, s.Size - 1.001f);
@@ -261,9 +300,12 @@ namespace Cosmimera.Planet
         private NativeArray<ushort> _heights;
         private NativeArray<byte> _water;
 
+        private readonly string[] _stampIds;
+
         private PlanetTemplates(NativeArray<TemplateStamp> stamps, NativeArray<ushort> heights, NativeArray<byte> water,
-            float maxAmplitude)
+            float maxAmplitude, string[] stampIds)
         {
+            _stampIds = stampIds;
             _stamps = stamps;
             _heights = heights;
             _water = water;
@@ -273,6 +315,10 @@ namespace Cosmimera.Planet
         /// <summary>Burst view of the stamps.</summary>
         /// <remarks>Pre: not disposed. Post: Count == placements. Side effects: none.</remarks>
         public TemplateView View => new TemplateView(_stamps, _heights, _water);
+
+        /// <summary>Source id of each stamp, indexed like <see cref="TemplateView.TryGetStamp"/>'s index.</summary>
+        /// <remarks>Pre: none (stays readable after Dispose). Post: one non-empty id per placement. Side effects: none.</remarks>
+        public IReadOnlyList<string> StampIds => _stampIds;
 
         /// <summary>Bound on how far templates move the surface beyond the noise bound (m).</summary>
         /// <remarks>Pre: none. Post: >= 0; |View.Apply(d, n)| &lt;= |n| + this. Side effects: none.</remarks>
@@ -299,12 +345,14 @@ namespace Cosmimera.Planet
             var stamps = new NativeArray<TemplateStamp>(placements.Count, Allocator.Persistent);
             var heights = new NativeArray<ushort>(math.max(total, 1), Allocator.Persistent);
             var water = new NativeArray<byte>(math.max(total, 1), Allocator.Persistent);
+            var ids = new string[placements.Count];
             int offset = 0;
             float maxAmp = 0f;
             for (int i = 0; i < placements.Count; i++)
             {
                 TemplatePlacement p = placements[i];
                 TemplateSource src = sources[p.Source];
+                ids[i] = src.Id;
                 NativeArray<ushort>.Copy(src.Heights, 0, heights, offset, src.Heights.Length);
                 NativeArray<byte>.Copy(src.Water, 0, water, offset, src.Water.Length);
                 PlanetFrame f = PlanetFrame.FromUp(p.Center);
@@ -328,7 +376,7 @@ namespace Cosmimera.Planet
                 offset += src.Heights.Length;
             }
 
-            return new PlanetTemplates(stamps, heights, water, maxAmp);
+            return new PlanetTemplates(stamps, heights, water, maxAmp, ids);
         }
 
         /// <summary>Surface height at <paramref name="dir"/> with templates over <paramref name="noise"/>.</summary>

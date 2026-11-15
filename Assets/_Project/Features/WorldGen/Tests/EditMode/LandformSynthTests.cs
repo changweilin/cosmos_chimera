@@ -174,6 +174,73 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void KindOf_recovers_the_kind_of_every_generated_stamp()
+        {
+            foreach (string kind in LandformSynth.Kinds)
+            {
+                Assert.That(LandformSynth.KindOf(LandformSynth.Generate(kind, 7UL, 3).Id), Is.EqualTo(kind));
+            }
+
+            Assert.Throws<ContractException>(() => LandformSynth.KindOf(null));
+            Assert.Throws<ContractException>(() => LandformSynth.KindOf("forest"));
+            Assert.Throws<ContractException>(() => LandformSynth.KindOf("no_such_kind#0"));
+        }
+
+        [Test]
+        public void ScatterDensity_follows_the_landform_under_each_point()
+        {
+            var planet = new PlanetConfig(640f, float3.zero);
+            const float Base = 0.33f;
+            using PlanetTemplates t = TemplatePlanner.Build(planet, 42UL, new List<string> { "fjord" }, PlanetSize.Moon);
+            System.Func<float3, float> density = TemplatePlanner.ScatterDensity(t, Base);
+            TemplateView view = t.View;
+            var rng = new Core.Random.Pcg32(3UL, 4UL);
+            int outside = 0, core = 0, band = 0;
+            for (int i = 0; i < 4000; i++)
+            {
+                float3 d = math.normalize(new float3(rng.NextFloat() - 0.5f, rng.NextFloat() - 0.5f, rng.NextFloat() - 0.5f));
+                float value = density(d);
+                Assert.That(value, Is.InRange(0f, 1f));
+                if (!view.TryGetStamp(d, out int stamp, out float w))
+                {
+                    outside++;
+                    Assert.That(value, Is.EqualTo(Base));
+                    continue;
+                }
+
+                string kind = LandformSynth.KindOf(t.StampIds[stamp]);
+                // REQ: planet-world.md#1 — volcano and cave stamps are the general landform around them on the surface.
+                string terrain = kind == "volcano" ? "volcano_foothills" : kind == "cave" ? "cavern_outer" : kind;
+                float own = TerrainProfiles.For(terrain).ScatterDensity;
+                if (w >= 1f)
+                {
+                    core++;
+                    Assert.That(value, Is.EqualTo(own).Within(1e-6f));
+                }
+                else
+                {
+                    band++;
+                    Assert.That(value, Is.InRange(math.min(Base, own) - 1e-6f, math.max(Base, own) + 1e-6f));
+                }
+            }
+
+            Assert.That(outside, Is.GreaterThan(0));
+            Assert.That(core, Is.GreaterThan(0));
+            Assert.That(band, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void ScatterDensity_rejects_null_templates_and_out_of_range_base()
+        {
+            using PlanetTemplates t = TemplatePlanner.Build(new PlanetConfig(640f, float3.zero), 1UL,
+                new List<string>(), PlanetSize.Moon);
+            Assert.Throws<ContractException>(() => TemplatePlanner.ScatterDensity(null, 0.5f));
+            Assert.Throws<ContractException>(() => TemplatePlanner.ScatterDensity(t, -0.1f));
+            Assert.Throws<ContractException>(() => TemplatePlanner.ScatterDensity(t, 1.1f));
+            Assert.Throws<ContractException>(() => TemplatePlanner.ScatterDensity(t, float.NaN));
+        }
+
+        [Test]
         public void TemplatePlanner_Build_rejects_null_tags_and_invalid_config()
         {
             Assert.Throws<ContractException>(() =>

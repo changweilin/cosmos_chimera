@@ -210,8 +210,13 @@ namespace Cosmimera.WorldGen
         public const float CellM = 10f;
 
         /// <summary>Bumped whenever the same inputs would give a different item set (testing.md: snapshots follow it).</summary>
-        /// <remarks>Pre: none. Post: constant; 2 = understory layer added, canopy items bit-identical to 1. Side effects: none.</remarks>
-        public const int GeneratorVersion = 2;
+        /// <remarks>
+        /// Pre: none.
+        /// Post: constant; 2 = understory layer added, canopy items bit-identical to 1; 3 = canopy density may follow the
+        ///       local landform (the per-point constructor), constant-density planners bit-identical to 2.
+        /// Side effects: none.
+        /// </remarks>
+        public const int GeneratorVersion = 3;
 
         /// <summary>Nominal understory cell width at a face centre (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -312,6 +317,7 @@ namespace Cosmimera.WorldGen
         private readonly Func<float3, bool> _isSea;
         private readonly Func<float3, bool> _isClear;
         private readonly float _placeChance;
+        private readonly Func<float3, float> _placeChanceAt;
         private readonly Dictionary<long, ScatterItem> _items = new Dictionary<long, ScatterItem>();
         private readonly HashSet<long> _empty = new HashSet<long>();
         private readonly HashSet<long> _queryCells = new HashSet<long>();
@@ -371,6 +377,22 @@ namespace Cosmimera.WorldGen
             _isSea = isSea;
             _isClear = isClear;
             _placeChance = placeChance;
+        }
+
+        /// <summary>Creates the planner with a canopy obstacle density that varies over the planet.</summary>
+        /// <remarks>
+        /// Pre: as the six-argument constructor; placeChanceAt non-null, deterministic, and returns a finite value in
+        ///      [0, 1] for every unit direction (TemplatePlanner.ScatterDensity: the landform under that point).
+        /// Post: a canopy cell holds an item iff the constant-density planner with the chance at that item's ground
+        ///       point would; positions, kinds and sizes are the same as that planner's. The understory is unaffected.
+        /// Side effects: none.
+        /// </remarks>
+        public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
+            Func<float3, bool> isSea, Func<float3, bool> isClear, Func<float3, float> placeChanceAt)
+            : this(config, seed, planetTypeId, groundAltitude, isSea, isClear, DefaultPlaceChance)
+        {
+            Contract.Requires(placeChanceAt != null, "placeChanceAt is required");
+            _placeChanceAt = placeChanceAt;
         }
 
         /// <summary>Canopy scatter table of a planet type (the default table for null or unknown ids).</summary>
@@ -549,7 +571,8 @@ namespace Cosmimera.WorldGen
             int i = rem % n;
             // A per-cell stream: the same cell regenerates identically after being streamed out and back in.
             var rng = new Pcg32(_seed ^ Salt, (ulong)key);
-            if (rng.NextFloat() > _placeChance)
+            float placeRoll = rng.NextFloat();
+            if (_placeChanceAt == null && placeRoll > _placeChance)
             {
                 return false;
             }
@@ -561,6 +584,18 @@ namespace Cosmimera.WorldGen
             float size = math.lerp(kind.MinSizeM, kind.MaxSizeM, rng.NextFloat());
             float yaw = rng.NextFloat() * 360f;
             float3 dir = CubeSphere.FaceToDirection(face, u, v);
+            // The local density is only known once the point is: the roll is drawn first either way, so the stream
+            // (and every surviving item) is the same as with a constant density.
+            if (_placeChanceAt != null)
+            {
+                float chance = _placeChanceAt(dir);
+                Contract.Requires(math.isfinite(chance) && chance >= 0f && chance <= 1f, "placeChanceAt must return [0, 1]");
+                if (placeRoll > chance)
+                {
+                    return false;
+                }
+            }
+
             if (_isSea != null && _isSea(dir))
             {
                 return false;

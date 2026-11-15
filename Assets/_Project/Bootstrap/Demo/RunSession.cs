@@ -487,8 +487,13 @@ namespace Cosmimera.Bootstrap.Demo
             // whether or not anything is drawn.
             System.Func<float3, bool> isOpenGround =
                 walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
-            var scatter = new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                isOpenGround, terrainProfile.ScatterDensity);
+            // REQ: planet-world.md#散佈 — canopy density follows the landform stamp under each point; between stamps
+            // (and without landforms) it is the planet type's own.
+            ScatterPlanner scatter = templates != null
+                ? new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
+                    isOpenGround, TemplatePlanner.ScatterDensity(templates, terrainProfile.ScatterDensity))
+                : new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
+                    isOpenGround, terrainProfile.ScatterDensity);
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {

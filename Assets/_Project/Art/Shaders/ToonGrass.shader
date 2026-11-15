@@ -29,6 +29,9 @@ Shader "Cosmimera/ToonGrass"
         [HideInInspector] _Shadow ("Shadow Tint", Color) = (0.55, 0.6, 0.78, 1)
         [HideInInspector] _Foam ("Surf Foam", Range(0, 1)) = 0
         [HideInInspector] _SeaLevel ("Sea Level (m)", Float) = -0.12
+        [HideInInspector] [NoScaleOffset] _StrokeTex ("Stroke Texture", 2D) = "gray" {}
+        [HideInInspector] _StrokeStrength ("Stroke Strength", Float) = 0
+        [HideInInspector] _StrokeScale ("Stroke Tiles per Metre", Float) = 0.16
     }
 
     SubShader

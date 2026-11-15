@@ -26,6 +26,7 @@ namespace Cosmimera.Bootstrap.Demo
             public float GrassHeight = 1f;
             public float Cloud = 0.42f;      // sky fraction under cloud
             public float Wind = 1f;
+            public float Stroke = 1f;        // brush-stroke contrast on the ground (ToonTerrain _StrokeStrength)
         }
 
         private static readonly Dictionary<string, Palette> Palettes = new Dictionary<string, Palette>
@@ -154,7 +155,16 @@ namespace Cosmimera.Bootstrap.Demo
             tint.a = p.WaterOpacity;
             m.SetColor("_WaterTint", tint);
             m.SetFloat("_WaterGlow", p.WaterGlow);
+            // REQ: vision.md#美術投資 — terrain and grass read the same strokes at the same scale, so a meadow and
+            // the ground under it stay one painted surface.
+            m.SetTexture("_StrokeTex", StrokeTexture.Shared);
+            m.SetFloat("_StrokeStrength", p.Stroke);
+            m.SetFloat("_StrokeScale", StrokeTilesPerMetre);
         }
+
+        // One tile every 6.25 m: a round dab is 0.25–0.55 m across up close, and the shader's broad layer
+        // (0.27× this) gives 0.9–2 m marks that still read from across a valley.
+        private const float StrokeTilesPerMetre = 0.16f;
 
         /// <summary>Outlined toon material for a creature placeholder.</summary>
         /// <remarks>Pre: shader non-null. Post: new material. Side effects: allocates a Material.</remarks>

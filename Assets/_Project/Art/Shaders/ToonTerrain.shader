@@ -25,6 +25,9 @@ Shader "Cosmimera/ToonTerrain"
         _Shadow ("Shadow Tint", Color) = (0.55, 0.6, 0.78, 1)
         _Foam ("Surf Foam", Range(0, 1)) = 0
         _SeaLevel ("Sea Level (m)", Float) = -0.12
+        [NoScaleOffset] _StrokeTex ("Stroke Texture (r dabs, g streaks, b grain)", 2D) = "gray" {}
+        _StrokeStrength ("Stroke Strength", Range(0, 2)) = 0
+        _StrokeScale ("Stroke Tiles per Metre", Float) = 0.16
     }
 
     SubShader

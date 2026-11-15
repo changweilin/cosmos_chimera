@@ -59,10 +59,71 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345()
         {
-            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(2), "new version: re-pin the digests below");
+            // Version 3 added the per-point density constructor; constant-density planners did not move, so the
+            // version-2 digests stay.
+            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(3), "new version: re-pin the digests below");
             float3 up = math.normalize(new float3(1, 1, 1));
             Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
             Assert.That(Digest(Planner(), up, true), Is.EqualTo(UnderstoryDigest));
+        }
+
+        private static ScatterPlanner PerPoint(System.Func<float3, float> chanceAt) =>
+            new ScatterPlanner(Planet, 12345, "verdant_planet", Hills, d => d.y < -0.9f, null, chanceAt);
+
+        [Test]
+        public void A_uniform_per_point_density_equals_the_constant_planner()
+        {
+            float3 up = math.normalize(new float3(1, 1, 1));
+            ScatterPlanner p = PerPoint(_ => 0.55f);
+            Assert.That(Digest(p, up), Is.EqualTo(SnapshotDigest));
+            Assert.That(Digest(p, up, true), Is.EqualTo(UnderstoryDigest));
+        }
+
+        [Test]
+        public void Per_point_density_only_removes_or_keeps_canopy_items()
+        {
+            // Bare west, full east: the east must match a planner that is full everywhere, item for item.
+            ScatterPlanner split = PerPoint(d => d.x > 0f ? 1f : 0f);
+            var full = new ScatterPlanner(Planet, 12345, "verdant_planet", Hills, d => d.y < -0.9f, null, 1f);
+            int kept = 0, removed = 0;
+            for (long k = 0; k < 6L * full.CellsPerFace * full.CellsPerFace; k += 11)
+            {
+                bool inFull = full.TryGetItem(k, out ScatterItem f);
+                bool inSplit = split.TryGetItem(k, out ScatterItem s);
+                if (!inFull)
+                {
+                    Assert.That(inSplit, Is.False);
+                    continue;
+                }
+
+                Assert.That(inSplit, Is.EqualTo(f.Direction.x > 0f));
+                if (!inSplit)
+                {
+                    removed++;
+                    continue;
+                }
+
+                kept++;
+                Assert.That(s.Direction, Is.EqualTo(f.Direction));
+                Assert.That(s.KindIndex, Is.EqualTo(f.KindIndex));
+                Assert.That(s.SizeM, Is.EqualTo(f.SizeM));
+                Assert.That(s.YawDeg, Is.EqualTo(f.YawDeg));
+            }
+
+            Assert.That(kept, Is.GreaterThan(100));
+            Assert.That(removed, Is.GreaterThan(100));
+        }
+
+        [Test]
+        public void Per_point_density_contract_violations_throw()
+        {
+            Assert.Throws<ContractException>(() =>
+                new ScatterPlanner(Planet, 1, null, Hills, null, null, (System.Func<float3, float>)null));
+            ScatterPlanner bad = PerPoint(_ => 1.5f);
+            Assert.Throws<ContractException>(() =>
+            {
+                for (long k = 0; k < 50; k++) bad.TryGetItem(k, out _);
+            });
         }
 
         private const ulong SnapshotDigest = 1236021966666354270ul;

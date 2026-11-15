@@ -87,6 +87,44 @@ namespace Cosmimera.Planet.Tests
         }
 
         [Test]
+        public void TryGetStamp_reports_the_stamp_and_its_blend_weight()
+        {
+            using PlanetTemplates t = Make();
+            TemplateView v = t.View;
+            Assert.That(t.StampIds, Is.EqualTo(new[] { "ramp" }));
+            Assert.That(v.TryGetStamp(Center, out int index, out float weight), Is.True);
+            Assert.That(index, Is.EqualTo(0));
+            Assert.That(weight, Is.EqualTo(1f));
+
+            // Half extent 0.3 rad: the blend band starts at tan(0.3)·0.65 on the gnomonic plane ≈ 0.198 rad.
+            float3 north = PlanetFrame.FromUp(Center).North;
+            Assert.That(v.TryGetStamp(Offset(0.26f, north), out index, out weight), Is.True);
+            Assert.That(index, Is.EqualTo(0));
+            Assert.That(weight, Is.GreaterThan(0f).And.LessThan(1f));
+
+            Assert.That(v.TryGetStamp(Offset(0.31f, north), out index, out weight), Is.False);
+            Assert.That(index, Is.EqualTo(-1));
+            Assert.That(weight, Is.EqualTo(0f));
+            Assert.That(default(TemplateView).TryGetStamp(Center, out _, out _), Is.False, "default view = no templates");
+        }
+
+        [Test]
+        public void TryGetStamp_picks_the_heavier_of_two_overlapping_stamps()
+        {
+            float3 east = PlanetFrame.FromUp(Center).East;
+            float3 other = Offset(0.4f, east);
+            using PlanetTemplates t = PlanetTemplates.Create(Planet640, new[] { Ramp() }, new[]
+            {
+                new TemplatePlacement(0, Center, 0f, 0.3f),
+                new TemplatePlacement(0, other, 0f, 0.3f),
+            });
+            Assert.That(t.View.TryGetStamp(Offset(0.05f, east), out int near, out _), Is.True);
+            Assert.That(near, Is.EqualTo(0));
+            Assert.That(t.View.TryGetStamp(Offset(0.35f, east), out int far, out _), Is.True);
+            Assert.That(far, Is.EqualTo(1));
+        }
+
+        [Test]
         public void Placement_rejects_a_half_angle_beyond_the_gnomonic_limit()
         {
             Assert.Throws<ContractException>(() => new TemplatePlacement(0, Center, 0f, 0.7f));

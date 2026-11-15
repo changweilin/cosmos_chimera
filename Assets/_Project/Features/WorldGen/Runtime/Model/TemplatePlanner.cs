@@ -58,6 +58,41 @@ namespace Cosmimera.WorldGen
             return PlanetTemplates.Create(config, sources, placements);
         }
 
+        /// <summary>Canopy obstacle density of the landform under each point of a planet built by <see cref="Build"/>.</summary>
+        /// <remarks>
+        /// Pre: templates is a live <see cref="Build"/> result and outlives every call of the returned function;
+        ///      baseDensity finite in [0, 1] (the planet type's own density, used between stamps).
+        /// Post: the function maps a unit direction to a value in [0, 1]: baseDensity outside every stamp, the stamp's
+        ///       landform <see cref="TerrainProfile.ScatterDensity"/> in its core, and a blend of the two over the same
+        ///       outer band where the stamp's height blends into the noise. Deterministic.
+        /// Side effects: allocates the function and one float per stamp.
+        /// </remarks>
+        public static System.Func<float3, float> ScatterDensity(PlanetTemplates templates, float baseDensity)
+        {
+            Contract.Requires(templates != null, "templates must not be null");
+            Contract.Requires(math.isfinite(baseDensity) && baseDensity >= 0f && baseDensity <= 1f,
+                "baseDensity must be in [0, 1]");
+            TemplateView view = templates.View;
+            var perStamp = new float[templates.StampIds.Count];
+            for (int i = 0; i < perStamp.Length; i++)
+            {
+                perStamp[i] = TerrainProfiles.For(SurfaceTerrainId(LandformSynth.KindOf(templates.StampIds[i]))).ScatterDensity;
+            }
+
+            return dir => view.TryGetStamp(dir, out int i, out float w)
+                ? math.lerp(baseDensity, perStamp[i], w)
+                : baseDensity;
+        }
+
+        // REQ: planet-world.md#1-骨架層程序化地貌 — on the open surface a volcano or cave stamp is the general landform
+        // around it (volcano_foothills, cavern_outer); `volcano` and `cave` profiles are the advanced dungeons.
+        private static string SurfaceTerrainId(string kind) => kind switch
+        {
+            "volcano" => "volcano_foothills",
+            "cave" => "cavern_outer",
+            _ => kind,
+        };
+
         /// <summary>Places <paramref name="count"/> templates.</summary>
         /// <remarks>
         /// Pre: catalogTags non-empty, no null entries; typeTags non-null; 1 &lt;= count &lt;= 8.
