@@ -96,7 +96,7 @@ namespace Cosmimera.GameData.Editor
             }
         }
 
-        /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.GameData.Editor.DataImporter.ImportAllBatch [-dataRoot DIR]</c>.</summary>
+        /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.GameData.Editor.DataImporter.ImportAllBatch [-dataRoot DIR] [-fieldUtilitiesOnly]</c>.</summary>
         /// <remarks>
         /// Pre: Unity started with -batchmode. Post: exits the Editor with 0 on success, 1 on any error.
         /// Side effects: same as <see cref="Import"/>; terminates the process.
@@ -108,7 +108,8 @@ namespace Cosmimera.GameData.Editor
             string root = i >= 0 && i + 1 < args.Length ? Path.GetFullPath(args[i + 1]) : DefaultSourceRoot;
             try
             {
-                DataImportReport report = Import(root, DefaultOutputFolder);
+                DataImportReport report = Array.IndexOf(args, "-fieldUtilitiesOnly") >= 0
+                    ? ImportFieldUtilities(root, DefaultOutputFolder) : Import(root, DefaultOutputFolder);
                 Debug.Log($"Data import from {root}: {report}");
                 EditorApplication.Exit(0);
             }
@@ -153,6 +154,43 @@ namespace Cosmimera.GameData.Editor
             }
 
             return Write(outputFolder, moves, traits, planets, creatures, edges);
+        }
+
+        /// <summary>Refreshes only explicit field utilities on existing creature assets.</summary>
+        /// <remarks>
+        /// Pre: sourceRoot exists with validated creatures/ JSON; outputFolder is an Assets/ path containing those creatures.
+        /// Post: explicit field_utility values updated; omitted fields and all combat definitions unchanged;
+        ///       invalid ids, missing assets or invalid utility values throw DataImportException before any writes.
+        /// Side effects: saves affected creature assets. Used by ImportAllBatch with -fieldUtilitiesOnly.
+        /// </remarks>
+        public static DataImportReport ImportFieldUtilities(string sourceRoot, string outputFolder)
+        {
+            Contract.Requires(sourceRoot != null && Directory.Exists(sourceRoot), "sourceRoot must exist");
+            Contract.Requires(outputFolder != null && outputFolder.StartsWith("Assets/", StringComparison.Ordinal), "outputFolder must be under Assets/");
+            var errors = new List<string>();
+            var updates = new Dictionary<CreatureDef, FieldUtility>();
+            foreach (Sourced<CreatureDto> source in ReadKind<CreatureDto>(sourceRoot, CreaturesSrc, errors))
+            {
+                CreatureDto dto = source.Dto;
+                if (dto.FieldUtility == null) continue;
+                if (string.IsNullOrEmpty(dto.Id) || !SnakeCase.IsMatch(dto.Id))
+                { errors.Add(source.Where + ": invalid creature id"); continue; }
+                if (!TryParseEnum(dto.FieldUtility, out FieldUtility utility))
+                { errors.Add(source.Where + ": invalid field utility"); continue; }
+                CreatureDef def = AssetDatabase.LoadAssetAtPath<CreatureDef>(outputFolder + "/" + CreaturesOut + "/" + dto.Id + ".asset");
+                if (def == null || updates.ContainsKey(def))
+                { errors.Add(source.Where + ": missing or duplicate creature " + dto.Id); continue; }
+                updates.Add(def, utility);
+            }
+            if (errors.Count > 0) throw new DataImportException(errors);
+            foreach (KeyValuePair<CreatureDef, FieldUtility> update in updates)
+            {
+                var serialized = new SerializedObject(update.Key);
+                serialized.FindProperty("fieldUtility").intValue = (int)update.Value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+            AssetDatabase.SaveAssets();
+            return new DataImportReport(0, updates.Count, 0);
         }
 
         private readonly struct Sourced<T>

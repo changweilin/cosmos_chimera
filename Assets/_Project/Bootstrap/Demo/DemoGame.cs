@@ -20,7 +20,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// Side effects: reads/writes the lobby save under Application.persistentDataPath.
     /// UI is IMGUI on purpose for D0: it is throwaway until the P4 UI pass, and IMGUI needs no prefab/asset plumbing.
     /// </remarks>
-    public sealed class DemoGame : MonoBehaviour
+    public sealed partial class DemoGame : MonoBehaviour
     {
         private enum Screen { Lobby, StarSelect, Running, Results }
 
@@ -184,6 +184,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            if (_journal != null)
+            {
+                if (_menuInput.FindAction("Cancel").WasPressedThisFrame()) CloseJournal();
+                else _journal.ReadInput(_menuInput);
+                return;
+            }
+
             _menuFocus.SetCount(MenuButtonCount());
             if (_menuInput.FindAction("Up").WasPressedThisFrame() || _menuInput.FindAction("Left").WasPressedThisFrame())
             {
@@ -222,8 +229,10 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (_screen == Screen.Results) return 1;  // return-to-lobby, or retry while unsettled
             if (_screen == Screen.StarSelect) return _options.Count + 1;
-            if (_save.StarterLine == null) return 1 + _starters.Count;
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 2;
+            if (_save.StarterLine == null) return 1 + _starters.Count +
+                (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 3;
+            if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
             for (int i = 0; i < _save.Owned.Count; i++)
             {
                 bool inParty = false;
@@ -355,6 +364,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             _title ??= new GUIStyle(GUI.skin.label) { fontSize = 32, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             _text ??= new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
+            if (_journal != null)
+            {
+                _journal.Draw(DrawJournal, CloseJournal);
+                return;
+            }
+
             var area = new Rect(UnityEngine.Screen.width / 2f - 320, 60, 640, UnityEngine.Screen.height - 120);
             GUILayout.BeginArea(area);
             _menuButtonCount = 0;
@@ -455,6 +470,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             DrawPartyEditor();
             DrawMaterials();
+            if (MenuButton(_copy.Ui("ui.journal.open"), GUILayout.Height(40)))
+            {
+                OpenJournal();
+                GUIUtility.ExitGUI();
+            }
             GUILayout.Space(20);
             if (MenuButton(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
             {
@@ -471,7 +491,6 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        // P4-07 minimal: order + add/remove only. Vessel/sub-hand pairing rules are not in D0 (vessel is shown, not enforced).
         private void DrawPartyEditor()
         {
             GUILayout.Label(PlayerLevelLabel(), _text);
@@ -528,7 +547,11 @@ namespace Cosmimera.Bootstrap.Demo
                 EvolveButton(o);
                 if (MenuButton(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
                 {
-                    if (party.Count >= LobbySave.MaxParty)
+                    if (IsSub(o.InstanceId))
+                    {
+                        _partyMsg = _copy.Ui("ui.partner.reason.SubIsAMain");
+                    }
+                    else if (party.Count >= LobbySave.MaxParty)
                     {
                         _partyMsg = _copy.Ui("ui.lobby.party_full");
                     }
@@ -808,6 +831,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void Launch(PlanetOption o)
         {
+            if (!TryBuildPartners(out PartnerLoadout loadout))
+            {
+                _screen = Screen.Lobby;
+                _partyMsg = _copy.Ui("ui.partner.repair");
+                return;
+            }
             var party = new List<CreatureDef>();
             var partyExp = new List<int>();
             _runPartyIds.Clear();
@@ -840,6 +869,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Materials = _materialDrops, EnvMaterials = _env,
                     CharacterModelPrefab = SelectedCharacterPrefab(),
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
+                    Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _screen = Screen.Running;

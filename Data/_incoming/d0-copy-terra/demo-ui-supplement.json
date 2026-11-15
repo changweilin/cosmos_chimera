@@ -342,5 +342,945 @@
   "ui.hud.trait_label": {
     "zh-TW": "特性：{trait}",
     "en": "Trait: {trait}"
+  },
+  "ui.journal.open": {
+    "zh-TW": "冒險手冊",
+    "en": "Field journal"
+  },
+  "ui.journal.close": {
+    "zh-TW": "關閉",
+    "en": "Close"
+  },
+  "ui.journal.tab.Partners": {
+    "zh-TW": "副手裝備",
+    "en": "Sub-partners"
+  },
+  "ui.journal.tab.Items": {
+    "zh-TW": "道具背包",
+    "en": "Inventory"
+  },
+  "ui.journal.tab.Skills": {
+    "zh-TW": "生活技能",
+    "en": "Life skills"
+  },
+  "ui.journal.tab.Codex": {
+    "zh-TW": "圖鑑",
+    "en": "Codex"
+  },
+  "ui.journal.navigation": {
+    "zh-TW": "方向鍵／十字鍵選擇，Enter／A 確認，Esc／B 返回",
+    "en": "Arrows / D-pad to select, Enter / A to confirm, Esc / B to close"
+  },
+  "ui.journal.empty": {
+    "zh-TW": "沒有符合的資料",
+    "en": "No entries"
+  },
+  "ui.journal.run_items": {
+    "zh-TW": "食材與料理於星球探索中取得及使用。",
+    "en": "Gather and use ingredients and meals while exploring a planet."
+  },
+  "ui.journal.run_skills": {
+    "zh-TW": "進入星球後可使用生活技能。",
+    "en": "Use life skills after landing on a planet."
+  },
+  "ui.partner.hint": {
+    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定招式／特性／超載。",
+    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines move, trait, or overload."
+  },
+  "ui.partner.equip": {
+    "zh-TW": "裝備副手",
+    "en": "Equip"
+  },
+  "ui.partner.remove": {
+    "zh-TW": "卸下副手",
+    "en": "Unequip"
+  },
+  "ui.partner.overload": {
+    "zh-TW": "解鎖主力超載",
+    "en": "Unlock main's overload"
+  },
+  "ui.partner.unknown": {
+    "zh-TW": "物種資料不存在",
+    "en": "Species data missing"
+  },
+  "ui.partner.repair": {
+    "zh-TW": "有副手配對失效；請先卸下並重新配對，才可出發。",
+    "en": "Invalid pairings. Unequip and repair them before departure."
+  },
+  "ui.partner.lobby_only": {
+    "zh-TW": "探索中可查看配置；返回大廳後可更換副手。",
+    "en": "View your loadout here. Change sub-partners in the lobby."
+  },
+  "ui.partner.reason.Ok": {
+    "zh-TW": "可裝備",
+    "en": "Available"
+  },
+  "ui.partner.reason.UnknownMain": {
+    "zh-TW": "請先選擇主力",
+    "en": "Select a main first"
+  },
+  "ui.partner.reason.SubIsAMain": {
+    "zh-TW": "主力與副手不能兼任；請先卸下副手",
+    "en": "Cannot be both main and sub; unequip first"
+  },
+  "ui.partner.reason.AlreadySubOfAnotherMain": {
+    "zh-TW": "已裝備於其他主力",
+    "en": "Assigned to another main"
+  },
+  "ui.partner.reason.AlreadyAssignedToThisMain": {
+    "zh-TW": "已裝備於此主力",
+    "en": "Already equipped here"
+  },
+  "ui.partner.reason.MainFull": {
+    "zh-TW": "副手欄位已滿",
+    "en": "All sub-partner slots are full"
+  },
+  "ui.partner.reason.NoRelation": {
+    "zh-TW": "與主力沒有關係連線",
+    "en": "No relation to this main"
+  },
+  "ui.partner.reason.NotAssigned": {
+    "zh-TW": "尚未裝備",
+    "en": "Not equipped"
+  },
+  "ui.partner.reason.SubStageAboveMain": {
+    "zh-TW": "副手階段高於主力",
+    "en": "Sub's stage exceeds main's"
+  },
+  "ui.codex.kind.0": {
+    "zh-TW": "宙獸",
+    "en": "Creatures"
+  },
+  "ui.codex.kind.1": {
+    "zh-TW": "招式",
+    "en": "Moves"
+  },
+  "ui.codex.kind.2": {
+    "zh-TW": "特性",
+    "en": "Traits"
+  },
+  "ui.codex.kind.3": {
+    "zh-TW": "關係網",
+    "en": "Relations"
+  },
+  "ui.codex.search": {
+    "zh-TW": "搜尋名稱",
+    "en": "Search by name"
+  },
+  "ui.codex.owned_only": {
+    "zh-TW": "只看已持有（切換）",
+    "en": "Owned only (toggle)"
+  },
+  "ui.codex.all": {
+    "zh-TW": "顯示全部（切換）",
+    "en": "All entries (toggle)"
+  },
+  "ui.codex.mastery": {
+    "zh-TW": "專精",
+    "en": "Mastery"
+  },
+  "ui.codex.resist": {
+    "zh-TW": "抗性",
+    "en": "Resistance"
+  },
+  "ui.codex.move": {
+    "zh-TW": "招式",
+    "en": "Move"
+  },
+  "ui.codex.trait": {
+    "zh-TW": "特性",
+    "en": "Trait"
+  },
+  "ui.codex.power": {
+    "zh-TW": "威力",
+    "en": "Power"
+  },
+  "ui.codex.accuracy": {
+    "zh-TW": "命中",
+    "en": "Accuracy"
+  },
+  "ui.items.run_stock": {
+    "zh-TW": "收服器皿沿用探索規則，不限次數；食材／料理僅限本場使用，結束後不帶回大廳。",
+    "en": "Capture vessels follow the run's unlimited-use rules. Ingredients and meals last for this run only."
+  },
+  "ui.items.no_capture_target": {
+    "zh-TW": "附近沒有可收服的倒地宙獸",
+    "en": "No capturable knocked-out creature nearby"
+  },
+  "ui.items.capture": {
+    "zh-TW": "投擲目前器皿收服",
+    "en": "Throw selected vessel"
+  },
+  "ui.items.eat": {
+    "zh-TW": "使用／食用",
+    "en": "Use / eat"
+  },
+  "ui.items.heal": {
+    "zh-TW": "回復（宙獸／玩家）",
+    "en": "Heal (creature / player)"
+  },
+  "ui.items.revive": {
+    "zh-TW": "復甦",
+    "en": "Revive"
+  },
+  "ui.items.empty_food": {
+    "zh-TW": "尚無食材／料理，可到生活技能採集。",
+    "en": "No ingredients or meals. Gather using life skills."
+  },
+  "ui.items.consumed": {
+    "zh-TW": "已使用：玩家回復 {player} HP，宙獸回復 {creature} HP，復甦 {revived} 隻",
+    "en": "Used: player +{player} HP, creatures +{creature} HP, {revived} revived"
+  },
+  "ui.skills.pause_hint": {
+    "zh-TW": "手冊開啟時暫停。陷阱需關閉手冊後才會累積時間。",
+    "en": "The journal pauses the run. Close it to advance trap timers."
+  },
+  "ui.skills.use": {
+    "zh-TW": "使用",
+    "en": "Use"
+  },
+  "ui.skills.stop": {
+    "zh-TW": "停止",
+    "en": "Stop"
+  },
+  "ui.skills.trap_placed": {
+    "zh-TW": "已設置陷阱，關閉手冊等待後可採收。",
+    "en": "Trap placed. Close the journal to let it mature."
+  },
+  "ui.skills.collect_traps": {
+    "zh-TW": "採收成熟陷阱",
+    "en": "Collect ready traps"
+  },
+  "ui.skills.recipes": {
+    "zh-TW": "料理食譜",
+    "en": "Recipes"
+  },
+  "ui.skills.cook": {
+    "zh-TW": "製作料理",
+    "en": "Cook"
+  },
+  "ui.skills.gathered": {
+    "zh-TW": "取得：",
+    "en": "Gathered:"
+  },
+  "ui.skills.escaped": {
+    "zh-TW": "已脫離野生戰鬥",
+    "en": "Disengaged from wild combat"
+  },
+  "ui.skills.no_battle": {
+    "zh-TW": "沒有可脫離的戰鬥",
+    "en": "No battle to escape"
+  },
+  "ui.skills.unavailable": {
+    "zh-TW": "此能力尚未開放使用",
+    "en": "This ability is not available yet"
+  },
+  "gather.reason.None": {
+    "zh-TW": "可使用",
+    "en": "Available"
+  },
+  "gather.reason.MissingSkill": {
+    "zh-TW": "隊伍缺少所需能力",
+    "en": "Required team ability missing"
+  },
+  "gather.reason.InvalidEnvironment": {
+    "zh-TW": "目前地點不符合條件",
+    "en": "Not available at this location"
+  },
+  "gather.reason.NoPoolAvailable": {
+    "zh-TW": "沒有對應食材",
+    "en": "No matching ingredients"
+  },
+  "gather.reason.TrapLimitReached": {
+    "zh-TW": "陷阱數量已達上限",
+    "en": "Trap limit reached"
+  },
+  "cook.None": {
+    "zh-TW": "可製作",
+    "en": "Ready to cook"
+  },
+  "cook.UnknownOutputFood": {
+    "zh-TW": "料理資料不存在",
+    "en": "Food data missing"
+  },
+  "cook.MissingCookingSkill": {
+    "zh-TW": "缺少料理能力",
+    "en": "Required cooking ability missing"
+  },
+  "cook.MissingIngredients": {
+    "zh-TW": "食材不足",
+    "en": "Missing ingredients"
+  },
+  "consume.UnknownItem": {
+    "zh-TW": "道具資料不存在",
+    "en": "Item data missing"
+  },
+  "consume.NotEdible": {
+    "zh-TW": "此食材不能生食",
+    "en": "Cannot eat this ingredient raw"
+  },
+  "consume.OutOfStock": {
+    "zh-TW": "數量不足",
+    "en": "Out of stock"
+  },
+  "consume.NoEligibleTarget": {
+    "zh-TW": "沒有可接受效果的目標",
+    "en": "No eligible target"
+  },
+  "quality.Normal": {
+    "zh-TW": "普通",
+    "en": "Normal"
+  },
+  "quality.Tasty": {
+    "zh-TW": "美味",
+    "en": "Tasty"
+  },
+  "quality.Masterwork": {
+    "zh-TW": "極品",
+    "en": "Masterwork"
+  },
+  "food.target.Player": {
+    "zh-TW": "玩家",
+    "en": "Player"
+  },
+  "food.target.ActiveCreatures": {
+    "zh-TW": "在場宙獸",
+    "en": "Active creatures"
+  },
+  "food.target.Party": {
+    "zh-TW": "全隊宙獸",
+    "en": "Party creatures"
+  },
+  "food.target.PlayerAndParty": {
+    "zh-TW": "玩家與全隊",
+    "en": "Player and party"
+  },
+  "utility.None": {
+    "zh-TW": "無",
+    "en": "None"
+  },
+  "utility.ImmuneLaboratory": {
+    "zh-TW": "機房適應",
+    "en": "Laboratory adaptation"
+  },
+  "utility.ImmuneRainforest": {
+    "zh-TW": "雨林適應",
+    "en": "Rainforest adaptation"
+  },
+  "utility.ImmuneDeepSea": {
+    "zh-TW": "深海適應",
+    "en": "Deep-sea adaptation"
+  },
+  "utility.ImmuneVolcano": {
+    "zh-TW": "火山適應",
+    "en": "Volcano adaptation"
+  },
+  "utility.ImmuneCave": {
+    "zh-TW": "洞穴適應",
+    "en": "Cave adaptation"
+  },
+  "utility.ImmuneIceCap": {
+    "zh-TW": "冰冠適應",
+    "en": "Ice-cap adaptation"
+  },
+  "utility.ImmuneTower": {
+    "zh-TW": "高塔適應",
+    "en": "Tower adaptation"
+  },
+  "utility.ImmuneSpace": {
+    "zh-TW": "太空適應",
+    "en": "Space adaptation"
+  },
+  "utility.ImmuneLabyrinth": {
+    "zh-TW": "迷宮適應",
+    "en": "Labyrinth adaptation"
+  },
+  "utility.ImmuneTemple": {
+    "zh-TW": "神廟適應",
+    "en": "Temple adaptation"
+  },
+  "utility.OpenObstacle": {
+    "zh-TW": "破除路障",
+    "en": "Clear obstacles"
+  },
+  "utility.Dive": {
+    "zh-TW": "潛水",
+    "en": "Dive"
+  },
+  "utility.Fly": {
+    "zh-TW": "飛翔",
+    "en": "Fly"
+  },
+  "utility.Levitate": {
+    "zh-TW": "懸浮",
+    "en": "Levitate"
+  },
+  "utility.CatchRateUp": {
+    "zh-TW": "收服強化",
+    "en": "Capture boost"
+  },
+  "utility.StealItem": {
+    "zh-TW": "竊取道具",
+    "en": "Steal items"
+  },
+  "utility.PreventEscape": {
+    "zh-TW": "阻止逃逸",
+    "en": "Prevent escape"
+  },
+  "utility.QuickEscape": {
+    "zh-TW": "瞬步脫戰",
+    "en": "Quick escape"
+  },
+  "utility.DropRateUp": {
+    "zh-TW": "掉落提升",
+    "en": "Drop boost"
+  },
+  "utility.ScoutPotential": {
+    "zh-TW": "潛力偵查",
+    "en": "Scout potential"
+  },
+  "utility.Mount": {
+    "zh-TW": "騎乘疾行",
+    "en": "Mount"
+  },
+  "utility.ReturnVillage": {
+    "zh-TW": "返回村落",
+    "en": "Return to village"
+  },
+  "utility.PartyStealth": {
+    "zh-TW": "隊伍隱身",
+    "en": "Party stealth"
+  },
+  "utility.EggHatchBoost": {
+    "zh-TW": "恆溫孵化",
+    "en": "Hatching boost"
+  },
+  "utility.MagnetPickupDouble": {
+    "zh-TW": "磁力回收",
+    "en": "Magnetic pickup"
+  },
+  "utility.WeatherControl": {
+    "zh-TW": "天氣操縱",
+    "en": "Weather control"
+  },
+  "utility.Fishing": {
+    "zh-TW": "釣魚",
+    "en": "Fishing"
+  },
+  "utility.ForageBerries": {
+    "zh-TW": "採集漿果",
+    "en": "Forage berries"
+  },
+  "utility.CookFire": {
+    "zh-TW": "生火料理",
+    "en": "Fire cooking"
+  },
+  "utility.ProduceMilk": {
+    "zh-TW": "產出乳品",
+    "en": "Produce milk"
+  },
+  "utility.CampfireRevive": {
+    "zh-TW": "營火復甦",
+    "en": "Campfire revival"
+  },
+  "utility.HuntGround": {
+    "zh-TW": "地面狩獵",
+    "en": "Ground hunting"
+  },
+  "utility.HuntSky": {
+    "zh-TW": "空中狩獵",
+    "en": "Sky hunting"
+  },
+  "utility.SetTrap": {
+    "zh-TW": "設置陷阱",
+    "en": "Set traps"
+  },
+  "utility.CastNet": {
+    "zh-TW": "撒網",
+    "en": "Cast nets"
+  },
+  "utility.HarvestCrops": {
+    "zh-TW": "收割作物",
+    "en": "Harvest crops"
+  },
+  "utility.CulinaryPrep": {
+    "zh-TW": "食材處理",
+    "en": "Culinary preparation"
+  },
+  "ingredient.category.MeatGround": {
+    "zh-TW": "獸肉",
+    "en": "Ground meat"
+  },
+  "ingredient.category.MeatSky": {
+    "zh-TW": "禽肉",
+    "en": "Poultry"
+  },
+  "ingredient.category.Seafood": {
+    "zh-TW": "水產",
+    "en": "Seafood"
+  },
+  "ingredient.category.BerryHerb": {
+    "zh-TW": "漿果／香草",
+    "en": "Berries / herbs"
+  },
+  "ingredient.category.GrainCrop": {
+    "zh-TW": "穀物",
+    "en": "Grain"
+  },
+  "ingredient.category.Dairy": {
+    "zh-TW": "乳品",
+    "en": "Dairy"
+  },
+  "ingredient.category.SpiceOil": {
+    "zh-TW": "香料／油",
+    "en": "Spice / oil"
+  },
+  "ingredient.category.Egg": {
+    "zh-TW": "蛋",
+    "en": "Egg"
+  },
+  "relation.EvolutionFamily": {
+    "zh-TW": "同進化線",
+    "en": "Evolution family"
+  },
+  "relation.MythKin": {
+    "zh-TW": "神話同源",
+    "en": "Myth kin"
+  },
+  "relation.RivalSymbiosis": {
+    "zh-TW": "天敵共生",
+    "en": "Rival symbiosis"
+  },
+  "relation.ToolKin": {
+    "zh-TW": "同工具系",
+    "en": "Tool kin"
+  },
+  "relation.Mentor": {
+    "zh-TW": "師徒",
+    "en": "Mentor"
+  },
+  "shape.Charge": {
+    "zh-TW": "衝鋒",
+    "en": "Charge"
+  },
+  "shape.Burst": {
+    "zh-TW": "爆發",
+    "en": "Burst"
+  },
+  "shape.Field": {
+    "zh-TW": "領域",
+    "en": "Field"
+  },
+  "shape.Cone": {
+    "zh-TW": "錐形",
+    "en": "Cone"
+  },
+  "shape.Line": {
+    "zh-TW": "直線",
+    "en": "Line"
+  },
+  "shape.Sphere": {
+    "zh-TW": "球形",
+    "en": "Sphere"
+  },
+  "shape.Projectile": {
+    "zh-TW": "投射",
+    "en": "Projectile"
+  },
+  "shape.Beam": {
+    "zh-TW": "光束",
+    "en": "Beam"
+  },
+  "shape.Melee": {
+    "zh-TW": "近戰",
+    "en": "Melee"
+  },
+  "shape.Single": {
+    "zh-TW": "單體",
+    "en": "Single"
+  },
+  "shape.Arc": {
+    "zh-TW": "弧形",
+    "en": "Arc"
+  },
+  "shape.Fan": {
+    "zh-TW": "扇形",
+    "en": "Fan"
+  },
+  "shape.Ray": {
+    "zh-TW": "射線",
+    "en": "Ray"
+  },
+  "shape.Ring": {
+    "zh-TW": "環形",
+    "en": "Ring"
+  },
+  "trigger.Always": {
+    "zh-TW": "持續生效",
+    "en": "Always active"
+  },
+  "trigger.OnSummon": {
+    "zh-TW": "進場時觸發",
+    "en": "On summon"
+  },
+  "trigger.OnAllySwap": {
+    "zh-TW": "輪替進場時觸發",
+    "en": "On switch-in"
+  },
+  "trigger.OnHitTaken": {
+    "zh-TW": "受擊時觸發",
+    "en": "When hit"
+  },
+  "trigger.OnMoveUsed": {
+    "zh-TW": "施招時觸發",
+    "en": "On move use"
+  },
+  "trigger.OnHpBelow": {
+    "zh-TW": "HP 低於門檻時",
+    "en": "Below HP threshold"
+  },
+  "trigger.OnHpAbove": {
+    "zh-TW": "HP 高於門檻時",
+    "en": "Above HP threshold"
+  },
+  "trigger.OnHpCrossBelow": {
+    "zh-TW": "HP 首次跌破門檻時",
+    "en": "On crossing below HP threshold"
+  },
+  "effect.MasteryMod": {
+    "zh-TW": "專精",
+    "en": "Mastery"
+  },
+  "effect.ResistMod": {
+    "zh-TW": "抗性",
+    "en": "Resistance"
+  },
+  "effect.CdModPercent": {
+    "zh-TW": "招式冷卻",
+    "en": "Move cooldown"
+  },
+  "effect.EvasionModPercent": {
+    "zh-TW": "閃避",
+    "en": "Evasion"
+  },
+  "effect.MoveSpeedModPercent": {
+    "zh-TW": "移速",
+    "en": "Move speed"
+  },
+  "effect.RangeModPercent": {
+    "zh-TW": "範圍",
+    "en": "Range"
+  },
+  "effect.HealPercentMaxHp": {
+    "zh-TW": "HP 回復",
+    "en": "HP healing"
+  },
+  "gather.HuntGround": {
+    "zh-TW": "地面狩獵",
+    "en": "Ground hunting"
+  },
+  "gather.HuntSky": {
+    "zh-TW": "空中狩獵",
+    "en": "Sky hunting"
+  },
+  "gather.SetTrap": {
+    "zh-TW": "設置陷阱",
+    "en": "Set traps"
+  },
+  "gather.Fishing": {
+    "zh-TW": "釣魚",
+    "en": "Fishing"
+  },
+  "gather.CastNet": {
+    "zh-TW": "撒網",
+    "en": "Cast nets"
+  },
+  "gather.ForageBerries": {
+    "zh-TW": "採集漿果",
+    "en": "Forage berries"
+  },
+  "gather.HarvestCrops": {
+    "zh-TW": "收割作物",
+    "en": "Harvest crops"
+  },
+  "gather.ProduceMilk": {
+    "zh-TW": "產出乳品",
+    "en": "Produce milk"
+  },
+  "utility.desc.None": {
+    "zh-TW": "無",
+    "en": "None"
+  },
+  "utility.desc.ImmuneLaboratory": {
+    "zh-TW": "機房適應",
+    "en": "Laboratory adaptation"
+  },
+  "utility.desc.ImmuneRainforest": {
+    "zh-TW": "雨林適應",
+    "en": "Rainforest adaptation"
+  },
+  "utility.desc.ImmuneDeepSea": {
+    "zh-TW": "深海適應",
+    "en": "Deep-sea adaptation"
+  },
+  "utility.desc.ImmuneVolcano": {
+    "zh-TW": "火山適應",
+    "en": "Volcano adaptation"
+  },
+  "utility.desc.ImmuneCave": {
+    "zh-TW": "洞穴適應",
+    "en": "Cave adaptation"
+  },
+  "utility.desc.ImmuneIceCap": {
+    "zh-TW": "冰冠適應",
+    "en": "Ice-cap adaptation"
+  },
+  "utility.desc.ImmuneTower": {
+    "zh-TW": "高塔適應",
+    "en": "Tower adaptation"
+  },
+  "utility.desc.ImmuneSpace": {
+    "zh-TW": "太空適應",
+    "en": "Space adaptation"
+  },
+  "utility.desc.ImmuneLabyrinth": {
+    "zh-TW": "迷宮適應",
+    "en": "Labyrinth adaptation"
+  },
+  "utility.desc.ImmuneTemple": {
+    "zh-TW": "神廟適應",
+    "en": "Temple adaptation"
+  },
+  "utility.desc.OpenObstacle": {
+    "zh-TW": "破除路障",
+    "en": "Clear obstacles"
+  },
+  "utility.desc.Dive": {
+    "zh-TW": "潛水",
+    "en": "Dive"
+  },
+  "utility.desc.Fly": {
+    "zh-TW": "飛翔",
+    "en": "Fly"
+  },
+  "utility.desc.Levitate": {
+    "zh-TW": "忽略地形減速",
+    "en": "Ignore terrain slowdown"
+  },
+  "utility.desc.CatchRateUp": {
+    "zh-TW": "提高收服成功率",
+    "en": "Increase capture chance"
+  },
+  "utility.desc.StealItem": {
+    "zh-TW": "竊取道具",
+    "en": "Steal items"
+  },
+  "utility.desc.PreventEscape": {
+    "zh-TW": "延長野生脫戰距離",
+    "en": "Extend wild disengage distance"
+  },
+  "utility.desc.QuickEscape": {
+    "zh-TW": "瞬步脫戰",
+    "en": "Quick escape"
+  },
+  "utility.desc.DropRateUp": {
+    "zh-TW": "提高素材掉落率",
+    "en": "Increase material drop chance"
+  },
+  "utility.desc.ScoutPotential": {
+    "zh-TW": "潛力偵查",
+    "en": "Scout potential"
+  },
+  "utility.desc.Mount": {
+    "zh-TW": "提高趕路速度並忽略地形減速",
+    "en": "Faster travel, ignoring terrain slowdown"
+  },
+  "utility.desc.ReturnVillage": {
+    "zh-TW": "返回村落",
+    "en": "Return to village"
+  },
+  "utility.desc.PartyStealth": {
+    "zh-TW": "縮小野生偵測範圍",
+    "en": "Reduce wild detection range"
+  },
+  "utility.desc.EggHatchBoost": {
+    "zh-TW": "恆溫孵化",
+    "en": "Hatching boost"
+  },
+  "utility.desc.MagnetPickupDouble": {
+    "zh-TW": "提高素材拾取數量",
+    "en": "Increase material pickup quantity"
+  },
+  "utility.desc.WeatherControl": {
+    "zh-TW": "天氣操縱",
+    "en": "Weather control"
+  },
+  "utility.desc.Fishing": {
+    "zh-TW": "釣魚",
+    "en": "Fishing"
+  },
+  "utility.desc.ForageBerries": {
+    "zh-TW": "採集漿果",
+    "en": "Forage berries"
+  },
+  "utility.desc.CookFire": {
+    "zh-TW": "生火料理",
+    "en": "Fire cooking"
+  },
+  "utility.desc.ProduceMilk": {
+    "zh-TW": "產出乳品",
+    "en": "Produce milk"
+  },
+  "utility.desc.CampfireRevive": {
+    "zh-TW": "營火復甦",
+    "en": "Campfire revival"
+  },
+  "utility.desc.HuntGround": {
+    "zh-TW": "地面狩獵",
+    "en": "Ground hunting"
+  },
+  "utility.desc.HuntSky": {
+    "zh-TW": "空中狩獵",
+    "en": "Sky hunting"
+  },
+  "utility.desc.SetTrap": {
+    "zh-TW": "設置陷阱",
+    "en": "Set traps"
+  },
+  "utility.desc.CastNet": {
+    "zh-TW": "撒網",
+    "en": "Cast nets"
+  },
+  "utility.desc.HarvestCrops": {
+    "zh-TW": "收割作物",
+    "en": "Harvest crops"
+  },
+  "utility.desc.CulinaryPrep": {
+    "zh-TW": "食材處理",
+    "en": "Culinary preparation"
+  },
+  "ing_boar_flank": {
+    "zh-TW": "野豬腹肉",
+    "en": "Boar flank"
+  },
+  "ing_beast_prime_rib": {
+    "zh-TW": "獸類上等肋肉",
+    "en": "Prime beast rib"
+  },
+  "ing_skyfowl_breast": {
+    "zh-TW": "飛禽胸肉",
+    "en": "Skyfowl breast"
+  },
+  "ing_gale_wing_cut": {
+    "zh-TW": "疾風翼肉",
+    "en": "Gale wing cut"
+  },
+  "ing_snare_hare_meat": {
+    "zh-TW": "陷阱兔肉",
+    "en": "Snared hare meat"
+  },
+  "ing_trapped_truffle_grub": {
+    "zh-TW": "松露蟲",
+    "en": "Truffle grub"
+  },
+  "ing_river_trout": {
+    "zh-TW": "河鱒",
+    "en": "River trout"
+  },
+  "ing_abyssal_salmon": {
+    "zh-TW": "深淵鮭",
+    "en": "Abyssal salmon"
+  },
+  "ing_net_shrimp": {
+    "zh-TW": "網捕蝦",
+    "en": "Net shrimp"
+  },
+  "ing_net_kelp_scallop": {
+    "zh-TW": "海藻扇貝",
+    "en": "Kelp scallop"
+  },
+  "ing_wild_berry": {
+    "zh-TW": "野生漿果",
+    "en": "Wild berries"
+  },
+  "ing_vital_fern_herb": {
+    "zh-TW": "活力蕨草",
+    "en": "Vital fern herb"
+  },
+  "ing_sun_wheat": {
+    "zh-TW": "日光麥",
+    "en": "Sun wheat"
+  },
+  "ing_golden_oilseed": {
+    "zh-TW": "金色油籽",
+    "en": "Golden oilseed"
+  },
+  "ing_chimera_milk": {
+    "zh-TW": "宙獸乳",
+    "en": "Chimera milk"
+  },
+  "ing_sky_nest_egg": {
+    "zh-TW": "空巢蛋",
+    "en": "Sky-nest egg"
+  },
+  "food_charred_boar_skewer": {
+    "zh-TW": "炙烤野豬串",
+    "en": "Charred boar skewer"
+  },
+  "food_hearty_beast_stew": {
+    "zh-TW": "濃香獸肉燉湯",
+    "en": "Hearty beast stew"
+  },
+  "food_gale_wing_stir_fry": {
+    "zh-TW": "疾風翼肉快炒",
+    "en": "Gale wing stir-fry"
+  },
+  "food_crispy_shrimp_tempura": {
+    "zh-TW": "酥脆鮮蝦天婦羅",
+    "en": "Crispy shrimp tempura"
+  },
+  "food_steamed_abyssal_salmon": {
+    "zh-TW": "清蒸深淵鮭",
+    "en": "Steamed abyssal salmon"
+  },
+  "food_chilled_herb_salad": {
+    "zh-TW": "冰鎮香草沙拉",
+    "en": "Chilled herb salad"
+  },
+  "food_revival_herb_powder": {
+    "zh-TW": "復甦香草粉",
+    "en": "Revival herb powder"
+  },
+  "ui.skills.no_safe_ground": {
+    "zh-TW": "附近沒有可安全落腳的空地",
+    "en": "No safe open ground nearby"
+  },
+  "shape.Front": {
+    "zh-TW": "正面",
+    "en": "Front"
+  },
+  "shape.Sweep": {
+    "zh-TW": "橫掃",
+    "en": "Sweep"
+  },
+  "shape.Self": {
+    "zh-TW": "自身",
+    "en": "Self"
+  },
+  "shape.Ally": {
+    "zh-TW": "友方",
+    "en": "Ally"
+  },
+  "ui.codex.any_element": {
+    "zh-TW": "全屬性",
+    "en": "All elements"
+  },
+  "ui.skills.show_locked": {
+    "zh-TW": "顯示未解鎖採集能力",
+    "en": "Show locked gathering skills"
+  },
+  "ui.skills.hide_locked": {
+    "zh-TW": "隱藏未解鎖採集能力",
+    "en": "Hide locked gathering skills"
   }
 }

@@ -106,6 +106,48 @@ namespace Cosmimera.GameData.Tests
         }
 
         [Test]
+        public void Field_only_import_preserves_combat_data_and_omitted_utilities()
+        {
+            DataImporter.Import(_src, Output);
+            Assert.That(Db.TryGet("sample_fox_cub", out CreatureDef cub), Is.True);
+            string beforeMove = cub.SignatureMove.Id;
+            int beforeCon = cub.Stats.Con;
+            string path = Path.Combine(_src, "creatures/creatures.json");
+            JArray creatures = JArray.Parse(File.ReadAllText(path));
+            foreach (JObject creature in creatures)
+            {
+                if ((string)creature["id"] != cub.Id) continue;
+                creature["field_utility"] = "cook_fire";
+                creature["signature_move"] = "not_imported_by_this_operation";
+                creature["stats"]["con"] = 999;
+            }
+            File.WriteAllText(path, creatures.ToString());
+            Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.EqualTo(1));
+            Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.CookFire));
+            Assert.That(cub.SignatureMove.Id, Is.EqualTo(beforeMove));
+            Assert.That(cub.Stats.Con, Is.EqualTo(beforeCon));
+            foreach (JObject creature in creatures) creature.Remove("field_utility");
+            File.WriteAllText(path, creatures.ToString());
+            Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.Zero);
+            Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.CookFire));
+        }
+
+        [TestCase("not_a_utility", "sample_fox_beast")]
+        [TestCase("fishing", "missing_species")]
+        public void Invalid_field_only_import_never_partially_updates(string utility, string secondId)
+        {
+            DataImporter.Import(_src, Output);
+            Assert.That(Db.TryGet("sample_fox_cub", out CreatureDef cub), Is.True);
+            string path = Path.Combine(_src, "creatures/creatures.json");
+            File.WriteAllText(path, "[{\"id\":\"sample_fox_cub\",\"field_utility\":\"cook_fire\"}," +
+                "{\"id\":\"" + secondId + "\",\"field_utility\":\"" + utility + "\"}]");
+            Assert.Throws<DataImportException>(() => DataImporter.ImportFieldUtilities(_src, Output));
+            Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.None));
+            Assert.Throws<ContractException>(() => DataImporter.ImportFieldUtilities(null, Output));
+            Assert.Throws<ContractException>(() => DataImporter.ImportFieldUtilities(_src, "outside_assets"));
+        }
+
+        [Test]
         public void TryGet_is_false_for_unknown_id_or_wrong_kind()
         {
             DataImporter.Import(_src, Output);

@@ -108,21 +108,26 @@ namespace Cosmimera.Combat
 
         /// <summary>Starts a dodge roll under <paramref name="weather"/>, scaling the roll cooldown.</summary>
         /// <remarks>
-        /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark; weather.PlayerRollCooldownMultiplier &gt; 0.
+        /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark; weather.PlayerRollCooldownMultiplier &gt; 0;
+        ///      foodCooldownModPercent in -100..100.
         /// Post: Downed if IsDowned (checked first, even during cooldown); else OnCooldown if a roll started within
-        ///       the weather-scaled RollCooldownMs; else Ok and a roll starts at nowMs. Refusals leave HP and roll state unchanged.
+        ///       the weather/food-scaled RollCooldownMs (at least RollDurationMs); else Ok and a roll starts at nowMs.
+        ///       Refusals leave HP and roll state unchanged.
         /// Side effects: records the roll start on Ok; advances the watermark to nowMs.
         /// </remarks>
-        public RollResult TryRoll(long nowMs, in WeatherProfile weather)
+        public RollResult TryRoll(long nowMs, in WeatherProfile weather, int foodCooldownModPercent = 0)
         {
             Contract.Requires(weather.PlayerRollCooldownMultiplier > 0f, "weather roll cooldown multiplier must be > 0");
+            Contract.Requires(foodCooldownModPercent >= -100 && foodCooldownModPercent <= 100,
+                "food cooldown modifier must be -100..100");
             AdvanceTime(nowMs);
             if (IsDowned)
             {
                 return RollResult.Downed;
             }
 
-            long effectiveCooldownMs = (long)System.Math.Ceiling(_config.RollCooldownMs * weather.PlayerRollCooldownMultiplier);
+            long effectiveCooldownMs = System.Math.Max(_config.RollDurationMs,
+                (long)System.Math.Ceiling(_config.RollCooldownMs * weather.PlayerRollCooldownMultiplier * (100 + foodCooldownModPercent) / 100d));
             if (_hasRolled && nowMs - _rollStartMs < effectiveCooldownMs)
             {
                 return RollResult.OnCooldown;

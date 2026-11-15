@@ -107,6 +107,20 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: true iff id ≥ TreasureIdBase. Side effects: none.</remarks>
         public static bool IsTreasure(long id) => id >= TreasureIdBase;
 
+        internal bool HasFoliage(float3 direction, float reachM)
+        {
+            _items.Clear();
+            _scatter.Query(direction, reachM, _items);
+            foreach (ScatterItem item in _items)
+            {
+                if (item.Shape != ScatterShape.Tree && item.Shape != ScatterShape.Shrub &&
+                    item.Shape != ScatterShape.Bamboo && item.Shape != ScatterShape.TallGrass) continue;
+                if (!_table.IsDestroyed(item.CellKey) && math.distance(direction, item.Direction) * _planet.Radius <= reachM)
+                    return true;
+            }
+            return false;
+        }
+
         /// <inheritdoc />
         public void Query(float3 worldPoint, float radiusM, List<DestructibleCandidate> into)
         {

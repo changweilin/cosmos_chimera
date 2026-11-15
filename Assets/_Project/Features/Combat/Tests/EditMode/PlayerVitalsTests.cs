@@ -10,6 +10,19 @@ namespace Cosmimera.Combat.Tests
         private static PlayerVitals Make() => new PlayerVitals(new PlayerVitalsConfig(100, 600, 400, 800));
 
         [Test]
+        public void Food_reduces_roll_cooldown_without_shortening_the_roll_itself()
+        {
+            PlayerVitals player = Make();
+            Assert.That(player.TryRoll(0, WorldGen.WeatherProfiles.Clear, -25), Is.EqualTo(RollResult.Ok));
+            Assert.That(player.TryRoll(599, WorldGen.WeatherProfiles.Clear, -25), Is.EqualTo(RollResult.OnCooldown));
+            Assert.That(player.TryRoll(600, WorldGen.WeatherProfiles.Clear, -25), Is.EqualTo(RollResult.Ok));
+            Assert.That(player.TryRoll(1199, WorldGen.WeatherProfiles.Clear, -100), Is.EqualTo(RollResult.OnCooldown));
+            Assert.That(player.TryRoll(1200, WorldGen.WeatherProfiles.Clear, -100), Is.EqualTo(RollResult.Ok));
+            Assert.Throws<ContractException>(() => player.TryRoll(1200, WorldGen.WeatherProfiles.Clear, -101));
+            Assert.Throws<ContractException>(() => player.TryRoll(1200, WorldGen.WeatherProfiles.Clear, 101));
+        }
+
+        [Test]
         public void Shipped_balance_builds_a_valid_config()
         {
             PlayerVitalsConfig c = BalanceFixture.PlayerConfig();

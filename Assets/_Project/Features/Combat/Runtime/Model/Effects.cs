@@ -351,6 +351,23 @@ namespace Cosmimera.Combat
         private readonly EffectSpec[] _traitEffects;
         private long _watermarkMs;
         private bool _crossBelowSpent;
+        private readonly List<EffectBook> _partnerTraits = new List<EffectBook>(4);
+
+        /// <summary>Adds a sub-partner trait before combat starts, retaining its own trigger and charge.</summary>
+        /// <remarks>
+        /// Pre: called before any timed command; traitId/effects satisfy the trait constructor; at most four partner traits.
+        /// Post: distinct trait ids contribute to every notification and modifier query; duplicate ids are ignored.
+        /// Side effects: allocates a private book for a new trait.
+        /// </remarks>
+        public void AddPartnerTrait(string traitId, in TriggerSpec trigger, IReadOnlyList<EffectSpec> effects)
+        {
+            Contract.Requires(_watermarkMs == 0, "partner traits must be assigned before combat");
+            var book = new EffectBook(traitId, trigger, effects);
+            if (_traitId == traitId) return;
+            foreach (EffectBook existing in _partnerTraits) if (existing._traitId == traitId) return;
+            Contract.Requires(_partnerTraits.Count < 4, "at most four partner traits");
+            _partnerTraits.Add(book);
+        }
 
         /// <summary>Creates a book for a combatant without a trait.</summary>
         /// <remarks>Pre: none. Post: HasTrait false; no active effects. Side effects: none.</remarks>
@@ -383,7 +400,7 @@ namespace Cosmimera.Combat
 
         /// <summary>Whether this combatant has a trait.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
-        public bool HasTrait => _traitId != null;
+        public bool HasTrait => _traitId != null || _partnerTraits.Count > 0;
 
         /// <summary>
         /// Applies a timed effect from <paramref name="sourceId"/> (move or trait id) at <paramref name="nowMs"/>.
@@ -446,6 +463,12 @@ namespace Cosmimera.Combat
                 }
             }
 
+            foreach (EffectBook partner in _partnerTraits)
+            {
+                int stacks = partner.StacksOf(sourceId, effectIndex, nowMs);
+                if (stacks > 0) return stacks;
+            }
+
             return 0;
         }
 
@@ -477,6 +500,7 @@ namespace Cosmimera.Combat
                 }
             }
 
+            foreach (EffectBook partner in _partnerTraits) removed += partner.RemoveNegativeTimedEffects(nowMs);
             return removed;
         }
 
@@ -489,6 +513,8 @@ namespace Cosmimera.Combat
         public void NotifySummoned(long nowMs, out int healPercent)
         {
             Fire(TriggerType.OnSummon, true, nowMs, out healPercent);
+            foreach (EffectBook partner in _partnerTraits)
+            { partner.NotifySummoned(nowMs, out int heal); healPercent += heal; }
         }
 
         /// <summary>The creature entered the field by a switch (not the opening summon): fires on_ally_swap.</summary>
@@ -499,6 +525,8 @@ namespace Cosmimera.Combat
         public void NotifySwappedIn(long nowMs, out int healPercent)
         {
             Fire(TriggerType.OnAllySwap, true, nowMs, out healPercent);
+            foreach (EffectBook partner in _partnerTraits)
+            { partner.NotifySwappedIn(nowMs, out int heal); healPercent += heal; }
         }
 
         /// <summary>The creature was hit (contact + roll succeeded) by a move of <paramref name="moveElement"/>: fires on_hit_taken.</summary>
@@ -513,6 +541,8 @@ namespace Cosmimera.Combat
             bool match = _traitId != null && _trigger.Type == TriggerType.OnHitTaken
                 && (_trigger.AnyElement || _trigger.Element == moveElement);
             Fire(TriggerType.OnHitTaken, match, nowMs, out healPercent);
+            foreach (EffectBook partner in _partnerTraits)
+            { partner.NotifyHitTaken(moveElement, nowMs, out int heal); healPercent += heal; }
         }
 
         /// <summary>The creature used a move of <paramref name="moveElement"/>: fires on_move_used for that element.</summary>
@@ -522,6 +552,8 @@ namespace Cosmimera.Combat
             Contract.Requires(moveElement >= Element.Metal && moveElement <= Element.Shadow, "undefined Element");
             bool match = _traitId != null && _trigger.Type == TriggerType.OnMoveUsed && _trigger.Element == moveElement;
             Fire(TriggerType.OnMoveUsed, match, nowMs, out healPercent);
+            foreach (EffectBook partner in _partnerTraits)
+            { partner.NotifyMoveUsed(moveElement, nowMs, out int heal); healPercent += heal; }
         }
 
         /// <summary>The creature's HP changed from <paramref name="previousHp"/> to <paramref name="hp"/>: fires on_hp_cross_below.</summary>
@@ -546,6 +578,8 @@ namespace Cosmimera.Combat
             {
                 _crossBelowSpent = true;
             }
+            foreach (EffectBook partner in _partnerTraits)
+            { partner.NotifyHpChanged(previousHp, hp, maxHp, nowMs, out int heal); healPercent += heal; }
         }
 
         /// <summary>Removes every timed effect and re-arms on_hp_cross_below (end of combat).</summary>
@@ -558,6 +592,7 @@ namespace Cosmimera.Combat
             Advance(nowMs);
             _slots.Clear();
             _crossBelowSpent = false;
+            foreach (EffectBook partner in _partnerTraits) partner.Clear(nowMs);
         }
 
         /// <summary>Sums every modifier active at <paramref name="nowMs"/> into <paramref name="into"/>.</summary>
@@ -573,6 +608,12 @@ namespace Cosmimera.Combat
             Contract.Requires(maxHp >= 1 && hp >= 0 && hp <= maxHp, "need 0 <= hp <= maxHp, maxHp >= 1");
             CombatTime.Require(nowMs, _watermarkMs);
             into.Clear();
+            CollectInto(nowMs, hp, maxHp, into);
+            foreach (EffectBook partner in _partnerTraits) partner.CollectInto(nowMs, hp, maxHp, into);
+        }
+
+        private void CollectInto(long nowMs, int hp, int maxHp, ModifierTotals into)
+        {
             foreach (Slot s in _slots)
             {
                 if (s.ExpiresMs > nowMs)

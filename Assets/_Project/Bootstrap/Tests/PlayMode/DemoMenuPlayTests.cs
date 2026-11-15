@@ -77,8 +77,10 @@ namespace Cosmimera.Bootstrap.Tests
                 .Invoke(game, null);
             // Batchmode -nographics never calls OnGUI, so the drawn count (_menuButtonCount) cannot be read here; the
             // expected value is the lobby layout: language + 6×(evolve, remove) + 5 enabled move-up (the first is
-            // disabled, not selectable) + 2 reserves×(evolve, add) + start-run + quit. Before the fix this was 16.
-            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 2));
+            // disabled, not selectable) + 2 reserves×(evolve, add) + journal + start-run + quit + optional character.
+            var models = (CharacterModelTable)Field(game, "_characterModels");
+            int characterButton = models != null && models.Entries.Count > 0 ? 1 : 0;
+            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 3 + characterButton));
             int drawn = (int)Field(game, "_menuButtonCount");
             if (drawn > 0)
             {

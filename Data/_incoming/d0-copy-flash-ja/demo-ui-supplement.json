@@ -256,5 +256,710 @@
   },
   "ui.hud.trait_label": {
     "ja": "特性：{trait}"
+  },
+  "ui.journal.open": {
+    "ja": "冒険手帳"
+  },
+  "ui.journal.close": {
+    "ja": "閉じる"
+  },
+  "ui.journal.tab.Partners": {
+    "ja": "サブパートナー"
+  },
+  "ui.journal.tab.Items": {
+    "ja": "持ち物"
+  },
+  "ui.journal.tab.Skills": {
+    "ja": "生活スキル"
+  },
+  "ui.journal.tab.Codex": {
+    "ja": "図鑑"
+  },
+  "ui.journal.navigation": {
+    "ja": "方向キーで選択、Enter / Aで決定、Esc / Bで戻る"
+  },
+  "ui.journal.empty": {
+    "ja": "該当する項目はありません"
+  },
+  "ui.journal.run_items": {
+    "ja": "食材と料理は惑星の探索中に入手・使用できます。"
+  },
+  "ui.journal.run_skills": {
+    "ja": "惑星に降り立つと生活スキルを使えます。"
+  },
+  "ui.partner.hint": {
+    "ja": "主力1体につき控えから最大4体。関係があり、主力以下の進化段階が必要。器で技・特性・オーバーロードが決まります。"
+  },
+  "ui.partner.equip": {
+    "ja": "装備"
+  },
+  "ui.partner.remove": {
+    "ja": "外す"
+  },
+  "ui.partner.overload": {
+    "ja": "主力のオーバーロード解放"
+  },
+  "ui.partner.unknown": {
+    "ja": "種族データがありません"
+  },
+  "ui.partner.repair": {
+    "ja": "無効な組み合わせがあります。外して組み直してから出発してください。"
+  },
+  "ui.partner.lobby_only": {
+    "ja": "ここでは装備を確認できます。変更はロビーで行います。"
+  },
+  "ui.partner.reason.Ok": {
+    "ja": "装備可能"
+  },
+  "ui.partner.reason.UnknownMain": {
+    "ja": "先に主力を選んでください"
+  },
+  "ui.partner.reason.SubIsAMain": {
+    "ja": "主力とサブは兼任できません。先に装備を外してください"
+  },
+  "ui.partner.reason.AlreadySubOfAnotherMain": {
+    "ja": "別の主力に装備中"
+  },
+  "ui.partner.reason.AlreadyAssignedToThisMain": {
+    "ja": "この主力に装備中"
+  },
+  "ui.partner.reason.MainFull": {
+    "ja": "サブ枠がいっぱいです"
+  },
+  "ui.partner.reason.NoRelation": {
+    "ja": "この主力との関係がありません"
+  },
+  "ui.partner.reason.NotAssigned": {
+    "ja": "未装備"
+  },
+  "ui.partner.reason.SubStageAboveMain": {
+    "ja": "主力より進化段階が高いです"
+  },
+  "ui.codex.kind.0": {
+    "ja": "宙獣"
+  },
+  "ui.codex.kind.1": {
+    "ja": "技"
+  },
+  "ui.codex.kind.2": {
+    "ja": "特性"
+  },
+  "ui.codex.kind.3": {
+    "ja": "関係図"
+  },
+  "ui.codex.search": {
+    "ja": "名前で検索"
+  },
+  "ui.codex.owned_only": {
+    "ja": "所持のみ（切替）"
+  },
+  "ui.codex.all": {
+    "ja": "すべて表示（切替）"
+  },
+  "ui.codex.mastery": {
+    "ja": "熟練"
+  },
+  "ui.codex.resist": {
+    "ja": "耐性"
+  },
+  "ui.codex.move": {
+    "ja": "技"
+  },
+  "ui.codex.trait": {
+    "ja": "特性"
+  },
+  "ui.codex.power": {
+    "ja": "威力"
+  },
+  "ui.codex.accuracy": {
+    "ja": "命中"
+  },
+  "ui.items.run_stock": {
+    "ja": "捕獲の器は回数制限なし。食材・料理は今回の探索中のみ使用でき、ロビーへは持ち帰れません。"
+  },
+  "ui.items.no_capture_target": {
+    "ja": "近くに捕獲できる倒れた宙獣がいません"
+  },
+  "ui.items.capture": {
+    "ja": "選んだ器で捕獲"
+  },
+  "ui.items.eat": {
+    "ja": "使用・食べる"
+  },
+  "ui.items.heal": {
+    "ja": "回復（宙獣・プレイヤー）"
+  },
+  "ui.items.revive": {
+    "ja": "蘇生"
+  },
+  "ui.items.empty_food": {
+    "ja": "食材・料理がありません。生活スキルで採集できます。"
+  },
+  "ui.items.consumed": {
+    "ja": "使用：プレイヤーHP +{player}、宙獣HP +{creature}、{revived}体蘇生"
+  },
+  "ui.skills.pause_hint": {
+    "ja": "手帳を開いている間は一時停止。罠の待ち時間は閉じると進みます。"
+  },
+  "ui.skills.use": {
+    "ja": "使う"
+  },
+  "ui.skills.stop": {
+    "ja": "停止"
+  },
+  "ui.skills.trap_placed": {
+    "ja": "罠を設置しました。手帳を閉じて待つと回収できます。"
+  },
+  "ui.skills.collect_traps": {
+    "ja": "準備のできた罠を回収"
+  },
+  "ui.skills.recipes": {
+    "ja": "料理レシピ"
+  },
+  "ui.skills.cook": {
+    "ja": "調理"
+  },
+  "ui.skills.gathered": {
+    "ja": "入手："
+  },
+  "ui.skills.escaped": {
+    "ja": "野生との戦闘から離脱しました"
+  },
+  "ui.skills.no_battle": {
+    "ja": "離脱できる戦闘がありません"
+  },
+  "ui.skills.unavailable": {
+    "ja": "この能力はまだ使用できません"
+  },
+  "gather.reason.None": {
+    "ja": "使用可能"
+  },
+  "gather.reason.MissingSkill": {
+    "ja": "必要な能力がありません"
+  },
+  "gather.reason.InvalidEnvironment": {
+    "ja": "この場所では使えません"
+  },
+  "gather.reason.NoPoolAvailable": {
+    "ja": "対応する食材がありません"
+  },
+  "gather.reason.TrapLimitReached": {
+    "ja": "罠の上限に達しました"
+  },
+  "cook.None": {
+    "ja": "調理可能"
+  },
+  "cook.UnknownOutputFood": {
+    "ja": "料理データがありません"
+  },
+  "cook.MissingCookingSkill": {
+    "ja": "必要な調理能力がありません"
+  },
+  "cook.MissingIngredients": {
+    "ja": "食材不足"
+  },
+  "consume.UnknownItem": {
+    "ja": "道具データがありません"
+  },
+  "consume.NotEdible": {
+    "ja": "この食材は生では食べられません"
+  },
+  "consume.OutOfStock": {
+    "ja": "所持数が足りません"
+  },
+  "consume.NoEligibleTarget": {
+    "ja": "効果を受けられる対象がいません"
+  },
+  "quality.Normal": {
+    "ja": "普通"
+  },
+  "quality.Tasty": {
+    "ja": "美味"
+  },
+  "quality.Masterwork": {
+    "ja": "傑作"
+  },
+  "food.target.Player": {
+    "ja": "プレイヤー"
+  },
+  "food.target.ActiveCreatures": {
+    "ja": "出場中の宙獣"
+  },
+  "food.target.Party": {
+    "ja": "全パーティー宙獣"
+  },
+  "food.target.PlayerAndParty": {
+    "ja": "プレイヤーとパーティー"
+  },
+  "utility.None": {
+    "ja": "なし"
+  },
+  "utility.ImmuneLaboratory": {
+    "ja": "研究所適応"
+  },
+  "utility.ImmuneRainforest": {
+    "ja": "熱帯雨林適応"
+  },
+  "utility.ImmuneDeepSea": {
+    "ja": "深海適応"
+  },
+  "utility.ImmuneVolcano": {
+    "ja": "火山適応"
+  },
+  "utility.ImmuneCave": {
+    "ja": "洞窟適応"
+  },
+  "utility.ImmuneIceCap": {
+    "ja": "氷冠適応"
+  },
+  "utility.ImmuneTower": {
+    "ja": "塔適応"
+  },
+  "utility.ImmuneSpace": {
+    "ja": "宇宙適応"
+  },
+  "utility.ImmuneLabyrinth": {
+    "ja": "迷宮適応"
+  },
+  "utility.ImmuneTemple": {
+    "ja": "神殿適応"
+  },
+  "utility.OpenObstacle": {
+    "ja": "障害物除去"
+  },
+  "utility.Dive": {
+    "ja": "潜水"
+  },
+  "utility.Fly": {
+    "ja": "飛行"
+  },
+  "utility.Levitate": {
+    "ja": "浮遊"
+  },
+  "utility.CatchRateUp": {
+    "ja": "捕獲強化"
+  },
+  "utility.StealItem": {
+    "ja": "道具を盗む"
+  },
+  "utility.PreventEscape": {
+    "ja": "逃走阻止"
+  },
+  "utility.QuickEscape": {
+    "ja": "緊急離脱"
+  },
+  "utility.DropRateUp": {
+    "ja": "ドロップ強化"
+  },
+  "utility.ScoutPotential": {
+    "ja": "潜在能力調査"
+  },
+  "utility.Mount": {
+    "ja": "騎乗"
+  },
+  "utility.ReturnVillage": {
+    "ja": "村へ帰還"
+  },
+  "utility.PartyStealth": {
+    "ja": "パーティー隠密"
+  },
+  "utility.EggHatchBoost": {
+    "ja": "孵化促進"
+  },
+  "utility.MagnetPickupDouble": {
+    "ja": "磁力回収"
+  },
+  "utility.WeatherControl": {
+    "ja": "天候操作"
+  },
+  "utility.Fishing": {
+    "ja": "釣り"
+  },
+  "utility.ForageBerries": {
+    "ja": "ベリー採集"
+  },
+  "utility.CookFire": {
+    "ja": "火の料理"
+  },
+  "utility.ProduceMilk": {
+    "ja": "ミルク生産"
+  },
+  "utility.CampfireRevive": {
+    "ja": "焚き火蘇生"
+  },
+  "utility.HuntGround": {
+    "ja": "地上狩猟"
+  },
+  "utility.HuntSky": {
+    "ja": "空中狩猟"
+  },
+  "utility.SetTrap": {
+    "ja": "罠設置"
+  },
+  "utility.CastNet": {
+    "ja": "投網"
+  },
+  "utility.HarvestCrops": {
+    "ja": "作物収穫"
+  },
+  "utility.CulinaryPrep": {
+    "ja": "下ごしらえ"
+  },
+  "ingredient.category.MeatGround": {
+    "ja": "獣肉"
+  },
+  "ingredient.category.MeatSky": {
+    "ja": "鳥肉"
+  },
+  "ingredient.category.Seafood": {
+    "ja": "魚介"
+  },
+  "ingredient.category.BerryHerb": {
+    "ja": "ベリー・ハーブ"
+  },
+  "ingredient.category.GrainCrop": {
+    "ja": "穀物"
+  },
+  "ingredient.category.Dairy": {
+    "ja": "乳製品"
+  },
+  "ingredient.category.SpiceOil": {
+    "ja": "香辛料・油"
+  },
+  "ingredient.category.Egg": {
+    "ja": "卵"
+  },
+  "relation.EvolutionFamily": {
+    "ja": "同進化系統"
+  },
+  "relation.MythKin": {
+    "ja": "神話の縁"
+  },
+  "relation.RivalSymbiosis": {
+    "ja": "天敵・共生"
+  },
+  "relation.ToolKin": {
+    "ja": "道具の縁"
+  },
+  "relation.Mentor": {
+    "ja": "師弟"
+  },
+  "shape.Charge": {
+    "ja": "突進"
+  },
+  "shape.Burst": {
+    "ja": "爆発"
+  },
+  "shape.Field": {
+    "ja": "領域"
+  },
+  "shape.Cone": {
+    "ja": "扇状"
+  },
+  "shape.Line": {
+    "ja": "直線"
+  },
+  "shape.Sphere": {
+    "ja": "球状"
+  },
+  "shape.Projectile": {
+    "ja": "飛翔体"
+  },
+  "shape.Beam": {
+    "ja": "ビーム"
+  },
+  "shape.Melee": {
+    "ja": "近接"
+  },
+  "shape.Single": {
+    "ja": "単体"
+  },
+  "shape.Arc": {
+    "ja": "弧状"
+  },
+  "shape.Fan": {
+    "ja": "扇状"
+  },
+  "shape.Ray": {
+    "ja": "光線"
+  },
+  "shape.Ring": {
+    "ja": "環状"
+  },
+  "trigger.Always": {
+    "ja": "常時発動"
+  },
+  "trigger.OnSummon": {
+    "ja": "登場時"
+  },
+  "trigger.OnAllySwap": {
+    "ja": "交代登場時"
+  },
+  "trigger.OnHitTaken": {
+    "ja": "被弾時"
+  },
+  "trigger.OnMoveUsed": {
+    "ja": "技使用時"
+  },
+  "trigger.OnHpBelow": {
+    "ja": "HPが閾値未満"
+  },
+  "trigger.OnHpAbove": {
+    "ja": "HPが閾値超過"
+  },
+  "trigger.OnHpCrossBelow": {
+    "ja": "HPが閾値を下回った時"
+  },
+  "effect.MasteryMod": {
+    "ja": "熟練"
+  },
+  "effect.ResistMod": {
+    "ja": "耐性"
+  },
+  "effect.CdModPercent": {
+    "ja": "技クールダウン"
+  },
+  "effect.EvasionModPercent": {
+    "ja": "回避"
+  },
+  "effect.MoveSpeedModPercent": {
+    "ja": "移動速度"
+  },
+  "effect.RangeModPercent": {
+    "ja": "範囲"
+  },
+  "effect.HealPercentMaxHp": {
+    "ja": "HP回復"
+  },
+  "gather.HuntGround": {
+    "ja": "地上狩猟"
+  },
+  "gather.HuntSky": {
+    "ja": "空中狩猟"
+  },
+  "gather.SetTrap": {
+    "ja": "罠設置"
+  },
+  "gather.Fishing": {
+    "ja": "釣り"
+  },
+  "gather.CastNet": {
+    "ja": "投網"
+  },
+  "gather.ForageBerries": {
+    "ja": "ベリー採集"
+  },
+  "gather.HarvestCrops": {
+    "ja": "作物収穫"
+  },
+  "gather.ProduceMilk": {
+    "ja": "ミルク生産"
+  },
+  "utility.desc.None": {
+    "ja": "なし"
+  },
+  "utility.desc.ImmuneLaboratory": {
+    "ja": "研究所適応"
+  },
+  "utility.desc.ImmuneRainforest": {
+    "ja": "熱帯雨林適応"
+  },
+  "utility.desc.ImmuneDeepSea": {
+    "ja": "深海適応"
+  },
+  "utility.desc.ImmuneVolcano": {
+    "ja": "火山適応"
+  },
+  "utility.desc.ImmuneCave": {
+    "ja": "洞窟適応"
+  },
+  "utility.desc.ImmuneIceCap": {
+    "ja": "氷冠適応"
+  },
+  "utility.desc.ImmuneTower": {
+    "ja": "塔適応"
+  },
+  "utility.desc.ImmuneSpace": {
+    "ja": "宇宙適応"
+  },
+  "utility.desc.ImmuneLabyrinth": {
+    "ja": "迷宮適応"
+  },
+  "utility.desc.ImmuneTemple": {
+    "ja": "神殿適応"
+  },
+  "utility.desc.OpenObstacle": {
+    "ja": "障害物除去"
+  },
+  "utility.desc.Dive": {
+    "ja": "潜水"
+  },
+  "utility.desc.Fly": {
+    "ja": "飛行"
+  },
+  "utility.desc.Levitate": {
+    "ja": "地形の減速を無視"
+  },
+  "utility.desc.CatchRateUp": {
+    "ja": "捕獲率を上昇"
+  },
+  "utility.desc.StealItem": {
+    "ja": "道具を盗む"
+  },
+  "utility.desc.PreventEscape": {
+    "ja": "野生の離脱距離を延長"
+  },
+  "utility.desc.QuickEscape": {
+    "ja": "緊急離脱"
+  },
+  "utility.desc.DropRateUp": {
+    "ja": "素材ドロップ率を上昇"
+  },
+  "utility.desc.ScoutPotential": {
+    "ja": "潜在能力調査"
+  },
+  "utility.desc.Mount": {
+    "ja": "移動速度を上げ地形の減速を無視"
+  },
+  "utility.desc.ReturnVillage": {
+    "ja": "村へ帰還"
+  },
+  "utility.desc.PartyStealth": {
+    "ja": "野生の感知範囲を縮小"
+  },
+  "utility.desc.EggHatchBoost": {
+    "ja": "孵化促進"
+  },
+  "utility.desc.MagnetPickupDouble": {
+    "ja": "素材回収量を増加"
+  },
+  "utility.desc.WeatherControl": {
+    "ja": "天候操作"
+  },
+  "utility.desc.Fishing": {
+    "ja": "釣り"
+  },
+  "utility.desc.ForageBerries": {
+    "ja": "ベリー採集"
+  },
+  "utility.desc.CookFire": {
+    "ja": "火の料理"
+  },
+  "utility.desc.ProduceMilk": {
+    "ja": "ミルク生産"
+  },
+  "utility.desc.CampfireRevive": {
+    "ja": "焚き火蘇生"
+  },
+  "utility.desc.HuntGround": {
+    "ja": "地上狩猟"
+  },
+  "utility.desc.HuntSky": {
+    "ja": "空中狩猟"
+  },
+  "utility.desc.SetTrap": {
+    "ja": "罠設置"
+  },
+  "utility.desc.CastNet": {
+    "ja": "投網"
+  },
+  "utility.desc.HarvestCrops": {
+    "ja": "作物収穫"
+  },
+  "utility.desc.CulinaryPrep": {
+    "ja": "下ごしらえ"
+  },
+  "ing_boar_flank": {
+    "ja": "イノシシのバラ肉"
+  },
+  "ing_beast_prime_rib": {
+    "ja": "上質な獣のリブ"
+  },
+  "ing_skyfowl_breast": {
+    "ja": "空鳥の胸肉"
+  },
+  "ing_gale_wing_cut": {
+    "ja": "疾風の手羽肉"
+  },
+  "ing_snare_hare_meat": {
+    "ja": "罠ウサギの肉"
+  },
+  "ing_trapped_truffle_grub": {
+    "ja": "トリュフ幼虫"
+  },
+  "ing_river_trout": {
+    "ja": "川マス"
+  },
+  "ing_abyssal_salmon": {
+    "ja": "深淵サーモン"
+  },
+  "ing_net_shrimp": {
+    "ja": "網捕りエビ"
+  },
+  "ing_net_kelp_scallop": {
+    "ja": "海藻ホタテ"
+  },
+  "ing_wild_berry": {
+    "ja": "野生のベリー"
+  },
+  "ing_vital_fern_herb": {
+    "ja": "活力のシダ"
+  },
+  "ing_sun_wheat": {
+    "ja": "陽光小麦"
+  },
+  "ing_golden_oilseed": {
+    "ja": "黄金の油種"
+  },
+  "ing_chimera_milk": {
+    "ja": "宙獣ミルク"
+  },
+  "ing_sky_nest_egg": {
+    "ja": "空の巣の卵"
+  },
+  "food_charred_boar_skewer": {
+    "ja": "炙りイノシシ串"
+  },
+  "food_hearty_beast_stew": {
+    "ja": "濃厚獣肉シチュー"
+  },
+  "food_gale_wing_stir_fry": {
+    "ja": "疾風手羽炒め"
+  },
+  "food_crispy_shrimp_tempura": {
+    "ja": "サクサク海老天"
+  },
+  "food_steamed_abyssal_salmon": {
+    "ja": "深淵サーモン蒸し"
+  },
+  "food_chilled_herb_salad": {
+    "ja": "冷製ハーブサラダ"
+  },
+  "food_revival_herb_powder": {
+    "ja": "蘇生ハーブ粉"
+  },
+  "ui.skills.no_safe_ground": {
+    "ja": "近くに安全な着地点がありません"
+  },
+  "shape.Front": {
+    "ja": "正面"
+  },
+  "shape.Sweep": {
+    "ja": "薙ぎ払い"
+  },
+  "shape.Self": {
+    "ja": "自身"
+  },
+  "shape.Ally": {
+    "ja": "味方"
+  },
+  "ui.codex.any_element": {
+    "ja": "全属性"
+  },
+  "ui.skills.show_locked": {
+    "ja": "未解放の採集スキルを表示"
+  },
+  "ui.skills.hide_locked": {
+    "ja": "未解放の採集スキルを非表示"
   }
 }

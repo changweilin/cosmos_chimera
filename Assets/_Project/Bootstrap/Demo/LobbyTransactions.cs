@@ -93,6 +93,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// Pre: live, partyIds, outcome and progression non-null; outcome.PlayerExp &lt;= progression.PlayerMaxExp; partyIds owned by live and outcome.PartyExp.Count == partyIds.Count;
         ///      outcome.PlayerExp &gt;= live.PlayerExp (a run never takes player XP away); path non-empty.
+        ///      PartnerExp keys are departure subs, and their values never decrease or exceed progression.MaxExp.
         /// Post: Committed → <paramref name="next"/> holds the outcome and the file holds next. StockFull → banking would
         ///       push <paramref name="overflow"/> past int.MaxValue; nothing applied, nothing written (never truncated).
         ///       WriteFailed → <paramref name="error"/> set. Otherwise next == live; live is never mutated, so after a
@@ -119,6 +120,13 @@ namespace Cosmimera.Bootstrap.Demo
             next = live;
             error = null;
             // Checked before any change so the player is told which key is full (W-02): AddMaterials would only throw.
+            foreach (KeyValuePair<int, int> partner in outcome.PartnerExp)
+            {
+                Contract.Requires(live.Partners.Any(p => p.SubInstanceId == partner.Key && partyIds.Contains(p.MainInstanceId)),
+                    "partner XP must belong to an equipped sub of a departing main");
+                Contract.Requires(partner.Value >= live.Get(partner.Key).Exp && partner.Value <= progression.MaxExp,
+                    "partner XP must not decrease or exceed MaxExp");
+            }
             if (live.WouldOverflow(outcome.Materials, out overflow))
             {
                 return CommitStatus.StockFull;
@@ -132,6 +140,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.SetPlayerExp(outcome.PlayerExp, progression);
+            foreach (KeyValuePair<int, int> partner in outcome.PartnerExp) candidate.SetExp(partner.Key, partner.Value);
 
             try
             {

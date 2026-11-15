@@ -21,13 +21,14 @@ namespace Cosmimera.Save
     /// empty stock; no past run's drops are reconstructed.
     /// Version 4 (D0-B2): root <c>player_exp</c> — cumulative player XP. Older saves load with 0 (player LV1); no past
     /// run's XP is reconstructed.
+    /// Version 5: root <c>partners</c> stores main/sub instance-id pairs; formats 1–4 start unequipped.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 4;
+        public const int FormatVersion = 5;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -35,6 +36,7 @@ namespace Cosmimera.Save
 
         private readonly List<OwnedCreature> _owned = new List<OwnedCreature>();
         private readonly List<int> _party = new List<int>();
+        private readonly List<PartnerPair> _partners = new List<PartnerPair>();
         private int _nextInstanceId = 1;
         private readonly MaterialInventory _materials = new MaterialInventory();
 
@@ -57,6 +59,35 @@ namespace Cosmimera.Save
         /// <summary>Party instance ids (≤ 6, each owned, no duplicates).</summary>
         /// <remarks>Pre: none. Post: as stated. Side effects: none.</remarks>
         public IReadOnlyList<int> Party => _party;
+
+        /// <summary>Persisted sub-partner assignments, including pairs invalidated by evolution.</summary>
+        /// <remarks>Pre: none. Post: each sub serves one main and is outside Party. Side effects: none.</remarks>
+        public IReadOnlyList<PartnerPair> Partners => _partners.AsReadOnly();
+
+        /// <summary>Replaces assignments after the caller validates relations and stages through PartnerLoadout.</summary>
+        /// <remarks>
+        /// Pre: pairs non-null; mains in Party; subs owned and outside Party; each sub unique; at most four subs per main.
+        /// Post: Partners equals pairs in order; invalid input leaves this save unchanged. Side effects: copies pairs.
+        /// </remarks>
+        public void SetPartners(IReadOnlyList<PartnerPair> pairs)
+        {
+            Contract.Requires(pairs != null, "pairs are required");
+            var copy = new List<PartnerPair>(pairs);
+            var seen = new HashSet<int>();
+            var counts = new Dictionary<int, int>();
+            foreach (PartnerPair pair in copy)
+            {
+                Contract.Requires(_party.Contains(pair.MainInstanceId), "partner main must be in party");
+                Contract.Requires(!_party.Contains(pair.SubInstanceId) && _owned.Exists(o => o.InstanceId == pair.SubInstanceId),
+                    "sub must be owned and outside party");
+                Contract.Requires(seen.Add(pair.SubInstanceId), "sub must be unique");
+                counts.TryGetValue(pair.MainInstanceId, out int count);
+                Contract.Requires(count < PartnerLoadout.MaxSubsPerMain, "main has too many subs");
+                counts[pair.MainInstanceId] = count + 1;
+            }
+            _partners.Clear();
+            _partners.AddRange(copy);
+        }
 
         /// <summary>Lobby-wide evolution material stock (Q-C32: shared by every creature, not per individual).</summary>
         /// <remarks>
@@ -162,6 +193,7 @@ namespace Cosmimera.Save
             };
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
+            c._partners.AddRange(_partners);
             foreach (MaterialStack m in _materials.Snapshot())
             {
                 c._materials.Add(m.Key, m.Qty);
@@ -215,8 +247,8 @@ namespace Cosmimera.Save
 
         /// <summary>Replaces the party.</summary>
         /// <remarks>
-        /// Pre: 1..6 distinct owned instance ids.
-        /// Post: Party equals instanceIds in order. Side effects: mutates this save.
+        /// Pre: 1..6 distinct owned instance ids; none currently assigned as a sub (unassign before promotion).
+        /// Post: Party equals instanceIds in order; assignments of removed mains are released. Side effects: mutates this save.
         /// </remarks>
         public void SetParty(IReadOnlyList<int> instanceIds)
         {
@@ -229,10 +261,12 @@ namespace Cosmimera.Save
             {
                 Contract.Requires(seen.Add(id), "party ids must be distinct");
                 Contract.Requires(_owned.Exists(o => o.InstanceId == id), "party ids must be owned");
+                Contract.Requires(!_partners.Exists(p => p.SubInstanceId == id), "unassign sub before making it a main");
             }
 
             _party.Clear();
             _party.AddRange(copy);
+            _partners.RemoveAll(p => !_party.Contains(p.MainInstanceId));
         }
 
         /// <summary>Replaces an owned creature's cumulative XP (run rewards are applied in the lobby, Q-M4).</summary>
@@ -289,7 +323,12 @@ namespace Cosmimera.Save
                 party = _party.ToArray(),
                 owned = new CreatureDto[_owned.Count],
                 player_exp = PlayerExp,
+                partners = new PartnerDto[_partners.Count],
             };
+            for (int i = 0; i < _partners.Count; i++)
+            {
+                dto.partners[i] = new PartnerDto { main = _partners[i].MainInstanceId, sub = _partners[i].SubInstanceId };
+            }
             IReadOnlyList<MaterialStack> stock = _materials.Snapshot();
             dto.materials = new MaterialDto[stock.Count];
             for (int i = 0; i < stock.Count; i++)
@@ -317,7 +356,7 @@ namespace Cosmimera.Save
             return JsonUtility.ToJson(dto, true);
         }
 
-        /// <summary>Parses a save, migrating formats 1–3 to the current format.</summary>
+        /// <summary>Parses a save, migrating formats 1–4 to the current format.</summary>
         /// <remarks>
         /// Pre: json non-empty; progression non-null; stageOf non-null (returns null for an unknown species).
         /// Post: the save it encodes with every Exp in 0..progression.MaxExp (higher values are clipped, never earned);
@@ -332,6 +371,7 @@ namespace Cosmimera.Save
         ///       twice, and — format 4 only — a negative player_exp. Formats 1–2 load with an empty material stock (their
         ///       materials field is ignored); formats 1–3 load with PlayerExp 0. PlayerExp above
         ///       progression.PlayerMaxExp is clipped.
+        ///       Format 5 refuses unowned/non-party mains, unowned/party subs, duplicate subs, and overfull assignments.
         /// Side effects: allocates.
         /// </remarks>
         public static LobbySave FromJson(string json, Progression progression, Func<string, CreatureStage?> stageOf)
@@ -382,6 +422,21 @@ namespace Cosmimera.Save
             }
 
             save._party.AddRange(party);
+            if (dto.version >= 5)
+            {
+                var subs = new HashSet<int>();
+                var counts = new Dictionary<int, int>();
+                foreach (PartnerDto pair in dto.partners ?? Array.Empty<PartnerDto>())
+                {
+                    Check(pair != null && inParty.Contains(pair.main), "partner main must be in party");
+                    Check(ids.Contains(pair.sub) && !inParty.Contains(pair.sub), "sub must be owned and outside party");
+                    Check(subs.Add(pair.sub), "sub assigned twice");
+                    counts.TryGetValue(pair.main, out int count);
+                    Check(count < PartnerLoadout.MaxSubsPerMain, "main has too many subs");
+                    counts[pair.main] = count + 1;
+                    save._partners.Add(new PartnerPair(pair.main, pair.sub));
+                }
+            }
             if (dto.version >= 4)
             {
                 Check(dto.player_exp >= 0, "player_exp must be >= 0");
@@ -503,6 +558,13 @@ namespace Cosmimera.Save
             public CreatureDto[] owned;
             public MaterialDto[] materials;
             public int player_exp;
+            public PartnerDto[] partners;
+        }
+
+        [Serializable] private sealed class PartnerDto
+        {
+            public int main;
+            public int sub;
         }
 
         [Serializable] private sealed class MaterialDto

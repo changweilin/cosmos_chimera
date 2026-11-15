@@ -35,6 +35,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
         public readonly List<int> PartyExp = new List<int>();
 
+        /// <summary>Final cumulative XP for equipped reserve sub-partners, keyed by owned instance id.</summary>
+        /// <remarks>Pre: populated by the run. Post: only departure sub-partners occur. Side effects: none.</remarks>
+        public readonly Dictionary<int, int> PartnerExp = new Dictionary<int, int>();
+
         /// <summary>Cumulative player XP when the run ended (level-progression.md#玩家等級).</summary>
         /// <remarks>Pre: none. Post: &gt;= RunSetup.PlayerExp and &lt;= Progression.PlayerMaxExp. Side effects: none.</remarks>
         public int PlayerExp;
@@ -125,6 +129,18 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Optional URP VolumeProfile for post-processing during the run; null skips Volume setup.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public VolumeProfile VolumeProfile;
+
+        /// <summary>Optional imported database for the field journal and equipped provisions.</summary>
+        /// <remarks>Pre: non-null when Partners is supplied. Post: retained for the run. Side effects: none.</remarks>
+        public GameDatabase Database;
+
+        /// <summary>Owned individuals at departure, including reserve sub-partners.</summary>
+        /// <remarks>Pre: contains every PartyId and assigned sub when Partners is supplied. Post: retained. Side effects: none.</remarks>
+        public List<OwnedCreature> Owned;
+
+        /// <summary>Validated departure loadout, or null for an unequipped run.</summary>
+        /// <remarks>Pre: every assignment satisfies current relations and stages. Post: fixed during the run. Side effects: none.</remarks>
+        public PartnerLoadout Partners;
     }
 
     /// <summary>
@@ -661,8 +677,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int i = 0; i < setup.Party.Count; i++)
             {
                 CreatureDef def = setup.Party[i];
-                EncounterUnit u = _encounter.AddCreature(EncounterSide.Player, def, null, _plan.LandingDirection,
-                    _progression.LevelOf(_partyExp[i]));
+                EncounterUnit u = AddEquippedPartyCreature(i);
                 roster.Add(u.Id);
                 _partyUnits.Add(u.Id);
                 CreateView(u, SpawnRole.Normal);
@@ -670,6 +685,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
+            ConfigureJournal();
         }
 
         private void Update()
@@ -691,6 +707,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            if (ReadJournalInput()) return;
             ReadInput();
             _accumulator += Time.deltaTime * 1000f;
             int steps = 0;
@@ -756,7 +773,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_rollRequested)
             {
                 _rollRequested = false;
-                if (_vitals.TryRoll(_nowMs) == RollResult.Ok)
+                if (_vitals.TryRoll(_nowMs, WeatherProfiles.Clear, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
                 {
                     _lastRollAtMs = _nowMs;
                 }
@@ -766,7 +783,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_overloadRequested)
             {
                 _overloadRequested = false;
-                if (_mainId >= 0 && _encounter.TryTriggerOverload(_mainId, _team.InCombat, true) == OverloadResult.Ok)
+                if (_mainId >= 0 && _encounter.TryTriggerOverload(_mainId, _team.InCombat, _overloadUnlocked.Contains(_mainId)) == OverloadResult.Ok)
                 {
                     EncounterUnit overloaded = _encounter.Units[_mainId];
                     float3 up = _rig.Config.ToDirection(overloaded.Position);
@@ -891,7 +908,9 @@ namespace Cosmimera.Bootstrap.Demo
             if (!w.Dropped)
             {
                 w.Dropped = true;
-                if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng,
+                    _utilityModifiers.DropRateBonusPercent + _foodBuffs.GetDropRateBonusPercent(_nowMs),
+                    math.max(1, _utilityModifiers.PickupMultiplier), out MaterialStack drop))
                 {
                     _outcome.Materials.Add(drop);
                     string msg = _copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key));
@@ -1236,7 +1255,7 @@ namespace Cosmimera.Bootstrap.Demo
             string creatureId = _encounter.Units[best].Def.Id;
             bool bounty = _plan.Regions[region].AffixId == "affix_bounty";
             int chance = CaptureRules.ChancePercent(role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
-                _balance.CaptureBossPercent);
+                _balance.CaptureBossPercent, _utilityModifiers.CatchRateBonusPercent + _foodBuffs.GetCatchRateBonusPercent(_nowMs));
             w.Gone = true; // one throw per knocked-out creature: a miss lets it escape (no re-roll farming)
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
@@ -1383,8 +1402,20 @@ namespace Cosmimera.Bootstrap.Demo
                     appeared.Contains(unit), -1));
             }
 
-            // D0 has no sidekick loadout yet (P2-07 lobby UI), so only mains are paid.
+            var subIds = new List<int>();
+            if (_setup.Partners != null)
+            {
+                for (int i = 0; i < _setup.PartyIds.Count; i++)
+                {
+                    foreach (int sub in _setup.Partners.SubsOf(_setup.PartyIds[i]))
+                    {
+                        subIds.Add(sub);
+                        recipients.Add(new XpRecipient(sub, _outcome.PartnerExp[sub], false, false, i));
+                    }
+                }
+            }
             XpSettlement settled = _progression.Settle(pool, recipients);
+            for (int i = 0; i < subIds.Count; i++) _outcome.PartnerExp[subIds[i]] += settled.Paid[_partyUnits.Count + i];
             for (int i = 0; i < _partyUnits.Count; i++)
             {
                 int before = _progression.LevelOf(_partyExp[i]);
@@ -1858,7 +1889,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 GroundDrop drop = _pickupBuffer[i];
                 int tier = drop.Kind == GroundDropKind.Gem ? 3 : 1;
-                _outcome.Materials.Add(new MaterialStack(new MaterialKey(drop.Element, tier), 1));
+                _outcome.Materials.Add(new MaterialStack(new MaterialKey(drop.Element, tier), math.max(1, _utilityModifiers.PickupMultiplier)));
             }
         }
 
@@ -2078,6 +2109,13 @@ namespace Cosmimera.Bootstrap.Demo
             DrawQuestPanel();
             DrawTeamPanel();
             DrawControlsPanel();
+            if (_journal != null)
+            {
+                _journal.Draw(DrawJournal, CloseJournal);
+                return;
+            }
+            if (GUI.Button(new Rect(Screen.width - 200, 12, 188, 34), _copy.Ui("ui.journal.open") + " [I / View]"))
+            { OpenJournal(); GUIUtility.ExitGUI(); }
             DrawInteraction();
             if (_nowMs < _toastUntilMs)
             {
@@ -2339,7 +2377,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
-            long rollCdLeft = math.max(0L, _lastRollAtMs + _balance.Player.RollCooldownMs - _nowMs);
+            long rollCdLeft = math.max(0L, _lastRollAtMs + math.max(_balance.Player.RollDurationMs,
+                (long)Math.Ceiling(_balance.Player.RollCooldownMs * (100 + _foodBuffs.GetRollCooldownModPercent(_nowMs)) / 100d)) - _nowMs);
             string rollText = _copy.Ui("ui.hud.roll_prompt").Replace("{key}", BindingLabel(_rollAction)) +
                 (rollCdLeft > 0 ? $" ({rollCdLeft / 1000f:0.0}s)" : $" {_copy.Ui("ui.hud.cd_ready")}");
             GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}\n{rollText}",
@@ -2401,6 +2440,7 @@ namespace Cosmimera.Bootstrap.Demo
                 .Replace("{focus}", BindingLabel(_focusAction)).Replace("{free}", BindingLabel(_freeAction))
                 .Replace("{follow}", BindingLabel(_followAction)).Replace("{retreat}", BindingLabel(_retreatAction));
             string overloadPrompt = _mainId >= 0 && _team.InCombat && _encounter.Units[_mainId].Def.Stage == CreatureStage.Adult
+                && _overloadUnlocked.Contains(_mainId)
                 && !_encounter.Units[_mainId].Combatant.IsOverloaded && !_encounter.Units[_mainId].Combatant.IsFainted
                 ? "  " + _copy.Ui("ui.hud.overload_prompt").Replace("{key}", BindingLabel(_overloadAction))
                 : string.Empty;
@@ -2440,16 +2480,24 @@ namespace Cosmimera.Bootstrap.Demo
             _ => "defeat_boss",
         };
 
-        private void OnEnable() => _runInput?.Enable();
+        private void OnEnable()
+        {
+            _runInput?.Enable();
+            _journalAction?.Enable();
+        }
 
         private void OnDisable()
         {
+            CloseJournal();
+            _journalAction?.Disable();
             _runInput?.Disable();
             _menuInput?.Disable();
         }
 
         private void OnDestroy()
         {
+            CloseJournal();
+            _journalAction?.Dispose();
             _runInput?.Dispose();
             _menuInput?.Dispose();
             _feedback?.Dispose();

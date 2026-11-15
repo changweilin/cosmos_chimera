@@ -37,12 +37,12 @@ namespace Cosmimera.Save.Tests
         }
 
         [Test]
-        public void Format_3_loads_with_zero_player_exp_and_writes_format_4()
+        public void Format_3_loads_with_zero_player_exp_and_writes_current_format()
         {
             LobbySave r = Parse("{\"version\":3,\"next_instance_id\":2," + Owned + ",\"player_exp\":999}");
             Assert.That(r.LoadedFormatVersion, Is.EqualTo(3));
             Assert.That(r.PlayerExp, Is.EqualTo(0), "a v3 file never had player XP; nothing is reconstructed");
-            Assert.That(r.ToJson(), Does.Contain("\"version\": 4"));
+            Assert.That(r.ToJson(), Does.Contain("\"version\": " + LobbySave.FormatVersion));
         }
 
         [Test]

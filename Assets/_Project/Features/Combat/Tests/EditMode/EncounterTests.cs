@@ -80,6 +80,31 @@ namespace Cosmimera.Combat.Tests
             return e;
         }
 
+        [Test]
+        public void Equipped_cards_get_independent_slots_and_relocation_preserves_combat_state()
+        {
+            MoveDef bite = Move("native", 40, MoveShape.Front, RangeClass.Melee, 2000);
+            CreatureDef def = Creature("mine", bite, AiStyle.Charge);
+            var encounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            var cards = new List<MoveDef>();
+            for (int i = 0; i < 4; i++) cards.Add(Move("card" + i, 50, MoveShape.Front, RangeClass.Melee, 2000));
+            EncounterUnit unit = encounter.AddEquippedCreature(def, cards, new TraitDef[0], Dir(0), 100);
+            Assert.That(unit.Moves.Count, Is.EqualTo(5));
+            Assert.That(unit.Combatant.Cooldowns.SlotCount, Is.EqualTo(5));
+            for (int i = 0; i < 4; i++) Assert.That(unit.Moves[i + 1].Id, Is.EqualTo(cards[i].Id));
+            encounter.Field(unit.Id, Dir(0), false, 100);
+            int hp = unit.Combatant.Hp;
+            encounter.RelocateParty(Dir(10));
+            Assert.That(math.distance(_planet.ToDirection(unit.Position), Dir(10)), Is.LessThan(1e-5f));
+            Assert.That(unit.Combatant.Hp, Is.EqualTo(hp));
+            Assert.That(unit.Fielded, Is.True);
+            Assert.Throws<ContractException>(() => encounter.AddEquippedCreature(def, null, new TraitDef[0], Dir(0), 100));
+            Assert.Throws<ContractException>(() => encounter.AddEquippedCreature(def, cards, null, Dir(0), 100));
+            Assert.Throws<ContractException>(() => encounter.AddEquippedCreature(def, new[] { (MoveDef)null }, new TraitDef[0], Dir(0), 100));
+            Assert.Throws<ContractException>(() => encounter.AddEquippedCreature(def, new MoveDef[5], new TraitDef[0], Dir(0), 100));
+            Assert.Throws<ContractException>(() => encounter.RelocateParty(float3.zero));
+        }
+
         private static long RunUntilFaint(Encounter e, float3 player, int maxTicks)
         {
             var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);

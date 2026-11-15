@@ -215,8 +215,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public Combatant Combatant { get; }
 
-        /// <summary>Moves by slot (slot 0 = signature move; slot 1 = talisman-card partner move when present).</summary>
-        /// <remarks>Pre: none. Post: length 1..2. Side effects: none.</remarks>
+        /// <summary>Moves by slot: signature followed by equipped talisman-card moves.</summary>
+        /// <remarks>Pre: none. Post: length 1..5. Side effects: none.</remarks>
         public IReadOnlyList<CastMove> Moves { get; }
 
         internal HitVolume[] Volumes { get; }
@@ -329,7 +329,7 @@ namespace Cosmimera.Combat
         public const int BossSizePermille = 1500;
 
         private const float ArriveM = 0.4f;
-        private const int MaxSlots = 2;
+        private const int MaxSlots = MoveCooldowns.MaxSlots;
         internal const long WanderUnscheduled = long.MinValue;
 
         private readonly PlanetConfig _planet;
@@ -558,6 +558,24 @@ namespace Cosmimera.Combat
             return disengagedAny;
         }
 
+        /// <summary>Relocates fielded allies after a quick escape without re-triggering summon traits.</summary>
+        /// <remarks>
+        /// Pre: direction unit; caller has checked a safe, open landing site for the party.
+        /// Post: active player units stand at direction, retaining HP, cooldowns and effects with no target.
+        /// Side effects: moves allied units; no summon or swap events.
+        /// </remarks>
+        public void RelocateParty(float3 direction)
+        {
+            Contract.Requires(math.abs(math.lengthsq(direction) - 1f) <= 2e-3f, "direction must be unit length");
+            foreach (EncounterUnit unit in _units)
+            {
+                if (unit.Side != EncounterSide.Player || !unit.IsActive) continue;
+                unit.Position = GroundPoint(direction, unit.BodyRadiusM);
+                unit.Forward = PlanetFrame.FromUp(direction).North;
+                unit.TargetId = CombatAi.NoTarget;
+            }
+        }
+
         /// <summary>Lets moves hit generated scene objects. REQ: docs/design/destructibles.md, ADR-0009.</summary>
         /// <remarks>
         /// Pre: table, index and isNight non-null; called at most once, before the first Tick; isNight(direction) answers
@@ -661,6 +679,29 @@ namespace Cosmimera.Combat
             return AddUnit(side, def, partnerMove, direction, level, false);
         }
 
+        /// <summary>Adds a player creature with all equipped card moves and bead traits.</summary>
+        /// <remarks>
+        /// Pre: same as AddCreature; moves/traits non-null, each contains at most four non-null definitions.
+        /// Post: signature followed by moves in separate cooldown slots; traits retain independent triggers.
+        /// Side effects: allocates a player unit; does not fire on_summon.
+        /// </remarks>
+        public EncounterUnit AddEquippedCreature(CreatureDef def, IReadOnlyList<MoveDef> moves,
+            IReadOnlyList<TraitDef> traits, float3 direction, int level)
+        {
+            Contract.Requires(moves != null && traits != null && moves.Count <= 4 && traits.Count <= 4,
+                "equipped moves and traits must contain at most four definitions");
+            foreach (MoveDef move in moves) Contract.Requires(move != null, "move must not be null");
+            foreach (TraitDef trait in traits) Contract.Requires(trait != null, "trait must not be null");
+            EncounterUnit unit = AddUnit(EncounterSide.Player, def, null, direction, level, false, moves);
+            foreach (TraitDef trait in traits)
+            {
+                var effects = new EffectSpec[trait.Effects.Count];
+                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(trait.Effects[i]);
+                unit.Combatant.Book.AddPartnerTrait(trait.Id, TriggerSpec.FromDef(trait.Trigger), effects);
+            }
+            return unit;
+        }
+
         /// <summary>
         /// Adds the planet boss: a wild unit like <see cref="AddCreature"/>, with MaxHp × <see cref="BossHpMultiplier"/>
         /// and body radius and melee move volumes × <see cref="BossSizePermille"/>/1000. REQ: planet-world.md (D0-R2).
@@ -678,12 +719,12 @@ namespace Cosmimera.Combat
         }
 
         private EncounterUnit AddUnit(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level,
-            bool boss)
+            bool boss, IReadOnlyList<MoveDef> partnerMoves = null)
         {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(math.abs(math.lengthsq(direction) - 1f) <= 2e-3f, "direction must be unit length");
-            int slots = partnerMove != null ? 2 : 1;
+            int slots = partnerMoves != null ? 1 + partnerMoves.Count : partnerMove != null ? 2 : 1;
             var moves = new CastMove[slots];
             var volumes = new HitVolume[slots];
             var ranges = new RangeClass[slots];
@@ -691,7 +732,7 @@ namespace Cosmimera.Combat
             CreatureStats s = def.Stats.AtLevel(level);
             for (int i = 0; i < slots; i++)
             {
-                MoveDef m = i == 0 ? def.SignatureMove : partnerMove;
+                MoveDef m = i == 0 ? def.SignatureMove : partnerMoves != null ? partnerMoves[i - 1] : partnerMove;
                 defs[i] = m;
                 moves[i] = CastMove.FromDef(m);
                 volumes[i] = BuildVolume(m, s.Str, boss);

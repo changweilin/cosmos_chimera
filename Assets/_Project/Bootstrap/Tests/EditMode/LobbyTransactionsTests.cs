@@ -49,6 +49,34 @@ namespace Cosmimera.Bootstrap.Tests
 
         private LobbySave Reload() => LobbySave.Load(_path, P, _ => CreatureStage.Juvenile);
 
+        [Test]
+        public void Sub_partner_xp_is_banked_atomically_with_the_run()
+        {
+            LobbySave live = Ready();
+            live.Add("sub", VesselKind.GlassBead, 0);
+            live.SetParty(new[] { 1 });
+            live.SetPartners(new[] { new PartnerPair(1, 2) });
+            live.Write(_path);
+            var outcome = new RunOutcome();
+            outcome.PartyExp.Add(live.Get(1).Exp);
+            outcome.PartnerExp.Add(2, 123);
+            using (LockSave())
+            {
+                Assert.That(LobbyTransactions.Settle(live, live.Party, outcome, P, _path,
+                    out LobbySave unchanged, out _, out _), Is.EqualTo(CommitStatus.WriteFailed));
+                Assert.That(unchanged, Is.SameAs(live));
+                Assert.That(live.Get(2).Exp, Is.Zero);
+            }
+            Assert.That(LobbyTransactions.Settle(live, live.Party, outcome, P, _path,
+                out LobbySave next, out _, out _), Is.EqualTo(CommitStatus.Committed));
+            Assert.That(next.Get(2).Exp, Is.EqualTo(123));
+            Assert.That(Reload().Get(2).Exp, Is.EqualTo(123));
+            Assert.That(live.Get(2).Exp, Is.Zero);
+            outcome.PartnerExp[2] = -1;
+            Assert.Throws<ContractException>(() => LobbyTransactions.Settle(live, live.Party, outcome, P, _path,
+                out _, out _, out _));
+        }
+
         // A directory squatting on the .tmp path makes LobbySave.Write throw before the final file is touched, on every OS
         // and even as root (CI runs Linux containers as root). The earlier FileShare lock only failed File.Replace on
         // Windows: Linux lets a file be replaced while it is open, so CI saw Committed.

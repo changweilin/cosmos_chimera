@@ -364,6 +364,14 @@ namespace Cosmimera.Food
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public IReadOnlyList<IngredientSpec> Ingredients => _ingredientList;
 
+        /// <summary>Registered foods for inventory presentation.</summary>
+        /// <remarks>Pre: do not register during enumeration. Post: all registered foods. Side effects: none.</remarks>
+        public IEnumerable<FoodItemSpec> Foods => _foods.Values;
+
+        /// <summary>Registered recipes for cooking presentation.</summary>
+        /// <remarks>Pre: do not register during enumeration. Post: all registered recipes. Side effects: none.</remarks>
+        public IEnumerable<RecipeSpec> Recipes => _recipes.Values;
+
         /// <summary>Registers an ingredient.</summary>
         /// <remarks>
         /// Pre: spec != null; id not already registered.

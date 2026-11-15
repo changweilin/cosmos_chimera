@@ -35,5 +35,6 @@ MonoBehaviour:
     agi: 20
   signatureMove: {fileID: 11400000, guid: 4833fc57efce1ef4cb40027a1305271b, type: 2}
   trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  fieldUtility: 18
   conceptJson: "{\"base\":\"\u5C0F\u99AC\u99D2 \xD7 \u984D\u982D\u661F\u5F62\u767D\u6591\u6703\u653E\u96FB\",\"stage_look\":\"\u8E44\u4E0B\u5192\u706B\u82B1\u3001\u8DCC\u8DCC\u649E\u649E\u5F80\u524D\u885D\u7684\u5C0F\u99AC\",\"archetype\":\"arch_tulpar\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u9EC3\u91D1\u96D9\u7FFC\u99FF\u99AC\",\"\u5F4E\u6708\u984D\u89D2\",\"\u75BE\u98A8\u9577\u9B03\",\"\u7121\u57A0\u7DA0\u8349\u539F\"],\"role\":\"\u524D\u6392\u885D\u92D2\uFF1A\u6CBF\u76F4\u7DDA\u5411\u524D\u7A81\u9032\uFF0C\u4EE5\u96F7\u5C6C\u6027\u653B\u64CA\u547D\u4E2D\u8DEF\u5F91\u4E0A\u7684\u6575\u4EBA\u3002\",\"palette\":\"\u91D1\u9EC3\u3001\u96FB\u7D2B\u3001\u8349\u539F\u7DA0\u3001\u96FB\u5149\u9280\u767D\"}"
   needsSensitivityReview: 0
