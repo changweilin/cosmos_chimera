@@ -369,11 +369,21 @@ namespace Cosmimera.Bootstrap.Demo
         {
             int first = part.P.Count;
             float3 reference = new float3(1f, 0f, 0f);
+            // Limbs can run along X; any axis not parallel to the tangent gives a stable frame. Chosen once per tube:
+            // switching axis between two rings turns the frame a quarter and twists the faces between them inside out.
+            float3 axis = reference;
+            for (int i = 0; i < spine.Length; i++)
+            {
+                float3 t = math.normalize(spine[math.min(i + 1, spine.Length - 1)] - spine[math.max(i - 1, 0)]);
+                if (math.abs(math.dot(t, reference)) > 0.9f)
+                {
+                    axis = new float3(0f, 0f, 1f);
+                }
+            }
+
             for (int i = 0; i < spine.Length; i++)
             {
                 float3 tangent = math.normalize(spine[math.min(i + 1, spine.Length - 1)] - spine[math.max(i - 1, 0)]);
-                // Limbs can run along X; any axis not parallel to the tangent gives a stable frame.
-                float3 axis = math.abs(math.dot(tangent, reference)) > 0.9f ? new float3(0f, 0f, 1f) : reference;
                 float3 side = math.normalize(math.cross(tangent, axis));
                 float3 forward = math.cross(side, tangent);
                 for (int k = 0; k < sides; k++)
@@ -898,7 +908,7 @@ namespace Cosmimera.Bootstrap.Demo
             float3 top = spine[spine.Length - 1];
             float3 crownCentre = top + new float3(0f, 0.08f, 0f);
 
-            var lobes = new List<Lobe> { new Lobe(crownCentre, new float3(0.3f, 0.13f, 0.3f), 2) };
+            var lobes = new List<Lobe> { new Lobe(crownCentre, new float3(0.3f, 0.16f, 0.3f), 2) };
             int ring = 5 + (int)rng.NextUInt(2);
             float turn = rng.NextFloat() * math.PI * 2f;
             for (int i = 0; i < ring; i++)
@@ -906,8 +916,8 @@ namespace Cosmimera.Bootstrap.Demo
                 float a = turn + (i + Signed(ref rng) * 0.2f) * math.PI * 2f / ring;
                 float r = 0.17f + rng.NextFloat() * 0.06f;
                 float reach = 0.24f + rng.NextFloat() * 0.06f;
-                lobes.Add(new Lobe(top + new float3(math.cos(a) * reach, 0.02f + rng.NextFloat() * 0.06f, math.sin(a) * reach),
-                    new float3(r, r * 0.5f, r), 2));
+                lobes.Add(new Lobe(top + new float3(math.cos(a) * reach, 0.04f + rng.NextFloat() * 0.06f, math.sin(a) * reach),
+                    new float3(r, r * 0.72f, r), 2));
             }
 
             var wood = new Part();
@@ -916,8 +926,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 float t = i / (float)rings;
                 // Plank roots (板根): only alternate sides flare, so the base reads as five fins rather than a cone.
-                float fin = (k & 1) == 0 ? 1f : 0.2f;
-                return 0.058f * (1f + math.exp(-t * 6f) * (0.5f + 2.2f * fin)) * math.lerp(1f, 0.5f, t);
+                float fin = (k & 1) == 0 ? 1f : 0.45f;
+                return 0.058f * (1f + math.exp(-t * 6f) * (0.4f + 1.7f * fin)) * math.lerp(1f, 0.5f, t);
             }, BarkColor);
             for (int b = 1; b < lobes.Count; b += 2)
             {

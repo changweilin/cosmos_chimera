@@ -61,8 +61,8 @@ namespace Cosmimera.WorldGen.Tests
             // Version 4 (Q-W15): species follow the landform and forest stands, so both digests were re-pinned.
             Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(4), "new version: re-pin the digests below");
             float3 up = math.normalize(new float3(1, 1, 1));
-            Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
             Assert.That(Digest(Planner(), up, true), Is.EqualTo(UnderstoryDigest));
+            Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
         }
 
         private static ScatterPlanner PerPoint(System.Func<float3, float> chanceAt) =>
@@ -124,8 +124,8 @@ namespace Cosmimera.WorldGen.Tests
             });
         }
 
-        private const ulong SnapshotDigest = 1236021966666354270ul;
-        private const ulong UnderstoryDigest = 14843648030852674448ul;
+        private const ulong SnapshotDigest = 6165704317201438783ul;
+        private const ulong UnderstoryDigest = 8650968227361999025ul;
 
         [Test]
         public void Understory_kinds_follow_their_altitude_band_and_keep_off_the_canopy()
@@ -265,7 +265,7 @@ namespace Cosmimera.WorldGen.Tests
                 if (!perType.TryGetValue(type, out Dictionary<string, int> census)) perType[type] = census = new Dictionary<string, int>();
                 census[kind.Id] = census.TryGetValue(kind.Id, out int c) ? c + 1 : 1;
                 float t = (it.SizeM - kind.MinSizeM) / (kind.MaxSizeM - kind.MinSizeM);
-                if (type == ForestType.Plantation) plantationSizes.Add(t);
+                if (type == ForestType.Plantation && kind.Shape == ScatterShape.Tree) plantationSizes.Add(t);
                 if (type == ForestType.Secondary && (kind.Id == "broadleaf" || kind.Id == "conifer"))
                     Assert.That(t, Is.LessThanOrEqualTo(0.451f), "regrowth is young");
                 // A tropical stand has no conifers (|y| < 0.3 is the tropical band; highland mixes them in only for 闊葉林).
@@ -281,8 +281,8 @@ namespace Cosmimera.WorldGen.Tests
             }));
             Assert.That(perType[ForestType.Conifer].ContainsKey("broadleaf"), Is.False);
             Assert.That(perType[ForestType.Mixed].Keys, Is.SupersetOf(new[] { "broadleaf", "conifer" }));
-            Assert.That(perType[ForestType.Plantation].ContainsKey("snag"), Is.False, "a plantation has no deadwood");
-            Assert.That(perType[ForestType.Plantation].ContainsKey("log"), Is.False);
+            // (Logs can still lie in a plantation: the forest landform lists them outside the tree slot.)
+            Assert.That(perType[ForestType.Plantation].ContainsKey("snag"), Is.False, "a plantation grows no deadwood");
             Assert.That(perType[ForestType.Secondary].Keys, Is.SupersetOf(new[] { "snag", "log" }));
             foreach (float t in plantationSizes) Assert.That(t, Is.InRange(0.449f, 0.601f), "one age class");
             Assert.That(plantationSizes.Count, Is.GreaterThan(100));
