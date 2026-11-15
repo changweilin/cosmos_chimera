@@ -53,7 +53,8 @@
 <h1>待決問題</h1>
 <div class="rule">
   待使用者決定的點。未決時：有「暫定」且只影響 <code>Data/</code> 數值 → <b>照暫定實作</b>；否則該項目停下，其他項目照做。
-  定案後寫入對應設計文件並<b>刪除該卡片</b>（定案歷史看 git）。
+  open-questions.answers.json 會記錄使用者決定。
+  定案後寫入對應設計文件並<b>刪除該卡片與answers</b>（定案歷史看 git）。
   <br>維護：每題一張 <code>&lt;article id="Q-xxx"&gt;</code>，放進對應 <code>&lt;section&gt;</code>；欄位固定為 問題／影響項目／暫定（無暫定寫 <span class="none">無</span>）。
 </div>
 <div class="tools"><input id="q" type="search" placeholder="篩選：ID、關鍵字、項目（如 P3-12）"></div>
