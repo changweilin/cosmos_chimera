@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Bootstrap.Tests",
     "references": [
         "Cosmimera.Bootstrap",
+        "Cosmimera.Capture",
         "Cosmimera.Combat",
         "Cosmimera.Core",
         "Cosmimera.Creatures",

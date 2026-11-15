@@ -149,6 +149,20 @@ class CrossFileRules(unittest.TestCase):
                 self.assertTrue(any(f.code == "schema" and f.pointer == "/0/ingredients" for f in findings))
                 self.assertTrue(any(f.code == "dangling_ref" and f.pointer == "/1/ingredients/0/ingredient_id" for f in findings))
 
+    def test_egg_outcomes_must_be_known_juvenile_creatures_listed_once(self):
+        ok = [{"id": "egg_ok", "outcomes": [{"species": "sample_fox_cub", "weight": 2}]}]
+        self.assertEqual(self.codes(self._with_valid({"eggs/ok.json": json.dumps(ok)})), set())
+        cases = {
+            "dangling_ref": [{"species": "sample_zz_ghost", "weight": 1}],
+            "egg_outcome_stage": [{"species": "sample_fox_beast", "weight": 1}],
+            "egg_outcome_duplicate": [{"species": "sample_fox_cub", "weight": 1}, {"species": "sample_fox_cub", "weight": 1}],
+            "schema": [{"species": "sample_fox_cub", "weight": 0}],
+        }
+        for code, outcomes in cases.items():
+            with self.subTest(code=code):
+                egg = [{"id": "egg_bad", "outcomes": outcomes}]
+                self.assertIn(code, self.codes(self._with_valid({"eggs/bad.json": json.dumps(egg)})))
+
     def test_retired_id(self):
         self.assertIn("retired_id", self.codes(self._with_valid({}, retired="# header\nsample_fox_cub\n")))
 

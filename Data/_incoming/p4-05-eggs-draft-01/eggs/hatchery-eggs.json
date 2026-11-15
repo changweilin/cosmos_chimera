@@ -1,0 +1,22 @@
+[
+  {
+    "id": "egg_sun",
+    "outcomes": [{ "species": "sun_mirror_chick", "weight": 1 }]
+  },
+  {
+    "id": "egg_moon",
+    "outcomes": [{ "species": "moon_night_pup", "weight": 1 }]
+  },
+  {
+    "id": "egg_star",
+    "outcomes": [{ "species": "star_blaze_foal", "weight": 1 }]
+  },
+  {
+    "id": "egg_mixed",
+    "outcomes": [
+      { "species": "sun_mirror_chick", "weight": 1 },
+      { "species": "moon_night_pup", "weight": 1 },
+      { "species": "star_blaze_foal", "weight": 1 }
+    ]
+  }
+]

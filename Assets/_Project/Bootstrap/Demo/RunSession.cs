@@ -49,6 +49,13 @@ namespace Cosmimera.Bootstrap.Demo
         ///      captures and XP (Q-M4: whatever the run earned comes back). Side effects: none.
         /// </remarks>
         public readonly List<MaterialStack> Materials = new List<MaterialStack>();
+
+        /// <summary>Hatchery progress earned this run in ppm (walking, battles, boss; egg_hatch_boost already applied).</summary>
+        /// <remarks>
+        /// Pre: none. Post: &gt;= 0; applied to every incubating egg at settlement, kept on victory, defeat and abandon
+        ///      like XP (Q-M4). Side effects: none.
+        /// </remarks>
+        public long EggProgressPpm;
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -842,6 +849,7 @@ namespace Cosmimera.Bootstrap.Demo
             _nowMs += TickMs;
             float3 player = PlayerPosition();
             UpdateEnvironment(player);
+            TrackWalk(player);
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
             RecordAppearances();
             UpdateRegion(player);
@@ -999,6 +1007,11 @@ namespace Cosmimera.Bootstrap.Demo
             if (!w.Dropped)
             {
                 w.Dropped = true;
+                if (role == SpawnRole.Boss)
+                {
+                    _outcome.EggProgressPpm += EggProgress.Boss(EggHatchConfig, _utilityModifiers.HasEggHatchBoost);
+                }
+
                 if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng,
                     _utilityModifiers.DropRateBonusPercent + _foodBuffs.GetDropRateBonusPercent(_nowMs),
                     math.max(1, _utilityModifiers.PickupMultiplier), out MaterialStack drop))
@@ -1473,10 +1486,30 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         // REQ: level-progression.md#經驗分配 — each battle keeps its own appearance record, reset when the next starts.
+        private static readonly HatchConfig EggHatchConfig = HatchConfig.Default;
+        private float3 _walkLast;
+        private bool _hasWalkLast;
+
+        // Chord length per tick: ticks are short enough that chord and arc agree to well under a millimetre.
+        private void TrackWalk(float3 player)
+        {
+            if (_hasWalkLast)
+            {
+                long mm = (long)(math.distance(player, _walkLast) * 1000f);
+                long circumferenceMm = (long)(2.0 * System.Math.PI * _setup.Radius * 1000.0);
+                _outcome.EggProgressPpm += EggProgress.Walk(mm, circumferenceMm, EggHatchConfig, _utilityModifiers.HasEggHatchBoost);
+            }
+
+            _walkLast = player;
+            _hasWalkLast = true;
+        }
+
         private void BeginCombat()
         {
             _appeared.Clear();
             _team.BeginCombat();
+            // REQ: lobby-meta.md#???? (Q-M3): each battle (one BeginCombat) advances incubating eggs.
+            _outcome.EggProgressPpm += EggProgress.Battles(1, EggHatchConfig, _utilityModifiers.HasEggHatchBoost);
         }
 
         private void RecordAppearances()

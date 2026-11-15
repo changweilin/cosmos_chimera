@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Cosmimera.Capture;
 using Cosmimera.Core.Contracts;
+using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Save;
 
@@ -16,6 +18,23 @@ namespace Cosmimera.Bootstrap.Demo
         Refused,
         StockFull,
         WriteFailed,
+    }
+
+    /// <summary>How eggs hatch while a run is settled (lobby-meta.md#????, Q-M3).</summary>
+    /// <remarks>
+    /// Pre: Catalog non-null. Post: Hatched lists (eggId, speciesId) for the last Committed settlement only.
+    /// Side effects: Settle rewrites Hatched.
+    /// </remarks>
+    internal sealed class HatchSettlement
+    {
+        /// <summary>Egg definitions; an egg whose id is missing stays incubating (retired id never breaks a save).</summary>
+        public EggCatalog Catalog;
+
+        /// <summary>Seed of the hatch roll; the same save, outcome and seed always hatch the same species.</summary>
+        public ulong Seed;
+
+        /// <summary>Eggs hatched by the last Committed settlement, in hatch order.</summary>
+        public readonly List<(string eggId, string speciesId)> Hatched = new List<(string, string)>();
     }
 
     /// <summary>
@@ -100,10 +119,13 @@ namespace Cosmimera.Bootstrap.Demo
         ///       non-Committed result calling again with the same live and outcome is a safe retry. Not idempotent after
         ///       Committed: settling the same outcome into next banks it again (no settlement token, SOL r2 R2-01) —
         ///       callers submit an outcome until its first Committed and never after.
-        /// Side effects: writes files on success.
+        ///       Eggs: outcome.EggProgressPpm is added to every egg incubating in live (eggs placed by this settlement never
+        ///       gain from the run that produced them); with <paramref name="hatch"/> non-null, ready eggs with a known
+        ///       definition hatch into new owned creatures (LV1, vessel inherited), otherwise they wait in the hatchery.
+        /// Side effects: writes files on success; rewrites hatch.Hatched when hatch is non-null.
         /// </remarks>
         public static CommitStatus Settle(LobbySave live, IReadOnlyList<int> partyIds, RunOutcome outcome, Progression progression,
-            string path, out LobbySave next, out MaterialKey overflow, out Exception error)
+            string path, out LobbySave next, out MaterialKey overflow, out Exception error, HatchSettlement hatch = null)
         {
             Contract.Requires(live != null && partyIds != null && outcome != null && progression != null,
                 "live, partyIds, outcome and progression are required");
@@ -133,6 +155,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             LobbySave candidate = live.Clone();
+            List<(string eggId, string speciesId)> hatched = null;
             // XP before captures: a new capture never receives its own capture reward (Q-M4).
             for (int i = 0; i < partyIds.Count; i++)
             {
@@ -148,6 +171,8 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     candidate.Add(speciesId, vessel, exp);
                 }
+
+                hatched = ApplyHatchery(candidate, outcome.EggProgressPpm, hatch);
             }
             catch (InvalidOperationException e)
             {
@@ -162,8 +187,51 @@ namespace Cosmimera.Bootstrap.Demo
                 return CommitStatus.WriteFailed;
             }
 
+            if (hatch != null)
+            {
+                hatch.Hatched.Clear();
+                hatch.Hatched.AddRange(hatched);
+            }
+
             next = candidate;
             return CommitStatus.Committed;
+        }
+
+        // Hatch creatures start at exp 0 (LV1): the egg table lists juveniles only (validate-data egg_outcome_stage).
+        private static List<(string eggId, string speciesId)> ApplyHatchery(LobbySave candidate, long progressPpm,
+            HatchSettlement hatch)
+        {
+            var hatched = new List<(string eggId, string speciesId)>();
+            if (candidate.Eggs.Count == 0)
+            {
+                return hatched;
+            }
+
+            var hatchery = new EggHatchery(HatchConfig.Default);
+            foreach (IncubatingEgg egg in candidate.Eggs)
+            {
+                hatchery.TryPlace(egg);
+            }
+
+            hatchery.AddProgressPpm(progressPpm);
+            if (hatch != null)
+            {
+                var rng = new Pcg32(hatch.Seed, 'H');
+                foreach (IncubatingEgg egg in new List<IncubatingEgg>(hatchery.Eggs))
+                {
+                    if (!egg.IsReady || !hatch.Catalog.TryGet(egg.EggId, out EggDef def))
+                    {
+                        continue;
+                    }
+
+                    HatchResult result = hatchery.Hatch(egg, def, ref rng);
+                    candidate.Add(result.SpeciesId, (VesselKind)result.Vessel, 0);
+                    hatched.Add((egg.EggId, result.SpeciesId));
+                }
+            }
+
+            candidate.SetEggs(hatchery.Eggs);
+            return hatched;
         }
     }
 }

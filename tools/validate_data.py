@@ -36,8 +36,9 @@ KINDS = {
     "characters": "character",
     "ingredients": "ingredient",
     "foods": "food",
+    "eggs": "egg",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs")
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 ENV_MATERIALS_FOLDER = "env-materials"
 ENV_MATERIALS_SCHEMA = "env-materials"
@@ -311,6 +312,28 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
                         Finding("error", "dangling_ref", r.file, f"/{r.index}/ingredients/{i}/ingredient_id",
                                 f"'{ing_id}' is not a known ingredient id")
                     )
+
+    for r in records["eggs"]:
+        outcomes = r.data.get("outcomes")
+        if not isinstance(outcomes, list):
+            continue
+        seen_species: set[str] = set()
+        for i, o in enumerate(outcomes):
+            if not isinstance(o, dict) or not isinstance(o.get("species"), str):
+                continue
+            sid = o["species"]
+            hit = by_id.get(sid)
+            if hit is None or hit.kind != "creatures":
+                findings.append(Finding("error", "dangling_ref", r.file, f"/{r.index}/outcomes/{i}/species",
+                                        f"'{sid}' is not a known creature id"))
+                continue
+            if hit.data.get("stage") != "juvenile":
+                findings.append(Finding("error", "egg_outcome_stage", r.file, f"/{r.index}/outcomes/{i}/species",
+                                        f"'{sid}' is {hit.data.get('stage')}; eggs hatch juveniles only"))
+            if sid in seen_species:
+                findings.append(Finding("error", "egg_outcome_duplicate", r.file, f"/{r.index}/outcomes/{i}/species",
+                                        f"'{sid}' listed twice in one egg"))
+            seen_species.add(sid)
 
 
 def _check_material_sums(r: Record, findings: list[Finding]) -> None:

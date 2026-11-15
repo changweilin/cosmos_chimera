@@ -179,6 +179,43 @@ namespace Cosmimera.Capture
         }
     }
 
+    /// <summary>Progress an egg earns from run events, in ppm. REQ: lobby-meta.md (Q-M3).</summary>
+    /// <remarks>
+    /// Pure integer math shared by the run (which tallies progress while it plays) and <see cref="EggHatchery"/>, so the
+    /// two can never disagree on a rate. Pre/Post per method; Side effects: none.
+    /// </remarks>
+    public static class EggProgress
+    {
+        /// <summary>Progress for walking <paramref name="distanceMm"/> on a planet of the given circumference.</summary>
+        /// <remarks>
+        /// Pre: distanceMm &gt;= 0; circumferenceMm &gt; 0. Post: &gt;= 0; one full circumference == FullProgressPpm.
+        /// Side effects: none.
+        /// </remarks>
+        public static long Walk(long distanceMm, long circumferenceMm, in HatchConfig config, bool hasBoost)
+        {
+            Contract.Requires(distanceMm >= 0, "distance must be >= 0");
+            Contract.Requires(circumferenceMm > 0, "circumference must be > 0");
+            // distanceMm * 1e6 stays below 2^63 for any distance under ~9e12 mm (9 million km).
+            return Boost(distanceMm * HatchConfig.FullProgressPpm / circumferenceMm, config, hasBoost);
+        }
+
+        /// <summary>Progress for <paramref name="count"/> battles.</summary>
+        /// <remarks>Pre: count &gt;= 0. Post: &gt;= 0. Side effects: none.</remarks>
+        public static long Battles(int count, in HatchConfig config, bool hasBoost)
+        {
+            Contract.Requires(count >= 0, "count must be >= 0");
+            return Boost((long)count * config.BattlePercent * (HatchConfig.FullProgressPpm / 100), config, hasBoost);
+        }
+
+        /// <summary>Progress for one defeated boss.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public static long Boss(in HatchConfig config, bool hasBoost) =>
+            Boost((long)config.BossPercent * (HatchConfig.FullProgressPpm / 100), config, hasBoost);
+
+        private static long Boost(long ppm, in HatchConfig config, bool hasBoost) =>
+            hasBoost ? ppm * (100 + config.BoostPercent) / 100 : ppm;
+    }
+
     /// <summary>Lobby hatchery: accumulates run events into egg progress and resolves hatching. REQ: lobby-meta.md (Q-M3).</summary>
     /// <remarks>
     /// Pure and deterministic; the caller reports run events and owns the RNG. Progress is integer ppm so repeated
@@ -220,24 +257,28 @@ namespace Cosmimera.Capture
         /// </remarks>
         public void AddWalk(long distanceMm, long circumferenceMm, bool hasBoost)
         {
-            Contract.Requires(distanceMm >= 0, "distance must be >= 0");
-            Contract.Requires(circumferenceMm > 0, "circumference must be > 0");
-            // distanceMm * 1e6 stays below 2^63 for any distance under ~9e12 mm (9 million km).
-            Gain(distanceMm * HatchConfig.FullProgressPpm / circumferenceMm, hasBoost);
+            Gain(EggProgress.Walk(distanceMm, circumferenceMm, _config, hasBoost));
         }
 
         /// <summary>Adds progress for finished battles.</summary>
         /// <remarks>Pre: count &gt;= 0. Post: every egg gains count × BattlePercent (plus boost). Side effects: mutates eggs.</remarks>
         public void AddBattles(int count, bool hasBoost)
         {
-            Contract.Requires(count >= 0, "count must be >= 0");
-            Gain((long)count * _config.BattlePercent * (HatchConfig.FullProgressPpm / 100), hasBoost);
+            Gain(EggProgress.Battles(count, _config, hasBoost));
         }
 
         /// <summary>Adds progress for a defeated boss.</summary>
         /// <remarks>Pre: none. Post: every egg gains BossPercent (plus boost). Side effects: mutates eggs.</remarks>
         public void AddBossVictory(bool hasBoost) =>
-            Gain((long)_config.BossPercent * (HatchConfig.FullProgressPpm / 100), hasBoost);
+            Gain(EggProgress.Boss(_config, hasBoost));
+
+        /// <summary>Adds already-computed progress (a run's tally) to every egg.</summary>
+        /// <remarks>Pre: ppm &gt;= 0. Post: every egg gains ppm, capped at 100%. Side effects: mutates eggs.</remarks>
+        public void AddProgressPpm(long ppm)
+        {
+            Contract.Requires(ppm >= 0, "ppm must be >= 0");
+            Gain(ppm);
+        }
 
         /// <summary>Hatches an egg that reached 100%.</summary>
         /// <remarks>
@@ -255,10 +296,9 @@ namespace Cosmimera.Capture
             return new HatchResult(def.Roll(ref rng), egg.Vessel);
         }
 
-        private void Gain(long ppm, bool hasBoost)
+        private void Gain(long ppm)
         {
             if (ppm <= 0) return;
-            if (hasBoost) ppm = ppm * (100 + _config.BoostPercent) / 100;
             for (int i = 0; i < _eggs.Count; i++)
             {
                 long next = _eggs[i].ProgressPpm + ppm;
