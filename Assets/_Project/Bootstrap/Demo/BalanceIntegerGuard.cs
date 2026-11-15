@@ -63,5 +63,16 @@ namespace Cosmimera.Bootstrap.Demo
                     token.ToString(Newtonsoft.Json.Formatting.None));
             }
         }
+
+        /// <summary>Reads a required positive Int32 setting without JsonUtility coercion.</summary>
+        /// <remarks>Pre: names identify a top-level object and its leaf. Post: positive integer or InvalidDataException. Side effects: allocates.</remarks>
+        internal static int ReadPositiveInteger(string json, string section, string field)
+        {
+            RequireIntegers(json, section);
+            JToken value = JObject.Parse(json)[section][field];
+            if (value == null || value.Type != JTokenType.Integer || (int)value < 1)
+                throw new InvalidDataException("balance json: " + section + "." + field + " must be a positive Int32 integer");
+            return (int)value;
+        }
     }
 }

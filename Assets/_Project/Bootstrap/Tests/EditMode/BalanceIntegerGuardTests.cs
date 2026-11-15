@@ -48,6 +48,28 @@ namespace Cosmimera.Bootstrap.Tests
         {
             string path = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "..")), "Data", "balance.json");
             Assert.DoesNotThrow(() => BalanceIntegerGuard.RequireIntegers(File.ReadAllText(path), "materials", "progression"));
+            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(File.ReadAllText(path), "field_utilities", "weather_control_cooldown_ms"),
+                Is.EqualTo(180_000));
+        }
+
+        [TestCase("0")]
+        [TestCase("-1")]
+        [TestCase("2.5")]
+        [TestCase("\"2\"")]
+        [TestCase("1e1")]
+        [TestCase("4294967298")]
+        [TestCase("null")]
+        public void Positive_integer_settings_reject_coercion_and_nonpositive_values(string value)
+        {
+            Assert.Throws<InvalidDataException>(() => BalanceIntegerGuard.ReadPositiveInteger(
+                "{\"field_utilities\":{\"weather_control_cooldown_ms\":" + value + "}}", "field_utilities", "weather_control_cooldown_ms"));
+        }
+
+        [Test]
+        public void Positive_integer_settings_require_the_section_and_field()
+        {
+            Assert.Throws<InvalidDataException>(() => BalanceIntegerGuard.ReadPositiveInteger("{}", "field_utilities", "weather_control_cooldown_ms"));
+            Assert.Throws<InvalidDataException>(() => BalanceIntegerGuard.ReadPositiveInteger("{\"field_utilities\":{}}", "field_utilities", "weather_control_cooldown_ms"));
         }
     }
 }

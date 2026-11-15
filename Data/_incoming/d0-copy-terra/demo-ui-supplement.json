@@ -271,6 +271,10 @@
     "zh-TW": "成年",
     "en": "Adult"
   },
+  "ui.stage.overload": {
+    "zh-TW": "超載",
+    "en": "Overload"
+  },
   "ui.temperament.timid": {
     "zh-TW": "膽怯",
     "en": "Timid"
@@ -322,6 +326,138 @@
   "ui.object.crystal": {
     "zh-TW": "晶柱",
     "en": "Crystal"
+  },
+  "ui.object.broadleaf": {
+    "zh-TW": "闊葉樹",
+    "en": "Broadleaf tree"
+  },
+  "ui.object.conifer": {
+    "zh-TW": "針葉樹",
+    "en": "Conifer"
+  },
+  "ui.object.umbrella": {
+    "zh-TW": "傘形樹",
+    "en": "Umbrella tree"
+  },
+  "ui.object.swamp_tree": {
+    "zh-TW": "沼澤樹",
+    "en": "Swamp tree"
+  },
+  "ui.object.snag": {
+    "zh-TW": "枯木",
+    "en": "Dead tree"
+  },
+  "ui.object.log": {
+    "zh-TW": "倒木",
+    "en": "Fallen log"
+  },
+  "ui.object.cactus": {
+    "zh-TW": "仙人掌",
+    "en": "Cactus"
+  },
+  "ui.object.giant_mushroom": {
+    "zh-TW": "巨型蘑菇",
+    "en": "Giant mushroom"
+  },
+  "ui.object.granite": {
+    "zh-TW": "花崗岩",
+    "en": "Granite boulder"
+  },
+  "ui.object.limestone": {
+    "zh-TW": "石灰岩",
+    "en": "Limestone"
+  },
+  "ui.object.marble": {
+    "zh-TW": "大理石",
+    "en": "Marble"
+  },
+  "ui.object.slate": {
+    "zh-TW": "板岩",
+    "en": "Slate"
+  },
+  "ui.object.sandstone": {
+    "zh-TW": "砂岩",
+    "en": "Sandstone"
+  },
+  "ui.object.basalt": {
+    "zh-TW": "玄武岩",
+    "en": "Basalt"
+  },
+  "ui.object.reef_rock": {
+    "zh-TW": "礁岩",
+    "en": "Reef rock"
+  },
+  "ui.object.moraine": {
+    "zh-TW": "冰磧石",
+    "en": "Moraine boulder"
+  },
+  "ui.object.basalt_column": {
+    "zh-TW": "玄武岩柱",
+    "en": "Basalt column"
+  },
+  "ui.object.stone_spire": {
+    "zh-TW": "石筍",
+    "en": "Stone spire"
+  },
+  "ui.object.ice_spire": {
+    "zh-TW": "冰柱",
+    "en": "Ice spire"
+  },
+  "ui.object.ore_gold": {
+    "zh-TW": "金礦脈",
+    "en": "Gold vein"
+  },
+  "ui.object.ore_silver": {
+    "zh-TW": "銀礦脈",
+    "en": "Silver vein"
+  },
+  "ui.object.ore_copper": {
+    "zh-TW": "銅礦脈",
+    "en": "Copper vein"
+  },
+  "ui.object.ore_iron": {
+    "zh-TW": "鐵礦脈",
+    "en": "Iron vein"
+  },
+  "ui.object.coal_seam": {
+    "zh-TW": "煤層",
+    "en": "Coal seam"
+  },
+  "ui.object.oil_shale": {
+    "zh-TW": "油頁岩",
+    "en": "Oil shale"
+  },
+  "ui.object.gem_geode": {
+    "zh-TW": "寶石晶洞",
+    "en": "Gem geode"
+  },
+  "ui.object.shrub": {
+    "zh-TW": "灌木",
+    "en": "Shrub"
+  },
+  "ui.object.dwarf_shrub": {
+    "zh-TW": "矮灌木",
+    "en": "Dwarf shrub"
+  },
+  "ui.object.bamboo": {
+    "zh-TW": "箭竹叢",
+    "en": "Cane clump"
+  },
+  "ui.object.tall_grass": {
+    "zh-TW": "芒草",
+    "en": "Plume grass"
+  },
+  "ui.object.fern": {
+    "zh-TW": "蕨類",
+    "en": "Fern"
+  },
+  "ui.object.reed": {
+    "zh-TW": "蘆葦",
+    "en": "Reeds"
+  },
+  "ui.object.flowers": {
+    "zh-TW": "花叢",
+    "en": "Flower patch"
   },
   "ui.object.building": {
     "zh-TW": "建築",
@@ -1282,5 +1418,101 @@
   "ui.skills.hide_locked": {
     "zh-TW": "隱藏未解鎖採集能力",
     "en": "Hide locked gathering skills"
+  },
+  "ui.weather.clear": {
+    "zh-TW": "晴朗",
+    "en": "Clear"
+  },
+  "ui.weather.fog": {
+    "zh-TW": "迷霧",
+    "en": "Fog"
+  },
+  "ui.weather.rain": {
+    "zh-TW": "降雨",
+    "en": "Rain"
+  },
+  "ui.weather.thunderstorm": {
+    "zh-TW": "雷暴",
+    "en": "Thunderstorm"
+  },
+  "ui.weather.blizzard": {
+    "zh-TW": "暴雪",
+    "en": "Blizzard"
+  },
+  "ui.weather.sandstorm": {
+    "zh-TW": "沙塵暴",
+    "en": "Sandstorm"
+  },
+  "ui.weather.heatwave": {
+    "zh-TW": "高溫",
+    "en": "Heatwave"
+  },
+  "ui.weather.gale": {
+    "zh-TW": "強風",
+    "en": "Gale"
+  },
+  "ui.weather.status": {
+    "zh-TW": "{weather} · {source} · 下次輪替 {seconds}s",
+    "en": "{weather} · {source} · Next cycle in {seconds}s"
+  },
+  "ui.weather.natural": {
+    "zh-TW": "自然天氣",
+    "en": "Natural"
+  },
+  "ui.weather.controlled": {
+    "zh-TW": "操縱天氣",
+    "en": "Controlled"
+  },
+  "ui.weather.movement": {
+    "zh-TW": "天氣修正：移動 ×{move}／衝刺 ×{sprint}／翻滾 CD ×{roll}",
+    "en": "Weather: walk ×{move} / sprint ×{sprint} / roll CD ×{roll}"
+  },
+  "ui.weather.title": {
+    "zh-TW": "天氣戰術",
+    "en": "Weather tactics"
+  },
+  "ui.weather.visibility": {
+    "zh-TW": "能見度上限：{meters} m",
+    "en": "Visibility limit: {meters} m"
+  },
+  "ui.weather.creatures": {
+    "zh-TW": "宙獸移速：一般 ×{base}／屬性適應 ×{adapted}",
+    "en": "Creature speed: normal ×{base} / adapted ×{adapted}"
+  },
+  "ui.weather.territory": {
+    "zh-TW": "野生領域 ×{radius}／遠程彈道偏移 ≤{drift}°",
+    "en": "Wild territory ×{radius} / ranged drift ≤{drift}°"
+  },
+  "ui.weather.stealth": {
+    "zh-TW": "靜止或緩行（≤{speed} m/s）時，偵測距離再減半。",
+    "en": "While still or moving slowly (≤{speed} m/s), detection distance is halved again."
+  },
+  "ui.weather.element": {
+    "zh-TW": "{element}：威力 {power}%／招式 CD {cooldown}%",
+    "en": "{element}: power {power}% / move CD {cooldown}%"
+  },
+  "ui.weather.no_element_effects": {
+    "zh-TW": "無屬性招式修正",
+    "en": "No elemental move modifiers"
+  },
+  "ui.weather.control": {
+    "zh-TW": "操縱當前區域天氣",
+    "en": "Control weather in this region"
+  },
+  "ui.weather.cooldown": {
+    "zh-TW": "天氣操縱冷卻：{seconds}s",
+    "en": "Weather control ready in {seconds}s"
+  },
+  "ui.weather.applied": {
+    "zh-TW": "已切換為{weather}，於下次自然天氣時段結束。",
+    "en": "Changed to {weather} until the next natural weather slot."
+  },
+  "ui.weather.missing_skill": {
+    "zh-TW": "隊伍缺少生效的天氣操縱能力。",
+    "en": "Your team needs an active weather-control utility."
+  },
+  "ui.weather.on_cooldown": {
+    "zh-TW": "天氣操縱仍在冷卻，切換區域不會重置。",
+    "en": "Weather control is cooling down; changing regions does not reset it."
   }
 }

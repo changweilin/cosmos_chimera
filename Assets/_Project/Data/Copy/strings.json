@@ -1983,5 +1983,125 @@
     "zh-TW": "隱藏未解鎖採集能力",
     "en": "Hide locked gathering skills",
     "ja": "未解放の採集スキルを非表示"
+  },
+  "ui.weather.clear": {
+    "zh-TW": "晴朗",
+    "en": "Clear",
+    "ja": "晴れ"
+  },
+  "ui.weather.fog": {
+    "zh-TW": "迷霧",
+    "en": "Fog",
+    "ja": "霧"
+  },
+  "ui.weather.rain": {
+    "zh-TW": "降雨",
+    "en": "Rain",
+    "ja": "雨"
+  },
+  "ui.weather.thunderstorm": {
+    "zh-TW": "雷暴",
+    "en": "Thunderstorm",
+    "ja": "雷雨"
+  },
+  "ui.weather.blizzard": {
+    "zh-TW": "暴雪",
+    "en": "Blizzard",
+    "ja": "吹雪"
+  },
+  "ui.weather.sandstorm": {
+    "zh-TW": "沙塵暴",
+    "en": "Sandstorm",
+    "ja": "砂嵐"
+  },
+  "ui.weather.heatwave": {
+    "zh-TW": "高溫",
+    "en": "Heatwave",
+    "ja": "猛暑"
+  },
+  "ui.weather.gale": {
+    "zh-TW": "強風",
+    "en": "Gale",
+    "ja": "強風"
+  },
+  "ui.weather.status": {
+    "zh-TW": "{weather} · {source} · 下次輪替 {seconds}s",
+    "en": "{weather} · {source} · Next cycle in {seconds}s",
+    "ja": "{weather} · {source} · 次の切替まで {seconds}秒"
+  },
+  "ui.weather.natural": {
+    "zh-TW": "自然天氣",
+    "en": "Natural",
+    "ja": "自然の天候"
+  },
+  "ui.weather.controlled": {
+    "zh-TW": "操縱天氣",
+    "en": "Controlled",
+    "ja": "操作中の天候"
+  },
+  "ui.weather.movement": {
+    "zh-TW": "天氣修正：移動 ×{move}／衝刺 ×{sprint}／翻滾 CD ×{roll}",
+    "en": "Weather: walk ×{move} / sprint ×{sprint} / roll CD ×{roll}",
+    "ja": "天候補正：移動 ×{move}／ダッシュ ×{sprint}／回避CD ×{roll}"
+  },
+  "ui.weather.title": {
+    "zh-TW": "天氣戰術",
+    "en": "Weather tactics",
+    "ja": "天候と戦術"
+  },
+  "ui.weather.visibility": {
+    "zh-TW": "能見度上限：{meters} m",
+    "en": "Visibility limit: {meters} m",
+    "ja": "視界の上限：{meters} m"
+  },
+  "ui.weather.creatures": {
+    "zh-TW": "宙獸移速：一般 ×{base}／屬性適應 ×{adapted}",
+    "en": "Creature speed: normal ×{base} / adapted ×{adapted}",
+    "ja": "宙獣の移動速度：通常 ×{base}／属性適応 ×{adapted}"
+  },
+  "ui.weather.territory": {
+    "zh-TW": "野生領域 ×{radius}／遠程彈道偏移 ≤{drift}°",
+    "en": "Wild territory ×{radius} / ranged drift ≤{drift}°",
+    "ja": "野生の縄張り ×{radius}／遠距離攻撃の偏向 ≤{drift}°"
+  },
+  "ui.weather.stealth": {
+    "zh-TW": "靜止或緩行（≤{speed} m/s）時，偵測距離再減半。",
+    "en": "While still or moving slowly (≤{speed} m/s), detection distance is halved again.",
+    "ja": "静止中または低速移動中（≤{speed} m/s）は、探知距離がさらに半減します。"
+  },
+  "ui.weather.element": {
+    "zh-TW": "{element}：威力 {power}%／招式 CD {cooldown}%",
+    "en": "{element}: power {power}% / move CD {cooldown}%",
+    "ja": "{element}：威力 {power}%／技CD {cooldown}%"
+  },
+  "ui.weather.no_element_effects": {
+    "zh-TW": "無屬性招式修正",
+    "en": "No elemental move modifiers",
+    "ja": "属性技への補正なし"
+  },
+  "ui.weather.control": {
+    "zh-TW": "操縱當前區域天氣",
+    "en": "Control weather in this region",
+    "ja": "現在の地域の天候を操作"
+  },
+  "ui.weather.cooldown": {
+    "zh-TW": "天氣操縱冷卻：{seconds}s",
+    "en": "Weather control ready in {seconds}s",
+    "ja": "天候操作の再使用まで {seconds}秒"
+  },
+  "ui.weather.applied": {
+    "zh-TW": "已切換為{weather}，於下次自然天氣時段結束。",
+    "en": "Changed to {weather} until the next natural weather slot.",
+    "ja": "{weather}に変更しました。次の自然天候の切替まで有効です。"
+  },
+  "ui.weather.missing_skill": {
+    "zh-TW": "隊伍缺少生效的天氣操縱能力。",
+    "en": "Your team needs an active weather-control utility.",
+    "ja": "有効な天候操作能力を持つ宙獣が必要です。"
+  },
+  "ui.weather.on_cooldown": {
+    "zh-TW": "天氣操縱仍在冷卻，切換區域不會重置。",
+    "en": "Weather control is cooling down; changing regions does not reset it.",
+    "ja": "天候操作は再使用待ちです。地域を移動してもリセットされません。"
   }
 }

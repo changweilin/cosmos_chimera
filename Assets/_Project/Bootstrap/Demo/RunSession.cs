@@ -83,6 +83,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public bool Dungeon = false;
 
+        /// <summary>Run-wide weather-control cooldown loaded from balance.json.</summary>
+        /// <remarks>Pre: greater than zero. Post: used for this run's controller. Side effects: none.</remarks>
+        public int WeatherControlCooldownMs = WeatherPlanner.DefaultSlotDurationMs;
+
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
         public List<CreatureDef> Party;
@@ -246,6 +250,7 @@ namespace Cosmimera.Bootstrap.Demo
         private TerrainProfile _playerTerrain;
         private WeatherProfile _playerWeather = WeatherProfiles.Clear;
         private AtmosphereDriver _atmosphere;
+        private WeatherControl _weatherControl;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
@@ -335,6 +340,7 @@ namespace Cosmimera.Bootstrap.Demo
         private long _toastUntilMs;
         private ConceptPortraitTable _portraits;
         private GUIStyle _label;
+        private GUIStyle _weatherLabel;
         private GUIStyle _markerStyle;
         private Material _terrainMaterial;
         private Material _playerMaterial;
@@ -469,6 +475,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _runInput.Enable();
             }
             _setup = setup;
+            _weatherControl = new WeatherControl(setup.WeatherControlCooldownMs);
             _onEnd = onEnd;
 
             var config = new PlanetConfig(setup.Radius, float3.zero);
@@ -783,8 +790,21 @@ namespace Cosmimera.Bootstrap.Demo
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
         }
 
-        private WeatherProfile WeatherAt(float3 direction, long nowMs) =>
-            WeatherPlanner.WeatherAt(_setup.Seed, _setup.PlanetType.Id, _terrainAt(direction).Id, nowMs);
+        private WeatherProfile WeatherAt(float3 direction, long nowMs)
+        {
+            int region = RunPlanner.RegionAt(_plan, direction);
+            return _weatherControl.TryGetOverride(region, nowMs, out WeatherProfile controlled) ? controlled :
+                WeatherPlanner.WeatherAt(_setup.Seed, _setup.PlanetType.Id, _terrainAt(direction).Id, nowMs);
+        }
+
+        private WeatherControlResult TryControlWeather(WeatherKind kind)
+        {
+            float3 player = PlayerPosition();
+            int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player));
+            WeatherControlResult result = _weatherControl.TryApply(region, kind, _nowMs, _utilityModifiers.CanWeatherControl);
+            if (result == WeatherControlResult.Applied) UpdateEnvironment(player);
+            return result;
+        }
 
         private void UpdateEnvironment(float3 player)
         {
@@ -2176,6 +2196,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 18, richText = true };
+            _weatherLabel ??= new GUIStyle(_label) { fontSize = 14, wordWrap = true };
             if (!_started)
             {
                 GUI.Label(new Rect(20, 20, 600, 30), _copy.Ui("ui.star_select.loading"), _label);
@@ -2328,10 +2349,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DrawQuestPanel()
         {
-            var box = new Rect(16, 16, 460, 210);
+            var box = new Rect(16, 16, 460, 260);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.Label("<b>" + _copy.ChainTitle(_plan.ChainId) + "</b>", _label);
+            GUILayout.Label(WeatherStatusText(), _weatherLabel);
+            GUILayout.Label(WeatherMovementText(), _weatherLabel);
             if (!_quest.IsComplete)
             {
                 RunQuestStep s = _quest.Current;

@@ -1,10 +1,35 @@
 ﻿using Cosmimera.Bootstrap.Demo;
 using NUnit.Framework;
+using Cosmimera.WorldGen;
+using System.IO;
+using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Tests
 {
     public sealed class DemoCopyTests
     {
+        [TestCase("zh-TW")]
+        [TestCase("en")]
+        [TestCase("ja")]
+        public void Shipped_weather_copy_resolves_every_profile_and_control_message(string language)
+        {
+            string strings = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Data", "Copy", "strings.json"));
+            var copy = new DemoCopy(language, strings, "{\"entries\":[]}", "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            foreach (WeatherProfile weather in WeatherProfiles.All)
+            {
+                string key = "ui.weather." + weather.Kind.ToString().ToLowerInvariant();
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key));
+                Assert.That(copy.Ui(key), Is.Not.Empty);
+            }
+            foreach (string name in new[] { "status", "natural", "controlled", "movement", "title", "visibility", "creatures",
+                         "territory", "stealth", "element", "no_element_effects", "control", "cooldown", "applied", "missing_skill", "on_cooldown" })
+            {
+                string key = "ui.weather." + name;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key));
+                Assert.That(copy.Ui(key), Is.Not.Empty);
+            }
+        }
+
         [Test]
         public void Japanese_names_use_translation_or_english_fallback()
         {

@@ -63,6 +63,7 @@ namespace Cosmimera.Bootstrap.Demo
         private CombatBalance _combatBalance;
         private Progression _progression;
         private MaterialDrops _materialDrops;
+        private int _weatherControlCooldownMs;
         private EnvMaterials _env;
         private LobbySave _save;
         private string _savePath;
@@ -132,6 +133,8 @@ namespace Cosmimera.Bootstrap.Demo
             BalanceIntegerGuard.RequireIntegers(_balance.text, "materials", "progression");
             _progression = Progression.FromJson(_balance.text);
             _materialDrops = MaterialDrops.FromJson(_balance.text);
+            _weatherControlCooldownMs = BalanceIntegerGuard.ReadPositiveInteger(_balance.text,
+                "field_utilities", "weather_control_cooldown_ms");
             _env = EnvMaterials.FromJson(_envMaterials.text);
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
@@ -873,6 +876,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlayerExp = _save.PlayerExp,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
+                    WeatherControlCooldownMs = _weatherControlCooldownMs,
                     CharacterModelPrefab = SelectedCharacterPrefab(),
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
                     Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,

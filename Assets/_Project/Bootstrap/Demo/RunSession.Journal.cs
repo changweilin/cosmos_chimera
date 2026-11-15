@@ -306,10 +306,74 @@ namespace Cosmimera.Bootstrap.Demo
                 _foodBuffs.GetDropRateBonusPercent(_nowMs));
         }
 
+        private string WeatherName(WeatherKind kind) => _copy.Ui("ui.weather." + kind.ToString().ToLowerInvariant());
+
+        private string WeatherStatusText()
+        {
+            int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(PlayerPosition()));
+            bool controlled = _weatherControl.TryGetOverride(region, _nowMs, out _);
+            long remaining = WeatherPlanner.DefaultSlotDurationMs - _nowMs % WeatherPlanner.DefaultSlotDurationMs;
+            return _copy.Ui("ui.weather.status").Replace("{weather}", WeatherName(_playerWeather.Kind))
+                .Replace("{source}", _copy.Ui(controlled ? "ui.weather.controlled" : "ui.weather.natural"))
+                .Replace("{seconds}", Math.Ceiling(remaining / 1000d).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        private string WeatherMovementText() => _copy.Ui("ui.weather.movement")
+            .Replace("{move}", _playerWeather.PlayerMoveSpeedMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+            .Replace("{sprint}", _playerWeather.PlayerSprintSpeedMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+            .Replace("{roll}", _playerWeather.PlayerRollCooldownMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+
+        private void DrawWeatherDetails(AdventurePanel ui)
+        {
+            ui.Heading(_copy.Ui("ui.weather.title"));
+            ui.Label(WeatherStatusText());
+            ui.Label(WeatherMovementText());
+            ui.Label(_copy.Ui("ui.weather.visibility").Replace("{meters}", RenderSettings.fogEndDistance.ToString("0")));
+            ui.Label(_copy.Ui("ui.weather.creatures")
+                .Replace("{base}", _playerWeather.CreatureMoveSpeedMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+                .Replace("{adapted}", _playerWeather.AdaptedCreatureMoveSpeedMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)));
+            ui.Label(_copy.Ui("ui.weather.territory")
+                .Replace("{radius}", (_playerWeather.TerritoryRadiusPermille / 1000f).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+                .Replace("{drift}", _playerWeather.ProjectileDriftDegrees.ToString("0", System.Globalization.CultureInfo.InvariantCulture)));
+            if (_playerWeather.StealthEnabled)
+                ui.Label(_copy.Ui("ui.weather.stealth").Replace("{speed}", Encounter.SlowStealthSpeedThresholdMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)));
+            bool hasElementEffects = false;
+            for (int i = (int)Element.Metal; i <= (int)Element.Shadow; i++)
+            {
+                Element element = (Element)i;
+                int power = _playerWeather.PowerDeltaPercent(element), cooldown = _playerWeather.CdDeltaPercent(element);
+                if (power == 0 && cooldown == 0) continue;
+                hasElementEffects = true;
+                ui.Label(_copy.Ui("ui.weather.element").Replace("{element}", _copy.Element(element.ToString()))
+                    .Replace("{power}", power.ToString("+0;-0;0", System.Globalization.CultureInfo.InvariantCulture))
+                    .Replace("{cooldown}", cooldown.ToString("+0;-0;0", System.Globalization.CultureInfo.InvariantCulture)));
+            }
+            if (!hasElementEffects) ui.Label(_copy.Ui("ui.weather.no_element_effects"));
+            if (!_utilityModifiers.CanWeatherControl)
+            {
+                ui.Label(_copy.Ui("ui.weather.missing_skill"));
+                return;
+            }
+            ui.Heading(_copy.Ui("ui.weather.control"));
+            int remaining = _weatherControl.CooldownRemainingMs(_nowMs);
+            ui.Label(remaining == 0 ? _copy.Ui("ui.hud.cd_ready") : _copy.Ui("ui.weather.cooldown")
+                .Replace("{seconds}", Math.Ceiling(remaining / 1000d).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            foreach (WeatherProfile weather in WeatherProfiles.All)
+            {
+                if (!ui.Button(WeatherName(weather.Kind), remaining == 0)) continue;
+                WeatherControlResult result = TryControlWeather(weather.Kind);
+                string key = result == WeatherControlResult.Applied ? "ui.weather.applied"
+                    : result == WeatherControlResult.MissingSkill ? "ui.weather.missing_skill" : "ui.weather.on_cooldown";
+                ui.Message = _copy.Ui(key).Replace("{weather}", WeatherName(weather.Kind));
+                GUIUtility.ExitGUI();
+            }
+        }
+
         private void DrawSkills(AdventurePanel ui)
         {
             ui.Heading(_copy.Ui("ui.journal.tab.Skills"));
             ui.Label(_copy.Ui("ui.skills.pause_hint"));
+            DrawWeatherDetails(ui);
             if (ui.Button(_copy.Ui(_showLockedGathering ? "ui.skills.hide_locked" : "ui.skills.show_locked")))
             { _showLockedGathering = !_showLockedGathering; GUIUtility.ExitGUI(); }
             GatheringContext environment = GatheringEnvironment();
@@ -359,7 +423,7 @@ namespace Cosmimera.Bootstrap.Demo
                     GUIUtility.ExitGUI();
                 }
                 else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
-                    && utility != FieldUtility.QuickEscape) ui.Label(_copy.Ui("ui.skills.unavailable"));
+                    && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl) ui.Label(_copy.Ui("ui.skills.unavailable"));
                 else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
                     utility != FieldUtility.CatchRateUp && utility != FieldUtility.DropRateUp &&
                     utility != FieldUtility.PreventEscape && utility != FieldUtility.MagnetPickupDouble &&
@@ -441,6 +505,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _lockedTarget = -1;
                 _lockedObjectId = -1;
                 _encounter.ClearObjectFocus();
+                UpdateEnvironment(position);
                 _journal.Message = _copy.Ui("ui.skills.escaped");
                 return;
             }
