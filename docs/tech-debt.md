@@ -4,6 +4,8 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 
 | 來源 | ID | 嚴重度 | 內容 |
 |---|---|---|---|
+| `docs/reviews/P3-25-sol.md` | P3-25-S1 | med | 人工林限制只套樹位；地貌表直接列出的傘形樹、倒木仍生成，違反同林班單一樹種／無死木；原主責修正並升 ScatterPlanner 版本 |
+| `docs/reviews/P3-25-sol.md` | P3-25-S2 | med | 倒木規則阻擋半徑 0.3S，小於實體 CapsuleCollider 長軸半長 0.4S；規則／物理阻擋與下層避讓須同步，改半徑需升生成版本 |
 | `docs/reviews/P1-review-r17-sol.md` 之後 | r18 | — | P1 第 18 輪複審因 Codex 額度中斷未執行；p1/r5-fixes 已於 2026-11-08 合併（EditMode 825/825） |
 | `Combat/Runtime/Model/Encounter.cs` | D0-E3 | low | steering 為直線大圓移動，無障礙迴避：野生遇海只停在岸邊，不繞行海灣（2026-11-11 已接 move_speed 效果、野生只在陸地） |
 | `Combat/Runtime/Model/Encounter.cs` | D0-W2 | low | 推開在每 tick 全部移動與施招之後執行：本 tick 招式用的是推開前位置（偏差 ≤ 一個身體寬）；推開不看地形起伏（海面已擋野生，玩家宙獸仍可被推入水面）；人群每 tick 只掃 2 輪，重疊靠後續 tick 收斂 |
