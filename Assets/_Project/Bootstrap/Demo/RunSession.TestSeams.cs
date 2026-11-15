@@ -337,6 +337,28 @@ namespace Cosmimera.Bootstrap.Demo
             float3 toward = math.normalize(look - player - math.dot(look - player, up) * up + up * 1e-4f);
             _rig.Camera.transform.position = player - toward * 7f + up * 4f;
             _rig.Camera.transform.rotation = Quaternion.LookRotation(look - (float3)_rig.Camera.transform.position, up);
+            RenderCameraTo(path);
+        }
+
+        /// <summary>Renders a screenshot of the ground ahead of the player from a raised viewpoint behind them.</summary>
+        /// <remarks>
+        /// Pre: the run landed; toward finite and not parallel to the local up; backM and upM &gt; 0; path writable.
+        /// Post: PNG written; the camera looks over the player along toward's tangent part.
+        /// Side effects: camera pose, GPU allocation and file I/O.
+        /// </remarks>
+        internal void CaptureGroundForTests(string path, float3 toward, float backM, float upM)
+        {
+            float3 player = PlayerPosition();
+            float3 up = _rig.Config.ToDirection(player);
+            float3 ahead = math.normalize(toward - math.dot(toward, up) * up);
+            _rig.Camera.transform.position = player - ahead * backM + up * upM;
+            _rig.Camera.transform.rotation =
+                Quaternion.LookRotation(player + ahead * backM - (float3)_rig.Camera.transform.position, up);
+            RenderCameraTo(path);
+        }
+
+        private void RenderCameraTo(string path)
+        {
             var rt = new RenderTexture(1280, 720, 24);
             var texture = new Texture2D(1280, 720, TextureFormat.RGB24, false);
             RenderTexture previous = RenderTexture.active;

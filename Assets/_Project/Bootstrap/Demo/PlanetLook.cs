@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Planet;
+using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -87,6 +88,94 @@ namespace Cosmimera.Bootstrap.Demo
             var m = new Material(shader);
             Fill(m, PaletteFor(planetTypeId), config, reliefM);
             return m;
+        }
+
+        /// <summary>Share of its own colour a named stone keeps on any planet; the rest is the planet's rock colour.</summary>
+        /// <remarks>Pre: none. Post: constant in (0, 1). Side effects: none.</remarks>
+        public const float StoneOwnColour = 0.65f;
+
+        /// <summary>Own colour (0xRRGGBB) of the stone <paramref name="speciesId"/> that gives a bedrock its look.</summary>
+        /// <remarks>
+        /// Pre: speciesId is one of ScatterGeology.MainRock's ids (granite, limestone, slate, basalt).
+        /// Post: the colour both the scattered boulders and the ground's rock faces mix from. Side effects: none.
+        /// </remarks>
+        public static int StoneRgb(string speciesId)
+        {
+            switch (speciesId)
+            {
+                case "granite": return 0xA89C94;
+                case "limestone": return 0xD8D2BC;
+                case "slate": return 0x4A5560;
+                case "basalt": return 0x3A3A40;
+                default:
+                    Contract.Requires(false, "not a bedrock stone: " + speciesId);
+                    return 0;
+            }
+        }
+
+        private const int GeologyStamps = 8; // CosmiBiome.hlsl COSMI_GEO_MAX; TemplatePlanner places at most 8
+        private static readonly int GeoCountId = Shader.PropertyToID("_CosmiGeoCount");
+        private static readonly int GeoCenterId = Shader.PropertyToID("_CosmiGeoCenter");
+        private static readonly int GeoRightId = Shader.PropertyToID("_CosmiGeoRight");
+        private static readonly int GeoUpId = Shader.PropertyToID("_CosmiGeoUp");
+        private static readonly int GeoRockId = Shader.PropertyToID("_CosmiGeoRock");
+        private static readonly int GeoBaseId = Shader.PropertyToID("_CosmiGeoBase");
+
+        /// <summary>Tells the ground shaders which bedrock lies where, so rock faces take its colour.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#地質變體 (P3-24 a: 地表配色).
+        /// Pre: view.Count ≤ 8; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined.
+        /// Post: terrain and grass-root rock colour is the bedrock's stone mixed into the planet type's rock colour,
+        ///       inside each stamp as far as its height blend reaches; Native bedrock keeps the planet's own.
+        /// Side effects: writes the _CosmiGeo* shader globals until <see cref="ClearGeology"/>.
+        /// </remarks>
+        public static void SetGeology(string planetTypeId, TemplateView view, IReadOnlyList<Geology> perStamp, Geology baseGeology)
+        {
+            Contract.Requires(perStamp != null && perStamp.Count == view.Count && view.Count <= GeologyStamps,
+                "one geology per stamp, at most 8 stamps");
+            Color rock = PaletteFor(planetTypeId).Rock;
+            // Unity fixes a global array's length at its first Set: always send all eight.
+            var center = new Vector4[GeologyStamps];
+            var right = new Vector4[GeologyStamps];
+            var up = new Vector4[GeologyStamps];
+            var colour = new Vector4[GeologyStamps];
+            for (int i = 0; i < view.Count; i++)
+            {
+                TemplateStamp s = view.Stamp(i);
+                center[i] = new Vector4(s.Center.x, s.Center.y, s.Center.z, 1f / s.TanHalf);
+                right[i] = new Vector4(s.Right.x, s.Right.y, s.Right.z, 0f);
+                up[i] = new Vector4(s.Up.x, s.Up.y, s.Up.z, 0f);
+                colour[i] = GeologyRock(rock, perStamp[i]);
+            }
+
+            Shader.SetGlobalVectorArray(GeoCenterId, center);
+            Shader.SetGlobalVectorArray(GeoRightId, right);
+            Shader.SetGlobalVectorArray(GeoUpId, up);
+            Shader.SetGlobalVectorArray(GeoRockId, colour);
+            Shader.SetGlobalVector(GeoBaseId, GeologyRock(rock, baseGeology));
+            Shader.SetGlobalFloat(GeoCountId, view.Count);
+        }
+
+        /// <summary>Returns the ground shaders to the planet type's own rock colour everywhere.</summary>
+        /// <remarks>Pre: none. Post: _CosmiGeoCount and _CosmiGeoBase are zero. Side effects: writes shader globals.</remarks>
+        public static void ClearGeology()
+        {
+            Shader.SetGlobalFloat(GeoCountId, 0f);
+            Shader.SetGlobalVector(GeoBaseId, Vector4.zero);
+        }
+
+        // rgb = rock colour, a = 1 where the bedrock overrides the material's _Rock.
+        private static Vector4 GeologyRock(Color planetRock, Geology geology)
+        {
+            string stone = ScatterGeology.MainRock(geology);
+            if (stone == null)
+            {
+                return Vector4.zero;
+            }
+
+            int rgb = StoneRgb(stone);
+            Color c = Color.Lerp(planetRock, Hex(rgb), StoneOwnColour);
+            return new Vector4(c.r, c.g, c.b, 1f);
         }
 
         /// <summary>Altitude (m) of the liquid surface; ground above it up to the shore band stays dry sand.</summary>

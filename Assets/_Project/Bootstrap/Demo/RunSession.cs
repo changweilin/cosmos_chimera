@@ -507,10 +507,19 @@ namespace Cosmimera.Bootstrap.Demo
                 walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
             // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
             // stamps (and without landforms) they are the planet type's own.
+            // REQ: planet-world.md#地質變體 (P3-24 a) — each stamp's bedrock swaps its country rock and rock colour.
+            Geology[] geologies = null;
+            Geology baseGeology = Geology.Native;
+            if (templates != null)
+            {
+                geologies = TemplatePlanner.Geologies(templates, setup.Seed, setup.PlanetType.Id, out baseGeology);
+            }
+
             ScatterPlanner scatter = templates != null
                 ? new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
                     isOpenGround, TemplatePlanner.ScatterDensity(templates, terrainProfile.ScatterDensity),
-                    TemplatePlanner.ScatterBiome(templates, setup.PlanetType.Id))
+                    TemplatePlanner.ScatterBiome(templates, setup.PlanetType.Id),
+                    TemplatePlanner.ScatterGeologyAt(templates, geologies, baseGeology))
                 : new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
                     isOpenGround, terrainProfile.ScatterDensity);
             DestructibleTable objects = null;
@@ -531,6 +540,10 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief);
                 terrainMaterial = _terrainMaterial;
+                if (geologies != null)
+                {
+                    PlanetLook.SetGeology(setup.PlanetType.Id, templates.View, geologies, baseGeology);
+                }
             }
 
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
@@ -611,6 +624,13 @@ namespace Cosmimera.Bootstrap.Demo
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
                     objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null, scenery?.Props);
+                if (scenery?.Props != null)
+                {
+                    // REQ: vision.md#美術投資 第 5 項 (P1-15) — tree and rock silhouettes past the near field. Ends
+                    // inside the linear fog so the outer edge fades instead of ending on a line.
+                    gameObject.AddComponent<FarScenery>().Configure(config, _scatterField, scatter, PlayerPosition,
+                        scenery.Props, math.min(FarScenery.MaxRadiusM, RenderSettings.fogEndDistance * 0.85f));
+                }
                 if (objects != null)
                 {
                     // REQ: destructibles.md#物理 (ADR-0009) — only where something is drawn: headless runs have no bodies.
@@ -2535,6 +2555,7 @@ namespace Cosmimera.Bootstrap.Demo
             _menuInput?.Dispose();
             _feedback?.Dispose();
             _rig?.Dispose();
+            PlanetLook.ClearGeology();
             if (_terrainMaterial != null)
             {
                 Destroy(_terrainMaterial);

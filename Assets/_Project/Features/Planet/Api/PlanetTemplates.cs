@@ -151,6 +151,18 @@ namespace Cosmimera.Planet
         /// <remarks>Pre: none. Post: >= 0; 0 for default. Side effects: none.</remarks>
         public int Count => _count;
 
+        /// <summary>Placement of stamp <paramref name="index"/> (centre, tangent axes, extent).</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= index &lt; Count.
+        /// Post: the stamp <see cref="TryGetStamp"/> reports under that index; a copy.
+        /// Side effects: none.
+        /// </remarks>
+        public TemplateStamp Stamp(int index)
+        {
+            Contract.Requires(index >= 0 && index < _count, "index out of range");
+            return _stamps[index];
+        }
+
         /// <summary>Height at <paramref name="dir"/> given the procedural height there.</summary>
         /// <remarks>
         /// Pre: dir unit length. Post: equals noiseHeight outside every stamp and where Count == 0; inside a stamp it

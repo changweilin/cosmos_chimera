@@ -84,6 +84,8 @@ namespace Cosmimera.WorldGen
             new ScatterKind("coal_seam", ScatterShape.OreVein, 1f, 2.4f, "charcoal"),
             new ScatterKind("oil_shale", ScatterShape.OreVein, 1f, 2.2f, "kerosene"),
             new ScatterKind("gem_geode", ScatterShape.OreVein, 0.7f, 1.6f, "crystal"),
+            // Only bedrock puts it there (ScatterGeology, planet-world.md#地質變體): no landform table lists it.
+            new ScatterKind("granite_tor", ScatterShape.Rock, 2.6f, 5f, "stone"),
 
             // ---- understory ----
             new ScatterKind("shrub", ScatterShape.Shrub, 0.8f, 1.8f, "plant"),
@@ -95,7 +97,7 @@ namespace Cosmimera.WorldGen
             new ScatterKind("flowers", ScatterShape.Flowers, 0.6f, 1.3f, "plant"),
         };
 
-        private const int CanopyCount = 27;
+        private const int CanopyCount = 28;
 
         private static readonly Dictionary<string, int> SpeciesIndex = BuildSpeciesIndex();
 

@@ -286,10 +286,13 @@ namespace Cosmimera.WorldGen
         /// Pre: none.
         /// Post: constant; 2 = understory layer added, canopy items bit-identical to 1; 3 = canopy density may follow the
         ///       local landform (the per-point constructor), constant-density planners bit-identical to 2;
-        ///       4 = species follow the landform (ScatterBiomes) and forest stands; every item set changed.
+        ///       4 = species follow the landform (ScatterBiomes) and forest stands; every item set changed;
+        ///       5 = bedrock (ScatterGeology) swaps country rock and the catalog gained granite_tor, which shifts
+        ///       every understory kind index by one; positions, sizes and canopy picks of planners without a
+        ///       geology map are otherwise as in 4.
         /// Side effects: none.
         /// </remarks>
-        public const int GeneratorVersion = 4;
+        public const int GeneratorVersion = 5;
 
         /// <summary>Canopy cells along one edge of a forest stand (≈ 60 m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -335,6 +338,7 @@ namespace Cosmimera.WorldGen
         private readonly int _canopyKinds;
         private readonly int _baseBiome;
         private readonly Func<float3, uint, int> _biomeAt;
+        private readonly Func<float3, uint, Geology> _geologyAt;
         private readonly float _maxCanopyBlockRadiusM;
         private readonly long _canopyKeys;
 
@@ -417,6 +421,24 @@ namespace Cosmimera.WorldGen
         {
             Contract.Requires(biomeAt != null, "biomeAt is required");
             _biomeAt = biomeAt;
+        }
+
+        /// <summary>Creates the planner with a density, a landform and a bedrock that all vary over the planet.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#地質變體 (P3-24 a).
+        /// Pre: as the biome constructor; geologyAt non-null, deterministic, and maps (unit direction, roll) to a
+        ///      defined Geology (TemplatePlanner.ScatterGeologyAt: called with the roll biomeAt was called with).
+        /// Post: where a cell's landform table picks country rock, the cell holds ScatterGeology.Substitute's rock for
+        ///       the bedrock there instead; every other cell, and every position and yaw, is the biome constructor's.
+        /// Side effects: none.
+        /// </remarks>
+        public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
+            Func<float3, bool> isSea, Func<float3, bool> isClear, Func<float3, float> placeChanceAt,
+            Func<float3, uint, int> biomeAt, Func<float3, uint, Geology> geologyAt)
+            : this(config, seed, planetTypeId, groundAltitude, isSea, isClear, placeChanceAt, biomeAt)
+        {
+            Contract.Requires(geologyAt != null, "geologyAt is required");
+            _geologyAt = geologyAt;
         }
 
         /// <summary>The species this planner picks from (ScatterBiomes.KindsFor): canopy species, then understory species.</summary>
@@ -636,6 +658,8 @@ namespace Cosmimera.WorldGen
             float yaw = rng.NextFloat() * 360f;
             uint treeRoll = rng.NextUInt();
             uint biomeRoll = rng.NextUInt();
+            // Drawn last: version 4's draws keep their places in the stream.
+            uint rockRoll = rng.NextUInt();
             // Cheap exit before any ground or stamp lookup: no stand can raise the chance past MaxDensityBoost.
             if (_placeChanceAt == null && placeRoll > math.min(1f, _placeChance * ScatterBiomes.MaxDensityBoost))
             {
@@ -698,6 +722,13 @@ namespace Cosmimera.WorldGen
                 kindIndex = ScatterBiomes.PickTree(forest, alt >= HighlandFractionOfRadius * _config.Radius, standHash,
                     treeRoll, out float lo, out float hi);
                 sizeT = math.lerp(lo, hi, sizeT);
+            }
+            else if (_geologyAt != null)
+            {
+                // Same point and roll as the biome: on a stamp's dithered edge both come from the same side.
+                Geology geology = _geologyAt(centre, biomeRoll);
+                Contract.Requires(geology >= Geology.Native && geology <= Geology.Slate, "geologyAt must return a defined Geology");
+                kindIndex = ScatterGeology.Substitute(kindIndex, geology, rockRoll);
             }
 
             ScatterKind kind = _kinds[kindIndex];

@@ -31,6 +31,41 @@ CBUFFER_END
 TEXTURE2D(_StrokeTex);
 SAMPLER(sampler_StrokeTex);
 
+// P3-24(a) bedrock: each landform stamp (and the ground between stamps) may override the rock colour. Globals, not
+// material properties: one planet is live at a time and terrain, grass and props must agree (PlanetLook.SetGeology).
+// Unset (count 0, base alpha 0) leaves every material's own _Rock.
+#define COSMI_GEO_MAX 8
+float4 _CosmiGeoCenter[COSMI_GEO_MAX]; // xyz = stamp centre direction, w = 1 / tan(half angle)
+float4 _CosmiGeoRight[COSMI_GEO_MAX];  // stamp +x tangent
+float4 _CosmiGeoUp[COSMI_GEO_MAX];     // stamp +y tangent
+half4 _CosmiGeoRock[COSMI_GEO_MAX];    // rgb = rock colour, a = 1 when the stamp's bedrock overrides _Rock
+half4 _CosmiGeoBase;                   // the same for the ground between stamps
+float _CosmiGeoCount;
+
+// Rock colour at a point. Same gnomonic square and 65 % blend start as Planet.TemplateView.TryGetStamp, so the colour
+// changes where the scatter's rock species do; `jitter` (0..1 noise) breaks the edge into patches the way the
+// planner's per-cell roll interleaves species.
+half3 CosmiBedrock(float3 up, float jitter)
+{
+    half4 pick = _CosmiGeoBase;
+    float best = 0.0;
+    for (int i = 0; i < COSMI_GEO_MAX; i++)
+    {
+        float3 centre = _CosmiGeoCenter[i].xyz;
+        float c = dot(up, centre);
+        float3 p = up / max(c, 0.5);
+        float m = max(abs(dot(p, _CosmiGeoRight[i].xyz)), abs(dot(p, _CosmiGeoUp[i].xyz))) * _CosmiGeoCenter[i].w;
+        float w = (1.0 - smoothstep(0.65, 1.0, m)) * step(0.5, c) * step(i + 0.5, _CosmiGeoCount);
+        if (w > best)
+        {
+            best = w;
+            pick = lerp(_CosmiGeoBase, _CosmiGeoRock[i], smoothstep(jitter - 0.06, jitter + 0.06, w));
+        }
+    }
+
+    return lerp(_Rock.rgb, pick.rgb, pick.a);
+}
+
 struct CosmiGround
 {
     float3 up;
@@ -122,15 +157,16 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
 
     // Bare earth where the slope is too steep for turf but not yet a rock face: without it grass butts straight
     // against cliff grey. The stroke offset makes the turf edge ragged, like grass tufts overhanging soil.
+    half3 bedrock = CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3);
     float earth = smoothstep(0.11, 0.19, g.slope + (n.y - 0.5) * 0.08 + fine.r * 0.10) * (1.0 - sand);
-    half3 earthColor = lerp(_High.rgb, _Rock.rgb, 0.35) * (1.0 + CosmiDab(fine.g + broad.r) * 0.12 * _StrokeStrength);
+    half3 earthColor = lerp(_High.rgb, bedrock, 0.35) * (1.0 + CosmiDab(fine.g + broad.r) * 0.12 * _StrokeStrength);
     c = lerp(c, earthColor, earth * 0.85);
     grass *= 1.0 - earth;
 
     float rock = smoothstep(0.2, 0.36, g.slope + (n.y - 0.5) * 0.12 + broad.g * 0.10);
     // Strata: thin lighter/darker beds that follow altitude, bent by the large noise so they never look ruled.
     float bed = frac(g.height * 0.3 + n.x * 3.0);
-    half3 rockColor = _Rock.rgb * lerp(0.84, 1.12, smoothstep(0.42, 0.58, bed)) * lerp(0.94, 1.05, n.z);
+    half3 rockColor = bedrock * lerp(0.84, 1.12, smoothstep(0.42, 0.58, bed)) * lerp(0.94, 1.05, n.z);
     // Rock: hard-edged streaks (chisel marks) over the strata, plus sparse dark cracks from the grain channel.
     rockColor *= 1.0 + CosmiDab(broad.g) * 0.20 * _StrokeStrength + CosmiDab(fine.g) * 0.10 * _StrokeStrength;
     rockColor *= 1.0 - smoothstep(0.28, 0.4, fine.b) * 0.25;

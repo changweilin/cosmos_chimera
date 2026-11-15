@@ -61,7 +61,12 @@ namespace Cosmimera.Bootstrap.Demo
             Bloom = 8,
         }
 
-        private const float RadiusM = 90f;
+        /// <summary>Distance (m) from the focus within which every item is a full object with its collider.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float RadiusM = 90f;
+
+        // Rocks smaller than this are not worth a silhouette past RadiusM: under fog they are a few pixels.
+        private const float FarMinRockM = 1.5f;
         private const float RefreshMoveM = 6f;
         private const float RefreshSeconds = 0.5f;
         // Metres of lean per metre of height in a full gust: a 6 m tree's crown travels ~0.4 m.
@@ -147,7 +152,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // A named stone keeps most of its own colour on every planet: marble must still read as marble on a lava world.
         private static Look Stone(Theme theme, int rgb, SceneryArchetype archetype = SceneryArchetype.Boulder) =>
-            new Look(archetype, Role.Rock, P(Mix(theme.Rock, rgb, 0.65f), theme.RockTop));
+            new Look(archetype, Role.Rock, P(Mix(theme.Rock, rgb, PlanetLook.StoneOwnColour), theme.RockTop));
 
         private static Look Ore(Theme theme, int host, int ore, int oreTop, float glow) =>
             new Look(SceneryArchetype.Outcrop, Role.Rock, P(Mix(theme.Rock, host, 0.5f), theme.RockTop),
@@ -183,17 +188,18 @@ namespace Cosmimera.Bootstrap.Demo
                     return new Look(SceneryArchetype.Mushroom, Role.Still, P(Mix(theme.Bark, 0xE8DCC0, 0.85f), C(0xE8DCC0)),
                         Role.Bloom, P(theme.Cap, C(0xF8F0E0), theme.CrystalGlow * 0.5f));
                 case "granite":
-                    return Stone(theme, 0xA89C94);
+                case "granite_tor":
+                    return Stone(theme, PlanetLook.StoneRgb("granite"));
                 case "limestone":
-                    return Stone(theme, 0xD8D2BC);
+                    return Stone(theme, PlanetLook.StoneRgb("limestone"));
                 case "marble":
                     return Stone(theme, 0xF0EEE8);
                 case "slate":
-                    return Stone(theme, 0x4A5560);
+                    return Stone(theme, PlanetLook.StoneRgb("slate"));
                 case "sandstone":
                     return Stone(theme, 0xC8926A);
                 case "basalt":
-                    return Stone(theme, 0x3A3A40);
+                    return Stone(theme, PlanetLook.StoneRgb("basalt"));
                 case "reef_rock":
                     return new Look(SceneryArchetype.Boulder, Role.Rock, P(Mix(theme.Rock, 0x6A6258, 0.65f), C(0x5A8A70)));
                 case "moraine":
@@ -347,6 +353,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public void Remove(long key)
         {
+            ItemGone?.Invoke(key);
             if (!_live.TryGetValue(key, out List<GameObject> objects))
             {
                 return;
@@ -370,6 +377,7 @@ namespace Cosmimera.Bootstrap.Demo
         public GameObject Detach(long key)
         {
             _detached.Add(key);
+            ItemGone?.Invoke(key);
             if (!_live.TryGetValue(key, out List<GameObject> objects) || objects.Count == 0)
             {
                 return null;
@@ -378,6 +386,71 @@ namespace Cosmimera.Bootstrap.Demo
             GameObject root = objects[0];
             objects.Clear();
             return root;
+        }
+
+        /// <summary>Raised with a cell key when its item stops being drawn at home (destroyed or handed to physics).</summary>
+        /// <remarks>Pre: none. Post: raised once per <see cref="Remove"/> / <see cref="Detach"/> call. Side effects: none.</remarks>
+        internal event Action<long> ItemGone;
+
+        /// <summary>The far-layer silhouette of canopy cell <paramref name="key"/>'s item (P1-15), if it has one.</summary>
+        /// <remarks>
+        /// Pre: Configure called; key is a canopy cell key of the planner.
+        /// Post: false when the cell is empty, its item was destroyed or detached, or the item is too small to show in
+        ///       the distance; otherwise shape is not None and the colours are the ones the near object is drawn with
+        ///       (body = crown / rock / cap, accent = trunk or stalk, top = what settles on upward faces).
+        /// Side effects: caches the cell in the planner.
+        /// </remarks>
+        internal bool TryGetFarItem(long key, out ScatterItem item, out FarShape shape, out Color body, out Color accent,
+            out Color top)
+        {
+            shape = FarShape.None;
+            body = accent = top = default;
+            if (_detached.Contains(key) || !_planner.TryGetItem(key, out item) || (_isDestroyed != null && _isDestroyed(key)))
+            {
+                item = default;
+                return false;
+            }
+
+            Look look = _looks[item.KindIndex];
+            shape = look.Archetype switch
+            {
+                SceneryArchetype.Broadleaf => FarShape.Broadleaf,
+                SceneryArchetype.SwampTree => FarShape.Broadleaf,
+                SceneryArchetype.Conifer => FarShape.Conifer,
+                SceneryArchetype.Umbrella => FarShape.Umbrella,
+                SceneryArchetype.Snag => FarShape.Snag,
+                SceneryArchetype.Mushroom => FarShape.Mushroom,
+                SceneryArchetype.Cactus => FarShape.Column,
+                SceneryArchetype.Columns => FarShape.Column,
+                SceneryArchetype.Spire => FarShape.Spire,
+                SceneryArchetype.CrystalCluster => FarShape.Crystal,
+                SceneryArchetype.Boulder => item.SizeM >= FarMinRockM ? FarShape.Boulder : FarShape.None,
+                _ => FarShape.None,
+            };
+            if (shape == FarShape.None)
+            {
+                return false;
+            }
+
+            // Two-part looks (trunk + crown, stalk + cap) carry the body in part B, exactly as Build picks it.
+            bool twoPart = shape == FarShape.Broadleaf || shape == FarShape.Conifer || shape == FarShape.Umbrella ||
+                           shape == FarShape.Mushroom;
+            if (twoPart)
+            {
+                uint hash = Hash(item.CellKey);
+                Palette second = look.VariantsB != null ? look.VariantsB[(int)((hash >> 4) % (uint)look.VariantsB.Length)] : look.B;
+                body = second.Color;
+                top = second.Top;
+                accent = look.A.Color;
+            }
+            else
+            {
+                body = look.A.Color;
+                top = look.A.Top;
+                accent = look.A.Color;
+            }
+
+            return true;
         }
 
         /// <summary>Spawns the item of one cell, or none.</summary>

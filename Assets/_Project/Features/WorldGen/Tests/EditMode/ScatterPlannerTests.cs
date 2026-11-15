@@ -58,8 +58,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345()
         {
-            // Version 4 (Q-W15): species follow the landform and forest stands, so both digests were re-pinned.
-            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(4), "new version: re-pin the digests below");
+            // Version 5 (P3-24 a): granite_tor joined the canopy catalog, shifting every understory kind index by one,
+            // so the understory digest was re-pinned; the canopy digest is version 4's (no geology map → same items).
+            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(5), "new version: re-pin the digests below");
             float3 up = math.normalize(new float3(1, 1, 1));
             Assert.That(Digest(Planner(), up, true), Is.EqualTo(UnderstoryDigest));
             Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
@@ -125,7 +126,7 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         private const ulong SnapshotDigest = 6165704317201438783ul;
-        private const ulong UnderstoryDigest = 8650968227361999025ul;
+        private const ulong UnderstoryDigest = 7627125579741782239ul;
 
         [Test]
         public void Understory_kinds_follow_their_altitude_band_and_keep_off_the_canopy()

@@ -15,6 +15,7 @@ float4 _CosmiSunColor;    // rgb = sun tint, a = daylight 0..1
 float4 _CosmiCloud;       // x = coverage 0..1, y = shadow strength, z = drift speed, w = cloud cell size (m)
 float4 _CosmiWind;        // x = strength, y = gust speed, z = gust wavelength (m)
 float4 _CosmiPlayer;      // xyz = player feet, w = push radius (m); grass leans away inside it
+float4 _CosmiFarFocus;    // xyz = centre of the near scatter field (FarScenery): far silhouettes shrink away inside it
 
 float CosmiHash(float3 p)
 {

@@ -15,6 +15,7 @@ Shader "Cosmimera/ToonScenery"
         _Sway ("Wind Sway (m per m of height)", Float) = 0
         _Translucency ("Backlight Through Leaves", Range(0, 1)) = 0
         _Glow ("Self Glow", Range(0, 2)) = 0
+        _FarFade ("Far Layer Fade (m: in from, in to, out from, out to; y = 0 off)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -34,6 +35,7 @@ Shader "Cosmimera/ToonScenery"
             float _Sway;
             float _Translucency;
             float _Glow;
+            float4 _FarFade;
         CBUFFER_END
 
         struct Attributes
@@ -42,12 +44,24 @@ Shader "Cosmimera/ToonScenery"
             float3 normalOS : NORMAL;
             half4 color : COLOR;
             float2 wind : TEXCOORD1;
+            float3 anchor : TEXCOORD2; // far layer only: the item's ground point, in object space
         };
 
         // World position after wind. Shared by the lit and shadow passes so a swaying crown and its shadow move as one.
         float3 SceneryWorld(Attributes i)
         {
             float3 ws = TransformObjectToWorld(i.positionOS.xyz);
+            // P1-15 far layer (FarScenery): many items merged into one mesh. Each shrinks into its own ground point
+            // where the near field draws the real object, and again at the layer's outer edge, so nothing is drawn
+            // twice and nothing pops in at full size.
+            if (_FarFade.y > 0.0)
+            {
+                float3 anchor = TransformObjectToWorld(i.anchor);
+                float d = distance(anchor, _CosmiFarFocus.xyz);
+                float k = smoothstep(_FarFade.x, _FarFade.y, d) * (1.0 - smoothstep(_FarFade.z, _FarFade.w, d));
+                return anchor + (ws - anchor) * k;
+            }
+
             float weight = i.wind.x * _Sway * _CosmiWind.x;
             if (weight <= 0.0)
             {

@@ -113,6 +113,49 @@ namespace Cosmimera.WorldGen
                 : baseBiome;
         }
 
+        /// <summary>Bedrock of the ground between stamps and of each stamp of a planet built by <see cref="Build"/>.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#地質變體 (P3-24 a: 只換岩石散佈與地表配色).
+        /// Pre: templates is a <see cref="Build"/> result (may be disposed); planetTypeId may be null or unknown.
+        /// Post: baseGeology is drawn for the planet type's own surface landform; perStamp[i] for stamp i's landform
+        ///       (ScatterGeology.For); Pcg32(seed, 'G'), base first, so a stamp's bedrock does not depend on how many
+        ///       stamps follow it. Same inputs → same output.
+        /// Side effects: allocates the array.
+        /// </remarks>
+        public static Geology[] Geologies(PlanetTemplates templates, ulong seed, string planetTypeId, out Geology baseGeology)
+        {
+            Contract.Requires(templates != null, "templates must not be null");
+            var rng = new Pcg32(seed, 'G');
+            baseGeology = ScatterGeology.For(ScatterBiomes.BiomeOf(TerrainProfiles.ForPlanetType(planetTypeId).Id), rng.NextUInt());
+            var perStamp = new Geology[templates.StampIds.Count];
+            for (int i = 0; i < perStamp.Length; i++)
+            {
+                perStamp[i] = ScatterGeology.For(ScatterBiomes.BiomeOf(LandformSynth.KindOf(templates.StampIds[i])), rng.NextUInt());
+            }
+
+            return perStamp;
+        }
+
+        /// <summary>Bedrock under each point of a planet built by <see cref="Build"/>.</summary>
+        /// <remarks>
+        /// Pre: templates is a live <see cref="Build"/> result and outlives every call of the returned function;
+        ///      perStamp has one defined entry per stamp (<see cref="Geologies"/>); baseGeology defined.
+        /// Post: the function maps (unit direction, roll) to baseGeology outside every stamp, the stamp's geology in its
+        ///       core, and one or the other over the outer blend band — for the same roll, the same side
+        ///       <see cref="ScatterBiome"/> picks, so a cell's species table and bedrock always belong together.
+        /// Side effects: allocates the function.
+        /// </remarks>
+        public static System.Func<float3, uint, Geology> ScatterGeologyAt(PlanetTemplates templates,
+            IReadOnlyList<Geology> perStamp, Geology baseGeology)
+        {
+            Contract.Requires(templates != null, "templates must not be null");
+            Contract.Requires(perStamp != null && perStamp.Count == templates.StampIds.Count, "one geology per stamp");
+            TemplateView view = templates.View;
+            return (dir, roll) => view.TryGetStamp(dir, out int i, out float w) && (roll & 0xFFFFu) < (uint)(w * 65536f)
+                ? perStamp[i]
+                : baseGeology;
+        }
+
         // REQ: planet-world.md#1-骨架層程序化地貌 — on the open surface a volcano or cave stamp is the general landform
         // around it (volcano_foothills, cavern_outer); `volcano` and `cave` profiles are the advanced dungeons.
         private static string SurfaceTerrainId(string kind) => kind switch

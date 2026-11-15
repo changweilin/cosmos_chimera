@@ -70,7 +70,7 @@ PlanetSeed + PlanetType + GeneratorVersion
 （形狀參數在 `LandformSynth`；調整時升 `LandformSynth.GeneratorVersion`。）
 
 ## <a id="散佈"></a>7. 散佈（規則層 `WorldGen.ScatterPlanner` ＋ `ScatterBiomes`；數值暫定）
-兩層各自獨立、共用一個物件 id 空間；每格一條自己的 `Pcg32` 串流（所有亂數先抽完再做判斷），所以串流順序不影響結果。兩層都避開海、道路與建築、陡坡（> 0.6）。調整任一張表或密度要升 `ScatterPlanner.GeneratorVersion`（目前 4）。
+兩層各自獨立、共用一個物件 id 空間；每格一條自己的 `Pcg32` 串流（所有亂數先抽完再做判斷），所以串流順序不影響結果。兩層都避開海、道路與建築、陡坡（> 0.6）。調整任一張表或密度要升 `ScatterPlanner.GeneratorVersion`（目前 5）。
 
 | 層 | 格寬 | 每格 | 內容 | 密度 |
 |---|---|---|---|---|
@@ -147,6 +147,18 @@ PlanetSeed + PlanetType + GeneratorVersion
 ### <a id="地質變體"></a>地質變體（P3-24）
 - **兩階段**：(a) 先只換岩石散佈與地表配色，地形形狀與既有 seed 不變；(b) 之後在 `LandformSynth` 新增地貌標籤（升 `GeneratorVersion`）。
 - 地質：石灰岩喀斯特（石林、天坑）、玄武岩柱、花崗岩圓丘、冰川 U 谷與冰斗、板岩斷崖。
+- **(a) 現行規則**（`WorldGen.ScatterGeology`；權重暫定）：每塊地貌印章與印章之間的地面各抽一種**基岩**（`TemplatePlanner.Geologies`，`Pcg32(seed,'G')`）。基岩只替換地貌表裡的**一般岩石**（花崗岩／石灰岩／大理石／板岩／砂岩／玄武岩）；樹、礦脈、石筍與棲地岩（礁岩、冰磧石）不變，位置與數量也不變。印章外緣與選種用同一次擲骰，物種表與基岩永遠同一側。
+
+  | 基岩 | 一般岩石換成 | 地表岩色 |
+  |---|---|---|
+  | 原生 | 不換（地貌表原樣） | 星球類型的岩色 |
+  | 喀斯特 | 石灰岩 50 %／石林石柱 35 %／大理石 15 % | 石灰岩 |
+  | 玄武岩 | 玄武岩 60 %／玄武岩柱 40 % | 玄武岩 |
+  | 花崗岩 | 花崗岩 55 %／花崗岩圓丘 `granite_tor`（2.6–5 m）45 % | 花崗岩 |
+  | 板岩 | 板岩 | 板岩 |
+
+  - 會抽基岩的地貌：`grassland`／`river_valley`／`forest`／`plateau`／`fjord`（無喀斯特）／`mountain`（偏花崗岩與板岩）／`eternal_day`／`eternal_night`。其餘地貌的岩性就是它的特徵（砂岩峽谷與沙漠、玄武岩裂谷與火山外圍、喀斯特岩洞外圍、礁岩群島、沼澤、凍原），固定為原生。
+  - 表現層：地表岩面與裸土帶取基岩的石色（與散佈岩石同一色源 `PlanetLook.StoneRgb`，混入星球類型岩色 35 %），範圍與印章高程混合帶一致、邊緣以噪聲打散（`CosmiBiome.hlsl` `CosmiBedrock`）。
 - 洞穴：洞口＋獨立場景（等 P3-07／P3-16）。
 
 ### <a id="自然生物"></a>自然生物與個體差異（P3-19）
