@@ -42,6 +42,8 @@ STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 ENV_MATERIALS_FOLDER = "env-materials"
 ENV_MATERIALS_SCHEMA = "env-materials"
 NINE_ELEMENTS = ("metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light")
+# JSON null must still reach schema validation; it cannot double as a parse-failure sentinel.
+_INVALID_JSON = object()
 
 
 @dataclass(frozen=True)
@@ -69,12 +71,15 @@ def _pointer(parts) -> str:
 
 
 def _load_json(path: Path, rel: str, findings: list[Finding]):
-    """Parse strictly: reject float literals and duplicate keys, which plain json.load accepts silently."""
+    """Parse strictly: reject float literals, nonstandard constants and duplicate keys accepted by json.load."""
     floats: list[str] = []
 
     def on_float(s: str):
         floats.append(s)
         return float(s)
+
+    def on_constant(s: str):
+        raise ValueError(f"nonstandard JSON constant '{s}' is not allowed")
 
     def on_pairs(pairs):
         seen = set()
@@ -86,13 +91,16 @@ def _load_json(path: Path, rel: str, findings: list[Finding]):
 
     try:
         text = path.read_text(encoding="utf-8")
-        doc = json.loads(text, parse_float=on_float, object_pairs_hook=on_pairs)
+        doc = json.loads(text, parse_float=on_float, parse_constant=on_constant, object_pairs_hook=on_pairs)
     except json.JSONDecodeError as e:
         findings.append(Finding("error", "parse_error", rel, "", f"line {e.lineno} col {e.colno}: {e.msg}"))
-        return None
+        return _INVALID_JSON
     except UnicodeDecodeError as e:
         findings.append(Finding("error", "parse_error", rel, "", f"not UTF-8: {e}"))
-        return None
+        return _INVALID_JSON
+    except ValueError as e:
+        findings.append(Finding("error", "parse_error", rel, "", str(e)))
+        return _INVALID_JSON
     for s in floats:
         # REQ: .claude/rules/data-content.md — integers only, floats format differently across tools.
         findings.append(Finding("error", "float_literal", rel, "", f"float literal {s} not allowed; use an integer (percent as int)"))
@@ -177,7 +185,7 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
         for path in sorted((root / folder).glob("*.json")):
             rel = path.relative_to(root).as_posix()
             doc = _load_json(path, rel, findings)
-            if doc is None:
+            if doc is _INVALID_JSON:
                 continue
             for err in sorted(validator.iter_errors(doc), key=lambda e: list(e.absolute_path)):
                 for leaf in _leaf_errors(err):
@@ -245,7 +253,7 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             if nxt.data.get("line_id") != r.data.get("line_id"):
                 findings.append(Finding("error", "evolution_chain", r.file, f"/{r.index}/evolves_to",
                                         f"'{nxt.data.get('id')}' is in line '{nxt.data.get('line_id')}', not '{r.data.get('line_id')}'"))
-            if STAGE_NEXT.get(stage) != nxt.data.get("stage"):
+            if isinstance(stage, str) and STAGE_NEXT.get(stage) != nxt.data.get("stage"):
                 findings.append(Finding("error", "evolution_chain", r.file, f"/{r.index}/evolves_to",
                                         f"{stage} must evolve into {STAGE_NEXT.get(stage)}, got {nxt.data.get('stage')}"))
         ov_target = ref(r, "overload_of", "creatures")
@@ -289,7 +297,10 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
         ref(r, "b", "creatures")
 
     for r in records["foods"]:
-        for i, ing in enumerate(r.data.get("ingredients") or []):
+        ingredients = r.data.get("ingredients")
+        if not isinstance(ingredients, list):
+            continue
+        for i, ing in enumerate(ingredients):
             if not isinstance(ing, dict):
                 continue
             ing_id = ing.get("ingredient_id")
@@ -308,8 +319,11 @@ def _check_material_sums(r: Record, findings: list[Finding]) -> None:
     evo = r.data.get("evolution")
     if not isinstance(evo, dict):
         return
+    materials = evo.get("materials")
+    if not isinstance(materials, list):
+        return
     sums: dict[tuple, int] = {}
-    for m in evo.get("materials") or []:
+    for m in materials:
         # Schema-invalid entries still reach cross-file checks; an unhashable element/tier used to raise TypeError
         # and drop every finding (Sol P2-05/07 r2 C8). Skip them here — the schema finding already reports them.
         if not isinstance(m, dict):
@@ -330,7 +344,10 @@ def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
     evo, mastery = r.data.get("evolution"), r.data.get("mastery")
     if not (isinstance(evo, dict) and isinstance(mastery, dict)):
         return
-    for i, m in enumerate(evo.get("materials") or []):
+    materials = evo.get("materials")
+    if not isinstance(materials, list):
+        return
+    for i, m in enumerate(materials):
         el = m.get("element") if isinstance(m, dict) else None
         if isinstance(el, str) and el not in mastery:
             findings.append(Finding("error", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
@@ -363,7 +380,7 @@ def _check_env_materials(
     target_path = paths[0]
     rel = target_path.relative_to(root).as_posix()
     doc = _load_json(target_path, rel, findings)
-    if doc is None:
+    if doc is _INVALID_JSON:
         return
 
     validator = Draft202012Validator(schema, registry=registry)

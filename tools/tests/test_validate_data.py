@@ -108,6 +108,47 @@ class CrossFileRules(unittest.TestCase):
     def test_parse_error_is_reported_not_raised(self):
         self.assertIn("parse_error", self.codes(self._with_valid({"moves/broken.json": "[{"})))
 
+    def test_nonstandard_json_constants_are_rejected_in_open_concept_fields(self):
+        creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=value):
+                creatures[0]["concept"]["invalid_number"] = value
+                findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                self.assertIn("parse_error", self.codes(findings))
+
+    def test_null_documents_report_root_schema_errors_for_every_kind(self):
+        relatives = [f"{kind}/null.json" for kind in validate_data.KINDS]
+        relatives.append("env-materials/env-materials.json")
+        for relative in relatives:
+            with self.subTest(relative=relative):
+                findings = self._with_valid({relative: "null"})
+                self.assertTrue(any(f.code == "schema" and f.file == relative and f.pointer == "" for f in findings))
+
+    def test_wrong_type_evolution_fields_preserve_schema_and_cross_ref_findings(self):
+        for field in ("stage", "materials"):
+            for value in (None, True, 1, "invalid", {}, []):
+                if field == "materials" and isinstance(value, list):
+                    continue
+                with self.subTest(field=field, value=value):
+                    creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+                    parent = creatures[0] if field == "stage" else creatures[0]["evolution"]
+                    parent[field] = value
+                    creatures[0]["signature_move"] = "missing_move"
+                    findings = self._with_valid({"creatures/creatures.json": json.dumps(creatures)})
+                    self.assertIn("schema", self.codes(findings))
+                    self.assertTrue(any(f.code == "dangling_ref" and f.pointer == "/0/signature_move" for f in findings))
+
+    def test_wrong_type_food_ingredients_preserve_schema_and_other_findings(self):
+        for value in (None, True, 1, "invalid", {}):
+            with self.subTest(value=value):
+                foods = [
+                    {"id": "invalid_food", "ingredients": value},
+                    {"id": "dangling_food", "ingredients": [{"ingredient_id": "missing_ingredient", "qty": 1}]},
+                ]
+                findings = self._with_valid({"foods/invalid.json": json.dumps(foods)})
+                self.assertTrue(any(f.code == "schema" and f.pointer == "/0/ingredients" for f in findings))
+                self.assertTrue(any(f.code == "dangling_ref" and f.pointer == "/1/ingredients/0/ingredient_id" for f in findings))
+
     def test_retired_id(self):
         self.assertIn("retired_id", self.codes(self._with_valid({}, retired="# header\nsample_fox_cub\n")))
 
@@ -384,6 +425,14 @@ class CrossFileRules(unittest.TestCase):
     def test_cli_exit_codes(self):
         self.assertEqual(0, validate_data.main(["--root", str(SAMPLES / "valid")]))
         self.assertEqual(2, validate_data.main(["--root", str(SAMPLES / "does_not_exist")]))
+
+    def test_cli_returns_data_error_for_malformed_documents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "data"
+            for text in ("null", '[{"ingredients":1}]', '[{"ingredients":NaN}]'):
+                with self.subTest(text=text):
+                    self._write(root, "foods/invalid.json", text)
+                    self.assertEqual(1, validate_data.main(["--root", str(root)]))
 
     def _overload_entry(self, creature_id="sample_fox_overload", target="sample_fox_lord", line_id="sample_line_a"):
         valid = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))

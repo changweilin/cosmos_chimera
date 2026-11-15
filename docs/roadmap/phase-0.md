@@ -9,6 +9,7 @@
 | P0-03 | `.editorconfig` + Roslyn analyzers、asmdef 骨架（依 overview.md） | SONNET | OPUS | 編譯 0 警告；跨 feature 引用 `Internal/` 會編譯失敗 | ✅ |
 | P0-04 | `Core/Contracts`（`Contract.Requires/Ensures`，Release 剝除）、`Core/Random/Pcg32` | OPUS | SOL | 單元測試覆蓋；Pcg32 對照官方測試向量 | 🟨 |
 | P0-05 | `Data/schemas/*.schema.json`（creature, move, trait, relation, planet-type）+ `tools/validate-data` | SONNET | OPUS | 範例資料通過，錯誤資料給出可讀錯誤訊息 | ✅ |
+| P0-05a | 資料驗證器錯誤輸入防護（P0-05 子項） | Codex | — | 非標準常數與根層 null 不誤過；錯誤型別不崩潰且保留其他跨檔診斷；CLI 回傳資料錯誤碼 | ✅ |
 | P0-06 | JSON → ScriptableObject importer（Editor） | SONNET | OPUS | 改 JSON 後重新匯入，registry 可依 id 查詢 | ✅ |
 | P0-07 | CI（GitHub Actions + GameCI）跑 EditMode 測試與資料驗證 | SONNET | — | PR 上自動跑；失敗會擋 | ✅ |
 
