@@ -42,6 +42,7 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Composition[] _kindComposition;
         private readonly string[] _kindNameKey;
         private readonly float _maxBuildingHitM;
+        private readonly float _maxGrassCoverM;
         private readonly List<ScatterItem> _items = new List<ScatterItem>(16);
         private readonly List<int> _treasureRegions = new List<int>();
 
@@ -78,6 +79,10 @@ namespace Cosmimera.Bootstrap.Demo
                 _kindComposition[k] = Composition.Of(sub);
                 _kindNameKey[k] = "ui.object." + kind.Id;
                 maxScatter = math.max(maxScatter, HitRadius(kind.Shape, kind.MaxSizeM));
+                if (kind.Shape == ScatterShape.TallGrass)
+                {
+                    _maxGrassCoverM = math.max(_maxGrassCoverM, HitRadius(kind.Shape, kind.MaxSizeM));
+                }
             }
 
             foreach (RunBuilding b in layout.Buildings)
@@ -120,6 +125,31 @@ namespace Cosmimera.Bootstrap.Demo
                 if (!_table.IsDestroyed(item.CellKey) && math.distance(direction, item.Direction) * _planet.Radius <= reachM)
                     return true;
             }
+            return false;
+        }
+
+        /// <summary>Whether intact tall grass covers a ground direction.</summary>
+        /// <remarks>
+        /// REQ: docs/design/destructibles.md#碰撞.
+        /// Pre: direction unit length and finite.
+        /// Post: true iff direction is inside an intact tall-grass item's hit-radius footprint; does not register objects.
+        /// Side effects: caches scatter cells and reuses the query buffer.
+        /// </remarks>
+        public bool HasGrassCover(float3 direction)
+        {
+            Contract.Requires(math.all(math.isfinite(direction)) && math.abs(math.lengthsq(direction) - 1f) <= 2e-3f,
+                "direction must be finite and unit length");
+            _items.Clear();
+            _scatter.Query(direction, _maxGrassCoverM, _items);
+            foreach (ScatterItem item in _items)
+            {
+                if (item.Shape != ScatterShape.TallGrass || _table.IsDestroyed(item.CellKey)) continue;
+                if (math.distance(direction, item.Direction) * _planet.Radius <= HitRadius(item.Shape, item.SizeM))
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 

@@ -128,6 +128,44 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Grass_cover_uses_its_footprint_and_disappears_when_destroyed()
+        {
+            Rig r = Build();
+            ScatterItem grass = default;
+            for (long k = 6L * r.Scatter.CellsPerFace * r.Scatter.CellsPerFace; k < r.Scatter.KeyCount; k++)
+            {
+                if (r.Scatter.TryGetItem(k, out ScatterItem item) && item.Shape == ScatterShape.TallGrass)
+                {
+                    grass = item;
+                    break;
+                }
+            }
+
+            Assert.That(grass.SizeM, Is.GreaterThan(0f), "fixture must contain tall grass");
+            // Keep only this clump so neighbouring grass cannot hide an incorrect footprint boundary.
+            var scatter = new ScatterPlanner(Planet, 99, "verdant_planet", _ => 0f, null,
+                d => math.distance(d, grass.Direction) * Planet.Radius < 0.01f);
+            EnvMaterials env = Env();
+            var table = new DestructibleTable(env);
+            var objects = new WorldObjects(Planet, scatter, Layout(), r.Clearance, _ => 0f, env, table);
+            Assert.That(objects.TryGet(grass.CellKey, out DestructibleCandidate candidate), Is.True);
+            float3 east = PlanetFrame.FromUp(grass.Direction).East;
+            float3 inside = math.normalize(grass.Direction + east * (candidate.HitRadiusM * 0.9f / Planet.Radius));
+            float3 outside = math.normalize(grass.Direction + east * (candidate.HitRadiusM * 1.1f / Planet.Radius));
+            Assert.That(objects.HasGrassCover(grass.Direction), Is.True);
+            Assert.That(objects.HasGrassCover(inside), Is.True);
+            Assert.That(objects.HasGrassCover(outside), Is.False);
+            Assert.That(objects.HasGrassCover(-grass.Direction), Is.False);
+            Assert.That(objects.HasGrassCover(FirstTree(r.Scatter).Direction), Is.False);
+
+            int slot = table.Register(candidate.Id, candidate.Composition, candidate.VolumeL, candidate.Center);
+            table.ApplyHit(slot, Element.Earth, 100_000, 0, 0);
+            Assert.That(table.IsDestroyed(grass.CellKey), Is.True);
+            Assert.That(objects.HasGrassCover(grass.Direction), Is.False);
+            Assert.That(objects.HasGrassCover(inside), Is.False);
+        }
+
+        [Test]
         public void TryGet_answers_like_Query_and_rejects_unknown_ids()
         {
             Rig r = Build();
@@ -170,6 +208,10 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() => new WorldObjects(Planet, r.Scatter, layout, r.Clearance, null, env, r.Table));
             Assert.Throws<ContractException>(() => r.Objects.Query(float3.zero, -1f, new List<DestructibleCandidate>()));
             Assert.Throws<ContractException>(() => r.Objects.Query(new float3(0, 700, 0), 1f, null));
+            Assert.Throws<ContractException>(() => r.Objects.HasGrassCover(float3.zero));
+            Assert.Throws<ContractException>(() => r.Objects.HasGrassCover(new float3(0f, 2f, 0f)));
+            Assert.Throws<ContractException>(() => r.Objects.HasGrassCover(new float3(float.NaN, 1f, 0f)));
+            Assert.Throws<ContractException>(() => r.Objects.HasGrassCover(new float3(float.PositiveInfinity, 0f, 0f)));
 
             // A scatter substance missing from env-materials must fail at construction, not at the first hit.
             Substance stone = env.Ground(Element.Earth);

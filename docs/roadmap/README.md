@@ -44,5 +44,6 @@ D0 已可完整跑一場（EditMode 2114/2114、PlayMode 129/129）；瓶頸是*
 5. **新定案待開工（2026-11-15）**：美術投資 P1-12～P1-14、P1-16（`../design/vision.md#美術投資`）；作物田 P3-21、火山地熱 P3-22、地質變體 P3-24(b)（與 P3-28 一起升 `LandformSynth` 版本）、自然生物 P3-19、路人 NPC P3-18（規格 `../design/planet-world.md#世界細節`、`../design/characters.md#路人-npc`，各有「未定」細項）；海底潛水 P3-23 要先立水下系統設計文件。
 
 6. **冒險手冊與輸入人工試玩**（`../demo-runbook.md#選單操作`、`../design/controls.md`）：副手裝備／卸下與重開存檔、道具使用、採集／料理、圖鑑搜尋與關係網；以阿爾宙斯優先配置確認實體手把／Steam Deck 的確認／返回、L 組合指令、捲動、文字輸入與鍵鼠交替提示。未開放生活能力依需求另行定規格。
+7. **P3-12 草叢隱蔽接線**：使用者授權 Codex 修改 Combat 核心，或由 Claude 合併 [`P3-12-grass-concealment.patch`](../proposals/P3-12-grass-concealment.patch) 後跑 EditMode／PlayMode；核心寫入限制見 `../ai-agents.md`。
 
 此節只寫「下一步」，不寫歷史；完成後改寫或刪除該條（歷史在 commit）。
