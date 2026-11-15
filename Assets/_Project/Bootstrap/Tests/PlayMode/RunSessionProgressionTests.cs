@@ -1142,6 +1142,57 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(s.UnitForTests(unitId).IsFainted, Is.True, "unit " + unitId + " taken to 0 HP");
         }
 
+        [UnityTest]
+        public IEnumerator Grass_hides_a_stationary_player_until_the_real_clump_is_destroyed()
+        {
+            Env env = LoadEnv();
+            var run = new Run();
+            EnvMaterials materials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text);
+            yield return Launch(env, 12345, env.Progression.XpThreshold(env.Progression.StarterLevel), run,
+                envMaterials: materials);
+            RunSession s = run.Session;
+            const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var objects = (WorldObjects)typeof(RunSession).GetField("_worldObjects", Private).GetValue(s);
+            var table = (DestructibleTable)typeof(RunSession).GetField("_objectTable", Private).GetValue(s);
+            var encounter = (Encounter)typeof(RunSession).GetField("_encounter", Private).GetValue(s);
+            var rig = (PlanetRig)typeof(RunSession).GetField("_rig", Private).GetValue(s);
+            var candidates = new List<DestructibleCandidate>();
+            objects.Query(s.PlayerPositionForTests, 90f, candidates);
+            DestructibleCandidate grass = candidates.First(c => objects.NameKey(c) == "ui.object.tall_grass");
+            float3 grassUp = rig.Config.ToDirection(grass.Center);
+            Assert.That(objects.HasGrassCover(grassUp), Is.True, "the fixture uses an intact generated clump");
+
+            // Isolate detection from the run's generated packs and the two exposed party members.
+            EncounterUnit wild = encounter.Units.Where(u => u.Side == EncounterSide.Wild)
+                .OrderByDescending(u => encounter.TerritoryRadiusM(u.Id)).First();
+            float territoryM = encounter.TerritoryRadiusM(wild.Id);
+            Assert.That(territoryM, Is.GreaterThan(0f), "the generated run contains a territorial observer");
+            foreach (EncounterUnit unit in encounter.Units)
+            {
+                if (unit.Side == EncounterSide.Wild && unit.Id != wild.Id) encounter.Remove(unit.Id);
+            }
+            s.RepositionPartyForTests(-grassUp);
+            MovePlayer(s, grassUp);
+            float3 velocity = rig.Character.Velocity;
+            Assert.That(math.length(velocity - grassUp * math.dot(velocity, grassUp)),
+                Is.LessThanOrEqualTo(Encounter.SlowStealthSpeedThresholdMs));
+            float angle = territoryM * 0.75f / rig.Config.Radius;
+            float3 wildAt = math.normalize(grassUp * math.cos(angle) + PlanetFrame.FromUp(grassUp).East * math.sin(angle));
+            typeof(EncounterUnit).GetProperty(nameof(EncounterUnit.Position)).SetValue(wild,
+                rig.Config.ToWorld(wildAt, rig.Height.Sample(wildAt) + wild.BodyRadiusM));
+            typeof(EncounterUnit).GetProperty(nameof(EncounterUnit.Forward)).SetValue(wild, PlanetFrame.FromUp(wildAt).North);
+
+            Step(s);
+            Assert.That(wild.Engaged, Is.False, "RunSession supplies both real grass cover and the player's current speed");
+
+            int slot = table.Register(grass.Id, grass.Composition, grass.VolumeL, grass.Center);
+            table.ApplyHit(slot, Element.Earth, 100_000, 0, s.NowMsForTests);
+            Assert.That(table.IsDestroyed(grass.Id), Is.True);
+            Assert.That(objects.HasGrassCover(grassUp), Is.False);
+            Step(s);
+            Assert.That(wild.Engaged, Is.True, "destroying the clump restores the wild's normal detection distance");
+        }
+
         // ---------------------------------------------------------------------------------------------------------
         // Session setup (same data and actions as RunSessionSmokeTests; Landforms off so the plan is reproducible)
         // ---------------------------------------------------------------------------------------------------------
@@ -1194,7 +1245,7 @@ namespace Cosmimera.Bootstrap.Tests
 
         // Staged-step cases disable the session after landing; the per-frame wiring regression keeps it enabled.
         private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null,
-            System.Action<RunOutcome> onEnd = null, bool keepEnabled = false)
+            System.Action<RunOutcome> onEnd = null, bool keepEnabled = false, EnvMaterials envMaterials = null)
         {
             var party = new List<CreatureDef>();
             for (int i = 0; i < PartySize; i++)
@@ -1219,6 +1270,7 @@ namespace Cosmimera.Bootstrap.Tests
                     PartyIds = (ids ?? Enumerable.Range(1, PartySize).ToArray()).ToList(),
                     PartyExp = Enumerable.Repeat(startExp, PartySize).ToList(),
                     Progression = env.Progression, Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
+                    EnvMaterials = envMaterials,
                 }, env.Wild, onEnd ?? (o => { }), Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                 Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"), Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
 

@@ -277,6 +277,7 @@ namespace Cosmimera.Combat
         internal int SlideSide { get; set; } = 1;
 
         internal float LastMoveSpeedMs { get; set; }
+        internal bool HasGrassCover { get; set; }
 
         /// <summary>Last AI target id, or NoTarget.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -464,10 +465,11 @@ namespace Cosmimera.Combat
         private WeatherProfile _weather = WeatherProfiles.Clear;
         private Func<float3, long, WeatherProfile> _weatherProvider;
         private float _playerMoveSpeedMs = 5.0f;
+        private Func<float3, bool> _grassCoverAt;
         private int _partyDetectionPermille = 1000;
         private bool _preventWildEscape;
 
-        /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for fog stealth (Q-C37).</summary>
+        /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for grass or fog stealth.</summary>
         /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
         public const float SlowStealthSpeedThresholdMs = 2.0f;
 
@@ -510,11 +512,24 @@ namespace Cosmimera.Combat
             _weatherProvider = weatherAt;
         }
 
-        /// <summary>Updates the player character's current ground speed (m/s) for fog stealth checks (Q-C37).</summary>
+        /// <summary>Sets the rule-layer lookup for intact grass cover.</summary>
+        /// <remarks>
+        /// REQ: docs/design/destructibles.md#碰撞.
+        /// Pre: grassCoverAt may be null (no grass); otherwise deterministic for a unit ground direction and current destroyed set.
+        /// Post: subsequent ticks halve detection distance for slow-moving players and allies in grass or fog; grass and fog
+        ///       enable the same concealment effect and do not compound. Existing engagements and provocation are unchanged.
+        /// Side effects: stores the callback; Tick queries it once per slow-moving player or active ally.
+        /// </remarks>
+        public void SetGrassCoverProvider(Func<float3, bool> grassCoverAt)
+        {
+            _grassCoverAt = grassCoverAt;
+        }
+
+        /// <summary>Updates the player character's current ground speed (m/s) for grass and fog stealth checks.</summary>
         /// <remarks>
         /// REQ: docs/design/planet-world.md#天氣影響.
         /// Pre: <paramref name="speedMs"/> &gt;= 0 and finite.
-        /// Post: stored speed is used on subsequent ticks to evaluate slow-moving fog stealth.
+        /// Post: stored speed is used on subsequent ticks to evaluate slow-moving grass or fog stealth.
         /// Side effects: updates stored player speed.
         /// </remarks>
         public void SetPlayerMoveSpeedMs(float speedMs)
@@ -1664,6 +1679,16 @@ namespace Cosmimera.Combat
 
         private void UpdateEngagement(float3 playerPosition, long nowMs)
         {
+            // Cover belongs to the intruder, not the observer. Query each intruder once even when many wilds observe it.
+            bool playerInGrass = _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs &&
+                _grassCoverAt != null && _grassCoverAt(Up(playerPosition));
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit p = _units[i];
+                p.HasGrassCover = p.Side == EncounterSide.Player && p.IsActive &&
+                    p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs && _grassCoverAt != null && _grassCoverAt(Up(p.Position));
+            }
+
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
@@ -1686,7 +1711,7 @@ namespace Cosmimera.Combat
                 bool intruderInRange = false;
                 if (territoryMm > 0)
                 {
-                    int playerThresholdMm = weather.StealthEnabled && _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                    int playerThresholdMm = (weather.StealthEnabled || playerInGrass) && _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs
                         ? territoryMm / 2
                         : territoryMm;
                     if (playerDist <= playerThresholdMm * 0.001f)
@@ -1704,7 +1729,7 @@ namespace Cosmimera.Combat
                         nearest = math.min(nearest, d);
                         if (!intruderInRange && territoryMm > 0)
                         {
-                            int petThresholdMm = weather.StealthEnabled && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                            int petThresholdMm = (weather.StealthEnabled || p.HasGrassCover) && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
                                 ? territoryMm / 2
                                 : territoryMm;
                             if (d <= petThresholdMm * 0.001f)

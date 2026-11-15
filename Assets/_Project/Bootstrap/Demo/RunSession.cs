@@ -657,6 +657,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
                 _encounter.AttachDestructibles(objects, _worldObjects, d => IsNight(d));
+                _encounter.SetGrassCoverProvider(_worldObjects.HasGrassCover);
             }
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
             _vitals = new PlayerVitals(balance.Player);
@@ -816,6 +817,9 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            float3 playerUp = _rig.Config.ToDirection(player);
+            float3 velocity = _rig.Character.Velocity;
+            _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
             CollectGroundPickups(player);

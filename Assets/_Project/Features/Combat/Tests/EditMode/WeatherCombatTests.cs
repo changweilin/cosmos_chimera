@@ -155,6 +155,102 @@ namespace Cosmimera.Combat.Tests
             Assert.That(fastWild.Engaged, Is.True);
         }
 
+        [TestCase(0f, true)]
+        [TestCase(2f, true)]
+        [TestCase(2.01f, false)]
+        public void Grass_conceals_only_slow_players_at_their_own_position(float speedMs, bool concealed)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            float3 playerAt = AtMeters(20f);
+            e.SetGrassCoverProvider(d => math.distance(d, playerAt) < 1e-4f);
+            e.SetPlayerMoveSpeedMs(speedMs);
+            e.Tick(Dt, Dt, playerAt * R, new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.EqualTo(!concealed));
+        }
+
+        [TestCase(0f, true)]
+        [TestCase(2f, true)]
+        [TestCase(2.01f, false)]
+        public void Grass_conceals_allies_independently_of_the_player(float speedMs, bool concealed)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit ally = e.AddCreature(EncounterSide.Player, MakeCreature(Element.Wood), null, AtMeters(20f), 10);
+            ally.Fielded = true;
+            ally.LastMoveSpeedMs = speedMs;
+            e.SetGrassCoverProvider(d => math.distance(d, AtMeters(20f)) < 1e-4f);
+            e.SetPlayerMoveSpeedMs(5f);
+            e.Tick(Dt, Dt, AtMeters(100f) * R, new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget), ally.Id);
+            Assert.That(wild.Engaged, Is.EqualTo(!concealed));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Grass_and_fog_enable_one_concealment_effect(bool fog)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            e.SetGrassCoverProvider(_ => true);
+            e.SetPlayerMoveSpeedMs(0f);
+            if (fog) e.SetWeather(WeatherProfiles.Fog);
+            // Between one and two halvings: grass + fog must not grant an extra halving.
+            float distanceM = fog ? 7f : 12f;
+            e.Tick(Dt, Dt, AtMeters(distanceM) * R, new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget), CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Losing_grass_cover_or_clearing_the_provider_restores_detection(bool clearProvider)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            bool intact = true;
+            e.SetGrassCoverProvider(_ => intact);
+            e.SetPlayerMoveSpeedMs(0f);
+            var follow = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
+            e.Tick(Dt, Dt, AtMeters(20f) * R, follow, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.False);
+            if (clearProvider) e.SetGrassCoverProvider(null);
+            else intact = false;
+            e.Tick(Dt * 2, Dt, AtMeters(20f) * R, follow, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+        }
+
+        [Test]
+        public void Concealed_player_does_not_hide_an_exposed_ally_and_grass_does_not_drop_combat()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit ally = e.AddCreature(EncounterSide.Player, MakeCreature(Element.Wood), null, AtMeters(20f), 10);
+            ally.Fielded = true;
+            e.SetGrassCoverProvider(d => math.distance(d, AtMeters(-20f)) < 1e-4f);
+            e.SetPlayerMoveSpeedMs(0f);
+            var follow = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
+            e.Tick(Dt, Dt, AtMeters(-20f) * R, follow, ally.Id);
+            Assert.That(wild.Engaged, Is.True, "the exposed ally still triggers engagement");
+            e.SetGrassCoverProvider(_ => true);
+            e.Tick(Dt * 2, Dt, AtMeters(-20f) * R, follow, ally.Id);
+            Assert.That(wild.Engaged, Is.True, "cover does not cancel an existing engagement");
+        }
+
+        [Test]
+        public void Provoke_starts_combat_even_when_the_player_is_concealed()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            e.SetGrassCoverProvider(_ => true);
+            e.SetPlayerMoveSpeedMs(0f);
+            var follow = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
+            e.Tick(Dt, Dt, AtMeters(20f) * R, follow, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.False);
+            e.Provoke(wild.Id);
+            e.Tick(Dt * 2, Dt, AtMeters(20f) * R, follow, CombatAi.NoTarget);
+            Assert.That(wild.Engaged, Is.True);
+        }
+
         [Test]
         public void Encounter_Blizzard_slows_fire_creature_and_boosts_ice_creature()
         {
