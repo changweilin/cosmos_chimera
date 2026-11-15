@@ -96,9 +96,21 @@
   <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
-<article id="Q-W15">
-  <header><a class="id" href="#Q-W15">Q-W15</a><span class="tag">影響 P3-25（新）、P3-09、P3-20</span></header>
-  <p><span class="label">問題</span>散佈物種要不要依<b>地貌印章</b>選？現況：冠層密度已依當地地貌（森林密、冰原／沙漠疏），但<b>種類</b>仍只看星球類型——翠綠星的沙丘、沼澤、峽谷長的是同一批闊葉樹與岩石，所以各地貌只靠地形起伏與疏密區分。要做的話需要一張「地貌 → 物種」表，並決定是否新增物種（每種都要規則層物質／碰撞＋程序化網格；升 <code>ScatterPlanner.GeneratorVersion</code>，既有 seed 的植被會變）。</p>
+<article id="Q-W16">
+  <header><a class="id" href="#Q-W16">Q-W16</a><span class="tag">影響 P3-26（新）、P3-04、P1-07</span></header>
+  <p><span class="label">問題</span><b>季節</b>怎麼定義？目前沒有任何季節系統：植被只依地貌、海拔帶與林型（<code>planet-world.md#散佈</code>），顏色只依星球類型。要「不同區域不同季節」需要先決定季節從哪裡來、會不會在一場 run 內變化，以及只影響外觀還是也影響規則（物種、天氣權重、可採集物）。若季節影響規則層，必須可重現且各客戶端一致。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W17">
+  <header><a class="id" href="#Q-W17">Q-W17</a><span class="tag">影響 P3-27（新）、P3-12、P4</span></header>
+  <p><span class="label">問題</span><b>礦物的用途</b>。金／銀／銅／鐵礦脈、煤層、油頁岩、寶石晶洞已作為可破壞場景物件出現在對應地貌（<code>planet-world.md#地貌物種</code>），但打壞後只照既有規則掉「屬性素材／珠寶」。要不要讓礦物成為<b>獨立道具</b>（需要新的背包分類、用途與 <code>Data/</code> schema）？另外三項未做：<b>天然氣</b>（需要危險地形規則，與 P3-22 火山地熱同類）、<b>石油</b>目前以油頁岩（物質 <code>kerosene</code>，遇火爆燃）表現、<b>各種寶石</b>目前只是晶洞的顏色（紅寶石／藍寶石／祖母綠／紫水晶／黃玉），掉落仍是 <code>crystal</code> 對應的土屬性。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-W18">
+  <header><a class="id" href="#Q-W18">Q-W18</a><span class="tag">影響 P3-24(b)、P3-28（新）</span></header>
+  <p><span class="label">問題</span><b>寒帶地形</b>。凍原植被、冰柱、冰磧石已依地貌散佈（<code>ice_field</code>／<code>fjord</code>／<code>eternal_night</code>），但<b>冰川、冰斗、冰磧丘、U 谷是地形形狀</b>，要在 <code>LandformSynth</code> 新增地貌標籤：這會改變<b>所有既有 seed</b> 的印章抽選（升 <code>LandformSynth.GeneratorVersion</code>，重訂所有快照）。<b>冰山</b>在海上，而散佈目前避開海、海也不可進入（P3-23 未開工）。</p>
   <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
@@ -125,7 +137,9 @@ const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit})
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
  'Q-W14':[G('stoneH','城邦石牆高度',4,12,1,8,' m'),G('palisadeH','小鎮木柵高度',2,6,1,4,' m')],
- 'Q-W15':[R('basis','選種依據',['星球類型為主，地貌只調整各物種權重','地貌為主，星球類型只換配色與物質','每個星球類型 × 地貌各一張表','維持現況（只依星球類型）']),C('new','第一批要新增的物種',['枯木／倒木','仙人掌／多肉','沼澤樹（板根、氣根）','蕨類','蘆葦','花叢','巨型蘑菇','石筍／石林','冰柱／浮冰','海岸礁岩']),R('under','下層（灌木／箭竹／芒草）密度',['維持只依星球類型','也依地貌（沙漠稀、沼澤與森林密）'])],
+ 'Q-W16':[R('source','季節從哪裡來',['每顆星球由 seed 抽一個季節，整場不變','依緯度：南北半球季節相反，赤道無季節','隨 run 內時間推進（例如每 N 分鐘一季）','依緯度＋隨時間推進']),R('scope','季節影響什麼',['只影響外觀（葉色、落葉、積雪、花）','外觀＋天氣權重','外觀＋天氣＋物種與可採集物']),C('looks','第一批要做的季節外觀',['春：新綠與開花','夏：深綠','秋：紅葉／黃葉','冬：落葉枯枝','冬：積雪覆蓋樹冠與岩石','草地隨季節變色']),T('note','補充','')],
+ 'Q-W17':[R('item','礦物是否成為獨立道具',['維持現況：只掉屬性素材／珠寶','獨立礦物道具（先只能收集，用途之後定）','獨立礦物道具＋用途（請在備註說明）']),R('gem','寶石與珠寶的對應',['維持現況：晶洞顏色只是外觀','每種寶石對應一個屬性的珠寶（十屬性各一種）']),R('gas','天然氣',['不做','做成危險地形（噴氣孔：遇火爆炸），併入 P3-22','做成可破壞物件（氣囊岩）']),C('tool','採礦方式',['維持只能用宙獸招式打壞','土／金屬性招式對礦脈有額外掉落','新增生活招式「採礦」']),T('note','用途／備註','')],
+ 'Q-W18':[C('forms','要新增的寒帶地貌標籤',['tundra 凍原（平緩、凍脹丘、融冰湖）','glacier 冰川（U 谷＋冰舌＋終磧）','cirque 冰斗（圍椅狀山凹＋冰斗湖）','moraine 冰磧丘陵']),R('seeds','既有 seed 的地形會變',['可以，升版並重訂快照','不行，只在新星球類型／尺寸出現']),R('where','出現在哪些星球',['只有冰晶星','冰晶星＋所有星球的寒帶（高緯度）','所有星球隨機']),R('berg','海上冰山',['現在做：海上散佈層，只當遠景與可被招式打壞的物件','等海域可進入（P3-23）再做','不做']),T('note','補充','')],
  'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])],
  'Q-T3':[R('tool','image-to-3D 工具',['Meshy','Tripo','Rodin（Hyper3D）','手工 Blender','暫不決定']),T('other','其他工具／備註','')]
 };

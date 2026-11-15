@@ -84,6 +84,35 @@ namespace Cosmimera.WorldGen
                 : baseDensity;
         }
 
+        /// <summary>Scatter biome (landform species table) under each point of a planet built by <see cref="Build"/>.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#散佈 (Q-W15: 依地貌印章選種).
+        /// Pre: templates is a live <see cref="Build"/> result and outlives every call of the returned function;
+        ///      planetTypeId may be null or unknown (as <see cref="TerrainProfiles.ForPlanetType"/>).
+        /// Post: the function maps (unit direction, roll) to a ScatterBiomes biome index: the planet type's own surface
+        ///       landform outside every stamp, the stamp's landform in its core, and over the stamp's outer blend band
+        ///       one or the other in proportion to the blend weight, chosen by roll — so species interleave across the
+        ///       edge instead of switching along a line. Deterministic.
+        /// Side effects: allocates the function and one int per stamp.
+        /// </remarks>
+        public static System.Func<float3, uint, int> ScatterBiome(PlanetTemplates templates, string planetTypeId)
+        {
+            Contract.Requires(templates != null, "templates must not be null");
+            TemplateView view = templates.View;
+            int baseBiome = ScatterBiomes.BiomeOf(TerrainProfiles.ForPlanetType(planetTypeId).Id);
+            var perStamp = new int[templates.StampIds.Count];
+            for (int i = 0; i < perStamp.Length; i++)
+            {
+                perStamp[i] = ScatterBiomes.BiomeOf(LandformSynth.KindOf(templates.StampIds[i]));
+            }
+
+            // 16-bit compare: the weight is a float, but a peer that rounds it one ulp differently disagrees on at
+            // most one roll in 65536, the same exposure the altitude-band and slope tests already have.
+            return (dir, roll) => view.TryGetStamp(dir, out int i, out float w) && (roll & 0xFFFFu) < (uint)(w * 65536f)
+                ? perStamp[i]
+                : baseBiome;
+        }
+
         // REQ: planet-world.md#1-骨架層程序化地貌 — on the open surface a volcano or cave stamp is the general landform
         // around it (volcano_foothills, cavern_outer); `volcano` and `cave` profiles are the advanced dungeons.
         private static string SurfaceTerrainId(string kind) => kind switch

@@ -23,6 +23,30 @@ namespace Cosmimera.WorldGen
 
         /// <summary>Tussock of tall plumed grass (芒草): never blocks (destructibles.md#碰撞: 草不擋).</summary>
         TallGrass = 5,
+
+        /// <summary>Fallen trunk lying on the ground (倒木): blocks, low.</summary>
+        Log = 6,
+
+        /// <summary>Columnar succulent with arms (仙人掌).</summary>
+        Cactus = 7,
+
+        /// <summary>Giant mushroom: a stalk under a wide cap; only the stalk blocks.</summary>
+        Mushroom = 8,
+
+        /// <summary>Tall tapering pillar: stalagmite, stone-forest spire, basalt column or ice pillar.</summary>
+        Spire = 9,
+
+        /// <summary>Rock outcrop carrying a mineral: ore, coal, oil shale or a gem geode.</summary>
+        OreVein = 10,
+
+        /// <summary>Rosette of fronds (蕨類): never blocks.</summary>
+        Fern = 11,
+
+        /// <summary>Stand of thin upright stems (蘆葦): never blocks.</summary>
+        Reed = 12,
+
+        /// <summary>Low patch of flowers (花叢): never blocks.</summary>
+        Flowers = 13,
     }
 
     /// <summary>Altitude band a scatter kind grows in.</summary>
@@ -38,7 +62,7 @@ namespace Cosmimera.WorldGen
         Highland = 2,
     }
 
-    /// <summary>One weighted entry of a planet type's scatter table.</summary>
+    /// <summary>One scatter species: its silhouette, size range, substance and altitude band.</summary>
     /// <remarks>Pre: none. Post: immutable value. Side effects: none.</remarks>
     public readonly struct ScatterKind
     {
@@ -50,6 +74,19 @@ namespace Cosmimera.WorldGen
         public ScatterKind(ScatterShape shape, float minSizeM, float maxSizeM, int weight, string substanceId)
             : this(shape, minSizeM, maxSizeM, weight, substanceId, ScatterHabitat.Any)
         {
+        }
+
+        /// <summary>Creates catalog species <paramref name="id"/> (weights live in the landform tables, so Weight is 1).</summary>
+        /// <remarks>
+        /// Pre: id non-empty; 0 &lt; minSizeM &lt;= maxSizeM; substanceId non-empty; habitat defined.
+        /// Post: fields echo the arguments; Weight == 1. Side effects: none.
+        /// </remarks>
+        public ScatterKind(string id, ScatterShape shape, float minSizeM, float maxSizeM, string substanceId,
+            ScatterHabitat habitat = ScatterHabitat.Any)
+            : this(shape, minSizeM, maxSizeM, 1, substanceId, habitat)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(id), "species id required");
+            Id = id;
         }
 
         /// <summary>Creates an entry that only grows in <paramref name="habitat"/>.</summary>
@@ -68,7 +105,15 @@ namespace Cosmimera.WorldGen
             Weight = weight;
             SubstanceId = substanceId;
             Habitat = habitat;
+            Id = "custom";
         }
+
+        internal ScatterKind WithSubstance(string substanceId) =>
+            new ScatterKind(Id, Shape, MinSizeM, MaxSizeM, substanceId, Habitat);
+
+        /// <summary>Species id (ScatterBiomes catalog); "custom" for kinds built without one.</summary>
+        /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
+        public string Id { get; }
 
         /// <summary>Silhouette.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -156,12 +201,21 @@ namespace Cosmimera.WorldGen
             ScatterShape.Shrub => SizeM * 0.3f,
             ScatterShape.Bamboo => SizeM * 0.18f,
             ScatterShape.TallGrass => SizeM * 0.15f,
+            ScatterShape.Log => SizeM * 0.3f,
+            ScatterShape.Cactus => SizeM * 0.12f,
+            ScatterShape.Mushroom => SizeM * 0.08f,
+            ScatterShape.Spire => SizeM * 0.2f,
+            ScatterShape.OreVein => SizeM * 0.4f,
+            ScatterShape.Fern => SizeM * 0.25f,
+            ScatterShape.Reed => SizeM * 0.15f,
+            ScatterShape.Flowers => SizeM * 0.25f,
             _ => SizeM * 0.2f,
         };
 
         /// <summary>Whether the intact item stops bodies (destructibles.md#碰撞: 草不擋; trees, shrubs, rocks do).</summary>
-        /// <remarks>Pre: none. Post: false only for <see cref="ScatterShape.TallGrass"/>. Side effects: none.</remarks>
-        public bool Blocks => Shape != ScatterShape.TallGrass;
+        /// <remarks>Pre: none. Post: false only for tall grass, ferns, reeds and flowers. Side effects: none.</remarks>
+        public bool Blocks => Shape != ScatterShape.TallGrass && Shape != ScatterShape.Fern &&
+                              Shape != ScatterShape.Reed && Shape != ScatterShape.Flowers;
 
         /// <summary>Volume in litres (dm³) of the placeholder geometry: HP and drop chances scale with it.</summary>
         /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
@@ -182,6 +236,22 @@ namespace Cosmimera.WorldGen
                     ScatterShape.Bamboo => Math.PI * 0.04 * 0.9 * s * s * s,
                     // Tussock: cone r 0.3 s, h s (size = height).
                     ScatterShape.TallGrass => Math.PI * 0.09 / 3.0 * s * s * s,
+                    // Trunk section on its side: cylinder r 0.1 s, length 0.8 s (size = length).
+                    ScatterShape.Log => Math.PI * 0.01 * 0.8 * s * s * s,
+                    // Column r 0.12 s, h s, plus about a third again in arms.
+                    ScatterShape.Cactus => Math.PI * 0.0144 * 1.3 * s * s * s,
+                    // Stalk cylinder r 0.08 s, h 0.7 s; cap ellipsoid semi-axes 0.35, 0.12, 0.35 s.
+                    ScatterShape.Mushroom => Math.PI * 0.0064 * 0.7 * s * s * s + 4.0 / 3.0 * Math.PI * 0.35 * 0.12 * 0.35 * s * s * s,
+                    // Blunt cone r 0.22 s, h s: half again a true cone's volume.
+                    ScatterShape.Spire => Math.PI * 0.0484 / 3.0 * 1.5 * s * s * s,
+                    // Ellipsoid semi-axes 0.45, 0.35, 0.4 s.
+                    ScatterShape.OreVein => 4.0 / 3.0 * Math.PI * 0.45 * 0.35 * 0.4 * s * s * s,
+                    // Rosette: cone r 0.4 s, h 0.5 s (size = width).
+                    ScatterShape.Fern => Math.PI * 0.16 / 3.0 * 0.5 * s * s * s,
+                    // Stand of stems: cone r 0.2 s, h s (size = height).
+                    ScatterShape.Reed => Math.PI * 0.04 / 3.0 * s * s * s,
+                    // Low cushion: disc r 0.5 s, h 0.3 s, about a third filled (size = width).
+                    ScatterShape.Flowers => Math.PI * 0.25 * 0.3 * 0.3 * s * s * s,
                     _ => 0.28 * 0.28 * s * s * s,
                 };
                 return Math.Max(1, (int)Math.Round(m3 * 1000.0));
@@ -190,17 +260,19 @@ namespace Cosmimera.WorldGen
     }
 
     /// <summary>
-    /// Rule-layer scatter (P3-09, P3-12): which cell holds which tree, rock, crystal, shrub, cane clump or grass tussock,
+    /// Rule-layer scatter (P3-09, P3-12, P3-25): which cell holds which tree, rock, mineral vein, spire, shrub or grass,
     /// so creatures can be blocked by them and moves can hit them without any GameObject. ScatterField only draws what this returns.
-    /// REQ: planet-world.md (7. 散佈); destructibles.md#實作分層 (散佈物件的位置必須由規則層產生).
+    /// REQ: planet-world.md (7. 散佈; Q-W15 地貌為主); destructibles.md#實作分層 (散佈物件的位置必須由規則層產生).
     /// </summary>
     /// <remarks>
-    /// Two independent layers share one key space. Canopy: each cube-face cell (≈ 10 m) holds at most one tree, rock or
-    /// crystal. Understory: each finer cell (≈ 6 m) holds at most one shrub, cane clump or grass tussock, chosen by the
-    /// altitude band it stands in. Every cell draws from its own Pcg32 stream, so an item is the same whenever it is
+    /// Two independent layers share one key space. Canopy: each cube-face cell (≈ 10 m) holds at most one tree, rock,
+    /// spire, vein or crystal. Understory: each finer cell (≈ 6 m) holds at most one shrub, cane clump, fern, reed,
+    /// flower patch or grass tussock, chosen by the altitude band it stands in. Which species a cell can hold comes from
+    /// the landform under it (<see cref="ScatterBiomes"/>); canopy cells are grouped into forest stands (≈ 60 m) whose
+    /// <see cref="ForestType"/> decides the trees. Every cell draws from its own Pcg32 stream, so an item is the same whenever it is
     /// asked for, in any order. Items avoid sea, roads/buildings (isClear) and steep slopes; an understory item also
     /// keeps off the canopy item next to it.
-    /// Pre: single-threaded. Post: items depend only on (seed, planet type, planet, ground/sea/clear functions).
+    /// Pre: single-threaded. Post: items depend only on (seed, planet type, planet, ground/sea/clear/density/biome functions).
     /// Side effects: caches items per cell.
     /// </remarks>
     public sealed class ScatterPlanner
@@ -213,10 +285,15 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: none.
         /// Post: constant; 2 = understory layer added, canopy items bit-identical to 1; 3 = canopy density may follow the
-        ///       local landform (the per-point constructor), constant-density planners bit-identical to 2.
+        ///       local landform (the per-point constructor), constant-density planners bit-identical to 2;
+        ///       4 = species follow the landform (ScatterBiomes) and forest stands; every item set changed.
         /// Side effects: none.
         /// </remarks>
-        public const int GeneratorVersion = 3;
+        public const int GeneratorVersion = 4;
+
+        /// <summary>Canopy cells along one edge of a forest stand (≈ 60 m).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int StandCells = 6;
 
         /// <summary>Nominal understory cell width at a face centre (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -235,84 +312,16 @@ namespace Cosmimera.WorldGen
         private const float CanopyGapM = 0.4f;
         private const string DefaultType = "verdant_planet";
 
-        // Substance per biome (destructibles.md#物質): trees are wood; rocks stone; crystals crystal, ice on the ice planet.
-        private static readonly Dictionary<string, ScatterKind[]> Sets = new Dictionary<string, ScatterKind[]>
-        {
-            ["verdant_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Tree, 3.5f, 7f, 6, "wood"),
-                new ScatterKind(ScatterShape.Rock, 0.8f, 2.2f, 3, "stone"),
-            },
-            ["lava_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Rock, 1f, 3f, 6, "stone"),
-                new ScatterKind(ScatterShape.Crystal, 1.5f, 4f, 3, "crystal"),
-            },
-            ["ice_crystal_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Crystal, 2f, 6f, 6, "ice"),
-                new ScatterKind(ScatterShape.Rock, 0.8f, 2.4f, 3, "stone"),
-            },
-            ["storm_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Tree, 3f, 5.5f, 3, "wood"),
-                new ScatterKind(ScatterShape.Rock, 1f, 2.6f, 5, "stone"),
-            },
-            ["mineral_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Crystal, 1.5f, 5f, 4, "crystal"),
-                new ScatterKind(ScatterShape.Rock, 1f, 3f, 5, "stone"),
-            },
-            ["twilight_planet"] = new[]
-            {
-                new ScatterKind(ScatterShape.Tree, 3.5f, 7f, 4, "wood"),
-                new ScatterKind(ScatterShape.Crystal, 1.5f, 4f, 3, "crystal"),
-            },
-        };
-
-        private readonly struct Understory
-        {
-            public readonly float PlaceChance;
-            public readonly ScatterKind[] Kinds;
-
-            public Understory(float placeChance, params ScatterKind[] kinds)
-            {
-                PlaceChance = placeChance;
-                Kinds = kinds;
-            }
-        }
-
-        // REQ: planet-world.md (7. 散佈 — 植被下層). Shrubs and grass are `plant`, canes are `wood` (destructibles.md#物質).
-        // Every table keeps at least one ScatterHabitat.Any kind, so every altitude has something to pick.
-        // Cane clumps (箭竹) are highland only; tall plumed grass (芒草) is a pioneer of open and volcanic ground.
-        private static readonly Dictionary<string, Understory> UnderSets = new Dictionary<string, Understory>
-        {
-            ["verdant_planet"] = new Understory(0.5f,
-                new ScatterKind(ScatterShape.Shrub, 0.8f, 1.8f, 5, "plant"),
-                new ScatterKind(ScatterShape.TallGrass, 1.2f, 2.4f, 4, "plant", ScatterHabitat.Lowland),
-                new ScatterKind(ScatterShape.Bamboo, 1.5f, 3f, 7, "wood", ScatterHabitat.Highland)),
-            ["lava_planet"] = new Understory(0.2f,
-                new ScatterKind(ScatterShape.TallGrass, 1f, 2f, 5, "plant"),
-                new ScatterKind(ScatterShape.Shrub, 0.6f, 1.2f, 2, "plant", ScatterHabitat.Lowland)),
-            ["ice_crystal_planet"] = new Understory(0.15f,
-                new ScatterKind(ScatterShape.Shrub, 0.5f, 1f, 3, "plant")),
-            ["storm_planet"] = new Understory(0.45f,
-                new ScatterKind(ScatterShape.TallGrass, 1.2f, 2.2f, 6, "plant"),
-                new ScatterKind(ScatterShape.Shrub, 0.7f, 1.4f, 3, "plant", ScatterHabitat.Lowland),
-                new ScatterKind(ScatterShape.Bamboo, 1.2f, 2.4f, 5, "wood", ScatterHabitat.Highland)),
-            ["mineral_planet"] = new Understory(0.2f,
-                new ScatterKind(ScatterShape.Shrub, 0.6f, 1.3f, 3, "plant"),
-                new ScatterKind(ScatterShape.TallGrass, 1f, 1.8f, 2, "plant", ScatterHabitat.Lowland)),
-            ["twilight_planet"] = new Understory(0.4f,
-                new ScatterKind(ScatterShape.Shrub, 0.8f, 1.6f, 4, "plant"),
-                new ScatterKind(ScatterShape.TallGrass, 1.2f, 2.2f, 3, "plant", ScatterHabitat.Lowland),
-                new ScatterKind(ScatterShape.Bamboo, 1.5f, 2.8f, 4, "wood", ScatterHabitat.Highland)),
-        };
+        // |y| of the unit direction (y = polar axis, LatLon): below → tropical stands, above → cold stands.
+        private const float TropicalMaxAbsY = 0.3f;
+        private const float ColdMinAbsY = 0.7f;
+        private const ulong StandSalt = 0x57A4D5EEDul;
+        // A plantation keeps this share of the cell jitter: rows stay readable without looking machine-stamped.
+        private const float PlantationJitter = 0.2f;
 
         private readonly PlanetConfig _config;
         private readonly ulong _seed;
         private readonly ScatterKind[] _kinds;
-        private readonly int _totalWeight;
         private readonly Func<float3, float> _groundAltitude;
         private readonly Func<float3, bool> _isSea;
         private readonly Func<float3, bool> _isClear;
@@ -324,15 +333,17 @@ namespace Cosmimera.WorldGen
         // Separate from _queryCells: an understory cell is evaluated while Query is still walking that set.
         private readonly HashSet<long> _probeCells = new HashSet<long>();
         private readonly int _canopyKinds;
-        private readonly float _understoryChance;
+        private readonly int _baseBiome;
+        private readonly Func<float3, uint, int> _biomeAt;
         private readonly float _maxCanopyBlockRadiusM;
         private readonly long _canopyKeys;
 
         /// <summary>Creates the planner with the default obstacle density.</summary>
         /// <remarks>
         /// Pre: config valid; groundAltitude non-null; isSea and isClear may be null (no sea mask / nothing to avoid);
-        ///      all three are deterministic. planetTypeId may be null or unknown (falls back to verdant_planet).
-        /// Post: <see cref="Kinds"/> is the planet type's table; no cell evaluated yet. Side effects: none.
+        ///      all three are deterministic. planetTypeId may be null (verdant_planet) or unknown (grassland species).
+        /// Post: <see cref="Kinds"/> is ScatterBiomes.KindsFor(planetTypeId); every cell grows the planet type's own
+        ///       surface landform; no cell evaluated yet. Side effects: none.
         /// </remarks>
         public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
             Func<float3, bool> isSea, Func<float3, bool> isClear)
@@ -343,7 +354,7 @@ namespace Cosmimera.WorldGen
         /// <summary>Creates the planner with an explicit landform obstacle density <paramref name="placeChance"/>.</summary>
         /// <remarks>
         /// Pre: config valid; groundAltitude non-null; placeChance finite in [0, 1]; isSea and isClear may be null.
-        /// Post: <see cref="Kinds"/> is the planet type's table; no cell evaluated yet. Side effects: none.
+        /// Post: as the six-argument constructor, with that density. Side effects: none.
         /// </remarks>
         public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
             Func<float3, bool> isSea, Func<float3, bool> isClear, float placeChance)
@@ -353,18 +364,13 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.isfinite(placeChance) && placeChance >= 0f && placeChance <= 1f, "placeChance must be in [0, 1]");
             _config = config;
             _seed = seed;
-            ScatterKind[] canopy = KindsFor(planetTypeId);
-            Understory under = planetTypeId != null && UnderSets.TryGetValue(planetTypeId, out Understory u)
-                ? u
-                : UnderSets[DefaultType];
-            _kinds = new ScatterKind[canopy.Length + under.Kinds.Length];
-            canopy.CopyTo(_kinds, 0);
-            under.Kinds.CopyTo(_kinds, canopy.Length);
-            _canopyKinds = canopy.Length;
-            _understoryChance = under.PlaceChance;
-            foreach (ScatterKind kind in canopy)
+            _kinds = ScatterBiomes.KindsFor(planetTypeId);
+            _canopyKinds = ScatterBiomes.CanopySpeciesCount;
+            // Between landform stamps (and without a biome map) the planet type's own surface landform grows.
+            _baseBiome = ScatterBiomes.BiomeOf(TerrainProfiles.ForPlanetType(planetTypeId ?? DefaultType).Id);
+            for (int k = 0; k < _canopyKinds; k++)
             {
-                _totalWeight += kind.Weight;
+                ScatterKind kind = _kinds[k];
                 _maxCanopyBlockRadiusM = math.max(_maxCanopyBlockRadiusM,
                     new ScatterItem(0, 0, kind.Shape, default, 0f, kind.MaxSizeM, 0f, kind.SubstanceId).BlockRadiusM);
             }
@@ -385,6 +391,7 @@ namespace Cosmimera.WorldGen
         ///      [0, 1] for every unit direction (TemplatePlanner.ScatterDensity: the landform under that point).
         /// Post: a canopy cell holds an item iff the constant-density planner with the chance at that item's ground
         ///       point would; positions, kinds and sizes are the same as that planner's. The understory is unaffected.
+        ///       (A plantation or secondary stand multiplies either chance by ScatterBiomes.DensityBoost.)
         /// Side effects: none.
         /// </remarks>
         public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
@@ -395,20 +402,24 @@ namespace Cosmimera.WorldGen
             _placeChanceAt = placeChanceAt;
         }
 
-        /// <summary>Canopy scatter table of a planet type (the default table for null or unknown ids).</summary>
-        /// <remarks>Pre: none. Post: non-empty; the same array instance for the same id. Side effects: none.</remarks>
-        public static ScatterKind[] KindsFor(string planetTypeId) =>
-            planetTypeId != null && Sets.TryGetValue(planetTypeId, out ScatterKind[] k) ? k : Sets[DefaultType];
-
-        /// <summary>Understory scatter table of a planet type (the default table for null or unknown ids).</summary>
+        /// <summary>Creates the planner with a canopy density and a landform (biome) that both vary over the planet.</summary>
         /// <remarks>
-        /// Pre: none. Post: non-empty; at least one kind has <see cref="ScatterHabitat.Any"/>; the same array instance
-        /// for the same id. Side effects: none.
+        /// Pre: as the per-point density constructor; biomeAt non-null, deterministic, and maps (unit direction, roll)
+        ///      to a valid ScatterBiomes biome index (TemplatePlanner.ScatterBiome: the roll dithers stamp edges).
+        /// Post: each cell picks its species from the biome biomeAt returns for it; positions do not depend on biomeAt
+        ///       outside plantation stands.
+        /// Side effects: none.
         /// </remarks>
-        public static ScatterKind[] UnderstoryKindsFor(string planetTypeId) =>
-            planetTypeId != null && UnderSets.TryGetValue(planetTypeId, out Understory u) ? u.Kinds : UnderSets[DefaultType].Kinds;
+        public ScatterPlanner(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
+            Func<float3, bool> isSea, Func<float3, bool> isClear, Func<float3, float> placeChanceAt,
+            Func<float3, uint, int> biomeAt)
+            : this(config, seed, planetTypeId, groundAltitude, isSea, isClear, placeChanceAt)
+        {
+            Contract.Requires(biomeAt != null, "biomeAt is required");
+            _biomeAt = biomeAt;
+        }
 
-        /// <summary>The kinds this planner picks from: the canopy table, then the understory table.</summary>
+        /// <summary>The species this planner picks from (ScatterBiomes.KindsFor): canopy species, then understory species.</summary>
         /// <remarks>Pre: none. Post: non-empty; the first <see cref="CanopyKindCount"/> are canopy kinds. Side effects: none.</remarks>
         public IReadOnlyList<ScatterKind> Kinds => _kinds;
 
@@ -561,39 +572,106 @@ namespace Cosmimera.WorldGen
             public int Compare(ScatterItem a, ScatterItem b) => a.CellKey.CompareTo(b.CellKey);
         }
 
+        /// <summary>Forest type of the stand canopy cell <paramref name="key"/> belongs to.</summary>
+        /// <remarks>
+        /// Pre: key names a canopy cell (0 ≤ key &lt; 6·CellsPerFace²).
+        /// Post: the type every tree slot of that cell resolves with; cells of one stand (StandCells × StandCells,
+        ///       edges dithered by one cell) share it unless they straddle a climate band. Same answer on every call.
+        /// Side effects: none.
+        /// </remarks>
+        public ForestType ForestTypeOfCell(long key)
+        {
+            Contract.Requires(key >= 0 && key < _canopyKeys, "key must name a canopy cell");
+            int n = CellsPerFace;
+            int face = (int)(key / ((long)n * n));
+            int rem = (int)(key % ((long)n * n));
+            return ForestOf(key, face, rem / n, rem % n, out _);
+        }
+
+        private ForestType ForestOf(long key, int face, int j, int i, out uint standHash)
+        {
+            // Integer-only stand lookup: a cell borrows the neighbouring stand at random (±1 cell), which frays the
+            // square stand edges without any float noise that peers could round differently.
+            uint cell = Mix((ulong)key ^ _seed ^ StandSalt);
+            int di = (int)(cell & 3u) - 1;
+            int dj = (int)((cell >> 2) & 3u) - 1;
+            int si = (i + (di > 1 ? 0 : di) + StandCells) / StandCells;
+            int sj = (j + (dj > 1 ? 0 : dj) + StandCells) / StandCells;
+            standHash = Mix(_seed ^ StandSalt ^ ((ulong)face << 40) ^ ((ulong)sj << 20) ^ (ulong)si);
+            int n = CellsPerFace;
+            float3 centre = CubeSphere.FaceToDirection((CubeFace)face, -1f + 2f * (i + 0.5f) / n, -1f + 2f * (j + 0.5f) / n);
+            float absY = math.abs(centre.y);
+            ForestClimate climate = absY < TropicalMaxAbsY ? ForestClimate.Tropical
+                : absY > ColdMinAbsY ? ForestClimate.Cold
+                : ForestClimate.Temperate;
+            return ScatterBiomes.ForestTypeFor(standHash, climate);
+        }
+
+        // SplitMix64 finaliser.
+        private static uint Mix(ulong z)
+        {
+            z += 0x9E3779B97F4A7C15ul;
+            z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ul;
+            z = (z ^ (z >> 27)) * 0x94D049BB133111EBul;
+            return (uint)((z ^ (z >> 31)) >> 16);
+        }
+
         private bool Evaluate(long key, out ScatterItem item)
         {
             item = default;
             int n = CellsPerFace;
-            var face = (CubeFace)(int)(key / ((long)n * n));
+            int f = (int)(key / ((long)n * n));
+            var face = (CubeFace)f;
             int rem = (int)(key % ((long)n * n));
             int j = rem / n;
             int i = rem % n;
             // A per-cell stream: the same cell regenerates identically after being streamed out and back in.
+            // Every value is drawn up front, so no decision below can shift another's draw.
             var rng = new Pcg32(_seed ^ Salt, (ulong)key);
             float placeRoll = rng.NextFloat();
-            if (_placeChanceAt == null && placeRoll > _placeChance)
+            float ju = rng.NextFloat();
+            float jv = rng.NextFloat();
+            uint kindRoll = rng.NextUInt();
+            float sizeT = rng.NextFloat();
+            float yaw = rng.NextFloat() * 360f;
+            uint treeRoll = rng.NextUInt();
+            uint biomeRoll = rng.NextUInt();
+            // Cheap exit before any ground or stamp lookup: no stand can raise the chance past MaxDensityBoost.
+            if (_placeChanceAt == null && placeRoll > math.min(1f, _placeChance * ScatterBiomes.MaxDensityBoost))
             {
                 return false;
             }
 
-            float u = math.clamp(-1f + 2f * (i + rng.NextFloat()) / n, -1f, 1f);
-            float v = math.clamp(-1f + 2f * (j + rng.NextFloat()) / n, -1f, 1f);
-            int kindIndex = Pick(ref rng);
-            ScatterKind kind = _kinds[kindIndex];
-            float size = math.lerp(kind.MinSizeM, kind.MaxSizeM, rng.NextFloat());
-            float yaw = rng.NextFloat() * 360f;
+            // The biome is read at the cell centre: a plantation moves the item, and the move must not change the biome.
+            float3 centre = CubeSphere.FaceToDirection(face, -1f + 2f * (i + 0.5f) / n, -1f + 2f * (j + 0.5f) / n);
+            int biome = BiomeAt(centre, biomeRoll);
+            bool wooded = ScatterBiomes.HasTrees(biome);
+            uint standHash = 0u;
+            ForestType forest = wooded ? ForestOf(key, f, j, i, out standHash) : ForestType.Mixed;
+            if (wooded && forest == ForestType.Plantation)
+            {
+                ju = 0.5f + (ju - 0.5f) * PlantationJitter;
+                jv = 0.5f + (jv - 0.5f) * PlantationJitter;
+            }
+
+            float u = math.clamp(-1f + 2f * (i + ju) / n, -1f, 1f);
+            float v = math.clamp(-1f + 2f * (j + jv) / n, -1f, 1f);
             float3 dir = CubeSphere.FaceToDirection(face, u, v);
-            // The local density is only known once the point is: the roll is drawn first either way, so the stream
-            // (and every surviving item) is the same as with a constant density.
+            float chance = _placeChance;
             if (_placeChanceAt != null)
             {
-                float chance = _placeChanceAt(dir);
+                chance = _placeChanceAt(dir);
                 Contract.Requires(math.isfinite(chance) && chance >= 0f && chance <= 1f, "placeChanceAt must return [0, 1]");
-                if (placeRoll > chance)
-                {
-                    return false;
-                }
+            }
+
+            if (wooded)
+            {
+                chance = math.min(1f, chance * ScatterBiomes.DensityBoost(forest));
+            }
+
+            if (placeRoll > chance)
+            {
+                return false;
             }
 
             if (_isSea != null && _isSea(dir))
@@ -614,8 +692,30 @@ namespace Cosmimera.WorldGen
                 return false;
             }
 
-            item = new ScatterItem(key, kindIndex, kind.Shape, dir, alt, size, yaw, kind.SubstanceId);
+            int kindIndex = ScatterBiomes.PickCanopy(biome, kindRoll);
+            if (kindIndex == ScatterBiomes.TreeSlot)
+            {
+                kindIndex = ScatterBiomes.PickTree(forest, alt >= HighlandFractionOfRadius * _config.Radius, standHash,
+                    treeRoll, out float lo, out float hi);
+                sizeT = math.lerp(lo, hi, sizeT);
+            }
+
+            ScatterKind kind = _kinds[kindIndex];
+            item = new ScatterItem(key, kindIndex, kind.Shape, dir, alt, math.lerp(kind.MinSizeM, kind.MaxSizeM, sizeT),
+                yaw, kind.SubstanceId);
             return true;
+        }
+
+        private int BiomeAt(float3 dir, uint roll)
+        {
+            if (_biomeAt == null)
+            {
+                return _baseBiome;
+            }
+
+            int biome = _biomeAt(dir, roll);
+            Contract.Requires(biome >= 0 && biome < ScatterBiomes.BiomeIds.Count, "biomeAt must return a ScatterBiomes biome index");
+            return biome;
         }
 
         private bool EvaluateUnderstory(long key, out ScatterItem item)
@@ -628,17 +728,26 @@ namespace Cosmimera.WorldGen
             int j = rem / n;
             int i = rem % n;
             var rng = new Pcg32(_seed ^ UnderstorySalt, (ulong)local);
-            if (rng.NextFloat() > _understoryChance)
-            {
-                return false;
-            }
-
+            float placeRoll = rng.NextFloat();
             float u = math.clamp(-1f + 2f * (i + rng.NextFloat()) / n, -1f, 1f);
             float v = math.clamp(-1f + 2f * (j + rng.NextFloat()) / n, -1f, 1f);
             uint roll = rng.NextUInt();
             float sizeT = rng.NextFloat();
             float yaw = rng.NextFloat() * 360f;
+            uint biomeRoll = rng.NextUInt();
+            if (placeRoll > ScatterBiomes.MaxUnderstoryChance)
+            {
+                return false;
+            }
+
             float3 dir = CubeSphere.FaceToDirection(face, u, v);
+            // REQ: Q-W15 — understory density follows the landform (desert sparse, swamp and forest dense).
+            int biome = BiomeAt(dir, biomeRoll);
+            if (placeRoll > ScatterBiomes.UnderstoryChance(biome))
+            {
+                return false;
+            }
+
             if ((_isSea != null && _isSea(dir)) || (_isClear != null && !_isClear(dir)))
             {
                 return false;
@@ -651,38 +760,11 @@ namespace Cosmimera.WorldGen
             }
 
             // Resolved after every draw: the habitat reads the altitude, and the stream must not depend on it.
-            int kindIndex = PickUnderstory(roll, alt >= HighlandFractionOfRadius * _config.Radius);
+            int kindIndex = ScatterBiomes.PickUnderstory(biome, roll, alt >= HighlandFractionOfRadius * _config.Radius);
             ScatterKind kind = _kinds[kindIndex];
             item = new ScatterItem(key, kindIndex, kind.Shape, dir, alt, math.lerp(kind.MinSizeM, kind.MaxSizeM, sizeT),
                 yaw, kind.SubstanceId);
             return !TouchesCanopy(item);
-        }
-
-        private int PickUnderstory(uint roll, bool highland)
-        {
-            ScatterHabitat excluded = highland ? ScatterHabitat.Lowland : ScatterHabitat.Highland;
-            int total = 0;
-            for (int k = _canopyKinds; k < _kinds.Length; k++)
-            {
-                total += _kinds[k].Habitat == excluded ? 0 : _kinds[k].Weight;
-            }
-
-            int pick = (int)(roll % (uint)total);
-            for (int k = _canopyKinds; k < _kinds.Length; k++)
-            {
-                if (_kinds[k].Habitat == excluded)
-                {
-                    continue;
-                }
-
-                pick -= _kinds[k].Weight;
-                if (pick < 0)
-                {
-                    return k;
-                }
-            }
-
-            return _canopyKinds;
         }
 
         // Canopy cells never read the understory, so this cannot recurse and the answer is order-independent.
@@ -716,21 +798,6 @@ namespace Cosmimera.WorldGen
             }
 
             return worst;
-        }
-
-        private int Pick(ref Pcg32 rng)
-        {
-            int roll = (int)rng.NextUInt((uint)_totalWeight);
-            for (int k = 0; k < _canopyKinds; k++)
-            {
-                roll -= _kinds[k].Weight;
-                if (roll < 0)
-                {
-                    return k;
-                }
-            }
-
-            return _canopyKinds - 1;
         }
 
         private static void CellRange(float component, float chord, float lo, float hi, int n,

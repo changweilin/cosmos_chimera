@@ -40,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly EnvMaterials _env;
         private readonly DestructibleTable _table;
         private readonly Composition[] _kindComposition;
+        private readonly string[] _kindNameKey;
         private readonly float _maxBuildingHitM;
         private readonly List<ScatterItem> _items = new List<ScatterItem>(16);
         private readonly List<int> _treasureRegions = new List<int>();
@@ -67,6 +68,7 @@ namespace Cosmimera.Bootstrap.Demo
             _env = env;
             _table = table;
             _kindComposition = new Composition[scatter.Kinds.Count];
+            _kindNameKey = new string[scatter.Kinds.Count];
             float maxScatter = 0f;
             for (int k = 0; k < _kindComposition.Length; k++)
             {
@@ -74,6 +76,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Contract.Requires(env.TryGetSubstance(kind.SubstanceId, out Substance sub),
                     "scatter substance " + kind.SubstanceId + " missing from env-materials");
                 _kindComposition[k] = Composition.Of(sub);
+                _kindNameKey[k] = "ui.object." + kind.Id;
                 maxScatter = math.max(maxScatter, HitRadius(kind.Shape, kind.MaxSizeM));
             }
 
@@ -113,8 +116,7 @@ namespace Cosmimera.Bootstrap.Demo
             _scatter.Query(direction, reachM, _items);
             foreach (ScatterItem item in _items)
             {
-                if (item.Shape != ScatterShape.Tree && item.Shape != ScatterShape.Shrub &&
-                    item.Shape != ScatterShape.Bamboo && item.Shape != ScatterShape.TallGrass) continue;
+                if (!IsFoliage(item.Shape)) continue;
                 if (!_table.IsDestroyed(item.CellKey) && math.distance(direction, item.Direction) * _planet.Radius <= reachM)
                     return true;
             }
@@ -254,7 +256,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>UI copy key naming what <paramref name="candidate"/> is (target HUD line).</summary>
         /// <remarks>
         /// Pre: candidate came from this instance's Query.
-        /// Post: one of ui.object.building / tree / rock / crystal / shrub / bamboo / tall_grass.
+        /// Post: ui.object.building, or ui.object.&lt;species id&gt; of the scatter item (ScatterBiomes catalog).
         /// Side effects: caches scatter cells; allocates nothing beyond Query's own caching.
         /// </remarks>
         public string NameKey(in DestructibleCandidate candidate)
@@ -270,16 +272,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 if (it.CellKey == candidate.Id)
                 {
-                    return it.Shape switch
-                    {
-                        ScatterShape.Rock => "ui.object.rock",
-                        ScatterShape.Crystal => "ui.object.crystal",
-                        ScatterShape.Tree => "ui.object.tree",
-                        ScatterShape.Shrub => "ui.object.shrub",
-                        ScatterShape.Bamboo => "ui.object.bamboo",
-                        ScatterShape.TallGrass => "ui.object.tall_grass",
-                        _ => throw new ArgumentOutOfRangeException(nameof(candidate), it.Shape, "unnamed scatter shape"),
-                    };
+                    return _kindNameKey[it.KindIndex];
                 }
             }
 
@@ -336,8 +329,19 @@ namespace Cosmimera.Bootstrap.Demo
             ScatterShape.Shrub => size * 0.45f,
             ScatterShape.Bamboo => size * 0.3f,
             ScatterShape.TallGrass => size * 0.35f,
+            ScatterShape.Log => size * 0.4f,
+            ScatterShape.Mushroom => size * 0.3f,
+            ScatterShape.OreVein => size * 0.42f,
+            ScatterShape.Fern => size * 0.4f,
+            ScatterShape.Flowers => size * 0.45f,
             _ => size * 0.25f,
         };
+
+        // Living plants a creature can forage in (Food gathering); deadwood, cacti and mushrooms are not foliage.
+        private static bool IsFoliage(ScatterShape shape) =>
+            shape == ScatterShape.Tree || shape == ScatterShape.Shrub || shape == ScatterShape.Bamboo ||
+            shape == ScatterShape.TallGrass || shape == ScatterShape.Fern || shape == ScatterShape.Reed ||
+            shape == ScatterShape.Flowers;
 
         private static float HitHeight(ScatterShape shape, float size) => shape switch
         {
@@ -345,6 +349,10 @@ namespace Cosmimera.Bootstrap.Demo
             ScatterShape.Rock => size * 0.25f,
             ScatterShape.Shrub => size * 0.35f,
             ScatterShape.TallGrass => size * 0.4f,
+            ScatterShape.Log => size * 0.12f,
+            ScatterShape.OreVein => size * 0.3f,
+            ScatterShape.Fern => size * 0.2f,
+            ScatterShape.Flowers => size * 0.12f,
             _ => size * 0.5f,
         };
     }

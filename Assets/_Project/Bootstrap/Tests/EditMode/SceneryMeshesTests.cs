@@ -61,8 +61,8 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(normals.Length, Is.EqualTo(vertices.Length));
             Assert.That(colors.Length, Is.EqualTo(vertices.Length));
             Assert.That(wind.Count, Is.EqualTo(vertices.Length));
-            bool plant = archetype != SceneryArchetype.Boulder && archetype != SceneryArchetype.CrystalCluster;
-            Assert.That(mesh.subMeshCount, Is.EqualTo(plant ? 2 : 1), "plants: stems + foliage");
+            bool plant = Sways(archetype);
+            Assert.That(mesh.subMeshCount, Is.EqualTo(SubMeshes(archetype)), "see SceneryMeshes.Build");
             float maxSway = 0f;
             for (int i = 0; i < vertices.Length; i++)
             {
@@ -76,6 +76,21 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(maxSway > 0f, Is.EqualTo(plant), "only plants move in the wind");
         }
+
+        // Rocks, crystals and stiff-bodied plants (log, cactus, mushroom) stand still in the wind.
+        private static bool Sways(SceneryArchetype archetype) => archetype switch
+        {
+            SceneryArchetype.Boulder or SceneryArchetype.CrystalCluster or SceneryArchetype.Log or SceneryArchetype.Cactus or
+                SceneryArchetype.Mushroom or SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Outcrop => false,
+            _ => true,
+        };
+
+        private static int SubMeshes(SceneryArchetype archetype) => archetype switch
+        {
+            SceneryArchetype.Boulder or SceneryArchetype.CrystalCluster or SceneryArchetype.Snag or SceneryArchetype.Log or
+                SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Fern => 1,
+            _ => 2,
+        };
 
         [TestCaseSource(nameof(Every))]
         public void Mesh_is_unit_sized_and_reaches_below_the_ground(SceneryArchetype archetype, int variant)

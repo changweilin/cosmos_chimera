@@ -29,7 +29,10 @@
 | P3-22 | 火山地熱地物（熔岩流／火山灰／泥火山／間歇噴泉／硫磺；規格 `#火山地熱`：規則層危險地形，熔岩可走但持續傷害） | 待定 | SOL | 每種地物各有規則測試；同 seed 各客戶端位置與週期一致；數值未定 | ⬜ |
 | P3-23 | 海底地物（珊瑚礁／深海火山／鯨落／沉船；規格 `#海底`：一般海域可潛水，需先立水下系統設計文件） | 待定 | SOL | 待水下系統設計文件 | ⛔ |
 | P3-24 | 地質變體（洞穴／山谷／山脈的岩性；規格 `#地質變體`：先換岩石散佈與配色、再新增 `LandformSynth` 標籤） | 待定 | SOL | (a) 既有 seed 地形不變、每種地質可辨識；(b) 升 `GeneratorVersion` 並重訂快照 | ⬜ |
-| P3-25 | 散佈依地貌印章：冠層密度依當地印章（`TemplateView.TryGetStamp`、`TemplatePlanner.ScatterDensity`，`ScatterPlanner.GeneratorVersion` 3，固定密度的結果逐位元不變）；依地貌選種與新物種待 Q-W15 | FABLE | SOL | 印章核心密度＝該地貌 `TerrainProfile.ScatterDensity`、印章外＝星球類型密度；逐點密度只增減物件、不移動其餘物件；快照不變 | 🟦 |
+| P3-25 | 散佈依地貌印章：冠層密度依當地印章（`TemplatePlanner.ScatterDensity`）；**選種依地貌**（Q-W15：`ScatterBiomes` 物種目錄＋16 張地貌表、林型＝闊葉／針葉／混合／人工／次生、礦脈／石材／寒帶物種、下層密度依地貌；`TemplatePlanner.ScatterBiome`；`ScatterPlanner.GeneratorVersion` 4）＋ `SceneryMeshes` 11 個新造型 | FABLE | SOL | 每個地貌只長自己表內的物種；林班內林型一致、人工林單一樹種樹齡；下層物種守海拔帶；同 seed 一致；快照依版本重訂；新造型未經目視 | 🟨 |
+| P3-26 | 季節（不同區域不同季節的植被外觀／物種；規格待 Q-W16） | 待定 | SOL | 待 Q-W16 | ⛔ |
+| P3-27 | 礦物用途（獨立道具、天然氣、寶石↔珠寶對應、採礦方式；礦脈物件已在 P3-25；規格待 Q-W17） | 待定 | SOL | 待 Q-W17 | ⛔ |
+| P3-28 | 寒帶地形與冰山（`LandformSynth` 新標籤：凍原／冰川／冰斗／冰磧；海上冰山散佈層；規格待 Q-W18，與 P3-24(b) 一起升版） | 待定 | SOL | 待 Q-W18 | ⛔ |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

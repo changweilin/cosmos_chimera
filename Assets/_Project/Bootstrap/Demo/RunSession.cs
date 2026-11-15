@@ -113,7 +113,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Destructible substances (Data/env-materials, P3-12); null = scene objects cannot be hit or block creatures.</summary>
         /// <remarks>
-        /// Pre: when non-null, every scatter substance (ScatterPlanner.KindsFor, UnderstoryKindsFor) exists in it. Post: none. Side effects: none.
+        /// Pre: when non-null, every scatter substance (ScatterBiomes.KindsFor) exists in it. Post: none. Side effects: none.
         /// Null exists for tests that pin creature movement recorded before trees and rocks blocked creatures.
         /// </remarks>
         public EnvMaterials EnvMaterials;
@@ -503,11 +503,12 @@ namespace Cosmimera.Bootstrap.Demo
             // whether or not anything is drawn.
             System.Func<float3, bool> isOpenGround =
                 walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
-            // REQ: planet-world.md#散佈 — canopy density follows the landform stamp under each point; between stamps
-            // (and without landforms) it is the planet type's own.
+            // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
+            // stamps (and without landforms) they are the planet type's own.
             ScatterPlanner scatter = templates != null
                 ? new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
-                    isOpenGround, TemplatePlanner.ScatterDensity(templates, terrainProfile.ScatterDensity))
+                    isOpenGround, TemplatePlanner.ScatterDensity(templates, terrainProfile.ScatterDensity),
+                    TemplatePlanner.ScatterBiome(templates, setup.PlanetType.Id))
                 : new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
                     isOpenGround, terrainProfile.ScatterDensity);
             DestructibleTable objects = null;

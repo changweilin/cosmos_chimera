@@ -16,6 +16,16 @@ namespace Cosmimera.Bootstrap.Tests
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private const string GrassRoot = "Scatter_TallGrass";
 
+        // REQ: destructibles.md#碰撞 — grass, ferns, reeds and flower patches never block (ScatterItem.Blocks).
+        private static bool IsSoft(string rootName) =>
+            rootName == GrassRoot || rootName == "Scatter_Fern" || rootName == "Scatter_Reed" || rootName == "Scatter_Flowers";
+
+        // Roots whose first material must not sway: rock, crystal and stiff-bodied plants.
+        private static bool IsStill(string rootName) =>
+            rootName == "Scatter_Rock" || rootName == "Scatter_Crystal" || rootName == "Scatter_Log" ||
+            rootName == "Scatter_Cactus" || rootName == "Scatter_Mushroom" || rootName == "Scatter_Spire" ||
+            rootName == "Scatter_OreVein";
+
         private ScatterField Field(float radius, float3 centre, float3 up, System.Func<float3, bool> isClear = null)
         {
             var root = new GameObject("scatter-test");
@@ -134,7 +144,7 @@ namespace Cosmimera.Bootstrap.Tests
             long key = -1;
             foreach (var pair in Get<Dictionary<long, List<GameObject>>>(field, "_live"))
             {
-                if (pair.Value.Count > 0 && pair.Value[0].name != GrassRoot) { key = pair.Key; break; }
+                if (pair.Value.Count > 0 && !IsSoft(pair.Value[0].name)) { key = pair.Key; break; }
             }
 
             Assert.That(key, Is.GreaterThanOrEqualTo(0));
@@ -173,16 +183,16 @@ namespace Cosmimera.Bootstrap.Tests
                 foreach (GameObject item in pair.Value)
                 {
                     // REQ: destructibles.md#碰撞 — grass never blocks the character; everything else has one body.
-                    bool isGrass = item.name == GrassRoot;
-                    if (isGrass) grass++;
-                    Assert.That(item.GetComponentsInChildren<Collider>().Length, Is.EqualTo(isGrass ? 0 : 1), item.name);
+                    if (item.name == GrassRoot) grass++;
+                    Assert.That(item.GetComponentsInChildren<Collider>().Length, Is.EqualTo(IsSoft(item.name) ? 0 : 1), item.name);
                     MeshRenderer renderer = item.GetComponentInChildren<MeshRenderer>();
                     Mesh mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
                     Assert.That(renderer.sharedMaterials.Length, Is.EqualTo(mesh.subMeshCount), "one material per sub-mesh");
                     foreach (Material m in renderer.sharedMaterials) Assert.That(m.shader, Is.SameAs(scenery));
-                    bool tree = mesh.subMeshCount == 2;
-                    if (tree) trees++; else rocks++;
-                    Assert.That(renderer.sharedMaterials[0].GetFloat("_Sway") > 0f, Is.EqualTo(tree), "trees sway, rocks do not");
+                    if (item.name == "Scatter_Tree") trees++;
+                    if (item.name == "Scatter_Rock") rocks++;
+                    Assert.That(renderer.sharedMaterials[0].GetFloat("_Sway") > 0f, Is.EqualTo(!IsStill(item.name)),
+                        item.name + ": plants sway, rocks and stiff bodies do not");
                 }
             }
 
@@ -228,6 +238,18 @@ namespace Cosmimera.Bootstrap.Tests
                 (SceneryArchetype.Shrub, 1.6f, Hex(0x4C8A3A), Hex(0x5A4630), Hex(0xA8C858), 0f),
                 (SceneryArchetype.CaneClump, 2.6f, Hex(0x6FA03C), Hex(0x9DB45A), Hex(0xC4D878), 0f),
                 (SceneryArchetype.PlumeGrass, 2f, Hex(0x7FA04A), Hex(0x7FA04A), Hex(0xEFE6CF), 0f),
+                // From here on: accent = sub-mesh 0's colour, color = sub-mesh 1's (or the only one's), top = its accent.
+                (SceneryArchetype.Snag, 5f, Hex(0x827062), Hex(0x827062), Hex(0x6B4A2B), 0f),
+                (SceneryArchetype.Log, 3.5f, Hex(0x60432A), Hex(0x60432A), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.SwampTree, 6f, Hex(0x436D38), Hex(0x563B22), Hex(0x9BB95C), 0f),
+                (SceneryArchetype.Cactus, 3f, Hex(0xF06A9A), Hex(0x478440), Hex(0xFFE070), 0f),
+                (SceneryArchetype.Mushroom, 4f, Hex(0xC8402A), Hex(0xD5C6AA), Hex(0xF8F0E0), 0f),
+                (SceneryArchetype.Spire, 5f, Hex(0xADA795), Hex(0xADA795), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Columns, 4f, Hex(0x48474B), Hex(0x48474B), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Outcrop, 1.8f, Hex(0xFFC830), Hex(0x938979), Hex(0xFFF2A0), 0.15f),
+                (SceneryArchetype.Fern, 1.2f, Hex(0x458438), Hex(0x458438), Hex(0x9CBF4A), 0f),
+                (SceneryArchetype.Reed, 2f, Hex(0x6A4A2A), Hex(0x789E4F), Hex(0x9A7A4A), 0f),
+                (SceneryArchetype.FlowerPatch, 1.2f, Hex(0xF06A9A), Hex(0x4C8A3A), Hex(0xFFE070), 0f),
             };
             for (int r = 0; r < rows.Length; r++)
             {
@@ -239,8 +261,20 @@ namespace Cosmimera.Bootstrap.Tests
                     go.transform.SetParent(stage.transform, false);
                     go.transform.localPosition = new Vector3((v - 1) * 8f, 0f, r * 40f);
                     go.transform.localScale = Vector3.one * row.size;
-                    go.AddComponent<MeshFilter>().sharedMesh = SceneryMeshes.Build(row.archetype, v);
-                    go.AddComponent<MeshRenderer>().sharedMaterials = row.archetype == SceneryArchetype.CaneClump
+                    Mesh built = SceneryMeshes.Build(row.archetype, v);
+                    go.AddComponent<MeshFilter>().sharedMesh = built;
+                    bool sways = row.archetype != SceneryArchetype.Log && row.archetype != SceneryArchetype.Cactus &&
+                                 row.archetype != SceneryArchetype.Mushroom && row.archetype != SceneryArchetype.Spire &&
+                                 row.archetype != SceneryArchetype.Columns && row.archetype != SceneryArchetype.Outcrop;
+                    go.AddComponent<MeshRenderer>().sharedMaterials = row.archetype >= SceneryArchetype.Snag
+                        ? built.subMeshCount == 2
+                            ? new[]
+                            {
+                                PlanetLook.SceneryMaterial(scenery, row.accent, row.accent * 0.72f, 0.8f, sways ? 0.06f : 0f, 0f, 0f),
+                                PlanetLook.SceneryMaterial(scenery, row.color, row.top, 0.85f, sways ? 0.1f : 0f, 0.5f, row.glow),
+                            }
+                            : new[] { PlanetLook.SceneryMaterial(scenery, row.color, row.top, 0.8f, sways ? 0.1f : 0f, 0f, row.glow) }
+                        : row.archetype == SceneryArchetype.CaneClump
                         ? new[]
                         {
                             PlanetLook.SceneryMaterial(scenery, row.accent, row.accent * 0.6f, 0.7f, 0.1f, 0.2f, 0f),

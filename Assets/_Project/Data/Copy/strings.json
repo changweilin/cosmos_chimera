@@ -614,6 +614,171 @@
     "en": "Crystal",
     "ja": "結晶柱"
   },
+  "ui.object.broadleaf": {
+    "zh-TW": "闊葉樹",
+    "en": "Broadleaf tree",
+    "ja": "広葉樹"
+  },
+  "ui.object.conifer": {
+    "zh-TW": "針葉樹",
+    "en": "Conifer",
+    "ja": "針葉樹"
+  },
+  "ui.object.umbrella": {
+    "zh-TW": "傘形樹",
+    "en": "Umbrella tree",
+    "ja": "傘状の木"
+  },
+  "ui.object.swamp_tree": {
+    "zh-TW": "沼澤樹",
+    "en": "Swamp tree",
+    "ja": "沼地の木"
+  },
+  "ui.object.snag": {
+    "zh-TW": "枯木",
+    "en": "Dead tree",
+    "ja": "枯れ木"
+  },
+  "ui.object.log": {
+    "zh-TW": "倒木",
+    "en": "Fallen log",
+    "ja": "倒木"
+  },
+  "ui.object.cactus": {
+    "zh-TW": "仙人掌",
+    "en": "Cactus",
+    "ja": "サボテン"
+  },
+  "ui.object.giant_mushroom": {
+    "zh-TW": "巨型蘑菇",
+    "en": "Giant mushroom",
+    "ja": "巨大キノコ"
+  },
+  "ui.object.granite": {
+    "zh-TW": "花崗岩",
+    "en": "Granite boulder",
+    "ja": "花崗岩"
+  },
+  "ui.object.limestone": {
+    "zh-TW": "石灰岩",
+    "en": "Limestone",
+    "ja": "石灰岩"
+  },
+  "ui.object.marble": {
+    "zh-TW": "大理石",
+    "en": "Marble",
+    "ja": "大理石"
+  },
+  "ui.object.slate": {
+    "zh-TW": "板岩",
+    "en": "Slate",
+    "ja": "粘板岩"
+  },
+  "ui.object.sandstone": {
+    "zh-TW": "砂岩",
+    "en": "Sandstone",
+    "ja": "砂岩"
+  },
+  "ui.object.basalt": {
+    "zh-TW": "玄武岩",
+    "en": "Basalt",
+    "ja": "玄武岩"
+  },
+  "ui.object.reef_rock": {
+    "zh-TW": "礁岩",
+    "en": "Reef rock",
+    "ja": "岩礁"
+  },
+  "ui.object.moraine": {
+    "zh-TW": "冰磧石",
+    "en": "Moraine boulder",
+    "ja": "氷堆石"
+  },
+  "ui.object.basalt_column": {
+    "zh-TW": "玄武岩柱",
+    "en": "Basalt column",
+    "ja": "玄武岩の柱"
+  },
+  "ui.object.stone_spire": {
+    "zh-TW": "石筍",
+    "en": "Stone spire",
+    "ja": "石筍"
+  },
+  "ui.object.ice_spire": {
+    "zh-TW": "冰柱",
+    "en": "Ice spire",
+    "ja": "氷柱"
+  },
+  "ui.object.ore_gold": {
+    "zh-TW": "金礦脈",
+    "en": "Gold vein",
+    "ja": "金鉱脈"
+  },
+  "ui.object.ore_silver": {
+    "zh-TW": "銀礦脈",
+    "en": "Silver vein",
+    "ja": "銀鉱脈"
+  },
+  "ui.object.ore_copper": {
+    "zh-TW": "銅礦脈",
+    "en": "Copper vein",
+    "ja": "銅鉱脈"
+  },
+  "ui.object.ore_iron": {
+    "zh-TW": "鐵礦脈",
+    "en": "Iron vein",
+    "ja": "鉄鉱脈"
+  },
+  "ui.object.coal_seam": {
+    "zh-TW": "煤層",
+    "en": "Coal seam",
+    "ja": "石炭層"
+  },
+  "ui.object.oil_shale": {
+    "zh-TW": "油頁岩",
+    "en": "Oil shale",
+    "ja": "オイルシェール"
+  },
+  "ui.object.gem_geode": {
+    "zh-TW": "寶石晶洞",
+    "en": "Gem geode",
+    "ja": "宝石の晶洞"
+  },
+  "ui.object.shrub": {
+    "zh-TW": "灌木",
+    "en": "Shrub",
+    "ja": "低木"
+  },
+  "ui.object.dwarf_shrub": {
+    "zh-TW": "矮灌木",
+    "en": "Dwarf shrub",
+    "ja": "矮性低木"
+  },
+  "ui.object.bamboo": {
+    "zh-TW": "箭竹叢",
+    "en": "Cane clump",
+    "ja": "笹むら"
+  },
+  "ui.object.tall_grass": {
+    "zh-TW": "芒草",
+    "en": "Plume grass",
+    "ja": "ススキ"
+  },
+  "ui.object.fern": {
+    "zh-TW": "蕨類",
+    "en": "Fern",
+    "ja": "シダ"
+  },
+  "ui.object.reed": {
+    "zh-TW": "蘆葦",
+    "en": "Reeds",
+    "ja": "アシ"
+  },
+  "ui.object.flowers": {
+    "zh-TW": "花叢",
+    "en": "Flower patch",
+    "ja": "花むら"
+  },
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",
