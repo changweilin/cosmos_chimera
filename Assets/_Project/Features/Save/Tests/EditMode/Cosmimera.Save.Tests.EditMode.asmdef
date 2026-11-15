@@ -1,7 +1,8 @@
-{
+﻿{
     "name": "Cosmimera.Save.Tests.EditMode",
     "rootNamespace": "Cosmimera.Save.Tests",
     "references": [
+        "Cosmimera.Capture",
         "Cosmimera.Core",
         "Cosmimera.Creatures",
         "Cosmimera.GameData",

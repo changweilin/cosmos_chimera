@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Cosmimera.Capture;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
@@ -22,13 +23,14 @@ namespace Cosmimera.Save
     /// Version 4 (D0-B2): root <c>player_exp</c> — cumulative player XP. Older saves load with 0 (player LV1); no past
     /// run's XP is reconstructed.
     /// Version 5: root <c>partners</c> stores main/sub instance-id pairs; formats 1–4 start unequipped.
+    /// Version 6 (P4-05): root <c>eggs</c> — eggs incubating in the hatchery; formats 1–5 load with none.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 5;
+        public const int FormatVersion = 6;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -37,6 +39,7 @@ namespace Cosmimera.Save
         private readonly List<OwnedCreature> _owned = new List<OwnedCreature>();
         private readonly List<int> _party = new List<int>();
         private readonly List<PartnerPair> _partners = new List<PartnerPair>();
+        private readonly List<IncubatingEgg> _eggs = new List<IncubatingEgg>();
         private int _nextInstanceId = 1;
         private readonly MaterialInventory _materials = new MaterialInventory();
 
@@ -87,6 +90,26 @@ namespace Cosmimera.Save
             }
             _partners.Clear();
             _partners.AddRange(copy);
+        }
+
+        /// <summary>Eggs incubating in the hatchery, with their progress.</summary>
+        /// <remarks>Pre: none. Post: at most HatchConfig.DefaultCapacity entries. Side effects: none.</remarks>
+        public IReadOnlyList<IncubatingEgg> Eggs => _eggs.AsReadOnly();
+
+        /// <summary>Replaces the incubating eggs (call with <c>EggHatchery.Eggs</c> after run events or hatching).</summary>
+        /// <remarks>
+        /// Pre: eggs non-null; count &lt;= HatchConfig.DefaultCapacity.
+        /// Post: Eggs equals copies of the input in order, so later hatchery mutation never leaks into the save;
+        ///       invalid input leaves this save unchanged. Side effects: allocates copies.
+        /// </remarks>
+        public void SetEggs(IReadOnlyList<IncubatingEgg> eggs)
+        {
+            Contract.Requires(eggs != null, "eggs are required");
+            Contract.Requires(eggs.Count <= HatchConfig.DefaultCapacity, "too many eggs for the hatchery");
+            var copy = new List<IncubatingEgg>(eggs.Count);
+            foreach (IncubatingEgg e in eggs) copy.Add(new IncubatingEgg(e.EggId, e.Vessel, e.ProgressPpm));
+            _eggs.Clear();
+            _eggs.AddRange(copy);
         }
 
         /// <summary>Lobby-wide evolution material stock (Q-C32: shared by every creature, not per individual).</summary>
@@ -194,6 +217,7 @@ namespace Cosmimera.Save
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
             c._partners.AddRange(_partners);
+            foreach (IncubatingEgg e in _eggs) c._eggs.Add(new IncubatingEgg(e.EggId, e.Vessel, e.ProgressPpm));
             foreach (MaterialStack m in _materials.Snapshot())
             {
                 c._materials.Add(m.Key, m.Qty);
@@ -324,7 +348,12 @@ namespace Cosmimera.Save
                 owned = new CreatureDto[_owned.Count],
                 player_exp = PlayerExp,
                 partners = new PartnerDto[_partners.Count],
+                eggs = new EggDto[_eggs.Count],
             };
+            for (int i = 0; i < _eggs.Count; i++)
+            {
+                dto.eggs[i] = new EggDto { egg_id = _eggs[i].EggId, vessel = _eggs[i].Vessel, progress_ppm = _eggs[i].ProgressPpm };
+            }
             for (int i = 0; i < _partners.Count; i++)
             {
                 dto.partners[i] = new PartnerDto { main = _partners[i].MainInstanceId, sub = _partners[i].SubInstanceId };
@@ -422,6 +451,17 @@ namespace Cosmimera.Save
             }
 
             save._party.AddRange(party);
+            if (dto.version >= 6)
+            {
+                Check((dto.eggs?.Length ?? 0) <= HatchConfig.DefaultCapacity, "more eggs than hatchery slots");
+                foreach (EggDto egg in dto.eggs ?? Array.Empty<EggDto>())
+                {
+                    Check(egg != null && !string.IsNullOrEmpty(egg.egg_id), "egg entry has no id");
+                    Check(Enum.IsDefined(typeof(VesselKind), egg.vessel), "egg entry has an unknown vessel");
+                    Check(egg.progress_ppm >= 0 && egg.progress_ppm <= HatchConfig.FullProgressPpm, "egg progress out of range");
+                    save._eggs.Add(new IncubatingEgg(egg.egg_id, egg.vessel, egg.progress_ppm));
+                }
+            }
             if (dto.version >= 5)
             {
                 var subs = new HashSet<int>();
@@ -559,6 +599,14 @@ namespace Cosmimera.Save
             public MaterialDto[] materials;
             public int player_exp;
             public PartnerDto[] partners;
+            public EggDto[] eggs;
+        }
+
+        [Serializable] private sealed class EggDto
+        {
+            public string egg_id;
+            public int vessel;
+            public long progress_ppm;
         }
 
         [Serializable] private sealed class PartnerDto

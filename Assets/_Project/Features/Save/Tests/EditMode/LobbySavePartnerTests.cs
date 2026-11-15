@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
@@ -69,11 +69,11 @@ namespace Cosmimera.Save.Tests
         [Test]
         public void Format_four_migrates_to_empty_assignments()
         {
-            string json = Roster().ToJson().Replace("\"version\": 5", "\"version\": 4");
+            string json = Roster().ToJson().Replace("\"version\": " + LobbySave.FormatVersion, "\"version\": 4");
             LobbySave save = LobbySave.FromJson(json, P, _ => CreatureStage.Juvenile);
             Assert.That(save.LoadedFormatVersion, Is.EqualTo(4));
             Assert.That(save.Partners, Is.Empty);
-            Assert.That(save.ToJson(), Does.Contain("\"version\": 5"));
+            Assert.That(save.ToJson(), Does.Contain("\"version\": " + LobbySave.FormatVersion));
         }
 
         [TestCase("[{\"main\":3,\"sub\":4}]")]
