@@ -163,5 +163,36 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() => driver.SetWeather(-0.1f, 1f));
             Assert.Throws<ContractException>(() => driver.SetWeather(0.5f, -1f));
         }
+
+        [UnityTest]
+        public IEnumerator Destroying_the_atmosphere_restores_clear_weather_visibility()
+        {
+            float oldStart = RenderSettings.fogStartDistance, oldEnd = RenderSettings.fogEndDistance;
+            bool oldFog = RenderSettings.fog;
+            FogMode oldMode = RenderSettings.fogMode;
+            var root = new GameObject("weather-lifecycle");
+            _roots.Add(root);
+            AtmosphereDriver driver = root.AddComponent<AtmosphereDriver>();
+            driver.Configure(root.AddComponent<Camera>(), root.AddComponent<Light>(), new PlanetConfig(Radius, float3.zero),
+                new float3(0, 1, 0), PlanetLook.Sky("verdant_planet"), 600f, 1.7f);
+            float clearStart = RenderSettings.fogStartDistance, clearEnd = RenderSettings.fogEndDistance;
+            driver.SetVisibilityRadius(18f);
+            yield return null;
+            Object.Destroy(root);
+            yield return null;
+            try
+            {
+                Assert.That(driver == null, Is.True);
+                Assert.That(RenderSettings.fogStartDistance, Is.EqualTo(clearStart), "weather does not leak out of the run");
+                Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(clearEnd));
+            }
+            finally
+            {
+                RenderSettings.fogStartDistance = oldStart;
+                RenderSettings.fogEndDistance = oldEnd;
+                RenderSettings.fog = oldFog;
+                RenderSettings.fogMode = oldMode;
+            }
+        }
     }
 }

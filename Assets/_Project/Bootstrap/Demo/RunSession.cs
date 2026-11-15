@@ -242,6 +242,10 @@ namespace Cosmimera.Bootstrap.Demo
         private long _lastRollAtMs = -1_000_000;
         private bool _overloadRequested;
         private RunSetup _setup;
+        private Func<float3, TerrainProfile> _terrainAt;
+        private TerrainProfile _playerTerrain;
+        private WeatherProfile _playerWeather = WeatherProfiles.Clear;
+        private AtmosphereDriver _atmosphere;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
@@ -501,6 +505,8 @@ namespace Cosmimera.Bootstrap.Demo
             _surface = surface;
             System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
             TerrainProfile terrainProfile = TerrainProfiles.ForPlanetType(setup.PlanetType.Id);
+            _terrainAt = TemplatePlanner.SurfaceProfile(templates, setup.PlanetType.Id);
+            _playerTerrain = terrainProfile;
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
             System.Func<float3, bool> isOpenGround =
@@ -565,6 +571,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             // The planet's spin axis is a property of this planet (fixed in world space), not "up" anywhere.
             AtmosphereDriver atmosphere = gameObject.AddComponent<AtmosphereDriver>();
+            _atmosphere = atmosphere;
             atmosphere.Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
             (float grassDensity, float snowLine, float polarLat, float cloudCover, float wind) =
@@ -652,7 +659,8 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _encounter = new Encounter(config, balance, surface, setup.Seed);
-            _encounter.SetTerrainMoveSpeedMultiplier(_ => terrainProfile.MoveSpeedMultiplier);
+            _encounter.SetTerrainMoveSpeedMultiplier(d => _terrainAt(d).MoveSpeedMultiplier);
+            _encounter.SetWeatherProvider(WeatherAt);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -710,6 +718,7 @@ namespace Cosmimera.Bootstrap.Demo
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
+            UpdateEnvironment(PlayerPosition());
         }
 
         private void Update()
@@ -774,10 +783,33 @@ namespace Cosmimera.Bootstrap.Demo
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
         }
 
+        private WeatherProfile WeatherAt(float3 direction, long nowMs) =>
+            WeatherPlanner.WeatherAt(_setup.Seed, _setup.PlanetType.Id, _terrainAt(direction).Id, nowMs);
+
+        private void UpdateEnvironment(float3 player)
+        {
+            float3 direction = _rig.Config.ToDirection(player);
+            _playerTerrain = _terrainAt(direction);
+            _playerWeather = WeatherAt(direction, _nowMs);
+            ApplyPlayerEnvironment();
+            _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
+        }
+
+        private void ApplyPlayerEnvironment()
+        {
+            float terrain = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.MoveSpeedMultiplier) : _playerTerrain.MoveSpeedMultiplier;
+            float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.SprintSpeedMultiplier) : _playerTerrain.SprintSpeedMultiplier;
+            float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.GroundAccelerationMultiplier) : _playerTerrain.GroundAccelerationMultiplier;
+            _rig.Character.SetTerrainModifiers(
+                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier,
+                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier, acceleration);
+        }
+
         private void StepCombat()
         {
             _nowMs += TickMs;
             float3 player = PlayerPosition();
+            UpdateEnvironment(player);
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
             RecordAppearances();
             UpdateRegion(player);
@@ -797,7 +829,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_rollRequested)
             {
                 _rollRequested = false;
-                if (_vitals.TryRoll(_nowMs, WeatherProfiles.Clear, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
+                if (_vitals.TryRoll(_nowMs, _playerWeather, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
                 {
                     _lastRollAtMs = _nowMs;
                 }
@@ -2434,7 +2466,8 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.BeginArea(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12));
             GUILayout.BeginHorizontal();
             long rollCdLeft = math.max(0L, _lastRollAtMs + math.max(_balance.Player.RollDurationMs,
-                (long)Math.Ceiling(_balance.Player.RollCooldownMs * (100 + _foodBuffs.GetRollCooldownModPercent(_nowMs)) / 100d)) - _nowMs);
+                (long)Math.Ceiling(_balance.Player.RollCooldownMs * _playerWeather.PlayerRollCooldownMultiplier *
+                    (100 + _foodBuffs.GetRollCooldownModPercent(_nowMs)) / 100d)) - _nowMs);
             string rollText = _copy.Ui("ui.hud.roll_prompt").Replace("{key}", BindingLabel(_rollAction)) +
                 (rollCdLeft > 0 ? $" ({rollCdLeft / 1000f:0.0}s)" : $" {_copy.Ui("ui.hud.cd_ready")}");
             GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}\n{rollText}",

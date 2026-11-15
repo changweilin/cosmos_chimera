@@ -3,6 +3,7 @@ using Cosmimera.Core.Contracts;
 using Cosmimera.Planet;
 using NUnit.Framework;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Tests
 {
@@ -43,6 +44,42 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(start, Is.GreaterThanOrEqualTo(previous), $"R={radius}");
                 Assert.That(start, Is.LessThanOrEqualTo(AtmosphereDriver.FogStartM), $"R={radius}");
                 previous = start;
+            }
+        }
+
+        [Test]
+        public void Weather_visibility_caps_restore_the_clear_range_and_validate_the_lifecycle_and_radius()
+        {
+            float oldStart = RenderSettings.fogStartDistance, oldEnd = RenderSettings.fogEndDistance;
+            bool oldFog = RenderSettings.fog;
+            FogMode oldMode = RenderSettings.fogMode;
+            var root = new GameObject("weather-visibility");
+            try
+            {
+                AtmosphereDriver driver = root.AddComponent<AtmosphereDriver>();
+                Assert.Throws<ContractException>(() => driver.SetVisibilityRadius(18f));
+                driver.Configure(root.AddComponent<Camera>(), root.AddComponent<Light>(), Planet(640f), new float3(0, 1, 0),
+                    PlanetLook.Sky("verdant_planet"), 600f, Eye);
+                float clearStart = RenderSettings.fogStartDistance, clearEnd = RenderSettings.fogEndDistance;
+                driver.SetVisibilityRadius(18f);
+                Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(18f));
+                Assert.That(RenderSettings.fogStartDistance / RenderSettings.fogEndDistance,
+                    Is.EqualTo(clearStart / clearEnd).Within(1e-6f));
+                driver.SetVisibilityRadius(45f);
+                Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(45f), "caps do not compound");
+                driver.SetVisibilityRadius(1000f);
+                Assert.That(RenderSettings.fogStartDistance, Is.EqualTo(clearStart));
+                Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(clearEnd));
+                foreach (float invalid in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
+                    Assert.Throws<ContractException>(() => driver.SetVisibilityRadius(invalid));
+            }
+            finally
+            {
+                if (root != null) Object.DestroyImmediate(root);
+                RenderSettings.fogStartDistance = oldStart;
+                RenderSettings.fogEndDistance = oldEnd;
+                RenderSettings.fog = oldFog;
+                RenderSettings.fogMode = oldMode;
             }
         }
 

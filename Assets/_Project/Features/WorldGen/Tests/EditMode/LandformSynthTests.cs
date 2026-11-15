@@ -241,6 +241,41 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Surface_profiles_follow_stamps_and_keep_volcano_and_cave_on_the_general_surface()
+        {
+            var planet = new PlanetConfig(640f, float3.zero);
+            var sources = new[] { LandformSynth.Generate("volcano", 7, 0), LandformSynth.Generate("cave", 7, 1),
+                LandformSynth.Generate("ice_field", 7, 2) };
+            var centers = new[] { new float3(0, 1, 0), new float3(1, 0, 0), new float3(0, -1, 0) };
+            var placements = new[] { new TemplatePlacement(0, centers[0], 0f, 0.3f),
+                new TemplatePlacement(1, centers[1], 0f, 0.3f), new TemplatePlacement(2, centers[2], 0f, 0.3f) };
+            using PlanetTemplates templates = PlanetTemplates.Create(planet, sources, placements);
+            System.Func<float3, TerrainProfile> at = TemplatePlanner.SurfaceProfile(templates, "verdant_planet");
+            var expected = new[] { "volcano_foothills", "cavern_outer", "ice_field" };
+            for (int i = 0; i < centers.Length; i++)
+            {
+                Assert.That(at(centers[i]).Id, Is.EqualTo(expected[i]));
+                Assert.That(at(centers[i]).IsAdvancedDungeon, Is.False);
+            }
+            Assert.That(at(new float3(0, 0, 1)).Id, Is.EqualTo("forest"), "between stamps use the planet baseline");
+        }
+
+        [TestCase("verdant_planet", "forest")]
+        [TestCase("ice_crystal_planet", "ice_field")]
+        [TestCase(null, "grassland")]
+        [TestCase("unknown", "grassland")]
+        public void Surface_profiles_without_landforms_use_the_planet_and_validate_directions(string type, string expected)
+        {
+            System.Func<float3, TerrainProfile> at = TemplatePlanner.SurfaceProfile(null, type);
+            Assert.That(at(new float3(0, 1, 0)).Id, Is.EqualTo(expected));
+            Assert.That(at(new float3(0, -1, 0)).Id, Is.EqualTo(expected));
+            Assert.Throws<ContractException>(() => at(float3.zero));
+            Assert.Throws<ContractException>(() => at(new float3(0, 2, 0)));
+            Assert.Throws<ContractException>(() => at(new float3(float.NaN, 0, 0)));
+            Assert.Throws<ContractException>(() => at(new float3(float.PositiveInfinity, 0, 0)));
+        }
+
+        [Test]
         public void TemplatePlanner_Build_rejects_null_tags_and_invalid_config()
         {
             Assert.Throws<ContractException>(() =>

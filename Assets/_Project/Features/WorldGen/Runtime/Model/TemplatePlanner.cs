@@ -84,6 +84,32 @@ namespace Cosmimera.WorldGen
                 : baseDensity;
         }
 
+        /// <summary>Surface terrain profile under each ground direction, for movement and local weather.</summary>
+        /// <remarks>
+        /// Pre: templates may be null (no landforms); otherwise a live Build result that outlives the returned function.
+        ///      The returned function accepts finite unit directions. planetTypeId may be null or unknown.
+        /// Post: the strongest contributing stamp supplies its general surface profile; outside all stamps (or without
+        ///       templates), returns the planet type's profile. Volcano/cave stamps do not become advanced dungeons.
+        /// Side effects: allocates a callback and one cached profile per stamp; queries allocate nothing.
+        /// </remarks>
+        public static System.Func<float3, TerrainProfile> SurfaceProfile(PlanetTemplates templates, string planetTypeId)
+        {
+            TerrainProfile baseline = TerrainProfiles.ForPlanetType(planetTypeId);
+            TemplateView view = templates != null ? templates.View : default;
+            var profiles = new TerrainProfile[templates != null ? templates.StampIds.Count : 0];
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                profiles[i] = TerrainProfiles.For(SurfaceTerrainId(LandformSynth.KindOf(templates.StampIds[i])));
+            }
+
+            return direction =>
+            {
+                Contract.Requires(math.all(math.isfinite(direction)) && math.abs(math.lengthsq(direction) - 1f) <= 2e-3f,
+                    "direction must be finite and unit length");
+                return view.TryGetStamp(direction, out int i, out _) ? profiles[i] : baseline;
+            };
+        }
+
         /// <summary>Scatter biome (landform species table) under each point of a planet built by <see cref="Build"/>.</summary>
         /// <remarks>
         /// REQ: planet-world.md#散佈 (Q-W15: 依地貌印章選種).

@@ -339,7 +339,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// colour and fog by the local sun elevation is correct at every point and costs nothing.
     /// It also publishes the sky, sun, cloud and wind state as shader globals (CosmiAtmosphere.hlsl) so terrain, grass,
     /// water and sky dome are lit by one atmosphere; they are zeroed again on destroy, which returns every scenery
-    /// shader to its undriven fallback.
+    /// shader to its undriven fallback; clear-weather fog distances are restored so local weather cannot leak into the lobby.
     /// Pre: Configure once. Side effects: writes RenderSettings fog/ambient, the camera background, the sun's colour and
     /// intensity, and the _Cosmi* shader globals every frame.
     /// </remarks>
@@ -355,6 +355,8 @@ namespace Cosmimera.Bootstrap.Demo
         private float _dayLengthS;
         private float _cloudCover = 0.42f;
         private float _wind = 1f;
+        private float _baseFogStartM;
+        private float _baseFogEndM;
 
         private static readonly int PlanetId = Shader.PropertyToID("_CosmiPlanet");
         private static readonly int PoleAxisId = Shader.PropertyToID("_CosmiPoleAxis");
@@ -377,6 +379,21 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Caps visibility for local weather while retaining the planet's clear-weather fog range.</summary>
+        /// <remarks>
+        /// Pre: Configure has run; radiusM finite and greater than zero.
+        /// Post: fog end is min(radiusM, clear-weather end); start retains the clear-weather fade proportion.
+        ///       Increasing the cap restores visibility without compounding previous caps.
+        /// Side effects: writes RenderSettings fog distances immediately.
+        /// </remarks>
+        public void SetVisibilityRadius(float radiusM)
+        {
+            Contract.Requires(_camera != null && _baseFogEndM > 0f, "Configure must run before setting visibility");
+            Contract.Requires(math.isfinite(radiusM) && radiusM > 0f, "visibility radius must be finite and > 0");
+            RenderSettings.fogEndDistance = math.min(radiusM, _baseFogEndM);
+            RenderSettings.fogStartDistance = _baseFogStartM * RenderSettings.fogEndDistance / _baseFogEndM;
         }
 
         /// <summary>Fog start on planets of R ≥ 640 m, where it was tuned.</summary>
@@ -428,6 +445,8 @@ namespace Cosmimera.Bootstrap.Demo
             // Fog end well past the horizon keeps distant landmarks readable while hiding LOD pop at the far end.
             RenderSettings.fogStartDistance = FogStartDistance(planet, eyeHeight);
             RenderSettings.fogEndDistance = math.max(250f, planet.Radius * 0.5f);
+            _baseFogStartM = RenderSettings.fogStartDistance;
+            _baseFogEndM = RenderSettings.fogEndDistance;
         }
 
         private void LateUpdate()
@@ -471,6 +490,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDestroy()
         {
+            // A run's short weather cap must not carry over into the lobby after its atmosphere is gone.
+            if (_baseFogEndM > 0f)
+            {
+                RenderSettings.fogStartDistance = _baseFogStartM;
+                RenderSettings.fogEndDistance = _baseFogEndM;
+            }
             Shader.SetGlobalVector(PlanetId, Vector4.zero);
             Shader.SetGlobalColor(SkyHorizonId, Color.clear);
             Shader.SetGlobalColor(SkyZenithId, Color.clear);

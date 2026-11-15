@@ -458,12 +458,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _utilityModifiers = FieldUtilityRules.ComputeTeamModifiers(_enabledUtilities);
             _encounter.SetExplorationUtilityModifiers(_utilityModifiers.WildDetectionPermille, _utilityModifiers.PreventsWildEscape);
-            TerrainProfile profile = TerrainProfiles.ForPlanetType(_setup.PlanetType.Id);
-            float terrain = _utilityModifiers.IgnoresTerrainSlow ? math.max(1, profile.MoveSpeedMultiplier) : profile.MoveSpeedMultiplier;
-            float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1, profile.SprintSpeedMultiplier) : profile.SprintSpeedMultiplier;
-            float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1, profile.GroundAccelerationMultiplier) : profile.GroundAccelerationMultiplier;
-            _rig.Character.SetTerrainModifiers(terrain * _utilityModifiers.MoveSpeedPermille / 1000f,
-                sprint * _utilityModifiers.MoveSpeedPermille / 1000f, acceleration);
+            ApplyPlayerEnvironment();
         }
     }
 }

@@ -1143,6 +1143,58 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [UnityTest]
+        public IEnumerator Dynamic_weather_reaches_combat_movement_visibility_and_rolls_then_changes_at_the_slot_boundary()
+        {
+            Env env = LoadEnv();
+            string terrain = TerrainProfiles.ForPlanetType(env.Type.Id).Id;
+            ulong seed = Enumerable.Range(1, 512).Select(i => (ulong)i).First(value =>
+                WeatherPlanner.WeatherAt(value, env.Type.Id, terrain, 1000).Kind == WeatherKind.Thunderstorm &&
+                WeatherPlanner.WeatherAt(value, env.Type.Id, terrain, WeatherPlanner.DefaultSlotDurationMs).Kind == WeatherKind.Clear);
+            var run = new Run();
+            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            RunSession s = run.Session;
+            const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var rig = (PlanetRig)typeof(RunSession).GetField("_rig", Private).GetValue(s);
+            var encounter = (Encounter)typeof(RunSession).GetField("_encounter", Private).GetValue(s);
+            var clock = typeof(RunSession).GetField("_nowMs", Private);
+            var roll = typeof(RunSession).GetField("_rollRequested", Private);
+            var lastRoll = typeof(RunSession).GetField("_lastRollAtMs", Private);
+            var motorScale = rig.Character.GetType().GetField("_terrainMoveSpeedScale", Private);
+            var combatWeather = typeof(Encounter).GetMethod("WeatherAt", Private);
+            foreach (EncounterUnit unit in encounter.Units)
+                if (unit.Side == EncounterSide.Wild) encounter.Remove(unit.Id);
+
+            roll.SetValue(s, true);
+            Step(s);
+            long started = s.NowMsForTests;
+            Assert.That((long)lastRoll.GetValue(s), Is.EqualTo(started));
+            WeatherProfile weather = WeatherPlanner.WeatherAt(seed, env.Type.Id, terrain, started);
+            var modifiers = (TeamUtilityModifiers)typeof(RunSession).GetField("_utilityModifiers", Private).GetValue(s);
+            float baseMove = TerrainProfiles.For(terrain).MoveSpeedMultiplier * modifiers.MoveSpeedPermille / 1000f;
+            Assert.That((float)motorScale.GetValue(rig.Character), Is.EqualTo(baseMove * weather.PlayerMoveSpeedMultiplier).Within(1e-6f));
+            Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(weather.PlayerVisibilityRadiusM));
+            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter,
+                new object[] { rig.Config.ToDirection(s.PlayerPositionForTests), started })).Kind, Is.EqualTo(weather.Kind));
+
+            clock.SetValue(s, started + env.Balance.Player.RollCooldownMs - 50L);
+            roll.SetValue(s, true);
+            Step(s);
+            Assert.That((long)lastRoll.GetValue(s), Is.EqualTo(started), "the sunny cooldown is too short in a thunderstorm");
+            long cooldown = (long)System.Math.Ceiling(env.Balance.Player.RollCooldownMs * weather.PlayerRollCooldownMultiplier);
+            clock.SetValue(s, started + cooldown - 50L);
+            roll.SetValue(s, true);
+            Step(s);
+            Assert.That((long)lastRoll.GetValue(s), Is.EqualTo(started + cooldown), "the weather-adjusted deadline permits a roll");
+
+            clock.SetValue(s, (long)WeatherPlanner.DefaultSlotDurationMs - 50L);
+            Step(s);
+            Assert.That((float)motorScale.GetValue(rig.Character), Is.EqualTo(baseMove).Within(1e-6f));
+            Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(math.max(250f, rig.Config.Radius * 0.5f)), "clear weather restores the planet fog range");
+            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter,
+                new object[] { rig.Config.ToDirection(s.PlayerPositionForTests), s.NowMsForTests })).Kind, Is.EqualTo(WeatherKind.Clear));
+        }
+
+        [UnityTest]
         public IEnumerator Grass_hides_a_stationary_player_until_the_real_clump_is_destroyed()
         {
             Env env = LoadEnv();
