@@ -1,6 +1,8 @@
 import importlib.util
+from contextlib import contextmanager
 import json
 from pathlib import Path
+from unittest.mock import Mock
 import zipfile
 
 import pytest
@@ -89,3 +91,52 @@ def test_invalid_name_fails_before_io(tmp_path, name):
     with pytest.raises(ValueError, match="Name"):
         pack(tmp_path, name)
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize("step", ["checksum", "folder", "archive"])
+def test_publication_failure_leaves_no_partial_release_and_allows_retry(checkout, monkeypatch, step):
+    original_open, original_rename = Path.open, Path.rename
+
+    @contextmanager
+    def fail_checksum(path, *args, **kwargs):
+        with original_open(path, *args, **kwargs) as stream:
+            if step == "checksum" and path.suffix == ".sha256" and args == ("x",):
+                def fail_write(data):
+                    stream.write("partial checksum")
+                    raise OSError("publication failed")
+
+                receipt = Mock(wraps=stream)
+                receipt.write.side_effect = fail_write
+                yield receipt
+            else:
+                yield stream
+
+    def fail_rename(path, target):
+        if ((step == "folder" and path.is_dir())
+                or (step == "archive" and path.suffix == ".zip")):
+            raise OSError("publication failed")
+        return original_rename(path, target)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "open", fail_checksum)
+        patch.setattr(Path, "rename", fail_rename)
+        with pytest.raises(OSError, match="publication failed"):
+            pack(checkout)
+    assert not list((checkout / "Builds/Demo").iterdir())
+    assert pack(checkout).is_file()
+
+
+def test_checksum_reservation_collision_preserves_the_other_release(checkout, monkeypatch):
+    original_open = Path.open
+
+    def collide(path, *args, **kwargs):
+        if path.suffix == ".sha256" and args == ("x",):
+            with original_open(path, "w", encoding="utf-8") as stream:
+                stream.write("another publisher")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", collide)
+    with pytest.raises(FileExistsError):
+        pack(checkout)
+    files = list((checkout / "Builds/Demo").iterdir())
+    assert len(files) == 1 and files[0].read_text() == "another publisher"

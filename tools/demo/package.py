@@ -121,10 +121,22 @@ def package(root, name, build_log, editmode, playmode, preview=None):
                     raise ValueError("ZIP checksum mismatch: " + path)
         digest = sha256(staged_zip)
         # Reserve the final name exclusively before publishing the verified package.
-        with checksum.open("x", encoding="utf-8") as stream:
-            stream.write(digest + "  " + archive.name + "\n")
-        staging.rename(folder)
-        staged_zip.rename(archive)
+        reserved = False
+        published_folder = False
+        try:
+            with checksum.open("x", encoding="utf-8") as stream:
+                reserved = True
+                stream.write(digest + "  " + archive.name + "\n")
+            staging.rename(folder)
+            published_folder = True
+            staged_zip.rename(archive)
+        except BaseException:
+            # Failed writes, renames and interrupts must not strand the version reservation; only undo our own output.
+            if published_folder:
+                folder.rename(staging)
+            if reserved:
+                checksum.unlink()
+            raise
     return archive
 
 
