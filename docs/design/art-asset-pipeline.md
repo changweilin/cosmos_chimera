@@ -31,7 +31,7 @@ Claude Code：「驗收 Art/_incoming/<task_id>」→ tools/validate-art 檢查 
 
 **3D 管線（`model-rig@2`）**：角色/宙獸立繪包（`chr-*.zip` / `cr-*.zip`）放在 Google 雲端硬碟 `project/cosmos_chimera/image_in/`；Gemini Argon 任務模式讀取後在同一個 prompt 內做完 image-to-3D、Blender、綁骨與動作，每包打包成一個 zip 上傳到 `project/cosmos_chimera/3D_out/`。批次模式處理 `image_in` 內所有包（跳過 `3D_out` 已有相同 `source_pack` 者），每包 `task_id = <批次 task_id>-<subject-id>`、manifest 帶 `batch_id`（= 標頭 task_id）與 `source_pack`。招式不在此管線：宙獸只做依形狀的通用招式動作槽（`atk_*`／`sup_*`／`field_deploy`）。
 
-**交付層級**：`L1` 對話式 AI 必定做得到（圖、JSON、腳本），未交付即任務失敗；`L2` 視平台能力（3D 網格、FBX 動畫），做不到時列入 `manifest.missing`，不得以假檔充數。3D 工具選型 → Q-T3。
+**交付層級**：`L1` 對話式 AI 必定做得到（圖、JSON、腳本），未交付即任務失敗；`L2` 視平台能力（3D 網格、FBX 動畫），做不到時列入 `manifest.missing`，不得以假檔充數。3D 工具選型已移交其他專案，本專案不做。
 
 ## 放置位置
 | 階段 | 路徑 | Git |

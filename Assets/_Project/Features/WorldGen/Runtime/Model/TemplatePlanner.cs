@@ -17,6 +17,34 @@ namespace Cosmimera.WorldGen
     /// </remarks>
     public static class TemplatePlanner
     {
+        /// <summary>|y| of a stamp centre above which the stamp lies in the cold band and becomes a cold landform.</summary>
+        /// <remarks>
+        /// Pre: none. Post: constant in (0, 1); the same latitude where forest stands turn cold (planet-world.md#林型).
+        /// Side effects: none.
+        /// </remarks>
+        public const float ColdBandY = 0.7f;
+
+        // REQ: planet-world.md#1-骨架層程序化地貌 (親和標籤; 暫定) — the planet terrain tag a landform that is not
+        // itself a planet tag also answers to, so it joins that planet type's preferred landforms.
+        private static readonly Dictionary<string, string> Affinity = new Dictionary<string, string>
+        {
+            ["grassland"] = "forest",
+            ["swamp"] = "river_valley",
+            ["desert"] = "canyon",
+            ["mountain"] = "plateau",
+            ["tundra"] = "ice_field",
+            ["glacier"] = "ice_field",
+            ["cirque"] = "ice_field",
+            ["moraine"] = "ice_field",
+            ["karst"] = "cave",
+            ["basalt_terrace"] = "volcano",
+            ["granite_domes"] = "plateau",
+            ["slate_cliffs"] = "eternal_night",
+        };
+
+        // REQ: planet-world.md#寒帶地形 (Q-W18: 冰晶星＋所有星球的寒帶) — what a cold-band stamp is redrawn from.
+        private static readonly string[] ColdKinds = { "tundra", "glacier", "cirque", "moraine", "ice_field" };
+
         /// <summary>Default angular half extent of a stamp (rad); ≈ 288 m at R = 640.</summary>
         /// <remarks>Pre: none. Post: constant within TemplatePlacement's (0, 0.6]. Side effects: none.</remarks>
         public const float DefaultHalfAngleRad = 0.45f;
@@ -28,8 +56,8 @@ namespace Cosmimera.WorldGen
         /// <summary>Synthesizes and places the landform stamps of one planet.</summary>
         /// <remarks>
         /// Pre: config valid; typeTags non-null, no null entries.
-        /// Post: CountFor(size) stamps; stamp i is LandformSynth.Generate(kind, seed, i) at Choose's i-th placement over
-        ///       the catalog LandformSynth.Kinds (one tag each). Same inputs → same stamps.
+        /// Post: CountFor(size) stamps; stamp i is LandformSynth.Generate(Kinds(...)[i], seed, i) at Choose's i-th
+        ///       placement. Same inputs → same stamps.
         /// Side effects: allocates persistent native memory owned by the result (Dispose required).
         /// </remarks>
         public static PlanetTemplates Build(in PlanetConfig config, ulong seed, IReadOnlyList<string> typeTags,
@@ -37,26 +65,71 @@ namespace Cosmimera.WorldGen
         {
             Contract.Requires(config.IsValid, "config must be valid");
             Contract.Requires(typeTags != null, "typeTags must not be null");
-            IReadOnlyList<string> kinds = LandformSynth.Kinds;
-            var catalog = new List<IReadOnlyList<string>>(kinds.Count);
-            foreach (string kind in kinds)
-            {
-                catalog.Add(new[] { kind });
-            }
-
-            List<TemplatePlacement> chosen = Choose(seed, typeTags, catalog, CountFor(size));
+            string[] kinds = Kinds(seed, typeTags, CountFor(size), out List<TemplatePlacement> chosen);
             var sources = new List<TemplateSource>(chosen.Count);
             var placements = new List<TemplatePlacement>(chosen.Count);
             for (int i = 0; i < chosen.Count; i++)
             {
                 TemplatePlacement c = chosen[i];
                 // One grid per stamp (not per kind): two volcanoes on one planet must not be copies.
-                sources.Add(LandformSynth.Generate(kinds[c.Source], seed, i));
+                sources.Add(LandformSynth.Generate(kinds[i], seed, i));
                 placements.Add(new TemplatePlacement(i, c.Center, c.RotationRad, c.HalfAngleRad));
             }
 
             return PlanetTemplates.Create(config, sources, placements);
         }
+
+        /// <summary>The landform kind of each stamp <see cref="Build"/> places, and where.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#1-骨架層程序化地貌, #寒帶地形.
+        /// Pre: typeTags non-null, no null entries; 1 &lt;= count &lt;= 8.
+        /// Post: count kinds of <see cref="LandformSynth.Kinds"/>, one per placement (placement.Source indexes an
+        ///       internal catalog and is not meaningful to callers). A kind is preferred when it, or the planet tag it
+        ///       has an affinity to, is in typeTags. The four glacial kinds (tundra, glacier, cirque, moraine) appear
+        ///       only on planets that prefer them and on stamps whose centre has |y| > <see cref="ColdBandY"/>; such
+        ///       a stamp is always a cold kind (those four or ice_field) or a fjord. Same inputs → same output.
+        /// Side effects: allocates the results.
+        /// </remarks>
+        public static string[] Kinds(ulong seed, IReadOnlyList<string> typeTags, int count,
+            out List<TemplatePlacement> placements)
+        {
+            Contract.Requires(typeTags != null, "typeTags must not be null");
+            IReadOnlyList<string> all = LandformSynth.Kinds;
+            var catalogKinds = new List<string>(all.Count);
+            var catalog = new List<IReadOnlyList<string>>(all.Count);
+            foreach (string kind in all)
+            {
+                IReadOnlyList<string> tags = Affinity.TryGetValue(kind, out string tag) ? new[] { kind, tag } : new[] { kind };
+                // Glacial landforms never fill a spare slot at random: off an ice world they belong to the cold band.
+                if (IsGlacial(kind) && !Overlaps(tags, typeTags))
+                {
+                    continue;
+                }
+
+                catalogKinds.Add(kind);
+                catalog.Add(tags);
+            }
+
+            placements = Choose(seed, typeTags, catalog, count);
+            // Own stream (P for polar), one draw per stamp whether used or not: a stamp's cold kind does not depend
+            // on which other stamps are cold, and the T stream is untouched.
+            var polar = new Pcg32(seed, 'P');
+            var kinds = new string[placements.Count];
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                string kind = catalogKinds[placements[i].Source];
+                string cold = ColdKinds[(int)polar.NextUInt((uint)ColdKinds.Length)];
+                // Float compare on a lattice centre: a peer one ulp off disagrees only for a centre within an ulp of
+                // the band edge, the same exposure the lattice rotation already has.
+                bool inColdBand = math.abs(placements[i].Center.y) > ColdBandY;
+                kinds[i] = inColdBand && kind != "fjord" && System.Array.IndexOf(ColdKinds, kind) < 0 ? cold : kind;
+            }
+
+            return kinds;
+        }
+
+        private static bool IsGlacial(string kind) =>
+            kind == "tundra" || kind == "glacier" || kind == "cirque" || kind == "moraine";
 
         /// <summary>Canopy obstacle density of the landform under each point of a planet built by <see cref="Build"/>.</summary>
         /// <remarks>

@@ -133,6 +133,10 @@ namespace Cosmimera.WorldGen
                     break;
                 case "ice_field":
                 case "ice_cap":
+                case "tundra":
+                case "glacier":
+                case "cirque":
+                case "moraine":
                     w.Add(WeatherKind.Blizzard, 35);
                     break;
                 case "volcano_foothills":
@@ -152,6 +156,7 @@ namespace Cosmimera.WorldGen
                     break;
                 case "eternal_night":
                 case "cave":
+                case "karst":
                 case "labyrinth":
                     w.Add(WeatherKind.Fog, 25);
                     break;

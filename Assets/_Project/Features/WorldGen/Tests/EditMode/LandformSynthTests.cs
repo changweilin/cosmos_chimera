@@ -9,9 +9,30 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class LandformSynthTests
     {
-        // Pinned digest of every kind at seed 12345, index 0 (LandformSynth.GeneratorVersion 1). The synth is integer-only,
-        // so unlike RunPlanner's pins this one must also hold on IL2CPP and other machines (ADR-0007 seaCount).
+        // Pinned digests at seed 12345, index 0. The synth is integer-only, so unlike RunPlanner's pins these must also
+        // hold on IL2CPP and other machines (ADR-0007 seaCount). V1 covers the twelve v1 kinds, which v2 must not
+        // change; V2 covers all kinds (LandformSynth.GeneratorVersion 2: twelve kinds added, Q-W18 / P3-24 b).
         private const ulong SnapshotSeed12345V1 = 15533561194335027287UL;
+        private const ulong SnapshotSeed12345V2 = 12616586232240399627UL;
+
+        private static readonly string[] V1Kinds =
+        {
+            "forest", "river_valley", "volcano", "rift_valley", "ice_field", "fjord",
+            "plateau", "archipelago", "canyon", "cave", "eternal_day", "eternal_night",
+        };
+
+        private static readonly string[] GlacialKinds = { "tundra", "glacier", "cirque", "moraine" };
+
+        private static int Count(TemplateSource s, byte water)
+        {
+            int n = 0;
+            foreach (byte w in s.Water)
+            {
+                n += w == water ? 1 : 0;
+            }
+
+            return n;
+        }
 
         private const int Size = LandformSynth.Size;
 
@@ -19,13 +40,158 @@ namespace Cosmimera.WorldGen.Tests
             math.max(math.abs(2 * x - (Size - 1)), math.abs((Size - 1) - 2 * y));
 
         [Test]
-        public void Kinds_are_the_twelve_schema_terrain_tags()
+        public void Kinds_start_with_the_twelve_schema_terrain_tags_and_add_the_table_cold_and_bedrock_landforms()
         {
-            CollectionAssert.AreEquivalent(new[]
+            var expected = new List<string>(V1Kinds);
+            expected.AddRange(new[] { "grassland", "desert", "swamp", "mountain" });
+            expected.AddRange(GlacialKinds);
+            expected.AddRange(new[] { "karst", "basalt_terrace", "granite_domes", "slate_cliffs" });
+            CollectionAssert.AreEqual(expected, LandformSynth.Kinds);
+        }
+
+        [Test]
+        public void Every_kind_has_its_own_surface_profile_species_table_and_bedrock_rule()
+        {
+            foreach (string kind in LandformSynth.Kinds)
             {
-                "forest", "river_valley", "volcano", "rift_valley", "ice_field", "fjord",
-                "plateau", "archipelago", "canyon", "cave", "eternal_day", "eternal_night",
-            }, LandformSynth.Kinds);
+                string terrain = kind == "volcano" ? "volcano_foothills" : kind == "cave" ? "cavern_outer" : kind;
+                Assert.That(TerrainProfiles.For(terrain).Id, Is.EqualTo(terrain), "no silent grassland fallback");
+                Assert.That(TerrainProfiles.For(terrain).IsAdvancedDungeon, Is.False, terrain);
+                Assert.That(ScatterBiomes.BiomeIds[ScatterBiomes.BiomeOf(kind)], Is.EqualTo(terrain));
+            }
+
+            // REQ: planet-world.md#地質變體 (b) — a bedrock landform is always its bedrock.
+            var pinned = new (string kind, Geology geology)[]
+            {
+                ("karst", Geology.Karst), ("basalt_terrace", Geology.Basalt),
+                ("granite_domes", Geology.Granite), ("slate_cliffs", Geology.Slate),
+            };
+            foreach ((string kind, Geology geology) in pinned)
+            {
+                for (uint h = 0; h < 200u; h++)
+                {
+                    Assert.That(ScatterGeology.For(ScatterBiomes.BiomeOf(kind), h * 2654435761u), Is.EqualTo(geology), kind);
+                }
+            }
+        }
+
+        [Test]
+        public void Lake_landforms_hold_a_little_water_and_a_glacier_drains_by_a_meltwater_stream()
+        {
+            foreach (ulong seed in new[] { 3UL, 99UL, 12345UL })
+            {
+                foreach (string kind in new[] { "tundra", "cirque", "moraine", "swamp" })
+                {
+                    int sea = Count(LandformSynth.Generate(kind, seed, 0), 1);
+                    Assert.That(sea, Is.GreaterThan(0).And.LessThan(Size * Size / 4), kind + " has lakes, not a sea");
+                }
+
+                TemplateSource glacier = LandformSynth.Generate("glacier", seed, 0);
+                Assert.That(Count(glacier, 1), Is.EqualTo(0));
+                Assert.That(Count(glacier, 2), Is.GreaterThan(0));
+            }
+        }
+
+        [Test]
+        public void Glacier_trough_floor_lies_below_both_shoulders()
+        {
+            // Dir is random, so find the trough by its river: every river sample must sit well below the stamp's top.
+            TemplateSource s = LandformSynth.Generate("glacier", 12345UL, 0);
+            int top = 0;
+            foreach (ushort h in s.Heights)
+            {
+                top = math.max(top, h);
+            }
+
+            for (int i = 0; i < s.Water.Length; i++)
+            {
+                if (s.Water[i] == 2)
+                {
+                    Assert.That((int)s.Heights[i], Is.LessThan(top / 2));
+                }
+            }
+        }
+
+        [Test]
+        public void Glacial_kinds_appear_only_on_planets_that_prefer_them_or_in_the_cold_band()
+        {
+            var cold = new HashSet<string>(GlacialKinds) { "ice_field" };
+            var tagSets = new[]
+            {
+                new[] { "forest", "river_valley" }, new[] { "volcano", "rift_valley" }, new[] { "plateau", "archipelago" },
+                new[] { "canyon", "cave" }, new[] { "eternal_day", "eternal_night" }, new string[0],
+            };
+            int coldStamps = 0;
+            foreach (string[] tags in tagSets)
+            {
+                for (ulong seed = 1; seed <= 150; seed++)
+                {
+                    foreach (int count in new[] { 4, 6 })
+                    {
+                        string[] kinds = TemplatePlanner.Kinds(seed, tags, count, out List<TemplatePlacement> where);
+                        Assert.That(kinds.Length, Is.EqualTo(count));
+                        Assert.That(where.Count, Is.EqualTo(count));
+                        for (int i = 0; i < count; i++)
+                        {
+                            CollectionAssert.Contains(LandformSynth.Kinds, kinds[i]);
+                            bool inBand = math.abs(where[i].Center.y) > TemplatePlanner.ColdBandY;
+                            if (inBand)
+                            {
+                                coldStamps++;
+                                Assert.That(cold.Contains(kinds[i]) || kinds[i] == "fjord", Is.True, $"seed {seed}: {kinds[i]} in the cold band");
+                            }
+                            else
+                            {
+                                CollectionAssert.DoesNotContain(GlacialKinds, kinds[i], $"seed {seed}: glacial landform outside the cold band");
+                            }
+                        }
+                    }
+                }
+            }
+
+            Assert.That(coldStamps, Is.GreaterThan(100), "the cold band is actually reached");
+        }
+
+        [Test]
+        public void An_ice_planet_prefers_glacial_kinds_at_any_latitude_and_every_one_of_them_occurs()
+        {
+            var tags = new[] { "ice_field", "fjord" };
+            var preferred = new HashSet<string>(GlacialKinds) { "ice_field", "fjord" };
+            var seen = new HashSet<string>();
+            for (ulong seed = 1; seed <= 100; seed++)
+            {
+                foreach (string kind in TemplatePlanner.Kinds(seed, tags, 4, out _))
+                {
+                    Assert.That(preferred.Contains(kind), Is.True, $"seed {seed}: {kind}");
+                    seen.Add(kind);
+                }
+            }
+
+            CollectionAssert.AreEquivalent(preferred, seen);
+        }
+
+        [Test]
+        public void Affinity_puts_related_landforms_first_and_Kinds_is_deterministic()
+        {
+            // verdant tags: forest, river_valley plus grassland (→ forest) and swamp (→ river_valley) fill four slots.
+            var verdant = new[] { "forest", "river_valley" };
+            var expected = new HashSet<string> { "forest", "river_valley", "grassland", "swamp", "tundra", "glacier",
+                "cirque", "moraine", "ice_field" };
+            for (ulong seed = 1; seed <= 60; seed++)
+            {
+                string[] a = TemplatePlanner.Kinds(seed, verdant, 4, out List<TemplatePlacement> pa);
+                string[] b = TemplatePlanner.Kinds(seed, verdant, 4, out List<TemplatePlacement> pb);
+                CollectionAssert.AreEqual(a, b);
+                for (int i = 0; i < a.Length; i++)
+                {
+                    Assert.That(expected.Contains(a[i]), Is.True, $"seed {seed}: {a[i]}");
+                    Assert.That(pa[i].Center, Is.EqualTo(pb[i].Center));
+                }
+            }
+
+            Assert.Throws<ContractException>(() => TemplatePlanner.Kinds(1UL, null, 4, out _));
+            Assert.Throws<ContractException>(() => TemplatePlanner.Kinds(1UL, verdant, 0, out _));
+            Assert.Throws<ContractException>(() => TemplatePlanner.Kinds(1UL, verdant, 9, out _));
         }
 
         [Test]
@@ -130,9 +296,16 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(LandformSynth.GeneratorVersion, Is.EqualTo(1), "bump the pin with the version");
+            Assert.That(LandformSynth.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
+            Assert.That(Digest(V1Kinds), Is.EqualTo(SnapshotSeed12345V1), "v1 kinds must stay bit-identical");
+            ulong h = Digest(LandformSynth.Kinds);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
+        }
+
+        private static ulong Digest(IReadOnlyList<string> kinds)
+        {
             ulong h = 14695981039346656037UL;
-            foreach (string kind in LandformSynth.Kinds)
+            foreach (string kind in kinds)
             {
                 TemplateSource s = LandformSynth.Generate(kind, 12345UL, 0);
                 foreach (ushort v in s.Heights)
@@ -146,7 +319,7 @@ namespace Cosmimera.WorldGen.Tests
                 }
             }
 
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V1), "actual " + h);
+            return h;
         }
 
         [Test]

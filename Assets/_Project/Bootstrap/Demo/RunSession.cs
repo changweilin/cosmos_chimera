@@ -63,6 +63,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public ulong Seed;
 
+        /// <summary>Season override for captures and tests; null = the seed's own (Seasons.For).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public Season? Season;
+
         /// <summary>Radius (m).</summary>
         /// <remarks>Pre: >= MoveGeometry.MinSupportedRadiusM. Post: none. Side effects: none.</remarks>
         public float Radius;
@@ -549,13 +553,21 @@ namespace Cosmimera.Bootstrap.Demo
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
             float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
+            // REQ: planet-world.md#季節 — one season per planet, from the seed, for the whole run.
+            Season season = setup.Season ?? Seasons.For(setup.Seed);
             if (terrainShader != null)
             {
-                _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief);
+                _terrainMaterial = PlanetLook.TerrainMaterial(terrainShader, setup.PlanetType.Id, config, relief, season);
                 terrainMaterial = _terrainMaterial;
                 if (geologies != null)
                 {
-                    PlanetLook.SetGeology(setup.PlanetType.Id, templates.View, geologies, baseGeology);
+                    var landforms = new string[templates.StampIds.Count];
+                    for (int i = 0; i < landforms.Length; i++)
+                    {
+                        landforms[i] = LandformSynth.KindOf(templates.StampIds[i]);
+                    }
+
+                    PlanetLook.SetGeology(setup.PlanetType.Id, templates.View, geologies, baseGeology, landforms);
                 }
             }
 
@@ -604,7 +616,7 @@ namespace Cosmimera.Bootstrap.Demo
                     // Stop a little short of the shader's snow line and polar cap, whose edges are noise-jittered.
                     gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isOpenGround,
                         PlayerPosition,
-                        PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM),
+                        PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM, season),
                         grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));
                 }
             }
@@ -637,7 +649,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 _scatterField = gameObject.AddComponent<ScatterField>();
                 _scatterField.Configure(config, scatter, setup.PlanetType.Id, PlayerPosition, toonShader,
-                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null, scenery?.Props);
+                    objects != null ? objects.IsDestroyed : (System.Func<long, bool>)null, scenery?.Props, season);
                 if (scenery?.Props != null)
                 {
                     // REQ: vision.md#美術投資 第 5 項 (P1-15) — tree and rock silhouettes past the near field. Ends

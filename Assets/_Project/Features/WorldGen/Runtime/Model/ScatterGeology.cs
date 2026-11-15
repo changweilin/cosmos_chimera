@@ -51,6 +51,14 @@ namespace Cosmimera.WorldGen
             ("mountain", new[] { 2, 1, 1, 3, 3 }),
             ("eternal_day", new[] { 4, 1, 1, 1, 1 }),
             ("eternal_night", new[] { 4, 1, 1, 1, 1 }),
+            // Glaciers cut hard rock, like the fjords they leave behind.
+            ("cirque", new[] { 2, 0, 0, 3, 3 }),
+            ("moraine", new[] { 3, 0, 1, 3, 2 }),
+            // P3-24 (b): a bedrock landform is its bedrock.
+            ("karst", new[] { 0, 1, 0, 0, 0 }),
+            ("basalt_terrace", new[] { 0, 0, 1, 0, 0 }),
+            ("granite_domes", new[] { 0, 0, 0, 1, 0 }),
+            ("slate_cliffs", new[] { 0, 0, 0, 0, 1 }),
         };
 
         private static readonly int[][] WeightsByBiome = BuildWeights();
@@ -66,7 +74,12 @@ namespace Cosmimera.WorldGen
         private static readonly int SlateRock = ScatterBiomes.IndexOf("slate");
 
         /// <summary>Whether landform <paramref name="biome"/> can have a bedrock other than its own.</summary>
-        /// <remarks>Pre: valid ScatterBiomes biome index. Post: false iff <see cref="For"/> always answers Native. Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: valid ScatterBiomes biome index.
+        /// Post: false iff <see cref="For"/> always answers Native (a bedrock landform always answers its one bedrock,
+        ///       and is true here).
+        /// Side effects: none.
+        /// </remarks>
         public static bool Varies(int biome)
         {
             Contract.Requires(biome >= 0 && biome < WeightsByBiome.Length, "biome out of range");

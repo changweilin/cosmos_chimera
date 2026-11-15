@@ -79,15 +79,48 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Toon terrain material for a planet type.</summary>
         /// <remarks>
-        /// Pre: shader non-null; reliefM > 0. Post: material with that type's palette (verdant when unknown).
+        /// Pre: shader non-null; reliefM > 0. Post: material with that type's palette (verdant when unknown), its turf
+        ///      tones shifted for season (Summer = as authored).
         /// Side effects: allocates a Material.
         /// </remarks>
-        public static Material TerrainMaterial(Shader shader, string planetTypeId, in PlanetConfig config, float reliefM)
+        public static Material TerrainMaterial(Shader shader, string planetTypeId, in PlanetConfig config, float reliefM,
+            Season season = Season.Summer)
         {
             Contract.Requires(shader != null && reliefM > 0f, "shader required; relief > 0");
             var m = new Material(shader);
-            Fill(m, PaletteFor(planetTypeId), config, reliefM);
+            Fill(m, PaletteFor(planetTypeId), config, reliefM, season);
             return m;
+        }
+
+        /// <summary>What settles on upward faces in winter on a planet type: its own snow (ash on a lava world).</summary>
+        /// <remarks>Pre: none (unknown ids read as verdant). Post: the terrain palette's snow colour. Side effects: none.</remarks>
+        public static Color SnowColor(string planetTypeId) => PaletteFor(planetTypeId).Snow;
+
+        // REQ: planet-world.md#季節 (草地隨季節變色; 配色暫定). Summer is the authored palette. The shift scales with how
+        // much of the ground is turf (Palette.Grass), so ice and lava worlds, whose "low ground" is not grass, keep
+        // their colours. Ground snow is not a season effect here (Q-W22).
+        private static void SeasonGround(Palette p, Season season, out Color low, out Color mid)
+        {
+            float turf = Mathf.Clamp01(p.Grass);
+            switch (season)
+            {
+                case Season.Spring:
+                    low = Color.Lerp(p.Low, Hex(0x8CCB52), 0.3f * turf);
+                    mid = Color.Lerp(p.Mid, Hex(0x5FA846), 0.3f * turf);
+                    break;
+                case Season.Autumn:
+                    low = Color.Lerp(p.Low, Hex(0xC8A858), 0.5f * turf);
+                    mid = Color.Lerp(p.Mid, Hex(0xA8803A), 0.45f * turf);
+                    break;
+                case Season.Winter:
+                    low = Color.Lerp(p.Low, Hex(0xB8A888), 0.7f * turf);
+                    mid = Color.Lerp(p.Mid, Hex(0x8A8068), 0.65f * turf);
+                    break;
+                default:
+                    low = p.Low;
+                    mid = p.Mid;
+                    break;
+            }
         }
 
         /// <summary>Share of its own colour a named stone keeps on any planet; the rest is the planet's rock colour.</summary>
@@ -120,19 +153,45 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly int GeoUpId = Shader.PropertyToID("_CosmiGeoUp");
         private static readonly int GeoRockId = Shader.PropertyToID("_CosmiGeoRock");
         private static readonly int GeoBaseId = Shader.PropertyToID("_CosmiGeoBase");
+        private static readonly int GeoSnowId = Shader.PropertyToID("_CosmiGeoSnow");
+
+        /// <summary>Snow line (share of the terrain relief) the ground of landform <paramref name="kind"/> is drawn with.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#寒帶地形 (表現層; 數值暫定).
+        /// Pre: none (null or unknown kinds have no snow line of their own).
+        /// Post: 0 = the planet type's own snow line; otherwise in (0, 1): a glacier is white from its tongue up, a
+        ///       cirque from its headwalls up, tundra and moraine carry patchy snow on every rise.
+        /// Side effects: none.
+        /// </remarks>
+        public static float LandformSnowLine(string kind)
+        {
+            switch (kind)
+            {
+                case "glacier": return 0.30f;
+                case "cirque": return 0.34f;
+                case "moraine": return 0.22f;
+                case "tundra": return 0.12f;
+                default: return 0f;
+            }
+        }
 
         /// <summary>Tells the ground shaders which bedrock lies where, so rock faces take its colour.</summary>
         /// <remarks>
         /// REQ: planet-world.md#地質變體 (P3-24 a: 地表配色).
-        /// Pre: view.Count ≤ 8; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined.
+        /// Pre: view.Count ≤ 8; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined;
+        ///      landforms null, or one landform kind per stamp (LandformSynth.KindOf of each stamp id).
         /// Post: terrain and grass-root rock colour is the bedrock's stone mixed into the planet type's rock colour,
-        ///       inside each stamp as far as its height blend reaches; Native bedrock keeps the planet's own.
+        ///       inside each stamp as far as its height blend reaches; Native bedrock keeps the planet's own. With
+        ///       landforms, each stamp's snow line is <see cref="LandformSnowLine"/> of its kind.
         /// Side effects: writes the _CosmiGeo* shader globals until <see cref="ClearGeology"/>.
         /// </remarks>
-        public static void SetGeology(string planetTypeId, TemplateView view, IReadOnlyList<Geology> perStamp, Geology baseGeology)
+        public static void SetGeology(string planetTypeId, TemplateView view, IReadOnlyList<Geology> perStamp, Geology baseGeology,
+            IReadOnlyList<string> landforms = null)
         {
             Contract.Requires(perStamp != null && perStamp.Count == view.Count && view.Count <= GeologyStamps,
                 "one geology per stamp, at most 8 stamps");
+            Contract.Requires(landforms == null || landforms.Count == view.Count, "one landform kind per stamp");
+            var snow = new Vector4[GeologyStamps];
             Color rock = PaletteFor(planetTypeId).Rock;
             // Unity fixes a global array's length at its first Set: always send all eight.
             var center = new Vector4[GeologyStamps];
@@ -146,7 +205,10 @@ namespace Cosmimera.Bootstrap.Demo
                 right[i] = new Vector4(s.Right.x, s.Right.y, s.Right.z, 0f);
                 up[i] = new Vector4(s.Up.x, s.Up.y, s.Up.z, 0f);
                 colour[i] = GeologyRock(rock, perStamp[i]);
+                snow[i] = new Vector4(landforms != null ? LandformSnowLine(landforms[i]) : 0f, 0f, 0f, 0f);
             }
+
+            Shader.SetGlobalVectorArray(GeoSnowId, snow);
 
             Shader.SetGlobalVectorArray(GeoCenterId, center);
             Shader.SetGlobalVectorArray(GeoRightId, right);
@@ -184,15 +246,17 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Instanced grass material whose root colour is the terrain's own (same palette, same shader include).</summary>
         /// <remarks>
-        /// Pre: shader (Cosmimera/ToonGrass) non-null; reliefM > 0 and equal to the terrain material's; fadeM > 0.
+        /// Pre: shader (Cosmimera/ToonGrass) non-null; reliefM > 0 and equal to the terrain material's; fadeM > 0;
+        ///      season equal to the terrain material's.
         /// Post: material with GPU instancing enabled. Side effects: allocates a Material.
         /// </remarks>
-        public static Material GrassMaterial(Shader shader, string planetTypeId, in PlanetConfig config, float reliefM, float fadeM)
+        public static Material GrassMaterial(Shader shader, string planetTypeId, in PlanetConfig config, float reliefM, float fadeM,
+            Season season = Season.Summer)
         {
             Contract.Requires(shader != null && reliefM > 0f && fadeM > 0f, "shader required; relief and fade > 0");
             Palette p = PaletteFor(planetTypeId);
             var m = new Material(shader) { enableInstancing = true };
-            Fill(m, p, config, reliefM);
+            Fill(m, p, config, reliefM, season);
             m.SetFloat("_GrassHeight", p.GrassHeight);
             m.SetFloat("_GrassFade", fadeM);
             return m;
@@ -219,8 +283,9 @@ namespace Cosmimera.Bootstrap.Demo
             return (p.Grass, p.SnowLine, p.PolarLat, p.Cloud, p.Wind);
         }
 
-        private static void Fill(Material m, Palette p, in PlanetConfig config, float reliefM)
+        private static void Fill(Material m, Palette p, in PlanetConfig config, float reliefM, Season season = Season.Summer)
         {
+            SeasonGround(p, season, out Color low, out Color mid);
             m.SetVector("_PlanetCenter", (Vector3)config.Center);
             m.SetFloat("_Radius", config.Radius);
             m.SetFloat("_Relief", reliefM);
@@ -228,8 +293,8 @@ namespace Cosmimera.Bootstrap.Demo
             m.SetColor("_DeepWater", p.Deep);
             m.SetColor("_ShallowWater", p.Shallow);
             m.SetColor("_Shore", p.Shore);
-            m.SetColor("_Low", p.Low);
-            m.SetColor("_Mid", p.Mid);
+            m.SetColor("_Low", low);
+            m.SetColor("_Mid", mid);
             m.SetColor("_High", p.High);
             m.SetColor("_Rock", p.Rock);
             m.SetColor("_Snow", p.Snow);

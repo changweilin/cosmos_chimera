@@ -2,14 +2,14 @@
 
 **出口條件**：≥ 60 條進化線（≥ 180 隻）、≥ 150 招式、≥ 60 特性、關係表連通；屬性/地區分布平均；通過平衡試玩。
 讀：`../design/creature-concept-pipeline.md`、`../design/creatures.md`
-**開工前需定案**：Q-T3（圖像/3D 工具）
+**開工前需定案**：無（Q-T3 的 3D 工具選型已移交其他專案）
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
 | P5-01 | 批次 prompt 模板 `tools/prompts/*.md` + 配額矩陣 | SONNET | OPUS | 模板產出可直接通過 schema | ✅ |
 | P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | 🟨 |
 | P5-03 | 宙獸批次初稿（每批 20–50） | FLASH / TERRA | SONNET | 每批通過驗證工具 | 🟦 |
-| P5-04 | 概念圖 prompt 與美術生產（依 Q-T3），經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
+| P5-04 | 概念圖 prompt 與美術生產，經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
 | P5-05 | 招式/特性批次 | FLASH | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
 | P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | ✅ |
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | 🟦 |

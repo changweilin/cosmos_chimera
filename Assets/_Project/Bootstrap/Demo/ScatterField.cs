@@ -87,6 +87,10 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly Color Grass, Plume;
             public readonly Color Cane, CaneLeaf;
             public readonly Color Cap, Bloom;
+            // Evergreen foliage (conifer needles, cactus flesh): the planet's leaf colour in every season.
+            public readonly Color Needle, NeedleTop;
+            // Winter: deciduous crowns are down (planet-world.md#季節 冬：落葉枯枝).
+            public readonly bool Bare;
 
             public Theme(int leaf, int leafTop, int bark, int rock, int rockTop, int crystal, int crystalTop, float crystalGlow,
                 int shrub, int shrubTop, int grass, int plume, int cane, int caneLeaf, int cap, int bloom)
@@ -107,6 +111,48 @@ namespace Cosmimera.Bootstrap.Demo
                 CaneLeaf = C(caneLeaf);
                 Cap = C(cap);
                 Bloom = C(bloom);
+                Needle = Leaf;
+                NeedleTop = LeafTop;
+                Bare = false;
+            }
+
+            private Theme(in Theme b, Color leaf, Color leafTop, Color needleTop, Color shrub, Color shrubTop, Color grass,
+                Color plume, Color caneLeaf, Color rockTop, bool bare)
+            {
+                this = b;
+                Leaf = leaf;
+                LeafTop = leafTop;
+                NeedleTop = needleTop;
+                Shrub = shrub;
+                ShrubTop = shrubTop;
+                Grass = grass;
+                Plume = plume;
+                CaneLeaf = caneLeaf;
+                RockTop = rockTop;
+                Bare = bare;
+            }
+
+            // REQ: planet-world.md#季節 (Q-W16; 配色暫定). Summer is the look the themes were authored in. Every shift is
+            // a blend toward a seasonal tone, so a planet keeps its own hue (twilight stays violet, only warmer in
+            // autumn). `snow` is what settles on upward faces in winter: the planet type's own snow colour.
+            public Theme In(Season season, Color snow)
+            {
+                switch (season)
+                {
+                    case Season.Spring:
+                        return new Theme(this, Mix(Leaf, 0x8CCB52, 0.4f), Mix(LeafTop, 0xF48FB8, 0.8f), Mix(LeafTop, 0xA8D878, 0.3f),
+                            Mix(Shrub, 0x86C24E, 0.4f), Mix(ShrubTop, 0xFFE9A0, 0.6f), Mix(Grass, 0x9CCB5A, 0.4f), Plume,
+                            Mix(CaneLeaf, 0x9CCB5A, 0.3f), RockTop, false);
+                    case Season.Autumn:
+                        return new Theme(this, Mix(Leaf, 0xC2502A, 0.75f), Mix(LeafTop, 0xF2B030, 0.8f), NeedleTop,
+                            Mix(Shrub, 0xB8642A, 0.65f), Mix(ShrubTop, 0xE8C040, 0.7f), Mix(Grass, 0xC8A858, 0.6f),
+                            Mix(Plume, 0xF4E8C8, 0.5f), Mix(CaneLeaf, 0xC8B050, 0.35f), RockTop, false);
+                    case Season.Winter:
+                        return new Theme(this, Mix(Leaf, 0x7A705A, 0.6f), snow, snow, Mix(Shrub, 0x6A5A48, 0.7f), snow,
+                            Mix(Grass, 0xB8A888, 0.7f), Mix(Plume, 0xEDE6D8, 0.6f), Mix(CaneLeaf, 0x9A9A6A, 0.4f), snow, true);
+                    default:
+                        return this;
+                }
             }
         }
 
@@ -167,11 +213,19 @@ namespace Cosmimera.Bootstrap.Demo
             switch (speciesId)
             {
                 case "broadleaf":
+                    if (theme.Bare)
+                    {
+                        // The bare-limbed mesh is the snag's; living bark (not a snag's grey) and snow on the limbs
+                        // tell a dormant tree from a dead one.
+                        return new Look(SceneryArchetype.Snag, Role.Bark, P(theme.Bark, theme.RockTop));
+                    }
+
                     // The twilight planet keeps its flat-topped silhouette: its trees are part of the planet's look.
                     return Tree(theme, planetTypeId == "twilight_planet" ? SceneryArchetype.Umbrella : SceneryArchetype.Broadleaf,
                         theme.Leaf, theme.LeafTop);
                 case "conifer":
-                    return Tree(theme, SceneryArchetype.Conifer, Mix(theme.Leaf, 0x1F4A3A, 0.45f), Mix(theme.LeafTop, 0x6FA07A, 0.4f));
+                    return Tree(theme, SceneryArchetype.Conifer, Mix(theme.Needle, 0x1F4A3A, 0.45f),
+                        theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x6FA07A, 0.4f));
                 case "umbrella":
                     return Tree(theme, SceneryArchetype.Umbrella, Mix(theme.Leaf, 0x7A9A3A, 0.35f), theme.LeafTop);
                 case "swamp_tree":
@@ -182,7 +236,7 @@ namespace Cosmimera.Bootstrap.Demo
                 case "log":
                     return new Look(SceneryArchetype.Log, Role.Still, P(Tone(theme.Bark, 0.9f), theme.RockTop));
                 case "cactus":
-                    return new Look(SceneryArchetype.Cactus, Role.Still, P(Mix(theme.Leaf, 0x4F8A4A, 0.5f), Mix(theme.LeafTop, 0xA8C878, 0.5f)),
+                    return new Look(SceneryArchetype.Cactus, Role.Still, P(Mix(theme.Needle, 0x4F8A4A, 0.5f), Mix(theme.NeedleTop, 0xA8C878, 0.5f)),
                         Role.Bloom, P(theme.Bloom, C(0xFFE070)));
                 case "giant_mushroom":
                     return new Look(SceneryArchetype.Mushroom, Role.Still, P(Mix(theme.Bark, 0xE8DCC0, 0.85f), C(0xE8DCC0)),
@@ -307,12 +361,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public void Configure(in PlanetConfig config, ulong seed, string planetTypeId, Func<float3, float> groundAltitude,
             Func<float3, bool> isSea, Func<float3> focus, Shader shader, Func<float3, bool> isClear = null,
-            Shader sceneryShader = null)
+            Shader sceneryShader = null, Season season = Season.Summer)
         {
             Contract.Requires(groundAltitude != null && focus != null && shader != null,
                 "groundAltitude, focus and shader are required");
             Configure(config, new ScatterPlanner(config, seed, planetTypeId, groundAltitude, isSea, isClear), planetTypeId,
-                focus, shader, null, sceneryShader);
+                focus, shader, null, sceneryShader, season);
         }
 
         /// <summary>Starts drawing <paramref name="planner"/>'s items around <paramref name="focus"/>.</summary>
@@ -320,16 +374,21 @@ namespace Cosmimera.Bootstrap.Demo
         /// Pre: config is the planner's planet; planner, focus and shader non-null; planetTypeId is the one the planner was
         ///      built with; isDestroyed may be null (nothing destroyed) and, once true for a key, stays true;
         ///      sceneryShader is Cosmimera/ToonScenery, or null to draw the same meshes with shader (flat colour, no
-        ///      wind: the optional-layer convention of SceneryShaders).
-        /// Post: Update streams cells in and out; destroyed items are never drawn. Side effects: none until Update.
+        ///      wind: the optional-layer convention of SceneryShaders); season defined (Summer = the authored look).
+        /// Post: Update streams cells in and out; destroyed items are never drawn; foliage, grass and what settles on
+        ///       upward faces are coloured for season, and in winter broadleaf trees are drawn bare (appearance only:
+        ///       colliders and rule-layer items are the same in every season).
+        /// Side effects: none until Update.
         /// </remarks>
         public void Configure(in PlanetConfig config, ScatterPlanner planner, string planetTypeId, Func<float3> focus,
-            Shader shader, Func<long, bool> isDestroyed, Shader sceneryShader = null)
+            Shader shader, Func<long, bool> isDestroyed, Shader sceneryShader = null, Season season = Season.Summer)
         {
             Contract.Requires(planner != null && focus != null && shader != null, "planner, focus and shader are required");
+            Contract.Requires(season >= Season.Spring && season <= Season.Winter, "season must be defined");
             _config = config;
             _planner = planner;
             Theme theme = planetTypeId != null && Themes.TryGetValue(planetTypeId, out Theme t) ? t : Themes["verdant_planet"];
+            theme = theme.In(season, PlanetLook.SnowColor(planetTypeId));
             _looks = new Look[planner.Kinds.Count];
             for (int k = 0; k < _looks.Length; k++)
             {

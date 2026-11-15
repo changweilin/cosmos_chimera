@@ -40,15 +40,19 @@ float4 _CosmiGeoRight[COSMI_GEO_MAX];  // stamp +x tangent
 float4 _CosmiGeoUp[COSMI_GEO_MAX];     // stamp +y tangent
 half4 _CosmiGeoRock[COSMI_GEO_MAX];    // rgb = rock colour, a = 1 when the stamp's bedrock overrides _Rock
 half4 _CosmiGeoBase;                   // the same for the ground between stamps
+// P3-28 cold landforms: x = snow line (normalised altitude, like _SnowLine) inside the stamp; 0 = the planet's own.
+float4 _CosmiGeoSnow[COSMI_GEO_MAX];
 float _CosmiGeoCount;
 
 // Rock colour at a point. Same gnomonic square and 65 % blend start as Planet.TemplateView.TryGetStamp, so the colour
 // changes where the scatter's rock species do; `jitter` (0..1 noise) breaks the edge into patches the way the
-// planner's per-cell roll interleaves species.
-half3 CosmiBedrock(float3 up, float jitter)
+// planner's per-cell roll interleaves species. snowLine is the strongest stamp's own snow line, eased in over the
+// blend band with the unjittered weight: snow creeps down toward a glacier, it does not start at a patchy edge.
+half3 CosmiBedrock(float3 up, float jitter, out float snowLine)
 {
     half4 pick = _CosmiGeoBase;
     float best = 0.0;
+    snowLine = _SnowLine;
     for (int i = 0; i < COSMI_GEO_MAX; i++)
     {
         float3 centre = _CosmiGeoCenter[i].xyz;
@@ -60,6 +64,8 @@ half3 CosmiBedrock(float3 up, float jitter)
         {
             best = w;
             pick = lerp(_CosmiGeoBase, _CosmiGeoRock[i], smoothstep(jitter - 0.06, jitter + 0.06, w));
+            float own = _CosmiGeoSnow[i].x;
+            snowLine = lerp(_SnowLine, own > 0.0 ? own : _SnowLine, w);
         }
     }
 
@@ -157,7 +163,8 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
 
     // Bare earth where the slope is too steep for turf but not yet a rock face: without it grass butts straight
     // against cliff grey. The stroke offset makes the turf edge ragged, like grass tufts overhanging soil.
-    half3 bedrock = CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3);
+    float snowLine;
+    half3 bedrock = CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3, snowLine);
     float earth = smoothstep(0.11, 0.19, g.slope + (n.y - 0.5) * 0.08 + fine.r * 0.10) * (1.0 - sand);
     half3 earthColor = lerp(_High.rgb, bedrock, 0.35) * (1.0 + CosmiDab(fine.g + broad.r) * 0.12 * _StrokeStrength);
     c = lerp(c, earthColor, earth * 0.85);
@@ -173,7 +180,7 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
     c = lerp(c, rockColor, rock);
     grass *= 1.0 - rock;
 
-    float snowAlt = smoothstep(_SnowLine - 0.04, _SnowLine + 0.04, t + (n.y - 0.5) * 0.08 + fine.r * 0.05);
+    float snowAlt = smoothstep(snowLine - 0.04, snowLine + 0.04, t + (n.y - 0.5) * 0.08 + fine.r * 0.05);
     float snowPole = smoothstep(_PolarLat - 0.02, _PolarLat + 0.02, g.lat + (n.x - 0.5) * 0.04);
     float snow = max(snowAlt, snowPole) * (1.0 - smoothstep(0.32, 0.55, g.slope));
     // Snow: only broad, faint, cool dabs — drifts, not texture.

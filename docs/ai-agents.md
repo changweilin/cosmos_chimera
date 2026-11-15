@@ -38,7 +38,7 @@
 | 大量分類 / 標記 / 格式轉換 | LUNA 或 FLASH | 腳本驗證 | 單筆輸入保持短 |
 | 文化考據、外部研究 | ARGON | OPUS 決策；事實須附來源 | FLASH 不做事實考據（幻覺率高） |
 | 整份資料集 / 長文件掃描 | ARGON（或 SOL/TERRA） | SONNET 抽查 | 不派 LUNA、FLASH |
-| 美術 prompt、概念圖 | TERRA（圖像）/ ARGON | 人工 | 見 Q-T3 |
+| 美術 prompt、概念圖 | TERRA（圖像）/ ARGON | 人工 | 3D 工具選型已移交其他專案 |
 
 ## 派工原則
 1. **一個項目一個主責**；必審項目的審查者必須是不同廠商的模型（降低同源盲點）。SONNET-AGY 與 SONNET/OPUS 同源。

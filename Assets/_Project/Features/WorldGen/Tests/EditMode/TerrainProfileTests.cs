@@ -26,6 +26,7 @@ namespace Cosmimera.WorldGen.Tests
                 "grassland", "ice_field", "desert", "swamp", "mountain", "forest",
                 "river_valley", "plateau", "archipelago", "fjord", "canyon", "rift_valley",
                 "volcano_foothills", "cavern_outer", "eternal_day", "eternal_night",
+                "tundra", "glacier", "cirque", "moraine", "karst", "basalt_terrace", "granite_domes", "slate_cliffs",
             };
             foreach (string id in general)
             {

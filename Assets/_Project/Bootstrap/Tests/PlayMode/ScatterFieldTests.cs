@@ -203,6 +203,73 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [UnityTest]
+        public IEnumerator Seasons_recolour_the_same_items_and_never_change_what_blocks()
+        {
+            // REQ: planet-world.md#季節 — the season is appearance here: items and colliders are the same in all four.
+            float3 up = math.normalize(new float3(0f, 1f, 0.2f));
+            var config = new PlanetConfig(640f, float3.zero);
+            Shader scenery = Shader.Find("Cosmimera/ToonScenery");
+            Assert.That(scenery, Is.Not.Null);
+            int items = -1, colliders = -1;
+            var palettes = new List<HashSet<Color>>();
+            foreach (Cosmimera.WorldGen.Season season in System.Enum.GetValues(typeof(Cosmimera.WorldGen.Season)))
+            {
+                var root = new GameObject("scatter-season-" + season);
+                _roots.Add(root);
+                ScatterField field = root.AddComponent<ScatterField>();
+                field.enabled = false;
+                field.Configure(config, 12345, "verdant_planet", _ => 0f, null, () => config.ToWorld(up, 0f),
+                    Shader.Find("Cosmimera/ToonOutlined"), null, scenery, season);
+                Call(field, "Refresh", config.ToWorld(up, 0f));
+                yield return null;
+                int n = 0, c = 0;
+                var colours = new HashSet<Color>();
+                foreach (var pair in Get<Dictionary<long, List<GameObject>>>(field, "_live"))
+                {
+                    foreach (GameObject item in pair.Value)
+                    {
+                        n++;
+                        c += item.GetComponentsInChildren<Collider>().Length;
+                        MeshRenderer renderer = item.GetComponentInChildren<MeshRenderer>();
+                        Assert.That(renderer.sharedMaterials.Length,
+                            Is.EqualTo(renderer.GetComponent<MeshFilter>().sharedMesh.subMeshCount), season + " " + item.name);
+                        foreach (Material m in renderer.sharedMaterials)
+                        {
+                            colours.Add(m.GetColor("_BaseColor"));
+                            colours.Add(m.GetColor("_Accent"));
+                        }
+                    }
+                }
+
+                Assert.That(n, Is.GreaterThan(0));
+                if (items < 0)
+                {
+                    items = n;
+                    colliders = c;
+                }
+
+                Assert.That(n, Is.EqualTo(items), season + ": same items in every season");
+                Assert.That(c, Is.EqualTo(colliders), season + ": same colliders in every season");
+                foreach (HashSet<Color> other in palettes)
+                {
+                    Assert.That(colours.SetEquals(other), Is.False, season + " must not look like another season");
+                }
+
+                palettes.Add(colours);
+                Object.Destroy(root);
+                yield return null;
+            }
+
+            var bad = new GameObject("scatter-season-bad");
+            _roots.Add(bad);
+            ScatterField invalid = bad.AddComponent<ScatterField>();
+            invalid.enabled = false;
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => invalid.Configure(config, 12345, "verdant_planet",
+                _ => 0f, null, () => config.ToWorld(up, 0f), Shader.Find("Cosmimera/ToonOutlined"), null, scenery,
+                (Cosmimera.WorldGen.Season)7));
+        }
+
+        [UnityTest]
         public IEnumerator Capture_scenery_lineup_when_requested()
         {
             if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") != "1")

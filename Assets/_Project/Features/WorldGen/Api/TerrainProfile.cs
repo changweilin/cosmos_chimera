@@ -103,6 +103,18 @@ namespace Cosmimera.WorldGen
             ["eternal_day"] = new TerrainProfile("eternal_day", DungeonKind.None, 0.35f, 1.0f, 1.02f, 1.0f, 0.95f),
             ["eternal_night"] = new TerrainProfile("eternal_night", DungeonKind.None, 0.48f, 0.94f, 0.95f, 0.95f, 1.08f),
 
+            // ---- Cold landforms (planet-world.md#寒帶地形; 數值暫定). Glacier ice is slippery, but less than an ice field. ----
+            ["tundra"] = new TerrainProfile("tundra", DungeonKind.None, 0.20f, 0.98f, 0.98f, 0.85f, 1.08f),
+            ["glacier"] = new TerrainProfile("glacier", DungeonKind.None, 0.22f, 0.95f, 0.95f, 0.45f, 1.10f),
+            ["cirque"] = new TerrainProfile("cirque", DungeonKind.None, 0.40f, 0.88f, 0.90f, 0.85f, 1.10f),
+            ["moraine"] = new TerrainProfile("moraine", DungeonKind.None, 0.50f, 0.92f, 0.94f, 0.95f, 1.05f),
+
+            // ---- Bedrock landforms (planet-world.md#地質變體 b; 數值暫定) ----
+            ["karst"] = new TerrainProfile("karst", DungeonKind.None, 0.62f, 0.90f, 0.92f, 1.0f, 1.0f),
+            ["basalt_terrace"] = new TerrainProfile("basalt_terrace", DungeonKind.None, 0.45f, 0.94f, 0.95f, 1.0f, 1.05f),
+            ["granite_domes"] = new TerrainProfile("granite_domes", DungeonKind.None, 0.40f, 0.95f, 0.96f, 1.0f, 1.0f),
+            ["slate_cliffs"] = new TerrainProfile("slate_cliffs", DungeonKind.None, 0.42f, 0.92f, 0.94f, 0.95f, 1.05f),
+
             // ---- 10 elemental advanced terrains (procedural dungeons) ----
             ["laboratory"] = new TerrainProfile("laboratory", DungeonKind.RoomModule, 0.35f, 1.0f, 1.0f, 1.0f, 1.0f),
             ["rainforest"] = new TerrainProfile("rainforest", DungeonKind.SurfaceMaze, 0.82f, 0.85f, 0.85f, 0.90f, 1.05f),

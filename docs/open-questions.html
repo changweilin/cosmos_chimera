@@ -90,28 +90,28 @@
 <h2>世界細節（作物／地熱／海底／地質／城牆）與美術水準</h2>
 <div class="cards">
 
-<article id="Q-W14">
-  <header><a class="id" href="#Q-W14">Q-W14</a><span class="tag">影響 P3-14</span></header>
-  <p><span class="label">問題</span>城牆（<code>settlement-structures.md#城牆</code>）只剩高度未定：城邦石牆與小鎮木柵各多高？（做法、城門、籬笆、缺口比例已定案並寫入該檔。）</p>
+<article id="Q-W19">
+  <header><a class="id" href="#Q-W19">Q-W19</a><span class="tag">影響 P3-26</span></header>
+  <p><span class="label">問題</span><b>四季的機率與適用星球</b>。季節已由 seed 抽出並接上外觀（<code>WorldGen.Seasons.For</code>）。四季各佔多少？熔岩星、冰晶星這類幾乎沒有植被的星球要不要有季節（目前照抽，但畫面上幾乎只有樹與岩石頂的顏色會變）？</p>
+  <p><span class="label">暫定</span>四季等機率（各 25 %）；所有星球類型都抽</p>
+</article>
+
+<article id="Q-W20">
+  <header><a class="id" href="#Q-W20">Q-W20</a><span class="tag">影響 P3-26、P3-04a</span></header>
+  <p><span class="label">問題</span><b>季節怎麼影響天氣</b>。自然天氣目前依 星球類型 × 地貌 × 180 秒時段 抽八種天氣（<code>WeatherPlanner</code>，進戰鬥與移動規則）。季節要怎麼改權重？這會改變既有 seed 的天氣序列。</p>
   <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
-<article id="Q-W16">
-  <header><a class="id" href="#Q-W16">Q-W16</a><span class="tag">影響 P3-26（新）、P3-04、P1-07</span></header>
-  <p><span class="label">問題</span><b>季節</b>怎麼定義？目前沒有任何季節系統：植被只依地貌、海拔帶與林型（<code>planet-world.md#散佈</code>），顏色只依星球類型。要「不同區域不同季節」需要先決定季節從哪裡來、會不會在一場 run 內變化，以及只影響外觀還是也影響規則（物種、天氣權重、可採集物）。若季節影響規則層，必須可重現且各客戶端一致。</p>
+<article id="Q-W21">
+  <header><a class="id" href="#Q-W21">Q-W21</a><span class="tag">影響 P3-26、P3-25、P3-06</span></header>
+  <p><span class="label">問題</span><b>季節怎麼影響物種與可採集物</b>。「物種」指場景植物（花叢、巨菇、蕨…的出現率，改 <code>ScatterPlanner</code> 要升版）、野生宙獸的出沒，還是兩者？「可採集物」目前只有破壞場景物件掉素材與料理食材：要新增季節限定的採集物，還是只調既有掉落？</p>
   <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
-<article id="Q-W17">
-  <header><a class="id" href="#Q-W17">Q-W17</a><span class="tag">影響 P3-27（新）、P3-12、P4</span></header>
-  <p><span class="label">問題</span><b>礦物的用途</b>。金／銀／銅／鐵礦脈、煤層、油頁岩、寶石晶洞已作為可破壞場景物件出現在對應地貌（<code>planet-world.md#地貌物種</code>），但打壞後只照既有規則掉「屬性素材／珠寶」。要不要讓礦物成為<b>獨立道具</b>（需要新的背包分類、用途與 <code>Data/</code> schema）？另外三項未做：<b>天然氣</b>（需要危險地形規則，與 P3-22 火山地熱同類）、<b>石油</b>目前以油頁岩（物質 <code>kerosene</code>，遇火爆燃）表現、<b>各種寶石</b>目前只是晶洞的顏色（紅寶石／藍寶石／祖母綠／紫水晶／黃玉），掉落仍是 <code>crystal</code> 對應的土屬性。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-W18">
-  <header><a class="id" href="#Q-W18">Q-W18</a><span class="tag">影響 P3-24(b)、P3-28（新）</span></header>
-  <p><span class="label">問題</span><b>寒帶地形</b>。凍原植被、冰柱、冰磧石已依地貌散佈（<code>ice_field</code>／<code>fjord</code>／<code>eternal_night</code>），但<b>冰川、冰斗、冰磧丘、U 谷是地形形狀</b>，要在 <code>LandformSynth</code> 新增地貌標籤：這會改變<b>所有既有 seed</b> 的印章抽選（升 <code>LandformSynth.GeneratorVersion</code>，重訂所有快照）。<b>冰山</b>在海上，而散佈目前避開海、海也不可進入（P3-23 未開工）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
+<article id="Q-W22">
+  <header><a class="id" href="#Q-W22">Q-W22</a><span class="tag">影響 P3-26、P3-28</span></header>
+  <p><span class="label">問題</span><b>冬季地面要不要積雪</b>。你選的冬季外觀是「落葉枯枝」與「積雪覆蓋樹冠與岩石」，地面沒有列入。目前冬季地面只是草色轉枯黃；樹冠與岩石頂是雪白。地面也要積雪嗎？若要，是否只算外觀（不變成冰原的低摩擦）？</p>
+  <p><span class="label">暫定</span>地面不積雪（只有樹冠、岩石、倒木頂面積雪；寒帶與高山的雪線不受季節影響）</p>
 </article>
 
 </div>
@@ -120,12 +120,6 @@
 <section>
 <h2>技術 / 工具</h2>
 <div class="cards">
-
-<article id="Q-T3">
-  <header><a class="id" href="#Q-T3">Q-T3</a><span class="tag">影響 P5-04</span></header>
-  <p><span class="label">問題</span>概念圖/貼圖/3D 模型由哪個工具產出？</p>
-  <p><span class="label">暫定</span>概念圖、三視圖、特效分鏡：ChatGPT（圖像生成）/ Gemini Argon 任務模式，經 <code>tools/prompt-forge</code>。<b>3D 網格/綁骨/動畫仍未定</b>：對話式 AI 只保證交付三視圖 + 骨架規格 + Blender 腳本，真正的 image-to-3D 工具待選</p>
-</article>
 
 </div>
 </section>
@@ -136,12 +130,11 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-W14':[G('stoneH','城邦石牆高度',4,12,1,8,' m'),G('palisadeH','小鎮木柵高度',2,6,1,4,' m')],
- 'Q-W16':[R('source','季節從哪裡來',['每顆星球由 seed 抽一個季節，整場不變','依緯度：南北半球季節相反，赤道無季節','隨 run 內時間推進（例如每 N 分鐘一季）','依緯度＋隨時間推進']),R('scope','季節影響什麼',['只影響外觀（葉色、落葉、積雪、花）','外觀＋天氣權重','外觀＋天氣＋物種與可採集物']),C('looks','第一批要做的季節外觀',['春：新綠與開花','夏：深綠','秋：紅葉／黃葉','冬：落葉枯枝','冬：積雪覆蓋樹冠與岩石','草地隨季節變色']),T('note','補充','')],
- 'Q-W17':[R('item','礦物是否成為獨立道具',['維持現況：只掉屬性素材／珠寶','獨立礦物道具（先只能收集，用途之後定）','獨立礦物道具＋用途（請在備註說明）']),R('gem','寶石與珠寶的對應',['維持現況：晶洞顏色只是外觀','每種寶石對應一個屬性的珠寶（十屬性各一種）']),R('gas','天然氣',['不做','做成危險地形（噴氣孔：遇火爆炸），併入 P3-22','做成可破壞物件（氣囊岩）']),C('tool','採礦方式',['維持只能用宙獸招式打壞','土／金屬性招式對礦脈有額外掉落','新增生活招式「採礦」']),T('note','用途／備註','')],
- 'Q-W18':[C('forms','要新增的寒帶地貌標籤',['tundra 凍原（平緩、凍脹丘、融冰湖）','glacier 冰川（U 谷＋冰舌＋終磧）','cirque 冰斗（圍椅狀山凹＋冰斗湖）','moraine 冰磧丘陵']),R('seeds','既有 seed 的地形會變',['可以，升版並重訂快照','不行，只在新星球類型／尺寸出現']),R('where','出現在哪些星球',['只有冰晶星','冰晶星＋所有星球的寒帶（高緯度）','所有星球隨機']),R('berg','海上冰山',['現在做：海上散佈層，只當遠景與可被招式打壞的物件','等海域可進入（P3-23）再做','不做']),T('note','補充','')],
- 'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])],
- 'Q-T3':[R('tool','image-to-3D 工具',['Meshy','Tripo','Rodin（Hyper3D）','手工 Blender','暫不決定']),T('other','其他工具／備註','')]
+ 'Q-W19':[R('odds','四季機率',['四季等機率（暫定）','春秋各 30 %、夏冬各 20 %','依星球類型不同（請在備註說明）']),R('who','哪些星球有季節',['所有星球類型（暫定）','只有有植被的星球（翠綠／風暴／晨昏／晶礦）','熔岩星與冰晶星固定一季（請在備註說明）'])],
+ 'Q-W20':[R('how','季節對天氣的影響',['不影響（季節只管外觀與物種）','每季加一組權重偏向（例：夏多雷雨與熱浪、冬多暴風雪與霧、春多雨、秋多強風）','每季禁止部分天氣（例：冬無熱浪、夏無暴風雪）','偏向＋禁止都要']),R('seeds','既有 seed 的天氣序列會變',['可以','不行，只對新版本的星球生效']),T('note','各季天氣偏向（自由填）','')],
+ 'Q-W21':[C('what','「物種」包含',['場景植物的出現率（花叢、巨菇、蕨、蘆葦…）','野生宙獸的出沒（某些宙獸只在特定季節）','樹果／作物的有無（接 P3-21 作物田）']),R('gather','可採集物',['只調既有破壞掉落的機率','新增季節限定採集物（春花、夏果、秋菇、冬冰晶…）','兩者都要']),T('note','補充','')],
+ 'Q-W22':[R('ground','冬季地面',['不積雪（暫定）','積雪，只算外觀','積雪，且雪地有行動修正（請在備註說明）']),R('where','積雪範圍',['整顆星球','只有溫帶與寒帶（熱帶不積雪）','依海拔（高處先白）'])],
+ 'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])]
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

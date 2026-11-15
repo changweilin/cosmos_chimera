@@ -181,6 +181,35 @@ namespace Cosmimera.WorldGen
             B("eternal_night", 0.3f,
                 C(("giant_mushroom", 3), ("tree", 2), ("moraine", 2), ("ice_spire", 2), ("crystal", 2), ("slate", 1)),
                 C(("fern", 3), ("shrub", 3), ("dwarf_shrub", 1))),
+            // Cold landforms (planet-world.md#寒帶地形): ice and glacial debris; trees only where a glacier has left.
+            B("tundra", 0.25f,
+                C(("moraine", 3), ("granite", 2), ("ice_spire", 1), ("snag", 1), ("crystal", 1)),
+                C(("dwarf_shrub", 5), ("tall_grass", 2), ("flowers", 1))),
+            B("glacier", 0.08f,
+                C(("ice_spire", 5), ("moraine", 4), ("granite", 1), ("crystal", 1)),
+                C(("dwarf_shrub", 1))),
+            B("cirque", 0.15f,
+                C(("moraine", 4), ("granite", 3), ("slate", 2), ("tree", 1), ("ice_spire", 1), ("ore_silver", 1),
+                    ("gem_geode", 1)),
+                C(("dwarf_shrub", 3), ("tall_grass", 1), ("bamboo", 2))),
+            B("moraine", 0.3f,
+                C(("moraine", 6), ("granite", 2), ("tree", 2), ("log", 1), ("ore_gold", 1)),
+                C(("dwarf_shrub", 3), ("tall_grass", 3), ("fern", 1))),
+            // Bedrock landforms (planet-world.md#地質變體 b): ScatterGeology pins their bedrock, so the plain rock
+            // listed here is what the pinned bedrock then varies (granite → tors, basalt → columns).
+            B("karst", 0.4f,
+                C(("stone_spire", 5), ("limestone", 4), ("tree", 2), ("marble", 1), ("giant_mushroom", 1),
+                    ("ore_silver", 1), ("gem_geode", 1)),
+                C(("fern", 4), ("shrub", 3), ("flowers", 1), ("bamboo", 3))),
+            B("basalt_terrace", 0.25f,
+                C(("basalt_column", 5), ("basalt", 4), ("umbrella", 1), ("snag", 1), ("ore_iron", 1), ("coal_seam", 1)),
+                C(("tall_grass", 4), ("shrub", 2), ("fern", 1))),
+            B("granite_domes", 0.35f,
+                C(("granite", 6), ("umbrella", 2), ("tree", 2), ("ore_copper", 1)),
+                C(("tall_grass", 4), ("shrub", 3), ("flowers", 2))),
+            B("slate_cliffs", 0.3f,
+                C(("slate", 6), ("tree", 2), ("snag", 1), ("ore_iron", 1), ("coal_seam", 1), ("gem_geode", 1)),
+                C(("tall_grass", 3), ("dwarf_shrub", 2), ("fern", 2), ("bamboo", 3))),
         };
 
         private static readonly Dictionary<string, int> BiomeIndex = BuildBiomeIndex();
