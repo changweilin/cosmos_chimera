@@ -17,6 +17,10 @@ namespace Cosmimera.Bootstrap.Demo
         private AdventurePanel _journal;
         private CodexPanel _codex;
         private InputAction _journalAction;
+        private InputAction _codexAction;
+        private InputActionMap _globalInput;
+        private InputAction _commandModifierAction;
+        private InputHints _inputHints;
         private float _previousTimeScale;
         private bool _previousPlayerInput;
         private CursorLockMode _previousCursorLock;
@@ -74,10 +78,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ConfigureJournal()
         {
-            _journalAction = new InputAction("Journal", InputActionType.Button);
-            _journalAction.AddBinding("<Keyboard>/i");
-            _journalAction.AddBinding("<Gamepad>/select");
-            if (isActiveAndEnabled) _journalAction.Enable();
+            _globalInput = _actions.FindActionMap("DemoGlobal", true).Clone();
+            _journalAction = _globalInput.FindAction("Journal", true);
+            _codexAction = _globalInput.FindAction("Codex", true);
+            _commandModifierAction = _actions.FindAction("Player/CommandModifier", true);
+            _inputHints = new InputHints(_actions.FindActionMap("Player", true), _runInput, _menuInput, _globalInput);
+            if (isActiveAndEnabled) _globalInput.Enable();
             _foodCatalog = FoodCatalog.CreateDefault();
             _foodRng = new Pcg32(_setup.Seed, 'F');
             foreach (CreatureDef creature in _setup.Party)
@@ -121,19 +127,26 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (_journal != null)
             {
-                if (_menuCancel.WasPressedThisFrame() || _journalAction.WasPressedThisFrame()) CloseJournal();
+                // The same D-pad now navigates the open journal; only keyboard shortcuts toggle it closed.
+                if (_menuCancel.WasPressedThisFrame() ||
+                    (!_journal.EditingText &&
+                        ((_journalAction.WasPressedThisFrame() && _journalAction.activeControl?.device is Keyboard) ||
+                         (_codexAction.WasPressedThisFrame() && _codexAction.activeControl?.device is Keyboard)))) CloseJournal();
                 else _journal.ReadInput(_menuInput);
                 return true;
             }
-            if (_interactTarget < 0 && _journalAction != null && _journalAction.WasPressedThisFrame())
-            { OpenJournal(); return true; }
+            if (_interactTarget < 0 && _journalAction != null)
+            {
+                if (PressedWithoutCommand(_journalAction)) { OpenJournal(); return true; }
+                if (PressedWithoutCommand(_codexAction)) { OpenJournal(AdventurePanel.Page.Codex); return true; }
+            }
             return false;
         }
 
-        private void OpenJournal()
+        private void OpenJournal(AdventurePanel.Page page = AdventurePanel.Page.Partners)
         {
             if (_journal != null || !_started || _ended || _interactTarget >= 0) return;
-            _journal = new AdventurePanel(_copy);
+            _journal = new AdventurePanel(_copy, page);
             _previousTimeScale = Time.timeScale;
             _previousPlayerInput = _rig.Input.enabled;
             _previousCursorLock = Cursor.lockState;

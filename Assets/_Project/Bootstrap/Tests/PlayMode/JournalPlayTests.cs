@@ -123,6 +123,7 @@ namespace Cosmimera.Bootstrap.Tests
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
             InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            Gamepad pad = InputSystem.AddDevice<Gamepad>();
             try
             {
                 session.Configure(copy, CombatBalance.FromJson(Copy("balance")),
@@ -170,6 +171,31 @@ namespace Cosmimera.Bootstrap.Tests
                 yield return Capture("items");
                 Page(panel, AdventurePanel.Page.Skills);
                 yield return Capture("skills");
+                Set(panel, "_editingText", true);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.I, Key.K));
+                InputSystem.Update();
+                Invoke(session, "ReadJournalInput");
+                Assert.That(Field(session, "_journal"), Is.SameAs(panel), "search typing cannot close the journal");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.DpadUp));
+                yield return null;
+                yield return null;
+                Assert.That(Field(session, "_journal"), Is.SameAs(panel), "D-pad up navigates an open journal");
+                InputSystem.QueueStateEvent(pad, new GamepadState());
+                yield return null;
+                InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.South));
+                yield return null;
+                yield return null;
+                Assert.That(Field(session, "_journal"), Is.Null, "Switch B closes the journal");
+                Assert.That(Time.timeScale, Is.EqualTo(1));
+                InputSystem.QueueStateEvent(pad, new GamepadState());
+                yield return null;
+                InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.DpadDown));
+                yield return null;
+                yield return null;
+                Assert.That(((AdventurePanel)Field(session, "_journal")).Current, Is.EqualTo(AdventurePanel.Page.Codex));
+                Assert.That(Time.timeScale, Is.Zero);
                 session.enabled = false;
                 Assert.That(Time.timeScale, Is.EqualTo(1));
                 Assert.That(Field(session, "_journal"), Is.Null);
@@ -180,6 +206,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 Object.Destroy(session.gameObject);
                 InputSystem.RemoveDevice(keyboard);
+                InputSystem.RemoveDevice(pad);
                 InputSystem.settings.backgroundBehavior = previousBackground;
                 InputSystem.settings.editorInputBehaviorInPlayMode = previousEditorInput;
                 Time.timeScale = 1;

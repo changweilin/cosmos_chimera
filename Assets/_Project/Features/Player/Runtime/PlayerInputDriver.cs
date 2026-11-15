@@ -6,26 +6,25 @@ namespace Cosmimera.Player
 {
     /// <summary>Reads the Player action map and forwards intent to <see cref="SphericalCharacter"/> and <see cref="PlayerCameraRig"/>.</summary>
     /// <remarks>
-    /// Pre: <see cref="Configure"/> once; the asset has a "Player" map with Move, Look, Jump and Sprint.
+    /// Pre: <see cref="Configure"/> once; the asset has a "Player" map with Move, Look, Jump, Sprint, ToggleView and CommandModifier.
     /// Post: while enabled, every Update pushes the latest input; nothing else reads devices for the player.
     /// Side effects: enables/disables the actions it uses.
     /// </remarks>
     public sealed class PlayerInputDriver : MonoBehaviour
     {
-        // The shared actions asset has no view-toggle action yet; an embedded action keeps that asset untouched until
-        // P7 key rebinding decides where toggles live.
-        [SerializeField] private InputAction _toggleView = new InputAction("ToggleView", InputActionType.Button, "<Keyboard>/v");
-
         private SphericalCharacter _character;
         private PlayerCameraRig _rig;
         private InputAction _move;
         private InputAction _look;
         private InputAction _jump;
         private InputAction _sprint;
+        private InputAction _toggleView;
+        private InputAction _commandModifier;
 
         /// <summary>Binds actions and targets.</summary>
         /// <remarks>
-        /// Pre: actions, character, rig non-null; actions contains Player/Move, Player/Look, Player/Jump, Player/Sprint.
+        /// Pre: actions, character, rig non-null; actions contains Player/Move, Player/Look, Player/Jump, Player/Sprint,
+        /// Player/ToggleView and Player/CommandModifier.
         /// Post: actions enabled. Side effects: enables input actions.
         /// </remarks>
         public void Configure(InputActionAsset actions, SphericalCharacter character, PlayerCameraRig rig)
@@ -37,12 +36,11 @@ namespace Cosmimera.Player
             _look = actions.FindAction("Player/Look");
             _jump = actions.FindAction("Player/Jump");
             _sprint = actions.FindAction("Player/Sprint");
-            Contract.Requires(_move != null && _look != null && _jump != null && _sprint != null,
-                "actions must contain Player/Move, Player/Look, Player/Jump and Player/Sprint");
-            if (_toggleView.bindings.Count == 1)
-            {
-                _toggleView.AddBinding("<Gamepad>/rightStickPress");
-            }
+            _toggleView = actions.FindAction("Player/ToggleView");
+            _commandModifier = actions.FindAction("Player/CommandModifier");
+            Contract.Requires(_move != null && _look != null && _jump != null && _sprint != null &&
+                _toggleView != null && _commandModifier != null,
+                "actions must contain Player/Move, Player/Look, Player/Jump, Player/Sprint, Player/ToggleView and Player/CommandModifier");
 
             SetEnabled(true);
         }
@@ -58,7 +56,7 @@ namespace Cosmimera.Player
                 return;
             }
 
-            foreach (InputAction action in new[] { _move, _look, _jump, _sprint, _toggleView })
+            foreach (InputAction action in new[] { _move, _look, _jump, _sprint, _toggleView, _commandModifier })
             {
                 if (enabled)
                 {
@@ -82,7 +80,9 @@ namespace Cosmimera.Player
             // Mouse delta is already per-frame; stick deflection must be scaled by time. One action carries both.
             bool pointer = _look.activeControl?.device is Pointer;
             _rig.AddLook(pointer ? look : Vector2.zero, pointer ? Vector2.zero : look, Time.deltaTime);
-            if (_toggleView.WasPressedThisFrame())
+            // Player and run maps have independent owners; a command chord must not also toggle the camera.
+            if (_toggleView.WasPressedThisFrame() &&
+                (!(_toggleView.activeControl?.device is Gamepad) || !_commandModifier.IsPressed()))
             {
                 _rig.ToggleView();
             }

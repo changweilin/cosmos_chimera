@@ -132,8 +132,8 @@
     "en": "Quest complete. Approach the fallen BOSS and press {capture} to attempt capture."
   },
   "ui.hud.exploration_help": {
-    "zh-TW": "WASD／方向鍵 移動 · Shift 衝刺\nSpace 跳躍 · 滑鼠 轉動視角\nV 切換第一／第三人稱\n宙獸接敵後自動施招，請跟上主力。\n擊倒後 20 秒內，靠近至 8 m 按 C 收服；每隻僅一次機會。\nB 切換收服道具\n倒下的隊友本場不復活，戰外不回血。\n3 秒內按兩次 Esc 結算返回大廳。",
-    "en": "WASD / Arrows Move · Shift Sprint\nSpace Jump · Mouse Look\nV Toggle first / third person\nCosmimera attack automatically. Keep up with your lead.\nAfter a knockout: get within 8 m and press C within 20 s. One attempt per target.\nB Cycle capture vessel\nNo revives or out-of-combat healing this run.\nPress Esc twice within 3 s to end the run."
+    "zh-TW": "WASD／方向鍵 移動 · Shift 衝刺\n{jump} 跳躍 · {roll} 翻滾\n滑鼠 轉動視角 · {view} 切換視角\n{interact} 互動 · {target} 切換目標\n{journal} 手冊 · {codex} 圖鑑\n{capture} 收服 · {cycle} 切換器皿\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次。\n宙獸自動施招，請跟上主力。\n3 秒內按兩次 {abandon} 結算。",
+    "en": "WASD / Arrows: move · Shift: sprint\n{jump}: jump · {roll}: dodge\nMouse: look · {view}: change view\n{interact}: interact · {target}: cycle target\n{journal}: journal · {codex}: codex\n{capture}: capture · {cycle}: cycle vessel\nCapture within 20 s and 8 m. One attempt per target.\nCosmimera attack automatically. Keep up.\nPress {abandon} twice within 3 s to end the run."
   },
   "ui.hud.capture_available": {
     "zh-TW": "[{capture}] 收服 {name} · 剩餘 {seconds} 秒\n[{cycle}] 切換收服道具 · 每隻僅一次機會",
@@ -152,8 +152,8 @@
     "en": "Press {key} again within 3 seconds to abandon. Captured Cosmimera return to the lobby."
   },
   "ui.hud.gamepad_help": {
-    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n選單：方向鍵或左搖桿移動，下方按鈕確認，右方按鈕返回。",
-    "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nMenus: D-pad or left stick to move, bottom button to confirm, right button to go back."
+    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；{view} 切換視角。\n{jump} 跳躍 · {roll} 翻滾\n{interact} 互動 · {target} 鎖定／切換目標\n{journal} 手冊 · {codex} 圖鑑\n{capture} 收服 · {cycle} 切換器皿\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次。\n3 秒內按兩次 {abandon} 結算。\n選單：十字鍵／左搖桿移動，右方確認、下方返回。",
+    "en": "Left stick: move · Right stick: look\nPress left stick: sprint · {view}: change view\n{jump}: jump · {roll}: dodge\n{interact}: interact · {target}: lock / cycle target\n{journal}: journal · {codex}: codex\n{capture}: capture · {cycle}: cycle vessel\nCapture within 20 s and 8 m. One attempt per target.\nPress {abandon} twice within 3 s to end the run.\nMenus: D-pad / left stick to move, right button to confirm, bottom button to go back."
   },
   "ui.lobby.language": {
     "zh-TW": "語言",
@@ -368,8 +368,8 @@
     "en": "Codex"
   },
   "ui.journal.navigation": {
-    "zh-TW": "方向鍵／十字鍵選擇，Enter／A 確認，Esc／B 返回",
-    "en": "Arrows / D-pad to select, Enter / A to confirm, Esc / B to close"
+    "zh-TW": "方向鍵／十字鍵選擇，Enter／右方按鈕確認，Esc／下方按鈕返回",
+    "en": "Arrows / D-pad to select, Enter / right button to confirm, Esc / bottom button to close"
   },
   "ui.journal.empty": {
     "zh-TW": "沒有符合的資料",

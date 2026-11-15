@@ -38,7 +38,7 @@ namespace Cosmimera.Bootstrap.Tests
                 yield return Press(pad, GamepadButton.DpadUp);
                 Assert.That(focus.Index, Is.EqualTo(0));
                 string before = (string)Field(game, "_language");
-                yield return Press(pad, GamepadButton.South);
+                yield return Press(pad, GamepadButton.East);
                 Assert.That((string)Field(game, "_language"), Is.Not.EqualTo(before));
                 var menu = (InputActionMap)Field(game, "_menuInput");
                 Assert.That(menu.enabled, Is.True);

@@ -22,9 +22,14 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _editingText;
         private bool _clearTextFocus;
         internal Page Current { get; private set; }
+        internal bool EditingText => _editingText;
         internal string Message { get; set; } = string.Empty;
 
-        internal AdventurePanel(DemoCopy copy) => _copy = copy;
+        internal AdventurePanel(DemoCopy copy, Page page = Page.Partners)
+        {
+            _copy = copy;
+            Current = page;
+        }
 
         internal void ReadInput(InputActionMap input)
         {

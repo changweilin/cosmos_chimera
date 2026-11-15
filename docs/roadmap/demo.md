@@ -36,6 +36,7 @@
 | D0-W3 | 近身互動：觀察／挑釁／撫摸 | OPUS（規則）＋FLASH（ja） | `combat.md#近身互動` | ✅ |
 | D0-W4 | 指定攻擊目標：目標切換＋鎖定標記 | OPUS | `combat.md#指定目標` | ✅ |
 | D0-U1 | 冒險手冊：副手裝備／保存、道具查看／使用、既有生活技能、圖鑑與關係網；未開放能力明示 | Codex | `creatures.md#隊伍規則`、`field-utilities.md`、`lobby-meta.md`；含存檔 v5／副手經驗與 API 接線，須審查 | 🟨 |
+| D0-I1 | 鍵鼠／手把操作一致性：阿爾宙斯優先配置、消除動作衝突、選單上下文、裝置提示切換 | Codex | `controls.md`；實體手把／Steam Deck 驗收由 P7-07 追蹤 | ✅ |
 
 ## 未收尾紀錄
 [log/demo.md](log/demo.md)（partial／blocked 才寫；舊紀錄為封存）。

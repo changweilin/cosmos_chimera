@@ -1,0 +1,41 @@
+# 操作配置
+
+手把優先沿用《寶可夢傳說 阿爾宙斯》的按鈕位置：右方互動／確認、下方取消、左方翻滾、ZL 鎖定、ZR 投擲收服、十字鍵上手冊／下圖鑑。跳躍採《曠野之息》的上方按鈕。本作額外的宙獸指令使用按住 L 的組合鍵。
+
+對齊的是**實體位置**：Switch 的 A／B 分別在右／下，Xbox 的 B／A 分別在右／下。HUD 以實際綁定名稱顯示，不把 Xbox A 當成 Switch A。
+
+| 功能 | 鍵鼠 | Switch 位置／名稱 | Xbox／Steam Deck |
+|---|---|---|---|
+| 移動／視角 | WASD 或方向鍵／滑鼠 | 左／右搖桿 | 左／右搖桿 |
+| 衝刺 | 按住左 Shift | 按住左搖桿 | 按住左搖桿 |
+| 跳躍 | J | 上方 X | Y |
+| 翻滾 | Space | 左方 Y | X |
+| 近身互動 | E | 右方 A | B |
+| 切換第一／第三人稱 | V | 按右搖桿 | 按右搖桿 |
+| 選第一／第二隻在場主力 | 1／2 | 十字鍵左／右 | 十字鍵左／右 |
+| 輪替所選主力 | Tab | L + R | LB + RB |
+| 鎖定／切換目標 | Q | ZL | LT |
+| 集火鎖定目標（無鎖定時取最近） | F | L + ZR | LB + RT |
+| 自由戰鬥 | R | L + 十字鍵下 | LB + 十字鍵下 |
+| 跟隨 | T | L + 十字鍵上 | LB + 十字鍵上 |
+| 撤退 | G | L + 下方 B | LB + A |
+| 切換收服器皿 | B | R | RB |
+| 投擲收服 | C | ZR | RT |
+| 超載 | O | L + 按右搖桿 | LB + 按右搖桿 |
+| 開手冊 | I | 十字鍵上 | 十字鍵上 |
+| 直接開圖鑑頁 | K | 十字鍵下 | 十字鍵下 |
+| 放棄探索 | 3 秒內按兩次 Esc | 3 秒內按兩次 + | 3 秒內按兩次 Start |
+| 選單移動 | 方向鍵／WASD | 十字鍵／左搖桿 | 十字鍵／左搖桿 |
+| 選單確認 | Enter／Space | 右方 A | B |
+| 選單取消 | Esc | 下方 B | A |
+
+## 輸入生命週期
+
+- `InputSystem_Actions.inputactions` 是綁定來源；`Player` 管角色，`DemoRun` 管探索指令，`DemoMenu` 管選單，`DemoGlobal` 管手冊／圖鑑捷徑。
+- 先按住 L 再按組合鍵；宙獸指令不會同時觸發收服、器皿輪換、開手冊或視角切換。鍵盤操作不受手把 L 影響。
+- ZL 只鎖定／切換目標；是否開戰仍依 `combat.md#指定目標` 的既有規則（集火狀態切換會改打新目標）。
+- 手冊暫停探索與角色輸入；開啟後十字鍵只導航，B（下方）／Esc 關閉。I／K 可關閉手冊，但搜尋文字時保留字元輸入。
+- 提示跟隨最後實際操作的裝置。只接上手把、放開按鍵、搖桿漂移／微抖均不切換提示；拔除手把後回到鍵鼠提示。
+- 尚未提供遊戲內重綁介面；實體手把／Steam Deck／Proton 仍須依 `../demo-runbook.md` 驗收。
+
+參考：[Nintendo《阿爾宙斯》鎖定與圖鑑說明](https://www.nintendo.com/en-ca/whatsnew/pokemon-legends-arceus-hone-your-catching-techniques-with-this-guide/)、[阿爾宙斯操作畫面](https://game8.jp/pokemon-legends/423963)、[Nintendo《曠野之息》探索指南](https://media.nintendo.com/zelda/breath-of-the-wild/assets/ExplorersGuide.pdf)。

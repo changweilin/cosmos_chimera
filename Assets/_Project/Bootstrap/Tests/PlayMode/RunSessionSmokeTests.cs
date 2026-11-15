@@ -115,10 +115,12 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(session.FirstPersonForTests, Is.Not.EqualTo(view), "V toggles the view");
                 Assert.That(session.VesselForTests, Is.EqualTo(vessel), "V leaves the vessel alone");
                 session.ToggleViewForTests();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
 
                 vessel = session.VesselForTests;
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
-                Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "gamepad east cycles vessels");
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightShoulder));
+                Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "R cycles vessels");
                 Assert.That(session.FirstPersonForTests, Is.EqualTo(view), "vessel input leaves the view alone");
 
                 int main = session.MainForTests;
@@ -126,22 +128,30 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(session.MainForTests, Is.Not.EqualTo(main), "d-pad right selects the other active lead");
                 yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadLeft));
                 Assert.That(session.MainForTests, Is.EqualTo(main), "d-pad left selects the first active lead");
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightShoulder));
-                Assert.That(session.MainForTests, Is.Not.EqualTo(main), "right shoulder switches to a reserve creature");
+                vessel = session.VesselForTests;
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.RightShoulder));
+                Assert.That(session.MainForTests, Is.Not.EqualTo(main), "L+R switches to a reserve creature");
+                Assert.That(session.VesselForTests, Is.EqualTo(vessel), "command chords cannot also cycle vessels");
 
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadUp));
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.DpadUp));
                 Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Follow));
-                yield return Press(gamepad, new GamepadState { leftTrigger = 1f });
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.South));
                 Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Retreat));
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.DpadDown));
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.DpadDown));
                 Assert.That(session.CommandForTests, Is.EqualTo(AiCommandKind.Free));
+
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.RightStick));
+                Assert.That(session.FirstPersonForTests, Is.EqualTo(view), "overload leaves the view alone");
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightStick));
+                Assert.That(session.FirstPersonForTests, Is.Not.EqualTo(view), "right stick alone toggles view");
+                session.ToggleViewForTests();
 
                 session.enabled = false;
                 vessel = session.VesselForTests;
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightShoulder));
                 Assert.That(session.VesselForTests, Is.EqualTo(vessel), "disabled run actions do not fire");
                 session.enabled = true;
-                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.East));
+                yield return Press(gamepad, new GamepadState().WithButton(GamepadButton.RightShoulder));
                 Assert.That(session.VesselForTests, Is.Not.EqualTo(vessel), "reenabled run actions work again");
                 // Unity's project-wide action asset may already be enabled when PlayMode starts.
                 Assert.That(actions.FindActionMap("DemoRun").enabled, Is.EqualTo(sharedRunEnabled),

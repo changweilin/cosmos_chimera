@@ -86,6 +86,7 @@ namespace Cosmimera.Bootstrap.Demo
         private Vector2 _partyScroll;
         private string _partyMsg = string.Empty;
         private InputActionMap _menuInput;
+        private InputHints _menuHints;
         private readonly MenuFocus _menuFocus = new MenuFocus();
         private int _menuButtonCount;
         private bool _confirmPending;
@@ -102,6 +103,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             var menu = _actions.FindActionMap("DemoMenu", true);
             _menuInput = menu.Clone();
+            _menuHints = new InputHints(_menuInput);
             if (isActiveAndEnabled)
             {
                 _menuInput.Enable();
@@ -175,7 +177,11 @@ namespace Cosmimera.Bootstrap.Demo
             _confirmPending = false;
         }
 
-        private void OnDestroy() => _menuInput?.Dispose();
+        private void OnDestroy()
+        {
+            _menuHints?.Dispose();
+            _menuInput?.Dispose();
+        }
 
         private void Update()
         {
@@ -872,6 +878,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
+            _run.Hints.Inherit(_menuHints);
             _screen = Screen.Running;
         }
 
@@ -894,6 +901,7 @@ namespace Cosmimera.Bootstrap.Demo
             // The run is over whether or not banking succeeds (End is single-shot), so leave it first; a failed bank
             // keeps Results open with a retry instead of stranding the player in Running (W-02).
             _outcome = outcome;
+            _menuHints.Inherit(_run.Hints);
             Destroy(_run.gameObject);
             _run = null;
             _lobbyCamera.gameObject.SetActive(true);

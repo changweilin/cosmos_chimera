@@ -15,6 +15,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 
 namespace Cosmimera.Bootstrap.Tests
@@ -337,7 +338,29 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(s.InteractableForTests, Is.EqualTo(-1), "no prompt while the menu is open");
             Assert.That(s.CharacterInputEnabledForTests, Is.False, "the character stands still");
 
-            s.ChooseInteractForTests(0);
+            var runInput = (InputActionMap)typeof(RunSession).GetField("_runInput",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(s);
+            var readInput = typeof(RunSession).GetMethod("ReadInput",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var previousBackground = InputSystem.settings.backgroundBehavior;
+            var previousEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            var pad = InputSystem.AddDevice<Gamepad>();
+            try
+            {
+                runInput.Enable();
+                InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.East));
+                InputSystem.Update();
+                readInput.Invoke(s, null);
+            }
+            finally
+            {
+                runInput.Disable();
+                InputSystem.RemoveDevice(pad);
+                InputSystem.settings.backgroundBehavior = previousBackground;
+                InputSystem.settings.editorInputBehaviorInPlayMode = previousEditorInput;
+            }
             Assert.That(s.ObserveTextForTests, Is.Not.Null.And.Not.Contains("{"), "observe fills every placeholder");
             Assert.That(s.InteractTargetForTests, Is.EqualTo(offered), "observe keeps the menu open");
 

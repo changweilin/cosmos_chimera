@@ -12,6 +12,7 @@
         "Cosmimera.WorldGen",
         "Cosmimera.Save",
         "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

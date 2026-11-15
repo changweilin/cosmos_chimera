@@ -375,9 +375,9 @@
     "ja": "任務完了。倒れたボスに近づき、{capture}で捕獲を試みましょう。"
   },
   "ui.hud.exploration_help": {
-    "zh-TW": "WASD／方向鍵 移動 · Shift 衝刺\nSpace 跳躍 · 滑鼠 轉動視角\nV 切換第一／第三人稱\n宙獸接敵後自動施招，請跟上主力。\n擊倒後 20 秒內，靠近至 8 m 按 C 收服；每隻僅一次機會。\nB 切換收服道具\n倒下的隊友本場不復活，戰外不回血。\n3 秒內按兩次 Esc 結算返回大廳。",
-    "en": "WASD / Arrows Move · Shift Sprint\nSpace Jump · Mouse Look\nV Toggle first / third person\nCosmimera attack automatically. Keep up with your lead.\nAfter a knockout: get within 8 m and press C within 20 s. One attempt per target.\nB Cycle capture vessel\nNo revives or out-of-combat healing this run.\nPress Esc twice within 3 s to end the run.",
-    "ja": "WASD／方向キー 移動・Shift ダッシュ\nSpace ジャンプ・マウス 視点操作\nV 一人称／三人称の切り替え\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づき、Cで捕獲。各対象につき1回限り。\nB 捕獲道具の切り替え\n今回の探索中は復活も戦闘外の回復もありません。\n3秒以内にEscを2回押すと探索を終了します。"
+    "zh-TW": "WASD／方向鍵 移動 · Shift 衝刺\n{jump} 跳躍 · {roll} 翻滾\n滑鼠 轉動視角 · {view} 切換視角\n{interact} 互動 · {target} 切換目標\n{journal} 手冊 · {codex} 圖鑑\n{capture} 收服 · {cycle} 切換器皿\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次。\n宙獸自動施招，請跟上主力。\n3 秒內按兩次 {abandon} 結算。",
+    "en": "WASD / Arrows: move · Shift: sprint\n{jump}: jump · {roll}: dodge\nMouse: look · {view}: change view\n{interact}: interact · {target}: cycle target\n{journal}: journal · {codex}: codex\n{capture}: capture · {cycle}: cycle vessel\nCapture within 20 s and 8 m. One attempt per target.\nCosmimera attack automatically. Keep up.\nPress {abandon} twice within 3 s to end the run.",
+    "ja": "WASD／方向キー 移動・Shift ダッシュ\n{jump} ジャンプ・{roll} 回避\nマウス 視点操作・{view} 視点切り替え\n{interact} 調べる・{target} 対象切り替え\n{journal} 手帳・{codex} 図鑑\n{capture} 捕獲・{cycle} 捕獲道具切り替え\n撃破から20秒以内に8 mまで接近。各対象1回限り。\n宙獣は自動で技を使います。主力についていきましょう。\n3秒以内に{abandon}を2回押すと終了。"
   },
   "ui.hud.capture_available": {
     "zh-TW": "[{capture}] 收服 {name} · 剩餘 {seconds} 秒\n[{cycle}] 切換收服道具 · 每隻僅一次機會",
@@ -400,9 +400,9 @@
     "ja": "3秒以内に再度{key}を押すと探索を放棄します。捕獲した宙獣はロビーに持ち帰ることができます。"
   },
   "ui.hud.gamepad_help": {
-    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；按右搖桿切換視角。\n下方按鈕跳躍；上方按鈕收服。\n右方按鈕切換收服道具。\n宙獸自動施招，請跟上主力。\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次機會。\n倒下不復活，戰外不回血。\n3 秒內按兩次 Start 結算。\n選單：方向鍵或左搖桿移動，下方按鈕確認，右方按鈕返回。",
-    "en": "Left stick: move. Right stick: look.\nPress left stick: sprint. Press right stick: change view.\nBottom button: jump. Top button: capture.\nRight button: cycle capture vessel.\nCosmimera attack automatically. Keep up.\nCapture within 20 s and 8 m. One attempt per target.\nNo revives or out-of-combat healing.\nPress Start twice within 3 s to end the run.\nMenus: D-pad or left stick to move, bottom button to confirm, right button to go back.",
-    "ja": "左スティックで移動、右スティックで視点操作。\n左スティック押し込みでダッシュ、右押し込みで視点切り替え。\n下のボタンでジャンプ、上のボタンで捕獲。\n右のボタンで捕獲道具を切り替え。\n宙獣は自動で技を使います。主力についていきましょう。\n撃破から20秒以内に8 mまで近づいて捕獲。各対象1回限り。\n復活も戦闘外の回復もありません。\n3秒以内にStartを2回押すと終了。\nメニュー：十字キー／左スティックで移動、下のボタンで決定、右のボタンで戻る。"
+    "zh-TW": "左搖桿移動，右搖桿轉動視角。\n按左搖桿衝刺；{view} 切換視角。\n{jump} 跳躍 · {roll} 翻滾\n{interact} 互動 · {target} 鎖定／切換目標\n{journal} 手冊 · {codex} 圖鑑\n{capture} 收服 · {cycle} 切換器皿\n擊倒後 20 秒內靠近至 8 m 收服，每隻一次。\n3 秒內按兩次 {abandon} 結算。\n選單：十字鍵／左搖桿移動，右方確認、下方返回。",
+    "en": "Left stick: move · Right stick: look\nPress left stick: sprint · {view}: change view\n{jump}: jump · {roll}: dodge\n{interact}: interact · {target}: lock / cycle target\n{journal}: journal · {codex}: codex\n{capture}: capture · {cycle}: cycle vessel\nCapture within 20 s and 8 m. One attempt per target.\nPress {abandon} twice within 3 s to end the run.\nMenus: D-pad / left stick to move, right button to confirm, bottom button to go back.",
+    "ja": "左スティック 移動・右スティック 視点操作\n左押し込み ダッシュ・{view} 視点切り替え\n{jump} ジャンプ・{roll} 回避\n{interact} 調べる・{target} 注目／対象切り替え\n{journal} 手帳・{codex} 図鑑\n{capture} 捕獲・{cycle} 捕獲道具切り替え\n撃破から20秒以内に8 mまで接近。各対象1回限り。\n3秒以内に{abandon}を2回押すと終了。\nメニュー：十字キー／左スティックで移動、右で決定、下で戻る。"
   },
   "ui.lobby.language": {
     "zh-TW": "語言",
@@ -840,9 +840,9 @@
     "ja": "図鑑"
   },
   "ui.journal.navigation": {
-    "zh-TW": "方向鍵／十字鍵選擇，Enter／A 確認，Esc／B 返回",
-    "en": "Arrows / D-pad to select, Enter / A to confirm, Esc / B to close",
-    "ja": "方向キーで選択、Enter / Aで決定、Esc / Bで戻る"
+    "zh-TW": "方向鍵／十字鍵選擇，Enter／右方按鈕確認，Esc／下方按鈕返回",
+    "en": "Arrows / D-pad to select, Enter / right button to confirm, Esc / bottom button to close",
+    "ja": "方向キーで選択、Enter／右ボタンで決定、Esc／下ボタンで戻る"
   },
   "ui.journal.empty": {
     "zh-TW": "沒有符合的資料",

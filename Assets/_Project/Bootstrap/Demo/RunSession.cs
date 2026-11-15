@@ -408,8 +408,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Starts the run.</summary>
         /// <remarks>
-        /// Pre: all arguments non-null; actions contains the DemoRun map and its twelve actions and the DemoMenu map
-        ///      with Up/Down/Submit/Cancel;
+        /// Pre: all arguments non-null; actions contains DemoRun's fourteen actions, DemoMenu with Up/Down/Submit/Cancel,
+        ///      DemoGlobal with Journal/Codex and Player/CommandModifier;
         ///      setup.Radius >= MoveGeometry.MinSupportedRadiusM; party 1..6 non-null forms with
         ///      matching PartyIds/PartyExp; setup.Progression non-null. The shaders and scenery may be null: each
         ///      null one skips its visual layer (headless runs pass none).
@@ -1051,12 +1051,12 @@ namespace Cosmimera.Bootstrap.Demo
                 _command = new AiCommand(AiCommandKind.Retreat, CombatAi.NoTarget);
             }
 
-            if (_cycleVesselAction.WasPressedThisFrame())
+            if (PressedWithoutCommand(_cycleVesselAction))
             {
                 _vessel = (VesselKind)(((int)_vessel + 1) % 3);
             }
 
-            if (_captureAction.WasPressedThisFrame())
+            if (PressedWithoutCommand(_captureAction))
             {
                 TryCapture();
             }
@@ -1077,6 +1077,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private bool PressedWithoutCommand(InputAction action) => action.WasPressedThisFrame() &&
+            (!(action.activeControl?.device is Gamepad) || !_commandModifierAction.IsPressed());
+
         internal static InputActionMap RequireRunMap(InputActionAsset actions)
         {
             Core.Contracts.Contract.Requires(actions != null, "actions are required");
@@ -1094,6 +1097,11 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Core.Contracts.Contract.Requires(menu.FindAction(name) != null, "DemoMenu is missing " + name);
             }
+
+            InputActionMap global = actions.FindActionMap("DemoGlobal");
+            Core.Contracts.Contract.Requires(global != null && global.FindAction("Journal") != null &&
+                global.FindAction("Codex") != null && actions.FindAction("Player/CommandModifier") != null,
+                "actions must contain DemoGlobal/Journal, DemoGlobal/Codex and Player/CommandModifier");
 
             return map;
         }
@@ -1144,7 +1152,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ReadInteractMenu()
         {
-            if (_menuCancel.WasPressedThisFrame() || _interactAction.WasPressedThisFrame())
+            if (_menuCancel.WasPressedThisFrame() ||
+                (_interactAction.WasPressedThisFrame() && _interactAction.activeControl?.device is Keyboard))
             {
                 CloseInteract();
                 return;
@@ -1209,8 +1218,9 @@ namespace Cosmimera.Bootstrap.Demo
                 .Replace("{level}", u.Level.ToString());
         }
 
-        private static string BindingLabel(InputAction action) =>
-            action.GetBindingDisplayString(group: Gamepad.current != null ? "Gamepad" : "Keyboard&Mouse");
+        private string BindingLabel(InputAction action) => _inputHints.BindingLabel(action);
+
+        internal InputHints Hints => _inputHints;
 
         private void SwitchMain()
         {
@@ -2127,7 +2137,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _journal.Draw(DrawJournal, CloseJournal);
                 return;
             }
-            if (GUI.Button(new Rect(Screen.width - 200, 12, 188, 34), _copy.Ui("ui.journal.open") + " [I / View]"))
+            if (GUI.Button(new Rect(Screen.width - 200, 12, 188, 34), _copy.Ui("ui.journal.open") + " [" + BindingLabel(_journalAction) + "]"))
             { OpenJournal(); GUIUtility.ExitGUI(); }
             DrawInteraction();
             if (_nowMs < _toastUntilMs)
@@ -2363,8 +2373,17 @@ namespace Cosmimera.Bootstrap.Demo
         {
             var box = new Rect(Screen.width - 346, 16, 330, 260);
             GUI.Box(box, GUIContent.none);
+            string help = _copy.Ui(_inputHints.UsesGamepad ? "ui.hud.gamepad_help" : "ui.hud.exploration_help")
+                .Replace("{jump}", BindingLabel(_actions.FindAction("Player/Jump")))
+                .Replace("{roll}", BindingLabel(_rollAction))
+                .Replace("{view}", BindingLabel(_actions.FindAction("Player/ToggleView")))
+                .Replace("{interact}", BindingLabel(_interactAction))
+                .Replace("{target}", BindingLabel(_cycleTargetAction))
+                .Replace("{journal}", BindingLabel(_journalAction)).Replace("{codex}", BindingLabel(_codexAction))
+                .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
+                .Replace("{abandon}", BindingLabel(_abandonAction));
             GUI.Label(new Rect(box.x + 10, box.y + 6, box.width - 20, box.height - 12),
-                _copy.Ui(Gamepad.current != null ? "ui.hud.gamepad_help" : "ui.hud.exploration_help"),
+                help,
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
 
             int capture = FindCaptureTarget(CaptureReachM);
@@ -2496,13 +2515,13 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnEnable()
         {
             _runInput?.Enable();
-            _journalAction?.Enable();
+            _globalInput?.Enable();
         }
 
         private void OnDisable()
         {
             CloseJournal();
-            _journalAction?.Disable();
+            _globalInput?.Disable();
             _runInput?.Disable();
             _menuInput?.Disable();
         }
@@ -2510,7 +2529,8 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnDestroy()
         {
             CloseJournal();
-            _journalAction?.Dispose();
+            _inputHints?.Dispose();
+            _globalInput?.Dispose();
             _runInput?.Dispose();
             _menuInput?.Dispose();
             _feedback?.Dispose();
