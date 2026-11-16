@@ -7,7 +7,8 @@
 | `line_id` / `stage` | 進化線 ID；資料契約目前為 `juvenile` 幼年 / `adolescent` 少年 / `adult` 成年；超載見〈超載〉（待 P2-05 接線） |
 | `size_class` | 體型級距 `XS` / `S` / `M` / `L` / `XL`（見〈體型級距〉） |
 | `ai_style` | 戰鬥 AI 走位風格 `keep_distance` / `flank` / `charge` / `hold`，逐階必填（Q-C21，見 [combat.md#戰鬥 AI](combat.md)） |
-| `temperament` | 性格，決定野生時的領域距離；逐階固定、不隨機（種類與距離見 Q-C35、[combat.md#野生領域](combat.md)）。schema 必填 `timid` (0m)／`cautious` (4m)／`normal` (8m)／`territorial` (14m)／`fierce` (20m)／`apex` (28m)；D0 30 物種逐一指定（`Data/_incoming/q-c35-temperament-terra/proposal.json`：timid 8／cautious 7／normal 4／territorial 8／fierce 2／apex 1；同線不降階，apex 僅火成年霸獅）；新物種批次須逐隻填寫 |
+| 生態棲位（P3-31 待接線） | 物種逐階提供候選棲位；個體依出生環境選棲位，再抽性格。規格與提案入口見 [creature-ecology.md](creature-ecology.md)；目前 schema 尚無此欄位 |
+| `temperament` | 性格決定野生領域距離，種類與半徑見 [combat.md#野生領域](combat.md#野生領域)。目標為棲位限制下的個體抽樣，不再要求同線性格單調不減；目前 schema／執行期仍讀物種固定值，待 P3-31 整體遷移，不能只刪除此必填欄位 |
 | `evolves_to` | 下一階段 ID（成年為 null） |
 | `evolution` | 現行契約 `{exp, materials: [{element, tier, qty}]}`；P2-12 待改為等級門檻，成年仍為 null（見〈進化〉） |
 | `resist` | 十屬性抗性：`{metal, wood, water, fire, earth, ice, wind, thunder, light, shadow}` 整數 % |
