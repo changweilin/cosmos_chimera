@@ -6,6 +6,7 @@ using Cosmimera.Capture;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.Save;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -182,6 +183,12 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.AddMaterials(outcome.Materials);
+            // The run already spent from its departure copy: adding its final stock would duplicate old items.
+            if (outcome.CraftStock != null && !candidate.CraftStock.TryExchange(candidate.CraftStock.Snapshot(), outcome.CraftStock))
+            {
+                error = new InvalidOperationException("Final crafting stock exceeds capacity");
+                return CommitStatus.WriteFailed;
+            }
             if (!TryWrite(candidate, path, out error))
             {
                 return CommitStatus.WriteFailed;

@@ -27,6 +27,7 @@ spec.loader.exec_module(merge)
 def inputs(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(merge, "COPY_OUT", tmp_path / "Copy")
+    monkeypatch.setattr(merge, "CRAFT_OUT", tmp_path / "Crafting")
     monkeypatch.setattr(merge, "NAME_SOURCES", ["names"])
     monkeypatch.setattr(merge, "BATCHES", ["batch"])
     monkeypatch.setattr(merge, "ENV_MATERIALS_BATCH", "env")
@@ -57,6 +58,11 @@ def inputs(tmp_path, monkeypatch):
     env = root / "_incoming" / "env" / "env-materials"
     env.mkdir(parents=True)
     (env / "env-materials.json").write_text('{"substances":[]}', encoding="utf-8")
+    craft = root / "_incoming" / "life-crafting-draft-01"
+    for kind in ("craft-items", "craft-recipes"):
+        (craft / kind).mkdir(parents=True)
+        (craft / kind / f"{kind}.json").write_text('[]', encoding="utf-8")
+    (craft / "crafting-copy.json").write_text('{}', encoding="utf-8")
     return root
 
 
@@ -91,6 +97,16 @@ def test_normal_output(inputs):
         'entries': [{'id': 'a', 'zh': '甲', 'en': 'A', 'ja': '\u30a2'}]}
     assert (merge.COPY_OUT / 'balance.json').read_bytes() == b'{"x":1}'
     assert (inputs / '_demo' / 'moves' / 'batch--one.json').read_bytes() == b'{"id":"one"}'
+
+
+def test_crafting_only_keeps_other_demo_content(inputs):
+    existing = inputs / "_demo" / "moves" / "keep.json"
+    existing.parent.mkdir(parents=True)
+    existing.write_bytes(b'[{"id":"keep"}]')
+    assert merge.main(crafting_only=True) == 0
+    assert existing.read_bytes() == b'[{"id":"keep"}]'
+    assert not merge.COPY_OUT.exists()
+    assert (merge.CRAFT_OUT / "items.json").read_bytes() == b'[]'
 
 
 def test_ja_collision_fails_before_writes(inputs):

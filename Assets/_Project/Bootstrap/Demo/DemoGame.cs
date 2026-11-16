@@ -880,6 +880,8 @@ namespace Cosmimera.Bootstrap.Demo
                     CharacterModelPrefab = SelectedCharacterPrefab(),
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
                     Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
+                    CraftStock = _save.CraftStock.Snapshot(),
+                    Equipment = _save.Equipment.Snapshot(),
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.Hints.Inherit(_menuHints);

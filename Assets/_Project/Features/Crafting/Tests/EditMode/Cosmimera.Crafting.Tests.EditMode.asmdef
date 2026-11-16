@@ -1,0 +1,28 @@
+{
+    "name": "Cosmimera.Crafting.Tests.EditMode",
+    "rootNamespace": "Cosmimera.Crafting.Tests",
+    "references": [
+        "Cosmimera.Core",
+        "Cosmimera.GameData",
+        "Cosmimera.Crafting",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Cosmimera.Combat"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

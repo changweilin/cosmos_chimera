@@ -128,6 +128,20 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
+        internal void QueryGathering(float3 direction, float reachM, List<GatheringNode> nodes)
+        {
+            nodes.Clear();
+            _items.Clear();
+            _scatter.Query(direction, reachM, _items);
+            foreach (ScatterItem item in _items)
+            {
+                if (_table.IsDestroyed(item.CellKey) ||
+                    math.distance(direction, item.Direction) * _planet.Radius > reachM) continue;
+                nodes.Add(new GatheringNode(item.CellKey, _scatter.Kinds[item.KindIndex].Id));
+            }
+            nodes.Sort((a, b) => a.Id.CompareTo(b.Id));
+        }
+
         /// <summary>Whether intact tall grass covers a ground direction.</summary>
         /// <remarks>
         /// REQ: docs/design/destructibles.md#碰撞.

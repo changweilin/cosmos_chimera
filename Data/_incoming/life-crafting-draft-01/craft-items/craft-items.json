@@ -1,0 +1,483 @@
+[
+  {
+    "id": "raw_iron_ore",
+    "category": "raw",
+    "sources": [
+      "ore_iron"
+    ],
+    "utility": "magnet_pickup_double",
+    "quantity": 2,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_copper_ore",
+    "category": "raw",
+    "sources": [
+      "ore_copper"
+    ],
+    "utility": "magnet_pickup_double",
+    "quantity": 2,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_silver_ore",
+    "category": "raw",
+    "sources": [
+      "ore_silver"
+    ],
+    "utility": "magnet_pickup_double",
+    "quantity": 1,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_gold_ore",
+    "category": "raw",
+    "sources": [
+      "ore_gold"
+    ],
+    "utility": "magnet_pickup_double",
+    "quantity": 1,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_coal",
+    "category": "raw",
+    "sources": [
+      "coal_seam"
+    ],
+    "utility": "drop_rate_up",
+    "quantity": 2,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_crystal",
+    "category": "raw",
+    "sources": [
+      "crystal"
+    ],
+    "utility": "drop_rate_up",
+    "quantity": 2,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_gem",
+    "category": "raw",
+    "sources": [
+      "gem_geode"
+    ],
+    "utility": "drop_rate_up",
+    "quantity": 1,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_stone",
+    "category": "raw",
+    "sources": [
+      "granite",
+      "limestone",
+      "slate",
+      "basalt",
+      "sandstone",
+      "marble"
+    ],
+    "utility": "drop_rate_up",
+    "quantity": 2,
+    "season": "all",
+    "gather_tool": "craft_pickaxe"
+  },
+  {
+    "id": "raw_timber",
+    "category": "raw",
+    "sources": [
+      "log",
+      "snag",
+      "bamboo"
+    ],
+    "utility": "forage_berries",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "raw_hemp",
+    "category": "raw",
+    "sources": [
+      "tall_grass",
+      "reed"
+    ],
+    "utility": "forage_berries",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "raw_cotton",
+    "category": "raw",
+    "sources": [
+      "shrub",
+      "dwarf_shrub"
+    ],
+    "utility": "forage_berries",
+    "quantity": 2,
+    "season": "summer"
+  },
+  {
+    "id": "raw_cocoon",
+    "category": "raw",
+    "sources": [
+      "set_trap"
+    ],
+    "utility": "set_trap",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "raw_down",
+    "category": "raw",
+    "sources": [
+      "set_trap"
+    ],
+    "utility": "set_trap",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "raw_dye_plant",
+    "category": "raw",
+    "sources": [
+      "flowers",
+      "fern"
+    ],
+    "utility": "forage_berries",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "craft_iron_ingot",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_copper_ingot",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_silver_ingot",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_gold_ingot",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_linen",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_cotton_cloth",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_silk",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_dye",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_paper",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_cut_gem",
+    "category": "processed",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_talisman_card",
+    "category": "capture",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "capture_bonus_percent": 15
+  },
+  {
+    "id": "craft_glass_bead",
+    "category": "capture",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "capture_bonus_percent": 15
+  },
+  {
+    "id": "craft_magic_cube",
+    "category": "capture",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "capture_bonus_percent": 15
+  },
+  {
+    "id": "craft_snare",
+    "category": "trap",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_pickaxe",
+    "category": "tool",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_needle",
+    "category": "tool",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_linen_outfit",
+    "category": "equipment",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "equipment": {
+      "slot": "armor",
+      "target": "both",
+      "player": {
+        "max_hp_percent": 0,
+        "move_speed_percent": 5,
+        "roll_cooldown_percent": 0
+      },
+      "creature_effects": [
+        {
+          "type": "move_speed_mod_percent",
+          "params": {
+            "delta": 5
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "craft_down_coat",
+    "category": "equipment",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "equipment": {
+      "slot": "armor",
+      "target": "both",
+      "player": {
+        "max_hp_percent": 10,
+        "move_speed_percent": 0,
+        "roll_cooldown_percent": 0
+      },
+      "creature_effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 10,
+            "element": "ice"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "craft_iron_blade",
+    "category": "equipment",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "equipment": {
+      "slot": "weapon",
+      "target": "creature",
+      "player": {
+        "max_hp_percent": 0,
+        "move_speed_percent": 0,
+        "roll_cooldown_percent": 0
+      },
+      "creature_effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "delta": 15,
+            "element": "metal"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "craft_iron_guard",
+    "category": "equipment",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "equipment": {
+      "slot": "armor",
+      "target": "both",
+      "player": {
+        "max_hp_percent": 15,
+        "move_speed_percent": 0,
+        "roll_cooldown_percent": 0
+      },
+      "creature_effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "metal"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "wood"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "water"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "fire"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "earth"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "ice"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "wind"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "thunder"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "light"
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "delta": 5,
+            "element": "shadow"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "craft_gem_pendant",
+    "category": "equipment",
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all",
+    "equipment": {
+      "slot": "accessory",
+      "target": "both",
+      "player": {
+        "max_hp_percent": 0,
+        "move_speed_percent": 0,
+        "roll_cooldown_percent": -10
+      },
+      "creature_effects": [
+        {
+          "type": "cd_mod_percent",
+          "params": {
+            "delta": -5,
+            "element": "any"
+          }
+        }
+      ]
+    }
+  }
+]

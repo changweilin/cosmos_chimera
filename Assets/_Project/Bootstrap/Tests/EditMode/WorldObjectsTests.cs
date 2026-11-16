@@ -62,6 +62,25 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Gathering_queries_only_nearby_intact_scatter_and_preserves_the_source_kind()
+        {
+            Rig r = Build();
+            ScatterItem tree = FirstTree(r.Scatter);
+            var nodes = new List<GatheringNode>();
+            r.Objects.QueryGathering(tree.Direction, 0.1f, nodes);
+            Assert.That(nodes.Exists(n => n.Id == tree.CellKey && n.Source == r.Scatter.Kinds[tree.KindIndex].Id), Is.True);
+            var found = new List<DestructibleCandidate>();
+            r.Objects.Query(Planet.ToWorld(tree.Direction, 0f), 1f, found);
+            DestructibleCandidate candidate = found.Find(c => c.Id == tree.CellKey);
+            int slot = r.Table.Register(candidate.Id, candidate.Composition, candidate.VolumeL, candidate.Center);
+            r.Table.ApplyHit(slot, Element.Earth, 100_000, 0, 0);
+            r.Objects.QueryGathering(tree.Direction, 0.1f, nodes);
+            Assert.That(nodes.Exists(n => n.Id == tree.CellKey), Is.False);
+            r.Objects.QueryGathering(-tree.Direction, 0.1f, nodes);
+            Assert.That(nodes.Exists(n => n.Id == tree.CellKey), Is.False);
+        }
+
+        [Test]
         public void Buildings_get_ids_above_scatter_and_their_settlement_material()
         {
             Rig r = Build();

@@ -13,6 +13,7 @@ Assets/_Project/
 │   ├── Combat/              # 傷害、CD、命中、招式執行、AI 行為
 │   ├── Capture/             # 收服、蛋、孵化
 │   ├── Food/                # 食物獲取、料理、食用與 Buff 規則
+│   ├── Crafting/            # 原料背包、採集／加工／製作、裝備與穿戴規則
 │   ├── Lobby/               # 地球大廳、星海選星
 │   ├── Codex/               # 圖鑑/招式表/特性表/關係表 UI
 │   ├── Net/                 # 連線、同步、房間
@@ -37,8 +38,9 @@ tools/                       # 資料驗證、匯入、AI prompt 模板
 ```
 Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet → Core
                  Net ──▶ (Combat, Creatures, Planet 的 Api)
-                 Save ─▶ (Creatures, Capture 的 Api)
+                 Save ─▶ (Creatures, Capture, Crafting 的 Api)
                  Food ─▶ (Combat, Creatures 的 Api)
+             Crafting ─▶ (Combat, GameData 的公開效果／資料型別)
 ```
 `Core` 不引用任何 feature；`Planet` 不知道宙獸存在。
 `GameData` 只引用 Core；除了 Planet、Player 以外的 feature 都可以引用它（ADR-0004）。
@@ -48,3 +50,5 @@ Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet �
 Data/*.json ──tools/validate-data──▶ importer(Editor) ──▶ Assets/_Project/Data/*.asset ──▶ Runtime registries (by id)
 ```
 Importer：選單 `Cosmimera/Data/Import All`，或 batchmode `-executeMethod Cosmimera.GameData.Editor.DataImporter.ImportAllBatch [-dataRoot DIR]`。registry：`GameDatabase.TryGet<T>(id)`、`GetRelations(creatureId)`。
+
+採集／製作資料另由 `tools/demo-data/merge.py --crafting-only` 複製成 Resources TextAssets，再由 `CraftCatalog` 驗證並載入純 C# 目錄（來源與規則見 [crafting.md](../design/crafting.md)）；存檔只存穩定 ID、數量與穿戴槽，不存配方或數值副本。

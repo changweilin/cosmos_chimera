@@ -18,10 +18,12 @@ BATCHES = [
     "p5-05-moves-draft-05", "p5-05-moves-draft-06",
     "p5-05-traits-draft-01", "p5-05-traits-draft-02", "p5-05-traits-draft-03",
     "p5-06-relations-draft-01", "p3-12-env-materials-draft-01",
+    "life-crafting-draft-01",
 ]
-KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials"]
+KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials", "craft-items", "craft-recipes"]
 # Runtime copy for the demo UI. Unity cannot read Data/ in a build, so the text is staged as TextAssets.
 COPY_OUT = Path("Assets/_Project/Data/Copy")
+CRAFT_OUT = Path("Assets/_Project/Features/Crafting/Resources/Crafting")
 D0_COPY = ["affixes", "region-themes", "quest-templates", "boss-epithets", "strings"]
 NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01"]
 ENV_MATERIALS_BATCH = "p3-12-env-materials-draft-01"
@@ -137,7 +139,29 @@ def stage_copy(root: Path) -> None:
     _write_copy(_prepare_copy(root))
 
 
-def main() -> int:
+def _prepare_crafting(root):
+    craft_root = root / "_incoming" / "life-crafting-draft-01"
+    files = {}
+    for name, source in {
+        "items.json": craft_root / "craft-items" / "craft-items.json",
+        "recipes.json": craft_root / "craft-recipes" / "craft-recipes.json",
+        "copy.json": craft_root / "crafting-copy.json",
+    }.items():
+        files[name], _ = _read_json(source)
+    return files
+
+
+def _write_crafting(root, files):
+    CRAFT_OUT.mkdir(parents=True, exist_ok=True)
+    for name, data in files.items():
+        (CRAFT_OUT / name).write_bytes(data)
+    for name, kind in (("items.json", "craft-items"), ("recipes.json", "craft-recipes")):
+        dest = root / "_demo" / kind / f"life-crafting-draft-01--{kind}.json"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(files[name])
+
+
+def main(crafting_only=False) -> int:
     """Stage demo inputs after validating them.
 
     Pre: run from the repo root with complete, valid inputs.
@@ -145,6 +169,9 @@ def main() -> int:
     Side effects: reads inputs and updates the two output directories.
     """
     root = Path("Data")
+    if crafting_only:
+        _write_crafting(root, _prepare_crafting(root))
+        return 0
     out = root / "_demo"
     batches = {}
     for batch in BATCHES:
@@ -157,6 +184,7 @@ def main() -> int:
                 data, _ = _read_json(f)
                 batches[Path(kind) / f"{batch}--{f.name}"] = data
     copy = _prepare_copy(root)
+    craft = _prepare_crafting(root)
     if out.exists():
         shutil.rmtree(out)
     for name, data in batches.items():
@@ -164,9 +192,13 @@ def main() -> int:
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_bytes(data)
     _write_copy(copy)
+    _write_crafting(root, craft)
     print(f"staged {len(batches)} files into {out}; copy into {COPY_OUT}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--crafting-only", action="store_true", help="Stage crafting data without regenerating other demo content")
+    sys.exit(main(crafting_only=parser.parse_args().crafting_only))

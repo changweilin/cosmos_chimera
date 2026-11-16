@@ -68,6 +68,8 @@ namespace Cosmimera.Bootstrap.Demo
                 case AdventurePanel.Page.Items:
                     ui.Heading(_copy.Ui("ui.journal.tab.Items"));
                     DrawMaterials();
+                    CraftJournal.DrawStock(ui, _copy, _save.CraftStock);
+                    DrawEquipment(ui);
                     ui.Label(_copy.Ui("ui.journal.run_items"));
                     break;
                 case AdventurePanel.Page.Skills:
@@ -77,8 +79,10 @@ namespace Cosmimera.Bootstrap.Demo
                     foreach (int id in _save.Party) mains.Add(_save.Get(id));
                     if (TryBuildPartners(out PartnerLoadout _))
                         foreach (PartnerPair pair in _save.Partners) subs.Add(_save.Get(pair.SubInstanceId));
-                    foreach (FieldUtility utility in FieldUtilityRules.CollectTeamUtilities(mains, subs, new GameDatabaseSpeciesLookup(_database)))
+                    var utilities = FieldUtilityRules.CollectTeamUtilities(mains, subs, new GameDatabaseSpeciesLookup(_database));
+                    foreach (FieldUtility utility in utilities)
                         ui.Label(_copy.Ui("utility." + utility) + " · " + _copy.Ui("utility.desc." + utility));
+                    DrawLobbyCrafting(ui, utilities);
                     ui.Label(_copy.Ui("ui.journal.run_skills"));
                     break;
             }

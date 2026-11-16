@@ -349,9 +349,31 @@ namespace Cosmimera.Combat
         private string _traitId;
         private TriggerSpec _trigger;
         private EffectSpec[] _traitEffects;
+        private EffectSpec[] _equipmentEffects = System.Array.Empty<EffectSpec>();
         private long _watermarkMs;
         private bool _crossBelowSpent;
         private readonly List<EffectBook> _partnerTraits = new List<EffectBook>(4);
+
+        /// <summary>Replaces departure equipment modifiers independently of innate and partner traits.</summary>
+        /// <remarks>
+        /// Pre: simulation watermark is zero; effects non-null with 0..32 constructed, non-instant entries.
+        /// Post: each supplied effect contributes once to Collect, including after Clear or innate-trait changes;
+        ///       an empty list removes all equipment modifiers. Invalid input preserves the previous modifiers.
+        /// Side effects: copies effects; does not consume partner-trait slots or change timed effects.
+        /// </remarks>
+        public void SetEquipmentEffects(IReadOnlyList<EffectSpec> effects)
+        {
+            Contract.Requires(_watermarkMs == 0, "equipment must be assigned before simulation time advances");
+            Contract.Requires(effects != null && effects.Count <= 32, "equipment effects must contain 0..32 entries");
+            var copy = new EffectSpec[effects.Count];
+            for (int i = 0; i < effects.Count; i++)
+            {
+                Contract.Requires(!effects[i].IsInstant && effects[i].MaxStacks >= 1,
+                    "equipment needs constructed non-instant effects");
+                copy[i] = effects[i];
+            }
+            _equipmentEffects = copy;
+        }
 
         /// <summary>Adds a sub-partner trait before combat starts, retaining its own trigger and charge.</summary>
         /// <remarks>
@@ -639,6 +661,7 @@ namespace Cosmimera.Combat
 
         private void CollectInto(long nowMs, int hp, int maxHp, ModifierTotals into)
         {
+            foreach (EffectSpec effect in _equipmentEffects) into.Add(effect, 1);
             foreach (Slot s in _slots)
             {
                 if (s.ExpiresMs > nowMs)

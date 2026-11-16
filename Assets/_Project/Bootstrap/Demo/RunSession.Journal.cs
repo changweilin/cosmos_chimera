@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.Food;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
@@ -60,6 +61,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
             EncounterUnit unit = _encounter.AddEquippedCreature(_setup.Party[slot], moves, traits, _plan.LandingDirection,
                 _progression.LevelOf(_partyExp[slot]));
+            EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
+                _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+            unit.Combatant.Book.SetEquipmentEffects(equipment.CreatureEffects);
             if (overload) _overloadUnlocked.Add(unit.Id);
             return unit;
         }
@@ -209,11 +213,13 @@ namespace Cosmimera.Bootstrap.Demo
         private void DrawItems(AdventurePanel ui)
         {
             ui.Heading(_copy.Ui("ui.journal.tab.Items"));
+            DrawCraftedItems(ui);
             ui.Label(_copy.Ui("ui.items.run_stock"));
             foreach (VesselKind vessel in Enum.GetValues(typeof(VesselKind)))
             {
                 if (!ui.Button((_vessel == vessel ? "● " : "") + _copy.Ui("ui.vessel." + VesselKey(vessel)))) continue;
                 _vessel = vessel;
+                _craftedVessel = null;
                 GUIUtility.ExitGUI();
             }
             bool canCapture = FindCaptureTarget(CaptureReachM) >= 0;
@@ -376,6 +382,7 @@ namespace Cosmimera.Bootstrap.Demo
             DrawWeatherDetails(ui);
             if (ui.Button(_copy.Ui(_showLockedGathering ? "ui.skills.hide_locked" : "ui.skills.show_locked")))
             { _showLockedGathering = !_showLockedGathering; GUIUtility.ExitGUI(); }
+            DrawCrafting(ui);
             GatheringContext environment = GatheringEnvironment();
             foreach (FoodAcquisitionMethod method in Enum.GetValues(typeof(FoodAcquisitionMethod)))
             {
@@ -403,8 +410,7 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (TrapState trap in _traps.ActiveTraps) ready |= trap.IsReady(_nowMs);
             if (ui.Button(_copy.Ui("ui.skills.collect_traps"), ready))
             {
-                _traps.CollectReadyTraps(_foodCatalog, _foodInventory, _nowMs, ref _foodRng, _gathered);
-                ui.Message = GatheredMessage();
+                ui.Message = TryCollectTrapMaterials() ? GatheredMessage() : _copy.Ui("craft.result.CapacityExceeded");
                 GUIUtility.ExitGUI();
             }
             foreach (FieldUtility utility in _utilities)

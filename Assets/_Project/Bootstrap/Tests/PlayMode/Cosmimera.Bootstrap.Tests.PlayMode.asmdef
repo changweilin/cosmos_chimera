@@ -8,6 +8,7 @@
         "Cosmimera.WorldGen",
         "Cosmimera.Combat",
         "Cosmimera.Creatures",
+        "Cosmimera.Crafting",
         "Cosmimera.Food",
         "Cosmimera.Save",
         "Cosmimera.Capture",

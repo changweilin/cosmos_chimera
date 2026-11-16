@@ -4,6 +4,7 @@ using Cosmimera.Capture;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Cosmimera.WorldGen;
@@ -56,6 +57,10 @@ namespace Cosmimera.Bootstrap.Demo
         ///      like XP (Q-M4). Side effects: none.
         /// </remarks>
         public long EggProgressPpm;
+
+        /// <summary>Final crafting stock including departure items; null for legacy outcomes.</summary>
+        /// <remarks>Pre: non-null entries valid. Post: replaces departure stock at settlement. Side effects: none.</remarks>
+        public IReadOnlyList<CraftStack> CraftStock;
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -156,6 +161,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Validated departure loadout, or null for an unequipped run.</summary>
         /// <remarks>Pre: every assignment satisfies current relations and stages. Post: fixed during the run. Side effects: none.</remarks>
         public PartnerLoadout Partners;
+
+        /// <summary>Persistent crafting stock copied into this run.</summary>
+        /// <remarks>Pre: null or valid stacks. Post: never mutated by the run. Side effects: none.</remarks>
+        public IReadOnlyList<CraftStack> CraftStock;
+
+        /// <summary>Fixed departure equipment for the player and owned party members.</summary>
+        /// <remarks>Pre: null or validated saved assignments. Post: unchanged throughout the run. Side effects: none.</remarks>
+        public IReadOnlyList<EquippedItem> Equipment;
     }
 
     /// <summary>
@@ -711,7 +724,9 @@ namespace Cosmimera.Bootstrap.Demo
                 _encounter.SetGrassCoverProvider(_worldObjects.HasGrassCover);
             }
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
-            _vitals = new PlayerVitals(balance.Player);
+            ConfigureCrafting();
+            _playerEquipment = EquipmentRules.Collect(0, setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+            _vitals = new PlayerVitals(EquipmentRules.ApplyPlayer(balance.Player, _playerEquipment));
             _encounter.AttachPlayer(_vitals);
             _captureRng = new Pcg32(setup.Seed, 'K');
             // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
@@ -857,8 +872,8 @@ namespace Cosmimera.Bootstrap.Demo
             float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.SprintSpeedMultiplier) : _playerTerrain.SprintSpeedMultiplier;
             float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.GroundAccelerationMultiplier) : _playerTerrain.GroundAccelerationMultiplier;
             _rig.Character.SetTerrainModifiers(
-                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier,
-                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier, acceleration);
+                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
+                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
         }
 
         private void StepCombat()
@@ -1172,6 +1187,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (PressedWithoutCommand(_cycleVesselAction))
             {
                 _vessel = (VesselKind)(((int)_vessel + 1) % 3);
+                _craftedVessel = null;
             }
 
             if (PressedWithoutCommand(_captureAction))
@@ -1381,12 +1397,17 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             WildInfo w = _wild[best];
+            if (!TryConsumeCraftedVessel(out int craftBonus))
+            {
+                Toast(_copy.Ui("craft.result.MissingMaterials"));
+                return;
+            }
             SpawnRole role = RoleOf(w);
             int region = RegionOf(w);
             string creatureId = _encounter.Units[best].Def.Id;
             bool bounty = _plan.Regions[region].AffixId == "affix_bounty";
             int chance = CaptureRules.ChancePercent(role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
-                _balance.CaptureBossPercent, _utilityModifiers.CatchRateBonusPercent + _foodBuffs.GetCatchRateBonusPercent(_nowMs));
+                _balance.CaptureBossPercent, _utilityModifiers.CatchRateBonusPercent + _foodBuffs.GetCatchRateBonusPercent(_nowMs) + craftBonus);
             w.Gone = true; // one throw per knocked-out creature: a miss lets it escape (no re-roll farming)
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
@@ -1927,6 +1948,7 @@ namespace Cosmimera.Bootstrap.Demo
             _outcome.PlayerExp = _playerExp;
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
+            _outcome.CraftStock = _craftInventory.Snapshot();
             _onEnd(_outcome);
         }
 

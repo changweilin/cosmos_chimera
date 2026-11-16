@@ -5,10 +5,12 @@
         "Cosmimera.Capture",
         "Cosmimera.Core",
         "Cosmimera.Creatures",
+        "Cosmimera.Crafting",
         "Cosmimera.GameData",
         "Cosmimera.Save",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Cosmimera.Combat"
     ],
     "includePlatforms": [
         "Editor"

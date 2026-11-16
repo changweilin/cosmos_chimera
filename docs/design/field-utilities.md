@@ -4,6 +4,8 @@
 
 > 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`。
 
+採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。
+
 ## 1. 隊伍與副手生效規則
 - **主力（6 隻）**：直接貢獻各自的 `field_utility`（不論 Move 或 Trait）。
 - **副手**：僅在**收服道具類別與能力類型匹配**時才對隊伍生效（`FieldUtilityRules.CollectTeamUtilities`）：

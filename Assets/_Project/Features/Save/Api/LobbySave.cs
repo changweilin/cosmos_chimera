@@ -4,6 +4,7 @@ using System.IO;
 using Cosmimera.Capture;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using UnityEngine;
 
@@ -24,13 +25,14 @@ namespace Cosmimera.Save
     /// run's XP is reconstructed.
     /// Version 5: root <c>partners</c> stores main/sub instance-id pairs; formats 1–4 start unequipped.
     /// Version 6 (P4-05): root <c>eggs</c> — eggs incubating in the hatchery; formats 1–5 load with none.
+    /// Version 7: root <c>craft_stock</c> stores gathered materials and crafted items; formats 1–6 load with none.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 6;
+        public const int FormatVersion = 7;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -42,6 +44,16 @@ namespace Cosmimera.Save
         private readonly List<IncubatingEgg> _eggs = new List<IncubatingEgg>();
         private int _nextInstanceId = 1;
         private readonly MaterialInventory _materials = new MaterialInventory();
+        private readonly CraftInventory _craftStock = new CraftInventory();
+        private readonly EquipmentLoadout _equipment = new EquipmentLoadout();
+
+        /// <summary>Persistent gathering and crafting inventory, separate from evolution materials and run-only food.</summary>
+        /// <remarks>Pre: main thread. Post: same inventory for this save's lifetime. Side effects: mutating it changes this save.</remarks>
+        public CraftInventory CraftStock => _craftStock;
+
+        /// <summary>Player and owned-creature equipment; item copies are reserved outside CraftStock.</summary>
+        /// <remarks>Pre: main thread; callers validate owner ids against Owned. Post: same instance. Side effects: mutations change this save.</remarks>
+        public EquipmentLoadout Equipment => _equipment;
 
         /// <summary>Cumulative player XP (level-progression.md#玩家等級).</summary>
         /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
@@ -222,6 +234,8 @@ namespace Cosmimera.Save
             {
                 c._materials.Add(m.Key, m.Qty);
             }
+            c._craftStock.TryExchange(Array.Empty<CraftStack>(), _craftStock.Snapshot());
+            c._equipment.Restore(_equipment.Snapshot());
 
             return c;
         }
@@ -350,6 +364,19 @@ namespace Cosmimera.Save
                 partners = new PartnerDto[_partners.Count],
                 eggs = new EggDto[_eggs.Count],
             };
+            IReadOnlyList<CraftStack> craftStock = _craftStock.Snapshot();
+            dto.craft_stock = new CraftDto[craftStock.Count];
+            for (int i = 0; i < craftStock.Count; i++)
+                dto.craft_stock[i] = new CraftDto { id = craftStock[i].Id, qty = craftStock[i].Quantity };
+            IReadOnlyList<EquippedItem> equipment = _equipment.Snapshot();
+            dto.equipment = new EquipmentDto[equipment.Count];
+            for (int i = 0; i < equipment.Count; i++)
+            {
+                EquippedItem item = equipment[i];
+                if (item.Owner != 0 && !_owned.Exists(o => o.InstanceId == item.Owner))
+                    throw new InvalidOperationException("Equipment owner is not owned");
+                dto.equipment[i] = new EquipmentDto { owner = item.Owner, slot = item.Slot, item = item.Item };
+            }
             for (int i = 0; i < _eggs.Count; i++)
             {
                 dto.eggs[i] = new EggDto { egg_id = _eggs[i].EggId, vessel = _eggs[i].Vessel, progress_ppm = _eggs[i].ProgressPpm };
@@ -498,6 +525,29 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 7)
+            {
+                var craftIds = new HashSet<string>(StringComparer.Ordinal);
+                var stacks = new List<CraftStack>();
+                foreach (CraftDto item in dto.craft_stock ?? Array.Empty<CraftDto>())
+                {
+                    Check(item != null && CraftInventory.ValidId(item.id), "invalid crafting item id");
+                    Check(item.qty > 0 && craftIds.Add(item.id), "invalid or duplicate crafting stack");
+                    stacks.Add(new CraftStack(item.id, item.qty));
+                }
+                Check(save._craftStock.TryExchange(Array.Empty<CraftStack>(), stacks), "crafting inventory overflow");
+                var entries = new List<EquippedItem>();
+                var slots = new HashSet<string>(StringComparer.Ordinal);
+                foreach (EquipmentDto item in dto.equipment ?? Array.Empty<EquipmentDto>())
+                {
+                    Check(item != null && item.owner >= 0 &&
+                        (item.owner == 0 || save._owned.Exists(o => o.InstanceId == item.owner)), "unknown equipment owner");
+                    Check(item.slot == "weapon" || item.slot == "armor" || item.slot == "accessory", "invalid equipment slot");
+                    Check(CraftInventory.ValidId(item.item) && slots.Add(item.owner + ":" + item.slot), "invalid or duplicate equipment entry");
+                    entries.Add(new EquippedItem(item.owner, item.slot, item.item));
+                }
+                save._equipment.Restore(entries);
+            }
             return save;
         }
 
@@ -600,6 +650,21 @@ namespace Cosmimera.Save
             public int player_exp;
             public PartnerDto[] partners;
             public EggDto[] eggs;
+            public CraftDto[] craft_stock;
+            public EquipmentDto[] equipment;
+        }
+
+        [Serializable] private sealed class EquipmentDto
+        {
+            public int owner;
+            public string slot;
+            public string item;
+        }
+
+        [Serializable] private sealed class CraftDto
+        {
+            public string id;
+            public int qty;
         }
 
         [Serializable] private sealed class EggDto

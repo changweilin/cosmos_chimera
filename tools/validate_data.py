@@ -37,8 +37,10 @@ KINDS = {
     "ingredients": "ingredient",
     "foods": "food",
     "eggs": "egg",
+    "craft-items": "craft-item",
+    "craft-recipes": "craft-recipe",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes")
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 ENV_MATERIALS_FOLDER = "env-materials"
 ENV_MATERIALS_SCHEMA = "env-materials"
@@ -296,6 +298,31 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             seen_edges[key] = r
         ref(r, "a", "creatures")
         ref(r, "b", "creatures")
+
+    for r in records["craft-items"]:
+        tool = r.data.get("gather_tool")
+        if isinstance(tool, str):
+            hit = by_id.get(tool)
+            if hit is None or hit.kind != "craft-items" or hit.data.get("category") != "tool":
+                findings.append(Finding("error", "dangling_ref", r.file, f"/{r.index}/gather_tool", "unknown gathering tool"))
+
+    for r in records["craft-recipes"]:
+        for field in ("costs", "gains"):
+            for i, stack in enumerate(r.data.get(field, []) if isinstance(r.data.get(field), list) else []):
+                if not isinstance(stack, dict) or not isinstance(stack.get("item"), str):
+                    continue
+                hit = by_id.get(stack["item"])
+                if hit is None or hit.kind != "craft-items":
+                    findings.append(Finding("error", "dangling_ref", r.file, f"/{r.index}/{field}/{i}/item", "unknown crafting item"))
+        for i, tool in enumerate(r.data.get("tools", []) if isinstance(r.data.get("tools", []), list) else []):
+            if not isinstance(tool, str):
+                continue
+            hit = by_id.get(tool)
+            if hit is None or hit.kind != "craft-items" or hit.data.get("category") != "tool":
+                findings.append(Finding("error", "dangling_ref", r.file, f"/{r.index}/tools/{i}", "unknown recipe tool"))
+            costs = r.data.get("costs", [])
+            if isinstance(costs, list) and any(isinstance(c, dict) and c.get("item") == tool for c in costs):
+                findings.append(Finding("error", "tool_consumed", r.file, f"/{r.index}/tools/{i}", "reusable tool cannot also be a consumed cost"))
 
     for r in records["foods"]:
         ingredients = r.data.get("ingredients")

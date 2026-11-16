@@ -1,0 +1,367 @@
+{
+  "raw_iron_ore": {
+    "zh-TW": "鐵礦石",
+    "en": "Iron ore",
+    "ja": "鉄鉱石"
+  },
+  "raw_copper_ore": {
+    "zh-TW": "銅礦石",
+    "en": "Copper ore",
+    "ja": "銅鉱石"
+  },
+  "raw_silver_ore": {
+    "zh-TW": "銀礦石",
+    "en": "Silver ore",
+    "ja": "銀鉱石"
+  },
+  "raw_gold_ore": {
+    "zh-TW": "金礦石",
+    "en": "Gold ore",
+    "ja": "金鉱石"
+  },
+  "raw_coal": {
+    "zh-TW": "煤炭",
+    "en": "Coal",
+    "ja": "石炭"
+  },
+  "raw_crystal": {
+    "zh-TW": "晶石原礦",
+    "en": "Rough crystal",
+    "ja": "結晶原石"
+  },
+  "raw_gem": {
+    "zh-TW": "寶石原礦",
+    "en": "Uncut gemstone",
+    "ja": "宝石原石"
+  },
+  "raw_stone": {
+    "zh-TW": "石材",
+    "en": "Stone",
+    "ja": "石材"
+  },
+  "raw_timber": {
+    "zh-TW": "木材",
+    "en": "Timber",
+    "ja": "木材"
+  },
+  "raw_hemp": {
+    "zh-TW": "麻纖維",
+    "en": "Hemp fibre",
+    "ja": "麻繊維"
+  },
+  "raw_cotton": {
+    "zh-TW": "棉花",
+    "en": "Cotton",
+    "ja": "綿花"
+  },
+  "raw_cocoon": {
+    "zh-TW": "絲繭",
+    "en": "Silkworm cocoon",
+    "ja": "繭"
+  },
+  "raw_down": {
+    "zh-TW": "羽絨",
+    "en": "Down feathers",
+    "ja": "羽毛"
+  },
+  "raw_dye_plant": {
+    "zh-TW": "染料植物",
+    "en": "Dye plants",
+    "ja": "染料植物"
+  },
+  "craft_iron_ingot": {
+    "zh-TW": "鐵錠",
+    "en": "Iron ingot",
+    "ja": "鉄のインゴット"
+  },
+  "craft_copper_ingot": {
+    "zh-TW": "銅錠",
+    "en": "Copper ingot",
+    "ja": "銅のインゴット"
+  },
+  "craft_silver_ingot": {
+    "zh-TW": "銀錠",
+    "en": "Silver ingot",
+    "ja": "銀のインゴット"
+  },
+  "craft_gold_ingot": {
+    "zh-TW": "金錠",
+    "en": "Gold ingot",
+    "ja": "金のインゴット"
+  },
+  "craft_linen": {
+    "zh-TW": "麻布",
+    "en": "Linen",
+    "ja": "麻布"
+  },
+  "craft_cotton_cloth": {
+    "zh-TW": "棉布",
+    "en": "Cotton cloth",
+    "ja": "綿布"
+  },
+  "craft_silk": {
+    "zh-TW": "絲綢",
+    "en": "Silk",
+    "ja": "絹"
+  },
+  "craft_dye": {
+    "zh-TW": "植物染料",
+    "en": "Plant dye",
+    "ja": "植物染料"
+  },
+  "craft_paper": {
+    "zh-TW": "符紙",
+    "en": "Talisman paper",
+    "ja": "札紙"
+  },
+  "craft_cut_gem": {
+    "zh-TW": "切磨寶石",
+    "en": "Cut gemstone",
+    "ja": "研磨宝石"
+  },
+  "craft_talisman_card": {
+    "zh-TW": "符籙卡片（製作）",
+    "en": "Crafted talisman card",
+    "ja": "製作した符札"
+  },
+  "craft_glass_bead": {
+    "zh-TW": "琉璃珠（製作）",
+    "en": "Crafted glass bead",
+    "ja": "製作したガラス玉"
+  },
+  "craft_magic_cube": {
+    "zh-TW": "魔術方塊（製作）",
+    "en": "Crafted magic cube",
+    "ja": "製作した魔法キューブ"
+  },
+  "craft_snare": {
+    "zh-TW": "採集陷阱",
+    "en": "Gathering snare",
+    "ja": "採集用の罠"
+  },
+  "craft_pickaxe": {
+    "zh-TW": "礦鎬",
+    "en": "Pickaxe",
+    "ja": "つるはし"
+  },
+  "craft_needle": {
+    "zh-TW": "縫紉針",
+    "en": "Sewing needle",
+    "ja": "縫い針"
+  },
+  "craft_linen_outfit": {
+    "zh-TW": "染色麻衣",
+    "en": "Dyed linen outfit",
+    "ja": "染めた麻の服"
+  },
+  "craft_down_coat": {
+    "zh-TW": "羽絨外套",
+    "en": "Down coat",
+    "ja": "羽毛コート"
+  },
+  "craft_iron_blade": {
+    "zh-TW": "鐵刃",
+    "en": "Iron blade",
+    "ja": "鉄の刃"
+  },
+  "craft_iron_guard": {
+    "zh-TW": "鐵甲",
+    "en": "Iron guard",
+    "ja": "鉄の鎧"
+  },
+  "craft_gem_pendant": {
+    "zh-TW": "寶石墜飾",
+    "en": "Gem pendant",
+    "ja": "宝石のペンダント"
+  },
+  "ui.craft.title": {
+    "zh-TW": "採集與製作",
+    "en": "Gathering & crafting",
+    "ja": "採集と製作"
+  },
+  "ui.craft.stock": {
+    "zh-TW": "原料與製作物（結算後保留）",
+    "en": "Materials & crafts (kept after settlement)",
+    "ja": "素材・製作品（精算後も保持）"
+  },
+  "ui.craft.gather": {
+    "zh-TW": "採集附近物件",
+    "en": "Gather from nearby objects",
+    "ja": "近くの物から採集"
+  },
+  "ui.craft.node": {
+    "zh-TW": "來源：{source} · {result}",
+    "en": "Source: {source} · {result}",
+    "ja": "採集元：{source} · {result}"
+  },
+  "ui.craft.no_nodes": {
+    "zh-TW": "附近沒有可採集的完整物件。",
+    "en": "No intact gathering objects nearby.",
+    "ja": "近くに採集可能な物がありません。"
+  },
+  "ui.craft.once": {
+    "zh-TW": "每個物件每場限採一次；礦鎬可代替採礦能力。",
+    "en": "Each object can be gathered once per run; a pickaxe substitutes for mining skills.",
+    "ja": "各対象は一周につき一度採集可能。つるはしで採鉱能力を代用できます。"
+  },
+  "ui.craft.make": {
+    "zh-TW": "製作",
+    "en": "Craft",
+    "ja": "製作"
+  },
+  "ui.craft.requires": {
+    "zh-TW": "需要：{skill}",
+    "en": "Requires: {skill}",
+    "ja": "必要：{skill}"
+  },
+  "ui.craft.tool": {
+    "zh-TW": "需要工具（不消耗）：{tool}",
+    "en": "Reusable tool required: {tool}",
+    "ja": "必要な道具（消費なし）：{tool}"
+  },
+  "ui.craft.capture_use": {
+    "zh-TW": "使用一個製作器皿：{item}（本次收服 +{bonus} 個百分點）",
+    "en": "Use one crafted vessel: {item} (+{bonus} percentage points this capture)",
+    "ja": "製作した器を1個使う：{item}（今回の捕獲率 +{bonus} ポイント）"
+  },
+  "ui.craft.capture_armed": {
+    "zh-TW": "已選製作器皿：{item}；有收服目標才消耗。",
+    "en": "Crafted vessel selected: {item}; consumed only with a capture target.",
+    "ja": "製作した器を選択中：{item}。捕獲対象がいる時のみ消費します。"
+  },
+  "ui.craft.capture_cancel": {
+    "zh-TW": "改用基本器皿",
+    "en": "Use a basic vessel",
+    "ja": "基本の器を使う"
+  },
+  "ui.craft.trap_use": {
+    "zh-TW": "使用一個採集陷阱（不需宙獸技能）",
+    "en": "Use one gathering snare (no creature skill required)",
+    "ja": "採集用の罠を1個使う（宙獣の能力は不要）"
+  },
+  "craft.result.Success": {
+    "zh-TW": "可使用",
+    "en": "Ready",
+    "ja": "使用可能"
+  },
+  "craft.result.MissingSkill": {
+    "zh-TW": "缺少生活能力",
+    "en": "Missing life skill",
+    "ja": "生活能力が必要"
+  },
+  "craft.result.MissingMaterials": {
+    "zh-TW": "材料不足",
+    "en": "Insufficient materials",
+    "ja": "素材不足"
+  },
+  "craft.result.CapacityExceeded": {
+    "zh-TW": "背包數量已滿",
+    "en": "Stack capacity exceeded",
+    "ja": "所持数の上限"
+  },
+  "craft.result.Depleted": {
+    "zh-TW": "本場已採集",
+    "en": "Already gathered this run",
+    "ja": "この周では採集済み"
+  },
+  "craft.result.NoResource": {
+    "zh-TW": "當季沒有可採資源",
+    "en": "No resource this season",
+    "ja": "今季は採集資源なし"
+  },
+  "craft.result.MissingTool": {
+    "zh-TW": "缺少工具",
+    "en": "Missing tool",
+    "ja": "道具が必要"
+  },
+  "ui.craft.equipment": {
+    "zh-TW": "裝備（僅大廳可更換）",
+    "en": "Equipment (change in lobby)",
+    "ja": "装備（ロビーで変更）"
+  },
+  "ui.craft.player": {
+    "zh-TW": "角色",
+    "en": "Player",
+    "ja": "プレイヤー"
+  },
+  "ui.craft.equip": {
+    "zh-TW": "穿戴",
+    "en": "Equip",
+    "ja": "装備する"
+  },
+  "ui.craft.unequip": {
+    "zh-TW": "卸下",
+    "en": "Unequip",
+    "ja": "外す"
+  },
+  "ui.craft.equip_failed": {
+    "zh-TW": "無法更換：物品不足或背包數量已滿。",
+    "en": "Cannot change equipment: item missing or stack full.",
+    "ja": "変更できません。アイテム不足または所持数の上限です。"
+  },
+  "ui.craft.gear_preview": {
+    "zh-TW": "穿戴效果將於出發時套用；外觀維持現狀。",
+    "en": "Equipment bonuses apply at departure; appearance stays unchanged.",
+    "ja": "装備効果は出発時に適用されます。外見は変わりません。"
+  },
+  "ui.craft.slot.weapon": {
+    "zh-TW": "武器",
+    "en": "Weapon",
+    "ja": "武器"
+  },
+  "ui.craft.slot.armor": {
+    "zh-TW": "防具",
+    "en": "Armor",
+    "ja": "防具"
+  },
+  "ui.craft.slot.accessory": {
+    "zh-TW": "飾品",
+    "en": "Accessory",
+    "ja": "アクセサリー"
+  },
+  "ui.craft.player_stats": {
+    "zh-TW": "角色：最大生命 {hp}%／移速 {speed}%／翻滾冷卻 {roll}%",
+    "en": "Player: max HP {hp}% / speed {speed}% / roll cooldown {roll}%",
+    "ja": "プレイヤー：最大HP {hp}%／移動速度 {speed}%／回避CD {roll}%"
+  },
+  "ui.craft.effect": {
+    "zh-TW": "宙獸：{effect} {delta}% {element}",
+    "en": "Creature: {effect} {delta}% {element}",
+    "ja": "宙獣：{effect} {delta}% {element}"
+  },
+  "ui.craft.effect.MasteryMod": {
+    "zh-TW": "屬性專精",
+    "en": "mastery",
+    "ja": "属性熟練"
+  },
+  "ui.craft.effect.ResistMod": {
+    "zh-TW": "屬性抗性",
+    "en": "resistance",
+    "ja": "属性耐性"
+  },
+  "ui.craft.effect.CdModPercent": {
+    "zh-TW": "招式冷卻",
+    "en": "move cooldown",
+    "ja": "技CD"
+  },
+  "ui.craft.effect.EvasionModPercent": {
+    "zh-TW": "閃避",
+    "en": "evasion",
+    "ja": "回避"
+  },
+  "ui.craft.effect.MoveSpeedModPercent": {
+    "zh-TW": "移速",
+    "en": "move speed",
+    "ja": "移動速度"
+  },
+  "ui.craft.effect.RangeModPercent": {
+    "zh-TW": "射程",
+    "en": "range",
+    "ja": "射程"
+  },
+  "ui.craft.any_element": {
+    "zh-TW": "所有屬性",
+    "en": "all elements",
+    "ja": "全属性"
+  }
+}

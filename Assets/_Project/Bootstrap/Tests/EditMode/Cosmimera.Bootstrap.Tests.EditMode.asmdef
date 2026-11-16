@@ -7,6 +7,7 @@
         "Cosmimera.Combat",
         "Cosmimera.Core",
         "Cosmimera.Creatures",
+        "Cosmimera.Crafting",
         "Cosmimera.GameData",
         "Cosmimera.Planet",
         "Cosmimera.Player",

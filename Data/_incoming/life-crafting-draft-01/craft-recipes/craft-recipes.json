@@ -1,0 +1,427 @@
+[
+  {
+    "id": "recipe_smelt_iron",
+    "utility": "cook_fire",
+    "costs": [
+      {
+        "item": "raw_iron_ore",
+        "quantity": 2
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_smelt_copper",
+    "utility": "cook_fire",
+    "costs": [
+      {
+        "item": "raw_copper_ore",
+        "quantity": 2
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_copper_ingot",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_smelt_silver",
+    "utility": "cook_fire",
+    "costs": [
+      {
+        "item": "raw_silver_ore",
+        "quantity": 2
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_silver_ingot",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_smelt_gold",
+    "utility": "cook_fire",
+    "costs": [
+      {
+        "item": "raw_gold_ore",
+        "quantity": 2
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_gold_ingot",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_weave_linen",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "raw_hemp",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_linen",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_weave_cotton",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "raw_cotton",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_cotton_cloth",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_reel_silk",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "raw_cocoon",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_silk",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_extract_dye",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "raw_dye_plant",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_dye",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_make_paper",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "raw_timber",
+        "quantity": 1
+      },
+      {
+        "item": "raw_hemp",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_paper",
+        "quantity": 2
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_cut_gem",
+    "utility": "scout_potential",
+    "costs": [
+      {
+        "item": "raw_gem",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_cut_gem",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_talisman",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "craft_paper",
+        "quantity": 2
+      },
+      {
+        "item": "craft_dye",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_talisman_card",
+        "quantity": 2
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_glass_bead",
+    "utility": "cook_fire",
+    "costs": [
+      {
+        "item": "raw_crystal",
+        "quantity": 2
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_glass_bead",
+        "quantity": 2
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_magic_cube",
+    "utility": "magnet_pickup_double",
+    "costs": [
+      {
+        "item": "craft_copper_ingot",
+        "quantity": 1
+      },
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_magic_cube",
+        "quantity": 2
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_snare",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "craft_linen",
+        "quantity": 1
+      },
+      {
+        "item": "raw_timber",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_snare",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_pickaxe",
+    "utility": "magnet_pickup_double",
+    "costs": [
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item": "raw_timber",
+        "quantity": 1
+      },
+      {
+        "item": "raw_stone",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_pickaxe",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_needle",
+    "utility": "magnet_pickup_double",
+    "costs": [
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_needle",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_linen_outfit",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "craft_linen",
+        "quantity": 2
+      },
+      {
+        "item": "craft_dye",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_linen_outfit",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      "craft_needle"
+    ]
+  },
+  {
+    "id": "recipe_down_coat",
+    "utility": "forage_berries",
+    "costs": [
+      {
+        "item": "craft_cotton_cloth",
+        "quantity": 2
+      },
+      {
+        "item": "raw_down",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_down_coat",
+        "quantity": 1
+      }
+    ],
+    "tools": [
+      "craft_needle"
+    ]
+  },
+  {
+    "id": "recipe_blade",
+    "utility": "magnet_pickup_double",
+    "costs": [
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 2
+      },
+      {
+        "item": "raw_timber",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_iron_blade",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_guard",
+    "utility": "magnet_pickup_double",
+    "costs": [
+      {
+        "item": "craft_iron_ingot",
+        "quantity": 3
+      },
+      {
+        "item": "craft_linen",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_iron_guard",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  },
+  {
+    "id": "recipe_pendant",
+    "utility": "scout_potential",
+    "costs": [
+      {
+        "item": "craft_cut_gem",
+        "quantity": 1
+      },
+      {
+        "item": "craft_silver_ingot",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_gem_pendant",
+        "quantity": 1
+      }
+    ],
+    "tools": []
+  }
+]

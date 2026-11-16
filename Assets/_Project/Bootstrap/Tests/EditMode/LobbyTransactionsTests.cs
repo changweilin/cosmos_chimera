@@ -4,6 +4,7 @@ using System.IO;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using Cosmimera.Save;
 using NUnit.Framework;
@@ -48,6 +49,31 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         private LobbySave Reload() => LobbySave.Load(_path, P, _ => CreatureStage.Juvenile);
+
+        [Test]
+        public void Crafting_settlement_replaces_departure_stock_and_failed_write_is_retryable()
+        {
+            LobbySave live = Ready();
+            live.CraftStock.TryExchange(Array.Empty<CraftStack>(), new[] { new CraftStack("raw_hemp", 8) });
+            live.Equipment.Restore(new[] { new EquippedItem(1, "armor", "retired_guard") });
+            live.Write(_path);
+            RunOutcome outcome = Outcome(live.Get(1).Exp);
+            outcome.CraftStock = new[] { new CraftStack("raw_hemp", 2), new CraftStack("craft_linen", 3) };
+            using (LockSave())
+            {
+                Assert.That(LobbyTransactions.Settle(live, live.Party, outcome, P, _path, out LobbySave unchanged, out _, out _),
+                    Is.EqualTo(CommitStatus.WriteFailed));
+                Assert.That(unchanged, Is.SameAs(live));
+                Assert.That(live.CraftStock.Count("raw_hemp"), Is.EqualTo(8));
+                Assert.That(Reload().CraftStock.Count("raw_hemp"), Is.EqualTo(8));
+            }
+            Assert.That(LobbyTransactions.Settle(live, live.Party, outcome, P, _path, out LobbySave next, out _, out _),
+                Is.EqualTo(CommitStatus.Committed));
+            Assert.That(next.CraftStock.Count("raw_hemp"), Is.EqualTo(2), "final stock replaces departure items rather than adding them twice");
+            Assert.That(next.CraftStock.Count("craft_linen"), Is.EqualTo(3));
+            Assert.That(next.Equipment.Snapshot()[0].Item, Is.EqualTo("retired_guard"));
+            Assert.That(Reload().ToJson(), Is.EqualTo(next.ToJson()));
+        }
 
         [Test]
         public void Sub_partner_xp_is_banked_atomically_with_the_run()

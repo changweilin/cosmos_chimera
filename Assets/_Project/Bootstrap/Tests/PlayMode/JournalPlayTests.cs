@@ -7,6 +7,7 @@ using System.Reflection;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Combat;
 using Cosmimera.Creatures;
+using Cosmimera.Crafting;
 using Cosmimera.Food;
 using Cosmimera.GameData;
 using Cosmimera.Save;
@@ -135,6 +136,8 @@ namespace Cosmimera.Bootstrap.Tests
                         Landforms = false, Party = party, PartyIds = new List<int> { 1, 2, 3, 4 }, PartyExp = xp,
                         Progression = progression, Materials = MaterialDrops.FromJson(Copy("balance")),
                         Database = db, Owned = owned, Partners = loadout,
+                        CraftStock = new[] { new CraftStack("craft_snare", 4), new CraftStack("craft_talisman_card", 1), new CraftStack("raw_hemp", 2) },
+                        Equipment = new[] { new EquippedItem(0, "armor", "craft_iron_guard"), new EquippedItem(1, "armor", "craft_linen_outfit") },
                     }, wild, _ => { });
                 float deadline = Time.realtimeSinceStartup + 60;
                 while (!session.StartedForTests && Time.realtimeSinceStartup < deadline) yield return null;
@@ -159,6 +162,43 @@ namespace Cosmimera.Bootstrap.Tests
                 var inventory = (FoodInventory)Field(session, "_foodInventory");
                 var catalog = (FoodCatalog)Field(session, "_foodCatalog");
                 var vitals = (PlayerVitals)Field(session, "_vitals");
+                Assert.That(vitals.MaxHp, Is.GreaterThan(CombatBalance.FromJson(Copy("balance")).Player.MaxHp));
+                Combatant geared = encounter.Units[session.PartyUnitsForTests[0]].Combatant;
+                var gearTotals = new ModifierTotals();
+                geared.Book.Collect(now, geared.Hp, geared.MaxHp, gearTotals);
+                Assert.That(gearTotals.MoveSpeedPercent, Is.Positive, "departure equipment reaches the actual combatant");
+                geared.Book.Clear(now);
+                geared.Book.Collect(now, geared.Hp, geared.MaxHp, gearTotals);
+                Assert.That(gearTotals.MoveSpeedPercent, Is.Positive, "disengaging must retain equipment");
+                var craftInventory = (CraftInventory)Field(session, "_craftInventory");
+                var craftCatalog = (CraftCatalog)Field(session, "_craftCatalog");
+                CraftRecipe linen = null;
+                foreach (CraftRecipe recipe in craftCatalog.Recipes) if (recipe.Id == "recipe_weave_linen") linen = recipe;
+                Assert.That(CraftRules.TryCraft(linen, utilities, craftInventory), Is.EqualTo(CraftResult.Success));
+                Assert.That(craftInventory.Count("raw_hemp"), Is.Zero);
+                Assert.That(craftInventory.Count("craft_linen"), Is.Positive);
+                Set(session, "_craftedVessel", "craft_talisman_card");
+                Invoke(session, "TryCapture");
+                Assert.That(craftInventory.Count("craft_talisman_card"), Is.EqualTo(1), "no target must not consume a crafted vessel");
+                var vesselArgs = new object[] { 0 };
+                Assert.That(Invoke(session, "TryConsumeCraftedVessel", vesselArgs), Is.True);
+                Assert.That((int)vesselArgs[0], Is.Positive);
+                Assert.That(craftInventory.Count("craft_talisman_card"), Is.Zero);
+                for (int i = 0; i < 3; i++) Assert.That(Invoke(session, "TryUseCraftedTrap"), Is.EqualTo(GatheringRefusalReason.None));
+                Assert.That(Invoke(session, "TryUseCraftedTrap"), Is.EqualTo(GatheringRefusalReason.TrapLimitReached));
+                Assert.That(craftInventory.Count("craft_snare"), Is.EqualTo(1));
+                Set(session, "_nowMs", now + TrapManager.DefaultTrapDurationMs);
+                craftInventory.TryExchange(Array.Empty<CraftStack>(), new[] { new CraftStack("raw_cocoon", int.MaxValue) });
+                Assert.That(Invoke(session, "TryCollectTrapMaterials"), Is.False);
+                Assert.That(((TrapManager)Field(session, "_traps")).ActiveTraps.Count, Is.EqualTo(3), "a full material stack must preserve ready traps");
+                craftInventory.TryExchange(new[] { new CraftStack("raw_cocoon", int.MaxValue) }, Array.Empty<CraftStack>());
+                Assert.That(Invoke(session, "TryCollectTrapMaterials"), Is.True);
+                Assert.That(craftInventory.Count("raw_cocoon"), Is.Positive);
+                Assert.That(craftInventory.Count("raw_down"), Is.Positive);
+                int cocoons = craftInventory.Count("raw_cocoon");
+                Assert.That(Invoke(session, "TryCollectTrapMaterials"), Is.True);
+                Assert.That(craftInventory.Count("raw_cocoon"), Is.EqualTo(cocoons), "collected traps cannot pay twice");
+                now = session.NowMsForTests;
                 vitals.ApplyDamage(vitals.MaxHp / 2, now);
                 int hp = vitals.Hp;
                 inventory.AddIngredient("ing_wild_berry", 2);
