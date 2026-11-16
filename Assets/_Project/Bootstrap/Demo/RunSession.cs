@@ -323,6 +323,28 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<GroundDrop> _pickupBuffer = new List<GroundDrop>(16);
         private readonly List<ActiveFieldSnapshot> _activeFieldsBuffer = new List<ActiveFieldSnapshot>(8);
         private CombatFeedback _feedback;
+        private HitFeelDirector _hitFeel;
+
+        // One hitstop per cast (combat-feel.md): hits of a tick are grouped by (source, slot) and flushed after the event loop.
+        private struct CastFeelBatch
+        {
+            public int SourceId;
+            public int Slot;
+            public bool HadCast;
+            public HitTier Tier;
+            public bool Boss;
+            public float NearestM;
+            public int TargetCount;
+        }
+
+        private const int MaxFeelBatches = 16;
+        private const int MaxFeelTargets = 16;
+        private readonly CastFeelBatch[] _feelBatches = new CastFeelBatch[MaxFeelBatches];
+        private readonly int[][] _feelTargets = NewFeelTargets();
+        private int _feelBatchCount;
+        private Vector3[] _heldViewPos = new Vector3[0];
+        private bool[] _viewHeld = new bool[0];
+        private int _bossPhaseLinesPassed;
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -634,6 +656,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
                 setup.CharacterModelPrefab, walls);
+            _hitFeel = new HitFeelDirector(_rig.Camera, HitFeelTuning.Default);
             _portraits = setup.Portraits;
             if (setup.VolumeProfile != null)
             {
@@ -832,6 +855,8 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            // Unscaled and ahead of the journal-pause return: rumble and slow-mo must still time out while paused.
+            _hitFeel?.Update(Time.unscaledDeltaTime);
             if (ReadJournalInput()) return;
             ReadInput();
             _accumulator += Time.deltaTime * 1000f;
@@ -974,6 +999,7 @@ namespace Cosmimera.Bootstrap.Demo
             RecordAppearances();
 
             bool playerDowned = false;
+            _feelBatchCount = 0;
             foreach (EncounterEvent ev in _encounter.Events)
             {
                 DispatchCombatFeedback(ev, player);
@@ -986,6 +1012,8 @@ namespace Cosmimera.Bootstrap.Demo
                     playerDowned = true;
                 }
             }
+
+            FlushHitFeel();
 
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             // Test seam: empty in play. A knock-out a test produced out of band settles exactly like a Tick event.
@@ -2242,6 +2270,11 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 float3 up = _rig.Config.ToDirection(u.Position);
+                if (HoldForHitstop(u, t))
+                {
+                    continue;
+                }
+
                 t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
                 t.localScale = u.Combatant.IsOverloaded && u.Def == u.BaseDef
                     ? new Vector3(1.15f, 1.15f, 1.15f)
@@ -2251,6 +2284,33 @@ namespace Cosmimera.Bootstrap.Demo
                     view.ShowFainted();
                 }
             }
+        }
+
+        // REQ: combat-feel.md#分層 — hitstop holds only the view (pose + small jitter); u.Position and the tick keep running,
+        // so the view snaps to the rule position when the hold ends. Fainted units are never held (ShowFainted must run).
+        private bool HoldForHitstop(EncounterUnit u, Transform t)
+        {
+            if (u.Id >= _viewHeld.Length)
+            {
+                int size = math.max(u.Id + 1, _viewHeld.Length * 2);
+                Array.Resize(ref _viewHeld, size);
+                Array.Resize(ref _heldViewPos, size);
+            }
+
+            if (_hitFeel == null || u.Combatant.IsFainted || !_hitFeel.IsFrozen(u.Id))
+            {
+                _viewHeld[u.Id] = false;
+                return false;
+            }
+
+            if (!_viewHeld[u.Id])
+            {
+                _viewHeld[u.Id] = true;
+                _heldViewPos[u.Id] = t.position;
+            }
+
+            t.position = _heldViewPos[u.Id] + _hitFeel.Jitter(u.BodyRadiusM * 0.06f);
+            return true;
         }
 
         private bool IsFleeing(int unitId)
@@ -2357,6 +2417,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 float3 up = _rig.Config.ToDirection(src.Position);
                 _feedback.ShowCast(src.Position, src.Forward, up, move, elemColor);
+                _feelBatches[FeelBatchIndex(ev.SourceId, ev.Slot)].HadCast = true;
                 return;
             }
 
@@ -2388,12 +2449,127 @@ namespace Cosmimera.Bootstrap.Demo
             }
             else if (ev.Kind == EncounterEventKind.Hit)
             {
-                _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor);
+                if (ev.TargetId == Encounter.PlayerCharacterId)
+                {
+                    _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor, HitTier.Light, false);
+                    _hitFeel?.PlayPlayerHit();
+                    return;
+                }
+
+                EncounterUnit dst = _encounter.Units[ev.TargetId];
+                CastMove hitMove = src.Moves[ev.Slot];
+                int resist = dst.Combatant.EffectiveResistPercent(hitMove.Element, _nowMs);
+                bool knockedOut = dst.Combatant.IsFainted;
+                HitTier tier = HitFeel.Classify(_hitFeel != null ? _hitFeel.Tuning : HitFeelTuning.Default, ev.Amount,
+                    dst.Combatant.MaxHp, resist, hitMove.DealsDamage, knockedOut);
+                _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor, tier,
+                    resist < 0 && ev.Amount > 0);
+                AddFeelTarget(ev.SourceId, ev.Slot, ev.TargetId, tier, src.IsBoss || dst.IsBoss,
+                    math.distance(targetPos, playerPos));
+                if (knockedOut && dst.Side == EncounterSide.Wild)
+                {
+                    // Slow-mo marks the player's win; the player's own creature going down only gets the hitstop.
+                    _hitFeel?.PlaySlowMo(dst.IsBoss);
+                }
+
+                if (dst.IsBoss)
+                {
+                    BossPhaseFeedback(dst, targetFwd, targetUp, elemColor);
+                }
             }
             else if (ev.Kind == EncounterEventKind.Support)
             {
                 _feedback.ShowSupport(targetPos, targetFwd, targetUp, targetRadius, ev.Amount);
             }
+        }
+
+        private static int[][] NewFeelTargets()
+        {
+            var t = new int[MaxFeelBatches][];
+            for (int i = 0; i < t.Length; i++)
+            {
+                t[i] = new int[MaxFeelTargets];
+            }
+
+            return t;
+        }
+
+        private int FeelBatchIndex(int sourceId, int slot)
+        {
+            for (int i = 0; i < _feelBatchCount; i++)
+            {
+                if (_feelBatches[i].SourceId == sourceId && _feelBatches[i].Slot == slot)
+                {
+                    return i;
+                }
+            }
+
+            // Overflow (more than 16 distinct casts in one 50 ms tick) folds into the last batch: still one hitstop there.
+            if (_feelBatchCount == MaxFeelBatches)
+            {
+                return MaxFeelBatches - 1;
+            }
+
+            _feelBatches[_feelBatchCount] = new CastFeelBatch
+            {
+                SourceId = sourceId, Slot = slot, Tier = HitTier.Miss, NearestM = float.MaxValue,
+            };
+            return _feelBatchCount++;
+        }
+
+        private void AddFeelTarget(int sourceId, int slot, int targetId, HitTier tier, bool boss, float distanceM)
+        {
+            int i = FeelBatchIndex(sourceId, slot);
+            ref CastFeelBatch b = ref _feelBatches[i];
+            if (tier > b.Tier)
+            {
+                b.Tier = tier;
+            }
+
+            b.Boss |= boss;
+            b.NearestM = math.min(b.NearestM, distanceM);
+            if (b.TargetCount < MaxFeelTargets)
+            {
+                _feelTargets[i][b.TargetCount++] = targetId;
+            }
+        }
+
+        private void FlushHitFeel()
+        {
+            if (_hitFeel == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _feelBatchCount; i++)
+            {
+                CastFeelBatch b = _feelBatches[i];
+                if (b.TargetCount == 0)
+                {
+                    continue;
+                }
+
+                // No Cast event from this (source, slot) in the tick means a field tick (casts resolve in the tick they start).
+                HitTier tier = b.HadCast ? b.Tier : HitFeel.CapForFieldTick(b.Tier);
+                _hitFeel.PlayCast(b.SourceId, _feelTargets[i], b.TargetCount, tier, b.Boss, b.NearestM);
+            }
+
+            _feelBatchCount = 0;
+        }
+
+        // REQ: combat-feel.md#BOSS-戰加強 — shockwave at HP 66 % and 33 % (presentation only; behaviour change is Q-C48).
+        private void BossPhaseFeedback(EncounterUnit boss, float3 forward, float3 up, Color elemColor)
+        {
+            long hp1000 = (long)boss.Combatant.Hp * 1000;
+            int passed = hp1000 <= 333L * boss.Combatant.MaxHp ? 2 : hp1000 <= 666L * boss.Combatant.MaxHp ? 1 : 0;
+            if (passed <= _bossPhaseLinesPassed || boss.Combatant.IsFainted)
+            {
+                return;
+            }
+
+            _bossPhaseLinesPassed = passed;
+            _feedback.ShowBossPhase(boss.Position, forward, up, boss.BodyRadiusM, elemColor);
+            _hitFeel?.PlayCast(boss.Id, _feelTargets[0], 0, HitTier.Knockout, true, 0f);
         }
 
         private void Toast(string text)
@@ -2419,6 +2595,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             DrawWorldBars();
             _feedback?.DrawFloatingTexts(_rig.Camera);
+            _hitFeel?.DrawOverlay();
             DrawLockMarker();
             DrawQuestPanel();
             DrawTeamPanel();
@@ -2828,6 +3005,7 @@ namespace Cosmimera.Bootstrap.Demo
             _runInput?.Dispose();
             _menuInput?.Dispose();
             _feedback?.Dispose();
+            _hitFeel?.Dispose();
             _rig?.Dispose();
             PlanetLook.ClearGeology();
             if (_terrainMaterial != null)

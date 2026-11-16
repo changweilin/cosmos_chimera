@@ -947,5 +947,20 @@ namespace Cosmimera.Combat.Tests
             c.Book.Apply("s", 0, Mod(EffectType.MoveSpeedModPercent, -20), 1000, 500);
             Assert.Throws<ContractException>(() => c.MoveSpeedMmS(499));
         }
+
+        [Test]
+        public void EffectiveResistPercent_matches_what_a_hit_uses_and_reads_without_side_effects()
+        {
+            var tBook = new EffectBook();
+            tBook.Apply("shell", 0, Mod(EffectType.ResistMod, 15), 100_000, 0);
+            Combatant target = Make(tBook, con: 100, resist: Table(Element.Fire, 10));
+            int hp = target.Hp;
+            Assert.AreEqual(25, target.EffectiveResistPercent(Element.Fire, 0));
+            Assert.AreEqual(0, target.EffectiveResistPercent(Element.Water, 0));
+            Assert.AreEqual(10, target.EffectiveResistPercent(Element.Fire, 100_000), "effect expired");
+            Assert.AreEqual(hp, target.Hp);
+            Assert.Throws<ContractException>(() => target.EffectiveResistPercent((Element)10, 0));
+            Assert.Throws<ContractException>(() => target.EffectiveResistPercent(Element.Fire, -1));
+        }
     }
 }

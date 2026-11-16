@@ -419,6 +419,20 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: true iff Hp == 0. Side effects: none.</remarks>
         public bool IsFainted => Hp == 0;
 
+        /// <summary>Effective resist (base or overload form plus active effects) to <paramref name="element"/> at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// Pre: element is one of the 10 elements; nowMs &gt;= 0.
+        /// Post: −ResistClamp..ResistClamp; equals the resist a hostile hit of that element would use at nowMs.
+        /// Side effects: refreshes the internal modifier scratch only; HP, cooldowns, effects and RNG unchanged.
+        /// </remarks>
+        public int EffectiveResistPercent(Element element, long nowMs)
+        {
+            Contract.Requires((int)element >= 0 && (int)element < ElementCount, "element out of range");
+            Contract.Requires(nowMs >= 0, "nowMs must be >= 0");
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return EffectMath.EffectiveResist(_resist[(int)element], _totals.ResistDelta(element));
+        }
+
         /// <summary>Whether this combatant is currently in temporary combat overload (Q-C12).</summary>
         /// <remarks>Pre: none. Post: true between BeginOverload and EndOverload. Side effects: none.</remarks>
         public bool IsOverloaded { get; private set; }
