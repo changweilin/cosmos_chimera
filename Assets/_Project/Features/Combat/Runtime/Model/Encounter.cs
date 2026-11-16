@@ -150,8 +150,8 @@ namespace Cosmimera.Combat
         /// </summary>
         Blocked = 8,
         /// <summary>
-        /// The main (TargetId) released block within block.perfect_window_ms before SourceId's hit landed (combat.md#格擋).
-        /// Its reward is pending Q-C59; for now the hit resolves as a normal block.
+        /// The main (TargetId) released block within block.perfect_window_ms before SourceId's hit landed (combat.md#格擋);
+        /// the hit itself resolves as a normal block. A Reflected event follows when the attacker can take damage.
         /// </summary>
         PerfectBlock = 9,
         /// <summary>TargetId's stance gauge filled on SourceId's hit: no block, cast or movement for block.guard_break_ms.</summary>
@@ -161,6 +161,11 @@ namespace Cosmimera.Combat
         /// staggers (a Staggered event follows when it could stagger; combat.md#完美閃避).
         /// </summary>
         PerfectDodge = 11,
+        /// <summary>
+        /// Perfect-block counter-damage: SourceId (the blocker) dealt Amount to TargetId (the attacker), which also fills
+        /// TargetId's stagger gauge (combat.md#格擋, Q-C59). A Faint or Staggered event may follow.
+        /// </summary>
+        Reflected = 12,
     }
 
     /// <summary>Outcome of a player overload command (Q-C12).</summary>
@@ -295,6 +300,10 @@ namespace Cosmimera.Combat
         /// <summary>Start of the unit's last roll (player side only; combat.md#完美閃避).</summary>
         /// <remarks>Pre: none. Post: none; far in the past before the first roll. Side effects: none.</remarks>
         public long RollStartedAtMs { get; internal set; } = long.MinValue / 2;
+
+        internal float3 RollHeading { get; set; }
+        internal float RollDistanceM { get; set; }
+        internal float RollRemainingM { get; set; }
 
         internal MoveDef[] MoveDefs { get; set; }
 
@@ -633,6 +642,13 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
+                if (IsRolling(u, nowMs) && u.WindupSlot != EncounterUnit.NoWindup)
+                {
+                    // Q-C58: rolling out of a windup abandons it with the cooldown refunded. Done here, not in TryRoll,
+                    // so the Interrupted event lands in this tick's Events instead of being cleared by it.
+                    CancelWindup(u, nowMs);
+                }
+
                 bool blocking = u.IsActive && !u.IsGuardBroken(nowMs) && !IsRolling(u, nowMs) &&
                     (IsMain(u) ? u.BlockHeld : u.IsBlocking);
                 u.IsBlocking = blocking;
@@ -662,6 +678,32 @@ namespace Cosmimera.Combat
         private bool IsPerfectBlock(EncounterUnit t, long nowMs) =>
             t.Side == EncounterSide.Player && IsMain(t) && !t.IsBlocking && t.IsActive && !t.IsGuardBroken(nowMs) &&
             nowMs - t.BlockReleasedAtMs <= _balance.Block.PerfectWindowMs;
+
+        // REQ: combat.md#格擋 (Q-C59): a perfect block returns reflect_percent of the move's damage, settled with the
+        // attacker's own resist, and that damage fills the attacker's stagger gauge like any hit. A field can outlive
+        // its caster, so an inactive attacker takes nothing.
+        private void Reflect(int attackerId, int blockerId, int slot, in CastContext ctx, long nowMs)
+        {
+            if (attackerId < 0 || attackerId >= _units.Count || !_units[attackerId].IsActive)
+            {
+                return;
+            }
+
+            EncounterUnit a = _units[attackerId];
+            int dealt = a.Combatant.ReceiveReflect(ctx, _balance.Block.ReflectPercent, nowMs);
+            UpdateBossStage(a);
+            _events.Add(new EncounterEvent(EncounterEventKind.Reflected, blockerId, attackerId, slot, dealt));
+            if (a.Combatant.IsFainted)
+            {
+                _events.Add(new EncounterEvent(EncounterEventKind.Faint, blockerId, attackerId, slot, 0));
+                return;
+            }
+
+            if (dealt > 0)
+            {
+                AddStagger(a, blockerId, dealt, nowMs);
+            }
+        }
 
         private void AddStance(EncounterUnit t, int sourceId, int preBlockDamage, long nowMs)
         {
@@ -1164,6 +1206,7 @@ namespace Cosmimera.Combat
             u.TargetId = CombatAi.NoTarget;
             u.BlockHeld = false;
             u.IsBlocking = false;
+            u.RollRemainingM = 0f;
         }
 
         /// <summary>Reports the block key state for a player-side unit (combat.md#格擋; only the main's state is used).</summary>
@@ -1186,25 +1229,55 @@ namespace Cosmimera.Combat
 
         /// <summary>Starts a roll for a player-side creature (Q-C55: the main rolls in combat; combat.md#完美閃避).</summary>
         /// <remarks>
-        /// Pre: unitId is a Player-side unit.
-        /// Post: true iff the unit is active, not staggered, not guard-broken, not winding up and nowMs &gt;= last roll
-        ///       start + creature_roll.cooldown_ms; then RollStartedAtMs == nowMs: hits are i-framed (no roll drawn, MISS
-        ///       feedback) for invulnerable_ms and the unit does not block for duration_ms. The roll does not move the
-        ///       unit (displacement is pending Q-C58).
-        /// Side effects: sets RollStartedAtMs on success.
+        /// Pre: unitId is a Player-side unit; direction is finite.
+        /// Post: true iff the unit is active, not staggered, not guard-broken and nowMs &gt;= last roll start +
+        ///       creature_roll.cooldown_ms; then RollStartedAtMs == nowMs, the next Tick cancels a windup in progress and
+        ///       refunds its cooldown before it can resolve (Q-C58; Interrupted is raised there), hits are i-framed (no roll drawn, MISS feedback) for invulnerable_ms, and for
+        ///       duration_ms the unit neither blocks, steers nor casts while Tick carries it 2 × CollisionRadiusM ×
+        ///       distance_height_permille / 1000 along <paramref name="direction"/> projected on the ground (backwards
+        ///       when that projection is near zero), at constant speed; buildings stop it like any other move.
+        /// Side effects: sets the roll state.
         /// </remarks>
-        public bool TryRoll(int unitId, long nowMs)
+        public bool TryRoll(int unitId, long nowMs, float3 direction)
         {
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Player, "only player-side creatures roll");
-            if (!u.IsActive || u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) || u.WindupSlot != EncounterUnit.NoWindup ||
+            Contract.Requires(math.all(math.isfinite(direction)), "direction must be finite");
+            if (!u.IsActive || u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) ||
                 nowMs - u.RollStartedAtMs < _balance.CreatureRoll.CooldownMs)
             {
                 return false;
             }
 
+            float3 up = Up(u.Position);
+            float3 flat = direction - up * math.dot(direction, up);
+            u.RollHeading = math.lengthsq(flat) > 1e-8f ? math.normalize(flat) : -u.Forward;
+            // Q-C58: roll distance follows body height; the size-class collision radius is the height proxy.
+            u.RollDistanceM = 2f * u.CollisionRadiusM * _balance.CreatureRoll.DistanceHeightPermille / 1000f;
+            u.RollRemainingM = u.RollDistanceM;
             u.RollStartedAtMs = nowMs;
             return true;
+        }
+
+        private void RollStep(EncounterUnit u, long nowMs)
+        {
+            int duration = _balance.CreatureRoll.DurationMs;
+            long elapsed = math.clamp(nowMs - u.RollStartedAtMs, 0L, duration);
+            float covered = u.RollDistanceM * elapsed / duration;
+            float step = covered - (u.RollDistanceM - u.RollRemainingM);
+            u.RollRemainingM = u.RollDistanceM - covered;
+            if (step <= 0f)
+            {
+                return;
+            }
+
+            float3 up = Up(u.Position);
+            float3 heading = Tangent(up, u.RollHeading, -u.Forward);
+            float angle = step / _planet.Radius;
+            float3 forward = u.Forward;
+            PlaceIfAllowed(u, math.normalize(up * math.cos(angle) + heading * math.sin(angle)));
+            u.Forward = Tangent(Up(u.Position), forward);
+            u.RollHeading = Tangent(Up(u.Position), heading);
         }
 
         /// <summary>Removes a wild unit from play (captured, or left behind when its region unloads).</summary>
@@ -1479,8 +1552,11 @@ namespace Cosmimera.Combat
         ///       rolling or guard-broken. A blocking unit casts nothing (raising the guard cancels its windup) and moves at
         ///       block.move_speed_permille; a blocked hit keeps (1000 − base_permille)/1000 of its damage and adds its
         ///       pre-block damage to the stance gauge; full → GuardBroken for guard_break_ms (no block, cast or movement).
+        ///       A perfect block (release within perfect_window_ms) also raises PerfectBlock and Reflected: the attacker
+        ///       takes block.reflect_percent of the move's damage at its own resist, which fills its stagger gauge.
         ///       Roll (combat.md#完美閃避): within creature_roll.invulnerable_ms of TryRoll hits become MISS with no roll
-        ///       drawn; contact within perfect_dodge_ms also raises PerfectDodge and staggers the attacker.
+        ///       drawn; contact within perfect_dodge_ms also raises PerfectDodge and staggers the attacker. A rolling unit
+        ///       travels its roll distance at constant speed and neither steers nor casts.
         /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
@@ -1521,6 +1597,18 @@ namespace Cosmimera.Combat
 
                 bool player = u.Side == EncounterSide.Player;
                 if (player && u.IsGuardBroken(nowMs))
+                {
+                    continue;
+                }
+
+                if (player && u.RollRemainingM > 0f)
+                {
+                    // The tick that finishes the travel is still a roll tick: no steering on top of the last step.
+                    RollStep(u, nowMs);
+                    continue;
+                }
+
+                if (player && IsRolling(u, nowMs))
                 {
                     continue;
                 }
@@ -2001,6 +2089,11 @@ namespace Cosmimera.Combat
                     if (!r.Fainted)
                     {
                         AddStance(t, casterId, r.PreBlockDamage, nowMs);
+                    }
+
+                    if (perfectBlock)
+                    {
+                        Reflect(casterId, t.Id, slot, ctx, nowMs);
                     }
                 }
                 if (r.Fainted)

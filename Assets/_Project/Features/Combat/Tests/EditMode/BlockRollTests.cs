@@ -199,9 +199,15 @@ namespace Cosmimera.Combat.Tests
         }
 
         // Holds block, waits for the wild's 300 ms windup to start, releases `releaseBeforeHitMs` before it lands.
-        private void ReleaseBeforeHit(int releaseBeforeHitMs, out bool perfect, out bool blocked)
+        private Encounter ReleaseBeforeHit(int releaseBeforeHitMs, out bool perfect, out bool blocked)
         {
-            Encounter e = Arena(40, 2000, 300, out EncounterUnit mine, out EncounterUnit wild);
+            return ReleaseBeforeHit(releaseBeforeHitMs, out perfect, out blocked, out _, out _);
+        }
+
+        private Encounter ReleaseBeforeHit(int releaseBeforeHitMs, out bool perfect, out bool blocked, out EncounterUnit mine,
+            out EncounterUnit wild)
+        {
+            Encounter e = Arena(40, 2000, 300, out mine, out wild);
             e.SetBlockHeld(mine.Id, true, 0);
             long hitAt = -1;
             for (long t = Dt; t <= 8000; t += Dt)
@@ -213,11 +219,12 @@ namespace Cosmimera.Combat.Tests
                 Assert.That(t, Is.EqualTo(hitAt));
                 perfect = Has(e, EncounterEventKind.PerfectBlock, wild.Id, mine.Id);
                 blocked = Has(e, EncounterEventKind.Blocked, wild.Id, mine.Id);
-                return;
+                return e;
             }
 
             Assert.Fail("wild never hit");
             perfect = blocked = false;
+            return e;
         }
 
         [Test]
@@ -225,7 +232,30 @@ namespace Cosmimera.Combat.Tests
         {
             ReleaseBeforeHit(_balance.Block.PerfectWindowMs, out bool perfect, out bool blocked);
             Assert.That(perfect, Is.True);
-            Assert.That(blocked, Is.True, "pending Q-C59 a perfect block resolves as a normal block");
+            Assert.That(blocked, Is.True, "Q-C59: the defender still takes a normal block");
+        }
+
+        [Test]
+        public void A_perfect_block_reflects_damage_that_fills_the_attackers_stagger_gauge()
+        {
+            Encounter e = ReleaseBeforeHit(_balance.Block.PerfectWindowMs, out bool perfect, out _, out EncounterUnit mine,
+                out EncounterUnit wild);
+            Assert.That(perfect, Is.True);
+            int reflected = Amount(e, EncounterEventKind.Reflected, mine.Id, wild.Id);
+            Assert.That(reflected, Is.GreaterThan(0));
+            Assert.That(wild.Combatant.MaxHp - wild.Combatant.Hp, Is.EqualTo(reflected));
+            Assert.That(wild.StaggerGaugeMilli, Is.EqualTo(reflected * 1000L));
+            int taken = Amount(e, EncounterEventKind.Hit, wild.Id, mine.Id);
+            Assert.That(reflected, Is.LessThan(taken), "25 % of the move's damage, below the 65 % the blocker took");
+        }
+
+        [Test]
+        public void A_late_release_reflects_nothing()
+        {
+            Encounter e = ReleaseBeforeHit(_balance.Block.PerfectWindowMs + Dt, out _, out _, out EncounterUnit mine,
+                out EncounterUnit wild);
+            Assert.That(Has(e, EncounterEventKind.Reflected, mine.Id, wild.Id), Is.False);
+            Assert.That(wild.Combatant.Hp, Is.EqualTo(wild.Combatant.MaxHp));
         }
 
         [Test]
@@ -294,7 +324,7 @@ namespace Cosmimera.Combat.Tests
             hitAt = -1;
             for (long t = Dt; t <= 8000; t += Dt)
             {
-                if (hitAt > 0 && t == hitAt - rollBeforeHitMs) Assert.That(e.TryRoll(mine.Id, t), Is.True);
+                if (hitAt > 0 && t == hitAt - rollBeforeHitMs) Assert.That(e.TryRoll(mine.Id, t, float3.zero), Is.True);
                 e.Tick(t, Dt, Feet, Free, mine.Id);
                 if (hitAt < 0 && Has(e, EncounterEventKind.Cast, wild.Id)) hitAt = wild.WindupEndsAtMs;
                 if (hitAt > 0 && t == hitAt) return e;
@@ -330,10 +360,60 @@ namespace Cosmimera.Combat.Tests
         public void Rolls_respect_the_cooldown()
         {
             Encounter e = Arena(1, 600000, 0, out EncounterUnit mine, out _);
-            Assert.That(e.TryRoll(mine.Id, 100), Is.True);
-            Assert.That(e.TryRoll(mine.Id, 100 + _balance.CreatureRoll.CooldownMs - 1), Is.False);
-            Assert.That(e.TryRoll(mine.Id, 100 + _balance.CreatureRoll.CooldownMs), Is.True);
+            Assert.That(e.TryRoll(mine.Id, 100, float3.zero), Is.True);
+            Assert.That(e.TryRoll(mine.Id, 100 + _balance.CreatureRoll.CooldownMs - 1, float3.zero), Is.False);
+            Assert.That(e.TryRoll(mine.Id, 100 + _balance.CreatureRoll.CooldownMs, float3.zero), Is.True);
             Assert.That(mine.RollStartedAtMs, Is.EqualTo(100 + _balance.CreatureRoll.CooldownMs));
+        }
+
+        [Test]
+        public void Rolling_out_of_a_windup_cancels_it_and_refunds_the_cooldown()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("slow", 5, 5000, 600)), null, AtMeters(0f), 30);
+            e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 600000, 0, 100)), null, AtMeters(1.5f), 30);
+            e.Field(mine.Id, AtMeters(0f), false, 0);
+            long t = Dt;
+            for (; t <= 3000 && mine.WindupSlot == EncounterUnit.NoWindup; t += Dt) e.Tick(t, Dt, Feet, Free, mine.Id);
+            Assume.That(mine.WindupSlot, Is.EqualTo(0));
+
+            Assert.That(e.TryRoll(mine.Id, t, float3.zero), Is.True);
+            e.Tick(t, Dt, Feet, Free, mine.Id);
+            Assert.That(Has(e, EncounterEventKind.Interrupted, mine.Id), Is.True);
+            Assert.That(mine.WindupSlot, Is.EqualTo(EncounterUnit.NoWindup));
+            Assert.That(mine.Combatant.Cooldowns.IsReady(0, t), Is.True, "cooldown refunded");
+        }
+
+        [Test]
+        public void A_roll_travels_its_height_scaled_distance_in_the_given_direction()
+        {
+            Encounter e = Arena(1, 600000, 0, out EncounterUnit mine, out EncounterUnit wild);
+            e.Remove(wild.Id);
+            float3 start = mine.Position;
+            float3 up = _planet.ToDirection(start);
+            float3 west = -PlanetFrame.FromUp(up).East;
+            Assert.That(e.TryRoll(mine.Id, 100, west), Is.True);
+            int duration = _balance.CreatureRoll.DurationMs;
+            long t = 100 + Dt;
+            for (; t < 100 + duration / 2; t += Dt) e.Tick(t, Dt, Feet, Free, mine.Id);
+            float expected = 2f * mine.CollisionRadiusM * _balance.CreatureRoll.DistanceHeightPermille / 1000f;
+            float half = math.distance(start, mine.Position);
+            Assert.That(half, Is.GreaterThan(0.2f * expected).And.LessThan(0.8f * expected), "constant speed, not a jump");
+            for (; t <= 100 + duration; t += Dt) e.Tick(t, Dt, Feet, Free, mine.Id);
+            Assert.That(math.distance(start, mine.Position), Is.EqualTo(expected).Within(0.02f));
+            Assert.That(math.dot(math.normalize(mine.Position - start), west), Is.GreaterThan(0.99f));
+        }
+
+        [Test]
+        public void A_roll_with_no_direction_goes_backwards()
+        {
+            Encounter e = Arena(1, 600000, 0, out EncounterUnit mine, out EncounterUnit wild);
+            e.Remove(wild.Id);
+            float3 start = mine.Position;
+            float3 forward = mine.Forward;
+            Assert.That(e.TryRoll(mine.Id, 100, float3.zero), Is.True);
+            for (long t = 100 + Dt; t <= 100 + _balance.CreatureRoll.DurationMs; t += Dt) e.Tick(t, Dt, Feet, Free, mine.Id);
+            Assert.That(math.dot(math.normalize(mine.Position - start), forward), Is.LessThan(-0.99f));
         }
 
         [Test]
@@ -341,7 +421,7 @@ namespace Cosmimera.Combat.Tests
         {
             Encounter e = Arena(1, 600000, 0, out EncounterUnit mine, out _);
             e.Unfield(mine.Id);
-            Assert.That(e.TryRoll(mine.Id, 100), Is.False);
+            Assert.That(e.TryRoll(mine.Id, 100, float3.zero), Is.False);
         }
 
         [Test]
@@ -349,19 +429,23 @@ namespace Cosmimera.Combat.Tests
         {
             Encounter e = Arena(1, 600000, 0, out _, out EncounterUnit wild);
             Assert.Throws<ContractException>(() => e.SetBlockHeld(wild.Id, true, 0));
-            Assert.Throws<ContractException>(() => e.TryRoll(wild.Id, 0));
+            Assert.Throws<ContractException>(() => e.TryRoll(wild.Id, 0, float3.zero));
+            EncounterUnit mine = e.Units[0];
+            Assert.Throws<ContractException>(() => e.TryRoll(mine.Id, 0, new float3(float.NaN, 0f, 0f)));
         }
 
         [Test]
         public void Tuning_rejects_out_of_range_values()
         {
-            Assert.Throws<ContractException>(() => new BlockTuning(1001, 400, 2000, 250, 1500, 150, 500));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 0, 2000, 250, 1500, 150, 500));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 0, 150, 500));
-            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 800, 401));
-            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 601, 800, 150));
-            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 599, 150));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500).CapacityHp(0));
+            Assert.Throws<ContractException>(() => new BlockTuning(1001, 400, 2000, 250, 1500, 150, 500, 25));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 0, 2000, 250, 1500, 150, 500, 25));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 0, 150, 500, 25));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, -1));
+            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 800, 401, 1500));
+            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 601, 800, 150, 1500));
+            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 599, 150, 1500));
+            Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 800, 150, 10001));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, 25).CapacityHp(0));
         }
     }
 }

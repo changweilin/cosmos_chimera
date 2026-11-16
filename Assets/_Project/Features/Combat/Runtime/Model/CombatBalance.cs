@@ -403,12 +403,14 @@ namespace Cosmimera.Combat
         /// <summary>Creates validated block tuning.</summary>
         /// <remarks>
         /// Pre: basePermille 0..1000; stanceHpPermille 1..10000; stanceRegenDelayMs 0..600000; stanceRegenPermillePerS
-        ///      0..1000; guardBreakMs 1..600000; perfectWindowMs 0..1000; moveSpeedPermille 0..1000.
+        ///      0..1000; guardBreakMs 1..600000; perfectWindowMs 0..1000; moveSpeedPermille 0..1000; reflectPercent 0..1000.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public BlockTuning(int basePermille, int stanceHpPermille, int stanceRegenDelayMs, int stanceRegenPermillePerS,
-            int guardBreakMs, int perfectWindowMs, int moveSpeedPermille)
+            int guardBreakMs, int perfectWindowMs, int moveSpeedPermille, int reflectPercent)
         {
+            Contract.Requires(reflectPercent >= 0 && reflectPercent <= 1000, "block.reflect_percent must be 0..1000");
+            ReflectPercent = reflectPercent;
             Contract.Requires(basePermille >= 0 && basePermille <= 1000, "block.base_permille must be 0..1000");
             Contract.Requires(stanceHpPermille >= 1 && stanceHpPermille <= 10000, "block.stance_hp_permille must be 1..10000");
             Contract.Requires(stanceRegenDelayMs >= 0 && stanceRegenDelayMs <= 600000,
@@ -451,6 +453,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 0..1000. Side effects: none.</remarks>
         public int PerfectWindowMs { get; }
 
+        /// <summary>Perfect-block counter-damage, percent of the blocked move's damage against the attacker (Q-C59).</summary>
+        /// <remarks>Pre: none. Post: 0..1000. Side effects: none.</remarks>
+        public int ReflectPercent { get; }
+
         /// <summary>Move speed while blocking, permille of normal.</summary>
         /// <remarks>Pre: none. Post: 0..1000. Side effects: none.</remarks>
         public int MoveSpeedPermille { get; }
@@ -474,11 +480,15 @@ namespace Cosmimera.Combat
         /// <summary>Creates validated roll tuning.</summary>
         /// <remarks>
         /// Pre: durationMs 1..10000; 0 &lt;= perfectDodgeMs &lt;= invulnerableMs &lt;= durationMs; cooldownMs >= durationMs
-        ///      and &lt;= 60000.
+        ///      and &lt;= 60000; distanceHeightPermille 0..10000.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
-        public CreatureRollTuning(int durationMs, int invulnerableMs, int cooldownMs, int perfectDodgeMs)
+        public CreatureRollTuning(int durationMs, int invulnerableMs, int cooldownMs, int perfectDodgeMs,
+            int distanceHeightPermille)
         {
+            Contract.Requires(distanceHeightPermille >= 0 && distanceHeightPermille <= 10000,
+                "creature_roll.distance_height_permille must be 0..10000");
+            DistanceHeightPermille = distanceHeightPermille;
             Contract.Requires(durationMs >= 1 && durationMs <= 10000, "creature_roll.duration_ms must be 1..10000");
             Contract.Requires(invulnerableMs >= 0 && invulnerableMs <= durationMs,
                 "creature_roll.invulnerable_ms must be 0..duration_ms");
@@ -503,6 +513,10 @@ namespace Cosmimera.Combat
         /// <summary>Time from one roll start to the next allowed start.</summary>
         /// <remarks>Pre: none. Post: DurationMs..60000. Side effects: none.</remarks>
         public int CooldownMs { get; }
+
+        /// <summary>Roll distance as permille of the creature's height (2 × its collision radius; Q-C58).</summary>
+        /// <remarks>Pre: none. Post: 0..10000. Side effects: none.</remarks>
+        public int DistanceHeightPermille { get; }
 
         /// <summary>Contact within this long of the roll start is a perfect dodge (the attacker staggers).</summary>
         /// <remarks>Pre: none. Post: 0..InvulnerableMs. Side effects: none.</remarks>
@@ -690,10 +704,12 @@ namespace Cosmimera.Combat
             Contract.Requires(d.block != null, "balance json is missing block");
             BlockDto bk = d.block;
             var block = new BlockTuning(bk.base_permille, bk.stance_hp_permille, bk.stance_regen_delay_ms,
-                bk.stance_regen_permille_per_s, bk.guard_break_ms, bk.perfect_window_ms, bk.move_speed_permille);
+                bk.stance_regen_permille_per_s, bk.guard_break_ms, bk.perfect_window_ms, bk.move_speed_permille,
+                bk.reflect_percent);
             Contract.Requires(d.creature_roll != null, "balance json is missing creature_roll");
             CreatureRollDto cr = d.creature_roll;
-            var creatureRoll = new CreatureRollTuning(cr.duration_ms, cr.invulnerable_ms, cr.cooldown_ms, cr.perfect_dodge_ms);
+            var creatureRoll = new CreatureRollTuning(cr.duration_ms, cr.invulnerable_ms, cr.cooldown_ms, cr.perfect_dodge_ms,
+                cr.distance_height_permille);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
                 d.capture.base_percent, d.capture.boss_percent, territory, wander, collision, horizon, enrage,
                 d.boss.windup_permille, stagger, block, creatureRoll);
@@ -811,6 +827,7 @@ namespace Cosmimera.Combat
             public int guard_break_ms;
             public int perfect_window_ms;
             public int move_speed_permille;
+            public int reflect_percent;
         }
 
         [Serializable] private sealed class CreatureRollDto
@@ -819,6 +836,7 @@ namespace Cosmimera.Combat
             public int invulnerable_ms;
             public int cooldown_ms;
             public int perfect_dodge_ms;
+            public int distance_height_permille;
         }
 
         [Serializable] private sealed class EnrageDto

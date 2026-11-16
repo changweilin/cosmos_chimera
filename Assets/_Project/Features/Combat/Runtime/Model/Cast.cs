@@ -842,6 +842,45 @@ namespace Cosmimera.Combat
             return new HitReport(HitOutcome.Hit, damage, Hp - hpAfterDamage, hpBefore, Hp, applied);
         }
 
+        /// <summary>Takes a perfect block's counter-damage from the move this combatant cast (combat.md#格擋, Q-C59).</summary>
+        /// <remarks>
+        /// Not a hostile hit: no roll, no on_hit_taken, no timed effect (like a cost, ReceiveSupport).
+        /// Pre: !IsFainted; cast is one this combatant began (BeginCast); 0 &lt;= percent &lt;= 1000; nowMs in CombatTime and
+        ///      >= every watermark of Book.
+        /// Post: returns damage dealt = min(HpBefore, round_half_up(DamageModel.Compute(power, cast mastery, this
+        ///       combatant's effective resist) × percent / 100)), at least 1 when that formula damage and percent are
+        ///       nonzero; 0 for non-damaging moves. If still alive, on_hp_cross_below may fire and its heal resolves.
+        /// Side effects: mutates Hp and Book. Does not touch any rng.
+        /// </remarks>
+        public int ReceiveReflect(in CastContext cast, int percent, long nowMs)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant takes no counter-damage");
+            Contract.Requires(percent >= 0 && percent <= 1000, "percent must be 0..1000");
+            CastMove move = cast.Move;
+            Contract.Requires(move.Id != null, "cast must come from BeginCast");
+            Book.RequireTime(nowMs);
+            if (!move.DealsDamage || percent == 0)
+            {
+                return 0;
+            }
+
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
+            int raw = DamageModel.Compute(DamageModel.ScalePower(move.Power, cast.PowerDeltaPercent), cast.MasteryPercent, resist);
+            long scaled = ((long)raw * percent + 50) / 100;
+            int amount = (int)System.Math.Min(int.MaxValue, raw > 0 && scaled == 0 ? 1 : scaled);
+            int hpBefore = Hp;
+            int damage = amount > Hp ? Hp : amount;
+            Hp -= damage;
+            if (Hp > 0)
+            {
+                Book.NotifyHpChanged(hpBefore, Hp, MaxHp, nowMs, out int crossHeal);
+                HealPercent(crossHeal, nowMs);
+            }
+
+            return damage;
+        }
+
         /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
         /// <remarks>
         /// REQ: combat.md#特性觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
