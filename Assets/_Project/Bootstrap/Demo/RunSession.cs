@@ -254,6 +254,19 @@ namespace Cosmimera.Bootstrap.Demo
             public bool Dropped;
         }
 
+        private sealed class FleeingView
+        {
+            public int UnitId;
+            public float3 Position;
+            public float3 Direction;
+            public float BodyRadiusM;
+            public float RemainingSec;
+        }
+
+        private const float FleeDurationSec = 2.5f;
+        private const float FleeSpeedMps = 10f;
+        private const float FleeFadeSec = 0.5f;
+
         private SpawnRole RoleOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Role : SpawnRole.Elite;
         private int RegionOf(WildInfo w) => w.Spawn >= 0 ? _plan.Spawns[w.Spawn].Region : w.TreasureRegion;
 
@@ -328,6 +341,7 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _chainPaid;
         private readonly Dictionary<int, WildInfo> _wild = new Dictionary<int, WildInfo>();
         private readonly Dictionary<int, ICreatureView> _views = new Dictionary<int, ICreatureView>();
+        private readonly List<FleeingView> _fleeing = new List<FleeingView>();
         private readonly Dictionary<int, CreatureDef> _viewDefs = new Dictionary<int, CreatureDef>();
         private readonly Dictionary<int, SpawnRole> _viewRoles = new Dictionary<int, SpawnRole>();
         private ICreatureViewFactory _viewFactory;
@@ -844,6 +858,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             SyncViews();
+            UpdateFleeingViews(Time.deltaTime);
         }
 
         private void SummonOpening()
@@ -1442,6 +1457,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             else
             {
+                StartFleeing(best);
                 Toast(_copy.Ui("ui.hud.capture_fail"));
             }
         }
@@ -2209,12 +2225,17 @@ namespace Cosmimera.Bootstrap.Demo
                     visible = false;
                 }
 
+                _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
+                if (IsFleeing(u.Id))
+                {
+                    continue;
+                }
+
                 if (t.gameObject.activeSelf != visible)
                 {
                     t.gameObject.SetActive(visible);
                 }
 
-                _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
                 if (!visible)
                 {
                     continue;
@@ -2229,6 +2250,95 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     view.ShowFainted();
                 }
+            }
+        }
+
+        private bool IsFleeing(int unitId)
+        {
+            for (int i = 0; i < _fleeing.Count; i++)
+            {
+                if (_fleeing[i].UnitId == unitId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void StartFleeing(int unitId)
+        {
+            if (!_views.TryGetValue(unitId, out ICreatureView view))
+            {
+                return;
+            }
+
+            EncounterUnit u = _encounter.Units[unitId];
+            float3 pos = u.Position;
+            float3 up = _rig.Config.ToDirection(pos);
+            float3 away = pos - PlayerPosition();
+            away -= up * math.dot(away, up);
+            if (math.lengthsq(away) < 1e-6f)
+            {
+                away = u.Forward - up * math.dot(u.Forward, up);
+            }
+
+            if (math.lengthsq(away) < 1e-6f)
+            {
+                away = math.cross(up, math.abs(up.x) < 0.9f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f));
+            }
+
+            float3 dir = math.normalize(away);
+            view.Root.gameObject.SetActive(true);
+            _fleeing.Add(new FleeingView
+            {
+                UnitId = unitId,
+                Position = pos,
+                Direction = dir,
+                BodyRadiusM = u.BodyRadiusM,
+                RemainingSec = FleeDurationSec,
+            });
+        }
+
+        private void UpdateFleeingViews(float dt)
+        {
+            if (_fleeing.Count == 0 || dt <= 0f)
+            {
+                return;
+            }
+
+            for (int i = _fleeing.Count - 1; i >= 0; i--)
+            {
+                FleeingView f = _fleeing[i];
+                f.RemainingSec -= dt;
+                if (!_views.TryGetValue(f.UnitId, out ICreatureView view))
+                {
+                    _fleeing.RemoveAt(i);
+                    continue;
+                }
+
+                Transform t = view.Root;
+                if (f.RemainingSec <= 0f)
+                {
+                    t.gameObject.SetActive(false);
+                    _fleeing.RemoveAt(i);
+                    continue;
+                }
+
+                float3 up = _rig.Config.ToDirection(f.Position);
+                // Re-project the tangent direction onto the sphere as the creature runs across the curved surface.
+                float3 dir = f.Direction - up * math.dot(f.Direction, up);
+                dir = math.lengthsq(dir) > 1e-6f ? math.normalize(dir) : f.Direction;
+                f.Direction = dir;
+
+                float3 stepped = f.Position + dir * (FleeSpeedMps * dt);
+                float3 surfaceDir = _rig.Config.ToDirection(stepped);
+                float alt = _surface != null ? _surface.GroundAltitude(surfaceDir) : 0f;
+                f.Position = _rig.Config.ToWorld(surfaceDir, alt + f.BodyRadiusM);
+
+                t.SetPositionAndRotation(f.Position, quaternion.LookRotationSafe(dir, surfaceDir));
+                float scale = f.RemainingSec < FleeFadeSec ? math.saturate(f.RemainingSec / FleeFadeSec) : 1f;
+                t.localScale = new Vector3(scale, scale, scale);
             }
         }
 

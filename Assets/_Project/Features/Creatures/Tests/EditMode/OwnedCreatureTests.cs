@@ -57,6 +57,36 @@ namespace Cosmimera.Creatures.Tests
         }
 
         [Test]
+        public void VisualVessel_defaults_to_Vessel_and_survives_WithVessel_and_WithSpecies()
+        {
+            var c = new OwnedCreature(4, "a", VesselKind.TalismanCard, 99);
+            Assert.AreEqual(VesselKind.TalismanCard, c.VisualVessel);
+
+            OwnedCreature converted = c.WithVessel(VesselKind.MagicCube);
+            Assert.AreEqual(VesselKind.MagicCube, converted.Vessel);
+            Assert.AreEqual(VesselKind.TalismanCard, converted.VisualVessel);
+            Assert.AreEqual(4, converted.InstanceId);
+            Assert.AreEqual("a", converted.SpeciesId);
+            Assert.AreEqual(99, converted.Exp);
+            Assert.AreEqual(VesselKind.TalismanCard, c.Vessel, "value type: the original is untouched");
+
+            OwnedCreature evolved = converted.WithSpecies("b");
+            Assert.AreEqual(VesselKind.MagicCube, evolved.Vessel);
+            Assert.AreEqual(VesselKind.TalismanCard, evolved.VisualVessel);
+        }
+
+        [Test]
+        public void WithVessel_and_explicit_VisualVessel_preconditions()
+        {
+            var c = new OwnedCreature(4, "a", VesselKind.TalismanCard, 0);
+            Assert.Throws<ContractException>(() => c.WithVessel((VesselKind)3));
+            Assert.Throws<ContractException>(() => c.WithVessel((VesselKind)(-1)));
+            Assert.Throws<ContractException>(() => default(OwnedCreature).WithVessel(VesselKind.GlassBead));
+            Assert.Throws<ContractException>(() => new OwnedCreature(1, "a", VesselKind.GlassBead, 0, (VesselKind)3));
+            Assert.Throws<ContractException>(() => new OwnedCreature(1, "a", VesselKind.GlassBead, 0, (VesselKind)(-1)));
+        }
+
+        [Test]
         public void MaterialKey_validates_and_has_value_equality()
         {
             Assert.AreEqual(new MaterialKey(Element.Fire, 2), new MaterialKey(Element.Fire, 2));

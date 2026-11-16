@@ -1370,6 +1370,67 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         // Staged-step cases disable the session after landing; the per-frame wiring regression keeps it enabled.
+        [UnityTest]
+        public IEnumerator Failed_capture_flee_moves_visual_away_without_interaction()
+        {
+            Env env = LoadEnv();
+            var run = new Run();
+            yield return Launch(env, 11ul, 0, run, keepEnabled: true);
+            RunSession session = run.Session;
+
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var encounter = (Encounter)typeof(RunSession).GetField("_encounter", flags).GetValue(session);
+            var wildMap = (System.Collections.IDictionary)typeof(RunSession).GetField("_wild", flags).GetValue(session);
+            var views = (System.Collections.IDictionary)typeof(RunSession).GetField("_views", flags).GetValue(session);
+            int targetId = -1;
+            object wildInfo = null;
+            foreach (System.Collections.DictionaryEntry entry in wildMap)
+            {
+                targetId = (int)entry.Key;
+                wildInfo = entry.Value;
+                break;
+            }
+            Assert.That(targetId, Is.GreaterThanOrEqualTo(0));
+
+            var rig = (PlanetRig)typeof(RunSession).GetField("_rig", flags).GetValue(session);
+            Vector3 playerPos = rig.Character.transform.position;
+            Vector3 up = playerPos.normalized;
+            Vector3 tangent = Vector3.Cross(up, Mathf.Abs(up.x) < 0.9f ? Vector3.right : Vector3.up).normalized;
+            EncounterUnit unit = encounter.Units[targetId];
+            Vector3 placed = playerPos + tangent * 2f;
+            typeof(EncounterUnit).GetProperty("Position").SetValue(unit, (float3)placed);
+            ((ICreatureView)views[targetId]).Root.position = placed;
+            wildInfo.GetType().GetField("KnockedOutAtMs").SetValue(wildInfo, session.NowMsForTests);
+
+            ulong failSeed = 1ul;
+            for (ulong s = 1ul; s < 1000ul; s++)
+            {
+                var probe = new Cosmimera.Core.Random.Pcg32(s, 1ul);
+                if (!Cosmimera.Capture.CaptureRules.Roll(env.Balance.CaptureBasePercent, ref probe))
+                {
+                    failSeed = s;
+                    break;
+                }
+            }
+            typeof(RunSession).GetField("_captureRng", flags).SetValue(session, new Cosmimera.Core.Random.Pcg32(failSeed, 1ul));
+
+            typeof(RunSession).GetMethod("TryCapture", flags).Invoke(session, null);
+
+            Assert.That((bool)wildInfo.GetType().GetField("Gone").GetValue(wildInfo), Is.True);
+            Assert.That(unit.IsActive, Is.False, "removed from encounter so no longer interactable");
+            Assert.That((int)typeof(RunSession).GetMethod("FindCaptureTarget", flags).Invoke(session, new object[] { 100f }), Is.EqualTo(-1));
+
+            var view = (ICreatureView)views[targetId];
+            Assert.That(view.Root.gameObject.activeSelf, Is.True, "visual stays active to flee");
+            float startDist = Vector3.Distance(view.Root.position, playerPos);
+
+            for (int i = 0; i < 6; i++) yield return null;
+
+            float afterDist = Vector3.Distance(view.Root.position, playerPos);
+            Assert.That(afterDist, Is.GreaterThan(startDist), "fleeing visual moves away from the player");
+            LogAssert.NoUnexpectedReceived();
+        }
+
         private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null,
             System.Action<RunOutcome> onEnd = null, bool keepEnabled = false, EnvMaterials envMaterials = null)
         {

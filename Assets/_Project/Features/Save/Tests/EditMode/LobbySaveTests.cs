@@ -209,5 +209,30 @@ namespace Cosmimera.Save.Tests
             File.Delete(backup);
             File.Delete(path);
         }
+
+        [Test]
+        public void SetVessel_changes_functional_vessel_only_and_round_trips_while_v7_defaults_visual_vessel()
+        {
+            var s = new LobbySave();
+            s.Add("a", VesselKind.TalismanCard, 42);
+            s.SetVessel(1, VesselKind.MagicCube);
+            Assert.That(s.Get(1).Vessel, Is.EqualTo(VesselKind.MagicCube));
+            Assert.That(s.Get(1).VisualVessel, Is.EqualTo(VesselKind.TalismanCard));
+
+            LobbySave roundTrip = Parse(s.ToJson());
+            Assert.That(roundTrip.Get(1).Vessel, Is.EqualTo(VesselKind.MagicCube));
+            Assert.That(roundTrip.Get(1).VisualVessel, Is.EqualTo(VesselKind.TalismanCard));
+
+            Assert.Throws<ContractException>(() => s.SetVessel(2, VesselKind.GlassBead));
+            Assert.Throws<ContractException>(() => s.SetVessel(1, (VesselKind)9));
+
+            const string v7 = "{\"version\":7,\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":1,\"exp\":10}]}";
+            LobbySave migrated = Parse(v7);
+            Assert.That(migrated.Get(1).Vessel, Is.EqualTo(VesselKind.GlassBead));
+            Assert.That(migrated.Get(1).VisualVessel, Is.EqualTo(VesselKind.GlassBead));
+
+            string badVisual = "{\"version\":" + LobbySave.FormatVersion + ",\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":1,\"visual_vessel\":9,\"exp\":10}]}";
+            Assert.Throws<InvalidDataException>(() => Parse(badVisual));
+        }
     }
 }

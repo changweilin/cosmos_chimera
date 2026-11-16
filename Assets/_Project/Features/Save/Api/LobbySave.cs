@@ -26,13 +26,14 @@ namespace Cosmimera.Save
     /// Version 5: root <c>partners</c> stores main/sub instance-id pairs; formats 1–4 start unequipped.
     /// Version 6 (P4-05): root <c>eggs</c> — eggs incubating in the hatchery; formats 1–5 load with none.
     /// Version 7: root <c>craft_stock</c> stores gathered materials and crafted items; formats 1–6 load with none.
+    /// Version 8: creature entries add <c>visual_vessel</c> (appearance preserved on late-game vessel conversion); formats 1–7 default <c>VisualVessel</c> to <c>Vessel</c>.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 7;
+        public const int FormatVersion = 8;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -309,7 +310,7 @@ namespace Cosmimera.Save
 
         /// <summary>Replaces an owned creature's cumulative XP (run rewards are applied in the lobby, Q-M4).</summary>
         /// <remarks>
-        /// Pre: instanceId owned; exp &gt;= 0. Post: Get(instanceId).Exp == exp; species, vessel and order unchanged.
+        /// Pre: instanceId owned; exp &gt;= 0. Post: Get(instanceId).Exp == exp; species, vessel, visual vessel and order unchanged.
         /// Side effects: mutates this save.
         /// </remarks>
         public void SetExp(int instanceId, int exp)
@@ -317,13 +318,13 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp);
+            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp, o.VisualVessel);
         }
 
         /// <summary>Replaces an owned creature's form after a successful lobby evolution.</summary>
         /// <remarks>
         /// Pre: instanceId owned; speciesId non-empty (the caller resolved it from the evolution requirement).
-        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, exp, party membership and order unchanged.
+        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, visual vessel, exp, party membership and order unchanged.
         /// Side effects: mutates this save.
         /// </remarks>
         public void SetSpecies(int instanceId, string speciesId)
@@ -332,7 +333,21 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp);
+            _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp, o.VisualVessel);
+        }
+
+        /// <summary>Replaces an owned creature's functional capture-item category without changing its appearance (Q-C13).</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; vessel is a defined VesselKind.
+        /// Post: Get(instanceId).Vessel == vessel; id, species, exp, VisualVessel, party membership and order unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetVessel(int instanceId, VesselKind vessel)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(VesselKind), vessel), "vessel must be a defined VesselKind");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            _owned[i] = _owned[i].WithVessel(vessel);
         }
 
         /// <summary>Owned creature by instance id.</summary>
@@ -405,7 +420,8 @@ namespace Cosmimera.Save
                 OwnedCreature o = _owned[i];
                 dto.owned[i] = new CreatureDto
                 {
-                    instance_id = o.InstanceId, species_id = o.SpeciesId, vessel = (int)o.Vessel, exp = o.Exp,
+                    instance_id = o.InstanceId, species_id = o.SpeciesId, vessel = (int)o.Vessel,
+                    visual_vessel = (int)o.VisualVessel, exp = o.Exp,
                 };
             }
 
@@ -461,8 +477,17 @@ namespace Cosmimera.Save
                     exp = progression.MigrationExp(stage.Value);
                 }
 
-                save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, (VesselKind)c.vessel,
-                    Math.Min(exp, progression.MaxExp)));
+                VesselKind vessel = (VesselKind)c.vessel;
+                VesselKind visualVessel = vessel;
+                if (dto.version >= 8)
+                {
+                    Check(Enum.IsDefined(typeof(VesselKind), c.visual_vessel),
+                        "creature entry has an undefined visual_vessel");
+                    visualVessel = (VesselKind)c.visual_vessel;
+                }
+
+                save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, vessel,
+                    Math.Min(exp, progression.MaxExp), visualVessel));
             }
 
             // Party is the XP settlement roster, so a duplicate would be paid twice (SOL P2-12 R3). An owned roster always
@@ -692,6 +717,7 @@ namespace Cosmimera.Save
             public int instance_id;
             public string species_id;
             public int vessel;
+            public int visual_vessel;
             public int exp;
         }
 #pragma warning restore 0649, IDE1006
