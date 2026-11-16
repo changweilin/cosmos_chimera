@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 0
   temperament: 3
   evolvesTo: {fileID: 11400000, guid: 27a67701fc2b093428eaf2cbd17c3ba6, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 35
   evolutionMaterials:
   - element: 6
@@ -33,8 +35,8 @@ MonoBehaviour:
     str: 56
     spi: 36
     agi: 80
-  signatureMove: {fileID: 11400000, guid: 0f1fd307a0486ca41a6f4da97dc66b40, type: 2}
-  trait: {fileID: 11400000, guid: 7317341e226d9ad4dbbb4b2cbb8f67bd, type: 2}
+  signatureMove: {fileID: 11400000, guid: f99dca3714ab5b946a6105b45e80966d, type: 2}
+  trait: {fileID: 11400000, guid: 52407eb3c5ea1a4418d5c6b13188d842, type: 2}
   fieldUtility: 14
   conceptJson: "{\"base\":\"\u6C23\u6D41\u6392\u7B1B\u8F15\u821F \xD7 \u5E7E\u4F55\u523A\u7E61\u98A8\u5E06\u6ED1\u7FD4\u7FFC\uFF08\u8F09\u5177\uFF09\",\"stage_look\":\"\u5F35\u958B\u5F69\u7E61\u523A\u7E61\u6ED1\u7FD4\u7FFC\u7684\u6C23\u52D5\u5DE1\u822A\u98DB\u821F\uFF0C\u5169\u5074\u6392\u5217\u6392\u7B1B\u98A8\u5B54\uFF0C\u80FD\u4E58\u75BE\u98A8\u6ED1\u884C\",\"archetype\":\"arch_heer_ranjha\",\"region\":\"\u5357\u4E9E\",\"motifs_used\":[\"\u96D5\u82B1\u7AF9\u7B1B\",\"\u5947\u7D0D\u5E03\u6CB3\u6E21\u8239\",\"\u5E7E\u4F55\u523A\u7E61\u62AB\u80A9\"],\"role\":\"\u6E38\u64CA\u624B\uFF1A\u6700\u9AD8\u654F\u6377\uFF0C\u9060\u8DDD\u76F4\u7DDA\u98A8\u5203\uFF0C\u63DB\u624B\u4E0A\u5834\u6642\u52A0\u901F\",\"palette\":\"\u831C\u8349\u7D73\u7D05\u3001\u7AF9\u9752\u7DA0\u3001\u6696\u6C99\u91D1\"}"
   needsSensitivityReview: 0

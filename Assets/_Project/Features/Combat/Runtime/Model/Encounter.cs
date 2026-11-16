@@ -141,6 +141,10 @@ namespace Cosmimera.Combat
         Faint = 4,
         /// <summary>The player character reached 0 HP (TargetId == Encounter.PlayerCharacterId); the run is lost (Q-C33).</summary>
         PlayerDowned = 5,
+        /// <summary>The target's stagger gauge filled (TargetId staggered, SourceId the hit that filled it; combat.md#失衡與擊退).</summary>
+        Staggered = 6,
+        /// <summary>SourceId's windup was cancelled and its cooldown refunded (Slot = that move; combat.md#前搖).</summary>
+        Interrupted = 7,
     }
 
     /// <summary>Outcome of a player overload command (Q-C12).</summary>
@@ -211,9 +215,43 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 1..100; never decreases. Side effects: none.</remarks>
         public int Level { get; internal set; }
 
-        /// <summary>Whether this unit is a planet boss (HP ×2, body and melee volumes ×1.5 — D0-R2).</summary>
+        /// <summary>Whether this unit is a planet boss (HP ×3, body and melee volumes ×1.5 — D0-R2).</summary>
         /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss. Side effects: none.</remarks>
         public bool IsBoss { get; internal set; }
+
+        /// <summary>Boss enrage stage reached so far (combat.md#BOSS-階段, Q-C48); 0 = opening stage.</summary>
+        /// <remarks>
+        /// Pre: none. Post: 0 for non-bosses; for a boss 0..CombatBalance.Enrage.StageCount and never decreases, so
+        /// healing back above a line does not calm it. Side effects: none.
+        /// </remarks>
+        public int BossStage { get; internal set; }
+
+        /// <summary><see cref="WindupSlot"/> value while no cast is winding up.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int NoWindup = -1;
+
+        /// <summary>Slot of the cast now winding up (combat.md#前搖), or <see cref="NoWindup"/>.</summary>
+        /// <remarks>Pre: none. Post: NoWindup or a valid slot; at most one windup per unit. Side effects: none.</remarks>
+        public int WindupSlot { get; internal set; } = NoWindup;
+
+        /// <summary>When the current windup resolves; meaningless while WindupSlot == NoWindup.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long WindupEndsAtMs { get; internal set; }
+
+        internal int WindupTargetId { get; set; }
+        internal CastContext WindupContext { get; set; }
+
+        /// <summary>End of the current stagger (combat.md#失衡與擊退); at or before now means not staggered.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long StaggeredUntilMs { get; internal set; }
+
+        // Milli-HP so the per-tick drain (capacity × permille/s × dt) keeps its precision at 50 ms ticks.
+        internal long StaggerGaugeMilli { get; set; }
+        internal long LastDamagedMs { get; set; }
+
+        /// <summary>Whether the unit is staggered at <paramref name="nowMs"/>: it cannot cast and takes extra damage.</summary>
+        /// <remarks>Pre: none. Post: true iff nowMs &lt; StaggeredUntilMs. Side effects: none.</remarks>
+        public bool IsStaggered(long nowMs) => nowMs < StaggeredUntilMs;
 
         internal MoveDef[] MoveDefs { get; set; }
 
@@ -331,7 +369,7 @@ namespace Cosmimera.Combat
 
         /// <summary>Boss MaxHp multiplier. REQ: docs/design/planet-world.md (D0-R2, 2026-11-10).</summary>
         /// <remarks>Pre: none. Post: constant >= 1. Side effects: none.</remarks>
-        public const int BossHpMultiplier = 2;
+        public const int BossHpMultiplier = 3;
 
         /// <summary>Boss body radius and melee hit-volume scale, in permille. REQ: planet-world.md (D0-R2).</summary>
         /// <remarks>Pre: none. Post: constant >= 1000. Side effects: none.</remarks>
@@ -455,6 +493,92 @@ namespace Cosmimera.Combat
             _wanderRng = new Pcg32(seed, 'W');
             _objectRng = new Pcg32(seed, 'O');
             _rangeCapMm = balance.Horizon.CapMm(planet.Radius);
+            BossEnrageTuning enrage = balance.Enrage;
+            _enrageEffects = new EffectSpec[enrage.StageCount + 1][];
+            _enrageEffects[0] = Array.Empty<EffectSpec>();
+            for (int stage = 1; stage <= enrage.StageCount; stage++)
+            {
+                _enrageEffects[stage] = new[]
+                {
+                    new EffectSpec(EffectType.MoveSpeedModPercent, false, default, enrage.MoveSpeedPercent(stage), 0, 1),
+                    new EffectSpec(EffectType.CdModPercent, true, default, enrage.CdPercent(stage), 0, 1),
+                };
+            }
+        }
+
+        // Built once so a stage change during Tick does not allocate.
+        private readonly EffectSpec[][] _enrageEffects;
+
+        // REQ: combat.md#失衡與擊退. No gain while staggered, and the gauge restarts from zero, so a stagger cannot chain.
+        private void AddStagger(EncounterUnit t, int sourceId, int damage, long nowMs)
+        {
+            t.LastDamagedMs = nowMs;
+            if (t.IsStaggered(nowMs))
+            {
+                return;
+            }
+
+            long capacityMilli = (long)_balance.Stagger.CapacityHp(t.Combatant.MaxHp) * 1000;
+            t.StaggerGaugeMilli = math.min(capacityMilli, t.StaggerGaugeMilli + (long)damage * 1000);
+            if (t.StaggerGaugeMilli < capacityMilli)
+            {
+                return;
+            }
+
+            t.StaggerGaugeMilli = 0;
+            t.StaggeredUntilMs = nowMs + _balance.Stagger.DurationMs;
+            _events.Add(new EncounterEvent(EncounterEventKind.Staggered, sourceId, t.Id, 0, 0));
+            if (t.WindupSlot != EncounterUnit.NoWindup)
+            {
+                CancelWindup(t, nowMs);
+            }
+        }
+
+        private void DrainStagger(EncounterUnit u, long nowMs, int dtMs)
+        {
+            StaggerTuning s = _balance.Stagger;
+            if (u.StaggerGaugeMilli <= 0 || nowMs - u.LastDamagedMs < s.RegenDelayMs)
+            {
+                return;
+            }
+
+            long drain = (long)s.CapacityHp(u.Combatant.MaxHp) * s.RegenPermillePerS * dtMs / 1000;
+            u.StaggerGaugeMilli = math.max(0L, u.StaggerGaugeMilli - drain);
+        }
+
+        // REQ: combat.md#失衡與擊退. Pushed away from the volume's anchor (the caster for caster-anchored moves, the
+        // impact point for aimed ones); sea and building rules are the same as for any other displacement.
+        private void Knockback(EncounterUnit t, float3 anchor, float3 forward, int damage)
+        {
+            StaggerTuning s = _balance.Stagger;
+            if (t.IsBoss || s.KnockbackMm == 0 ||
+                (long)damage * 1000 < (long)s.KnockbackHpPermille * t.Combatant.MaxHp)
+            {
+                return;
+            }
+
+            float3 up = Up(t.Position);
+            float3 away = Tangent(up, t.Position - anchor, forward);
+            float step = s.KnockbackMm * 0.001f / _planet.Radius;
+            PlaceIfAllowed(t, math.normalize(up * math.cos(step) + away * math.sin(step)));
+        }
+
+        // REQ: combat.md#BOSS-階段. Stages only advance; the layer replaces (not stacks on) the previous stage's.
+        private void UpdateBossStage(EncounterUnit u)
+        {
+            if (!u.IsBoss || u.Combatant.Hp <= 0)
+            {
+                return;
+            }
+
+            int stage = _balance.Enrage.StageFor(u.Combatant.Hp, u.Combatant.MaxHp);
+            if (stage <= u.BossStage)
+            {
+                return;
+            }
+
+            u.BossStage = stage;
+            u.Combatant.Book.SetPhaseEffects(_enrageEffects[stage]);
         }
 
         /// <summary><see cref="ObjectEvent.SourceId"/> of an object that burnt out on its own.</summary>
@@ -879,6 +1003,10 @@ namespace Cosmimera.Combat
             u.Forward = PlanetFrame.FromUp(math.normalize(direction)).North;
             u.Fielded = true;
             u.Combatant.EnterField(bySwap, nowMs);
+            if (u.WindupSlot != EncounterUnit.NoWindup)
+            {
+                CancelWindup(u, nowMs);
+            }
         }
 
         /// <summary>Takes a player-side unit off the field (recall or switch out).</summary>
@@ -1046,6 +1174,9 @@ namespace Cosmimera.Combat
         private void ApplyUnitForm(EncounterUnit u, CreatureDef form, out CreatureStats scaled)
         {
             Contract.Requires(form != null && form.SignatureMove != null, "form needs a signature move");
+            // The frozen CastContext names the old form's move; resolving it with the new form's volumes would mix the
+            // two. No nowMs here, so the cooldown is kept (overload is the player's own choice, not an interruption).
+            u.WindupSlot = EncounterUnit.NoWindup;
             scaled = form.Stats.AtLevel(u.Level);
             u.MoveDefs[0] = form.SignatureMove;
             u.MoveSlots[0] = CastMove.FromDef(form.SignatureMove);
@@ -1147,6 +1278,14 @@ namespace Cosmimera.Combat
         ///       CollisionRadiusM) to inside one; a step into a wall slides along it (heading turned 45°, 90°, then 135°,
         ///       toward the unit's last slide side, then the other side) or, if every turn is walled, does not move.
         ///       A unit already inside (spawned or pushed there) may move freely.
+        ///       Windup (combat.md#前搖): an accepted cast with windup_ms > 0 (boss × boss.windup_permille) raises Cast and
+        ///       resolves on the first Tick with nowMs >= WindupEndsAtMs, after that unit's steering, tracking the target
+        ///       chosen at cast time; meanwhile the unit moves but starts no other cast. Fainting, recall, disengaging or
+        ///       staggering cancels it, refunds its cooldown and raises Interrupted.
+        ///       Stagger (combat.md#失衡與擊退): every damaging hit on a unit fills its gauge (capacity = MaxHp ×
+        ///       stagger.gauge_hp_permille); full → Staggered for stagger.duration_ms (no casts, damage taken +bonus).
+        ///       A hit of at least knockback_hp_permille of MaxHp pushes a non-boss target knockback_mm away from the
+        ///       volume anchor. The player character neither staggers nor is knocked back.
         /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
@@ -1172,14 +1311,25 @@ namespace Cosmimera.Combat
                 if (!u.IsActive)
                 {
                     u.LastMoveSpeedMs = 0f;
+                    if (u.WindupSlot != EncounterUnit.NoWindup)
+                    {
+                        CancelWindup(u, nowMs);
+                    }
+
                     continue;
                 }
 
                 u.LastMoveSpeedMs = 0f;
+                DrainStagger(u, nowMs, dtMs);
 
                 bool player = u.Side == EncounterSide.Player;
                 if (!player && !u.Engaged)
                 {
+                    if (u.WindupSlot != EncounterUnit.NoWindup)
+                    {
+                        CancelWindup(u, nowMs);
+                    }
+
                     Wander(u, nowMs, dtMs);
                     continue;
                 }
@@ -1218,7 +1368,16 @@ namespace Cosmimera.Combat
                     u.Forward = TangentToward(u.Position, TargetPosition(d.TargetId), u.Forward);
                 }
 
-                if (d.CastSlot != CombatAi.NoCast)
+                // REQ: combat.md#前搖. The windup resolves after this tick's steering, so it hits where the caster and
+                // its target are now (tracking), and a unit never starts a second cast while one is winding up.
+                if (u.WindupSlot != EncounterUnit.NoWindup)
+                {
+                    if (nowMs >= u.WindupEndsAtMs)
+                    {
+                        ResolveWindup(u, partner, nowMs);
+                    }
+                }
+                else if (d.CastSlot != CombatAi.NoCast && !u.IsStaggered(nowMs))
                 {
                     TryCast(u, partner, d.CastSlot, d.TargetId, nowMs);
                 }
@@ -1467,6 +1626,57 @@ namespace Cosmimera.Combat
             }
 
             _events.Add(new EncounterEvent(EncounterEventKind.Cast, u.Id, targetId, slot, 0));
+            int windupMs = WindupMsFor(u, slot);
+            if (windupMs > 0)
+            {
+                u.WindupSlot = slot;
+                u.WindupTargetId = targetId;
+                u.WindupContext = ctx;
+                u.WindupEndsAtMs = nowMs + windupMs;
+                return;
+            }
+
+            ResolveCast(u, partner, slot, targetId, ctx, weather, nowMs);
+        }
+
+        private int WindupMsFor(EncounterUnit u, int slot)
+        {
+            int ms = u.MoveDefs[slot].WindupMs;
+            return u.IsBoss ? (int)((long)ms * _balance.BossWindupPermille / 1000) : ms;
+        }
+
+        // REQ: combat.md#前搖 — the hit tracks the target chosen at cast time; a target that is gone falls back to the
+        // caster's current facing, like a cast with no target.
+        private void ResolveWindup(EncounterUnit u, EncounterUnit partner, long nowMs)
+        {
+            int slot = u.WindupSlot;
+            int targetId = u.WindupTargetId;
+            CastContext ctx = u.WindupContext;
+            u.WindupSlot = EncounterUnit.NoWindup;
+            bool targetAlive = targetId == ObjectTargetId ? ObjectFocusIntact() : IsValidEnemy(u, targetId);
+            if (!targetAlive)
+            {
+                targetId = CombatAi.NoTarget;
+            }
+            else
+            {
+                u.Forward = TangentToward(u.Position, TargetPosition(targetId), u.Forward);
+            }
+
+            ResolveCast(u, partner, slot, targetId, ctx, WeatherAt(Up(u.Position), nowMs), nowMs);
+        }
+
+        private void CancelWindup(EncounterUnit u, long nowMs)
+        {
+            int slot = u.WindupSlot;
+            u.WindupSlot = EncounterUnit.NoWindup;
+            u.Combatant.Cooldowns.Refund(slot, nowMs);
+            _events.Add(new EncounterEvent(EncounterEventKind.Interrupted, u.Id, CombatAi.NoTarget, slot, 0));
+        }
+
+        private void ResolveCast(EncounterUnit u, EncounterUnit partner, int slot, int targetId, in CastContext ctx,
+            in WeatherProfile weather, long nowMs)
+        {
             // u.Volumes stays unbounded so range modifiers scale the raw value; the planet cap comes last (Q-D1).
             HitVolume volume = MoveGeometry.ApplyPlanetCap(EffectMath.ApplyRange(u.Volumes[slot], u.RangeClasses[slot],
                 ctx.RangePercentSum, _balance.Stats, _balance.Effects), u.RangeClasses[slot], _rangeCapMm);
@@ -1559,8 +1769,10 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs);
+                int bonus = t.IsStaggered(nowMs) ? _balance.Stagger.DamageTakenBonusPercent : 0;
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus);
                 bool hit = r.Outcome == HitOutcome.Hit;
+                UpdateBossStage(t);
                 _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, casterId, t.Id, slot,
                     r.Damage));
                 if (r.Fainted)
@@ -1572,6 +1784,12 @@ namespace Cosmimera.Combat
                     // Being hit starts the fight even outside its territory (timid only fights back, Q-C35); a MISS does
                     // not, or a timid unit would join from a roll it never felt (E2-SOL-02).
                     t.Engaged = true;
+                }
+
+                if (hit && r.Damage > 0 && !r.Fainted)
+                {
+                    AddStagger(t, casterId, r.Damage, nowMs);
+                    Knockback(t, anchor, forward, r.Damage);
                 }
             }
 
@@ -1670,6 +1888,7 @@ namespace Cosmimera.Combat
         private void Support(EncounterUnit caster, EncounterUnit receiver, in CastContext ctx, int slot, long nowMs)
         {
             HitReport r = receiver.Combatant.ReceiveSupport(ctx, nowMs);
+            UpdateBossStage(receiver);
             _events.Add(new EncounterEvent(EncounterEventKind.Support, caster.Id, receiver.Id, slot, r.Healed));
             if (r.Fainted)
             {

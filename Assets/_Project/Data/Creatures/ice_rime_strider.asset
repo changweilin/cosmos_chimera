@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 0
   temperament: 4
   evolvesTo: {fileID: 11400000, guid: 79b7c2060430adf4783588b81fe93528, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 43
   evolutionMaterials:
   - element: 5
@@ -33,8 +35,8 @@ MonoBehaviour:
     str: 48
     spi: 40
     agi: 60
-  signatureMove: {fileID: 11400000, guid: a726fce9182136c429b08e0e963d4e91, type: 2}
-  trait: {fileID: 11400000, guid: 230b438fbc486c04fb9204f2218bf401, type: 2}
+  signatureMove: {fileID: 11400000, guid: bf77285b418db4d42a70cde27c952ab9, type: 2}
+  trait: {fileID: 11400000, guid: 95cc5be1bdd9dfd46b9a09ffe55cf438, type: 2}
   fieldUtility: 21
   conceptJson: "{\"base\":\"\u6C38\u51CD\u9E7F\u89D2\u795E\u7378 \xD7 \u51B0\u88C2\u935B\u9435\u95DC\u7BC0\u8207\u978D\u8EDB\u9023\u52D5\u6A5F\u95DC\uFF08\u751F\u7269
     \xD7 \u5668\u68B0\uFF09\",\"stage_look\":\"\u96D9\u7FFC\u88DD\u914D\u935B\u9435\u9278\u93C8\u8207\u91D1\u7B94\u978D\u8EDB\u7684\u51B0\u539F\u7375\u7378\uFF0C\u51B0\u67F1\u72C0\u5206\u53C9\u5DE8\u89D2\u80FD\u5C0E\u5F15\u5BD2\u6C23\",\"archetype\":\"arch_pazyryk_antlered_griffin\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u9CE5\u9996\u5206\u53C9\u5DE8\u9E7F\u89D2\",\"\u91D1\u7B94\u6BDB\u6C08\u978D\u98FE\",\"\u6C38\u51CD\u51B0\u585A\"],\"role\":\"\u9060\u8DDD\u8F38\u51FA\uFF1A\u9AD8\u654F\u6377\uFF0C\u9060\u8DDD\u76F4\u7DDA\u51B0\u69CD\uFF0C\u4E0A\u5834\u6642\u66AB\u6642\u63D0\u9AD8\u51B0\u6297\",\"palette\":\"\u971C\u96EA\u767D\u3001\u51B0\u5DDD\u6DE1\u85CD\u3001\u51CD\u9435\u53E4\u91D1\"}"

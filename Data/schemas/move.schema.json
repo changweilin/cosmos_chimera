@@ -9,7 +9,7 @@
     "move": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "element", "kind", "power", "cooldown_ms", "accuracy", "range_class", "shape", "base_range_mm"],
+      "required": ["id", "element", "kind", "power", "cooldown_ms", "windup_ms", "accuracy", "range_class", "shape", "base_range_mm"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "element": { "$ref": "common.schema.json#/$defs/element" },
@@ -25,6 +25,12 @@
           "$ref": "common.schema.json#/$defs/durationMs"
         },
         "cooldown_ms": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+        "windup_ms": {
+          "description": "combat.md#前搖: delay from an accepted cast to hit resolution (boss ×1.5 at run time). 0 resolves at once.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
         "accuracy": { "$ref": "common.schema.json#/$defs/percent" },
         "range_class": { "enum": ["melee", "mid", "long"] },
         "shape": {

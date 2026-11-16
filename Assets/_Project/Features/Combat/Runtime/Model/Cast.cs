@@ -174,6 +174,22 @@ namespace Cosmimera.Combat
             _readyAt[slot] = nowMs + cooldownMs;
         }
 
+        /// <summary>Gives back a cooldown started by a cast that never resolved (combat.md#前搖: interrupted windup).</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= slot &lt; SlotCount; nowMs in CombatTime and >= watermark.
+        /// Post: IsReady(slot, nowMs); a slot already ready is unchanged. Side effects: records the watermark.
+        /// </remarks>
+        public void Refund(int slot, long nowMs)
+        {
+            RequireSlot(slot);
+            CombatTime.Require(nowMs, _watermarkMs);
+            _watermarkMs = nowMs;
+            if (_readyAt[slot] > nowMs)
+            {
+                _readyAt[slot] = nowMs;
+            }
+        }
+
         /// <summary>Makes every slot ready (start of a new combat).</summary>
         /// <remarks>
         /// Pre: nowMs in CombatTime and >= watermark. Post: every ReadyAtMs == 0. Side effects: records the watermark.
@@ -394,7 +410,7 @@ namespace Cosmimera.Combat
             _agi = agi;
         }
 
-        /// <summary>Multiplies MaxHp for this combatant's whole life (boss fights: HP ×2, D0-R2) and refills HP.</summary>
+        /// <summary>Multiplies MaxHp for this combatant's whole life (boss fights: HP ×3, Q-C48) and refills HP.</summary>
         /// <remarks>
         /// Pre: called once, right after construction (Hp == MaxHp, never multiplied before); 1 &lt;= multiplier;
         ///      MaxHp × multiplier fits Int32.
@@ -663,7 +679,22 @@ namespace Cosmimera.Combat
         /// </remarks>
         public HitReport ReceiveHostile(in CastContext cast, bool geometricContact, ref Pcg32 rng, long nowMs)
         {
+            return ReceiveHostile(cast, geometricContact, ref rng, nowMs, 0);
+        }
+
+        /// <summary>As <see cref="ReceiveHostile(in CastContext, bool, ref Pcg32, long)"/>, taking extra damage (stagger).</summary>
+        /// <remarks>
+        /// REQ: combat.md#失衡與擊退 — a staggered unit takes more damage.
+        /// Pre: as the four-argument overload; 0 &lt;= damageTakenBonusPercent &lt;= 1000.
+        /// Post: as the four-argument overload, except the formula damage is first scaled by (100 + bonus)/100 rounded
+        ///       half up (a nonzero raw stays >= 1; immunity stays 0). Side effects: as the four-argument overload.
+        /// </remarks>
+        public HitReport ReceiveHostile(in CastContext cast, bool geometricContact, ref Pcg32 rng, long nowMs,
+            int damageTakenBonusPercent)
+        {
             Contract.Requires(!IsFainted, "a fainted combatant is not a target");
+            Contract.Requires(damageTakenBonusPercent >= 0 && damageTakenBonusPercent <= 1000,
+                "damageTakenBonusPercent must be 0..1000");
             CastMove move = cast.Move;
             Contract.Requires(move.Id != null, "cast must come from BeginCast");
             int hpBefore = Hp;
@@ -683,6 +714,11 @@ namespace Cosmimera.Combat
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int power = DamageModel.ScalePower(move.Power, cast.PowerDeltaPercent);
                 int raw = DamageModel.Compute(power, cast.MasteryPercent, resist);
+                if (damageTakenBonusPercent > 0)
+                {
+                    raw = (int)System.Math.Min(int.MaxValue, ((long)raw * (100 + damageTakenBonusPercent) + 50) / 100);
+                }
+
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)

@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 2
   temperament: 3
   evolvesTo: {fileID: 11400000, guid: bc4983aab4bbc9940889964e43bbb616, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 45
   evolutionMaterials:
   - element: 7

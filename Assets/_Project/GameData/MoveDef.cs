@@ -18,6 +18,7 @@ namespace Cosmimera.GameData
         [SerializeField] private int effectDurationMs;
         [SerializeField] private int fieldDurationMs;
         [SerializeField] private int cooldownMs;
+        [SerializeField] private int windupMs;
         [SerializeField] private int accuracy;
         [SerializeField] private RangeClass rangeClass;
         [SerializeField] private MoveShape shape;
@@ -78,6 +79,14 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
         public int CooldownMs => cooldownMs;
 
+        /// <summary>Longest windup a move may declare, in milliseconds; must match move.schema.json.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxWindupMs = 10000;
+
+        /// <summary>Delay from an accepted cast to hit resolution, before the boss scale.</summary>
+        /// <remarks>REQ: docs/design/combat.md#前搖 (Q-C45). Pre: none. Post: 0..MaxWindupMs. Side effects: none.</remarks>
+        public int WindupMs => windupMs;
+
         /// <summary>Accuracy percent.</summary>
         /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
         public int Accuracy => accuracy;
@@ -134,6 +143,13 @@ namespace Cosmimera.GameData
             this.baseRangeMm = baseRangeMm;
             this.movement = movement;
             this.origin = origin;
+        }
+
+        // Separate from Set so the many test fixtures that build instant moves keep compiling with windup 0.
+        internal void SetWindup(int windupMs)
+        {
+            Contract.Requires(windupMs >= 0 && windupMs <= MaxWindupMs, "windup_ms must be 0..MaxWindupMs");
+            this.windupMs = windupMs;
         }
     }
 }

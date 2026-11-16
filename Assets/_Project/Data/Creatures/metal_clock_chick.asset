@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 3
   temperament: 1
   evolvesTo: {fileID: 11400000, guid: 25068b496a2013e45911826301db9198, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 28
   evolutionMaterials:
   - element: 0
@@ -33,8 +35,8 @@ MonoBehaviour:
     str: 28
     spi: 18
     agi: 14
-  signatureMove: {fileID: 11400000, guid: 3a0e2dba1145a8e40a3cb1fd3d00dacc, type: 2}
-  trait: {fileID: 11400000, guid: 60316f332fe13ea4c87560931756e7bf, type: 2}
+  signatureMove: {fileID: 11400000, guid: c7e7d068b2818b244b79d90fc3735ae8, type: 2}
+  trait: {fileID: 11400000, guid: b2943f285c302af4192bc8d7f773d39d, type: 2}
   fieldUtility: 25
   conceptJson: "{\"base\":\"\u7CBE\u5BC6\u9752\u9285\u767C\u689D\u6A5F\u95DC \xD7
     \u9418\u9336\u9F52\u8F2A\u8207\u6C34\u529B\u5E73\u8861\u9023\u687F\",\"stage_look\":\"\u5713\u5F27\u9752\u9285\u9F52\u8F2A\u5E7C\u96DB\uFF0C\u80F8\u53E3\u5E36\u6709\u5FAE\u578B\u6D6E\u7897\u6F0F\u523B\u6C34\u69FD\uFF0C\u6B65\u4F10\u4F34\u96A8\u6E05\u8106\u9F52\u8F2A\u767C\u689D\u8072\",\"archetype\":\"arch_al_jazari\",\"region\":\"\u897F\u4E9E/\u4E2D\u6771\",\"motifs_used\":[\"\u5831\u6642\u6A5F\u68B0\u5DE8\u8C61\",\"\u6C89\u6C34\u6D6E\u7897\u6F0F\u58FA\",\"\u76E4\u9F8D\u5E73\u8861\u687F\"],\"role\":\"\u524D\u6392\u5766\u514B\uFF1A\u9AD8\u9AD4\u8CEA\uFF0C\u8FD1\u8DDD\u524D\u65B9\u65AC\u64CA\",\"palette\":\"\u9752\u9285\u7DA0\u3001\u9EC3\u9285\u91D1\u3001\u7384\u9435\u9ED1\"}"

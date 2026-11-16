@@ -361,6 +361,12 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{m.Where}: field_duration_ms must be 1..{MaxDurationMs}");
                 }
+
+                // REQ: docs/design/combat.md#前搖 (Q-C45).
+                if (m.Dto.WindupMs < 0 || m.Dto.WindupMs > MoveDef.MaxWindupMs)
+                {
+                    errors.Add($"{m.Where}: windup_ms must be 0..{MoveDef.MaxWindupMs}");
+                }
             }
 
             foreach (Sourced<TraitDto> t in traits)
@@ -569,6 +575,7 @@ namespace Cosmimera.GameData.Editor
                     d.EffectDurationMs ?? 0, d.FieldDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
                     d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
                     d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
+                moveDefs[d.Id].SetWindup(d.WindupMs);
             }
 
             foreach (Sourced<TraitDto> s in traits)

@@ -27,6 +27,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
         [JsonProperty("field_duration_ms", Required = Required.DisallowNull)] public int? FieldDurationMs;
         [JsonProperty("cooldown_ms", Required = Required.Always)] public int CooldownMs;
+        [JsonProperty("windup_ms", Required = Required.Always)] public int WindupMs;
         [JsonProperty("accuracy", Required = Required.Always)] public int Accuracy;
         [JsonProperty("range_class", Required = Required.Always)] public string RangeClass;
         [JsonProperty("shape", Required = Required.Always)] public string Shape;

@@ -54,6 +54,24 @@ namespace Cosmimera.Crafting
             return new EquipmentModifiers(hp, Math.Max(-90, speed), Math.Max(-90, roll), effects);
         }
 
+        /// <summary>Share of a sub-partner's creature equipment effect that reaches its main, in percent.</summary>
+        /// <remarks>REQ: docs/design/crafting.md#穿戴與數值. Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int PartnerSharePercent = 25;
+
+        /// <summary>Scales one sub-partner equipment effect to <see cref="PartnerSharePercent"/>, rounding away from zero.</summary>
+        /// <remarks>
+        /// REQ: crafting.md#穿戴與數值 (Q-C42: each item scaled on its own, then rounded away from zero, so +5 → +2, −5 → −2).
+        /// Pre: effect constructed and non-instant. Post: same type/element/stacks; |Delta| = ceil(|effect.Delta| × 25 / 100),
+        ///      sign kept; 0 stays 0. Side effects: none.
+        /// </remarks>
+        public static EffectSpec ScalePartner(in EffectSpec effect)
+        {
+            Contract.Requires(!effect.IsInstant && effect.MaxStacks >= 1, "partner equipment needs constructed non-instant effects");
+            int magnitude = (Math.Abs(effect.Delta) * PartnerSharePercent + 99) / 100;
+            int delta = effect.Delta < 0 ? -magnitude : magnitude;
+            return new EffectSpec(effect.Type, effect.AnyElement, effect.Element, delta, 0, effect.MaxStacks);
+        }
+
         /// <summary>Applies player HP and roll bonuses to the base configuration without shortening roll duration or invulnerability.</summary>
         /// <remarks>Pre: baseline constructed. Post: max HP positive, cooldown at least roll duration; overflow saturates. Side effects: none.</remarks>
         public static PlayerVitalsConfig ApplyPlayer(in PlayerVitalsConfig baseline, in EquipmentModifiers modifiers)

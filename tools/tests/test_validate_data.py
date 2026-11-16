@@ -209,12 +209,12 @@ class CrossFileRules(unittest.TestCase):
             self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(params)})), params)
 
     def test_effect_move_requires_effect(self):
-        move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
+        move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
         self.assertIn("schema", self.codes(self._with_valid({"moves/buff.json": move})))
 
     def test_target_burst_must_not_be_melee(self):
-        move = ('{"id":"sample_blast","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,'
+        move = ('{"id":"sample_blast","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"%s","shape":"burst","origin":"%s","base_range_mm":3000}')
         for rc, origin, valid in [("melee", "target", False), ("mid", "target", True), ("melee", "caster", True)]:
             with self.subTest(rc=rc, origin=origin):
@@ -223,7 +223,7 @@ class CrossFileRules(unittest.TestCase):
                 self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
 
     def test_effect_duration_required_iff_timed_effect(self):
-        base = ('{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,'
+        base = ('{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"melee","shape":"self","base_range_mm":0')
         haste = ',"effect":{"type":"move_speed_mod_percent","params":{"delta":20}}'
         heal = ',"effect":{"type":"heal_percent_max_hp","params":{"percent":20}}'

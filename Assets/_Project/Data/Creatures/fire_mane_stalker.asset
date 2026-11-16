@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 2
   temperament: 4
   evolvesTo: {fileID: 11400000, guid: 5004155136d050441a62e726e406d197, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 44
   evolutionMaterials:
   - element: 3
@@ -33,8 +35,8 @@ MonoBehaviour:
     str: 80
     spi: 25
     agi: 35
-  signatureMove: {fileID: 11400000, guid: 49c10a5c308d94349b79d42a6d684f55, type: 2}
-  trait: {fileID: 11400000, guid: e5472874e510aa94c9b028f73ab75459, type: 2}
+  signatureMove: {fileID: 11400000, guid: f2b52ecfa43f0fe44bc42349813024c9, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
   fieldUtility: 4
   conceptJson: "{\"base\":\"\u70C8\u7130\u96C4\u7345 \xD7 \u7802\u5CA9\u7194\u6838\u7532\u80C4\",\"stage_look\":\"\u808C\u8089\u7D50\u5BE6\u7684\u70C8\u7130\u8352\u539F\u7345\uFF0C\u9B03\u6BDB\u5982\u7FFB\u9A30\u706B\u6D6A\uFF0C\u984D\u524D\u51DD\u7D50\u4E09\u9053\u7194\u5CA9\u88C2\u7D0B\",\"archetype\":\"arch_apedemak\",\"region\":\"\u975E\u6D32\",\"motifs_used\":[\"\u4E09\u9996\u56DB\u81C2\u96C4\u7345\u50CF\",\"\u76E4\u86C7\u7DBB\u653E\u84EE\u82B1\",\"\u9661\u9802\u7802\u5CA9\u91D1\u5B57\u5854\"],\"role\":\"\u7A81\u64CA\u624B\uFF1A\u4E2D\u8DDD\u76F4\u7DDA\u7A81\u9032\uFF0C\u53D7\u706B\u5C6C\u6027\u653B\u64CA\u5F8C\u7E2E\u77ED\u706B\u62DB
     CD\",\"palette\":\"\u8D6D\u77F3\u7D05\u3001\u71BE\u91D1\u9EC3\u3001\u7384\u6B66\u5CA9\u6697\u7070\"}"

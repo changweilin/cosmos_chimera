@@ -350,6 +350,7 @@ namespace Cosmimera.Combat
         private TriggerSpec _trigger;
         private EffectSpec[] _traitEffects;
         private EffectSpec[] _equipmentEffects = System.Array.Empty<EffectSpec>();
+        private EffectSpec[] _phaseEffects = System.Array.Empty<EffectSpec>();
         private long _watermarkMs;
         private bool _crossBelowSpent;
         private readonly List<EffectBook> _partnerTraits = new List<EffectBook>(4);
@@ -373,6 +374,28 @@ namespace Cosmimera.Combat
                 copy[i] = effects[i];
             }
             _equipmentEffects = copy;
+        }
+
+        /// <summary>Replaces the boss-phase modifier layer (enrage, Q-C48); may change at any simulation time.</summary>
+        /// <remarks>
+        /// REQ: docs/design/combat.md#BOSS-階段.
+        /// Pre: effects non-null with 0..8 constructed, non-instant entries.
+        /// Post: each supplied effect contributes once to every later Collect, alongside equipment; survives Clear;
+        ///       an empty list removes the layer.
+        /// Side effects: copies effects; timed effects, traits and equipment are unchanged.
+        /// </remarks>
+        public void SetPhaseEffects(IReadOnlyList<EffectSpec> effects)
+        {
+            Contract.Requires(effects != null && effects.Count <= 8, "phase effects must contain 0..8 entries");
+            var copy = new EffectSpec[effects.Count];
+            for (int i = 0; i < effects.Count; i++)
+            {
+                Contract.Requires(!effects[i].IsInstant && effects[i].MaxStacks >= 1,
+                    "phase effects need constructed non-instant effects");
+                copy[i] = effects[i];
+            }
+
+            _phaseEffects = copy;
         }
 
         /// <summary>Adds a sub-partner trait before combat starts, retaining its own trigger and charge.</summary>
@@ -662,6 +685,7 @@ namespace Cosmimera.Combat
         private void CollectInto(long nowMs, int hp, int maxHp, ModifierTotals into)
         {
             foreach (EffectSpec effect in _equipmentEffects) into.Add(effect, 1);
+            foreach (EffectSpec effect in _phaseEffects) into.Add(effect, 1);
             foreach (Slot s in _slots)
             {
                 if (s.ExpiresMs > nowMs)

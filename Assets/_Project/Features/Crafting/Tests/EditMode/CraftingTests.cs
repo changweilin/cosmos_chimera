@@ -134,6 +134,25 @@ namespace Cosmimera.Crafting.Tests
         }
 
         [Test]
+        public void Partner_equipment_scales_each_effect_to_a_quarter_rounding_away_from_zero()
+        {
+            EffectSpec Scale(int delta) => EquipmentRules.ScalePartner(
+                new EffectSpec(EffectType.ResistMod, false, Element.Ice, delta, 0, 1));
+            Assert.That(Scale(15).Delta, Is.EqualTo(4));
+            Assert.That(Scale(10).Delta, Is.EqualTo(3));
+            Assert.That(Scale(5).Delta, Is.EqualTo(2));
+            Assert.That(Scale(4).Delta, Is.EqualTo(1));
+            Assert.That(Scale(1).Delta, Is.EqualTo(1));
+            Assert.That(Scale(-5).Delta, Is.EqualTo(-2));
+            Assert.That(Scale(0).Delta, Is.EqualTo(0));
+            Assert.That(Scale(100).Delta, Is.EqualTo(25));
+            EffectSpec any = EquipmentRules.ScalePartner(new EffectSpec(EffectType.CdModPercent, true, default, -5, 0, 2));
+            Assert.That(any.AnyElement && any.MaxStacks == 2 && any.Type == EffectType.CdModPercent, Is.True);
+            Assert.Throws<ContractException>(() => EquipmentRules.ScalePartner(
+                new EffectSpec(EffectType.HealPercentMaxHp, false, default, 0, 10, 1)));
+        }
+
+        [Test]
         public void Catalog_refuses_bad_references_and_duplicate_ids()
         {
             JArray items = JArray.Parse(Data("craft-items")); items.Add(items[0].DeepClone());

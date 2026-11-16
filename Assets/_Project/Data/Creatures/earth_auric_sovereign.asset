@@ -19,6 +19,8 @@ MonoBehaviour:
   aiStyle: 2
   temperament: 4
   evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
   evolutionLevel: 0
   evolutionMaterials: []
   resist: 0000000000000000000000000a0000003200000000000000d8ffffff0f0000000000000000000000
@@ -30,8 +32,8 @@ MonoBehaviour:
     str: 85
     spi: 120
     agi: 50
-  signatureMove: {fileID: 11400000, guid: 2a3bc7fc4146475409fb311a4711703f, type: 2}
-  trait: {fileID: 11400000, guid: 5619766b3e3caba49932813f4429bad3, type: 2}
+  signatureMove: {fileID: 11400000, guid: dc0f4797247d39142bb167400422d239, type: 2}
+  trait: {fileID: 11400000, guid: f735ffdf2062f93469199688adba577e, type: 2}
   fieldUtility: 11
   conceptJson: "{\"base\":\"\u9EC3\u91D1\u7926\u8108\u4EBA\u5F62 \xD7 \u5100\u5178\u5CA9\u93A7\u77F3\u5076\uFF08\u4EBA\u5F62\uFF09\",\"stage_look\":\"\u5DCD\u7136\u5C79\u7ACB\u7684\u91CD\u5CA9\u91D1\u796D\u8056\u5076\uFF0C\u96D9\u81C2\u5982\u7ACB\u67F1\uFF0C\u901A\u9AD4\u938F\u91D1\u7D50\u6676\u8207\u7FE1\u7FE0\u77F3\u8108\u5171\u9CF4\",\"archetype\":\"arch_el_dorado_muisca\",\"region\":\"\u7F8E\u6D32\",\"motifs_used\":[\"\u91D1\u7C89\u8986\u8EAB\",\"\u9AD8\u5C71\u8056\u6E56\u7DA0\u5BF6\u77F3\",\"\u9EC3\u91D1\u796D\u5076\"],\"role\":\"\u524D\u6392\uFF1A\u9060\u8DDD\u76F4\u7DDA\u7A81\u9032\uFF0C\u53D7\u64CA\u5F8C\u63D0\u9AD8\u571F\u5C08\u7CBE\",\"palette\":\"\u938F\u91D1\u9EC3\u3001\u7FE1\u7FE0\u7DA0\u3001\u9676\u571F\u8D6D\u8910\"}"
   needsSensitivityReview: 0

@@ -27,6 +27,7 @@ MonoBehaviour:
   effectDurationMs: 10000
   fieldDurationMs: 0
   cooldownMs: 8500
+  windupMs: 200
   accuracy: 100
   rangeClass: 0
   shape: 8

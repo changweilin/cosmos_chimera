@@ -292,7 +292,7 @@ namespace Cosmimera.GameData.Tests
         }
 
         private const string BuffMoveHead = "[{\"id\":\"sample_buff\",\"element\":\"light\",\"kind\":\"effect\",\"power\":0,"
-            + "\"cooldown_ms\":1000,\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"self\",\"base_range_mm\":0";
+            + "\"cooldown_ms\":1000,\"windup_ms\":200,\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"self\",\"base_range_mm\":0";
         private const string Haste = ",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20}}";
         private const string Heal = ",\"effect\":{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":20}}";
 
@@ -327,8 +327,40 @@ namespace Cosmimera.GameData.Tests
             }
         }
 
-        private const string FieldMoveHead = "[{\"id\":\"sample_field\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":10,"
-            + "\"cooldown_ms\":8000,\"accuracy\":100,\"range_class\":\"mid\",\"base_range_mm\":12000";
+        [TestCase("\"windup_ms\":200", 200)]
+        [TestCase("\"windup_ms\":0", 0)]
+        [TestCase("\"windup_ms\":10000", 10000)]
+        [TestCase("\"windup_ms\":10001", -1)]
+        [TestCase("\"windup_ms\":-1", -1)]
+        public void Windup_is_imported_within_its_bounds(string windup, int expected)
+        {
+            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200", windup)
+                + Haste + ",\"effect_duration_ms\":5000}]");
+
+            if (expected < 0)
+            {
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                StringAssert.Contains("windup_ms", error.Message);
+                return;
+            }
+
+            DataImporter.Import(_src, Output);
+            Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
+            Assert.AreEqual(expected, move.WindupMs);
+        }
+
+        [Test]
+        public void Windup_is_required()
+        {
+            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200,", "")
+                + Haste + ",\"effect_duration_ms\":5000}]");
+
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            StringAssert.Contains("windup_ms", error.Message);
+        }
+
+        private const string FieldMoveHead ="[{\"id\":\"sample_field\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":10,"
+            + "\"cooldown_ms\":8000,\"windup_ms\":700,\"accuracy\":100,\"range_class\":\"mid\",\"base_range_mm\":12000";
 
         [TestCase(",\"shape\":\"field\",\"field_duration_ms\":6000", true)]
         [TestCase(",\"shape\":\"field\",\"field_duration_ms\":600000", true)]
@@ -398,7 +430,7 @@ namespace Cosmimera.GameData.Tests
         public void Melee_target_point_burst_is_rejected()
         {
             File.WriteAllText(Path.Combine(_src, "moves/blast.json"),
-                "[{\"id\":\"sample_blast\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,"
+                "[{\"id\":\"sample_blast\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,\"windup_ms\":300,"
                 + "\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"burst\",\"origin\":\"target\",\"base_range_mm\":3000}]");
 
             var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));

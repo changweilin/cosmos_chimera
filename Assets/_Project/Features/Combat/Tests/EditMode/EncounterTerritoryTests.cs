@@ -548,7 +548,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         [Test]
-        public void Boss_has_double_hp_and_a_larger_body_and_melee_reach()
+        public void Boss_has_triple_hp_and_a_larger_body_and_melee_reach()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             MoveDef ranged = Move("bolt", RangeClass.Long, 24000);

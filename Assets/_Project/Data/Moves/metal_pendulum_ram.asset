@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fee4a263ad2320140be20f5f8b40d8df, type: 3}
+  m_Name: metal_pendulum_ram
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.MoveDef
+  id: metal_pendulum_ram
+  element: 0
+  kind: 2
+  power: 108
+  hasEffect: 1
+  effect:
+    type: 1
+    anyElement: 0
+    element: 0
+    delta: -12
+    percent: 0
+    maxStacks: 1
+  effectDurationMs: 4500
+  fieldDurationMs: 0
+  cooldownMs: 8200
+  windupMs: 450
+  accuracy: 88
+  rangeClass: 2
+  shape: 0
+  baseRangeMm: 18000
+  movement: 1
+  origin: 0

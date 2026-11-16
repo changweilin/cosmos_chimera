@@ -74,7 +74,7 @@ namespace Cosmimera.Bootstrap.Demo
                     {
                         if (combinedEffects.Count < 32)
                         {
-                            combinedEffects.Add(effect);
+                            combinedEffects.Add(EquipmentRules.ScalePartner(effect));
                         }
                     }
                 }
