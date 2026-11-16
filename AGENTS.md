@@ -5,7 +5,8 @@
 ## 1. 開工（只讀需要的）
 1. `CLAUDE.md`
 2. `docs/roadmap/README.md` 的「現在」→ 被指派項目所在的 `phase-N.md`／`demo.md` 那一列。歷史只在卡住時查 `git log -- <路徑>`。
-3. `.claude/rules/` — Claude 依路徑自動載入；**其他工具依改動路徑手動讀**：
+3. 若 `docs/open-questions.answers.json` 有尚未消化的回答（對應 `docs/open-questions.html` 仍有該題，或殘留已定案舊題），先依 `docs-and-progress.md` §決策 寫入設計文件並清理兩者；有缺漏或新歧義則保留／開新題卡片。
+4. `.claude/rules/` — Claude 依路徑自動載入；**其他工具依改動路徑手動讀**：
    `Assets/**/*.cs` → `code-contracts.md`、`unity-csharp.md`、`testing.md` · `Data/**`、`tools/**` → `data-content.md` · `docs/**` → `docs-and-progress.md`
 
 派工／審查分工（`docs/ai-agents.md`）只在**你要派工或被指定審查**時讀。

@@ -46,6 +46,8 @@
   .bar button { padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); cursor:pointer; font:inherit; }
   .bar button.pri { background:var(--accent); color:#fff; border-color:var(--accent); }
   #cnt { color:var(--muted); font-size:13px; }
+  #copyBox { margin-top:8px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); }
+  #copyBox textarea { width:100%; margin-top:6px; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--fg); font:13px ui-monospace,Consolas,monospace; }
 </style>
 </head>
 <body>
@@ -65,17 +67,18 @@
   <button id="reset">全部清除</button>
   <span id="msg" style="font-size:13px;color:var(--muted)"></span>
 </div>
+<div id="copyBox" hidden>
+  <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+    <span>瀏覽器限制剪貼簿權限，請按 <code>Ctrl+C</code>（Mac <code>Cmd+C</code>）複製以下內容：</span>
+    <button id="copyClose" class="clr">關閉</button>
+  </div>
+  <textarea id="copyText" rows="6" readonly></textarea>
+</div>
 <p style="color:var(--muted);font-size:13px">選擇會自動存在這個瀏覽器（localStorage）。agent 讀不到——按「複製決策」貼回對話，或下載 JSON 存成 <code>docs/open-questions.answers.json</code>。</p>
 
 <section>
 <h2>多人</h2>
 <div class="cards">
-
-<article id="Q-N1">
-  <header><a class="id" href="#Q-N1">Q-N1</a><span class="tag">影響 P6-04</span></header>
-  <p><span class="label">問題</span>合作模式的收服/蛋如何分配？</p>
-  <p><span class="label">暫定</span>每人各自一份</p>
-</article>
 
 </div>
 </section>
@@ -84,34 +87,10 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C38">
-  <header><a class="id" href="#Q-C38">Q-C38</a><span class="tag">影響 P3-12、P3-21</span></header>
-  <p><span class="label">問題</span><b>哪些植物算「草叢隱蔽」</b>。規格寫「在草內靜止或緩行時野生偵測距離減半」。目前只有<b>芒草</b>給隱蔽；同樣不擋路的<b>蘆葦、蕨、花叢</b>不給。地面的草皮（GPU 草）也不算。要擴大嗎？</p>
-  <p><span class="label">暫定</span>只有芒草（現狀）</p>
-</article>
-
-<article id="Q-C43">
-  <header><a class="id" href="#Q-C43">Q-C43</a><span class="tag">影響 P4-03、D0-U2</span></header>
-  <p><span class="label">問題</span><b>分階器皿與符籙卡／琉璃珠／魔術方塊的關係</b>。分階規則已定案（見 <code>lobby-meta.md#收服器皿分階</code>）。但現有三種類別決定副手提供招式／特性／超載。玩家投出的是「某類別＋某階」的器皿（例如成年階琉璃珠），還是階數器皿取代三類別？進階（十屬性）器皿收服的宙獸算哪一類別？接線前要先定。</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（遊戲仍用舊規則：普通 60%、BOSS 100%）</p>
-</article>
-
 <article id="Q-C60">
   <header><a class="id" href="#Q-C60">Q-C60</a><span class="tag">影響 P2-17</span></header>
   <p><span class="label">問題</span><b>直接操作的四個新指令與其餘細節</b>（已定：出招鍵照提案、上場池全倒＝失敗、翻滾位移與跳躍高度參考身高、前搖中可翻滾並返還 CD、倒地野生留到區域卸載、角色自動跟隨主控；四個指令改為「切換主控／切換支援模式／更換備援或道具／回到角色」）。接線前還差：（1）<b>四個新指令的按鍵</b>——原指令鍵 R／F／T／G 已給出招。提案：切換主控沿用 1／2 與十字鍵左／右；切換支援模式＝X／L＋十字鍵上；更換備援或道具＝C（戰鬥中投擲停用）／L＋十字鍵下；回到角色＝H／L＋下方按鈕（原撤退位置）；（2）<b>支援模式有哪些</b>——提案沿用舊四指令當支援模式循環：自由戰鬥（預設）／集火主控目標／跟隨主控待命／撤退；（3）<b>更換備援或道具</b>的介面：快捷輪盤（戰鬥不暫停）、輪盤時慢動作，或其他；（4）<b>回到角色後</b>（宙獸全收回）角色會不會被打——提案：回到角色即恢復探索規則（會被打、可翻滾），直到脫戰；（5）<b>瞄準</b>：前方類招式朝主控面向；瞄準點招（burst 目標點／arc／field）打鎖定目標，無鎖定取面前最近敵人——提案；（6）<b>BOSS 倒地</b>：現在 BOSS 倒地後有 20 秒收服窗口、窗口結束即結算本場。改為「留在原地直到收服或離開區域」嗎？（7）<b>身高</b>：宙獸身高暫以體型身體半徑 ×2 代表（XS 0.4／S 0.8／M 1.4／L 2.2／XL 3.2 m），翻滾距離＝身高 ×1.5、跳躍高度＝角色跳躍 1.2 m × 宙獸身高 ÷ 角色身高（1.7 m）——提案。</p>
   <p><span class="label">暫定</span>規則層已用（5）以外的暫定：翻滾距離＝身高 ×1.5、無方向輸入時向後翻。</p>
-</article>
-
-<article id="Q-C50">
-  <header><a class="id" href="#Q-C50">Q-C50</a><span class="tag">影響 P3-31、P5-03</span></header>
-  <p><span class="label">問題</span><b>生態棲位目錄與數值提案</b>。已定案：物種候選依出生環境抽棲位→棲位限制內抽性格；速度／移動／停留有個體間與每次行動兩層標準差。<a href="../Data/_incoming/p3-31-ecology/proposal.json">14 棲位 JSON 提案</a>包含性格權重、四種遊蕩模式、半徑及兩層分布參數，是否採用？正式接線前另需配現有物種逐階的候選棲位與權重。</p>
-  <p><span class="label">暫定</span>JSON 僅為待審提案，不影響現行資料與遊戲。</p>
-</article>
-
-<article id="Q-C51">
-  <header><a class="id" href="#Q-C51">Q-C51</a><span class="tag">影響 P3-31、P2-05、P4-05</span></header>
-  <p><span class="label">問題</span><b>個體性格的進化與舊存檔遷移</b>。收服保留已抽到的性格；進化後若不在新階段棲位允許範圍，要保留原性格、重新抽樣，或限制所有進化階段候選都能容納原性格？舊存檔只有物種資訊的個體，要沿用舊性格並標記舊制，還是以穩定個體 ID 遷移抽樣？不能在每次讀檔重新抽。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
 </div>
@@ -123,32 +102,8 @@
 
 <article id="Q-A5">
   <header><a class="id" href="#Q-A5">Q-A5</a><span class="tag">影響 P3-18</span></header>
-  <p><span class="label">問題</span><b>種族清單與不死／魔族的定位</b>。已實作 15 種族（人類／精靈／矮人／哥布林／獸人／鳥人／魚人／蜥蜴人／龍人／殭屍／骷髏／狼人／吸血鬼／天使／惡魔），目前<b>全部都是和平的聚落居民</b>。殭屍、骷髏、吸血鬼、惡魔要當居民，還是只出現在遺跡／夜晚／當敵對 NPC？清單還要加哪些種族？</p>
+  <p><span class="label">問題</span><b>不死／魔族（殭屍、骷髏、吸血鬼、惡魔）的定位</b>。既有 15 種族保留並規劃新增巨人、食人妖、機器人（多種樣態）已定案；上輪你為不死／魔族選了「其他」但未填備註。殭屍、骷髏、吸血鬼、惡魔要當和平聚落居民，還是只出現在遺跡／夜晚／當敵對 NPC？</p>
   <p><span class="label">暫定</span>15 種族全部是居民；遺跡與巢穴無人居住</p>
-</article>
-
-<article id="Q-A6">
-  <header><a class="id" href="#Q-A6">Q-A6</a><span class="tag">影響 P3-18</span></header>
-  <p><span class="label">問題</span><b>種族分布</b>。每顆星球由 seed 抽主種族＋副種族（星球類型加權，例：熔岩星龍人／惡魔 ×3、風暴星鳥人／天使 ×3），聚落內 主種族約 50–85 %、副種族 10–40 %、其他種族 3–12 %；15 % 的聚落是「副種族為主」的飛地，25 % 改用區域主題的種族（海岸→魚人、高地→鳥人…）。人類基礎權重 20、其餘 3–10。比例與加權要調整嗎？</p>
-  <p><span class="label">暫定</span>如上（<code>PopulacePlanner.RaceWeights</code>）</p>
-</article>
-
-<article id="Q-A7">
-  <header><a class="id" href="#Q-A7">Q-A7</a><span class="tag">影響 P3-18</span></header>
-  <p><span class="label">問題</span><b>每個聚落的人數與效能</b>。目前每棟建築門前站 1–6 人（帳篷 1–2、民居 1–3、大廳 3–6、塔 1–2），單一聚落上限 60 人；140 m 外不繪製。人數要多還是少？</p>
-  <p><span class="label">暫定</span>如上</p>
-</article>
-
-<article id="Q-A8">
-  <header><a class="id" href="#Q-A8">Q-A8</a><span class="tag">影響 P3-18、P1-16</span></header>
-  <p><span class="label">問題</span><b>路人的美術來源與動作</b>。目前是程式生成的低面數靜態人形（無骨架、無動畫、無描邊），離「曠野之息等級」還有明顯差距：那個水準需要美術基底模型（每種族一套可換裝骨架網格）＋手繪貼圖＋動畫。基底模型怎麼取得？路人要不要走動／做事？</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（程序化人形先當佔位；規則層資料不變，之後換網格來源）</p>
-</article>
-
-<article id="Q-A9">
-  <header><a class="id" href="#Q-A9">Q-A9</a><span class="tag">影響 P3-18</span></header>
-  <p><span class="label">問題</span><b>路人互動與被攻擊</b>。路人目前只有碰撞（擋角色與宙獸），不能對話、交易、治療，也不會被招式打到。要哪些互動？招式打到路人時怎麼處理？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
 </div>
@@ -157,54 +112,6 @@
 <section>
 <h2>世界細節（作物／地熱／海底／地質／城牆）與美術水準</h2>
 <div class="cards">
-
-<article id="Q-W19">
-  <header><a class="id" href="#Q-W19">Q-W19</a><span class="tag">影響 P3-26</span></header>
-  <p><span class="label">問題</span><b>四季的機率與適用星球</b>。季節已由 seed 抽出並接上外觀（<code>WorldGen.Seasons.For</code>）。四季各佔多少？熔岩星、冰晶星這類幾乎沒有植被的星球要不要有季節（目前照抽，但畫面上幾乎只有樹與岩石頂的顏色會變）？</p>
-  <p><span class="label">暫定</span>四季等機率（各 25 %）；所有星球類型都抽</p>
-</article>
-
-<article id="Q-W20">
-  <header><a class="id" href="#Q-W20">Q-W20</a><span class="tag">影響 P3-26、P3-04a</span></header>
-  <p><span class="label">問題</span><b>季節怎麼影響天氣</b>。自然天氣目前依 星球類型 × 地貌 × 180 秒時段 抽八種天氣（<code>WeatherPlanner</code>，進戰鬥與移動規則）。季節要怎麼改權重？這會改變既有 seed 的天氣序列。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-W21">
-  <header><a class="id" href="#Q-W21">Q-W21</a><span class="tag">影響 P3-26、P3-25、P3-06</span></header>
-  <p><span class="label">問題</span><b>季節怎麼影響物種與可採集物</b>。「物種」指場景植物（花叢、巨菇、蕨…的出現率，改 <code>ScatterPlanner</code> 要升版）、野生宙獸的出沒，還是兩者？要新增季節限定食材，還是只調既有掉落？原料採集、加工、工具／器皿／陷阱／裝備製作與穿戴已獨立接線，見 <a href="design/crafting.md">採集、加工與裝備</a>；本題剩季節食材與物種分布，不改場景物件外觀。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-W22">
-  <header><a class="id" href="#Q-W22">Q-W22</a><span class="tag">影響 P3-26、P3-28</span></header>
-  <p><span class="label">問題</span><b>冬季地面要不要積雪</b>。你選的冬季外觀是「落葉枯枝」與「積雪覆蓋樹冠與岩石」，地面沒有列入。目前冬季地面只是草色轉枯黃；樹冠與岩石頂是雪白。地面也要積雪嗎？若要，是否只算外觀（不變成冰原的低摩擦）？</p>
-  <p><span class="label">暫定</span>地面不積雪（只有樹冠、岩石、倒木頂面積雪；寒帶與高山的雪線不受季節影響）</p>
-</article>
-
-<article id="Q-W23">
-  <header><a class="id" href="#Q-W23">Q-W23</a><span class="tag">影響 P3-29、P3-13、P3-07</span></header>
-  <p><span class="label">問題</span><b>奇觀地標與「進階地形」的關係</b>。新做的奇觀（高塔／神廟／空島／太空電梯與太空站／迷宮／坑道／地城門）目前是<b>所有尺寸的星球都會出現的地表外觀</b>。但進階地形表規定：高塔與太空設施在行星（R=960）以上、迷宮與神廟在超巨星才有，且需要對應屬性招式才能進入。奇觀要不要照那張表限制出現的星球尺寸？它們就是進階地城的入口，還是獨立的風景？</p>
-  <p><span class="label">暫定</span>奇觀是獨立的地表風景，所有尺寸都出現（小行星 demo 也看得到）；進階地城的入口與通行限制另由 P3-07／P3-13 決定</p>
-</article>
-
-<article id="Q-W24">
-  <header><a class="id" href="#Q-W24">Q-W24</a><span class="tag">影響 P3-29</span></header>
-  <p><span class="label">問題</span><b>奇觀的數量與組成</b>。目前每顆星球：地面奇觀 4／6／8／10 座（R=320／640／960／1280），六種（高塔、神廟、空島、迷宮、坑道、地城門）洗牌後輪流發，所以小星球上不重複；另外<b>每顆星球固定一座太空電梯＋頂端一座太空站</b>（70 % 未來科技、30 % 遠古先民的光柱與方尖體）。原始時代的星球也有太空電梯，可以嗎？</p>
-  <p><span class="label">暫定</span>如上（每顆星球都有太空電梯；它的時代與星球的時代無關）</p>
-</article>
-
-<article id="Q-W25">
-  <header><a class="id" href="#Q-W25">Q-W25</a><span class="tag">影響 P3-29、P3-12</span></header>
-  <p><span class="label">問題</span><b>奇觀能不能互動</b>。目前是實心：角色與宙獸被整個圓形地基擋住，不能進入、不能攀爬、<b>不能被招式打壞</b>；空島與太空站只能看。要不要：(a) 可攀爬／登頂（塔頂解鎖地圖視野？）(b) 可被打壞並掉素材 (c) 空島可抵達（風屬性生活招式？）</p>
-  <p><span class="label">暫定</span>純地標：實心、不可破壞、不可進入</p>
-</article>
-
-<article id="Q-W26">
-  <header><a class="id" href="#Q-W26">Q-W26</a><span class="tag">影響 P3-29、P3-07、P3-16</span></header>
-  <p><span class="label">問題</span><b>迷宮／坑道／地城的內部</b>。目前只有地表造型（迷宮是三圈錯開缺口的環牆，但整座是一個實心圓，走不進去）。內部要怎麼做？</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（內部等 P3-07 房間拼接地城；本項只做外觀）</p>
-</article>
 
 </div>
 </section>
@@ -222,25 +129,8 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-W19':[R('odds','四季機率',['四季等機率（暫定）','春秋各 30 %、夏冬各 20 %','依星球類型不同（請在備註說明）']),R('who','哪些星球有季節',['所有星球類型（暫定）','只有有植被的星球（翠綠／風暴／晨昏／晶礦）','熔岩星與冰晶星固定一季（請在備註說明）'])],
- 'Q-W20':[R('how','季節對天氣的影響',['不影響（季節只管外觀與物種）','每季加一組權重偏向（例：夏多雷雨與熱浪、冬多暴風雪與霧、春多雨、秋多強風）','每季禁止部分天氣（例：冬無熱浪、夏無暴風雪）','偏向＋禁止都要']),R('seeds','既有 seed 的天氣序列會變',['可以','不行，只對新版本的星球生效']),T('note','各季天氣偏向（自由填）','')],
- 'Q-W21':[C('what','「物種」包含',['場景植物的出現率（花叢、巨菇、蕨、蘆葦…）','野生宙獸的出沒（某些宙獸只在特定季節）','樹果／作物的有無（接 P3-21 作物田）']),R('gather','可採集物',['只調既有破壞掉落的機率','新增季節限定採集物（春花、夏果、秋菇、冬冰晶…）','兩者都要']),T('note','補充','')],
- 'Q-W22':[R('ground','冬季地面',['不積雪（暫定）','積雪，只算外觀','積雪，且雪地有行動修正（請在備註說明）']),R('where','積雪範圍',['整顆星球','只有溫帶與寒帶（熱帶不積雪）','依海拔（高處先白）'])],
- 'Q-W23':[R('size','出現的星球尺寸',['所有尺寸都出現（暫定）','照進階地形表：坑道 R≥640、高塔／空島／太空 R≥960、迷宮／神廟 R=1280','其他（請在備註說明）']),R('role','與進階地城的關係',['獨立風景，入口另做（暫定）','奇觀就是該進階地城的入口（需對應屬性招式才能進）','兩種都有：部分是入口、部分是風景']),T('note','補充','')],
- 'Q-W24':[R('count','地面奇觀數量',['4／6／8／10（暫定）','減半','加倍','其他（請在備註說明）']),R('elevator','太空電梯',['每顆星球一座（暫定）','只有未來／蒸汽龐克／廢土時代的星球','只有 R≥960 的星球','隨機，約半數星球有']),C('kinds','要保留的種類',['高塔','神廟','空島','太空電梯＋太空站','迷宮','坑道','地城門']),T('more','還想要的奇觀（自由填）','')],
- 'Q-W25':[C('act','互動',['可攀爬／登頂','可被招式打壞並掉素材','空島可抵達','塔頂揭露周圍地圖']),R('solid','阻擋方式',['整個圓形地基實心（暫定）','只擋建築本體，地基可走上去']),T('note','補充','')],
- 'Q-W26':[R('maze','迷宮',['地表可走的真迷宮（規則層牆段，擋角色與宙獸）','入口傳送到獨立場景（P3-07）','維持純外觀']),R('mine','坑道／地城',['入口傳送到獨立場景（P3-07）','維持純外觀']),T('note','補充','')],
- 'Q-A5':[R('undead','殭屍／骷髏／吸血鬼／惡魔',['都是和平居民（暫定）','只住在遺跡與巢穴周圍','只在夜晚出現','改為敵對 NPC（會攻擊）','其他（請在備註說明）']),C('keep','要保留的種族',['人類','精靈','矮人','哥布林','獸人','鳥人','魚人','蜥蜴人','龍人','殭屍','骷髏','狼人','吸血鬼','天使','惡魔']),T('more','還想要的種族（自由填）','')],
- 'Q-A6':[R('mix','聚落內的種族比例',['主 50–85 %／副 10–40 %／其他 3–12 %（暫定）','更單一（主 ≥ 90 %）','更混雜（三四個種族相當）']),R('human','人類的比重',['基礎權重 20，約兩成星球以人類為主（暫定）','人類為主的星球過半','與其他種族等權重']),R('planet','星球類型加權',['照暫定','不加權，全隨機','更強（星球類型幾乎決定種族）']),T('note','補充','')],
- 'Q-A7':[R('count','每棟建築的人數',['1–6 人、聚落上限 60（暫定）','減半','加倍（要先確認 Steam Deck 幀率）']),T('note','補充','')],
- 'Q-A8':[R('source','基底模型來源',['外包／美術匯入（走 art-asset-pipeline）','AI 生成 3D 模型後人工修整','維持程序化人形，繼續精修']),R('motion','路人動作',['站立不動（暫定）','原地待機動畫','沿道路／聚落內走動','依職業做事（耕作、打鐵、站崗…）']),T('note','補充','')],
- 'Q-C38':[C('kinds','給隱蔽的植物',['芒草（現狀）','蘆葦','蕨','花叢','地面草皮（GPU 草）']),T('note','補充','')],
- 'Q-C43':[R('rel','分階器皿與三類別',['並存：每個器皿同時有類別與階（例：成年階琉璃珠）','階數器皿取代三類別，類別改由其他方式決定','其他（請在備註說明）']),R('adv','進階（十屬性）器皿收服後的類別',['玩家投擲時另選類別','固定為某一類別（請在備註說明）','依屬性對應類別']),T('note','補充','')],
+ 'Q-A5':[R('undead','殭屍／骷髏／吸血鬼／惡魔',['都是和平居民（暫定）','只住在遺跡與巢穴周圍','只在夜晚出現','改為敵對 NPC（會攻擊）','其他（請在備註說明）']),T('more','補充','')],
  'Q-C60':[R('keys','四個新指令的按鍵',['照提案（1／2、X、C、H；十字鍵左右、L＋十字上／下、L＋下方）','其他（請在備註說明）']),R('modes','支援模式',['沿用舊四指令循環（自由／集火主控目標／跟隨／撤退）（提案）','其他（請在備註說明）']),R('swap','更換備援或道具介面',['快捷輪盤，戰鬥不暫停','快捷輪盤，開啟時慢動作','其他（請在備註說明）']),R('back','回到角色後',['恢復探索規則（會被打、可翻滾）直到脫戰（提案）','脫戰前角色仍不會被打']),R('aim','瞄準',['照提案（前方類朝面向；瞄準點招打鎖定目標，無鎖定取面前最近）','其他（請在備註說明）']),R('boss','BOSS 倒地',['留在原地直到收服或離開區域','維持 20 秒收服窗口後結算']),R('height','身高與翻滾／跳躍',['照提案（體型半徑 ×2；翻滾 ×1.5；跳躍按身高比例）','其他（請在備註說明）']),T('note','補充','')],
- 'Q-C50':[R('catalog','棲位與數值提案',['採用 14 棲位與提案數值','採用分類，權重／數值修改如下','分類也需修改']),T('note','物種候選或調整','')],
- 'Q-C51':[R('evolve','進化',['保留原性格','依新棲位重抽性格','限制進化候選以保留性格合法性']),R('legacy','舊存檔',['保留舊性格並標記舊制','用穩定個體 ID 一次性遷移抽樣']),T('note','補充','')],
- 'Q-A9':[C('talk','互動',['對話（閒聊／世界觀）','交易（商人）','治療昏厥宙獸（治療師，combat.md）','委託任務','指路（揭露地圖）']),R('hit','招式打到路人',['穿過，不受影響（暫定）','擋住招式但不受傷','會受傷逃跑','會倒下並影響聚落好感']),T('note','補充','')],
- 'Q-N1':[R('split','合作模式收服/蛋分配',['每人各自一份（暫定）','擊殺者獲得','輪流分配','隊伍共享池，擲骰'])]
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
@@ -304,7 +194,33 @@ function exportText(){
 const msg=t=>{const m=document.getElementById('msg');m.textContent=t;setTimeout(()=>m.textContent='',2500)};
 document.querySelectorAll('article').forEach(a=>{if(SPEC[a.id])build(a,a.id)});
 restore();
-document.getElementById('copy').onclick=async()=>{const t=exportText();if(!t)return msg('尚無決策');try{await navigator.clipboard.writeText(t);msg('已複製')}catch(e){prompt('複製以下文字',t)}};
+async function copyToClipboard(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    try{await navigator.clipboard.writeText(t);return true}catch(e){}
+  }
+  const ta=document.createElement('textarea');
+  ta.value=t;
+  ta.setAttribute('readonly','');
+  ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0,t.length);
+  let ok=false;
+  try{ok=document.execCommand('copy')}catch(e){}
+  document.body.removeChild(ta);
+  return ok;
+}
+document.getElementById('copyClose').onclick=()=>{document.getElementById('copyBox').hidden=true};
+document.getElementById('copy').onclick=async()=>{
+  const t=exportText();
+  if(!t)return msg('尚無決策');
+  const box=document.getElementById('copyBox');
+  if(await copyToClipboard(t)){box.hidden=true;return msg('已複製')}
+  const ta=document.getElementById('copyText');
+  ta.value=t;box.hidden=false;ta.focus();ta.select();
+  msg('請按 Ctrl+C 複製');
+};
 document.getElementById('dl').onclick=()=>{const b=new Blob([JSON.stringify(st,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='open-questions.answers.json';a.click()};
 document.getElementById('reset').onclick=()=>{if(confirm('清除所有已填決策？')){st={};save();restore()}};
 </script>

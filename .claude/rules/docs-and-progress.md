@@ -25,5 +25,6 @@ paths:
 
 ## 決策
 - `docs/design/` 只寫現行規格（不寫誰在何時決定）；其內容皆已定案，要改先問使用者。
-- 設計決定一旦定案：從 `docs/open-questions.html` 移除，寫進對應設計文件，必要時新增 ADR。
+- 設計決定一旦定案：從 `docs/open-questions.html` 移除卡片與 `SPEC`、寫進對應設計文件，並從 `docs/open-questions.answers.json` 移除該題（無剩餘待處理回答時可清空為 `{}`）；必要時新增 ADR。
+- 開工或觸及文件時若發現 `docs/open-questions.answers.json` 有未消化回答，先依上條處理；若回答不完整或衍生新歧義，將已定部分寫入設計文件，原題改寫為追問或開新題，並自 `answers.json` 移除已處理鍵。
 - ADR 格式：`docs/decisions/ADR-XXXX-<slug>.md`，章節：狀態 / 背景 / 決定 / 後果 / 替代方案。
