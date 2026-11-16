@@ -143,5 +143,47 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<InvalidDataException>(() => new CraftCatalog("[{", "[]"));
             Assert.Throws<ContractException>(() => new CraftCatalog(null, "[]"));
         }
+
+        [Test]
+        public void Capture_vessels_parse_tiered_and_advanced_specs_and_require_inventory_stock()
+        {
+            const string itemsJson = @"
+            [
+              { ""id"": ""raw_ore"", ""category"": ""raw"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"" },
+              { ""id"": ""basic_card_t2"", ""category"": ""capture"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                ""capture"": { ""mode"": ""basic"", ""tier"": ""adolescent"", ""base_percent"": 55 } },
+              { ""id"": ""adv_card_fire"", ""category"": ""capture"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                ""capture"": { ""mode"": ""advanced"", ""element"": ""fire"", ""base_percent"": 50, ""advanced_bonus_percent"": 25 } }
+            ]";
+            const string recipesJson = @"
+            [
+              { ""id"": ""recipe_adv_card_fire"", ""utility"": ""forage_berries"", ""costs"": [{ ""item"": ""raw_ore"", ""quantity"": 1 }], ""gains"": [{ ""item"": ""adv_card_fire"", ""quantity"": 1 }] }
+            ]";
+            var catalog = new CraftCatalog(itemsJson, recipesJson);
+            Assert.That(catalog.TryGetItem("basic_card_t2", out CraftItem basic), Is.True);
+            Assert.That(basic.Capture.Mode, Is.EqualTo("basic"));
+            Assert.That(basic.Capture.Tier, Is.EqualTo(CreatureStage.Adolescent));
+            Assert.That(basic.Capture.BasePercent, Is.EqualTo(55));
+
+            Assert.That(catalog.TryGetItem("adv_card_fire", out CraftItem adv), Is.True);
+            Assert.That(adv.Capture.Mode, Is.EqualTo("advanced"));
+            Assert.That(adv.Capture.TerrainElement, Is.EqualTo(Element.Fire));
+            Assert.That(adv.Capture.AdvancedBonusPercent, Is.EqualTo(25));
+            Assert.That(adv.Capture.CraftedOnly, Is.True);
+
+            var bag = new CraftInventory();
+            Assert.That(CraftRules.TryConsumeCaptureVessel(adv, bag), Is.EqualTo(CraftResult.MissingMaterials));
+            Assert.That(bag.TryExchange(Empty, new[] { new CraftStack("raw_ore", 1) }), Is.True);
+            Assert.That(CraftRules.TryCraft(catalog.Recipes[0], AllSkills, bag), Is.EqualTo(CraftResult.Success));
+            Assert.That(CraftRules.TryConsumeCaptureVessel(adv, bag), Is.EqualTo(CraftResult.Success));
+            Assert.That(bag.Count("adv_card_fire"), Is.Zero);
+
+            Assert.That(catalog.TryGetItem("raw_ore", out CraftItem raw), Is.True);
+            Assert.Throws<ContractException>(() => CraftRules.TryConsumeCaptureVessel(raw, bag));
+
+            const string badCapture = @"[{ ""id"": ""bad_cap"", ""category"": ""raw"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                ""capture"": { ""mode"": ""advanced"", ""element"": ""fire"", ""base_percent"": 50, ""advanced_bonus_percent"": 20 } }]";
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(badCapture, "[]"));
+        }
     }
 }

@@ -38,6 +38,22 @@ namespace Cosmimera.Crafting
             return inventory.TryExchange(recipe.Costs, recipe.Gains) ? CraftResult.Success : CraftResult.CapacityExceeded;
         }
 
+        /// <summary>Consumes one unit of a consumable capture vessel from <paramref name="inventory"/>.</summary>
+        /// <remarks>
+        /// Pre: <paramref name="item"/> and <paramref name="inventory"/> non-null; <paramref name="item"/>.Category == "capture".
+        /// Post: returns Success and decrements stock by 1 iff stock &gt;= 1; otherwise returns MissingMaterials and leaves stock unchanged.
+        /// Side effects: mutates <paramref name="inventory"/> on Success.
+        /// </remarks>
+        public static CraftResult TryConsumeCaptureVessel(CraftItem item, CraftInventory inventory)
+        {
+            Contract.Requires(item != null && inventory != null, "item and inventory required");
+            Contract.Requires(item.Category == "capture", "item must be a capture vessel");
+            if (inventory.Count(item.Id) == 0) return CraftResult.MissingMaterials;
+            return inventory.TryExchange(new[] { new CraftStack(item.Id, 1) }, Array.Empty<CraftStack>())
+                ? CraftResult.Success
+                : CraftResult.MissingMaterials;
+        }
+
         internal static bool HasUtility(IReadOnlyCollection<FieldUtility> utilities, FieldUtility required)
         {
             foreach (FieldUtility utility in utilities) if (utility == required) return true;

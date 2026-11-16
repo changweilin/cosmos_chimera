@@ -8,14 +8,54 @@ using Newtonsoft.Json.Linq;
 
 namespace Cosmimera.Crafting
 {
+    /// <summary>Rule-layer capture vessel specification attached to a capture item.</summary>
+    /// <remarks>Pre: loaded through CraftCatalog. Post: immutable, validated mode, tier/element, and percentages. Side effects: none.</remarks>
+    public sealed class CraftCaptureSpec
+    {
+        internal CraftCaptureSpec(string mode, CreatureStage tier, Element terrainElement,
+            int basePercent, int advancedBonusPercent, bool craftedOnly)
+        {
+            Mode = mode;
+            Tier = tier;
+            TerrainElement = terrainElement;
+            BasePercent = basePercent;
+            AdvancedBonusPercent = advancedBonusPercent;
+            CraftedOnly = craftedOnly;
+        }
+
+        /// <summary>Vessel mode: "basic" (4-tier) or "advanced" (10-element terrain/dungeon).</summary>
+        /// <remarks>Pre: none. Post: "basic" or "advanced". Side effects: none.</remarks>
+        public string Mode { get; }
+
+        /// <summary>Target stage tier for "basic" vessels (Juvenile..Overload).</summary>
+        /// <remarks>Pre: none. Post: defined <see cref="CreatureStage"/>. Side effects: none.</remarks>
+        public CreatureStage Tier { get; }
+
+        /// <summary>Matching advanced terrain/dungeon element for "advanced" vessels.</summary>
+        /// <remarks>Pre: none. Post: defined <see cref="Element"/>. Side effects: none.</remarks>
+        public Element TerrainElement { get; }
+
+        /// <summary>Base capture percentage in 0..100.</summary>
+        /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
+        public int BasePercent { get; }
+
+        /// <summary>Additional percentage points when used in matching advanced terrain/dungeon.</summary>
+        /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
+        public int AdvancedBonusPercent { get; }
+
+        /// <summary>Whether the vessel can only be obtained via crafting.</summary>
+        /// <remarks>Pre: none. Post: true for advanced vessels. Side effects: none.</remarks>
+        public bool CraftedOnly { get; }
+    }
+
     /// <summary>Data-defined crafting item and its eligible gathering sources.</summary>
     /// <remarks>Pre: loaded through CraftCatalog. Post: immutable. Side effects: none.</remarks>
     public sealed class CraftItem
     {
         internal CraftItem(string id, string category, string[] sources, FieldUtility utility, int quantity, string season,
-            string gatherTool, int captureBonusPercent, EquipmentSpec equipment)
+            string gatherTool, int captureBonusPercent, EquipmentSpec equipment, CraftCaptureSpec capture = null)
         { Id = id; Category = category; Sources = Array.AsReadOnly(sources); Utility = utility; Quantity = quantity;
-            Season = season; GatherTool = gatherTool; CaptureBonusPercent = captureBonusPercent; Equipment = equipment; }
+            Season = season; GatherTool = gatherTool; CaptureBonusPercent = captureBonusPercent; Equipment = equipment; Capture = capture; }
 
         /// <summary>Stable item id.</summary>
         /// <remarks>Pre: none. Post: valid snake_case id. Side effects: none.</remarks>
@@ -44,6 +84,9 @@ namespace Cosmimera.Crafting
         /// <summary>Wearable bonuses, or null for other categories.</summary>
         /// <remarks>Pre: none. Post: non-null iff equipment category. Side effects: none.</remarks>
         public EquipmentSpec Equipment { get; }
+        /// <summary>Optional tiered/advanced capture vessel specification, or null.</summary>
+        /// <remarks>Pre: none. Post: non-null only when category == "capture". Side effects: none.</remarks>
+        public CraftCaptureSpec Capture { get; }
     }
 
     /// <summary>One atomic crafting recipe.</summary>
@@ -102,7 +145,9 @@ namespace Cosmimera.Crafting
                 Check(bonus <= 100 && (bonus == 0 || category == "capture"), "invalid capture bonus");
                 EquipmentSpec equipment = item["equipment"] == null ? null : new EquipmentSpec(item["equipment"]);
                 Check((category == "equipment") == (equipment != null), "equipment data must match category");
-                var spec = new CraftItem(id, category, sources.ToArray(), utility, Positive(item["quantity"]), season, tool, bonus, equipment);
+                CraftCaptureSpec capture = item["capture"] == null ? null : ParseCapture(item["capture"]);
+                Check(capture == null || category == "capture", "capture spec requires capture category");
+                var spec = new CraftItem(id, category, sources.ToArray(), utility, Positive(item["quantity"]), season, tool, bonus, equipment, capture);
                 _items.Add(id, spec);
                 _orderedItems.Add(spec);
             }
@@ -191,6 +236,61 @@ namespace Cosmimera.Crafting
         {
             Contract.Requires(Enum.IsDefined(typeof(FieldUtility), utility), "undefined utility");
             return System.Text.RegularExpressions.Regex.Replace(utility.ToString(), "([a-z])([A-Z])", "$1_$2").ToLowerInvariant();
+        }
+
+        private static CraftCaptureSpec ParseCapture(JToken token)
+        {
+            Check(token is JObject, "capture spec must be an object");
+            var obj = (JObject)token;
+            string mode = Text(obj["mode"]);
+            Check(mode == "basic" || mode == "advanced", "capture mode must be basic or advanced");
+            int basePercent = Percent(obj["base_percent"]);
+            int advancedBonus = obj["advanced_bonus_percent"] == null ? 0 : Percent(obj["advanced_bonus_percent"]);
+            CreatureStage tier = CreatureStage.Juvenile;
+            Element element = Element.Metal;
+            if (mode == "basic")
+            {
+                tier = ParseStage(obj["tier"]);
+                Check(advancedBonus == 0, "basic capture vessel cannot have advanced_bonus_percent");
+            }
+            else
+            {
+                element = ParseElement(obj["element"]);
+            }
+            bool craftedOnly = mode == "advanced";
+            if (!craftedOnly && obj["crafted_only"] != null)
+            {
+                Check(obj["crafted_only"].Type == JTokenType.Boolean, "crafted_only must be boolean");
+                craftedOnly = (bool)obj["crafted_only"];
+            }
+            return new CraftCaptureSpec(mode, tier, element, basePercent, advancedBonus, craftedOnly);
+        }
+
+        private static int Percent(JToken value)
+        {
+            Check(value?.Type == JTokenType.Integer && (long)value >= 0 && (long)value <= 100, "percent must be 0..100");
+            return (int)value;
+        }
+
+        private static CreatureStage ParseStage(JToken value)
+        {
+            string id = Text(value);
+            switch (id)
+            {
+                case "juvenile": return CreatureStage.Juvenile;
+                case "adolescent": return CreatureStage.Adolescent;
+                case "adult": return CreatureStage.Adult;
+                case "overload": return CreatureStage.Overload;
+                default: throw new InvalidDataException("Unknown creature stage: " + id);
+            }
+        }
+
+        private static Element ParseElement(JToken value)
+        {
+            string id = Text(value);
+            foreach (Element e in Enum.GetValues(typeof(Element)))
+                if (e.ToString().ToLowerInvariant() == id) return e;
+            throw new InvalidDataException("Unknown element: " + id);
         }
 
         private static void Check(bool valid, string message)

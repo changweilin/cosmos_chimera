@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Capture.Tests",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.GameData",
         "Cosmimera.Capture",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

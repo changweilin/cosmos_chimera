@@ -1,5 +1,6 @@
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.GameData;
 using NUnit.Framework;
 
 namespace Cosmimera.Capture.Tests
@@ -63,6 +64,65 @@ namespace Cosmimera.Capture.Tests
         {
             var rng = new Pcg32(1, 2);
             Assert.Throws<ContractException>(() => CaptureRules.Roll(101, ref rng));
+        }
+
+        [Test]
+        public void Basic_four_tiers_scale_by_stage_difference_and_clamp()
+        {
+            var t1 = CaptureVesselSpec.Basic(CreatureStage.Juvenile, 50);
+            var t3 = CaptureVesselSpec.Basic(CreatureStage.Adult, 70);
+            var env = new CaptureEnvironment(false, 0);
+
+            Assert.That(CaptureRules.ChancePercent(t1, CaptureTarget.Wild(CreatureStage.Juvenile), env), Is.EqualTo(50));
+            Assert.That(CaptureRules.ChancePercent(t3, CaptureTarget.Wild(CreatureStage.Juvenile), env), Is.EqualTo(100));
+            Assert.That(CaptureRules.ChancePercent(t1, CaptureTarget.Wild(CreatureStage.Adult), env), Is.EqualTo(0));
+            Assert.That(CaptureRules.ChancePercent(t1, CaptureTarget.Wild(CreatureStage.Adolescent), env), Is.EqualTo(25));
+        }
+
+        [Test]
+        public void Basic_vessel_guarantees_planet_boss_only_when_tier_meets_boss_stage()
+        {
+            var t1 = CaptureVesselSpec.Basic(CreatureStage.Juvenile, 40);
+            var t2 = CaptureVesselSpec.Basic(CreatureStage.Adolescent, 45);
+            var t4 = CaptureVesselSpec.Basic(CreatureStage.Overload, 60);
+            var env = new CaptureEnvironment(false, 0);
+
+            Assert.That(CaptureRules.ChancePercent(t1, CaptureTarget.PlanetBoss(PlanetSize.Asteroid), env), Is.EqualTo(100));
+            Assert.That(CaptureRules.ChancePercent(t2, CaptureTarget.PlanetBoss(PlanetSize.Asteroid), env), Is.EqualTo(100));
+            Assert.That(CaptureRules.ChancePercent(t1, CaptureTarget.PlanetBoss(PlanetSize.Moon), env), Is.LessThan(100));
+            Assert.That(CaptureRules.ChancePercent(t4, CaptureTarget.PlanetBoss(PlanetSize.Supergiant), env), Is.EqualTo(100));
+            Assert.That(CaptureRules.ChancePercent(t4, CaptureTarget.DungeonBoss(CreatureStage.Adult, Element.Fire), env), Is.LessThan(100));
+        }
+
+        [Test]
+        public void Advanced_vessel_boosts_matching_terrain_and_guarantees_matching_dungeon_boss()
+        {
+            var fireVessel = CaptureVesselSpec.Advanced(Element.Fire, 50, 25);
+            var surfaceEnv = new CaptureEnvironment(false, 0);
+            var fireDungeonEnv = new CaptureEnvironment(false, 0, inAdvancedTerrain: true, Element.Fire);
+            var iceDungeonEnv = new CaptureEnvironment(false, 0, inAdvancedTerrain: true, Element.Ice);
+
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.Wild(CreatureStage.Adult), surfaceEnv), Is.EqualTo(50));
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.Wild(CreatureStage.Adult), fireDungeonEnv), Is.EqualTo(75));
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.Wild(CreatureStage.Adult), iceDungeonEnv), Is.EqualTo(50));
+
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.DungeonBoss(CreatureStage.Adult, Element.Fire), fireDungeonEnv), Is.EqualTo(100));
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.DungeonBoss(CreatureStage.Adult, Element.Fire), surfaceEnv), Is.EqualTo(50));
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.DungeonBoss(CreatureStage.Adult, Element.Ice), iceDungeonEnv), Is.EqualTo(50));
+            Assert.That(CaptureRules.ChancePercent(fireVessel, CaptureTarget.PlanetBoss(PlanetSize.Asteroid), surfaceEnv), Is.EqualTo(50));
+        }
+
+        [Test]
+        public void Tiered_capture_specs_reject_invalid_preconditions()
+        {
+            Assert.Throws<ContractException>(() => CaptureVesselSpec.Basic((CreatureStage)9, 50));
+            Assert.Throws<ContractException>(() => CaptureVesselSpec.Basic(CreatureStage.Juvenile, 101));
+            Assert.Throws<ContractException>(() => CaptureVesselSpec.Advanced((Element)99, 50, 20));
+            Assert.Throws<ContractException>(() => CaptureVesselSpec.Advanced(Element.Fire, 50, -1));
+            Assert.Throws<ContractException>(() => CaptureTarget.PlanetBoss((PlanetSize)9));
+            Assert.Throws<ContractException>(() => CaptureTarget.DungeonBoss((CreatureStage)9, Element.Fire));
+            Assert.Throws<ContractException>(() => new CaptureEnvironment(false, -1));
+            Assert.Throws<ContractException>(() => new CaptureStageCurve(-1, 10));
         }
     }
 }
