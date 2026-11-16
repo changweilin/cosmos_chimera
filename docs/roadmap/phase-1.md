@@ -19,7 +19,7 @@
 | P1-12 | GPU instancing 植被：草海密度 ×10（第 1 項） | 待定 | OPUS | Steam Deck 800p ≥ 30 fps；截圖驗收 | ⬜ |
 | P1-13 | 水面：岸邊泡沫、折射、焦散（第 3 項） | 待定 | 人工 | 截圖驗收 | ⬜ |
 | P1-14 | 體積霧與光束（第 4 項） | 待定 | 人工 | 截圖驗收；Steam Deck ≥ 30 fps | ⬜ |
-| P1-15 | 遠景 LOD／impostor（第 5 項）：`FarScenery` 把 90 m 外到霧裡（≤ 260 m）的樹／大岩／石柱／晶簇合併成低面數輪廓分塊網格（`FarSceneryMeshes`，每物件 10–42 面，每幀最多建 2 塊），`ToonScenery` `_FarFade` 在近景範圍與外緣縮回地面；建築原本就全星球常駐（`SettlementView`） | FABLE | OPUS | 90 m 外仍看得到樹與建築輪廓；截圖驗收（`Logs/geology-*-far{,-before}.png`）；Steam Deck 幀率未量 | 🟨 |
+| P1-15 | 遠景 LOD／impostor（第 5 項）：`FarScenery` 把 90 m 外到霧裡（≤ 260 m）的樹／大岩／石柱／晶簇合併成低面數輪廓分塊網格（`FarSceneryMeshes`，每物件 10–42 面，每幀最多建 2 塊），`ToonScenery` `_FarFade` 在近景範圍與外緣縮回地面；建築原本就全星球常駐（`SettlementView`） | FABLE | OPUS | 90 m 外仍看得到樹與建築輪廓；截圖驗收（`Logs/geology-*-far{,-before}.png`）；Steam Deck 幀率未量 | ✅ |
 | P1-16 | 匯入美術模型與貼圖取代程序網格（第 6 項；`design/art-asset-pipeline.md`，3D 工具選型已移交其他專案） | 待定 | 人工 | 逐類資產驗收 | ⬜ |
 
 ## 未收尾紀錄
