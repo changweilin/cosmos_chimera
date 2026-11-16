@@ -208,7 +208,7 @@ namespace Cosmimera.WorldGen
                     break;
                 case LandmarkKind.Labyrinth:
                     footprint = 14f + rng.NextUInt(5);
-                    height = 5f + rng.NextUInt(3);
+                    height = 9f + 2f * rng.NextUInt(3);
                     break;
                 case LandmarkKind.MineShaft:
                     footprint = 6f + 0.5f * rng.NextUInt(5);

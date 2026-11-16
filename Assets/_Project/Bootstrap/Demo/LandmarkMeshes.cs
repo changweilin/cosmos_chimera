@@ -1082,7 +1082,8 @@ namespace Cosmimera.Bootstrap.Demo
             for (int ring = 0; ring < 3; ring++)
             {
                 float rr = fr * (0.95f - 0.27f * ring);
-                float wallH = h * (0.75f + 0.18f * ring);
+                // HeightM is the core spire; the walls step up toward it from half that.
+                float wallH = h * (0.5f + 0.12f * ring);
                 // The outer wall opens on the entrance axis; each inner wall opens a third of a turn further round.
                 float gap = math.PI * 0.5f + ring * 2.1f;
                 int pieces = s.Variant == 0 ? 28 : 16;
@@ -1120,17 +1121,17 @@ namespace Cosmimera.Bootstrap.Demo
             float gateZ = s.Variant == 0 ? fr * 0.9f : fr * 0.66f;
             for (int side = -1; side <= 1; side += 2)
             {
-                Box(g[W], new float3(side * 2.6f, 0f, gateZ), 0.9f, 0.9f, h * 1.25f, math.PI * 0.5f, 0.9f, 1.08f, 0.75f);
-                Lathe(g[G], new float3(side * 2.6f, h * 1.25f + 0.3f, gateZ), up, Ball(0.4f, 4), 6, 0f, 1f, 1f);
+                Box(g[W], new float3(side * 2.6f, 0f, gateZ), 0.9f, 0.9f, h * 0.85f, math.PI * 0.5f, 0.9f, 1.08f, 0.75f);
+                Lathe(g[G], new float3(side * 2.6f, h * 0.85f + 0.3f, gateZ), up, Ball(0.4f, 4), 6, 0f, 1f, 1f);
             }
 
             float core = fr * 0.2f;
             Lathe(g[W], float3.zero, up, new[]
             {
-                new float2(core, 0.25f), new float2(core * 0.8f, 1.2f), new float2(core * 0.45f, 1.2f), new float2(core * 0.3f, h * 1.6f), new float2(0f, h * 1.6f + 1.2f),
+                new float2(core, 0.25f), new float2(core * 0.8f, 1.2f), new float2(core * 0.45f, 1.2f), new float2(core * 0.3f, h - 1.2f), new float2(0f, h),
             }, 4, math.PI * 0.25f, 0.88f, 1.1f);
-            Torus(g[G], new float3(0f, h * 1.1f, 0f), up, core * 0.75f, 0.1f, 16, 4, 1f);
-            Lathe(g[G], new float3(0f, h * 1.6f + 1.9f, 0f), up, new[] { new float2(0f, 0f), new float2(0.5f, 0.8f), new float2(0f, 1.8f) }, 4, 0f, 1f, 1f);
+            Torus(g[G], new float3(0f, h * 0.7f, 0f), up, core * 0.75f, 0.1f, 16, 4, 1f);
+            Lathe(g[G], new float3(0f, h + 0.7f, 0f), up, new[] { new float2(0f, 0f), new float2(0.5f, 0.8f), new float2(0f, 1.8f) }, 4, 0f, 1f, 1f);
         }
 
         private static float3 RingPoint(float a, float r, int variant)
@@ -1208,6 +1209,13 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     float3 q = p + new float3(1f, 0f, 1f) * (0.8f * noise.snoise(p * 0.22f + seed)) * (i > 0 ? 1f : 0f);
                     q.z = math.min(q.z, face + q.y * -0.05f);
+                    // The bulges must not carry rock past the circle the collider blocks.
+                    float reach = math.length(q.xz);
+                    if (reach > fr * 0.99f)
+                    {
+                        q.xz *= fr * 0.99f / reach;
+                    }
+
                     return q;
                 });
                 float pw = 1.7f, ph = 3.2f;

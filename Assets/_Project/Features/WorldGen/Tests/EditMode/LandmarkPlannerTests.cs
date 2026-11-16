@@ -11,7 +11,7 @@ namespace Cosmimera.WorldGen.Tests
     public sealed class LandmarkPlannerTests
     {
         // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v1).
-        private const ulong SnapshotSeed12345V1 = 0UL;
+        private const ulong SnapshotSeed12345V1 = 4764574909514260500UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;

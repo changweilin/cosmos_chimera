@@ -23,7 +23,7 @@ namespace Cosmimera.Bootstrap.Tests
             LandmarkKind.SkyIsland => (18f, 16f),
             LandmarkKind.SpaceElevator => (9f, 480f),
             LandmarkKind.SpaceStation => (0f, 24f),
-            LandmarkKind.Labyrinth => (16f, 6f),
+            LandmarkKind.Labyrinth => (16f, 11f),
             LandmarkKind.MineShaft => (7f, 10f),
             _ => (7f, 8f),
         };

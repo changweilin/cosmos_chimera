@@ -150,7 +150,7 @@ namespace Cosmimera.Bootstrap.Tests
                 ("sky-island", LandmarkKind.SkyIsland, 18f, 16f, 30f, 48f),
                 ("space-elevator", LandmarkKind.SpaceElevator, 9f, 240f, 0f, 30f),
                 ("space-station", LandmarkKind.SpaceStation, 0f, 24f, 40f, 70f),
-                ("labyrinth", LandmarkKind.Labyrinth, 16f, 6f, 0f, 40f),
+                ("labyrinth", LandmarkKind.Labyrinth, 16f, 11f, 0f, 40f),
                 ("mine", LandmarkKind.MineShaft, 7f, 10f, 0f, 20f),
                 ("dungeon-gate", LandmarkKind.DungeonGate, 7f, 9f, 0f, 20f),
             };

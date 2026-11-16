@@ -293,7 +293,7 @@ PlanetSeed + PlanetType + GeneratorVersion
 | 空島 `SkyIsland` | 樹林／遺跡／晶簇 | 14–22 m（島本身） | 厚 12–20 m，離地 50–90 m | 不擋 |
 | 太空電梯 `SpaceElevator` | 帶狀纜＋爬升艙／三纜＋間隔環 | 9 m | 0.75 R | 實心 |
 | 太空站 `SpaceStation` | 環形／紡錘＋太陽能板 | — | 掛在電梯頂端 | 不擋 |
-| 迷宮 `Labyrinth` | 圓環／方庭（三圈錯開缺口的牆） | 14–18 m | 牆 5–7 m | 實心 |
+| 迷宮 `Labyrinth` | 圓環／方庭（三圈錯開缺口的牆） | 14–18 m | 中央方尖碑 9–13 m，牆為其 0.5–0.75 | 實心 |
 | 坑道 `MineShaft` | 豎井井架／山腹坑口 | 6–8 m | 8–12 m | 實心 |
 | 地城門 `DungeonGate` | 巨拱封印門／獸首巨口 | 6–8 m | 7–10 m | 實心 |
 
