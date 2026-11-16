@@ -123,7 +123,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-A5':[R('undead','殭屍／骷髏／吸血鬼／惡魔',['都是和平居民（暫定）','只住在遺跡與巢穴周圍','只在夜晚出現','改為敵對 NPC（會攻擊）','其他（請在備註說明）']),T('more','補充','')],
+ 'Q-A5':[R('undead','殭屍／骷髏／吸血鬼／惡魔',['都是和平居民（暫定）','只住在遺跡與巢穴周圍','只在夜晚出現','改為敵對 NPC（會攻擊）','其他（請在備註說明）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
@@ -214,7 +214,22 @@ document.getElementById('copy').onclick=async()=>{
   ta.value=t;box.hidden=false;ta.focus();ta.select();
   msg('請按 Ctrl+C 複製');
 };
-document.getElementById('dl').onclick=()=>{const b=new Blob([JSON.stringify(st,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='open-questions.answers.json';a.click()};
+document.getElementById('dl').onclick=()=>{
+  const json=JSON.stringify(st,null,2);
+  const a=document.createElement('a');
+  a.download='open-questions.answers.json';
+  let url='';
+  if(json.length<1000000){
+    a.href='data:application/json;charset=utf-8,'+encodeURIComponent(json);
+  }else{
+    url=URL.createObjectURL(new Blob([json],{type:'application/json;charset=utf-8'}));
+    a.href=url;
+  }
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  if(url)setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
 document.getElementById('reset').onclick=()=>{if(confirm('清除所有已填決策？')){st={};save();restore()}};
 </script>
 <script>
