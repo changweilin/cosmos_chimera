@@ -2,7 +2,7 @@
 
 validate_data checks schema and cross-file refs; it does not know stage_bands or the
 per-stage resist/mastery pattern the batch prompt demands. This closes that gap so a
-FLASH/TERRA draft fails fast with a pointer instead of reaching review.
+TERRA/HYDROGEN draft fails fast with a pointer instead of reaching review.
 
 Run: python tools/prompts/check_batch.py Data/_incoming/<batch>/creatures/creatures.json
 

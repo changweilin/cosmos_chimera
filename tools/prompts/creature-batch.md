@@ -1,6 +1,6 @@
 # 宙獸批次 prompt 模板（P5-01）
 
-給 FLASH／TERRA 的批次初稿 prompt。使用前先讀 `AGENTS.md`；本檔只負責「這一批要產什麼」，規格來源不複製：
+給 TERRA／HYDROGEN 的批次初稿 prompt。使用前先讀 `AGENTS.md`；本檔只負責「這一批要產什麼」，規格來源不複製：
 `Data/schemas/creature.schema.json`、`Data/balance.json#stage_bands`、`docs/design/creatures.md`、`docs/design/creature-concept-pipeline.md`。
 
 ## 人類操作（派工前）

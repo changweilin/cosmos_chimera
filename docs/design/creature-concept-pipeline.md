@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 1. 組合矩陣 | 屬性 × 外觀 × 文化地區的配額表（確保分布平均） | Claude Sonnet | 確認配額 |
 | 2. 文化考據 | 原型清單：特徵、象徵物、敏感度 | Gemini Argon（長上下文考據）→ Claude Opus 審 | 敏感度審核 |
-| 3. 批次初稿 | 每批 20–50 隻 JSON（符合 schema） | Gemini Flash / ChatGPT Terra | — |
+| 3. 批次初稿 | 每批 20–50 隻 JSON（符合 schema） | ChatGPT Terra / Gemini Hydrogen | — |
 | 4. 一致性 | 去重、命名衝突、屬性分布、關係邊建議 | Claude Sonnet + `tools/validate-data` | — |
 | 5. 數值初配 | 能力值、抗性、專精 | ChatGPT Sol（數值模型）→ Claude Opus 審 | 平衡試玩 |
 | 6. 視覺 prompt | 四型態（三段進化＋超載）的概念圖 prompt，用 `tools/prompt-forge` 產生 | ChatGPT Terra | 美術定稿 |
