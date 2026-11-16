@@ -84,6 +84,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: Configure ran. Post: null when the run was configured without visuals. Side effects: none.</remarks>
         internal LandmarkView LandmarkViewForTests => _landmarkView;
 
+        /// <summary>Observes the run's residents (immutable).</summary>
+        /// <remarks>Pre: Configure ran. Post: non-null. Side effects: none.</remarks>
+        internal RunPopulace PopulaceForTests => _populace;
+
+        /// <summary>Observes the residents' view.</summary>
+        /// <remarks>Pre: Configure ran. Post: null when the run was configured without visuals. Side effects: none.</remarks>
+        internal PopulaceView PopulaceViewForTests => _populaceView;
+
         /// <summary>Copies a quest step's immutable value.</summary>
         /// <remarks>Pre: Configure ran; index indexes Quest. Post: detached value. Side effects: none.</remarks>
         internal RunQuestStep QuestStepForTests(int index) => _plan.Quest[index];

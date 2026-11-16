@@ -218,6 +218,9 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: planet-world.md#奇觀地標 — solid wonders block creatures on the circle LandmarkView gives a collider.
             public LandmarkLayout Landmarks { get; set; }
 
+            // REQ: characters.md#路人-npc — residents are rule-layer bodies: creatures walk around them.
+            public RunPopulace Populace { get; set; }
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
@@ -231,7 +234,8 @@ namespace Cosmimera.Bootstrap.Demo
             public bool IsBlocked(float3 direction, float clearanceM) =>
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
                 (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
-                (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM));
+                (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM)) ||
+                (Populace != null && Populace.IsBlocked(direction, clearanceM));
 
             // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
             public bool IsOffWalls(float3 direction) =>
@@ -294,6 +298,8 @@ namespace Cosmimera.Bootstrap.Demo
         private SettlementView _settlementView;
         private LandmarkLayout _landmarks;
         private LandmarkView _landmarkView;
+        private RunPopulace _populace;
+        private PopulaceView _populaceView;
         private ScatterField _scatterField;
         private ObjectPhysics _objectPhysics;
         private EnvMaterials _envMaterials;
@@ -552,6 +558,15 @@ namespace Cosmimera.Bootstrap.Demo
                 d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
+            // REQ: characters.md#路人-npc — the era is a presentation axis, so its pull on age and health is passed in.
+            // Nobody stands where the player touches down.
+            float3 landingAt = _plan.LandingDirection;
+            float landingGap = 4f / config.Radius;
+            _populace = PopulacePlanner.Generate(config, _plan, _layout,
+                NpcMeshes.TemperFor(ArchitectureMeshes.PlanetStyleFor(setup.PlanetType.Id, setup.Seed).Era),
+                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
+                     math.distancesq(d, landingAt) > landingGap * landingGap);
+            surface.Populace = _populace;
             System.Func<float3, bool> isOpenGround =
                 d => clearance.IsClear(d) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.5f);
             // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
@@ -676,6 +691,11 @@ namespace Cosmimera.Bootstrap.Demo
                 _landmarkView = landmarkRoot.AddComponent<LandmarkView>();
                 _landmarkView.Configure(config, landmarks, surface.GroundAltitude, toonShader, scenery?.Props,
                     setup.PlanetType.Id, setup.Seed);
+                var populaceRoot = new GameObject("Populace");
+                populaceRoot.transform.SetParent(transform, false);
+                _populaceView = populaceRoot.AddComponent<PopulaceView>();
+                _populaceView.Configure(config, _populace, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
+                    setup.PlanetType.Id, setup.Seed, _plan, PlayerPosition);
                 if (_dungeon != null)
                 {
                     var dungeonRoot = new GameObject("Dungeon");

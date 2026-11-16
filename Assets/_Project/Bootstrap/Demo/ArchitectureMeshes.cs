@@ -89,7 +89,44 @@ namespace Cosmimera.Bootstrap.Demo
             DamageMean = damageMean;
             PitchScale = pitchScale;
             PlinthAddM = plinthAddM;
+            TertiaryRegion = secondaryRegion;
+            TertiaryEra = secondaryEra;
+            TertiaryShare = 0f;
         }
+
+        private ArchMix(in ArchMix mix, ArchRegion tertiaryRegion, ArchEra tertiaryEra, float tertiaryShare)
+        {
+            this = mix;
+            TertiaryRegion = tertiaryRegion;
+            TertiaryEra = tertiaryEra;
+            TertiaryShare = tertiaryShare;
+        }
+
+        /// <summary>The same mix with a third style that some of the settlement borrows from instead of the secondary.</summary>
+        /// <remarks>
+        /// REQ: settlement-structures.md#建築造型 (第三風格).
+        /// Pre: defined enums; 0 ≤ share ≤ 0.5. Post: a copy whose Tertiary* are the arguments; everything else unchanged.
+        /// Side effects: none.
+        /// </remarks>
+        public ArchMix WithTertiary(ArchRegion region, ArchEra era, float share)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(ArchRegion), region) && Enum.IsDefined(typeof(ArchEra), era),
+                "tertiary region and era must be defined");
+            Contract.Requires(share >= 0f && share <= 0.5f, "share in [0, 0.5]");
+            return new ArchMix(this, region, era, share);
+        }
+
+        /// <summary>Tradition of the third style.</summary>
+        /// <remarks>Pre: none. Post: defined (SecondaryRegion when no third style was given). Side effects: none.</remarks>
+        public ArchRegion TertiaryRegion { get; }
+
+        /// <summary>Era of the third style.</summary>
+        /// <remarks>Pre: none. Post: defined (SecondaryEra when no third style was given). Side effects: none.</remarks>
+        public ArchEra TertiaryEra { get; }
+
+        /// <summary>Share of buildings (and residents) whose borrowed traits come from the third style instead of the secondary.</summary>
+        /// <remarks>Pre: none. Post: in [0, 0.5]; 0 = no third style. Side effects: none.</remarks>
+        public float TertiaryShare { get; }
 
         /// <summary>Tradition the secondary traits come from.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -407,7 +444,9 @@ namespace Cosmimera.Bootstrap.Demo
         /// Pre: defined kind; settlementIndex ≥ 0; themeId may be null or unknown (no nudge).
         /// Post: same arguments, same mix; Ruins and Lair get a pure Ancient mix; otherwise Weight ≤ 0.7, the
         ///       secondary region is never the planet's own (the planet's secondary, the theme's, or a third
-        ///       tradition), and the secondary era is any inhabited era but the planet's (mostly its kin).
+        ///       tradition), and the secondary era is any inhabited era but the planet's (mostly its kin); the
+        ///       tertiary region is neither the planet's nor the secondary, the tertiary era neither the planet's nor
+        ///       the secondary era, and TertiaryShare is in [0.08, 0.4].
         /// Side effects: none.
         /// </remarks>
         public static ArchMix MixFor(in ArchPlanetStyle planet, SettlementKind kind, string themeId, ulong seed, int settlementIndex)
@@ -481,11 +520,44 @@ namespace Cosmimera.Bootstrap.Demo
                 : eraRoll < DistantEraShare + OtherKinEraShare ? other
                 : planet.SecondaryEra;
             (float eraAge, float eraDamage) = EraWear(planet.Era);
-            return new ArchMix(secondary, secondaryEra,
+            var mix = new ArchMix(secondary, secondaryEra,
                 math.clamp(planet.Weight + theme.weight + 0.12f * Gauss(ref rng), 0f, 0.7f),
                 math.saturate(eraAge + upkeep + theme.age + 0.08f * Gauss(ref rng)),
                 math.saturate(eraDamage + theme.damage + 0.04f * Gauss(ref rng)),
                 theme.pitch, theme.plinth);
+
+            // REQ: settlement-structures.md#建築造型 (第三風格) — a quarter of newcomers, a street rebuilt after a
+            // fire: a pairing the settlement's secondary does not already cover. Its own stream, so the draws above
+            // (and every settlement drawn before this existed) stay as they were.
+            var third = new Pcg32(Salt ^ seed, 0x544552ul + (ulong)settlementIndex);
+            ArchRegion thirdRegion = planet.Region;
+            for (int skip = (int)third.NextUInt(4); ; thirdRegion = (ArchRegion)(((int)thirdRegion + 1) % 6))
+            {
+                if (thirdRegion != planet.Region && thirdRegion != secondary && skip-- == 0)
+                {
+                    break;
+                }
+            }
+
+            ArchEra thirdEra = planet.Era;
+            for (int skip = (int)third.NextUInt((uint)InhabitedEras.Length - 2); ;
+                 thirdEra = InhabitedEras[(Array.IndexOf(InhabitedEras, thirdEra) + 1) % InhabitedEras.Length])
+            {
+                if (thirdEra != planet.Era && thirdEra != secondaryEra && skip-- == 0)
+                {
+                    break;
+                }
+            }
+
+            // Bigger places draw from farther away.
+            float reach = kind switch
+            {
+                SettlementKind.City => 0.08f,
+                SettlementKind.CityState => 0.1f,
+                SettlementKind.Town => 0.04f,
+                _ => 0f,
+            };
+            return mix.WithTertiary(thirdRegion, thirdEra, math.clamp(0.08f + reach + 0.22f * third.NextFloat(), 0f, 0.5f));
         }
 
         // Irwin–Hall(4) scaled to unit variance: bounded (|g| ≤ 3.47), so no draw can push a roof past MaxOverhangM,
@@ -754,7 +826,11 @@ namespace Cosmimera.Bootstrap.Demo
             Style st = StyleFor(spec.Region, spec.Era);
             if (vary.Mix > 0f)
             {
-                st = Blend(st, StyleFor(mix.SecondaryRegion, mix.SecondaryEra), vary.Mix, ref rng);
+                // Own stream: a settlement without a third style builds exactly what it did before the third existed.
+                var coin = new Pcg32(Salt ^ spec.Seed, 0x544552ul);
+                bool third = coin.NextFloat() < mix.TertiaryShare;
+                st = Blend(st, third ? StyleFor(mix.TertiaryRegion, mix.TertiaryEra) : StyleFor(mix.SecondaryRegion, mix.SecondaryEra),
+                    vary.Mix, ref rng);
             }
 
             st.Roof.Pitch = math.clamp(st.Roof.Pitch * mix.PitchScale * (1f + 0.12f * Gauss(ref rng)), 0.3f, 1.9f);
