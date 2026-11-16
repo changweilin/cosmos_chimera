@@ -77,10 +77,10 @@ namespace Cosmimera.Bootstrap.Tests
                 .Invoke(game, null);
             // Batchmode -nographics never calls OnGUI, so the drawn count (_menuButtonCount) cannot be read here; the
             // expected value is the lobby layout: language + 6×(evolve, remove) + 5 enabled move-up (the first is
-            // disabled, not selectable) + 2 reserves×(evolve, add) + journal + start-run + quit + optional character.
+            // disabled, not selectable) + 2 reserves×(evolve, add) + equipment-paperdoll + journal + start-run + quit + optional character.
             var models = (CharacterModelTable)Field(game, "_characterModels");
             int characterButton = models != null && models.Entries.Count > 0 ? 1 : 0;
-            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 3 + characterButton));
+            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 4 + characterButton));
             int drawn = (int)Field(game, "_menuButtonCount");
             if (drawn > 0)
             {
@@ -95,6 +95,42 @@ namespace Cosmimera.Bootstrap.Tests
             yield return null;
             InputSystem.QueueStateEvent(pad, new GamepadState());
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Lobby_shortcut_opens_items_paperdoll_and_preview_switches_targets()
+        {
+            SceneManager.LoadScene("Demo");
+            yield return null;
+            var game = Object.FindFirstObjectByType<DemoGame>();
+            Assert.That(game, Is.Not.Null);
+
+            var starters = (List<CreatureDef>)Field(game, "_starters");
+            var save = new LobbySave();
+            save.ChooseStarter(starters[0].LineId, starters[0].Id, 0);
+            game.GetType().GetField("_save", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(game, save);
+
+            game.GetType().GetMethod("OpenJournalAt", BindingFlags.NonPublic | BindingFlags.Instance)
+                .Invoke(game, new object[] { AdventurePanel.Page.Items });
+
+            var journal = (AdventurePanel)Field(game, "_journal");
+            Assert.That(journal, Is.Not.Null);
+            Assert.That(journal.Current, Is.EqualTo(AdventurePanel.Page.Items));
+
+            using (var preview = new PaperdollPreview(null))
+            {
+                Assert.That(preview.Texture, Is.Not.Null);
+                preview.SetPlayerTarget(null, null, "capsule", "craft_iron_blade", "craft_iron_guard", "craft_gem_pendant");
+                preview.Rotate(45f);
+                Assert.That(preview.Yaw, Is.EqualTo(225f).Within(0.01f));
+                preview.Render();
+
+                preview.SetCreatureTarget(starters[0], 1, "craft_copper_rod", "craft_linen_outfit", "");
+                preview.Render();
+            }
+
+            game.GetType().GetMethod("CloseJournal", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(game, null);
+            Assert.That(Field(game, "_journal"), Is.Null);
         }
     }
 }

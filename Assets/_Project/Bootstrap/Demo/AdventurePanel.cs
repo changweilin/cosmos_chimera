@@ -31,6 +31,14 @@ namespace Cosmimera.Bootstrap.Demo
             Current = page;
         }
 
+        internal void SetPage(Page page)
+        {
+            Current = page;
+            _scroll = Vector2.zero;
+            Message = string.Empty;
+            _focus.SetCount(4);
+        }
+
         internal void ReadInput(InputActionMap input)
         {
             if (_editingText)

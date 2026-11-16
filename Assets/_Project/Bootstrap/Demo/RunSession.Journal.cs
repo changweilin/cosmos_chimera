@@ -63,7 +63,23 @@ namespace Cosmimera.Bootstrap.Demo
                 _progression.LevelOf(_partyExp[slot]));
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
                 _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
-            unit.Combatant.Book.SetEquipmentEffects(equipment.CreatureEffects);
+            var combinedEffects = new List<EffectSpec>(equipment.CreatureEffects);
+            if (_setup.Partners != null)
+            {
+                foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
+                {
+                    EquipmentModifiers subEquipment = EquipmentRules.Collect(subId,
+                        _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+                    foreach (EffectSpec effect in subEquipment.CreatureEffects)
+                    {
+                        if (combinedEffects.Count < 32)
+                        {
+                            combinedEffects.Add(effect);
+                        }
+                    }
+                }
+            }
+            unit.Combatant.Book.SetEquipmentEffects(combinedEffects);
             if (overload) _overloadUnlocked.Add(unit.Id);
             return unit;
         }

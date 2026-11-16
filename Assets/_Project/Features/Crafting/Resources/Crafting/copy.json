@@ -363,5 +363,55 @@
     "zh-TW": "所有屬性",
     "en": "all elements",
     "ja": "全属性"
+  },
+  "ui.lobby.equipment_paperdoll": {
+    "zh-TW": "裝備系統與紙娃娃",
+    "en": "Equipment & Paperdoll",
+    "ja": "装備とペーパードール"
+  },
+  "ui.paperdoll.title": {
+    "zh-TW": "紙娃娃與裝備配置",
+    "en": "Paperdoll & Equipment",
+    "ja": "ペーパードール＆装備"
+  },
+  "ui.paperdoll.rotate_left": {
+    "zh-TW": "⟲ 左轉",
+    "en": "⟲ Rotate L",
+    "ja": "⟲ 左回転"
+  },
+  "ui.paperdoll.rotate_right": {
+    "zh-TW": "右轉 ⟳",
+    "en": "Rotate R ⟳",
+    "ja": "右回転 ⟳"
+  },
+  "ui.paperdoll.empty_slot": {
+    "zh-TW": "未裝備",
+    "en": "Empty",
+    "ja": "未装備"
+  },
+  "ui.paperdoll.sub_prefix": {
+    "zh-TW": "副手",
+    "en": "Sub",
+    "ja": "サブ"
+  },
+  "ui.paperdoll.manage_partners": {
+    "zh-TW": "設定主力／副手配對",
+    "en": "Configure Main & Sub Partners",
+    "ja": "主力／サブ編成へ"
+  },
+  "ui.paperdoll.available_gear": {
+    "zh-TW": "背包可裝備物品",
+    "en": "Available Gear in Bag",
+    "ja": "所持装備品"
+  },
+  "ui.paperdoll.none_available": {
+    "zh-TW": "背包內無符合此對象的可裝備物品。",
+    "en": "No equippable gear in bag for this wearer.",
+    "ja": "この対象に装備できるアイテムがありません。"
+  },
+  "ui.paperdoll.drag_hint": {
+    "zh-TW": "拖曳模型或按按鈕旋轉預覽",
+    "en": "Drag preview or use buttons to rotate",
+    "ja": "ドラッグまたはボタンで回転"
   }
 }

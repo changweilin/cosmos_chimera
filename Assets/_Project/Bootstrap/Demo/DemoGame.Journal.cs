@@ -11,9 +11,11 @@ namespace Cosmimera.Bootstrap.Demo
         private CodexPanel _codex;
         private int _partnerMain;
 
-        private void OpenJournal()
+        private void OpenJournal() => OpenJournalAt(AdventurePanel.Page.Partners);
+
+        private void OpenJournalAt(AdventurePanel.Page initialPage)
         {
-            _journal = new AdventurePanel(_copy);
+            _journal = new AdventurePanel(_copy, initialPage);
             _codex = new CodexPanel(_database, _copy, IsOwnedSpecies, _portraits);
             _partnerMain = _save.Party[0];
             _confirmPending = false;
@@ -21,6 +23,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CloseJournal()
         {
+            _paperdollPreview?.Dispose();
+            _paperdollPreview = null;
             _journal = null;
             _confirmPending = false;
             _menuFocus.SetCount(0);

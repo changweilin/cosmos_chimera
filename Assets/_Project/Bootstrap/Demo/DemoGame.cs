@@ -182,6 +182,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDestroy()
         {
+            _paperdollPreview?.Dispose();
+            _paperdollPreview = null;
             _menuHints?.Dispose();
             _menuInput?.Dispose();
         }
@@ -240,7 +242,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_screen == Screen.StarSelect) return _options.Count + 1;
             if (_save.StarterLine == null) return 1 + _starters.Count +
                 (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 3;
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 4;
             if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
             for (int i = 0; i < _save.Owned.Count; i++)
             {
@@ -479,6 +481,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             DrawPartyEditor();
             DrawMaterials();
+            if (MenuButton(_copy.Ui("ui.lobby.equipment_paperdoll"), GUILayout.Height(40)))
+            {
+                OpenJournalAt(AdventurePanel.Page.Items);
+                GUIUtility.ExitGUI();
+            }
             if (MenuButton(_copy.Ui("ui.journal.open"), GUILayout.Height(40)))
             {
                 OpenJournal();
