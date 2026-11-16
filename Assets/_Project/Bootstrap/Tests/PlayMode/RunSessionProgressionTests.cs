@@ -427,7 +427,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 var rng = new Pcg32(p.Seed, 'D');
                 return Tier0Normals(p, null).Count > 0 &&
-                    rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out _);
+                    rules.TryRoll(SpawnRole.Normal, p.Elements.Elements, p.Elements.Percents, ref rng, out _);
             });
             RunPlan plan = PlanFor(env, seed);
             int target = Tier0Normals(plan, null)[0];
@@ -446,7 +446,7 @@ namespace Cosmimera.Bootstrap.Tests
                     events[faint] = default;
                     Assert.That(s.EventsForTests[faint].Kind, Is.EqualTo(EncounterEventKind.Faint), "event snapshot is detached");
                     var rng = new Pcg32(seed, 'D');
-                    Assert.That(rules.TryRoll(SpawnRole.Normal, env.Type.ElementBias, ref rng, out MaterialStack expected), Is.True);
+                    Assert.That(rules.TryRoll(SpawnRole.Normal, plan.Elements.Elements, plan.Elements.Percents, ref rng, out MaterialStack expected), Is.True);
                     Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1), "real faint dispatch awards the drop");
                     Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
                     Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
@@ -467,7 +467,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 var rng = new Pcg32(p.Seed, 'D');
                 return p.Spawns.Any(sp => sp.Role == SpawnRole.Elite) &&
-                    rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref rng, out _);
+                    rules.TryRoll(SpawnRole.Elite, p.Elements.Elements, p.Elements.Percents, ref rng, out _);
             });
             RunPlan plan = PlanFor(env, seed);
             int elite = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Elite);
@@ -480,7 +480,7 @@ namespace Cosmimera.Bootstrap.Tests
             Step(s);
 
             var oracle = new Pcg32(seed, 'D');
-            Assert.That(rules.TryRoll(SpawnRole.Elite, env.Type.ElementBias, ref oracle, out MaterialStack expected), Is.True);
+            Assert.That(rules.TryRoll(SpawnRole.Elite, plan.Elements.Elements, plan.Elements.Percents, ref oracle, out MaterialStack expected), Is.True);
             Assert.That(s.MaterialsForTests.Count, Is.EqualTo(1));
             Assert.That(s.MaterialsForTests[0].Key, Is.EqualTo(expected.Key));
             Assert.That(s.MaterialsForTests[0].Qty, Is.EqualTo(expected.Qty));
@@ -537,7 +537,7 @@ namespace Cosmimera.Bootstrap.Tests
             var expected = new List<MaterialStack>();
             foreach (int unit in order)
             {
-                if (rules.TryRoll(plan.Spawns[unit].Role, env.Type.ElementBias, ref oracle, out MaterialStack drop))
+                if (rules.TryRoll(plan.Spawns[unit].Role, plan.Elements.Elements, plan.Elements.Percents, ref oracle, out MaterialStack drop))
                 {
                     expected.Add(drop);
                 }
@@ -549,7 +549,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 Assert.That(got[i].Key, Is.EqualTo(expected[i].Key), "drop " + i);
                 Assert.That(got[i].Qty, Is.EqualTo(expected[i].Qty), "drop " + i);
-                CollectionAssert.Contains(env.Type.ElementBias, got[i].Key.Element);
+                CollectionAssert.Contains(plan.Elements.Elements, got[i].Key.Element);
             }
 
             Assert.That(got[got.Count - 1].Key.Tier, Is.EqualTo(rules.TierFor(SpawnRole.Boss)), "the boss always drops (100%)");
@@ -579,7 +579,7 @@ namespace Cosmimera.Bootstrap.Tests
             ulong seed = FindSeed(env, p =>
             {
                 var rng = new Pcg32(p.Seed, 'D');
-                return rules.TryRoll(SpawnRole.Boss, env.Type.ElementBias, ref rng, out _);
+                return rules.TryRoll(SpawnRole.Boss, p.Elements.Elements, p.Elements.Percents, ref rng, out _);
             });
             RunPlan plan = PlanFor(env, seed);
             int boss = plan.Spawns.ToList().FindIndex(sp => sp.Role == SpawnRole.Boss);
@@ -622,8 +622,10 @@ namespace Cosmimera.Bootstrap.Tests
                 case EndPath.Downed:
                     // Q-C33: a real wild hit through Encounter.Tick (not a seam) must raise PlayerDowned and settle the
                     // run as a defeat. The party stays parked >40 m away so the player is the only intruder in reach.
+                    // Q-C35: a timid wild only fights back once hit, so it would never strike the idle player.
                     RunSession.UnitSnapshot target = s.UnitsForTests.First(u =>
-                        u.Side == EncounterSide.Wild && u.Fielded && !u.IsFainted && u.Id != boss);
+                        u.Side == EncounterSide.Wild && u.Fielded && !u.IsFainted && u.Id != boss &&
+                        env.Wild.First(c => c.Id == u.CreatureId).Temperament != Temperament.Timid);
                     float3 wildUp = s.DirectionForTests(target.Position);
                     MovePlayer(s, math.normalize(wildUp * Radius + PlanetFrame.FromUp(wildUp).East * 3f));
                     s.WoundPlayerForTests(1);
@@ -1428,7 +1430,8 @@ namespace Cosmimera.Bootstrap.Tests
 
             float afterDist = Vector3.Distance(view.Root.position, playerPos);
             Assert.That(afterDist, Is.GreaterThan(startDist), "fleeing visual moves away from the player");
-            LogAssert.NoUnexpectedReceived();
+            // Errors and exceptions already fail the test. NoUnexpectedReceived also trips on the engine's plain-log
+            // "2 audio listeners" notice, which depends on scenes other fixtures left loaded, not on the flee.
         }
 
         private IEnumerator Launch(Env env, ulong seed, int startExp, Run run, ICreatureViewFactory views = null, int[] ids = null,
