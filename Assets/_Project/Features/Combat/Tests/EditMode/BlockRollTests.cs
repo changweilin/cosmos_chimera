@@ -198,6 +198,77 @@ namespace Cosmimera.Combat.Tests
             Assert.Fail("wild never hit the support");
         }
 
+        [TestCase(SupportMode.FreeAllOut)]
+        [TestCase(SupportMode.FocusAllOut)]
+        public void An_all_out_support_never_blocks(SupportMode mode)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
+            EncounterUnit main = e.AddCreature(EncounterSide.Player, Creature("main", Move("tap0", 1, 600000, 0, 100)), null,
+                AtMeters(-60f), 30);
+            EncounterUnit support = e.AddCreature(EncounterSide.Player, Creature("s", Move("tap", 1, 600000, 0, 100), 1), null,
+                AtMeters(0f), 30);
+            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("bite", 40, 2000, 300)), null,
+                AtMeters(1.5f), 30);
+            e.Field(support.Id, AtMeters(0f), false, 0);
+            e.SetSupportMode(mode);
+
+            for (long t = Dt; t <= 6000; t += Dt)
+            {
+                e.Tick(t, Dt, Feet, Free, main.Id);
+                Assert.That(support.IsBlocking, Is.False, "all-out at " + t);
+                if (Has(e, EncounterEventKind.Hit, wild.Id, support.Id))
+                {
+                    Assert.That(Has(e, EncounterEventKind.Blocked, wild.Id, support.Id), Is.False);
+                    return;
+                }
+            }
+
+            Assert.Fail("wild never hit the support");
+        }
+
+        // Main at 0 m locked on a wild behind it (-3 m); a second wild sits next to the support (+3.5 m).
+        private EncounterUnit SupportTargetAfterOneTick(SupportMode mode, out EncounterUnit nearSupport, out EncounterUnit nearMain)
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
+            EncounterUnit main = e.AddCreature(EncounterSide.Player, Creature("main", Move("tap0", 1, 600000, 0, 100)), null,
+                AtMeters(0f), 30);
+            EncounterUnit support = e.AddCreature(EncounterSide.Player, Creature("s", Move("tap", 1, 600000, 0, 100)), null,
+                AtMeters(2f), 30);
+            nearSupport = e.AddCreature(EncounterSide.Wild, Creature("a", Move("nip", 1, 600000, 0, 100)), null, AtMeters(3.5f), 30);
+            nearMain = e.AddCreature(EncounterSide.Wild, Creature("b", Move("nip", 1, 600000, 0, 100)), null, AtMeters(-3f), 30);
+            e.Field(main.Id, AtMeters(0f), false, 0);
+            e.Field(support.Id, AtMeters(2f), false, 0);
+            e.SetSupportMode(mode);
+            Assert.That(e.SupportMode, Is.EqualTo(mode));
+            e.Tick(Dt, Dt, Feet, new AiCommand(AiCommandKind.Focus, nearMain.Id), main.Id);
+            Assume.That(main.TargetId, Is.EqualTo(nearMain.Id));
+            return support;
+        }
+
+        [TestCase(SupportMode.Free)]
+        [TestCase(SupportMode.FreeAllOut)]
+        public void A_free_support_picks_its_nearest_enemy(SupportMode mode)
+        {
+            EncounterUnit support = SupportTargetAfterOneTick(mode, out EncounterUnit nearSupport, out _);
+            Assert.That(support.TargetId, Is.EqualTo(nearSupport.Id));
+        }
+
+        [TestCase(SupportMode.Focus)]
+        [TestCase(SupportMode.FocusAllOut)]
+        public void A_focus_support_takes_the_mains_target(SupportMode mode)
+        {
+            EncounterUnit support = SupportTargetAfterOneTick(mode, out _, out EncounterUnit nearMain);
+            Assert.That(support.TargetId, Is.EqualTo(nearMain.Id));
+        }
+
+        [Test]
+        public void Support_mode_defaults_to_free_and_rejects_undefined_values()
+        {
+            var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
+            Assert.That(e.SupportMode, Is.EqualTo(SupportMode.Free));
+            Assert.Throws<ContractException>(() => e.SetSupportMode((SupportMode)4));
+        }
+
         // Holds block, waits for the wild's 300 ms windup to start, releases `releaseBeforeHitMs` before it lands.
         private Encounter ReleaseBeforeHit(int releaseBeforeHitMs, out bool perfect, out bool blocked)
         {

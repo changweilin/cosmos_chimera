@@ -168,6 +168,20 @@ namespace Cosmimera.Combat
         Reflected = 12,
     }
 
+    /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum SupportMode
+    {
+        /// <summary>Picks its own target (nearest enemy); blocks automatically.</summary>
+        Free = 0,
+        /// <summary>Attacks the main's current target when it has one; blocks automatically.</summary>
+        Focus = 1,
+        /// <summary>As Free, but all-out: never blocks or dodges.</summary>
+        FreeAllOut = 2,
+        /// <summary>As Focus, but all-out: never blocks or dodges.</summary>
+        FocusAllOut = 3,
+    }
+
     /// <summary>Outcome of a player overload command (Q-C12).</summary>
     /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
     public enum OverloadResult
@@ -463,6 +477,27 @@ namespace Cosmimera.Combat
         private float3 _objectAim;
         private readonly HashSet<int> _overloadedThisCombat = new HashSet<int>();
         private int _mainId = CombatAi.NoTarget;
+
+        /// <summary>The support creature's mode (combat.md#支援模式); Free until changed.</summary>
+        /// <remarks>Pre: none. Post: a defined SupportMode. Side effects: none.</remarks>
+        public SupportMode SupportMode { get; private set; } = SupportMode.Free;
+
+        /// <summary>Sets how the player's support creature fights from the next Tick on.</summary>
+        /// <remarks>
+        /// Pre: mode is a defined SupportMode.
+        /// Post: SupportMode == mode. Focus modes hand the main's target to the support AI; all-out modes stop its
+        ///       automatic block (a block already raised this tick stays until the next Tick).
+        /// Side effects: none beyond the property.
+        /// </remarks>
+        public void SetSupportMode(SupportMode mode)
+        {
+            Contract.Requires(mode >= SupportMode.Free && mode <= SupportMode.FocusAllOut, "undefined support mode");
+            SupportMode = mode;
+        }
+
+        private bool SupportFocuses => SupportMode == SupportMode.Focus || SupportMode == SupportMode.FocusAllOut;
+
+        private bool SupportAllOut => SupportMode == SupportMode.FreeAllOut || SupportMode == SupportMode.FocusAllOut;
         private long _lastCombatReviveMs = -1;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
@@ -609,7 +644,8 @@ namespace Cosmimera.Combat
         }
 
         // REQ: combat.md#格擋. Support auto-blocks while an enemy windup has picked it as the target (Q-C56) and it is not
-        // itself winding up — dropping its own attack for every incoming windup would leave the support idle.
+        // itself winding up — dropping its own attack for every incoming windup would leave the support idle. All-out
+        // support modes never block (Q-C60).
         private void UpdateBlocking(long nowMs, int dtMs)
         {
             for (int i = 0; i < _units.Count; i++)
@@ -617,7 +653,7 @@ namespace Cosmimera.Combat
                 _units[i].IsBlocking = false;
             }
 
-            for (int i = 0; i < _units.Count; i++)
+            for (int i = 0; i < _units.Count && !SupportAllOut; i++)
             {
                 EncounterUnit w = _units[i];
                 if (w.Side != EncounterSide.Wild || !w.IsActive || w.WindupSlot == EncounterUnit.NoWindup ||
@@ -1633,7 +1669,9 @@ namespace Cosmimera.Combat
                     cmd = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
                 }
 
-                int mainTarget = role == AiRole.Support && mainId >= 0 ? _units[mainId].TargetId : CombatAi.NoTarget;
+                // REQ: combat.md#支援模式 — only a focus mode hands the main's target to the support.
+                int mainTarget = role == AiRole.Support && mainId >= 0 && SupportFocuses ? _units[mainId].TargetId
+                    : CombatAi.NoTarget;
                 float3 leashAnchor = player ? playerPosition : u.Home;
                 if (onObject)
                 {
