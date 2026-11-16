@@ -30,6 +30,7 @@ namespace Cosmimera.Bootstrap.Demo
             public ulong Seed;
             public float Radius;
             public CreatureStage BossStage;
+            public WorldGen.PlanetElements Elements;
         }
 
         [SerializeField] private GameDatabase _database;
@@ -723,18 +724,13 @@ namespace Cosmimera.Bootstrap.Demo
                 .Replace("{adult}", _progression.BossStageUnlockLevel(CreatureStage.Adult).ToString(inv)), _text);
             foreach (PlanetOption o in _options)
             {
-                string size = _copy.Ui("ui.star_select.size_" + WorldGen.BossDraw.SizeFor(o.BossStage).ToString().ToLowerInvariant());
+                PlanetSize planetSize = WorldGen.BossDraw.SizeFor(o.BossStage);
+                string size = _copy.Ui("ui.star_select.size_" + planetSize.ToString().ToLowerInvariant());
                 string boss = _copy.Ui("ui.star_select.boss_stage")
                     .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
-                var elementNames = new List<string>();
-                foreach (Element e in o.Type.ElementBias)
-                {
-                    elementNames.Add(_copy.Element(e.ToString()));
-                }
-
-                string elements = string.Join(" / ", elementNames);
+                string elementsLine = FormatPlanetElements(o.Elements);
                 GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
-                                $"{_copy.Ui("ui.star_select.main_elements")}：{elements}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
+                                $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
                     Launch(o);
@@ -750,6 +746,32 @@ namespace Cosmimera.Bootstrap.Demo
                 RollOptions();
                 GUIUtility.ExitGUI();
             }
+        }
+
+        private string FormatPlanetElements(WorldGen.PlanetElements elements)
+        {
+            var mainParts = new List<string>(elements.MainCount);
+            var subParts = new List<string>(elements.SubCount);
+            foreach (WorldGen.PlanetElementShare share in elements.Shares)
+            {
+                string label = $"{_copy.Element(share.Element.ToString())} {share.Percent}%";
+                if (share.IsMain)
+                {
+                    mainParts.Add(label);
+                }
+                else
+                {
+                    subParts.Add(label);
+                }
+            }
+
+            string mainText = $"{_copy.Ui("ui.star_select.main_elements")}：{string.Join(" / ", mainParts)}";
+            if (subParts.Count == 0)
+            {
+                return mainText;
+            }
+
+            return $"{mainText}   {_copy.Ui("ui.star_select.sub_elements")}：{string.Join(" / ", subParts)}";
         }
 
         private void DrawResults()
@@ -823,9 +845,11 @@ namespace Cosmimera.Bootstrap.Demo
                 PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
                 ulong seed = _menuRng.NextUInt();
                 CreatureStage stage = WorldGen.BossDraw.Stage(seed, maxStage);
+                PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
                 _options.Add(new PlanetOption
                 {
-                    Type = t, Seed = seed, BossStage = stage, Radius = RadiusFor(WorldGen.BossDraw.SizeFor(stage)),
+                    Type = t, Seed = seed, BossStage = stage, Radius = RadiusFor(size),
+                    Elements = WorldGen.PlanetElementDraw.Draw(seed, size, t.ElementBias),
                 });
             }
         }

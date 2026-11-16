@@ -64,6 +64,11 @@
     "en": "Main Elements",
     "ja": "主要属性"
   },
+  "ui.star_select.sub_elements": {
+    "zh-TW": "副屬性",
+    "en": "Sub Elements",
+    "ja": "副属性"
+  },
   "ui.star_select.seed": {
     "zh-TW": "種子",
     "en": "Seed",

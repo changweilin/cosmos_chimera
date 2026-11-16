@@ -1079,7 +1079,7 @@ namespace Cosmimera.Bootstrap.Demo
                     _outcome.EggProgressPpm += EggProgress.Boss(EggHatchConfig, _utilityModifiers.HasEggHatchBoost);
                 }
 
-                if (_drops.TryRoll(role, _setup.PlanetType.ElementBias, ref _materialRng,
+                if (_drops.TryRoll(role, _plan.Elements.Elements, _plan.Elements.Percents, ref _materialRng,
                     _utilityModifiers.DropRateBonusPercent + _foodBuffs.GetDropRateBonusPercent(_nowMs),
                     math.max(1, _utilityModifiers.PickupMultiplier), out MaterialStack drop))
                 {
@@ -2011,7 +2011,7 @@ namespace Cosmimera.Bootstrap.Demo
                 int rolls = 1 + _plan.Regions[region].Tier;
                 for (int i = 0; i < rolls; i++)
                 {
-                    if (_drops.TryRoll(SpawnRole.Elite, _setup.PlanetType.ElementBias, ref _materialRng, out MaterialStack drop))
+                    if (_drops.TryRoll(SpawnRole.Elite, _plan.Elements.Elements, _plan.Elements.Percents, ref _materialRng, out MaterialStack drop))
                     {
                         _outcome.Materials.Add(drop);
                         Toast(_copy.Ui("ui.hud.material_drop").Replace("{material}", _copy.Material(drop.Key)));

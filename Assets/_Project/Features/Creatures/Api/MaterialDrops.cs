@@ -131,14 +131,7 @@ namespace Cosmimera.Creatures
             }
 
             drop = default;
-            int chance = _chancePercent[(int)role] + dropRateBonusPercent;
-            if (chance > 100)
-            {
-                chance = 100;
-            }
-
-            // Always draw the chance, even at 100%: the stream position then depends only on the knock-out sequence.
-            if (rng.NextUInt(100) >= (uint)chance)
+            if (!TryPassChance(role, dropRateBonusPercent, pickupMultiplier, ref rng))
             {
                 return false;
             }
@@ -146,6 +139,86 @@ namespace Cosmimera.Creatures
             Element element = planetBias[(int)rng.NextUInt((uint)planetBias.Count)];
             drop = new MaterialStack(new MaterialKey(element, _tier[(int)role]), _qty[(int)role] * pickupMultiplier);
             return true;
+        }
+
+        /// <summary>Rolls a weighted drop from <paramref name="elements"/> with parallel positive <paramref name="weights"/>.</summary>
+        /// <remarks>
+        /// Pre: role defined; elements non-null with &gt;= 1 defined element; weights non-null with same Count, all &gt;= 0,
+        ///      and sum &gt; 0; rng seeded.
+        /// Post: true iff the chance roll succeeded; then drop.Key == (picked, TierFor(role)) with probability proportional
+        ///       to weights and drop.Qty == QtyFor(role). Deterministic for a given rng state.
+        /// Side effects: advances <paramref name="rng"/> by 1 draw on failure, 2 draws on success.
+        /// </remarks>
+        public bool TryRoll(SpawnRole role, IReadOnlyList<Element> elements, IReadOnlyList<int> weights, ref Pcg32 rng,
+            out MaterialStack drop) =>
+            TryRoll(role, elements, weights, ref rng, 0, 1, out drop);
+
+        /// <summary>Rolls a weighted drop with field-utility modifiers.</summary>
+        /// <remarks>
+        /// Pre: role defined; elements non-null with &gt;= 1 defined element; weights non-null with same Count, all &gt;= 0,
+        ///      and sum &gt; 0; dropRateBonusPercent &gt;= 0; pickupMultiplier &gt;= 1; rng seeded.
+        /// Post: true iff the boosted chance roll succeeded; then drop.Key == (picked, TierFor(role)) with probability
+        ///       proportional to weights and drop.Qty == QtyFor(role) * pickupMultiplier.
+        /// Side effects: advances <paramref name="rng"/> by 1 draw on failure, 2 draws on success.
+        /// </remarks>
+        public bool TryRoll(
+            SpawnRole role,
+            IReadOnlyList<Element> elements,
+            IReadOnlyList<int> weights,
+            ref Pcg32 rng,
+            int dropRateBonusPercent,
+            int pickupMultiplier,
+            out MaterialStack drop)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(SpawnRole), role), "role must be defined");
+            Contract.Requires(elements != null && elements.Count >= 1, "elements must have at least one entry");
+            Contract.Requires(weights != null && weights.Count == elements.Count, "weights must match elements length");
+            Contract.Requires(dropRateBonusPercent >= 0, "dropRateBonusPercent must be >= 0");
+            Contract.Requires(pickupMultiplier >= 1, "pickupMultiplier must be >= 1");
+            long totalWeight = 0;
+            for (int i = 0; i < elements.Count; i++)
+            {
+                Contract.Requires(Enum.IsDefined(typeof(Element), elements[i]), "elements must be defined");
+                Contract.Requires(weights[i] >= 0, "weights must be >= 0");
+                totalWeight += weights[i];
+            }
+
+            Contract.Requires(totalWeight > 0 && totalWeight <= uint.MaxValue, "total weight must be in [1, uint.MaxValue]");
+
+            drop = default;
+            if (!TryPassChance(role, dropRateBonusPercent, pickupMultiplier, ref rng))
+            {
+                return false;
+            }
+
+            uint roll = rng.NextUInt((uint)totalWeight);
+            Element picked = elements[0];
+            for (int i = 0; i < elements.Count; i++)
+            {
+                uint w = (uint)weights[i];
+                if (roll < w)
+                {
+                    picked = elements[i];
+                    break;
+                }
+
+                roll -= w;
+            }
+
+            drop = new MaterialStack(new MaterialKey(picked, _tier[(int)role]), _qty[(int)role] * pickupMultiplier);
+            return true;
+        }
+
+        private bool TryPassChance(SpawnRole role, int dropRateBonusPercent, int pickupMultiplier, ref Pcg32 rng)
+        {
+            int chance = _chancePercent[(int)role] + dropRateBonusPercent;
+            if (chance > 100)
+            {
+                chance = 100;
+            }
+
+            // Always draw the chance, even at 100%: the stream position then depends only on the knock-out sequence.
+            return rng.NextUInt(100) < (uint)chance;
         }
 
         private static void Check(bool condition, string message)

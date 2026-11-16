@@ -168,5 +168,30 @@ namespace Cosmimera.Creatures.Tests
             Assert.That(d.TryRoll(SpawnRole.Normal, Twilight, ref rng, 90, 2, out MaterialStack drop), Is.True);
             Assert.That(drop.Qty, Is.EqualTo(2));
         }
+
+        [Test]
+        public void TryRoll_weighted_favors_higher_weight_and_checks_preconditions()
+        {
+            MaterialDrops d = MaterialDrops.FromJson(Synthetic);
+            var elements = new[] { Element.Wood, Element.Fire };
+            var weights = new[] { 90, 10 };
+            int woodCount = 0;
+            int fireCount = 0;
+            var rng = new Pcg32(42, 'W');
+            for (int i = 0; i < 400; i++)
+            {
+                if (d.TryRoll(SpawnRole.Boss, elements, weights, ref rng, out MaterialStack drop))
+                {
+                    if (drop.Key.Element == Element.Wood) woodCount++;
+                    else if (drop.Key.Element == Element.Fire) fireCount++;
+                }
+            }
+
+            Assert.That(woodCount, Is.GreaterThan(fireCount * 3));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, elements, null, ref rng, out _));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, elements, new[] { 100 }, ref rng, out _));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, elements, new[] { -1, 10 }, ref rng, out _));
+            Assert.Throws<ContractException>(() => d.TryRoll(SpawnRole.Boss, elements, new[] { 0, 0 }, ref rng, out _));
+        }
     }
 }

@@ -21,7 +21,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 6;
+        public const int GeneratorVersion = 7;
 
         /// <summary>Smallest land cap (rad) the nearest-land sweep is guaranteed to find; isLand must contain one.</summary>
         /// <remarks>
@@ -106,6 +106,7 @@ namespace Cosmimera.WorldGen
 
             Contract.Requires(hasBossForm, "wild pool needs a form of the boss stage");
             var rng = new Pcg32(seed, 'R');
+            PlanetElements elements = PlanetElementDraw.Draw(seed, SizeForRadius(planet.Radius), planetType.ElementBias);
 
             float3[] sites = Sites(planet, ref rng);
             if (borderClearanceRad > 0f)
@@ -138,7 +139,7 @@ namespace Cosmimera.WorldGen
                 string affix = null;
                 if (i != landing && (i == boss || rng.NextUInt(100) < 40))
                 {
-                    affix = PickAffix(planetType, vocabulary, ref rng);
+                    affix = PickAffix(elements, vocabulary, ref rng);
                 }
 
                 regions[i] = new RunRegion(i, sites[i], adjacency[i], theme, affix, tier, hops[i]);
@@ -154,7 +155,7 @@ namespace Cosmimera.WorldGen
             int sightMembers = 1 + (int)rng.NextUInt(2);
             for (int m = 0; m < sightMembers; m++)
             {
-                CreatureDef species = PickSpecies(wildPool, planetType, CreatureStage.Juvenile, bossStage, ref rng);
+                CreatureDef species = PickSpecies(wildPool, elements, CreatureStage.Juvenile, bossStage, ref rng);
                 float3 dir = Scatter(sightCenter, 4f / planet.Radius, isLand, ref rng);
                 spawns.Add(new RunSpawn(landing, group, dir, species.Id, SpawnRole.Normal));
             }
@@ -174,7 +175,7 @@ namespace Cosmimera.WorldGen
                     int members = 2 + (int)rng.NextUInt(regions[i].Tier == 0 ? 2u : 3u);
                     for (int m = 0; m < members; m++)
                     {
-                        CreatureDef species = PickSpecies(wildPool, planetType, (CreatureStage)regions[i].Tier, bossStage,
+                        CreatureDef species = PickSpecies(wildPool, elements, (CreatureStage)regions[i].Tier, bossStage,
                             ref rng);
                         float3 dir = Scatter(packCenter, 5f / planet.Radius, isLand, ref rng);
                         spawns.Add(new RunSpawn(i, group, dir, species.Id, SpawnRole.Normal));
@@ -189,7 +190,7 @@ namespace Cosmimera.WorldGen
             {
                 int region = route[r];
                 CreatureStage stage = (CreatureStage)math.min(2, regions[region].Tier + 1);
-                CreatureDef species = PickSpecies(wildPool, planetType, stage, bossStage, ref rng);
+                CreatureDef species = PickSpecies(wildPool, elements, stage, bossStage, ref rng);
                 eliteByRegion[region] = spawns.Count;
                 spawns.Add(new RunSpawn(region, group++, Scatter(sites[region], spacing * 0.2f, isLand, ref rng),
                     species.Id, SpawnRole.Elite));
@@ -198,13 +199,13 @@ namespace Cosmimera.WorldGen
             if (eliteByRegion.Count == 0)
             {
                 // A two-region route has no middle region; the elite then guards the landing region's edge.
-                CreatureDef species = PickSpecies(wildPool, planetType, CreatureStage.Adolescent, bossStage, ref rng);
+                CreatureDef species = PickSpecies(wildPool, elements, CreatureStage.Adolescent, bossStage, ref rng);
                 eliteByRegion[landing] = spawns.Count;
                 spawns.Add(new RunSpawn(landing, group++, Scatter(sites[landing], spacing * 0.3f, isLand, ref rng),
                     species.Id, SpawnRole.Elite));
             }
 
-            CreatureDef bossSpecies = PickSpecies(wildPool, planetType, bossStage, bossStage, ref rng);
+            CreatureDef bossSpecies = PickSpecies(wildPool, elements, bossStage, bossStage, ref rng);
             int bossSpawn = spawns.Count;
             spawns.Add(new RunSpawn(boss, group, Scatter(sites[boss], 0f, isLand, ref rng), bossSpecies.Id, SpawnRole.Boss));
 
@@ -232,11 +233,12 @@ namespace Cosmimera.WorldGen
             }
 
             var questCandidates = new List<Element>();
-            foreach (Element e in planetType.ElementBias)
+            foreach (PlanetElementShare share in elements.Shares)
             {
-                if (nonBossByElement.TryGetValue(e, out int n) && n >= DefeatWildCount && !questCandidates.Contains(e))
+                if (nonBossByElement.TryGetValue(share.Element, out int n) && n >= DefeatWildCount &&
+                    !questCandidates.Contains(share.Element))
                 {
-                    questCandidates.Add(e);
+                    questCandidates.Add(share.Element);
                 }
             }
 
@@ -255,7 +257,7 @@ namespace Cosmimera.WorldGen
 
             string chain = vocabulary.ChainIds[(int)rng.NextUInt((uint)vocabulary.ChainIds.Count)];
             return new RunPlan(seed, planetType.Id, chain, regions, landing, boss, route, spawns.ToArray(), quest,
-                landingDir);
+                landingDir, elements);
         }
 
         /// <summary>Order-sensitive FNV-1a digest of a plan for snapshot tests (directions quantized to 1e-4).</summary>
@@ -297,6 +299,16 @@ namespace Cosmimera.WorldGen
                 Mix(ref h, (ulong)q.Count);
                 Mix(ref h, (ulong)q.Element);
                 Mix(ref h, (ulong)(q.TargetSpawn + 1));
+            }
+
+            if (plan.Elements != null)
+            {
+                foreach (PlanetElementShare share in plan.Elements.Shares)
+                {
+                    Mix(ref h, (ulong)share.Element);
+                    Mix(ref h, (ulong)share.Percent);
+                    Mix(ref h, share.IsMain ? 1UL : 0UL);
+                }
             }
 
             return h;
@@ -496,22 +508,35 @@ namespace Cosmimera.WorldGen
             return vocab.ThemeIds[(int)rng.NextUInt((uint)vocab.ThemeIds.Count)];
         }
 
-        private static string PickAffix(PlanetTypeDef type, RunPlanVocabulary vocab, ref Pcg32 rng)
+        private static string PickAffix(PlanetElements elements, RunPlanVocabulary vocab, ref Pcg32 rng)
         {
-            if (type.ElementBias.Count > 0 && rng.NextUInt(100) < 70)
+            if (elements.Shares.Count > 0 && rng.NextUInt(100) < 70)
             {
-                return RunPlanVocabulary.SurgeAffixId(type.ElementBias[(int)rng.NextUInt((uint)type.ElementBias.Count)]);
+                int roll = (int)rng.NextUInt(100);
+                for (int i = 0; i < elements.Shares.Count; i++)
+                {
+                    int pct = elements.Shares[i].Percent;
+                    if (roll < pct)
+                    {
+                        return RunPlanVocabulary.SurgeAffixId(elements.Shares[i].Element);
+                    }
+
+                    roll -= pct;
+                }
+
+                return RunPlanVocabulary.SurgeAffixId(elements.Shares[0].Element);
             }
 
             return vocab.GenericAffixIds[(int)rng.NextUInt((uint)vocab.GenericAffixIds.Count)];
         }
 
-        private static CreatureDef PickSpecies(IReadOnlyList<CreatureDef> pool, PlanetTypeDef type, CreatureStage stage,
+        private static CreatureDef PickSpecies(IReadOnlyList<CreatureDef> pool, PlanetElements elements, CreatureStage stage,
             CreatureStage cap, ref Pcg32 rng)
         {
-            // Weight 3 for the planet's elements, 1 otherwise; fall back to the nearest available stage not above cap.
-            // Asking for min(stage, cap) first keeps a capped tier on the boss stage instead of drifting further down.
-            // Generate's Pre guarantees a cap-stage form, so some delta in 0..2 always has a positive total.
+            // Weight 10 + 2 * elementPercent (10 for absent, up to 210 for 100% main); fall back to the nearest
+            // available stage not above cap. Asking for min(stage, cap) first keeps a capped tier on the boss stage
+            // instead of drifting further down. Generate's Pre guarantees a cap-stage form, so some delta in 0..2
+            // always has a positive total.
             if (stage > cap)
             {
                 stage = cap;
@@ -522,7 +547,7 @@ namespace Cosmimera.WorldGen
                 uint total = 0;
                 foreach (CreatureDef c in pool)
                 {
-                    total += Weight(c, type, stage, cap, delta);
+                    total += Weight(c, elements, stage, cap, delta);
                 }
 
                 if (total == 0)
@@ -533,7 +558,7 @@ namespace Cosmimera.WorldGen
                 uint pick = rng.NextUInt(total);
                 foreach (CreatureDef c in pool)
                 {
-                    uint w = Weight(c, type, stage, cap, delta);
+                    uint w = Weight(c, elements, stage, cap, delta);
                     if (pick < w)
                     {
                         return c;
@@ -546,23 +571,22 @@ namespace Cosmimera.WorldGen
             return pool[0];
         }
 
-        private static uint Weight(CreatureDef c, PlanetTypeDef type, CreatureStage stage, CreatureStage cap, int delta)
+        private static uint Weight(CreatureDef c, PlanetElements elements, CreatureStage stage, CreatureStage cap, int delta)
         {
             if (c.Stage > cap || math.abs((int)c.Stage - (int)stage) != delta)
             {
                 return 0;
             }
 
-            Element main = MainElement(c);
-            foreach (Element e in type.ElementBias)
-            {
-                if (e == main)
-                {
-                    return 3;
-                }
-            }
+            return 10u + (uint)elements.PercentOf(MainElement(c)) * 2u;
+        }
 
-            return 1;
+        private static PlanetSize SizeForRadius(float radius)
+        {
+            if (radius <= 480f) return PlanetSize.Asteroid;
+            if (radius <= 800f) return PlanetSize.Moon;
+            if (radius <= 1120f) return PlanetSize.Planet;
+            return PlanetSize.Supergiant;
         }
 
         private static float3 Scatter(float3 center, float maxAngle, Func<float3, bool> isLand, ref Pcg32 rng)

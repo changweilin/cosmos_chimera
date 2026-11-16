@@ -192,7 +192,7 @@ namespace Cosmimera.WorldGen
     public sealed class RunPlan
     {
         internal RunPlan(ulong seed, string planetTypeId, string chainId, RunRegion[] regions, int landing, int boss,
-            int[] route, RunSpawn[] spawns, RunQuestStep[] quest, float3 landingDirection)
+            int[] route, RunSpawn[] spawns, RunQuestStep[] quest, float3 landingDirection, PlanetElements elements = null)
         {
             Seed = seed;
             PlanetTypeId = planetTypeId;
@@ -204,6 +204,7 @@ namespace Cosmimera.WorldGen
             Spawns = spawns;
             Quest = quest;
             LandingDirection = landingDirection;
+            Elements = elements;
         }
 
         /// <summary>Planet seed.</summary>
@@ -245,5 +246,9 @@ namespace Cosmimera.WorldGen
         /// <summary>Exact landing point (unit direction) inside the landing region.</summary>
         /// <remarks>Pre: none. Post: unit length. Side effects: none.</remarks>
         public float3 LandingDirection { get; }
+
+        /// <summary>Main and sub-elements with their percentages for this planet.</summary>
+        /// <remarks>Pre: none. Post: non-null; Percents sum to 100. Side effects: none.</remarks>
+        public PlanetElements Elements { get; }
     }
 }
