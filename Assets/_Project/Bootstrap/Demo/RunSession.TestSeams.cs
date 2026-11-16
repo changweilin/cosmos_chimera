@@ -76,6 +76,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: Configure ran. Post: unit direction. Side effects: none.</remarks>
         internal float3 LandingDirectionForTests => _plan.LandingDirection;
 
+        /// <summary>Observes the run's wonders (immutable).</summary>
+        /// <remarks>Pre: Configure ran. Post: non-null. Side effects: none.</remarks>
+        internal LandmarkLayout LandmarksForTests => _landmarks;
+
+        /// <summary>Observes the wonders' view.</summary>
+        /// <remarks>Pre: Configure ran. Post: null when the run was configured without visuals. Side effects: none.</remarks>
+        internal LandmarkView LandmarkViewForTests => _landmarkView;
+
         /// <summary>Copies a quest step's immutable value.</summary>
         /// <remarks>Pre: Configure ran; index indexes Quest. Post: detached value. Side effects: none.</remarks>
         internal RunQuestStep QuestStepForTests(int index) => _plan.Quest[index];

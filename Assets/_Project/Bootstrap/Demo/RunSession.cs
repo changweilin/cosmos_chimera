@@ -202,6 +202,9 @@ namespace Cosmimera.Bootstrap.Demo
             // Set once the scatter planner exists (it needs GroundAltitude first); null = buildings only.
             public WorldObjects Objects { get; set; }
 
+            // REQ: planet-world.md#奇觀地標 — solid wonders block creatures on the circle LandmarkView gives a collider.
+            public LandmarkLayout Landmarks { get; set; }
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
@@ -214,7 +217,8 @@ namespace Cosmimera.Bootstrap.Demo
             // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
-                (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed));
+                (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
+                (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM));
 
             // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
             public bool IsOffWalls(float3 direction) =>
@@ -275,6 +279,8 @@ namespace Cosmimera.Bootstrap.Demo
         private WorldObjects _worldObjects;
         private DestructibleTable _objectTable;
         private SettlementView _settlementView;
+        private LandmarkLayout _landmarks;
+        private LandmarkView _landmarkView;
         private ScatterField _scatterField;
         private ObjectPhysics _objectPhysics;
         private EnvMaterials _envMaterials;
@@ -527,8 +533,14 @@ namespace Cosmimera.Bootstrap.Demo
             _playerTerrain = terrainProfile;
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
+            // REQ: planet-world.md#奇觀地標 — wonders go on land that no wall band owns; scatter then keeps the same
+            // 1.5 m off their footprints as it does off buildings.
+            LandmarkLayout landmarks = LandmarkPlanner.Generate(config, _plan, _layout,
+                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
+            _landmarks = landmarks;
+            surface.Landmarks = landmarks;
             System.Func<float3, bool> isOpenGround =
-                walls != null ? (System.Func<float3, bool>)(d => clearance.IsClear(d) && surface.IsOffWalls(d)) : clearance.IsClear;
+                d => clearance.IsClear(d) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.5f);
             // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
             // stamps (and without landforms) they are the planet type's own.
             // REQ: planet-world.md#地質變體 (P3-24 a) — each stamp's bedrock swaps its country rock and rock colour.
@@ -646,6 +658,11 @@ namespace Cosmimera.Bootstrap.Demo
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
                     setup.PlanetType.Id, setup.Seed, _plan);
+                var landmarkRoot = new GameObject("Landmarks");
+                landmarkRoot.transform.SetParent(transform, false);
+                _landmarkView = landmarkRoot.AddComponent<LandmarkView>();
+                _landmarkView.Configure(config, landmarks, surface.GroundAltitude, toonShader, scenery?.Props,
+                    setup.PlanetType.Id, setup.Seed);
                 if (_dungeon != null)
                 {
                     var dungeonRoot = new GameObject("Dungeon");
