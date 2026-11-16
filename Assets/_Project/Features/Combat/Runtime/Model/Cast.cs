@@ -272,7 +272,14 @@ namespace Cosmimera.Combat
     public readonly struct HitReport
     {
         internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied)
+            : this(outcome, damage, healed, hpBefore, hpAfter, effectApplied, damage)
         {
+        }
+
+        internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied,
+            int preBlockDamage)
+        {
+            PreBlockDamage = preBlockDamage;
             Outcome = outcome;
             Damage = damage;
             Healed = healed;
@@ -282,8 +289,18 @@ namespace Cosmimera.Combat
         }
 
         /// <summary>Contact / roll result; Miss must get explicit feedback (combat.md#命中與閃避).</summary>
-        /// <remarks>Pre: none. Post: defined; never Invulnerable (creatures have no i-frames). Side effects: none.</remarks>
+        /// <remarks>
+        /// Pre: none. Post: defined; Invulnerable only when the caller passed invulnerable (a rolling creature).
+        /// Side effects: none.
+        /// </remarks>
         public HitOutcome Outcome { get; }
+
+        /// <summary>Formula damage (with any taken bonus) before a block reduced it; feeds the stance gauge.</summary>
+        /// <remarks>
+        /// Pre: none. Post: 0 unless Outcome == Hit; >= Damage whenever the hit did not faint the target. Not clamped to HP.
+        /// Side effects: none.
+        /// </remarks>
+        public int PreBlockDamage { get; }
 
         /// <summary>HP removed by the move's damage.</summary>
         /// <remarks>Pre: none. Post: 0 unless Outcome == Hit; &lt;= HpBefore. Side effects: none.</remarks>
@@ -692,7 +709,23 @@ namespace Cosmimera.Combat
         public HitReport ReceiveHostile(in CastContext cast, bool geometricContact, ref Pcg32 rng, long nowMs,
             int damageTakenBonusPercent)
         {
+            return ReceiveHostile(cast, geometricContact, ref rng, nowMs, damageTakenBonusPercent, 0, false);
+        }
+
+        /// <summary>As the five-argument overload, with a block reduction and roll i-frames.</summary>
+        /// <remarks>
+        /// REQ: combat.md#格擋, #完美閃避.
+        /// Pre: as the five-argument overload; 0 &lt;= blockPermille &lt;= 1000.
+        /// Post: invulnerable with contact → Outcome Invulnerable, no roll drawn, nothing changes (like a dodge-rolling
+        ///       character). Otherwise as the five-argument overload, except the bonus-scaled damage (PreBlockDamage) is then
+        ///       scaled by (1000 − blockPermille)/1000 rounded half up; a nonzero value stays >= 1 unless blockPermille == 1000.
+        /// Side effects: as the five-argument overload; no rng draw when invulnerable.
+        /// </remarks>
+        public HitReport ReceiveHostile(in CastContext cast, bool geometricContact, ref Pcg32 rng, long nowMs,
+            int damageTakenBonusPercent, int blockPermille, bool invulnerable)
+        {
             Contract.Requires(!IsFainted, "a fainted combatant is not a target");
+            Contract.Requires(blockPermille >= 0 && blockPermille <= 1000, "blockPermille must be 0..1000");
             Contract.Requires(damageTakenBonusPercent >= 0 && damageTakenBonusPercent <= 1000,
                 "damageTakenBonusPercent must be 0..1000");
             CastMove move = cast.Move;
@@ -702,13 +735,14 @@ namespace Cosmimera.Combat
             Book.Collect(nowMs, Hp, MaxHp, _totals);
             int evasion = EffectMath.EvasionPermille(_stats, _agi, _totals.EvasionPercent, _rules);
             int chance = _stats.HitChancePermille(move.AccuracyPercent, evasion);
-            HitOutcome outcome = HitResolver.Resolve(geometricContact, false, chance, ref rng);
+            HitOutcome outcome = HitResolver.Resolve(geometricContact, invulnerable, chance, ref rng);
             if (outcome != HitOutcome.Hit)
             {
                 return new HitReport(outcome, 0, 0, hpBefore, hpBefore, false);
             }
 
             int damage = 0;
+            int preBlock = 0;
             if (move.DealsDamage)
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
@@ -719,12 +753,19 @@ namespace Cosmimera.Combat
                     raw = (int)System.Math.Min(int.MaxValue, ((long)raw * (100 + damageTakenBonusPercent) + 50) / 100);
                 }
 
+                preBlock = raw;
+                if (blockPermille > 0)
+                {
+                    long kept = ((long)raw * (1000 - blockPermille) + 500) / 1000;
+                    raw = (int)(raw > 0 && kept == 0 && blockPermille < 1000 ? 1 : kept);
+                }
+
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)
                 {
                     // Q-C18 spirit (user decision 2026-11-07): nothing may fire on a fainted unit, so no heal revives it.
-                    return new HitReport(outcome, damage, 0, hpBefore, 0, false);
+                    return new HitReport(outcome, damage, 0, hpBefore, 0, false, preBlock);
                 }
             }
 
@@ -746,7 +787,7 @@ namespace Cosmimera.Combat
             }
 
             HealPercent(crossHeal + hitHeal + moveHeal, nowMs);
-            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied);
+            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock);
         }
 
         /// <summary>Resolves a self/ally move landing on this combatant: no roll (user decision 2026-11-07).</summary>

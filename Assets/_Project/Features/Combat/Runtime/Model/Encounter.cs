@@ -145,6 +145,22 @@ namespace Cosmimera.Combat
         Staggered = 6,
         /// <summary>SourceId's windup was cancelled and its cooldown refunded (Slot = that move; combat.md#前搖).</summary>
         Interrupted = 7,
+        /// <summary>
+        /// TargetId blocked SourceId's hit (Amount = damage after the block); follows that hit's Hit event (combat.md#格擋).
+        /// </summary>
+        Blocked = 8,
+        /// <summary>
+        /// The main (TargetId) released block within block.perfect_window_ms before SourceId's hit landed (combat.md#格擋).
+        /// Its reward is pending Q-C59; for now the hit resolves as a normal block.
+        /// </summary>
+        PerfectBlock = 9,
+        /// <summary>TargetId's stance gauge filled on SourceId's hit: no block, cast or movement for block.guard_break_ms.</summary>
+        GuardBroken = 10,
+        /// <summary>
+        /// TargetId's roll began at most creature_roll.perfect_dodge_ms before SourceId's move touched it; SourceId
+        /// staggers (a Staggered event follows when it could stagger; combat.md#完美閃避).
+        /// </summary>
+        PerfectDodge = 11,
     }
 
     /// <summary>Outcome of a player overload command (Q-C12).</summary>
@@ -252,6 +268,33 @@ namespace Cosmimera.Combat
         /// <summary>Whether the unit is staggered at <paramref name="nowMs"/>: it cannot cast and takes extra damage.</summary>
         /// <remarks>Pre: none. Post: true iff nowMs &lt; StaggeredUntilMs. Side effects: none.</remarks>
         public bool IsStaggered(long nowMs) => nowMs < StaggeredUntilMs;
+
+        // Block (combat.md#格擋). BlockHeld is the main's key state as last reported; IsBlocking is decided once per tick
+        // before anything resolves, so every hit in a tick sees the same state whatever the unit order.
+        internal bool BlockHeld { get; set; }
+        internal long BlockReleasedAtMs { get; set; } = long.MinValue / 2;
+        internal long StanceGaugeMilli { get; set; }
+        internal long LastBlockingMs { get; set; } = long.MinValue / 2;
+
+        /// <summary>Whether the unit blocks hits this tick (main: key held; support: auto-block; combat.md#格擋).</summary>
+        /// <remarks>Pre: none. Post: false for wild units and for inactive, rolling or guard-broken units. Side effects: none.</remarks>
+        public bool IsBlocking { get; internal set; }
+
+        /// <summary>End of the current guard break; at or before now means not broken.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long GuardBrokenUntilMs { get; internal set; }
+
+        /// <summary>Whether the guard is broken at <paramref name="nowMs"/>: no block, cast or movement.</summary>
+        /// <remarks>Pre: none. Post: true iff nowMs &lt; GuardBrokenUntilMs. Side effects: none.</remarks>
+        public bool IsGuardBroken(long nowMs) => nowMs < GuardBrokenUntilMs;
+
+        /// <summary>Stance gauge fill in HP (capacity = MaxHp × block.stance_hp_permille).</summary>
+        /// <remarks>Pre: none. Post: >= 0, below capacity. Side effects: none.</remarks>
+        public int StanceGauge => (int)(StanceGaugeMilli / 1000);
+
+        /// <summary>Start of the unit's last roll (player side only; combat.md#完美閃避).</summary>
+        /// <remarks>Pre: none. Post: none; far in the past before the first roll. Side effects: none.</remarks>
+        public long RollStartedAtMs { get; internal set; } = long.MinValue / 2;
 
         internal MoveDef[] MoveDefs { get; set; }
 
@@ -410,6 +453,7 @@ namespace Cosmimera.Combat
         // Edge point of the focused object's hit sphere nearest the main creature, refreshed each time it decides.
         private float3 _objectAim;
         private readonly HashSet<int> _overloadedThisCombat = new HashSet<int>();
+        private int _mainId = CombatAi.NoTarget;
         private long _lastCombatReviveMs = -1;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
@@ -525,6 +569,11 @@ namespace Cosmimera.Combat
                 return;
             }
 
+            Stagger(t, sourceId, nowMs);
+        }
+
+        private void Stagger(EncounterUnit t, int sourceId, long nowMs)
+        {
             t.StaggerGaugeMilli = 0;
             t.StaggeredUntilMs = nowMs + _balance.Stagger.DurationMs;
             _events.Add(new EncounterEvent(EncounterEventKind.Staggered, sourceId, t.Id, 0, 0));
@@ -532,6 +581,102 @@ namespace Cosmimera.Combat
             {
                 CancelWindup(t, nowMs);
             }
+        }
+
+        // REQ: combat.md#完美閃避 — the attacker staggers outright; a fainted, recalled or already staggered attacker is
+        // left alone (a field can outlive its caster).
+        private void StaggerAttacker(int attackerId, int dodgerId, long nowMs)
+        {
+            if (attackerId < 0 || attackerId >= _units.Count)
+            {
+                return;
+            }
+
+            EncounterUnit a = _units[attackerId];
+            if (a.IsActive && !a.IsStaggered(nowMs))
+            {
+                Stagger(a, dodgerId, nowMs);
+            }
+        }
+
+        // REQ: combat.md#格擋. Support auto-blocks while an enemy windup has picked it as the target (Q-C56) and it is not
+        // itself winding up — dropping its own attack for every incoming windup would leave the support idle.
+        private void UpdateBlocking(long nowMs, int dtMs)
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                _units[i].IsBlocking = false;
+            }
+
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side != EncounterSide.Wild || !w.IsActive || w.WindupSlot == EncounterUnit.NoWindup ||
+                    w.WindupTargetId < 0 || w.WindupTargetId >= _units.Count)
+                {
+                    continue;
+                }
+
+                EncounterUnit t = _units[w.WindupTargetId];
+                if (t.Side == EncounterSide.Player && !IsMain(t) && t.WindupSlot == EncounterUnit.NoWindup)
+                {
+                    t.IsBlocking = true;
+                }
+            }
+
+            BlockTuning b = _balance.Block;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.Side != EncounterSide.Player)
+                {
+                    continue;
+                }
+
+                bool blocking = u.IsActive && !u.IsGuardBroken(nowMs) && !IsRolling(u, nowMs) &&
+                    (IsMain(u) ? u.BlockHeld : u.IsBlocking);
+                u.IsBlocking = blocking;
+                if (blocking)
+                {
+                    u.LastBlockingMs = nowMs;
+                    if (u.WindupSlot != EncounterUnit.NoWindup)
+                    {
+                        // Q-C56: no casting while blocking; raising the guard abandons the windup like a stagger does.
+                        CancelWindup(u, nowMs);
+                    }
+                }
+                else if (u.StanceGaugeMilli > 0 && nowMs - u.LastBlockingMs >= b.StanceRegenDelayMs)
+                {
+                    long drain = (long)b.CapacityHp(u.Combatant.MaxHp) * b.StanceRegenPermillePerS * dtMs / 1000;
+                    u.StanceGaugeMilli = math.max(0L, u.StanceGaugeMilli - drain);
+                }
+            }
+        }
+
+        // Same rule as Tick's AI role: with no main reported, every player unit acts as a main.
+        private bool IsMain(EncounterUnit u) => _mainId == CombatAi.NoTarget || u.Id == _mainId;
+
+        private bool IsRolling(EncounterUnit u, long nowMs) =>
+            nowMs >= u.RollStartedAtMs && nowMs - u.RollStartedAtMs < _balance.CreatureRoll.DurationMs;
+
+        private bool IsPerfectBlock(EncounterUnit t, long nowMs) =>
+            t.Side == EncounterSide.Player && IsMain(t) && !t.IsBlocking && t.IsActive && !t.IsGuardBroken(nowMs) &&
+            nowMs - t.BlockReleasedAtMs <= _balance.Block.PerfectWindowMs;
+
+        private void AddStance(EncounterUnit t, int sourceId, int preBlockDamage, long nowMs)
+        {
+            BlockTuning b = _balance.Block;
+            long capacityMilli = (long)b.CapacityHp(t.Combatant.MaxHp) * 1000;
+            t.StanceGaugeMilli = math.min(capacityMilli, t.StanceGaugeMilli + (long)preBlockDamage * 1000);
+            if (t.StanceGaugeMilli < capacityMilli)
+            {
+                return;
+            }
+
+            t.StanceGaugeMilli = 0;
+            t.GuardBrokenUntilMs = nowMs + b.GuardBreakMs;
+            t.IsBlocking = false;
+            _events.Add(new EncounterEvent(EncounterEventKind.GuardBroken, sourceId, t.Id, 0, 0));
         }
 
         private void DrainStagger(EncounterUnit u, long nowMs, int dtMs)
@@ -1017,6 +1162,49 @@ namespace Cosmimera.Combat
             Contract.Requires(u.Side == EncounterSide.Player && u.Fielded, "only a fielded player-side unit can be recalled");
             u.Fielded = false;
             u.TargetId = CombatAi.NoTarget;
+            u.BlockHeld = false;
+            u.IsBlocking = false;
+        }
+
+        /// <summary>Reports the block key state for a player-side unit (combat.md#格擋; only the main's state is used).</summary>
+        /// <remarks>
+        /// Pre: unitId is a Player-side unit. Post: a true → false change records nowMs as the release time, which makes a
+        ///       hit landing within block.perfect_window_ms afterwards a perfect block. Takes effect from the next Tick.
+        /// Side effects: mutates the unit's block key state only.
+        /// </remarks>
+        public void SetBlockHeld(int unitId, bool held, long nowMs)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Player, "only player-side units block");
+            if (u.BlockHeld && !held && u.IsBlocking)
+            {
+                u.BlockReleasedAtMs = nowMs;
+            }
+
+            u.BlockHeld = held;
+        }
+
+        /// <summary>Starts a roll for a player-side creature (Q-C55: the main rolls in combat; combat.md#完美閃避).</summary>
+        /// <remarks>
+        /// Pre: unitId is a Player-side unit.
+        /// Post: true iff the unit is active, not staggered, not guard-broken, not winding up and nowMs &gt;= last roll
+        ///       start + creature_roll.cooldown_ms; then RollStartedAtMs == nowMs: hits are i-framed (no roll drawn, MISS
+        ///       feedback) for invulnerable_ms and the unit does not block for duration_ms. The roll does not move the
+        ///       unit (displacement is pending Q-C58).
+        /// Side effects: sets RollStartedAtMs on success.
+        /// </remarks>
+        public bool TryRoll(int unitId, long nowMs)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Player, "only player-side creatures roll");
+            if (!u.IsActive || u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) || u.WindupSlot != EncounterUnit.NoWindup ||
+                nowMs - u.RollStartedAtMs < _balance.CreatureRoll.CooldownMs)
+            {
+                return false;
+            }
+
+            u.RollStartedAtMs = nowMs;
+            return true;
         }
 
         /// <summary>Removes a wild unit from play (captured, or left behind when its region unloads).</summary>
@@ -1286,6 +1474,13 @@ namespace Cosmimera.Combat
         ///       stagger.gauge_hp_permille); full → Staggered for stagger.duration_ms (no casts, damage taken +bonus).
         ///       A hit of at least knockback_hp_permille of MaxHp pushes a non-boss target knockback_mm away from the
         ///       volume anchor. The player character neither staggers nor is knocked back.
+        ///       Block (combat.md#格擋, Q-C56): decided once per tick before anything resolves — the main blocks while its
+        ///       key is held (SetBlockHeld), a support while a wild windup targets it and it is not winding up; never while
+        ///       rolling or guard-broken. A blocking unit casts nothing (raising the guard cancels its windup) and moves at
+        ///       block.move_speed_permille; a blocked hit keeps (1000 − base_permille)/1000 of its damage and adds its
+        ///       pre-block damage to the stance gauge; full → GuardBroken for guard_break_ms (no block, cast or movement).
+        ///       Roll (combat.md#完美閃避): within creature_roll.invulnerable_ms of TryRoll hits become MISS with no roll
+        ///       drawn; contact within perfect_dodge_ms also raises PerfectDodge and staggers the attacker.
         /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
@@ -1299,7 +1494,9 @@ namespace Cosmimera.Combat
             // Units stand with their body centre one radius above the ground (GroundPoint); the character's position is
             // its feet, so lift it the same way to keep MoveGeometry's height test consistent.
             _playerCenter = playerPosition + Up(playerPosition) * PlayerBodyRadiusM;
+            _mainId = mainId;
             UpdateEngagement(playerPosition, nowMs);
+            UpdateBlocking(nowMs, dtMs);
 
             // Fields placed in earlier ticks resolve before any unit acts, in placement order, so every peer sees the same
             // RNG draw order. Their tick-0 resolution already happened inside the placing TryCast.
@@ -1323,6 +1520,11 @@ namespace Cosmimera.Combat
                 DrainStagger(u, nowMs, dtMs);
 
                 bool player = u.Side == EncounterSide.Player;
+                if (player && u.IsGuardBroken(nowMs))
+                {
+                    continue;
+                }
+
                 if (!player && !u.Engaged)
                 {
                     if (u.WindupSlot != EncounterUnit.NoWindup)
@@ -1362,7 +1564,7 @@ namespace Cosmimera.Combat
                 AiDecision d = CombatAi.Decide(_planet, _balance.Ai, input, _enemyBuffer, _optionBuffer);
                 u.TargetId = d.TargetId;
 
-                Steer(u, d.DestinationDirection, nowMs, dtMs, 1000);
+                Steer(u, d.DestinationDirection, nowMs, dtMs, u.IsBlocking ? _balance.Block.MoveSpeedPermille : 1000);
                 if (d.TargetId != CombatAi.NoTarget)
                 {
                     u.Forward = TangentToward(u.Position, TargetPosition(d.TargetId), u.Forward);
@@ -1377,7 +1579,7 @@ namespace Cosmimera.Combat
                         ResolveWindup(u, partner, nowMs);
                     }
                 }
-                else if (d.CastSlot != CombatAi.NoCast && !u.IsStaggered(nowMs))
+                else if (d.CastSlot != CombatAi.NoCast && !u.IsStaggered(nowMs) && !u.IsBlocking)
                 {
                     TryCast(u, partner, d.CastSlot, d.TargetId, nowMs);
                 }
@@ -1770,11 +1972,37 @@ namespace Cosmimera.Combat
                 }
 
                 int bonus = t.IsStaggered(nowMs) ? _balance.Stagger.DamageTakenBonusPercent : 0;
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus);
+                bool perfectBlock = IsPerfectBlock(t, nowMs);
+                bool blocked = t.IsBlocking || perfectBlock;
+                long sinceRoll = nowMs - t.RollStartedAtMs;
+                bool invulnerable = t.Side == EncounterSide.Player && sinceRoll >= 0 &&
+                    sinceRoll < _balance.CreatureRoll.InvulnerableMs;
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus,
+                    blocked ? _balance.Block.BasePermille : 0, invulnerable);
                 bool hit = r.Outcome == HitOutcome.Hit;
                 UpdateBossStage(t);
+                // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
                 _events.Add(new EncounterEvent(hit ? EncounterEventKind.Hit : EncounterEventKind.Miss, casterId, t.Id, slot,
                     r.Damage));
+                if (invulnerable && sinceRoll < _balance.CreatureRoll.PerfectDodgeMs)
+                {
+                    _events.Add(new EncounterEvent(EncounterEventKind.PerfectDodge, casterId, t.Id, slot, 0));
+                    StaggerAttacker(casterId, t.Id, nowMs);
+                }
+
+                if (hit && blocked)
+                {
+                    if (perfectBlock)
+                    {
+                        _events.Add(new EncounterEvent(EncounterEventKind.PerfectBlock, casterId, t.Id, slot, 0));
+                    }
+
+                    _events.Add(new EncounterEvent(EncounterEventKind.Blocked, casterId, t.Id, slot, r.Damage));
+                    if (!r.Fainted)
+                    {
+                        AddStance(t, casterId, r.PreBlockDamage, nowMs);
+                    }
+                }
                 if (r.Fainted)
                 {
                     _events.Add(new EncounterEvent(EncounterEventKind.Faint, casterId, t.Id, slot, 0));

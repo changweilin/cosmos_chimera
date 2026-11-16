@@ -66,6 +66,8 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.wander_pause_min_ms`／`ai.wander_pause_max_ms` | D0-W1 每段遊蕩之間的停頓（含兩端，2000–5000，Q-D2；0 ≤ min ≤ max） |
 | `ai.wander_speed_permille` | D0-W1 遊蕩步行速度 = 戰鬥移速 × 此值 / 1000（400，Q-D2；1–1000） |
 | `stagger.*` | 失衡與擊退（[combat.md#失衡與擊退](../combat.md)，暫定）：`gauge_hp_permille` 失衡槽容量（最大 HP 千分比，1–10000）、`regen_delay_ms` 最後受傷後多久開始回復、`regen_permille_per_s` 每秒回復容量千分比、`duration_ms` 失衡時間、`damage_taken_bonus_percent` 失衡中受傷加成、`knockback_hp_permille` 單擊達此最大 HP 千分比即擊退、`knockback_mm` 擊退距離（0–36000） |
+| `block.*` | 格擋（[combat.md#格擋](../combat.md)，暫定）：`base_permille` 無盾格擋減傷千分比（0–1000）、`stance_hp_permille` 架勢條容量（最大 HP 千分比，1–10000）、`stance_regen_delay_ms` 最後一次格擋後多久開始回復、`stance_regen_permille_per_s` 每秒回復容量千分比、`guard_break_ms` 破防硬直（1–600000）、`perfect_window_ms` 完美格擋窗口（命中前放開，0–1000）、`move_speed_permille` 格擋中移速千分比 |
+| `creature_roll.*` | 主控宙獸翻滾（[combat.md#完美閃避](../combat.md)，暫定，與 `player` 翻滾同值）：`duration_ms`、`invulnerable_ms`（≤ duration）、`cooldown_ms`（≥ duration，從開始算）、`perfect_dodge_ms` 完美閃避窗口（≤ invulnerable） |
 | `boss.windup_permille` | BOSS 招式前搖倍率（1500＝×1.5；[combat.md#前搖](../combat.md)） |
 | `boss.enrage[]` | BOSS 狂暴階段（[combat.md#BOSS-階段](../combat.md)，暫定 Q-C53）：`hp_below_percent`（1–99，嚴格遞減，HP·100 < 值·MaxHP 時成立）、`move_speed_percent`（0–100，相對移速）、`cd_reduction_percent`（0–100，全屬性 CD 相對縮短；程式內取負值）；1–8 段，後段取代前段 |
 

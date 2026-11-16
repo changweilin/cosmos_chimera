@@ -27,6 +27,8 @@
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
   "capture": {"base_percent": 60, "boss_percent": 100},
   "stagger": {"gauge_hp_permille": 300, "regen_delay_ms": 3000, "regen_permille_per_s": 200, "duration_ms": 2000, "damage_taken_bonus_percent": 25, "knockback_hp_permille": 150, "knockback_mm": 1500},
+  "block": {"base_permille": 350, "stance_hp_permille": 400, "stance_regen_delay_ms": 2000, "stance_regen_permille_per_s": 250, "guard_break_ms": 1500, "perfect_window_ms": 150, "move_speed_permille": 500},
+  "creature_roll": {"duration_ms": 600, "invulnerable_ms": 400, "cooldown_ms": 800, "perfect_dodge_ms": 150},
   "boss": {"windup_permille": 1500, "enrage": [{"hp_below_percent": 66, "move_speed_percent": 15, "cd_reduction_percent": 15}, {"hp_below_percent": 33, "move_speed_percent": 30, "cd_reduction_percent": 30}]},
   "materials": {"normal": {"tier": 1, "chance_percent": 10, "qty": 1}, "elite": {"tier": 2, "chance_percent": 60, "qty": 1}, "boss": {"tier": 3, "chance_percent": 100, "qty": 1}},
   "ai": {"keep_distance_permille": 800, "close_in_permille": 500, "hold_permille": 900, "follow_leash_mm": 6000, "territory_mm": {"timid": 0, "cautious": 4000, "normal": 8000, "territorial": 14000, "fierce": 20000, "apex": 28000}, "wander_mm": {"timid": 3000, "cautious": 4000, "normal": 6000, "territorial": 8000, "fierce": 10000, "apex": 12000}, "wander_pause_min_ms": 2000, "wander_pause_max_ms": 5000, "wander_speed_permille": 400, "body_mm": {"xs": 200, "s": 400, "m": 700, "l": 1100, "xl": 1600, "character": 350}},
