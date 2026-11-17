@@ -1,6 +1,7 @@
 [
   {
     "id": "metal_ferro_temper",
+    "star": 1,
     "element": "metal",
     "kind": "effect",
     "power": 0,
@@ -21,6 +22,7 @@
   },
   {
     "id": "metal_alloy_polish",
+    "star": 1,
     "element": "metal",
     "kind": "effect",
     "power": 0,
@@ -41,6 +43,8 @@
   },
   {
     "id": "metal_magnet_strike",
+    "star": 1,
+    "polarity": "yin",
     "element": "metal",
     "kind": "both",
     "power": 45,
@@ -60,6 +64,7 @@
   },
   {
     "id": "wood_sunlight_mend",
+    "star": 1,
     "element": "wood",
     "kind": "effect",
     "power": 0,
@@ -78,6 +83,7 @@
   },
   {
     "id": "wood_verdant_infusion",
+    "star": 1,
     "element": "wood",
     "kind": "effect",
     "power": 0,
@@ -98,6 +104,8 @@
   },
   {
     "id": "wood_thorn_snare",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "both",
     "power": 50,
@@ -117,6 +125,7 @@
   },
   {
     "id": "water_healing_spring",
+    "star": 1,
     "element": "water",
     "kind": "effect",
     "power": 0,
@@ -135,6 +144,7 @@
   },
   {
     "id": "water_vapor_veil",
+    "star": 1,
     "element": "water",
     "kind": "effect",
     "power": 0,
@@ -154,6 +164,8 @@
   },
   {
     "id": "water_drenching_surge",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "both",
     "power": 55,
@@ -174,6 +186,7 @@
   },
   {
     "id": "fire_kindle_ward",
+    "star": 1,
     "element": "fire",
     "kind": "effect",
     "power": 0,
@@ -194,6 +207,7 @@
   },
   {
     "id": "fire_thermal_sprint",
+    "star": 1,
     "element": "fire",
     "kind": "effect",
     "power": 0,
@@ -213,6 +227,8 @@
   },
   {
     "id": "fire_cinder_slash",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "both",
     "power": 60,
@@ -232,6 +248,7 @@
   },
   {
     "id": "earth_mineral_communion",
+    "star": 1,
     "element": "earth",
     "kind": "effect",
     "power": 0,
@@ -250,6 +267,7 @@
   },
   {
     "id": "earth_granite_stance",
+    "star": 1,
     "element": "earth",
     "kind": "effect",
     "power": 0,
@@ -270,6 +288,8 @@
   },
   {
     "id": "earth_tremor_stomp",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "both",
     "power": 50,
@@ -291,6 +311,7 @@
   },
   {
     "id": "ice_glacial_mirror",
+    "star": 1,
     "element": "ice",
     "kind": "effect",
     "power": 0,
@@ -310,6 +331,7 @@
   },
   {
     "id": "ice_numbing_haze",
+    "star": 1,
     "element": "ice",
     "kind": "effect",
     "power": 0,
@@ -329,6 +351,8 @@
   },
   {
     "id": "ice_brittle_strike",
+    "star": 1,
+    "polarity": "yin",
     "element": "ice",
     "kind": "both",
     "power": 40,
@@ -349,6 +373,7 @@
   },
   {
     "id": "wind_tailwind_boon",
+    "star": 1,
     "element": "wind",
     "kind": "effect",
     "power": 0,
@@ -368,6 +393,7 @@
   },
   {
     "id": "wind_haste_current",
+    "star": 1,
     "element": "wind",
     "kind": "effect",
     "power": 0,
@@ -387,6 +413,8 @@
   },
   {
     "id": "wind_turbulent_arc",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "both",
     "power": 45,
@@ -406,6 +434,7 @@
   },
   {
     "id": "thunder_overclock_charge",
+    "star": 1,
     "element": "thunder",
     "kind": "effect",
     "power": 0,
@@ -426,6 +455,7 @@
   },
   {
     "id": "thunder_amplifying_spark",
+    "star": 1,
     "element": "thunder",
     "kind": "effect",
     "power": 0,
@@ -445,6 +475,8 @@
   },
   {
     "id": "thunder_draining_bolt",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "both",
     "power": 65,
@@ -465,6 +497,7 @@
   },
   {
     "id": "light_radiant_benediction",
+    "star": 1,
     "element": "light",
     "kind": "effect",
     "power": 0,
@@ -483,6 +516,7 @@
   },
   {
     "id": "light_crown_radiance",
+    "star": 1,
     "element": "light",
     "kind": "effect",
     "power": 0,
@@ -503,6 +537,8 @@
   },
   {
     "id": "light_dazzling_crescent",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "both",
     "power": 45,
@@ -523,6 +559,7 @@
   },
   {
     "id": "shadow_veiling_mist",
+    "star": 1,
     "element": "shadow",
     "kind": "effect",
     "power": 0,
@@ -542,6 +579,7 @@
   },
   {
     "id": "shadow_enervating_mire",
+    "star": 1,
     "element": "shadow",
     "kind": "effect",
     "power": 0,
@@ -563,6 +601,8 @@
   },
   {
     "id": "shadow_umbra_curse",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "both",
     "power": 55,

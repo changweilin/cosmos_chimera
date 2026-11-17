@@ -16,17 +16,17 @@ namespace Cosmimera.Food.Tests
             _catalog = FoodCatalog.CreateDefault();
         }
 
-        private static Combatant MakeCombatant(int con = 50)
+        private static Combatant MakeCombatant(int hp = 90)
         {
             var coeffs = new DerivedStatsCoefficients(
                 DerivedStatsCoefficients.SupportedModelVersion,
                 10000, 600, 900, 100, 1000, 100, 500, 100, 36000,
-                400, 100, 250, 4000, 2000, 100, 400, 150, 50);
+                400, 100, 250, 4000, 2000, 100, 400, 150, 50, 10, 100, 250, 4000);
             var stats = new DerivedStats(coeffs);
             var rules = new EffectRulesConfig(10, 300, 1000);
             int[] mastery = new int[10];
             int[] resist = new int[10];
-            return new Combatant(stats, rules, con, 50, 50, mastery, resist, new EffectBook(), 4);
+            return new Combatant(stats, rules, new CreatureStats(hp, 50, 50, 50, 50, 50), mastery, resist, new EffectBook(), 4);
         }
 
         private static PlayerVitals MakeDamagedPlayer(int damage, long nowMs)
@@ -42,7 +42,9 @@ namespace Cosmimera.Food.Tests
             var move = new CastMove("test_hit", Element.Fire, MoveKind.Damage, power, 100, 0, false, default, 0);
             Assert.AreEqual(CastResult.Accepted, attacker.BeginCast(0, move, nowMs, out CastContext ctx));
             var rng = new Pcg32(7UL, 1UL);
-            victim.ReceiveHostile(in ctx, true, ref rng, nowMs);
+            // Shared base evasion (creatures.md#六大能力值) can make a roll miss; hit until the damage lands.
+            int before = victim.Hp;
+            for (int i = 0; i < 20 && victim.Hp == before; i++) victim.ReceiveHostile(in ctx, true, ref rng, nowMs);
         }
 
         [Test]

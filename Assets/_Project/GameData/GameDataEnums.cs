@@ -103,6 +103,13 @@ namespace Cosmimera.GameData
         OnHpCrossBelow = 7,
     }
 
+    /// <summary>Damage polarity of a move. REQ: docs/design/creatures.md#六大能力值 — yang = outside-in (cut, claw, burn),
+    /// yin = inside-out (blunt, shock, radiation); picks the attack / defence pair in combat.md#傷害公式.</summary>
+    public enum Polarity
+    {
+        Yin = 0, Yang = 1,
+    }
+
     /// <summary>What a trait effect or move effect does. REQ: common.schema.json#/$defs/effect (closed in P2-01).</summary>
     public enum EffectType
     {

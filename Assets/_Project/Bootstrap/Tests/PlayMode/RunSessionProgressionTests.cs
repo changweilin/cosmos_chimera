@@ -1135,7 +1135,9 @@ namespace Cosmimera.Bootstrap.Tests
             Pcg32 rng = new Pcg32(99UL, 'T');
             for (int e = 0; e < 10 && !s.UnitForTests(unitId).IsFainted; e++)
             {
-                var attacker = new Combatant(env.Balance.Stats, env.Balance.Effects, 0, 0, 0, mastery, new int[10], new EffectBook(), 1);
+                // Max attack, zero defence on itself: only the target's defence and the ratio cap shape the nuke.
+                var attacker = new Combatant(env.Balance.Stats, env.Balance.Effects, new CreatureStats(0, 0, 10000, 10000, 0, 0),
+                    mastery, new int[10], new EffectBook(), 1);
                 var move = new CastMove("test_nuke", (Element)e, MoveKind.Damage, DamageModel.MaxPower, 100, 0, false, default, 0);
                 Assert.That(attacker.BeginCast(0, move, now, out CastContext cast), Is.EqualTo(CastResult.Accepted));
                 for (int hit = 0; hit < 64 && !s.UnitForTests(unitId).IsFainted; hit++)

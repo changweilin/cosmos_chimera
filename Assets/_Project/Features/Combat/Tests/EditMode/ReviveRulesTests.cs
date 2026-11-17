@@ -53,7 +53,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Adult, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -92,7 +92,8 @@ namespace Cosmimera.Combat.Tests
             var rng = new Pcg32(1UL, 1UL);
             Assert.That(wild.Combatant.BeginCast(0, CastMove.FromDef(wild.Def.SignatureMove), 1000, out CastContext ctx1),
                 Is.EqualTo(CastResult.Accepted));
-            mine.Combatant.ReceiveHostile(ctx1, true, ref rng, 1000);
+            // Shared base evasion can make one roll miss; keep hitting with the same cast until it lands.
+            for (int i = 0; i < 20 && !mine.Combatant.IsFainted; i++) mine.Combatant.ReceiveHostile(ctx1, true, ref rng, 1000);
             Assert.That(mine.Combatant.IsFainted, Is.True);
 
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Planet, inCombat: true, nowMs: 2000),
@@ -103,7 +104,7 @@ namespace Cosmimera.Combat.Tests
             // Faint again; second combat revive within 60 s is blocked
             Assert.That(wild.Combatant.BeginCast(0, CastMove.FromDef(wild.Def.SignatureMove), 2000, out CastContext ctx2),
                 Is.EqualTo(CastResult.Accepted));
-            mine.Combatant.ReceiveHostile(ctx2, true, ref rng, 2000);
+            for (int i = 0; i < 20 && !mine.Combatant.IsFainted; i++) mine.Combatant.ReceiveHostile(ctx2, true, ref rng, 2000);
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Planet, inCombat: true, nowMs: 61_999),
                 Is.EqualTo(ReviveResult.OnCooldown));
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Supergiant, inCombat: true, nowMs: 62_000),

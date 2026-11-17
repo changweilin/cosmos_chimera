@@ -62,7 +62,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -86,7 +86,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         private float MaxStep(EncounterUnit wild)
-            => _balance.Stats.MoveSpeedMmS(wild.Agi) * 0.001f * TestWild.SpeedPermille / 1000f * Dt * 0.001f;
+            => _balance.Stats.MoveSpeedMmS(wild.Speed) * 0.001f * TestWild.SpeedPermille / 1000f * Dt * 0.001f;
 
         [Test]
         public void Wander_radius_reads_the_individuals_niche()

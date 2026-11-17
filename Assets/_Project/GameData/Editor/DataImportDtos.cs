@@ -22,6 +22,9 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("id", Required = Required.Always)] public string Id;
         [JsonProperty("element", Required = Required.Always)] public string Element;
         [JsonProperty("kind", Required = Required.Always)] public string Kind;
+        [JsonProperty("star", Required = Required.Always)] public int Star;
+        [JsonProperty("polarity", Required = Required.DisallowNull)] public string Polarity;
+        [JsonProperty("downgraded", Required = Required.DisallowNull)] public MoveDowngradedDto Downgraded;
         [JsonProperty("power", Required = Required.Always)] public int Power;
         [JsonProperty("effect")] public RuleDto Effect;
         [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
@@ -36,9 +39,25 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("origin", Required = Required.DisallowNull)] public string Origin;
     }
 
+    internal sealed class MoveDowngradedDto
+    {
+        [JsonProperty("power", Required = Required.DisallowNull)] public int? Power;
+        [JsonProperty("cooldown_ms", Required = Required.DisallowNull)] public int? CooldownMs;
+        [JsonProperty("accuracy", Required = Required.DisallowNull)] public int? Accuracy;
+        [JsonProperty("effect", Required = Required.DisallowNull)] public RuleDto Effect;
+        [JsonProperty("effect_duration_ms", Required = Required.DisallowNull)] public int? EffectDurationMs;
+    }
+
+    internal sealed class TraitDowngradedDto
+    {
+        [JsonProperty("effects", Required = Required.Always)] public List<RuleDto> Effects;
+    }
+
     internal sealed class TraitDto
     {
         [JsonProperty("id", Required = Required.Always)] public string Id;
+        [JsonProperty("star", Required = Required.Always)] public int Star;
+        [JsonProperty("downgraded", Required = Required.DisallowNull)] public TraitDowngradedDto Downgraded;
         [JsonProperty("trigger", Required = Required.Always)] public RuleDto Trigger;
         [JsonProperty("effects", Required = Required.Always)] public List<RuleDto> Effects;
     }
@@ -65,10 +84,12 @@ namespace Cosmimera.GameData.Editor
 
     internal sealed class StatsDto
     {
-        [JsonProperty("con", Required = Required.Always)] public int Con;
-        [JsonProperty("str", Required = Required.Always)] public int Str;
-        [JsonProperty("spi", Required = Required.Always)] public int Spi;
-        [JsonProperty("agi", Required = Required.Always)] public int Agi;
+        [JsonProperty("hp", Required = Required.Always)] public int Hp;
+        [JsonProperty("speed", Required = Required.Always)] public int Speed;
+        [JsonProperty("yin_atk", Required = Required.Always)] public int YinAtk;
+        [JsonProperty("yang_atk", Required = Required.Always)] public int YangAtk;
+        [JsonProperty("yin_def", Required = Required.Always)] public int YinDef;
+        [JsonProperty("yang_def", Required = Required.Always)] public int YangDef;
     }
 
     internal sealed class CreatureDto

@@ -67,7 +67,7 @@ namespace Cosmimera.Net.Tests
             c.SetId(id);
             c.Set("line_" + id, stage, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 20) },
-                new CreatureStats(statValue, statValue, statValue, statValue), move, null, "{}", false);
+                new CreatureStats(statValue, statValue, statValue, statValue, statValue, statValue), move, null, "{}", false);
             return c;
         }
 

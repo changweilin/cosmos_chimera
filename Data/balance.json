@@ -1,7 +1,9 @@
 {
   "model_version": 1,
   "stat_effective_cap": 10000,
-  "hp": {"base": 600, "gain": 900, "half_stat": 100},
+  "hp": {"base": 600, "gain": 900, "half_stat": 100, "per_point": 10},
+  "shared_base_stat": 100,
+  "damage": {"ratio_min_permille": 250, "ratio_max_permille": 4000},
   "melee_volume": {"gain_permille": 1000, "half_stat": 100},
   "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000, "horizon_factor_permille": 775, "horizon_eye_height_mm": 1700},
   "cd": {"min_permille": 400, "half_stat": 100, "floor_ms": 250},
@@ -34,10 +36,10 @@
   "boss": {"windup_permille": 1500, "enrage": [{"hp_below_percent": 66, "move_speed_percent": 15, "cd_reduction_percent": 15}, {"hp_below_percent": 33, "move_speed_percent": 30, "cd_reduction_percent": 30}]},
   "materials": {"normal": {"tier": 1, "chance_percent": 10, "qty": 1}, "elite": {"tier": 2, "chance_percent": 60, "qty": 1}, "boss": {"tier": 3, "chance_percent": 100, "qty": 1}},
   "ai": {"keep_distance_permille": 800, "close_in_permille": 500, "hold_permille": 900, "follow_leash_mm": 6000, "territory_mm": {"avoidant": 0, "vigilant": 4000, "tolerant": 8000, "territorial": 14000, "aggressive": 20000, "dominant": 28000}, "body_mm": {"xs": 200, "s": 400, "m": 700, "l": 1100, "xl": 1600, "character": 350}},
-  "stage_bands": {
-    "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},
-    "adolescent": {"min_stat": 25, "max_stat": 100, "total_stats": 200},
-    "adult": {"min_stat": 50, "max_stat": 200, "total_stats": 400}
+  "stat_budget": {
+    "base": {"juvenile": 400, "adolescent": 500, "adult": 600, "overload": 720},
+    "per_extra_star_percent": 10,
+    "tolerance_percent": 5
   },
   "progression": {
     "level_max": 100,

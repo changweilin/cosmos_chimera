@@ -39,9 +39,11 @@ namespace Cosmimera.Combat.Tests
         private static CastMove Support(EffectSpec effect, int duration) =>
             new CastMove("move_sup", Element.Fire, MoveKind.Effect, 0, 100, 2000, true, effect, duration);
 
-        private Combatant Make(EffectBook book = null, int con = 30, int spi = 30, int agi = 0,
+        // hp points ≈ the old CON curve's max HP / 10 (CON 0 → 60, 30 → 81, 40 → 86, 100 → 105, 200 → 120), so the HP
+        // scale these tests were written against is kept; speed drives both cooldown and move speed now.
+        private Combatant Make(EffectBook book = null, int hp = 81, int speed = 30,
             int[] mastery = null, int[] resist = null, int slots = 2) =>
-            new Combatant(_stats, _cfg, con, spi, agi, mastery ?? Table(), resist ?? Table(), book ?? new EffectBook(),
+            new Combatant(_stats, _cfg, BalanceFixture.Core(hp, speed), mastery ?? Table(), resist ?? Table(), book ?? new EffectBook(),
                 slots);
 
         private static EffectBook Trait(TriggerSpec trigger, params EffectSpec[] effects) =>
@@ -152,29 +154,29 @@ namespace Cosmimera.Combat.Tests
         {
             int[] ok = Table();
             var book = new EffectBook();
-            Assert.Throws<ContractException>(() => new Combatant(null, _cfg, 1, 1, 1, ok, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, null, 1, 1, 1, ok, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, ok, null, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, -1, 1, 1, ok, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, -1, 1, ok, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, -1, ok, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, new int[9], ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, new int[11], book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, null, ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, null, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, Table(Element.Fire, -1), ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, Table(Element.Fire, DamageModel.MaxMasteryPercent + 1), ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, Table(Element.Fire, 101), book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, Table(Element.Fire, -101), book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, 1, 1, 1, ok, ok, book, 0));
+            Assert.Throws<ContractException>(() => new Combatant(null, _cfg, BalanceFixture.Core(1, 1), ok, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, null, BalanceFixture.Core(1, 1), ok, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, ok, null, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(-1, 1), ok, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, -1), ok, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1, -1), ok, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), new int[9], ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, new int[11], book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), null, ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, null, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), Table(Element.Fire, -1), ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), Table(Element.Fire, DamageModel.MaxMasteryPercent + 1), ok, book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, 101), book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, -101), book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, ok, book, 0));
         }
 
         [Test]
         public void Combatant_starts_at_full_hp_with_ready_moves()
         {
             var book = new EffectBook();
-            Combatant c = Make(book, con: 40, slots: 3);
-            Assert.AreEqual(_stats.MaxHp(40), c.MaxHp);
+            Combatant c = Make(book, hp: 86, slots: 3);
+            Assert.AreEqual(_stats.MaxHpFromPoints(86), c.MaxHp);
             Assert.AreEqual(c.MaxHp, c.Hp);
             Assert.IsFalse(c.IsFainted);
             Assert.AreSame(book, c.Book);
@@ -199,7 +201,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void BeginCast_starts_the_effective_cooldown_and_samples_mastery()
         {
-            Combatant c = Make(spi: 40, mastery: Table(Element.Fire, 25));
+            Combatant c = Make(speed: 40, mastery: Table(Element.Fire, 25));
             CastContext ctx = Cast(c, Damage(cd: 4000), 1000, slot: 1);
             int expected = _stats.EffectiveCooldownMs(4000, 40);
             Assert.AreEqual(expected, ctx.CooldownMs);
@@ -228,7 +230,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void BeginCast_refuses_a_fainted_caster()
         {
-            Combatant victim = Make(con: 0);
+            Combatant victim = Make(hp: 60);
             Combatant attacker = Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
             Pcg32 rng = Rng();
             victim.ReceiveHostile(Cast(attacker, Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
@@ -244,7 +246,7 @@ namespace Cosmimera.Combat.Tests
             var trigger = new TriggerSpec(TriggerType.OnMoveUsed, false, Element.Fire, 0, 5000);
             EffectBook book = Trait(trigger, Mod(EffectType.MasteryMod, 15),
                 new EffectSpec(EffectType.CdModPercent, true, default, -50, 0, 1));
-            Combatant c = Make(book, spi: 0, mastery: Table(Element.Fire, 20));
+            Combatant c = Make(book, speed: 0, mastery: Table(Element.Fire, 20));
             CastContext ctx = Cast(c, Damage(cd: 4000), 0);
             Assert.AreEqual(35, ctx.MasteryPercent);
             Assert.AreEqual(EffectMath.EffectiveCooldownMs(_stats, 4000, 0, -50, _cfg), ctx.CooldownMs);
@@ -298,9 +300,9 @@ namespace Cosmimera.Combat.Tests
         {
             var book = new EffectBook();
             book.Apply("evade", 0, Mod(EffectType.EvasionModPercent, 50), EffectBook.MaxDurationMs, 0);
-            Combatant target = Make(book, con: 100, agi: 100);
+            Combatant target = Make(book, hp: 105, speed: 100);
             Combatant caster = Make();
-            int evasion = EffectMath.EvasionPermille(_stats, 100, 50, _cfg);
+            int evasion = EffectMath.EvasionPermille(_stats, _stats.Coefficients.SharedBaseStat, 50, _cfg);
             int chance = _stats.HitChancePermille(60, evasion);
             Pcg32 rng = Rng();
             int misses = 0;
@@ -337,7 +339,7 @@ namespace Cosmimera.Combat.Tests
         {
             var tBook = new EffectBook();
             tBook.Apply("shell", 0, Mod(EffectType.ResistMod, 15), 100_000, 0);
-            Combatant target = Make(tBook, con: 100, resist: Table(Element.Fire, 10));
+            Combatant target = Make(tBook, hp: 105, resist: Table(Element.Fire, 10));
             Combatant caster = Make(mastery: Table(Element.Fire, 30));
             Pcg32 rng = Rng();
             HitReport r = target.ReceiveHostile(Cast(caster, Damage(power: 80), 0), true, ref rng, 0);
@@ -357,7 +359,7 @@ namespace Cosmimera.Combat.Tests
             cBook.Apply("focus", 0, Mod(EffectType.MasteryMod, 40), 100, 0);
             Combatant caster = Make(cBook);
             CastContext ctx = Cast(caster, Damage(power: 60), 0);
-            Combatant target = Make(con: 100);
+            Combatant target = Make(hp: 105);
             Pcg32 rng = Rng();
             HitReport r = target.ReceiveHostile(ctx, true, ref rng, 5_000);
             Assert.AreEqual(DamageModel.Compute(60, 40, 0), r.Damage, "buff expired at 100 ms but the cast kept it");
@@ -369,7 +371,7 @@ namespace Cosmimera.Combat.Tests
             // User decision 2026-11-07: a unit at 0 HP fires no trait event, so an on_hit_taken heal cannot revive.
             var trigger = new TriggerSpec(TriggerType.OnHitTaken, true, default, 0, 5000);
             EffectBook book = Trait(trigger, Heal(50));
-            Combatant target = Make(book, con: 0);
+            Combatant target = Make(book, hp: 60);
             Combatant caster = Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
             Pcg32 rng = Rng();
             HitReport r = target.ReceiveHostile(Cast(caster, Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
@@ -384,7 +386,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Faint_skips_the_moves_own_effect()
         {
-            Combatant target = Make(con: 0);
+            Combatant target = Make(hp: 60);
             Combatant caster = Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
             Pcg32 rng = Rng();
             CastMove move = Both(Mod(EffectType.EvasionModPercent, -20), 3000, power: DamageModel.MaxPower);
@@ -399,7 +401,7 @@ namespace Cosmimera.Combat.Tests
         {
             // User decision 2026-11-07: the triggering hit uses the pre-hit modifiers.
             var trigger = new TriggerSpec(TriggerType.OnHitTaken, false, Element.Fire, 0, 10_000);
-            Combatant target = Make(Trait(trigger, Mod(EffectType.ResistMod, 40)), con: 200);
+            Combatant target = Make(Trait(trigger, Mod(EffectType.ResistMod, 40)), hp: 120);
             Combatant caster = Make();
             Pcg32 rng = Rng();
             HitReport first = target.ReceiveHostile(Cast(caster, Damage(power: 100), 0), true, ref rng, 0);
@@ -413,7 +415,7 @@ namespace Cosmimera.Combat.Tests
         {
             var trigger = new TriggerSpec(TriggerType.OnHitTaken, false, Element.Water, 0, 10_000);
             EffectBook book = Trait(trigger, Mod(EffectType.ResistMod, 40));
-            Combatant target = Make(book, con: 200);
+            Combatant target = Make(book, hp: 120);
             Combatant caster = Make();
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(caster, Damage(power: 10), 0), true, ref rng, 0);
@@ -426,7 +428,7 @@ namespace Cosmimera.Combat.Tests
         public void Hp_cross_below_heal_resolves_after_the_hit()
         {
             var trigger = new TriggerSpec(TriggerType.OnHpCrossBelow, false, default, 50, 1000);
-            Combatant target = Make(Trait(trigger, Heal(20)), con: 0);
+            Combatant target = Make(Trait(trigger, Heal(20)), hp: 60);
             int maxHp = target.MaxHp;
             // Power picked so the hit lands strictly between 0 and 50 % of max HP.
             int power = 1;
@@ -448,7 +450,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Hostile_timed_effect_lands_only_on_hit()
         {
-            Combatant target = Make(con: 200, agi: 200);
+            Combatant target = Make(hp: 120, speed: 200);
             Combatant caster = Make();
             CastMove move = new CastMove("move_slow", Element.Fire, MoveKind.Effect, 0, 0, 0, true,
                 Mod(EffectType.MoveSpeedModPercent, -30), 3000);
@@ -472,7 +474,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Hostile_heal_heals_whatever_the_shape_hits()
         {
-            Combatant target = Make(con: 100);
+            Combatant target = Make(hp: 105);
             Combatant caster = Make();
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(caster, Damage(power: 120), 0), true, ref rng, 0);
@@ -496,7 +498,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Support_heal_needs_no_roll_and_clamps_at_max_hp()
         {
-            Combatant target = Make(con: 100);
+            Combatant target = Make(hp: 105);
             Combatant caster = Make();
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(caster, Damage(power: 30), 0), true, ref rng, 0);
@@ -535,7 +537,7 @@ namespace Cosmimera.Combat.Tests
         public void Support_rejects_fainted_target_and_default_cast()
         {
             Combatant caster = Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
-            Combatant dead = Make(con: 0);
+            Combatant dead = Make(hp: 60);
             Pcg32 rng = Rng();
             dead.ReceiveHostile(Cast(caster, Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
             Combatant healer = Make();
@@ -550,7 +552,7 @@ namespace Cosmimera.Combat.Tests
             // resist, never rolls, never fires on_hit_taken.
             var trigger = new TriggerSpec(TriggerType.OnHitTaken, true, default, 0, 5000);
             EffectBook book = Trait(trigger, Mod(EffectType.ResistMod, 40));
-            Combatant self = Make(book, con: 100, mastery: Table(Element.Fire, 20), resist: Table(Element.Fire, 10));
+            Combatant self = Make(book, hp: 105, mastery: Table(Element.Fire, 20), resist: Table(Element.Fire, 10));
             Pcg32 rng = Rng();
             Pcg32 before = rng;
             CastMove cost = Both(Mod(EffectType.MasteryMod, 30), 4000, power: 40);
@@ -572,7 +574,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Support_damage_can_faint_and_then_nothing_else_happens()
         {
-            Combatant self = Make(con: 0, mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
+            Combatant self = Make(hp: 60, mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent));
             HitReport r = self.ReceiveSupport(
                 Cast(self, Both(Mod(EffectType.MasteryMod, 5), 1000, power: DamageModel.MaxPower), 0), 0);
             Assert.IsTrue(r.Fainted);
@@ -586,7 +588,7 @@ namespace Cosmimera.Combat.Tests
         public void Support_damage_can_fire_hp_cross_below()
         {
             var trigger = new TriggerSpec(TriggerType.OnHpCrossBelow, false, default, 50, 1000);
-            Combatant self = Make(Trait(trigger, Heal(20)), con: 0);
+            Combatant self = Make(Trait(trigger, Heal(20)), hp: 60);
             int power = 1;
             while (DamageModel.Compute(power, 0, 0) * 100 <= 50 * self.MaxHp)
             {
@@ -651,7 +653,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Refused_casts_still_check_slot_and_time()
         {
-            Combatant dead = Make(con: 0);
+            Combatant dead = Make(hp: 60);
             dead.EnterField(false, 500);
             Pcg32 rng = Rng();
             dead.ReceiveHostile(Cast(Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent)),
@@ -690,7 +692,7 @@ namespace Cosmimera.Combat.Tests
         public void On_move_used_heal_reaches_hp()
         {
             var trigger = new TriggerSpec(TriggerType.OnMoveUsed, false, Element.Fire, 0, 1000);
-            Combatant c = Make(Trait(trigger, Heal(10)), con: 100);
+            Combatant c = Make(Trait(trigger, Heal(10)), hp: 105);
             Pcg32 rng = Rng();
             c.ReceiveHostile(Cast(Make(), Damage(power: 200), 0), true, ref rng, 0);
             int hp = c.Hp;
@@ -703,7 +705,7 @@ namespace Cosmimera.Combat.Tests
         {
             // on_hp_below{50}: +30 fire mastery and +40 fire resist only once HP is under half.
             var trigger = new TriggerSpec(TriggerType.OnHpBelow, false, default, 50, 0);
-            Combatant c = Make(Trait(trigger, Mod(EffectType.MasteryMod, 30), Mod(EffectType.ResistMod, 40)), con: 0);
+            Combatant c = Make(Trait(trigger, Mod(EffectType.MasteryMod, 30), Mod(EffectType.ResistMod, 40)), hp: 60);
             Assert.AreEqual(0, Cast(c, Damage(), 0).MasteryPercent, "full HP: trait off");
             Combatant caster = Make();
             int power = 1;
@@ -725,7 +727,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Sure_hit_contact_still_draws_once_plus_the_crit_roll()
         {
-            Combatant target = Make(con: 200);
+            Combatant target = Make(hp: 120);
             Pcg32 rng = Rng();
             Pcg32 expected = rng;
             expected.NextUInt(DerivedStats.Permille);
@@ -738,7 +740,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Hostile_timed_effect_lasts_its_duration()
         {
-            Combatant target = Make(con: 200);
+            Combatant target = Make(hp: 120);
             CastMove move = Both(Mod(EffectType.EvasionModPercent, -20), 3000, power: 5);
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(Make(), move, 1000), true, ref rng, 1000);
@@ -750,7 +752,7 @@ namespace Cosmimera.Combat.Tests
         public void Survivor_on_hit_taken_heal_and_move_heal_resolve_once()
         {
             var trigger = new TriggerSpec(TriggerType.OnHitTaken, true, default, 0, 1000);
-            Combatant target = Make(Trait(trigger, Heal(7)), con: 100);
+            Combatant target = Make(Trait(trigger, Heal(7)), hp: 105);
             Combatant caster = Make();
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(caster, Damage(power: 300), 0), true, ref rng, 0);
@@ -766,7 +768,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Support_report_and_heal_advance_the_book()
         {
-            Combatant target = Make(con: 100);
+            Combatant target = Make(hp: 105);
             Pcg32 rng = Rng();
             target.ReceiveHostile(Cast(Make(), Damage(power: 200), 0), true, ref rng, 0);
             int hp = target.Hp;
@@ -781,7 +783,7 @@ namespace Cosmimera.Combat.Tests
         public void EnterField_fires_summon_and_swap_and_heals_once()
         {
             var summon = new TriggerSpec(TriggerType.OnSummon, false, default, 0, 2000);
-            Combatant a = Make(Trait(summon, Heal(8)), con: 100);
+            Combatant a = Make(Trait(summon, Heal(8)), hp: 105);
             Pcg32 rng = Rng();
             a.ReceiveHostile(Cast(Make(), Damage(power: 300), 0), true, ref rng, 0);
             int hp = a.Hp;
@@ -801,7 +803,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void EnterField_rejects_fainted_and_backwards_time()
         {
-            Combatant dead = Make(con: 0);
+            Combatant dead = Make(hp: 60);
             Pcg32 rng = Rng();
             dead.ReceiveHostile(Cast(Make(mastery: Table(Element.Fire, DamageModel.MaxMasteryPercent)),
                 Damage(power: DamageModel.MaxPower), 0), true, ref rng, 0);
@@ -835,7 +837,7 @@ namespace Cosmimera.Combat.Tests
         {
             var book = new EffectBook();
             book.Apply("shell", 0, Mod(EffectType.ResistMod, 40), 1000, 0);
-            Combatant self = Make(book, con: 100);
+            Combatant self = Make(book, hp: 105);
             HitReport r = self.ReceiveSupport(Cast(self, Damage(power: 100), 0), 0);
             Assert.AreEqual(DamageModel.Compute(100, 0, 40), r.Damage);
         }
@@ -862,7 +864,7 @@ namespace Cosmimera.Combat.Tests
         public void W35_swap_heal_reaches_hp()
         {
             var swap = new TriggerSpec(TriggerType.OnAllySwap, false, default, 0, 2000);
-            Combatant c = Make(Trait(swap, Heal(10)), con: 100);
+            Combatant c = Make(Trait(swap, Heal(10)), hp: 105);
             Pcg32 rng = Rng();
             c.ReceiveHostile(Cast(Make(), Damage(power: 300), 0), true, ref rng, 0);
             int hp = c.Hp;
@@ -903,7 +905,7 @@ namespace Cosmimera.Combat.Tests
         public void W49_cost_damage_sees_current_hp_for_continuous_traits()
         {
             var trigger = new TriggerSpec(TriggerType.OnHpBelow, false, default, 50, 0);
-            Combatant self = Make(Trait(trigger, Mod(EffectType.ResistMod, 40)), con: 0);
+            Combatant self = Make(Trait(trigger, Mod(EffectType.ResistMod, 40)), hp: 60);
             int power = 1;
             while (DamageModel.Compute(power, 0, 0) * 100 <= 60 * self.MaxHp)
             {
@@ -921,7 +923,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void MoveSpeed_without_modifiers_equals_the_agi_derived_value()
         {
-            Combatant c = Make(agi: 40);
+            Combatant c = Make(speed: 40);
             Assert.AreEqual(_stats.MoveSpeedMmS(40), c.MoveSpeedMmS(0));
         }
 
@@ -929,8 +931,8 @@ namespace Cosmimera.Combat.Tests
         public void MoveSpeed_follows_an_always_trait_in_both_directions()
         {
             var always = new TriggerSpec(TriggerType.Always, false, default, 0, 0);
-            Combatant fast = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, 30)), agi: 40);
-            Combatant slow = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, -30)), agi: 40);
+            Combatant fast = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, 30)), speed: 40);
+            Combatant slow = Make(Trait(always, Mod(EffectType.MoveSpeedModPercent, -30)), speed: 40);
             int baseline = _stats.MoveSpeedMmS(40);
             Assert.AreEqual(EffectMath.MoveSpeedMmS(_stats, 40, 30, _cfg), fast.MoveSpeedMmS(0));
             Assert.AreEqual(EffectMath.MoveSpeedMmS(_stats, 40, -30, _cfg), slow.MoveSpeedMmS(0));
@@ -941,7 +943,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void MoveSpeed_timed_modifier_expires()
         {
-            Combatant c = Make(agi: 40);
+            Combatant c = Make(speed: 40);
             c.Book.Apply("s", 0, Mod(EffectType.MoveSpeedModPercent, -20), 1000, 0);
             Assert.Less(c.MoveSpeedMmS(999), _stats.MoveSpeedMmS(40));
             Assert.AreEqual(_stats.MoveSpeedMmS(40), c.MoveSpeedMmS(1000));
@@ -950,7 +952,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void MoveSpeed_rejects_time_before_the_watermark()
         {
-            Combatant c = Make(agi: 40);
+            Combatant c = Make(speed: 40);
             c.Book.Apply("s", 0, Mod(EffectType.MoveSpeedModPercent, -20), 1000, 500);
             Assert.Throws<ContractException>(() => c.MoveSpeedMmS(499));
         }
@@ -960,7 +962,7 @@ namespace Cosmimera.Combat.Tests
         {
             var tBook = new EffectBook();
             tBook.Apply("shell", 0, Mod(EffectType.ResistMod, 15), 100_000, 0);
-            Combatant target = Make(tBook, con: 100, resist: Table(Element.Fire, 10));
+            Combatant target = Make(tBook, hp: 105, resist: Table(Element.Fire, 10));
             int hp = target.Hp;
             Assert.AreEqual(25, target.EffectiveResistPercent(Element.Fire, 0));
             Assert.AreEqual(0, target.EffectiveResistPercent(Element.Water, 0));

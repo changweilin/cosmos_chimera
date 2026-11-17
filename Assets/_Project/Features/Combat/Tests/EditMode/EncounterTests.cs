@@ -60,7 +60,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, style, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), move, null, "{}", false);
             return c;
         }
 
@@ -138,7 +138,7 @@ namespace Cosmimera.Combat.Tests
             Assert.That(grown.Level, Is.EqualTo(30));
             Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp));
             Assert.That(grown.Combatant.Hp, Is.EqualTo(grown.Combatant.MaxHp), "full HP stays full");
-            Assert.That(grown.Agi, Is.EqualTo(built.Agi));
+            Assert.That(grown.Speed, Is.EqualTo(built.Speed));
             Assert.That(grown.Volumes[0], Is.EqualTo(built.Volumes[0]));
             Assert.That(grown.Combatant.MaxHp, Is.GreaterThan(before));
             Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(grown.Id, 29), "levels never go down");
@@ -156,16 +156,16 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Rescale_raises_hp_by_the_max_hp_increase_and_refuses_fainted()
         {
-            var c = new Combatant(_balance.Stats, _balance.Effects, 10, 10, 10, new int[10], new int[10], new EffectBook(), 1);
+            var c = new Combatant(_balance.Stats, _balance.Effects, BalanceFixture.Core(68, 10, 10), new int[10], new int[10], new EffectBook(), 1);
             int max10 = c.MaxHp;
             System.Reflection.PropertyInfo hp = typeof(Combatant).GetProperty(nameof(Combatant.Hp));
             hp.SetValue(c, max10 - 100); // damage taken in the battle that just ended
-            c.Rescale(50, 10, 10);
+            c.Rescale(BalanceFixture.Core(90, 10, 10));
             Assert.That(c.MaxHp, Is.GreaterThan(max10));
             Assert.That(c.Hp, Is.EqualTo(c.MaxHp - 100), "damage taken is kept, not healed");
-            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(10, 10, 10), "never lowers MaxHp");
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(BalanceFixture.Core(68, 10, 10)), "never lowers MaxHp");
             hp.SetValue(c, 0);
-            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(60, 10, 10), "fainted");
+            Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => c.Rescale(BalanceFixture.Core(95, 10, 10)), "fainted");
         }
 
         // REQ: docs/design/combat.md#場地 — a field resolves at placement and every field.tick_ms, ceil(life/tick) times.
@@ -345,7 +345,7 @@ namespace Cosmimera.Combat.Tests
             TestWild.WithHabit(baseDef, Habit.Tolerant).Set("fox", CreatureStage.Adult, CreatureSizeClass.L, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), resist,
                 new List<ElementValue> { new ElementValue(Element.Fire, 100) },
-                new CreatureStats(100, 100, 100, 100), baseMove, baseTrait, "{}", false);
+                new CreatureStats(105, 100, 100, 100, 100, 100), baseMove, baseTrait, "{}", false);
 
             var ovDef = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(ovDef);
@@ -353,7 +353,7 @@ namespace Cosmimera.Combat.Tests
             TestWild.WithHabit(ovDef, Habit.Tolerant).Set("fox", CreatureStage.Overload, CreatureSizeClass.XL, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), resist,
                 new List<ElementValue> { new ElementValue(Element.Fire, 150) },
-                new CreatureStats(200, 140, 120, 130), ovMove, ovTrait, "{}", false);
+                new CreatureStats(120, 130, 140, 140, 120, 120), ovMove, ovTrait, "{}", false);
 
             baseDef.SetOverloadLinks(null, ovDef);
             ovDef.SetOverloadLinks(baseDef, null);

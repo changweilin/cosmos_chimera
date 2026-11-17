@@ -13,7 +13,7 @@
 | `evolution` | 現行契約 `{exp, materials: [{element, tier, qty}]}`；P2-12 待改為等級門檻，成年仍為 null（見〈進化〉） |
 | `resist` | 十屬性抗性：`{metal, wood, water, fire, earth, ice, wind, thunder, light, shadow}` 整數 % |
 | `mastery` | 1–3 個屬性專精 `{element: %}`（加成同屬性招式） |
-| `stats` | 六大能力值（見〈六大能力值〉）；現行 schema 仍為 `con`/`str`/`spi`/`agi`，遷移見 D0-S1 |
+| `stats` | 六大能力值 `hp` / `speed` / `yin_atk` / `yang_atk` / `yin_def` / `yang_def`（LV100 基準，見〈六大能力值〉） |
 | `signature_move` | 一個精通招式 ID（招式帶星級，見〈技能星級〉） |
 | `trait` | 一個特性 ID（特性帶星級，見〈技能星級〉） |
 | `field_utility` | 最多一個場外生活招式／特性（預設 `none`，規格見 [field-utilities.md](field-utilities.md)） |
@@ -26,11 +26,11 @@
 外觀意象、屬性專精與屬性抗性各自設計；外觀含某元素，不強制具有該屬性專精或正抗性；副專精也不強制伴隨同屬性正抗性（P5-08 A10／Q-C27）。金線成年保留土副專精，水線成年風抗 0、冰線成年金抗 0、日線成年水抗 −15 等現有數值均沿用。
 
 ## 六大能力值
-取代舊四維（CON／STR／SPI／AGI）；執行期遷移為 D0-S1。
+取代舊四維（CON／STR／SPI／AGI）。現有資料由 `tools/demo-data/six_stats.py` 機械轉換（Q-C74，全部技能先設 ★），報告 `Data/_incoming/d0-s1-six-stats/report.md` 待人工審核。
 
 | 能力 | 說明 |
 |---|---|
-| HP | 直接等於最大 HP |
+| HP | 最大 HP ＝ HP 點 × 10（`Data/balance.json#hp.per_point`）；等級先縮放點數再乘 |
 | 速度 | 移動速度、招式 CD（[derived-stats.md](derived-stats.md)） |
 | 陽攻 / 陽守 | **陽**＝由外而內的傷害：刀劍、抓擊、槍傷、燃燒、腐蝕等 |
 | 陰攻 / 陰守 | **陰**＝由內而外的傷害：打擊、衝擊波、電擊、輻射、神經毒素等 |
@@ -57,9 +57,9 @@
 生活能力不計入。`tools/validate-data` 硬性檢查六項總和落在預算 ±5% 內。階段基準與每星 10% 放 `Data/balance.json`。
 
 ## 技能星級
-- 技能（招式與特性）分 3 個星級，即稀有度：★ 一般 / ★★ 稀有 / ★★★ 獨有。星級是技能本身固定的欄位 `star: 1|2|3`。
+- 技能（招式與特性）分 3 個星級，即稀有度：★ 一般 / ★★ 稀有 / ★★★ 獨有。星級是技能本身固定的欄位 `star: 1|2|3`；傷害招式另有必填 `polarity: yin|yang`。
 - ★★★ 獨有：只有一個物種（含其進化線）可擁有；`validate-data` 檢查。★／★★ 可由多個物種共用。
-- 技能**作為副手提供時，素質一律降格為 ★**：★★／★★★ 技能另存一份 ★ 版數值（`downgraded`），副手提供時改用該版本；★ 技能無此欄位。
+- 技能**作為副手提供時，素質一律降格為 ★**：★★／★★★ 技能另存一份 ★ 版數值（`downgraded`），副手提供時改用該版本；★ 技能無此欄位。招式的 `downgraded` 可覆寫 `power` / `cooldown_ms` / `accuracy` / `effect`（只能替換既有效果，且保持瞬間／計時同類）/ `effect_duration_ms`；特性的 `downgraded` 為整組 `effects`。`validate-data` 以合併後的 ★ 版重新驗證。
 - 超載、生活能力與副手裝備（25%，[crafting.md](crafting.md)）不受星級降格影響。
 
 ## 等級與成長

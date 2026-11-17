@@ -1,6 +1,8 @@
 [
   {
     "id": "SampleMoveStrike",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 30,

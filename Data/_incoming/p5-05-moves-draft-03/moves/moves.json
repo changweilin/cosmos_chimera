@@ -1,6 +1,8 @@
 [
   {
     "id": "metal_drill_drive",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 45,
@@ -14,6 +16,8 @@
   },
   {
     "id": "metal_flechette_beam",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 70,
@@ -26,6 +30,8 @@
   },
   {
     "id": "metal_shard_volley",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 85,
@@ -38,6 +44,8 @@
   },
   {
     "id": "metal_anvil_drop",
+    "star": 1,
+    "polarity": "yin",
     "element": "metal",
     "kind": "damage",
     "power": 100,
@@ -51,6 +59,8 @@
   },
   {
     "id": "wood_bramble_whip",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 40,
@@ -63,6 +73,8 @@
   },
   {
     "id": "wood_pollen_jet",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 60,
@@ -75,6 +87,8 @@
   },
   {
     "id": "wood_vine_lunge",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 80,
@@ -88,6 +102,8 @@
   },
   {
     "id": "wood_timber_fall",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 95,
@@ -101,6 +117,8 @@
   },
   {
     "id": "water_cascade_jab",
+    "star": 1,
+    "polarity": "yang",
     "element": "water",
     "kind": "damage",
     "power": 35,
@@ -113,6 +131,8 @@
   },
   {
     "id": "water_geyser_pool",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 65,
@@ -126,6 +146,8 @@
   },
   {
     "id": "water_hydro_spray",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 85,
@@ -138,6 +160,8 @@
   },
   {
     "id": "water_tsunami_charge",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 100,
@@ -151,6 +175,8 @@
   },
   {
     "id": "fire_ash_fan",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 40,
@@ -163,6 +189,8 @@
   },
   {
     "id": "fire_flare_nova",
+    "star": 1,
+    "polarity": "yin",
     "element": "fire",
     "kind": "damage",
     "power": 55,
@@ -176,6 +204,8 @@
   },
   {
     "id": "fire_searing_ray",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 75,
@@ -188,6 +218,8 @@
   },
   {
     "id": "fire_meteor_rush",
+    "star": 1,
+    "polarity": "yin",
     "element": "fire",
     "kind": "damage",
     "power": 105,
@@ -201,6 +233,8 @@
   },
   {
     "id": "earth_stone_skate",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 35,
@@ -214,6 +248,8 @@
   },
   {
     "id": "earth_dust_cloud",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 55,
@@ -226,6 +262,8 @@
   },
   {
     "id": "earth_stalagmite_field",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 75,
@@ -239,6 +277,8 @@
   },
   {
     "id": "earth_tectonic_lance",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 105,
@@ -251,6 +291,8 @@
   },
   {
     "id": "ice_claw_cleave",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 35,
@@ -263,6 +305,8 @@
   },
   {
     "id": "ice_permafrost_surge",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 65,
@@ -276,6 +320,8 @@
   },
   {
     "id": "ice_icicle_beam",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 80,
@@ -288,6 +334,8 @@
   },
   {
     "id": "ice_avalanche_charge",
+    "star": 1,
+    "polarity": "yin",
     "element": "ice",
     "kind": "damage",
     "power": 110,
@@ -301,6 +349,8 @@
   },
   {
     "id": "wind_zephyr_cutter",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 40,
@@ -313,6 +363,8 @@
   },
   {
     "id": "wind_whirlwind_burst",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 50,
@@ -326,6 +378,8 @@
   },
   {
     "id": "wind_shear_fan",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 65,
@@ -338,6 +392,8 @@
   },
   {
     "id": "wind_tailwind_dive",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 95,
@@ -351,6 +407,8 @@
   },
   {
     "id": "thunder_shock_prod",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 35,
@@ -363,6 +421,8 @@
   },
   {
     "id": "thunder_volt_drift",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 55,
@@ -376,6 +436,8 @@
   },
   {
     "id": "thunder_storm_cell",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 75,
@@ -389,6 +451,8 @@
   },
   {
     "id": "thunder_fork_barrage",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 95,
@@ -401,6 +465,8 @@
   },
   {
     "id": "light_photon_flash",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 35,
@@ -413,6 +479,8 @@
   },
   {
     "id": "light_luminous_glide",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 55,
@@ -426,6 +494,8 @@
   },
   {
     "id": "light_halo_burst",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 75,
@@ -439,6 +509,8 @@
   },
   {
     "id": "light_zenith_lance",
+    "star": 1,
+    "polarity": "yang",
     "element": "light",
     "kind": "damage",
     "power": 105,
@@ -451,6 +523,8 @@
   },
   {
     "id": "shadow_dusk_fang",
+    "star": 1,
+    "polarity": "yang",
     "element": "shadow",
     "kind": "damage",
     "power": 35,
@@ -463,6 +537,8 @@
   },
   {
     "id": "shadow_twilight_phase",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 55,
@@ -476,6 +552,8 @@
   },
   {
     "id": "shadow_abyssal_shroud",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 70,
@@ -488,6 +566,8 @@
   },
   {
     "id": "shadow_void_well",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 85,

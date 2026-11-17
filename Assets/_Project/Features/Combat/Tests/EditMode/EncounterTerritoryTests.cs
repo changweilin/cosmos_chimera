@@ -63,7 +63,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), move ?? Move("bite_" + id, RangeClass.Melee, 2000), null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), move ?? Move("bite_" + id, RangeClass.Melee, 2000), null, "{}", false);
             return c;
         }
 
@@ -598,7 +598,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void MultiplyMaxHp_is_once_and_before_damage()
         {
-            var c = new Combatant(_balance.Stats, _balance.Effects, 10, 10, 10, new int[10], new int[10], new EffectBook(), 1);
+            var c = new Combatant(_balance.Stats, _balance.Effects, BalanceFixture.Core(68, 10, 10), new int[10], new int[10], new EffectBook(), 1);
             int max = c.MaxHp;
             Assert.Throws<ContractException>(() => c.MultiplyMaxHp(0));
             c.MultiplyMaxHp(2);

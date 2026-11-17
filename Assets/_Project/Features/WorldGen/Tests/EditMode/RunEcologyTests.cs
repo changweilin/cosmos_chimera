@@ -82,7 +82,7 @@ namespace Cosmimera.WorldGen.Tests
             c.SetId(id);
             c.Set(line, stage, CreatureSizeClass.M, AiStyle.Charge, new List<NicheCandidate>(niches), null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(e, 15) },
-                new CreatureStats(25, 25, 25, 25), null, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), null, null, "{}", false);
             return c;
         }
 

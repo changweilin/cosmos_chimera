@@ -370,12 +370,76 @@ namespace Cosmimera.GameData.Editor
                 {
                     errors.Add($"{m.Where}: windup_ms must be 0..{MoveDef.MaxWindupMs}");
                 }
+
+                // REQ: creatures.md#技能星級, #六大能力值 (D0-S1).
+                CheckStar(m.Where, m.Dto.Star, m.Dto.Downgraded != null, errors);
+                if ((m.Dto.Kind != "effect") != (m.Dto.Polarity != null))
+                {
+                    errors.Add($"{m.Where}: polarity is required iff the move deals damage");
+                }
+                else if (m.Dto.Polarity != null)
+                {
+                    RequireEnum<Polarity>(m.Where, "polarity", m.Dto.Polarity);
+                }
+
+                MoveDowngradedDto dg = m.Dto.Downgraded;
+                if (dg != null)
+                {
+                    if (dg.Power == null && dg.CooldownMs == null && dg.Accuracy == null && dg.Effect == null
+                        && dg.EffectDurationMs == null)
+                    {
+                        errors.Add($"{m.Where}: downgraded must change at least one field");
+                    }
+
+                    if (dg.Power < 0 || dg.Power > 100000 || dg.CooldownMs < 0 || dg.Accuracy < 0 || dg.Accuracy > 100)
+                    {
+                        errors.Add($"{m.Where}: downgraded power / cooldown_ms / accuracy out of range");
+                    }
+
+                    if (dg.Effect != null)
+                    {
+                        if (m.Dto.Effect == null)
+                        {
+                            errors.Add($"{m.Where}: downgraded.effect needs an effect on the full move");
+                        }
+                        else
+                        {
+                            CheckRule(m.Where, "downgraded.effect", dg.Effect, EffectParams, errors);
+                            if ((dg.Effect.Type == "heal_percent_max_hp") != (m.Dto.Effect.Type == "heal_percent_max_hp"))
+                            {
+                                errors.Add($"{m.Where}: downgraded.effect must keep the move's instant / timed kind");
+                            }
+                        }
+                    }
+
+                    if (dg.EffectDurationMs != null && (m.Dto.EffectDurationMs == null || dg.EffectDurationMs < 1
+                        || dg.EffectDurationMs > MaxDurationMs))
+                    {
+                        errors.Add($"{m.Where}: downgraded.effect_duration_ms needs a timed effect and 1..{MaxDurationMs}");
+                    }
+                }
             }
 
             foreach (Sourced<TraitDto> t in traits)
             {
                 Claim(t.Where, t.Dto.Id, "trait");
                 CheckRule(t.Where, "trigger", t.Dto.Trigger, TriggerParams, errors);
+                CheckStar(t.Where, t.Dto.Star, t.Dto.Downgraded != null, errors);
+                if (t.Dto.Downgraded != null)
+                {
+                    List<RuleDto> down = t.Dto.Downgraded.Effects;
+                    if (down == null || down.Count == 0 || down.Count > TraitDef.MaxEffects)
+                    {
+                        errors.Add($"{t.Where}: downgraded.effects must have 1..{TraitDef.MaxEffects} entries");
+                    }
+                    else
+                    {
+                        for (int i = 0; i < down.Count; i++)
+                        {
+                            CheckRule(t.Where, $"downgraded.effects[{i}]", down[i], EffectParams, errors);
+                        }
+                    }
+                }
                 if (t.Dto.Effects == null || t.Dto.Effects.Count == 0 || t.Dto.Effects.Count > TraitDef.MaxEffects)
                 {
                     errors.Add($"{t.Where}: effects must have 1..{TraitDef.MaxEffects} entries");
@@ -642,11 +706,19 @@ namespace Cosmimera.GameData.Editor
                     d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
                     d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
                 moveDefs[d.Id].SetWindup(d.WindupMs);
+                moveDefs[d.Id].SetSkill(d.Star, d.Polarity != null ? ParseEnum<Polarity>(d.Polarity) : default);
+                if (d.Downgraded != null)
+                {
+                    MoveDowngradedDto g = d.Downgraded;
+                    moveDefs[d.Id].SetDowngraded(g.Power ?? -1, g.CooldownMs ?? -1, g.Accuracy ?? -1,
+                        g.Effect != null ? ToEffect(g.Effect) : null, g.EffectDurationMs ?? -1);
+                }
             }
 
             foreach (Sourced<TraitDto> s in traits)
             {
                 traitDefs[s.Dto.Id].Set(ToTrigger(s.Dto.Trigger), s.Dto.Effects.Select(ToEffect).ToList());
+                traitDefs[s.Dto.Id].SetSkill(s.Dto.Star, s.Dto.Downgraded?.Effects.Select(ToEffect).ToList());
             }
 
             foreach (Sourced<PlanetTypeDto> s in planets)
@@ -690,7 +762,7 @@ namespace Cosmimera.GameData.Editor
                 def.Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
                     d.Niches.Select(nc => new NicheCandidate(nicheDefs[nc.Niche], nc.Weight)).ToList(),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
-                    mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
+                    mastery, new CreatureStats(d.Stats.Hp, d.Stats.Speed, d.Stats.YinAtk, d.Stats.YangAtk, d.Stats.YinDef, d.Stats.YangDef),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
                     sensitivity == "review");
                 def.SetOverloadLinks(
@@ -799,6 +871,19 @@ namespace Cosmimera.GameData.Editor
                 ["on_ally_swap"] = new[] { ("duration_ms", ParamKind.DurationMs) },
                 ["on_hp_cross_below"] = new[] { ("percent", ParamKind.Percent), ("duration_ms", ParamKind.DurationMs) },
             };
+
+        // REQ: creatures.md#技能星級 — the ★ version is required iff the skill is ★★ or ★★★.
+        private static void CheckStar(string where, int star, bool hasDowngraded, List<string> errors)
+        {
+            if (star < 1 || star > 3)
+            {
+                errors.Add($"{where}: star must be 1..3");
+            }
+            else if ((star >= 2) != hasDowngraded)
+            {
+                errors.Add($"{where}: downgraded is required iff star >= 2");
+            }
+        }
 
         private static readonly Dictionary<string, (string Key, ParamKind Kind)[]> EffectParams =
             new Dictionary<string, (string Key, ParamKind Kind)[]>(StringComparer.Ordinal)

@@ -1,6 +1,8 @@
 [
   {
     "id": "sample_ember_strike",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 30,
@@ -14,6 +16,8 @@
   },
   {
     "id": "sample_flame_burst",
+    "star": 1,
+    "polarity": "yin",
     "element": "fire",
     "kind": "damage",
     "power": 60,
@@ -26,6 +30,8 @@
   },
   {
     "id": "sample_solar_flare",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 110,
@@ -38,6 +44,8 @@
   },
   {
     "id": "sample_aqua_pulse",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 50,
@@ -51,6 +59,8 @@
   },
   {
     "id": "sample_gust_slash",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 40,
@@ -63,6 +73,8 @@
   },
   {
     "id": "sample_thunder_jolt",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 45,

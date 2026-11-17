@@ -1,6 +1,6 @@
 """Numeric/semantic gate for a creature batch (P5-01), run before validate_data.
 
-validate_data checks schema and cross-file refs; it does not know stage_bands or the
+validate_data checks schema, cross-file refs and the exact star-adjusted stat budget; it does not know the
 per-stage resist/mastery pattern the batch prompt demands. This closes that gap so a
 TERRA/HYDROGEN draft fails fast with a pointer instead of reaching review.
 
@@ -24,7 +24,10 @@ PATTERN = {
     "adolescent": (35, -30, 25, (35, 50)),
     "adult": (50, -40, 40, None),
 }
-STAT_KEYS = ["con", "str", "spi", "agi"]
+STAT_KEYS = ["hp", "speed", "yin_atk", "yang_atk", "yin_def", "yang_def"]
+# REQ: creatures.md#綜合值預算 — two ★★★ skills cost 4 extra stars. The creature file alone does not know its skills
+# stars, so this gate only checks the feasible range; validate_data checks the exact budget against moves/traits.
+MAX_EXTRA_STARS = 4
 SECONDARY_MASTERY = 15
 
 
@@ -40,12 +43,15 @@ def check(creatures: list[dict], bands: dict) -> list[str]:
     for c in creatures:
         cid, stage = c["id"], c["stage"]
         own, weak, main, lvl = PATTERN[stage]
-        band = bands[stage]
+        base = bands["base"][stage]
+        tol = bands["tolerance_percent"]
+        low = base * (100 - bands["per_extra_star_percent"] * MAX_EXTRA_STARS) * (100 - tol) // 10000
+        high = base * (100 + tol) // 100
         stats = [c["stats"][k] for k in STAT_KEYS]
-        if sum(stats) != band["total_stats"]:
-            errs.append(f"{cid}: stats total {sum(stats)} != {band['total_stats']}")
-        if any(not band["min_stat"] <= s <= band["max_stat"] for s in stats):
-            errs.append(f"{cid}: stat outside {band['min_stat']}..{band['max_stat']}")
+        if not low <= sum(stats) <= high:
+            errs.append(f"{cid}: stats total {sum(stats)} outside {low}..{high}")
+        if any(s < 1 for s in stats):
+            errs.append(f"{cid}: stat outside 1..")
         # REQ: creature-ecology.md#生成順序 — habits are drawn per individual from niches; coverage is validate-data's job.
         if not c.get("niches"):
             errs.append(f"{cid}: needs at least one candidate niche")
@@ -89,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         if not p.is_file():
             print(f"error: not found: {p}", file=sys.stderr)
             return 2
-    bands = json.loads(args.balance.read_text(encoding="utf-8"))["stage_bands"]
+    bands = json.loads(args.balance.read_text(encoding="utf-8"))["stat_budget"]
     errs = check(json.loads(args.file.read_text(encoding="utf-8")), bands)
     for e in errs:
         print(e)

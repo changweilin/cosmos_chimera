@@ -9,7 +9,7 @@ sys.path.insert(0, str(REPO / "tools" / "prompts"))
 import check_batch  # noqa: E402
 import quota  # noqa: E402
 
-BANDS = json.loads((REPO / "Data" / "balance.json").read_text(encoding="utf-8"))["stage_bands"]
+BANDS = json.loads((REPO / "Data" / "balance.json").read_text(encoding="utf-8"))["stat_budget"]
 ALL = ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"]
 
 
@@ -20,16 +20,16 @@ def _creature(cid, stage, nxt, stats, level):
     return {
         "id": cid, "line_id": "line_x", "stage": stage, "evolves_to": nxt,
         "niches": [{"niche": "niche_opportunistic_omnivore", "weight": 1}],
-        "stats": dict(zip(["con", "str", "spi", "agi"], stats)), "mastery": {"fire": main},
+        "stats": dict(zip(check_batch.STAT_KEYS, stats)), "mastery": {"fire": main},
         "resist": resist, "evolution": {"level": level, "materials": []} if nxt else None,
     }
 
 
 def _line():
     return [
-        _creature("a1", "juvenile", "a2", [40, 20, 20, 20], 25),
-        _creature("a2", "adolescent", "a3", [80, 40, 40, 40], 40),
-        _creature("a3", "adult", None, [160, 80, 80, 80], 0),
+        _creature("a1", "juvenile", "a2", [80, 60, 50, 70, 70, 70], 25),
+        _creature("a2", "adolescent", "a3", [100, 75, 60, 90, 85, 90], 40),
+        _creature("a3", "adult", None, [120, 90, 75, 105, 105, 105], 0),
     ]
 
 
@@ -39,7 +39,8 @@ def test_valid_line_passes():
 
 def test_stat_total_and_band_violations_reported():
     line = _line()
-    line[0]["stats"]["con"] = 60
+    line[0]["stats"]["hp"] = 400
+    line[1]["stats"]["speed"] = 0
     errs = check_batch.check(line, BANDS)
     assert any("stats total" in e for e in errs)
     assert any("stat outside" in e for e in errs)

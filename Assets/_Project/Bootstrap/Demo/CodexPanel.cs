@@ -90,7 +90,8 @@ namespace Cosmimera.Bootstrap.Demo
                 if (portrait != null)
                     GUI.DrawTexture(GUILayoutUtility.GetRect(120, 120, GUILayout.ExpandWidth(false)), portrait, ScaleMode.ScaleToFit, true);
                 ui.Label(_copy.Ui("ui.stage." + creature.Stage.ToString().ToLowerInvariant()));
-                ui.Label($"CON {creature.Stats.Con} · STR {creature.Stats.Str} · SPI {creature.Stats.Spi} · AGI {creature.Stats.Agi} (LV100)");
+                CreatureStats st = creature.Stats;
+                ui.Label($"HP {st.Hp} · SPD {st.Speed} · 陰攻 {st.YinAtk} · 陽攻 {st.YangAtk} · 陰守 {st.YinDef} · 陽守 {st.YangDef} (LV100)");
                 string mastery = _copy.Ui("ui.codex.mastery") + "：";
                 foreach (ElementValue value in creature.Mastery) mastery += _copy.Element(value.Element.ToString()) + $" {value.Value}%  ";
                 ui.Label(mastery);

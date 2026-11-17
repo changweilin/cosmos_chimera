@@ -26,3 +26,5 @@ MonoBehaviour:
     delta: 25
     percent: 0
     maxStacks: 1
+  star: 1
+  downgradedEffects: []

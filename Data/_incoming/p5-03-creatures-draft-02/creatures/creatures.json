@@ -32,12 +32,7 @@
     "mastery": {
       "metal": 15
     },
-    "stats": {
-      "con": 38,
-      "str": 26,
-      "spi": 22,
-      "agi": 14
-    },
+    "stats": {"hp": 99, "speed": 36, "yin_atk": 41, "yang_atk": 68, "yin_def": 78, "yang_def": 78},
     "signature_move": "metal_corrosion_edge",
     "trait": "trait_metal_clockwork_precision",
     "concept": {
@@ -87,12 +82,7 @@
     "mastery": {
       "metal": 25
     },
-    "stats": {
-      "con": 76,
-      "str": 52,
-      "spi": 44,
-      "agi": 28
-    },
+    "stats": {"hp": 124, "speed": 45, "yin_atk": 51, "yang_atk": 84, "yin_def": 98, "yang_def": 98},
     "signature_move": "metal_scrap_barrage",
     "trait": "trait_metal_clockwork_precision",
     "concept": {
@@ -135,12 +125,7 @@
       "metal": 40,
       "earth": 15
     },
-    "stats": {
-      "con": 152,
-      "str": 104,
-      "spi": 88,
-      "agi": 56
-    },
+    "stats": {"hp": 148, "speed": 55, "yin_atk": 102, "yang_atk": 61, "yin_def": 117, "yang_def": 117},
     "signature_move": "metal_anvil_drop",
     "trait": "trait_metal_clockwork_precision",
     "concept": {
@@ -191,12 +176,7 @@
     "mastery": {
       "wood": 15
     },
-    "stats": {
-      "con": 26,
-      "str": 24,
-      "spi": 32,
-      "agi": 18
-    },
+    "stats": {"hp": 74, "speed": 51, "yin_atk": 41, "yang_atk": 68, "yin_def": 83, "yang_def": 83},
     "signature_move": "wood_splinter_thrust",
     "trait": "trait_wood_spore_regeneration",
     "concept": {
@@ -246,12 +226,7 @@
     "mastery": {
       "wood": 25
     },
-    "stats": {
-      "con": 52,
-      "str": 48,
-      "spi": 64,
-      "agi": 36
-    },
+    "stats": {"hp": 93, "speed": 64, "yin_atk": 51, "yang_atk": 86, "yin_def": 103, "yang_def": 103},
     "signature_move": "wood_thorn_snare",
     "trait": "trait_wood_spore_regeneration",
     "concept": {
@@ -293,12 +268,7 @@
       "wood": 40,
       "water": 15
     },
-    "stats": {
-      "con": 104,
-      "str": 96,
-      "spi": 128,
-      "agi": 72
-    },
+    "stats": {"hp": 111, "speed": 77, "yin_atk": 61, "yang_atk": 103, "yin_def": 124, "yang_def": 124},
     "signature_move": "wood_timber_fall",
     "trait": "trait_wood_spore_regeneration",
     "concept": {
@@ -349,12 +319,7 @@
     "mastery": {
       "water": 15
     },
-    "stats": {
-      "con": 34,
-      "str": 32,
-      "spi": 16,
-      "agi": 18
-    },
+    "stats": {"hp": 89, "speed": 47, "yin_atk": 50, "yang_atk": 84, "yin_def": 65, "yang_def": 65},
     "signature_move": "water_cascade_jab",
     "trait": "trait_water_cleansing_tide",
     "concept": {
@@ -403,12 +368,7 @@
     "mastery": {
       "water": 25
     },
-    "stats": {
-      "con": 68,
-      "str": 64,
-      "spi": 32,
-      "agi": 36
-    },
+    "stats": {"hp": 111, "speed": 59, "yin_atk": 104, "yang_atk": 63, "yin_def": 82, "yang_def": 81},
     "signature_move": "water_undertow_rush",
     "trait": "trait_water_cleansing_tide",
     "concept": {
@@ -449,12 +409,7 @@
     "mastery": {
       "water": 40
     },
-    "stats": {
-      "con": 136,
-      "str": 128,
-      "spi": 64,
-      "agi": 72
-    },
+    "stats": {"hp": 133, "speed": 71, "yin_atk": 125, "yang_atk": 75, "yin_def": 98, "yang_def": 98},
     "signature_move": "water_tsunami_charge",
     "trait": "trait_water_cleansing_tide",
     "concept": {
@@ -505,12 +460,7 @@
     "mastery": {
       "fire": 15
     },
-    "stats": {
-      "con": 30,
-      "str": 28,
-      "spi": 22,
-      "agi": 20
-    },
+    "stats": {"hp": 82, "speed": 54, "yin_atk": 46, "yang_atk": 76, "yin_def": 71, "yang_def": 71},
     "signature_move": "fire_spark_jab",
     "trait": "trait_fire_cinder_screen",
     "concept": {
@@ -559,12 +509,7 @@
     "mastery": {
       "fire": 25
     },
-    "stats": {
-      "con": 60,
-      "str": 56,
-      "spi": 44,
-      "agi": 40
-    },
+    "stats": {"hp": 102, "speed": 68, "yin_atk": 57, "yang_atk": 95, "yin_def": 89, "yang_def": 89},
     "signature_move": "fire_cinder_slash",
     "trait": "trait_fire_cinder_screen",
     "concept": {
@@ -605,12 +550,7 @@
     "mastery": {
       "fire": 40
     },
-    "stats": {
-      "con": 120,
-      "str": 112,
-      "spi": 88,
-      "agi": 80
-    },
+    "stats": {"hp": 123, "speed": 82, "yin_atk": 114, "yang_atk": 69, "yin_def": 106, "yang_def": 106},
     "signature_move": "fire_caldera_burst",
     "trait": "trait_fire_cinder_screen",
     "concept": {
@@ -661,12 +601,7 @@
     "mastery": {
       "earth": 15
     },
-    "stats": {
-      "con": 28,
-      "str": 34,
-      "spi": 16,
-      "agi": 22
-    },
+    "stats": {"hp": 76, "speed": 59, "yin_atk": 92, "yang_atk": 55, "yin_def": 59, "yang_def": 59},
     "signature_move": "earth_stone_skate",
     "trait": "trait_earth_landslide_charge",
     "concept": {
@@ -715,12 +650,7 @@
     "mastery": {
       "earth": 25
     },
-    "stats": {
-      "con": 56,
-      "str": 68,
-      "spi": 32,
-      "agi": 44
-    },
+    "stats": {"hp": 94, "speed": 74, "yin_atk": 115, "yang_atk": 69, "yin_def": 74, "yang_def": 74},
     "signature_move": "earth_fault_dash",
     "trait": "trait_earth_landslide_charge",
     "concept": {
@@ -761,12 +691,7 @@
     "mastery": {
       "earth": 40
     },
-    "stats": {
-      "con": 112,
-      "str": 136,
-      "spi": 64,
-      "agi": 88
-    },
+    "stats": {"hp": 113, "speed": 89, "yin_atk": 137, "yang_atk": 83, "yin_def": 89, "yang_def": 89},
     "signature_move": "earth_tectonic_lance",
     "trait": "trait_earth_landslide_charge",
     "concept": {
@@ -817,12 +742,7 @@
     "mastery": {
       "ice": 15
     },
-    "stats": {
-      "con": 22,
-      "str": 28,
-      "spi": 20,
-      "agi": 30
-    },
+    "stats": {"hp": 63, "speed": 86, "yin_atk": 48, "yang_atk": 81, "yin_def": 61, "yang_def": 61},
     "signature_move": "ice_glaze_slide",
     "trait": "trait_ice_frostbite_edge",
     "concept": {
@@ -871,12 +791,7 @@
     "mastery": {
       "ice": 25
     },
-    "stats": {
-      "con": 44,
-      "str": 56,
-      "spi": 40,
-      "agi": 60
-    },
+    "stats": {"hp": 79, "speed": 108, "yin_atk": 101, "yang_atk": 60, "yin_def": 76, "yang_def": 76},
     "signature_move": "ice_floe_crash",
     "trait": "trait_ice_frostbite_edge",
     "concept": {
@@ -917,12 +832,7 @@
     "mastery": {
       "ice": 40
     },
-    "stats": {
-      "con": 88,
-      "str": 112,
-      "spi": 80,
-      "agi": 120
-    },
+    "stats": {"hp": 95, "speed": 130, "yin_atk": 121, "yang_atk": 72, "yin_def": 91, "yang_def": 91},
     "signature_move": "ice_avalanche_charge",
     "trait": "trait_ice_frostbite_edge",
     "concept": {
@@ -973,12 +883,7 @@
     "mastery": {
       "wind": 15
     },
-    "stats": {
-      "con": 18,
-      "str": 24,
-      "spi": 24,
-      "agi": 34
-    },
+    "stats": {"hp": 54, "speed": 103, "yin_atk": 73, "yang_atk": 44, "yin_def": 63, "yang_def": 63},
     "signature_move": "wind_draft_step",
     "trait": "trait_wind_aloft_vigilance",
     "concept": {
@@ -1027,12 +932,7 @@
     "mastery": {
       "wind": 25
     },
-    "stats": {
-      "con": 36,
-      "str": 48,
-      "spi": 48,
-      "agi": 68
-    },
+    "stats": {"hp": 68, "speed": 129, "yin_atk": 54, "yang_atk": 91, "yin_def": 79, "yang_def": 79},
     "signature_move": "wind_cyclone_dart",
     "trait": "trait_wind_aloft_vigilance",
     "concept": {
@@ -1073,12 +973,7 @@
     "mastery": {
       "wind": 40
     },
-    "stats": {
-      "con": 72,
-      "str": 96,
-      "spi": 96,
-      "agi": 136
-    },
+    "stats": {"hp": 82, "speed": 154, "yin_atk": 109, "yang_atk": 65, "yin_def": 95, "yang_def": 95},
     "signature_move": "wind_hurricane_sweep",
     "trait": "trait_wind_aloft_vigilance",
     "concept": {
@@ -1129,12 +1024,7 @@
     "mastery": {
       "thunder": 15
     },
-    "stats": {
-      "con": 26,
-      "str": 24,
-      "spi": 24,
-      "agi": 26
-    },
+    "stats": {"hp": 74, "speed": 74, "yin_atk": 69, "yang_atk": 41, "yin_def": 71, "yang_def": 71},
     "signature_move": "thunder_pulse_ring",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1183,12 +1073,7 @@
     "mastery": {
       "thunder": 25
     },
-    "stats": {
-      "con": 52,
-      "str": 48,
-      "spi": 48,
-      "agi": 52
-    },
+    "stats": {"hp": 93, "speed": 93, "yin_atk": 85, "yang_atk": 51, "yin_def": 89, "yang_def": 89},
     "signature_move": "thunder_arc_discharge",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1230,12 +1115,7 @@
       "thunder": 40,
       "fire": 15
     },
-    "stats": {
-      "con": 104,
-      "str": 96,
-      "spi": 96,
-      "agi": 104
-    },
+    "stats": {"hp": 111, "speed": 111, "yin_atk": 103, "yang_atk": 61, "yin_def": 107, "yang_def": 107},
     "signature_move": "thunder_plasma_rail",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1286,12 +1166,7 @@
     "mastery": {
       "light": 15
     },
-    "stats": {
-      "con": 20,
-      "str": 28,
-      "spi": 34,
-      "agi": 18
-    },
+    "stats": {"hp": 58, "speed": 53, "yin_atk": 49, "yang_atk": 82, "yin_def": 79, "yang_def": 79},
     "signature_move": "light_glint_jab",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1340,12 +1215,7 @@
     "mastery": {
       "light": 25
     },
-    "stats": {
-      "con": 40,
-      "str": 56,
-      "spi": 68,
-      "agi": 36
-    },
+    "stats": {"hp": 73, "speed": 66, "yin_atk": 61, "yang_atk": 102, "yin_def": 99, "yang_def": 99},
     "signature_move": "light_optic_lance",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1387,12 +1257,7 @@
       "light": 40,
       "thunder": 15
     },
-    "stats": {
-      "con": 80,
-      "str": 112,
-      "spi": 136,
-      "agi": 72
-    },
+    "stats": {"hp": 88, "speed": 79, "yin_atk": 123, "yang_atk": 74, "yin_def": 118, "yang_def": 118},
     "signature_move": "light_chromatic_fan",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1443,12 +1308,7 @@
     "mastery": {
       "shadow": 15
     },
-    "stats": {
-      "con": 24,
-      "str": 26,
-      "spi": 22,
-      "agi": 28
-    },
+    "stats": {"hp": 69, "speed": 80, "yin_atk": 45, "yang_atk": 74, "yin_def": 66, "yang_def": 66},
     "signature_move": "shadow_dusk_fang",
     "trait": "trait_shadow_fade_step",
     "concept": {
@@ -1497,12 +1357,7 @@
     "mastery": {
       "shadow": 25
     },
-    "stats": {
-      "con": 48,
-      "str": 52,
-      "spi": 44,
-      "agi": 56
-    },
+    "stats": {"hp": 86, "speed": 100, "yin_atk": 93, "yang_atk": 56, "yin_def": 83, "yang_def": 82},
     "signature_move": "shadow_twilight_phase",
     "trait": "trait_shadow_fade_step",
     "concept": {
@@ -1543,12 +1398,7 @@
     "mastery": {
       "shadow": 40
     },
-    "stats": {
-      "con": 96,
-      "str": 104,
-      "spi": 88,
-      "agi": 112
-    },
+    "stats": {"hp": 103, "speed": 120, "yin_atk": 112, "yang_atk": 67, "yin_def": 99, "yang_def": 99},
     "signature_move": "shadow_wraith_charge",
     "trait": "trait_shadow_fade_step",
     "concept": {

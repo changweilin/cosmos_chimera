@@ -87,24 +87,16 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C72">
-  <header><a class="id" href="#Q-C72">Q-C72</a><span class="tag">影響 D0-S1</span><span class="tag">Combat · balance</span></header>
-  <p><span class="label">問題</span><b>「HP 能力值直接等於最大 HP」與招式威力的尺度不合</b>。成年總點數 600 分給六項，HP 約 100 點（LV100），LV10 縮放後約 18 點；現行招式威力 8～120，攻守比約 ×1 時一招就打倒。現行最大 HP 約 640（LV10）～1300（LV100）。攻守比本身與點數尺度無關，只有 HP 的量級需要決定。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
+<article id="Q-C75">
+  <header><a class="id" href="#Q-C75">Q-C75</a><span class="tag">影響 D0-S1（僅玩家角色被打）</span></header>
+  <p><span class="label">問題</span><b>玩家角色沒穿防具時的陰守／陽守</b>。Q-C73 定為「玩家由防具取得」，但沒有底值時守＝0，攻守比直接到上限 ×4。玩家 HP 固定 1000、不隨等級；野生攻擊隨野生等級縮放（LV10 約 18 點、LV100 成年約 100 點）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（實作前玩家被打仍用舊公式，攻守比 ×1）</p>
 </article>
 
-<article id="Q-C73">
-  <header><a class="id" href="#Q-C73">Q-C73</a><span class="tag">影響 D0-S1</span><span class="tag">Combat · destructibles</span></header>
-  <p><span class="label">問題</span><b>沒有陰守／陽守的目標</b>：玩家角色（固定 HP 1000，不隨等級）與場景物件（HP 與抗性由物質決定）。新公式的守 D 從哪裡來？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C74">
-  <header><a class="id" href="#Q-C74">Q-C74</a><span class="tag">影響 D0-S1</span><span class="tag">Data</span></header>
-  <p><span class="label">問題</span><b>現有資料怎麼遷移</b>：30 個物種型態要六能力值、203 個傷害招式要標陰陽、230 招＋100 特性要星級（其中 10 個特性被多物種共用，不能是 ★★★）。規則要求 AI 產出先進 <code>Data/_incoming</code> 經人工審核；但 schema 一改，<code>Data/_demo</code> 不遷移 demo 就無法載入。</p>
-  <p>陰陽傾向提案（依你舉的例子）：<b>陽</b>＝金、火、木、冰；<b>陰</b>＝雷、光、影、土、水、風。逐招再依動作覆寫：斬／切／爪／牙／咬／刺／燒 → 陽；擊／撞／震／波／電／光束 → 陰。</p>
-  <p>能力值換算提案：HP←CON、速度←AGI；精通招式同陰陽的攻←STR，另一攻←STR×0.6；兩守←(CON+SPI)/2；依比例縮放到該階段預算。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
+<article id="Q-C76">
+  <header><a class="id" href="#Q-C76">Q-C76</a><span class="tag">影響 Destructibles</span></header>
+  <p><span class="label">問題</span><b>「場景物件攻擊只看屬性、生活技能加成」</b>。現行：威力 × (1+專精) × (1−物質抗性) × 屬性反應倍率（點燃、碎裂、導電等）。(1) 專精是否仍計入？(2)「生活技能加成」目前不存在：是哪些生活能力、加多少（例：砍伐對木材、採礦對岩石）？</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（攻守比固定 ×1 已可實作；現行公式保持不變）</p>
 </article>
 
 
@@ -141,12 +133,9 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C72':[R('scale','HP 量級',['最大 HP = HP 點 × 10（成年 LV100 約 1000，近現行；LV10 約 180，低等戰鬥比現在快約 3 倍）（建議）','最大 HP = 600 + HP 點 × 6（保留低等底血，近現行曲線）','總點數 ×10（4000/5000/6000/7200），HP 點直接等於最大 HP','招式威力全部 ÷10','其他（補充）'])],
- 'Q-C73':[R('player','玩家角色被打',['攻守比固定 ×1（維持現行調校）（建議）','以參考守備值（成年平均點數）計算','玩家由防具取得陰守／陽守']),
-          R('props','場景物件被打',['攻守比固定 ×1（建議）','以參考守備值計算，攻高的宙獸拆得快'])],
- 'Q-C74':[R('flow','遷移方式',['機械轉換直接改 Data/_demo（全部技能先設 ★），轉換報告放 _incoming，事後人工審核（🟨）（建議）','先只產 _incoming 草稿，審核通過才改 schema 與程式','其他（補充）']),
-          R('polarity','陰陽傾向',['採用提案（屬性傾向＋依動作覆寫）（建議）','其他（補充寫出各屬性傾向）']),
-          R('stats','能力值換算',['採用提案（建議）','其他（補充）'])],
+ 'Q-C75':[R('base','玩家無防具時的守',['依玩家等級：與成年宙獸平均守（100 點）同樣用 (L+10)/110 縮放，防具再加（建議）','固定 100 點，防具再加','固定 0，只靠防具（未穿防具時受 ×4）','其他（補充）'])],
+ 'Q-C76':[R('mastery','專精',['保留（建議）','不計']),
+          T('bonus','生活技能加成（哪些能力、對哪些物質、加多少）','例：chop_wood 對木材 +50%')],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

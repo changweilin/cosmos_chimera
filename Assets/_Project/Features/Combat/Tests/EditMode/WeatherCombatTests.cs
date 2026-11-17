@@ -57,7 +57,7 @@ namespace Cosmimera.Combat.Tests
             TestWild.WithHabit(c, habit).Set("line_wx", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10],
                 new List<ElementValue> { new ElementValue(masteryElement, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -82,7 +82,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         private Combatant MakeCombatant() =>
-            new Combatant(_balance.Stats, _balance.Effects, 30, 20, 20, new int[10], new int[10], new EffectBook(), 2);
+            new Combatant(_balance.Stats, _balance.Effects, BalanceFixture.Core(80, 20), new int[10], new int[10], new EffectBook(), 2);
 
         [Test]
         public void BeginCast_and_ReceiveHostile_apply_weather_cooldown_and_power_modifiers()
@@ -91,6 +91,11 @@ namespace Cosmimera.Combat.Tests
             Combatant waterTarget = MakeCombatant();
             Combatant fireTarget = MakeCombatant();
             Combatant clearTarget = MakeCombatant();
+            // Shared base evasion (creatures.md#六大能力值) would let one seed miss all three; this test is about power.
+            var noEvasion = new[] { new EffectSpec(EffectType.EvasionModPercent, false, default, -100, 0, 1) };
+            waterTarget.Book.SetEquipmentEffects(noEvasion);
+            fireTarget.Book.SetEquipmentEffects(noEvasion);
+            clearTarget.Book.SetEquipmentEffects(noEvasion);
 
             var waterMove = new CastMove("w", Element.Water, MoveKind.Damage, 100, 100, 2000, false, default, default);
             var fireMove = new CastMove("f", Element.Fire, MoveKind.Damage, 100, 100, 2000, false, default, default);

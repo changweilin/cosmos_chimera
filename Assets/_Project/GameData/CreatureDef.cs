@@ -5,43 +5,77 @@ using UnityEngine;
 
 namespace Cosmimera.GameData
 {
-    /// <summary>Base stats of a creature form. REQ: docs/design/creatures.md#能力值.</summary>
+    /// <summary>Six core stats of a creature form (LV100 basis). REQ: docs/design/creatures.md#六大能力值.</summary>
     /// <remarks>Pre: none. Post: all values >= 0 for imported data. Side effects: none.</remarks>
     [Serializable]
     public struct CreatureStats
     {
-        [SerializeField] private int con;
-        [SerializeField] private int str;
-        [SerializeField] private int spi;
-        [SerializeField] private int agi;
+        [SerializeField] private int hp;
+        [SerializeField] private int speed;
+        [SerializeField] private int yinAtk;
+        [SerializeField] private int yangAtk;
+        [SerializeField] private int yinDef;
+        [SerializeField] private int yangDef;
 
-        internal CreatureStats(int con, int str, int spi, int agi)
+        /// <summary>Builds a stat set (importer, level scaling, rule-layer callers and tests).</summary>
+        /// <remarks>Pre: none (rule-layer consumers check nonnegativity). Post: properties equal the arguments. Side effects: none.</remarks>
+        public CreatureStats(int hp, int speed, int yinAtk, int yangAtk, int yinDef, int yangDef)
         {
-            this.con = con;
-            this.str = str;
-            this.spi = spi;
-            this.agi = agi;
+            this.hp = hp;
+            this.speed = speed;
+            this.yinAtk = yinAtk;
+            this.yangAtk = yangAtk;
+            this.yinDef = yinDef;
+            this.yangDef = yangDef;
         }
 
-        /// <summary>Constitution.</summary>
+        /// <summary>HP points; max HP = Hp × balance.json#hp.per_point.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int Con => con;
+        public int Hp => hp;
 
-        /// <summary>Strength.</summary>
+        /// <summary>Speed: drives move speed and move cooldowns.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int Str => str;
+        public int Speed => speed;
 
-        /// <summary>Spirit.</summary>
+        /// <summary>陰攻: attack of yin (inside-out) moves.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int Spi => spi;
+        public int YinAtk => yinAtk;
 
-        /// <summary>Agility.</summary>
+        /// <summary>陽攻: attack of yang (outside-in) moves.</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int Agi => agi;
+        public int YangAtk => yangAtk;
+
+        /// <summary>陰守: defence against yin moves.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int YinDef => yinDef;
+
+        /// <summary>陽守: defence against yang moves.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int YangDef => yangDef;
+
+        /// <summary>Attack used by a move of <paramref name="polarity"/>.</summary>
+        /// <remarks>Pre: polarity defined. Post: YinAtk or YangAtk. Side effects: none.</remarks>
+        public int Attack(Polarity polarity)
+        {
+            Contract.Requires(polarity == Polarity.Yin || polarity == Polarity.Yang, "undefined Polarity");
+            return polarity == Polarity.Yin ? yinAtk : yangAtk;
+        }
+
+        /// <summary>Defence against a move of <paramref name="polarity"/>.</summary>
+        /// <remarks>Pre: polarity defined. Post: YinDef or YangDef. Side effects: none.</remarks>
+        public int Defence(Polarity polarity)
+        {
+            Contract.Requires(polarity == Polarity.Yin || polarity == Polarity.Yang, "undefined Polarity");
+            return polarity == Polarity.Yin ? yinDef : yangDef;
+        }
+
+        /// <summary>Sum of the six stats (creatures.md#綜合值預算).</summary>
+        /// <remarks>Pre: none. Post: Int64 sum, no overflow. Side effects: none.</remarks>
+        public long Total => (long)hp + speed + yinAtk + yangAtk + yinDef + yangDef;
 
         /// <summary>
-        /// These stats (the LV100 basis) scaled to <paramref name="level"/>: each of CON/STR/SPI/AGI becomes
-        /// round_half_up(B × (L + 10) / 110). REQ: docs/design/level-progression.md#四維縮放 (Q-C28).
+        /// These stats (the LV100 basis) scaled to <paramref name="level"/>: each of the six becomes
+        /// round_half_up(B × (L + 10) / 110). REQ: docs/design/level-progression.md#能力值縮放 (Q-C28, Q-C67).
         /// </summary>
         /// <remarks>
         /// Pre: 1 &lt;= level &lt;= 100; stats &gt;= 0.
@@ -50,8 +84,10 @@ namespace Cosmimera.GameData
         public CreatureStats AtLevel(int level)
         {
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
-            Contract.Requires(con >= 0 && str >= 0 && spi >= 0 && agi >= 0, "stats must be >= 0");
-            return new CreatureStats(Scale(con, level), Scale(str, level), Scale(spi, level), Scale(agi, level));
+            Contract.Requires(hp >= 0 && speed >= 0 && yinAtk >= 0 && yangAtk >= 0 && yinDef >= 0 && yangDef >= 0,
+                "stats must be >= 0");
+            return new CreatureStats(Scale(hp, level), Scale(speed, level), Scale(yinAtk, level), Scale(yangAtk, level),
+                Scale(yinDef, level), Scale(yangDef, level));
         }
 
         // Int64 before multiplying: B up to Int32.MaxValue × 110 overflows Int32. One rounding at the end only, so low

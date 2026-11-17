@@ -119,7 +119,7 @@ namespace Cosmimera.GameData.Tests
             DataImporter.Import(_src, Output);
             Assert.That(Db.TryGet("sample_fox_cub", out CreatureDef cub), Is.True);
             string beforeMove = cub.SignatureMove.Id;
-            int beforeCon = cub.Stats.Con;
+            int beforeHp = cub.Stats.Hp;
             string path = Path.Combine(_src, "creatures/creatures.json");
             JArray creatures = JArray.Parse(File.ReadAllText(path));
             foreach (JObject creature in creatures)
@@ -127,13 +127,13 @@ namespace Cosmimera.GameData.Tests
                 if ((string)creature["id"] != cub.Id) continue;
                 creature["field_utility"] = "cook_fire";
                 creature["signature_move"] = "not_imported_by_this_operation";
-                creature["stats"]["con"] = 999;
+                creature["stats"]["hp"] = 999;
             }
             File.WriteAllText(path, creatures.ToString());
             Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.EqualTo(1));
             Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.CookFire));
             Assert.That(cub.SignatureMove.Id, Is.EqualTo(beforeMove));
-            Assert.That(cub.Stats.Con, Is.EqualTo(beforeCon));
+            Assert.That(cub.Stats.Hp, Is.EqualTo(beforeHp));
             foreach (JObject creature in creatures) creature.Remove("field_utility");
             File.WriteAllText(path, creatures.ToString());
             Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.Zero);
@@ -313,7 +313,7 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains(expected, e.Message);
         }
 
-        private const string BuffMoveHead = "[{\"id\":\"sample_buff\",\"element\":\"light\",\"kind\":\"effect\",\"power\":0,"
+        private const string BuffMoveHead = "[{\"id\":\"sample_buff\",\"star\":1,\"element\":\"light\",\"kind\":\"effect\",\"power\":0,"
             + "\"cooldown_ms\":1000,\"windup_ms\":200,\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"self\",\"base_range_mm\":0";
         private const string Haste = ",\"effect\":{\"type\":\"move_speed_mod_percent\",\"params\":{\"delta\":20}}";
         private const string Heal = ",\"effect\":{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":20}}";
@@ -381,7 +381,7 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains("windup_ms", error.Message);
         }
 
-        private const string FieldMoveHead ="[{\"id\":\"sample_field\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":10,"
+        private const string FieldMoveHead ="[{\"id\":\"sample_field\",\"star\":1,\"polarity\":\"yang\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":10,"
             + "\"cooldown_ms\":8000,\"windup_ms\":700,\"accuracy\":100,\"range_class\":\"mid\",\"base_range_mm\":12000";
 
         [TestCase(",\"shape\":\"field\",\"field_duration_ms\":6000", true)]
@@ -452,7 +452,7 @@ namespace Cosmimera.GameData.Tests
         public void Melee_target_point_burst_is_rejected()
         {
             File.WriteAllText(Path.Combine(_src, "moves/blast.json"),
-                "[{\"id\":\"sample_blast\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,\"windup_ms\":300,"
+                "[{\"id\":\"sample_blast\",\"star\":1,\"polarity\":\"yang\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,\"windup_ms\":300,"
                 + "\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"burst\",\"origin\":\"target\",\"base_range_mm\":3000}]");
 
             var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
@@ -496,7 +496,7 @@ namespace Cosmimera.GameData.Tests
             string effect = "{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":"
                 + (parameter == "delta" ? value : "20") + "}}";
             File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
-                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger + ",\"effects\":[" + effect + "]}]");
+                "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger + ",\"effects\":[" + effect + "]}]");
 
             var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
 
@@ -508,7 +508,7 @@ namespace Cosmimera.GameData.Tests
         public void Hp_cross_below_imports_percent_and_duration()
         {
             File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
-                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":{\"type\":\"on_hp_cross_below\",\"params\":"
+                "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":{\"type\":\"on_hp_cross_below\",\"params\":"
                 + "{\"percent\":25,\"duration_ms\":4000}},\"effects\":[{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":12}}]}]");
 
             DataImporter.Import(_src, Output);
@@ -542,7 +542,7 @@ namespace Cosmimera.GameData.Tests
             }
 
             File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
-                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger + ",\"effects\":[" + string.Join(",", effects) + "]}]");
+                "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger + ",\"effects\":[" + string.Join(",", effects) + "]}]");
 
             if (expectedError.Length > 0)
             {
@@ -563,7 +563,7 @@ namespace Cosmimera.GameData.Tests
         public void Always_trigger_accepts_omitted_or_empty_params_and_rejects_null(string trigger, bool valid)
         {
             File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
-                "[{\"id\":\"sample_trait_placeholder\",\"trigger\":" + trigger
+                "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger
                 + ",\"effects\":[{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":20}}]}]");
 
             if (!valid)

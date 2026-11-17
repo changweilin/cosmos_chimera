@@ -184,7 +184,7 @@ class CrossFileRules(unittest.TestCase):
         mod = '{"type":"mastery_mod","params":{"element":"fire","delta":5}}'
 
         def trait(trigger, effects):
-            return '[{"id":"sample_extra_trait","trigger":' + trigger + ',"effects":[' + ",".join(effects) + ']}]'
+            return '[{"id":"sample_extra_trait","star":1,"trigger":' + trigger + ',"effects":[' + ",".join(effects) + ']}]'
 
         for trigger in ('{"type":"always"}', '{"type":"on_hp_below","params":{"percent":30}}',
                         '{"type":"on_hp_above","params":{"percent":30}}'):
@@ -200,7 +200,7 @@ class CrossFileRules(unittest.TestCase):
         heal = '{"type":"heal_percent_max_hp","params":{"percent":12}}'
 
         def trait(params):
-            return ('[{"id":"sample_extra_trait","trigger":{"type":"on_hp_cross_below","params":' + params
+            return ('[{"id":"sample_extra_trait","star":1,"trigger":{"type":"on_hp_cross_below","params":' + params
                     + '},"effects":[' + heal + ']}]')
 
         self.assertEqual([], self._with_valid({"traits/extra.json": trait('{"percent":25,"duration_ms":1000}')}))
@@ -209,12 +209,12 @@ class CrossFileRules(unittest.TestCase):
             self.assertIn("schema", self.codes(self._with_valid({"traits/extra.json": trait(params)})), params)
 
     def test_effect_move_requires_effect(self):
-        move = ('[{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
+        move = ('[{"id":"sample_buff","star":1,"element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"mid","shape":"burst","origin":"target","base_range_mm":12000}]')
         self.assertIn("schema", self.codes(self._with_valid({"moves/buff.json": move})))
 
     def test_target_burst_must_not_be_melee(self):
-        move = ('{"id":"sample_blast","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,"windup_ms":300,'
+        move = ('{"id":"sample_blast","star":1,"polarity":"yang","element":"fire","kind":"damage","power":30,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"%s","shape":"burst","origin":"%s","base_range_mm":3000}')
         for rc, origin, valid in [("melee", "target", False), ("mid", "target", True), ("melee", "caster", True)]:
             with self.subTest(rc=rc, origin=origin):
@@ -223,7 +223,7 @@ class CrossFileRules(unittest.TestCase):
                 self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
 
     def test_effect_duration_required_iff_timed_effect(self):
-        base = ('{"id":"sample_buff","element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
+        base = ('{"id":"sample_buff","star":1,"element":"light","kind":"effect","power":0,"cooldown_ms":1000,"windup_ms":300,'
                 '"accuracy":100,"range_class":"melee","shape":"self","base_range_mm":0')
         haste = ',"effect":{"type":"move_speed_mod_percent","params":{"delta":20}}'
         heal = ',"effect":{"type":"heal_percent_max_hp","params":{"percent":20}}'
@@ -250,7 +250,7 @@ class CrossFileRules(unittest.TestCase):
             ("moves", ("cooldown_ms",), 2147483647),
             ("moves", ("base_range_mm",), 2147483647),
             ("creatures", ("mastery", "fire"), 1000),
-            ("creatures", ("stats", "con"), 2147483647),
+            ("creatures", ("stats", "hp"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "tier"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "qty"), 2147483647),
         ]
@@ -265,7 +265,9 @@ class CrossFileRules(unittest.TestCase):
                     for key in path[:-1]:
                         parent = parent[key]
                     parent[path[-1]] = value
-                    errors = [f for f in self._with_valid({relative: json.dumps(records)}) if f.level == "error"]
+                    # Representability only: an Int32-max stat is schema-valid but breaks the budget by design.
+                    errors = [f for f in self._with_valid({relative: json.dumps(records)})
+                              if f.level == "error" and f.code != "stat_budget"]
                     self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
 
     def test_evolution_level_bands_per_stage(self):
@@ -325,6 +327,68 @@ class CrossFileRules(unittest.TestCase):
         self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([move])})))
         undashed = {**source, "id": "review_move", "movement": "none", "base_range_mm": 36001}
         self.assertEqual(set(), self.codes(self._with_valid({"moves/review.json": json.dumps([undashed])})))
+
+    def _samples(self, kind):
+        return json.loads((SAMPLES / f"valid/{kind}/{kind}.json").read_text(encoding="utf-8"))
+
+    def test_damage_move_needs_polarity_and_effect_move_must_not_have_one(self):
+        moves = self._samples("moves")
+        damage = next(i for i, m in enumerate(moves) if m["kind"] != "effect")
+        del moves[damage]["polarity"]
+        found = self._with_valid({"moves/moves.json": json.dumps(moves)})
+        self.assertTrue(any(f.code == "schema" and f.pointer.startswith(f"/{damage}") for f in found),
+                        "\n".join(map(str, found)))
+
+    def test_star_two_needs_a_valid_downgraded_version(self):
+        moves = self._samples("moves")
+        i = next(i for i, m in enumerate(moves) if m["kind"] == "damage")
+        moves[i]["star"] = 2
+        found = self._with_valid({"moves/moves.json": json.dumps(moves)})
+        self.assertIn("schema", self.codes(found), "★★ without downgraded")
+        moves[i]["downgraded"] = {"effect": {"type": "range_mod_percent", "params": {"delta": 5}}}
+        found = self._with_valid({"moves/moves.json": json.dumps(moves)})
+        self.assertIn("downgraded_invalid", self.codes(found), "a damage-only move cannot gain an effect")
+        moves[i]["downgraded"] = {"power": max(1, moves[i]["power"] // 2)}
+        found = [f for f in self._with_valid({"moves/moves.json": json.dumps(moves)})
+                 if f.code in ("schema", "downgraded_invalid")]
+        self.assertEqual([], found)
+
+    def test_stat_budget_drops_ten_percent_per_extra_star(self):
+        # REQ: creatures.md#綜合值預算 — juvenile base 400; ★★★ signature + ★ trait = 2 extra stars → 320 ±5%.
+        creatures, moves = self._samples("creatures"), self._samples("moves")
+        cub = next(c for c in creatures if c["stage"] == "juvenile")
+        sig = next(m for m in moves if m["id"] == cub["signature_move"])
+        others = {c["signature_move"] for c in creatures if c is not cub}
+        self.assertNotIn(sig["id"], others, "fixture: the cub's signature must be its own")
+        sig["star"] = 3
+        sig["downgraded"] = {"power": max(1, sig["power"] // 2)}
+        files = {"moves/moves.json": json.dumps(moves), "creatures/creatures.json": json.dumps(creatures)}
+        self.assertIn("stat_budget", self.codes(self._with_valid(files)))
+        cub["stats"] = {"hp": 60, "speed": 60, "yin_atk": 40, "yang_atk": 40, "yin_def": 60, "yang_def": 60}
+        files["creatures/creatures.json"] = json.dumps(creatures)
+        self.assertNotIn("stat_budget", self.codes(self._with_valid(files)))
+        cub["stats"]["hp"] += 17  # 337 > 320 × 1.05 = 336
+        files["creatures/creatures.json"] = json.dumps(creatures)
+        self.assertIn("stat_budget", self.codes(self._with_valid(files)))
+
+    def test_three_star_skill_is_unique_to_one_line(self):
+        skill = validate_data.Record("moves", "moves/m.json", 0, {"id": "m_unique", "star": 3})
+        trait = validate_data.Record("traits", "traits/t.json", 0, {"id": "t_common", "star": 1})
+        six = {"hp": 100, "speed": 100, "yin_atk": 100, "yang_atk": 100, "yin_def": 100, "yang_def": 100}
+        creatures = [validate_data.Record("creatures", "creatures/c.json", i,
+                                          {"id": f"c{i}", "line_id": line, "stage": "adult", "stats": six,
+                                           "signature_move": "m_unique", "trait": "t_common"})
+                     for i, line in enumerate(("line_a", "line_a", "line_b"))]
+        records = {k: [] for k in validate_data.KINDS}
+        records["moves"], records["traits"], records["creatures"] = [skill], [trait], creatures
+        budget = json.loads((REPO / "Data/balance.json").read_text(encoding="utf-8"))["stat_budget"]
+        findings = []
+        validate_data._check_skill_stars(records, findings, budget, {})
+        self.assertEqual(["unique_skill_shared"], [f.code for f in findings if f.code != "stat_budget"])
+        records["creatures"] = creatures[:2]
+        findings = []
+        validate_data._check_skill_stars(records, findings, budget, {})
+        self.assertNotIn("unique_skill_shared", {f.code for f in findings})
 
     def test_material_outside_mastery_is_an_error(self):
         src = (SAMPLES / "valid" / "creatures" / "creatures.json").read_text(encoding="utf-8")
@@ -479,6 +543,8 @@ class CrossFileRules(unittest.TestCase):
         adult["overload_of"] = target
         adult["evolves_to"] = None
         adult["evolution"] = None
+        # REQ: creatures.md#綜合值預算 — overload base 720 vs adult 600.
+        adult["stats"] = {k: v * 6 // 5 for k, v in adult["stats"].items()}
         return valid, adult
 
     def test_overload_form_valid(self):

@@ -62,7 +62,7 @@ namespace Cosmimera.Combat.Tests
             // Timid: never engages on its own, so the only motion besides separation is wandering (paused at spawn).
             TestWild.WithHabit(c, Habit.Avoidant).Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 

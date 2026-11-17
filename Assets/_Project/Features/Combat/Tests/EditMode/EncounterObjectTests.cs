@@ -116,7 +116,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId("brawler");
             TestWild.WithHabit(c, Habit.Dominant).Set("line_brawler", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 

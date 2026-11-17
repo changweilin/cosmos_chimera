@@ -32,12 +32,7 @@
     "mastery": {
       "metal": 15
     },
-    "stats": {
-      "con": 40,
-      "str": 28,
-      "spi": 18,
-      "agi": 14
-    },
+    "stats": {"hp": 102, "speed": 36, "yin_atk": 43, "yang_atk": 71, "yin_def": 74, "yang_def": 74},
     "signature_move": "metal_escapement_jab",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "magnet_pickup_double",
@@ -88,12 +83,7 @@
     "mastery": {
       "metal": 25
     },
-    "stats": {
-      "con": 80,
-      "str": 55,
-      "spi": 37,
-      "agi": 28
-    },
+    "stats": {"hp": 128, "speed": 45, "yin_atk": 53, "yang_atk": 88, "yin_def": 93, "yang_def": 93},
     "signature_move": "metal_ratchet_sweep",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "immune_laboratory",
@@ -136,12 +126,7 @@
       "metal": 40,
       "earth": 15
     },
-    "stats": {
-      "con": 165,
-      "str": 110,
-      "spi": 70,
-      "agi": 55
-    },
+    "stats": {"hp": 157, "speed": 52, "yin_atk": 104, "yang_atk": 63, "yin_def": 112, "yang_def": 112},
     "signature_move": "metal_pendulum_ram",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "catch_rate_up",
@@ -192,12 +177,7 @@
     "mastery": {
       "wood": 15
     },
-    "stats": {
-      "con": 28,
-      "str": 16,
-      "spi": 40,
-      "agi": 16
-    },
+    "stats": {"hp": 81, "speed": 47, "yin_atk": 28, "yang_atk": 46, "yin_def": 99, "yang_def": 99},
     "signature_move": "wood_frond_dart",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "forage_berries",
@@ -248,12 +228,7 @@
     "mastery": {
       "wood": 25
     },
-    "stats": {
-      "con": 55,
-      "str": 32,
-      "spi": 81,
-      "agi": 32
-    },
+    "stats": {"hp": 100, "speed": 59, "yin_atk": 35, "yang_atk": 58, "yin_def": 124, "yang_def": 124},
     "signature_move": "wood_plumage_volley",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "immune_rainforest",
@@ -295,12 +270,7 @@
     "mastery": {
       "wood": 40
     },
-    "stats": {
-      "con": 110,
-      "str": 65,
-      "spi": 160,
-      "agi": 65
-    },
+    "stats": {"hp": 120, "speed": 71, "yin_atk": 71, "yang_atk": 43, "yin_def": 148, "yang_def": 147},
     "signature_move": "wood_bloom_detonation",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "return_village",
@@ -351,12 +321,7 @@
     "mastery": {
       "water": 15
     },
-    "stats": {
-      "con": 20,
-      "str": 38,
-      "spi": 18,
-      "agi": 24
-    },
+    "stats": {"hp": 56, "speed": 67, "yin_atk": 107, "yang_atk": 64, "yin_def": 53, "yang_def": 53},
     "signature_move": "water_wake_jet",
     "trait": "trait_water_keel_momentum",
     "field_utility": "fishing",
@@ -407,12 +372,7 @@
     "mastery": {
       "water": 25
     },
-    "stats": {
-      "con": 40,
-      "str": 75,
-      "spi": 35,
-      "agi": 50
-    },
+    "stats": {"hp": 70, "speed": 88, "yin_atk": 131, "yang_atk": 79, "yin_def": 66, "yang_def": 66},
     "signature_move": "water_spray_fan",
     "trait": "trait_water_keel_momentum",
     "field_utility": "immune_deep_sea",
@@ -455,12 +415,7 @@
       "water": 40,
       "wind": 15
     },
-    "stats": {
-      "con": 80,
-      "str": 150,
-      "spi": 70,
-      "agi": 100
-    },
+    "stats": {"hp": 84, "speed": 105, "yin_atk": 158, "yang_atk": 95, "yin_def": 79, "yang_def": 79},
     "signature_move": "water_monsoon_swell",
     "trait": "trait_water_keel_momentum",
     "field_utility": "dive",
@@ -511,12 +466,7 @@
     "mastery": {
       "fire": 15
     },
-    "stats": {
-      "con": 30,
-      "str": 40,
-      "spi": 12,
-      "agi": 18
-    },
+    "stats": {"hp": 78, "speed": 47, "yin_atk": 62, "yang_atk": 104, "yin_def": 55, "yang_def": 54},
     "signature_move": "fire_cinder_claw",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "cook_fire",
@@ -567,12 +517,7 @@
     "mastery": {
       "fire": 25
     },
-    "stats": {
-      "con": 60,
-      "str": 80,
-      "spi": 25,
-      "agi": 35
-    },
+    "stats": {"hp": 97, "speed": 57, "yin_atk": 130, "yang_atk": 78, "yin_def": 69, "yang_def": 69},
     "signature_move": "fire_mane_pounce",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "immune_volcano",
@@ -614,12 +559,7 @@
     "mastery": {
       "fire": 40
     },
-    "stats": {
-      "con": 120,
-      "str": 155,
-      "spi": 55,
-      "agi": 70
-    },
+    "stats": {"hp": 117, "speed": 68, "yin_atk": 91, "yang_atk": 152, "yin_def": 86, "yang_def": 86},
     "signature_move": "fire_solar_crucible",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "egg_hatch_boost",
@@ -670,12 +610,7 @@
     "mastery": {
       "earth": 15
     },
-    "stats": {
-      "con": 36,
-      "str": 22,
-      "spi": 30,
-      "agi": 12
-    },
+    "stats": {"hp": 97, "speed": 32, "yin_atk": 59, "yang_atk": 35, "yin_def": 89, "yang_def": 88},
     "signature_move": "earth_shale_bolt",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "drop_rate_up",
@@ -726,12 +661,7 @@
     "mastery": {
       "earth": 25
     },
-    "stats": {
-      "con": 72,
-      "str": 44,
-      "spi": 59,
-      "agi": 25
-    },
+    "stats": {"hp": 120, "speed": 42, "yin_atk": 74, "yang_atk": 44, "yin_def": 110, "yang_def": 110},
     "signature_move": "earth_ritual_quake",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "immune_cave",
@@ -773,12 +703,7 @@
     "mastery": {
       "earth": 40
     },
-    "stats": {
-      "con": 145,
-      "str": 85,
-      "spi": 120,
-      "agi": 50
-    },
+    "stats": {"hp": 146, "speed": 50, "yin_atk": 86, "yang_atk": 51, "yin_def": 134, "yang_def": 133},
     "signature_move": "earth_monolith_charge",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "open_obstacle",
@@ -829,12 +754,7 @@
     "mastery": {
       "ice": 15
     },
-    "stats": {
-      "con": 26,
-      "str": 24,
-      "spi": 20,
-      "agi": 30
-    },
+    "stats": {"hp": 74, "speed": 85, "yin_atk": 41, "yang_atk": 68, "yin_def": 66, "yang_def": 66},
     "signature_move": "ice_rime_breath",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "prevent_escape",
@@ -885,12 +805,7 @@
     "mastery": {
       "ice": 25
     },
-    "stats": {
-      "con": 52,
-      "str": 48,
-      "spi": 40,
-      "agi": 60
-    },
+    "stats": {"hp": 93, "speed": 107, "yin_atk": 51, "yang_atk": 85, "yin_def": 82, "yang_def": 82},
     "signature_move": "ice_antler_javelin",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "mount",
@@ -933,12 +848,7 @@
       "ice": 40,
       "metal": 15
     },
-    "stats": {
-      "con": 105,
-      "str": 95,
-      "spi": 80,
-      "agi": 120
-    },
+    "stats": {"hp": 112, "speed": 128, "yin_atk": 61, "yang_atk": 101, "yin_def": 99, "yang_def": 99},
     "signature_move": "ice_permafrost_halo",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "immune_ice_cap",
@@ -989,12 +899,7 @@
     "mastery": {
       "wind": 15
     },
-    "stats": {
-      "con": 14,
-      "str": 28,
-      "spi": 18,
-      "agi": 40
-    },
+    "stats": {"hp": 43, "speed": 122, "yin_atk": 51, "yang_atk": 86, "yin_def": 49, "yang_def": 49},
     "signature_move": "wind_flute_slash",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "weather_control",
@@ -1045,12 +950,7 @@
     "mastery": {
       "wind": 25
     },
-    "stats": {
-      "con": 28,
-      "str": 56,
-      "spi": 36,
-      "agi": 80
-    },
+    "stats": {"hp": 54, "speed": 153, "yin_atk": 107, "yang_atk": 64, "yin_def": 61, "yang_def": 61},
     "signature_move": "wind_reed_crescent",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "levitate",
@@ -1092,12 +992,7 @@
     "mastery": {
       "wind": 40
     },
-    "stats": {
-      "con": 56,
-      "str": 114,
-      "spi": 70,
-      "agi": 160
-    },
+    "stats": {"hp": 64, "speed": 183, "yin_atk": 131, "yang_atk": 78, "yin_def": 72, "yang_def": 72},
     "signature_move": "wind_gale_symphony",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "immune_space",

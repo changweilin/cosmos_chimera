@@ -27,7 +27,7 @@ namespace Cosmimera.Combat.Tests
         {
             var book = new EffectBook();
             book.SetEquipmentEffects(equipment);
-            return new Combatant(_stats, _cfg, 30, 30, 0, new int[10], new int[10], book, 2);
+            return new Combatant(_stats, _cfg, BalanceFixture.Core(80, 30), new int[10], new int[10], book, 2);
         }
 
         private static CastContext Cast(Combatant caster, in CastMove move)
@@ -104,7 +104,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void A_guaranteed_crit_multiplies_formula_damage()
         {
-            Combatant attacker = Make(Mod(EffectType.CritRateMod, 100));
+            Combatant attacker = Make(Mod(EffectType.CritRateMod, 100), Mod(EffectType.AccuracyMod, 100));
             CastContext ctx = Cast(attacker, Damage(60));
             Combatant target = Make();
             var rng = new Pcg32(1UL, 1UL);
@@ -118,7 +118,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void No_crit_rate_never_crits()
         {
-            CastContext ctx = Cast(Make(Mod(EffectType.CritRateMod, -100)), Damage(60));
+            CastContext ctx = Cast(Make(Mod(EffectType.CritRateMod, -100), Mod(EffectType.AccuracyMod, 100)), Damage(60));
             var rng = new Pcg32(1UL, 1UL);
             for (int i = 0; i < 20; i++)
             {

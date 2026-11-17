@@ -67,9 +67,9 @@ namespace Cosmimera.Creatures.Tests
             foreach (JToken c in Golden()["scaled_stat"])
             {
                 int b = (int)c["base"];
-                CreatureStats s = new CreatureStats(b, b, b, b).AtLevel((int)c["level"]);
-                Assert.AreEqual((int)c["value"], s.Con, $"base {b} level {c["level"]}");
-                Assert.AreEqual(s.Con, s.Agi);
+                CreatureStats s = new CreatureStats(b, b, b, b, b, b).AtLevel((int)c["level"]);
+                Assert.AreEqual((int)c["value"], s.Hp, $"base {b} level {c["level"]}");
+                Assert.AreEqual(s.Hp, s.YangDef);
             }
         }
 
@@ -186,8 +186,8 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => P.SourceXp(XpSource.Boss, 10, true), "only a wild defeat is elite");
             Assert.Throws<ContractException>(() => P.SourceXp((XpSource)9, 10, false));
             Assert.Throws<ContractException>(() => P.MigrationExp((CreatureStage)9));
-            Assert.Throws<ContractException>(() => new CreatureStats(1, 1, 1, 1).AtLevel(0));
-            Assert.Throws<ContractException>(() => new CreatureStats(1, 1, 1, 1).AtLevel(101));
+            Assert.Throws<ContractException>(() => new CreatureStats(61, 1, 1, 1, 1, 1).AtLevel(0));
+            Assert.Throws<ContractException>(() => new CreatureStats(61, 1, 1, 1, 1, 1).AtLevel(101));
         }
 
         [Test]

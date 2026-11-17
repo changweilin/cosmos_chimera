@@ -93,10 +93,13 @@ class DerivedStats:
         _integer(c["evasion"]["cap_permille"], "evasion.cap_permille", 0, PERMILLE - 1)
         _integer(c["hit"]["floor_permille"], "hit.floor_permille", 1, PERMILLE)
         _integer(c["reference_move"]["accuracy_percent"], "accuracy_percent", 0, 100)
-        for stage, band in c["stage_bands"].items():
-            if not (band["min_stat"] <= band["max_stat"] <= c["stat_effective_cap"]
-                    and 4 * band["min_stat"] <= band["total_stats"] <= 4 * band["max_stat"]):
-                raise ValueError(f"infeasible stage band: {stage}")
+        _integer(c["shared_base_stat"], "shared_base_stat", 0, c["stat_effective_cap"])
+        budget = c["stat_budget"]
+        for stage, total in budget["base"].items():
+            _integer(total, f"stat_budget.base.{stage}", 6, 6 * c["stat_effective_cap"])
+        # Two ★★★ skills cost 4 extra stars; the budget must stay positive (creatures.md#綜合值預算).
+        _integer(budget["per_extra_star_percent"], "stat_budget.per_extra_star_percent", 0, 24)
+        _integer(budget["tolerance_percent"], "stat_budget.tolerance_percent", 0, 100)
 
     def derive(self, con, str, spi, agi, *, cooldown_ms=None,
                accuracy_percent=None, base_range_mm=None):

@@ -1,6 +1,8 @@
 [
   {
     "id": "metal_escapement_jab",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "both",
     "power": 32,
@@ -15,6 +17,8 @@
   },
   {
     "id": "metal_ratchet_sweep",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 64,
@@ -27,6 +31,8 @@
   },
   {
     "id": "metal_pendulum_ram",
+    "star": 1,
+    "polarity": "yin",
     "element": "metal",
     "kind": "both",
     "power": 108,
@@ -42,6 +48,8 @@
   },
   {
     "id": "wood_frond_dart",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 36,
@@ -55,6 +63,8 @@
   },
   {
     "id": "wood_plumage_volley",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "both",
     "power": 78,
@@ -69,6 +79,8 @@
   },
   {
     "id": "wood_bloom_detonation",
+    "star": 1,
+    "polarity": "yin",
     "element": "wood",
     "kind": "both",
     "power": 102,
@@ -84,6 +96,8 @@
   },
   {
     "id": "water_wake_jet",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 38,
@@ -96,6 +110,8 @@
   },
   {
     "id": "water_spray_fan",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "both",
     "power": 72,
@@ -110,6 +126,8 @@
   },
   {
     "id": "water_monsoon_swell",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 114,
@@ -123,6 +141,8 @@
   },
   {
     "id": "fire_cinder_claw",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 36,
@@ -135,6 +155,8 @@
   },
   {
     "id": "fire_mane_pounce",
+    "star": 1,
+    "polarity": "yin",
     "element": "fire",
     "kind": "both",
     "power": 68,
@@ -150,6 +172,8 @@
   },
   {
     "id": "fire_solar_crucible",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 118,
@@ -163,6 +187,8 @@
   },
   {
     "id": "earth_shale_bolt",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 32,
@@ -175,6 +201,8 @@
   },
   {
     "id": "earth_ritual_quake",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "both",
     "power": 62,
@@ -190,6 +218,8 @@
   },
   {
     "id": "earth_monolith_charge",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 104,
@@ -203,6 +233,8 @@
   },
   {
     "id": "ice_rime_breath",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "both",
     "power": 34,
@@ -217,6 +249,8 @@
   },
   {
     "id": "ice_antler_javelin",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 84,
@@ -229,6 +263,8 @@
   },
   {
     "id": "ice_permafrost_halo",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "both",
     "power": 106,
@@ -244,6 +280,8 @@
   },
   {
     "id": "wind_flute_slash",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 32,
@@ -256,6 +294,8 @@
   },
   {
     "id": "wind_reed_crescent",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "both",
     "power": 76,
@@ -270,6 +310,8 @@
   },
   {
     "id": "wind_gale_symphony",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 108,

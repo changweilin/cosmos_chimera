@@ -9,9 +9,27 @@
     "move": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "element", "kind", "power", "cooldown_ms", "windup_ms", "accuracy", "range_class", "shape", "base_range_mm"],
+      "required": ["id", "star", "element", "kind", "power", "cooldown_ms", "windup_ms", "accuracy", "range_class", "shape", "base_range_mm"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
+        "star": { "$ref": "common.schema.json#/$defs/star" },
+        "polarity": {
+          "description": "combat.md#傷害公式: yang = outside-in damage (cut, claw, burn), yin = inside-out (blunt, shock, radiation). Required iff the move deals damage.",
+          "enum": ["yin", "yang"]
+        },
+        "downgraded": {
+          "description": "★ version used when a partner provides this move (creatures.md#技能星級). Required iff star >= 2; listed fields replace the full version's.",
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "power": { "$ref": "common.schema.json#/$defs/movePower" },
+            "cooldown_ms": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "accuracy": { "$ref": "common.schema.json#/$defs/percent" },
+            "effect": { "$ref": "common.schema.json#/$defs/effect" },
+            "effect_duration_ms": { "$ref": "common.schema.json#/$defs/durationMs" }
+          }
+        },
         "element": { "$ref": "common.schema.json#/$defs/element" },
         "kind": { "enum": ["damage", "effect", "both"] },
         "power": { "$ref": "common.schema.json#/$defs/movePower" },
@@ -44,6 +62,16 @@
         "origin": { "description": "Burst center only.", "enum": ["caster", "target"] }
       },
       "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "effect" } } },
+          "then": { "not": { "required": ["polarity"] } },
+          "else": { "required": ["polarity"] }
+        },
+        {
+          "if": { "properties": { "star": { "const": 1 } } },
+          "then": { "not": { "required": ["downgraded"] } },
+          "else": { "required": ["downgraded"] }
+        },
         {
           "if": { "properties": { "kind": { "const": "damage" } } },
           "then": { "not": { "required": ["effect"] } },

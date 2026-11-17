@@ -58,7 +58,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), move, null, "{}", false);
             return c;
         }
 
@@ -131,7 +131,9 @@ namespace Cosmimera.Combat.Tests
         public void Boss_enrages_at_each_hp_line_once_and_moves_faster()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("smash", 400)), null, AtMeters(0f), 100);
+            // Small steps: a LV100 attacker against the LV1 boss hits at the ×4 ratio cap, and HP has no base any more
+            // (Q-C72), so a big hit would skip the 33 % stage.
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("smash", 5)), null, AtMeters(0f), 100);
             CreatureDef bossDef = Creature("b", Move("bite", 1));
             EncounterUnit boss = e.AddBossT(bossDef, null, AtMeters(2f), 1);
             EncounterUnit plain = e.AddWildT(bossDef, null, AtMeters(300f), 1);

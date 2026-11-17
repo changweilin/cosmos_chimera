@@ -105,6 +105,10 @@
         { "if": { "properties": { "type": { "const": "on_hp_cross_below" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["percent", "duration_ms"], "properties": { "percent": { "$ref": "#/$defs/rulePercent" }, "duration_ms": { "$ref": "#/$defs/durationMs" } } } } } }
       ]
     },
+    "star": {
+      "description": "Skill star / rarity (creatures.md#技能星級): 1 一般, 2 稀有, 3 獨有 (one evolution line only).",
+      "type": "integer", "minimum": 1, "maximum": 3
+    },
     "effect": {
       "description": "Closed effect vocabulary shared by trait effects and move effects (P2-01). Adding a type = this enum + GameData EffectType + a P2-09 handler.",
       "type": "object",

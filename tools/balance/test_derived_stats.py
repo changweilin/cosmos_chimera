@@ -162,7 +162,7 @@ class DerivedStatsTests(unittest.TestCase):
                    ("melee_volume.gain_permille", PERMILLE + 1),
                    ("ranged_distance.gain_permille", PERMILLE + 1),
                    ("evasion.cap_permille", PERMILLE), ("speed.gain_mm_s", 1_000_001),
-                   ("reference_move.accuracy_percent", 101), ("stage_bands.adult.total_stats", 0))
+                   ("reference_move.accuracy_percent", 101), ("stat_budget.base.adult", 0))
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "proposal.json"
             for key, value in changes:

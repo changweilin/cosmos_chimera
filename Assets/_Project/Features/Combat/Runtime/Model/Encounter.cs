@@ -214,7 +214,7 @@ namespace Cosmimera.Combat
     public sealed class EncounterUnit
     {
         internal EncounterUnit(int id, EncounterSide side, CreatureDef def, Combatant combatant, CastMove[] moves,
-            HitVolume[] volumes, RangeClass[] rangeClasses, float bodyRadiusM, int agi, float3 home)
+            HitVolume[] volumes, RangeClass[] rangeClasses, float bodyRadiusM, int speed, float3 home)
         {
             Id = id;
             Side = side;
@@ -226,7 +226,7 @@ namespace Cosmimera.Combat
             Volumes = volumes;
             RangeClasses = rangeClasses;
             BodyRadiusM = bodyRadiusM;
-            Agi = agi;
+            Speed = speed;
             Home = home;
         }
 
@@ -346,7 +346,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: > 0; boss = BossSizePermille/1000 × balance body_mm. Side effects: none.</remarks>
         public float CollisionRadiusM { get; internal set; }
 
-        internal int Agi { get; set; }
+        // Level-scaled speed stat (creatures.md#六大能力值); move speed is derived from it.
+        internal int Speed { get; set; }
 
         /// <summary>Leash anchor for wild units (their spawn point); unused for the player's side.</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
@@ -1122,8 +1123,10 @@ namespace Cosmimera.Combat
             EncounterUnit unit = AddUnit(EncounterSide.Player, def, null, direction, level, false, moves);
             foreach (TraitDef trait in traits)
             {
-                var effects = new EffectSpec[trait.Effects.Count];
-                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(trait.Effects[i]);
+                // REQ: creatures.md#技能星級 — a partner-provided trait always works at ★.
+                IReadOnlyList<EffectDef> source = trait.EffectsFor(true);
+                var effects = new EffectSpec[source.Count];
+                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(source[i]);
                 unit.Combatant.Book.AddPartnerTrait(trait.Id, TriggerSpec.FromDef(trait.Trigger), effects);
             }
             return unit;
@@ -1163,8 +1166,9 @@ namespace Cosmimera.Combat
             {
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMoves != null ? partnerMoves[i - 1] : partnerMove;
                 defs[i] = m;
-                moves[i] = CastMove.FromDef(m);
-                volumes[i] = BuildVolume(m, s.Str, boss);
+                // REQ: creatures.md#技能星級 — slot 0 is the creature's own signature; every other slot is partner-provided.
+                moves[i] = CastMove.FromDef(m, i > 0);
+                volumes[i] = BuildVolume(m, boss);
                 ranges[i] = m.RangeClass;
             }
 
@@ -1173,7 +1177,7 @@ namespace Cosmimera.Combat
             FillElementTables(def, mastery, resist);
 
             EffectBook book = BookFor(def.Trait);
-            var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
+            var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
             float radius = BodyRadiusFor(def.SizeClass);
             int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
             if (boss)
@@ -1185,7 +1189,7 @@ namespace Cosmimera.Combat
             }
 
             float3 position = GroundPoint(direction, radius);
-            var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Agi, position)
+            var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Speed, position)
             {
                 Level = level,
                 IsBoss = boss,
@@ -1245,22 +1249,18 @@ namespace Cosmimera.Combat
             }
 
             CreatureStats s = u.Def.Stats.AtLevel(level);
-            for (int i = 0; i < u.Volumes.Length; i++)
-            {
-                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str, u.IsBoss);
-            }
-
-            u.Combatant.Rescale(s.Con, s.Spi, s.Agi);
-            u.Agi = s.Agi;
+            u.Combatant.Rescale(s);
+            u.Speed = s.Speed;
             u.Level = level;
         }
 
-        private HitVolume BuildVolume(MoveDef m, int str, bool boss)
+        private HitVolume BuildVolume(MoveDef m, bool boss)
         {
             // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
             BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
-            HitVolume v = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats,
-                _balance.Hit);
+            // creatures.md#六大能力值: range is a shared base value now, so every creature feeds the same stat.
+            HitVolume v = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm,
+                _balance.Stats.Coefficients.SharedBaseStat, _balance.Stats, _balance.Hit);
             // Melee volumes are already "the body's reach" scaled by STR (combat.md#射程), so a larger boss body scales
             // them the same way. Ranged caps (36 m) and data-authored dash lengths stay untouched.
             if (!boss || m.RangeClass != RangeClass.Melee || v.DashDistanceMm > 0)
@@ -1494,7 +1494,7 @@ namespace Cosmimera.Combat
             {
                 ApplyUnitForm(u, overloadForm, out CreatureStats scaled);
                 FillElementTables(overloadForm, _overloadMastery, _overloadResist);
-                u.Combatant.BeginOverload(scaled.Con, scaled.Spi, scaled.Agi, _overloadMastery, _overloadResist);
+                u.Combatant.BeginOverload(scaled, _overloadMastery, _overloadResist);
             }
             else
             {
@@ -1552,7 +1552,7 @@ namespace Cosmimera.Combat
             u.RangeClasses[0] = form.SignatureMove.RangeClass;
             for (int i = 0; i < u.Volumes.Length; i++)
             {
-                u.Volumes[i] = BuildVolume(u.MoveDefs[i], scaled.Str, u.IsBoss);
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], u.IsBoss);
             }
 
             float radius = BodyRadiusFor(form.SizeClass);
@@ -1566,7 +1566,7 @@ namespace Cosmimera.Combat
             u.Def = form;
             u.BodyRadiusM = radius;
             u.CollisionRadiusM = collisionMm * 0.001f;
-            u.Agi = scaled.Agi;
+            u.Speed = scaled.Speed;
             float3 dir = math.normalizesafe(u.Position, new float3(0f, 1f, 0f));
             u.Position = GroundPoint(dir, radius);
             if (form.Trait != null)

@@ -53,14 +53,17 @@
           "additionalProperties": { "$ref": "common.schema.json#/$defs/masteryPercent" }
         },
         "stats": {
+          "description": "Six core stats at LV100 (creatures.md#六大能力值). The total must match the star-adjusted stage budget (creatures.md#綜合值預算), checked by tools/validate-data.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["con", "str", "spi", "agi"],
+          "required": ["hp", "speed", "yin_atk", "yang_atk", "yin_def", "yang_def"],
           "properties": {
-            "con": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
-            "str": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
-            "spi": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
-            "agi": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
+            "hp": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "speed": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "yin_atk": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "yang_atk": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "yin_def": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+            "yang_def": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
           }
         },
         "signature_move": { "$ref": "common.schema.json#/$defs/id" },

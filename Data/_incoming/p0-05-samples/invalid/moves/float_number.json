@@ -1,6 +1,8 @@
 [
   {
     "id": "sample_float_strike",
+    "star": 1,
+    "polarity": "yin",
     "element": "fire",
     "kind": "damage",
     "power": 12.5,

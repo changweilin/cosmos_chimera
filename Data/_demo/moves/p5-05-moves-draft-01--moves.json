@@ -1,6 +1,8 @@
 [
   {
     "id": "metal_needle_thrust",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 30,
@@ -13,6 +15,8 @@
   },
   {
     "id": "metal_iron_cleave",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 60,
@@ -25,6 +29,8 @@
   },
   {
     "id": "metal_scrap_barrage",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 80,
@@ -38,6 +44,8 @@
   },
   {
     "id": "metal_lance_charge",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 110,
@@ -51,6 +59,8 @@
   },
   {
     "id": "wood_briar_dash",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 35,
@@ -64,6 +74,8 @@
   },
   {
     "id": "wood_spore_scatter",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 55,
@@ -76,6 +88,8 @@
   },
   {
     "id": "wood_root_spear",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 85,
@@ -88,6 +102,8 @@
   },
   {
     "id": "wood_canopy_crush",
+    "star": 1,
+    "polarity": "yin",
     "element": "wood",
     "kind": "damage",
     "power": 105,
@@ -101,6 +117,8 @@
   },
   {
     "id": "water_crest_slicer",
+    "star": 1,
+    "polarity": "yang",
     "element": "water",
     "kind": "damage",
     "power": 40,
@@ -113,6 +131,8 @@
   },
   {
     "id": "water_tidal_surge",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 55,
@@ -126,6 +146,8 @@
   },
   {
     "id": "water_torrent_burst",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 75,
@@ -138,6 +160,8 @@
   },
   {
     "id": "water_deluge_crater",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 115,
@@ -151,6 +175,8 @@
   },
   {
     "id": "fire_ember_lash",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 35,
@@ -163,6 +189,8 @@
   },
   {
     "id": "fire_blaze_charge",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 65,
@@ -176,6 +204,8 @@
   },
   {
     "id": "fire_scorch_beam",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 80,
@@ -188,6 +218,8 @@
   },
   {
     "id": "fire_inferno_cataclysm",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 120,
@@ -201,6 +233,8 @@
   },
   {
     "id": "earth_pebble_shot",
+    "star": 1,
+    "polarity": "yang",
     "element": "earth",
     "kind": "damage",
     "power": 30,
@@ -213,6 +247,8 @@
   },
   {
     "id": "earth_seismic_slam",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 60,
@@ -226,6 +262,8 @@
   },
   {
     "id": "earth_sand_sweep",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 75,
@@ -238,6 +276,8 @@
   },
   {
     "id": "earth_rampart_rush",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 100,
@@ -251,6 +291,8 @@
   },
   {
     "id": "ice_shard_flurry",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 35,
@@ -263,6 +305,8 @@
   },
   {
     "id": "ice_rime_skate",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 50,
@@ -276,6 +320,8 @@
   },
   {
     "id": "ice_glacier_lance",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 85,
@@ -288,6 +334,8 @@
   },
   {
     "id": "ice_blizzard_vortex",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 110,
@@ -301,6 +349,8 @@
   },
   {
     "id": "wind_gale_claw",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 30,
@@ -313,6 +363,8 @@
   },
   {
     "id": "wind_cyclone_dart",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 55,
@@ -326,6 +378,8 @@
   },
   {
     "id": "wind_vacuum_blade",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 80,
@@ -338,6 +392,8 @@
   },
   {
     "id": "wind_tempest_sphere",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 105,
@@ -351,6 +407,8 @@
   },
   {
     "id": "thunder_spark_dash",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 40,
@@ -364,6 +422,8 @@
   },
   {
     "id": "thunder_arc_discharge",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 60,
@@ -376,6 +436,8 @@
   },
   {
     "id": "thunder_plasma_rail",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 90,
@@ -388,6 +450,8 @@
   },
   {
     "id": "thunder_clap_nova",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 110,
@@ -401,6 +465,8 @@
   },
   {
     "id": "light_prism_beam",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 45,
@@ -413,6 +479,8 @@
   },
   {
     "id": "light_dawn_flash",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 50,
@@ -426,6 +494,8 @@
   },
   {
     "id": "light_solar_burst",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 75,
@@ -438,6 +508,8 @@
   },
   {
     "id": "light_radiant_step",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 95,
@@ -451,6 +523,8 @@
   },
   {
     "id": "shadow_umbral_fang",
+    "star": 1,
+    "polarity": "yang",
     "element": "shadow",
     "kind": "damage",
     "power": 35,
@@ -463,6 +537,8 @@
   },
   {
     "id": "shadow_void_step",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 55,
@@ -476,6 +552,8 @@
   },
   {
     "id": "shadow_abyss_ray",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 80,
@@ -488,6 +566,8 @@
   },
   {
     "id": "shadow_eclipse_collapse",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 115,

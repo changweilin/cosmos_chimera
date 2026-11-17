@@ -1,6 +1,8 @@
 [
   {
     "id": "metal_blade_rush",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 35,
@@ -14,6 +16,8 @@
   },
   {
     "id": "metal_tungsten_pierce",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 50,
@@ -26,6 +30,8 @@
   },
   {
     "id": "metal_siege_bombard",
+    "star": 1,
+    "polarity": "yang",
     "element": "metal",
     "kind": "damage",
     "power": 115,
@@ -39,6 +45,8 @@
   },
   {
     "id": "wood_splinter_thrust",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 30,
@@ -51,6 +59,8 @@
   },
   {
     "id": "wood_tendril_vault",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 60,
@@ -64,6 +74,8 @@
   },
   {
     "id": "wood_pine_salvo",
+    "star": 1,
+    "polarity": "yang",
     "element": "wood",
     "kind": "damage",
     "power": 90,
@@ -76,6 +88,8 @@
   },
   {
     "id": "water_froth_swipe",
+    "star": 1,
+    "polarity": "yang",
     "element": "water",
     "kind": "damage",
     "power": 35,
@@ -88,6 +102,8 @@
   },
   {
     "id": "water_undertow_rush",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 65,
@@ -101,6 +117,8 @@
   },
   {
     "id": "water_depth_charge",
+    "star": 1,
+    "polarity": "yin",
     "element": "water",
     "kind": "damage",
     "power": 90,
@@ -114,6 +132,8 @@
   },
   {
     "id": "fire_pyre_lunge",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 35,
@@ -127,6 +147,8 @@
   },
   {
     "id": "fire_furnace_vent",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 65,
@@ -140,6 +162,8 @@
   },
   {
     "id": "fire_pyroclast_sweep",
+    "star": 1,
+    "polarity": "yang",
     "element": "fire",
     "kind": "damage",
     "power": 95,
@@ -152,6 +176,8 @@
   },
   {
     "id": "earth_flint_thrust",
+    "star": 1,
+    "polarity": "yang",
     "element": "earth",
     "kind": "damage",
     "power": 35,
@@ -164,6 +190,8 @@
   },
   {
     "id": "earth_tremor_ring",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 60,
@@ -177,6 +205,8 @@
   },
   {
     "id": "earth_scree_spray",
+    "star": 1,
+    "polarity": "yin",
     "element": "earth",
     "kind": "damage",
     "power": 90,
@@ -189,6 +219,8 @@
   },
   {
     "id": "ice_glaze_slide",
+    "star": 1,
+    "polarity": "yang",
     "element": "ice",
     "kind": "damage",
     "power": 30,
@@ -202,6 +234,8 @@
   },
   {
     "id": "ice_hoarfrost_ray",
+    "star": 1,
+    "polarity": "yin",
     "element": "ice",
     "kind": "damage",
     "power": 55,
@@ -214,6 +248,8 @@
   },
   {
     "id": "ice_frostfall_impact",
+    "star": 1,
+    "polarity": "yin",
     "element": "ice",
     "kind": "damage",
     "power": 90,
@@ -227,6 +263,8 @@
   },
   {
     "id": "wind_zephyr_pierce",
+    "star": 1,
+    "polarity": "yang",
     "element": "wind",
     "kind": "damage",
     "power": 30,
@@ -239,6 +277,8 @@
   },
   {
     "id": "wind_jetstream_glide",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 70,
@@ -252,6 +292,8 @@
   },
   {
     "id": "wind_hurricane_sweep",
+    "star": 1,
+    "polarity": "yin",
     "element": "wind",
     "kind": "damage",
     "power": 90,
@@ -264,6 +306,8 @@
   },
   {
     "id": "thunder_pulse_ring",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 30,
@@ -277,6 +321,8 @@
   },
   {
     "id": "thunder_overload_spray",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 80,
@@ -289,6 +335,8 @@
   },
   {
     "id": "thunder_dynamo_charge",
+    "star": 1,
+    "polarity": "yin",
     "element": "thunder",
     "kind": "damage",
     "power": 105,
@@ -302,6 +350,8 @@
   },
   {
     "id": "light_beacon_lunge",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 35,
@@ -315,6 +365,8 @@
   },
   {
     "id": "light_optic_lance",
+    "star": 1,
+    "polarity": "yang",
     "element": "light",
     "kind": "damage",
     "power": 65,
@@ -327,6 +379,8 @@
   },
   {
     "id": "light_chromatic_fan",
+    "star": 1,
+    "polarity": "yin",
     "element": "light",
     "kind": "damage",
     "power": 90,
@@ -339,6 +393,8 @@
   },
   {
     "id": "shadow_gloom_pulse",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 35,
@@ -352,6 +408,8 @@
   },
   {
     "id": "shadow_penumbra_spike",
+    "star": 1,
+    "polarity": "yang",
     "element": "shadow",
     "kind": "damage",
     "power": 65,
@@ -364,6 +422,8 @@
   },
   {
     "id": "shadow_entropy_wave",
+    "star": 1,
+    "polarity": "yin",
     "element": "shadow",
     "kind": "damage",
     "power": 100,

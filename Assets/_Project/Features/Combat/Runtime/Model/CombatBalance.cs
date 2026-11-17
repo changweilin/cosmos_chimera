@@ -604,7 +604,7 @@ namespace Cosmimera.Combat
             Dto d = JsonUtility.FromJson<Dto>(json);
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
-                d.team != null && d.field != null && d.effects != null && d.crit != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
+                d.team != null && d.field != null && d.effects != null && d.crit != null && d.damage != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
                 d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
@@ -616,7 +616,8 @@ namespace Cosmimera.Combat
                 d.ranged_distance.gain_permille, d.ranged_distance.half_stat, d.ranged_distance.cap_mm,
                 d.cd.min_permille, d.cd.half_stat, d.cd.floor_ms,
                 d.speed.base_mm_s, d.speed.gain_mm_s, d.speed.half_stat,
-                d.evasion.cap_permille, d.evasion.half_stat, d.hit.floor_permille);
+                d.evasion.cap_permille, d.evasion.half_stat, d.hit.floor_permille,
+                d.hp.per_point, d.shared_base_stat, d.damage.ratio_min_permille, d.damage.ratio_max_permille);
             HitVolumeDto h = d.hit_volume;
             var hit = new HitVolumeDefaults(h.height_mm, h.front_width_mm, h.sweep_angle_deg, h.cone_angle_deg,
                 h.line_width_mm, h.arc_landing_radius_mm, h.field_radius_mm, h.target_cast_mid_mm, h.target_cast_long_mm);
@@ -692,6 +693,8 @@ namespace Cosmimera.Combat
             public FieldDto field;
             public EffectsDto effects;
             public CritDto crit;
+            public int shared_base_stat;
+            public DamageDto damage;
             public PlayerDto player;
             public AiDto ai;
             public CaptureDto capture;
@@ -702,7 +705,8 @@ namespace Cosmimera.Combat
             public EquipmentDto equipment;
         }
 
-        [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; }
+        [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; public int per_point; }
+        [Serializable] private sealed class DamageDto { public int ratio_min_permille; public int ratio_max_permille; }
         [Serializable] private sealed class GainDto { public int gain_permille; public int half_stat; }
         [Serializable] private sealed class RangedDto
         {

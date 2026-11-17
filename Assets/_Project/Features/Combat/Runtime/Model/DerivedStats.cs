@@ -24,7 +24,9 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// Pre: modelVersion == SupportedModelVersion; every argument in 0..MaxCoefficient; statEffectiveCap,
         ///      every halfStat, hpBase, speedBaseMmS, cdFloorMs, rangedCapMm >= 1; both STR gains &lt;= 1000;
-        ///      cdMinPermille in 1..1000; evasionCapPermille &lt;= 999; hitFloorPermille in 1..1000.
+        ///      cdMinPermille in 1..1000; evasionCapPermille &lt;= 999; hitFloorPermille in 1..1000;
+        ///      1 &lt;= hpPerPoint &lt;= 1000;
+        ///      1 &lt;= damageRatioMinPermille &lt;= 1000 &lt;= damageRatioMaxPermille &lt;= MaxDamageRatioPermille.
         /// Post: properties return the arguments unchanged.
         /// Side effects: allocates this instance.
         /// </remarks>
@@ -35,7 +37,8 @@ namespace Cosmimera.Combat
             int cdMinPermille, int cdHalfStat, int cdFloorMs,
             int speedBaseMmS, int speedGainMmS, int speedHalfStat,
             int evasionCapPermille, int evasionHalfStat,
-            int hitFloorPermille)
+            int hitFloorPermille,
+            int hpPerPoint, int sharedBaseStat, int damageRatioMinPermille, int damageRatioMaxPermille)
         {
             Contract.Requires(modelVersion == SupportedModelVersion, "unsupported balance model_version");
             RequireRange(statEffectiveCap, 1, MaxCoefficient, "stat_effective_cap");
@@ -56,6 +59,15 @@ namespace Cosmimera.Combat
             RequireRange(evasionCapPermille, 0, DerivedStats.Permille - 1, "evasion.cap_permille");
             RequireRange(evasionHalfStat, 1, MaxCoefficient, "evasion.half_stat");
             RequireRange(hitFloorPermille, 1, DerivedStats.Permille, "hit.floor_permille");
+            RequireRange(hpPerPoint, 1, 1000, "hp.per_point");
+            // Not bounded by stat_effective_cap: the curves saturate the input anyway.
+            RequireRange(sharedBaseStat, 0, MaxCoefficient, "shared_base_stat");
+            RequireRange(damageRatioMinPermille, 1, DerivedStats.Permille, "damage.ratio_min_permille");
+            RequireRange(damageRatioMaxPermille, DerivedStats.Permille, MaxDamageRatioPermille, "damage.ratio_max_permille");
+            HpPerPoint = hpPerPoint;
+            SharedBaseStat = sharedBaseStat;
+            DamageRatioMinPermille = damageRatioMinPermille;
+            DamageRatioMaxPermille = damageRatioMaxPermille;
 
             StatEffectiveCap = statEffectiveCap;
             HpBase = hpBase;
@@ -149,6 +161,27 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 1..1000. Side effects: none.</remarks>
         public int HitFloorPermille { get; }
 
+        /// <summary>Largest attack/defence ratio cap accepted, permille (×10). Keeps DamageModel's Int64 product safe.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxDamageRatioPermille = 10_000;
+
+        /// <summary>Max HP per HP stat point (creatures.md#六大能力值, Q-C72).</summary>
+        /// <remarks>Pre: none. Post: 1..1000. Side effects: none.</remarks>
+        public int HpPerPoint { get; }
+
+        /// <summary>Stat fed to the range and evasion curves for every creature: those are shared base values now
+        /// (creatures.md#六大能力值), raised only by skills and gear.</summary>
+        /// <remarks>Pre: none. Post: 0..MaxCoefficient (saturated by the curves). Side effects: none.</remarks>
+        public int SharedBaseStat { get; }
+
+        /// <summary>Lower clamp of the attack/defence ratio, permille (combat.md#傷害公式).</summary>
+        /// <remarks>Pre: none. Post: 1..1000. Side effects: none.</remarks>
+        public int DamageRatioMinPermille { get; }
+
+        /// <summary>Upper clamp of the attack/defence ratio, permille; also the ratio when defence is 0.</summary>
+        /// <remarks>Pre: none. Post: 1000..MaxDamageRatioPermille. Side effects: none.</remarks>
+        public int DamageRatioMaxPermille { get; }
+
         private static void RequireRange(int value, int min, int max, string name)
         {
             Contract.Requires(value >= min && value <= max, name + " outside its portability envelope");
@@ -193,6 +226,37 @@ namespace Cosmimera.Combat
         public int MaxHp(int con)
         {
             return _c.HpBase + (int)Curve(_c.HpGain, Saturate(con, "con"), _c.HpHalfStat);
+        }
+
+        /// <summary>Max HP for <paramref name="hpPoints"/> (HP stat after level scaling). REQ: creatures.md#六大能力值.</summary>
+        /// <remarks>
+        /// Pre: hpPoints >= 0. Post: max(1, hpPoints × HpPerPoint) capped at int.MaxValue; non-decreasing. The floor of
+        ///       1 keeps a 0-point form alive at spawn instead of entering combat fainted. Side effects: none.
+        /// </remarks>
+        public int MaxHpFromPoints(int hpPoints)
+        {
+            Contract.Requires(hpPoints >= 0, "hpPoints must be nonnegative");
+            long hp = (long)hpPoints * _c.HpPerPoint;
+            return hp < 1 ? 1 : hp > int.MaxValue ? int.MaxValue : (int)hp;
+        }
+
+        /// <summary>Attack/defence multiplier in permille. REQ: combat.md#傷害公式 (Q-C65).</summary>
+        /// <remarks>
+        /// Pre: attack >= 0; defence >= 0.
+        /// Post: clamp(floor(attack × 1000 / defence), DamageRatioMinPermille, DamageRatioMaxPermille); DamageRatioMax when
+        ///       defence == 0; non-decreasing in attack, non-increasing in defence. Side effects: none.
+        /// </remarks>
+        public int AttackRatioPermille(int attack, int defence)
+        {
+            Contract.Requires(attack >= 0 && defence >= 0, "attack and defence must be nonnegative");
+            if (defence == 0)
+            {
+                return _c.DamageRatioMaxPermille;
+            }
+
+            long r = (long)attack * Permille / defence;
+            return r < _c.DamageRatioMinPermille ? _c.DamageRatioMinPermille
+                : r > _c.DamageRatioMaxPermille ? _c.DamageRatioMaxPermille : (int)r;
         }
 
         /// <summary>Melee hit-volume multiplier in permille for <paramref name="str"/>.</summary>

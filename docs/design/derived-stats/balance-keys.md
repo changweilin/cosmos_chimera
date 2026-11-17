@@ -30,9 +30,12 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `reference_move.cooldown_ms` | 工具預設 / 範例用招式 CD，正式執行時須傳招式自己的值 |
 | `reference_move.accuracy_percent` | 工具預設 / 範例用招式命中百分比，100 表 100% |
 | `reference_move.base_range_mm` | 工具預設 / 範例用遠程基礎距離，非現有 schema 的新欄位 |
-| `stage_bands.<stage>.min_stat` | 該階段每項能力的軟製作下界，非 runtime clamp |
-| `stage_bands.<stage>.max_stat` | 該階段每項能力的軟製作上界，非 schema maximum |
-| `stage_bands.<stage>.total_stats` | 該階段四項總點數預算；不是單項上限 |
+| `stat_budget.base.<stage>` | 六能力值總和的階段基準（★+★）：幼年 400／少年 500／成年 600／超載 720 |
+| `stat_budget.per_extra_star_percent` | 精通招式＋特性星數每超過 2 一星，預算扣的百分比（10） |
+| `stat_budget.tolerance_percent` | validate-data 容許的預算誤差（±5%） |
+| `hp.per_point` | 最大 HP ＝ HP 點 × 此值（Q-C72，10）；`hp.base/gain/half_stat` 為舊 CON 曲線，執行期不再使用 |
+| `shared_base_stat` | 射程／判定範圍與閃避曲線的共同輸入（全宙獸相同，暫定 100） |
+| `damage.ratio_min_permille` / `ratio_max_permille` | 攻守比上下限（250 = ×0.25、4000 = ×4）；守為 0 時取上限 |
 
 | `hit_volume.height_mm` | 所有判定體的總高度（melee 乘線性倍率）；下限 2，讓半高至少 1 mm |
 | `hit_volume.front_width_mm` / `line_width_mm` | front / line 矩形寬度 |

@@ -17,7 +17,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         private Combatant Make() =>
-            new Combatant(_stats, _cfg, 30, 30, 0, new int[10], new int[10], new EffectBook(), 2);
+            new Combatant(_stats, _cfg, BalanceFixture.Core(80, 30), new int[10], new int[10], new EffectBook(), 2);
 
         private static CastMove Damage(Element e, int cd = 4000) =>
             new CastMove("move_" + e, e, MoveKind.Damage, 50, 100, cd, false, default, 0);
