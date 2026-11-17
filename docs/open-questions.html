@@ -87,11 +87,6 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C77">
-  <header><a class="id" href="#Q-C77">Q-C77</a><span class="tag">影響 Destructibles（Q-C76 追問）</span></header>
-  <p><span class="label">問題</span><b>場景物件的生活技能加成細節</b>。已定：具對應生活技能時對該物件傷害有加成、擊倒＝收成（<a href="design/destructibles.md">destructibles.md〈傷害〉</a>）。未定：(1) 誰的技能算——只有施放招式的那隻宙獸自身的 <code>field_utility</code>，還是隊伍任一生效的生活技能（含副手）？背包裡的礦鎬算不算？(2) 倍率。(3) 物質對應：現行採集對應是「技能→原料」（<code>magnet_pickup_double</code> 金屬礦、<code>drop_rate_up</code> 煤／晶石／石材、<code>forage_berries</code> 木材／麻／棉），需換成物件物質。(4) 背包滿時擊倒：收成丟失，還是不算收成？</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（(2) 倍率只影響 <code>Data/</code>，但 (1)(3) 未定前整項無法實作）</p>
-</article>
 
 
 
@@ -127,10 +122,6 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C77':[R('who','誰的技能算',['施放招式的宙獸自身（建議）','隊伍任一生效生活技能（含副手）','以上任一，且礦鎬也算','其他（補充）']),
-          G('mult','傷害倍率',1.1,3,0.1,1.5,'×'),
-          T('map','物質對應（建議：magnet_pickup_double→metal；drop_rate_up→stone、crystal；forage_berries→wood、plant）','照建議或改寫'),
-          R('full','背包滿時擊倒',['收成丟失（物件已毀，建議）','仍破壞但收成改掉在地上','其他（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
