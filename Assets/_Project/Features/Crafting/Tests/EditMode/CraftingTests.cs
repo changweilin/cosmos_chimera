@@ -347,5 +347,36 @@ namespace Cosmimera.Crafting.Tests
                 ""capture"": { ""mode"": ""advanced"", ""element"": ""fire"", ""base_percent"": 50, ""advanced_bonus_percent"": 20 } }]";
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(badCapture, "[]"));
         }
+
+        // REQ: destructibles.md#傷害 擊倒＝收成 (Q-C77).
+        [Test]
+        public void Knockdown_harvest_uses_only_caster_skills_spends_the_node_and_reports_a_full_bag()
+        {
+            var gathering = new CraftGathering();
+            var yields = new List<CraftStack>();
+            var forage = new[] { FieldUtility.ForageBerries };
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, new FieldUtility[0], _bag, yields),
+                Is.EqualTo(CraftResult.MissingSkill));
+            Assert.That(yields, Is.Empty);
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Success),
+                "a refused harvest did not spend the node");
+            Assert.That(yields, Is.Not.Empty);
+            foreach (CraftStack stack in yields) Assert.That(_bag.Count(stack.Id), Is.GreaterThanOrEqualTo(stack.Quantity));
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Depleted));
+            Assert.That(gathering.Preview(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Depleted),
+                "the knockdown harvest is the node's one harvest");
+
+            // Capacity is int.MaxValue per id: one stack just below it leaves no room for the harvest.
+            var full = new CraftInventory();
+            Assert.That(full.TryExchange(Empty, new[] { new CraftStack("raw_timber", int.MaxValue - 1) }), Is.True);
+            Assert.That(gathering.HarvestOnKnockdown(100, "log", "spring", _catalog, forage, full, yields), Is.EqualTo(CraftResult.CapacityExceeded));
+            Assert.That(yields, Is.Not.Empty, "the caller drops these on the ground");
+            Assert.That(full.Count("raw_timber"), Is.EqualTo(int.MaxValue - 1), "inventory unchanged");
+            Assert.That(gathering.Preview(100, "log", "spring", _catalog, forage, full, yields), Is.EqualTo(CraftResult.Depleted));
+            Assert.That(gathering.HarvestOnKnockdown(5, "no_such_source", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.NoResource));
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(-1, "log", "spring", _catalog, forage, _bag, yields));
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "monsoon", _catalog, forage, _bag, yields));
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "spring", _catalog, null, _bag, yields));
+        }
     }
 }

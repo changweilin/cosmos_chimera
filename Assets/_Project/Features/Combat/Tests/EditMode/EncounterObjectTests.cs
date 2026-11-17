@@ -171,6 +171,71 @@ namespace Cosmimera.Combat.Tests
             Assert.That(table.IsDestroyed(42), Is.True);
         }
 
+        // REQ: destructibles.md#傷害 (Q-C77) — the caster's life skill on its substance: ×2 damage and the break is a harvest.
+        [Test]
+        public void A_caster_with_the_matching_life_skill_deals_double_and_its_break_is_a_harvest()
+        {
+            int FirstHit(FieldUtility[] utilities)
+            {
+                Encounter e = Fight(out float3 player);
+                e.SetHarvestUtilities(0, utilities);
+                var index = new ListIndex();
+                index.Items.Add(new DestructibleCandidate(9, Ground(1.5f), 0.5f, Composition.Of(Wood()), 1_000_000));
+                e.AttachDestructibles(new DestructibleTable(Env()), index, _ => false);
+                return Run(e, player, 6000).Find(ev => ev.Kind == ObjectEventKind.Hit).Damage;
+            }
+
+            int plain = FirstHit(new FieldUtility[0]);
+            int other = FirstHit(new[] { FieldUtility.MagnetPickupDouble });
+            int skilled = FirstHit(new[] { FieldUtility.ForageBerries });
+            Assert.That(plain, Is.GreaterThan(0));
+            Assert.That(other, Is.EqualTo(plain), "a skill for another substance gives nothing");
+            Assert.That(skilled, Is.InRange(plain * 2 - 1, plain * 2 + 1), "×2 with one rounding");
+
+            List<ObjectEvent> Small(FieldUtility[] utilities)
+            {
+                Encounter e = Fight(out float3 player);
+                e.SetHarvestUtilities(0, utilities);
+                var index = new ListIndex();
+                index.Items.Add(new DestructibleCandidate(42, Ground(1.5f), 0.5f, Composition.Of(Wood()), 50));
+                e.AttachDestructibles(new DestructibleTable(Env()), index, _ => false);
+                return Run(e, player, 6000);
+            }
+
+            ObjectEvent harvested = Small(new[] { FieldUtility.ForageBerries }).Find(ev => ev.Kind == ObjectEventKind.Destroyed);
+            Assert.That(harvested.ObjectId, Is.EqualTo(42));
+            Assert.That(harvested.Harvested, Is.True);
+            Assert.That(harvested.SourceId, Is.EqualTo(0));
+            Assert.That(Small(new FieldUtility[0]).Find(ev => ev.Kind == ObjectEventKind.Destroyed).Harvested, Is.False);
+            Assert.Throws<ContractException>(() => Fight(out _).SetHarvestUtilities(0, null));
+        }
+
+        [Test]
+        public void Harvest_rules_match_the_design_table()
+        {
+            Assert.That(HarvestRules.Harvests(FieldUtility.MagnetPickupDouble, "metal"), Is.True);
+            Assert.That(HarvestRules.Harvests(FieldUtility.DropRateUp, "stone"), Is.True);
+            Assert.That(HarvestRules.Harvests(FieldUtility.DropRateUp, "crystal"), Is.True);
+            Assert.That(HarvestRules.Harvests(FieldUtility.ForageBerries, "wood"), Is.True);
+            Assert.That(HarvestRules.Harvests(FieldUtility.ForageBerries, "plant"), Is.True);
+            Assert.That(HarvestRules.Harvests(FieldUtility.ForageBerries, "stone"), Is.False);
+            Assert.That(HarvestRules.Harvests(FieldUtility.OpenObstacle, "stone"), Is.False, "only the gathering skills");
+            Assert.That(HarvestRules.Harvests(FieldUtility.None, "wood"), Is.False);
+            Assert.That(HarvestRules.AnyHarvests(new[] { FieldUtility.None, FieldUtility.DropRateUp }, "crystal"), Is.True);
+            Assert.That(HarvestRules.AnyHarvests(new FieldUtility[0], "wood"), Is.False);
+            Assert.Throws<ContractException>(() => HarvestRules.Harvests(FieldUtility.ForageBerries, null));
+            Assert.Throws<ContractException>(() => HarvestRules.AnyHarvests(null, "wood"));
+        }
+
+        [Test]
+        public void Apply_hit_rejects_a_harvest_multiplier_outside_its_domain()
+        {
+            var table = new DestructibleTable(Env());
+            int i = table.Register(1, Composition.Of(Wood()), 1000, Ground(1f));
+            Assert.Throws<ContractException>(() => table.ApplyHit(i, Element.Earth, 10, 0, 0, 999));
+            Assert.Throws<ContractException>(() => table.ApplyHit(i, Element.Earth, 10, 0, 0, 10001));
+        }
+
         [Test]
         public void A_big_burning_tree_burns_out_on_its_own()
         {

@@ -128,6 +128,15 @@ namespace Cosmimera.Bootstrap.Demo
             return false;
         }
 
+        // The scatter kind id gathering uses as the node's source; buildings and chests are not gathering nodes.
+        internal bool TryGetGatherSource(long id, out string source)
+        {
+            source = null;
+            if (id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem item)) return false;
+            source = _scatter.Kinds[item.KindIndex].Id;
+            return true;
+        }
+
         internal void QueryGathering(float3 direction, float reachM, List<GatheringNode> nodes)
         {
             nodes.Clear();

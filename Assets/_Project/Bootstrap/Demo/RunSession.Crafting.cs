@@ -6,6 +6,7 @@ using Cosmimera.Creatures;
 using Cosmimera.Food;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -19,6 +20,9 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<CraftStack> _craftYields = new List<CraftStack>();
         private string _craftedVessel;
         private EquipmentModifiers _playerEquipment;
+        private readonly HarvestPiles _harvestPiles = new HarvestPiles();
+        private readonly Dictionary<int, GameObject> _harvestPileViews = new Dictionary<int, GameObject>();
+        private readonly List<int> _harvestPicked = new List<int>(4);
 
         private void ConfigureCrafting()
         {
@@ -34,7 +38,7 @@ namespace Cosmimera.Bootstrap.Demo
             _gatheringNodes.Clear();
             _worldObjects?.QueryGathering(_rig.Config.ToDirection(PlayerPosition()), Encounter.InteractRadiusM, _gatheringNodes);
             bool any = false;
-            string season = (_setup.Season ?? Seasons.For(_setup.Seed)).ToString().ToLowerInvariant();
+            string season = SeasonId();
             foreach (GatheringNode node in _gatheringNodes)
             {
                 CraftResult result = _craftGathering.Preview(node.Id, node.Source, season, _craftCatalog,
@@ -55,6 +59,70 @@ namespace Cosmimera.Bootstrap.Demo
             if (selected == null) return;
             ui.Message = _copy.Ui("craft.result." + CraftRules.TryCraft(selected, _enabledUtilities, _craftInventory));
             GUIUtility.ExitGUI();
+        }
+
+        private string SeasonId() => (_setup.Season ?? Seasons.For(_setup.Seed)).ToString().ToLowerInvariant();
+
+        // REQ: destructibles.md#傷害 (Q-C77) — the main's own skill plus its vessel-matched partners'; not the rest of the team.
+        private HashSet<FieldUtility> HarvestUtilitiesOf(int slot)
+        {
+            var subs = new List<OwnedCreature>();
+            if (_setup.Partners != null)
+                foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot])) subs.Add(OwnedAtDeparture(subId));
+            HashSet<FieldUtility> utilities = subs.Count == 0 ? new HashSet<FieldUtility>()
+                : FieldUtilityRules.CollectTeamUtilities(Array.Empty<OwnedCreature>(), subs, new GameDatabaseSpeciesLookup(_setup.Database));
+            if (_setup.Party[slot].FieldUtility != FieldUtility.None) utilities.Add(_setup.Party[slot].FieldUtility);
+            return utilities;
+        }
+
+        // REQ: destructibles.md#傷害 擊倒＝收成 — a full bag still spends the harvest; it waits on the ground instead.
+        private void HarvestKnockdown(in ObjectEvent ev)
+        {
+            if (!_worldObjects.TryGetGatherSource(ev.ObjectId, out string source) ||
+                !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c)) return;
+            CraftResult result = _craftGathering.HarvestOnKnockdown(ev.ObjectId, source, SeasonId(), _craftCatalog,
+                _encounter.Units[ev.SourceId].HarvestUtilities, _craftInventory, _craftYields);
+            if (result == CraftResult.Success)
+            {
+                Toast(_copy.Ui("ui.craft.harvest").Replace("{items}", HarvestText(_craftYields)));
+            }
+            else if (result == CraftResult.CapacityExceeded)
+            {
+                int id = _harvestPiles.Add(c.Center, _craftYields);
+                _harvestPileViews[id] = PileView(c.Center);
+                Toast(_copy.Ui("ui.craft.harvest_ground").Replace("{items}", HarvestText(_craftYields)));
+            }
+        }
+
+        private void CollectHarvestPiles(float3 playerPosition)
+        {
+            if (_harvestPiles.Count == 0) return;
+            _harvestPicked.Clear();
+            _harvestPiles.Collect(playerPosition, ObjectPhysics.AutoPickupRadiusM, _craftInventory, _harvestPicked);
+            foreach (int id in _harvestPicked)
+            {
+                if (_harvestPileViews.TryGetValue(id, out GameObject view) && view != null) Destroy(view);
+                _harvestPileViews.Remove(id);
+            }
+        }
+
+        private string HarvestText(List<CraftStack> stacks)
+        {
+            var parts = new string[stacks.Count];
+            for (int i = 0; i < parts.Length; i++) parts[i] = _copy.Ui(stacks[i].Id) + " ×" + stacks[i].Quantity;
+            return string.Join("、", parts);
+        }
+
+        // Placeholder marker until harvest piles get art; no collider so it never blocks the character.
+        private GameObject PileView(float3 center)
+        {
+            GameObject view = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(view.GetComponent<Collider>());
+            view.name = "HarvestPile";
+            view.transform.SetParent(transform, false);
+            view.transform.position = center;
+            view.transform.localScale = Vector3.one * 0.35f;
+            return view;
         }
 
         private void DrawCraftedItems(AdventurePanel ui)

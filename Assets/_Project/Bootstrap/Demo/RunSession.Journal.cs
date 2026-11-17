@@ -61,6 +61,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             EncounterUnit unit = _encounter.AddEquippedCreature(_setup.Party[slot], moves, traits, _plan.LandingDirection,
                 _progression.LevelOf(_partyExp[slot]));
+            _encounter.SetHarvestUtilities(unit.Id, HarvestUtilitiesOf(slot));
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
                 _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(_setup.PartyIds[slot]), _balance.Grips);
             var combinedEffects = new List<EffectSpec>(equipment.CreatureEffects);

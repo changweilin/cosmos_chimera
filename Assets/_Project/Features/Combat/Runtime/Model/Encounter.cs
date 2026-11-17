@@ -238,6 +238,11 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public EncounterSide Side { get; }
 
+        /// <summary>Life skills that count for this unit's object hits: its own and its vessel-matched partners'
+        /// (destructibles.md#傷害). Empty unless set through <see cref="Encounter.SetHarvestUtilities"/>.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public IReadOnlyList<FieldUtility> HarvestUtilities { get; internal set; } = System.Array.Empty<FieldUtility>();
+
         /// <summary>Base species form assigned at creation (never changes during temporary overload).</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public CreatureDef BaseDef { get; }
@@ -1413,6 +1418,22 @@ namespace Cosmimera.Combat
             _playerYangDefence = yangDefence;
         }
 
+        /// <summary>Sets the life skills that give <paramref name="unitId"/>'s moves the harvest bonus on matching objects.</summary>
+        /// <remarks>
+        /// REQ: destructibles.md#傷害 (Q-C77) — the caster's own field_utility plus those of partners whose vessel matches;
+        /// the caller resolves the vessel rule. Other team members and tools never count.
+        /// Pre: unitId indexes Units; utilities non-null. Post: Units[unitId].HarvestUtilities is a copy of utilities.
+        /// Side effects: mutates the unit.
+        /// </remarks>
+        public void SetHarvestUtilities(int unitId, IReadOnlyCollection<FieldUtility> utilities)
+        {
+            Contract.Requires(utilities != null, "utilities must not be null");
+            var copy = new FieldUtility[utilities.Count];
+            int i = 0;
+            foreach (FieldUtility u in utilities) copy[i++] = u;
+            Get(unitId).HarvestUtilities = copy;
+        }
+
         /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its habit.</summary>
         /// <remarks>
         /// Pre: unitId is an active Wild unit.
@@ -1842,23 +1863,26 @@ namespace Cosmimera.Combat
                     index = _objects.Register(c.Id, c.Composition, c.VolumeL, c.Center);
                 }
 
+                // REQ: destructibles.md#傷害 — the caster's life skill on its matching substance: ×harvest, and a break is a harvest.
+                bool harvest = casterId >= 0 && casterId < _units.Count &&
+                    HarvestRules.AnyHarvests(_units[casterId].HarvestUtilities, c.Composition.Dominant.Id);
                 ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element,
-                    ctx.EffectivePower, ctx.MasteryPercent, nowMs);
+                    ctx.EffectivePower, ctx.MasteryPercent, nowMs, harvest ? _balance.HarvestDamagePermille : 1000);
                 _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
                     default, ctx.Move.Power));
                 if (r.Destroyed)
                 {
-                    EmitDestroyed(index, casterId, ctx.Move.Power);
+                    EmitDestroyed(index, casterId, ctx.Move.Power, harvest);
                 }
             }
         }
 
-        private void EmitDestroyed(int index, int sourceId, int power)
+        private void EmitDestroyed(int index, int sourceId, int power, bool harvested = false)
         {
             // REQ: destructibles.md#影素材 — night is judged where the object stood.
             ObjectDrop drop = _objects.RollDrop(index, _isNight(_planet.ToDirection(_objects.CenterOf(index))), ref _objectRng);
             _objectEvents.Add(new ObjectEvent(ObjectEventKind.Destroyed, _objects.IdOf(index), sourceId, 0,
-                ObjectReaction.None, _objects.CauseOf(index), drop, power));
+                ObjectReaction.None, _objects.CauseOf(index), drop, power, harvested));
         }
 
         /// <summary>

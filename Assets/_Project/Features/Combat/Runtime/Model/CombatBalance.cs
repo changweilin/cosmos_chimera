@@ -503,9 +503,10 @@ namespace Cosmimera.Combat
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
             TerritoryTuning territory, CollisionTuning collision, HorizonRangeTuning horizon,
             BossEnrageTuning enrage, int bossWindupPermille, StaggerTuning stagger, BlockTuning block,
-            CreatureRollTuning creatureRoll, GripTuning grips, int playerBaseDefence)
+            CreatureRollTuning creatureRoll, GripTuning grips, int playerBaseDefence, int harvestDamagePermille)
         {
             PlayerBaseDefence = playerBaseDefence;
+            HarvestDamagePermille = harvestDamagePermille;
             Block = block;
             Grips = grips;
             CreatureRoll = creatureRoll;
@@ -528,6 +529,10 @@ namespace Cosmimera.Combat
         /// <summary>LV100 basis of the player character's yin and yang defence (player.base_defense; combat.md#玩家角色的守).</summary>
         /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
         public int PlayerBaseDefence { get; }
+
+        /// <summary>Object damage multiplier for a caster whose life skill matches the object's substance (destructibles.md#傷害).</summary>
+        /// <remarks>Pre: none. Post: 1000..10000 (field_utilities.harvest_damage_permille). Side effects: none.</remarks>
+        public int HarvestDamagePermille { get; }
 
         /// <summary>Boss windup scale in permille (boss.windup_permille; combat.md#前搖).</summary>
         /// <remarks>Pre: none. Post: 1..10000. Side effects: none.</remarks>
@@ -630,6 +635,9 @@ namespace Cosmimera.Combat
                 d.field.tick_ms, d.crit.base_rate_permille, d.crit.base_damage_percent);
             var ai = new AiTuning(d.ai.keep_distance_permille, d.ai.close_in_permille, d.ai.hold_permille,
                 d.ai.follow_leash_mm);
+            Contract.Requires(d.field_utilities != null, "balance json is missing field_utilities");
+            Contract.Requires(d.field_utilities.harvest_damage_permille >= 1000 && d.field_utilities.harvest_damage_permille <= 10000,
+                "field_utilities.harvest_damage_permille must be 1000..10000");
             // An absent key parses as 0, which would put every hit on the player at the ratio cap.
             Contract.Requires(d.player.base_defense >= 1, "player.base_defense must be >= 1");
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
@@ -679,13 +687,14 @@ namespace Cosmimera.Combat
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
                 d.capture.base_percent, d.capture.boss_percent, territory, collision, horizon, enrage,
                 d.boss.windup_permille, stagger, block, creatureRoll,
-                RequireGrips(d.equipment), d.player.base_defense);
+                RequireGrips(d.equipment), d.player.base_defense, d.field_utilities.harvest_damage_permille);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
 #pragma warning disable 0649, IDE1006
         [Serializable] private sealed class Dto
         {
+            public FieldUtilitiesDto field_utilities;
             public int model_version;
             public int stat_effective_cap;
             public HpDto hp;
@@ -744,6 +753,11 @@ namespace Cosmimera.Combat
             public int field_radius_mm;
             public int target_cast_mid_mm;
             public int target_cast_long_mm;
+        }
+
+        [Serializable] private sealed class FieldUtilitiesDto
+        {
+            public int harvest_damage_permille;
         }
 
         [Serializable] private sealed class PlayerDto

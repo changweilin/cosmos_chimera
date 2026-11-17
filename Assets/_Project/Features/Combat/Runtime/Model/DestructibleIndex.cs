@@ -78,8 +78,9 @@ namespace Cosmimera.Combat
     public readonly struct ObjectEvent
     {
         internal ObjectEvent(ObjectEventKind kind, long objectId, int sourceId, int damage, ObjectReaction reactions,
-            DestroyCause cause, ObjectDrop drop, int power)
+            DestroyCause cause, ObjectDrop drop, int power, bool harvested = false)
         {
+            Harvested = harvested;
             Kind = kind;
             ObjectId = objectId;
             SourceId = sourceId;
@@ -121,5 +122,10 @@ namespace Cosmimera.Combat
         /// <summary>Power of the move that hit (or broke) the object; 0 for burn-outs. Presentation sizes the shove with it.</summary>
         /// <remarks>Pre: none. Post: 0..DamageModel.MaxPower. Side effects: none.</remarks>
         public int Power { get; }
+
+        /// <summary>Destroyed only: the breaking hit had the caster's life-skill bonus, so the break counts as a harvest
+        /// (destructibles.md#傷害 擊倒＝收成). False for burn-outs and every Hit event.</summary>
+        /// <remarks>Pre: none. Post: implies Kind == Destroyed and SourceId is a unit. Side effects: none.</remarks>
+        public bool Harvested { get; }
     }
 }

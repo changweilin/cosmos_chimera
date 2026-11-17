@@ -438,5 +438,15 @@
     "zh-TW": "武器：{element}專精 +{mastery} · 威力 ×{power} · 攻速 ×{speed}",
     "en": "Weapon: {element} mastery +{mastery} · power ×{power} · speed ×{speed}",
     "ja": "武器：{element}熟練 +{mastery}・威力 ×{power}・攻速 ×{speed}"
+  },
+  "ui.craft.harvest": {
+    "zh-TW": "收成：{items}",
+    "en": "Harvested: {items}",
+    "ja": "収穫：{items}"
+  },
+  "ui.craft.harvest_ground": {
+    "zh-TW": "背包已滿，收成留在地上：{items}",
+    "en": "Bag full; harvest left on the ground: {items}",
+    "ja": "所持数の上限のため、収穫物は地面に残りました：{items}"
   }
 }

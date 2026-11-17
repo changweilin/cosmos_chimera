@@ -26,7 +26,7 @@
   "effects": {"multiplier_min_percent": 10, "multiplier_max_percent": 300},
   "crit": {"base_rate_permille": 50, "base_damage_percent": 150},
   "player": {"max_hp": 1000, "roll_duration_ms": 600, "roll_invulnerable_ms": 400, "roll_cooldown_ms": 800, "base_defense": 100},
-  "field_utilities": {"weather_control_cooldown_ms": 180000},
+  "field_utilities": {"weather_control_cooldown_ms": 180000, "harvest_damage_permille": 2000},
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
   "capture": {"base_percent": 60, "boss_percent": 100},
   "stagger": {"gauge_hp_permille": 300, "regen_delay_ms": 3000, "regen_permille_per_s": 200, "duration_ms": 2000, "damage_taken_bonus_percent": 25, "knockback_hp_permille": 150, "knockback_mm": 1500},

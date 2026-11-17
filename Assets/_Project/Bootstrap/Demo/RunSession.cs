@@ -999,6 +999,7 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
             CollectGroundPickups(player);
+            CollectHarvestPiles(player);
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
@@ -2044,6 +2045,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 _worldObjects.OnDestroyed(ev.ObjectId);
+                if (ev.Harvested) HarvestKnockdown(ev);
                 ShatterObject(ev);
                 if (WorldObjects.IsTreasure(ev.ObjectId))
             {
