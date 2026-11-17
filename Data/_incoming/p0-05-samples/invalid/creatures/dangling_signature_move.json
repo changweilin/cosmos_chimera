@@ -42,7 +42,7 @@
       "archetype": "trickster"
     },
     "ai_style": "charge",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_sample_generalist", "weight": 1}],
     "size_class": "S"
   }
 ]

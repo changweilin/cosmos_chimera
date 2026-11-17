@@ -58,7 +58,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Hold, Temperament.Normal, null, 0,
+            TestWild.WithHabit(c, Habit.Tolerant).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Hold, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, agi), move, null, "{}", false);
             return c;
@@ -71,7 +71,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), seed);
             mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("tap", 1, 600000, 0, 100), 1), null, AtMeters(0f), 30);
-            wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("bite", wildPower, wildCooldownMs, wildWindupMs)), null,
+            wild = e.AddWildT(Creature("w", Move("bite", wildPower, wildCooldownMs, wildWindupMs)), null,
                 AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             return e;
@@ -105,9 +105,10 @@ namespace Cosmimera.Combat.Tests
             return -1;
         }
 
-        private int FirstHitDamage(bool hold)
+        private int FirstHitDamage(bool hold, bool shield = false)
         {
             Encounter e = Arena(40, 1000, 0, out EncounterUnit mine, out EncounterUnit wild);
+            if (shield) mine.Combatant.SetWeapons(new WeaponLoadout(0, default, default, 0, 0, true));
             e.SetBlockHeld(mine.Id, hold, 0);
             for (long t = Dt; t <= 5000; t += Dt)
             {
@@ -133,11 +134,22 @@ namespace Cosmimera.Combat.Tests
         }
 
         [Test]
+        public void A_shield_raises_the_block_to_shield_permille_and_does_nothing_unblocked()
+        {
+            int open = FirstHitDamage(false);
+            Assert.That(FirstHitDamage(false, true), Is.EqualTo(open), "a shield only matters while blocking");
+            int expected = (open * (1000 - _balance.Block.ShieldPermille) + 500) / 1000;
+            Assert.That(FirstHitDamage(true, true), Is.EqualTo(expected));
+            Assert.That(_balance.Block.ShieldPermille, Is.GreaterThan(_balance.Block.BasePermille));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, 25, 349));
+        }
+
+        [Test]
         public void A_blocking_main_never_casts_and_its_windup_is_cancelled()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("slow", 5, 5000, 600)), null, AtMeters(0f), 30);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 600000, 0, 100)), null,
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("nip", 1, 600000, 0, 100)), null,
                 AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             long t = Dt;
@@ -167,7 +179,7 @@ namespace Cosmimera.Combat.Tests
                 AtMeters(-60f), 30);
             EncounterUnit support = e.AddCreature(EncounterSide.Player, Creature("s", Move("tap", 1, 600000, 0, 100), 1), null,
                 AtMeters(0f), 30);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("bite", 40, 2000, 300)), null,
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("bite", 40, 2000, 300)), null,
                 AtMeters(1.5f), 30);
             e.Field(support.Id, AtMeters(0f), false, 0);
 
@@ -207,7 +219,7 @@ namespace Cosmimera.Combat.Tests
                 AtMeters(-60f), 30);
             EncounterUnit support = e.AddCreature(EncounterSide.Player, Creature("s", Move("tap", 1, 600000, 0, 100), 1), null,
                 AtMeters(0f), 30);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("bite", 40, 2000, 300)), null,
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("bite", 40, 2000, 300)), null,
                 AtMeters(1.5f), 30);
             e.Field(support.Id, AtMeters(0f), false, 0);
             e.SetSupportMode(mode);
@@ -234,8 +246,8 @@ namespace Cosmimera.Combat.Tests
                 AtMeters(0f), 30);
             EncounterUnit support = e.AddCreature(EncounterSide.Player, Creature("s", Move("tap", 1, 600000, 0, 100)), null,
                 AtMeters(2f), 30);
-            nearSupport = e.AddCreature(EncounterSide.Wild, Creature("a", Move("nip", 1, 600000, 0, 100)), null, AtMeters(3.5f), 30);
-            nearMain = e.AddCreature(EncounterSide.Wild, Creature("b", Move("nip", 1, 600000, 0, 100)), null, AtMeters(-3f), 30);
+            nearSupport = e.AddWildT(Creature("a", Move("nip", 1, 600000, 0, 100)), null, AtMeters(3.5f), 30);
+            nearMain = e.AddWildT(Creature("b", Move("nip", 1, 600000, 0, 100)), null, AtMeters(-3f), 30);
             e.Field(main.Id, AtMeters(0f), false, 0);
             e.Field(support.Id, AtMeters(2f), false, 0);
             e.SetSupportMode(mode);
@@ -442,7 +454,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("slow", 5, 5000, 600)), null, AtMeters(0f), 30);
-            e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 600000, 0, 100)), null, AtMeters(1.5f), 30);
+            e.AddWildT(Creature("w", Move("nip", 1, 600000, 0, 100)), null, AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             long t = Dt;
             for (; t <= 3000 && mine.WindupSlot == EncounterUnit.NoWindup; t += Dt) e.Tick(t, Dt, Feet, Free, mine.Id);
@@ -508,15 +520,15 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void Tuning_rejects_out_of_range_values()
         {
-            Assert.Throws<ContractException>(() => new BlockTuning(1001, 400, 2000, 250, 1500, 150, 500, 25));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 0, 2000, 250, 1500, 150, 500, 25));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 0, 150, 500, 25));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, -1));
+            Assert.Throws<ContractException>(() => new BlockTuning(1001, 400, 2000, 250, 1500, 150, 500, 25, 750));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 0, 2000, 250, 1500, 150, 500, 25, 750));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 0, 150, 500, 25, 750));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, -1, 750));
             Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 800, 401, 1500));
             Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 601, 800, 150, 1500));
             Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 599, 150, 1500));
             Assert.Throws<ContractException>(() => new CreatureRollTuning(600, 400, 800, 150, 10001));
-            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, 25).CapacityHp(0));
+            Assert.Throws<ContractException>(() => new BlockTuning(350, 400, 2000, 250, 1500, 150, 500, 25, 750).CapacityHp(0));
         }
     }
 }

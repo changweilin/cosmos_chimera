@@ -61,7 +61,7 @@ namespace Cosmimera.Combat.Tests
             _created.Clear();
         }
 
-        private CreatureDef Creature(string id, Temperament temperament)
+        private CreatureDef Creature(string id, Habit habit)
         {
             var m = ScriptableObject.CreateInstance<MoveDef>();
             _created.Add(m);
@@ -71,7 +71,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -97,7 +97,7 @@ namespace Cosmimera.Combat.Tests
             // Apex wanders 12 m; the sea starts 2 m east of home, so most of its disk is water.
             var sea = new BandSea(2f, 1000f);
             var e = new Encounter(_planet, _balance, sea, 21);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Apex), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Dominant), null, AtMeters(0f), 10);
             float3 start = wild.Position;
             bool moved = false;
             for (long now = Dt; now <= 120_000; now += Dt)
@@ -116,7 +116,7 @@ namespace Cosmimera.Combat.Tests
             // Land is a 2 cm strip around home: every 12 m draw (and every step off home) is sea.
             var sea = new BandSea(0.01f, 1000f);
             var e = new Encounter(_planet, _balance, new CompositeSea(sea), 5);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Apex), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Dominant), null, AtMeters(0f), 10);
             float3 start = wild.Position;
             for (long now = Dt; now <= 60_000; now += Dt)
             {
@@ -150,7 +150,7 @@ namespace Cosmimera.Combat.Tests
             // The character stands 10 m east, across a strait from 2 m to 8 m: inside apex territory, out of reach.
             var sea = new BandSea(2f, 8f);
             var e = new Encounter(_planet, _balance, sea, 3);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Apex), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Dominant), null, AtMeters(0f), 10);
             float3 player = _planet.ToWorld(AtMeters(10f), 0f);
             // Without vitals the character is not a target and the engaged wild would just hold position.
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
@@ -174,7 +174,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("d");
-            c.Set("line_d", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, Temperament.Apex, null, 0,
+            TestWild.WithHabit(c, Habit.Dominant).Set("line_d", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -188,7 +188,7 @@ namespace Cosmimera.Combat.Tests
             float RunDash(IEncounterSurface surface, out bool cast)
             {
                 var e = new Encounter(_planet, _balance, surface, 3);
-                EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Dasher(), null, AtMeters(0f), 10);
+                EncounterUnit wild = e.AddWildT(Dasher(), null, AtMeters(0f), 10);
                 e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
                 e.Provoke(wild.Id);
                 float3 player = _planet.ToWorld(AtMeters(1f), 0f);
@@ -224,8 +224,8 @@ namespace Cosmimera.Combat.Tests
             float3 Run(IEncounterSurface surface, out float3 westStart, out EncounterUnit west, out float3 eastStart)
             {
                 var e = new Encounter(_planet, _balance, surface, 9);
-                west = e.AddCreature(EncounterSide.Wild, Creature("a", Temperament.Timid), null, AtMeters(1.6f), 10);
-                EncounterUnit east = e.AddCreature(EncounterSide.Wild, Creature("b", Temperament.Timid), null,
+                west = e.AddWildT(Creature("a", Habit.Avoidant), null, AtMeters(1.6f), 10);
+                EncounterUnit east = e.AddWildT(Creature("b", Habit.Avoidant), null,
                     AtMeters(1.9f), 10);
                 westStart = west.Position;
                 eastStart = east.Position;

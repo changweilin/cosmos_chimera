@@ -44,7 +44,7 @@ namespace Cosmimera.Combat.Tests
             _created.Clear();
         }
 
-        private CreatureDef MakeCreature(Element masteryElement, Temperament temperament = Temperament.Apex)
+        private CreatureDef MakeCreature(Element masteryElement, Habit habit = Habit.Dominant)
         {
             var m = ScriptableObject.CreateInstance<MoveDef>();
             _created.Add(m);
@@ -54,7 +54,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("wx_creature_" + masteryElement);
-            c.Set("line_wx", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_wx", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10],
                 new List<ElementValue> { new ElementValue(masteryElement, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
@@ -137,7 +137,7 @@ namespace Cosmimera.Combat.Tests
             // Apex base territory is 28 m. Fog scales to 60% = 16.8 m; slow-walk stealth halves it to 8.4 m.
             // Place player at 12 m: outside stealth radius (8.4 m) but inside unstealthed fog radius (16.8 m).
             var slowEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit slowWild = slowEncounter.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire, Temperament.Apex),
+            EncounterUnit slowWild = slowEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
             slowEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
             slowEncounter.SetWeather(WeatherProfiles.Fog);
@@ -146,7 +146,7 @@ namespace Cosmimera.Combat.Tests
             Assert.That(slowWild.Engaged, Is.False);
 
             var fastEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit fastWild = fastEncounter.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire, Temperament.Apex),
+            EncounterUnit fastWild = fastEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
             fastEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
             fastEncounter.SetWeather(WeatherProfiles.Fog);
@@ -161,7 +161,7 @@ namespace Cosmimera.Combat.Tests
         public void Grass_conceals_only_slow_players_at_their_own_position(float speedMs, bool concealed)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
             float3 playerAt = AtMeters(20f);
             e.SetGrassCoverProvider(d => math.distance(d, playerAt) < 1e-4f);
@@ -176,7 +176,7 @@ namespace Cosmimera.Combat.Tests
         public void Grass_conceals_allies_independently_of_the_player(float speedMs, bool concealed)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             EncounterUnit ally = e.AddCreature(EncounterSide.Player, MakeCreature(Element.Wood), null, AtMeters(20f), 10);
             ally.Fielded = true;
             ally.LastMoveSpeedMs = speedMs;
@@ -191,7 +191,7 @@ namespace Cosmimera.Combat.Tests
         public void Grass_and_fog_enable_one_concealment_effect(bool fog)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             e.SetGrassCoverProvider(_ => true);
             e.SetPlayerMoveSpeedMs(0f);
             if (fog) e.SetWeather(WeatherProfiles.Fog);
@@ -206,7 +206,7 @@ namespace Cosmimera.Combat.Tests
         public void Losing_grass_cover_or_clearing_the_provider_restores_detection(bool clearProvider)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             bool intact = true;
             e.SetGrassCoverProvider(_ => intact);
             e.SetPlayerMoveSpeedMs(0f);
@@ -223,7 +223,7 @@ namespace Cosmimera.Combat.Tests
         public void Concealed_player_does_not_hide_an_exposed_ally_and_grass_does_not_drop_combat()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             EncounterUnit ally = e.AddCreature(EncounterSide.Player, MakeCreature(Element.Wood), null, AtMeters(20f), 10);
             ally.Fielded = true;
             e.SetGrassCoverProvider(d => math.distance(d, AtMeters(-20f)) < 1e-4f);
@@ -240,7 +240,7 @@ namespace Cosmimera.Combat.Tests
         public void Provoke_starts_combat_even_when_the_player_is_concealed()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
             e.SetGrassCoverProvider(_ => true);
             e.SetPlayerMoveSpeedMs(0f);
             var follow = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
@@ -257,7 +257,7 @@ namespace Cosmimera.Combat.Tests
             float StepFor(Element mastery, WeatherProfile weather)
             {
                 var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-                EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(mastery, Temperament.Apex),
+                EncounterUnit wild = e.AddWildT(MakeCreature(mastery, Habit.Dominant),
                     null, AtMeters(0f), 10);
                 e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
                 e.SetWeather(weather);
@@ -277,7 +277,7 @@ namespace Cosmimera.Combat.Tests
         public void Encounter_SetWeatherProvider_applies_dynamic_weather_and_validates_player_speed()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 9);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire, Temperament.Apex),
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
             e.SetWeatherProvider((_, t) => t < 1000 ? WeatherProfiles.Fog : WeatherProfiles.Clear);
@@ -298,9 +298,9 @@ namespace Cosmimera.Combat.Tests
         public void Encounter_SetExplorationUtilityModifiers_and_ForceDisengageAllWild_apply_stealth_and_escape()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 17);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, MakeCreature(Element.Fire, Temperament.Apex),
+            EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            EncounterUnit boss = e.AddBoss(MakeCreature(Element.Fire, Temperament.Apex),
+            EncounterUnit boss = e.AddBossT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(200f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
 

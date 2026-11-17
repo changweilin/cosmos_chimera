@@ -17,7 +17,13 @@ MonoBehaviour:
   stage: 2
   sizeClass: 2
   aiStyle: 0
-  temperament: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
   evolvesTo: {fileID: 0}
   overloadOf: {fileID: 0}
   overloadForm: {fileID: 0}

@@ -5,7 +5,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_detritivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "metal_gear_strider",
     "evolution": {
       "level": 28,
@@ -61,7 +61,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "metal_chronos_engine",
     "evolution": {
       "level": 48,
@@ -117,7 +117,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -165,7 +165,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_ground_granivore", "weight": 3}, {"niche": "niche_fruit_disperser", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "wood_plume_peafowl",
     "evolution": {
       "level": 24,
@@ -221,7 +221,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_fruit_disperser", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "wood_canopy_regent",
     "evolution": {
       "level": 40,
@@ -277,7 +277,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "hold",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_fruit_disperser", "weight": 3}, {"niche": "niche_edge_browser", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -324,7 +324,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_detritivore", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "water_skiff_eel",
     "evolution": {
       "level": 22,
@@ -380,7 +380,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "temperament": "normal",
+    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_detritivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "water_catamaran_serpent",
     "evolution": {
       "level": 38,
@@ -436,7 +436,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -484,7 +484,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_opportunistic_omnivore", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 2}],
     "evolves_to": "fire_mane_stalker",
     "evolution": {
       "level": 26,
@@ -540,7 +540,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": "fire_pyre_monarch",
     "evolution": {
       "level": 44,
@@ -596,7 +596,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "apex",
+    "niches": [{"niche": "niche_apex_predator", "weight": 4}, {"niche": "niche_ambient_energy_feeder", "weight": 1}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -643,7 +643,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_detritivore", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "earth_gilded_warden",
     "evolution": {
       "level": 30,
@@ -699,7 +699,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "temperament": "normal",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "earth_auric_sovereign",
     "evolution": {
       "level": 50,
@@ -755,7 +755,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -802,7 +802,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_ground_granivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "ice_rime_strider",
     "evolution": {
       "level": 25,
@@ -858,7 +858,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ground_grazer", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": "ice_tundra_dreadnought",
     "evolution": {
       "level": 43,
@@ -914,7 +914,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "fierce",
+    "niches": [{"niche": "niche_apex_predator", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -962,7 +962,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_nectar_visitor", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "wind_flute_cruiser",
     "evolution": {
       "level": 20,
@@ -1018,7 +1018,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 3}, {"niche": "niche_nectar_visitor", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "wind_monsoon_galeon",
     "evolution": {
       "level": 35,
@@ -1074,7 +1074,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "normal",
+    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {

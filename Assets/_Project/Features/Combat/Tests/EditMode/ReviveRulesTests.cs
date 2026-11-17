@@ -51,7 +51,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Adult, CreatureSizeClass.M, AiStyle.Charge, Temperament.Fierce, null, 0,
+            TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Adult, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -80,7 +80,7 @@ namespace Cosmimera.Combat.Tests
             var enc = new Encounter(_planet, _balance, new FlatSurface(), 1UL);
             var up = new float3(0f, 1f, 0f);
             EncounterUnit mine = enc.AddCreature(EncounterSide.Player, MakeCreature("mine"), null, up, 10);
-            EncounterUnit wild = enc.AddCreature(EncounterSide.Wild, MakeCreature("wild"), null, up, 10);
+            EncounterUnit wild = enc.AddWildT(MakeCreature("wild"), null, up, 10);
 
             Assert.That(enc.TryRevive(mine.Id, ReviveSource.ConsumableItem, PlanetSize.Moon, false, 1000),
                 Is.EqualTo(ReviveResult.NotFainted));

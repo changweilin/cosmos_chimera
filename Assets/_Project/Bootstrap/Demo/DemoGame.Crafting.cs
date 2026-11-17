@@ -28,11 +28,17 @@ namespace Cosmimera.Bootstrap.Demo
             DrawWearerSelector(ui);
             GUILayout.Space(8f);
 
-            string weaponId = FindEquippedItem(_equipmentOwner, "weapon");
-            string armorId = FindEquippedItem(_equipmentOwner, "armor");
-            string accessoryId = FindEquippedItem(_equipmentOwner, "accessory");
+            IReadOnlyCollection<GripMode> grips = WearerGrips(_equipmentOwner);
+            if (_equipmentOwner != 0)
+            {
+                var names = new List<string>();
+                foreach (GripMode mode in grips) names.Add(_copy.Ui("ui.craft.grip." + mode));
+                ui.Label(_copy.Ui("ui.craft.grips").Replace("{grips}", string.Join(" / ", names)));
+            }
 
-            UpdatePaperdollPreview(weaponId, armorId, accessoryId);
+            // Appearance assets are unchanged by D0-U3, so the preview keeps its three-piece inputs.
+            UpdatePaperdollPreview(FindEquippedItem(_equipmentOwner, EquipmentSlots.MainHand),
+                FindEquippedItem(_equipmentOwner, EquipmentSlots.Upper), FindEquippedItem(_equipmentOwner, EquipmentSlots.Accessory));
 
             GUILayout.BeginHorizontal();
 
@@ -41,9 +47,9 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.BeginHorizontal();
 
             GUILayout.BeginVertical(GUILayout.Width(148f));
-            DrawPaperdollSlot(ui, "weapon", weaponId);
-            GUILayout.Space(8f);
-            DrawPaperdollSlot(ui, "accessory", accessoryId);
+            DrawPaperdollSlot(ui, EquipmentSlots.MainHand);
+            DrawPaperdollSlot(ui, EquipmentSlots.OffHand);
+            DrawPaperdollSlot(ui, EquipmentSlots.Accessory);
             GUILayout.EndVertical();
 
             GUILayout.BeginVertical(GUILayout.Width(196f));
@@ -51,9 +57,10 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
 
             GUILayout.BeginVertical(GUILayout.Width(148f));
-            DrawPaperdollSlot(ui, "armor", armorId);
+            DrawPaperdollSlot(ui, EquipmentSlots.Upper);
+            DrawPaperdollSlot(ui, EquipmentSlots.Lower);
             GUILayout.Space(8f);
-            DrawWearerBonusSummary(ui);
+            DrawWearerBonusSummary(ui, grips);
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
@@ -74,13 +81,18 @@ namespace Cosmimera.Bootstrap.Demo
 
                 anyAvailable = true;
                 GUILayout.BeginVertical(GUI.skin.box);
-                ui.Label("[" + _copy.Ui("ui.craft.slot." + item.Equipment.Slot) + "] " + _copy.Ui(item.Id)
+                ui.Label("[" + _copy.Ui("ui.craft.kind." + item.Equipment.Kind) + "] " + _copy.Ui(item.Id)
                     + " ×" + _save.CraftStock.Count(item.Id));
                 CraftJournal.DrawGearStats(ui, _copy, item);
-                if (ui.Button(_copy.Ui("ui.craft.equip")))
+                foreach (string slot in EquipmentSlots.All)
                 {
+                    if (!item.Equipment.Fits(slot) || !ui.Button(_copy.Ui("ui.craft.equip_to").Replace("{slot}", _copy.Ui("ui.craft.slot." + slot))))
+                    {
+                        continue;
+                    }
+
                     var candidate = _save.Clone();
-                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, CraftCatalog, candidate.CraftStock)
+                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, slot, grips, CraftCatalog, candidate.CraftStock)
                         ? (CommitLobby(candidate) ? string.Empty : _partyMsg) : _copy.Ui("ui.craft.equip_failed");
                     GUIUtility.ExitGUI();
                 }
@@ -168,8 +180,9 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Label(_copy.Ui("ui.paperdoll.drag_hint"));
         }
 
-        private void DrawPaperdollSlot(AdventurePanel ui, string slot, string equippedId)
+        private void DrawPaperdollSlot(AdventurePanel ui, string slot)
         {
+            string equippedId = FindEquippedItem(_equipmentOwner, slot);
             GUILayout.BeginVertical(GUI.skin.box);
             ui.Label(_copy.Ui("ui.craft.slot." + slot));
             if (string.IsNullOrEmpty(equippedId))
@@ -194,10 +207,16 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
         }
 
-        private void DrawWearerBonusSummary(AdventurePanel ui)
+        private void DrawWearerBonusSummary(AdventurePanel ui, IReadOnlyCollection<GripMode> grips)
         {
-            EquipmentModifiers mods = EquipmentRules.Collect(_equipmentOwner, _save.Equipment.Snapshot(), CraftCatalog);
+            EquipmentModifiers mods = EquipmentRules.Collect(_equipmentOwner, _save.Equipment.Snapshot(), CraftCatalog, grips,
+                _combatBalance.Grips);
             GUILayout.BeginVertical(GUI.skin.box);
+            if (!mods.HandsValid)
+            {
+                ui.Label(_copy.Ui("ui.craft.hands_invalid"));
+            }
+
             if (_equipmentOwner == 0)
             {
                 ui.Label(_copy.Ui("ui.craft.player_stats")
@@ -224,6 +243,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
             GUILayout.EndVertical();
         }
+
+        private IReadOnlyCollection<GripMode> WearerGrips(int owner) =>
+            owner == 0 ? EquipmentRules.PlayerGrips : CraftCatalog.GripsOf(_save.Get(owner).SpeciesId);
 
         private string FindEquippedItem(int owner, string slot)
         {

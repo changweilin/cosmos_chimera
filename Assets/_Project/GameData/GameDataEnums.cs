@@ -68,17 +68,25 @@ namespace Cosmimera.GameData
     }
 
     /// <summary>
-    /// Species temperament: sets a wild creature's territory radius. REQ: docs/design/combat.md#野生領域 (D0-E2, closed
-    /// enum; kinds provisional, Q-C35).
+    /// Individual habit (習性): sets a wild creature's territory radius. Drawn per individual from its niche, never fixed
+    /// per species. REQ: docs/design/creature-ecology.md#習性, combat.md#野生領域 (closed enum).
     /// </summary>
     /// <remarks>
-    /// Pre: imported from timid|cautious|normal|territorial|fierce|apex. Post: stable serialized values; Normal is 0 so an asset imported before
-    /// the field existed reads as the middle temperament rather than as one that never fights.
+    /// Pre: imported from avoidant|vigilant|tolerant|territorial|aggressive|dominant. Post: stable serialized values
+    /// (kept from the former Temperament enum: Normal→Tolerant, Timid→Avoidant, Fierce→Aggressive, Cautious→Vigilant,
+    /// Apex→Dominant), so assets and saves written before the rename keep their meaning.
     /// Side effects: none.
     /// </remarks>
-    public enum Temperament
+    public enum Habit
     {
-        Normal = 0, Timid = 1, Fierce = 2, Cautious = 3, Territorial = 4, Apex = 5,
+        Tolerant = 0, Avoidant = 1, Aggressive = 2, Vigilant = 3, Territorial = 4, Dominant = 5,
+    }
+
+    /// <summary>Idle wander pattern of a niche. REQ: docs/design/creature-ecology.md#四種遊蕩模式 (closed enum).</summary>
+    /// <remarks>Pre: imported from shuttle|loop|bounded_random|unbounded_random. Post: stable values. Side effects: none.</remarks>
+    public enum WanderMode
+    {
+        Shuttle = 0, Loop = 1, BoundedRandom = 2, UnboundedRandom = 3,
     }
 
     /// <summary>Relation edge kind. REQ: docs/design/creatures.md#關係表 (closed enum).</summary>

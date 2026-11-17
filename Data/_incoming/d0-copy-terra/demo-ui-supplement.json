@@ -252,8 +252,8 @@
     "en": "Close"
   },
   "ui.interact.observe_detail": {
-    "zh-TW": "{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}",
-    "en": "{species} | {stage} | {element} | Temperament: {temperament} | LV{level}"
+    "zh-TW": "{species}｜{stage}｜{element}｜習性：{habit}｜棲位：{niche}｜LV{level}",
+    "en": "{species} | {stage} | {element} | Habit: {habit} | Niche: {niche} | LV{level}"
   },
   "ui.interact.pet_reaction": {
     "zh-TW": "{target} 安靜地蹭了蹭你的手。",
@@ -275,29 +275,85 @@
     "zh-TW": "超載",
     "en": "Overload"
   },
-  "ui.temperament.timid": {
-    "zh-TW": "膽怯",
-    "en": "Timid"
+  "ui.habit.avoidant": {
+    "zh-TW": "迴避",
+    "en": "Avoidant"
   },
-  "ui.temperament.cautious": {
-    "zh-TW": "警惕",
-    "en": "Cautious"
+  "ui.habit.vigilant": {
+    "zh-TW": "警戒",
+    "en": "Vigilant"
   },
-  "ui.temperament.normal": {
-    "zh-TW": "沉穩",
-    "en": "Steady"
+  "ui.habit.tolerant": {
+    "zh-TW": "耐受",
+    "en": "Tolerant"
   },
-  "ui.temperament.territorial": {
-    "zh-TW": "領地意識",
+  "ui.habit.territorial": {
+    "zh-TW": "護域",
     "en": "Territorial"
   },
-  "ui.temperament.fierce": {
-    "zh-TW": "凶悍",
-    "en": "Fierce"
+  "ui.habit.aggressive": {
+    "zh-TW": "攻擊",
+    "en": "Aggressive"
   },
-  "ui.temperament.apex": {
-    "zh-TW": "霸主",
-    "en": "Apex"
+  "ui.habit.dominant": {
+    "zh-TW": "優勢",
+    "en": "Dominant"
+  },
+  "ui.niche.niche_ground_grazer": {
+    "zh-TW": "地表食草",
+    "en": "Ground grazer"
+  },
+  "ui.niche.niche_edge_browser": {
+    "zh-TW": "林緣食葉",
+    "en": "Edge browser"
+  },
+  "ui.niche.niche_fruit_disperser": {
+    "zh-TW": "食果傳種",
+    "en": "Fruit disperser"
+  },
+  "ui.niche.niche_nectar_visitor": {
+    "zh-TW": "訪花食蜜",
+    "en": "Nectar visitor"
+  },
+  "ui.niche.niche_ground_granivore": {
+    "zh-TW": "地表食籽",
+    "en": "Ground granivore"
+  },
+  "ui.niche.niche_understory_insectivore": {
+    "zh-TW": "林下食蟲",
+    "en": "Understory insectivore"
+  },
+  "ui.niche.niche_detritivore": {
+    "zh-TW": "腐屑食者",
+    "en": "Detritivore"
+  },
+  "ui.niche.niche_carrion_scavenger": {
+    "zh-TW": "食腐",
+    "en": "Carrion scavenger"
+  },
+  "ui.niche.niche_ambush_predator": {
+    "zh-TW": "伏擊掠食",
+    "en": "Ambush predator"
+  },
+  "ui.niche.niche_patrol_hunter": {
+    "zh-TW": "巡獵掠食",
+    "en": "Patrol hunter"
+  },
+  "ui.niche.niche_apex_predator": {
+    "zh-TW": "頂級掠食",
+    "en": "Apex predator"
+  },
+  "ui.niche.niche_opportunistic_omnivore": {
+    "zh-TW": "機會型雜食",
+    "en": "Opportunistic omnivore"
+  },
+  "ui.niche.niche_mineral_feeder": {
+    "zh-TW": "食礦",
+    "en": "Mineral feeder"
+  },
+  "ui.niche.niche_ambient_energy_feeder": {
+    "zh-TW": "環境能量採食",
+    "en": "Ambient energy feeder"
   },
   "ui.star_select.boss_stage": {
     "zh-TW": "BOSS：{stage}",

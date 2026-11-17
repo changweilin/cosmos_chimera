@@ -300,6 +300,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private PlanetRig _rig;
         private RunPlan _plan;
+        private System.Func<float3, string> _habitatAt;
         private RunLayout _layout;
         private DungeonLayout _dungeon;
         private HeightSurface _surface;
@@ -569,6 +570,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
                 setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
+            // REQ: creature-ecology.md — niche, habit and wander means per spawn; same-niche species keep their areas apart.
+            _habitatAt = TemplatePlanner.HabitatAt(templates, setup.PlanetType.Id);
+            _plan = RunEcology.Apply(_plan, wildPool, config.Radius, _habitatAt, isLand);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
             PlanetWalls walls = null;
             if (setup.Dungeon)
@@ -782,7 +786,8 @@ namespace Cosmimera.Bootstrap.Demo
             }
             // REQ: combat.md#野生領域 (Q-C33) — wild creatures may target the character; 0 HP loses the run.
             ConfigureCrafting();
-            _playerEquipment = EquipmentRules.Collect(0, setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+            _playerEquipment = EquipmentRules.Collect(0, setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog,
+                EquipmentRules.PlayerGrips, balance.Grips);
             _vitals = new PlayerVitals(EquipmentRules.ApplyPlayer(balance.Player, _playerEquipment));
             _encounter.AttachPlayer(_vitals);
             _captureRng = new Pcg32(setup.Seed, 'K');
@@ -795,8 +800,8 @@ namespace Cosmimera.Bootstrap.Demo
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
                 EncounterUnit u = spawn.Role == SpawnRole.Boss
-                    ? _encounter.AddBoss(def, null, spawn.Direction, level)
-                    : _encounter.AddCreature(EncounterSide.Wild, def, null, spawn.Direction, level);
+                    ? _encounter.AddBoss(def, null, spawn.Direction, level, spawn.Individual)
+                    : _encounter.AddWild(def, null, spawn.Direction, level, spawn.Individual);
                 _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
@@ -814,7 +819,10 @@ namespace Cosmimera.Bootstrap.Demo
                     CreatureDef guardDef = wildPool[r % wildPool.Count];
                     int guardLevel = _progression.WildLevel(D0Difficulty, _plan.Regions[r].Tier, SpawnRole.Elite);
                     float3 guardDir = BesidePlayer(_plan.Regions[r].Center, r);
-                    EncounterUnit guard = _encounter.AddCreature(EncounterSide.Wild, guardDef, null, guardDir, guardLevel);
+                    // Keys after the plan's spawn indices, so a guard's draws never coincide with a spawn's stream.
+                    WildIndividual guardEco = WildIndividual.Draw(guardDef, _habitatAt(guardDir),
+                        WildIndividual.KeyFor(setup.Seed, (ulong)(_plan.Spawns.Count + r)));
+                    EncounterUnit guard = _encounter.AddWild(guardDef, null, guardDir, guardLevel, guardEco);
                     _wild[guard.Id] = new WildInfo { Spawn = -1, TreasureRegion = r, Level = guardLevel };
                     CreateView(guard, SpawnRole.Elite);
                 }
@@ -1411,7 +1419,8 @@ namespace Cosmimera.Bootstrap.Demo
                 .Replace("{species}", _copy.Name(u.Def.Id))
                 .Replace("{stage}", _copy.Ui("ui.stage." + u.Def.Stage.ToString().ToLowerInvariant()))
                 .Replace("{element}", string.Join("/", elements))
-                .Replace("{temperament}", _copy.Ui("ui.temperament." + u.Def.Temperament.ToString().ToLowerInvariant()))
+                .Replace("{habit}", _copy.Ui("ui.habit." + u.Individual.Habit.ToString().ToLowerInvariant()))
+                .Replace("{niche}", _copy.Ui("ui.niche." + u.Individual.Niche.Id))
                 .Replace("{level}", u.Level.ToString());
         }
 

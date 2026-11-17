@@ -46,8 +46,9 @@ def check(creatures: list[dict], bands: dict) -> list[str]:
             errs.append(f"{cid}: stats total {sum(stats)} != {band['total_stats']}")
         if any(not band["min_stat"] <= s <= band["max_stat"] for s in stats):
             errs.append(f"{cid}: stat outside {band['min_stat']}..{band['max_stat']}")
-        if c["temperament"] == "apex":
-            errs.append(f"{cid}: apex is reserved (only the D0 fire adult)")
+        # REQ: creature-ecology.md#生成順序 — habits are drawn per individual from niches; coverage is validate-data's job.
+        if not c.get("niches"):
+            errs.append(f"{cid}: needs at least one candidate niche")
         mastery = c["mastery"]
         element = max(mastery, key=mastery.get)
         if mastery[element] != main:
@@ -73,16 +74,10 @@ def check(creatures: list[dict], bands: dict) -> list[str]:
                 errs.append(f"{st[a]['id']}: evolves_to {st[a]['evolves_to']} != {st[b]['id']}")
             if any(st[b]["stats"][k] < st[a]["stats"][k] for k in STAT_KEYS):
                 errs.append(f"{st[b]['id']}: a stat is lower than {st[a]['id']}")
-            if st[b]["temperament"] != st[a]["temperament"] and _rank(st[b]) < _rank(st[a]):
-                errs.append(f"{st[b]['id']}: temperament lowered vs {st[a]['id']}")
         weak = {tuple(k for k, v in s["resist"].items() if v < 0) for s in st.values()}
         if len(weak) != 1:
             errs.append(f"{line}: weakness element changes between stages")
     return errs
-
-
-def _rank(c: dict) -> int:
-    return ["timid", "cautious", "normal", "territorial", "fierce", "apex"].index(c["temperament"])
 
 
 def main(argv: list[str] | None = None) -> int:

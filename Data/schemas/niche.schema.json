@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://cosmimera.local/schemas/ecological-niche.schema.json",
-  "title": "Ecological niche proposal catalog (P3-31; not imported yet)",
-  "description": "REQ: docs/design/creature-ecology.md. Draft numeric proposals stay under Data/_incoming until reviewed. Cross-field ordering and ID uniqueness require semantic validation.",
+  "$id": "https://cosmimera.local/schemas/niche.schema.json",
+  "title": "Ecological niche catalog (P3-31)",
+  "description": "REQ: docs/design/creature-ecology.md. Cross-field ordering (min <= mean <= max), landform ids and ID uniqueness are checked semantically by tools/validate-data.",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/niche" },
@@ -22,18 +22,20 @@
     "niche": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name_zh", "resource_zh", "habitat_kinds", "temperament_weights", "wander"],
+      "required": ["id", "name_zh", "resource_zh", "habitat_kinds", "habit_weights", "wander"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "name_zh": { "type": "string", "minLength": 1 },
         "resource_zh": { "type": "string", "minLength": 1 },
         "habitat_kinds": {
+          "description": "Landform kinds (LandformSynth.Kinds) where an individual may take this niche.",
           "type": "array", "minItems": 1, "uniqueItems": true,
           "items": { "$ref": "common.schema.json#/$defs/id" }
         },
-        "temperament_weights": {
+        "habit_weights": {
+          "description": "Keys are the allowed habits (creature-ecology.md#習性); values positive integer relative weights.",
           "type": "object", "minProperties": 1,
-          "propertyNames": { "enum": ["timid", "cautious", "normal", "territorial", "fierce", "apex"] },
+          "propertyNames": { "enum": ["avoidant", "vigilant", "tolerant", "territorial", "aggressive", "dominant"] },
           "additionalProperties": { "$ref": "common.schema.json#/$defs/positiveInt" }
         },
         "wander": {
@@ -42,14 +44,18 @@
           "properties": {
             "mode": { "enum": ["shuttle", "loop", "bounded_random", "unbounded_random"] },
             "radius_mm": { "oneOf": [{ "$ref": "common.schema.json#/$defs/positiveInt" }, { "type": "null" }] },
+            "exclusion_radius_mm": {
+              "description": "unbounded_random only: radius of the spawn area other species of this niche may not overlap (creature-ecology.md#同棲位不同種不共用活動區).",
+              "$ref": "common.schema.json#/$defs/positiveInt"
+            },
             "speed_permille": { "$ref": "#/$defs/distribution" },
             "move_ms": { "$ref": "#/$defs/distribution" },
             "pause_ms": { "$ref": "#/$defs/distribution" }
           },
           "allOf": [{
             "if": { "properties": { "mode": { "const": "unbounded_random" } }, "required": ["mode"] },
-            "then": { "properties": { "radius_mm": { "type": "null" } } },
-            "else": { "properties": { "radius_mm": { "$ref": "common.schema.json#/$defs/positiveInt" } } }
+            "then": { "properties": { "radius_mm": { "type": "null" } }, "required": ["exclusion_radius_mm"] },
+            "else": { "properties": { "radius_mm": { "$ref": "common.schema.json#/$defs/positiveInt" } }, "not": { "required": ["exclusion_radius_mm"] } }
           }]
         }
       }

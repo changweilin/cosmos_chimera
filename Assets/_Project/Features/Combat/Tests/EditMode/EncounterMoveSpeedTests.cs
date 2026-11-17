@@ -46,7 +46,7 @@ namespace Cosmimera.Combat.Tests
             _created.Clear();
         }
 
-        private CreatureDef Creature(Temperament temperament)
+        private CreatureDef Creature(Habit habit)
         {
             var m = ScriptableObject.CreateInstance<MoveDef>();
             _created.Add(m);
@@ -56,7 +56,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("ms");
-            c.Set("line_ms", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_ms", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -76,7 +76,7 @@ namespace Cosmimera.Combat.Tests
         private float[] ChargeSteps(int percent, int durationMs, int ticks)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature(Temperament.Apex), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature(Habit.Dominant), null, AtMeters(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
             if (percent != 0)
             {
@@ -115,7 +115,7 @@ namespace Cosmimera.Combat.Tests
             float MaxStep(int percent)
             {
                 var e = new Encounter(_planet, _balance, new FlatSurface(), 21);
-                EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature(Temperament.Timid), null, AtMeters(0f),
+                EncounterUnit wild = e.AddWildT(Creature(Habit.Avoidant), null, AtMeters(0f),
                     10);
                 if (percent != 0)
                 {

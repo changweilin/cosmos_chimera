@@ -79,7 +79,7 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("overload_of")] public string OverloadOf;
         [JsonProperty("size_class", Required = Required.Always)] public string SizeClass;
         [JsonProperty("ai_style", Required = Required.Always)] public string AiStyle;
-        [JsonProperty("temperament", Required = Required.Always)] public string Temperament;
+        [JsonProperty("niches", Required = Required.Always)] public List<NicheCandidateDto> Niches;
         [JsonProperty("evolves_to", Required = Required.AllowNull)] public string EvolvesTo;
         [JsonProperty("evolution", Required = Required.AllowNull)] public EvolutionDto Evolution;
         [JsonProperty("resist", Required = Required.Always)] public Dictionary<string, int> Resist;
@@ -89,6 +89,42 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("trait", Required = Required.Always)] public string Trait;
         [JsonProperty("field_utility", Required = Required.DisallowNull)] public string FieldUtility;
         [JsonProperty("concept", Required = Required.Always)] public JObject Concept;
+    }
+
+    internal sealed class NicheCandidateDto
+    {
+        [JsonProperty("niche", Required = Required.Always)] public string Niche;
+        [JsonProperty("weight", Required = Required.Always)] public int Weight;
+    }
+
+    internal sealed class DistributionDto
+    {
+        [JsonProperty("mean", Required = Required.Always)] public int Mean;
+        [JsonProperty("individual_sd", Required = Required.Always)] public int IndividualSd;
+        [JsonProperty("action_sd", Required = Required.Always)] public int ActionSd;
+        [JsonProperty("min", Required = Required.Always)] public int Min;
+        [JsonProperty("max", Required = Required.Always)] public int Max;
+    }
+
+    internal sealed class WanderDto
+    {
+        [JsonProperty("mode", Required = Required.Always)] public string Mode;
+        [JsonProperty("radius_mm", Required = Required.AllowNull)] public int? RadiusMm;
+        [JsonProperty("exclusion_radius_mm")] public int? ExclusionRadiusMm;
+        [JsonProperty("speed_permille", Required = Required.Always)] public DistributionDto SpeedPermille;
+        [JsonProperty("move_ms", Required = Required.Always)] public DistributionDto MoveMs;
+        [JsonProperty("pause_ms", Required = Required.Always)] public DistributionDto PauseMs;
+    }
+
+    internal sealed class NicheDto
+    {
+        [JsonProperty("id", Required = Required.Always)] public string Id;
+        [JsonProperty("name_zh", Required = Required.Always)] public string NameZh;
+        [JsonProperty("resource_zh", Required = Required.Always)] public string ResourceZh;
+        [JsonProperty("habitat_kinds", Required = Required.Always)] public List<string> HabitatKinds;
+        // Key order is not meaningful; Write sorts by habit value so asset YAML does not churn.
+        [JsonProperty("habit_weights", Required = Required.Always)] public Dictionary<string, int> HabitWeights;
+        [JsonProperty("wander", Required = Required.Always)] public WanderDto Wander;
     }
 
     internal sealed class EdgeDto

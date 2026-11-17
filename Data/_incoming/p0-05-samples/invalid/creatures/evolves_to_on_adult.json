@@ -34,7 +34,7 @@
       "archetype": "solar guardian"
     },
     "ai_style": "keep_distance",
-    "temperament": "fierce",
+    "niches": [{"niche": "niche_sample_generalist", "weight": 1}],
     "size_class": "L"
   }
 ]

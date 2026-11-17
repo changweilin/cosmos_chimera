@@ -27,13 +27,15 @@ namespace Cosmimera.Save
     /// Version 6 (P4-05): root <c>eggs</c> — eggs incubating in the hatchery; formats 1–5 load with none.
     /// Version 7: root <c>craft_stock</c> stores gathered materials and crafted items; formats 1–6 load with none.
     /// Version 8: creature entries add <c>visual_vessel</c> (appearance preserved on late-game vessel conversion); formats 1–7 default <c>VisualVessel</c> to <c>Vessel</c>.
+    /// Version 9 (D0-U3): equipment slots become main_hand/off_hand/upper/lower/accessory; formats 7–8 migrate
+    /// weapon → main_hand, armor → upper, accessory → accessory (crafting.md#穿戴與數值).
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 8;
+        public const int FormatVersion = 9;
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -567,9 +569,10 @@ namespace Cosmimera.Save
                 {
                     Check(item != null && item.owner >= 0 &&
                         (item.owner == 0 || save._owned.Exists(o => o.InstanceId == item.owner)), "unknown equipment owner");
-                    Check(item.slot == "weapon" || item.slot == "armor" || item.slot == "accessory", "invalid equipment slot");
-                    Check(CraftInventory.ValidId(item.item) && slots.Add(item.owner + ":" + item.slot), "invalid or duplicate equipment entry");
-                    entries.Add(new EquippedItem(item.owner, item.slot, item.item));
+                    string slot = dto.version >= 9 ? item.slot : EquipmentSlots.MigrateLegacy(item.slot);
+                    Check(EquipmentSlots.IsValid(slot), "invalid equipment slot");
+                    Check(CraftInventory.ValidId(item.item) && slots.Add(item.owner + ":" + slot), "invalid or duplicate equipment entry");
+                    entries.Add(new EquippedItem(item.owner, slot, item.item));
                 }
                 save._equipment.Restore(entries);
             }

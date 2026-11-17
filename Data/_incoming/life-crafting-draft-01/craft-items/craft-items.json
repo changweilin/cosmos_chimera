@@ -296,7 +296,7 @@
     "quantity": 1,
     "season": "all",
     "equipment": {
-      "slot": "armor",
+      "kind": "upper",
       "target": "both",
       "player": {
         "max_hp_percent": 0,
@@ -321,7 +321,7 @@
     "quantity": 1,
     "season": "all",
     "equipment": {
-      "slot": "armor",
+      "kind": "upper",
       "target": "both",
       "player": {
         "max_hp_percent": 10,
@@ -347,22 +347,20 @@
     "quantity": 1,
     "season": "all",
     "equipment": {
-      "slot": "weapon",
+      "kind": "one_handed",
       "target": "creature",
       "player": {
         "max_hp_percent": 0,
         "move_speed_percent": 0,
         "roll_cooldown_percent": 0
       },
-      "creature_effects": [
-        {
-          "type": "mastery_mod",
-          "params": {
-            "delta": 15,
-            "element": "metal"
-          }
-        }
-      ]
+      "creature_effects": [],
+      "weapon": {
+        "element": "metal",
+        "element_mastery": 15,
+        "power_permille": 1000,
+        "speed_permille": 1000
+      }
     }
   },
   {
@@ -373,7 +371,7 @@
     "quantity": 1,
     "season": "all",
     "equipment": {
-      "slot": "armor",
+      "kind": "upper",
       "target": "both",
       "player": {
         "max_hp_percent": 15,
@@ -462,7 +460,7 @@
     "quantity": 1,
     "season": "all",
     "equipment": {
-      "slot": "accessory",
+      "kind": "accessory",
       "target": "both",
       "player": {
         "max_hp_percent": 0,

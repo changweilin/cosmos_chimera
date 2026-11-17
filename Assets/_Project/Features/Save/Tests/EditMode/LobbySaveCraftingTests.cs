@@ -18,7 +18,7 @@ namespace Cosmimera.Save.Tests
         {
             var save = new LobbySave(); save.Add("a", VesselKind.TalismanCard, 0);
             save.CraftStock.TryExchange(Array.Empty<CraftStack>(), new[] { new CraftStack("raw_hemp", 5), new CraftStack("retired_gem", int.MaxValue) });
-            save.Equipment.Restore(new[] { new EquippedItem(1, "armor", "retired_guard") });
+            save.Equipment.Restore(new[] { new EquippedItem(1, "upper", "retired_guard") });
             LobbySave loaded = Load(save.ToJson());
             Assert.That(loaded.ToJson(), Is.EqualTo(save.ToJson()));
             LobbySave clone = loaded.Clone();
@@ -48,10 +48,30 @@ namespace Cosmimera.Save.Tests
             Assert.Throws<InvalidDataException>(() => Load("{\"version\":7,\"next_instance_id\":1," + fields + "}"));
         }
 
+        [TestCase(7)] [TestCase(8)]
+        public void Pre_d0u3_slots_migrate_to_main_hand_upper_and_accessory(int version)
+        {
+            LobbySave save = Load("{\"version\":" + version + ",\"next_instance_id\":1,\"equipment\":[" +
+                "{\"owner\":0,\"slot\":\"weapon\",\"item\":\"w\"},{\"owner\":0,\"slot\":\"armor\",\"item\":\"a\"}," +
+                "{\"owner\":0,\"slot\":\"accessory\",\"item\":\"c\"}]}");
+            var slots = new System.Collections.Generic.Dictionary<string, string>();
+            foreach (EquippedItem e in save.Equipment.Snapshot()) slots.Add(e.Slot, e.Item);
+            Assert.That(slots, Is.EquivalentTo(new System.Collections.Generic.Dictionary<string, string>
+                { { "main_hand", "w" }, { "upper", "a" }, { "accessory", "c" } }));
+            Assert.That(save.ToJson(), Does.Contain("\"main_hand\"").And.Not.Contain("\"weapon\""));
+        }
+
+        [TestCase("weapon")] [TestCase("armor")]
+        public void Current_format_rejects_legacy_slot_names(string slot)
+        {
+            Assert.Throws<InvalidDataException>(() => Load("{\"version\":" + LobbySave.FormatVersion +
+                ",\"next_instance_id\":1,\"equipment\":[{\"owner\":0,\"slot\":\"" + slot + "\",\"item\":\"a\"}]}"));
+        }
+
         [Test]
         public void Writing_an_unknown_equipment_owner_is_refused()
         {
-            var save = new LobbySave(); save.Equipment.Restore(new[] { new EquippedItem(1, "armor", "a") });
+            var save = new LobbySave(); save.Equipment.Restore(new[] { new EquippedItem(1, "upper", "a") });
             Assert.Throws<InvalidOperationException>(() => save.ToJson());
         }
     }

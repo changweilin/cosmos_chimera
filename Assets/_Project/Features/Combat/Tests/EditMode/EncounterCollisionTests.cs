@@ -60,7 +60,7 @@ namespace Cosmimera.Combat.Tests
             _created.Add(c);
             c.SetId(id);
             // Timid: never engages on its own, so the only motion besides separation is wandering (paused at spawn).
-            c.Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge, Temperament.Timid, null, 0,
+            TestWild.WithHabit(c, Habit.Avoidant).Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -94,11 +94,11 @@ namespace Cosmimera.Combat.Tests
             string[] keys = { "xs", "s", "m", "l", "xl" };
             for (int i = 0; i < sizes.Length; i++)
             {
-                EncounterUnit u = e.AddCreature(EncounterSide.Wild, Creature("c" + i, sizes[i]), null, AtMeters(30f * i), 10);
+                EncounterUnit u = e.AddWildT(Creature("c" + i, sizes[i]), null, AtMeters(30f * i), 10);
                 Assert.That(u.CollisionRadiusM, Is.EqualTo(BodyM(keys[i])).Within(1e-5f), keys[i]);
             }
 
-            EncounterUnit boss = e.AddBoss(Creature("boss", CreatureSizeClass.L), null, AtMeters(200f), 10);
+            EncounterUnit boss = e.AddBossT(Creature("boss", CreatureSizeClass.L), null, AtMeters(200f), 10);
             Assert.That(boss.CollisionRadiusM,
                 Is.EqualTo(BodyM("l") * Encounter.BossSizePermille / 1000f).Within(1e-5f));
         }
@@ -131,8 +131,8 @@ namespace Cosmimera.Combat.Tests
         public void Overlapping_pair_separates_to_touching_in_one_tick()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit a = e.AddCreature(EncounterSide.Wild, Creature("a", CreatureSizeClass.M), null, AtMeters(0f), 10);
-            EncounterUnit b = e.AddCreature(EncounterSide.Wild, Creature("b", CreatureSizeClass.M), null, AtMeters(0.3f), 10);
+            EncounterUnit a = e.AddWildT(Creature("a", CreatureSizeClass.M), null, AtMeters(0f), 10);
+            EncounterUnit b = e.AddWildT(Creature("b", CreatureSizeClass.M), null, AtMeters(0.3f), 10);
             float3 midBefore = math.normalize(_planet.ToDirection(a.Position) + _planet.ToDirection(b.Position));
 
             e.Tick(Dt, Dt, FarPlayer, Free, CombatAi.NoTarget);
@@ -149,8 +149,8 @@ namespace Cosmimera.Combat.Tests
         public void Units_stay_on_the_ground_with_tangent_forward_after_a_push()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit a = e.AddCreature(EncounterSide.Wild, Creature("a", CreatureSizeClass.L), null, AtMeters(0f), 10);
-            EncounterUnit b = e.AddCreature(EncounterSide.Wild, Creature("b", CreatureSizeClass.S), null, AtMeters(0.5f), 10);
+            EncounterUnit a = e.AddWildT(Creature("a", CreatureSizeClass.L), null, AtMeters(0f), 10);
+            EncounterUnit b = e.AddWildT(Creature("b", CreatureSizeClass.S), null, AtMeters(0.5f), 10);
 
             e.Tick(Dt, Dt, FarPlayer, Free, CombatAi.NoTarget);
 
@@ -166,8 +166,8 @@ namespace Cosmimera.Combat.Tests
         public void Separated_pair_is_untouched()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit a = e.AddCreature(EncounterSide.Wild, Creature("a", CreatureSizeClass.M), null, AtMeters(0f), 10);
-            EncounterUnit b = e.AddCreature(EncounterSide.Wild, Creature("b", CreatureSizeClass.M), null, AtMeters(1.5f), 10);
+            EncounterUnit a = e.AddWildT(Creature("a", CreatureSizeClass.M), null, AtMeters(0f), 10);
+            EncounterUnit b = e.AddWildT(Creature("b", CreatureSizeClass.M), null, AtMeters(1.5f), 10);
             float3 pa = a.Position;
             float3 pb = b.Position;
 
@@ -183,8 +183,8 @@ namespace Cosmimera.Combat.Tests
             float3[] Run()
             {
                 var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-                EncounterUnit a = e.AddCreature(EncounterSide.Wild, Creature("a", CreatureSizeClass.M), null, AtMeters(5f), 10);
-                EncounterUnit b = e.AddCreature(EncounterSide.Wild, Creature("b", CreatureSizeClass.M), null, AtMeters(5f), 10);
+                EncounterUnit a = e.AddWildT(Creature("a", CreatureSizeClass.M), null, AtMeters(5f), 10);
+                EncounterUnit b = e.AddWildT(Creature("b", CreatureSizeClass.M), null, AtMeters(5f), 10);
                 e.Tick(Dt, Dt, FarPlayer, Free, CombatAi.NoTarget);
                 Assert.That(Arc(a.Position, b.Position), Is.EqualTo(a.CollisionRadiusM + b.CollisionRadiusM).Within(ArcTolM));
                 return new[] { a.Position, b.Position };
@@ -217,8 +217,8 @@ namespace Cosmimera.Combat.Tests
                     {
                         float3 dir = k == 0 ? math.normalize(witness) : rng.NextFloat3Direction();
                         var e = new Encounter(planet, _balance, new FlatSurface(), 3);
-                        EncounterUnit a = e.AddCreature(EncounterSide.Wild, ca, null, dir, 10);
-                        EncounterUnit b = e.AddCreature(EncounterSide.Wild, cb, null, dir, 10);
+                        EncounterUnit a = e.AddWildT(ca, null, dir, 10);
+                        EncounterUnit b = e.AddWildT(cb, null, dir, 10);
                         e.Tick(Dt, Dt, planet.ToWorld(-dir, 0f), Free, CombatAi.NoTarget);
                         float3 da = planet.ToDirection(a.Position);
                         float3 db = planet.ToDirection(b.Position);
@@ -239,8 +239,8 @@ namespace Cosmimera.Combat.Tests
         public void Larger_footprint_yields_less()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit big = e.AddCreature(EncounterSide.Wild, Creature("big", CreatureSizeClass.XL), null, AtMeters(0f), 10);
-            EncounterUnit small = e.AddCreature(EncounterSide.Wild, Creature("small", CreatureSizeClass.XS), null,
+            EncounterUnit big = e.AddWildT(Creature("big", CreatureSizeClass.XL), null, AtMeters(0f), 10);
+            EncounterUnit small = e.AddWildT(Creature("small", CreatureSizeClass.XS), null,
                 AtMeters(0.5f), 10);
             float3 bigBefore = big.Position;
             float3 smallBefore = small.Position;
@@ -260,7 +260,7 @@ namespace Cosmimera.Combat.Tests
         public void Character_overlap_is_reported_as_player_push_and_the_unit_yields_its_share()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", CreatureSizeClass.M), null,
+            EncounterUnit wild = e.AddWildT(Creature("w", CreatureSizeClass.M), null,
                 AtMeters(0.3f), 10);
             float3 wildBefore = wild.Position;
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);
@@ -283,7 +283,7 @@ namespace Cosmimera.Combat.Tests
         public void Inactive_units_are_not_bodies()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", CreatureSizeClass.M), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", CreatureSizeClass.M), null, AtMeters(0f), 10);
             // A player-side creature that was never summoned (Fielded == false) overlaps exactly.
             EncounterUnit benched = e.AddCreature(EncounterSide.Player, Creature("p", CreatureSizeClass.M), null,
                 AtMeters(0.1f), 10);
@@ -304,7 +304,7 @@ namespace Cosmimera.Combat.Tests
             var units = new List<EncounterUnit>();
             for (int i = 0; i < 6; i++)
             {
-                units.Add(e.AddCreature(EncounterSide.Wild, Creature("c" + i, CreatureSizeClass.M), null,
+                units.Add(e.AddWildT(Creature("c" + i, CreatureSizeClass.M), null,
                     AtMeters(0.1f * i), 10));
             }
 

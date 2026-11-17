@@ -388,16 +388,38 @@ class CrossFileRules(unittest.TestCase):
         del creatures[0]["ai_style"]
         self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
 
-    def test_temperament_is_required_and_closed(self):
-        # D0-E2: territory radius comes from the species temperament; a missing value must not default silently.
+    def test_niches_are_required_resolved_and_cover_every_landform(self):
+        # P3-31: a spawn whose form has no niche for its landform fails generation, so data must cover every landform.
         creatures = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
-        for value in ("timid", "cautious", "normal", "territorial", "fierce", "apex"):
-            creatures[0]["temperament"] = value
-            self.assertEqual(set(), self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
-        creatures[0]["temperament"] = "shy"
-        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
-        del creatures[0]["temperament"]
-        self.assertIn("schema", self.codes(self._with_valid({"creatures/creatures.json": json.dumps(creatures)})))
+        niches = json.loads((SAMPLES / "valid/niches/niches.json").read_text(encoding="utf-8"))
+        files = lambda: {"creatures/creatures.json": json.dumps(creatures), "niches/niches.json": json.dumps(niches)}
+        self.assertEqual(set(), self.codes(self._with_valid(files())))
+        creatures[0]["niches"] = [{"niche": "niche_missing", "weight": 1}]
+        self.assertIn("dangling_ref", self.codes(self._with_valid(files())))
+        creatures[0]["niches"] = []
+        self.assertIn("niche_candidates", self.codes(self._with_valid(files())))
+        creatures[0]["niches"] = [{"niche": "niche_sample_generalist", "weight": 0}]
+        self.assertIn("schema", self.codes(self._with_valid(files())))
+        creatures[0]["niches"] = [{"niche": "niche_sample_generalist", "weight": 1}]
+        niches[0]["habitat_kinds"] = ["forest"]
+        self.assertIn("niche_coverage", self.codes(self._with_valid(files())))
+        niches[0]["habitat_kinds"] = ["forest", "lava_lake"]
+        self.assertIn("niche_habitat", self.codes(self._with_valid(files())))
+        del creatures[0]["niches"]
+        self.assertIn("schema", self.codes(self._with_valid(files())))
+
+    def test_niche_distribution_and_mode_rules(self):
+        niches = json.loads((SAMPLES / "valid/niches/niches.json").read_text(encoding="utf-8"))
+        niches[0]["wander"]["speed_permille"]["mean"] = 50  # below min 100
+        self.assertIn("niche_distribution", self.codes(self._with_valid({"niches/niches.json": json.dumps(niches)})))
+        niches = json.loads((SAMPLES / "valid/niches/niches.json").read_text(encoding="utf-8"))
+        niches[0]["wander"]["mode"] = "unbounded_random"  # radius_mm must become null and exclusion_radius_mm appear
+        self.assertIn("schema", self.codes(self._with_valid({"niches/niches.json": json.dumps(niches)})))
+        niches[0]["wander"]["radius_mm"] = None
+        niches[0]["wander"]["exclusion_radius_mm"] = 9000
+        self.assertEqual(set(), self.codes(self._with_valid({"niches/niches.json": json.dumps(niches)})))
+        niches[0]["habit_weights"] = {"shy": 1}
+        self.assertIn("schema", self.codes(self._with_valid({"niches/niches.json": json.dumps(niches)})))
 
     def test_env_materials_multiple(self):
         findings = self._with_valid({"env-materials/extra.json": "{}"})

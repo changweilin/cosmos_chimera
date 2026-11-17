@@ -295,24 +295,14 @@
     "ja": "外す"
   },
   "ui.craft.equip_failed": {
-    "zh-TW": "無法更換：物品不足或背包數量已滿。",
-    "en": "Cannot change equipment: item missing or stack full.",
-    "ja": "変更できません。アイテム不足または所持数の上限です。"
+    "zh-TW": "無法更換：持握方式不符、物品不足或背包數量已滿。",
+    "en": "Cannot change equipment: grip not allowed, item missing or stack full.",
+    "ja": "変更できません。持ち方が合わない、アイテム不足、または所持数の上限です。"
   },
   "ui.craft.gear_preview": {
     "zh-TW": "穿戴效果將於出發時套用；外觀維持現狀。",
     "en": "Equipment bonuses apply at departure; appearance stays unchanged.",
     "ja": "装備効果は出発時に適用されます。外見は変わりません。"
-  },
-  "ui.craft.slot.weapon": {
-    "zh-TW": "武器",
-    "en": "Weapon",
-    "ja": "武器"
-  },
-  "ui.craft.slot.armor": {
-    "zh-TW": "防具",
-    "en": "Armor",
-    "ja": "防具"
   },
   "ui.craft.slot.accessory": {
     "zh-TW": "飾品",
@@ -364,54 +354,89 @@
     "en": "all elements",
     "ja": "全属性"
   },
-  "ui.lobby.equipment_paperdoll": {
-    "zh-TW": "裝備系統與紙娃娃",
-    "en": "Equipment & Paperdoll",
-    "ja": "装備とペーパードール"
+  "ui.craft.slot.main_hand": {
+    "zh-TW": "右手",
+    "en": "Main hand",
+    "ja": "右手"
   },
-  "ui.paperdoll.title": {
-    "zh-TW": "紙娃娃與裝備配置",
-    "en": "Paperdoll & Equipment",
-    "ja": "ペーパードール＆装備"
+  "ui.craft.slot.off_hand": {
+    "zh-TW": "左手",
+    "en": "Off hand",
+    "ja": "左手"
   },
-  "ui.paperdoll.rotate_left": {
-    "zh-TW": "⟲ 左轉",
-    "en": "⟲ Rotate L",
-    "ja": "⟲ 左回転"
+  "ui.craft.slot.upper": {
+    "zh-TW": "上身",
+    "en": "Upper body",
+    "ja": "上半身"
   },
-  "ui.paperdoll.rotate_right": {
-    "zh-TW": "右轉 ⟳",
-    "en": "Rotate R ⟳",
-    "ja": "右回転 ⟳"
+  "ui.craft.slot.lower": {
+    "zh-TW": "下身",
+    "en": "Lower body",
+    "ja": "下半身"
   },
-  "ui.paperdoll.empty_slot": {
-    "zh-TW": "未裝備",
-    "en": "Empty",
-    "ja": "未装備"
+  "ui.craft.kind.OneHanded": {
+    "zh-TW": "單手武器",
+    "en": "One-handed weapon",
+    "ja": "片手武器"
   },
-  "ui.paperdoll.sub_prefix": {
-    "zh-TW": "副手",
-    "en": "Sub",
-    "ja": "サブ"
+  "ui.craft.kind.TwoHanded": {
+    "zh-TW": "雙手武器",
+    "en": "Two-handed weapon",
+    "ja": "両手武器"
   },
-  "ui.paperdoll.manage_partners": {
-    "zh-TW": "設定主力／副手配對",
-    "en": "Configure Main & Sub Partners",
-    "ja": "主力／サブ編成へ"
+  "ui.craft.kind.Shield": {
+    "zh-TW": "盾",
+    "en": "Shield",
+    "ja": "盾"
   },
-  "ui.paperdoll.available_gear": {
-    "zh-TW": "背包可裝備物品",
-    "en": "Available Gear in Bag",
-    "ja": "所持装備品"
+  "ui.craft.kind.Upper": {
+    "zh-TW": "上身防具",
+    "en": "Upper-body armor",
+    "ja": "上半身防具"
   },
-  "ui.paperdoll.none_available": {
-    "zh-TW": "背包內無符合此對象的可裝備物品。",
-    "en": "No equippable gear in bag for this wearer.",
-    "ja": "この対象に装備できるアイテムがありません。"
+  "ui.craft.kind.Lower": {
+    "zh-TW": "下身防具",
+    "en": "Lower-body armor",
+    "ja": "下半身防具"
   },
-  "ui.paperdoll.drag_hint": {
-    "zh-TW": "拖曳模型或按按鈕旋轉預覽",
-    "en": "Drag preview or use buttons to rotate",
-    "ja": "ドラッグまたはボタンで回転"
+  "ui.craft.kind.Accessory": {
+    "zh-TW": "飾品",
+    "en": "Accessory",
+    "ja": "アクセサリー"
+  },
+  "ui.craft.equip_to": {
+    "zh-TW": "穿戴到{slot}",
+    "en": "Equip to {slot}",
+    "ja": "{slot}に装備"
+  },
+  "ui.craft.grips": {
+    "zh-TW": "持握方式：{grips}",
+    "en": "Grips: {grips}",
+    "ja": "持ち方：{grips}"
+  },
+  "ui.craft.grip.TwoHanded": {
+    "zh-TW": "雙手武器",
+    "en": "Two-handed",
+    "ja": "両手持ち"
+  },
+  "ui.craft.grip.DualWield": {
+    "zh-TW": "雙持單手",
+    "en": "Dual wield",
+    "ja": "二刀流"
+  },
+  "ui.craft.grip.OneHandShield": {
+    "zh-TW": "單手＋盾",
+    "en": "One hand + shield",
+    "ja": "片手＋盾"
+  },
+  "ui.craft.hands_invalid": {
+    "zh-TW": "持握方式不符，手上的裝備不生效。",
+    "en": "Held gear doesn't match this creature's grips and gives no effect.",
+    "ja": "持ち方が合わないため、手の装備は効果がありません。"
+  },
+  "ui.craft.weapon_stats": {
+    "zh-TW": "武器：{element}專精 +{mastery} · 威力 ×{power} · 攻速 ×{speed}",
+    "en": "Weapon: {element} mastery +{mastery} · power ×{power} · speed ×{speed}",
+    "ja": "武器：{element}熟練 +{mastery}・威力 ×{power}・攻速 ×{speed}"
   }
 }

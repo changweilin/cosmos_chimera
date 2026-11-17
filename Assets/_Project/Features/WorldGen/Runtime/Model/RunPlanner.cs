@@ -629,6 +629,22 @@ namespace Cosmimera.WorldGen
         /// </remarks>
         internal static float3 NearestLand(float3 center, Func<float3, bool> isLand)
         {
+            if (FirstInRings(center, isLand, out float3 land))
+            {
+                return land;
+            }
+
+            // Not a Contract.Requires: that is stripped in Release, and a sea spawn there is the silent failure this replaces.
+            throw new ContractException("Precondition failed: isLand must contain a land cap of radius MinLandCapRad");
+        }
+
+        /// <summary>First direction accepted by <paramref name="accept"/> in NearestLand's ring order.</summary>
+        /// <remarks>
+        /// Pre: center unit length; accept deterministic. Post: true and accept(found), or false after the whole sphere.
+        /// Side effects: none besides accept calls.
+        /// </remarks>
+        internal static bool FirstInRings(float3 center, Func<float3, bool> accept, out float3 found)
+        {
             const float Step = LandSweepStepRad;
             float3 t = PlanetFrame.FromUp(center).East;
             float3 b = math.cross(center, t);
@@ -641,15 +657,16 @@ namespace Cosmimera.WorldGen
                 {
                     float a = 2f * math.PI * j / n;
                     float3 p = math.normalize(center * math.cos(d) + (t * math.cos(a) + b * math.sin(a)) * math.sin(d));
-                    if (isLand(p))
+                    if (accept(p))
                     {
-                        return p;
+                        found = p;
+                        return true;
                     }
                 }
             }
 
-            // Not a Contract.Requires: that is stripped in Release, and a sea spawn there is the silent failure this replaces.
-            throw new ContractException("Precondition failed: isLand must contain a land cap of radius MinLandCapRad");
+            found = default;
+            return false;
         }
 
         private static float3 RandomUnit(ref Pcg32 rng)

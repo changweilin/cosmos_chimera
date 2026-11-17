@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_ambient_energy_feeder
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_ambient_energy_feeder
+  nameZh: "\u74B0\u5883\u80FD\u91CF\u63A1\u98DF"
+  habitatKinds:
+  - volcano
+  - rift_valley
+  - ice_field
+  - plateau
+  - cave
+  - eternal_day
+  - eternal_night
+  - mountain
+  - glacier
+  - basalt_terrace
+  habits:
+  - habit: 0
+    weight: 4
+  - habit: 1
+    weight: 1
+  - habit: 3
+    weight: 2
+  - habit: 4
+    weight: 3
+  mode: 2
+  radiusMm: 11000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 180
+    individualSd: 27
+    actionSd: 36
+    min: 50
+    max: 900
+  moveMs:
+    mean: 4500
+    individualSd: 900
+    actionSd: 1350
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 14000
+    individualSd: 3500
+    actionSd: 5600
+    min: 250
+    max: 60000

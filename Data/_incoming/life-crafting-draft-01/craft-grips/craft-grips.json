@@ -1,0 +1,192 @@
+[
+  {
+    "species": "sun_mirror_chick",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "sun_heliostat_heron",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "sun_array_skyheron",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "moon_night_pup",
+    "grips": [
+      "dual_wield"
+    ]
+  },
+  {
+    "species": "moon_shade_wolf",
+    "grips": [
+      "dual_wield"
+    ]
+  },
+  {
+    "species": "moon_longnight_wolf",
+    "grips": [
+      "dual_wield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "star_blaze_foal",
+    "grips": [
+      "two_handed"
+    ]
+  },
+  {
+    "species": "star_storm_colt",
+    "grips": [
+      "two_handed"
+    ]
+  },
+  {
+    "species": "star_skyhoof_steed",
+    "grips": [
+      "two_handed",
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "metal_clock_chick",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "metal_gear_strider",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "metal_chronos_engine",
+    "grips": [
+      "two_handed",
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "wood_fern_chick",
+    "grips": [
+      "two_handed"
+    ]
+  },
+  {
+    "species": "wood_plume_peafowl",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "wood_canopy_regent",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "water_wave_elver",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "water_skiff_eel",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "water_catamaran_serpent",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "fire_ember_cub",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "fire_mane_stalker",
+    "grips": [
+      "two_handed"
+    ]
+  },
+  {
+    "species": "fire_pyre_monarch",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "earth_pebble_pawn",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "earth_gilded_warden",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "earth_auric_sovereign",
+    "grips": [
+      "two_handed",
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "ice_frost_fledgling",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "ice_rime_strider",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "ice_tundra_dreadnought",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  },
+  {
+    "species": "wind_reed_skiff",
+    "grips": [
+      "dual_wield"
+    ]
+  },
+  {
+    "species": "wind_flute_cruiser",
+    "grips": [
+      "one_hand_shield"
+    ]
+  },
+  {
+    "species": "wind_monsoon_galeon",
+    "grips": [
+      "one_hand_shield",
+      "two_handed"
+    ]
+  }
+]

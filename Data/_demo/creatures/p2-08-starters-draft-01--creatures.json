@@ -5,7 +5,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "keep_distance",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_nectar_visitor", "weight": 3}, {"niche": "niche_ground_granivore", "weight": 3}, {"niche": "niche_opportunistic_omnivore", "weight": 2}],
     "evolves_to": "sun_heliostat_heron",
     "evolution": {
       "level": 25,
@@ -61,7 +61,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_ambush_predator", "weight": 4}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 2}],
     "evolves_to": "sun_array_skyheron",
     "evolution": {
       "level": 42,
@@ -117,7 +117,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -165,7 +165,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_opportunistic_omnivore", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 1}],
     "evolves_to": "moon_shade_wolf",
     "evolution": {
       "level": 23,
@@ -221,7 +221,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "flank",
-    "temperament": "normal",
+    "niches": [{"niche": "niche_patrol_hunter", "weight": 4}, {"niche": "niche_carrion_scavenger", "weight": 2}],
     "evolves_to": "moon_longnight_wolf",
     "evolution": {
       "level": 40,
@@ -277,7 +277,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "flank",
-    "temperament": "fierce",
+    "niches": [{"niche": "niche_apex_predator", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {
@@ -325,7 +325,7 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
-    "temperament": "timid",
+    "niches": [{"niche": "niche_ground_grazer", "weight": 5}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "star_storm_colt",
     "evolution": {
       "level": 27,
@@ -382,7 +382,7 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "temperament": "cautious",
+    "niches": [{"niche": "niche_ground_grazer", "weight": 4}, {"niche": "niche_edge_browser", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": "star_skyhoof_steed",
     "evolution": {
       "level": 45,
@@ -440,7 +440,7 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "temperament": "territorial",
+    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
     "evolves_to": null,
     "evolution": null,
     "resist": {

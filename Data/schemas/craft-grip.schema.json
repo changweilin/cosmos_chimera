@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/craft-grip.schema.json",
+  "title": "Species weapon grips (crafting.md#穿戴與數值)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "species",
+      "grips"
+    ],
+    "properties": {
+      "species": {
+        "$ref": "common.schema.json#/$defs/id"
+      },
+      "grips": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 2,
+        "uniqueItems": true,
+        "items": {
+          "enum": [
+            "two_handed",
+            "dual_wield",
+            "one_hand_shield"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -213,7 +213,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("far");
-            c.Set("line_far", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, Temperament.Apex, null, 0,
+            TestWild.WithHabit(c, Habit.Dominant).Set("line_far", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -229,7 +229,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("sniper");
-            c.Set("line_sniper", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Hold, Temperament.Apex, null, 0,
+            TestWild.WithHabit(c, Habit.Dominant).Set("line_sniper", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Hold, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -248,7 +248,7 @@ namespace Cosmimera.Combat.Tests
             }
 
             var e = new Encounter(planet, _balance, new FlatSurface(), 5);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Sniper(), null, At(0f), 10);
+            EncounterUnit wild = e.AddWildT(Sniper(), null, At(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
             e.Provoke(wild.Id);
             e.Tick(Dt, Dt, planet.ToWorld(At(30f), 0f), new AiCommand(AiCommandKind.Free, CombatAi.NoTarget),
@@ -278,7 +278,7 @@ namespace Cosmimera.Combat.Tests
             }
 
             var e = new Encounter(planet, _balance, new FlatSurface(), 5);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Sniper(), null, At(0f), 10);
+            EncounterUnit wild = e.AddWildT(Sniper(), null, At(0f), 10);
             wild.Combatant.Book.Apply("short", 0, new EffectSpec(EffectType.RangeModPercent, false, Element.Fire, -50, 0, 1),
                 600_000, 0);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
@@ -314,7 +314,7 @@ namespace Cosmimera.Combat.Tests
 
             var e = new Encounter(planet, _balance, new FlatSurface(), 3);
             Assert.That(e.RangeCapMm, Is.EqualTo(_balance.Horizon.CapMm(radius)));
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, LongDasher(), null, At(0f), 10);
+            EncounterUnit wild = e.AddWildT(LongDasher(), null, At(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
             e.Provoke(wild.Id);
             float3 player = planet.ToWorld(At(20f), 0f);

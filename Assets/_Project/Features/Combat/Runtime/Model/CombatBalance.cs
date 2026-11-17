@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Cosmimera.Combat
 {
     /// <summary>
-    /// Wild territory radius per temperament (<c>Data/balance.json#ai.territory_mm</c>). REQ: combat.md#野生領域
-    /// (D0-E2, 2026-11-10); the radii themselves are provisional (Q-C35).
+    /// Wild territory radius per habit (<c>Data/balance.json#ai.territory_mm</c>). REQ: combat.md#野生領域
+    /// (D0-E2, 2026-11-10), creature-ecology.md#習性; the radii themselves are provisional (Q-C35).
     /// </summary>
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public sealed class TerritoryTuning
@@ -18,95 +18,34 @@ namespace Cosmimera.Combat
         ///      distance would re-engage the moment a fight ends.
         /// Post: RadiusMm returns the matching argument. Side effects: allocates this instance.
         /// </remarks>
-        public TerritoryTuning(int timidMm, int cautiousMm, int normalMm, int territorialMm, int fierceMm, int apexMm)
+        public TerritoryTuning(int avoidantMm, int vigilantMm, int tolerantMm, int territorialMm, int aggressiveMm,
+            int dominantMm)
         {
             const int limitMm = (int)(Encounter.DisengageRadiusM * 1000f);
-            Contract.Requires(timidMm >= 0 && timidMm < limitMm, "territory_mm.timid must be 0..disengage");
-            Contract.Requires(cautiousMm >= 0 && cautiousMm < limitMm, "territory_mm.cautious must be 0..disengage");
-            Contract.Requires(normalMm >= 0 && normalMm < limitMm, "territory_mm.normal must be 0..disengage");
+            Contract.Requires(avoidantMm >= 0 && avoidantMm < limitMm, "territory_mm.avoidant must be 0..disengage");
+            Contract.Requires(vigilantMm >= 0 && vigilantMm < limitMm, "territory_mm.vigilant must be 0..disengage");
+            Contract.Requires(tolerantMm >= 0 && tolerantMm < limitMm, "territory_mm.tolerant must be 0..disengage");
             Contract.Requires(territorialMm >= 0 && territorialMm < limitMm, "territory_mm.territorial must be 0..disengage");
-            Contract.Requires(fierceMm >= 0 && fierceMm < limitMm, "territory_mm.fierce must be 0..disengage");
-            Contract.Requires(apexMm >= 0 && apexMm < limitMm, "territory_mm.apex must be 0..disengage");
+            Contract.Requires(aggressiveMm >= 0 && aggressiveMm < limitMm, "territory_mm.aggressive must be 0..disengage");
+            Contract.Requires(dominantMm >= 0 && dominantMm < limitMm, "territory_mm.dominant must be 0..disengage");
             _radiusMm = new int[6];
-            _radiusMm[(int)Temperament.Normal] = normalMm;
-            _radiusMm[(int)Temperament.Timid] = timidMm;
-            _radiusMm[(int)Temperament.Fierce] = fierceMm;
-            _radiusMm[(int)Temperament.Cautious] = cautiousMm;
-            _radiusMm[(int)Temperament.Territorial] = territorialMm;
-            _radiusMm[(int)Temperament.Apex] = apexMm;
+            _radiusMm[(int)Habit.Tolerant] = tolerantMm;
+            _radiusMm[(int)Habit.Avoidant] = avoidantMm;
+            _radiusMm[(int)Habit.Aggressive] = aggressiveMm;
+            _radiusMm[(int)Habit.Vigilant] = vigilantMm;
+            _radiusMm[(int)Habit.Territorial] = territorialMm;
+            _radiusMm[(int)Habit.Dominant] = dominantMm;
         }
 
-        // Indexed by the Temperament value (Normal 0, Timid 1, Fierce 2, Cautious 3, Territorial 4, Apex 5).
+        // Indexed by the Habit value (Tolerant 0, Avoidant 1, Aggressive 2, Vigilant 3, Territorial 4, Dominant 5).
         private readonly int[] _radiusMm;
 
-        /// <summary>Territory radius in mm for <paramref name="temperament"/>.</summary>
-        /// <remarks>Pre: temperament defined. Post: >= 0. Side effects: none.</remarks>
-        public int RadiusMm(Temperament temperament)
+        /// <summary>Territory radius in mm for <paramref name="habit"/>.</summary>
+        /// <remarks>Pre: habit defined. Post: >= 0. Side effects: none.</remarks>
+        public int RadiusMm(Habit habit)
         {
-            Contract.Requires(temperament >= Temperament.Normal && temperament <= Temperament.Apex, "undefined Temperament");
-            return _radiusMm[(int)temperament];
-        }
-    }
-
-    /// <summary>
-    /// Idle wandering of wild units around their spawn point (<c>Data/balance.json#ai.wander_*</c>). REQ: combat.md#遊蕩
-    /// (D0-W1, 2026-11-10); the values were confirmed by the user (Q-D2, 2026-11-10).
-    /// </summary>
-    /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
-    public sealed class WanderTuning
-    {
-        /// <summary>Creates validated wander tunables.</summary>
-        /// <remarks>
-        /// Pre: 0 &lt;= each radius &lt; Encounter.DisengageRadiusM (in mm), so a wanderer never strays past the distance
-        ///      at which a fight would already have ended; 0 &lt;= pauseMinMs &lt;= pauseMaxMs; 1 &lt;= speedPermille &lt;= 1000.
-        /// Post: RadiusMm returns the matching argument; PauseMinMs/PauseMaxMs/SpeedPermille as given.
-        /// Side effects: allocates this instance.
-        /// </remarks>
-        public WanderTuning(int timidMm, int cautiousMm, int normalMm, int territorialMm, int fierceMm, int apexMm,
-            int pauseMinMs, int pauseMaxMs, int speedPermille)
-        {
-            const int limitMm = (int)(Encounter.DisengageRadiusM * 1000f);
-            Contract.Requires(timidMm >= 0 && timidMm < limitMm, "wander_mm.timid must be 0..disengage");
-            Contract.Requires(cautiousMm >= 0 && cautiousMm < limitMm, "wander_mm.cautious must be 0..disengage");
-            Contract.Requires(normalMm >= 0 && normalMm < limitMm, "wander_mm.normal must be 0..disengage");
-            Contract.Requires(territorialMm >= 0 && territorialMm < limitMm, "wander_mm.territorial must be 0..disengage");
-            Contract.Requires(fierceMm >= 0 && fierceMm < limitMm, "wander_mm.fierce must be 0..disengage");
-            Contract.Requires(apexMm >= 0 && apexMm < limitMm, "wander_mm.apex must be 0..disengage");
-            Contract.Requires(pauseMinMs >= 0 && pauseMaxMs >= pauseMinMs, "wander pause must satisfy 0 <= min <= max");
-            Contract.Requires(speedPermille >= 1 && speedPermille <= 1000, "wander_speed_permille must be 1..1000");
-            _radiusMm = new int[6];
-            _radiusMm[(int)Temperament.Normal] = normalMm;
-            _radiusMm[(int)Temperament.Timid] = timidMm;
-            _radiusMm[(int)Temperament.Fierce] = fierceMm;
-            _radiusMm[(int)Temperament.Cautious] = cautiousMm;
-            _radiusMm[(int)Temperament.Territorial] = territorialMm;
-            _radiusMm[(int)Temperament.Apex] = apexMm;
-            PauseMinMs = pauseMinMs;
-            PauseMaxMs = pauseMaxMs;
-            SpeedPermille = speedPermille;
-        }
-
-        // Indexed by the Temperament value, as in TerritoryTuning.
-        private readonly int[] _radiusMm;
-
-        /// <summary>Shortest idle pause (ms) between two wander legs.</summary>
-        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int PauseMinMs { get; }
-
-        /// <summary>Longest idle pause (ms) between two wander legs (inclusive).</summary>
-        /// <remarks>Pre: none. Post: >= PauseMinMs. Side effects: none.</remarks>
-        public int PauseMaxMs { get; }
-
-        /// <summary>Wander walking speed as permille of the unit's combat move speed.</summary>
-        /// <remarks>Pre: none. Post: 1..1000. Side effects: none.</remarks>
-        public int SpeedPermille { get; }
-
-        /// <summary>Wander radius in mm around the spawn point for <paramref name="temperament"/>.</summary>
-        /// <remarks>Pre: temperament defined. Post: >= 0; 0 means the unit holds its spawn point. Side effects: none.</remarks>
-        public int RadiusMm(Temperament temperament)
-        {
-            Contract.Requires(temperament >= Temperament.Normal && temperament <= Temperament.Apex, "undefined Temperament");
-            return _radiusMm[(int)temperament];
+            Contract.Requires(habit >= Habit.Tolerant && habit <= Habit.Dominant, "undefined Habit");
+            return _radiusMm[(int)habit];
         }
     }
 
@@ -117,7 +56,7 @@ namespace Cosmimera.Combat
     /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
     public sealed class CollisionTuning
     {
-        // Twice the widest wander radius would already be absurd for a body; this only rejects unit mix-ups (m vs mm).
+        // Only rejects unit mix-ups (m vs mm); no creature body is anywhere near 10 m.
         private const int MaxBodyMm = 10000;
 
         /// <summary>Creates validated body radii.</summary>
@@ -394,6 +333,29 @@ namespace Cosmimera.Combat
         }
     }
 
+    /// <summary>Grip bonuses for held weapons (<c>Data/balance.json#equipment</c>). REQ: crafting.md#穿戴與數值 (values provisional).</summary>
+    /// <remarks>Pre: build through the constructor. Post: immutable. Side effects: none.</remarks>
+    public sealed class GripTuning
+    {
+        /// <summary>Creates validated grip bonuses.</summary>
+        /// <remarks>Pre: both 0..500. Post: properties equal the arguments. Side effects: none.</remarks>
+        public GripTuning(int twoHandedDamagePercent, int dualWieldSpeedPercent)
+        {
+            Contract.Requires(twoHandedDamagePercent >= 0 && twoHandedDamagePercent <= 500, "equipment.two_handed_damage_percent must be 0..500");
+            Contract.Requires(dualWieldSpeedPercent >= 0 && dualWieldSpeedPercent <= 500, "equipment.dual_wield_speed_percent must be 0..500");
+            TwoHandedDamagePercent = twoHandedDamagePercent;
+            DualWieldSpeedPercent = dualWieldSpeedPercent;
+        }
+
+        /// <summary>Damage bonus while holding a two-handed weapon.</summary>
+        /// <remarks>Pre: none. Post: 0..500. Side effects: none.</remarks>
+        public int TwoHandedDamagePercent { get; }
+
+        /// <summary>Attack-speed bonus while dual wielding.</summary>
+        /// <remarks>Pre: none. Post: 0..500. Side effects: none.</remarks>
+        public int DualWieldSpeedPercent { get; }
+    }
+
     /// <summary>
     /// Block, stance gauge and perfect block (<c>Data/balance.json#block</c>). REQ: combat.md#格擋 (Q-C56; values provisional).
     /// </summary>
@@ -403,12 +365,15 @@ namespace Cosmimera.Combat
         /// <summary>Creates validated block tuning.</summary>
         /// <remarks>
         /// Pre: basePermille 0..1000; stanceHpPermille 1..10000; stanceRegenDelayMs 0..600000; stanceRegenPermillePerS
-        ///      0..1000; guardBreakMs 1..600000; perfectWindowMs 0..1000; moveSpeedPermille 0..1000; reflectPercent 0..1000.
+        ///      0..1000; guardBreakMs 1..600000; perfectWindowMs 0..1000; moveSpeedPermille 0..1000; reflectPercent 0..1000;
+        ///      basePermille &lt;= shieldPermille &lt;= 1000.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public BlockTuning(int basePermille, int stanceHpPermille, int stanceRegenDelayMs, int stanceRegenPermillePerS,
-            int guardBreakMs, int perfectWindowMs, int moveSpeedPermille, int reflectPercent)
+            int guardBreakMs, int perfectWindowMs, int moveSpeedPermille, int reflectPercent, int shieldPermille)
         {
+            Contract.Requires(shieldPermille >= basePermille && shieldPermille <= 1000, "block.shield_permille must be base_permille..1000");
+            ShieldPermille = shieldPermille;
             Contract.Requires(reflectPercent >= 0 && reflectPercent <= 1000, "block.reflect_percent must be 0..1000");
             ReflectPercent = reflectPercent;
             Contract.Requires(basePermille >= 0 && basePermille <= 1000, "block.base_permille must be 0..1000");
@@ -429,9 +394,13 @@ namespace Cosmimera.Combat
             MoveSpeedPermille = moveSpeedPermille;
         }
 
-        /// <summary>Damage removed by a block without a shield, permille (shields arrive with D0-U3).</summary>
+        /// <summary>Damage removed by a block without a shield, permille.</summary>
         /// <remarks>Pre: none. Post: 0..1000. Side effects: none.</remarks>
         public int BasePermille { get; }
+
+        /// <summary>Damage removed by a block while holding a shield, permille (crafting.md#穿戴與數值).</summary>
+        /// <remarks>Pre: none. Post: BasePermille..1000. Side effects: none.</remarks>
+        public int ShieldPermille { get; }
 
         /// <summary>Stance gauge capacity as permille of max HP.</summary>
         /// <remarks>Pre: none. Post: 1..10000. Side effects: none.</remarks>
@@ -532,11 +501,12 @@ namespace Cosmimera.Combat
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
-            TerritoryTuning territory, WanderTuning wander, CollisionTuning collision, HorizonRangeTuning horizon,
+            TerritoryTuning territory, CollisionTuning collision, HorizonRangeTuning horizon,
             BossEnrageTuning enrage, int bossWindupPermille, StaggerTuning stagger, BlockTuning block,
-            CreatureRollTuning creatureRoll)
+            CreatureRollTuning creatureRoll, GripTuning grips)
         {
             Block = block;
+            Grips = grips;
             CreatureRoll = creatureRoll;
             Enrage = enrage;
             BossWindupPermille = bossWindupPermille;
@@ -544,7 +514,6 @@ namespace Cosmimera.Combat
             Horizon = horizon;
             Collision = collision;
             Territory = territory;
-            Wander = wander;
             Stats = stats;
             Hit = hit;
             Effects = effects;
@@ -567,6 +536,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public BlockTuning Block { get; }
 
+        /// <summary>Grip bonuses for held weapons (Data/balance.json#equipment).</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public GripTuning Grips { get; }
+
         /// <summary>Player-side creature roll and perfect dodge.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public CreatureRollTuning CreatureRoll { get; }
@@ -575,13 +548,9 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public BossEnrageTuning Enrage { get; }
 
-        /// <summary>Wild territory radii by temperament.</summary>
+        /// <summary>Wild territory radii by habit.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
         public TerritoryTuning Territory { get; }
-
-        /// <summary>Idle wandering of wild units.</summary>
-        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
-        public WanderTuning Wander { get; }
 
         /// <summary>Body radii for character/creature separation.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
@@ -636,7 +605,7 @@ namespace Cosmimera.Combat
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
                 d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
-                d.ai.wander_mm != null && d.ai.body_mm != null &&
+                d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
                 d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100, "capture percents must be 0..100");
@@ -659,23 +628,12 @@ namespace Cosmimera.Combat
                 d.player.roll_cooldown_ms);
             Contract.Requires(d.team.switch_cooldown_ms >= 0, "switch cooldown must be >= 0");
             var territory = new TerritoryTuning(
-                d.ai.territory_mm.timid,
-                d.ai.territory_mm.cautious,
-                d.ai.territory_mm.normal,
+                d.ai.territory_mm.avoidant,
+                d.ai.territory_mm.vigilant,
+                d.ai.territory_mm.tolerant,
                 d.ai.territory_mm.territorial,
-                d.ai.territory_mm.fierce,
-                d.ai.territory_mm.apex);
-            // JsonUtility leaves an absent int at 0; a 0 speed is rejected by WanderTuning, so a missing key fails loudly.
-            var wander = new WanderTuning(
-                d.ai.wander_mm.timid,
-                d.ai.wander_mm.cautious,
-                d.ai.wander_mm.normal,
-                d.ai.wander_mm.territorial,
-                d.ai.wander_mm.fierce,
-                d.ai.wander_mm.apex,
-                d.ai.wander_pause_min_ms,
-                d.ai.wander_pause_max_ms,
-                d.ai.wander_speed_permille);
+                d.ai.territory_mm.aggressive,
+                d.ai.territory_mm.dominant);
             // An absent body_mm key parses as 0 and is rejected by CollisionTuning.
             BodyDto b = d.ai.body_mm;
             var collision = new CollisionTuning(b.xs, b.s, b.m, b.l, b.xl, b.character);
@@ -705,14 +663,15 @@ namespace Cosmimera.Combat
             BlockDto bk = d.block;
             var block = new BlockTuning(bk.base_permille, bk.stance_hp_permille, bk.stance_regen_delay_ms,
                 bk.stance_regen_permille_per_s, bk.guard_break_ms, bk.perfect_window_ms, bk.move_speed_permille,
-                bk.reflect_percent);
+                bk.reflect_percent, bk.shield_permille);
             Contract.Requires(d.creature_roll != null, "balance json is missing creature_roll");
             CreatureRollDto cr = d.creature_roll;
             var creatureRoll = new CreatureRollTuning(cr.duration_ms, cr.invulnerable_ms, cr.cooldown_ms, cr.perfect_dodge_ms,
                 cr.distance_height_permille);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent, territory, wander, collision, horizon, enrage,
-                d.boss.windup_permille, stagger, block, creatureRoll);
+                d.capture.base_percent, d.capture.boss_percent, territory, collision, horizon, enrage,
+                d.boss.windup_permille, stagger, block, creatureRoll,
+                RequireGrips(d.equipment));
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
@@ -739,6 +698,7 @@ namespace Cosmimera.Combat
             public StaggerDto stagger;
             public BlockDto block;
             public CreatureRollDto creature_roll;
+            public EquipmentDto equipment;
         }
 
         [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; }
@@ -788,10 +748,6 @@ namespace Cosmimera.Combat
             public int hold_permille;
             public int follow_leash_mm;
             public TerritoryDto territory_mm;
-            public TerritoryDto wander_mm;
-            public int wander_pause_min_ms;
-            public int wander_pause_max_ms;
-            public int wander_speed_permille;
             public BodyDto body_mm;
         }
 
@@ -818,6 +774,18 @@ namespace Cosmimera.Combat
             public int knockback_mm;
         }
 
+        private static GripTuning RequireGrips(EquipmentDto e)
+        {
+            Contract.Requires(e != null, "balance json is missing equipment");
+            return new GripTuning(e.two_handed_damage_percent, e.dual_wield_speed_percent);
+        }
+
+        [Serializable] private sealed class EquipmentDto
+        {
+            public int two_handed_damage_percent;
+            public int dual_wield_speed_percent;
+        }
+
         [Serializable] private sealed class BlockDto
         {
             public int base_permille;
@@ -828,6 +796,7 @@ namespace Cosmimera.Combat
             public int perfect_window_ms;
             public int move_speed_permille;
             public int reflect_percent;
+            public int shield_permille;
         }
 
         [Serializable] private sealed class CreatureRollDto
@@ -848,12 +817,12 @@ namespace Cosmimera.Combat
 
         [Serializable] private sealed class TerritoryDto
         {
-            public int timid;
-            public int cautious;
-            public int normal;
+            public int avoidant;
+            public int vigilant;
+            public int tolerant;
             public int territorial;
-            public int fierce;
-            public int apex;
+            public int aggressive;
+            public int dominant;
         }
 #pragma warning restore 0649, IDE1006
     }

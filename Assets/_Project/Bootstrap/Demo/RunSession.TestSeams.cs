@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
 using System.Collections.Generic;
 using Cosmimera.Combat;
+using Cosmimera.GameData;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.WorldGen;
@@ -24,6 +25,8 @@ namespace Cosmimera.Bootstrap.Demo
             internal readonly bool IsFainted;
             internal readonly int Hp;
             internal readonly int MaxHp;
+            // Wild only (Avoidant for player units, which have no individual).
+            internal readonly Habit Habit;
 
             internal UnitSnapshot(EncounterUnit unit)
             {
@@ -37,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
                 IsFainted = unit.Combatant.IsFainted;
                 Hp = unit.Combatant.Hp;
                 MaxHp = unit.Combatant.MaxHp;
+                Habit = unit.Individual != null ? unit.Individual.Habit : Habit.Avoidant;
             }
         }
 

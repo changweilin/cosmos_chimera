@@ -65,7 +65,7 @@ namespace Cosmimera.Net.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, stage, CreatureSizeClass.M, AiStyle.Charge, Temperament.Fierce, null, 0,
+            c.Set("line_" + id, stage, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 20) },
                 new CreatureStats(statValue, statValue, statValue, statValue), move, null, "{}", false);
             return c;

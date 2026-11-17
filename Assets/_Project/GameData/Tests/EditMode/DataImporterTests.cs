@@ -63,8 +63,16 @@ namespace Cosmimera.GameData.Tests
         {
             DataImportReport report = DataImporter.Import(_src, Output);
 
-            Assert.AreEqual(11, report.Created); // 6 moves + 1 trait + 1 planet type + 3 creatures
-            Assert.AreEqual(11, Db.All.Count);
+            Assert.AreEqual(12, report.Created); // 6 moves + 1 trait + 1 planet type + 3 creatures + 1 niche
+            Assert.AreEqual(12, Db.All.Count);
+            Assert.IsTrue(Db.TryGet("niche_sample_generalist", out NicheDef niche));
+            Assert.AreEqual(WanderMode.BoundedRandom, niche.Mode);
+            Assert.AreEqual(5000, niche.RadiusMm);
+            Assert.AreEqual(Habit.Tolerant, niche.Habits[0].Habit);
+            Assert.AreEqual(24, niche.HabitatKinds.Count);
+            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.AreSame(niche, cub.Niches[0].Niche, "creature niche candidates resolve to the imported asset");
+            Assert.AreEqual(1, cub.Niches[0].Weight);
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(30, move.Power);
             Assert.AreEqual(MoveShape.Line, move.Shape);
@@ -182,7 +190,7 @@ namespace Cosmimera.GameData.Tests
             DataImportReport report = DataImporter.Import(_src, Output);
 
             Assert.AreEqual(0, report.Created);
-            Assert.AreEqual(11, report.Updated);
+            Assert.AreEqual(12, report.Updated);
             Assert.AreEqual(guid, AssetDatabase.AssetPathToGUID(path), "GUID must survive so references survive");
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(35, move.Power);
@@ -213,6 +221,20 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains("missing_move", e.Message);
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(30, move.Power, "valid edits in the same batch must not be half-applied");
+        }
+
+        // REQ: creature-ecology.md — a dangling niche, a bad habit or a bounded niche without radius must not import.
+        [TestCase("\"niche\": \"niche_sample_generalist\"", "\"niche\": \"niche_missing\"", "niche_missing")]
+        [TestCase("\"tolerant\": 1", "\"shy\": 1", "shy")]
+        [TestCase("\"radius_mm\": 5000", "\"radius_mm\": null", "radius_mm")]
+        public void Bad_niche_data_aborts(string from, string to, string mentioned)
+        {
+            string file = from.Contains("\"niche\":") ? "creatures/creatures.json" : "niches/niches.json";
+            ReplaceInFile(file, from, to);
+
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+
+            StringAssert.Contains(mentioned, e.Message);
         }
 
         [Test]

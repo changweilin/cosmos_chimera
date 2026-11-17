@@ -1,0 +1,61 @@
+[
+  {
+    "id": "niche_sample_generalist",
+    "name_zh": "樣本雜食",
+    "resource_zh": "零散資源",
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "volcano",
+      "rift_valley",
+      "ice_field",
+      "fjord",
+      "plateau",
+      "archipelago",
+      "canyon",
+      "cave",
+      "eternal_day",
+      "eternal_night",
+      "grassland",
+      "desert",
+      "swamp",
+      "mountain",
+      "tundra",
+      "glacier",
+      "cirque",
+      "moraine",
+      "karst",
+      "basalt_terrace",
+      "granite_domes",
+      "slate_cliffs"
+    ],
+    "habit_weights": {
+      "tolerant": 1
+    },
+    "wander": {
+      "mode": "bounded_random",
+      "radius_mm": 5000,
+      "speed_permille": {
+        "mean": 300,
+        "individual_sd": 0,
+        "action_sd": 0,
+        "min": 100,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 3000,
+        "individual_sd": 0,
+        "action_sd": 0,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 3000,
+        "individual_sd": 0,
+        "action_sd": 0,
+        "min": 250,
+        "max": 60000
+      }
+    }
+  }
+]

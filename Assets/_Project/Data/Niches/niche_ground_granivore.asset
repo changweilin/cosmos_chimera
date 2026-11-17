@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_ground_granivore
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_ground_granivore
+  nameZh: "\u5730\u8868\u98DF\u7C7D"
+  habitatKinds:
+  - forest
+  - plateau
+  - eternal_day
+  - grassland
+  - desert
+  - tundra
+  habits:
+  - habit: 0
+    weight: 1
+  - habit: 1
+    weight: 5
+  - habit: 3
+    weight: 4
+  mode: 2
+  radiusMm: 9000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 330
+    individualSd: 49
+    actionSd: 66
+    min: 50
+    max: 900
+  moveMs:
+    mean: 3000
+    individualSd: 600
+    actionSd: 900
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 4000
+    individualSd: 1000
+    actionSd: 1600
+    min: 250
+    max: 60000

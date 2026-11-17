@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_ambush_predator
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_ambush_predator
+  nameZh: "\u4F0F\u64CA\u63A0\u98DF"
+  habitatKinds:
+  - forest
+  - rift_valley
+  - canyon
+  - cave
+  - swamp
+  - karst
+  - slate_cliffs
+  habits:
+  - habit: 0
+    weight: 2
+  - habit: 2
+    weight: 1
+  - habit: 3
+    weight: 3
+  - habit: 4
+    weight: 4
+  mode: 2
+  radiusMm: 10000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 240
+    individualSd: 36
+    actionSd: 48
+    min: 50
+    max: 900
+  moveMs:
+    mean: 2500
+    individualSd: 500
+    actionSd: 750
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 16000
+    individualSd: 4000
+    actionSd: 6400
+    min: 250
+    max: 60000

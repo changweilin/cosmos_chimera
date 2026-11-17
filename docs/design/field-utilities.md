@@ -4,7 +4,7 @@
 
 > 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`。
 
-採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。
+採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。製造擴充（D0-U4）改以製造專屬 `field_utility` 提供裁縫／鍛造／木工／珠寶等資格，見 [crafting.md#製造擴充](crafting.md#製造擴充)。
 
 ## 1. 隊伍與副手生效規則
 - **主力（6 隻）**：直接貢獻各自的 `field_utility`（不論 Move 或 Trait）。
@@ -12,6 +12,7 @@
   - **符籙卡片**（`talisman_card`）→ 生效 **Move**（同時提供戰鬥 `signature_move`）
   - **琉璃珠**（`glass_bead`）→ 生效 **Trait**（同時提供戰鬥 `trait`）
   - **魔術方塊**（`magic_cube`）→ 僅解鎖主力超載，**不**提供 `field_utility`
+  - **製造類**（D0-U4）→ 依技能資料標記的器皿（符籙或琉璃珠）生效，見 [crafting.md#製造擴充](crafting.md#製造擴充)
 - **設計意圖**：玩家挑選副手時，必須同時權衡「關係表連線 × 跨屬性戰鬥招式／特性互補 × 生活能力／地形免疫補齊」。
 
 ## 2. 十大屬性「生活—戰鬥—環境」定位

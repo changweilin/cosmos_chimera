@@ -137,7 +137,7 @@ namespace Cosmimera.Bootstrap.Tests
                         Progression = progression, Materials = MaterialDrops.FromJson(Copy("balance")),
                         Database = db, Owned = owned, Partners = loadout,
                         CraftStock = new[] { new CraftStack("craft_snare", 4), new CraftStack("craft_talisman_card", 1), new CraftStack("raw_hemp", 2) },
-                        Equipment = new[] { new EquippedItem(0, "armor", "craft_iron_guard"), new EquippedItem(1, "armor", "craft_linen_outfit") },
+                        Equipment = new[] { new EquippedItem(0, "upper", "craft_iron_guard"), new EquippedItem(1, "upper", "craft_linen_outfit") },
                     }, wild, _ => { });
                 float deadline = Time.realtimeSinceStartup + 60;
                 while (!session.StartedForTests && Time.realtimeSinceStartup < deadline) yield return null;

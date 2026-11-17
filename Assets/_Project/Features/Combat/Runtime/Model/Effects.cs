@@ -355,6 +355,10 @@ namespace Cosmimera.Combat
         private bool _crossBelowSpent;
         private readonly List<EffectBook> _partnerTraits = new List<EffectBook>(4);
 
+        /// <summary>Latest simulation time this book has seen; zero before combat starts.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        internal long WatermarkMs => _watermarkMs;
+
         /// <summary>Replaces departure equipment modifiers independently of innate and partner traits.</summary>
         /// <remarks>
         /// Pre: simulation watermark is zero; effects non-null with 0..32 constructed, non-instant entries.

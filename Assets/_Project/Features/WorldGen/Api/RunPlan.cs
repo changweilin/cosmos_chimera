@@ -80,13 +80,15 @@ namespace Cosmimera.WorldGen
     /// <remarks>Pre: produced by RunPlanner. Post: immutable. Side effects: none.</remarks>
     public readonly struct RunSpawn
     {
-        internal RunSpawn(int region, int group, float3 direction, string creatureId, SpawnRole role)
+        internal RunSpawn(int region, int group, float3 direction, string creatureId, SpawnRole role,
+            WildIndividual individual = null)
         {
             Region = region;
             Group = group;
             Direction = direction;
             CreatureId = creatureId;
             Role = role;
+            Individual = individual;
         }
 
         /// <summary>Region index.</summary>
@@ -108,6 +110,10 @@ namespace Cosmimera.WorldGen
         /// <summary>Role.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public SpawnRole Role { get; }
+
+        /// <summary>Niche, habit and wander means of this individual (creature-ecology.md), set by RunEcology.</summary>
+        /// <remarks>Pre: none. Post: null in a plan straight from RunPlanner; non-null after RunEcology.Apply. Side effects: none.</remarks>
+        public WildIndividual Individual { get; }
     }
 
     /// <summary>One step of the main quest chain.</summary>
@@ -206,6 +212,10 @@ namespace Cosmimera.WorldGen
             LandingDirection = landingDirection;
             Elements = elements;
         }
+
+        internal RunPlan WithSpawns(RunSpawn[] spawns)
+            => new RunPlan(Seed, PlanetTypeId, ChainId, (RunRegion[])Regions, LandingRegion, BossRegion, (int[])MainRoute,
+                spawns, (RunQuestStep[])Quest, LandingDirection, Elements);
 
         /// <summary>Planet seed.</summary>
         /// <remarks>Pre: none. Post: as given. Side effects: none.</remarks>

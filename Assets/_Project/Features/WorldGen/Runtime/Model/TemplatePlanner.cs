@@ -183,6 +183,39 @@ namespace Cosmimera.WorldGen
             };
         }
 
+        /// <summary>Landform kind (a LandformSynth id) a wild creature born at each direction lives in.</summary>
+        /// <remarks>
+        /// REQ: creature-ecology.md#生成順序 (出生點環境).
+        /// Pre: templates null (no stamps) or a live <see cref="Build"/> result that outlives the returned function;
+        ///      planetTypeId may be null or unknown. The function accepts finite unit directions.
+        /// Post: the strongest stamp's landform where its blend weight is &gt;= 0.5; elsewhere the planet type's own
+        ///       surface landform (grassland for an unknown type). Always one of <see cref="LandformSynth.Kinds"/>.
+        /// Side effects: allocates the callback and one string reference per stamp; queries allocate nothing.
+        /// </remarks>
+        public static System.Func<float3, string> HabitatAt(PlanetTemplates templates, string planetTypeId)
+        {
+            string baseKind = LandformOfTerrain(TerrainProfiles.ForPlanetType(planetTypeId).Id);
+            TemplateView view = templates != null ? templates.View : default;
+            var perStamp = new string[templates != null ? templates.StampIds.Count : 0];
+            for (int i = 0; i < perStamp.Length; i++)
+            {
+                perStamp[i] = LandformSynth.KindOf(templates.StampIds[i]);
+            }
+
+            // Half weight: the blend band is where the stamp is still fading in; its core decides the habitat.
+            return dir => perStamp.Length > 0 && view.TryGetStamp(dir, out int i, out float w) && w >= 0.5f
+                ? perStamp[i]
+                : baseKind;
+        }
+
+        // Inverse of SurfaceTerrainId for the planet types' base surfaces.
+        private static string LandformOfTerrain(string terrainId) => terrainId switch
+        {
+            "volcano_foothills" => "volcano",
+            "cavern_outer" => "cave",
+            _ => terrainId,
+        };
+
         /// <summary>Scatter biome (landform species table) under each point of a planet built by <see cref="Build"/>.</summary>
         /// <remarks>
         /// REQ: planet-world.md#散佈 (Q-W15: 依地貌印章選種).

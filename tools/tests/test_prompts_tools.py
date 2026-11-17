@@ -13,12 +13,13 @@ BANDS = json.loads((REPO / "Data" / "balance.json").read_text(encoding="utf-8"))
 ALL = ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"]
 
 
-def _creature(cid, stage, nxt, stats, level, temperament="normal"):
+def _creature(cid, stage, nxt, stats, level):
     own, weak, main, _ = check_batch.PATTERN[stage]
     resist = {e: 0 for e in ALL}
     resist.update(fire=own, water=weak)
     return {
-        "id": cid, "line_id": "line_x", "stage": stage, "evolves_to": nxt, "temperament": temperament,
+        "id": cid, "line_id": "line_x", "stage": stage, "evolves_to": nxt,
+        "niches": [{"niche": "niche_opportunistic_omnivore", "weight": 1}],
         "stats": dict(zip(["con", "str", "spi", "agi"], stats)), "mastery": {"fire": main},
         "resist": resist, "evolution": {"level": level, "materials": []} if nxt else None,
     }
@@ -59,13 +60,11 @@ def test_evolution_level_and_chain_checked():
     assert any("evolves_to" in e for e in errs)
 
 
-def test_apex_and_temperament_drop_rejected():
+def test_missing_niches_rejected():
     line = _line()
-    line[1]["temperament"] = "apex"
-    line[2]["temperament"] = "timid"
+    line[1]["niches"] = []
     errs = check_batch.check(line, BANDS)
-    assert any("apex is reserved" in e for e in errs)
-    assert any("temperament lowered" in e for e in errs)
+    assert any("candidate niche" in e for e in errs)
 
 
 def test_quota_counts_remaining(tmp_path):
