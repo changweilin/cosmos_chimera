@@ -55,7 +55,7 @@ namespace Cosmimera.Bootstrap.Tests
         {
             LobbySave live = Ready();
             live.CraftStock.TryExchange(Array.Empty<CraftStack>(), new[] { new CraftStack("raw_hemp", 8) });
-            live.Equipment.Restore(new[] { new EquippedItem(1, "armor", "retired_guard") });
+            live.Equipment.Restore(new[] { new EquippedItem(1, "upper", "retired_guard") });
             live.Write(_path);
             RunOutcome outcome = Outcome(live.Get(1).Exp);
             outcome.CraftStock = new[] { new CraftStack("raw_hemp", 2), new CraftStack("craft_linen", 3) };

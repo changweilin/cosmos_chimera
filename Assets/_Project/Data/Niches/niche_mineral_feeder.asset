@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_mineral_feeder
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_mineral_feeder
+  nameZh: "\u98DF\u7926"
+  habitatKinds:
+  - volcano
+  - rift_valley
+  - canyon
+  - cave
+  - desert
+  - mountain
+  - glacier
+  - cirque
+  - moraine
+  - karst
+  - basalt_terrace
+  - granite_domes
+  - slate_cliffs
+  habits:
+  - habit: 0
+    weight: 4
+  - habit: 2
+    weight: 1
+  - habit: 3
+    weight: 2
+  - habit: 4
+    weight: 3
+  mode: 0
+  radiusMm: 15000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 200
+    individualSd: 30
+    actionSd: 40
+    min: 50
+    max: 900
+  moveMs:
+    mean: 6500
+    individualSd: 1300
+    actionSd: 1950
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 12000
+    individualSd: 3000
+    actionSd: 4800
+    min: 250
+    max: 60000

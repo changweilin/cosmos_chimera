@@ -189,7 +189,7 @@
     "ja": "閉じる"
   },
   "ui.interact.observe_detail": {
-    "ja": "{species}｜{stage}｜{element}｜性格：{temperament}｜LV{level}"
+    "ja": "{species}｜{stage}｜{element}｜習性：{habit}｜ニッチ：{niche}｜LV{level}"
   },
   "ui.interact.pet_reaction": {
     "ja": "{target}は静かにあなたの手にすり寄ってきた。"
@@ -206,23 +206,65 @@
   "ui.stage.overload": {
     "ja": "オーバーロード"
   },
-  "ui.temperament.timid": {
-    "ja": "臆病"
+  "ui.habit.avoidant": {
+    "ja": "回避"
   },
-  "ui.temperament.cautious": {
+  "ui.habit.vigilant": {
     "ja": "警戒"
   },
-  "ui.temperament.normal": {
-    "ja": "沈着"
+  "ui.habit.tolerant": {
+    "ja": "耐性"
   },
-  "ui.temperament.territorial": {
+  "ui.habit.territorial": {
     "ja": "縄張り"
   },
-  "ui.temperament.fierce": {
-    "ja": "凶暴"
+  "ui.habit.aggressive": {
+    "ja": "攻撃"
   },
-  "ui.temperament.apex": {
-    "ja": "覇者"
+  "ui.habit.dominant": {
+    "ja": "優位"
+  },
+  "ui.niche.niche_ground_grazer": {
+    "ja": "地表草食"
+  },
+  "ui.niche.niche_edge_browser": {
+    "ja": "林縁葉食"
+  },
+  "ui.niche.niche_fruit_disperser": {
+    "ja": "果実散布"
+  },
+  "ui.niche.niche_nectar_visitor": {
+    "ja": "訪花吸蜜"
+  },
+  "ui.niche.niche_ground_granivore": {
+    "ja": "地表種子食"
+  },
+  "ui.niche.niche_understory_insectivore": {
+    "ja": "林床食虫"
+  },
+  "ui.niche.niche_detritivore": {
+    "ja": "デトリタス食"
+  },
+  "ui.niche.niche_carrion_scavenger": {
+    "ja": "腐肉食"
+  },
+  "ui.niche.niche_ambush_predator": {
+    "ja": "待ち伏せ捕食"
+  },
+  "ui.niche.niche_patrol_hunter": {
+    "ja": "巡回捕食"
+  },
+  "ui.niche.niche_apex_predator": {
+    "ja": "頂点捕食"
+  },
+  "ui.niche.niche_opportunistic_omnivore": {
+    "ja": "日和見雑食"
+  },
+  "ui.niche.niche_mineral_feeder": {
+    "ja": "鉱物食"
+  },
+  "ui.niche.niche_ambient_energy_feeder": {
+    "ja": "環境エネルギー摂食"
   },
   "ui.star_select.boss_stage": {
     "ja": "ボス：{stage}"

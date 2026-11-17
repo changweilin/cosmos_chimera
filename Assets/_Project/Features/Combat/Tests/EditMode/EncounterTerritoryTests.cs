@@ -56,12 +56,12 @@ namespace Cosmimera.Combat.Tests
             return m;
         }
 
-        private CreatureDef Creature(string id, Temperament temperament, MoveDef move = null)
+        private CreatureDef Creature(string id, Habit habit, MoveDef move = null)
         {
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move ?? Move("bite_" + id, RangeClass.Melee, 2000), null, "{}", false);
             return c;
@@ -76,35 +76,35 @@ namespace Cosmimera.Combat.Tests
 
         private float3 Feet(float meters) => _planet.ToWorld(AtMeters(meters), 0f);
 
-        [TestCase(Temperament.Normal, 7f, true)]
-        [TestCase(Temperament.Normal, 9f, false)]
-        [TestCase(Temperament.Fierce, 19f, true)]
-        [TestCase(Temperament.Fierce, 21f, false)]
-        [TestCase(Temperament.Timid, 0.5f, false)]
-        [TestCase(Temperament.Cautious, 3.5f, true)]
-        [TestCase(Temperament.Cautious, 4.5f, false)]
-        [TestCase(Temperament.Territorial, 13f, true)]
-        [TestCase(Temperament.Territorial, 15f, false)]
-        [TestCase(Temperament.Apex, 27f, true)]
-        [TestCase(Temperament.Apex, 29f, false)]
-        public void Proximity_engagement_follows_the_species_territory(Temperament temperament, float meters, bool engaged)
+        [TestCase(Habit.Tolerant, 7f, true)]
+        [TestCase(Habit.Tolerant, 9f, false)]
+        [TestCase(Habit.Aggressive, 19f, true)]
+        [TestCase(Habit.Aggressive, 21f, false)]
+        [TestCase(Habit.Avoidant, 0.5f, false)]
+        [TestCase(Habit.Vigilant, 3.5f, true)]
+        [TestCase(Habit.Vigilant, 4.5f, false)]
+        [TestCase(Habit.Territorial, 13f, true)]
+        [TestCase(Habit.Territorial, 15f, false)]
+        [TestCase(Habit.Dominant, 27f, true)]
+        [TestCase(Habit.Dominant, 29f, false)]
+        public void Proximity_engagement_follows_the_individual_habit_territory(Habit habit, float meters, bool engaged)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", temperament), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", habit), null, AtMeters(0f), 10);
             e.Tick(50, 50, Feet(meters), Free, CombatAi.NoTarget);
             Assert.That(wild.Engaged, Is.EqualTo(engaged));
         }
 
         [Test]
-        public void Territory_radius_reads_balance_per_temperament()
+        public void Territory_radius_reads_balance_per_habit()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(0f), 10);
-            EncounterUnit cautious = e.AddCreature(EncounterSide.Wild, Creature("c", Temperament.Cautious), null, AtMeters(25f), 10);
-            EncounterUnit normal = e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(50f), 10);
-            EncounterUnit territorial = e.AddCreature(EncounterSide.Wild, Creature("tr", Temperament.Territorial), null, AtMeters(75f), 10);
-            EncounterUnit fierce = e.AddCreature(EncounterSide.Wild, Creature("f", Temperament.Fierce), null, AtMeters(100f), 10);
-            EncounterUnit apex = e.AddCreature(EncounterSide.Wild, Creature("a", Temperament.Apex), null, AtMeters(125f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(0f), 10);
+            EncounterUnit cautious = e.AddWildT(Creature("c", Habit.Vigilant), null, AtMeters(25f), 10);
+            EncounterUnit normal = e.AddWildT(Creature("n", Habit.Tolerant), null, AtMeters(50f), 10);
+            EncounterUnit territorial = e.AddWildT(Creature("tr", Habit.Territorial), null, AtMeters(75f), 10);
+            EncounterUnit fierce = e.AddWildT(Creature("f", Habit.Aggressive), null, AtMeters(100f), 10);
+            EncounterUnit apex = e.AddWildT(Creature("a", Habit.Dominant), null, AtMeters(125f), 10);
             Assert.That(e.TerritoryRadiusM(timid.Id), Is.EqualTo(0f));
             // mm × 0.001f is not exact in float (28000 × 0.001f = 28.0000019); 1e-5 m covers that rounding at 28 m.
             Assert.That(e.TerritoryRadiusM(cautious.Id), Is.EqualTo(4f).Within(1e-5f));
@@ -120,7 +120,7 @@ namespace Cosmimera.Combat.Tests
         public void An_engaged_wild_stays_engaged_until_the_disengage_distance()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Normal), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Tolerant), null, AtMeters(0f), 10);
             e.Tick(50, 50, Feet(5f), Free, CombatAi.NoTarget);
             Assert.That(wild.Engaged, Is.True);
             e.Tick(100, 50, Feet(30f), Free, CombatAi.NoTarget);
@@ -133,8 +133,8 @@ namespace Cosmimera.Combat.Tests
         public void Provoke_starts_a_fight_with_a_timid_wild_and_checks_its_target()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Temperament.Normal), null, AtMeters(0f), 10);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(3f), 10);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Habit.Tolerant), null, AtMeters(0f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(3f), 10);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             e.Tick(50, 50, Feet(0f), Free, mine.Id);
             Assert.That(timid.Engaged, Is.False, "a timid wild never starts a fight");
@@ -168,10 +168,10 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player,
-                Creature("m", Temperament.Normal, ShapedMove("burst_m", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
+                Creature("m", Habit.Tolerant, ShapedMove("burst_m", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
                 null, AtMeters(0f), 10);
-            EncounterUnit normal = e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            EncounterUnit normal = e.AddWildT(Creature("n", Habit.Tolerant), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(2f), 10);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             bool timidHit = false;
             for (int t = 1; t <= 40 && !timidHit; t++)
@@ -195,10 +195,10 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player,
-                Creature("m", Temperament.Normal, ShapedMove("field_m", MoveShape.Field, RangeClass.Mid, 12000, 1, 3500)),
+                Creature("m", Habit.Tolerant, ShapedMove("field_m", MoveShape.Field, RangeClass.Mid, 12000, 1, 3500)),
                 null, AtMeters(0f), 10);
-            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.AddWildT(Creature("n", Habit.Tolerant), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(2f), 10);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             int misses = 0;
             bool hit = false;
@@ -279,7 +279,7 @@ namespace Cosmimera.Combat.Tests
         private Encounter NewPlayerFight(out PlayerVitals vitals)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             vitals = new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800));
             e.AttachPlayer(vitals);
             return e;
@@ -292,7 +292,7 @@ namespace Cosmimera.Combat.Tests
         public void Disengage_distance_is_inclusive_at_40_m(float beyond, bool staysEngaged)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Timid), null, AtMeters(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Avoidant), null, AtMeters(0f), 10);
             e.Provoke(wild.Id);
             e.Tick(50, 50, Feet(30f), Free, CombatAi.NoTarget);
             Assert.That(wild.Engaged, Is.True);
@@ -321,10 +321,10 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player,
-                Creature("m", Temperament.Normal, ShapedMove("front_m", MoveShape.Front, RangeClass.Melee, 4000, 100, 0)),
+                Creature("m", Habit.Tolerant, ShapedMove("front_m", MoveShape.Front, RangeClass.Melee, 4000, 100, 0)),
                 null, AtMeters(0f), 10);
-            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            e.AddWildT(Creature("n", Habit.Tolerant), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(2f), 10);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             bool timidHit = false;
             for (int t = 1; t <= 40 && !timidHit; t++)
@@ -353,9 +353,9 @@ namespace Cosmimera.Combat.Tests
             field.Set(Element.Fire, MoveKind.Damage, power, null, 0, 3500, 1500, 100, RangeClass.Mid, MoveShape.Field, 12000,
                 MoveMovement.None, BurstOrigin.Caster);
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Temperament.Normal, field), null, AtMeters(0f), 10);
-            e.AddCreature(EncounterSide.Wild, Creature("n", Temperament.Normal), null, AtMeters(1f), 10);
-            EncounterUnit timid = e.AddCreature(EncounterSide.Wild, Creature("t", Temperament.Timid), null, AtMeters(2f), 10);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Habit.Tolerant, field), null, AtMeters(0f), 10);
+            e.AddWildT(Creature("n", Habit.Tolerant), null, AtMeters(1f), 10);
+            EncounterUnit timid = e.AddWildT(Creature("t", Habit.Avoidant), null, AtMeters(2f), 10);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             bool hit = false;
             for (int t = 1; t <= 200 && !hit; t++)
@@ -376,7 +376,7 @@ namespace Cosmimera.Combat.Tests
         public void After_the_player_is_downed_a_lone_wild_draws_nothing()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1, 600, 400, 800));
             e.AttachPlayer(vitals);
             int t = 1;
@@ -403,10 +403,9 @@ namespace Cosmimera.Combat.Tests
         public void A_wild_burst_resolves_targets_in_id_order_with_the_player_last()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
-            EncounterUnit a = e.AddCreature(EncounterSide.Player, Creature("a", Temperament.Normal), null, AtMeters(1f), 10);
-            EncounterUnit b = e.AddCreature(EncounterSide.Player, Creature("b", Temperament.Normal), null, AtMeters(-1f), 10);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild,
-                Creature("w", Temperament.Fierce, ShapedMove("burst_w", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
+            EncounterUnit a = e.AddCreature(EncounterSide.Player, Creature("a", Habit.Tolerant), null, AtMeters(1f), 10);
+            EncounterUnit b = e.AddCreature(EncounterSide.Player, Creature("b", Habit.Tolerant), null, AtMeters(-1f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive, ShapedMove("burst_w", MoveShape.Burst, RangeClass.Melee, 3000, 100, 0)),
                 null, AtMeters(0f), 50);
             e.Field(a.Id, AtMeters(1f), false, 0);
             e.Field(b.Id, AtMeters(-1f), false, 0);
@@ -432,7 +431,7 @@ namespace Cosmimera.Combat.Tests
         public void Wild_attacks_the_player_character_and_downs_it_once()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(150, 600, 400, 800));
             e.AttachPlayer(vitals);
             int hits = 0;
@@ -471,7 +470,7 @@ namespace Cosmimera.Combat.Tests
         public void Without_an_attached_player_the_character_is_never_targeted()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             for (int t = 1; t <= 100; t++)
             {
                 e.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
@@ -486,8 +485,8 @@ namespace Cosmimera.Combat.Tests
         public void A_nearer_creature_is_preferred_over_the_player_character()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Temperament.Normal), null, AtMeters(2f), 50);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Habit.Tolerant), null, AtMeters(2f), 50);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             e.Field(mine.Id, AtMeters(2f), false, 0);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800));
             e.AttachPlayer(vitals);
@@ -499,7 +498,7 @@ namespace Cosmimera.Combat.Tests
         public void Dodge_roll_iframes_turn_a_hit_on_the_player_into_a_miss()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
-            e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Fierce), null, AtMeters(0f), 50);
+            e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800));
             e.AttachPlayer(vitals);
             int misses = 0;
@@ -538,13 +537,13 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 40000, 8000, 14000, 20000, 28000), "must stay below disengage");
             Assert.Throws<ContractException>(() => _ = new TerritoryTuning(0, 4000, 8000, 14000, 40000, 28000));
             var t = new TerritoryTuning(1, 2, 3, 4, 5, 6);
-            Assert.That(t.RadiusMm(Temperament.Timid), Is.EqualTo(1));
-            Assert.That(t.RadiusMm(Temperament.Cautious), Is.EqualTo(2));
-            Assert.That(t.RadiusMm(Temperament.Normal), Is.EqualTo(3));
-            Assert.That(t.RadiusMm(Temperament.Territorial), Is.EqualTo(4));
-            Assert.That(t.RadiusMm(Temperament.Fierce), Is.EqualTo(5));
-            Assert.That(t.RadiusMm(Temperament.Apex), Is.EqualTo(6));
-            Assert.Throws<ContractException>(() => t.RadiusMm((Temperament)7));
+            Assert.That(t.RadiusMm(Habit.Avoidant), Is.EqualTo(1));
+            Assert.That(t.RadiusMm(Habit.Vigilant), Is.EqualTo(2));
+            Assert.That(t.RadiusMm(Habit.Tolerant), Is.EqualTo(3));
+            Assert.That(t.RadiusMm(Habit.Territorial), Is.EqualTo(4));
+            Assert.That(t.RadiusMm(Habit.Aggressive), Is.EqualTo(5));
+            Assert.That(t.RadiusMm(Habit.Dominant), Is.EqualTo(6));
+            Assert.Throws<ContractException>(() => t.RadiusMm((Habit)7));
         }
 
         [Test]
@@ -552,10 +551,10 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             MoveDef ranged = Move("bolt", RangeClass.Long, 24000);
-            CreatureDef def = Creature("b", Temperament.Fierce);
-            CreatureDef rangedDef = Creature("r", Temperament.Fierce, ranged);
-            EncounterUnit normal = e.AddCreature(EncounterSide.Wild, def, ranged, AtMeters(0f), 30);
-            EncounterUnit boss = e.AddBoss(def, ranged, AtMeters(100f), 30);
+            CreatureDef def = Creature("b", Habit.Aggressive);
+            CreatureDef rangedDef = Creature("r", Habit.Aggressive, ranged);
+            EncounterUnit normal = e.AddWildT(def, ranged, AtMeters(0f), 30);
+            EncounterUnit boss = e.AddBossT(def, ranged, AtMeters(100f), 30);
             Assert.That(normal.IsBoss, Is.False);
             Assert.That(boss.IsBoss, Is.True);
             Assert.That(boss.Side, Is.EqualTo(EncounterSide.Wild));
@@ -569,20 +568,20 @@ namespace Cosmimera.Combat.Tests
             Assert.That(bv.WidthMm, Is.EqualTo(nv.WidthMm * Encounter.BossSizePermille / 1000));
             Assert.That(bv.HalfHeightMm, Is.EqualTo(nv.HalfHeightMm * Encounter.BossSizePermille / 1000));
             Assert.That(boss.Volumes[1], Is.EqualTo(normal.Volumes[1]), "ranged volumes are not scaled");
-            EncounterUnit rangedBoss = e.AddBoss(rangedDef, null, AtMeters(200f), 30);
-            EncounterUnit rangedNormal = e.AddCreature(EncounterSide.Wild, rangedDef, null, AtMeters(300f), 30);
+            EncounterUnit rangedBoss = e.AddBossT(rangedDef, null, AtMeters(200f), 30);
+            EncounterUnit rangedNormal = e.AddWildT(rangedDef, null, AtMeters(300f), 30);
             Assert.That(rangedBoss.Volumes[0], Is.EqualTo(rangedNormal.Volumes[0]));
-            Assert.Throws<ContractException>(() => e.AddBoss(null, null, AtMeters(0f), 30));
-            Assert.Throws<ContractException>(() => e.AddBoss(def, null, AtMeters(0f), 0));
+            Assert.Throws<ContractException>(() => e.AddBossT(null, null, AtMeters(0f), 30));
+            Assert.Throws<ContractException>(() => e.AddBossT(def, null, AtMeters(0f), 0));
         }
 
         [Test]
         public void SetLevel_keeps_the_boss_multipliers()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            CreatureDef def = Creature("b", Temperament.Fierce);
-            EncounterUnit grown = e.AddBoss(def, null, AtMeters(0f), 10);
-            EncounterUnit built = e.AddBoss(def, null, AtMeters(100f), 40);
+            CreatureDef def = Creature("b", Habit.Aggressive);
+            EncounterUnit grown = e.AddBossT(def, null, AtMeters(0f), 10);
+            EncounterUnit built = e.AddBossT(def, null, AtMeters(100f), 40);
             e.SetLevel(grown.Id, 40);
             Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp));
             Assert.That(grown.Volumes[0], Is.EqualTo(built.Volumes[0]));

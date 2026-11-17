@@ -56,7 +56,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, Temperament.Fierce, null, 0,
+            TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
             return c;
@@ -133,8 +133,8 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("smash", 400)), null, AtMeters(0f), 100);
             CreatureDef bossDef = Creature("b", Move("bite", 1));
-            EncounterUnit boss = e.AddBoss(bossDef, null, AtMeters(2f), 1);
-            EncounterUnit plain = e.AddCreature(EncounterSide.Wild, bossDef, null, AtMeters(300f), 1);
+            EncounterUnit boss = e.AddBossT(bossDef, null, AtMeters(2f), 1);
+            EncounterUnit plain = e.AddWildT(bossDef, null, AtMeters(300f), 1);
             Assert.That(boss.Combatant.MaxHp, Is.EqualTo(3 * plain.Combatant.MaxHp), "Q-C48: boss HP is three times normal");
             e.Field(mine.Id, AtMeters(0f), false, 0);
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);

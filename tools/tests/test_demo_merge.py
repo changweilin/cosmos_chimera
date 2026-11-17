@@ -59,7 +59,7 @@ def inputs(tmp_path, monkeypatch):
     env.mkdir(parents=True)
     (env / "env-materials.json").write_text('{"substances":[]}', encoding="utf-8")
     craft = root / "_incoming" / "life-crafting-draft-01"
-    for kind in ("craft-items", "craft-recipes"):
+    for kind in ("craft-items", "craft-recipes", "craft-grips"):
         (craft / kind).mkdir(parents=True)
         (craft / kind / f"{kind}.json").write_text('[]', encoding="utf-8")
     (craft / "crafting-copy.json").write_text('{}', encoding="utf-8")

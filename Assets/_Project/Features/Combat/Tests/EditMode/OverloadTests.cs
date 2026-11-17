@@ -55,7 +55,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, stage, CreatureSizeClass.L, AiStyle.Charge, Temperament.Normal, null, 0,
+            TestWild.WithHabit(c, Habit.Tolerant).Set("line_" + id, stage, CreatureSizeClass.L, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
             return c;
@@ -68,7 +68,7 @@ namespace Cosmimera.Combat.Tests
             var up = new float3(0f, 1f, 0f);
             EncounterUnit adult = enc.AddCreature(EncounterSide.Player, MakeCreature("adult", CreatureStage.Adult), null, up, 10);
             EncounterUnit juvenile = enc.AddCreature(EncounterSide.Player, MakeCreature("juv", CreatureStage.Juvenile), null, up, 10);
-            EncounterUnit wild = enc.AddCreature(EncounterSide.Wild, MakeCreature("wild", CreatureStage.Adult), null, up, 10);
+            EncounterUnit wild = enc.AddWildT(MakeCreature("wild", CreatureStage.Adult), null, up, 10);
 
             Assert.That(enc.TryTriggerOverload(adult.Id, inCombat: false, overloadUnlocked: true), Is.EqualTo(OverloadResult.NotInCombat));
             Assert.That(enc.TryTriggerOverload(wild.Id, inCombat: true, overloadUnlocked: true), Is.EqualTo(OverloadResult.NotPlayerSide));

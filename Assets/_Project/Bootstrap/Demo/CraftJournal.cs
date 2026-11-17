@@ -20,8 +20,9 @@ namespace Cosmimera.Bootstrap.Demo
         {
             TextAsset items = Resources.Load<TextAsset>("Crafting/items");
             TextAsset recipes = Resources.Load<TextAsset>("Crafting/recipes");
-            if (items == null || recipes == null) throw new InvalidDataException("Missing staged crafting catalog");
-            return new CraftCatalog(items.text, recipes.text);
+            TextAsset grips = Resources.Load<TextAsset>("Crafting/grips");
+            if (items == null || recipes == null || grips == null) throw new InvalidDataException("Missing staged crafting catalog");
+            return new CraftCatalog(items.text, recipes.text, grips.text);
         }
 
         internal static void DrawStock(AdventurePanel ui, DemoCopy copy, CraftInventory inventory)
@@ -62,6 +63,11 @@ namespace Cosmimera.Bootstrap.Demo
                     .Replace("{speed}", spec.PlayerSpeedPercent.ToString("+0;-0;0"))
                     .Replace("{roll}", spec.PlayerRollPercent.ToString("+0;-0;0")));
             if (spec.Target == "player") return;
+            if (spec.IsWeapon)
+                ui.Label(copy.Ui("ui.craft.weapon_stats").Replace("{element}", copy.Element(spec.Weapon.Element.ToString()))
+                    .Replace("{mastery}", spec.Weapon.ElementMastery.ToString())
+                    .Replace("{power}", (spec.Weapon.PowerPermille / 1000f).ToString("0.##"))
+                    .Replace("{speed}", (spec.Weapon.SpeedPermille / 1000f).ToString("0.##")));
             foreach (EffectSpec effect in spec.CreatureEffects)
             {
                 bool scoped = effect.Type == EffectType.MasteryMod || effect.Type == EffectType.ResistMod || effect.Type == EffectType.CdModPercent;

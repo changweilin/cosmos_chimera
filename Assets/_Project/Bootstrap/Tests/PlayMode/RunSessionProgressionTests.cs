@@ -622,10 +622,13 @@ namespace Cosmimera.Bootstrap.Tests
                 case EndPath.Downed:
                     // Q-C33: a real wild hit through Encounter.Tick (not a seam) must raise PlayerDowned and settle the
                     // run as a defeat. The party stays parked >40 m away so the player is the only intruder in reach.
-                    // Q-C35: a timid wild only fights back once hit, so it would never strike the idle player.
+                    // Q-C35: an avoidant wild only fights back once hit, so it would never strike the idle player.
+                    // Habits are per individual since P3-31, so the old species filter no longer kept out ranged holders
+                    // (water_wave_elver's line move never connects with the idle character); a charger is the reliable striker.
                     RunSession.UnitSnapshot target = s.UnitsForTests.First(u =>
                         u.Side == EncounterSide.Wild && u.Fielded && !u.IsFainted && u.Id != boss &&
-                        env.Wild.First(c => c.Id == u.CreatureId).Temperament != Temperament.Timid);
+                        u.Habit != Habit.Avoidant &&
+                        env.Wild.First(c => c.Id == u.CreatureId).AiStyle == AiStyle.Charge);
                     float3 wildUp = s.DirectionForTests(target.Position);
                     MovePlayer(s, math.normalize(wildUp * Radius + PlanetFrame.FromUp(wildUp).East * 3f));
                     s.WoundPlayerForTests(1);

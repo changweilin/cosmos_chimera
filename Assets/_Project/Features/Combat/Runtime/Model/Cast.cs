@@ -232,8 +232,10 @@ namespace Cosmimera.Combat
     public readonly struct CastContext
     {
         internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs,
-            int powerDeltaPercent = 0)
+            int powerDeltaPercent = 0, int weaponPowerPermille = 1000)
         {
+            // Stored as an offset so default(CastContext) stays a neutral ×1.
+            WeaponPowerOffsetPermille = weaponPowerPermille - 1000;
             Move = move;
             MasteryPercent = masteryPercent;
             RangePercentSum = rangePercentSum;
@@ -265,6 +267,16 @@ namespace Cosmimera.Combat
         /// <summary>Weather percentage modifier on move power frozen at cast time.</summary>
         /// <remarks>Pre: none. Post: in [-90, 100]. Side effects: none.</remarks>
         public int PowerDeltaPercent { get; }
+
+        private int WeaponPowerOffsetPermille { get; }
+
+        /// <summary>Weapon multiplier on move power frozen at cast time, permille (1000 when unarmed).</summary>
+        /// <remarks>Pre: none. Post: 1..DamageModel.MaxWeaponPermille for an Accepted cast. Side effects: none.</remarks>
+        public int WeaponPowerPermille => 1000 + WeaponPowerOffsetPermille;
+
+        /// <summary>Move power after the frozen weather delta and weapon multiplier.</summary>
+        /// <remarks>Pre: obtained from an Accepted BeginCast. Post: as DamageModel.ScalePower(power, delta, weapon). Side effects: none.</remarks>
+        public int EffectivePower => DamageModel.ScalePower(Move.Power, PowerDeltaPercent, WeaponPowerPermille);
     }
 
     /// <summary>What one move did to one combatant.</summary>
@@ -361,6 +373,8 @@ namespace Cosmimera.Combat
         private int[] _preOverloadMastery;
         private int[] _preOverloadResist;
         private bool _hasOverloadFormStats;
+        private WeaponLoadout _weapons;
+        private long _acceptedCasts;
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -643,14 +657,58 @@ namespace Cosmimera.Combat
             HealPercent(healPercent, nowMs);
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
-            int mastery = EffectMath.EffectiveMastery(_mastery[(int)move.Element], _totals.MasteryDelta(move.Element));
+            long masteryDelta = _totals.MasteryDelta(move.Element);
+            int weaponPower = 1000;
+            int speed = 1000;
+            if (_weapons.HandCount > 0)
+            {
+                // REQ: crafting.md#武器數值模型 — dual wield alternates hands per accepted cast; a hand's element
+                // mastery counts only when it matches the move.
+                WeaponProfile hand = _weapons.Hand(_acceptedCasts);
+                if (hand.Element == move.Element)
+                {
+                    masteryDelta += hand.ElementMastery;
+                }
+
+                weaponPower = _weapons.PowerPermille(hand);
+                speed = _weapons.SpeedPermille(hand);
+                _acceptedCasts++;
+            }
+
+            int mastery = EffectMath.EffectiveMastery(_mastery[(int)move.Element], masteryDelta);
             int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _spi,
                 _totals.CdPercent(move.Element) + weather.CdDeltaPercent(move.Element), _rules);
+            if (speed != 1000)
+            {
+                long sped = ((long)cd * 1000 + speed - 1) / speed;
+                int floor = _stats.Coefficients.CdFloorMs;
+                cd = sped < floor ? floor : sped > int.MaxValue ? int.MaxValue : (int)sped;
+            }
+
             Cooldowns.Start(slot, nowMs, cd);
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
-                weather.PowerDeltaPercent(move.Element));
+                weather.PowerDeltaPercent(move.Element), weaponPower);
             return CastResult.Accepted;
         }
+
+        /// <summary>Replaces the departure weapon loadout; default(WeaponLoadout) is unarmed.</summary>
+        /// <remarks>
+        /// REQ: docs/design/crafting.md#穿戴與數值.
+        /// Pre: Book's simulation watermark is zero (departure only, like equipment effects).
+        /// Post: later accepted casts use the loadout's multiplier, speed and element mastery, starting from the first hand;
+        ///       HasShield equals loadout.HasShield.
+        /// Side effects: replaces weapon state and resets hand alternation.
+        /// </remarks>
+        public void SetWeapons(in WeaponLoadout loadout)
+        {
+            Contract.Requires(Book.WatermarkMs == 0, "weapons must be assigned before simulation time advances");
+            _weapons = loadout;
+            _acceptedCasts = 0;
+        }
+
+        /// <summary>Whether a shield is held (block uses block.shield_permille).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool HasShield => _weapons.HasShield;
 
         /// <summary>Move speed (mm/s) at <paramref name="nowMs"/> after AGI and the active move_speed_mod_percent.</summary>
         /// <remarks>
@@ -746,8 +804,7 @@ namespace Cosmimera.Combat
             if (move.DealsDamage)
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-                int power = DamageModel.ScalePower(move.Power, cast.PowerDeltaPercent);
-                int raw = DamageModel.Compute(power, cast.MasteryPercent, resist);
+                int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist);
                 if (damageTakenBonusPercent > 0)
                 {
                     raw = (int)System.Math.Min(int.MaxValue, ((long)raw * (100 + damageTakenBonusPercent) + 50) / 100);
@@ -866,7 +923,7 @@ namespace Cosmimera.Combat
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
             int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-            int raw = DamageModel.Compute(DamageModel.ScalePower(move.Power, cast.PowerDeltaPercent), cast.MasteryPercent, resist);
+            int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist);
             long scaled = ((long)raw * percent + 50) / 100;
             int amount = (int)System.Math.Min(int.MaxValue, raw > 0 && scaled == 0 ? 1 : scaled);
             int hpBefore = Hp;

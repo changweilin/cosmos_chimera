@@ -62,14 +62,15 @@ namespace Cosmimera.Bootstrap.Demo
             EncounterUnit unit = _encounter.AddEquippedCreature(_setup.Party[slot], moves, traits, _plan.LandingDirection,
                 _progression.LevelOf(_partyExp[slot]));
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
-                _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+                _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(_setup.PartyIds[slot]), _balance.Grips);
             var combinedEffects = new List<EffectSpec>(equipment.CreatureEffects);
             if (_setup.Partners != null)
             {
                 foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
                 {
+                    // REQ: crafting.md#穿戴與數值 — only the sub's effect rows reach the main; its weapons stay with it.
                     EquipmentModifiers subEquipment = EquipmentRules.Collect(subId,
-                        _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog);
+                        _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(subId), _balance.Grips);
                     foreach (EffectSpec effect in subEquipment.CreatureEffects)
                     {
                         if (combinedEffects.Count < 32)
@@ -80,9 +81,14 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
             unit.Combatant.Book.SetEquipmentEffects(combinedEffects);
+            unit.Combatant.SetWeapons(equipment.Weapons);
             if (overload) _overloadUnlocked.Add(unit.Id);
             return unit;
         }
+
+        // Runs without owned individuals (smoke tests) have no species to look up; they hold no equipment either.
+        private IReadOnlyCollection<GripMode> GripsAtDeparture(int ownedId) =>
+            _setup.Owned == null ? (IReadOnlyCollection<GripMode>)Array.Empty<GripMode>() : _craftCatalog.GripsOf(OwnedAtDeparture(ownedId).SpeciesId);
 
         private OwnedCreature OwnedAtDeparture(int id)
         {

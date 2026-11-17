@@ -45,7 +45,7 @@ namespace Cosmimera.Combat.Tests
             _created.Clear();
         }
 
-        private CreatureDef Creature(string id, Temperament temperament)
+        private CreatureDef Creature(string id, Habit habit)
         {
             var m = ScriptableObject.CreateInstance<MoveDef>();
             _created.Add(m);
@@ -55,7 +55,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -84,12 +84,12 @@ namespace Cosmimera.Combat.Tests
         public void Reach_is_measured_between_body_edges()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit inside = e.AddCreature(EncounterSide.Wild, Creature("in", Temperament.Timid), null,
+            EncounterUnit inside = e.AddWildT(Creature("in", Habit.Avoidant), null,
                 AtMeters(AtGap(MProbe, Encounter.InteractRadiusM - 0.05f)), 10);
             Assert.That(e.NearestInteractable(Feet), Is.EqualTo(inside.Id));
 
             var far = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            far.AddCreature(EncounterSide.Wild, Creature("out", Temperament.Timid), null,
+            far.AddWildT(Creature("out", Habit.Avoidant), null,
                 AtMeters(AtGap(MProbe, Encounter.InteractRadiusM + 0.05f)), 10);
             Assert.That(far.NearestInteractable(Feet), Is.EqualTo(-1));
         }
@@ -98,15 +98,15 @@ namespace Cosmimera.Combat.Tests
         public void Nearest_wins_and_ties_go_to_the_lower_id()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            e.AddCreature(EncounterSide.Wild, Creature("far", Temperament.Timid), null, AtMeters(AtGap(MProbe, 2f)), 10);
-            EncounterUnit near = e.AddCreature(EncounterSide.Wild, Creature("near", Temperament.Timid), null,
+            e.AddWildT(Creature("far", Habit.Avoidant), null, AtMeters(AtGap(MProbe, 2f)), 10);
+            EncounterUnit near = e.AddWildT(Creature("near", Habit.Avoidant), null,
                 AtMeters(AtGap(MProbe, 1f)), 10);
             Assert.That(e.NearestInteractable(Feet), Is.EqualTo(near.Id));
 
             var tie = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit first = tie.AddCreature(EncounterSide.Wild, Creature("a", Temperament.Timid), null,
+            EncounterUnit first = tie.AddWildT(Creature("a", Habit.Avoidant), null,
                 AtMeters(AtGap(MProbe, 1f)), 10);
-            tie.AddCreature(EncounterSide.Wild, Creature("b", Temperament.Timid), null, AtMeters(-AtGap(MProbe, 1f)), 10);
+            tie.AddWildT(Creature("b", Habit.Avoidant), null, AtMeters(-AtGap(MProbe, 1f)), 10);
             Assert.That(tie.NearestInteractable(Feet), Is.EqualTo(first.Id));
         }
 
@@ -114,9 +114,9 @@ namespace Cosmimera.Combat.Tests
         public void Engaged_provoked_and_player_side_units_are_not_offered()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Timid), null,
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Avoidant), null,
                 AtMeters(AtGap(MProbe, 1f)), 10);
-            EncounterUnit pet = e.AddCreature(EncounterSide.Player, Creature("p", Temperament.Timid), null,
+            EncounterUnit pet = e.AddCreature(EncounterSide.Player, Creature("p", Habit.Avoidant), null,
                 AtMeters(-AtGap(MProbe, 0.5f)), 10);
             e.Field(pet.Id, AtMeters(-AtGap(MProbe, 0.5f)), false, 0);
             Assert.That(e.NearestInteractable(Feet), Is.EqualTo(wild.Id), "own creature is never offered");
@@ -133,7 +133,7 @@ namespace Cosmimera.Combat.Tests
         public void Timid_and_apex_are_both_offered_while_idle()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            EncounterUnit apex = e.AddCreature(EncounterSide.Wild, Creature("apex", Temperament.Apex), null,
+            EncounterUnit apex = e.AddWildT(Creature("apex", Habit.Dominant), null,
                 AtMeters(AtGap(MProbe, 1f)), 10);
             Assert.That(e.NearestInteractable(Feet), Is.EqualTo(apex.Id), "idle until the first Tick decides engagement");
         }

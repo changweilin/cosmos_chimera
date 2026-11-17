@@ -103,34 +103,172 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<ContractException>(() => CraftRules.CanCraft(null, AllSkills, _bag));
         }
 
+        private static readonly GripTuning Grips = new GripTuning(30, 15);
+        private static readonly GripMode[] TwoHand = { GripMode.TwoHanded };
+        private static readonly GripMode[] Dual = { GripMode.DualWield };
+        private static readonly GripMode[] Shield = { GripMode.OneHandShield };
+
+        private static CraftCatalog GearCatalog()
+        {
+            JArray items = JArray.Parse(Data("craft-items"));
+            foreach (string json in new[]
+            {
+                @"{ ""id"": ""test_greatsword"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                    ""equipment"": { ""kind"": ""two_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
+                    ""creature_effects"": [ { ""type"": ""range_mod_percent"", ""params"": { ""delta"": 10 } } ],
+                    ""weapon"": { ""element"": ""fire"", ""element_mastery"": 20, ""power_permille"": 2000, ""speed_permille"": 900 } } }",
+                @"{ ""id"": ""test_dagger"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                    ""equipment"": { ""kind"": ""one_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
+                    ""creature_effects"": [], ""weapon"": { ""element"": ""water"", ""element_mastery"": 5, ""power_permille"": 900, ""speed_permille"": 1100 } } }",
+                @"{ ""id"": ""test_shield"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
+                    ""equipment"": { ""kind"": ""shield"", ""target"": ""both"", ""player"": { ""max_hp_percent"": 5, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
+                    ""creature_effects"": [ { ""type"": ""resist_mod"", ""params"": { ""delta"": 5, ""element"": ""earth"" } } ] } }",
+            }) items.Add(JObject.Parse(json));
+            return new CraftCatalog(items.ToString(), Data("craft-recipes"),
+                @"[{ ""species"": ""s_two"", ""grips"": [""two_handed"", ""one_hand_shield""] }]");
+        }
+
         [Test]
-        public void Equipment_reserves_copies_and_refuses_wrong_target_and_overflowing_returns()
+        public void Equipment_reserves_copies_and_refuses_wrong_target_slot_and_overflowing_returns()
         {
             var gear = new EquipmentLoadout(); Add("craft_iron_blade", 1);
-            Assert.That(gear.TryEquip(0, "craft_iron_blade", _catalog, _bag), Is.False);
-            Assert.That(gear.TryEquip(1, "craft_iron_blade", _catalog, _bag), Is.True);
-            Assert.That(gear.TryEquip(2, "craft_iron_blade", _catalog, _bag), Is.False);
+            Assert.That(gear.TryEquip(0, "craft_iron_blade", "main_hand", EquipmentRules.PlayerGrips, _catalog, _bag), Is.False, "weapons are creature-only");
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "upper", Dual, _catalog, _bag), Is.False, "a weapon does not fit armor");
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "main_hand", TwoHand, _catalog, _bag), Is.False, "grip must permit one hand");
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "main_hand", Dual, _catalog, _bag), Is.True);
+            Assert.That(gear.TryEquip(2, "craft_iron_blade", "main_hand", Dual, _catalog, _bag), Is.False);
             Add("craft_iron_blade", int.MaxValue);
-            Assert.That(gear.TryUnequip(1, "weapon", _bag), Is.False);
+            Assert.That(gear.TryUnequip(1, "main_hand", _bag), Is.False);
             Assert.That(gear.Snapshot().Count, Is.EqualTo(1));
             Assert.That(_bag.TryExchange(new[] { new CraftStack("craft_iron_blade", 1) }, Empty), Is.True);
-            Assert.That(gear.TryUnequip(1, "weapon", _bag), Is.True);
+            Assert.That(gear.TryUnequip(1, "main_hand", _bag), Is.True);
             Assert.That(_bag.Count("craft_iron_blade"), Is.EqualTo(int.MaxValue));
-            Assert.Throws<ContractException>(() => gear.Restore(new[] { new EquippedItem(0, "armor", "a"), new EquippedItem(0, "armor", "b") }));
+            Assert.Throws<ContractException>(() => gear.Restore(new[] { new EquippedItem(0, "upper", "a"), new EquippedItem(0, "upper", "b") }));
+            Assert.Throws<ContractException>(() => new EquippedItem(0, "armor", "a"));
+            Assert.Throws<ContractException>(() => gear.TryEquip(1, "craft_iron_blade", "main_hand", null, _catalog, _bag));
+        }
+
+        [Test]
+        public void Two_handed_weapon_frees_the_off_hand_and_off_hand_displaces_it()
+        {
+            CraftCatalog catalog = GearCatalog(); var gear = new EquipmentLoadout();
+            Add("craft_iron_blade", 2); Add("test_greatsword", 1); Add("test_shield", 1);
+            var both = new[] { GripMode.TwoHanded, GripMode.OneHandShield };
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "main_hand", both, catalog, _bag), Is.True);
+            Assert.That(gear.TryEquip(1, "test_shield", "off_hand", both, catalog, _bag), Is.True);
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "off_hand", both, catalog, _bag), Is.False, "two blades need dual wield");
+            Assert.That(gear.TryEquip(1, "test_greatsword", "main_hand", both, catalog, _bag), Is.True);
+            Assert.That(gear.ItemIn(1, "main_hand"), Is.EqualTo("test_greatsword"));
+            Assert.That(gear.ItemIn(1, "off_hand"), Is.Null);
+            Assert.That(_bag.Count("craft_iron_blade"), Is.EqualTo(2)); Assert.That(_bag.Count("test_shield"), Is.EqualTo(1));
+            Assert.That(gear.TryEquip(1, "test_shield", "off_hand", both, catalog, _bag), Is.True);
+            Assert.That(gear.ItemIn(1, "main_hand"), Is.Null, "a shield displaces the two-handed weapon");
+            Assert.That(_bag.Count("test_greatsword"), Is.EqualTo(1));
+            Add("test_shield", int.MaxValue);
+            Assert.That(gear.TryEquip(1, "craft_iron_blade", "main_hand", both, catalog, _bag), Is.True);
+            Assert.That(gear.TryEquip(1, "test_greatsword", "main_hand", both, catalog, _bag), Is.False, "full bag cannot take back the displaced shield");
+            Assert.That(gear.ItemIn(1, "main_hand"), Is.EqualTo("craft_iron_blade"));
+            Assert.That(gear.ItemIn(1, "off_hand"), Is.EqualTo("test_shield"));
+        }
+
+        [Test]
+        public void Required_grips_cover_every_hand_pair()
+        {
+            Assert.That(EquipmentRules.RequiredGrips(null, null), Is.Null);
+            Assert.That(EquipmentRules.RequiredGrips(EquipmentKind.TwoHanded, null), Is.EqualTo(TwoHand));
+            Assert.That(EquipmentRules.RequiredGrips(EquipmentKind.TwoHanded, EquipmentKind.Shield), Is.Empty);
+            Assert.That(EquipmentRules.RequiredGrips(EquipmentKind.OneHanded, EquipmentKind.OneHanded), Is.EqualTo(Dual));
+            Assert.That(EquipmentRules.RequiredGrips(null, EquipmentKind.OneHanded), Is.EqualTo(Dual));
+            Assert.That(EquipmentRules.RequiredGrips(EquipmentKind.OneHanded, EquipmentKind.Shield), Is.EqualTo(Shield));
+            Assert.That(EquipmentRules.RequiredGrips(null, EquipmentKind.Shield), Is.EqualTo(Shield));
+            Assert.That(EquipmentRules.RequiredGrips(EquipmentKind.OneHanded, null), Is.EquivalentTo(new[] { GripMode.DualWield, GripMode.OneHandShield }));
+        }
+
+        [Test]
+        public void Collect_builds_weapon_loadouts_from_grips()
+        {
+            CraftCatalog catalog = GearCatalog();
+            WeaponLoadout Weapons(params EquippedItem[] e) => EquipmentRules.Collect(1, e, catalog, EquipmentRules.PlayerGrips, Grips).Weapons;
+            WeaponLoadout two = Weapons(new EquippedItem(1, "main_hand", "test_greatsword"));
+            Assert.That(two.HandCount, Is.EqualTo(1)); Assert.That(two.PowerBonusPercent, Is.EqualTo(30));
+            Assert.That(two.PowerPermille(two.First), Is.EqualTo(2600));
+            WeaponLoadout dual = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_dagger"));
+            Assert.That(dual.HandCount, Is.EqualTo(2)); Assert.That(dual.SpeedBonusPercent, Is.EqualTo(15));
+            Assert.That(dual.Hand(0).Element, Is.EqualTo(Element.Metal)); Assert.That(dual.Hand(1).Element, Is.EqualTo(Element.Water));
+            Assert.That(dual.SpeedPermille(dual.Hand(1)), Is.EqualTo(1265));
+            WeaponLoadout shield = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_shield"));
+            Assert.That(shield.HasShield && shield.HandCount == 1 && shield.PowerBonusPercent == 0 && shield.SpeedBonusPercent == 0, Is.True);
+        }
+
+        [Test]
+        public void Hands_outside_the_wearer_grips_give_nothing_but_armor_still_counts()
+        {
+            CraftCatalog catalog = GearCatalog();
+            var entries = new[] { new EquippedItem(1, "main_hand", "test_greatsword"), new EquippedItem(1, "upper", "craft_down_coat") };
+            EquipmentModifiers ok = EquipmentRules.Collect(1, entries, catalog, catalog.GripsOf("s_two"), Grips);
+            Assert.That(ok.HandsValid, Is.True); Assert.That(ok.CreatureEffects.Count, Is.EqualTo(2));
+            EquipmentModifiers bad = EquipmentRules.Collect(1, entries, catalog, Dual, Grips);
+            Assert.That(bad.HandsValid, Is.False); Assert.That(bad.Weapons.HandCount, Is.Zero);
+            Assert.That(bad.CreatureEffects.Count, Is.EqualTo(1), "armor still applies");
+            Assert.That(catalog.GripsOf("unknown"), Is.Empty);
+            Assert.Throws<ContractException>(() => EquipmentRules.Collect(1, entries, catalog, null, Grips));
+        }
+
+        [Test]
+        public void Player_takes_shield_and_armor_effects_but_never_weapons()
+        {
+            CraftCatalog catalog = GearCatalog();
+            var entries = new[] { new EquippedItem(0, "off_hand", "test_shield"), new EquippedItem(0, "upper", "craft_iron_guard") };
+            EquipmentModifiers mods = EquipmentRules.Collect(0, entries, catalog, EquipmentRules.PlayerGrips, Grips);
+            Assert.That(mods.PlayerHpPercent, Is.EqualTo(20));
+            Assert.That(mods.Weapons.HasShield, Is.False); Assert.That(mods.CreatureEffects, Is.Empty);
         }
 
         [Test]
         public void Equipment_stats_apply_without_changing_roll_duration_or_granting_retired_item_bonuses()
         {
-            var entries = new[] { new EquippedItem(0, "armor", "craft_iron_guard"), new EquippedItem(0, "accessory", "craft_gem_pendant") };
+            EquipmentModifiers Collect(params EquippedItem[] e) => EquipmentRules.Collect(0, e, _catalog, EquipmentRules.PlayerGrips, Grips);
             var baseline = new PlayerVitalsConfig(100, 300, 200, 1000);
-            PlayerVitalsConfig modified = EquipmentRules.ApplyPlayer(baseline, EquipmentRules.Collect(0, entries, _catalog));
+            PlayerVitalsConfig modified = EquipmentRules.ApplyPlayer(baseline,
+                Collect(new EquippedItem(0, "upper", "craft_iron_guard"), new EquippedItem(0, "accessory", "craft_gem_pendant")));
             Assert.That(modified.MaxHp, Is.GreaterThan(baseline.MaxHp));
             Assert.That(modified.RollCooldownMs, Is.LessThan(baseline.RollCooldownMs));
             Assert.That(modified.RollDurationMs, Is.EqualTo(baseline.RollDurationMs));
-            var retired = new[] { new EquippedItem(0, "armor", "retired_outfit") };
-            Assert.That(EquipmentRules.ApplyPlayer(baseline, EquipmentRules.Collect(0, retired, _catalog)).MaxHp, Is.EqualTo(baseline.MaxHp));
-            Assert.Throws<InvalidDataException>(() => EquipmentRules.Collect(0, new[] { new EquippedItem(0, "armor", "craft_iron_blade") }, _catalog));
+            Assert.That(EquipmentRules.ApplyPlayer(baseline, Collect(new EquippedItem(0, "upper", "retired_outfit"))).MaxHp, Is.EqualTo(baseline.MaxHp));
+            Assert.Throws<InvalidDataException>(() => Collect(new EquippedItem(0, "upper", "craft_iron_blade")));
+        }
+
+        [Test]
+        public void Catalog_rejects_weapon_data_on_the_wrong_kind_and_player_bonuses_on_weapons()
+        {
+            JArray items = JArray.Parse(Data("craft-items"));
+            JToken blade = null; foreach (JToken i in items) if ((string)i["id"] == "craft_iron_blade") blade = i;
+            blade["equipment"]["player"]["max_hp_percent"] = 5;
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
+            blade["equipment"]["player"]["max_hp_percent"] = 0; blade["equipment"]["kind"] = "upper";
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
+            blade["equipment"]["kind"] = "one_handed"; ((JObject)blade["equipment"]).Remove("weapon");
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
+            foreach (string grips in new[] { @"[{""species"":""a"",""grips"":[]}]", @"[{""species"":""a"",""grips"":[""dual_wield"",""dual_wield""]}]",
+                @"[{""species"":""a"",""grips"":[""sword""]}]", @"[{""species"":""a"",""grips"":[""dual_wield""]},{""species"":""a"",""grips"":[""two_handed""]}]" })
+                Assert.Throws<InvalidDataException>(() => new CraftCatalog(Data("craft-items"), Data("craft-recipes"), grips));
+        }
+
+        [Test]
+        public void Legacy_slots_migrate_and_unknown_ones_do_not()
+        {
+            Assert.That(EquipmentSlots.MigrateLegacy("weapon"), Is.EqualTo("main_hand"));
+            Assert.That(EquipmentSlots.MigrateLegacy("armor"), Is.EqualTo("upper"));
+            Assert.That(EquipmentSlots.MigrateLegacy("accessory"), Is.EqualTo("accessory"));
+            Assert.That(EquipmentSlots.MigrateLegacy("hat"), Is.Null);
+        }
+
+        [Test]
+        public void Shipped_grips_cover_every_staged_species()
+        {
+            var catalog = new CraftCatalog(Data("craft-items"), Data("craft-recipes"), Data("craft-grips"));
+            Assert.That(catalog.GripsOf("star_blaze_foal"), Is.EqualTo(new[] { GripMode.TwoHanded }));
+            Assert.That(catalog.GripsOf("sun_array_skyheron"), Is.EquivalentTo(new[] { GripMode.OneHandShield, GripMode.TwoHanded }));
         }
 
         [Test]

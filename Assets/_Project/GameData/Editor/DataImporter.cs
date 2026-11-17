@@ -60,6 +60,8 @@ namespace Cosmimera.GameData.Editor
         private const string PlanetTypesSrc = "planet-types";
         private const string CreaturesSrc = "creatures";
         private const string RelationsSrc = "relations";
+        private const string NichesSrc = "niches";
+        private const string NichesOut = "Niches";
         private const string MovesOut = "Moves";
         private const string TraitsOut = "Traits";
         private const string PlanetTypesOut = "PlanetTypes";
@@ -143,9 +145,10 @@ namespace Cosmimera.GameData.Editor
             List<Sourced<PlanetTypeDto>> planets = ReadKind<PlanetTypeDto>(sourceRoot, PlanetTypesSrc, errors);
             List<Sourced<CreatureDto>> creatures = ReadKind<CreatureDto>(sourceRoot, CreaturesSrc, errors);
             List<Sourced<EdgeDto>> edges = ReadKind<EdgeDto>(sourceRoot, RelationsSrc, errors);
+            List<Sourced<NicheDto>> niches = ReadKind<NicheDto>(sourceRoot, NichesSrc, errors);
             if (errors.Count == 0)
             {
-                Resolve(moves, traits, planets, creatures, edges, errors);
+                Resolve(moves, traits, planets, creatures, edges, niches, errors);
             }
 
             if (errors.Count > 0)
@@ -153,7 +156,7 @@ namespace Cosmimera.GameData.Editor
                 throw new DataImportException(errors);
             }
 
-            return Write(outputFolder, moves, traits, planets, creatures, edges);
+            return Write(outputFolder, moves, traits, planets, creatures, edges, niches);
         }
 
         /// <summary>Refreshes only explicit field utilities on existing creature assets.</summary>
@@ -268,7 +271,7 @@ namespace Cosmimera.GameData.Editor
 
         private static void Resolve(List<Sourced<MoveDto>> moves, List<Sourced<TraitDto>> traits,
             List<Sourced<PlanetTypeDto>> planets, List<Sourced<CreatureDto>> creatures, List<Sourced<EdgeDto>> edges,
-            List<string> errors)
+            List<Sourced<NicheDto>> niches, List<string> errors)
         {
             var kindById = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -393,6 +396,38 @@ namespace Cosmimera.GameData.Editor
                 }
             }
 
+            foreach (Sourced<NicheDto> n in niches)
+            {
+                Claim(n.Where, n.Dto.Id, "niche");
+                RequireEnum<WanderMode>(n.Where, "wander.mode", n.Dto.Wander.Mode);
+                if (n.Dto.HabitatKinds.Count == 0 || n.Dto.HabitWeights.Count == 0)
+                {
+                    errors.Add($"{n.Where}: habitat_kinds and habit_weights must not be empty");
+                }
+
+                foreach (KeyValuePair<string, int> hw in n.Dto.HabitWeights)
+                {
+                    RequireEnum<Habit>(n.Where, "habit_weights key", hw.Key);
+                    if (hw.Value <= 0)
+                    {
+                        errors.Add($"{n.Where}: habit weight for '{hw.Key}' must be > 0");
+                    }
+                }
+
+                bool unbounded = n.Dto.Wander.Mode == "unbounded_random";
+                bool radiusOk = unbounded
+                    ? n.Dto.Wander.RadiusMm == null && n.Dto.Wander.ExclusionRadiusMm > 0
+                    : n.Dto.Wander.RadiusMm > 0 && n.Dto.Wander.ExclusionRadiusMm == null;
+                if (!radiusOk)
+                {
+                    errors.Add($"{n.Where}: unbounded_random needs radius_mm null and exclusion_radius_mm > 0; other modes radius_mm > 0 only");
+                }
+
+                CheckDistribution(n.Where, "speed_permille", n.Dto.Wander.SpeedPermille, errors);
+                CheckDistribution(n.Where, "move_ms", n.Dto.Wander.MoveMs, errors);
+                CheckDistribution(n.Where, "pause_ms", n.Dto.Wander.PauseMs, errors);
+            }
+
             foreach (Sourced<PlanetTypeDto> p in planets)
             {
                 Claim(p.Where, p.Dto.Id, "planet-type");
@@ -422,7 +457,19 @@ namespace Cosmimera.GameData.Editor
                     errors.Add($"{c.Where}: size_class '{d.SizeClass}' must be XS, S, M, L or XL");
                 }
                 RequireEnum<AiStyle>(c.Where, "ai_style", d.AiStyle);
-                RequireEnum<Temperament>(c.Where, "temperament", d.Temperament);
+                foreach (NicheCandidateDto nc in d.Niches)
+                {
+                    RequireRef(c.Where, "niches.niche", nc.Niche, "niche");
+                    if (nc.Weight <= 0)
+                    {
+                        errors.Add($"{c.Where}: niche weight for '{nc.Niche}' must be > 0");
+                    }
+                }
+
+                if (d.Stage != "overload" && d.Niches.Count == 0)
+                {
+                    errors.Add($"{c.Where}: non-overload forms need at least one candidate niche");
+                }
                 RequireRef(c.Where, "signature_move", d.SignatureMove, "move");
                 RequireRef(c.Where, "trait", d.Trait, "trait");
                 if (d.FieldUtility != null)
@@ -531,7 +578,7 @@ namespace Cosmimera.GameData.Editor
 
         private static DataImportReport Write(string outputFolder, List<Sourced<MoveDto>> moves,
             List<Sourced<TraitDto>> traits, List<Sourced<PlanetTypeDto>> planets, List<Sourced<CreatureDto>> creatures,
-            List<Sourced<EdgeDto>> edges)
+            List<Sourced<EdgeDto>> edges, List<Sourced<NicheDto>> niches)
         {
             int created = 0;
             int updated = 0;
@@ -542,12 +589,31 @@ namespace Cosmimera.GameData.Editor
             deleted += DeleteOrphans(outputFolder + "/" + TraitsOut, traits.Select(t => t.Dto.Id));
             deleted += DeleteOrphans(outputFolder + "/" + PlanetTypesOut, planets.Select(p => p.Dto.Id));
             deleted += DeleteOrphans(outputFolder + "/" + CreaturesOut, creatures.Select(c => c.Dto.Id));
+            deleted += DeleteOrphans(outputFolder + "/" + NichesOut, niches.Select(n => n.Dto.Id));
 
             // Create every asset before filling any, so cross references (creature → move) point at persisted objects.
             var moveDefs = new Dictionary<string, MoveDef>(StringComparer.Ordinal);
             var traitDefs = new Dictionary<string, TraitDef>(StringComparer.Ordinal);
             var planetDefs = new Dictionary<string, PlanetTypeDef>(StringComparer.Ordinal);
             var creatureDefs = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
+            var nicheDefs = new Dictionary<string, NicheDef>(StringComparer.Ordinal);
+            foreach (Sourced<NicheDto> n in niches)
+            {
+                nicheDefs.Add(n.Dto.Id, GetOrCreate<NicheDef>(outputFolder + "/" + NichesOut, n.Dto.Id, ref created, ref updated));
+            }
+
+            foreach (Sourced<NicheDto> s in niches)
+            {
+                NicheDto d = s.Dto;
+                List<HabitWeight> habits = d.HabitWeights
+                    .Select(kv => new HabitWeight(ParseEnum<Habit>(kv.Key), kv.Value))
+                    .OrderBy(h => h.Habit)
+                    .ToList();
+                nicheDefs[d.Id].Set(d.NameZh, new List<string>(d.HabitatKinds), habits, ParseEnum<WanderMode>(d.Wander.Mode),
+                    d.Wander.RadiusMm ?? 0, d.Wander.ExclusionRadiusMm ?? 0, ToDistribution(d.Wander.SpeedPermille),
+                    ToDistribution(d.Wander.MoveMs), ToDistribution(d.Wander.PauseMs));
+            }
+
             foreach (Sourced<MoveDto> m in moves)
             {
                 moveDefs.Add(m.Dto.Id, GetOrCreate<MoveDef>(outputFolder + "/" + MovesOut, m.Dto.Id, ref created, ref updated));
@@ -622,7 +688,7 @@ namespace Cosmimera.GameData.Editor
                 FieldUtility fieldUtility = d.FieldUtility != null ? ParseEnum<FieldUtility>(d.FieldUtility) : FieldUtility.None;
                 CreatureDef def = creatureDefs[d.Id];
                 def.Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
-                    ParseEnum<Temperament>(d.Temperament),
+                    d.Niches.Select(nc => new NicheCandidate(nicheDefs[nc.Niche], nc.Weight)).ToList(),
                     d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
                     mastery, new CreatureStats(d.Stats.Con, d.Stats.Str, d.Stats.Spi, d.Stats.Agi),
                     moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
@@ -637,6 +703,7 @@ namespace Cosmimera.GameData.Editor
             allDefs.AddRange(traitDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
             allDefs.AddRange(planetDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
             allDefs.AddRange(creatureDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+            allDefs.AddRange(nicheDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
             foreach (GameDef def in allDefs)
             {
                 EditorUtility.SetDirty(def);
@@ -845,6 +912,17 @@ namespace Cosmimera.GameData.Editor
             return new EffectDef(ParseEnum<EffectType>(dto.Type), any, element,
                 (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0, dto.MaxStacks ?? 1);
         }
+
+        private static void CheckDistribution(string where, string key, DistributionDto d, List<string> errors)
+        {
+            if (!(d.Min > 0 && d.Min <= d.Mean && d.Mean <= d.Max && d.IndividualSd >= 0 && d.ActionSd >= 0))
+            {
+                errors.Add($"{where}: wander.{key} needs 0 < min <= mean <= max and SDs >= 0");
+            }
+        }
+
+        private static WanderDistribution ToDistribution(DistributionDto d)
+            => new WanderDistribution(d.Mean, d.IndividualSd, d.ActionSd, d.Min, d.Max);
 
         private static T ParseEnum<T>(string snake) where T : struct, Enum
         {

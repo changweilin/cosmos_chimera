@@ -64,7 +64,7 @@ namespace Cosmimera.Combat.Tests
             _created.Clear();
         }
 
-        private CreatureDef Creature(string id, Temperament temperament, MoveShape shape = MoveShape.Front,
+        private CreatureDef Creature(string id, Habit habit, MoveShape shape = MoveShape.Front,
             MoveMovement movement = MoveMovement.None)
         {
             var m = ScriptableObject.CreateInstance<MoveDef>();
@@ -75,7 +75,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -102,7 +102,7 @@ namespace Cosmimera.Combat.Tests
         private Encounter Engaged(IEncounterSurface surface, CreatureDef def, float3 start, out EncounterUnit wild)
         {
             var e = new Encounter(_planet, _balance, surface, 3);
-            wild = e.AddCreature(EncounterSide.Wild, def, null, start, 10);
+            wild = e.AddWildT(def, null, start, 10);
             // Without vitals the character is not a target and the engaged wild would just hold position.
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
             e.Provoke(wild.Id);
@@ -114,7 +114,7 @@ namespace Cosmimera.Combat.Tests
         {
             // A wall across the whole way (±50 m) between the wild at 0 m and the character at 10 m.
             var wall = new Wall(3f, 5f, 50f);
-            Encounter e = Engaged(wall, Creature("w", Temperament.Apex), At(0f), out EncounterUnit wild);
+            Encounter e = Engaged(wall, Creature("w", Habit.Dominant), At(0f), out EncounterUnit wild);
             float3 player = _planet.ToWorld(At(10f), 0f);
             float closest = 0f;
             for (long now = Dt; now <= 10_000; now += Dt)
@@ -132,7 +132,7 @@ namespace Cosmimera.Combat.Tests
         {
             // A 4 m-wide house between the wild at 0 m and the character at 10 m.
             var wall = new Wall(3f, 6f, 2f);
-            Encounter e = Engaged(wall, Creature("w", Temperament.Apex), At(0f), out EncounterUnit wild);
+            Encounter e = Engaged(wall, Creature("w", Habit.Dominant), At(0f), out EncounterUnit wild);
             float3 player = _planet.ToWorld(At(10f), 0f);
             bool passed = false;
             for (long now = Dt; now <= 20_000 && !passed; now += Dt)
@@ -149,7 +149,7 @@ namespace Cosmimera.Combat.Tests
         public void A_wild_that_starts_inside_a_building_can_walk_out()
         {
             var wall = new Wall(-2f, 2f, 2f);
-            Encounter e = Engaged(wall, Creature("w", Temperament.Apex), At(0f), out EncounterUnit wild);
+            Encounter e = Engaged(wall, Creature("w", Habit.Dominant), At(0f), out EncounterUnit wild);
             float3 player = _planet.ToWorld(At(10f), 0f);
             for (long now = Dt; now <= 10_000; now += Dt)
             {
@@ -166,7 +166,7 @@ namespace Cosmimera.Combat.Tests
             // Apex wanders 12 m around home; a 6 × 6 m house sits 2 m east of it.
             var wall = new Wall(2f, 8f, 3f);
             var e = new Encounter(_planet, _balance, wall, 21);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Temperament.Apex), null, At(0f), 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", Habit.Dominant), null, At(0f), 10);
             float3 far = _planet.ToWorld(At(-300f), 0f);
             float3 start = wild.Position;
             bool moved = false;
@@ -185,7 +185,7 @@ namespace Cosmimera.Combat.Tests
         {
             float RunDash(IEncounterSurface surface, out bool cast)
             {
-                Encounter e = Engaged(surface, Creature("d", Temperament.Apex, MoveShape.Line, MoveMovement.Dash), At(0f),
+                Encounter e = Engaged(surface, Creature("d", Habit.Dominant, MoveShape.Line, MoveMovement.Dash), At(0f),
                     out EncounterUnit wild);
                 float3 player = _planet.ToWorld(At(1f), 0f);
                 cast = false;
@@ -220,7 +220,7 @@ namespace Cosmimera.Combat.Tests
         {
             // Wall face across the path; the slide moves along the face, never through it.
             var wall = new Wall(3f, 5f, 50f);
-            Encounter e = Engaged(wall, Creature("w", Temperament.Apex), At(0f), out EncounterUnit wild);
+            Encounter e = Engaged(wall, Creature("w", Habit.Dominant), At(0f), out EncounterUnit wild);
             float3 player = _planet.ToWorld(At(10f, 1f), 0f);
             for (long now = Dt; now <= 5_000; now += Dt)
             {

@@ -54,12 +54,12 @@ namespace Cosmimera.Combat.Tests
             return m;
         }
 
-        private CreatureDef Creature(string id, MoveDef move, Temperament temperament = Temperament.Normal)
+        private CreatureDef Creature(string id, MoveDef move, Habit habit = Habit.Tolerant)
         {
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
             return c;
@@ -103,7 +103,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("slow", 5, 5000, 300)), null, AtMeters(0f), 30);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 5000, 0)), null, AtMeters(1.5f), 30);
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("nip", 1, 5000, 0)), null, AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);
 
@@ -142,7 +142,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 5);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("tap", 1, 5000, 0)), null, AtMeters(0f), 30);
-            EncounterUnit boss = e.AddBoss(Creature("b", Move("slam", 1, 5000, 400), Temperament.Fierce), null, AtMeters(2f), 30);
+            EncounterUnit boss = e.AddBossT(Creature("b", Move("slam", 1, 5000, 400), Habit.Aggressive), null, AtMeters(2f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);
             for (long t = Dt; t <= 3000; t += Dt)
@@ -163,7 +163,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("slow", 5, 5000, 1000)), null, AtMeters(0f), 30);
-            e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 5000, 0)), null, AtMeters(1.5f), 30);
+            e.AddWildT(Creature("w", Move("nip", 1, 5000, 0)), null, AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);
             long t = Dt;
@@ -186,7 +186,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 11);
             // The wild winds up long enough that mine's first hit lands mid-windup.
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("charge", 1, 100, 2000)), null, AtMeters(1.5f), 30);
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("charge", 1, 100, 2000)), null, AtMeters(1.5f), 30);
             int maxHp = wild.Combatant.MaxHp;
             // ~40 % of max HP per hit (mastery 15 %, resist 0): above the 30 % gauge and the 15 % knockback line.
             int power = maxHp * 40 / 115;
@@ -238,7 +238,7 @@ namespace Cosmimera.Combat.Tests
         public void The_gauge_drains_after_the_regen_delay()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 2);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", Move("nip", 1, 5000, 0), Temperament.Timid),
+            EncounterUnit wild = e.AddWildT(Creature("w", Move("nip", 1, 5000, 0), Habit.Avoidant),
                 null, AtMeters(1.5f), 30);
             wild.StaggerGaugeMilli = 1000L * _balance.Stagger.CapacityHp(wild.Combatant.MaxHp) / 2;
             wild.LastDamagedMs = 0;
@@ -255,7 +255,7 @@ namespace Cosmimera.Combat.Tests
         public void Bosses_are_not_knocked_back()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 9);
-            EncounterUnit boss = e.AddBoss(Creature("b", Move("nip", 1, 5000, 0), Temperament.Timid), null, AtMeters(1.5f), 1);
+            EncounterUnit boss = e.AddBossT(Creature("b", Move("nip", 1, 5000, 0), Habit.Avoidant), null, AtMeters(1.5f), 1);
             int power = boss.Combatant.MaxHp * 20 / 115;
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("smash", power, 1000, 0)), null, AtMeters(0f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
@@ -289,7 +289,7 @@ namespace Cosmimera.Combat.Tests
 
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit a = e.AddCreature(EncounterSide.Player, Creature("a", Move("tap", 10, 1000, 0)), null, AtMeters(0f), 30);
-            EncounterUnit b = e.AddCreature(EncounterSide.Wild, Creature("b", Move("nip", 1, 1000, 0)), null, AtMeters(1f), 30);
+            EncounterUnit b = e.AddWildT(Creature("b", Move("nip", 1, 1000, 0)), null, AtMeters(1f), 30);
             Assert.That(a.Combatant.BeginCast(0, a.Moves[0], 10, out CastContext ctx), Is.EqualTo(CastResult.Accepted));
             var rng = new Pcg32(1, 'C');
             Assert.Throws<ContractException>(() => b.Combatant.ReceiveHostile(ctx, true, ref rng, 10, -1));

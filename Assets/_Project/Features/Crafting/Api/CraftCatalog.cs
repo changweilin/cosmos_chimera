@@ -120,12 +120,22 @@ namespace Cosmimera.Crafting
         private readonly Dictionary<string, CraftItem> _items = new Dictionary<string, CraftItem>(StringComparer.Ordinal);
         private readonly List<CraftItem> _orderedItems = new List<CraftItem>();
         private readonly List<CraftRecipe> _recipes = new List<CraftRecipe>();
+        private readonly Dictionary<string, GripMode[]> _grips = new Dictionary<string, GripMode[]>(StringComparer.Ordinal);
 
-        /// <summary>Parses item and recipe arrays, rejecting duplicate ids and missing item references.</summary>
-        /// <remarks>Pre: both JSON strings non-null. Post: fully validated catalog or exception, no partial publication. Side effects: allocates.</remarks>
-        public CraftCatalog(string itemsJson, string recipesJson)
+        /// <summary>Parses item and recipe arrays with no species grip data, so no creature can hold weapons or shields.</summary>
+        /// <remarks>Pre: both JSON strings non-null. Post: as the three-argument constructor with an empty grip array. Side effects: allocates.</remarks>
+        public CraftCatalog(string itemsJson, string recipesJson) : this(itemsJson, recipesJson, "[]")
         {
-            Contract.Requires(itemsJson != null && recipesJson != null, "both JSON sources required");
+        }
+
+        /// <summary>Parses item, recipe and species grip arrays, rejecting duplicate ids and missing item references.</summary>
+        /// <remarks>
+        /// Pre: all three JSON strings non-null; grips rows are {species, grips: 1..2 distinct grip ids}.
+        /// Post: fully validated catalog or exception, no partial publication. Side effects: allocates.
+        /// </remarks>
+        public CraftCatalog(string itemsJson, string recipesJson, string gripsJson)
+        {
+            Contract.Requires(itemsJson != null && recipesJson != null && gripsJson != null, "all JSON sources required");
             foreach (JToken item in Read(itemsJson))
             {
                 Check(item is JObject, "item must be an object");
@@ -175,6 +185,40 @@ namespace Cosmimera.Crafting
                 CraftStack[] costs = Stacks(recipe["costs"]);
                 foreach (CraftStack cost in costs) Check(!tools.Contains(cost.Id), "reusable tool cannot also be consumed");
                 _recipes.Add(new CraftRecipe(id, utility, costs, Stacks(recipe["gains"]), tools.ToArray()));
+            }
+            foreach (JToken row in Read(gripsJson))
+            {
+                Check(row is JObject, "grip row must be an object");
+                string species = Id(row["species"]);
+                Check(row["grips"] is JArray array && array.Count >= 1 && array.Count <= 2, "a species holds 1..2 grips");
+                var modes = new List<GripMode>();
+                foreach (JToken token in (JArray)row["grips"])
+                {
+                    GripMode mode = ParseGrip(Text(token));
+                    Check(!modes.Contains(mode), "duplicate grip");
+                    modes.Add(mode);
+                }
+                Check(!_grips.ContainsKey(species), "duplicate grip species: " + species);
+                _grips.Add(species, modes.ToArray());
+            }
+        }
+
+        /// <summary>Grips a species form may use; empty when the data lists none.</summary>
+        /// <remarks>REQ: crafting.md#穿戴與數值. Pre: speciesId non-null. Post: 0..2 distinct grips, independent copy. Side effects: allocates.</remarks>
+        public IReadOnlyCollection<GripMode> GripsOf(string speciesId)
+        {
+            Contract.Requires(speciesId != null, "speciesId required");
+            return _grips.TryGetValue(speciesId, out GripMode[] modes) ? Array.AsReadOnly((GripMode[])modes.Clone()) : Array.AsReadOnly(new GripMode[0]);
+        }
+
+        private static GripMode ParseGrip(string id)
+        {
+            switch (id)
+            {
+                case "two_handed": return GripMode.TwoHanded;
+                case "dual_wield": return GripMode.DualWield;
+                case "one_hand_shield": return GripMode.OneHandShield;
+                default: throw new InvalidDataException("Unknown grip: " + id);
             }
         }
 

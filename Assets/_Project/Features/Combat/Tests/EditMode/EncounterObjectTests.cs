@@ -114,7 +114,7 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId("brawler");
-            c.Set("line_brawler", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, Temperament.Apex, null, 0,
+            TestWild.WithHabit(c, Habit.Dominant).Set("line_brawler", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
             return c;
@@ -127,7 +127,7 @@ namespace Cosmimera.Combat.Tests
         private Encounter Fight(out float3 player)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, FireBrawler(), null, At(0f), 10);
+            EncounterUnit wild = e.AddWildT(FireBrawler(), null, At(0f), 10);
             e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1_000_000, 600, 400, 800)));
             e.Provoke(wild.Id);
             player = _planet.ToWorld(At(3f), 0f);

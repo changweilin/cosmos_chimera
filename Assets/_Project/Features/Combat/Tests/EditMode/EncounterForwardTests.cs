@@ -53,8 +53,8 @@ namespace Cosmimera.Combat.Tests
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge,
-                Temperament.Fierce, null, 0, new List<EvolutionMaterial>(), new int[10],
+            TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge,
+                null, null, 0, new List<EvolutionMaterial>(), new int[10],
                 new List<ElementValue> { new ElementValue(Element.Fire, 15) }, new CreatureStats(25, 25, 25, 25), m, null,
                 "{}", false);
             return c;
@@ -81,7 +81,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(planet, _balance, new FlatSurface(), 7);
             float3 dir = math.normalize(new float3(dx, dy, dz));
             EncounterUnit party = e.AddCreature(EncounterSide.Player, Creature("p", partySize), null, dir, 10);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("w", wildSize), null, dir, 10);
+            EncounterUnit wild = e.AddWildT(Creature("w", wildSize), null, dir, 10);
             e.Field(party.Id, dir, false, 0);
             // Player 30 m away: outside melee, inside the fierce territory, so the first tick runs the no-target
             // (fallback) branch for the wild before it engages and both sides take the attack branch.

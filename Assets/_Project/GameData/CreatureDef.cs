@@ -137,7 +137,7 @@ namespace Cosmimera.GameData
         [SerializeField] private CreatureStage stage;
         [SerializeField] private CreatureSizeClass sizeClass;
         [SerializeField] private AiStyle aiStyle;
-        [SerializeField] private Temperament temperament;
+        [SerializeField] private List<NicheCandidate> niches = new List<NicheCandidate>();
         [SerializeField] private CreatureDef evolvesTo;
         [SerializeField] private CreatureDef overloadOf;
         [SerializeField] private CreatureDef overloadForm;
@@ -168,9 +168,15 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: a defined AiStyle. Side effects: none.</remarks>
         public AiStyle AiStyle => aiStyle;
 
-        /// <summary>Temperament of this form: its wild territory radius (D0-E2, combat.md#野生領域).</summary>
-        /// <remarks>Pre: none. Post: a defined Temperament. Side effects: none.</remarks>
-        public Temperament Temperament => temperament;
+        /// <summary>
+        /// Candidate niches of this form with positive weights; a wild individual draws one at spawn, then its habit.
+        /// REQ: creature-ecology.md#生成順序.
+        /// </summary>
+        /// <remarks>
+        /// Pre: none. Post: never null; empty only for forms that never spawn wild (overload) or hand-built test defs.
+        /// Side effects: none.
+        /// </remarks>
+        public IReadOnlyList<NicheCandidate> Niches => niches;
 
         /// <summary>The next form, or null for an adult or overload form.</summary>
         /// <remarks>Pre: none. Post: null iff Stage == Adult || Stage == Overload; otherwise same LineId, next stage. Side effects: none.</remarks>
@@ -233,15 +239,15 @@ namespace Cosmimera.GameData
         }
 
         internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle,
-            Temperament temperament, CreatureDef evolvesTo,
+            List<NicheCandidate> niches, CreatureDef evolvesTo,
             int evolutionLevel,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, string conceptJson, bool needsSensitivityReview)
-            => Set(lineId, stage, sizeClass, aiStyle, temperament, evolvesTo, evolutionLevel, evolutionMaterials,
+            => Set(lineId, stage, sizeClass, aiStyle, niches, evolvesTo, evolutionLevel, evolutionMaterials,
                 resist, mastery, stats, signatureMove, trait, FieldUtility.None, conceptJson, needsSensitivityReview);
 
         internal void Set(string lineId, CreatureStage stage, CreatureSizeClass sizeClass, AiStyle aiStyle,
-            Temperament temperament, CreatureDef evolvesTo,
+            List<NicheCandidate> niches, CreatureDef evolvesTo,
             int evolutionLevel,
             List<EvolutionMaterial> evolutionMaterials, int[] resist, List<ElementValue> mastery, CreatureStats stats,
             MoveDef signatureMove, TraitDef trait, FieldUtility fieldUtility, string conceptJson, bool needsSensitivityReview)
@@ -251,7 +257,7 @@ namespace Cosmimera.GameData
             this.stage = stage;
             this.sizeClass = sizeClass;
             this.aiStyle = aiStyle;
-            this.temperament = temperament;
+            this.niches = niches ?? new List<NicheCandidate>();
             this.evolvesTo = evolvesTo;
             this.evolutionLevel = evolutionLevel;
             this.evolutionMaterials = evolutionMaterials;

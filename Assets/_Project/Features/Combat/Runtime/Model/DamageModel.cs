@@ -78,5 +78,34 @@ namespace Cosmimera.Combat
 
             return scaled > MaxPower ? MaxPower : (int)scaled;
         }
+
+        /// <summary>Scales power by weather, then by a weapon multiplier in permille.</summary>
+        /// <remarks>
+        /// REQ: docs/design/crafting.md#武器數值模型 — the weapon attack multiplier multiplies move power.
+        /// Pre: as <see cref="ScalePower(int, int)"/>; 1 &lt;= weaponPermille &lt;= MaxWeaponPermille.
+        /// Post: 0 if power == 0; otherwise in [1, MaxPower]; equals ScalePower(power, deltaPercent) when weaponPermille == 1000.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static int ScalePower(int power, int deltaPercent, int weaponPermille)
+        {
+            Contract.Requires(weaponPermille >= 1 && weaponPermille <= MaxWeaponPermille, "weaponPermille must be 1..MaxWeaponPermille");
+            int weathered = ScalePower(power, deltaPercent);
+            if (weathered == 0 || weaponPermille == 1000)
+            {
+                return weathered;
+            }
+
+            long scaled = ((long)weathered * weaponPermille + 500L) / 1000L;
+            if (scaled < 1)
+            {
+                return 1;
+            }
+
+            return scaled > MaxPower ? MaxPower : (int)scaled;
+        }
+
+        /// <summary>Upper bound of a weapon power multiplier (permille), grip bonus included.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxWeaponPermille = 10_000;
     }
 }

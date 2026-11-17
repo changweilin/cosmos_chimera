@@ -53,12 +53,12 @@ namespace Cosmimera.Combat.Tests
         }
 
         // Fierce (20 m) keeps the pre-territory tests' 18 m engagement geometry valid.
-        private CreatureDef Creature(string id, MoveDef move, AiStyle style, Temperament temperament = Temperament.Fierce)
+        private CreatureDef Creature(string id, MoveDef move, AiStyle style, Habit habit = Habit.Aggressive)
         {
             var c = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(c);
             c.SetId(id);
-            c.Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, style, temperament, null, 0,
+            TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, style, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
                 new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
             return c;
@@ -75,7 +75,7 @@ namespace Cosmimera.Combat.Tests
             MoveDef bite = Move("fire_bite", 40, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), seed);
             mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f), 100);
-            wild = e.AddCreature(EncounterSide.Wild, Creature("wild", bite, AiStyle.Charge), null, Dir(0.9f), 100);
+            wild = e.AddWildT(Creature("wild", bite, AiStyle.Charge), null, Dir(0.9f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
             return e;
         }
@@ -146,7 +146,7 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(99, 50));
             e.SetLevel(grown.Id, 30);
             Assert.That(grown.Combatant.MaxHp, Is.EqualTo(built.Combatant.MaxHp), "same level is a no-op");
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, def, null, Dir(2f), 10);
+            EncounterUnit wild = e.AddWildT(def, null, Dir(2f), 10);
             wild.Engaged = true;
             Assert.Throws<Cosmimera.Core.Contracts.ContractException>(() => e.SetLevel(grown.Id, 31), "not mid-fight");
             wild.Engaged = false;
@@ -180,7 +180,7 @@ namespace Cosmimera.Combat.Tests
             MoveDef nibble = Move("fire_nibble", 1, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", field, AiStyle.Hold), null, Dir(0f), 100);
-            EncounterUnit wild = e.AddCreature(EncounterSide.Wild, Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
+            EncounterUnit wild = e.AddWildT(Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
             var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             int resolutions = 0;
@@ -238,7 +238,7 @@ namespace Cosmimera.Combat.Tests
             MoveDef bite = Move("fire_bite", 40, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", bite, AiStyle.Charge), null, Dir(0f), 100);
-            EncounterUnit far = e.AddCreature(EncounterSide.Wild, Creature("far", bite, AiStyle.Charge), null, Dir(10f), 100);
+            EncounterUnit far = e.AddWildT(Creature("far", bite, AiStyle.Charge), null, Dir(10f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
             var free = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
             for (int t = 1; t <= 200; t++)
@@ -294,7 +294,7 @@ namespace Cosmimera.Combat.Tests
             MoveDef nibble = Move("fire_nibble", 1, MoveShape.Front, RangeClass.Melee, 2000);
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("mine", field, AiStyle.Hold), null, Dir(0f), 100);
-            e.AddCreature(EncounterSide.Wild, Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
+            e.AddWildT(Creature("wild", nibble, AiStyle.Hold), null, Dir(0.1f), 100);
             e.Field(mine.Id, Dir(0f), false, 0);
 
             var list = new List<ActiveFieldSnapshot>();
@@ -342,7 +342,7 @@ namespace Cosmimera.Combat.Tests
             var baseDef = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(baseDef);
             baseDef.SetId("fox_adult");
-            baseDef.Set("fox", CreatureStage.Adult, CreatureSizeClass.L, AiStyle.Charge, Temperament.Normal, null, 0,
+            TestWild.WithHabit(baseDef, Habit.Tolerant).Set("fox", CreatureStage.Adult, CreatureSizeClass.L, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), resist,
                 new List<ElementValue> { new ElementValue(Element.Fire, 100) },
                 new CreatureStats(100, 100, 100, 100), baseMove, baseTrait, "{}", false);
@@ -350,7 +350,7 @@ namespace Cosmimera.Combat.Tests
             var ovDef = ScriptableObject.CreateInstance<CreatureDef>();
             _created.Add(ovDef);
             ovDef.SetId("fox_overload");
-            ovDef.Set("fox", CreatureStage.Overload, CreatureSizeClass.XL, AiStyle.Charge, Temperament.Normal, null, 0,
+            TestWild.WithHabit(ovDef, Habit.Tolerant).Set("fox", CreatureStage.Overload, CreatureSizeClass.XL, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), resist,
                 new List<ElementValue> { new ElementValue(Element.Fire, 150) },
                 new CreatureStats(200, 140, 120, 130), ovMove, ovTrait, "{}", false);

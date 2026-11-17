@@ -140,7 +140,9 @@ namespace Cosmimera.EditorTools
                 var encounter = new Encounter(planet, balance, surface, seed);
                 for (int i = 0; i < enemies; i++)
                 {
-                    encounter.AddCreature(EncounterSide.Wild, enemy, null, Direction(10f + i * 2f, planet.Radius), level);
+                    // No habitat filter: the probe has no terrain; any candidate niche is a legal individual.
+                    encounter.AddWild(enemy, null, Direction(10f + i * 2f, planet.Radius), level,
+                        WildIndividual.Draw(enemy, null, WildIndividual.KeyFor(seed, (ulong)i)));
                 }
 
                 EncounterUnit mine = encounter.AddCreature(EncounterSide.Player, starter, null, Direction(0f, planet.Radius), progression.StarterLevel);

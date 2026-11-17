@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_opportunistic_omnivore
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_opportunistic_omnivore
+  nameZh: "\u6A5F\u6703\u578B\u96DC\u98DF"
+  habitatKinds:
+  - forest
+  - river_valley
+  - volcano
+  - rift_valley
+  - ice_field
+  - fjord
+  - plateau
+  - archipelago
+  - canyon
+  - cave
+  - eternal_day
+  - eternal_night
+  - grassland
+  - desert
+  - swamp
+  - mountain
+  - tundra
+  - glacier
+  - cirque
+  - moraine
+  - karst
+  - basalt_terrace
+  - granite_domes
+  - slate_cliffs
+  habits:
+  - habit: 0
+    weight: 4
+  - habit: 1
+    weight: 1
+  - habit: 3
+    weight: 3
+  - habit: 4
+    weight: 2
+  mode: 3
+  radiusMm: 0
+  exclusionRadiusMm: 15000
+  speedPermille:
+    mean: 360
+    individualSd: 54
+    actionSd: 72
+    min: 50
+    max: 900
+  moveMs:
+    mean: 10000
+    individualSd: 2000
+    actionSd: 3000
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 5000
+    individualSd: 1250
+    actionSd: 2000
+    min: 250
+    max: 60000

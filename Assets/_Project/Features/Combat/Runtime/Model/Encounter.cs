@@ -370,6 +370,28 @@ namespace Cosmimera.Combat
 
         internal bool Provoked { get; set; }
 
+        /// <summary>Wild only: the individual's niche, habit and wander means (creature-ecology.md); null for player units.</summary>
+        /// <remarks>Pre: none. Post: non-null for every Wild unit. Side effects: none.</remarks>
+        public WildIndividual Individual { get; internal set; }
+
+        // Wild only: wants to fight (territory, provoke or hit) but the engagement cap is full (combat.md#交戰上限).
+        internal bool WantsEngage { get; set; }
+
+        // Distance (m) to the nearest intruder at the last engagement pass; orders who fills a free slot.
+        internal float EngageDistanceM { get; set; }
+
+        // Niche wander state (creature-ecology.md#四種遊蕩模式). Route is built lazily on the first idle decision because the
+        // obstacle index may be attached after the unit; RouteIndex is the waypoint being walked to.
+        internal float3[] Route { get; set; }
+        internal int RouteIndex { get; set; }
+        internal int RouteStep { get; set; } = 1;
+        internal long LegRemainingMs { get; set; }
+        internal int LegSpeedPermille { get; set; }
+        internal bool Returning { get; set; }
+
+        // Own stream per individual (seeded from WildIndividual.StreamKey): one unit's blocked leg never shifts another's.
+        internal Pcg32 WanderRng;
+
         // Idle wander state (combat.md#遊蕩, D0-W1). WanderResumeMs == Encounter.WanderUnscheduled means "decide on the next
         // idle tick" — the unit was just spawned or just disengaged.
         internal bool HasWanderTarget { get; set; }
@@ -399,7 +421,7 @@ namespace Cosmimera.Combat
     /// <remarks>
     /// Field moves persist for field_duration_ms and resolve on <see cref="FieldTimeline"/> ticks (combat.md#場地).
     /// Wild units engage by territory (combat.md#野生領域, D0-E2): an intruder — the player character or an active
-    /// player-side creature — inside the species' temperament radius starts the fight, and the nearest enemy, the player
+    /// player-side creature — inside the individual's habit radius starts the fight, and the nearest enemy, the player
     /// character included once attached through <see cref="AttachPlayer"/>, is the target.
     /// D0 simplifications (recorded in docs/tech-debt.md): steering is direct great-circle movement without obstacle
     /// avoidance; movement speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
@@ -409,7 +431,7 @@ namespace Cosmimera.Combat
     {
         /// <summary>
         /// How far (m) the player may reach to pick a not-yet-engaged wild unit as a Focus target and so start the fight
-        /// with it (<see cref="Provoke"/>). Kept at the pre-territory aggro radius so timid creatures stay catchable.
+        /// with it (<see cref="Provoke"/>). Kept at the pre-territory aggro radius so avoidant creatures stay catchable.
         /// </summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float ProvokeRadiusM = 18f;
@@ -441,6 +463,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: constant >= 1000. Side effects: none.</remarks>
         public const int BossSizePermille = 1500;
 
+        /// <summary>Most wild units engaged with one player at a time, boss fights excepted (combat.md#交戰上限, Q-C63).</summary>
+        /// <remarks>Pre: none. Post: constant; matches the player's two fielded creatures. Side effects: none.</remarks>
+        public const int WildEngageCapPerPlayer = 2;
+
         private const float ArriveM = 0.4f;
         private const int MaxSlots = MoveCooldowns.MaxSlots;
         internal const long WanderUnscheduled = long.MinValue;
@@ -456,8 +482,6 @@ namespace Cosmimera.Combat
         private readonly int[] _overloadMastery = new int[10];
         private readonly int[] _overloadResist = new int[10];
         private Pcg32 _rng;
-        // Separate stream so wandering never shifts the combat roll order (hit/crit/capture replays stay identical).
-        private Pcg32 _wanderRng;
         private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
@@ -578,7 +602,6 @@ namespace Cosmimera.Combat
             _balance = balance;
             _surface = surface;
             _rng = new Pcg32(seed, 'C');
-            _wanderRng = new Pcg32(seed, 'W');
             _objectRng = new Pcg32(seed, 'O');
             _rangeCapMm = balance.Horizon.CapMm(planet.Radius);
             BossEnrageTuning enrage = balance.Enrage;
@@ -917,9 +940,10 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked))
+                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked || w.WantsEngage))
                 {
                     w.Engaged = false;
+                    w.WantsEngage = false;
                     w.Provoked = false;
                     w.HasWanderTarget = false;
                     w.WanderResumeMs = WanderUnscheduled;
@@ -1048,7 +1072,21 @@ namespace Cosmimera.Combat
         /// </remarks>
         public EncounterUnit AddCreature(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level)
         {
+            Contract.Requires(side == EncounterSide.Player, "wild units carry an individual: use AddWild");
             return AddUnit(side, def, partnerMove, direction, level, false);
+        }
+
+        /// <summary>Adds a wild creature with its individual ecology (habit sets territory, niche sets wander).</summary>
+        /// <remarks>
+        /// Pre: as AddCreature; individual non-null. REQ: creature-ecology.md, combat.md#野生領域.
+        /// Post: as AddCreature with side Wild; Individual == individual; Home is the ground point under direction.
+        /// Side effects: allocates the unit and seeds its own wander stream from individual.StreamKey.
+        /// </remarks>
+        public EncounterUnit AddWild(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual)
+        {
+            Contract.Requires(individual != null, "wild units need an individual");
+            return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false, null, individual);
         }
 
         /// <summary>Adds a player creature with all equipped card moves and bead traits.</summary>
@@ -1079,19 +1117,21 @@ namespace Cosmimera.Combat
         /// and body radius and melee move volumes × <see cref="BossSizePermille"/>/1000. REQ: planet-world.md (D0-R2).
         /// </summary>
         /// <remarks>
-        /// Pre: as AddCreature.
-        /// Post: as AddCreature with side Wild, plus IsBoss; MaxHp == BossHpMultiplier × the AddCreature MaxHp at that
+        /// Pre: as AddWild.
+        /// Post: as AddWild, plus IsBoss; MaxHp == BossHpMultiplier × the AddCreature MaxHp at that
         ///       level; BodyRadiusM == BossSizePermille/1000 × BodyRadiusFor(def.SizeClass). Mid/long and dash volumes are
         ///       unchanged (the decision names melee reach only).
         /// Side effects: allocates the unit.
         /// </remarks>
-        public EncounterUnit AddBoss(CreatureDef def, MoveDef partnerMove, float3 direction, int level)
+        public EncounterUnit AddBoss(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual)
         {
-            return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, true);
+            Contract.Requires(individual != null, "wild units need an individual");
+            return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, true, null, individual);
         }
 
         private EncounterUnit AddUnit(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level,
-            bool boss, IReadOnlyList<MoveDef> partnerMoves = null)
+            bool boss, IReadOnlyList<MoveDef> partnerMoves = null, WildIndividual individual = null)
         {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
@@ -1137,7 +1177,13 @@ namespace Cosmimera.Combat
                 Position = position,
                 Forward = PlanetFrame.FromUp(direction).North,
                 Fielded = side == EncounterSide.Wild,
+                Individual = individual,
             };
+            if (individual != null)
+            {
+                unit.WanderRng = new Pcg32(individual.StreamKey, 'W');
+            }
+
             _units.Add(unit);
             return unit;
         }
@@ -1325,6 +1371,7 @@ namespace Cosmimera.Combat
             u.Fielded = false;
             u.Engaged = false;
             u.Provoked = false;
+            u.WantsEngage = false;
         }
 
         /// <summary>
@@ -1343,11 +1390,12 @@ namespace Cosmimera.Combat
             _player = vitals;
         }
 
-        /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its temperament.</summary>
+        /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its habit.</summary>
         /// <remarks>
         /// Pre: unitId is an active Wild unit.
-        /// Post: Engaged from the next Tick (if still active); then it stays engaged until no intruder is within
-        ///       DisengageRadiusM. Engaged itself is unchanged until then.
+        /// Post: Engaged from the next Tick (if still active and the engagement cap allows, combat.md#交戰上限; otherwise it
+        ///       waits for a slot); then it stays engaged until no intruder is within DisengageRadiusM. Engaged itself
+        ///       is unchanged until then.
         /// Side effects: mutates the unit.
         /// </remarks>
         public void Provoke(int unitId)
@@ -1359,13 +1407,20 @@ namespace Cosmimera.Combat
             u.Provoked = true;
         }
 
-        /// <summary>Territory radius (m) of a unit, from its species temperament (combat.md#野生領域).</summary>
-        /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it never starts a fight by proximity. Side effects: none.</remarks>
-        public float TerritoryRadiusM(int unitId) => _balance.Territory.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
+        /// <summary>Territory radius (m) of a wild unit, from its individual habit (combat.md#野生領域).</summary>
+        /// <remarks>Pre: unitId is a Wild unit. Post: >= 0; 0 means it never starts a fight by proximity. Side effects: none.</remarks>
+        public float TerritoryRadiusM(int unitId) => _balance.Territory.RadiusMm(WildOf(unitId).Habit) * 0.001f;
 
-        /// <summary>Wander radius (m) of a unit around its spawn point, from its species temperament (combat.md#遊蕩).</summary>
-        /// <remarks>Pre: unitId indexes Units. Post: >= 0; 0 means it holds its spawn point. Side effects: none.</remarks>
-        public float WanderRadiusM(int unitId) => _balance.Wander.RadiusMm(Get(unitId).Def.Temperament) * 0.001f;
+        /// <summary>Route / area radius (m) of a wild unit around Home, from its niche (creature-ecology.md).</summary>
+        /// <remarks>Pre: unitId is a Wild unit. Post: > 0, or 0 for an unbounded_random niche (no home range). Side effects: none.</remarks>
+        public float WanderRadiusM(int unitId) => WildOf(unitId).Niche.RadiusMm * 0.001f;
+
+        private WildIndividual WildOf(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Wild && u.Individual != null, "unit must be a wild unit");
+            return u.Individual;
+        }
 
         /// <summary>Triggers temporary combat overload for <paramref name="unitId"/> (Q-C12).</summary>
         /// <remarks>
@@ -1564,9 +1619,14 @@ namespace Cosmimera.Combat
         ///      Player unit or NoTarget; player position inside the combat shell.
         /// Post: Events lists, in order: resolutions of fields placed in earlier ticks (fields in placement order, targets
         ///       in id order), then each acting unit's cast and its resolutions in unit-id order (a new field resolves
-        ///       at once); positions stay on the ground. Idle (not engaged) wild units wander (combat.md#遊蕩): pause
-        ///       PauseMinMs..PauseMaxMs, then walk at SpeedPermille of their move speed to a seeded point within
-        ///       WanderRadiusM of Home; one outside that radius (just disengaged) first walks straight back to Home.
+        ///       at once); positions stay on the ground. Idle (not engaged) wild units wander by their niche
+        ///       (creature-ecology.md#四種遊蕩模式): pause, then a leg whose speed and time budget are drawn from the
+        ///       individual means; shuttle/loop walk a seeded route of up to 3 waypoints inside WanderRadiusM of Home,
+        ///       bounded_random picks points inside that cap and unbounded_random steps from the current position. A
+        ///       bounded unit never steps outside its cap (the step is undone and the leg ends); one left outside by a
+        ///       fight first walks back (to Home, or its current waypoint). Arrival, a blocked step or an exhausted budget
+        ///       ends the leg; routes keep their progress. Engagement is capped at WildEngageCapPerPlayer wild units
+        ///       (combat.md#交戰上限) except while a boss is engaged; others that want to fight wait for a slot.
         ///       Last, overlapping bodies are pushed apart (combat.md#實體碰撞): active units (CollisionRadiusM) and the
         ///       character at playerPosition (balance body_mm.character), each pair split by inverse footprint area, in
         ///       <see cref="SeparationPasses"/> sweeps in unit-id order; the character's share is in PlayerPush. A pair
@@ -1586,14 +1646,16 @@ namespace Cosmimera.Combat
         ///       Block (combat.md#格擋, Q-C56): decided once per tick before anything resolves — the main blocks while its
         ///       key is held (SetBlockHeld), a support while a wild windup targets it and it is not winding up; never while
         ///       rolling or guard-broken. A blocking unit casts nothing (raising the guard cancels its windup) and moves at
-        ///       block.move_speed_permille; a blocked hit keeps (1000 − base_permille)/1000 of its damage and adds its
+        ///       block.move_speed_permille; a blocked hit keeps (1000 − base_permille)/1000 of its damage (shield_permille when
+        ///       the unit holds a shield, crafting.md#穿戴與數值) and adds its
         ///       pre-block damage to the stance gauge; full → GuardBroken for guard_break_ms (no block, cast or movement).
         ///       A perfect block (release within perfect_window_ms) also raises PerfectBlock and Reflected: the attacker
         ///       takes block.reflect_percent of the move's damage at its own resist, which fills its stagger gauge.
         ///       Roll (combat.md#完美閃避): within creature_roll.invulnerable_ms of TryRoll hits become MISS with no roll
         ///       drawn; contact within perfect_dodge_ms also raises PerfectDodge and staggers the attacker. A rolling unit
         ///       travels its roll distance at constant speed and neither steers nor casts.
-        /// Side effects: mutates units, both RNG streams, Events and PlayerPush. No allocation after warm-up.
+        /// Side effects: mutates units, the combat stream and each wandering unit's own stream, Events and PlayerPush.
+        ///          No allocation after warm-up.
         /// </remarks>
         public void Tick(long nowMs, int dtMs, float3 playerPosition, in AiCommand command, int mainId)
         {
@@ -1758,7 +1820,7 @@ namespace Cosmimera.Combat
                 }
 
                 ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element,
-                    DamageModel.ScalePower(ctx.Move.Power, ctx.PowerDeltaPercent), ctx.MasteryPercent, nowMs);
+                    ctx.EffectivePower, ctx.MasteryPercent, nowMs);
                 _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
                     default, ctx.Move.Power));
                 if (r.Destroyed)
@@ -1785,7 +1847,7 @@ namespace Cosmimera.Combat
         /// <summary>The idle wild unit the character at <paramref name="playerPosition"/> can interact with, if any.</summary>
         /// <remarks>
         /// Pre: none.
-        /// Post: returns the id of the active, not Engaged and not Provoked Wild unit whose body edge is within
+        /// Post: returns the id of the active, not Engaged, not Provoked and not waiting-to-engage Wild unit whose body edge is within
         ///       InteractRadiusM of the character's body edge (arc on the sphere minus both collision radii), the
         ///       smallest such gap winning and ties going to the lower id; -1 when there is none.
         /// Side effects: none.
@@ -1799,7 +1861,7 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit u = _units[i];
-                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked)
+                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage)
                 {
                     continue;
                 }
@@ -2104,7 +2166,8 @@ namespace Cosmimera.Combat
                 bool invulnerable = t.Side == EncounterSide.Player && sinceRoll >= 0 &&
                     sinceRoll < _balance.CreatureRoll.InvulnerableMs;
                 HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus,
-                    blocked ? _balance.Block.BasePermille : 0, invulnerable);
+                    blocked ? (t.Combatant.HasShield ? _balance.Block.ShieldPermille : _balance.Block.BasePermille) : 0,
+                    invulnerable);
                 bool hit = r.Outcome == HitOutcome.Hit;
                 UpdateBossStage(t);
                 // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
@@ -2140,9 +2203,20 @@ namespace Cosmimera.Combat
                 }
                 else if (hit && t.Side == EncounterSide.Wild)
                 {
-                    // Being hit starts the fight even outside its territory (timid only fights back, Q-C35); a MISS does
-                    // not, or a timid unit would join from a roll it never felt (E2-SOL-02).
-                    t.Engaged = true;
+                    // Being hit starts the fight even outside its territory (avoidant only fights back, Q-C35); a MISS does
+                    // not, or an avoidant unit would join from a roll it never felt (E2-SOL-02). A full cap makes it wait
+                    // instead (combat.md#交戰上限: a hit does not add a third wild).
+                    if (!t.Engaged)
+                    {
+                        if (HasEngageSlot(t))
+                        {
+                            Engage(t);
+                        }
+                        else
+                        {
+                            t.WantsEngage = true;
+                        }
+                    }
                 }
 
                 if (hit && r.Damage > 0 && !r.Fainted)
@@ -2172,8 +2246,7 @@ namespace Cosmimera.Combat
             int dealt = 0;
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
-                int power = DamageModel.ScalePower(move.Power, ctx.PowerDeltaPercent);
-                dealt = _player.ApplyDamage(DamageModel.Compute(power, ctx.MasteryPercent, 0), nowMs);
+                dealt = _player.ApplyDamage(DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0), nowMs);
             }
 
             // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
@@ -2189,9 +2262,9 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
         internal Pcg32 RngForTests => _rng;
 
-        /// <summary>Copy of the wander stream, for golden-vector oracles (SOL W-B2-SOL-05).</summary>
-        /// <remarks>Pre: none. Post: detached copy; drawing from it does not move the encounter's stream. Side effects: none.</remarks>
-        internal Pcg32 WanderRngForTests => _wanderRng;
+        /// <summary>Copy of a wild unit's wander stream, for golden-vector oracles (SOL W-B2-SOL-05).</summary>
+        /// <remarks>Pre: unitId indexes Units. Post: detached copy; drawing from it does not move the unit's stream. Side effects: none.</remarks>
+        internal Pcg32 WanderRngForTests(int unitId) => Get(unitId).WanderRng;
 
         private bool PlayerTargetable() => _player != null && !_player.IsDowned;
 
@@ -2281,9 +2354,9 @@ namespace Cosmimera.Combat
 
                 // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
                 // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
-                // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (timid) never starts a fight by proximity.
+                // REQ: combat.md#野生領域 (D0-E2) — a 0 m territory (avoidant) never starts a fight by proximity.
                 // REQ: planet-world.md#天氣影響 (Q-C37), field-utilities.md (party_stealth) — weather and party stealth scale territory radius.
-                int territoryMm = (int)((long)_balance.Territory.RadiusMm(w.Def.Temperament)
+                int territoryMm = (int)((long)_balance.Territory.RadiusMm(w.Individual.Habit)
                     * weather.TerritoryRadiusPermille / 1000L
                     * _partyDetectionPermille / 1000L);
                 bool intruderInRange = false;
@@ -2319,82 +2392,298 @@ namespace Cosmimera.Combat
                 }
 
                 float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
-                w.Engaged = w.Engaged
-                    ? nearest <= disengageRadiusM
-                    : w.Provoked || intruderInRange;
-                w.Provoked = false;
+                w.EngageDistanceM = nearest;
                 if (w.Engaged)
                 {
-                    // Re-decide from scratch after the fight: the old leg may now be far behind (combat.md#遊蕩).
-                    w.HasWanderTarget = false;
-                    w.WanderResumeMs = WanderUnscheduled;
+                    w.Engaged = nearest <= disengageRadiusM;
                 }
+                else
+                {
+                    // A waiting unit gives up once every intruder has left the disengage distance (combat.md#交戰上限).
+                    w.WantsEngage = (w.WantsEngage && nearest <= disengageRadiusM) || w.Provoked || intruderInRange;
+                }
+
+                w.Provoked = false;
+            }
+
+            FillEngageSlots();
+        }
+
+        // REQ: combat.md#交戰上限 (Q-C63) — at most WildEngageCapPerPlayer non-boss wild units fight the player at once; a
+        // boss never takes a slot and, while one is engaged, every waiting unit joins. Free slots go to the waiting units
+        // nearest an intruder (ties → lower id). Selection rescans the unit list instead of sorting: no allocation per tick.
+        private void FillEngageSlots()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && w.WantsEngage && !w.Engaged && (w.IsBoss || BossEngaged()))
+                {
+                    Engage(w);
+                }
+            }
+
+            int free = WildEngageCapPerPlayer - EngagedNonBossCount();
+            while (free > 0)
+            {
+                EncounterUnit best = null;
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit w = _units[i];
+                    if (w.Side == EncounterSide.Wild && w.IsActive && w.WantsEngage && !w.Engaged &&
+                        (best == null || w.EngageDistanceM < best.EngageDistanceM))
+                    {
+                        best = w;
+                    }
+                }
+
+                if (best == null)
+                {
+                    break;
+                }
+
+                Engage(best);
+                free--;
             }
         }
 
-        // REQ: combat.md#遊蕩 (D0-W1). Engagement for this tick was already decided from the pre-move positions, so a
-        // wander step can only bring a unit into someone's territory on the next tick — same as any other movement.
+        private void Engage(EncounterUnit w)
+        {
+            w.Engaged = true;
+            w.WantsEngage = false;
+            // Re-decide from scratch after the fight: the old leg may now be far behind (combat.md#遊蕩).
+            w.HasWanderTarget = false;
+            w.WanderResumeMs = WanderUnscheduled;
+            w.Returning = false;
+        }
+
+        private bool HasEngageSlot(EncounterUnit w)
+            => w.IsBoss || BossEngaged() || EngagedNonBossCount() < WildEngageCapPerPlayer;
+
+        private bool BossEngaged()
+        {
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].IsBoss && _units[i].Engaged && _units[i].IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private int EngagedNonBossCount()
+        {
+            int n = 0;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && w.Engaged && !w.IsBoss)
+                {
+                    n++;
+                }
+            }
+
+            return n;
+        }
+
+        // REQ: creature-ecology.md#四種遊蕩模式 (P3-31), combat.md#遊蕩. Engagement for this tick was already decided from the
+        // pre-move positions, so a wander step can only bring a unit into someone's territory on the next tick — same as
+        // any other movement.
         private void Wander(EncounterUnit u, long nowMs, int dtMs)
         {
-            WanderTuning t = _balance.Wander;
-            float radiusM = t.RadiusMm(u.Def.Temperament) * 0.001f;
+            WildIndividual ind = u.Individual;
+            NicheDef niche = ind.Niche;
+            float capM = niche.RadiusMm * 0.001f;
+            bool bounded = niche.Mode != WanderMode.UnboundedRandom;
+            if (bounded && u.Route == null)
+            {
+                BuildRoute(u, capM);
+            }
+
             if (!u.HasWanderTarget)
             {
                 if (u.WanderResumeMs == WanderUnscheduled)
                 {
-                    float fromHome = math.distance(u.Position, u.Home);
-                    if (fromHome <= radiusM + ArriveM)
+                    // Just spawned or just out of a fight. creature-ecology.md#戰鬥、障礙與重現性: a bounded unit outside its
+                    // range walks back first; an unbounded one carries on from where the fight left it.
+                    if (bounded && !InsideCap(u, u.Position, capM))
                     {
-                        u.WanderResumeMs = nowMs + NextWanderPause(t);
+                        u.WanderTarget = niche.Mode == WanderMode.BoundedRandom ? Up(u.Home) : u.Route[u.RouteIndex];
+                        u.Returning = true;
+                        StartLeg(u);
+                    }
+                    else
+                    {
+                        u.WanderResumeMs = nowMs + DrawPause(u);
                         return;
                     }
-
-                    u.WanderTarget = Up(u.Home);
-                    u.HasWanderTarget = true;
                 }
                 else if (nowMs < u.WanderResumeMs)
                 {
                     return;
                 }
+                else if (!u.Returning && !PickLegTarget(u, capM, nowMs))
+                {
+                    u.WanderResumeMs = nowMs + DrawPause(u);
+                    return;
+                }
                 else
                 {
-                    if (!TryLandWanderPoint(u.Home, radiusM, u.CollisionRadiusM, out float3 target))
-                    {
-                        u.WanderResumeMs = nowMs + NextWanderPause(t);
-                        return;
-                    }
-
-                    u.WanderTarget = target;
-                    u.HasWanderTarget = true;
+                    StartLeg(u);
                 }
             }
 
-            // A blocked step (sea ahead) ends the leg like an arrival, so the unit pauses and draws a new destination.
-            if (Steer(u, u.WanderTarget, nowMs, dtMs, t.SpeedPermille) != SteerResult.Moving)
+            float3 before = u.Position;
+            SteerResult step = Steer(u, u.WanderTarget, nowMs, dtMs, u.LegSpeedPermille);
+            // A bounded unit may never step out of its cap (wall slides included); a returning one is outside by design.
+            if (bounded && !u.Returning && step != SteerResult.Blocked && !InsideCap(u, u.Position, capM))
             {
-                u.HasWanderTarget = false;
-                u.WanderResumeMs = nowMs + NextWanderPause(t);
+                u.Position = before;
+                step = SteerResult.Blocked;
+            }
+
+            u.LegRemainingMs -= dtMs;
+            if (step == SteerResult.Arrived)
+            {
+                if (niche.Mode == WanderMode.Shuttle || niche.Mode == WanderMode.Loop)
+                {
+                    AdvanceRoute(u, niche.Mode);
+                }
+
+                EndLeg(u, nowMs, keepTarget: false);
+            }
+            else if (step == SteerResult.Blocked || u.LegRemainingMs <= 0)
+            {
+                // Routes and return legs keep their progress (same target next leg); random modes draw a new destination.
+                // Resuming re-reads Route[RouteIndex] for routes, and Returning skips the draw for a return leg.
+                bool route = u.Returning || niche.Mode == WanderMode.Shuttle || niche.Mode == WanderMode.Loop;
+                EndLeg(u, nowMs, keepTarget: route);
             }
         }
 
-        private int NextWanderPause(WanderTuning t)
+        // Speed and budget are drawn once per leg (creature-ecology.md: no per-frame redraw, tick rate never changes the
+        // number of draws).
+        private void StartLeg(EncounterUnit u)
         {
-            return t.PauseMinMs + (int)_wanderRng.NextUInt((uint)(t.PauseMaxMs - t.PauseMinMs + 1));
+            NicheDef n = u.Individual.Niche;
+            u.LegSpeedPermille = BoundedNormal.Sample(ref u.WanderRng, u.Individual.SpeedPermilleMean, n.SpeedPermille.ActionSd,
+                n.SpeedPermille.Min, n.SpeedPermille.Max);
+            u.LegRemainingMs = BoundedNormal.Sample(ref u.WanderRng, u.Individual.MoveMsMean, n.MoveMs.ActionSd, n.MoveMs.Min,
+                n.MoveMs.Max);
+            u.HasWanderTarget = true;
         }
+
+        private void EndLeg(EncounterUnit u, long nowMs, bool keepTarget)
+        {
+            u.HasWanderTarget = false;
+            if (!keepTarget)
+            {
+                u.Returning = false;
+            }
+
+            u.WanderResumeMs = nowMs + DrawPause(u);
+        }
+
+        private int DrawPause(EncounterUnit u)
+        {
+            NicheDef n = u.Individual.Niche;
+            return BoundedNormal.Sample(ref u.WanderRng, u.Individual.PauseMsMean, n.PauseMs.ActionSd, n.PauseMs.Min, n.PauseMs.Max);
+        }
+
+        private bool PickLegTarget(EncounterUnit u, float capM, long nowMs)
+        {
+            NicheDef n = u.Individual.Niche;
+            switch (n.Mode)
+            {
+                case WanderMode.Shuttle:
+                case WanderMode.Loop:
+                    if (u.Route.Length < 2)
+                    {
+                        return false; // no second waypoint could be placed (all sea / walled): stay put, never teleport.
+                    }
+
+                    u.WanderTarget = u.Route[u.RouteIndex];
+                    return true;
+                case WanderMode.BoundedRandom:
+                    return TryLandWanderPoint(u, u.Home, capM, out float3 inCap) && Set(u, inCap);
+                default:
+                    // Unbounded: from the current position, about as far as the leg's mean speed covers in its mean budget.
+                    float speedMs = u.Combatant.MoveSpeedMmS(nowMs) * 0.001f * u.Individual.SpeedPermilleMean / 1000f;
+                    float reachM = math.max(ArriveM * 2f, speedMs * u.Individual.MoveMsMean * 0.001f);
+                    return TryLandWanderPoint(u, u.Position, reachM, out float3 free) && Set(u, free);
+            }
+        }
+
+        private static bool Set(EncounterUnit u, float3 target)
+        {
+            u.WanderTarget = target;
+            return true;
+        }
+
+        // Up to 3 waypoints: Home plus two seeded points in the cap (shuttle A→B→C→B→A, loop A→B→C→A); start phase and
+        // shuttle direction are seeded so a pack does not move in lockstep. Points that stay sea or walled after the
+        // retries are dropped rather than replaced by a fallback.
+        private void BuildRoute(EncounterUnit u, float capM)
+        {
+            var points = new List<float3>(3) { Up(u.Home) };
+            if (u.Individual.Niche.Mode != WanderMode.BoundedRandom)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    if (TryLandWanderPoint(u, u.Home, capM, out float3 p))
+                    {
+                        points.Add(p);
+                    }
+                }
+            }
+
+            u.Route = points.ToArray();
+            u.RouteIndex = (int)u.WanderRng.NextUInt((uint)u.Route.Length);
+            u.RouteStep = u.WanderRng.NextUInt(2) == 0 ? 1 : -1;
+        }
+
+        private static void AdvanceRoute(EncounterUnit u, WanderMode mode)
+        {
+            int n = u.Route.Length;
+            if (n < 2)
+            {
+                return;
+            }
+
+            if (mode == WanderMode.Loop)
+            {
+                u.RouteIndex = (u.RouteIndex + u.RouteStep + n) % n;
+                return;
+            }
+
+            int next = u.RouteIndex + u.RouteStep;
+            if (next < 0 || next >= n)
+            {
+                u.RouteStep = -u.RouteStep;
+                next = u.RouteIndex + u.RouteStep;
+            }
+
+            u.RouteIndex = next;
+        }
+
+        private bool InsideCap(EncounterUnit u, float3 position, float capM)
+            => ArcM(Up(position), Up(u.Home), _planet.Radius) <= capM + ArriveM;
 
         /// <summary>Destination draws per wander leg before giving up on a disk that is (almost) all sea.</summary>
         /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
         public const int WanderSeaRetries = 8;
 
-        // REQ: combat.md#只在陸地. Redraws come from the same (seed,'W') stream, so the count of draws is still a pure
-        // function of seed and positions; a coast-hugging spawn just pauses again instead of walking into the water.
-        // A destination inside a building is redrawn the same way (planet-world.md#道路與建築).
-        private bool TryLandWanderPoint(float3 home, float radiusM, float clearanceM, out float3 target)
+        // REQ: combat.md#只在陸地. Redraws come from the unit's own stream, so the count of draws is still a pure function
+        // of its key and positions; a coast-hugging spawn just pauses again instead of walking into the water. A
+        // destination inside a building is redrawn the same way (planet-world.md#道路與建築).
+        private bool TryLandWanderPoint(EncounterUnit u, float3 center, float radiusM, out float3 target)
         {
             for (int i = 0; i < WanderSeaRetries; i++)
             {
-                target = WanderPoint(home, radiusM);
-                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, clearanceM))
+                target = WanderPoint(ref u.WanderRng, center, radiusM);
+                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, u.CollisionRadiusM))
                 {
                     return true;
                 }
@@ -2405,12 +2694,12 @@ namespace Cosmimera.Combat
         }
 
         // Uniform over the disk (sqrt of the radial draw); the disk is laid on the sphere by arc length, which differs from
-        // the flat disk's area by ≈ θ²/12: < 0.012 % for the ≤ 12 m wander radii at R ≥ 320 (SOL Q-D1 B).
-        private float3 WanderPoint(float3 home, float radiusM)
+        // the flat disk's area by ≈ θ²/12: < 0.1 % for the ≤ 32 m niche radii at R ≥ 320 (SOL Q-D1 B).
+        private float3 WanderPoint(ref Pcg32 rng, float3 center, float radiusM)
         {
-            float3 up = Up(home);
-            float theta = _wanderRng.NextFloat() * 2f * math.PI;
-            float arc = radiusM * math.sqrt(_wanderRng.NextFloat()) / _planet.Radius;
+            float3 up = Up(center);
+            float theta = rng.NextFloat() * 2f * math.PI;
+            float arc = radiusM * math.sqrt(rng.NextFloat()) / _planet.Radius;
             PlanetFrame f = PlanetFrame.FromUp(up);
             float3 heading = f.East * math.cos(theta) + f.North * math.sin(theta);
             return math.normalize(up * math.cos(arc) + heading * math.sin(arc));

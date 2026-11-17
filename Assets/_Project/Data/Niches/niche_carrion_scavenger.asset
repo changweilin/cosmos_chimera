@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_carrion_scavenger
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_carrion_scavenger
+  nameZh: "\u98DF\u8150"
+  habitatKinds:
+  - forest
+  - river_valley
+  - volcano
+  - rift_valley
+  - ice_field
+  - fjord
+  - plateau
+  - archipelago
+  - canyon
+  - cave
+  - eternal_day
+  - eternal_night
+  - grassland
+  - desert
+  - swamp
+  - mountain
+  - tundra
+  - glacier
+  - cirque
+  - moraine
+  - karst
+  - basalt_terrace
+  - granite_domes
+  - slate_cliffs
+  habits:
+  - habit: 0
+    weight: 4
+  - habit: 3
+    weight: 4
+  - habit: 4
+    weight: 2
+  mode: 3
+  radiusMm: 0
+  exclusionRadiusMm: 20000
+  speedPermille:
+    mean: 480
+    individualSd: 72
+    actionSd: 96
+    min: 50
+    max: 900
+  moveMs:
+    mean: 14000
+    individualSd: 2800
+    actionSd: 4200
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 4000
+    individualSd: 1000
+    actionSd: 1600
+    min: 250
+    max: 60000

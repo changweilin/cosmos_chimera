@@ -14,7 +14,7 @@ SOURCE = REPO / "Data/_incoming/life-crafting-draft-01"
 
 @pytest.fixture
 def crafting(tmp_path):
-    for kind in ("craft-items", "craft-recipes"):
+    for kind in ("craft-items", "craft-recipes", "craft-grips"):
         shutil.copytree(SOURCE / kind, tmp_path / kind)
     return tmp_path
 
@@ -60,3 +60,31 @@ def test_recipe_rejects_nonpositive_cost_and_unqualified_utility(crafting):
 def test_recipe_cannot_consume_its_reusable_tool(crafting):
     mutate(crafting, "craft-recipes", lambda rows: rows[0].update(tools=["craft_needle"], costs=[{"item": "craft_needle", "quantity": 1}]))
     assert any(f.code == "tool_consumed" for f in errors(crafting))
+
+
+def test_weapon_requires_profile_and_gives_player_nothing(crafting):
+    def change(rows):
+        blade = next(row for row in rows if row["id"] == "craft_iron_blade")
+        del blade["equipment"]["weapon"]
+        blade["equipment"]["player"]["max_hp_percent"] = 5
+    mutate(crafting, "craft-items", change)
+    assert len([f for f in errors(crafting) if f.code == "schema"]) >= 2
+
+
+def test_non_weapon_cannot_carry_weapon_profile(crafting):
+    def change(rows):
+        coat = next(row for row in rows if row["id"] == "craft_down_coat")
+        coat["equipment"]["weapon"] = {"element": "ice", "element_mastery": 0, "power_permille": 1000, "speed_permille": 1000}
+    mutate(crafting, "craft-items", change)
+    assert any(f.code == "schema" for f in errors(crafting))
+
+
+@pytest.mark.parametrize("grips", [[], ["two_handed", "dual_wield", "one_hand_shield"], ["dual_wield", "dual_wield"], ["sword"]])
+def test_grip_rows_hold_one_or_two_distinct_known_grips(crafting, grips):
+    mutate(crafting, "craft-grips", lambda rows: rows[0].update(grips=grips))
+    assert any(f.code == "schema" for f in errors(crafting))
+
+
+def test_grip_species_listed_once(crafting):
+    mutate(crafting, "craft-grips", lambda rows: rows.append(dict(rows[0])))
+    assert any(f.code == "duplicate_id" for f in errors(crafting))

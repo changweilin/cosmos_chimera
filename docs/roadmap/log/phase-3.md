@@ -32,3 +32,4 @@
 - 2026-11-15 · Claude Fable · partial · P3-26 季節：規則層抽季節（`WorldGen.Seasons`）與四季外觀已做；天氣、物種與可採集物未做，等 Q-W19～Q-W22 · 下一步：使用者回答後接 `WeatherPlanner` 與 `ScatterPlanner`（升版），並在 HUD／手冊顯示季節
 - 2026-11-16 · Claude Fable · partial · P3-18 路人 NPC：規則層 `WorldGen/PopulacePlanner` v1（15 種族、14 職業、星球→聚落→個人三層種族組成，年齡／健康／體型整數有界常態；`RunPopulace.IsBlocked` 已接 `HeightSurface`）＋表現層 `NpcMeshes`／`PopulaceView`（程序化靜態人形，服裝依地區×時代＋主／副／第三風格混搭、職業道具、年齡與健康外觀）；`ArchMix` 新增第三風格（既有 seed 的部分混搭建築外觀會變，`RunLayout` 雜湊不變）。未做：道路上與野外營地的路人、走動與動畫、互動、被招式命中、描邊、實景目視（只看過 `Logs/npc-*.png` 測試台截圖）；美術離目標水準有差距，等基底模型（P1-16） · 下一步：使用者回答 Q-A5～Q-A9；人工試玩看聚落內人數、碰撞手感與幀率
 - 2026-11-16 · Codex · partial · P3-31 生態設計與 14 棲位 JSON 提案完成（四模式、42 組兩層分布），執行期尚未接線；數值與個體遷移待定 · 下一步：使用者確認 Q-C50／Q-C51，配物種候選後整體遷移生成、遊蕩、性格領域與存檔
+- 2026-11-17 · Claude Opus · partial · P3-31：性格→習性改名、棲位資料／importer、`RunEcology`（抽樣＋同棲位異種排他）、`Encounter` 四模式遊蕩與 2 vs 2 交戰上限已接線；存檔（收服保留、進化重抽、舊存檔遷移）與 `ReproProbe` 未做 · 下一步：使用者審草擬資料；Save／Capture 接線

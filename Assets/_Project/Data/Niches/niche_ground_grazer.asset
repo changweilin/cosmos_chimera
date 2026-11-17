@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_ground_grazer
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_ground_grazer
+  nameZh: "\u5730\u8868\u98DF\u8349"
+  habitatKinds:
+  - river_valley
+  - fjord
+  - plateau
+  - archipelago
+  - eternal_day
+  - grassland
+  - tundra
+  - cirque
+  - moraine
+  habits:
+  - habit: 0
+    weight: 2
+  - habit: 1
+    weight: 4
+  - habit: 3
+    weight: 4
+  mode: 2
+  radiusMm: 14000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 280
+    individualSd: 42
+    actionSd: 56
+    min: 50
+    max: 900
+  moveMs:
+    mean: 5000
+    individualSd: 1000
+    actionSd: 1500
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 5500
+    individualSd: 1375
+    actionSd: 2200
+    min: 250
+    max: 60000

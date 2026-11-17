@@ -198,7 +198,7 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(touched, Is.True, "the main's move reached the locked object within 30 s");
 
-            // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its temperament (D0-E2:
+            // Teleport onto the nearest normal pack and press Focus, which provokes it whatever its habit (D0-E2:
             // tier-0 juveniles are timid). Nearest, because the character's motor rejects an up vector that turns > 90°
             // in one step (a far teleport is not gameplay).
             float3 target = float3.zero;

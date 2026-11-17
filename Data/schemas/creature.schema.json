@@ -9,7 +9,7 @@
     "creature": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "line_id", "stage", "size_class", "ai_style", "temperament", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
+      "required": ["id", "line_id", "stage", "size_class", "ai_style", "niches", "evolves_to", "evolution", "resist", "mastery", "stats", "signature_move", "trait", "concept"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
         "line_id": { "$ref": "common.schema.json#/$defs/id" },
@@ -23,9 +23,18 @@
           "description": "Combat AI positioning style. REQ: docs/design/combat.md#戰鬥 AI (Q-C21). Per stage: a line may change style as its signature move changes.",
           "enum": ["keep_distance", "flank", "charge", "hold"]
         },
-        "temperament": {
-          "description": "Wild territory radius class. REQ: docs/design/combat.md#野生領域 (D0-E2); radii in balance.json#ai.territory_mm (Q-C35).",
-          "enum": ["timid", "cautious", "normal", "territorial", "fierce", "apex"]
+        "niches": {
+          "description": "Candidate ecological niches of this form with positive integer weights. REQ: docs/design/creature-ecology.md#生成順序. Non-overload forms need >= 1 and their habitat union must cover every landform (semantic check).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["niche", "weight"],
+            "properties": {
+              "niche": { "$ref": "common.schema.json#/$defs/id" },
+              "weight": { "$ref": "common.schema.json#/$defs/positiveInt" }
+            }
+          }
         },
         "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
         "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },

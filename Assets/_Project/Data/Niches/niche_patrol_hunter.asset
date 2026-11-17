@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_patrol_hunter
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_patrol_hunter
+  nameZh: "\u5DE1\u7375\u63A0\u98DF"
+  habitatKinds:
+  - forest
+  - ice_field
+  - fjord
+  - plateau
+  - canyon
+  - eternal_night
+  - grassland
+  - desert
+  - mountain
+  - tundra
+  - glacier
+  - moraine
+  habits:
+  - habit: 0
+    weight: 3
+  - habit: 2
+    weight: 2
+  - habit: 3
+    weight: 2
+  - habit: 4
+    weight: 3
+  mode: 1
+  radiusMm: 32000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 520
+    individualSd: 78
+    actionSd: 104
+    min: 50
+    max: 900
+  moveMs:
+    mean: 12000
+    individualSd: 2400
+    actionSd: 3600
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 4500
+    individualSd: 1125
+    actionSd: 1800
+    min: 250
+    max: 60000

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_apex_predator
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_apex_predator
+  nameZh: "\u9802\u7D1A\u63A0\u98DF"
+  habitatKinds:
+  - forest
+  - rift_valley
+  - ice_field
+  - plateau
+  - canyon
+  - eternal_night
+  - grassland
+  - desert
+  - mountain
+  - tundra
+  - glacier
+  habits:
+  - habit: 0
+    weight: 2
+  - habit: 2
+    weight: 3
+  - habit: 4
+    weight: 4
+  - habit: 5
+    weight: 1
+  mode: 3
+  radiusMm: 0
+  exclusionRadiusMm: 30000
+  speedPermille:
+    mean: 460
+    individualSd: 69
+    actionSd: 92
+    min: 50
+    max: 900
+  moveMs:
+    mean: 18000
+    individualSd: 3600
+    actionSd: 5400
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 8000
+    individualSd: 2000
+    actionSd: 3200
+    min: 250
+    max: 60000

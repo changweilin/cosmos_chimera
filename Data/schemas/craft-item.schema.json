@@ -64,16 +64,19 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "slot",
+          "kind",
           "target",
           "player",
           "creature_effects"
         ],
         "properties": {
-          "slot": {
+          "kind": {
             "enum": [
-              "weapon",
-              "armor",
+              "one_handed",
+              "two_handed",
+              "shield",
+              "upper",
+              "lower",
               "accessory"
             ]
           },
@@ -132,6 +135,78 @@
                 }
               ]
             }
+          },
+          "weapon": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "element",
+              "element_mastery",
+              "power_permille",
+              "speed_permille"
+            ],
+            "properties": {
+              "element": {
+                "$ref": "common.schema.json#/$defs/element"
+              },
+              "element_mastery": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "power_permille": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10000
+              },
+              "speed_permille": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 10000
+              }
+            }
+          }
+        },
+        "if": {
+          "properties": {
+            "kind": {
+              "enum": [
+                "one_handed",
+                "two_handed"
+              ]
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "weapon"
+          ],
+          "properties": {
+            "target": {
+              "not": {
+                "const": "player"
+              }
+            },
+            "player": {
+              "properties": {
+                "max_hp_percent": {
+                  "const": 0
+                },
+                "move_speed_percent": {
+                  "const": 0
+                },
+                "roll_cooldown_percent": {
+                  "const": 0
+                }
+              }
+            }
+          }
+        },
+        "else": {
+          "not": {
+            "required": [
+              "weapon"
+            ]
           }
         }
       }

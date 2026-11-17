@@ -18,9 +18,9 @@ BATCHES = [
     "p5-05-moves-draft-05", "p5-05-moves-draft-06",
     "p5-05-traits-draft-01", "p5-05-traits-draft-02", "p5-05-traits-draft-03",
     "p5-06-relations-draft-01", "p3-12-env-materials-draft-01",
-    "life-crafting-draft-01",
+    "life-crafting-draft-01", "p3-31-ecology-draft-01",
 ]
-KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials", "craft-items", "craft-recipes"]
+KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials", "craft-items", "craft-recipes", "niches"]
 # Runtime copy for the demo UI. Unity cannot read Data/ in a build, so the text is staged as TextAssets.
 COPY_OUT = Path("Assets/_Project/Data/Copy")
 CRAFT_OUT = Path("Assets/_Project/Features/Crafting/Resources/Crafting")
@@ -145,6 +145,7 @@ def _prepare_crafting(root):
     for name, source in {
         "items.json": craft_root / "craft-items" / "craft-items.json",
         "recipes.json": craft_root / "craft-recipes" / "craft-recipes.json",
+        "grips.json": craft_root / "craft-grips" / "craft-grips.json",
         "copy.json": craft_root / "crafting-copy.json",
     }.items():
         files[name], _ = _read_json(source)
@@ -155,7 +156,7 @@ def _write_crafting(root, files):
     CRAFT_OUT.mkdir(parents=True, exist_ok=True)
     for name, data in files.items():
         (CRAFT_OUT / name).write_bytes(data)
-    for name, kind in (("items.json", "craft-items"), ("recipes.json", "craft-recipes")):
+    for name, kind in (("items.json", "craft-items"), ("recipes.json", "craft-recipes"), ("grips.json", "craft-grips")):
         dest = root / "_demo" / kind / f"life-crafting-draft-01--{kind}.json"
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(files[name])

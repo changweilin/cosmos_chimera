@@ -39,8 +39,19 @@ KINDS = {
     "eggs": "egg",
     "craft-items": "craft-item",
     "craft-recipes": "craft-recipe",
+    "craft-grips": "craft-grip",
+    "niches": "niche",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches")
+# Mirrors LandformSynth.KindIds (Assets/_Project/Features/WorldGen/Runtime/Model/LandformSynth.cs): every spawn point's
+# habitat is one of these (creature-ecology.md#生成順序), so a form's niche habitats must cover all of them.
+LANDFORM_KINDS = (
+    "forest", "river_valley", "volcano", "rift_valley", "ice_field", "fjord",
+    "plateau", "archipelago", "canyon", "cave", "eternal_day", "eternal_night",
+    "grassland", "desert", "swamp", "mountain",
+    "tundra", "glacier", "cirque", "moraine",
+    "karst", "basalt_terrace", "granite_domes", "slate_cliffs",
+)
 STAGE_NEXT = {"juvenile": "adolescent", "adolescent": "adult"}
 ENV_MATERIALS_FOLDER = "env-materials"
 ENV_MATERIALS_SCHEMA = "env-materials"
@@ -200,9 +211,63 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
                         records[folder].append(Record(folder, rel, i, item))
 
     _check_cross_refs(records, findings, retired_ids_path)
+    _check_niches(records, findings)
     _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
     return findings
+
+
+def _check_niches(records: dict[str, list[Record]], findings: list[Finding]) -> None:
+    """REQ: docs/design/creature-ecology.md — distribution order, landform ids, creature niche refs and coverage."""
+    niches: dict[str, Record] = {}
+    for r in records["niches"]:
+        nid = r.data.get("id")
+        if isinstance(nid, str):
+            niches.setdefault(nid, r)
+        kinds = r.data.get("habitat_kinds")
+        if isinstance(kinds, list):
+            for i, k in enumerate(kinds):
+                if k not in LANDFORM_KINDS:
+                    findings.append(Finding("error", "niche_habitat", r.file, f"/{r.index}/habitat_kinds/{i}",
+                                            f"'{k}' is not a landform kind (LandformSynth.Kinds)"))
+        wander = r.data.get("wander")
+        if isinstance(wander, dict):
+            for key in ("speed_permille", "move_ms", "pause_ms"):
+                d = wander.get(key)
+                if isinstance(d, dict) and all(isinstance(d.get(k), int) for k in ("min", "mean", "max")):
+                    if not d["min"] <= d["mean"] <= d["max"]:
+                        findings.append(Finding("error", "niche_distribution", r.file, f"/{r.index}/wander/{key}",
+                                                "needs min <= mean <= max"))
+    for r in records["creatures"]:
+        cands = r.data.get("niches")
+        if not isinstance(cands, list):
+            continue
+        if r.data.get("stage") != "overload" and not cands:
+            findings.append(Finding("error", "niche_candidates", r.file, f"/{r.index}/niches",
+                                    "non-overload forms need at least one candidate niche"))
+            continue
+        covered: set[str] = set()
+        seen: set[str] = set()
+        for i, c in enumerate(cands):
+            nid = c.get("niche") if isinstance(c, dict) else None
+            if not isinstance(nid, str):
+                continue
+            if nid in seen:
+                findings.append(Finding("error", "niche_candidates", r.file, f"/{r.index}/niches/{i}/niche",
+                                        f"'{nid}' listed twice"))
+            seen.add(nid)
+            hit = niches.get(nid)
+            if hit is None:
+                findings.append(Finding("error", "dangling_ref", r.file, f"/{r.index}/niches/{i}/niche",
+                                        f"'{nid}' is not a known niche id"))
+                continue
+            kinds = hit.data.get("habitat_kinds")
+            if isinstance(kinds, list):
+                covered.update(k for k in kinds if isinstance(k, str))
+        missing = [k for k in LANDFORM_KINDS if k not in covered]
+        if cands and missing:
+            findings.append(Finding("error", "niche_coverage", r.file, f"/{r.index}/niches",
+                                    f"candidate habitats miss landforms {missing}; a spawn there would fail"))
 
 
 def _load_retired_ids(retired_ids_path: Path | None) -> set[str]:
@@ -323,6 +388,21 @@ def _check_cross_refs(records: dict[str, list[Record]], findings: list[Finding],
             costs = r.data.get("costs", [])
             if isinstance(costs, list) and any(isinstance(c, dict) and c.get("item") == tool for c in costs):
                 findings.append(Finding("error", "tool_consumed", r.file, f"/{r.index}/tools/{i}", "reusable tool cannot also be a consumed cost"))
+
+    # A crafting batch validated on its own has no creatures; species refs are checked once both are staged together.
+    seen_grip_species: dict[str, Record] = {}
+    for r in records["craft-grips"]:
+        species = r.data.get("species")
+        if not isinstance(species, str):
+            continue
+        if species in seen_grip_species:
+            o = seen_grip_species[species]
+            findings.append(Finding("error", "duplicate_id", r.file, f"/{r.index}/species",
+                                    f"grips for '{species}' already defined in {o.file}/{o.index}"))
+        else:
+            seen_grip_species[species] = r
+        if records["creatures"]:
+            ref(r, "species", "creatures")
 
     for r in records["foods"]:
         ingredients = r.data.get("ingredients")

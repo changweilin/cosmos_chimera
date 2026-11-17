@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b50cf3a6b68a43708095731bfcf44f8b, type: 3}
+  m_Name: niche_understory_insectivore
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.NicheDef
+  id: niche_understory_insectivore
+  nameZh: "\u6797\u4E0B\u98DF\u87F2"
+  habitatKinds:
+  - forest
+  - river_valley
+  - swamp
+  habits:
+  - habit: 0
+    weight: 3
+  - habit: 1
+    weight: 2
+  - habit: 3
+    weight: 5
+  mode: 2
+  radiusMm: 12000
+  exclusionRadiusMm: 0
+  speedPermille:
+    mean: 420
+    individualSd: 63
+    actionSd: 84
+    min: 50
+    max: 900
+  moveMs:
+    mean: 4000
+    individualSd: 800
+    actionSd: 1200
+    min: 500
+    max: 60000
+  pauseMs:
+    mean: 3000
+    individualSd: 750
+    actionSd: 1200
+    min: 250
+    max: 60000
