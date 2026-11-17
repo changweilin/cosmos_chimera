@@ -87,41 +87,9 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C65">
-  <header><a class="id" href="#Q-C65">Q-C65</a><span class="tag">影響 D0-S1</span><span class="tag">Combat · schema</span></header>
-  <p><span class="label">問題</span><b>陰陽攻守如何進入傷害公式</b>。現行：<code>power × (1+專精) × (1−抗性)</code>，沒有攻防數值。新制下需決定 (1) 每招如何標陰陽；(2) 攻／守的計算形式；(3) 專精與十屬性抗性是否保留在公式中。</p>
-  <p>形式比較（攻 A、守 D）：<b>比值</b> <code>A/D</code>——雙方等值時 ×1，翻倍即雙倍，直覺但極端值易爆；<b>收斂</b> <code>A/(A+D)×2</code>——上限 ×2，穩定但成長感弱；<b>減法</b> <code>A−D</code>——高守可讓弱招歸零，需保底。</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（schema 與公式變更）</p>
-</article>
-
-<article id="Q-C66">
-  <header><a class="id" href="#Q-C66">Q-C66</a><span class="tag">影響 D0-S1</span><span class="tag">DerivedStats</span></header>
-  <p><span class="label">問題</span><b>「其餘數值基礎值都相同」涵蓋哪些，速度影響哪些</b>。舊四維推導的射程（STR）、CD（SPI）、閃避（AGI）改為全宙獸共同基礎值；另需確認：物種的<b>十屬性抗性</b>與<b>專精</b>（目前是物種身分、相剋的唯一來源，Q-C1）是保留為物種資料，還是也改成共同基礎值、只由技能與飾品提供？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C67">
-  <header><a class="id" href="#Q-C67">Q-C67</a><span class="tag">影響 D0-S1</span><span class="tag">Data · level-progression</span></header>
-  <p><span class="label">問題</span><b>六能力值的尺度與成長</b>。舊制：每階四項總點數 100／200／400，HP 由 CON 經收斂曲線推導（600～1500），等級線性縮放 <code>B×(L+10)/110</code>。新制 HP 是能力值本身；需決定 HP 數值是否直接等於最大 HP、各階總點數，以及等級縮放是否沿用（六項全縮放）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C68">
-  <header><a class="id" href="#Q-C68">Q-C68</a><span class="tag">影響 D0-S1</span><span class="tag">Data · validate-data</span></header>
-  <p><span class="label">問題</span><b>技能星級 → 六能力值綜合值的換算</b>。「星級越高、綜合值越低」需要可驗證的預算規則：哪些技能計入（精通招式、特性、生活能力），每多一星扣多少，是硬性驗證還是製作參考。</p>
-  <p>例（每星 −5%，以兩技能合計星數計）：★+★＝2 星 → 100%；★★★+★★★＝6 星 → 80%。</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C69">
-  <header><a class="id" href="#Q-C69">Q-C69</a><span class="tag">影響 D0-S1</span><span class="tag">PartnerLoadout · schema</span></header>
-  <p><span class="label">問題</span><b>星級的資料形狀與副手降格怎麼算</b>。(1) 星級是技能固定的稀有度，還是每個技能都有 ★／★★／★★★ 三版？(2) 副手「降格為 ★」怎麼計算數值？(3) 「獨有」是否表示只有一個物種可擁有（目前多隻宙獸可共用同一 <code>signature_move</code>／<code>trait</code>）？(4) 降格是否也套用到生活能力、超載與副手裝備（現行 25%）？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
-<article id="Q-C70">
-  <header><a class="id" href="#Q-C70">Q-C70</a><span class="tag">影響 D0-S1 · D0-U4</span><span class="tag">crafting · combat</span></header>
-  <p><span class="label">問題</span><b>裝備新數值的定義</b>。目前沒有暴擊；格擋只在主控按鍵時發生（35%／持盾 75%）；失衡槽＝最大 HP×30%。需決定：<b>爆率／爆傷</b>的基礎值；<b>格擋率</b>指什麼；<b>失衡值</b>是自己的失衡槽容量還是對敵累積的失衡量；現有武器「同屬性專精 +N」（元素類）是否移到飾品。</p>
+<article id="Q-C71">
+  <header><a class="id" href="#Q-C71">Q-C71</a><span class="tag">影響 D0-S1（僅超載與防具部分）</span></header>
+  <p><span class="label">問題</span>Q-C69／Q-C70 回答後剩下兩點：(1) <b>「降格也套用到超載」</b>指什麼？超載一律需要魔術方塊副手才解鎖，若解讀為「超載型態的技能降為 ★」，則所有超載技能永遠是 ★；(2) 格擋率改名<b>格擋減免率</b>後，防具清單原本的<b>「格擋值」</b>是否就是同一項，或是另一項（例如架勢條容量）？</p>
   <p><span class="label">暫定</span><span class="none">無</span></p>
 </article>
 
@@ -159,25 +127,8 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C65':[R('tag','招式陰陽標示',['每個傷害招式必填一種：yin 或 yang（建議）','可混合：招式填陰／陽比例','其他（補充）']),
-          R('form','攻／守計算形式',['比值 A/D，上下限夾住（例 ×0.25～×4）（建議）','收斂 A/(A+D)×2','減法 A−D，保底 1','其他（補充）']),
-          R('keep','專精與抗性',['保留：power × 攻守係數 × (1+專精) × (1−抗性)（建議）','移除專精，只留抗性','都移除，元素只由飾品處理'])],
- 'Q-C66':[C('base','改為全宙獸共同基礎值（可複選）',['射程／判定範圍','招式 CD','閃避率','命中']),
-          C('spd','速度影響（可複選）',['移動速度','閃避率','招式 CD（攻速）','出手順序／前搖']),
-          R('elem','物種的十屬性抗性與專精',['保留為物種資料（建議）','改為共同基礎值，只由技能與飾品提供','抗性保留、專精改由技能／飾品']) ],
- 'Q-C67':[R('hp','HP 能力值',['直接等於最大 HP（建議）','經曲線推導最大 HP']),
-          G('adult_total','成年六項總點數（基準，未扣星級）',300,1200,50,600,' 點'),
-          R('level','等級縮放',['沿用 B×(L+10)/110，六項全縮放（建議）','只縮放 HP 與攻守，速度不縮放','其他（補充）'])],
- 'Q-C68':[C('count','計入預算的技能（可複選）',['精通招式','特性','生活能力']),
-          G('per_star','每多一星，綜合值扣減',0,15,1,5,' %'),
-          R('enforce','執行方式',['validate-data 硬性檢查（容許 ±5%）（建議）','僅製作參考，人工審核'])],
- 'Q-C69':[R('shape','星級資料形狀',['每技能固定一個星級，另存 ★ 版降格數值（建議）','每技能都有三版數值，物種選用其一','全域倍率：★ 版＝原值 × 固定比例']),
-          R('unique','「獨有」',['只有一個物種（含其進化線）可擁有（建議）','只是稀有度名稱，可共用']),
-          C('scope','降格也套用到（可複選）',['生活能力','超載','副手裝備（取代 25%）'])],
- 'Q-C70':[R('crit','暴擊基礎',['基礎爆率 0%、爆傷 150%，只由武器與技能提升（建議）','基礎爆率 5%、爆傷 150%','其他（補充）']),
-          R('blockrate','格擋率',['未按格擋時自動格擋的機率（含支援宙獸）（建議）','按格擋時減免成功率','其他（補充）']),
-          R('poise','失衡值',['自己的失衡槽容量加成（防守面）（建議）','攻擊時對敵累積的失衡量']),
-          R('wpnelem','武器「同屬性專精 +N」',['保留在武器（建議）','移到飾品，武器只留攻擊面'])],
+ 'Q-C71':[R('overload','降格套用到超載',['超載型態的精通招式與特性一律以 ★ 版生效（預算因此以 ★+★＝720 計）（建議）','魔術方塊副手提供的超載整體能力值打折','其他（補充）']),
+          R('guard','防具「格擋值」',['與格擋減免率是同一項，只保留格擋減免率（建議）','另一項：架勢條容量加成','其他（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
