@@ -1567,7 +1567,7 @@ namespace Cosmimera.Bootstrap.Demo
                     RunRegion nextRegion = _plan.Regions[region];
                     if (!BgmResolver.CanPartyEnterAdvancedTerrain(nextRegion.ThemeId, _setup?.Party, out Element req))
                     {
-                        Toast($"需攜帶擁有【{req}】屬性招式的宙獸");
+                        Toast($"需攜帶擁有【{req}】屬性主動技的宙獸");
                     }
                 }
                 UpdateBgm();

@@ -7,8 +7,8 @@
       "ja": "金湧"
     },
     "desc": {
-      "zh-TW": "金屑在空中閃爍，本區域內所有金屬性招式的 CD 減少 15%。",
-      "en": "Metallic flecks shimmer in the air; all metal moves in this region have 15% less cooldown.",
+      "zh-TW": "金屑在空中閃爍，本區域內所有金屬性主動技的 CD 減少 15%。",
+      "en": "Metallic flecks shimmer in the air; all metal active skills in this region have 15% less cooldown.",
       "ja": "金屑が宙に煌めき、本エリア内の全金属性スキルのCTが15%短縮。"
     }
   },
@@ -20,8 +20,8 @@
       "ja": "木湧"
     },
     "desc": {
-      "zh-TW": "落葉隨風盤旋，本區域內所有木屬性招式的 CD 減少 15%。",
-      "en": "Leaves spiral through the air; all wood moves in this region have 15% less cooldown.",
+      "zh-TW": "落葉隨風盤旋，本區域內所有木屬性主動技的 CD 減少 15%。",
+      "en": "Leaves spiral through the air; all wood active skills in this region have 15% less cooldown.",
       "ja": "落葉が風に舞い、本エリア内の全木属性スキルのCTが15%短縮。"
     }
   },
@@ -33,8 +33,8 @@
       "ja": "水湧"
     },
     "desc": {
-      "zh-TW": "細雨輕落，本區域內所有水屬性招式的 CD 減少 15%。",
-      "en": "A fine rain falls; all water moves in this region have 15% less cooldown.",
+      "zh-TW": "細雨輕落，本區域內所有水屬性主動技的 CD 減少 15%。",
+      "en": "A fine rain falls; all water active skills in this region have 15% less cooldown.",
       "ja": "細雨が静かに降り注ぎ、本エリア内の全水属性スキルのCTが15%短縮。"
     }
   },
@@ -46,8 +46,8 @@
       "ja": "火湧"
     },
     "desc": {
-      "zh-TW": "餘燼如雨飄落，本區域內所有火屬性招式的 CD 減少 15%。",
-      "en": "Embers drift down like rain; all fire moves in this region have 15% less cooldown.",
+      "zh-TW": "餘燼如雨飄落，本區域內所有火屬性主動技的 CD 減少 15%。",
+      "en": "Embers drift down like rain; all fire active skills in this region have 15% less cooldown.",
       "ja": "残り火が雨のように降り注ぎ、本エリア内の全火属性スキルのCTが15%短縮。"
     }
   },
@@ -59,8 +59,8 @@
       "ja": "土湧"
     },
     "desc": {
-      "zh-TW": "塵沙在地面翻湧，本區域內所有土屬性招式的 CD 減少 15%。",
-      "en": "Dust swirls across the ground; all earth moves in this region have 15% less cooldown.",
+      "zh-TW": "塵沙在地面翻湧，本區域內所有土屬性主動技的 CD 減少 15%。",
+      "en": "Dust swirls across the ground; all earth active skills in this region have 15% less cooldown.",
       "ja": "地表に砂塵が渦巻き、本エリア内の全土属性スキルのCTが15%短縮。"
     }
   },
@@ -72,8 +72,8 @@
       "ja": "氷湧"
     },
     "desc": {
-      "zh-TW": "冰晶飄散，本區域內所有冰屬性招式的 CD 減少 15%。",
-      "en": "Ice crystals drift through the air; all ice moves in this region have 15% less cooldown.",
+      "zh-TW": "冰晶飄散，本區域內所有冰屬性主動技的 CD 減少 15%。",
+      "en": "Ice crystals drift through the air; all ice active skills in this region have 15% less cooldown.",
       "ja": "氷晶が宙を漂い、本エリア内の全氷属性スキルのCTが15%短縮。"
     }
   },
@@ -85,8 +85,8 @@
       "ja": "風湧"
     },
     "desc": {
-      "zh-TW": "氣流掠過地表，本區域內所有風屬性招式的 CD 減少 15%。",
-      "en": "Gusts sweep across the ground; all wind moves in this region have 15% less cooldown.",
+      "zh-TW": "氣流掠過地表，本區域內所有風屬性主動技的 CD 減少 15%。",
+      "en": "Gusts sweep across the ground; all wind active skills in this region have 15% less cooldown.",
       "ja": "疾風が地表を吹き抜け、本エリア内の全風属性スキルのCTが15%短縮。"
     }
   },
@@ -98,8 +98,8 @@
       "ja": "雷湧"
     },
     "desc": {
-      "zh-TW": "閃電劃過天空，本區域內所有雷屬性招式的 CD 減少 15%。",
-      "en": "Lightning streaks across the sky; all thunder moves in this region have 15% less cooldown.",
+      "zh-TW": "閃電劃過天空，本區域內所有雷屬性主動技的 CD 減少 15%。",
+      "en": "Lightning streaks across the sky; all thunder active skills in this region have 15% less cooldown.",
       "ja": "稲妻が空を切り裂き、本エリア内の全雷属性スキルのCTが15%短縮。"
     }
   },
@@ -111,8 +111,8 @@
       "ja": "光湧"
     },
     "desc": {
-      "zh-TW": "光點在空中流轉，本區域內所有光屬性招式的 CD 減少 15%。",
-      "en": "Motes of light drift through the air; all light moves in this region have 15% less cooldown.",
+      "zh-TW": "光點在空中流轉，本區域內所有光屬性主動技的 CD 減少 15%。",
+      "en": "Motes of light drift through the air; all light active skills in this region have 15% less cooldown.",
       "ja": "光の粒子が宙に揺らめき、本エリア内の全光属性スキルのCTが15%短縮。"
     }
   },
@@ -124,8 +124,8 @@
       "ja": "影湧"
     },
     "desc": {
-      "zh-TW": "暗影在地面流動，本區域內所有影屬性招式的 CD 減少 15%。",
-      "en": "Shadows ripple across the ground; all shadow moves in this region have 15% less cooldown.",
+      "zh-TW": "暗影在地面流動，本區域內所有影屬性主動技的 CD 減少 15%。",
+      "en": "Shadows ripple across the ground; all shadow active skills in this region have 15% less cooldown.",
       "ja": "暗影が地表をうごめき、本エリア内の全影属性スキルのCTが15%短縮。"
     }
   },

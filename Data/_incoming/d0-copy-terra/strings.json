@@ -72,8 +72,8 @@
     "en": "HP"
   },
   "ui.hud.cd_ready": {
-    "zh-TW": "招式就緒",
-    "en": "Move Ready"
+    "zh-TW": "主動技就緒",
+    "en": "Active Skill Ready"
   },
   "ui.hud.switch": {
     "zh-TW": "輪替",

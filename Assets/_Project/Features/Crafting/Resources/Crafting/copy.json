@@ -330,8 +330,8 @@
     "ja": "属性耐性"
   },
   "ui.craft.effect.CdModPercent": {
-    "zh-TW": "招式冷卻",
-    "en": "move cooldown",
+    "zh-TW": "主動技冷卻",
+    "en": "active skill cooldown",
     "ja": "技CD"
   },
   "ui.craft.effect.EvasionModPercent": {

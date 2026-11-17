@@ -167,4 +167,4 @@ Values are strictly integers obeying monotonic trade-offs:
    - Ranged debuffs like `shadow_enervating_mire` (Mid Burst) will require distinct visual telegraph indicators (e.g. purple miasma ring on ground) so players and AI opponents have counterplay opportunities to roll or dash out of the radius before detonation.
 
 ## 修訂 2026-11-07（P5-08 A1，使用者裁決）
-- `wood_photosynthesis` 更名 `wood_sunlight_mend`（與特性 `trait_wood_photosynthesis` 撞詞幹，TERRA 命名）；數值不變。
+- `wood_photosynthesis` 更名 `wood_sunlight_mend`（與被動技 `trait_wood_photosynthesis` 撞詞幹，TERRA 命名）；數值不變。

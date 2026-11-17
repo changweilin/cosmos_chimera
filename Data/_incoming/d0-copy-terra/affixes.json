@@ -6,8 +6,8 @@
       "en": "Metal Surge"
     },
     "desc": {
-      "zh-TW": "金屑在空中閃爍，本區域內所有金屬性招式的 CD 減少 15%。",
-      "en": "Metallic flecks shimmer in the air; all metal moves in this region have 15% less cooldown."
+      "zh-TW": "金屑在空中閃爍，本區域內所有金屬性主動技的 CD 減少 15%。",
+      "en": "Metallic flecks shimmer in the air; all metal active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -17,8 +17,8 @@
       "en": "Wood Surge"
     },
     "desc": {
-      "zh-TW": "落葉隨風盤旋，本區域內所有木屬性招式的 CD 減少 15%。",
-      "en": "Leaves spiral through the air; all wood moves in this region have 15% less cooldown."
+      "zh-TW": "落葉隨風盤旋，本區域內所有木屬性主動技的 CD 減少 15%。",
+      "en": "Leaves spiral through the air; all wood active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -28,8 +28,8 @@
       "en": "Water Surge"
     },
     "desc": {
-      "zh-TW": "細雨輕落，本區域內所有水屬性招式的 CD 減少 15%。",
-      "en": "A fine rain falls; all water moves in this region have 15% less cooldown."
+      "zh-TW": "細雨輕落，本區域內所有水屬性主動技的 CD 減少 15%。",
+      "en": "A fine rain falls; all water active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -39,8 +39,8 @@
       "en": "Fire Surge"
     },
     "desc": {
-      "zh-TW": "餘燼如雨飄落，本區域內所有火屬性招式的 CD 減少 15%。",
-      "en": "Embers drift down like rain; all fire moves in this region have 15% less cooldown."
+      "zh-TW": "餘燼如雨飄落，本區域內所有火屬性主動技的 CD 減少 15%。",
+      "en": "Embers drift down like rain; all fire active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -50,8 +50,8 @@
       "en": "Earth Surge"
     },
     "desc": {
-      "zh-TW": "塵沙在地面翻湧，本區域內所有土屬性招式的 CD 減少 15%。",
-      "en": "Dust swirls across the ground; all earth moves in this region have 15% less cooldown."
+      "zh-TW": "塵沙在地面翻湧，本區域內所有土屬性主動技的 CD 減少 15%。",
+      "en": "Dust swirls across the ground; all earth active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -61,8 +61,8 @@
       "en": "Ice Surge"
     },
     "desc": {
-      "zh-TW": "冰晶飄散，本區域內所有冰屬性招式的 CD 減少 15%。",
-      "en": "Ice crystals drift through the air; all ice moves in this region have 15% less cooldown."
+      "zh-TW": "冰晶飄散，本區域內所有冰屬性主動技的 CD 減少 15%。",
+      "en": "Ice crystals drift through the air; all ice active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -72,8 +72,8 @@
       "en": "Wind Surge"
     },
     "desc": {
-      "zh-TW": "氣流掠過地表，本區域內所有風屬性招式的 CD 減少 15%。",
-      "en": "Gusts sweep across the ground; all wind moves in this region have 15% less cooldown."
+      "zh-TW": "氣流掠過地表，本區域內所有風屬性主動技的 CD 減少 15%。",
+      "en": "Gusts sweep across the ground; all wind active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -83,8 +83,8 @@
       "en": "Thunder Surge"
     },
     "desc": {
-      "zh-TW": "閃電劃過天空，本區域內所有雷屬性招式的 CD 減少 15%。",
-      "en": "Lightning streaks across the sky; all thunder moves in this region have 15% less cooldown."
+      "zh-TW": "閃電劃過天空，本區域內所有雷屬性主動技的 CD 減少 15%。",
+      "en": "Lightning streaks across the sky; all thunder active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -94,8 +94,8 @@
       "en": "Light Surge"
     },
     "desc": {
-      "zh-TW": "光點在空中流轉，本區域內所有光屬性招式的 CD 減少 15%。",
-      "en": "Motes of light drift through the air; all light moves in this region have 15% less cooldown."
+      "zh-TW": "光點在空中流轉，本區域內所有光屬性主動技的 CD 減少 15%。",
+      "en": "Motes of light drift through the air; all light active skills in this region have 15% less cooldown."
     }
   },
   {
@@ -105,8 +105,8 @@
       "en": "Shadow Surge"
     },
     "desc": {
-      "zh-TW": "暗影在地面流動，本區域內所有影屬性招式的 CD 減少 15%。",
-      "en": "Shadows ripple across the ground; all shadow moves in this region have 15% less cooldown."
+      "zh-TW": "暗影在地面流動，本區域內所有影屬性主動技的 CD 減少 15%。",
+      "en": "Shadows ripple across the ground; all shadow active skills in this region have 15% less cooldown."
     }
   },
   {

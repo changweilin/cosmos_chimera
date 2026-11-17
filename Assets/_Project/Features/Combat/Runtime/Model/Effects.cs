@@ -92,7 +92,7 @@ namespace Cosmimera.Combat
 
     /// <summary>A trait trigger as the combat rules see it; mirrors <see cref="TriggerDef"/>.</summary>
     /// <remarks>
-    /// REQ: docs/design/combat.md#特性觸發. Pre: build through the constructor or <see cref="FromDef"/>.
+    /// REQ: docs/design/combat.md#被動技觸發. Pre: build through the constructor or <see cref="FromDef"/>.
     /// Post: immutable. Side effects: none.
     /// </remarks>
     public readonly struct TriggerSpec
@@ -375,7 +375,7 @@ namespace Cosmimera.Combat
     /// <summary>
     /// Timed effects on one combatant, plus its trait. Stacking key = (source id, effect index): the same move or trait
     /// refreshes / stacks no matter who cast it; different sources always add up.
-    /// REQ: docs/design/combat.md#效果疊加, #特性觸發 (user decisions 2026-11-06).
+    /// REQ: docs/design/combat.md#效果疊加, #被動技觸發 (user decisions 2026-11-06).
     /// </summary>
     /// <remarks>
     /// Windows are half-open [applied, applied + duration). A re-application inside the window adds one stack up to
@@ -635,7 +635,7 @@ namespace Cosmimera.Combat
 
         /// <summary>The creature entered the field (initial summon or switch-in): fires on_summon.</summary>
         /// <remarks>
-        /// REQ: combat.md#特性觸發 — every entry counts as a summon. Pre: nowMs in CombatTime and >= watermark.
+        /// REQ: combat.md#被動技觸發 — every entry counts as a summon. Pre: nowMs in CombatTime and >= watermark.
         /// Post: if the trait is on_summon, its effects are applied with the trigger's window.
         /// Side effects: records the watermark. Instant trait effects are returned through <paramref name="healPercent"/>.
         /// </remarks>
@@ -648,7 +648,7 @@ namespace Cosmimera.Combat
 
         /// <summary>The creature entered the field by a switch (not the opening summon): fires on_ally_swap.</summary>
         /// <remarks>
-        /// REQ: combat.md#特性觸發 (user decision 2026-11-06: the creature swapped in). Call in addition to
+        /// REQ: combat.md#被動技觸發 (user decision 2026-11-06: the creature swapped in). Call in addition to
         /// <see cref="NotifySummoned"/>. Pre/Post/Side effects: as NotifySummoned for on_ally_swap.
         /// </remarks>
         public void NotifySwappedIn(long nowMs, out int healPercent)
@@ -687,7 +687,7 @@ namespace Cosmimera.Combat
 
         /// <summary>The creature's HP changed from <paramref name="previousHp"/> to <paramref name="hp"/>: fires on_hp_cross_below.</summary>
         /// <remarks>
-        /// REQ: combat.md#特性觸發 (Q-C18, user decision 2026-11-07: once per combat). Call after every HP change
+        /// REQ: combat.md#被動技觸發 (Q-C18, user decision 2026-11-07: once per combat). Call after every HP change
         /// (damage, heal, field tick) with the values before and after it.
         /// Pre: maxHp >= 1; 0 &lt;= previousHp, hp &lt;= maxHp; nowMs in CombatTime and >= watermark.
         /// Post: fires iff the trait is on_hp_cross_below{p}, it has not fired since construction or the last

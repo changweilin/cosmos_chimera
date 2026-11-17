@@ -532,7 +532,7 @@ namespace Cosmimera.Combat
         private bool SupportAllOut => SupportMode == SupportMode.FreeAllOut || SupportMode == SupportMode.FocusAllOut;
         private long _lastCombatReviveMs = -1;
 
-        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
+        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#被動技觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
         private readonly struct PlacedField
         {

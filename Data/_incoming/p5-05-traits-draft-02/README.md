@@ -174,5 +174,5 @@ In Batch 01, out of 56 theoretical combinations (8 triggers × 7 effects), 27 we
 4. **Range Modifier Interaction with Melee Moves**: `range_mod_percent` modifies attack reach and projectile distance. Combat logic will need to clamp minimum and maximum hitbox scaling for melee shapes (e.g., slash arcs and point-blank bursts) to prevent animation distortion or collision clipping.
 
 ## 修訂 2026-11-07（P5-08 A1/A14，使用者裁決）
-執行期完全同效的特性改綁各自主題；分佈與覆蓋統計已於 2026-11-08 從 `traits.json` 重新產生：
+執行期完全同效的被動技改綁各自主題；分佈與覆蓋統計已於 2026-11-08 從 `traits.json` 重新產生：
 - `trait_water_undertow_escape`：HP<35% 移速 +20% → HP<20% 閃避 +15%（原與 `trait_wind_desperation_updraft` 完全相同；門檻 20% 依 SOL 複核，避免嚴格支配 `trait_shadow_void_embrace` HP<25%／+10%）。

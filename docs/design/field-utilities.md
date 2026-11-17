@@ -1,6 +1,6 @@
-# 生活招式與特性（Field Utilities）
+# 生活主動技與被動技（Field Utilities）
 
-每隻宙獸型態最多擁有 **1 個**場外生活能力（`field_utility`，可為 `none`），分為**生活招式（Move）**與**生活特性（Trait）**。設計核心為「**生活 × 屬性 × 戰鬥**」三位一體契合：生活能力不獨立於戰鬥之外，而是順應屬性的物理與生態法則，透過**副手器皿配對**與**天氣／地形／物質反應**回饋戰鬥決策。
+每隻宙獸型態最多擁有 **1 個**場外生活能力（`field_utility`，可為 `none`），分為**生活主動技（Move）**與**生活被動技（Trait）**。設計核心為「**生活 × 屬性 × 戰鬥**」三位一體契合：生活能力不獨立於戰鬥之外，而是順應屬性的物理與生態法則，透過**副手器皿配對**與**天氣／地形／物質反應**回饋戰鬥決策。
 
 > 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`。
 
@@ -13,7 +13,7 @@
   - **琉璃珠**（`glass_bead`）→ 生效 **Trait**（同時提供戰鬥 `trait`）
   - **魔術方塊**（`magic_cube`）→ 僅解鎖主力超載，**不**提供 `field_utility`
   - **製造類**（D0-U4）→ 依技能資料標記的器皿（符籙或琉璃珠）生效，見 [crafting.md#製造擴充](crafting.md#製造擴充)
-- **設計意圖**：玩家挑選副手時，必須同時權衡「關係表連線 × 跨屬性戰鬥招式／特性互補 × 生活能力／地形免疫補齊」。
+- **設計意圖**：玩家挑選副手時，必須同時權衡「關係表連線 × 跨屬性戰鬥主動技／被動技互補 × 生活能力／地形免疫補齊」。
 
 ## 2. 十大屬性「生活—戰鬥—環境」定位
 | 屬性 | 生活與生態核心 | 戰鬥／環境聯動契合點 |
@@ -45,7 +45,7 @@
 | `immune_labyrinth` | 影 | 迷宮 | 超巨星（超載） | `moon_longnight_wolf` |
 | `immune_temple` | 光 | 神廟 | 超巨星（超載） | `sun_array_skyheron` |
 
-## 4. 主動生活招式（Move × 13，符籙卡片副手可提供）
+## 4. 主動生活主動技（Move × 13，符籙卡片副手可提供）
 數值與冷卻為設計暫定值，實作時收斂至 `Data/balance.json`。
 
 | ID | 契合屬性 | 場外生活效果 | 與戰鬥／環境／屬性之契合聯動 | D0 持有物種 |
@@ -70,7 +70,7 @@
 - 每次成功施放後，共用冷卻 **180 秒**（`Data/balance.json#field_utilities.weather_control_cooldown_ms`）；切換區域、選擇其他天氣均不重置冷卻。沒有能力或冷卻未到時拒絕，且不改變天氣或冷卻。
 - 覆寫到期後回到當地地貌與當前時段的自然天氣。所有時間沿用 run 模擬時鐘；手冊暫停時不計時。覆寫與冷卻不跨 run／不存檔。
 
-## 5. 被動生活特性（Trait × 8，琉璃珠副手可提供）
+## 5. 被動生活被動技（Trait × 8，琉璃珠副手可提供）
 | ID | 契合屬性 | 場外生活效果 | 與戰鬥／環境／屬性之契合聯動 | D0 持有物種 |
 |---|---|---|---|---|
 | `scout_potential` | 光（／金／雷） | 接近未開戰野生時顯示詳細弱點抗性、個體潛力與掉落預覽 | **戰前情報決策**：針對目標負抗性切換主力／副手屬性，並判斷該「擊倒刷素材」或「留手收服」 | `sun_mirror_chick` |
@@ -83,9 +83,9 @@
 | `egg_hatch_boost` | 火（／光） | 縮短大廳孵蛋所需的場次或步數條件 | 恆溫孵化意象；讓火屬性主力／副手兼具高爆發與育成加速價值 | `fire_pyre_monarch` |
 
 ## 6. 多屬性戰鬥與生活搭配範例（Multi-Element Combat-Paired）
-以下展示如何透過「主力（戰鬥核心）+ 副手（跨屬性招式/特性 + 生活能力）」組成高契合隊伍：
+以下展示如何透過「主力（戰鬥核心）+ 副手（跨屬性主動技/被動技 + 生活能力）」組成高契合隊伍：
 
-1. **風雷極速控場組**：主力 `star_storm_colt`（雷+風，高突進 `charge` + `mount` 騎乘）＋ 符籙副手 `wind_reed_skiff`（風，`weather_control` + 風招式）。戰前切**雷暴**天氣，騎乘高速切入開戰，享雷招 +25% 威力／−15% CD；遇雷抗敵人則改用副手風招。
-2. **光影情報掠奪組**：主力 `moon_longnight_wolf`（影+冰，`flank` 繞背 + `immune_labyrinth`）＋ 琉璃珠副手 `sun_mirror_chick`（光，`scout_potential` + 光射程特性）或 `metal_chronos_engine`（金+土，`catch_rate_up`）。先偵查弱點、迷霧隱身繞背偷襲，高潛力目標直接提昇捕獲率收服。
+1. **風雷極速控場組**：主力 `star_storm_colt`（雷+風，高突進 `charge` + `mount` 騎乘）＋ 符籙副手 `wind_reed_skiff`（風，`weather_control` + 風主動技）。戰前切**雷暴**天氣，騎乘高速切入開戰，享雷招 +25% 威力／−15% CD；遇雷抗敵人則改用副手風招。
+2. **光影情報掠奪組**：主力 `moon_longnight_wolf`（影+冰，`flank` 繞背 + `immune_labyrinth`）＋ 琉璃珠副手 `sun_mirror_chick`（光，`scout_potential` + 光射程被動技）或 `metal_chronos_engine`（金+土，`catch_rate_up`）。先偵查弱點、迷霧隱身繞背偷襲，高潛力目標直接提昇捕獲率收服。
 3. **火木永續烹飪組**：主力 `fire_ember_cub`（火，`cook_fire` + 燃燒反應）＋ 琉璃珠副手 `wood_fern_chick`（木，`forage_berries` + `trait_wood_photosynthesis` 進場回血）。木補火打水/土盲區，森林採果現場生火料理轉化為戰前 Buff。
 4. **土金破障尋寶組**：主力 `earth_auric_sovereign`（土，`open_obstacle` + 粉碎易碎物）＋ 琉璃珠副手 `metal_clock_chick`（金，`magnet_pickup_double` + 合金抗性）。大範圍重擊轟碎岩石建築，自動磁吸雙倍進化素材。

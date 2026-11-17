@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Cosmimera.GameData
 {
-    /// <summary>Imported passive trait: a trigger plus effects. REQ: docs/design/creatures.md#特性.</summary>
+    /// <summary>Imported passive trait: a trigger plus effects. REQ: docs/design/creatures.md#被動技.</summary>
     /// <remarks>Pre: filled by the importer. Post: Trigger non-null; Effects has >= 1 entry. Side effects: none.</remarks>
     public sealed class TraitDef : GameDef
     {

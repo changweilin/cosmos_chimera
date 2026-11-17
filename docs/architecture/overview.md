@@ -10,12 +10,12 @@ Assets/_Project/
 │   ├── WorldGen/            # 骨架/生物群系/區域圖/POI/地城（純 C# + Jobs）
 │   ├── Player/              # 角色控制、攝影機
 │   ├── Creatures/           # 宙獸模型、進化、隊伍、副手規則
-│   ├── Combat/              # 傷害、CD、命中、招式執行、AI 行為
+│   ├── Combat/              # 傷害、CD、命中、主動技執行、AI 行為
 │   ├── Capture/             # 收服、蛋、孵化
 │   ├── Food/                # 食物獲取、料理、食用與 Buff 規則
 │   ├── Crafting/            # 原料背包、採集／加工／製作、裝備與穿戴規則
 │   ├── Lobby/               # 地球大廳、星海選星
-│   ├── Codex/               # 圖鑑/招式表/特性表/關係表 UI
+│   ├── Codex/               # 圖鑑/主動技表/被動技表/關係表 UI
 │   ├── Net/                 # 連線、同步、房間
 │   └── Save/                # 存檔與版本遷移
 ├── Data/                    # importer 產出的 ScriptableObject（勿手改）

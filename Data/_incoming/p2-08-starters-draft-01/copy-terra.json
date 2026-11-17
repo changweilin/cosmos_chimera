@@ -153,7 +153,7 @@
       "name_zh": "逐光聚焦",
       "name_en": "Sunward Focus",
       "naming_note": "逐光調鏡，焦點漸遠。",
-      "desc_zh": "使用光屬性招式後，鏡光暫時延伸招式範圍，此效果可疊加。",
+      "desc_zh": "使用光屬性主動技後，鏡光暫時延伸主動技範圍，此效果可疊加。",
       "desc_en": "After using a light move, focused mirrorlight temporarily extends move range; the effect can stack."
     },
     {

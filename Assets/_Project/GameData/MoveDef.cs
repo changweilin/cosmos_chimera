@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Cosmimera.GameData
 {
-    /// <summary>Imported move definition. REQ: docs/design/creatures.md#招式, Data/schemas/move.schema.json.</summary>
+    /// <summary>Imported move definition. REQ: docs/design/creatures.md#主動技, Data/schemas/move.schema.json.</summary>
     /// <remarks>
     /// Pre: filled by the importer. Post: <see cref="Effect"/> is null iff <see cref="Kind"/> is Damage.
     /// Side effects: none.
@@ -96,7 +96,7 @@ namespace Cosmimera.GameData
 
         /// <summary>How long the effect lasts on each target it lands on, in milliseconds.</summary>
         /// <remarks>
-        /// REQ: docs/design/combat.md#招式效果. Pre: HasEffectDuration. Post: 1..600000. Side effects: none.
+        /// REQ: docs/design/combat.md#主動技效果. Pre: HasEffectDuration. Post: 1..600000. Side effects: none.
         /// </remarks>
         public int EffectDurationMs
         {

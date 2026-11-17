@@ -400,7 +400,7 @@ namespace Cosmimera.Combat
     /// <summary>
     /// One creature in combat: HP, move cooldowns, trait/effect book. Resolves casts it makes and moves that land on
     /// it, in a fixed order every peer replays identically.
-    /// REQ: docs/design/combat.md#傷害公式, #命中與閃避, #CD, #效果疊加, #特性觸發.
+    /// REQ: docs/design/combat.md#傷害公式, #命中與閃避, #CD, #效果疊加, #被動技觸發.
     /// </summary>
     /// <remarks>
     /// Order (user decisions 2026-11-07):
@@ -942,7 +942,7 @@ namespace Cosmimera.Combat
             int moveHeal = 0;
             if (move.HasEffect && move.Effect.IsInstant)
             {
-                // combat.md#招式效果: the target is whoever the shape hits, so a heal on an enemy shape heals that enemy.
+                // combat.md#主動技效果: the target is whoever the shape hits, so a heal on an enemy shape heals that enemy.
                 moveHeal = move.Effect.Percent;
             }
             else if (move.HasEffect)
@@ -1051,7 +1051,7 @@ namespace Cosmimera.Combat
 
         /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
         /// <remarks>
-        /// REQ: combat.md#特性觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
+        /// REQ: combat.md#被動技觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
         /// through here is the only way it reaches Hp (ARGON cast review K2).
         /// Pre: !IsFainted (a fainted creature cannot enter); nowMs in CombatTime and >= every watermark of Book.
         /// Post: returns HP restored (>= 0); Hp == previous Hp + result &lt;= MaxHp.

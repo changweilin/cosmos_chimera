@@ -43,7 +43,7 @@
 - `arch_mwindo`（非洲／英雄）：鑲銅水牛尾神拂、鍛鐵短斧、地底七頭閃電龍、雨林激流
 - `arch_tupaia`（大洋洲／歷史名人）：群島星辰海圖、雙體遠洋獨木舟、信風湧浪、珊瑚環礁航標
 - `arch_vikram_vetala`（南亞／英雄）：拔劍王者、倒懸樹枝蝙蝠靈、月夜古榕樹、樺樹皮卷軸
-- 可引用的招式 ID（**未被任何宙獸使用**的）：（只列 `damage` 類且排除 `field` 形狀；格式 id(威力,形狀/距離/位移)，依威力排序；每線從自己屬性挑 3 招，威力須逐階遞增）
+- 可引用的主動技 ID（**未被任何宙獸使用**的）：（只列 `damage` 類且排除 `field` 形狀；格式 id(威力,形狀/距離/位移)，依威力排序；每線從自己屬性挑 3 招，威力須逐階遞增）
 - metal：`metal_razor_spin`(35,burst/melee)、`metal_blade_rush`(35,line/melee/dash)、`metal_drill_drive`(45,line/mid/dash)、`metal_tungsten_pierce`(50,line/mid)、`metal_mercury_drift`(60,line/melee/dash)、`metal_flechette_beam`(70,line/mid)、`metal_shrapnel_spray`(75,cone/mid)、`metal_shard_volley`(85,cone/long)、`metal_rail_slug`(110,line/long)、`metal_siege_bombard`(115,burst/long)
 - water：`water_bubble_pop`(30,burst/melee)、`water_froth_swipe`(35,sweep/melee)、`water_tidal_surge`(55,line/melee/dash)、`water_rip_current`(60,line/melee/dash)、`water_geyser_pool`(65,burst/mid)、`water_brine_spray`(75,cone/mid)、`water_hydro_spray`(85,cone/long)、`water_depth_charge`(90,burst/long)、`water_maelstrom_lance`(110,line/long)
 - wood：`wood_sap_splash`(35,burst/melee)、`wood_bramble_whip`(40,sweep/melee)、`wood_spore_scatter`(55,cone/mid)、`wood_pollen_jet`(60,line/mid)、`wood_tendril_vault`(60,line/mid/dash)、`wood_bamboo_surge`(65,line/melee/dash)、`wood_acorn_bombard`(75,cone/mid)、`wood_vine_lunge`(80,line/long/dash)、`wood_pine_salvo`(90,cone/long)、`wood_thorn_ballista`(105,line/long)
@@ -54,7 +54,7 @@
 - thunder：`thunder_static_prick`(35,sweep/melee)、`thunder_shock_prod`(35,front/melee)、`thunder_spark_dash`(40,line/melee/dash)、`thunder_volt_drift`(55,line/mid/dash)、`thunder_piercing_needle`(60,line/mid)、`thunder_storm_cell`(75,burst/mid)、`thunder_fulgur_dive`(80,line/long/dash)、`thunder_overload_spray`(80,cone/mid)、`thunder_fork_barrage`(95,cone/long)、`thunder_dynamo_charge`(105,line/long/dash)、`thunder_clap_nova`(110,burst/melee)、`thunder_megavolt_burst`(115,burst/long)
 - light：`light_photon_flash`(35,sweep/melee)、`light_beacon_lunge`(35,line/melee/dash)、`light_prism_beam`(45,line/long)、`light_dawn_flash`(50,burst/melee)、`light_luminous_glide`(55,line/melee/dash)、`light_corona_sweep`(60,cone/mid)、`light_solar_burst`(75,cone/mid)、`light_aurora_drift`(75,line/long/dash)、`light_halo_burst`(75,burst/mid)、`light_radiant_step`(95,line/mid/dash)、`light_zenith_lance`(105,line/long)、`light_stellar_nova`(110,burst/long)
 - shadow：`shadow_shade_dart`(30,line/mid)、`shadow_umbral_fang`(35,sweep/melee)、`shadow_gloom_pulse`(35,burst/melee)、`shadow_void_step`(55,line/melee/dash)、`shadow_penumbra_spike`(65,line/mid)、`shadow_nightmare_cleave`(70,sweep/melee)、`shadow_abyssal_shroud`(70,cone/mid)、`shadow_abyss_ray`(80,line/long)、`shadow_void_well`(85,burst/long)、`shadow_entropy_wave`(100,cone/long)、`shadow_eclipse_collapse`(115,burst/mid)、`shadow_singularity_maw`(120,burst/long)
-- 可引用的特性 ID（**未被任何宙獸使用**的）：（依主屬性分組；已排除單屬性 `on_hit_taken` 觸發，避免跨線永不觸發的死特性）
+- 可引用的被動技 ID（**未被任何宙獸使用**的）：（依主屬性分組；已排除單屬性 `on_hit_taken` 觸發，避免跨線永不觸發的死被動技）
 - metal：`trait_metal_ballistic_pivot`[on_ally_swap]、`trait_metal_reinforce_protocol`[on_ally_swap]、`trait_metal_scrap_overdrive`[on_hp_below]、`trait_metal_siege_anchoring`[on_summon]、`trait_metal_tempered_edge`[on_move_used]
 - water：`trait_water_calm_waters`[on_hp_above]、`trait_water_fluid_stance`[always]、`trait_water_revitalizing_spring`[on_move_used]、`trait_water_spring_surge`[on_ally_swap]、`trait_water_torrential_deluge`[on_move_used]、`trait_water_undertow_escape`[on_hp_below]
 - wood：`trait_wood_bark_reinforcement`[always]、`trait_wood_canopy_reach`[always]、`trait_wood_overgrowth_surge`[on_hp_above]、`trait_wood_thorn_lash`[on_hp_below]、`trait_wood_verdant_resonance`[on_ally_swap]
@@ -84,7 +84,7 @@
 - `size_class`：幼年 XS／S、少年 M（可 L）、成年 L／XL；以身長界線為準（`creatures.md#體型級距`）。
 - `ai_style` 對齊 `signature_move` 的 `movement`／`range_class`（遠距→`keep_distance`、突進→`charge`、繞背→`flank`、近戰定點→`hold`）。
 - `temperament` 逐隻指定，同線只升不降；**不得使用 `apex`**。批內分布大致：timid 20%／cautious 25%／normal 25%／territorial 20%／fierce 10%。
-- `signature_move`：從「可引用的招式」挑，**屬性與主屬性相同**，威力逐階遞增，整批不重複；`trait`：同線三階共用一個特性，整批不重複。
+- `signature_move`：從「可引用的主動技」挑，**屬性與主屬性相同**，威力逐階遞增，整批不重複；`trait`：同線三階共用一個被動技，整批不重複。
 - `concept` 必填鍵：`base`（外觀基底，生物／人形／器械／載具可複合）、`stage_look`、`archetype`（上表 ID）、`region`（上表地區原文）、`motifs_used`（陣列，僅意象）、`role`、`palette`。**不得填 `sensitivity`**，原型為 `review` 者本來就不在配額內。
 - 外觀意象與專精／抗性各自設計，不必強制一一對應（Q-C27）。
 
@@ -93,6 +93,6 @@
 - 格式 `{"a","b","kind","note"}`，**`a` 字典序小於 `b`**，無重複；`note` 為開發備註，說明同線進化即可。
 
 ### 自檢清單（輸出前逐項確認，不輸出）
-四維總和／範圍 · 弱點恰一個 · 抗性十鍵 · id 唯一且未被使用 · 招式屬性與威力遞增 · 特性整批不重複 · 無 `apex` · 無真名 id · edges `a < b`。
+四維總和／範圍 · 弱點恰一個 · 抗性十鍵 · id 唯一且未被使用 · 主動技屬性與威力遞增 · 被動技整批不重複 · 無 `apex` · 無真名 id · edges `a < b`。
 
 ## PROMPT 結束

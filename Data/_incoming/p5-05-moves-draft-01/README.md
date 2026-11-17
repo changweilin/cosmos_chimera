@@ -27,7 +27,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 | `sweep` | 4 | 0 | 0 | 4 |
 | **合計** | 13 | 14 | 13 | **40** |
 
-同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
+同屬性＋同形狀＋同射程的主動技組（近似重複候選，需靠數值或效果區隔）：無。
 
 ## Element to Moves Mapping
 

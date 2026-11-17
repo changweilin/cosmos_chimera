@@ -25,11 +25,11 @@ Claude Code：「驗收 Art/_incoming/<task_id>」→ tools/validate-art 檢查 
 | `creature-concept` | 宙獸四型態（幼/少/成/超載）立繪、三視圖、進化排列、體型對照 | ChatGPT | — |
 | `model-rig` | 單一管線：image-to-3D → Blender 清理 → 綁骨 → 骨架動作（建模參考圖、骨架/動作規格、Blender 腳本；L2：GLB/FBX 模型與動畫）。輸入/輸出走雲端硬碟，可批次（見下） | Gemini Argon | 雲端硬碟上的立繪包 |
 | ~~`animation-set`~~ | 已併入 `model-rig@2`，forge 不再產生；驗收工具仍接受舊包 | — | — |
-| `move-vfx` | 招式特效分鏡、flipbook 序列圖、Unity 參數表；招式是獨立圖鑑條目（`move_id`），宙獸只作示範施放者 | ChatGPT | 可選示範宙獸 |
+| `move-vfx` | 主動技特效分鏡、flipbook 序列圖、Unity 參數表；主動技是獨立圖鑑條目（`move_id`），宙獸只作示範施放者 | ChatGPT | 可選示範宙獸 |
 | `capture-vessel` | 三類收服道具外觀、圖示、投擲/收服分鏡與特效 | ChatGPT | — |
 | `culture-research` | 文化原型考據（意象、敏感度、來源） | Gemini Argon | — |
 
-**3D 管線（`model-rig@2`）**：角色/宙獸立繪包（`chr-*.zip` / `cr-*.zip`）放在 Google 雲端硬碟 `project/cosmos_chimera/image_in/`；Gemini Argon 任務模式讀取後在同一個 prompt 內做完 image-to-3D、Blender、綁骨與動作，每包打包成一個 zip 上傳到 `project/cosmos_chimera/3D_out/`。批次模式處理 `image_in` 內所有包（跳過 `3D_out` 已有相同 `source_pack` 者），每包 `task_id = <批次 task_id>-<subject-id>`、manifest 帶 `batch_id`（= 標頭 task_id）與 `source_pack`。招式不在此管線：宙獸只做依形狀的通用招式動作槽（`atk_*`／`sup_*`／`field_deploy`）。
+**3D 管線（`model-rig@2`）**：角色/宙獸立繪包（`chr-*.zip` / `cr-*.zip`）放在 Google 雲端硬碟 `project/cosmos_chimera/image_in/`；Gemini Argon 任務模式讀取後在同一個 prompt 內做完 image-to-3D、Blender、綁骨與動作，每包打包成一個 zip 上傳到 `project/cosmos_chimera/3D_out/`。批次模式處理 `image_in` 內所有包（跳過 `3D_out` 已有相同 `source_pack` 者），每包 `task_id = <批次 task_id>-<subject-id>`、manifest 帶 `batch_id`（= 標頭 task_id）與 `source_pack`。主動技不在此管線：宙獸只做依形狀的通用主動技動作槽（`atk_*`／`sup_*`／`field_deploy`）。
 
 **交付層級**：`L1` 對話式 AI 必定做得到（圖、JSON、腳本），未交付即任務失敗；`L2` 視平台能力（3D 網格、FBX 動畫），做不到時列入 `manifest.missing`，不得以假檔充數。3D 工具選型已移交其他專案，本專案不做。
 
@@ -40,7 +40,7 @@ Claude Code：「驗收 Art/_incoming/<task_id>」→ tools/validate-art 檢查 
 | 解壓（待驗收） | `Art/_incoming/<task_id>/` | 忽略（只提交 README） |
 | 角色定稿 | `Assets/_Project/Art/Characters/<char_id>/{Concept,Model,Anim}/` | LFS |
 | 宙獸定稿 | `Assets/_Project/Art/Creatures/<line_id>/<stage>/{Concept,Model,Anim}/` | LFS |
-| 招式特效 | `Assets/_Project/Art/VFX/<element>/<move_id>/` | LFS |
+| 主動技特效 | `Assets/_Project/Art/VFX/<element>/<move_id>/` | LFS |
 | 收服道具 | `Assets/_Project/Art/Vessels/<vessel_id>/` | LFS |
 | 概念/考據 JSON | `Data/_incoming/<task_id>/` → 驗證後進 `Data/` | 提交 |
 
@@ -105,7 +105,7 @@ Steam Deck 是效能下限（`vision.md`），面數上限以 4 人 × 2 隻宙�
 clip ID、幀數、迴圈與事件的唯一來源是 `tools/prompt-forge/catalog.js` 的 `ACTIONS`；改動時同步 bump catalog 版本（見 `tools/prompt-forge/README.md`）。
 - 事件名：`ev_hit`（傷害判定幀）、`ev_spawn_fx`、`ev_release`（投擲離手）、`ev_footstep`、`ev_end_lock`（可接下一動作）。
 - 撫摸：角色依宙獸 `size_class` 播 `chr_pet_xs|s|m|l|xl`（XS：托在掌心輕撫）；宙獸播對應的 `cr_<stage>_petted`，兩者以 `Socket_PetTouch` 對位。
-- 攻擊動作依 `combat.md#招式形狀` 分類命名。
+- 攻擊動作依 `combat.md#主動技形狀` 分類命名。
 
 ## 版本
 - prompt 第一行為任務標頭：`[COSMIMERA-TASK spec=… tool=… catalog=… template=<id>@<ver> task_id=… seed=…]`，manifest 必須原樣抄回，日後可追溯是哪一版規格產出的。

@@ -176,8 +176,8 @@ Other revised combinations have more than one prior occurrence:
 3. **Compound Buff/Drawback Resolution on Buff Expiration**: Traits like `trait_metal_scrap_overdrive` or `trait_water_torrential_deluge` combine a positive modifier with a speed reduction. If an external cleanse or purge mechanic removes positive buffs, game rules must clarify whether the drawback expires simultaneously or tracks its own independent duration.
 
 ## 修訂 2026-11-07（P5-08 A1/A14，使用者裁決）
-執行期完全同效的特性改綁各自主題；分佈與覆蓋統計已於 2026-11-08 從 `traits.json` 重新產生：
+執行期完全同效的被動技改綁各自主題；分佈與覆蓋統計已於 2026-11-08 從 `traits.json` 重新產生：
 - `trait_thunder_supercharged_stride`：移速 +15% → 雷招 CD −10%（原與 `trait_fire_scorching_momentum` 完全相同）。
 - `trait_water_revitalizing_spring`：上場治療 8% → 使用水招時治療 4%（原與 `trait_wood_photosynthesis` 同效；先改的「受水擊治療 6%」又與 `trait_wood_sap_absorption` 相同，故再改）。
 - `trait_light_guiding_beam`：換手移速 +20% → 換手光專精 +15（原與 `trait_wind_tailwind_glide` 僅差 1 s）。
-- `trait_thunder_arc_discharge` 更名 `trait_thunder_crisis_arc`（與招式 `thunder_arc_discharge` 撞詞幹，TERRA 命名）。
+- `trait_thunder_arc_discharge` 更名 `trait_thunder_crisis_arc`（與主動技 `thunder_arc_discharge` 撞詞幹，TERRA 命名）。

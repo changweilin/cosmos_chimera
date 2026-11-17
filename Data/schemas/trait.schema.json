@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cosmimera.local/schemas/trait.schema.json",
   "title": "Trait file (array of traits)",
-  "description": "REQ: docs/design/creatures.md#特性 — passive = trigger + effects, data-driven.",
+  "description": "REQ: docs/design/creatures.md#被動技 — passive = trigger + effects, data-driven.",
   "type": "array",
   "items": { "$ref": "#/$defs/trait" },
   "$defs": {
@@ -35,7 +35,7 @@
           "else": { "required": ["downgraded"] }
         },
         {
-          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#特性觸發).",
+          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#被動技觸發).",
           "if": { "properties": { "trigger": { "properties": { "type": { "enum": ["always", "on_hp_below", "on_hp_above"] } } } } },
           "then": { "properties": { "effects": { "items": { "properties": { "type": { "not": { "const": "heal_percent_max_hp" } } } } } } }
         }

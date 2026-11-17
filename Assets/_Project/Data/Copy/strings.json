@@ -95,8 +95,8 @@
     "ja": "HP"
   },
   "ui.hud.cd_ready": {
-    "zh-TW": "招式就緒",
-    "en": "Move Ready",
+    "zh-TW": "主動技就緒",
+    "en": "Active Skill Ready",
     "ja": "スキル準備完了"
   },
   "ui.hud.switch": {
@@ -880,8 +880,8 @@
     "ja": "[{key}] 回避"
   },
   "ui.hud.trait_label": {
-    "zh-TW": "特性：{trait}",
-    "en": "Trait: {trait}",
+    "zh-TW": "被動技：{trait}",
+    "en": "Passive Skill: {trait}",
     "ja": "特性：{trait}"
   },
   "ui.journal.open": {
@@ -935,8 +935,8 @@
     "ja": "惑星に降り立つと生活スキルを使えます。"
   },
   "ui.partner.hint": {
-    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定招式／特性／超載。",
-    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines move, trait, or overload.",
+    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定主動技／被動技／超載。",
+    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines active skill, passive skill, or overload.",
     "ja": "主力1体につき控えから最大4体。関係があり、主力以下の進化段階が必要。器で技・特性・オーバーロードが決まります。"
   },
   "ui.partner.equip": {
@@ -1020,13 +1020,13 @@
     "ja": "宙獣"
   },
   "ui.codex.kind.1": {
-    "zh-TW": "招式",
-    "en": "Moves",
+    "zh-TW": "主動技",
+    "en": "Active Skills",
     "ja": "技"
   },
   "ui.codex.kind.2": {
-    "zh-TW": "特性",
-    "en": "Traits",
+    "zh-TW": "被動技",
+    "en": "Passive Skills",
     "ja": "特性"
   },
   "ui.codex.kind.3": {
@@ -1060,13 +1060,13 @@
     "ja": "耐性"
   },
   "ui.codex.move": {
-    "zh-TW": "招式",
-    "en": "Move",
+    "zh-TW": "主動技",
+    "en": "Active Skill",
     "ja": "技"
   },
   "ui.codex.trait": {
-    "zh-TW": "特性",
-    "en": "Trait",
+    "zh-TW": "被動技",
+    "en": "Passive Skill",
     "ja": "特性"
   },
   "ui.codex.power": {
@@ -1621,7 +1621,7 @@
   },
   "trigger.OnMoveUsed": {
     "zh-TW": "施招時觸發",
-    "en": "On move use",
+    "en": "On active skill use",
     "ja": "技使用時"
   },
   "trigger.OnHpBelow": {
@@ -1650,8 +1650,8 @@
     "ja": "耐性"
   },
   "effect.CdModPercent": {
-    "zh-TW": "招式冷卻",
-    "en": "Move cooldown",
+    "zh-TW": "主動技冷卻",
+    "en": "Active skill cooldown",
     "ja": "技クールダウン"
   },
   "effect.EvasionModPercent": {
@@ -2145,13 +2145,13 @@
     "ja": "静止中または低速移動中（≤{speed} m/s）は、探知距離がさらに半減します。"
   },
   "ui.weather.element": {
-    "zh-TW": "{element}：威力 {power}%／招式 CD {cooldown}%",
-    "en": "{element}: power {power}% / move CD {cooldown}%",
+    "zh-TW": "{element}：威力 {power}%／主動技 CD {cooldown}%",
+    "en": "{element}: power {power}% / active skill CD {cooldown}%",
     "ja": "{element}：威力 {power}%／技CD {cooldown}%"
   },
   "ui.weather.no_element_effects": {
-    "zh-TW": "無屬性招式修正",
-    "en": "No elemental move modifiers",
+    "zh-TW": "無屬性主動技修正",
+    "en": "No elemental active skill modifiers",
     "ja": "属性技への補正なし"
   },
   "ui.weather.control": {

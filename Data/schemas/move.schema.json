@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cosmimera.local/schemas/move.schema.json",
   "title": "Move file (array of moves)",
-  "description": "REQ: docs/design/creatures.md#招式, docs/design/combat.md",
+  "description": "REQ: docs/design/creatures.md#主動技, docs/design/combat.md",
   "type": "array",
   "items": { "$ref": "#/$defs/move" },
   "$defs": {

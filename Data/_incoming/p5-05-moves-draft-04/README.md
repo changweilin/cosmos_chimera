@@ -79,7 +79,7 @@ All values are strictly integers obeying monotonic trade-offs (higher power dict
 | `sweep` | 1 | 0 | 0 | 1 |
 | **合計** | 10 | 10 | 10 | **30** |
 
-同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
+同屬性＋同形狀＋同射程的主動技組（近似重複候選，需靠數值或效果區隔）：無。
 
 ### Per Range Class (Batch 04)
 - `melee`: 10 moves (exactly 1 per element)

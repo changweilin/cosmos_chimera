@@ -343,7 +343,7 @@ namespace Cosmimera.GameData.Editor
                     CheckRule(m.Where, "effect", m.Dto.Effect, EffectParams, errors);
                 }
 
-                // REQ: docs/design/combat.md#招式效果 — heal is instant, every other effect is a timed window.
+                // REQ: docs/design/combat.md#主動技效果 — heal is instant, every other effect is a timed window.
                 bool needsDuration = m.Dto.Effect != null && m.Dto.Effect.Type != "heal_percent_max_hp";
                 if (needsDuration != m.Dto.EffectDurationMs.HasValue)
                 {
@@ -446,7 +446,7 @@ namespace Cosmimera.GameData.Editor
                     continue;
                 }
 
-                // REQ: docs/design/combat.md#特性觸發 — a heal is instant; a continuous trigger has no moment to fire it
+                // REQ: docs/design/combat.md#被動技觸發 — a heal is instant; a continuous trigger has no moment to fire it
                 // (SOL P2-09 E4: the schema accepted it and EffectBook then rejected the imported trait).
                 bool continuous = t.Dto.Trigger != null
                     && (t.Dto.Trigger.Type == "always" || t.Dto.Trigger.Type == "on_hp_below" || t.Dto.Trigger.Type == "on_hp_above");

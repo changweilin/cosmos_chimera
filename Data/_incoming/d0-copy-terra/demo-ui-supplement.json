@@ -532,8 +532,8 @@
     "en": "[{key}] Roll"
   },
   "ui.hud.trait_label": {
-    "zh-TW": "特性：{trait}",
-    "en": "Trait: {trait}"
+    "zh-TW": "被動技：{trait}",
+    "en": "Passive Skill: {trait}"
   },
   "ui.journal.open": {
     "zh-TW": "冒險手冊",
@@ -576,8 +576,8 @@
     "en": "Use life skills after landing on a planet."
   },
   "ui.partner.hint": {
-    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定招式／特性／超載。",
-    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines move, trait, or overload."
+    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定主動技／被動技／超載。",
+    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines active skill, passive skill, or overload."
   },
   "ui.partner.equip": {
     "zh-TW": "裝備副手",
@@ -644,12 +644,12 @@
     "en": "Creatures"
   },
   "ui.codex.kind.1": {
-    "zh-TW": "招式",
-    "en": "Moves"
+    "zh-TW": "主動技",
+    "en": "Active Skills"
   },
   "ui.codex.kind.2": {
-    "zh-TW": "特性",
-    "en": "Traits"
+    "zh-TW": "被動技",
+    "en": "Passive Skills"
   },
   "ui.codex.kind.3": {
     "zh-TW": "關係網",
@@ -676,12 +676,12 @@
     "en": "Resistance"
   },
   "ui.codex.move": {
-    "zh-TW": "招式",
-    "en": "Move"
+    "zh-TW": "主動技",
+    "en": "Active Skill"
   },
   "ui.codex.trait": {
-    "zh-TW": "特性",
-    "en": "Trait"
+    "zh-TW": "被動技",
+    "en": "Passive Skill"
   },
   "ui.codex.power": {
     "zh-TW": "威力",
@@ -1125,7 +1125,7 @@
   },
   "trigger.OnMoveUsed": {
     "zh-TW": "施招時觸發",
-    "en": "On move use"
+    "en": "On active skill use"
   },
   "trigger.OnHpBelow": {
     "zh-TW": "HP 低於門檻時",
@@ -1148,8 +1148,8 @@
     "en": "Resistance"
   },
   "effect.CdModPercent": {
-    "zh-TW": "招式冷卻",
-    "en": "Move cooldown"
+    "zh-TW": "主動技冷卻",
+    "en": "Active skill cooldown"
   },
   "effect.EvasionModPercent": {
     "zh-TW": "閃避",
@@ -1544,12 +1544,12 @@
     "en": "While still or moving slowly (≤{speed} m/s), detection distance is halved again."
   },
   "ui.weather.element": {
-    "zh-TW": "{element}：威力 {power}%／招式 CD {cooldown}%",
-    "en": "{element}: power {power}% / move CD {cooldown}%"
+    "zh-TW": "{element}：威力 {power}%／主動技 CD {cooldown}%",
+    "en": "{element}: power {power}% / active skill CD {cooldown}%"
   },
   "ui.weather.no_element_effects": {
-    "zh-TW": "無屬性招式修正",
-    "en": "No elemental move modifiers"
+    "zh-TW": "無屬性主動技修正",
+    "en": "No elemental active skill modifiers"
   },
   "ui.weather.control": {
     "zh-TW": "操縱當前區域天氣",
