@@ -87,16 +87,10 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C75">
-  <header><a class="id" href="#Q-C75">Q-C75</a><span class="tag">影響 D0-S1（僅玩家角色被打）</span></header>
-  <p><span class="label">問題</span><b>玩家角色沒穿防具時的陰守／陽守</b>。Q-C73 定為「玩家由防具取得」，但沒有底值時守＝0，攻守比直接到上限 ×4。玩家 HP 固定 1000、不隨等級；野生攻擊隨野生等級縮放（LV10 約 18 點、LV100 成年約 100 點）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（實作前玩家被打仍用舊公式，攻守比 ×1）</p>
-</article>
-
-<article id="Q-C76">
-  <header><a class="id" href="#Q-C76">Q-C76</a><span class="tag">影響 Destructibles</span></header>
-  <p><span class="label">問題</span><b>「場景物件攻擊只看屬性、生活技能加成」</b>。現行：威力 × (1+專精) × (1−物質抗性) × 屬性反應倍率（點燃、碎裂、導電等）。(1) 專精是否仍計入？(2)「生活技能加成」目前不存在：是哪些生活能力、加多少（例：砍伐對木材、採礦對岩石）？</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（攻守比固定 ×1 已可實作；現行公式保持不變）</p>
+<article id="Q-C77">
+  <header><a class="id" href="#Q-C77">Q-C77</a><span class="tag">影響 Destructibles（Q-C76 追問）</span></header>
+  <p><span class="label">問題</span><b>場景物件的生活技能加成細節</b>。已定：具對應生活技能時對該物件傷害有加成、擊倒＝收成（<a href="design/destructibles.md">destructibles.md〈傷害〉</a>）。未定：(1) 誰的技能算——只有施放招式的那隻宙獸自身的 <code>field_utility</code>，還是隊伍任一生效的生活技能（含副手）？背包裡的礦鎬算不算？(2) 倍率。(3) 物質對應：現行採集對應是「技能→原料」（<code>magnet_pickup_double</code> 金屬礦、<code>drop_rate_up</code> 煤／晶石／石材、<code>forage_berries</code> 木材／麻／棉），需換成物件物質。(4) 背包滿時擊倒：收成丟失，還是不算收成？</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（(2) 倍率只影響 <code>Data/</code>，但 (1)(3) 未定前整項無法實作）</p>
 </article>
 
 
@@ -133,9 +127,10 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C75':[R('base','玩家無防具時的守',['依玩家等級：與成年宙獸平均守（100 點）同樣用 (L+10)/110 縮放，防具再加（建議）','固定 100 點，防具再加','固定 0，只靠防具（未穿防具時受 ×4）','其他（補充）'])],
- 'Q-C76':[R('mastery','專精',['保留（建議）','不計']),
-          T('bonus','生活技能加成（哪些能力、對哪些物質、加多少）','例：chop_wood 對木材 +50%')],
+ 'Q-C77':[R('who','誰的技能算',['施放招式的宙獸自身（建議）','隊伍任一生效生活技能（含副手）','以上任一，且礦鎬也算','其他（補充）']),
+          G('mult','傷害倍率',1.1,3,0.1,1.5,'×'),
+          T('map','物質對應（建議：magnet_pickup_double→metal；drop_rate_up→stone、crystal；forage_berries→wood、plant）','照建議或改寫'),
+          R('full','背包滿時擊倒',['收成丟失（物件已毀，建議）','仍破壞但收成改掉在地上','其他（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
