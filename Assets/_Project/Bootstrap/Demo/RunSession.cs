@@ -32,9 +32,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Abandoned;
 
-        /// <summary>Captured (species id, vessel, cumulative XP = T(encounter level)) in capture order.</summary>
+        /// <summary>Captured (species id, vessel, cumulative XP = T(encounter level), niche id, habit) in capture order.</summary>
         /// <remarks>Pre: none. Post: non-null; exp &gt;= 0. Side effects: none.</remarks>
-        public readonly List<(string speciesId, VesselKind vessel, int exp)> Captured = new List<(string, VesselKind, int)>();
+        public readonly List<(string speciesId, VesselKind vessel, int exp, string nicheId, Habit habit)> Captured =
+            new List<(string, VesselKind, int, string, Habit)>();
 
         /// <summary>Cumulative XP of each party slot when the run ended (same order as RunSetup.Party).</summary>
         /// <remarks>Pre: none. Post: one entry per party slot, each &gt;= its starting value and &lt;= MaxExp. Side effects: none.</remarks>
@@ -1521,8 +1522,10 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
             {
-                // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
-                _outcome.Captured.Add((creatureId, _vessel, _progression.XpThreshold(w.Level)));
+                // A capture keeps its form, level and individual ecology (creature-ecology.md); it joins the reward roster only in the lobby.
+                WildIndividual ind = _encounter.Units[best].Individual;
+                _outcome.Captured.Add((creatureId, _vessel, _progression.XpThreshold(w.Level),
+                    ind != null ? ind.Niche.Id : null, ind != null ? ind.Habit : Habit.Tolerant));
                 EncyclopediaCatalog.RecordOwned(_outcome.Codex, _encounter.Units[best].Def);
                 HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
                 Reward(XpSource.Capture, w.Level, false, battle);

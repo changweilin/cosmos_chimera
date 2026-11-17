@@ -31,13 +31,15 @@ namespace Cosmimera.Save
     /// Version 9 (D0-U3): equipment slots become main_hand/off_hand/upper/lower/accessory; formats 7–8 migrate
     /// weapon → main_hand, armor → upper, accessory → accessory (crafting.md#穿戴與數值).
     /// Version 10: root codex stores permanent knowledge; older saves recover owned forms.
+    /// Version 11 (P3-31): creature entries add <c>niche_id</c> and <c>habit</c>; formats 1–10 leave <c>NicheId</c> empty
+    /// until migrated once per individual via <c>SetEcology</c>.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 10;
+        public const int FormatVersion = 11;
 
         /// <summary>Persistent encyclopedia knowledge, including known subjects no longer owned.</summary>
         /// <remarks>Pre: main thread. Post: same instance for this save's lifetime. Side effects: mutating it changes this save.</remarks>
@@ -258,11 +260,20 @@ namespace Cosmimera.Save
         /// Side effects: mutates this save.
         /// </remarks>
         public OwnedCreature ChooseStarter(string lineId, string speciesId, int exp)
+            => ChooseStarter(lineId, speciesId, exp, null, Habit.Tolerant);
+
+        /// <summary>Records the starter choice and adds the starter with its drawn ecology.</summary>
+        /// <remarks>
+        /// Pre: StarterLine == null; lineId and speciesId non-empty; exp &gt;= 0; habit is a defined Habit.
+        /// Post: StarterLine == lineId; the starter is owned with that exp and ecology, and is in the party.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public OwnedCreature ChooseStarter(string lineId, string speciesId, int exp, string nicheId, Habit habit)
         {
             Contract.Requires(StarterLine == null, "starter already chosen");
             Contract.Requires(!string.IsNullOrEmpty(lineId), "lineId must be non-empty");
             StarterLine = lineId;
-            return Add(speciesId, VesselKind.TalismanCard, exp);
+            return Add(speciesId, VesselKind.TalismanCard, exp, nicheId, habit);
         }
 
         /// <summary>Adds a captured creature; it joins the party if there is room.</summary>
@@ -274,6 +285,17 @@ namespace Cosmimera.Save
         /// Side effects: mutates this save.
         /// </remarks>
         public OwnedCreature Add(string speciesId, VesselKind vessel, int exp)
+            => Add(speciesId, vessel, exp, null, Habit.Tolerant);
+
+        /// <summary>Adds a captured creature with its individual ecology; it joins the party if there is room.</summary>
+        /// <remarks>
+        /// Pre: speciesId non-empty; vessel defined; exp &gt;= 0; habit is a defined Habit.
+        /// Post: one more owned creature with a fresh InstanceId, that exp, and that niche/habit; in Party iff Party had &lt; 6 before.
+        ///       <see cref="InvalidOperationException"/> in every build, with the save unchanged, once instance ids are
+        ///       exhausted.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public OwnedCreature Add(string speciesId, VesselKind vessel, int exp, string nicheId, Habit habit)
         {
             // Checked before any mutation: incrementing first would overflow the cursor and write a save FromJson rejects
             // (SOL P2-12 R4).
@@ -282,7 +304,7 @@ namespace Cosmimera.Save
                 throw new InvalidOperationException("lobby save: creature instance ids are exhausted");
             }
 
-            var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp);
+            var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp, vessel, nicheId, habit);
             _nextInstanceId++;
             _owned.Add(c);
             Codex.Record(CodexEvent.Capture, speciesId);
@@ -328,13 +350,13 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp, o.VisualVessel);
+            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp, o.VisualVessel, o.NicheId, o.Habit);
         }
 
         /// <summary>Replaces an owned creature's form after a successful lobby evolution.</summary>
         /// <remarks>
         /// Pre: instanceId owned; speciesId non-empty (the caller resolved it from the evolution requirement).
-        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, visual vessel, exp, party membership and order unchanged.
+        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, visual vessel, exp, ecology, party membership and order unchanged.
         /// Side effects: mutates this save.
         /// </remarks>
         public void SetSpecies(int instanceId, string speciesId)
@@ -343,8 +365,38 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp, o.VisualVessel);
+            _owned[i] = o.WithSpecies(speciesId);
             Codex.Record(CodexEvent.Capture, speciesId);
+        }
+
+        /// <summary>Replaces an owned creature's form and redrawn ecology after a successful lobby evolution.</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; speciesId and nicheId non-empty; habit is a defined Habit.
+        /// Post: Get(instanceId) has the new SpeciesId, NicheId and Habit; id, vessel, visual vessel, exp, party membership and order unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetSpecies(int instanceId, string speciesId, string nicheId, Habit habit)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(speciesId), "speciesId must be non-empty");
+            Contract.Requires(!string.IsNullOrEmpty(nicheId), "nicheId must be non-empty");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            _owned[i] = _owned[i].WithSpecies(speciesId, nicheId, habit);
+            Codex.Record(CodexEvent.Capture, speciesId);
+        }
+
+        /// <summary>Assigns an owned creature's ecology (e.g. one-time legacy save migration).</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; nicheId non-empty; habit is a defined Habit.
+        /// Post: Get(instanceId).NicheId == nicheId and Habit == habit; all other fields unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetEcology(int instanceId, string nicheId, Habit habit)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(nicheId), "nicheId must be non-empty");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            _owned[i] = _owned[i].WithEcology(nicheId, habit);
         }
 
         /// <summary>Replaces an owned creature's functional capture-item category without changing its appearance (Q-C13).</summary>
@@ -437,6 +489,7 @@ namespace Cosmimera.Save
                 {
                     instance_id = o.InstanceId, species_id = o.SpeciesId, vessel = (int)o.Vessel,
                     visual_vessel = (int)o.VisualVessel, exp = o.Exp,
+                    niche_id = o.NicheId ?? string.Empty, habit = (int)o.Habit,
                 };
             }
 
@@ -501,8 +554,17 @@ namespace Cosmimera.Save
                     visualVessel = (VesselKind)c.visual_vessel;
                 }
 
+                string nicheId = string.Empty;
+                Habit habit = Habit.Tolerant;
+                if (dto.version >= 11)
+                {
+                    Check(Enum.IsDefined(typeof(Habit), c.habit), "creature entry has an undefined habit");
+                    nicheId = c.niche_id ?? string.Empty;
+                    habit = (Habit)c.habit;
+                }
+
                 save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, vessel,
-                    Math.Min(exp, progression.MaxExp), visualVessel));
+                    Math.Min(exp, progression.MaxExp), visualVessel, nicheId, habit));
             }
 
             // Party is the XP settlement roster, so a duplicate would be paid twice (SOL P2-12 R3). An owned roster always
@@ -758,6 +820,8 @@ namespace Cosmimera.Save
             public int vessel;
             public int visual_vessel;
             public int exp;
+            public string niche_id;
+            public int habit;
         }
 #pragma warning restore 0649, IDE1006
     }

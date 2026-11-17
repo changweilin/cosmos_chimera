@@ -5,6 +5,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -143,6 +144,15 @@ namespace Cosmimera.Bootstrap.Demo
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
+            if (LobbyTransactions.MigrateEcology(_save, id => _database.TryGet(id, out CreatureDef d) ? d : null,
+                    _savePath, out LobbySave migrated, out System.Exception migrateError) == CommitStatus.Committed)
+            {
+                _save = migrated;
+            }
+            else if (migrateError != null)
+            {
+                Debug.LogException(migrateError);
+            }
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
             foreach (GameDef def in _database.All)
@@ -471,7 +481,16 @@ namespace Cosmimera.Bootstrap.Demo
                     if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
                         LobbySave candidate = _save.Clone();
-                        candidate.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
+                        int exp = _progression.XpThreshold(_progression.StarterLevel);
+                        if (s.Niches.Count > 0)
+                        {
+                            WildIndividual ind = WildIndividual.Draw(s, null, WildIndividual.KeyFor(0x53545254UL, 1UL));
+                            candidate.ChooseStarter(s.LineId, s.Id, exp, ind.Niche.Id, ind.Habit);
+                        }
+                        else
+                        {
+                            candidate.ChooseStarter(s.LineId, s.Id, exp);
+                        }
                         CommitLobby(candidate);
                         GUIUtility.ExitGUI();
                     }
@@ -636,8 +655,9 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            _database.TryGet(req.NextSpeciesId, out CreatureDef nextDef);
             CommitStatus status = LobbyTransactions.Evolve(_save, o.InstanceId, req, _progression, _savePath,
-                out LobbySave next, out EvolutionResult r, out System.Exception error);
+                out LobbySave next, out EvolutionResult r, out System.Exception error, nextDef);
             if (status == CommitStatus.Committed)
             {
                 _save = next;
@@ -788,7 +808,7 @@ namespace Cosmimera.Bootstrap.Demo
             string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
             GUILayout.Label(title, _title, GUILayout.Height(60));
             GUILayout.Label(_copy.Ui("ui.results.captured_list"), _text);
-            foreach ((string speciesId, VesselKind vessel, int exp) in _outcome.Captured)
+            foreach ((string speciesId, VesselKind vessel, int exp, _, _) in _outcome.Captured)
             {
                 GUILayout.Label("· " + _copy.Name(speciesId) + " LV" + _progression.LevelOf(exp) + "  (" +
                     _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
