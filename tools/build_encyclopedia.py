@@ -90,7 +90,7 @@ def build(repo, wiki_cache, media_index, data_root):
             preferences = field(source, "興趣") or ""
             likes = re.search(r"喜好：(.+?)；厭惡：(.+)$", preferences)
             biography = field(source, "背景故事")
-            occupation = "孵蛋師" if subject == "chr_1855" else "修補學徒" if subject == "chr_1286" else None
+            occupation = "調律技師／宙獸探索者" if subject == "chr_1855" else "修補學徒" if subject == "chr_1286" else None
             e["details"] = {"occupation": occupation, "biography": biography, "race": None,
                             "physique": field(source, "體型比例"),
                             "likes": [v.strip() for v in likes[1].split(",")] if likes else None,
