@@ -93,6 +93,28 @@
 
 驗收須涵蓋：候選為空、非法習性／權重、零標準差、夾限與整數邊界、兩層變異統計、同 seed 重現、獨立串流、四種模式、球面接縫、移動途中越界、全路線受阻、戰鬥中斷／續行、無限制模式跨區不回家、收服／進化／讀檔後個體一致。改規則跑 EditMode；接入場景跑 PlayMode；正式資料跑 `tools/validate-data`。
 
+## 棲位食物鏈階級與野生對抗
+
+14 種棲位依生態學營養級分四階（`trophic_tier` 1–4）與兩個群組（`trophic_group`：`food_web` 參與食物鏈捕食、`abiotic` 只做同棲位競爭）：
+
+| `trophic_tier` | 每方對抗數量 (`5 − tier`) | `food_web` 棲位 | `abiotic` 棲位 |
+|---|---|---|---|
+| 4（頂級掠食） | 1 | `niche_apex_predator` | — |
+| 3（中階掠食） | 2 | `niche_ambush_predator`、`niche_patrol_hunter` | — |
+| 2（小型獵物／雜食／食腐） | 3 | `niche_understory_insectivore`、`niche_opportunistic_omnivore`、`niche_carrion_scavenger` | — |
+| 1（基礎採食／腐屑） | 4 | `niche_ground_grazer`、`niche_edge_browser`、`niche_fruit_disperser`、`niche_nectar_visitor`、`niche_ground_granivore`、`niche_detritivore` | `niche_mineral_feeder`、`niche_ambient_energy_feeder` |
+
+`RunEcology` 在排他移位後以獨立亂數串流低機率生成**野生對抗**（每顆星球設有上限），分兩種：
+
+- **同棲位對抗**：相同棲位、不同物種（`line_id` 不同）且活動區相鄰處，於相鄰邊界對峙；雙方數量相等（依該棲位階級為 1v1、2v2、3v3 或 4v4）。
+- **上下棲位對抗**：雙方皆屬 `food_web` 且 `trophic_tier` 不同，於鄰近相遇處對峙；上位少對下位多（例如 1v4、1v3、1v2、2v4、2v3、3v4）。
+
+介入與車輪戰規則：
+- **對峙狀態**：玩家加入前，雙方在現場對峙／低強度試探（不會提前分勝負，也不依個人領域主動攻擊玩家）。
+- **加入一方**：玩家靠近任一方按互動選單選「協助此方」，或直接攻擊其中一方以加入其對立面。
+- **車輪戰（1 玩家宙獸 + 1 vs 2）**：開戰後維持 2 vs 2 場上上限（除非該方總數只有 1 隻，如 1v1 的頂級掠食）。玩家方同時最多上場 **1 隻**（可從上場池輪替）＋ **1 隻野生盟友**，對抗敵方最多 **2 隻**；雙方若有超過場上上限的待命個體，在場上同伴倒下時依序遞補上場。
+- **戰後處置**：獲勝後存活的野生盟友保持友善不開戰，可直接互動投擲收服且收服率獲得加成（`Data/balance.json#capture.friendly_bonus_percent`）；敵方倒地者依既有規則戰後收服。
+
 ## 生態學依據
 
 棲位以資源、空間與時間的利用區分；同棲位異種不共用活動區即競爭排斥原理，參考 [OpenStax：Community Ecology](https://openstax.org/books/biology-2e/pages/45-6-community-ecology)。個體行為傾向與移動、家域及微棲地使用的關聯，參考 [Schirmer 等（2019）野生田鼠研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC6418052/)。本文的習性允許集合、四種路線與幻想食性是遊戲設計推論，並非研究證明的普遍生物規律；不加入尚未設計的食物鏈人口模擬。

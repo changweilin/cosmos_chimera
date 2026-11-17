@@ -5,6 +5,16 @@ using UnityEngine;
 
 namespace Cosmimera.GameData
 {
+    /// <summary>Whether a niche participates in food-web predation or only same-niche competition.</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum TrophicGroup
+    {
+        /// <summary>Participates in upper-vs-lower food-web confrontations.</summary>
+        FoodWeb = 0,
+        /// <summary>Mineral / ambient energy feeders: same-niche competition only.</summary>
+        Abiotic = 1,
+    }
+
     /// <summary>
     /// Bounded normal distribution of one wander quantity: niche mean, between-individual SD, per-action SD, clamp.
     /// REQ: docs/design/creature-ecology.md#平均值與變異度.
@@ -116,6 +126,8 @@ namespace Cosmimera.GameData
         [SerializeField] private WanderDistribution speedPermille;
         [SerializeField] private WanderDistribution moveMs;
         [SerializeField] private WanderDistribution pauseMs;
+        [SerializeField] private int trophicTier = 1;
+        [SerializeField] private TrophicGroup trophicGroup = TrophicGroup.FoodWeb;
 
         /// <summary>Display name (zh).</summary>
         /// <remarks>Pre: none. Post: non-empty. Side effects: none.</remarks>
@@ -155,6 +167,18 @@ namespace Cosmimera.GameData
         /// <remarks>Pre: none. Post: valid distribution. Side effects: none.</remarks>
         public WanderDistribution PauseMs => pauseMs;
 
+        /// <summary>Food-chain tier 1..4 (1 = basal, 4 = apex predator).</summary>
+        /// <remarks>Pre: none. Post: 1..4. Side effects: none.</remarks>
+        public int TrophicTier => trophicTier < 1 ? 1 : trophicTier > 4 ? 4 : trophicTier;
+
+        /// <summary>Whether this niche participates in food-web predation or only same-niche competition.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public TrophicGroup TrophicGroup => trophicGroup;
+
+        /// <summary>Number of individuals on this niche's side in a wild confrontation (5 - TrophicTier: 4..1).</summary>
+        /// <remarks>Pre: none. Post: 1..4. Side effects: none.</remarks>
+        public int ConfrontationGroupSize => 5 - TrophicTier;
+
         /// <summary>True when <paramref name="kind"/> is one of <see cref="HabitatKinds"/>.</summary>
         /// <remarks>Pre: kind non-null. Post: ordinal comparison. Side effects: none.</remarks>
         public bool Allows(string kind)
@@ -173,12 +197,13 @@ namespace Cosmimera.GameData
 
         internal void Set(string nameZh, List<string> habitatKinds, List<HabitWeight> habits, WanderMode mode,
             int radiusMm, int exclusionRadiusMm, WanderDistribution speedPermille, WanderDistribution moveMs,
-            WanderDistribution pauseMs)
+            WanderDistribution pauseMs, int trophicTier = 1, TrophicGroup trophicGroup = TrophicGroup.FoodWeb)
         {
             Contract.Requires(habitatKinds != null && habitatKinds.Count > 0, "niche needs habitat kinds");
             Contract.Requires(habits != null && habits.Count > 0, "niche needs habits");
             Contract.Requires(mode == WanderMode.UnboundedRandom ? exclusionRadiusMm > 0 && radiusMm == 0 : radiusMm > 0,
                 "bounded niches need radius_mm; unbounded ones exclusion_radius_mm only");
+            Contract.Requires(trophicTier >= 1 && trophicTier <= 4, "trophic_tier must be 1..4");
             this.nameZh = nameZh;
             this.habitatKinds = habitatKinds;
             this.habits = habits;
@@ -188,6 +213,8 @@ namespace Cosmimera.GameData
             this.speedPermille = speedPermille;
             this.moveMs = moveMs;
             this.pauseMs = pauseMs;
+            this.trophicTier = trophicTier;
+            this.trophicGroup = trophicGroup;
         }
     }
 }

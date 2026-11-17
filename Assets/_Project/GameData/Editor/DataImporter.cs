@@ -464,6 +464,11 @@ namespace Cosmimera.GameData.Editor
             {
                 Claim(n.Where, n.Dto.Id, "niche");
                 RequireEnum<WanderMode>(n.Where, "wander.mode", n.Dto.Wander.Mode);
+                RequireEnum<TrophicGroup>(n.Where, "trophic_group", n.Dto.TrophicGroup);
+                if (n.Dto.TrophicTier < 1 || n.Dto.TrophicTier > 4)
+                {
+                    errors.Add($"{n.Where}: trophic_tier must be 1..4");
+                }
                 if (n.Dto.HabitatKinds.Count == 0 || n.Dto.HabitWeights.Count == 0)
                 {
                     errors.Add($"{n.Where}: habitat_kinds and habit_weights must not be empty");
@@ -675,7 +680,8 @@ namespace Cosmimera.GameData.Editor
                     .ToList();
                 nicheDefs[d.Id].Set(d.NameZh, new List<string>(d.HabitatKinds), habits, ParseEnum<WanderMode>(d.Wander.Mode),
                     d.Wander.RadiusMm ?? 0, d.Wander.ExclusionRadiusMm ?? 0, ToDistribution(d.Wander.SpeedPermille),
-                    ToDistribution(d.Wander.MoveMs), ToDistribution(d.Wander.PauseMs));
+                    ToDistribution(d.Wander.MoveMs), ToDistribution(d.Wander.PauseMs),
+                    d.TrophicTier, ParseEnum<TrophicGroup>(d.TrophicGroup));
             }
 
             foreach (Sourced<MoveDto> m in moves)

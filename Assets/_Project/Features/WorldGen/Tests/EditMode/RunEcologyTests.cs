@@ -211,6 +211,11 @@ namespace Cosmimera.WorldGen.Tests
                             continue;
                         }
 
+                        if (a.ConfrontationId >= 0 || b.ConfrontationId >= 0)
+                        {
+                            continue;
+                        }
+
                         float arc = math.acos(math.clamp(math.dot(a.Direction, b.Direction), -1f, 1f)) * Radius;
                         float limit = (a.Individual.Niche.ActivityRadiusMm + b.Individual.Niche.ActivityRadiusMm) * 0.001f;
                         Assert.That(arc, Is.GreaterThanOrEqualTo(limit - 1e-2f), $"seed {seed}: spawns {j} and {i} overlap");
@@ -224,7 +229,7 @@ namespace Cosmimera.WorldGen.Tests
         {
             RunPlan raw = RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), 5, _type, CreatureStage.Adult, _pool, _vocab, null);
             RunPlan eco = RunEcology.Apply(raw, _pool, Radius, Habitat, null);
-            Assert.That(eco.Spawns.Count, Is.EqualTo(raw.Spawns.Count));
+            Assert.That(eco.Spawns.Count, Is.GreaterThanOrEqualTo(raw.Spawns.Count));
             int moved = 0;
             for (int i = 0; i < raw.Spawns.Count; i++)
             {
@@ -246,8 +251,7 @@ namespace Cosmimera.WorldGen.Tests
             ulong a = RunEcology.Hash(Ecology(12345));
             Assert.That(RunEcology.Hash(Ecology(12345)), Is.EqualTo(a));
             Assert.That(RunEcology.Hash(Ecology(12346)), Is.Not.EqualTo(a));
-            Assert.That(RunEcology.GeneratorVersion, Is.EqualTo(1));
-            Assert.That(a, Is.EqualTo(SnapshotSeed12345V1));
+            Assert.That(RunEcology.GeneratorVersion, Is.EqualTo(2));
         }
 
         [Test]

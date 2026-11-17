@@ -501,6 +501,7 @@ namespace Cosmimera.Combat
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
+            int captureFriendlyBonusPercent,
             TerritoryTuning territory, CollisionTuning collision, HorizonRangeTuning horizon,
             BossEnrageTuning enrage, int bossWindupPermille, StaggerTuning stagger, BlockTuning block,
             CreatureRollTuning creatureRoll, GripTuning grips, int playerBaseDefence, int harvestDamagePermille)
@@ -524,6 +525,7 @@ namespace Cosmimera.Combat
             Player = player;
             CaptureBasePercent = captureBasePercent;
             CaptureBossPercent = captureBossPercent;
+            CaptureFriendlyBonusPercent = captureFriendlyBonusPercent;
         }
 
         /// <summary>LV100 basis of the player character's yin and yang defence (player.base_defense; combat.md#玩家角色的守).</summary>
@@ -602,6 +604,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
         public int CaptureBossPercent { get; }
 
+        /// <summary>Capture chance bonus for a friendly wild ally after winning a confrontation (capture.friendly_bonus_percent).</summary>
+        /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
+        public int CaptureFriendlyBonusPercent { get; }
+
         /// <summary>Parses balance.json text.</summary>
         /// <remarks>
         /// Pre: json is the content of Data/balance.json (all sections present; values within each config's Pre).
@@ -618,7 +624,8 @@ namespace Cosmimera.Combat
                 d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
-                d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100, "capture percents must be 0..100");
+                d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100 &&
+                d.capture.friendly_bonus_percent >= 0 && d.capture.friendly_bonus_percent <= 100, "capture percents must be 0..100");
 
             var coefficients = new DerivedStatsCoefficients(d.model_version, d.stat_effective_cap,
                 d.hp.@base, d.hp.gain, d.hp.half_stat,
@@ -685,7 +692,7 @@ namespace Cosmimera.Combat
             var creatureRoll = new CreatureRollTuning(cr.duration_ms, cr.invulnerable_ms, cr.cooldown_ms, cr.perfect_dodge_ms,
                 cr.distance_height_permille);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent, territory, collision, horizon, enrage,
+                d.capture.base_percent, d.capture.boss_percent, d.capture.friendly_bonus_percent, territory, collision, horizon, enrage,
                 d.boss.windup_permille, stagger, block, creatureRoll,
                 RequireGrips(d.equipment), d.player.base_defense, d.field_utilities.harvest_damage_permille);
         }
@@ -740,7 +747,7 @@ namespace Cosmimera.Combat
         [Serializable] private sealed class FieldDto { public int tick_ms; }
         [Serializable] private sealed class EffectsDto { public int multiplier_min_percent; public int multiplier_max_percent; }
         [Serializable] private sealed class CritDto { public int base_rate_permille; public int base_damage_percent; }
-        [Serializable] private sealed class CaptureDto { public int base_percent; public int boss_percent; }
+        [Serializable] private sealed class CaptureDto { public int base_percent; public int boss_percent; public int friendly_bonus_percent; }
 
         [Serializable] private sealed class HitVolumeDto
         {

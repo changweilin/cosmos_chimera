@@ -3,6 +3,8 @@
     "id": "niche_sample_generalist",
     "name_zh": "樣本雜食",
     "resource_zh": "零散資源",
+    "trophic_tier": 2,
+    "trophic_group": "food_web",
     "habitat_kinds": [
       "forest",
       "river_valley",

@@ -805,6 +805,13 @@ namespace Cosmimera.Bootstrap.Demo
             // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
             _materialRng = new Pcg32(setup.Seed, 'D');
 
+            var confIdMap = new int[_plan.Confrontations.Count];
+            for (int c = 0; c < _plan.Confrontations.Count; c++)
+            {
+                RunConfrontation rc = _plan.Confrontations[c];
+                confIdMap[c] = _encounter.RegisterConfrontation(rc.Kind, rc.Center);
+            }
+
             for (int s = 0; s < _plan.Spawns.Count; s++)
             {
                 RunSpawn spawn = _plan.Spawns[s];
@@ -812,7 +819,10 @@ namespace Cosmimera.Bootstrap.Demo
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
                 EncounterUnit u = spawn.Role == SpawnRole.Boss
                     ? _encounter.AddBoss(def, null, spawn.Direction, level, spawn.Individual)
-                    : _encounter.AddWild(def, null, spawn.Direction, level, spawn.Individual);
+                    : spawn.ConfrontationId >= 0
+                        ? _encounter.AddWildInConfrontation(def, null, spawn.Direction, level, spawn.Individual,
+                            confIdMap[spawn.ConfrontationId], spawn.ConfrontationSide, spawn.ConfrontationOrder)
+                        : _encounter.AddWild(def, null, spawn.Direction, level, spawn.Individual);
                 _wild[u.Id] = new WildInfo { Spawn = s, Level = level };
                 CreateView(u, spawn.Role);
             }
@@ -1415,6 +1425,12 @@ namespace Cosmimera.Bootstrap.Demo
                     _lockedObjectId = -1;
                     return;
                 case InteractChoice.Pet:
+                    if (_encounter.IsConfrontationStandoff(id))
+                    {
+                        CloseInteract();
+                        _encounter.JoinConfrontation(id);
+                        return;
+                    }
                     // Q-D2 (decided 2026-11-10): petting has no rule effect.
                     CloseInteract();
                     Toast(_copy.Ui("ui.interact.pet_reaction").Replace("{target}", _copy.Name(u.Def.Id)));
@@ -1496,8 +1512,11 @@ namespace Cosmimera.Bootstrap.Demo
             int region = RegionOf(w);
             string creatureId = _encounter.Units[best].Def.Id;
             bool bounty = _plan.Regions[region].AffixId == "affix_bounty";
+            int friendlyBonus = _encounter.Units[best].IsFriendlyAfterConfrontation
+                ? _balance.CaptureFriendlyBonusPercent
+                : 0;
             int chance = CaptureRules.ChancePercent(role == SpawnRole.Boss, bounty, _balance.CaptureBasePercent,
-                _balance.CaptureBossPercent, _utilityModifiers.CatchRateBonusPercent + _foodBuffs.GetCatchRateBonusPercent(_nowMs) + craftBonus);
+                _balance.CaptureBossPercent, _utilityModifiers.CatchRateBonusPercent + _foodBuffs.GetCatchRateBonusPercent(_nowMs) + craftBonus + friendlyBonus);
             w.Gone = true; // one throw per knocked-out creature: a miss lets it escape (no re-roll farming)
             _encounter.Remove(best);
             if (CaptureRules.Roll(chance, ref _captureRng))
@@ -1525,8 +1544,9 @@ namespace Cosmimera.Bootstrap.Demo
             float bestDist = reach;
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
-                if (kv.Value.Gone || kv.Value.KnockedOutAtMs < 0 ||
-                    _nowMs - kv.Value.KnockedOutAtMs > KnockedOutWindowMs)
+                bool friendly = _encounter.Units[kv.Key].IsFriendlyAfterConfrontation && _encounter.Units[kv.Key].IsActive;
+                bool knocked = kv.Value.KnockedOutAtMs >= 0 && _nowMs - kv.Value.KnockedOutAtMs <= KnockedOutWindowMs;
+                if (kv.Value.Gone || (!knocked && !friendly))
                 {
                     continue;
                 }
@@ -2717,10 +2737,11 @@ namespace Cosmimera.Bootstrap.Demo
             GUI.Box(box, GUIContent.none);
             GUI.Label(new Rect(box.x + 10, box.y + 8, box.width - 20, 30),
                 "<b>" + _copy.Name(_encounter.Units[_interactTarget].Def.Id) + "</b>", style);
+            bool standoff = _encounter.IsConfrontationStandoff(_interactTarget);
             string[] keys = { "ui.interact.observe", "ui.interact.provoke", "ui.interact.pet", "ui.interact.close" };
             for (int i = 0; i < keys.Length; i++)
             {
-                string text = _copy.Ui(keys[i]);
+                string text = standoff && i == (int)InteractChoice.Pet ? "協助此方" : _copy.Ui(keys[i]);
                 GUI.Label(new Rect(box.x + 10, box.y + 42 + i * 30, box.width - 20, 28),
                     (int)_interactChoice == i ? "▶ <b>" + text + "</b> ◀" : text, style);
             }

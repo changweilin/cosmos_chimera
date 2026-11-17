@@ -142,6 +142,8 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("id", Required = Required.Always)] public string Id;
         [JsonProperty("name_zh", Required = Required.Always)] public string NameZh;
         [JsonProperty("resource_zh", Required = Required.Always)] public string ResourceZh;
+        [JsonProperty("trophic_tier", Required = Required.Always)] public int TrophicTier;
+        [JsonProperty("trophic_group", Required = Required.Always)] public string TrophicGroup;
         [JsonProperty("habitat_kinds", Required = Required.Always)] public List<string> HabitatKinds;
         // Key order is not meaningful; Write sorts by habit value so asset YAML does not churn.
         [JsonProperty("habit_weights", Required = Required.Always)] public Dictionary<string, int> HabitWeights;

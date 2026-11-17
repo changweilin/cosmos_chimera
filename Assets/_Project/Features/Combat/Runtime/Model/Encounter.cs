@@ -380,8 +380,28 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null for every Wild unit. Side effects: none.</remarks>
         public WildIndividual Individual { get; internal set; }
 
-        // Wild only: wants to fight (territory, provoke or hit) but the engagement cap is full (combat.md#交戰上限).
+        /// <summary>Wild only: wants to fight (territory, provoke or hit) but the engagement cap is full (combat.md#交戰上限).</summary>
         internal bool WantsEngage { get; set; }
+
+        /// <summary>Wild only: confrontation index in the owning Encounter, or -1.</summary>
+        /// <remarks>Pre: none. Post: >= -1. Side effects: none.</remarks>
+        public int ConfrontationId { get; internal set; } = -1;
+
+        /// <summary>Wild only: side (0 or 1) within the confrontation, or -1.</summary>
+        /// <remarks>Pre: none. Post: -1, 0, or 1. Side effects: none.</remarks>
+        public int ConfrontationSide { get; internal set; } = -1;
+
+        /// <summary>Wild only: relay order (0..3) within its confrontation side.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int ConfrontationOrder { get; internal set; }
+
+        /// <summary>True while this wild unit is fighting on the player's side in an active confrontation.</summary>
+        /// <remarks>Pre: none. Post: Wild only. Side effects: none.</remarks>
+        public bool IsConfrontationAlly { get; internal set; }
+
+        /// <summary>True after winning a confrontation: stays friendly, never aggros, capturable with bonus.</summary>
+        /// <remarks>Pre: none. Post: Wild only. Side effects: none.</remarks>
+        public bool IsFriendlyAfterConfrontation { get; internal set; }
 
         // Distance (m) to the nearest intruder at the last engagement pass; orders who fills a free slot.
         internal float EngageDistanceM { get; set; }
@@ -487,6 +507,27 @@ namespace Cosmimera.Combat
         private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private readonly int[] _overloadMastery = new int[10];
         private readonly int[] _overloadResist = new int[10];
+        private enum ConfrontationState { Standoff = 0, Active = 1, Resolved = 2 }
+
+        private sealed class ConfrontationRecord
+        {
+            public ConfrontationRecord(int id, ConfrontationKind kind, float3 center)
+            {
+                Id = id;
+                Kind = kind;
+                Center = center;
+                State = ConfrontationState.Standoff;
+                AlliedSide = -1;
+            }
+
+            public int Id { get; }
+            public ConfrontationKind Kind { get; }
+            public float3 Center { get; }
+            public ConfrontationState State { get; set; }
+            public int AlliedSide { get; set; }
+        }
+
+        private readonly List<ConfrontationRecord> _confrontations = new List<ConfrontationRecord>(4);
         private Pcg32 _rng;
         private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
@@ -1114,6 +1155,89 @@ namespace Cosmimera.Combat
             return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false, null, individual);
         }
 
+        /// <summary>Registers a wild confrontation from <see cref="RunPlan.Confrontations"/>.</summary>
+        /// <remarks>
+        /// Pre: kind defined; center unit length.
+        /// Post: returns the confrontation id to pass to <see cref="AddWildInConfrontation"/>.
+        /// Side effects: allocates a confrontation record.
+        /// </remarks>
+        public int RegisterConfrontation(ConfrontationKind kind, float3 center)
+        {
+            Contract.Requires(math.abs(math.lengthsq(center) - 1f) <= 2e-3f, "center must be unit length");
+            int id = _confrontations.Count;
+            _confrontations.Add(new ConfrontationRecord(id, kind, math.normalize(center)));
+            return id;
+        }
+
+        /// <summary>Adds a wild unit participating in a registered confrontation (order 0..1 fielded in standoff; 2+ wait as reserves).</summary>
+        /// <remarks>
+        /// Pre: as AddWild; confrontationId valid; side 0 or 1; order >= 0.
+        /// Post: unit added with confrontation metadata; Fielded iff order < 2.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddWildInConfrontation(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual, int confrontationId, int side, int order)
+        {
+            Contract.Requires(individual != null, "wild units need an individual");
+            Contract.Requires(confrontationId >= 0 && confrontationId < _confrontations.Count, "invalid confrontationId");
+            Contract.Requires(side == 0 || side == 1, "side must be 0 or 1");
+            Contract.Requires(order >= 0, "order must be >= 0");
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false, null, individual);
+            u.ConfrontationId = confrontationId;
+            u.ConfrontationSide = side;
+            u.ConfrontationOrder = order;
+            u.Fielded = order < 2;
+            return u;
+        }
+
+        /// <summary>True while the player is actively fighting on one side of a wild confrontation.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool HasActiveConfrontation
+        {
+            get
+            {
+                for (int i = 0; i < _confrontations.Count; i++)
+                {
+                    if (_confrontations[i].State == ConfrontationState.Active)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>Maximum player creatures allowed on the field right now (1 during a confrontation relay, else 2).</summary>
+        /// <remarks>Pre: none. Post: 1 or 2. Side effects: none.</remarks>
+        public int PlayerFieldCap => HasActiveConfrontation ? 1 : 2;
+
+        /// <summary>True when <paramref name="unitId"/> belongs to a confrontation still in standoff.</summary>
+        /// <remarks>Pre: valid unitId. Post: none. Side effects: none.</remarks>
+        public bool IsConfrontationStandoff(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            return u.ConfrontationId >= 0 && u.ConfrontationId < _confrontations.Count &&
+                _confrontations[u.ConfrontationId].State == ConfrontationState.Standoff;
+        }
+
+        /// <summary>Joins <paramref name="unitId"/>'s side in a standoff confrontation, starting the 1+1 vs 2 relay fight.</summary>
+        /// <remarks>
+        /// Pre: unitId valid; unit is in a Standoff confrontation.
+        /// Post: confrontation becomes Active; player field capped to 1; 1 wild ally + up to 2 wild enemies active.
+        /// Side effects: recalls excess player creatures; fields/unfields confrontation units.
+        /// </remarks>
+        public bool JoinConfrontation(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            if (u.ConfrontationId < 0 || u.ConfrontationId >= _confrontations.Count)
+            {
+                return false;
+            }
+
+            return ActivateConfrontation(u.ConfrontationId, u.ConfrontationSide);
+        }
+
         /// <summary>Adds a player creature with all equipped card moves and bead traits.</summary>
         /// <remarks>
         /// Pre: same as AddCreature; moves/traits non-null, each contains at most four non-null definitions.
@@ -1292,6 +1416,17 @@ namespace Cosmimera.Combat
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Player && !u.Fielded && !u.Combatant.IsFainted,
                 "only an unfielded, conscious player-side unit can be fielded");
+            if (HasActiveConfrontation)
+            {
+                // REQ: creature-ecology.md#棲位食物鏈階級與野生對抗 — 1 player creature + 1 wild ally vs 2 wild enemies.
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    if (_units[i].Side == EncounterSide.Player && _units[i].Fielded)
+                    {
+                        Unfield(_units[i].Id);
+                    }
+                }
+            }
             u.Position = GroundPoint(math.normalize(direction), u.BodyRadiusM);
             u.Forward = PlanetFrame.FromUp(math.normalize(direction)).North;
             u.Fielded = true;
@@ -1446,6 +1581,11 @@ namespace Cosmimera.Combat
         {
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Wild && u.IsActive, "only an active wild unit can be provoked");
+            if (IsConfrontationStandoff(unitId))
+            {
+                ActivateConfrontation(u.ConfrontationId, 1 - u.ConfrontationSide);
+                return;
+            }
             // Deferred to the Tick: input is read before the host's between-battles step, and an Engaged flag set here
             // would make that step's level-ups look mid-fight (SetLevel's Q-C31 guard).
             u.Provoked = true;
@@ -1755,21 +1895,30 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                if (!player && !u.Engaged)
+                if (!player && !u.Engaged && !u.IsConfrontationAlly)
                 {
                     if (u.WindupSlot != EncounterUnit.NoWindup)
                     {
                         CancelWindup(u, nowMs);
                     }
 
-                    Wander(u, nowMs, dtMs);
+                    if (IsConfrontationStandoff(u.Id))
+                    {
+                        FaceConfrontationOpponent(u);
+                    }
+                    else if (!u.IsFriendlyAfterConfrontation)
+                    {
+                        Wander(u, nowMs, dtMs);
+                    }
+
                     continue;
                 }
 
+                bool playerSide = player || u.IsConfrontationAlly;
                 EncounterUnit partner = PartnerOf(u);
                 AiRole role = !player || u.Id == mainId || mainId == CombatAi.NoTarget ? AiRole.Main : AiRole.Support;
                 AiCommand cmd = player && role == AiRole.Main ? command : new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
-                bool onObject = cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
+                bool onObject = player && cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
                 if (cmd.Kind == AiCommandKind.Focus && !onObject && !IsValidEnemy(u, cmd.TargetId))
                 {
                     cmd = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
@@ -1778,7 +1927,7 @@ namespace Cosmimera.Combat
                 // REQ: combat.md#支援模式 — only a focus mode hands the main's target to the support.
                 int mainTarget = role == AiRole.Support && mainId >= 0 && SupportFocuses ? _units[mainId].TargetId
                     : CombatAi.NoTarget;
-                float3 leashAnchor = player ? playerPosition : u.Home;
+                float3 leashAnchor = playerSide ? playerPosition : u.Home;
                 if (onObject)
                 {
                     FillObjectEnemy(u);
@@ -1818,6 +1967,7 @@ namespace Cosmimera.Combat
             }
 
             BurnObjects(nowMs);
+            AdvanceConfrontations();
             Separate(playerPosition);
         }
 
@@ -1908,7 +2058,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit u = _units[i];
-                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage)
+                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage ||
+                    u.IsConfrontationAlly)
                 {
                     continue;
                 }
@@ -2193,13 +2344,16 @@ namespace Cosmimera.Combat
         private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
             float3 anchor, float3 forward, long nowMs)
         {
+            bool casterIsAlly = side == EncounterSide.Player ||
+                (casterId >= 0 && casterId < _units.Count && _units[casterId].IsConfrontationAlly);
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit t = _units[i];
                 // Any hostile volume hits every active enemy it touches (combat.md#場地 for fields; "被擊中即開戰" for the
                 // rest), including a wild unit that has not engaged; the Engaged gate only governs AI target choice
                 // (SOL D0-E1-01 for fields, D0-E2 E2-SOL-01 for caster/front volumes).
-                bool eligible = t.Side != side && t.IsActive;
+                bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+                bool eligible = casterIsAlly != targetIsAlly && t.IsActive;
                 if (!eligible ||
                     !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
                 {
@@ -2250,10 +2404,14 @@ namespace Cosmimera.Combat
                 }
                 else if (hit && t.Side == EncounterSide.Wild)
                 {
+                    if (casterIsAlly && IsConfrontationStandoff(t.Id))
+                    {
+                        ActivateConfrontation(t.ConfrontationId, 1 - t.ConfrontationSide);
+                    }
                     // Being hit starts the fight even outside its territory (avoidant only fights back, Q-C35); a MISS does
                     // not, or an avoidant unit would join from a roll it never felt (E2-SOL-02). A full cap makes it wait
                     // instead (combat.md#交戰上限: a hit does not add a third wild).
-                    if (!t.Engaged)
+                    else if (!t.Engaged && !t.IsConfrontationAlly)
                     {
                         if (HasEngageSlot(t))
                         {
@@ -2274,7 +2432,7 @@ namespace Cosmimera.Combat
             }
 
             // The player character resolves last: its id is above every unit id, and targets resolve in id order.
-            if (side == EncounterSide.Wild && PlayerTargetable() &&
+            if (!casterIsAlly && PlayerTargetable() &&
                 MoveGeometry.Overlaps(volume, _planet, anchor, forward, _playerCenter, PlayerBodyRadiusM))
             {
                 HitPlayer(casterId, slot, ctx, nowMs);
@@ -2398,7 +2556,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side != EncounterSide.Wild || !w.IsActive)
+                if (w.Side != EncounterSide.Wild || !w.IsActive ||
+                    w.IsConfrontationAlly || w.IsFriendlyAfterConfrontation || IsConfrontationStandoff(w.Id))
                 {
                     continue;
                 }
@@ -2462,6 +2621,215 @@ namespace Cosmimera.Combat
             }
 
             FillEngageSlots();
+        }
+
+        private void FaceConfrontationOpponent(EncounterUnit u)
+        {
+            int enemySide = 1 - u.ConfrontationSide;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit other = _units[i];
+                if (other.ConfrontationId == u.ConfrontationId && other.ConfrontationSide == enemySide && other.IsActive)
+                {
+                    u.Forward = TangentToward(u.Position, other.Position, u.Forward);
+                    return;
+                }
+            }
+        }
+
+        private bool ActivateConfrontation(int confId, int alliedSide)
+        {
+            if (confId < 0 || confId >= _confrontations.Count)
+            {
+                return false;
+            }
+
+            ConfrontationRecord rec = _confrontations[confId];
+            if (rec.State != ConfrontationState.Standoff || (alliedSide != 0 && alliedSide != 1))
+            {
+                return false;
+            }
+
+            rec.State = ConfrontationState.Active;
+            rec.AlliedSide = alliedSide;
+            int enemySide = 1 - alliedSide;
+
+            // Keep at most 1 player creature fielded (1 player + 1 wild ally vs 2 wild enemies).
+            bool keptOnePlayer = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].Side == EncounterSide.Player && _units[i].Fielded)
+                {
+                    if (!keptOnePlayer)
+                    {
+                        keptOnePlayer = true;
+                    }
+                    else
+                    {
+                        Unfield(_units[i].Id);
+                    }
+                }
+            }
+
+            int allyFielded = 0;
+            int enemyFielded = 0;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.ConfrontationId != confId || u.Combatant.IsFainted)
+                {
+                    continue;
+                }
+
+                if (u.ConfrontationSide == alliedSide)
+                {
+                    u.IsConfrontationAlly = true;
+                    u.Engaged = false;
+                    u.WantsEngage = false;
+                    u.Fielded = allyFielded < 1;
+                    if (u.Fielded)
+                    {
+                        allyFielded++;
+                    }
+                }
+                else if (u.ConfrontationSide == enemySide)
+                {
+                    u.IsConfrontationAlly = false;
+                    if (enemyFielded < WildEngageCapPerPlayer)
+                    {
+                        u.Fielded = true;
+                        Engage(u);
+                        enemyFielded++;
+                    }
+                    else
+                    {
+                        u.Fielded = false;
+                        u.Engaged = false;
+                        u.WantsEngage = false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void AdvanceConfrontations()
+        {
+            for (int c = 0; c < _confrontations.Count; c++)
+            {
+                ConfrontationRecord rec = _confrontations[c];
+                if (rec.State != ConfrontationState.Active)
+                {
+                    continue;
+                }
+
+                int alliedSide = rec.AlliedSide;
+                int enemySide = 1 - alliedSide;
+                int activeAllies = 0;
+                int activeEnemies = 0;
+                int engagedEnemies = 0;
+                int aliveEnemies = 0;
+
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit u = _units[i];
+                    if (u.ConfrontationId != rec.Id)
+                    {
+                        continue;
+                    }
+
+                    if (u.ConfrontationSide == alliedSide && u.IsActive)
+                    {
+                        activeAllies++;
+                    }
+                    else if (u.ConfrontationSide == enemySide && !u.Combatant.IsFainted)
+                    {
+                        aliveEnemies++;
+                        if (u.Fielded)
+                        {
+                            activeEnemies++;
+                            if (u.Engaged)
+                            {
+                                engagedEnemies++;
+                            }
+                        }
+                    }
+                }
+
+                if (aliveEnemies == 0)
+                {
+                    // Victory: surviving allies become friendly and capturable with bonus.
+                    rec.State = ConfrontationState.Resolved;
+                    for (int i = 0; i < _units.Count; i++)
+                    {
+                        EncounterUnit u = _units[i];
+                        if (u.ConfrontationId == rec.Id && u.ConfrontationSide == alliedSide)
+                        {
+                            u.IsConfrontationAlly = false;
+                            if (!u.Combatant.IsFainted)
+                            {
+                                u.IsFriendlyAfterConfrontation = true;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                if (activeEnemies > 0 && engagedEnemies == 0)
+                {
+                    // Player fled beyond disengage radius: end the confrontation cleanly and restore normal fielding cap.
+                    rec.State = ConfrontationState.Resolved;
+                    for (int i = 0; i < _units.Count; i++)
+                    {
+                        EncounterUnit u = _units[i];
+                        if (u.ConfrontationId == rec.Id)
+                        {
+                            u.IsConfrontationAlly = false;
+                            u.Engaged = false;
+                            u.WantsEngage = false;
+                        }
+                    }
+                    continue;
+                }
+
+                // Relay reserves into empty active slots (1 wild ally, up to 2 wild enemies).
+                if (activeAllies < 1)
+                {
+                    FieldNextConfrontationReserve(rec.Id, alliedSide, engage: false);
+                }
+
+                while (activeEnemies < WildEngageCapPerPlayer && FieldNextConfrontationReserve(rec.Id, enemySide, engage: true))
+                {
+                    activeEnemies++;
+                }
+            }
+        }
+
+        private bool FieldNextConfrontationReserve(int confId, int side, bool engage)
+        {
+            EncounterUnit best = null;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.ConfrontationId == confId && u.ConfrontationSide == side && !u.Fielded && !u.Combatant.IsFainted &&
+                    (best == null || u.ConfrontationOrder < best.ConfrontationOrder))
+                {
+                    best = u;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            best.Fielded = true;
+            if (engage)
+            {
+                Engage(best);
+            }
+
+            return true;
         }
 
         // REQ: combat.md#交戰上限 (Q-C63) — at most WildEngageCapPerPlayer non-boss wild units fight the player at once; a
@@ -2760,7 +3128,28 @@ namespace Cosmimera.Combat
             return math.normalize(up * math.cos(arc) + heading * math.sin(arc));
         }
 
-        private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
+        private bool IsValidEnemy(EncounterUnit self, int id)
+        {
+            bool selfIsAlly = self.Side == EncounterSide.Player || self.IsConfrontationAlly;
+            if (id == PlayerCharacterId)
+            {
+                return !selfIsAlly && PlayerTargetable();
+            }
+
+            if (id < 0 || id >= _units.Count)
+            {
+                return false;
+            }
+
+            EncounterUnit t = _units[id];
+            bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+            if (selfIsAlly == targetIsAlly || !t.IsActive)
+            {
+                return false;
+            }
+
+            return selfIsAlly ? t.Engaged : true;
+        }
 
         private bool IsValidEnemy(EncounterSide side, int id)
         {
@@ -2775,12 +3164,14 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit t = _units[id];
-            if (t.Side == side || !t.IsActive)
+            bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+            bool sideIsAlly = side == EncounterSide.Player;
+            if (sideIsAlly == targetIsAlly || !t.IsActive)
             {
                 return false;
             }
 
-            return t.Side == EncounterSide.Player || t.Engaged;
+            return sideIsAlly ? t.Engaged : true;
         }
 
         private void FillEnemies(EncounterUnit self)
