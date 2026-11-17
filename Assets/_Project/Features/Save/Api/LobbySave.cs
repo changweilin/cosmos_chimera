@@ -30,7 +30,7 @@ namespace Cosmimera.Save
     /// Version 8: creature entries add <c>visual_vessel</c> (appearance preserved on late-game vessel conversion); formats 1–7 default <c>VisualVessel</c> to <c>Vessel</c>.
     /// Version 9 (D0-U3): equipment slots become main_hand/off_hand/upper/lower/accessory; formats 7–8 migrate
     /// weapon → main_hand, armor → upper, accessory → accessory (crafting.md#穿戴與數值).
-    /// Version 10: root codex stores permanent knowledge; older saves recover owned forms and the two protagonists.
+    /// Version 10: root codex stores permanent knowledge; older saves recover owned forms.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
@@ -41,15 +41,7 @@ namespace Cosmimera.Save
 
         /// <summary>Persistent encyclopedia knowledge, including known subjects no longer owned.</summary>
         /// <remarks>Pre: main thread. Post: same instance for this save's lifetime. Side effects: mutating it changes this save.</remarks>
-        public CodexProgress Codex { get; } = NewCodex();
-
-        private static CodexProgress NewCodex()
-        {
-            var progress = new CodexProgress();
-            progress.Record(CodexEvent.CharacterQuest, "chr_yeh_chengxi");
-            progress.Record(CodexEvent.CharacterQuest, "chr_roen");
-            return progress;
-        }
+        public CodexProgress Codex { get; } = new CodexProgress();
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -610,8 +602,6 @@ namespace Cosmimera.Save
                     knowledge.Add(new CodexRecord((CodexKind)item.kind, item.id, (CodexLevel)item.level));
                 }
                 save.Codex.Restore(knowledge);
-                save.Codex.Record(CodexEvent.CharacterQuest, "chr_yeh_chengxi");
-                save.Codex.Record(CodexEvent.CharacterQuest, "chr_roen");
             }
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;

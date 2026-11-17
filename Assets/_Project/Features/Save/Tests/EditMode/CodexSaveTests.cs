@@ -16,11 +16,11 @@ namespace Cosmimera.Save.Tests
         }
 
         [Test]
-        public void Protagonists_start_complete_but_other_characters_and_creatures_are_unknown()
+        public void Characters_and_creatures_start_unknown_until_unlocked()
         {
             var save = new LobbySave();
-            Assert.That(save.Codex.Get(CodexKind.Character, "chr_yeh_chengxi"), Is.EqualTo(CodexLevel.Complete));
-            Assert.That(save.Codex.Get(CodexKind.Character, "chr_roen"), Is.EqualTo(CodexLevel.Complete));
+            Assert.That(save.Codex.Get(CodexKind.Character, "chr_yeh_chengxi"), Is.EqualTo(CodexLevel.Unknown));
+            Assert.That(save.Codex.Get(CodexKind.Character, "chr_roen"), Is.EqualTo(CodexLevel.Unknown));
             Assert.That(save.Codex.Get(CodexKind.Character, "chr_amemori_sumiha"), Is.EqualTo(CodexLevel.Unknown));
             Assert.That(save.Codex.Get(CodexKind.Creature, "cr_aqua_slime_juvenile"), Is.EqualTo(CodexLevel.Unknown));
         }
@@ -55,7 +55,9 @@ namespace Cosmimera.Save.Tests
         [Test]
         public void Undefined_saved_category_fails_instead_of_silently_losing_knowledge()
         {
-            string json = new LobbySave().ToJson().Replace("\"kind\": 1", "\"kind\": 99");
+            var save = new LobbySave();
+            save.Codex.Record(CodexEvent.Dialogue, "chr_yeh_chengxi");
+            string json = save.ToJson().Replace("\"kind\": 1", "\"kind\": 99");
             Assert.Throws<InvalidDataException>(() => Parse(json));
         }
     }
