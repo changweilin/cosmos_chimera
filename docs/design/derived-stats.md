@@ -1,5 +1,7 @@
 # P2-02 能力值 → 衍生值提案
 
+> 改制中：四維由 [六大能力值](creatures.md#六大能力值) 取代；本文的射程（STR）、CD（SPI）、閃避（AGI）推導將改為全宙獸共同基礎值，HP 推導待 Q-C66／Q-C67。D0-S1 完成前執行期仍為本文公式。
+
 係數、點數帶、上限、取整規約皆已定案；文中「提議中」字樣視同定案。改數值須重產黃金向量並送審（必審類別）。射程上限 36 m 為全域上限；小星球再依地平線收斂，見〈[星球射程上限](#星球射程上限)〉（Q-D1）。
 需求來源：[四大能力值](creatures.md#四大能力值)、[戰鬥](combat.md)。傷害仍只由威力 × 專精 × 抗性決定；本提案不引入 ATK / DEF，不修改正式 schema 或 C#。
 係數唯一來源：[Data/balance.json](../../Data/balance.json)（鍵值說明：[balance-keys.md](derived-stats/balance-keys.md)）。C# 移植：`Combat/Runtime/Model/DerivedStats.cs`，以黃金向量逐位元比對。
