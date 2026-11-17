@@ -31,7 +31,10 @@ namespace Cosmimera.Bootstrap.Demo
             public float Radius;
             public CreatureStage BossStage;
             public WorldGen.PlanetElements Elements;
+            public bool IsBeginnerQuest;
         }
+
+        internal const ulong BeginnerQuestSeed = 20261117UL;
 
         [SerializeField] private GameDatabase _database;
         [SerializeField] private InputActionAsset _actions;
@@ -447,6 +450,11 @@ namespace Cosmimera.Bootstrap.Demo
 
                 GUILayout.EndHorizontal();
             }
+            if (_save.Owned.Count <= 1)
+            {
+                GUILayout.Label(_copy.Ui("ui.beginner_quest.banner"), _text);
+                GUILayout.Label(_copy.Ui("ui.beginner_quest.hint_lobby"), _text);
+            }
             if (_save.StarterLine == null)
             {
                 GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
@@ -729,7 +737,8 @@ namespace Cosmimera.Bootstrap.Demo
                 string boss = _copy.Ui("ui.star_select.boss_stage")
                     .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
                 string elementsLine = FormatPlanetElements(o.Elements);
-                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
+                string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
+                GUILayout.Label($"{tag}{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
                                 $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
@@ -838,9 +847,24 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // REQ: docs/roadmap/demo.md + phase-7.md#P7-02 — Demo serves as the beginner quest; slot 0 guarantees
+            // a deterministic starter-friendly verdant asteroid before the player's first wild capture.
+            int startIndex = 0;
+            if (_save.Owned.Count <= 1 && types.Count > 0)
+            {
+                (PlanetTypeDef bType, ulong bSeed, CreatureStage bStage, float bRadius, WorldGen.PlanetElements bElem) =
+                    BuildBeginnerOption(types);
+                _options.Add(new PlanetOption
+                {
+                    Type = bType, Seed = bSeed, BossStage = bStage, Radius = bRadius,
+                    Elements = bElem, IsBeginnerQuest = true,
+                });
+                startIndex = 1;
+            }
+
             // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
             CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
-            for (int i = 0; i < 3 && types.Count > 0; i++)
+            for (int i = startIndex; i < 3 && types.Count > 0; i++)
             {
                 PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
                 ulong seed = _menuRng.NextUInt();
@@ -852,6 +876,32 @@ namespace Cosmimera.Bootstrap.Demo
                     Elements = WorldGen.PlanetElementDraw.Draw(seed, size, t.ElementBias),
                 });
             }
+        }
+
+        /// <summary>Builds the deterministic beginner-quest planet option (verdant asteroid, juvenile boss).</summary>
+        /// <remarks>
+        /// Pre: types is non-null and has at least one entry.
+        /// Post: returns a juvenile-boss 320 m planet option preferring "verdant_planet".
+        /// Side effects: none.
+        /// </remarks>
+        internal static (PlanetTypeDef type, ulong seed, CreatureStage bossStage, float radius, WorldGen.PlanetElements elements)
+            BuildBeginnerOption(IReadOnlyList<PlanetTypeDef> types)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(types != null && types.Count > 0, "types must be non-empty");
+            PlanetTypeDef chosen = types[0];
+            for (int i = 0; i < types.Count; i++)
+            {
+                if (types[i].Id == "verdant_planet")
+                {
+                    chosen = types[i];
+                    break;
+                }
+            }
+
+            const CreatureStage stage = CreatureStage.Juvenile;
+            PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
+            return (chosen, BeginnerQuestSeed, stage, RadiusFor(size),
+                WorldGen.PlanetElementDraw.Draw(BeginnerQuestSeed, size, chosen.ElementBias));
         }
 
         // REQ: planet-world.md#星球尺度 (Q-D1 settled 2026-11-11: asteroids play at 320 m). Explicit per size so a

@@ -28,6 +28,12 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(copy.Ui(key), Is.Not.EqualTo(key));
                 Assert.That(copy.Ui(key), Is.Not.Empty);
             }
+            foreach (string name in new[] { "banner", "planet_tag", "hint_lobby" })
+            {
+                string key = "ui.beginner_quest." + name;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key));
+                Assert.That(copy.Ui(key), Is.Not.Empty);
+            }
         }
 
         [Test]

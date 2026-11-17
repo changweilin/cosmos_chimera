@@ -64,11 +64,6 @@
     "en": "Main Elements",
     "ja": "主要属性"
   },
-  "ui.star_select.sub_elements": {
-    "zh-TW": "副屬性",
-    "en": "Sub Elements",
-    "ja": "副属性"
-  },
   "ui.star_select.seed": {
     "zh-TW": "種子",
     "en": "Seed",
@@ -2178,5 +2173,20 @@
     "zh-TW": "天氣操縱仍在冷卻，切換區域不會重置。",
     "en": "Weather control is cooling down; changing regions does not reset it.",
     "ja": "天候操作は再使用待ちです。地域を移動してもリセットされません。"
+  },
+  "ui.beginner_quest.banner": {
+    "zh-TW": "新手任務：選取御三家 → 降落新手星球探索戰鬥 → 收服野生宙獸 → 擊敗巢穴 BOSS",
+    "en": "Beginner Quest: Pick a Starter → Explore & Battle → Capture Wild Cosmimera → Defeat Nest Boss",
+    "ja": "初心者クエスト：御三家を選択 → 惑星探索・戦闘 → 野生宙獣を捕獲 → 巣のボスを撃破"
+  },
+  "ui.beginner_quest.planet_tag": {
+    "zh-TW": "【新手任務星球】",
+    "en": "[Beginner Quest]",
+    "ja": "【初心者クエスト惑星】"
+  },
+  "ui.beginner_quest.hint_lobby": {
+    "zh-TW": "從新手任務星球展開冒險；可先在冒險手冊配置副手與裝備。",
+    "en": "Begin your expedition on the Beginner Quest planet; check the Adventure Journal for partners & gear.",
+    "ja": "初心者クエスト惑星から冒険を始めよう。冒険手帳でパートナーや装備も確認できます。"
   }
 }

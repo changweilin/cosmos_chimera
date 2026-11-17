@@ -1177,5 +1177,14 @@
   },
   "ui.weather.on_cooldown": {
     "ja": "天候操作は再使用待ちです。地域を移動してもリセットされません。"
+  },
+  "ui.beginner_quest.banner": {
+    "ja": "初心者クエスト：御三家を選択 → 惑星探索・戦闘 → 野生宙獣を捕獲 → 巣のボスを撃破"
+  },
+  "ui.beginner_quest.planet_tag": {
+    "ja": "【初心者クエスト惑星】"
+  },
+  "ui.beginner_quest.hint_lobby": {
+    "ja": "初心者クエスト惑星から冒険を始めよう。冒険手帳でパートナーや装備も確認できます。"
   }
 }

@@ -2,6 +2,8 @@ using System;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.GameData;
 using NUnit.Framework;
+using UnityEditor;
+using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Tests
 {
@@ -22,6 +24,35 @@ namespace Cosmimera.Bootstrap.Tests
         public void An_undefined_size_fails_loudly()
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => DemoGame.RadiusFor((PlanetSize)99));
+        }
+
+        [Test]
+        public void Beginner_option_prefers_verdant_asteroid_with_juvenile_boss()
+        {
+            PlanetTypeDef lava = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            PlanetTypeDef verdant = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            try
+            {
+                SetPlanetId(lava, "lava_planet");
+                SetPlanetId(verdant, "verdant_planet");
+                var option = DemoGame.BuildBeginnerOption(new[] { lava, verdant });
+                Assert.That(option.type, Is.SameAs(verdant));
+                Assert.That(option.seed, Is.EqualTo(DemoGame.BeginnerQuestSeed));
+                Assert.That(option.bossStage, Is.EqualTo(CreatureStage.Juvenile));
+                Assert.That(option.radius, Is.EqualTo(320f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(lava);
+                UnityEngine.Object.DestroyImmediate(verdant);
+            }
+        }
+
+        private static void SetPlanetId(PlanetTypeDef def, string id)
+        {
+            var so = new SerializedObject(def);
+            so.FindProperty("id").stringValue = id;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
