@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_thunder_drone_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_thunder_drone_overload
+  lineId: cr_thunder_drone
+  stage: 3
+  sizeClass: 2
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 8b6a32691c50ae24a916bb7b7bb69a3c, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0a000000000000000500000000000000f1ffffff000000001e00000032000000d8ffffff00000000
+  mastery:
+  - element: 7
+    value: 30
+  stats:
+    hp: 89
+    speed: 172
+    yinAtk: 187
+    yangAtk: 86
+    yinDef: 100
+    yangDef: 86
+  signatureMove: {fileID: 11400000, guid: 3c1647dcf2fa7f14483eba91f2de84de, type: 2}
+  trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  fieldUtility: 7
+  conceptJson: "{\"name_zh\":\"\u5929\u9802\u8ECC\u9053\u96FB\u78C1\u885B\u661F\",\"name_en\":null,\"stage_look\":\"-
+    **\u96D9\u5EA7\u524D\u50BE\u9AD8\u58D3\u7279\u65AF\u62C9\u7DDA\u5708\u5854 (`Drone_Chassis`
+    / `Neon_Cyan_Arc`)**\uFF1A\u7576\u8D85\u5C0E\u96FB\u5BB9\u9032\u5165\u6975\u9650\u8D85\u983B\u72C0\u614B\uFF08`overload_enter`\uFF09\uFF0C\u6A5F\u80CC\u88DD\u7532\u89E3\u9396\u5F48\u958B\uFF0C\u5169\u5EA7\u9AD8\u9054
+    0.86 \u7C73\u3001\u5E36\u56DB\u5C64\u8AE7\u632F\u96FB\u96E2\u74B0\u7684\u300C\u9AD8\u58D3\u7279\u65AF\u62C9\u7DDA\u5708\u5854\u300D\uFF08\u9748\u611F\u6E90\u81EA
+    [Nikola Tesla Colorado Springs Notes](https://sanandres.uep.edu.py/ProductPdf/TLhpxj/703507/nikola-tesla_colorado_springs_notes_1899_1900.pdf)
+    \u7684\u653E\u5927\u767C\u5C04\u6A5F\u8AE7\u632F\u5854\uFF09\u81EA\u96D9\u80A9\u5F8C\u4E0A\u65B9\u5A01\u56B4\u5347\u8D77\u4E26\u5411\u524D\u50BE\u659C\u3002\\n-
+    **\u5927\u578B\u78C1\u8ECC\u52A0\u901F\u9663\u5217\u8207\u5C55\u958B\u5F0F\u592A\u967D\u80FD\u7FFC
+    (`Prong_L, Prong_R` / `Lens_Glass`)**\uFF1A\u539F\u672C\u7684\u96D9\u806F\u653E\u96FB\u53C9\u6CBF\u5411\u524D\u5916\u6ED1\u8ECC\u5FB9\u5E95\u89E3\u9396\u5EF6\u4F38\uFF0C\u91CD\u7D44\u70BA\u5DE6\u53F3\u5C0D\u7A31\u3001\u5167\u7F6E\u4E09\u7D1A\u74B0\u5F62\u6D1B\u502B\u8332\u52A0\u901F\u7DDA\u5708\u7684\u300C\u5927\u578B\u96FB\u78C1\u8ECC\u9053\u7832\u52A0\u901F\u9663\u5217\u300D\uFF08\u81F4\u656C
+    [Plasma Railguns & Directed Energy Weapons](https://www.quora.com/Are-guns-that-shoot-electricity-lighting-possible-Why-dont-we-see-them-more-in-science-fiction)\uFF09\u3002\u6A5F\u8EAB\u5DE6\u53F3\u5169\u5074\u5247\u6C34\u5E73\u5C55\u958B\u96D9\u6BB5\u5F0F\u5927\u578B\u592A\u7A7A\u592A\u967D\u80FD\u96FB\u6C60\u7FFC\uFF0C\u8179\u90E8\u8D85\u5C0E\u96FB\u5BB9\u6838\u5FC3\u8D85\u983B\u767C\u51FA\u523A\u76EE\u7684\u767D\u71BE\u5F37\u5149\u3002\\n-
+    **\u516D\u8EF8\u65CB\u7FFC\u5168\u6578\u812B\u96E2\u70BA\u5916\u570D\u74B0\u7E5E\u653E\u96FB\u6D6E\u6A19
+    (`Orbit_SubDrone_01..04`)**\uFF1A\u56B4\u683C\u9075\u5FAA\u300C\u516D\u8EF8\u65CB\u7FFC\u812B\u96E2\u70BA\u5B50\u6A5F\u3001\u5728\u5916\u570D\u74B0\u7E5E\u653E\u96FB\u6D6E\u6A19\u300D\u4E4B\u8A2D\u5B9A\uFF0C\u6BCD\u6A5F\u672C\u9AD4\u56DB\u5468\u50C5\u4FDD\u7559\u89E3\u9396\u5F8C\u7684\u78C1\u6D6E\u5C0D\u63A5\u5EA7\uFF0C\u539F\u672C\u7684
+    **6 \u5177\u65CB\u7FFC\u5168\u6578\u812B\u96E2\u6BCD\u6A5F**\uFF0C\u5316\u70BA\u5728\u534A\u5F91
+    `1.62m` \u5916\u570D\u8ECC\u9053\u5448\u516D\u89D2\u5F62\u7DE8\u968A\u81EA\u4E3B\u516C\u8F49\u7684
+    **6 \u5177\u7368\u7ACB\u6DB5\u9053\u65CB\u7FFC\u653E\u96FB\u6D6E\u6A19\u5B50\u6A5F**\uFF08\u6BCF\u5177\u5B50\u6A5F\u5747\u5177\u5099\u5B8C\u6574\u56DB\u8449\u6DB5\u9053\u65CB\u7FFC\u8207\u9802\u90E8\u7403\u5F62\u653E\u96FB\u7AEF\u5B50\uFF09\u3002\\n-
+    **Level 4 \u5929\u9802\u96FB\u78C1\u96F7\u66B4\u7DB2 (`Neon_Cyan_Arc`)**\uFF1A\u8D85\u8F09\u72C0\u614B\u4E0B\u96FB\u5149\u5BC6\u5EA6\u9054\u5230\u9802\u5CF0\uFF0C\u5168\u6A5F\u5468\u570D\u5954\u6E67\u8457
+    **\u8D85\u904E 72 \u9053\u5DE8\u578B\u5206\u53C9\u9583\u96FB\u93C8**\uFF01\u96D9\u5EA7\u7279\u65AF\u62C9\u7DDA\u5708\u5854\u9802\u8207\u6A5F\u8179\u767D\u71BE\u96FB\u5BB9\u6838\u540C\u6642\u5411\u5916\u570D
+    **6 \u5177\u812B\u96E2\u5F0F\u65CB\u7FFC\u5B50\u6A5F** \u6295\u5C04\u4E0A\u4E0B\u96D9\u5C64\u7ACB\u9AD4\u9AD8\u58D3\u96FB\u7E9C\u5F27\uFF0C\u516D\u5177\u5B50\u6A5F\u4E4B\u9593\u66F4\u5F7C\u6B64\u4E32\u806F\u6210\u906E\u5929\u853D\u65E5\u7684\u96D9\u74B0\u516D\u89D2\u96F7\u66B4\u529B\u5834\u7DB2\uFF0C\u52A0\u4E0A\u5169\u9580\u9577\u78C1\u8ECC\u7832\u7BA1\u4E0A\u87BA\u65CB\u70B8\u88C2\u7684\u5C0E\u5F15\u96FB\u6F3F\u96F7\u5149\uFF0C\u5B8C\u7F8E\u5C55\u73FE\u8ECC\u9053\u96FB\u78C1\u885B\u661F\u7684\u6BC0\u6EC5\u6027\u5A01\u58D3\uFF08\u4E14\u6B63\u9762\u4E3B\u93E1\u982D\u524D\u65B9\u4F9D\u820A\u4FDD\u6301
+    100% \u7D55\u5C0D\u6DE8\u7A7A\uFF09\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_thunder_drone/cr_thunder_drone_overload_05_wiki.md\",\"sha256\":\"db2be13c5ae19c7b2f156d3b8a671de16e678c0ba7fc5e8b63d4c644245ffe8f\",\"drive_file_id\":\"1C548mJ_-aHJmD2mCgViRMh77RLalktor\"},\"status\":\"review_required\",\"gameplay_archetype\":\"star_skyhoof_steed\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

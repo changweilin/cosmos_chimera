@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Cosmimera.Codex;
 using Cosmimera.GameData;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -12,35 +14,65 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly DemoCopy _copy;
         private readonly Func<string, bool> _owned;
         private readonly ConceptPortraitTable _portraits;
-        private readonly List<GameDef> _entries = new List<GameDef>();
+        private readonly CodexProgress _progress;
+        private readonly EncyclopediaCatalog _catalog = new EncyclopediaCatalog();
+        private readonly List<JObject> _entries = new List<JObject>();
         private int _kind;
         private int _page;
         private bool _ownedOnly;
         private string _search = string.Empty;
-        private GameDef _selected;
+        private JObject _selected;
         private GUIStyle _nodeStyle;
+        private readonly List<JObject> _knownRelations = new List<JObject>();
+        private readonly List<string> _hiddenNames = new List<string>();
 
-        internal CodexPanel(GameDatabase database, DemoCopy copy, Func<string, bool> owned, ConceptPortraitTable portraits = null)
+        internal CodexPanel(GameDatabase database, DemoCopy copy, Func<string, bool> owned,
+            ConceptPortraitTable portraits = null, CodexProgress progress = null)
         {
-            _database = database;
-            _copy = copy;
-            _owned = owned;
-            _portraits = portraits;
+            _database = database; _copy = copy; _owned = owned; _portraits = portraits;
+            _progress = progress ?? new CodexProgress();
             Refresh();
+        }
+
+        internal CodexLevel Level(JObject entry) => _progress.Get(EncyclopediaCatalog.Kind(entry), EncyclopediaCatalog.Subject(entry));
+
+        internal string Title(JObject entry)
+        {
+            if (Level(entry) == CodexLevel.Unknown) return _copy.Ui("dex.unknown");
+            return (string)entry["basic"]?["name_zh"] ?? (string)entry["basic"]?["name_en"] ?? _copy.Ui("dex.missing");
         }
 
         private void Refresh()
         {
             _entries.Clear();
-            foreach (GameDef def in _database.All)
+            _hiddenNames.Clear();
+            var knownNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (JObject entry in _catalog.Entries)
+                if (Level(entry) != CodexLevel.Unknown)
+                    foreach (string key in new[] { "name_zh", "name_en" })
+                    {
+                        string name = (string)entry["basic"]?[key];
+                        if (!string.IsNullOrEmpty(name)) knownNames.Add(name);
+                    }
+            foreach (JObject entry in _catalog.Entries)
+                if (Level(entry) == CodexLevel.Unknown)
+                    foreach (string key in new[] { "name_zh", "name_en" })
+                    {
+                        string name = (string)entry["basic"]?[key];
+                        if (!string.IsNullOrEmpty(name) && !knownNames.Contains(name)) _hiddenNames.Add(name);
+                    }
+            _hiddenNames.Sort((a, b) => b.Length.CompareTo(a.Length));
+            foreach (JObject entry in _catalog.Entries)
             {
-                bool kindMatches = _kind == 1 ? def is MoveDef : _kind == 2 ? def is TraitDef : def is CreatureDef;
-                if (!kindMatches || (_ownedOnly && def is CreatureDef && !_owned(def.Id))) continue;
-                if (_copy.Name(def.Id).IndexOf(_search, StringComparison.OrdinalIgnoreCase) < 0 &&
-                    def.Id.IndexOf(_search, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                _entries.Add(def);
+                string kind = (string)entry["kind"], skill = (string)entry["skill_type"];
+                bool matches = _kind == 4 ? kind == "character" : _kind == 1 ? kind == "skill" && skill == "move"
+                    : _kind == 2 ? kind == "skill" && skill != "move" : kind == "creature";
+                if (!matches || (_ownedOnly && kind == "creature" && !_owned((string)entry["game_id"]))) continue;
+                // Unknown names and hidden prose must not become an oracle through search or raw IDs.
+                if (!string.IsNullOrEmpty(_search) && (Level(entry) == CodexLevel.Unknown ||
+                    Title(entry).IndexOf(_search, StringComparison.OrdinalIgnoreCase) < 0)) continue;
+                _entries.Add(entry);
             }
-            _entries.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             _page = 0;
             _selected = _entries.Count > 0 ? _entries[0] : null;
         }
@@ -48,28 +80,17 @@ namespace Cosmimera.Bootstrap.Demo
         internal void Draw(AdventurePanel ui)
         {
             GUILayout.BeginHorizontal();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 5; i++)
             {
-                if (!ui.Button(_copy.Ui("ui.codex.kind." + i))) continue;
-                _kind = i;
-                Refresh();
-                GUIUtility.ExitGUI();
+                if (!ui.Button(_copy.Ui(i == 4 ? "dex.characters" : "ui.codex.kind." + i))) continue;
+                _kind = i; Refresh(); GUIUtility.ExitGUI();
             }
             GUILayout.EndHorizontal();
             ui.Label(_copy.Ui("ui.codex.search"));
             string search = ui.TextField("CodexSearch", _search);
-            if (search != _search)
-            {
-                _search = search;
-                Refresh();
-                GUIUtility.ExitGUI();
-            }
+            if (search != _search) { _search = search; Refresh(); GUIUtility.ExitGUI(); }
             if ((_kind == 0 || _kind == 3) && ui.Button(_copy.Ui(_ownedOnly ? "ui.codex.owned_only" : "ui.codex.all")))
-            {
-                _ownedOnly = !_ownedOnly;
-                Refresh();
-                GUIUtility.ExitGUI();
-            }
+            { _ownedOnly = !_ownedOnly; Refresh(); GUIUtility.ExitGUI(); }
             int pages = Math.Max(1, (_entries.Count + PageSize - 1) / PageSize);
             GUILayout.BeginHorizontal();
             if (ui.Button("◀", _page > 0)) { _page--; GUIUtility.ExitGUI(); }
@@ -78,89 +99,97 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndHorizontal();
             for (int i = _page * PageSize; i < Math.Min(_entries.Count, (_page + 1) * PageSize); i++)
             {
-                GameDef def = _entries[i];
-                string mark = def is CreatureDef && _owned(def.Id) ? "★ " : string.Empty;
-                if (ui.Button(mark + _copy.Name(def.Id))) { _selected = def; GUIUtility.ExitGUI(); }
+                JObject entry = _entries[i];
+                if (ui.Button(Title(entry) + " · " + _copy.Ui("dex.level." + Level(entry))))
+                { _selected = entry; GUIUtility.ExitGUI(); }
             }
             if (_selected == null) { ui.Label(_copy.Ui("ui.journal.empty")); return; }
-            ui.Heading(_copy.Name(_selected.Id));
-            if (_selected is CreatureDef creature)
+            CodexLevel level = Level(_selected);
+            ui.Heading(Title(_selected));
+            if (level == CodexLevel.Unknown) { ui.Label(_copy.Ui("dex.hint." + (string)_selected["kind"])); return; }
+            if (_selected["authored_fields"] is JArray authored && authored.Count > 0) ui.Label(_copy.Ui("dex.authored"));
+            DrawPortrait(_selected);
+            foreach (JProperty field in ((JObject)_selected["basic"]).Properties())
+                if (field.Name != "name_zh" && field.Name != "name_en") DrawField(ui, field.Name, field.Value);
+            if (level != CodexLevel.Complete) { ui.Label(_copy.Ui("dex.complete_hint." + (string)_selected["kind"])); return; }
+            foreach (JProperty field in ((JObject)_selected["details"]).Properties())
+                if (field.Name != "value_refs") DrawField(ui, field.Name, field.Value);
+            foreach (JObject value in (_catalog.Values[(string)_selected["id"]] as JArray) ?? new JArray())
             {
-                Texture2D portrait = _portraits != null ? _portraits.FindCreature(creature.LineId, creature.Stage) : null;
-                if (portrait != null)
-                    GUI.DrawTexture(GUILayoutUtility.GetRect(120, 120, GUILayout.ExpandWidth(false)), portrait, ScaleMode.ScaleToFit, true);
-                ui.Label(_copy.Ui("ui.stage." + creature.Stage.ToString().ToLowerInvariant()));
-                CreatureStats st = creature.Stats;
-                ui.Label($"HP {st.Hp} · SPD {st.Speed} · 陰攻 {st.YinAtk} · 陽攻 {st.YangAtk} · 陰守 {st.YinDef} · 陽守 {st.YangDef} (LV100)");
+                string pointer = (string)value["pointer"];
+                string key = pointer.Substring(pointer.LastIndexOf('/') + 1);
+                string label = _copy.Ui("dex.value." + key);
+                if (label == "dex.value." + key) label = _copy.Ui("dex.value");
+                ui.Label(label + "：" + (string)value["value"] + " " + Unit((string)value["unit"]));
+            }
+            string gameplayId = (string)_selected["game_id"];
+            if (!string.IsNullOrEmpty(gameplayId) && _database.TryGet(gameplayId, out CreatureDef creature))
+            {
+                CreatureStats stats = creature.Stats;
+                ui.Label($"HP {stats.Hp} · SPD {stats.Speed} · {_copy.Ui("dex.yin_atk")} {stats.YinAtk} · {_copy.Ui("dex.yang_atk")} {stats.YangAtk} · {_copy.Ui("dex.yin_def")} {stats.YinDef} · {_copy.Ui("dex.yang_def")} {stats.YangDef} (LV100)");
                 string mastery = _copy.Ui("ui.codex.mastery") + "：";
                 foreach (ElementValue value in creature.Mastery) mastery += _copy.Element(value.Element.ToString()) + $" {value.Value}%  ";
                 ui.Label(mastery);
                 string resist = _copy.Ui("ui.codex.resist") + "：";
-                foreach (Element element in Enum.GetValues(typeof(Element)))
-                    resist += _copy.Element(element.ToString()) + $" {creature.GetResist(element)}%  ";
+                foreach (Element element in Enum.GetValues(typeof(Element))) resist += _copy.Element(element.ToString()) + $" {creature.GetResist(element)}%  ";
                 ui.Label(resist);
-                if (ui.Button(_copy.Ui("ui.codex.move") + "：" + _copy.Name(creature.SignatureMove.Id)))
-                { _selected = creature.SignatureMove; GUIUtility.ExitGUI(); }
-                if (ui.Button(_copy.Ui("ui.codex.trait") + "：" + _copy.Name(creature.Trait.Id)))
-                { _selected = creature.Trait; GUIUtility.ExitGUI(); }
-                ui.Label(_copy.Ui("ui.journal.tab.Skills") + "：" + _copy.Ui("utility." + creature.FieldUtility));
-                ui.Heading(_copy.Ui("ui.codex.kind.3"));
-                IReadOnlyList<RelationLink> links = _database.GetRelations(creature.Id);
-                if (links.Count == 0) ui.Label(_copy.Ui("ui.journal.empty"));
-                else DrawRelations(creature, links);
-                foreach (RelationLink link in links)
-                {
-                    if (ui.Button(_copy.Name(creature.Id) + " ↔ " + _copy.Name(link.Other.Id) + " · " + _copy.Ui("relation." + link.Kind)))
-                    { _selected = link.Other; GUIUtility.ExitGUI(); }
-                }
-            }
-            else if (_selected is MoveDef move)
-            {
-                ui.Label(_copy.Element(move.Element.ToString()) + $" · {_copy.Ui("ui.codex.power")} {move.Power} · CD {move.CooldownMs / 1000f:0.0}s · {_copy.Ui("ui.codex.accuracy")} {move.Accuracy}%");
-                ui.Label(_copy.Ui("shape." + move.Shape) + $" · {move.BaseRangeMm / 1000f:0.0}m");
-                if (move.Effect != null) ui.Label(EffectLabel(move.Effect));
-            }
-            else if (_selected is TraitDef trait)
-            {
-                ui.Label(_copy.Ui("trigger." + trait.Trigger.Type));
-                if (trait.Trigger.HasElement)
-                    ui.Label(trait.Trigger.AnyElement ? _copy.Ui("ui.codex.any_element") : _copy.Element(trait.Trigger.Element.ToString()));
-                if (trait.Trigger.Type == TriggerType.OnHpBelow || trait.Trigger.Type == TriggerType.OnHpAbove ||
-                    trait.Trigger.Type == TriggerType.OnHpCrossBelow) ui.Label($"HP {trait.Trigger.Percent}%");
-                if (trait.Trigger.HasDuration) ui.Label($"{trait.Trigger.DurationMs / 1000f:0.0}s");
-                foreach (EffectDef effect in trait.Effects) ui.Label(EffectLabel(effect));
+                Link(ui, CodexKind.Skill, creature.SignatureMove.Id);
+                Link(ui, CodexKind.Skill, creature.Trait.Id);
+                DrawKnownRelations(creature);
+                foreach (RelationLink link in _database.GetRelations(creature.Id)) Link(ui, CodexKind.Creature, link.Other.Id);
             }
         }
 
-        private string EffectLabel(EffectDef effect)
+        private string Unit(string unit) => unit == "percent" ? "%" : unit == "ms" || unit == "mm" ? unit : string.Empty;
+
+        private void DrawField(AdventurePanel ui, string key, JToken value)
         {
-            string scope = effect.HasElement ? (effect.AnyElement ? _copy.Ui("ui.codex.any_element") :
-                _copy.Element(effect.Element.ToString())) + " · " : string.Empty;
-            return scope + _copy.Ui("effect." + effect.Type) + " " +
-                (effect.Type == EffectType.HealPercentMaxHp ? effect.Percent.ToString() : effect.Delta.ToString()) + "%";
+            if (value == null || value.Type == JTokenType.Null) { ui.Label(_copy.Ui("dex.field." + key) + "：" + _copy.Ui("dex.missing")); return; }
+            string content = value is JArray array ? string.Join("、", array.ToObject<string[]>()) : (string)value;
+            foreach (string hidden in _hiddenNames) content = content.Replace(hidden, _copy.Ui("dex.unknown"));
+            ui.Heading(_copy.Ui("dex.field." + key)); ui.Label(content);
         }
 
-        private void DrawRelations(CreatureDef creature, IReadOnlyList<RelationLink> links)
+        private void DrawKnownRelations(CreatureDef creature)
         {
+            _knownRelations.Clear();
+            foreach (RelationLink link in _database.GetRelations(creature.Id))
+            {
+                JObject other = _catalog.Find(CodexKind.Creature, link.Other.Id);
+                if (other != null && Level(other) != CodexLevel.Unknown) _knownRelations.Add(other);
+            }
+            if (_knownRelations.Count == 0) return;
             _nodeStyle ??= new GUIStyle(GUI.skin.box) { wordWrap = true, fontSize = 13, alignment = TextAnchor.MiddleCenter };
             Rect area = GUILayoutUtility.GetRect(200, 240, GUILayout.ExpandWidth(true));
             Vector2 center = area.center;
-            int count = Math.Min(links.Count, 8);
+            int count = Math.Min(_knownRelations.Count, 8);
             for (int i = 0; i < count; i++)
             {
                 float angle = 2 * Mathf.PI * i / count;
                 Vector2 node = center + new Vector2(Mathf.Cos(angle) * (area.width - 140) / 2, Mathf.Sin(angle) * 90);
-                Color color = GUI.color;
-                GUI.color = new Color(0.55f, 0.85f, 1f);
-                // Axis-aligned branches retain the scroll view's clip space under DPI scaling.
-                GUI.DrawTexture(new Rect(Mathf.Min(center.x, node.x), center.y,
-                    Mathf.Max(1, Mathf.Abs(node.x - center.x)), 2), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(node.x, Mathf.Min(center.y, node.y),
-                    2, Mathf.Max(1, Mathf.Abs(node.y - center.y))), Texture2D.whiteTexture);
-                GUI.color = color;
-                GUI.Box(new Rect(node.x - 62, node.y - 22, 124, 44), _copy.Name(links[i].Other.Id), _nodeStyle);
+                GUI.DrawTexture(new Rect(Mathf.Min(center.x, node.x), center.y, Mathf.Max(1, Mathf.Abs(node.x - center.x)), 2), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(node.x, Mathf.Min(center.y, node.y), 2, Mathf.Max(1, Mathf.Abs(node.y - center.y))), Texture2D.whiteTexture);
+                GUI.Box(new Rect(node.x - 62, node.y - 22, 124, 44), Title(_knownRelations[i]), _nodeStyle);
             }
-            GUI.Box(new Rect(center.x - 62, center.y - 22, 124, 44), _copy.Name(creature.Id), _nodeStyle);
+            GUI.Box(new Rect(center.x - 62, center.y - 22, 124, 44), Title(_selected), _nodeStyle);
+        }
+
+        private void Link(AdventurePanel ui, CodexKind kind, string id)
+        {
+            JObject entry = _catalog.Find(kind, id);
+            if (entry == null || Level(entry) == CodexLevel.Unknown) return;
+            if (ui.Button(Title(entry))) { _selected = entry; GUIUtility.ExitGUI(); }
+        }
+
+        private void DrawPortrait(JObject entry)
+        {
+            if (_portraits == null) return;
+            Texture2D portrait = null;
+            if ((string)entry["kind"] == "character") portrait = _portraits.FindCharacter((string)entry["game_id"]);
+            else if ((string)entry["kind"] == "creature" && Enum.TryParse((string)entry["stage"], true, out CreatureStage stage))
+                portrait = _portraits.FindCreature((string)entry["subject_id"], stage);
+            if (portrait != null)
+                GUI.DrawTexture(GUILayoutUtility.GetRect(160, 160, GUILayout.ExpandWidth(false)), portrait, ScaleMode.ScaleToFit, true);
         }
     }
 }

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_ice_snowman_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_ice_snowman_adolescent
+  lineId: cr_ice_snowman
+  stage: 1
+  sizeClass: 0
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 69e638f35fe2f1a4fa9a42274668e8d1, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 5
+    tier: 2
+    qty: 5
+  resist: 00000000000000000f00000000000000e2ffffff230000000a000000000000000000000000000000
+  mastery:
+  - element: 5
+    value: 20
+  stats:
+    hp: 130
+    speed: 30
+    yinAtk: 90
+    yangAtk: 50
+    yinDef: 100
+    yangDef: 100
+  signatureMove: {fileID: 11400000, guid: bf77285b418db4d42a70cde27c952ab9, type: 2}
+  trait: {fileID: 11400000, guid: 95cc5be1bdd9dfd46b9a09ffe55cf438, type: 2}
+  fieldUtility: 21
+  conceptJson: "{\"name_zh\":\"\u971C\u9310\u9B54\u6676\u4F8D\",\"name_en\":null,\"stage_look\":\"*
+    \u5169\u6BB5\u5F0F\u96EA\u971C\u8EAB\u8EC0 (Snow_Base / Snow_Chest / Snow_Head)\uFF1A\u96A8\u8457\u9AD4\u5167\u5BD2\u6C23\u5BC6\u5EA6\u63D0\u5347\uFF0C\u539F\u672C\u9B06\u6563\u7684\u7C89\u96EA\u88AB\u9AD8\u58D3\u51DD\u7DF4\u70BA\u7DCA\u5BE6\u7684\u5169\u6BB5\u5F0F\u96EA\u971C\u80F8\u8179\u7D50\u69CB\uFF0C\u6297\u6253\u64CA\u80FD\u529B\u986F\u8457\u589E\u5F37\uFF0C\u982D\u9802\u5C0F\u51B0\u9310\u4EA6\u5206\u5316\u70BA\u5C0D\u7A31\u7684\u96D9\u53C9\u51B0\u89D2\u3002\\n*
+    \u7D50\u6676\u5316\u92B3\u5229\u51B0\u9310\u624B\u81C2 (L_IceArm_01..02 / R_IceArm_01..02)\uFF1A\u5169\u5074\u6D6E\u7A7A\u96EA\u584A\u5728\u5BD2\u6D41\u53CD\u8986\u6DEC\u934A\u4E0B\u5FB9\u5E95\u7D50\u6676\u5316\uFF0C\u5EF6\u4F38\u70BA\u5169\u67C4\u9AD8\u900F\u5C04\u7387\uFF08Transmission
+    0.85, IOR 1.309\uFF09\u7684\u92B3\u5229\u516D\u7A1C\u51B0\u9310\uFF0C\u4E0D\u50C5\u80FD\u9032\u884C\u9AD8\u901F\u7A7F\u523A\uFF0C\u4EA6\u80FD\u5728\u8EAB\u524D\u4EA4\u932F\u683C\u64CB\u3002\\n*
+    \u80F8\u524D\u83F1\u5F62\u51B0\u85CD\u9B54\u6676 (Socket_Front / Frost_Glow)\uFF1A\u80F8\u8154\u6B63\u524D\u65B9\u7A81\u7834\u96EA\u5C64\uFF0C\u9472\u5D4C\u8457\u4E00\u679A\u5916\u9732\u7684\u516B\u9762\u9AD4\u83F1\u5F62\u51B0\u85CD\u9B54\u6676\uFF08Emission
+    Strength 5.0\uFF09\uFF0C\u80FD\u4E3B\u52D5\u5F9E\u5927\u6C23\u4E2D\u6C72\u53D6\u6C34\u6C7D\u4FEE\u88DC\u53D7\u640D\u7684\u96EA\u8EC0\uFF0C\u4E26\u4F5C\u70BA\u9060\u7A0B\u96F6\u5EA6\u51B0\u67F1\u7684\u767C\u5C04\u805A\u7126\u5668\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_ice_snowman/cr_ice_snowman_adolescent_05_wiki.md\",\"sha256\":\"d482666fcb82473d7ebe096282fd0b09848bb61f9abd58526fe40131cb735c79\",\"drive_file_id\":\"1de9_SNjh66qKLlv25PxKpHqDx_8SL_cP\"},\"status\":\"review_required\",\"gameplay_archetype\":\"ice_rime_strider\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

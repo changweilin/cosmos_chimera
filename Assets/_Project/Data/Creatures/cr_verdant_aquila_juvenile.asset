@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_verdant_aquila_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_verdant_aquila_juvenile
+  lineId: cr_verdant_aquila
+  stage: 0
+  sizeClass: 4
+  aiStyle: 1
+  niches:
+  - niche: {fileID: 11400000, guid: da3346b48c2f9fc44a001b4e68340c73, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: cc23bcd8b9e99bb44aa110664d3e6390, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 6d7fa3d4d2abc494a8c57b2cce2139fa, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 1
+    tier: 1
+    qty: 3
+  resist: ecffffff140000000a00000000000000050000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 15
+  - element: 6
+    value: 5
+  stats:
+    hp: 56
+    speed: 96
+    yinAtk: 64
+    yangAtk: 88
+    yinDef: 48
+    yangDef: 48
+  signatureMove: {fileID: 11400000, guid: 2ee372000a40e73499e704b23ba8cd9e, type: 2}
+  trait: {fileID: 11400000, guid: e038bda6360067140bc9a88821836a12, type: 2}
+  fieldUtility: 28
+  conceptJson: "{\"name_zh\":\"\u5AE9\u82BD\u5C0F\u9DF9\",\"name_en\":null,\"stage_look\":\"\u525B\u5F9E\u53E4\u6728\u86CB\u7834\u6BBC\u800C\u51FA\u7684\u5E7C\u96DB\uFF08\u5C0D\u61C9\u52D5\u4F5C
+    hatch\uFF0CGolden eagle - Wikipedia\uFF09\u3002\u5168\u8EAB\u62AB\u8457\u6625\u5929\u521D\u7DBB\u5C71\u6BDB\u6AF8\u5AE9\u8449\u822C\u7684\u9BAE\u4EAE\u9EC3\u7DA0\u80CC\u7FBD\uFF08#5CA333\uFF09\u8207\u5C71\u6BDB\u6AF8\u5805\u679C\u822C\u7684\u6696\u5976\u767D\u8179\u7FBD\uFF0C\u4E26\u5E36\u6709\u67D4\u6F64\u7684\u96DB\u9CE5\u7FBD\u8863\u5149\u6FA4\u3002\u5176\u96D9\u7FFC\u4F9D\u9CE5\u985E\u8155\u90E8\u5C3A\u5074\u6298\u758A\u69CB\u9020\uFF08PMC2880093\uFF09\u5448
+    Z \u5B57\u5F62\u5B8C\u6574\u6536\u5408\u65BC\u5713\u6EFE\u6EFE\u7684\u9AD4\u58C1\u5916\u5074\uFF0C\u8986\u7FBD\u3001\u6B21\u7D1A\u98DB\u7FBD\u8207\u521D\u7D1A\u98DB\u7FBD\u7686\u70BA\u5177\u6709\u5E73\u884C\u5074\u8108\u8207\u6CE2\u72C0\u92F8\u9F52\u7DE3\u7684\u5C71\u6BDB\u6AF8\u5AE9\u8449\u5F62\u614B\uFF0C\u5C3A\u5BF8\u98FD\u6EFF\u4E14\u5C64\u6B21\u5206\u660E\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_verdant_aquila/cr_verdant_aquila_juvenile_05_wiki.md\",\"sha256\":\"e97d4cd87cb12ce351f0a467c96b54d643135b76b9b02d27e1cb2d52f1b6ea47\",\"drive_file_id\":\"1Sj_roFW5nlIGtjXERaweeDySL5DXH2Zn\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wood_fern_chick\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

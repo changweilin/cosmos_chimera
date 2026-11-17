@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_aqua_slime_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_aqua_slime_overload
+  lineId: cr_aqua_slime
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 7f101df01550ba040bc6d0c3aa6889e8, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0000000000000000320000000f000000000000000a00000000000000d8ffffff0000000000000000
+  mastery:
+  - element: 2
+    value: 30
+  stats:
+    hp: 180
+    speed: 72
+    yinAtk: 108
+    yangAtk: 72
+    yinDef: 144
+    yangDef: 144
+  signatureMove: {fileID: 11400000, guid: 775ff3932b52f914f90c9ab7da41967c, type: 2}
+  trait: {fileID: 11400000, guid: 2956a23b16544624995bcc2e6b60a7f0, type: 2}
+  fieldUtility: 12
+  conceptJson: "{\"name_zh\":\"\u66B4\u96E8\u6E26\u65CB\u6C34\u795E\u5C07\",\"name_en\":null,\"stage_look\":\"*
+    \u66B4\u96E8\u6C34\u9F8D\u6372\u6838\u5FC3\uFF1A\u4E3B\u9AD4\u7684\u6EAB\u548C\u6C34\u6BCD\u5916\u5F62\u5FB9\u5E95\u89E3\u96E2\u6495\u88C2\uFF0C\u5316\u70BA\u4E00\u9053\u5287\u70C8\u81EA\u8F49\u3001\u4E0A\u4E0B\u8CAB\u901A\u7684\u300C\u5FAE\u578B\u66B4\u98A8\u6C34\u9F8D\u6372\u6F0F\u6597\u300D\u3002\u5E95\u7AEF\u9AD8\u901F\u62BD\u5438\u5730\u8108\u6C34\u5206\uFF0C\u9802\u7AEF\u81A8\u8139\u64F4\u6563\u51FA\u6DF1\u85CD\u66B4\u96E8\u96F2\u9727\u3002\\n  
+    * \u9AD8\u58D3\u6C34\u5200\u5149\u74B0\uFF1A\u5916\u570D\u51DD\u81A0\u5728\u8D85\u97F3\u901F\u81EA\u8F49\u5F15\u5C0E\u4E0B\uFF0C\u88AB\u6495\u88C2\u5851\u5F62\u70BA\u96D9\u5C64\u4EA4\u53C9\u9006\u5411\u65CB\u8F49\u7684\u300C\u9AD8\u58D3\u6C34\u5200\u61F8\u6D6E\u74B0\u300D\u3002\u5149\u74B0\u5916\u7DE3\u5E36\u6709\u516B\u679A\u4E0D\u5C0D\u7A31\u92B3\u5229\u6D41\u9AD4\u5200\u8292\uFF0C\u5176\u908A\u7DE3\u9AD8\u5149\u6CDB\u767D\u5982\u523A\u76EE\u6975\u5149\uFF0C\u80FD\u8F15\u6613\u5207\u958B\u5408\u91D1\u539A\u7532\u3002\\n  
+    * \u767D\u71BE\u7B49\u96E2\u5B50\u6C34\u6838\uFF1A\u9AD4\u5167\u6C34\u6838\u56E0\u6975\u9650\u80FD\u91CF\u6FC0\u76EA\uFF0C\u7531\u6DF1\u85CD\u8272\u8E8D\u9077\u70BA\u8000\u773C\u7684\u767D\u71BE\u9752\u767D\u8272\uFF0C\u5149\u8292\u66B4\u6F32\u5341\u500D\uFF0C\u5167\u90E8\u7B49\u96E2\u5B50\u96FB\u6F3F\u6FC0\u70C8\u9707\u76EA\uFF0C\u96A8\u6642\u5F15\u767C\u6C34\u9CF4\u562F\u53EB\u3002\\n  
+    * \u885B\u661F\u91CD\u529B\u661F\u74B0\uFF1A\u539F\u672C\u7684\u4E09\u9846\u5C0F\u6C34\u7403\u88AB\u62C9\u4F38\u70BA\u74B0\u7E5E\u98A8\u66B4\u8ECC\u9053\u7684\u6D41\u7DDA\u5F62\u9AD8\u6EAB\u6C34\u7BAD\uFF0C\u5728\u9F8D\u6372\u98A8\u66B4\u5468\u570D\u9032\u884C\u8D85\u9AD8\u901F\u8D85\u91CD\u529B\u516C\u8F49\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_aqua_slime/cr_aqua_slime_overload_05_wiki.md\",\"sha256\":\"26440a0162f6731bf1b7be278b375ceb33d837cab55df4f9965959063ae623df\",\"drive_file_id\":\"10b1FKQPmw_1L0R03nwA99sHScBjga2hK\"},\"status\":\"review_required\",\"gameplay_archetype\":\"water_catamaran_serpent\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

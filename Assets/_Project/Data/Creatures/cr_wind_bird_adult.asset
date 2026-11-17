@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_wind_bird_adult
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_wind_bird_adult
+  lineId: cr_wind_bird
+  stage: 2
+  sizeClass: 1
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 11400000, guid: 4488641f203fc75439427506dc292a2a, type: 2}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 000000000f000000000000000000000000000000d8ffffff32000000f6ffffff0000000000000000
+  mastery:
+  - element: 6
+    value: 25
+  stats:
+    hp: 72
+    speed: 168
+    yinAtk: 132
+    yangAtk: 96
+    yinDef: 60
+    yangDef: 72
+  signatureMove: {fileID: 11400000, guid: 1bdaa9705abec1d46bcc49cfa35669b0, type: 2}
+  trait: {fileID: 11400000, guid: 52407eb3c5ea1a4418d5c6b13188d842, type: 2}
+  fieldUtility: 8
+  conceptJson: "{\"name_zh\":\"\u5D50\u5929\u4E09\u5C3E\u7FD4\u98A8\u9CE5\",\"name_en\":null,\"stage_look\":\"*
+    \u7FF1\u7FD4\u5D50\u5929\u7684\u5BEC\u7FFC\u731B\u79BD\u8EAB\u59FF (Body_Cloud
+    / L_Wing_01..03 / R_Wing_01..03)\uFF1A\u9032\u5165\u6210\u5E74\u671F\u5F8C\uFF0C\u7FFC\u5C55\u5927\u5E45\u64F4\u5F35\u81F3\u8FD1
+    3 \u7C73\uFF0C\u5BEC\u5EE3\u7684\u96D9\u7FFC\u7531\u9AD8\u5BC6\u5EA6\u58D3\u7E2E\u6C23\u6D41\u8207
+    12 \u679A\u4FEE\u9577\u92D2\u5229\u7684\u9752\u7DA0\u98A8\u5203\u98DB\u7FBD\u69CB\u6210\uFF0C\u80F8\u5074\u4EA6\u5206\u5316\u51FA\u5169\u679A\u7A69\u5B9A\u504F\u822A\u7684\u9752\u98A8\u5C0E\u6D41\u526F\u5203\uFF0C\u795E\u614B\u92B3\u5229\u800C\u654F\u6377\u3002\\n*
+    \u96D9\u8033\u9752\u98A8\u51A0\u7FBD\u7DDE\u5E36 (Head_Crest / Gale_Blade)\uFF1A\u982D\u90E8\u5169\u5074\u8033\u7FBD\u5FB9\u5E95\u5347\u83EF\u70BA\u5169\u675F\u9577\u9054
+    1.1 \u7C73\u7684\u300C\u96D9\u8033\u9752\u98A8\u51A0\u7FBD\u7DDE\u5E36\u300D\uFF0C\u81EA\u592A\u967D\u7A74\u5169\u5074\u5411\u659C\u4E0A\u65B9\u8207\u8EAB\u5F8C\u701F\u7051\u5EF6\u5C55\uFF0C\u914D\u5408\u984D\u9802\u4E2D\u592E\u7684\u92B3\u5229\u98A8\u51A0\u523A\uFF0C\u52FE\u52D2\u51FA\u5D50\u5929\u9738\u4E3B\u7684\u5A01\u56B4\u8F2A\u5ED3\uFF0C\u540C\u6642\u5B8C\u5168\u907F\u958B\u81C9\u90E8\u6B63\u9762\u8996\u7DDA\u3002\\n*
+    \u4E09\u675F\u65CB\u8F49\u98A8\u5E36\u4EA4\u7E54\u9577\u5C3E (Tail_Whirl_01..03
+    / Gale_Blade / Eye_Core)\uFF1A\u9577\u5C3E\u7531\u5169\u675F\u9BAE\u660E\u9752\u7DA0\u98A8\u5203\u5E36\u8207\u4E00\u675F\u851A\u85CD\u9AD8\u900F\u660E\u6E26\u6D41\u5E36\u5171\u300C\u4E09\u675F\u65CB\u8F49\u98A8\u5E36\u300D\u4EE5
+    120 \u5EA6\u76F8\u4F4D\u5DEE\u87BA\u65CB\u4EA4\u7E54\u800C\u6210\uFF0C\u5728\u7A7A\u4E2D\u6D6E\u7A7A\u64B2\u7FFC\u6642\u80FD\u512A\u96C5\u5283\u51FA
+    8 \u5B57\u5F62\uFF08Lissajous Figure-8\uFF09\u6C23\u6D41\u8ECC\u8DE1\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_wind_bird/cr_wind_bird_adult_05_wiki.md\",\"sha256\":\"25101f90ccbd71ae79efe5445a95ebf7c5cb97ec045d739a20221651904db373\",\"drive_file_id\":\"1AbIXJjH600SutHFW18tIpEu5KKFfbf5L\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wind_monsoon_galeon\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -37,6 +37,10 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _ui[kv.Key] = Localized(kv.Value, lang);
             }
+            var encyclopedia = UnityEngine.Resources.Load<EncyclopediaTable>("Encyclopedia/Table");
+            if (encyclopedia != null)
+                foreach (KeyValuePair<string, JToken> kv in JObject.Parse(encyclopedia.UiJson))
+                    _ui.Add(kv.Key, Localized(kv.Value, lang));
             UnityEngine.TextAsset craftingCopy = UnityEngine.Resources.Load<UnityEngine.TextAsset>("Crafting/copy");
             if (craftingCopy == null) throw new System.IO.InvalidDataException("Missing staged crafting copy");
             foreach (KeyValuePair<string, JToken> kv in JObject.Parse(craftingCopy.text))

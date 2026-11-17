@@ -183,6 +183,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.AddMaterials(outcome.Materials);
+            candidate.Codex.Merge(outcome.Codex);
             // The run already spent from its departure copy: adding its final stock would duplicate old items.
             if (outcome.CraftStock != null && !candidate.CraftStock.TryExchange(candidate.CraftStock.Snapshot(), outcome.CraftStock))
             {

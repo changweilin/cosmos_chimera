@@ -1,0 +1,7 @@
+{
+  "name": "Cosmimera.Codex.Api",
+  "rootNamespace": "Cosmimera.Codex",
+  "references": ["Cosmimera.Core"],
+  "autoReferenced": false,
+  "noEngineReferences": true
+}

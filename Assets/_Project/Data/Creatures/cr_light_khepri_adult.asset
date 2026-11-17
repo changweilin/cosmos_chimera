@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_light_khepri_adult
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_light_khepri_adult
+  lineId: cr_light_khepri
+  stage: 2
+  sizeClass: 1
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 11400000, guid: dac90745ec074cb4a8cdb2b7841d510a, type: 2}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0000000000000000f1ffffff19000000000000000a000000050000000000000032000000d8ffffff
+  mastery:
+  - element: 8
+    value: 25
+  stats:
+    hp: 132
+    speed: 48
+    yinAtk: 120
+    yangAtk: 72
+    yinDef: 120
+    yangDef: 108
+  signatureMove: {fileID: 11400000, guid: c6d544f7dc2508546926ecdec714f7b6, type: 2}
+  trait: {fileID: 11400000, guid: 17db6c338dfe7fb4ea1a4430f1175f2b, type: 2}
+  fieldUtility: 10
+  conceptJson: "{\"name_zh\":\"\u51F1\u5E03\u5229\u795E\u5149\u5DE8\u7532\u87F2\",\"name_en\":null,\"stage_look\":\"*
+    \u5962\u83EF\u9EC3\u91D1\u8207\u6DF1\u85CD\u9752\u91D1\u77F3\u689D\u7D0B\u76F8\u9593\u80CC\u7532
+    (L/R_Elytron)\uFF1A\u6210\u5E74\u671F\u5316\u8EAB\u70BA\u5A01\u56B4\u96C4\u5049\u7684\u5DE8\u578B\u795E\u8056\u7532\u87F2\u3002\u5BEC\u95CA\u7684\u62F1\u5F62\u9798\u7FC5\u4E0A\uFF0C\u4E09\u9053\u539A\u91CD\u7684\u6CD5\u8001\u7D14\u91D1\u6D6E\u96D5\u808B\u689D\u8207\u6DF1\u85CD\u9752\u91D1\u77F3\u57FA\u5E95\u69CB\u6210\u5962\u83EF\u596A\u76EE\u7684\u300C\u91D1\u85CD\u76F8\u9593\u689D\u7D0B\u300D\uFF0C\u5167\u5C64\u91D1\u8584\u7FC5\u66F4\u9472\u5D4C\u4E86\u8D64\u91D1\u7B49\u96E2\u5B50\u5149\u7FBD\uFF0C\u5C55\u958B\u6642\u83EF\u9E97\u975E\u51E1\u3002\\n*
+    \u6CD5\u8001\u982D\u5DFE (Nemes) \u8B77\u7532\u8207\u5716\u5766\u5361\u9580\u5C55\u7FC5\u8056\u7532\u87F2\u80F8\u98FE
+    (Thorax_Main)\uFF1A\u524D\u80F8\u5169\u5074\u5411\u5916\u5EF6\u5C55\u51FA\u53E4\u57C3\u53CA\u6CD5\u8001\u5FA1\u7528\u7684\u300C\u5C3C\u7F8E\u65AF\u982D\u5DFE\uFF08Nemes
+    Headdress\uFF09\u300D\u91D1\u85CD\u689D\u7D0B\u5074\u7FFC\u80A9\u7532\uFF1B\u6B63\u524D\u65B9\u80F8\u819B\uFF08Socket_Core_FX\uFF09\u5247\u5B8C\u6574\u9472\u5D4C\u4E00\u5177\u81F4\u656C\u5716\u5766\u5361\u9580\u738B\u5BA4\u79D8\u5BF6\u7684\u300C\u5C55\u7FC5\u8056\u7532\u87F2\u9EC3\u91D1\u80F8\u98FE\uFF08Winged
+    Scarab Pectoral\uFF09\u300D\uFF08Winged Scarab Pectoral of Tutankhamun - Egypt
+    Museum\uFF09\uFF0C\u4E2D\u592E\u6258\u8209\u8457\u71BE\u71B1\u767C\u5149\u7684\u592A\u967D\u5BF6\u77F3\u3002\\n*
+    \u738B\u51A0\u62F1\u885B\u718A\u718A\u71C3\u71D2\u7684\u963F\u9813\u65E5\u8F2A
+    (Head_Pharaoh & Sun_Disc_Spin)\uFF1A\u982D\u90E8\u914D\u6234\u9752\u91D1\u77F3\u738B\u51A0\u8207\u9EC3\u91D1\u8056\u86C7\uFF08Uraeus\uFF09\u984D\u98FE\uFF0C\u5169\u5074\u63DA\u8D77\u4FEE\u9577\u5A01\u56B4\u7684\u9ED1\u66DC\u77F3\u62B1\u65E5\u96D9\u89D2\uFF1B\u96D9\u89D2\u4E0A\u65B9\u62F1\u885B\u8457\u4E00\u8F2A\u5916\u74B0\u9752\u91D1\u77F3\u5708\u8207
+    12 \u9053\u65E5\u73E5\u70C8\u7130\u5C16\u523A\u3001\u96A8\u51F1\u5E03\u5229\u610F\u5FD7\u6D6E\u7A7A\u81EA\u8F49\u7684\u300C\u963F\u9813\u65E5\u8F2A\uFF08Aten's
+    Disc\uFF09\u300D\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_light_khepri/cr_light_khepri_adult_05_wiki.md\",\"sha256\":\"7774b0f6d018a7bee84815b4f1defbea0c396b4b0bdd405d59eac59657381809\",\"drive_file_id\":\"1i4xEmbeAZN2ycZDox2NAs6DexnjDUOXr\"},\"status\":\"review_required\",\"gameplay_archetype\":\"sun_array_skyheron\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

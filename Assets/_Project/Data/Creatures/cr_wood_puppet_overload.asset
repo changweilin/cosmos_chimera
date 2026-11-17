@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_wood_puppet_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_wood_puppet_overload
+  lineId: cr_wood_puppet
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: cc23bcd8b9e99bb44aa110664d3e6390, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 874d11c0092756d438b15f4af69cc211, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 710a5666209faee488ffdb8085a9b05a, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: d8ffffff320000000f000000000000000a0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 30
+  stats:
+    hp: 180
+    speed: 36
+    yinAtk: 72
+    yangAtk: 144
+    yinDef: 108
+    yangDef: 180
+  signatureMove: {fileID: 11400000, guid: 182a30010992e04489db8699fa0ad6e7, type: 2}
+  trait: {fileID: 11400000, guid: e038bda6360067140bc9a88821836a12, type: 2}
+  fieldUtility: 22
+  conceptJson: "{\"name_zh\":\"\u5343\u6A5F\u9748\u6728\u795E\u5C07\",\"name_en\":null,\"stage_look\":\"*
+    \u61F8\u6D6E\u525B\u9AD4\u69AB\u536F\u89E3\u9396 (Torso_Log / L_Shoulder / R_Shoulder)\uFF1A\u7576\u9AD4\u5167\u5E74\u8F2A\u6838\u5FC3\u9032\u5165\u8D85\u8F09\u5171\u9CF4\uFF0C\u5168\u8EAB\u6240\u6709\u50B3\u7D71\u7269\u7406\u6728\u8CEA\u5361\u69AB\u77AC\u9593\u89E3\u9396\u5206\u96E2\uFF01\u80F8\u7532\u3001\u80A9\u93A7\u3001\u8098\u8155\u8207\u819D\u7532\u5316\u70BA\u6578\u5341\u584A\u5F7C\u6B64\u7368\u7ACB\u537B\u7531\u9AD8\u7DAD\u6728\u9748\u78C1\u5834\u7CBE\u5BC6\u727D\u5F15\u7684\u300C\u61F8\u6D6E\u539F\u6728\u525B\u9AD4\u7D50\u69CB\u300D\u3002\\n*
+    \u6728\u7D0B\u7E2B\u9699\u9748\u5149\u66B4\u767C (Chakra_Glow)\uFF1A\u89E3\u9396\u6490\u958B\u7684\u80F8\u8154\u8207\u95DC\u7BC0\u7E2B\u9699\u4E2D\uFF0C\u66B4\u767C\u51FA\u523A\u76EE\u7480\u74A8\u7684\u7FE1\u7FE0\u8272\u751F\u547D\u795E\u5149\uFF0C\u982D\u90E8\u4E0A\u65B9\u51DD\u805A\u51FA\u4E09\u53C9\u795E\u6728\u9748\u5149\u51A0\u5195
+    (Socket_Head)\uFF0C\u6BCF\u4E00\u6B21\u547C\u5438\u90FD\u4F34\u96A8\u8457\u53E4\u8001\u68EE\u6797\u7684\u5B8F\u5927\u5171\u9CF4\u3002\\n*
+    \u5DE8\u578B\u5341\u4E8C\u6A1E\u6A5F\u767C\u5149\u6728\u8F2A (Branch_01..02)\uFF1A\u80CC\u5F8C\u7684\u5171\u751F\u76C6\u666F\u53E4\u6728\u5FB9\u5E95\u5C55\u958B\u5347\u83EF\uFF0C\u5316\u70BA\u4E00\u5EA7\u61F8\u6D6E\u65BC\u795E\u5C07\u80CC\u5F8C\u7684\u300C\u5DE8\u578B\u5341\u4E8C\u6A1E\u6A5F\u767C\u5149\u6728\u8F2A\u300D\u3002\u6728\u8F2A\u7531\u5341\u4E8C\u679A\u523B\u6EFF\u5E74\u8F2A\u7B26\u6587\u7684\u53E4\u6728\u6A1E\u6A5F\u9663\u5217\u8207\u7FE1\u7FE0\u5149\u5203\u69CB\u6210\uFF0C\u96A8\u795E\u5C07\u610F\u5FF5\u9AD8\u901F\u81EA\u8F49\uFF0C\u5C55\u73FE\u5A01\u9707\u6230\u5834\u7684\u5929\u5C07\u795E\u59FF\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_wood_puppet/cr_wood_puppet_overload_05_wiki.md\",\"sha256\":\"b133646cab34ace2807e4b71d0f54a4135963af0af0f7d6aa6094bba2f78e82f\",\"drive_file_id\":\"1QY9t0WFU_0Bo_6AkhZh3QC2KPtg94LlJ\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wood_canopy_regent\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

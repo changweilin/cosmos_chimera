@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Cosmimera.Creatures;
+using Cosmimera.Codex;
 using Cosmimera.GameData;
 using UnityEngine;
 
@@ -11,12 +12,33 @@ namespace Cosmimera.Bootstrap.Demo
         private CodexPanel _codex;
         private int _partnerMain;
 
+        /// <summary>Persists the first successful conversation with a named encyclopedia character.</summary>
+        /// <remarks>Pre: characterId is a mapped character; game initialized. Post: basic knowledge survives restart. Side effects: transactional save I/O; throws on write failure.</remarks>
+        public void RecordCharacterDialogue(string characterId) => RecordCharacterKnowledge(characterId, CodexEvent.Dialogue);
+
+        /// <summary>Persists completion of a named character's quest.</summary>
+        /// <remarks>Pre: characterId mapped; quest successfully completed. Post: full knowledge survives restart. Side effects: transactional save I/O; throws on write failure.</remarks>
+        public void RecordCharacterQuest(string characterId) => RecordCharacterKnowledge(characterId, CodexEvent.CharacterQuest);
+
+        private void RecordCharacterKnowledge(string characterId, CodexEvent trigger)
+        {
+            Core.Contracts.Contract.Requires(!string.IsNullOrEmpty(characterId) &&
+                new EncyclopediaCatalog().Find(CodexKind.Character, characterId) != null, "character must exist in the encyclopedia");
+            var candidate = _save.Clone();
+            if (!candidate.Codex.Record(trigger, characterId)) return;
+            candidate.Write(_savePath);
+            _save = candidate;
+        }
+
         private void OpenJournal() => OpenJournalAt(AdventurePanel.Page.Partners);
 
         private void OpenJournalAt(AdventurePanel.Page initialPage)
         {
+            foreach (OwnedCreature creature in _save.Owned)
+                if (_database.TryGet(creature.SpeciesId, out CreatureDef definition))
+                    EncyclopediaCatalog.RecordOwned(_save.Codex, definition);
             _journal = new AdventurePanel(_copy, initialPage);
-            _codex = new CodexPanel(_database, _copy, IsOwnedSpecies, _portraits);
+            _codex = new CodexPanel(_database, _copy, IsOwnedSpecies, _portraits, _save.Codex);
             _partnerMain = _save.Party[0];
             _confirmPending = false;
         }

@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_aqua_slime_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_aqua_slime_juvenile
+  lineId: cr_aqua_slime
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 15ae3551e17c51b4e8ccac0140008d91, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: ef7eeb9258091344fa4e98200f1821aa, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 19d1f7f7401ecbf48909e2f8433fd31a, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 2
+    tier: 1
+    qty: 3
+  resist: 0000000000000000140000000a000000000000000500000000000000ecffffff0000000000000000
+  mastery:
+  - element: 2
+    value: 15
+  stats:
+    hp: 100
+    speed: 40
+    yinAtk: 60
+    yangAtk: 40
+    yinDef: 80
+    yangDef: 80
+  signatureMove: {fileID: 11400000, guid: b3140c4b54adc17459191ff192857709, type: 2}
+  trait: {fileID: 11400000, guid: 2956a23b16544624995bcc2e6b60a7f0, type: 2}
+  fieldUtility: 27
+  conceptJson: "{\"name_zh\":\"\u5FAE\u9732\u51DD\u81A0\u6C34\u6EF4\",\"name_en\":null,\"stage_look\":\"*
+    \u4E3B\u9AD4\u69CB\u9020\uFF1A\u4E3B\u9AD4\u70BA\u4E00\u9846\u6E3E\u5713\u98FD\u6EFF\u3001\u8FD1\u4E4E\u5B8C\u7F8E\u7403\u9AD4\u7684\u534A\u900F\u660E\u6676\u85CD\u6C34\u6EF4\u3002\u901A\u9AD4\u6563\u767C\u8457\u679C\u51CD\u822C\u6676\u7469\u5254\u900F\u7684\u67D4\u548C\u5FAE\u5149\uFF0C\u8868\u9762\u5F35\u529B\u98FD\u6EFF\uFF0C\u843D\u5730\u6642\u5E36\u6709\u6975\u9AD8\u5F48\u6027\u7684\u8EDF\u5AE9\u9707\u986B\u3002\\n  
+    * \u982D\u90E8\u6C34\u82BD\uFF1A\u9802\u7AEF\u751F\u9577\u8457\u4E00\u5C0D\u7E96\u7D30\u7531\u51DD\u81A0\u69CB\u6210\u7684\u300C\u5FAE\u9732\u6C34\u82BD\u300D\uFF0C\u6C34\u82BD\u9802\u7AEF\u5E38\u5E74\u51DD\u805A\u8457\u4E00\u9846\u6676\u4EAE\u7684\u5C0F\u9732\u73E0\uFF0C\u6703\u96A8\u8457\u5E7C\u9AD4\u7684\u5FC3\u60C5\u8207\u8DF3\u52D5\u800C\u5411\u5F8C\u4FCF\u76AE\u64FA\u52D5\u3002\\n  
+    * \u6C34\u7738\u8207\u80DA\u6838\uFF1A\u4E3B\u9AD4\u5167\u90E8\u4E2D\u592E\u6D6E\u73FE\u4E00\u679A\u5C1A\u672A\u5B8C\u5168\u51DD\u7D50\u7684\u80DA\u80CE\u7D1A\u5149\u6838\uFF08Water_Core\uFF09\uFF0C\u6CDB\u8457\u5FAE\u5F31\u5982\u6708\u5149\u822C\u7684\u6C34\u85CD\u7192\u5149\uFF1B\u524D\u5074\u751F\u6709\u4E00\u5C0D\u7D14\u771F\u7121\u90AA\u7684\u5713\u9EDE\u72C0\u6C34\u4EAE\u773C\u7738\uFF0C\u597D\u5947\u5730\u6253\u91CF\u8457\u5468\u906D\u4E16\u754C\u3002\\n  
+    * \u5E95\u76E4\u88D9\u908A\uFF1A\u7DCA\u8CBC\u5730\u8868\u8655\u74B0\u7E5E\u8457\u4E00\u5C64\u8584\u5982\u87EC\u7FFC\u7684\u83F2\u6D85\u723E\uFF08Fresnel\uFF09\u9AD8\u5149\u6CE1\u6CAB\u5916\u819C\uFF08Gel_Rim\uFF09\uFF0C\u6ED1\u884C\u6642\u5728\u5730\u9762\u7559\u4E0B\u8FC5\u901F\u84B8\u767C\u7684\u5FAE\u578B\u9732\u6C34\u8ECC\u8DE1\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_aqua_slime/cr_aqua_slime_juvenile_05_wiki.md\",\"sha256\":\"9df91a854109384253a63b4d2b56f477688059c6e610a7f63bbbe0634386b626\",\"drive_file_id\":\"1lk3QBffpmUE8qiYqUqKUMlPTUjKHtkqF\"},\"status\":\"review_required\",\"gameplay_archetype\":\"water_wave_elver\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cosmimera.Combat;
+using Cosmimera.Codex;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
@@ -17,6 +18,7 @@ namespace Cosmimera.Bootstrap.Demo
     {
         private AdventurePanel _journal;
         private CodexPanel _codex;
+        private readonly HashSet<int> _codexEncountered = new HashSet<int>();
         private InputAction _journalAction;
         private InputAction _codexAction;
         private InputActionMap _globalInput;
@@ -105,6 +107,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ConfigureJournal()
         {
+            if (_setup.Codex != null) _outcome.Codex.Merge(_setup.Codex);
+            foreach (CreatureDef creature in _setup.Party) EncyclopediaCatalog.RecordOwned(_outcome.Codex, creature);
+            if (_setup.Database != null && _setup.Owned != null)
+                foreach (OwnedCreature creature in _setup.Owned)
+                    if (_setup.Database.TryGet(creature.SpeciesId, out CreatureDef definition))
+                        EncyclopediaCatalog.RecordOwned(_outcome.Codex, definition);
             _globalInput = _actions.FindActionMap("DemoGlobal", true).Clone();
             _journalAction = _globalInput.FindAction("Journal", true);
             _codexAction = _globalInput.FindAction("Codex", true);
@@ -139,7 +147,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (utility != FieldUtility.Mount && utility != FieldUtility.Fly && utility != FieldUtility.Levitate &&
                     utility != FieldUtility.PartyStealth) _enabledUtilities.Add(utility);
             ApplyUtilities();
-            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits);
+            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits, _outcome.Codex);
         }
 
         private bool OwnsSpecies(string species)

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_light_khepri_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_light_khepri_overload
+  lineId: cr_light_khepri
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: e16671402dfb9fa41890227a9ca15e6e, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0000000000000000f1ffffff19000000000000000a000000050000000000000032000000d8ffffff
+  mastery:
+  - element: 8
+    value: 30
+  stats:
+    hp: 160
+    speed: 57
+    yinAtk: 144
+    yangAtk: 86
+    yinDef: 144
+    yangDef: 129
+  signatureMove: {fileID: 11400000, guid: c6d544f7dc2508546926ecdec714f7b6, type: 2}
+  trait: {fileID: 11400000, guid: 17db6c338dfe7fb4ea1a4430f1175f2b, type: 2}
+  fieldUtility: 10
+  conceptJson: "{\"name_zh\":\"\u5929\u7A79\u62C9\u795E\u81F3\u9AD8\u795E\u6BBF\u614B\",\"name_en\":null,\"stage_look\":\"*
+    \u534A\u61F8\u6D6E\u9EC3\u91D1\u5716\u9A30\u795E\u50CF\u8207\u96D9\u5EA7\u61F8\u6D6E\u65B9\u5C16\u7891\u5149\u5203
+    (Thorax_Main)\uFF1A\u7576\u5149\u5C6C\u6027\u661F\u754C\u80FD\u91CF\u7A81\u7834\u81E8\u754C\uFF0C\u8056\u7532\u87F2\u812B\u96E2\u5730\u9762\u9032\u5165\u534A\u61F8\u6D6E\u7684\u300C\u5929\u7A79\u62C9\u795E\u81F3\u9AD8\u795E\u6BBF\u614B\u300D\u3002\u8EAB\u8EC0\u5169\u5074\u900F\u904E\u9EC3\u91D1\u80FD\u91CF\u62F1\u6A4B\uFF0C\u5728\u8EAB\u5F8C\u5DE6\u53F3\u5169\u7AEF\u61F8\u6D6E\u8D77\u5169\u5EA7\u9AD8\u8073\u5165\u96F2\u7684\u300C\u65B9\u5C16\u7891\u5149\u5203\uFF08Obelisk
+    Light Blades\uFF09\u300D\u2014\u2014\u7891\u8EAB\u7531\u6CD5\u8001\u7D14\u91D1\u935B\u9020\uFF0C\u5E95\u90E8\u6536\u675F\u70BA\u9ED1\u66DC\u77F3\u5C16\u9310\uFF0C\u9802\u7AEF\u91D1\u5B57\u5854\u5C16\uFF08Pyramidion\uFF09\u5247\u7DBB\u653E\u8457\u7121\u5805\u4E0D\u6467\u7684\u7B49\u96E2\u5B50\u5149\u5203\u3002\\n*
+    \u963F\u9813\u65E5\u8F2A\u8207\u842C\u5343\u9053\u300C\u963F\u9813\u4E4B\u624B\u300D\u795E\u8056\u91D1\u5149\u675F
+    (Sun_Disc_Spin)\uFF1A\u80CC\u5F8C\u5DE8\u5927\u7684\u963F\u9813\u65E5\u8F2A\u9032\u5316\u70BA\u96D9\u5C64\u5149\u74B0\u795E\u5EA7\uFF0C\u5411\u5916\u653E\u5C04\u51FA
+    16 \u9053\u5448\u6247\u5F62\u5C55\u958B\u7684\u5E7E\u4F55\u795E\u8056\u91D1\u5149\u675F\uFF1B\u6BCF\u4E00\u9053\u5149\u675F\u672B\u7AEF\u7686\u7CBE\u6E96\u91CD\u73FE\u53E4\u57C3\u53CA\u963F\u746A\u7D0D\u6642\u671F\u795E\u8056\u5716\u9A30\u2014\u2014\u5316\u70BA\u5F35\u958B\u4E09\u6307\u3001\u6563\u767C\u67D4\u548C\u91D1\u5149\u7684\u300C\u64AB\u5E73\u624B\u638C\uFF08Hands
+    of Aten\uFF09\u300D\uFF08Aten Rays Terminating in Hands - Wikipedia\uFF09\uFF0C\u8C61\u5FB5\u62C9\u795E\u8207\u963F\u9813\u64AB\u5E73\u50B7\u75DB\u3001\u88C1\u6C7A\u5929\u5730\u842C\u7269\u7684\u81F3\u9AD8\u795E\u6B0A\u3002\\n*
+    \u5168\u5834\u8986\u84CB\u4E4B\u91D1\u5B57\u5854\u5149\u529B\u5834 (Socket_Ground_FX)\uFF1A\u4EE5\u795E\u6BBF\u614B\u8056\u7532\u87F2\u5F8C\u4E0A\u65B9\u5929\u9802\u70BA\u5236\u9AD8\u9EDE\uFF0C\u56DB\u5468\u5730\u9762\uFF08Socket_Ground_FX\uFF09\u62C9\u8D77\u56DB\u9053\u7D14\u91D1\u8207\u8D64\u91D1\u4EA4\u7E54\u7684\u7ACB\u9AD4\u300C\u91D1\u5B57\u5854\u5149\u529B\u5834\u7D50\u754C\uFF08Pyramid
+    Forcefield\uFF09\u300D\uFF0C\u5C07\u6574\u5EA7\u6230\u5834\u5316\u70BA\u795E\u8056\u4E0D\u53EF\u4FB5\u72AF\u7684\u592A\u967D\u795E\u6BBF\u9818\u57DF\uFF0C\u540C\u6642\u524D\u5074\u659C\u7A1C\u512A\u96C5\u6846\u4F4F\u8EAB\u8EC0\u5169\u5074\uFF0C\u78BA\u4FDD\u6B63\u9762\u81C9\u90E8\u8207\u80F8\u98FE
+    100% \u6E05\u6670\u7121\u906E\u64CB\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_light_khepri/cr_light_khepri_overload_05_wiki.md\",\"sha256\":\"f91d7b1fc56c60f16af5186a2599d317c964ca6b6de44f864a2c3efbf734cc9f\",\"drive_file_id\":\"18lpDbVU_QiJCDKTRZM4gx1430wpN3e-x\"},\"status\":\"review_required\",\"gameplay_archetype\":\"sun_array_skyheron\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

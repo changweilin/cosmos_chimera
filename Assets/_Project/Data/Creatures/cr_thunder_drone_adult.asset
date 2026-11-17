@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_thunder_drone_adult
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_thunder_drone_adult
+  lineId: cr_thunder_drone
+  stage: 2
+  sizeClass: 1
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 11400000, guid: da4a6e11d49562c428998087c8cce3b0, type: 2}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0a000000000000000500000000000000f1ffffff000000001e00000032000000d8ffffff00000000
+  mastery:
+  - element: 7
+    value: 25
+  stats:
+    hp: 72
+    speed: 144
+    yinAtk: 156
+    yangAtk: 72
+    yinDef: 84
+    yangDef: 72
+  signatureMove: {fileID: 11400000, guid: 3c1647dcf2fa7f14483eba91f2de84de, type: 2}
+  trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  fieldUtility: 7
+  conceptJson: "{\"name_zh\":\"\u516D\u8EF8\u7279\u65AF\u62C9\u54E8\u6212\u5854\",\"name_en\":null,\"stage_look\":\"\u91CD\u88DD\u61F8\u6D6E\u54E8\u6212\u5854\u3001\u516D\u8EF8\u6298\u758A\u6DB5\u9053\u63A8\u9032\u5668\u3001\u6A5F\u80CC\u96D9\u806F\u91CD\u578B\u8D85\u5C0E\u96FB\u5BB9\u5713\u7B52\u8207\u659C\u5C55\u592A\u967D\u80FD\u677F\u3001\u5DE6\u53F3\u524D\u4F38\u96D9\u806F\u88DD\u96FB\u6F3F\u653E\u96FB\u53C9\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_thunder_drone/cr_thunder_drone_adult_05_wiki.md\",\"sha256\":\"ff73ae3311eb774248e164a9d45bb6647c7a141112655ab571b2258065d973f1\",\"drive_file_id\":\"1ASdg2v1X_WFqA0Bm7xnewQWubFt7xa95\"},\"status\":\"review_required\",\"gameplay_archetype\":\"star_skyhoof_steed\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

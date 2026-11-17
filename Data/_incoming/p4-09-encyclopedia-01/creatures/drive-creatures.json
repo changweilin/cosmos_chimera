@@ -1,0 +1,4115 @@
+[
+  {
+    "id": "cr_aqua_slime_juvenile",
+    "line_id": "cr_aqua_slime",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_detritivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_aqua_slime_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 20,
+      "fire": 10,
+      "earth": 0,
+      "ice": 5,
+      "wind": 0,
+      "thunder": -20,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 15
+    },
+    "stats": {
+      "hp": 100,
+      "speed": 40,
+      "yin_atk": 60,
+      "yang_atk": 40,
+      "yin_def": 80,
+      "yang_def": 80
+    },
+    "signature_move": "water_wake_jet",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "fishing",
+    "concept": {
+      "name_zh": "微露凝膠水滴",
+      "name_en": null,
+      "stage_look": "* 主體構造：主體為一顆渾圓飽滿、近乎完美球體的半透明晶藍水滴。通體散發著果凍般晶瑩剔透的柔和微光，表面張力飽滿，落地時帶有極高彈性的軟嫩震顫。\n   * 頭部水芽：頂端生長著一對纖細由凝膠構成的「微露水芽」，水芽頂端常年凝聚著一顆晶亮的小露珠，會隨著幼體的心情與跳動而向後俏皮擺動。\n   * 水眸與胚核：主體內部中央浮現一枚尚未完全凝結的胚胎級光核（Water_Core），泛著微弱如月光般的水藍熒光；前側生有一對純真無邪的圓點狀水亮眼眸，好奇地打量著周遭世界。\n   * 底盤裙邊：緊貼地表處環繞著一層薄如蟬翼的菲涅爾（Fresnel）高光泡沫外膜（Gel_Rim），滑行時在地面留下迅速蒸發的微型露水軌跡。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_aqua_slime/cr_aqua_slime_juvenile_05_wiki.md",
+        "sha256": "9df91a854109384253a63b4d2b56f477688059c6e610a7f63bbbe0634386b626",
+        "drive_file_id": "1lk3QBffpmUE8qiYqUqKUMlPTUjKHtkqF"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "water_wave_elver",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_aqua_slime_adolescent",
+    "line_id": "cr_aqua_slime",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_aqua_slime_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "water",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 35,
+      "fire": 15,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -30,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 20
+    },
+    "stats": {
+      "hp": 125,
+      "speed": 50,
+      "yin_atk": 75,
+      "yang_atk": 50,
+      "yin_def": 100,
+      "yang_def": 100
+    },
+    "signature_move": "water_spray_fan",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "immune_deep_sea",
+    "concept": {
+      "name_zh": "碧浪鰭凝膠水怪",
+      "name_en": null,
+      "stage_look": "* 主體構造：擺脫了幼年時的球狀幾何，身軀分化出流線型的仿生水獺／海天使輪廓。水體顏色加深為清澈的翠海青藍色，折射率（IOR 1.333）更加凝聚。\n   * 凝膠鰭肢：身側兩端分化出翼狀的半透明「雙側凝膠鰭肢」。鰭邊帶有細緻的高光波浪稜邊，在半空游動或地面滑行時能像滑翔翼般切開氣流。\n   * 懸浮水珠尾：主體後方衍生出一條由三顆依序縮小的水珠構成的「懸浮導流尾鏈」。這三顆水珠不直接連通，而是由看不見的流體磁場牽引，在移動時如彗星尾跡般上下波浪擺動。\n   * 躍動水核：體內水核凝結為菱形微晶結構，自發光強度提升至 4.0，伴隨著呼吸節奏進行規律明暗脈動。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_aqua_slime/cr_aqua_slime_adolescent_05_wiki.md",
+        "sha256": "01dc8829b13b14b44073e5cebf2fc92dc8fde6b032b25d364b50dab93d3d7535",
+        "drive_file_id": "1kOMJsi5kBJ65KxfWVR99Zz6bWhBFIrLb"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "water_skiff_eel",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_aqua_slime_adult",
+    "line_id": "cr_aqua_slime",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 50,
+      "fire": 15,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -40,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 25
+    },
+    "stats": {
+      "hp": 150,
+      "speed": 60,
+      "yin_atk": 90,
+      "yang_atk": 60,
+      "yin_def": 120,
+      "yang_def": 120
+    },
+    "signature_move": "water_monsoon_swell",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "dive",
+    "concept": {
+      "name_zh": "澤影水母史萊姆",
+      "name_en": null,
+      "stage_look": "* 鐘形水母主體：頂部演化為莊嚴優雅的「八瓣流體水母鐘形傘蓋」。傘蓋頂部厚重結實，內部具備高壓冷液腔室；傘緣垂落著六條細長曼妙的螺旋流體觸鬚，在半空中散發著微光懸浮飄動。\n   * 三軌公轉水球：圍繞成年體核心以 120 度等邊三角形軌跡，自主運轉著 3 顆高密度壓縮的「浮游公轉小水球 (Orbit_Orb_01..03)」。這三顆水球每顆均蘊含微型水核，可作為浮游護盾抵禦傷害，亦可作為法術增幅中繼站。\n   * 凝聚態巨型水拳：在平時呈現為兩團隱沒於主體兩側的凝膠渦流，戰鬥中可瞬間抽取周遭大氣水汽，伸展硬化為直徑達 0.8 米的重型液壓水拳，揮出裂地碎石的物理重擊。\n   * 水核星芒：體內水核升華為直徑 0.35 米的璀璨星芒光核，如深海明燈般照亮透射凝膠體，外膜泛白高光形成繁複的水流蕾絲紋理。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_aqua_slime/cr_aqua_slime_adult_05_wiki.md",
+        "sha256": "7a9797fcdfa05733c40a33d0459d538292a943087cdf6c90ee4cc3de798f1fe1",
+        "drive_file_id": "1AxsrGerR06355rCbsM7r9mulVZ7uBUwV"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "water_catamaran_serpent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_aqua_slime_overload",
+    "line_id": "cr_aqua_slime",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 50,
+      "fire": 15,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -40,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 30
+    },
+    "stats": {
+      "hp": 180,
+      "speed": 72,
+      "yin_atk": 108,
+      "yang_atk": 72,
+      "yin_def": 144,
+      "yang_def": 144
+    },
+    "signature_move": "water_monsoon_swell",
+    "trait": "trait_water_keel_momentum",
+    "field_utility": "dive",
+    "concept": {
+      "name_zh": "暴雨渦旋水神將",
+      "name_en": null,
+      "stage_look": "* 暴雨水龍捲核心：主體的溫和水母外形徹底解離撕裂，化為一道劇烈自轉、上下貫通的「微型暴風水龍捲漏斗」。底端高速抽吸地脈水分，頂端膨脹擴散出深藍暴雨雲霧。\n   * 高壓水刀光環：外圍凝膠在超音速自轉引導下，被撕裂塑形為雙層交叉逆向旋轉的「高壓水刀懸浮環」。光環外緣帶有八枚不對稱銳利流體刀芒，其邊緣高光泛白如刺目極光，能輕易切開合金厚甲。\n   * 白熾等離子水核：體內水核因極限能量激盪，由深藍色躍遷為耀眼的白熾青白色，光芒暴漲十倍，內部等離子電漿激烈震盪，隨時引發水鳴嘯叫。\n   * 衛星重力星環：原本的三顆小水球被拉伸為環繞風暴軌道的流線形高溫水箭，在龍捲風暴周圍進行超高速超重力公轉。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_aqua_slime/cr_aqua_slime_overload_05_wiki.md",
+        "sha256": "26440a0162f6731bf1b7be278b375ceb33d837cab55df4f9965959063ae623df",
+        "drive_file_id": "10b1FKQPmw_1L0R03nwA99sHScBjga2hK"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "water_catamaran_serpent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_aqua_slime_adult"
+  },
+  {
+    "id": "cr_chrono_beetle_juvenile",
+    "line_id": "cr_chrono_beetle",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_chrono_beetle_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 20,
+      "wood": 5,
+      "water": 0,
+      "fire": -20,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 15,
+      "thunder": 5
+    },
+    "stats": {
+      "hp": 72,
+      "speed": 72,
+      "yin_atk": 88,
+      "yang_atk": 48,
+      "yin_def": 60,
+      "yang_def": 60
+    },
+    "signature_move": "metal_escapement_jab",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "magnet_pickup_double",
+    "concept": {
+      "name_zh": "發條幼甲蟲",
+      "name_en": null,
+      "stage_look": "剛從青銅發條金屬蛋中破殼而出的幼體（對應專屬動作 hatch），採用頭、頸、前胸背板、腰環與腹部完全連通的單一流形外骨骼（The Animal Facts - Rhinoceros Beetle）。頭頂單支短犀角由頭楯基座平滑隆起，角身外圍環繞兩道亮青色靜電電弧（Lightning_Core）。六隻小巧青銅節肢已具備完整的「基節 → 藍鋼轉節球軸 → 昂起腿節 → 藍鋼膝球軸 → 脛節 → 藍鋼踝球軸 → 跗節與雙鉤爪」分節構造，展現真實甲蟲穩健的抓地站姿。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_chrono_beetle/cr_chrono_beetle_juvenile_05_wiki.md",
+        "sha256": "527d086417aeee7ec2db666e345e3909eb1d37f3656e8941672518435214de47",
+        "drive_file_id": "198rPhm1lrV58tHbkeiNn-B8ZMr7k3vjq"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_clock_chick",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_chrono_beetle_adolescent",
+    "line_id": "cr_chrono_beetle",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_chrono_beetle_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 35,
+      "wood": 10,
+      "water": 0,
+      "fire": -30,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 20,
+      "thunder": 10
+    },
+    "stats": {
+      "hp": 90,
+      "speed": 90,
+      "yin_atk": 110,
+      "yang_atk": 60,
+      "yin_def": 75,
+      "yang_def": 75
+    },
+    "signature_move": "metal_ratchet_sweep",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "immune_laboratory",
+    "concept": {
+      "name_zh": "雙叉游絲甲蟲",
+      "name_en": null,
+      "stage_look": "歷經第一次發條擴容與高壓淬火後，少年體的前胸背板（Thorax）隆起為飽滿的頭盔狀拱弧，並從前緣伸出微向下彎的分叉胸角，與頭頂向前上方挑起的 Y 字雙叉頭角構成標準的雙叉犀金龜鉗合輪廓（McCullough et al., 2015）。背部兩側的 D 字形拱弧鞘翅自小盾片兩側向後外方呈倒 V 字形微開（ResearchGate），下方後胸側板則水平向外伸出弧形導電膜質後翅（Wing_Inner_L/R），翅尖與角叉外圍環繞跳躍的青金色靜電絲。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_chrono_beetle/cr_chrono_beetle_adolescent_05_wiki.md",
+        "sha256": "0dcb2968659726784c8be8ba955d9ed26c49e91411bbdaa97e5a2deef6088ea4",
+        "drive_file_id": "1lS54N7m_nJ-3vJSqxbtGHJQRbgb1rADS"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_gear_strider",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_chrono_beetle_adult",
+    "line_id": "cr_chrono_beetle",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 10,
+      "water": 0,
+      "fire": -40,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 25,
+      "thunder": 15
+    },
+    "stats": {
+      "hp": 108,
+      "speed": 108,
+      "yin_atk": 132,
+      "yang_atk": 72,
+      "yin_def": 90,
+      "yang_def": 90
+    },
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "catch_rate_up",
+    "concept": {
+      "name_zh": "巨角避雷懷錶金龜",
+      "name_en": null,
+      "stage_look": "完全成熟的成年體展現真實巨型獨角仙的力學美感。頭頂延伸出超過體長三分之一的青銅三叉避雷巨角（Horn_Main -> Horn_Tip），角身由粗壯的倒三角形基座向前下方伸出，經過中段流線收束後以凌厲弧度向上揚起，並在頂端最寬環節平滑分叉為三叉戟狀冠部（PMC10229555）。兩側深拱形縱溝鞘翅順著背部輪廓向後外方呈倒 V 字形展開，中央自然露出十二刻度羅馬數字琺瑯懷錶（Enamel_Dial），而下層的高展弦比膜質後翅則自鞘翅下方往左右兩側大幅度水平延展（MDPI Biomimetics 2024）。六足腿節飽滿隆起，前足脛節外緣排列三枚鋒利的挖掘齒突並於膝關節配置機械齒輪重爪（Wikipedia - Insect morphology）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_chrono_beetle/cr_chrono_beetle_adult_05_wiki.md",
+        "sha256": "ef371ca79b7be00c243868e86da2ed0e7849cb5a6375c22dc57e71d4f42eb221",
+        "drive_file_id": "1fep__GPhQpMF325-RJpRtHSEV_8Pd1of"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_chronos_engine",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_chrono_beetle_overload",
+    "line_id": "cr_chrono_beetle",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 10,
+      "water": 0,
+      "fire": -40,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 30,
+      "thunder": 20
+    },
+    "stats": {
+      "hp": 131,
+      "speed": 129,
+      "yin_atk": 158,
+      "yang_atk": 86,
+      "yin_def": 108,
+      "yang_def": 108
+    },
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "catch_rate_up",
+    "concept": {
+      "name_zh": "逆時雷暴機神金龜",
+      "name_en": null,
+      "stage_look": "當體內主發條扭力與靜電蓄能突破臨界點（觸發 overload_enter），倒 V 字形拱弧鞘翅沿電磁滑軌進一步向外上方懸浮展開，與下層全幅橫展的巨型導電後翅構成無死角的雙層展翅姿態（Gerald Charles - What is a tourbillon watch?）。此時中央懷錶錶盤迸發璀璨青金光芒（#6DF0FF），藍鋼指針逆時針超速飛旋；頭頂巨角與高速振動的雙翅外圍全數被高壓靜電電弧包覆，配合背甲正上方高懸成扇形皇冠陣列的 6 枚金色放電齒輪光環（Overload_Halo_Root），化身為掌控局部時空與雷暴領域的機神。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_chrono_beetle/cr_chrono_beetle_overload_05_wiki.md",
+        "sha256": "637716b8b2ea22c52881d80e41ad036c090ae70bb7ed9ac0d7c4e27f6bdcc412",
+        "drive_file_id": "15W3jF2salK9uv7zCluN5vjaTXwsmdZAf"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_chronos_engine",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_chrono_beetle_adult"
+  },
+  {
+    "id": "cr_earth_golem_juvenile",
+    "line_id": "cr_earth_golem",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_earth_golem_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 5,
+      "earth": 20,
+      "ice": 0,
+      "wind": -20,
+      "thunder": 10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 15
+    },
+    "stats": {
+      "hp": 100,
+      "speed": 20,
+      "yin_atk": 80,
+      "yang_atk": 80,
+      "yin_def": 60,
+      "yang_def": 60
+    },
+    "signature_move": "earth_shale_bolt",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "drop_rate_up",
+    "concept": {
+      "name_zh": "萌芽圓墩泥偶",
+      "name_en": null,
+      "stage_look": "* 圓墩墩的連體泥塊軀幹 (Hips_Stone / Spine_01 / Clay_Joint)：主體由溫潤飽滿的高密度黃土陶泥捏合而成，呈現渾圓可愛的葫蘆墩造型。泥土表面帶有微濕潤的陶土光澤（Roughness 0.70），腹部與大腦袋之間完全無縫實心連接，肚皮後方鑲嵌著一塊天然風化的暖色鵝卵石護片。\n* 短粗雙腿與小岩掌 (L_Thigh / R_Thigh / L_StoneFoot / R_StoneFoot)：下半身為一對短粗敦實的黃土泥柱小腿，穩穩踩在兩塊厚實的八角扁平小石靴上；身體左右兩側伸出圓潤的短泥臂，末端包裹著小巧的圓石拳頭，行走時步履沉穩卻帶著憨態可掬的左右搖擺。\n* 頭頂小嫩草與無遮擋憨厚五官 (Head_Boulder / Amber_Core)：圓滾滾的泥偶腦袋頂端破土長出一撮充滿生機的三葉翠綠小嫩草，隨步伐輕輕晃動。正面（-Y 方向）視野 100% 淨空無遮擋，額頭上方點綴著兩小塊鵝卵石眉毛，下方鑲嵌著一對散發溫潤深黃光芒的圓方琥珀大眼與微笑泥縫嘴，胸口則透出初生小琥珀核的柔和微光。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_earth_golem/cr_earth_golem_juvenile_05_wiki.md",
+        "sha256": "a40827c1edeed8a08e39bb67493ceeee8c9bde8f1d71a94d96083a0df86bd03e",
+        "drive_file_id": "19nOTLUm1JLiTzzB6IlBkECMjyEG68chu"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "earth_pebble_pawn",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_earth_golem_adolescent",
+    "line_id": "cr_earth_golem",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_earth_golem_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "earth",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 35,
+      "ice": 0,
+      "wind": -30,
+      "thunder": 15,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 20
+    },
+    "stats": {
+      "hp": 125,
+      "speed": 25,
+      "yin_atk": 100,
+      "yang_atk": 100,
+      "yin_def": 75,
+      "yang_def": 75
+    },
+    "signature_move": "earth_ritual_quake",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "immune_cave",
+    "concept": {
+      "name_zh": "裂紋重錘石偶",
+      "name_en": null,
+      "stage_look": "* 陶泥與堅硬岩板拼接軀幹 (Spine_01 / Spine_02 / Plate_Rock)：隨著大地靈力淬鍊，原本柔軟的泥軀分化出堅實的陶泥腰腹核心柱，外層則緊密拼接上厚重的深灰玄武岩胸鎧與骨盆岩盤（Roughness 0.90，具備 Voronoi 風化裂隙凹凸法線）。軀幹從雙腿、骨盆、腰泥至胸岩與頸部完全實心咬合。\n* 右手特化厚重破城石錘 (R_RockArm / R_Hammer)：少年期最顯著的武裝進化在於不對稱雙臂——左臂進化為包覆岩甲的粗壯格擋石拳；右臂則由高密度陶泥肌腱牽引，特化重組為一柄長達 0.65 米、前端帶有琥珀能量箍環的「巨型八角破城石錘」，揮砸時具備開山裂石的破壞力。\n* 黃土發光裂紋與方正岩首 (Amber_Core / Head_Boulder)：胸腹玄武岩板的拼接縫隙中，顯露出四道斜向延伸、泛著深黃光芒的「黃土能量裂紋」與菱形胸核。頭部進化為稜角分明的方正拼接岩首，頭頂覆蓋玄武岩額板，正面琥珀雙眸銳利有神且毫無遮擋。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_earth_golem/cr_earth_golem_adolescent_05_wiki.md",
+        "sha256": "3085d2d91205f6e2a85c68ceea11c476d9602ac9e966e8ff5c3091c15ee29c29",
+        "drive_file_id": "1GM2SH0bqZAE4mdz4xPPVABWRVZw2Yn81"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "earth_gilded_warden",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_earth_golem_adult",
+    "line_id": "cr_earth_golem",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 50,
+      "ice": 0,
+      "wind": -40,
+      "thunder": 15,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 25
+    },
+    "stats": {
+      "hp": 150,
+      "speed": 30,
+      "yin_atk": 120,
+      "yang_atk": 120,
+      "yin_def": 90,
+      "yang_def": 90
+    },
+    "signature_move": "earth_monolith_charge",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "open_obstacle",
+    "concept": {
+      "name_zh": "珀核晶簇岩怪",
+      "name_en": null,
+      "stage_look": "* 寬肩厚背的重型岩怪身軀 (Spine_02 / Plate_Rock)：進入成年期後，體型全面擴張為寬肩厚背的重裝堡壘結構。背部覆蓋整塊厚達 0.36 米的巨型玄武岩背甲，雙足化為穩健如萬年磐石的粗壯石柱與重型護脛，每一次踏步都能引發地面震顫。\n* 胸前鑲嵌璀璨琥珀地核 (Socket_Core_FX / Amber_Core)：胸腔正中央的玄武岩護框內，正式鑲嵌並外露出一顆直徑達 0.28 米的八面體「高純度琥珀地核」（Emission Strength 4.0）。地核如同地底深層的太陽般散發溫潤而強大的深黃色寶石光芒，源源不絕地為全身提供重力場能量。\n* 肩部粗糙琥珀水晶簇與青苔岩額 (L_Shoulder / R_Shoulder / Socket_PetTouch)：寬闊的雙肩岩鎧上方，由於地核能量滿溢而向外斜上方生長出六根粗獷銳利的「天然琥珀水晶簇」（嚴格分布於雙肩外側與後上方，絕不遮擋正面臉部）。巨大的岩石腦袋頂部則覆蓋著一層柔軟的翠綠青苔岩台，成為契約者撫摸互動的專屬部位。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_earth_golem/cr_earth_golem_adult_05_wiki.md",
+        "sha256": "c3f850a104f7f18807d334a11ea13ccae3af84b704c8aa31e6299d886e5e7c86",
+        "drive_file_id": "1E8LKmlWUhOyUbvgvSeRTTrepv5xZx-OA"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "earth_auric_sovereign",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_earth_golem_overload",
+    "line_id": "cr_earth_golem",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 10,
+      "earth": 50,
+      "ice": 0,
+      "wind": -40,
+      "thunder": 15,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 30
+    },
+    "stats": {
+      "hp": 180,
+      "speed": 36,
+      "yin_atk": 144,
+      "yang_atk": 144,
+      "yin_def": 108,
+      "yang_def": 108
+    },
+    "signature_move": "earth_monolith_charge",
+    "trait": "trait_earth_gilded_bulwark",
+    "field_utility": "open_obstacle",
+    "concept": {
+      "name_zh": "熔岩群峰泰坦",
+      "name_en": null,
+      "stage_look": "* 背部隆起三座聳立山峰 (Spine_02 / Plate_Rock / Amber_Core)：當琥珀地核進入極限超載共鳴，陶泥厚岩偶化身為地動山搖的移動岩石要塞！其後背（+Y 方向）拔地隆起三座高聳入雲的險峻玄武岩山峰（最高主峰達 2.24 米），峰頂火山口噴發著熾熱的地心熔岩火光，在正面視角中形成威震天地的背山輪廓，同時確保正面臉部與雙眸 100% 清晰顯露。\n* 四肢環繞懸浮重力岩塊 (Orbit_Rock_01..04)：超載引發的局部大地引力逆轉，使周遭四塊纏繞著琥珀磁環的巨型多面體「懸浮重力岩塊」脫離地面，環繞在泰坦四肢與雙肩外圍自主高速公轉，既可在防禦時鎖定成多重石門，亦可在攻擊時化為流星群砸向敵陣。\n* 周身裂隙地心熔岩奔騰 (Amber_Core)：要塞級胸鎧、雙腿護脛與巨型雙錘拳套的風化裂隙徹底張開，赤橙交織的金黃地心熔岩在全身裂谷中奔騰流淌，頭頂兩側揚起威嚴的琥珀熔岩雙角，展現大地泰坦的無上威壓。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_earth_golem/cr_earth_golem_overload_05_wiki.md",
+        "sha256": "267af4dc872f1d3ead48577893ff56f139e4c0afe802604421df712470910389",
+        "drive_file_id": "145Dkz7RAminBqUbFBHciga0DMtjEff_n"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "earth_auric_sovereign",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_earth_golem_adult"
+  },
+  {
+    "id": "cr_fire_wisp_juvenile",
+    "line_id": "cr_fire_wisp",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_fire_wisp_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 10,
+      "water": -20,
+      "fire": 20,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 15
+    },
+    "stats": {
+      "hp": 48,
+      "speed": 96,
+      "yin_atk": 80,
+      "yang_atk": 96,
+      "yin_def": 40,
+      "yang_def": 40
+    },
+    "signature_move": "fire_cinder_claw",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "cook_fire",
+    "concept": {
+      "name_zh": "躍火炭芯靈",
+      "name_en": null,
+      "stage_look": "* 單顆裂隙黑炭基底 (Flame_Base / Charcoal_Base)：底部由一顆直徑約 0.70 米的多稜角深黑焦炭基底構成。粗糙的木炭表面（Roughness 0.90）布滿縱橫交錯的橙紅熔岩裂隙（Orange_Glow），底部與上方的火苗軀幹無縫實心相連，為跳躍的火苗提供穩定的重力與熱能基座。\n* 活潑跳躍的小火苗身軀 (Flame_Mid / Flame_Tip / Flame_Body)：主體為一朵自黑炭中心向上竄起、呈現三層蓮瓣流線輪廓的活潑小火苗。火焰主體採用芯部純白、中層金黃、外緣赤紅的高亮漸層自發光材質（Emission Strength 6.0），兩側延伸出與主火苗完全融合的躍動小火翼，隨熱對流持續輕巧搖曳。\n* 金色小火花雙眼 (Orb_Flame)：臉部正前方（-Y 方向）完全淨空無遮擋，鑲嵌著一對由高純度金黃火花凝聚而成的星芒大眼，眼角帶有俏皮上揚的金色小火苗，下方點綴著一道溫暖的微笑火弧；背後上方則有 3 顆半透明跳動的微型鬼火火星環繞公轉。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_fire_wisp/cr_fire_wisp_juvenile_05_wiki.md",
+        "sha256": "2f39a8a83aa112c2804fdb4e54ac65d562213613cec7f1582718ab543ff9395f",
+        "drive_file_id": "126mF9F5N6uAiQdFv-eSLeyrmER4_0KuB"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_ember_cub",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_fire_wisp_adolescent",
+    "line_id": "cr_fire_wisp",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_fire_wisp_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -30,
+      "fire": 35,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 20
+    },
+    "stats": {
+      "hp": 60,
+      "speed": 120,
+      "yin_atk": 100,
+      "yang_atk": 120,
+      "yin_def": 50,
+      "yang_def": 50
+    },
+    "signature_move": "fire_mane_pounce",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "immune_volcano",
+    "concept": {
+      "name_zh": "雙棍火爪侍",
+      "name_en": null,
+      "stage_look": "* 雙層熔岩炭座與流線型火軀 (Flame_Base / Flame_Mid)：隨著熱能密度倍增，底部黑炭擴展為穩固的雙層熔岩結晶炭座，主體火苗抽高至 1.48 米，焰心與炭座緊密相連，正面雙眸蛻變為銳利颯爽的柳葉金芒眼，胸口浮現菱形高溫火核印記。\n* 左右側身展出燒火棍與烈火炭爪 (L_Poker_Arm / R_Poker_Arm / L_Flame_Blade / R_Flame_Blade)：自烈焰軀幹左右兩側（絕不橫越或遮擋臉部正面）向外伸展出兩隻鍛鐵質感的深黑燒火棍機械臂。每隻燒火棍前端的分叉火鉗各緊緊夾著一塊燒得通紅的烈火炭塊，並從炭塊前端激射出三道鋒利的弧形烈焰火爪，具備強悍的撕裂與格擋能力。\n* 三軌浮游鬼火 (Orbit_Wisp_01..03)：背後的火星成長為三顆拳頭大小的半透明噪波跳動鬼火，隨呼吸節奏在身後呈三角軌跡高速游走。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_fire_wisp/cr_fire_wisp_adolescent_05_wiki.md",
+        "sha256": "0e6cc20c0e2b6439891753c84f745f01ec373987710a461d17f7f26e1fa8e08a",
+        "drive_file_id": "147OzvQ87We65V-ktWn453sV6FhFMSYve"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_mane_stalker",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_fire_wisp_adult",
+    "line_id": "cr_fire_wisp",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -40,
+      "fire": 50,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 25
+    },
+    "stats": {
+      "hp": 72,
+      "speed": 144,
+      "yin_atk": 120,
+      "yang_atk": 144,
+      "yin_def": 60,
+      "yang_def": 60
+    },
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "egg_hatch_boost",
+    "concept": {
+      "name_zh": "浮灶雙劍衛",
+      "name_en": null,
+      "stage_look": "* 漂浮爐灶護甲與敞開式拱門灶口 (Charcoal_Base)：進入成年期後，外圍高密度的焦炭與玄武熔岩重組為一座包覆軀幹的厚重「漂浮爐灶護甲」。爐灶底部與圓盤炭座完全實心鍛接，正前方開設寬敞高聳的圓拱形灶口（開口角度達 95 度），使內部灼燒的火焰靈魂與璀璨金色雙眸 100% 清晰顯露、毫無遮擋；爐頂左右後側則聳立著兩座斜向後方的排煙管。\n* 灼燒靈魂與木炭火焰雙劍 (Flame_Body)：爐膛中央燃燒著高純度的火焰靈魂，頂端火冠穿透爐頂向上飄揚。左右兩側燒火棍前端的木炭演化為十字劍格護手，並向上凝聚噴發成兩柄長達 0.85 米的「木炭火焰雙劍」，揮舞時拉出絢麗的半月形熔岩火弧。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_fire_wisp/cr_fire_wisp_adult_05_wiki.md",
+        "sha256": "6f080a0c7176e20543c9b6f422f5d5f02a1d5a5fa96e5a61396ea0bca8616fa8",
+        "drive_file_id": "1b7KngoFJ5ZVrAfmmkRuBm1PGbtqs7zYe"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_pyre_monarch",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_fire_wisp_overload",
+    "line_id": "cr_fire_wisp",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -40,
+      "fire": 50,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 30
+    },
+    "stats": {
+      "hp": 88,
+      "speed": 172,
+      "yin_atk": 144,
+      "yang_atk": 172,
+      "yin_def": 72,
+      "yang_def": 72
+    },
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "egg_hatch_boost",
+    "concept": {
+      "name_zh": "日冕等離子炎神",
+      "name_en": null,
+      "stage_look": "* 全身燒紅的裂解蒸汽爐灶 (Charcoal_Base)：當體內熱能突破臨界點進入超載狀態，外部厚重的爐灶裝甲因極限高溫而徹底燒紅，正面拱門進一步向外擴張敞開，肩部與背部四座巨型高壓蒸汽煙管狂暴噴發熾熱白煙。\n* 白熾等離子火球核心与日冕烈陽光輪 (Flame_Body / Orb_Flame)：爐膛核心化為一顆劇烈翻滾的白熾等離子火球，正面白金色雙眸威壓暴漲；身後（+Y 側）浮現出一座由八道太陽耀斑火芒構成的璀璨「日冕烈陽光輪」，完全襯托出炎神降臨的神聖威儀且不遮擋正面視野。\n* 巨型爆裂火焰雙劍 (L_Flame_Blade / R_Flame_Blade)：兩側燒火棍與火焰雙劍暴漲至 1.25 米以上，劍脊兩側爆裂出三對鋸齒狀等離子副刃，一擊即可將戰場化為翻滾的熔岩焦土領域。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_fire_wisp/cr_fire_wisp_overload_05_wiki.md",
+        "sha256": "5d0d32e388968e886aaa745e2c0e297b15728217b705b2cd1cf00a922f3e7509",
+        "drive_file_id": "1n3cW1KBbAUuogB75C7VLn-2yiVTRR34b"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_pyre_monarch",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_fire_wisp_adult"
+  },
+  {
+    "id": "cr_frostblade_penguin_juvenile",
+    "line_id": "cr_frostblade_penguin",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_frostblade_penguin_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 10,
+      "fire": 0,
+      "earth": -20,
+      "ice": 20,
+      "wind": 5,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 15,
+      "water": 5
+    },
+    "stats": {
+      "hp": 64,
+      "speed": 80,
+      "yin_atk": 48,
+      "yang_atk": 96,
+      "yin_def": 56,
+      "yang_def": 56
+    },
+    "signature_move": "ice_rime_breath",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "prevent_escape",
+    "concept": {
+      "name_zh": "剛從透著幽藍冷光的冰蛋中破殼滾出",
+      "name_en": null,
+      "stage_look": "1. 幼年期 (juvenile — 冰絨圓雛)：剛從透著幽藍冷光的冰蛋中破殼滾出 (hatch)，全身包裹在蓬鬆的銀灰色初生絨毛中，頭頂有一簇微光冰晶絨冠，黑亮雙眼與短小鳥喙毫無遮擋、神態呆萌。由於重心偏高且腳底剛長出微型滑冰晶墊，走起路來左搖右晃、極易打滑，翼下初具雛形的半透明薄冰片僅能用於拍打雪花與維持平衡。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_frostblade_penguin/cr_frostblade_penguin_juvenile_05_wiki.md",
+        "sha256": "d51fe21a83b9140b6f1499bb823624bd15c3f4f91a1121ac301e7ed7093dadd0",
+        "drive_file_id": "1QVfhL60cp99PvhGPe11W95ZQ6I8blOri"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_frost_fledgling",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_frostblade_penguin_adolescent",
+    "line_id": "cr_frostblade_penguin",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_frostblade_penguin_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -30,
+      "ice": 35,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 20,
+      "water": 10
+    },
+    "stats": {
+      "hp": 80,
+      "speed": 100,
+      "yin_atk": 60,
+      "yang_atk": 120,
+      "yin_def": 70,
+      "yang_def": 70
+    },
+    "signature_move": "ice_antler_javelin",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "mount",
+    "concept": {
+      "name_zh": "經歷首次換羽後，體態收束為符合流體力學的水滴流線型",
+      "name_en": null,
+      "stage_look": "2. 少年期 (adolescent — 疾行滑刃企)：經歷首次換羽後，體態收束為符合流體力學的水滴流線型 (Britannica — Penguin Form and Function)。腹部中央凝結出弧形低摩擦「珍珠白霜甲龍骨」，雙翼前端則與極地寒氣共鳴硬化為不對稱深藍滑行冰刃。此階段的疾行滑刃企熱愛在冰川斜坡與結冰海面上以肚皮貼地高速衝刺，利用雙刃切開浮冰並以尾舵精準轉向。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_frostblade_penguin/cr_frostblade_penguin_adolescent_05_wiki.md",
+        "sha256": "614bc11712931b81796baf7ce4030e821cf948f45cf3813a06a75edd815e0f13",
+        "drive_file_id": "1y3B0pht5d-1IfX0rdNcvRLXgotu04lTq"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_rime_strider",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_frostblade_penguin_adult",
+    "line_id": "cr_frostblade_penguin",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 25,
+      "water": 15
+    },
+    "stats": {
+      "hp": 96,
+      "speed": 120,
+      "yin_atk": 72,
+      "yang_atk": 144,
+      "yin_def": 84,
+      "yang_def": 84
+    },
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "immune_ice_cap",
+    "concept": {
+      "name_zh": "歷經極地深海高壓與暴風雪洗禮的族群主力獵手。雙肩覆蓋棱角分明的霜鋼肩甲，背部披掛厚實的海軍藍防寒羽絨重甲；雙翼徹底武裝化為一對雙刃極光冰鋼斬刀，兼具高速迴旋斬擊",
+      "name_en": null,
+      "stage_look": "3. 成年期 (adult — 霜刃重裝企鵝)：歷經極地深海高壓與暴風雪洗禮的族群主力獵手。雙肩覆蓋棱角分明的霜鋼肩甲，背部披掛厚實的海軍藍防寒羽絨重甲；雙翼徹底武裝化為一對雙刃極光冰鋼斬刀，兼具高速迴旋斬擊 (atk_melee_sweep) 與架刀凝結六角冰盾 (block) 的攻防能力。胸前鑲嵌的「六角冰晶紋章 (Socket_Front)」可匯聚體內寒能，發射筆直的極寒冰凍射線 (atk_ranged_line)。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_frostblade_penguin/cr_frostblade_penguin_adult_05_wiki.md",
+        "sha256": "3ab689583a0a692c1e8900fb1408997dc44768b685614084af721873a4bdff93",
+        "drive_file_id": "1s18dW5OzXjXIlZpI1IhgHVOFRUehxhrB"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_tundra_dreadnought",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_frostblade_penguin_overload",
+    "line_id": "cr_frostblade_penguin",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 30,
+      "water": 20
+    },
+    "stats": {
+      "hp": 118,
+      "speed": 144,
+      "yin_atk": 86,
+      "yang_atk": 172,
+      "yin_def": 100,
+      "yang_def": 100
+    },
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "immune_ice_cap",
+    "concept": {
+      "name_zh": "當胸前冰川紋章進入極限超載",
+      "name_en": null,
+      "stage_look": "4. 超載期 (overload — 極光絕對零度刀皇)：當胸前冰川紋章進入極限超載 (overload_enter)，體內絕對零度核心全面解放，頭頂展開五連極光帝皇冰冠，雙翼斬刀向外暴漲為攜帶天藍至紫紅極光光束的巨型雙刃光刀。其背後懸浮一圈由十二枚絕對零度冰刃構成的高速旋轉星輪 (Socket_Core_FX)，每一次呼吸皆化為冰霧寒霜，雙足冰爪踏過之處瞬間隆起環狀萬年冰刺 (Socket_Ground_FX)。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_frostblade_penguin/cr_frostblade_penguin_overload_05_wiki.md",
+        "sha256": "fd3b1d90ab9f5619cee4c11435129b9c47d998baac025226b4acf807de6420e9",
+        "drive_file_id": "1msldAvkbKVodocZwYdPjQRvUSxS0n7mc"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_tundra_dreadnought",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_frostblade_penguin_adult"
+  },
+  {
+    "id": "cr_ice_snowman_juvenile",
+    "line_id": "cr_ice_snowman",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_ice_snowman_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 10,
+      "fire": 0,
+      "earth": -20,
+      "ice": 20,
+      "wind": 5,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 15
+    },
+    "stats": {
+      "hp": 104,
+      "speed": 24,
+      "yin_atk": 72,
+      "yang_atk": 40,
+      "yin_def": 80,
+      "yang_def": 80
+    },
+    "signature_move": "ice_rime_breath",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "prevent_escape",
+    "concept": {
+      "name_zh": "絨雪微錐球",
+      "name_en": null,
+      "stage_look": "* 主體構造 (Snow_Base / Snow_Head)：由上下兩顆渾圓飽滿、表面帶有自然風吹壓雪凹凸質感的粗糙雪球疊合而成。純白雪層具備柔和的次表面散射（Subsurface Scattering 0.35），在星光下呈現蓬鬆透光的粉雪質感。\n* 頭頂斜插小冰錐 (Ice_Crystal)：頭頂右上方斜插著一根半透明的淡青藍六稜小冰錐，如同戴歪的冰晶小尖帽，能作為感知大氣濕度與溫度的天然天線，在休眠或警戒時會偶爾微幅顫動。\n* 浮空小雪塊小手 (L_IceArm_01..02 / R_IceArm_01..02)：身體兩側由微弱寒霜磁場托舉著兩團圓滾的浮空小雪塊，前端各綴有一枚小巧的八面體冰晶指尖，維持無重力沉浮。\n* 冰藍眼眸與初生冰核 (Frost_Glow)：面部嵌有一對散發柔和冰藍自發光的晶石眼眸，胸腔內部隱約透出初生冰核的微光。移動時不依賴雙足行走，而是以底盤雪球在地面平滑摩擦滑行代步。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ice_snowman/cr_ice_snowman_juvenile_05_wiki.md",
+        "sha256": "ab03aa22f45a2c2e0554461e5dbd9db689274d5adb5420f1bd96e97dbb68f78c",
+        "drive_file_id": "1ol-PZ1mDCLBKo91RH3m_WVf8WiI7ObC0"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_frost_fledgling",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ice_snowman_adolescent",
+    "line_id": "cr_ice_snowman",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_ice_snowman_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "ice",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -30,
+      "ice": 35,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 20
+    },
+    "stats": {
+      "hp": 130,
+      "speed": 30,
+      "yin_atk": 90,
+      "yang_atk": 50,
+      "yin_def": 100,
+      "yang_def": 100
+    },
+    "signature_move": "ice_antler_javelin",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "mount",
+    "concept": {
+      "name_zh": "霜錐魔晶侍",
+      "name_en": null,
+      "stage_look": "* 兩段式雪霜身軀 (Snow_Base / Snow_Chest / Snow_Head)：隨著體內寒氣密度提升，原本鬆散的粉雪被高壓凝練為緊實的兩段式雪霜胸腹結構，抗打擊能力顯著增強，頭頂小冰錐亦分化為對稱的雙叉冰角。\n* 結晶化銳利冰錐手臂 (L_IceArm_01..02 / R_IceArm_01..02)：兩側浮空雪塊在寒流反覆淬鍊下徹底結晶化，延伸為兩柄高透射率（Transmission 0.85, IOR 1.309）的銳利六稜冰錐，不僅能進行高速穿刺，亦能在身前交錯格擋。\n* 胸前菱形冰藍魔晶 (Socket_Front / Frost_Glow)：胸腔正前方突破雪層，鑲嵌著一枚外露的八面體菱形冰藍魔晶（Emission Strength 5.0），能主動從大氣中汲取水汽修補受損的雪軀，並作為遠程零度冰柱的發射聚焦器。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ice_snowman/cr_ice_snowman_adolescent_05_wiki.md",
+        "sha256": "d482666fcb82473d7ebe096282fd0b09848bb61f9abd58526fe40131cb735c79",
+        "drive_file_id": "1de9_SNjh66qKLlv25PxKpHqDx_8SL_cP"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_rime_strider",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ice_snowman_adult",
+    "line_id": "cr_ice_snowman",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 25
+    },
+    "stats": {
+      "hp": 156,
+      "speed": 36,
+      "yin_atk": 108,
+      "yang_atk": 60,
+      "yin_def": 120,
+      "yang_def": 120
+    },
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "immune_ice_cap",
+    "concept": {
+      "name_zh": "凜風冰鎧衛",
+      "name_en": null,
+      "stage_look": "* 旋轉暴風雪錐底盤 (Snow_Base)：下半身徹底告別球形雪團，重塑為一枚倒立的八稜旋轉暴風雪錐。雪錐尖端與地表保持極小摩擦面，可化為高速自轉的冰霜鑽頭破風推進。\n* 剛硬冰雪鎧甲 (Snow_Chest)：上半身擴張為厚重寬闊的萬年壓雪胸甲，雙肩聳立著向外斜刺的巨型冰稜肩鎧，胸口魔晶與內部冰髓連通，散發凜冽寒芒。\n* 多段浮空冰刃 (L_IceArm_01..02 / R_IceArm_01..02)：雙臂進化為由冰晶關節球與長型多面體冰刃組成的雙段浮空武裝，既可在近戰中暴漲為巨型冰鎬猛鑿地面，也能展開如刀刃進行 360 度狂暴迴旋橫掃。\n* 背懸三枚懸浮冰菱 (Crystal_Orbit_01..03)：背後上方呈三角陣列懸浮著三枚高純度冰菱晶體，隨呼吸節律自主自轉，可投射半透明浮空冰晶護甲支援友軍。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ice_snowman/cr_ice_snowman_adult_05_wiki.md",
+        "sha256": "4e7f422164990ddd2c915bc06d70bc420dfdcecfa3eaa9917dd5c092a379773a",
+        "drive_file_id": "1M3f1tDaxL48BUnmGq1GPs2WqIN3lc2Ml"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_tundra_dreadnought",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ice_snowman_overload",
+    "line_id": "cr_ice_snowman",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 15,
+      "fire": 0,
+      "earth": -40,
+      "ice": 50,
+      "wind": 10,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 30
+    },
+    "stats": {
+      "hp": 188,
+      "speed": 43,
+      "yin_atk": 129,
+      "yang_atk": 72,
+      "yin_def": 144,
+      "yang_def": 144
+    },
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
+    "field_utility": "immune_ice_cap",
+    "concept": {
+      "name_zh": "極寒暴雪魔神",
+      "name_en": null,
+      "stage_look": "* 震碎外殼與深藍冰髓 (Snow_Chest / Socket_Core_FX)：當體內寒能突破臨界點，外部厚重的壓雪鎧甲被狂暴的零度極光震碎裂開為四塊懸浮雪殼裝甲片，徹底顯露出內部刺目耀眼的巨型多面體「深藍冰髓核心」。\n* 三重極冰王冠 (Snow_Head / Socket_Head)：頭部上方凝聚出三道衝天而起的鋒利冰冠尖稜，雙眸化為熾亮刺目的冰藍極光裂縫。\n* 周身公轉防禦浮空冰壁 (Crystal_Orbit_01..03)：背後三枚冰菱在超載能量灌注下暴漲數倍，化為三道環繞周身高速公轉的巨型半透明「防禦浮空冰壁」，在攻防一體的極寒力場中粉碎一切逼近的敵人。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ice_snowman/cr_ice_snowman_overload_05_wiki.md",
+        "sha256": "9ae2b97e64e29e3d954f5077f7d5ad1b0eb9fbc0f81e917ece4ca9d9975084ff",
+        "drive_file_id": "1Kb5UE5v_zZboR-FwDTx8mXA8qGtrYhMF"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "ice_tundra_dreadnought",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_ice_snowman_adult"
+  },
+  {
+    "id": "cr_ink_stele_juvenile",
+    "line_id": "cr_ink_stele",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_ink_stele_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -20,
+      "light": -5,
+      "shadow": 20
+    },
+    "mastery": {
+      "shadow": 15,
+      "earth": 5
+    },
+    "stats": {
+      "hp": 88,
+      "speed": 32,
+      "yin_atk": 96,
+      "yang_atk": 40,
+      "yin_def": 80,
+      "yang_def": 64
+    },
+    "signature_move": "shadow_nightpaw_swipe",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "party_stealth",
+    "concept": {
+      "name_zh": "懸空墨硯精",
+      "name_en": null,
+      "stage_look": "本體為一方圓潤古雅的八角弧邊青玄石端硯，外圈「硯邊」雕有微浮雕卷雲凹槽，中央「墨池」深蓄一汪泛著幽紫光澤的非牛頓活水墨，液面不時浮起三顆圓潤飽滿的懸浮墨珠。硯台正前方探出圓潤可愛的玄石小龜首，額側嵌有一對如端硯「鴝鵒眼」般明亮的赤紅硃砂瞳孔，五官毫無遮擋；硯底垂下三條靈動的小黑墨觸手，末端收束如毛筆筆鋒，像三隻小短腿般在地面輕快跳躍，墨池後方則斜插著一小截刻有三道朱文篆痕的斷裂古石片。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ink_stele/cr_ink_stele_juvenile_05_wiki.md",
+        "sha256": "257acedd06129f166a5e646fd39c81f6a1f5e26d846321908d934a0e264e42e4",
+        "drive_file_id": "1-67WaFzszFfpO_R0hjY9dcAkQwaTTg7i"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_night_pup",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ink_stele_adolescent",
+    "line_id": "cr_ink_stele",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 4
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_ink_stele_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 5,
+      "thunder": -30,
+      "light": -10,
+      "shadow": 35
+    },
+    "mastery": {
+      "shadow": 20,
+      "earth": 10
+    },
+    "stats": {
+      "hp": 110,
+      "speed": 40,
+      "yin_atk": 120,
+      "yang_atk": 50,
+      "yin_def": 100,
+      "yang_def": 80
+    },
+    "signature_move": "shadow_longnight_lunge",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "steal_item",
+    "concept": {
+      "name_zh": "負碑墨玄龜",
+      "name_en": null,
+      "stage_look": "隨靈識成長，青玄石硯翻轉凝結為厚實沉穩的六角格紋古岩石龜甲与腹甲。背甲中央隆起一尊方正的龜趺石座，其上矗立一截完整古樸的黑石殘碑，碑陽與碑陰皆嵌有十五枚發光硃砂篆字。四肢由高濃度活水墨凝聚為粗壯的三爪獸足支撐大地，尾部拖曳兩道墨跡觸手；玄石龍龜頭生出向後揚起的短龍角與水墨龍鬚，口鼻兩側向後方與兩側吐出淡淡的宣紙暈染墨雲霧氣，既顯威儀又完全不遮擋臉部視線。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ink_stele/cr_ink_stele_adolescent_05_wiki.md",
+        "sha256": "6851eda75d07459adac4534e1e20ebf169d343306574247aded1cf093937926b",
+        "drive_file_id": "1513_Pyc4v5wk-KgHpjARPzO-KS9mWvjm"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_shade_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ink_stele_adult",
+    "line_id": "cr_ink_stele",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": 0,
+      "ice": 30,
+      "wind": 10,
+      "thunder": -40,
+      "light": -15,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 25,
+      "earth": 15
+    },
+    "stats": {
+      "hp": 132,
+      "speed": 48,
+      "yin_atk": 144,
+      "yang_atk": 60,
+      "yin_def": 120,
+      "yang_def": 96
+    },
+    "signature_move": "shadow_lone_hunter_ambush",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "immune_labyrinth",
+    "concept": {
+      "name_zh": "玄岩龍龜馱碑獸",
+      "name_en": null,
+      "stage_look": "巍峨如山的太古贔屭巨構。龜背由歷經萬年風化的粗礪青玄巨岩構成，兩側肩甲聳立六座如斧劈皴山峰般的護山岩脊；正前方昂首探出威嚴的太古龍龜首，雙角後掠、頷下垂拂長鬚，雙目燃燒赤紅硃砂神光。背部蓮瓣龜趺座上完整馱負一座十丈高的「鎮界古神碑」，碑首雕刻雙螭盤龍拱額，碑身正反兩面銘刻三十二道流光溢彩的硃砂古篆禁制，四周更有四塊破裂的太古銘文浮石環繞護持。龜腹下的深邃黑影中探出六條狂草筆意般蒼勁翻湧的巨大水墨觸手，周身環繞三層水墨山河暈染氣環。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ink_stele/cr_ink_stele_adult_05_wiki.md",
+        "sha256": "99be814159a3478ceff7e71734ae24a6f8806a77214bf66142c123e441a02718",
+        "drive_file_id": "1Y-bYIBJ5JD7Do7bESHMDJd1Pj6ydadOd"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_longnight_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_ink_stele_overload",
+    "line_id": "cr_ink_stele",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": 0,
+      "ice": 30,
+      "wind": 10,
+      "thunder": -40,
+      "light": -15,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 30,
+      "earth": 20
+    },
+    "stats": {
+      "hp": 160,
+      "speed": 57,
+      "yin_atk": 172,
+      "yang_atk": 72,
+      "yin_def": 144,
+      "yang_def": 115
+    },
+    "signature_move": "shadow_lone_hunter_ambush",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "immune_labyrinth",
+    "concept": {
+      "name_zh": "萬古太虛墨碑山神",
+      "name_en": null,
+      "stage_look": "當體內太古禁制全面解封，背上鎮界神碑崩解破空、昇華為一座高聳入雲的「千層太虛古閣樓群碑矩陣」——中央主碑化為通天玄石神柱，其上懸浮三重飛簷古閣與八座環繞鎮界副碑。龍龜下半身軀幹半化為吞噬光線的深淵黑洞水墨螺旋漩渦，六條狂草水墨巨觸手如黑龍騰空翻湧；周身懸浮十六枚環形公轉的金紅硃砂真言古篆與四重太虛煙雲氣環，宛如將整片水墨山河背負於身的太古神靈。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_ink_stele/cr_ink_stele_overload_05_wiki.md",
+        "sha256": "88fdafaff05389da2ff0cb949e5fd7c97308f61bea8badfddff0a7a2adbcefb3",
+        "drive_file_id": "1XtAMtWvdCj6gKC1ADdSo2nXBnpTsMkc1"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_longnight_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_ink_stele_adult"
+  },
+  {
+    "id": "cr_light_khepri_juvenile",
+    "line_id": "cr_light_khepri",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_light_khepri_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -5,
+      "fire": 10,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 20,
+      "shadow": -20
+    },
+    "mastery": {
+      "light": 15
+    },
+    "stats": {
+      "hp": 88,
+      "speed": 32,
+      "yin_atk": 80,
+      "yang_atk": 48,
+      "yin_def": 80,
+      "yang_def": 72
+    },
+    "signature_move": "light_mirror_glint",
+    "trait": "trait_light_heliostat_focus",
+    "field_utility": "scout_potential",
+    "concept": {
+      "name_zh": "晨曦珠光小金甲",
+      "name_en": null,
+      "stage_look": "* 滾圓呆萌的金工外骨骼與青金石背甲 (Thorax_Main / L_Elytron, R_Elytron)：幼年期體型嬌小渾圓，腹部與六足採用溫潤飽和的「法老純金（Pharaoh_Gold，Metallic 1.0, Roughness 0.2）」打造，背部則覆蓋著一體閉合的深海靛藍「青金石背甲（Lapis_Lazuli，Roughness 0.35）」，中縫鑲嵌一道精緻的黃金浮雕脊線。頭胸之間以厚實的純金頸環完全無縫固接，絕無任何斷裂或破圖。\n* 無遮擋晨曦大眼與初生圓角 (Head_Pharaoh)：正面（+Z 方向）視野 100% 淨空無遮擋，圓潤的黃金腦袋上鑲嵌著一對散發金白柔光的太陽複眼，外圍勾勒黑曜石眼線；額頂正中央長有一支呆萌圓鈍的黑曜石小獨角，兩側伸出末端帶有三片深藍扇葉的可愛金龜子觸角（Scarab Beetle Lamellate Antennae - Britannica）。\n* 珍珠般懸浮晨曦光球 (Sun_Disc_Root -> Sun_Disc_Spin)：在帶有三枚黑曜石挖掘齒的前肢（Leg_FL, Leg_FR）前方低處，懸浮著一顆小如珍珠、外環純金細箍的「晨曦光球（Aten_Sun_Core）」。光球位置精準設定於前足掌間高度，完全不遮擋幼蟲可愛的臉龐與胸口微光寶石（Socket_Core_FX）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_light_khepri/cr_light_khepri_juvenile_05_wiki.md",
+        "sha256": "cc5ec92825e75530d22050e0aead7360147bdd94810aa0cfade44db30b0b0957",
+        "drive_file_id": "1gJUsPqzlNdHGjmSjGRPCzlgyj_CXLQ7w"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "sun_mirror_chick",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_light_khepri_adolescent",
+    "line_id": "cr_light_khepri",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_light_khepri_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "light",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -10,
+      "fire": 15,
+      "earth": 0,
+      "ice": 5,
+      "wind": 0,
+      "thunder": 0,
+      "light": 35,
+      "shadow": -30
+    },
+    "mastery": {
+      "light": 20
+    },
+    "stats": {
+      "hp": 110,
+      "speed": 40,
+      "yin_atk": 100,
+      "yang_atk": 60,
+      "yin_def": 100,
+      "yang_def": 90
+    },
+    "signature_move": "light_heliostat_beam",
+    "trait": "trait_light_heliostat_focus",
+    "field_utility": "fly",
+    "concept": {
+      "name_zh": "荷魯斯金翼聖甲蟲",
+      "name_en": null,
+      "stage_look": "* 微張條紋鞘翅與鏤空黃金薄翅 (L/R_Elytron & L/R_GoldWing)：進入少年期後，青金石鞘翅向左右兩側微幅展開，每片鞘翅表面浮現兩道銘刻象形文字的純金縱向條紋，鞘翅下方則伸展出三羽分叉的「黃金薄翅（L_GoldWing, R_GoldWing）」，在奔跑與滑行時能以高頻震動產生反重力浮力。\n* 法老王冠雙分叉角 (Head_Pharaoh / Sacred_Obsidian)：頭部頂端隆起一座純金基座，向上分叉延伸出如古埃及王冠與太陽牛角般的「黑曜石雙分叉聖角」（Khepri Horns & Sun Disk - Study.com），前額唇基（Clypeus）強化為光滑深邃的黑曜石裝甲板，正面雙眸與三葉扇形觸角清晰銳利。\n* 刻有荷魯斯之眼的發光赤金日輪 (Sun_Disc_Spin)：在雙分叉聖角正上方高處，懸浮著一具直徑擴展的「赤金日輪」。日輪前後雙面均以青金石虹膜、神聖黑曜石瞳孔與法老純金螺旋紋，立體浮雕出象徵神聖庇護與健康的「荷魯斯之眼（Eye of Horus / Wadjet）」（Pectoral with Eye of Horus - Egypt Museum）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_light_khepri/cr_light_khepri_adolescent_05_wiki.md",
+        "sha256": "b6c6141bbc413998edf2634b5780e4e7782fd92b1a84effa0d228d3a521044e9",
+        "drive_file_id": "1B0DDa4qizv24Hvvu_mbjLQbt-iF42WLM"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "sun_heliostat_heron",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_light_khepri_adult",
+    "line_id": "cr_light_khepri",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -15,
+      "fire": 25,
+      "earth": 0,
+      "ice": 10,
+      "wind": 5,
+      "thunder": 0,
+      "light": 50,
+      "shadow": -40
+    },
+    "mastery": {
+      "light": 25
+    },
+    "stats": {
+      "hp": 132,
+      "speed": 48,
+      "yin_atk": 120,
+      "yang_atk": 72,
+      "yin_def": 120,
+      "yang_def": 108
+    },
+    "signature_move": "light_solar_array_lance",
+    "trait": "trait_light_heliostat_focus",
+    "field_utility": "immune_temple",
+    "concept": {
+      "name_zh": "凱布利神光巨甲蟲",
+      "name_en": null,
+      "stage_look": "* 奢華黃金與深藍青金石條紋相間背甲 (L/R_Elytron)：成年期化身為威嚴雄偉的巨型神聖甲蟲。寬闊的拱形鞘翅上，三道厚重的法老純金浮雕肋條與深藍青金石基底構成奢華奪目的「金藍相間條紋」，內層金薄翅更鑲嵌了赤金等離子光羽，展開時華麗非凡。\n* 法老頭巾 (Nemes) 護甲與圖坦卡門展翅聖甲蟲胸飾 (Thorax_Main)：前胸兩側向外延展出古埃及法老御用的「尼美斯頭巾（Nemes Headdress）」金藍條紋側翼肩甲；正前方胸膛（Socket_Core_FX）則完整鑲嵌一具致敬圖坦卡門王室秘寶的「展翅聖甲蟲黃金胸飾（Winged Scarab Pectoral）」（Winged Scarab Pectoral of Tutankhamun - Egypt Museum），中央托舉著熾熱發光的太陽寶石。\n* 王冠拱衛熊熊燃燒的阿頓日輪 (Head_Pharaoh & Sun_Disc_Spin)：頭部配戴青金石王冠與黃金聖蛇（Uraeus）額飾，兩側揚起修長威嚴的黑曜石抱日雙角；雙角上方拱衛著一輪外環青金石圈與 12 道日珥烈焰尖刺、隨凱布利意志浮空自轉的「阿頓日輪（Aten's Disc）」。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_light_khepri/cr_light_khepri_adult_05_wiki.md",
+        "sha256": "7774b0f6d018a7bee84815b4f1defbea0c396b4b0bdd405d59eac59657381809",
+        "drive_file_id": "1i4xEmbeAZN2ycZDox2NAs6DexnjDUOXr"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "sun_array_skyheron",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_light_khepri_overload",
+    "line_id": "cr_light_khepri",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": -15,
+      "fire": 25,
+      "earth": 0,
+      "ice": 10,
+      "wind": 5,
+      "thunder": 0,
+      "light": 50,
+      "shadow": -40
+    },
+    "mastery": {
+      "light": 30
+    },
+    "stats": {
+      "hp": 160,
+      "speed": 57,
+      "yin_atk": 144,
+      "yang_atk": 86,
+      "yin_def": 144,
+      "yang_def": 129
+    },
+    "signature_move": "light_solar_array_lance",
+    "trait": "trait_light_heliostat_focus",
+    "field_utility": "immune_temple",
+    "concept": {
+      "name_zh": "天穹拉神至高神殿態",
+      "name_en": null,
+      "stage_look": "* 半懸浮黃金圖騰神像與雙座懸浮方尖碑光刃 (Thorax_Main)：當光屬性星界能量突破臨界，聖甲蟲脫離地面進入半懸浮的「天穹拉神至高神殿態」。身軀兩側透過黃金能量拱橋，在身後左右兩端懸浮起兩座高聳入雲的「方尖碑光刃（Obelisk Light Blades）」——碑身由法老純金鍛造，底部收束為黑曜石尖錐，頂端金字塔尖（Pyramidion）則綻放著無堅不摧的等離子光刃。\n* 阿頓日輪與萬千道「阿頓之手」神聖金光束 (Sun_Disc_Spin)：背後巨大的阿頓日輪進化為雙層光環神座，向外放射出 16 道呈扇形展開的幾何神聖金光束；每一道光束末端皆精準重現古埃及阿瑪納時期神聖圖騰——化為張開三指、散發柔和金光的「撫平手掌（Hands of Aten）」（Aten Rays Terminating in Hands - Wikipedia），象徵拉神與阿頓撫平傷痛、裁決天地萬物的至高神權。\n* 全場覆蓋之金字塔光力場 (Socket_Ground_FX)：以神殿態聖甲蟲後上方天頂為制高點，四周地面（Socket_Ground_FX）拉起四道純金與赤金交織的立體「金字塔光力場結界（Pyramid Forcefield）」，將整座戰場化為神聖不可侵犯的太陽神殿領域，同時前側斜稜優雅框住身軀兩側，確保正面臉部與胸飾 100% 清晰無遮擋。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_light_khepri/cr_light_khepri_overload_05_wiki.md",
+        "sha256": "f91d7b1fc56c60f16af5186a2599d317c964ca6b6de44f864a2c3efbf734cc9f",
+        "drive_file_id": "18lpDbVU_QiJCDKTRZM4gx1430wpN3e-x"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "sun_array_skyheron",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_light_khepri_adult"
+  },
+  {
+    "id": "cr_metal_vault_juvenile",
+    "line_id": "cr_metal_vault",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_metal_vault_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 20,
+      "wood": 5,
+      "water": 0,
+      "fire": -20,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 15
+    },
+    "stats": {
+      "hp": 96,
+      "speed": 24,
+      "yin_atk": 48,
+      "yang_atk": 72,
+      "yin_def": 72,
+      "yang_def": 88
+    },
+    "signature_move": "metal_escapement_jab",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "magnet_pickup_double",
+    "concept": {
+      "name_zh": "裝甲彈藥補給爬箱",
+      "name_en": null,
+      "stage_look": "* 倒角方盒裝甲箱體與四隅防撞角件 (Main_Container_Hull / Industrial_Armor & Hazard_Stripe)：主體設計參考軍規空投彈藥箱與緊湊型戰術貨櫃 HDT Global LPE2S2，採用 45 度精密機械倒角的立方體合金箱身（軍艦灰塗裝，Roughness 0.45，邊緣帶輕度磨損掉漆高光）。箱體四個垂直轉角包覆加厚工程橘黃防撞角件，兩側下緣與頂蓋前緣貼有黃黑相間的高反光安全警示條紋。\n* 頂部工業折疊提把與全向掃描雷達 (Hatch_Top & Socket_Head)：箱頂艙蓋中央設有防滑平坦踏板（Socket_PetTouch），並透過兩具鏡面鍍鉻鉸鏈座安裝有一根粗壯的工程橘黃 U 型「工業折疊提把」，可在搬運或收納時平折鎖死；提把前方則配置一具圓柱形箱頂全向掃描雷達（Socket_Head），散發穩定的琥珀黃光。\n* 正面 100% 淨空感測光條與破城推柱艙門 (Hatch_Front & Socket_Front)：箱體正前方（+Z 軸）視野完全淨空無遮擋，上半部鑲嵌寬幅琥珀黃感測光條與左右兩枚警告紅洩壓燈（Valve_Light, Emission 4.0），下半部則為帶黃黑警示紋的下翻式重型艙門（Hatch_Front），內部預藏一具鍍鉻微型破城推柱（Socket_Front）。\n* 四支微型減震橡膠機械腳與側向固定扣爪 (Foot_FL..RR & L/R_Piston_01..03)：底盤（Vault_Base）四角向下伸縮出四支短小精悍的鏡面鍍鉻液壓避震桿（考據 MiniHyQ Hydraulic Quadruped），末端包裹高阻尼黑色減震橡膠腳墊與橘黃護趾，邁步時如同靈巧沉穩的小爬箱；箱體左右兩側則配有一對緊湊的三節液壓折疊固定夾爪。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_metal_vault/cr_metal_vault_juvenile_05_wiki.md",
+        "sha256": "97ef0b8706ba74724df65cfcf7393669b14df7b80861c7ef034757f7db115a5f",
+        "drive_file_id": "1ksgafN07FojHHIgGSa0k8FodbYLEbSB-"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_clock_chick",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_metal_vault_adolescent",
+    "line_id": "cr_metal_vault",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_metal_vault_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "metal",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 35,
+      "wood": 10,
+      "water": 0,
+      "fire": -30,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 20
+    },
+    "stats": {
+      "hp": 120,
+      "speed": 30,
+      "yin_atk": 60,
+      "yang_atk": 90,
+      "yin_def": 90,
+      "yang_def": 110
+    },
+    "signature_move": "metal_ratchet_sweep",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "immune_laboratory",
+    "concept": {
+      "name_zh": "武裝貨櫃輪式裝甲車",
+      "name_en": null,
+      "stage_look": "* 模組化武裝貨櫃車體與背部氣動推進器 (Main_Container_Hull / Vault_Base)：進入少年期後，箱體擴展為標準 ISO 戰術武裝貨櫃比例（參考 Weatherhaven MECC），頂部前緣加裝傾斜防爆裝甲眉板，箱體左右兩側印有大幅醒目的黃黑危險警示斜紋（Hazard_Stripe）。貨櫃後背下方增設兩具大口徑氣動推進噴口，可在高速滑衝時提供強勁推力。\n* 三段式液壓折疊推桿機械臂 (L/R_Piston_01..03 -> L/R_ShieldClaw)：箱體左右兩側正式展開兩條厚重的「三段式液壓折疊推桿機械臂」——第一段為重型肩部轉塔與工程橘黃外液壓缸筒（Piston_01），第二段為高鏡面反射的單軸粗壯鍍鉻伸縮推桿與裝甲肘座（Piston_02），第三段為上下並聯雙鍍鉻阻尼桿（Piston_03），末端連接帶有上下開合工兵重爪與側護盾板的複合機械爪（ShieldClaw）。所有關節套筒與推桿均 100% 實心咬合連接，且嚴格配置於箱體兩側，絕不遮擋正面感測器與艙門。\n* 四輪液壓懸吊底盤 (Foot_FL, Foot_FR, Foot_RL, Foot_RR)：四支機械足底部全面整合高承載電動滾輪與鍍鉻輪轂，平時可鎖死滾輪作為四足邁步，進入高速奔跑（run）時則直接降下底盤滾輪，化身貼地狂飆的輪式裝甲貨櫃車。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_metal_vault/cr_metal_vault_adolescent_05_wiki.md",
+        "sha256": "3a7dbc751014089f41aafd42cc75447a8311c536be55b700b7ed5e26ac1069d2",
+        "drive_file_id": "1ZgXK2uCn3qEne-xg-X0pTD-6HFHLSuDw"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_gear_strider",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_metal_vault_adult",
+    "line_id": "cr_metal_vault",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 10,
+      "water": 0,
+      "fire": -40,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 25
+    },
+    "stats": {
+      "hp": 144,
+      "speed": 36,
+      "yin_atk": 72,
+      "yang_atk": 108,
+      "yin_def": 108,
+      "yang_def": 132
+    },
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "catch_rate_up",
+    "concept": {
+      "name_zh": "重裝工兵防暴堡壘",
+      "name_en": null,
+      "stage_look": "* 三層重疊六角形合金密封貨櫃 (Main_Container_Hull)：成年期迎來結構性躍遷，主軀幹由下、中、上「三個重疊咬合的六角形合金密封貨櫃」構成（參考多模組複合防禦方艙 Global Defence Solutions Containers）。六角形斜面幾何大幅提升了正面與側向的抗爆跳彈能力，兩側加裝厚實的工程橘黃斜角防爆肩甲，後背則聳立著兩根粗壯的鍍鉻高壓蒸氣洩壓塔（頂端鑲嵌琥珀黃洩壓閥燈）。\n* 兩面 15 公分厚防爆防彈折疊大盾臂 (L/R_ShieldClaw)：雙側三段式液壓機械臂全面重裝化，末端裝備兩面厚達 15 公分、高 1.36 米的「防爆防彈折疊大盾臂」（考據 Hard Shell FZE Foldable Ballistic Shield 與 Covered 6 MTS Shield）。大盾上下兩端設有斜角折疊防爆翼板，外表面塗裝黃黑警示條紋與琥珀色防彈觀測窗（Viewing Slit）；格擋（block）時雙盾可於正前方嚴密合扣，形成堅不可摧的 V 型金屬壁壘。\n* 氣動液壓破碎衝錘與重型穿甲發射管 (L/R_ShieldClaw & Socket_Front)：每面大盾內側前端均整合了一具工程橘黃與鏡面鍍鉻構成的「氣動液壓破碎衝錘（Pneumatic Pile-Bunker Hammer）」（參考火砲液壓制退器 Hydraulic Recoil Mechanism），能在近戰中打出碎石裂甲的打樁重拳；正面下艙門內更藏有一門大口徑鎢合金實心刺針電磁發射管（Socket_Front）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_metal_vault/cr_metal_vault_adult_05_wiki.md",
+        "sha256": "8285387ba04c395e52c5504b7934ae9bd9f7b6fb25f41d5610bfacfd9d0eb92c",
+        "drive_file_id": "1JQtZH2xgLjy60bnlgKvkGx47F9M-tpyi"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_chronos_engine",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_metal_vault_overload",
+    "line_id": "cr_metal_vault",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 10,
+      "water": 0,
+      "fire": -40,
+      "earth": 15,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 30
+    },
+    "stats": {
+      "hp": 175,
+      "speed": 43,
+      "yin_atk": 86,
+      "yang_atk": 129,
+      "yin_def": 129,
+      "yang_def": 158
+    },
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
+    "field_utility": "catch_rate_up",
+    "concept": {
+      "name_zh": "太空電梯要塞堡壘",
+      "name_en": null,
+      "stage_look": "* 花瓣式爆開貨櫃外壁與鈦合金武器模組架 (Main_Container_Hull & Hatch_Top/Front)：當內部微型聚變核心（Socket_Core_FX）進入極限超載共鳴，原本緊密鎖死的貨櫃外壁全面像花瓣般向外爆開展開（參考三倍展開容積方艙 HDT Global TRICON 與加高展開系統 Weatherhaven EHMECC）！左右兩側與後方的厚重複合裝甲板由鍍鉻液壓撐桿向外斜向推開懸掛，徹底顯露出內部高密度的銀白「鈦合金垂直發射武器模組架（Titanium VLS Weapon Racks）」與九宮格琥珀色高爆彈頭艙，中央聚變核心與全身洩壓閥同步轉為刺目的警告紅光（Emission 4.0）。\n* 四組巨型駐鋤鋼樁死死扎入地面 (Foot_FL, Foot_FR, Foot_RL, Foot_RR)：底盤八角要塞基座向外斜伸出四條粗壯的外伸支腿樑，每條支腿配置巨型鍍鉻液壓千斤頂與工程橘黃「重型火砲駐鋤鋼樁（Artillery Outrigger Spades）」（考據 Power-Packer Hydraulic Outrigger Stabilizers 與 Bison Container Lifting Jacks），將四枚錐形鈦鋼地錨深深打入地底岩層，抵銷一切後座力與衝擊波。\n* 正面雙聯裝重型電磁磁軌砲台 (Socket_Front & Socket_Head)：在 100% 淨空無遮擋的正面火控雷達橋下方，原本的穿甲發射管全面展開延伸為一門長達 0.92 米的「雙聯裝重型電磁磁軌砲（Twin-Rail Electromagnetic Railgun）」，兩道鏡面鍍鉻加速導軌中央奔湧著熾紅的高壓洛倫茲電漿光軌，箱頂則升起雙天線太空電梯相位陣列雷達塔（Socket_Head），化身鎮守戰場的終極移動要塞。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_metal_vault/cr_metal_vault_overload_05_wiki.md",
+        "sha256": "45d78a2acfcb6cdffb53a4995777240c3b2902e6bd7db426c32e76a91d389867",
+        "drive_file_id": "1jG6Vrsoj9em3SDD31dStGTpol6b4nRqs"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "metal_chronos_engine",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_metal_vault_adult"
+  },
+  {
+    "id": "cr_shadow_eye_juvenile",
+    "line_id": "cr_shadow_eye",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_shadow_eye_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 10,
+      "wind": 0,
+      "thunder": -20,
+      "light": -5,
+      "shadow": 20
+    },
+    "mastery": {
+      "shadow": 15
+    },
+    "stats": {
+      "hp": 48,
+      "speed": 88,
+      "yin_atk": 112,
+      "yang_atk": 48,
+      "yin_def": 64,
+      "yang_def": 40
+    },
+    "signature_move": "shadow_nightpaw_swipe",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "party_stealth",
+    "concept": {
+      "name_zh": "黑霧絨球瞳",
+      "name_en": null,
+      "stage_look": "【黑霧絨球瞳】\n\t0.78m × 0.82m × 0.98m\n\t3.2 kg\n\t圓滾深淵黑霧小毛球（靈感源自 Susuwatari）、頭頂紫青漸變鬼火絨角、中央猩紅血環與毒紫幽青大獨眼、暗紅爪尖小影爪\n\tadolescent",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_shadow_eye/cr_shadow_eye_juvenile_05_wiki.md",
+        "sha256": "2868365724716cdaefbc6ab85e7be920197e97f13cfe09998eeeb8421dbee438",
+        "drive_file_id": "1wvMNsVwg-DxskfK3DyIMO4cgRiEFvw0A"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_night_pup",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_shadow_eye_adolescent",
+    "line_id": "cr_shadow_eye",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 4
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_shadow_eye_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "shadow",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 5,
+      "thunder": -30,
+      "light": -10,
+      "shadow": 35
+    },
+    "mastery": {
+      "shadow": 20
+    },
+    "stats": {
+      "hp": 60,
+      "speed": 110,
+      "yin_atk": 140,
+      "yang_atk": 60,
+      "yin_def": 80,
+      "yang_def": 50
+    },
+    "signature_move": "shadow_longnight_lunge",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "steal_item",
+    "concept": {
+      "name_zh": "破篷幽爪靈",
+      "name_en": null,
+      "stage_look": "【破篷幽爪靈】\n\t1.12m × 1.32m × 1.44m\n\t18.5 kg\n\t黑霧拉長形成暗紫血紋破舊斗篷剪影、高拱兜帽陰影中懸浮血絲毒紫單眼、雙側探出尖端浸染咒怨血紅的漆黑三指幽靈爪\n\tadult",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_shadow_eye/cr_shadow_eye_adolescent_05_wiki.md",
+        "sha256": "94849ed909bb0d3536ad320510da522d51b9f631cdfd783f09d8c135f67bbb8b",
+        "drive_file_id": "1t95Ave2AzU_GI0bBcMWBZlgr3Lyw_jag"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_shade_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_shadow_eye_adult",
+    "line_id": "cr_shadow_eye",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": 0,
+      "ice": 30,
+      "wind": 10,
+      "thunder": -40,
+      "light": -15,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 25
+    },
+    "stats": {
+      "hp": 72,
+      "speed": 132,
+      "yin_atk": 168,
+      "yang_atk": 72,
+      "yin_def": 96,
+      "yang_def": 60
+    },
+    "signature_move": "shadow_lone_hunter_ambush",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "immune_labyrinth",
+    "concept": {
+      "name_zh": "破面虛空魔客",
+      "name_en": null,
+      "stage_look": "【破面虛空魔客】\n\t1.68m × 1.84m × 1.94m\n\t64.0 kg\n\t虛空幽影魔客、黑曜鑲嵌猩紅與幽青咒紋的破裂多面體面具、長幾何鋸齒影子披風、身側漂浮「猩紅‧幽青‧毒紫」三色異瞳紫火影珠\n\toverload",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_shadow_eye/cr_shadow_eye_adult_05_wiki.md",
+        "sha256": "c8a4a234b253097f8a3c9b8c8843ff6263695db98520c199fd1deb81a9507908",
+        "drive_file_id": "1g6fw-9-JN7_rsvYpv077oVKffk48nih6"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_longnight_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_shadow_eye_overload",
+    "line_id": "cr_shadow_eye",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": 0,
+      "ice": 30,
+      "wind": 10,
+      "thunder": -40,
+      "light": -15,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 30
+    },
+    "stats": {
+      "hp": 88,
+      "speed": 158,
+      "yin_atk": 201,
+      "yang_atk": 86,
+      "yin_def": 115,
+      "yang_def": 72
+    },
+    "signature_move": "shadow_lone_hunter_ambush",
+    "trait": "trait_shadow_longnight_stalker",
+    "field_utility": "immune_labyrinth",
+    "concept": {
+      "name_zh": "深淵巨瞳視界",
+      "name_en": null,
+      "stage_look": "【深淵巨瞳視界】\n\t2.15m × 3.56m × 2.88m\n\t480.0 kg (含引力場)\n\t深淵巨瞳形態（致敬 Dark Beholder）、八道遮天黑霧幾何觸手帷幕、猩紅與幽青雙環深淵黑洞視界、十芒血珀與鬼火皇冠",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_shadow_eye/cr_shadow_eye_overload_05_wiki.md",
+        "sha256": "b08a50451e953d792f122868b7b65b9be0f809f4d15cdc35bfe55ae83a32aeb6",
+        "drive_file_id": "1EXwt6tp-lBIElWIEGjhwpfJZY1JxQP48"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "moon_longnight_wolf",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_shadow_eye_adult"
+  },
+  {
+    "id": "cr_solmane_lion_juvenile",
+    "line_id": "cr_solmane_lion",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
+    "evolves_to": "cr_solmane_lion_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 10,
+      "water": -20,
+      "fire": 20,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 15,
+      "light": 5
+    },
+    "stats": {
+      "hp": 80,
+      "speed": 64,
+      "yin_atk": 64,
+      "yang_atk": 96,
+      "yin_def": 48,
+      "yang_def": 48
+    },
+    "signature_move": "fire_cinder_claw",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "cook_fire",
+    "concept": {
+      "name_zh": "晨光幼獅",
+      "name_en": null,
+      "stage_look": "* 外觀描述：剛從溫熱的太陽火晶蛋中破殼翻滾而出（對應專屬動作 hatch）。體態遵循幼年獅科動物頭身比，擁有圓滾滾的柔軟小肚皮與短粗肉乎乎的四肢肉墊（Scaling and mechanics of carnivoran footpads - PMC2894873）。額頭正中央天生帶有白金光芒的「金星十字印記（Sol_Core）」，脖頸周圍環繞著一圈如清晨第一道陽光般溫暖柔和的蓬鬆金色絨毛領，尾巴末端搖曳著一小簇恆溫不傷人的橘金火苗。\n   * 五官與拓撲檢核：幼獅圓潤的雙耳、大而明亮的日曜十字雙瞳、金色鼻頭與下顎完全外露無遮擋；全身軀幹、頸部與四肢採連續封閉流形拓撲（Manifold Lofted Topology），無任何懸空或穿模問題。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_solmane_lion/cr_solmane_lion_juvenile_05_wiki.md",
+        "sha256": "83c46b89977c359cddf4a883f80fd878011f4c4c721d6bafa4839b2fceb83b66",
+        "drive_file_id": "1HllPIgWCbw7igxv1N-eUqrhN_iDlI9Pz"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_ember_cub",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_solmane_lion_adolescent",
+    "line_id": "cr_solmane_lion",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_solmane_lion_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "fire",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -30,
+      "fire": 35,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 20,
+      "light": 10
+    },
+    "stats": {
+      "hp": 100,
+      "speed": 80,
+      "yin_atk": 80,
+      "yang_atk": 120,
+      "yin_def": 60,
+      "yang_def": 60
+    },
+    "signature_move": "fire_mane_pounce",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "immune_volcano",
+    "concept": {
+      "name_zh": "烈陽鬃獅",
+      "name_en": null,
+      "stage_look": "* 外觀描述：進入亞成年換毛與骨骼抽長期，肩胛與後臀肌肉輪廓日趨明顯（Numeric and morphological studies of the African lion - PMC9636809）。原本柔軟的頸絨正式點燃為兩層向後翻騰的明亮橘金烈焰（Solar_Mane），尾尖火苗亦擴大為飽滿的烈焰火球。太陽帝國神殿騎士團會在此階段為其雙前肢佩戴經過聖光洗禮的「象牙白太陽浮雕護甲（Holy_Marble_Armor）」，使其在高速奔襲（run）與前掌撲擊時具備優異的防禦與破甲能力。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_solmane_lion/cr_solmane_lion_adolescent_05_wiki.md",
+        "sha256": "aef18595ce12d0c0a86f547faddce8a2aed839480413ce9893b4787aaaa344c2",
+        "drive_file_id": "1BkEb84vLT3RZYyydHBNC1ATxXmnCe30a"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_mane_stalker",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_solmane_lion_adult",
+    "line_id": "cr_solmane_lion",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -40,
+      "fire": 50,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 25,
+      "light": 15
+    },
+    "stats": {
+      "hp": 120,
+      "speed": 96,
+      "yin_atk": 96,
+      "yang_atk": 144,
+      "yin_def": 72,
+      "yang_def": 72
+    },
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "egg_hatch_boost",
+    "concept": {
+      "name_zh": "火鬃日曜聖獅",
+      "name_en": null,
+      "stage_look": "* 外觀描述：完全成熟的王廷主力守護聖獸（Maahes | Ancient Egypt Online）。頭頂加冕五芒 24K 純金太陽皇冠（Socket_Head），頸部、雙肩與壯碩胸膛生長著澎湃翻滾的三層式純金太陽日冕鬃毛（Solar corona - Wikipedia），如怒濤般向後上方捲曲延展，將威嚴的獅王面容襯托得熠熠生輝。軀幹披掛全套古太陽帝國「金白大理石符文聖甲」，包含鑲嵌日曜核心勳章的胸甲（Socket_Front）、浮雕雙肩鎧、背脊護甲、腰臀甲裙與四肢脛甲；長尾末端則燃燒著帶有立體白金十字星芒的「神聖十字火炬（Tail_Flame_Tip）」。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_solmane_lion/cr_solmane_lion_adult_05_wiki.md",
+        "sha256": "a7181d4daa4c65d3dcf4545bebcbc3032527d5f12b870ee2523d4899d41b8805",
+        "drive_file_id": "170rtIqOnLW30Y31k_KpRIySp9Acj2xlj"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_pyre_monarch",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_solmane_lion_overload",
+    "line_id": "cr_solmane_lion",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "charge",
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 15,
+      "water": -40,
+      "fire": 50,
+      "earth": 0,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 30,
+      "light": 20
+    },
+    "stats": {
+      "hp": 146,
+      "speed": 115,
+      "yin_atk": 115,
+      "yang_atk": 172,
+      "yin_def": 86,
+      "yang_def": 86
+    },
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
+    "field_utility": "egg_hatch_boost",
+    "concept": {
+      "name_zh": "全曜日冕天界聖天獅",
+      "name_en": null,
+      "stage_look": "* 外觀描述：當心臟處的「神聖核聚變反應核心（Socket_Core_FX）」完全解封（觸發 overload_enter），火鬃日曜聖獅將突破生物肉體極限，化為半等離子態的恆星熾熱體（Solar Prominences - NASA）。其雙肩鬃毛如日珥爆發般向兩側高空展開為一對遮天蔽日的雙層「光火光翼」，背後上方（Halo_Solar_Root）升起一輪由彭特利庫斯白大理石外環、24K 純金中環、白金等離子內環與十六道十字星芒構成的巨大實體「神聖日輪十字光冕」，四足踏地之處皆燃起璀璨的太陽金炎火環（Socket_Ground_FX）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_solmane_lion/cr_solmane_lion_overload_05_wiki.md",
+        "sha256": "40b1993598c2ac28c6992bcfdd402860cb2b66667e858fb16fcd6ce6be181953",
+        "drive_file_id": "1bTgshDzrHrwIn9V-i53aeImv19osKYU0"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "fire_pyre_monarch",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_solmane_lion_adult"
+  },
+  {
+    "id": "cr_thunder_drone_juvenile",
+    "line_id": "cr_thunder_drone",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 5
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_thunder_drone_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": -5,
+      "ice": 0,
+      "wind": 10,
+      "thunder": 20,
+      "light": -20,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 15
+    },
+    "stats": {
+      "hp": 48,
+      "speed": 96,
+      "yin_atk": 104,
+      "yang_atk": 48,
+      "yin_def": 56,
+      "yang_def": 48
+    },
+    "signature_move": "thunder_starblaze_charge",
+    "trait": "trait_thunder_storm_gallop",
+    "field_utility": "quick_escape",
+    "concept": {
+      "name_zh": "微電同軸偵察球",
+      "name_en": null,
+      "stage_look": "掌上型球形軍規白導角機身（參考 [Int-Ball](https://en.wikipedia.org/wiki/Int-Ball)）、正面無遮擋單顆大光圈掃描鏡頭、底部鏤空支架同軸雙旋翼涵道",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_thunder_drone/cr_thunder_drone_juvenile_05_wiki.md",
+        "sha256": "181e5df244faf6b8dfcbd3d0e3c1a285950875169a09769e6e6911dcca02badd",
+        "drive_file_id": "1xNig-d5CRA6ifan3z8gDTETDyoRLsViX"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "star_blaze_foal",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_thunder_drone_adolescent",
+    "line_id": "cr_thunder_drone",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 4
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_thunder_drone_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "thunder",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 5,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": -10,
+      "ice": 0,
+      "wind": 20,
+      "thunder": 35,
+      "light": -30,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 20
+    },
+    "stats": {
+      "hp": 60,
+      "speed": 120,
+      "yin_atk": 130,
+      "yang_atk": 60,
+      "yin_def": 70,
+      "yang_def": 60
+    },
+    "signature_move": "thunder_galloping_discharge",
+    "trait": "trait_thunder_storm_gallop",
+    "field_utility": "mount",
+    "concept": {
+      "name_zh": "四軸電針巡邏機",
+      "name_en": null,
+      "stage_look": "消光深灰導角立方體機殼、四軸碳纖維斜伸機臂與四葉涵道推進器、兩側下顎高壓電極針、正面倒品字三鏡頭感測雲台",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_thunder_drone/cr_thunder_drone_adolescent_05_wiki.md",
+        "sha256": "cd49583127ba06746e354ce8c7be9ec8539f6279f9a7dfdffcd0d2858a86a1bd",
+        "drive_file_id": "1iTI19bcTUT7bQHyQVIpa0iXu9hCz7J_t"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "star_storm_colt",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_thunder_drone_adult",
+    "line_id": "cr_thunder_drone",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": -15,
+      "ice": 0,
+      "wind": 30,
+      "thunder": 50,
+      "light": -40,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 25
+    },
+    "stats": {
+      "hp": 72,
+      "speed": 144,
+      "yin_atk": 156,
+      "yang_atk": 72,
+      "yin_def": 84,
+      "yang_def": 72
+    },
+    "signature_move": "thunder_skyhoof_stampede",
+    "trait": "trait_thunder_storm_gallop",
+    "field_utility": "immune_tower",
+    "concept": {
+      "name_zh": "六軸特斯拉哨戒塔",
+      "name_en": null,
+      "stage_look": "重裝懸浮哨戒塔、六軸折疊涵道推進器、機背雙聯重型超導電容圓筒與斜展太陽能板、左右前伸雙聯裝電漿放電叉",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_thunder_drone/cr_thunder_drone_adult_05_wiki.md",
+        "sha256": "ff73ae3311eb774248e164a9d45bb6647c7a141112655ab571b2258065d973f1",
+        "drive_file_id": "1ASdg2v1X_WFqA0Bm7xnewQWubFt7xa95"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "star_skyhoof_steed",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_thunder_drone_overload",
+    "line_id": "cr_thunder_drone",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 10,
+      "wood": 0,
+      "water": 5,
+      "fire": 0,
+      "earth": -15,
+      "ice": 0,
+      "wind": 30,
+      "thunder": 50,
+      "light": -40,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 30
+    },
+    "stats": {
+      "hp": 89,
+      "speed": 172,
+      "yin_atk": 187,
+      "yang_atk": 86,
+      "yin_def": 100,
+      "yang_def": 86
+    },
+    "signature_move": "thunder_skyhoof_stampede",
+    "trait": "trait_thunder_storm_gallop",
+    "field_utility": "immune_tower",
+    "concept": {
+      "name_zh": "天頂軌道電磁衛星",
+      "name_en": null,
+      "stage_look": "- **雙座前傾高壓特斯拉線圈塔 (`Drone_Chassis` / `Neon_Cyan_Arc`)**：當超導電容進入極限超頻狀態（`overload_enter`），機背裝甲解鎖彈開，兩座高達 0.86 米、帶四層諧振電離環的「高壓特斯拉線圈塔」（靈感源自 [Nikola Tesla Colorado Springs Notes](https://sanandres.uep.edu.py/ProductPdf/TLhpxj/703507/nikola-tesla_colorado_springs_notes_1899_1900.pdf) 的放大發射機諧振塔）自雙肩後上方威嚴升起並向前傾斜。\n- **大型磁軌加速陣列與展開式太陽能翼 (`Prong_L, Prong_R` / `Lens_Glass`)**：原本的雙聯放電叉沿向前外滑軌徹底解鎖延伸，重組為左右對稱、內置三級環形洛倫茲加速線圈的「大型電磁軌道砲加速陣列」（致敬 [Plasma Railguns & Directed Energy Weapons](https://www.quora.com/Are-guns-that-shoot-electricity-lighting-possible-Why-dont-we-see-them-more-in-science-fiction)）。機身左右兩側則水平展開雙段式大型太空太陽能電池翼，腹部超導電容核心超頻發出刺目的白熾強光。\n- **六軸旋翼全數脫離為外圍環繞放電浮標 (`Orbit_SubDrone_01..04`)**：嚴格遵循「六軸旋翼脫離為子機、在外圍環繞放電浮標」之設定，母機本體四周僅保留解鎖後的磁浮對接座，原本的 **6 具旋翼全數脫離母機**，化為在半徑 `1.62m` 外圍軌道呈六角形編隊自主公轉的 **6 具獨立涵道旋翼放電浮標子機**（每具子機均具備完整四葉涵道旋翼與頂部球形放電端子）。\n- **Level 4 天頂電磁雷暴網 (`Neon_Cyan_Arc`)**：超載狀態下電光密度達到頂峰，全機周圍奔湧著 **超過 72 道巨型分叉閃電鏈**！雙座特斯拉線圈塔頂與機腹白熾電容核同時向外圍 **6 具脫離式旋翼子機** 投射上下雙層立體高壓電纜弧，六具子機之間更彼此串聯成遮天蔽日的雙環六角雷暴力場網，加上兩門長磁軌砲管上螺旋炸裂的導引電漿雷光，完美展現軌道電磁衛星的毀滅性威壓（且正面主鏡頭前方依舊保持 100% 絕對淨空）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_thunder_drone/cr_thunder_drone_overload_05_wiki.md",
+        "sha256": "db2be13c5ae19c7b2f156d3b8a671de16e678c0ba7fc5e8b63d4c644245ffe8f",
+        "drive_file_id": "1C548mJ_-aHJmD2mCgViRMh77RLalktor"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "star_skyhoof_steed",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_thunder_drone_adult"
+  },
+  {
+    "id": "cr_verdant_aquila_juvenile",
+    "line_id": "cr_verdant_aquila",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_verdant_aquila_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": -20,
+      "wood": 20,
+      "water": 10,
+      "fire": 0,
+      "earth": 5,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 15,
+      "wind": 5
+    },
+    "stats": {
+      "hp": 56,
+      "speed": 96,
+      "yin_atk": 64,
+      "yang_atk": 88,
+      "yin_def": 48,
+      "yang_def": 48
+    },
+    "signature_move": "wood_frond_dart",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "forage_berries",
+    "concept": {
+      "name_zh": "嫩芽小鷹",
+      "name_en": null,
+      "stage_look": "剛從古木蛋破殼而出的幼雛（對應動作 hatch，Golden eagle - Wikipedia）。全身披著春天初綻山毛櫸嫩葉般的鮮亮黃綠背羽（#5CA333）與山毛櫸堅果般的暖奶白腹羽，並帶有柔潤的雛鳥羽衣光澤。其雙翼依鳥類腕部尺側折疊構造（PMC2880093）呈 Z 字形完整收合於圓滾滾的體壁外側，覆羽、次級飛羽與初級飛羽皆為具有平行側脈與波狀鋸齒緣的山毛櫸嫩葉形態，尺寸飽滿且層次分明。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_verdant_aquila/cr_verdant_aquila_juvenile_05_wiki.md",
+        "sha256": "e97d4cd87cb12ce351f0a467c96b54d643135b76b9b02d27e1cb2d52f1b6ea47",
+        "drive_file_id": "1Sj_roFW5nlIGtjXERaweeDySL5DXH2Zn"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_fern_chick",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_verdant_aquila_adolescent",
+    "line_id": "cr_verdant_aquila",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_verdant_aquila_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": -30,
+      "wood": 35,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 20,
+      "wind": 10
+    },
+    "stats": {
+      "hp": 70,
+      "speed": 120,
+      "yin_atk": 80,
+      "yang_atk": 110,
+      "yin_def": 60,
+      "yang_def": 60
+    },
+    "signature_move": "wood_plumage_volley",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "immune_rainforest",
+    "concept": {
+      "name_zh": "碧羽風隼",
+      "name_en": null,
+      "stage_look": "完成首次換羽後，碧羽風隼便進入全時滯空狀態（Steady as they hover - PMC11418201）。雙翼展開為上層覆羽、後緣次級飛羽與翼尖開縫初級飛羽三層結構，每一片羽毛皆呈現山毛櫸葉特有的平行直達側脈（Craspedodromous Venation）與波狀鋸齒金邊（Trees for Cities）。透過雙骨線性插值蒙皮權重，無論在動力下拍或上抬屈肘收腕（Scoop & Tuck，PMC4872793）時，所有山毛櫸葉羽皆與翅膀主樑緊密貼合、一體扇動。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_verdant_aquila/cr_verdant_aquila_adolescent_05_wiki.md",
+        "sha256": "3dfe6ca841d0912652282c31dcde1d3a2f4d7fdf4083ead1fd1fbb8ae9e09700",
+        "drive_file_id": "13UtFsu_PEgt1TECCubN1x87QBvOhDGas"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_plume_peafowl",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_verdant_aquila_adult",
+    "line_id": "cr_verdant_aquila",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 25,
+      "wind": 15
+    },
+    "stats": {
+      "hp": 84,
+      "speed": 144,
+      "yin_atk": 96,
+      "yang_atk": 132,
+      "yin_def": 72,
+      "yang_def": 72
+    },
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "return_village",
+    "concept": {
+      "name_zh": "千葉翡冠天鷲",
+      "name_en": null,
+      "stage_look": "古樹神廟與翡翠風穹的領空霸主。背部覆蓋成熟山毛櫸林冠的深邃暖調橄欖綠正羽，前胸為溫潤淺奶白腹羽，頸圈環繞燦爛的秋芽古銅金領羽，表面呈現絲緞般的鳥類羽衣光澤（Roughness = 0.18）。寬廣的雙翼與扇形三長尾羽（Tail_Feather_01..03）皆由大型山毛櫸葉狀飛羽構成，中肋（Midrib）、平行側脈與古銅金波狀齒緣在陽光下熠熠生輝；頭頂展開 7 羽金邊山毛櫸神冠並懸浮神聖年輪光環，下腹則蜷收著纖細的金鱗跗蹠骨與針尖烏木鐮刀利爪（PMC12746076）。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_verdant_aquila/cr_verdant_aquila_adult_05_wiki.md",
+        "sha256": "d326a281b4601999db59551105cfa87eeeefb11534b15fed4744f2ad204676b4",
+        "drive_file_id": "1s_nHoffvZMJuI8V6gXY5JDegsgsFqCjv"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_canopy_regent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_verdant_aquila_overload",
+    "line_id": "cr_verdant_aquila",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "flank",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 30,
+      "wind": 20
+    },
+    "stats": {
+      "hp": 103,
+      "speed": 172,
+      "yin_atk": 115,
+      "yang_atk": 158,
+      "yin_def": 86,
+      "yang_def": 86
+    },
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "return_village",
+    "concept": {
+      "name_zh": "神木穹天暴風鷲",
+      "name_en": null,
+      "stage_look": "當千葉翡冠天鷲進入極限超載狀態（overload_enter）時，胸前古木核心（Verdant_Core）釋放強度達 5.0 的晨曦金生命射線。高空懸停的三層式山毛櫸世界樹巨翼交錯綻放盛夏翠綠與深秋耀金的暴風光刃（Roots Plants），頭頂展開三重同心旋轉的世界樹年輪光環（MDPI Dendrochronology），周身環繞 10 道高速螺旋氣旋飄帶。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_verdant_aquila/cr_verdant_aquila_overload_05_wiki.md",
+        "sha256": "0bc360dc0b80d26b8d0244413021ef6ebe6edbc9e4ca40556c1c485a3dc50ae8",
+        "drive_file_id": "1-xyjuOfxXKK-Bhh2h5tsdbHKzncKnU8J"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_canopy_regent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_verdant_aquila_adult"
+  },
+  {
+    "id": "cr_wind_bird_juvenile",
+    "line_id": "cr_wind_bird",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_wind_bird_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 10,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -20,
+      "wind": 20,
+      "thunder": -5,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 15
+    },
+    "stats": {
+      "hp": 48,
+      "speed": 112,
+      "yin_atk": 88,
+      "yang_atk": 64,
+      "yin_def": 40,
+      "yang_def": 48
+    },
+    "signature_move": "wind_flute_slash",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "weather_control",
+    "concept": {
+      "name_zh": "絨雲旋尾雛雀",
+      "name_en": null,
+      "stage_look": "* 圓滾蓬鬆的連體小雲團身軀 (Body_Cloud / Neck / Head_Crest / Cloud_Wing)：主體宛如一團剛從晴空摘下的飽滿棉花雲球，腹部、胸廓、頸部與圓潤腦袋採用平行傳輸樣條無縫連體塑形，表面覆蓋著極淺青白色、帶有柔和透射感（Transmission 0.60, Roughness 0.30）的蓬鬆絨雲團，臉頰兩側與背羽處隆起圓滾滾的雲朵絨球。\n* 撲稜透明小羽翼與螺旋風尾 (L_Wing_01..03 / R_Wing_01..03 / Tail_Whirl_01..03)：身體兩側生有一對短小靈巧的三節小羽翼，覆羽為柔軟白雲，飛羽末端則呈現半透明青藍色澤；身後拖著一條小巧玲瓏的青綠螺旋風尾，飛行時如發條般輕快捲動。\n* 無遮擋清澈五官與頭頂風芽 (Eye_Core / Gale_Blade)：正面視野 100% 淨空無遮擋，圓潤臉龐鑲嵌著一對水汪汪的蔚藍渦流大眼與星芒高光點，中央點綴著小巧的青金鳥喙，頭頂則豎立著一撮隨風搖晃的翠青小風芽，腹底蜷縮著兩隻青翠小巧的雲爪。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wind_bird/cr_wind_bird_juvenile_05_wiki.md",
+        "sha256": "5efdcfc1b11be0470ab8471b869a1965a1f5c5f84a2e06ca75ed7388d6f08dc8",
+        "drive_file_id": "180X5tRSWRcXs9-3W6m4cI5j7HI74WI4k"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wind_reed_skiff",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wind_bird_adolescent",
+    "line_id": "cr_wind_bird",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_wind_bird_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "wind",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -30,
+      "wind": 35,
+      "thunder": -10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 20
+    },
+    "stats": {
+      "hp": 60,
+      "speed": 140,
+      "yin_atk": 110,
+      "yang_atk": 80,
+      "yin_def": 50,
+      "yang_def": 60
+    },
+    "signature_move": "wind_reed_crescent",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "levitate",
+    "concept": {
+      "name_zh": "青冠流風刃雀",
+      "name_en": null,
+      "stage_look": "* 流線型梭狀氣動身軀 (Body_Cloud / Neck / Cloud_Wing)：脫去幼年期的渾圓稚氣，軀幹與修長頸部分化為符合高速空氣動力學的流線型梭狀輪廓，胸前隆起飽滿的破風龍骨雲甲，使牠能在強風中穩定切開氣流。\n* 多層半透明風刃羽毛 (L_Wing_01..03 / R_Wing_01..03 / Gale_Blade)：雙翼明顯拉長並分化出上下雙層結構——上層為導流雲霧覆羽，下層則排列著 9 枚邊緣散發鮮明青綠自發光（Emission Strength 5.0）的半透明風刃初級飛羽，揮翼時能拍出銳利氣刃。\n* 額前青風冠羽緞帶 (Head_Crest / Gale_Blade)：額前正上方凝聚出一束修長飄逸的「青風冠羽緞帶」，自額頂優雅地向上拱起並向腦後流暢飄揚，既展現少年風雀的英氣，又確保正面雙眸、銳利青眉與鳥喙毫無遮擋；尾部則進化為雙股交纏的流線螺旋風帶。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wind_bird/cr_wind_bird_adolescent_05_wiki.md",
+        "sha256": "26cbdf0850e16d52a3bdb621cb4aada6605922c72e3f1e292ff8482bf4418ecc",
+        "drive_file_id": "1JSp4QU5bADkWwUbN-US1yyX1P47B03aE"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wind_flute_cruiser",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wind_bird_adult",
+    "line_id": "cr_wind_bird",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -40,
+      "wind": 50,
+      "thunder": -10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 25
+    },
+    "stats": {
+      "hp": 72,
+      "speed": 168,
+      "yin_atk": 132,
+      "yang_atk": 96,
+      "yin_def": 60,
+      "yang_def": 72
+    },
+    "signature_move": "wind_gale_symphony",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "immune_space",
+    "concept": {
+      "name_zh": "嵐天三尾翔風鳥",
+      "name_en": null,
+      "stage_look": "* 翱翔嵐天的寬翼猛禽身姿 (Body_Cloud / L_Wing_01..03 / R_Wing_01..03)：進入成年期後，翼展大幅擴張至近 3 米，寬廣的雙翼由高密度壓縮氣流與 12 枚修長鋒利的青綠風刃飛羽構成，胸側亦分化出兩枚穩定偏航的青風導流副刃，神態銳利而敏捷。\n* 雙耳青風冠羽緞帶 (Head_Crest / Gale_Blade)：頭部兩側耳羽徹底升華為兩束長達 1.1 米的「雙耳青風冠羽緞帶」，自太陽穴兩側向斜上方與身後瀟灑延展，配合額頂中央的銳利風冠刺，勾勒出嵐天霸主的威嚴輪廓，同時完全避開臉部正面視線。\n* 三束旋轉風帶交織長尾 (Tail_Whirl_01..03 / Gale_Blade / Eye_Core)：長尾由兩束鮮明青綠風刃帶與一束蔚藍高透明渦流帶共「三束旋轉風帶」以 120 度相位差螺旋交織而成，在空中浮空撲翼時能優雅劃出 8 字形（Lissajous Figure-8）氣流軌跡。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wind_bird/cr_wind_bird_adult_05_wiki.md",
+        "sha256": "25101f90ccbd71ae79efe5445a95ebf7c5cb97ec045d739a20221651904db373",
+        "drive_file_id": "1AbIXJjH600SutHFW18tIpEu5KKFfbf5L"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wind_monsoon_galeon",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wind_bird_overload",
+    "line_id": "cr_wind_bird",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": -40,
+      "wind": 50,
+      "thunder": -10,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wind": 30
+    },
+    "stats": {
+      "hp": 88,
+      "speed": 201,
+      "yin_atk": 158,
+      "yang_atk": 115,
+      "yin_def": 72,
+      "yang_def": 86
+    },
+    "signature_move": "wind_gale_symphony",
+    "trait": "trait_wind_reed_harmonics",
+    "field_utility": "immune_space",
+    "concept": {
+      "name_zh": "罡風天穹狂鷹",
+      "name_en": null,
+      "stage_look": "* 深邃風暴灰狂暴鷹軀 (Body_Cloud / Cloud_Wing)：當體內氣旋核心進入極限超載共振，原本澄澈的青白雲霧羽衣瞬間因高壓離子化而轉為深邃威嚴的「風暴灰（Storm Grey）」，體型驟然擴展為翼展近 4 米的暴風神鷹，胸側披掛三對重型切割風刃鎧。\n* 雙翼外側超高速自轉切割氣刃光環 (L_Wing_02 / R_Wing_02 / Gale_Blade)：雙翼中段與外側上方各生成一座直徑近 1 米、帶有十枚鋸齒風芒的「超高速自轉切割氣刃光環」，內圈伴生蔚藍渦流副環；光環沿翼面斜向展開，絕不遮擋正面神鷹銳利雙眸。\n* 中心爆發微型真空颶風眼 (Socket_Core_FX / Eye_Core)：胸腹正中央（位於臉部下方的胸腔核心區）徹底裂解並爆發出一顆高速坍縮旋轉的「微型真空颶風眼」，蔚藍色高透明渦流核心外圍環繞著雙層逆向旋轉的壓縮氣刃環，持續向外釋放撕裂天地的風暴呼嘯。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wind_bird/cr_wind_bird_overload_05_wiki.md",
+        "sha256": "35dd229b2d7f44d94462d53298369b4fb5f2e130093afa9d2e5cc7a2482bbc43",
+        "drive_file_id": "1Lb_X9TlaoSAhaU9eGLVYxoxtSu1ieo4I"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wind_monsoon_galeon",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_wind_bird_adult"
+  },
+  {
+    "id": "cr_wood_puppet_juvenile",
+    "line_id": "cr_wood_puppet",
+    "stage": "juvenile",
+    "size_class": "XS",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_wood_puppet_adolescent",
+    "evolution": {
+      "level": 25,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 1,
+          "qty": 3
+        }
+      ]
+    },
+    "resist": {
+      "metal": -20,
+      "wood": 20,
+      "water": 10,
+      "fire": 0,
+      "earth": 5,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 15
+    },
+    "stats": {
+      "hp": 100,
+      "speed": 20,
+      "yin_atk": 40,
+      "yang_atk": 80,
+      "yin_def": 60,
+      "yang_def": 100
+    },
+    "signature_move": "wood_frond_dart",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "forage_berries",
+    "concept": {
+      "name_zh": "十字稻草木樁偶",
+      "name_en": null,
+      "stage_look": "* 截頂短木樁身軀 (Pelvis_Log / Torso_Log)：主體由兩段未去皮的截頂冷杉短木樁透過簡易圓木榫上下串接而成。深褐色的粗糙樹皮表面保留著天然的縱向裂紋與切面年輪凹凸細節 (Bark_Wood, Roughness 0.85)。\n* 稻草人面貌與十字身形 (Head_Sprout / L_Shoulder / R_Shoulder)：頭部木樁正面以焦痕與刀刻勾勒出質樸的稻草人五官，雙眼與縫線嘴角透出柔和的翡翠綠微光 (Chakra_Glow)。雙臂為一根橫穿胸腔木樁的十字形原木橫桿，使其整體輪廓呈現鮮明的田間十字木偶造型。\n* 初生雙葉嫩芽 (Bonsai_Trunk / Branch_01..02)：頭頂截斷面中央破木長出一株鮮嫩欲滴的翠綠雙葉幼苗 (Sprout_Green, Subsurface 0.2)，會隨著幼體搖晃的步伐與微風輕巧擺動。\n* 步履搖晃的動態特徵：由於膝部與踝部尚未分化出精密鉸鏈，幼年木偶行走時仰賴短木樁雙足交替硬性點地，步伐帶著笨拙可愛的左右搖晃與木頭碰撞的「叩、叩」聲響。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wood_puppet/cr_wood_puppet_juvenile_05_wiki.md",
+        "sha256": "8d78ff6879bc513064d7ca512c0f2fb063907e196a048fac67d0e50a018171bf",
+        "drive_file_id": "1mzJVD43kmcXGg54IvAEc-TqPm_QfquIm"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_fern_chick",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wood_puppet_adolescent",
+    "line_id": "cr_wood_puppet",
+    "stage": "adolescent",
+    "size_class": "S",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": "cr_wood_puppet_adult",
+    "evolution": {
+      "level": 45,
+      "materials": [
+        {
+          "element": "wood",
+          "tier": 2,
+          "qty": 5
+        }
+      ]
+    },
+    "resist": {
+      "metal": -30,
+      "wood": 35,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 20
+    },
+    "stats": {
+      "hp": 125,
+      "speed": 25,
+      "yin_atk": 50,
+      "yang_atk": 100,
+      "yin_def": 75,
+      "yang_def": 125
+    },
+    "signature_move": "wood_plumage_volley",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "immune_rainforest",
+    "concept": {
+      "name_zh": "藤纏木刺傀儡",
+      "name_en": null,
+      "stage_look": "* 標準兩段式傀儡身軀 (Pelvis_Log / Torso_Log)：木樁身軀經過木靈力二次塑形，分化為靈活的倒梯形胸腔與球窩關節腰盤，四肢關節處進化出完整的圓軸鉸鏈（L_Elbow, R_Elbow, L_Knee, R_Knee），具備敏捷的奔跑與180度旋轉閃避能力。\n* 纏繞生機藤蔓 (Sprout_Green)：充滿彈性的鮮綠活體藤蔓沿著胸腹榫卯縫隙與肩肘關節緊密纏繞，如同生物肌腱般提供強大的爆發拉力，同時能在戰鬥受損時迅速生長修補破損木皮。\n* 右臂銳利木刺錐 (R_WoodHand)：右前臂由普通木桿特化重組為一柄長達 0.68 米的螺旋錐形硬木刺槍，內部藏有高張力發條木簧，可在近戰中如機械彈簧般猛力彈射刺出並高速旋轉鑽擊。\n* 胸前生命年輪符文 (Socket_Core_FX / Chakra_Glow)：胸腔正中央浮現出深刻入木的同心圓生命年輪符文，內部湧動著高純度翡翠靈光（Emission Strength 4.5），可裂開射出筆直濃郁的生命木靈光束。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wood_puppet/cr_wood_puppet_adolescent_05_wiki.md",
+        "sha256": "4fa87e7e8b4c1357e98c9aeb14d0be622b0dd0adf8e7337fb28945db9e73cbb5",
+        "drive_file_id": "1r7hqsD49ZVgQQXixB-Mj8ridw5NKpFh0"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_plume_peafowl",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wood_puppet_adult",
+    "line_id": "cr_wood_puppet",
+    "stage": "adult",
+    "size_class": "M",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 25
+    },
+    "stats": {
+      "hp": 150,
+      "speed": 30,
+      "yin_atk": 60,
+      "yang_atk": 120,
+      "yin_def": 90,
+      "yang_def": 150
+    },
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "return_village",
+    "concept": {
+      "name_zh": "古木盆景守衛魔偶",
+      "name_en": null,
+      "stage_look": "* 重型機關守衛胸鎧 (Torso_Log / Bark_Wood)：進入成年期後，身軀外覆數層百年鐵杉與古樟樹皮交疊咬合而成的厚實重鎧，肩部聳立著方正的魯班鎖式重木肩甲，雙臂化為可水平合攏鎖死的巨型方木壁壘盾拳。\n* 背負共生盆景古木 (Bonsai_Trunk / Branch_01..02)：背部上方紮根生長著一株蒼勁蜿蜒的共生盆景古木。古木傘狀樹冠繁茂蒼翠，枝頭常年盛開著散發翡翠螢光的「靈木林花」，不僅為魔偶提供源源不絕的光合靈能，更能在甩動時發射暴雨般的鋒利木葉飛刀。\n* 大地根系連結 (Socket_Ground_FX)：粗壯的柱狀木足底部設有可開合的根鬚導孔，待機或防禦時可瞬間將氣根扎入地底汲取地脈養分，或引發大範圍荊棘藤蔓領域與尖銳地刺木樁。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wood_puppet/cr_wood_puppet_adult_05_wiki.md",
+        "sha256": "8b46e80bf0829cbe717f156cb2ec30a7197139f43b313bb8ccb8fc7ff6695c64",
+        "drive_file_id": "1hpDUitGnpQgLzfV2MxxHl3MmVZahh4ZW"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_canopy_regent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    }
+  },
+  {
+    "id": "cr_wood_puppet_overload",
+    "line_id": "cr_wood_puppet",
+    "stage": "overload",
+    "size_class": "L",
+    "ai_style": "hold",
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 50,
+      "water": 15,
+      "fire": 0,
+      "earth": 10,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 30
+    },
+    "stats": {
+      "hp": 180,
+      "speed": 36,
+      "yin_atk": 72,
+      "yang_atk": 144,
+      "yin_def": 108,
+      "yang_def": 180
+    },
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
+    "field_utility": "return_village",
+    "concept": {
+      "name_zh": "千機靈木神將",
+      "name_en": null,
+      "stage_look": "* 懸浮剛體榫卯解鎖 (Torso_Log / L_Shoulder / R_Shoulder)：當體內年輪核心進入超載共鳴，全身所有傳統物理木質卡榫瞬間解鎖分離！胸甲、肩鎧、肘腕與膝甲化為數十塊彼此獨立卻由高維木靈磁場精密牽引的「懸浮原木剛體結構」。\n* 木紋縫隙靈光暴發 (Chakra_Glow)：解鎖撐開的胸腔與關節縫隙中，暴發出刺目璀璨的翡翠色生命神光，頭部上方凝聚出三叉神木靈光冠冕 (Socket_Head)，每一次呼吸都伴隨著古老森林的宏大共鳴。\n* 巨型十二樞機發光木輪 (Branch_01..02)：背後的共生盆景古木徹底展開升華，化為一座懸浮於神將背後的「巨型十二樞機發光木輪」。木輪由十二枚刻滿年輪符文的古木樞機陣列與翡翠光刃構成，隨神將意念高速自轉，展現威震戰場的天將神姿。",
+      "source_wiki": {
+        "id": "wiki",
+        "storage": "drive",
+        "path": "creatures/cr_wood_puppet/cr_wood_puppet_overload_05_wiki.md",
+        "sha256": "b133646cab34ace2807e4b71d0f54a4135963af0af0f7d6aa6094bba2f78e82f",
+        "drive_file_id": "1QY9t0WFU_0Bo_6AkhZh3QC2KPtg94LlJ"
+      },
+      "status": "review_required",
+      "gameplay_archetype": "wood_canopy_regent",
+      "gameplay_note": "數值與候選棲位沿現有屬性原型草擬；技能暫共用既有招式，不代表 wiki 所有武裝效果均已實裝。"
+    },
+    "overload_of": "cr_wood_puppet_adult"
+  }
+]

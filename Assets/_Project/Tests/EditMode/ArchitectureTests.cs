@@ -30,9 +30,10 @@ namespace Cosmimera.Architecture.Tests
             ["Cosmimera.Combat"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Capture"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Lobby"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
-            ["Cosmimera.Codex"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
+            ["Cosmimera.Codex"] = new[] { "Cosmimera.Core", "Cosmimera.Codex.Api", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
+            ["Cosmimera.Codex.Api"] = new[] { "Cosmimera.Core" },
             ["Cosmimera.Net"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Creatures", "Cosmimera.Planet", "Cosmimera.GameData" },
-            ["Cosmimera.Save"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Capture", "Cosmimera.Crafting", "Cosmimera.GameData" },
+            ["Cosmimera.Save"] = new[] { "Cosmimera.Core", "Cosmimera.Codex.Api", "Cosmimera.Creatures", "Cosmimera.Capture", "Cosmimera.Crafting", "Cosmimera.GameData" },
             ["Cosmimera.Food"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Combat", "Cosmimera.GameData" },
             ["Cosmimera.Crafting"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.GameData" },
         };

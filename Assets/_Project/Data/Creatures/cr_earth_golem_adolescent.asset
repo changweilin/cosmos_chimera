@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_earth_golem_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_earth_golem_adolescent
+  lineId: cr_earth_golem
+  stage: 1
+  sizeClass: 0
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 424a113e43da4a446b4920afcf848276, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 4
+    tier: 2
+    qty: 5
+  resist: 0000000000000000000000000a0000002300000000000000e2ffffff0f0000000000000000000000
+  mastery:
+  - element: 4
+    value: 20
+  stats:
+    hp: 125
+    speed: 25
+    yinAtk: 100
+    yangAtk: 100
+    yinDef: 75
+    yangDef: 75
+  signatureMove: {fileID: 11400000, guid: 113b3b7981d407b45a48ab54528f23ed, type: 2}
+  trait: {fileID: 11400000, guid: f735ffdf2062f93469199688adba577e, type: 2}
+  fieldUtility: 5
+  conceptJson: "{\"name_zh\":\"\u88C2\u7D0B\u91CD\u9318\u77F3\u5076\",\"name_en\":null,\"stage_look\":\"*
+    \u9676\u6CE5\u8207\u5805\u786C\u5CA9\u677F\u62FC\u63A5\u8EC0\u5E79 (Spine_01
+    / Spine_02 / Plate_Rock)\uFF1A\u96A8\u8457\u5927\u5730\u9748\u529B\u6DEC\u934A\uFF0C\u539F\u672C\u67D4\u8EDF\u7684\u6CE5\u8EC0\u5206\u5316\u51FA\u5805\u5BE6\u7684\u9676\u6CE5\u8170\u8179\u6838\u5FC3\u67F1\uFF0C\u5916\u5C64\u5247\u7DCA\u5BC6\u62FC\u63A5\u4E0A\u539A\u91CD\u7684\u6DF1\u7070\u7384\u6B66\u5CA9\u80F8\u93A7\u8207\u9AA8\u76C6\u5CA9\u76E4\uFF08Roughness
+    0.90\uFF0C\u5177\u5099 Voronoi \u98A8\u5316\u88C2\u9699\u51F9\u51F8\u6CD5\u7DDA\uFF09\u3002\u8EC0\u5E79\u5F9E\u96D9\u817F\u3001\u9AA8\u76C6\u3001\u8170\u6CE5\u81F3\u80F8\u5CA9\u8207\u9838\u90E8\u5B8C\u5168\u5BE6\u5FC3\u54AC\u5408\u3002\\n*
+    \u53F3\u624B\u7279\u5316\u539A\u91CD\u7834\u57CE\u77F3\u9318 (R_RockArm / R_Hammer)\uFF1A\u5C11\u5E74\u671F\u6700\u986F\u8457\u7684\u6B66\u88DD\u9032\u5316\u5728\u65BC\u4E0D\u5C0D\u7A31\u96D9\u81C2\u2014\u2014\u5DE6\u81C2\u9032\u5316\u70BA\u5305\u8986\u5CA9\u7532\u7684\u7C97\u58EF\u683C\u64CB\u77F3\u62F3\uFF1B\u53F3\u81C2\u5247\u7531\u9AD8\u5BC6\u5EA6\u9676\u6CE5\u808C\u8171\u727D\u5F15\uFF0C\u7279\u5316\u91CD\u7D44\u70BA\u4E00\u67C4\u9577\u9054
+    0.65 \u7C73\u3001\u524D\u7AEF\u5E36\u6709\u7425\u73C0\u80FD\u91CF\u7B8D\u74B0\u7684\u300C\u5DE8\u578B\u516B\u89D2\u7834\u57CE\u77F3\u9318\u300D\uFF0C\u63EE\u7838\u6642\u5177\u5099\u958B\u5C71\u88C2\u77F3\u7684\u7834\u58DE\u529B\u3002\\n*
+    \u9EC3\u571F\u767C\u5149\u88C2\u7D0B\u8207\u65B9\u6B63\u5CA9\u9996 (Amber_Core
+    / Head_Boulder)\uFF1A\u80F8\u8179\u7384\u6B66\u5CA9\u677F\u7684\u62FC\u63A5\u7E2B\u9699\u4E2D\uFF0C\u986F\u9732\u51FA\u56DB\u9053\u659C\u5411\u5EF6\u4F38\u3001\u6CDB\u8457\u6DF1\u9EC3\u5149\u8292\u7684\u300C\u9EC3\u571F\u80FD\u91CF\u88C2\u7D0B\u300D\u8207\u83F1\u5F62\u80F8\u6838\u3002\u982D\u90E8\u9032\u5316\u70BA\u7A1C\u89D2\u5206\u660E\u7684\u65B9\u6B63\u62FC\u63A5\u5CA9\u9996\uFF0C\u982D\u9802\u8986\u84CB\u7384\u6B66\u5CA9\u984D\u677F\uFF0C\u6B63\u9762\u7425\u73C0\u96D9\u7738\u92B3\u5229\u6709\u795E\u4E14\u6BEB\u7121\u906E\u64CB\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_earth_golem/cr_earth_golem_adolescent_05_wiki.md\",\"sha256\":\"3085d2d91205f6e2a85c68ceea11c476d9602ac9e966e8ff5c3091c15ee29c29\",\"drive_file_id\":\"1GM2SH0bqZAE4mdz4xPPVABWRVZw2Yn81\"},\"status\":\"review_required\",\"gameplay_archetype\":\"earth_gilded_warden\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

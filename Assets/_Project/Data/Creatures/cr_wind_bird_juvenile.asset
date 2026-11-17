@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_wind_bird_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_wind_bird_juvenile
+  lineId: cr_wind_bird
+  stage: 0
+  sizeClass: 4
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 8ea272888593fbc47a22e6faa533325b, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: b4ba1b80275015b429ba54dbd6fde23a, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 6
+    tier: 1
+    qty: 3
+  resist: 000000000a000000000000000000000000000000ecffffff14000000fbffffff0000000000000000
+  mastery:
+  - element: 6
+    value: 15
+  stats:
+    hp: 48
+    speed: 112
+    yinAtk: 88
+    yangAtk: 64
+    yinDef: 40
+    yangDef: 48
+  signatureMove: {fileID: 11400000, guid: 9bbe5bbc2eaf65d4680fb3443998fe86, type: 2}
+  trait: {fileID: 11400000, guid: 52407eb3c5ea1a4418d5c6b13188d842, type: 2}
+  fieldUtility: 26
+  conceptJson: "{\"name_zh\":\"\u7D68\u96F2\u65CB\u5C3E\u96DB\u96C0\",\"name_en\":null,\"stage_look\":\"*
+    \u5713\u6EFE\u84EC\u9B06\u7684\u9023\u9AD4\u5C0F\u96F2\u5718\u8EAB\u8EC0 (Body_Cloud
+    / Neck / Head_Crest / Cloud_Wing)\uFF1A\u4E3B\u9AD4\u5B9B\u5982\u4E00\u5718\u525B\u5F9E\u6674\u7A7A\u6458\u4E0B\u7684\u98FD\u6EFF\u68C9\u82B1\u96F2\u7403\uFF0C\u8179\u90E8\u3001\u80F8\u5ED3\u3001\u9838\u90E8\u8207\u5713\u6F64\u8166\u888B\u63A1\u7528\u5E73\u884C\u50B3\u8F38\u6A23\u689D\u7121\u7E2B\u9023\u9AD4\u5851\u5F62\uFF0C\u8868\u9762\u8986\u84CB\u8457\u6975\u6DFA\u9752\u767D\u8272\u3001\u5E36\u6709\u67D4\u548C\u900F\u5C04\u611F\uFF08Transmission
+    0.60, Roughness 0.30\uFF09\u7684\u84EC\u9B06\u7D68\u96F2\u5718\uFF0C\u81C9\u9830\u5169\u5074\u8207\u80CC\u7FBD\u8655\u9686\u8D77\u5713\u6EFE\u6EFE\u7684\u96F2\u6735\u7D68\u7403\u3002\\n*
+    \u64B2\u7A1C\u900F\u660E\u5C0F\u7FBD\u7FFC\u8207\u87BA\u65CB\u98A8\u5C3E (L_Wing_01..03
+    / R_Wing_01..03 / Tail_Whirl_01..03)\uFF1A\u8EAB\u9AD4\u5169\u5074\u751F\u6709\u4E00\u5C0D\u77ED\u5C0F\u9748\u5DE7\u7684\u4E09\u7BC0\u5C0F\u7FBD\u7FFC\uFF0C\u8986\u7FBD\u70BA\u67D4\u8EDF\u767D\u96F2\uFF0C\u98DB\u7FBD\u672B\u7AEF\u5247\u5448\u73FE\u534A\u900F\u660E\u9752\u85CD\u8272\u6FA4\uFF1B\u8EAB\u5F8C\u62D6\u8457\u4E00\u689D\u5C0F\u5DE7\u73B2\u74CF\u7684\u9752\u7DA0\u87BA\u65CB\u98A8\u5C3E\uFF0C\u98DB\u884C\u6642\u5982\u767C\u689D\u822C\u8F15\u5FEB\u6372\u52D5\u3002\\n*
+    \u7121\u906E\u64CB\u6E05\u6F88\u4E94\u5B98\u8207\u982D\u9802\u98A8\u82BD (Eye_Core
+    / Gale_Blade)\uFF1A\u6B63\u9762\u8996\u91CE 100% \u6DE8\u7A7A\u7121\u906E\u64CB\uFF0C\u5713\u6F64\u81C9\u9F90\u9472\u5D4C\u8457\u4E00\u5C0D\u6C34\u6C6A\u6C6A\u7684\u851A\u85CD\u6E26\u6D41\u5927\u773C\u8207\u661F\u8292\u9AD8\u5149\u9EDE\uFF0C\u4E2D\u592E\u9EDE\u7DB4\u8457\u5C0F\u5DE7\u7684\u9752\u91D1\u9CE5\u5599\uFF0C\u982D\u9802\u5247\u8C4E\u7ACB\u8457\u4E00\u64AE\u96A8\u98A8\u6416\u6643\u7684\u7FE0\u9752\u5C0F\u98A8\u82BD\uFF0C\u8179\u5E95\u8737\u7E2E\u8457\u5169\u96BB\u9752\u7FE0\u5C0F\u5DE7\u7684\u96F2\u722A\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_wind_bird/cr_wind_bird_juvenile_05_wiki.md\",\"sha256\":\"5efdcfc1b11be0470ab8471b869a1965a1f5c5f84a2e06ca75ed7388d6f08dc8\",\"drive_file_id\":\"180X5tRSWRcXs9-3W6m4cI5j7HI74WI4k\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wind_reed_skiff\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_shadow_eye_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_shadow_eye_adolescent
+  lineId: cr_shadow_eye
+  stage: 1
+  sizeClass: 0
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 2
+  evolvesTo: {fileID: 11400000, guid: 463f990d063c2464798b056de78a2430, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 9
+    tier: 2
+    qty: 5
+  resist: 00000000000000000000000000000000000000001400000005000000e2fffffff6ffffff23000000
+  mastery:
+  - element: 9
+    value: 20
+  stats:
+    hp: 60
+    speed: 110
+    yinAtk: 140
+    yangAtk: 60
+    yinDef: 80
+    yangDef: 50
+  signatureMove: {fileID: 11400000, guid: de6a362d1033ce64d807a6684c8f3b8b, type: 2}
+  trait: {fileID: 11400000, guid: 4def9f90fad392141bb29705c8094ecc, type: 2}
+  fieldUtility: 16
+  conceptJson: "{\"name_zh\":\"\u7834\u7BF7\u5E7D\u722A\u9748\",\"name_en\":null,\"stage_look\":\"\u3010\u7834\u7BF7\u5E7D\u722A\u9748\u3011\\n\\t1.12m
+    \xD7 1.32m \xD7 1.44m\\n\\t18.5 kg\\n\\t\u9ED1\u9727\u62C9\u9577\u5F62\u6210\u6697\u7D2B\u8840\u7D0B\u7834\u820A\u6597\u7BF7\u526A\u5F71\u3001\u9AD8\u62F1\u515C\u5E3D\u9670\u5F71\u4E2D\u61F8\u6D6E\u8840\u7D72\u6BD2\u7D2B\u55AE\u773C\u3001\u96D9\u5074\u63A2\u51FA\u5C16\u7AEF\u6D78\u67D3\u5492\u6028\u8840\u7D05\u7684\u6F06\u9ED1\u4E09\u6307\u5E7D\u9748\u722A\\n\\tadult\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_shadow_eye/cr_shadow_eye_adolescent_05_wiki.md\",\"sha256\":\"94849ed909bb0d3536ad320510da522d51b9f631cdfd783f09d8c135f67bbb8b\",\"drive_file_id\":\"1t95Ave2AzU_GI0bBcMWBZlgr3Lyw_jag\"},\"status\":\"review_required\",\"gameplay_archetype\":\"moon_shade_wolf\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Capture;
+using Cosmimera.Codex;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
@@ -29,13 +30,26 @@ namespace Cosmimera.Save
     /// Version 8: creature entries add <c>visual_vessel</c> (appearance preserved on late-game vessel conversion); formats 1–7 default <c>VisualVessel</c> to <c>Vessel</c>.
     /// Version 9 (D0-U3): equipment slots become main_hand/off_hand/upper/lower/accessory; formats 7–8 migrate
     /// weapon → main_hand, armor → upper, accessory → accessory (crafting.md#穿戴與數值).
+    /// Version 10: root codex stores permanent knowledge; older saves recover owned forms and the two protagonists.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 9;
+        public const int FormatVersion = 10;
+
+        /// <summary>Persistent encyclopedia knowledge, including known subjects no longer owned.</summary>
+        /// <remarks>Pre: main thread. Post: same instance for this save's lifetime. Side effects: mutating it changes this save.</remarks>
+        public CodexProgress Codex { get; } = NewCodex();
+
+        private static CodexProgress NewCodex()
+        {
+            var progress = new CodexProgress();
+            progress.Record(CodexEvent.CharacterQuest, "chr_yeh_chengxi");
+            progress.Record(CodexEvent.CharacterQuest, "chr_roen");
+            return progress;
+        }
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -239,6 +253,7 @@ namespace Cosmimera.Save
             }
             c._craftStock.TryExchange(Array.Empty<CraftStack>(), _craftStock.Snapshot());
             c._equipment.Restore(_equipment.Snapshot());
+            c.Codex.Restore(Codex.Snapshot());
 
             return c;
         }
@@ -278,6 +293,7 @@ namespace Cosmimera.Save
             var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp);
             _nextInstanceId++;
             _owned.Add(c);
+            Codex.Record(CodexEvent.Capture, speciesId);
             if (_party.Count < MaxParty)
             {
                 _party.Add(c.InstanceId);
@@ -336,6 +352,7 @@ namespace Cosmimera.Save
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
             _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp, o.VisualVessel);
+            Codex.Record(CodexEvent.Capture, speciesId);
         }
 
         /// <summary>Replaces an owned creature's functional capture-item category without changing its appearance (Q-C13).</summary>
@@ -381,6 +398,10 @@ namespace Cosmimera.Save
                 partners = new PartnerDto[_partners.Count],
                 eggs = new EggDto[_eggs.Count],
             };
+            IReadOnlyList<CodexRecord> knowledge = Codex.Snapshot();
+            dto.codex = new CodexDto[knowledge.Count];
+            for (int i = 0; i < knowledge.Count; i++)
+                dto.codex[i] = new CodexDto { kind = (int)knowledge[i].Kind, id = knowledge[i].Id, level = (int)knowledge[i].Level };
             IReadOnlyList<CraftStack> craftStock = _craftStock.Snapshot();
             dto.craft_stock = new CraftDto[craftStock.Count];
             for (int i = 0; i < craftStock.Count; i++)
@@ -576,6 +597,23 @@ namespace Cosmimera.Save
                 }
                 save._equipment.Restore(entries);
             }
+            if (dto.version >= 10)
+            {
+                Check(dto.codex != null, "missing codex records");
+                var knowledge = new List<CodexRecord>();
+                var knowledgeKeys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (CodexDto item in dto.codex)
+                {
+                    Check(item != null && Enum.IsDefined(typeof(CodexKind), item.kind) && !string.IsNullOrWhiteSpace(item.id)
+                        && (item.level == (int)CodexLevel.Basic || item.level == (int)CodexLevel.Complete), "invalid codex record");
+                    Check(knowledgeKeys.Add(item.kind + ":" + item.id), "duplicate codex record");
+                    knowledge.Add(new CodexRecord((CodexKind)item.kind, item.id, (CodexLevel)item.level));
+                }
+                save.Codex.Restore(knowledge);
+                save.Codex.Record(CodexEvent.CharacterQuest, "chr_yeh_chengxi");
+                save.Codex.Record(CodexEvent.CharacterQuest, "chr_roen");
+            }
+            foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
         }
 
@@ -680,6 +718,14 @@ namespace Cosmimera.Save
             public EggDto[] eggs;
             public CraftDto[] craft_stock;
             public EquipmentDto[] equipment;
+            public CodexDto[] codex;
+        }
+
+        [Serializable] private sealed class CodexDto
+        {
+            public int kind;
+            public string id;
+            public int level;
         }
 
         [Serializable] private sealed class EquipmentDto

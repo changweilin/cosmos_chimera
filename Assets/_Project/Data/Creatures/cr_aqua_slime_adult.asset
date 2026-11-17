@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_aqua_slime_adult
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_aqua_slime_adult
+  lineId: cr_aqua_slime
+  stage: 2
+  sizeClass: 1
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 11400000, guid: ecaaaee422e55914da848f0cb7bbaa2d, type: 2}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0000000000000000320000000f000000000000000a00000000000000d8ffffff0000000000000000
+  mastery:
+  - element: 2
+    value: 25
+  stats:
+    hp: 150
+    speed: 60
+    yinAtk: 90
+    yangAtk: 60
+    yinDef: 120
+    yangDef: 120
+  signatureMove: {fileID: 11400000, guid: 775ff3932b52f914f90c9ab7da41967c, type: 2}
+  trait: {fileID: 11400000, guid: 2956a23b16544624995bcc2e6b60a7f0, type: 2}
+  fieldUtility: 12
+  conceptJson: "{\"name_zh\":\"\u6FA4\u5F71\u6C34\u6BCD\u53F2\u840A\u59C6\",\"name_en\":null,\"stage_look\":\"*
+    \u9418\u5F62\u6C34\u6BCD\u4E3B\u9AD4\uFF1A\u9802\u90E8\u6F14\u5316\u70BA\u838A\u56B4\u512A\u96C5\u7684\u300C\u516B\u74E3\u6D41\u9AD4\u6C34\u6BCD\u9418\u5F62\u5098\u84CB\u300D\u3002\u5098\u84CB\u9802\u90E8\u539A\u91CD\u7D50\u5BE6\uFF0C\u5167\u90E8\u5177\u5099\u9AD8\u58D3\u51B7\u6DB2\u8154\u5BA4\uFF1B\u5098\u7DE3\u5782\u843D\u8457\u516D\u689D\u7D30\u9577\u66FC\u5999\u7684\u87BA\u65CB\u6D41\u9AD4\u89F8\u9B1A\uFF0C\u5728\u534A\u7A7A\u4E2D\u6563\u767C\u8457\u5FAE\u5149\u61F8\u6D6E\u98C4\u52D5\u3002\\n  
+    * \u4E09\u8ECC\u516C\u8F49\u6C34\u7403\uFF1A\u570D\u7E5E\u6210\u5E74\u9AD4\u6838\u5FC3\u4EE5
+    120 \u5EA6\u7B49\u908A\u4E09\u89D2\u5F62\u8ECC\u8DE1\uFF0C\u81EA\u4E3B\u904B\u8F49\u8457
+    3 \u9846\u9AD8\u5BC6\u5EA6\u58D3\u7E2E\u7684\u300C\u6D6E\u6E38\u516C\u8F49\u5C0F\u6C34\u7403
+    (Orbit_Orb_01..03)\u300D\u3002\u9019\u4E09\u9846\u6C34\u7403\u6BCF\u9846\u5747\u860A\u542B\u5FAE\u578B\u6C34\u6838\uFF0C\u53EF\u4F5C\u70BA\u6D6E\u6E38\u8B77\u76FE\u62B5\u79A6\u50B7\u5BB3\uFF0C\u4EA6\u53EF\u4F5C\u70BA\u6CD5\u8853\u589E\u5E45\u4E2D\u7E7C\u7AD9\u3002\\n  
+    * \u51DD\u805A\u614B\u5DE8\u578B\u6C34\u62F3\uFF1A\u5728\u5E73\u6642\u5448\u73FE\u70BA\u5169\u5718\u96B1\u6C92\u65BC\u4E3B\u9AD4\u5169\u5074\u7684\u51DD\u81A0\u6E26\u6D41\uFF0C\u6230\u9B25\u4E2D\u53EF\u77AC\u9593\u62BD\u53D6\u5468\u906D\u5927\u6C23\u6C34\u6C7D\uFF0C\u4F38\u5C55\u786C\u5316\u70BA\u76F4\u5F91\u9054
+    0.8 \u7C73\u7684\u91CD\u578B\u6DB2\u58D3\u6C34\u62F3\uFF0C\u63EE\u51FA\u88C2\u5730\u788E\u77F3\u7684\u7269\u7406\u91CD\u64CA\u3002\\n  
+    * \u6C34\u6838\u661F\u8292\uFF1A\u9AD4\u5167\u6C34\u6838\u5347\u83EF\u70BA\u76F4\u5F91
+    0.35 \u7C73\u7684\u7480\u74A8\u661F\u8292\u5149\u6838\uFF0C\u5982\u6DF1\u6D77\u660E\u71C8\u822C\u7167\u4EAE\u900F\u5C04\u51DD\u81A0\u9AD4\uFF0C\u5916\u819C\u6CDB\u767D\u9AD8\u5149\u5F62\u6210\u7E41\u8907\u7684\u6C34\u6D41\u857E\u7D72\u7D0B\u7406\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_aqua_slime/cr_aqua_slime_adult_05_wiki.md\",\"sha256\":\"7a9797fcdfa05733c40a33d0459d538292a943087cdf6c90ee4cc3de798f1fe1\",\"drive_file_id\":\"1AxsrGerR06355rCbsM7r9mulVZ7uBUwV\"},\"status\":\"review_required\",\"gameplay_archetype\":\"water_catamaran_serpent\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -38,11 +38,12 @@ tools/                       # 資料驗證、匯入、AI prompt 模板
 ```
 Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet → Core
                  Net ──▶ (Combat, Creatures, Planet 的 Api)
-                 Save ─▶ (Creatures, Capture, Crafting 的 Api)
+                 Save ─▶ (Creatures, Capture, Crafting、Codex.Api 的 Api)
                  Food ─▶ (Combat, Creatures 的 Api)
              Crafting ─▶ (Combat, GameData 的公開效果／資料型別)
 ```
 `Core` 不引用任何 feature；`Planet` 不知道宙獸存在。
+`Codex.Api` 是只依賴 Core 的純 C# 解鎖狀態與事件組件；Save 引用此葉節點，不引用圖鑑 UI，避免存檔反向依賴表現層。
 `GameData` 只引用 Core；除了 Planet、Player 以外的 feature 都可以引用它（ADR-0004）。
 
 ## 資料流

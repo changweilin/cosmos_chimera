@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_ink_stele_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_ink_stele_juvenile
+  lineId: cr_ink_stele
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: ef7eeb9258091344fa4e98200f1821aa, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 9693c4422f41d674eb6ecf72aa2704f9, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 9
+    tier: 1
+    qty: 3
+  resist: 00000000000000000000000000000000000000000a00000000000000ecfffffffbffffff14000000
+  mastery:
+  - element: 4
+    value: 5
+  - element: 9
+    value: 15
+  stats:
+    hp: 88
+    speed: 32
+    yinAtk: 96
+    yangAtk: 40
+    yinDef: 80
+    yangDef: 64
+  signatureMove: {fileID: 11400000, guid: f17fc6f83e32958408fe700fd87ce359, type: 2}
+  trait: {fileID: 11400000, guid: 4def9f90fad392141bb29705c8094ecc, type: 2}
+  fieldUtility: 23
+  conceptJson: "{\"name_zh\":\"\u61F8\u7A7A\u58A8\u786F\u7CBE\",\"name_en\":null,\"stage_look\":\"\u672C\u9AD4\u70BA\u4E00\u65B9\u5713\u6F64\u53E4\u96C5\u7684\u516B\u89D2\u5F27\u908A\u9752\u7384\u77F3\u7AEF\u786F\uFF0C\u5916\u5708\u300C\u786F\u908A\u300D\u96D5\u6709\u5FAE\u6D6E\u96D5\u5377\u96F2\u51F9\u69FD\uFF0C\u4E2D\u592E\u300C\u58A8\u6C60\u300D\u6DF1\u84C4\u4E00\u6C6A\u6CDB\u8457\u5E7D\u7D2B\u5149\u6FA4\u7684\u975E\u725B\u9813\u6D3B\u6C34\u58A8\uFF0C\u6DB2\u9762\u4E0D\u6642\u6D6E\u8D77\u4E09\u9846\u5713\u6F64\u98FD\u6EFF\u7684\u61F8\u6D6E\u58A8\u73E0\u3002\u786F\u53F0\u6B63\u524D\u65B9\u63A2\u51FA\u5713\u6F64\u53EF\u611B\u7684\u7384\u77F3\u5C0F\u9F9C\u9996\uFF0C\u984D\u5074\u5D4C\u6709\u4E00\u5C0D\u5982\u7AEF\u786F\u300C\u9D1D\u9D52\u773C\u300D\u822C\u660E\u4EAE\u7684\u8D64\u7D05\u7843\u7802\u77B3\u5B54\uFF0C\u4E94\u5B98\u6BEB\u7121\u906E\u64CB\uFF1B\u786F\u5E95\u5782\u4E0B\u4E09\u689D\u9748\u52D5\u7684\u5C0F\u9ED1\u58A8\u89F8\u624B\uFF0C\u672B\u7AEF\u6536\u675F\u5982\u6BDB\u7B46\u7B46\u92D2\uFF0C\u50CF\u4E09\u96BB\u5C0F\u77ED\u817F\u822C\u5728\u5730\u9762\u8F15\u5FEB\u8DF3\u8E8D\uFF0C\u58A8\u6C60\u5F8C\u65B9\u5247\u659C\u63D2\u8457\u4E00\u5C0F\u622A\u523B\u6709\u4E09\u9053\u6731\u6587\u7BC6\u75D5\u7684\u65B7\u88C2\u53E4\u77F3\u7247\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_ink_stele/cr_ink_stele_juvenile_05_wiki.md\",\"sha256\":\"257acedd06129f166a5e646fd39c81f6a1f5e26d846321908d934a0e264e42e4\",\"drive_file_id\":\"1-67WaFzszFfpO_R0hjY9dcAkQwaTTg7i\"},\"status\":\"review_required\",\"gameplay_archetype\":\"moon_night_pup\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

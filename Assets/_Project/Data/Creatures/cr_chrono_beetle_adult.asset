@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_chrono_beetle_adult
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_chrono_beetle_adult
+  lineId: cr_chrono_beetle
+  stage: 2
+  sizeClass: 1
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 11400000, guid: 1c4c998c5ca79c2459111bf5c9d30496, type: 2}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 320000000a00000000000000d8ffffff0f0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 0
+    value: 25
+  - element: 7
+    value: 15
+  stats:
+    hp: 108
+    speed: 108
+    yinAtk: 132
+    yangAtk: 72
+    yinDef: 90
+    yangDef: 90
+  signatureMove: {fileID: 11400000, guid: 230702af6d75caf4dac85b6ba0ddc1cb, type: 2}
+  trait: {fileID: 11400000, guid: b2943f285c302af4192bc8d7f773d39d, type: 2}
+  fieldUtility: 15
+  conceptJson: "{\"name_zh\":\"\u5DE8\u89D2\u907F\u96F7\u61F7\u9336\u91D1\u9F9C\",\"name_en\":null,\"stage_look\":\"\u5B8C\u5168\u6210\u719F\u7684\u6210\u5E74\u9AD4\u5C55\u73FE\u771F\u5BE6\u5DE8\u578B\u7368\u89D2\u4ED9\u7684\u529B\u5B78\u7F8E\u611F\u3002\u982D\u9802\u5EF6\u4F38\u51FA\u8D85\u904E\u9AD4\u9577\u4E09\u5206\u4E4B\u4E00\u7684\u9752\u9285\u4E09\u53C9\u907F\u96F7\u5DE8\u89D2\uFF08Horn_Main
+    -> Horn_Tip\uFF09\uFF0C\u89D2\u8EAB\u7531\u7C97\u58EF\u7684\u5012\u4E09\u89D2\u5F62\u57FA\u5EA7\u5411\u524D\u4E0B\u65B9\u4F38\u51FA\uFF0C\u7D93\u904E\u4E2D\u6BB5\u6D41\u7DDA\u6536\u675F\u5F8C\u4EE5\u51CC\u53B2\u5F27\u5EA6\u5411\u4E0A\u63DA\u8D77\uFF0C\u4E26\u5728\u9802\u7AEF\u6700\u5BEC\u74B0\u7BC0\u5E73\u6ED1\u5206\u53C9\u70BA\u4E09\u53C9\u621F\u72C0\u51A0\u90E8\uFF08PMC10229555\uFF09\u3002\u5169\u5074\u6DF1\u62F1\u5F62\u7E31\u6E9D\u9798\u7FC5\u9806\u8457\u80CC\u90E8\u8F2A\u5ED3\u5411\u5F8C\u5916\u65B9\u5448\u5012
+    V \u5B57\u5F62\u5C55\u958B\uFF0C\u4E2D\u592E\u81EA\u7136\u9732\u51FA\u5341\u4E8C\u523B\u5EA6\u7F85\u99AC\u6578\u5B57\u743A\u746F\u61F7\u9336\uFF08Enamel_Dial\uFF09\uFF0C\u800C\u4E0B\u5C64\u7684\u9AD8\u5C55\u5F26\u6BD4\u819C\u8CEA\u5F8C\u7FC5\u5247\u81EA\u9798\u7FC5\u4E0B\u65B9\u5F80\u5DE6\u53F3\u5169\u5074\u5927\u5E45\u5EA6\u6C34\u5E73\u5EF6\u5C55\uFF08MDPI
+    Biomimetics 2024\uFF09\u3002\u516D\u8DB3\u817F\u7BC0\u98FD\u6EFF\u9686\u8D77\uFF0C\u524D\u8DB3\u811B\u7BC0\u5916\u7DE3\u6392\u5217\u4E09\u679A\u92D2\u5229\u7684\u6316\u6398\u9F52\u7A81\u4E26\u65BC\u819D\u95DC\u7BC0\u914D\u7F6E\u6A5F\u68B0\u9F52\u8F2A\u91CD\u722A\uFF08Wikipedia
+    - Insect morphology\uFF09\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_chrono_beetle/cr_chrono_beetle_adult_05_wiki.md\",\"sha256\":\"ef371ca79b7be00c243868e86da2ed0e7849cb5a6375c22dc57e71d4f42eb221\",\"drive_file_id\":\"1fep__GPhQpMF325-RJpRtHSEV_8Pd1of\"},\"status\":\"review_required\",\"gameplay_archetype\":\"metal_chronos_engine\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

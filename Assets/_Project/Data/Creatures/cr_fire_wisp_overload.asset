@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_fire_wisp_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_fire_wisp_overload
+  lineId: cr_fire_wisp
+  stage: 3
+  sizeClass: 2
+  aiStyle: 1
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: aad80b2dfb47156418a5ae72a9d6c07d, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0a0000000f000000d8ffffff32000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 30
+  stats:
+    hp: 88
+    speed: 172
+    yinAtk: 144
+    yangAtk: 172
+    yinDef: 72
+    yangDef: 72
+  signatureMove: {fileID: 11400000, guid: d4e431ecfc93eeb4aa29b957a5e9d1f9, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
+  fieldUtility: 24
+  conceptJson: "{\"name_zh\":\"\u65E5\u5195\u7B49\u96E2\u5B50\u708E\u795E\",\"name_en\":null,\"stage_look\":\"*
+    \u5168\u8EAB\u71D2\u7D05\u7684\u88C2\u89E3\u84B8\u6C7D\u7210\u7076 (Charcoal_Base)\uFF1A\u7576\u9AD4\u5167\u71B1\u80FD\u7A81\u7834\u81E8\u754C\u9EDE\u9032\u5165\u8D85\u8F09\u72C0\u614B\uFF0C\u5916\u90E8\u539A\u91CD\u7684\u7210\u7076\u88DD\u7532\u56E0\u6975\u9650\u9AD8\u6EAB\u800C\u5FB9\u5E95\u71D2\u7D05\uFF0C\u6B63\u9762\u62F1\u9580\u9032\u4E00\u6B65\u5411\u5916\u64F4\u5F35\u655E\u958B\uFF0C\u80A9\u90E8\u8207\u80CC\u90E8\u56DB\u5EA7\u5DE8\u578B\u9AD8\u58D3\u84B8\u6C7D\u7159\u7BA1\u72C2\u66B4\u5674\u767C\u71BE\u71B1\u767D\u7159\u3002\\n*
+    \u767D\u71BE\u7B49\u96E2\u5B50\u706B\u7403\u6838\u5FC3\u4E0E\u65E5\u5195\u70C8\u967D\u5149\u8F2A
+    (Flame_Body / Orb_Flame)\uFF1A\u7210\u819B\u6838\u5FC3\u5316\u70BA\u4E00\u9846\u5287\u70C8\u7FFB\u6EFE\u7684\u767D\u71BE\u7B49\u96E2\u5B50\u706B\u7403\uFF0C\u6B63\u9762\u767D\u91D1\u8272\u96D9\u7738\u5A01\u58D3\u66B4\u6F32\uFF1B\u8EAB\u5F8C\uFF08+Y
+    \u5074\uFF09\u6D6E\u73FE\u51FA\u4E00\u5EA7\u7531\u516B\u9053\u592A\u967D\u8000\u6591\u706B\u8292\u69CB\u6210\u7684\u7480\u74A8\u300C\u65E5\u5195\u70C8\u967D\u5149\u8F2A\u300D\uFF0C\u5B8C\u5168\u896F\u6258\u51FA\u708E\u795E\u964D\u81E8\u7684\u795E\u8056\u5A01\u5100\u4E14\u4E0D\u906E\u64CB\u6B63\u9762\u8996\u91CE\u3002\\n*
+    \u5DE8\u578B\u7206\u88C2\u706B\u7130\u96D9\u528D (L_Flame_Blade / R_Flame_Blade)\uFF1A\u5169\u5074\u71D2\u706B\u68CD\u8207\u706B\u7130\u96D9\u528D\u66B4\u6F32\u81F3
+    1.25 \u7C73\u4EE5\u4E0A\uFF0C\u528D\u810A\u5169\u5074\u7206\u88C2\u51FA\u4E09\u5C0D\u92F8\u9F52\u72C0\u7B49\u96E2\u5B50\u526F\u5203\uFF0C\u4E00\u64CA\u5373\u53EF\u5C07\u6230\u5834\u5316\u70BA\u7FFB\u6EFE\u7684\u7194\u5CA9\u7126\u571F\u9818\u57DF\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_fire_wisp/cr_fire_wisp_overload_05_wiki.md\",\"sha256\":\"5d0d32e388968e886aaa745e2c0e297b15728217b705b2cd1cf00a922f3e7509\",\"drive_file_id\":\"1n3cW1KBbAUuogB75C7VLn-2yiVTRR34b\"},\"status\":\"review_required\",\"gameplay_archetype\":\"fire_pyre_monarch\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

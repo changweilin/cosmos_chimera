@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cosmimera.Capture;
+using Cosmimera.Codex;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
@@ -20,6 +21,9 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>Pre: none. Post: Captured and PartyExp non-null. Side effects: none.</remarks>
     public sealed class RunOutcome
     {
+        /// <summary>Encyclopedia facts retained on victory, defeat or abandon.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: mutations change the outcome.</remarks>
+        public CodexProgress Codex { get; } = new CodexProgress();
         /// <summary>Boss knocked out.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Victory;
@@ -67,6 +71,9 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>Pre: all fields set. Post: none. Side effects: none.</remarks>
     public sealed class RunSetup
     {
+        /// <summary>Departure knowledge; copied into the outcome, never mutated by the run.</summary>
+        /// <remarks>Pre: null or a valid progress. Post: departure remains unchanged. Side effects: none.</remarks>
+        public CodexProgress Codex;
         /// <summary>Planet type.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public PlanetTypeDef PlanetType;
@@ -1016,6 +1023,12 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (EncounterEvent ev in _encounter.Events)
             {
                 DispatchCombatFeedback(ev, player);
+                if (ev.Kind == EncounterEventKind.Cast)
+                {
+                    EncounterUnit caster = _encounter.Units[ev.SourceId];
+                    if (math.distancesq(caster.Position, player) <= Encounter.DisengageRadiusM * Encounter.DisengageRadiusM)
+                        _outcome.Codex.Record(CodexEvent.SkillSeen, caster.Moves[ev.Slot].Id);
+                }
                 if (ev.Kind == EncounterEventKind.Faint)
                 {
                     OnFaint(ev.TargetId);
@@ -1491,6 +1504,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 // A capture keeps its form and level (option A); it joins the reward roster only in the lobby.
                 _outcome.Captured.Add((creatureId, _vessel, _progression.XpThreshold(w.Level)));
+                EncyclopediaCatalog.RecordOwned(_outcome.Codex, _encounter.Units[best].Def);
                 HashSet<int> battle = w.AppearedAtKnockout ?? new HashSet<int>();
                 Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
@@ -1630,6 +1644,17 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void RecordAppearances()
         {
+            float3 player = PlayerPosition();
+            foreach (KeyValuePair<int, WildInfo> wild in _wild)
+            {
+                EncounterUnit unit = _encounter.Units[wild.Key];
+                if (!wild.Value.Gone && unit.IsActive && !_codexEncountered.Contains(wild.Key) &&
+                    math.distancesq(unit.Position, player) <= Encounter.DisengageRadiusM * Encounter.DisengageRadiusM)
+                {
+                    _outcome.Codex.Record(CodexEvent.Encounter, unit.Def.Id);
+                    _codexEncountered.Add(wild.Key);
+                }
+            }
             if (!_team.InCombat)
             {
                 return;
