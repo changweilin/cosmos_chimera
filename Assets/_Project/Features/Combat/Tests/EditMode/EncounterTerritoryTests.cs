@@ -231,9 +231,10 @@ namespace Cosmimera.Combat.Tests
         // (NextUInt(1000)); an i-frame dodge costs none. Same-seed self-replay cannot see an extra draw, so compare a
         // run that dodges the first contact against one that takes it.
         [Test]
-        public void A_player_contact_costs_one_combat_draw_and_an_iframe_dodge_costs_none()
+        public void A_player_contact_costs_hit_and_crit_draws_and_an_iframe_dodge_costs_none()
         {
             long contactAt = -1;
+            bool contactHit = false;
             Encounter taken = NewPlayerFight(out _);
             for (int t = 1; t <= 400 && contactAt < 0; t++)
             {
@@ -244,6 +245,7 @@ namespace Cosmimera.Combat.Tests
                         (ev.Kind == EncounterEventKind.Hit || ev.Kind == EncounterEventKind.Miss))
                     {
                         contactAt = t;
+                        contactHit = ev.Kind == EncounterEventKind.Hit;
                     }
                 }
             }
@@ -269,6 +271,12 @@ namespace Cosmimera.Combat.Tests
 
             Pcg32 expected = dodged.RngForTests;
             expected.NextUInt(1000);
+            if (contactHit)
+            {
+                // combat.md#暴擊: a landed damaging hit on the player rolls crit next.
+                expected.NextUInt(1000);
+            }
+
             Pcg32 actual = taken.RngForTests;
             for (int i = 0; i < 4; i++)
             {

@@ -67,10 +67,16 @@ namespace Cosmimera.Combat.Tests
         // The defender's own move cannot reach (0.1 m), so it never draws from the combat stream and two runs that differ
         // only in blocking consume the same rolls.
         private Encounter Arena(int wildPower, int wildCooldownMs, int wildWindupMs, out EncounterUnit mine,
-            out EncounterUnit wild, ulong seed = 7)
+            out EncounterUnit wild, ulong seed = 7, int blockReductionMod = 0)
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), seed);
             mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("tap", 1, 600000, 0, 100), 1), null, AtMeters(0f), 30);
+            if (blockReductionMod != 0)
+            {
+                mine.Combatant.Book.SetEquipmentEffects(new[]
+                    { new EffectSpec(EffectType.BlockReductionMod, false, default, blockReductionMod, 0, 1) });
+            }
+
             wild = e.AddWildT(Creature("w", Move("bite", wildPower, wildCooldownMs, wildWindupMs)), null,
                 AtMeters(1.5f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
@@ -105,9 +111,9 @@ namespace Cosmimera.Combat.Tests
             return -1;
         }
 
-        private int FirstHitDamage(bool hold, bool shield = false)
+        private int FirstHitDamage(bool hold, bool shield = false, int blockReductionMod = 0)
         {
-            Encounter e = Arena(40, 1000, 0, out EncounterUnit mine, out EncounterUnit wild);
+            Encounter e = Arena(40, 1000, 0, out EncounterUnit mine, out EncounterUnit wild, 7, blockReductionMod);
             if (shield) mine.Combatant.SetWeapons(new WeaponLoadout(0, default, default, 0, 0, true));
             e.SetBlockHeld(mine.Id, hold, 0);
             for (long t = Dt; t <= 5000; t += Dt)
@@ -288,9 +294,9 @@ namespace Cosmimera.Combat.Tests
         }
 
         private Encounter ReleaseBeforeHit(int releaseBeforeHitMs, out bool perfect, out bool blocked, out EncounterUnit mine,
-            out EncounterUnit wild)
+            out EncounterUnit wild, int blockReductionMod = 0)
         {
-            Encounter e = Arena(40, 2000, 300, out mine, out wild);
+            Encounter e = Arena(40, 2000, 300, out mine, out wild, 7, blockReductionMod);
             e.SetBlockHeld(mine.Id, true, 0);
             long hitAt = -1;
             for (long t = Dt; t <= 8000; t += Dt)
@@ -330,6 +336,37 @@ namespace Cosmimera.Combat.Tests
             Assert.That(wild.StaggerGaugeMilli, Is.EqualTo(reflected * 1000L));
             int taken = Amount(e, EncounterEventKind.Hit, wild.Id, mine.Id);
             Assert.That(reflected, Is.LessThan(taken), "25 % of the move's damage, below the 65 % the blocker took");
+        }
+
+        [Test]
+        public void Armor_block_reduction_adds_to_the_block_value()
+        {
+            int open = FirstHitDamage(false);
+            int blocked = FirstHitDamage(true, false, 20);
+            int expected = (open * (1000 - _balance.Block.BasePermille - 200) + 500) / 1000;
+            Assert.That(blocked, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void A_block_value_over_100_percent_takes_no_damage()
+        {
+            Assert.That(FirstHitDamage(true, true, 40), Is.Zero, "shield 75 % + 40 points saturates at 100 %");
+        }
+
+        [Test]
+        public void Block_value_over_100_percent_raises_the_perfect_block_reflect()
+        {
+            Encounter plain = ReleaseBeforeHit(_balance.Block.PerfectWindowMs, out _, out _, out EncounterUnit m0,
+                out EncounterUnit w0);
+            int baseReflect = Amount(plain, EncounterEventKind.Reflected, m0.Id, w0.Id);
+            // 35 % base + 90 points = 125 %: the extra 25 points double the 25 % reflect.
+            Encounter boosted = ReleaseBeforeHit(_balance.Block.PerfectWindowMs, out bool perfect, out _,
+                out EncounterUnit m1, out EncounterUnit w1, 90);
+            Assert.That(perfect, Is.True);
+            Assert.That(Amount(boosted, EncounterEventKind.Hit, w1.Id, m1.Id), Is.Zero);
+            int reflected = Amount(boosted, EncounterEventKind.Reflected, m1.Id, w1.Id);
+            Assert.That(baseReflect, Is.GreaterThan(0));
+            Assert.That(reflected, Is.InRange(baseReflect * 2 - 1, baseReflect * 2 + 1));
         }
 
         [Test]

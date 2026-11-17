@@ -114,7 +114,7 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => _m.MoveSpeedMmS(-1));
             Assert.Throws<ContractException>(() => _m.EvasionPermille(-1));
             Assert.Throws<ContractException>(() => _m.HitChancePermille(-1, 0));
-            Assert.Throws<ContractException>(() => _m.HitChancePermille(101, 0));
+            Assert.Throws<ContractException>(() => _m.HitChancePermille(DerivedStats.MaxAccuracyPercent + 1, 0));
             Assert.Throws<ContractException>(() => _m.HitChancePermille(100, -1));
             Assert.Throws<ContractException>(() => _m.HitChancePermille(100, 1001));
             Assert.Throws<ContractException>(() => new DerivedStats(null));

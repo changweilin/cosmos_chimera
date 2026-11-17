@@ -604,7 +604,7 @@ namespace Cosmimera.Combat
             Dto d = JsonUtility.FromJson<Dto>(json);
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
-                d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
+                d.team != null && d.field != null && d.effects != null && d.crit != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
                 d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
@@ -621,7 +621,7 @@ namespace Cosmimera.Combat
             var hit = new HitVolumeDefaults(h.height_mm, h.front_width_mm, h.sweep_angle_deg, h.cone_angle_deg,
                 h.line_width_mm, h.arc_landing_radius_mm, h.field_radius_mm, h.target_cast_mid_mm, h.target_cast_long_mm);
             var effects = new EffectRulesConfig(d.effects.multiplier_min_percent, d.effects.multiplier_max_percent,
-                d.field.tick_ms);
+                d.field.tick_ms, d.crit.base_rate_permille, d.crit.base_damage_percent);
             var ai = new AiTuning(d.ai.keep_distance_permille, d.ai.close_in_permille, d.ai.hold_permille,
                 d.ai.follow_leash_mm);
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
@@ -691,6 +691,7 @@ namespace Cosmimera.Combat
             public TeamDto team;
             public FieldDto field;
             public EffectsDto effects;
+            public CritDto crit;
             public PlayerDto player;
             public AiDto ai;
             public CaptureDto capture;
@@ -718,6 +719,7 @@ namespace Cosmimera.Combat
         [Serializable] private sealed class TeamDto { public int switch_cooldown_ms; }
         [Serializable] private sealed class FieldDto { public int tick_ms; }
         [Serializable] private sealed class EffectsDto { public int multiplier_min_percent; public int multiplier_max_percent; }
+        [Serializable] private sealed class CritDto { public int base_rate_permille; public int base_damage_percent; }
         [Serializable] private sealed class CaptureDto { public int base_percent; public int boss_percent; }
 
         [Serializable] private sealed class HitVolumeDto

@@ -142,6 +142,11 @@ namespace Cosmimera.Crafting
                     case "evasion_mod_percent": type = EffectType.EvasionModPercent; break;
                     case "move_speed_mod_percent": type = EffectType.MoveSpeedModPercent; break;
                     case "range_mod_percent": type = EffectType.RangeModPercent; break;
+                    case "accuracy_mod": type = EffectType.AccuracyMod; break;
+                    case "crit_rate_mod": type = EffectType.CritRateMod; break;
+                    case "crit_damage_mod": type = EffectType.CritDamageMod; break;
+                    case "stagger_capacity_mod_percent": type = EffectType.StaggerCapacityModPercent; break;
+                    case "block_reduction_mod": type = EffectType.BlockReductionMod; break;
                     default: throw new InvalidDataException("Equipment effect must be a continuous modifier");
                 }
                 int delta = ReadDelta(effect["params"], "delta", -100, 100);

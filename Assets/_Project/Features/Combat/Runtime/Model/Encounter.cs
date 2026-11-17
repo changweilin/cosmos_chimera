@@ -629,7 +629,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            long capacityMilli = (long)_balance.Stagger.CapacityHp(t.Combatant.MaxHp) * 1000;
+            long capacityMilli = (long)StaggerCapacityHp(t, nowMs) * 1000;
             t.StaggerGaugeMilli = math.min(capacityMilli, t.StaggerGaugeMilli + (long)damage * 1000);
             if (t.StaggerGaugeMilli < capacityMilli)
             {
@@ -741,7 +741,7 @@ namespace Cosmimera.Combat
         // REQ: combat.md#格擋 (Q-C59): a perfect block returns reflect_percent of the move's damage, settled with the
         // attacker's own resist, and that damage fills the attacker's stagger gauge like any hit. A field can outlive
         // its caster, so an inactive attacker takes nothing.
-        private void Reflect(int attackerId, int blockerId, int slot, in CastContext ctx, long nowMs)
+        private void Reflect(int attackerId, int blockerId, int slot, in CastContext ctx, int extraPercent, long nowMs)
         {
             if (attackerId < 0 || attackerId >= _units.Count || !_units[attackerId].IsActive)
             {
@@ -749,7 +749,7 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit a = _units[attackerId];
-            int dealt = a.Combatant.ReceiveReflect(ctx, _balance.Block.ReflectPercent, nowMs);
+            int dealt = a.Combatant.ReceiveReflect(ctx, math.min(1000, _balance.Block.ReflectPercent + extraPercent), nowMs);
             UpdateBossStage(a);
             _events.Add(new EncounterEvent(EncounterEventKind.Reflected, blockerId, attackerId, slot, dealt));
             if (a.Combatant.IsFainted)
@@ -780,6 +780,23 @@ namespace Cosmimera.Combat
             _events.Add(new EncounterEvent(EncounterEventKind.GuardBroken, sourceId, t.Id, 0, 0));
         }
 
+        // REQ: combat.md#失衡與擊退 — armor's 失衡值 (stagger_capacity_mod_percent) scales the gauge, summed then applied
+        // once with the shared relative-percent clamp like every other relative modifier.
+        private int StaggerCapacityHp(EncounterUnit u, long nowMs)
+        {
+            return EffectMath.ApplyPercent(_balance.Stagger.CapacityHp(u.Combatant.MaxHp),
+                u.Combatant.StaggerCapacityPercent(nowMs), _balance.Effects);
+        }
+
+        // REQ: combat.md#格擋 — armor's 格擋減免率 adds percentage points to the base / shield block value. The block itself
+        // saturates at 100 %; only the excess goes to the perfect-block reflect, as extra percent of the move's damage.
+        private int BlockTotalPermille(EncounterUnit t, long nowMs)
+        {
+            int basePermille = t.Combatant.HasShield ? _balance.Block.ShieldPermille : _balance.Block.BasePermille;
+            long total = basePermille + t.Combatant.BlockReductionDelta(nowMs) * 10;
+            return total < 0 ? 0 : total > 2000 ? 2000 : (int)total;
+        }
+
         private void DrainStagger(EncounterUnit u, long nowMs, int dtMs)
         {
             StaggerTuning s = _balance.Stagger;
@@ -788,7 +805,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            long drain = (long)s.CapacityHp(u.Combatant.MaxHp) * s.RegenPermillePerS * dtMs / 1000;
+            long drain = (long)StaggerCapacityHp(u, nowMs) * s.RegenPermillePerS * dtMs / 1000;
             u.StaggerGaugeMilli = math.max(0L, u.StaggerGaugeMilli - drain);
         }
 
@@ -2165,8 +2182,8 @@ namespace Cosmimera.Combat
                 long sinceRoll = nowMs - t.RollStartedAtMs;
                 bool invulnerable = t.Side == EncounterSide.Player && sinceRoll >= 0 &&
                     sinceRoll < _balance.CreatureRoll.InvulnerableMs;
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus,
-                    blocked ? (t.Combatant.HasShield ? _balance.Block.ShieldPermille : _balance.Block.BasePermille) : 0,
+                int blockTotal = blocked ? BlockTotalPermille(t, nowMs) : 0;
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus, math.min(1000, blockTotal),
                     invulnerable);
                 bool hit = r.Outcome == HitOutcome.Hit;
                 UpdateBossStage(t);
@@ -2194,7 +2211,7 @@ namespace Cosmimera.Combat
 
                     if (perfectBlock)
                     {
-                        Reflect(casterId, t.Id, slot, ctx, nowMs);
+                        Reflect(casterId, t.Id, slot, ctx, math.max(0, blockTotal - 1000) / 10, nowMs);
                     }
                 }
                 if (r.Fainted)
@@ -2241,12 +2258,18 @@ namespace Cosmimera.Combat
         private void HitPlayer(int casterId, int slot, in CastContext ctx, long nowMs)
         {
             CastMove move = ctx.Move;
-            int chance = _balance.Stats.HitChancePermille(move.AccuracyPercent, 0);
+            int chance = _balance.Stats.HitChancePermille(ctx.EffectiveAccuracyPercent, 0);
             HitOutcome outcome = HitResolver.Resolve(true, _player.IsInvulnerable(nowMs), chance, ref _rng);
             int dealt = 0;
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
-                dealt = _player.ApplyDamage(DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0), nowMs);
+                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0);
+                if (HitResolver.RollCrit(ctx.CritRatePermille, ref _rng))
+                {
+                    raw = DamageModel.ApplyCrit(raw, ctx.CritDamagePercent);
+                }
+
+                dealt = _player.ApplyDamage(raw, nowMs);
             }
 
             // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.

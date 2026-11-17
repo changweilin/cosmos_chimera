@@ -49,5 +49,25 @@ namespace Cosmimera.Combat
 
             return rng.NextUInt(DerivedStats.Permille) < (uint)hitChancePermille ? HitOutcome.Hit : HitOutcome.Miss;
         }
+
+        /// <summary>Rolls whether a landed damaging hit is critical. REQ: docs/design/combat.md#暴擊.</summary>
+        /// <remarks>
+        /// Call only after a Hit from <see cref="Resolve"/>, for a move that deals damage, on the same stream.
+        /// Pre: 0 &lt;= critRatePermille &lt;= 1000.
+        /// Post: false when critRatePermille == 0; otherwise true with probability critRatePermille / 1000.
+        /// Side effects: advances rng by exactly one bounded draw iff critRatePermille > 0. A zero rate draws nothing so
+        ///       contexts without crit (default CastContext, tools) keep their historical roll sequence.
+        /// </remarks>
+        public static bool RollCrit(int critRatePermille, ref Pcg32 rng)
+        {
+            Contract.Requires(critRatePermille >= 0 && critRatePermille <= DerivedStats.Permille,
+                "critRatePermille must be 0..1000");
+            if (critRatePermille == 0)
+            {
+                return false;
+            }
+
+            return rng.NextUInt(DerivedStats.Permille) < (uint)critRatePermille;
+        }
     }
 }

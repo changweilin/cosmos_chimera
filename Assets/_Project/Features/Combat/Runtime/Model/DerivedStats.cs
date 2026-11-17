@@ -277,16 +277,22 @@ namespace Cosmimera.Combat
             return (int)Curve(_c.EvasionCapPermille, Saturate(agi, "agi"), _c.EvasionHalfStat);
         }
 
+        /// <summary>Largest effective accuracy accepted: move accuracy plus accuracy_mod (weapons) may exceed 100 to
+        /// offset evasion. Representability bound, not balance.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxAccuracyPercent = 200;
+
         /// <summary>Hit chance (permille) of a roll that already passed the geometric test.</summary>
         /// <remarks>
-        /// REQ: docs/design/combat.md#命中與閃避. Pre: 0 &lt;= accuracyPercent &lt;= 100;
+        /// REQ: docs/design/combat.md#命中與閃避. Pre: 0 &lt;= accuracyPercent &lt;= MaxAccuracyPercent;
         /// 0 &lt;= evasionPermille &lt;= 1000 (normally <see cref="EvasionPermille"/>; P2-09 modifiers clamp first).
         /// Post: HitFloorPermille &lt;= result &lt;= 1000; non-decreasing in accuracy, non-increasing in evasion.
         /// Side effects: none.
         /// </remarks>
         public int HitChancePermille(int accuracyPercent, int evasionPermille)
         {
-            Contract.Requires(accuracyPercent >= 0 && accuracyPercent <= 100, "accuracyPercent must be 0..100");
+            Contract.Requires(accuracyPercent >= 0 && accuracyPercent <= MaxAccuracyPercent,
+                "accuracyPercent must be 0..MaxAccuracyPercent");
             Contract.Requires(evasionPermille >= 0 && evasionPermille <= Permille, "evasionPermille must be 0..1000");
             int hit = accuracyPercent * (Permille - evasionPermille) / 100;
             return hit < _c.HitFloorPermille ? _c.HitFloorPermille : hit > Permille ? Permille : hit;

@@ -232,8 +232,12 @@ namespace Cosmimera.Combat
     public readonly struct CastContext
     {
         internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs,
-            int powerDeltaPercent = 0, int weaponPowerPermille = 1000)
+            int powerDeltaPercent = 0, int weaponPowerPermille = 1000, int accuracyDelta = 0, int critRatePermille = 0,
+            int critDamagePercent = 100)
         {
+            AccuracyDelta = accuracyDelta;
+            CritRatePermille = critRatePermille;
+            CritDamageOffsetPercent = critDamagePercent - 100;
             // Stored as an offset so default(CastContext) stays a neutral ×1.
             WeaponPowerOffsetPermille = weaponPowerPermille - 1000;
             Move = move;
@@ -270,6 +274,32 @@ namespace Cosmimera.Combat
 
         private int WeaponPowerOffsetPermille { get; }
 
+        /// <summary>Caster's accuracy_mod sum frozen at cast time, percentage points.</summary>
+        /// <remarks>Pre: none. Post: none (0 on default). Side effects: none.</remarks>
+        public int AccuracyDelta { get; }
+
+        /// <summary>Move accuracy plus <see cref="AccuracyDelta"/>, clamped for the hit roll.</summary>
+        /// <remarks>Pre: none. Post: 0..DerivedStats.MaxAccuracyPercent. Side effects: none.</remarks>
+        public int EffectiveAccuracyPercent
+        {
+            get
+            {
+                long a = (long)Move.AccuracyPercent + AccuracyDelta;
+                return a < 0 ? 0 : a > DerivedStats.MaxAccuracyPercent ? DerivedStats.MaxAccuracyPercent : (int)a;
+            }
+        }
+
+        /// <summary>Caster's crit chance frozen at cast time (combat.md#暴擊), permille.</summary>
+        /// <remarks>Pre: none. Post: 0..1000 (0 on default: no crit). Side effects: none.</remarks>
+        public int CritRatePermille { get; }
+
+        // Offset so default(CastContext) is a neutral ×1.
+        private int CritDamageOffsetPercent { get; }
+
+        /// <summary>Caster's crit multiplier frozen at cast time, percent.</summary>
+        /// <remarks>Pre: none. Post: 100..DamageModel.MaxCritDamagePercent (100 on default). Side effects: none.</remarks>
+        public int CritDamagePercent => 100 + CritDamageOffsetPercent;
+
         /// <summary>Weapon multiplier on move power frozen at cast time, permille (1000 when unarmed).</summary>
         /// <remarks>Pre: none. Post: 1..DamageModel.MaxWeaponPermille for an Accepted cast. Side effects: none.</remarks>
         public int WeaponPowerPermille => 1000 + WeaponPowerOffsetPermille;
@@ -289,8 +319,9 @@ namespace Cosmimera.Combat
         }
 
         internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied,
-            int preBlockDamage)
+            int preBlockDamage, bool critical = false)
         {
+            Critical = critical;
             PreBlockDamage = preBlockDamage;
             Outcome = outcome;
             Damage = damage;
@@ -333,6 +364,10 @@ namespace Cosmimera.Combat
         /// <summary>Whether the move's timed effect was applied to this combatant.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool EffectApplied { get; }
+
+        /// <summary>Whether the damage was a critical hit (combat.md#暴擊).</summary>
+        /// <remarks>Pre: none. Post: false unless Outcome == Hit and the move deals damage. Side effects: none.</remarks>
+        public bool Critical { get; }
 
         /// <summary>Whether this move took the combatant to 0 HP.</summary>
         /// <remarks>Pre: none. Post: true iff HpBefore >= 1 and HpAfter == 0. Side effects: none.</remarks>
@@ -687,7 +722,8 @@ namespace Cosmimera.Combat
 
             Cooldowns.Start(slot, nowMs, cd);
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
-                weather.PowerDeltaPercent(move.Element), weaponPower);
+                weather.PowerDeltaPercent(move.Element), weaponPower, ClampInt(_totals.AccuracyDelta, -1000, 1000),
+                CritRatePermille(), CritDamagePercent());
             return CastResult.Accepted;
         }
 
@@ -704,6 +740,44 @@ namespace Cosmimera.Combat
             Contract.Requires(Book.WatermarkMs == 0, "weapons must be assigned before simulation time advances");
             _weapons = loadout;
             _acceptedCasts = 0;
+        }
+
+        // REQ: combat.md#暴擊 — base from balance.json#crit, raised by crit_rate_mod / crit_damage_mod percentage points.
+        private int CritRatePermille()
+        {
+            return (int)ClampLong(_rules.CritBaseRatePermille + _totals.CritRateDelta * 10, 0, DerivedStats.Permille);
+        }
+
+        private int CritDamagePercent()
+        {
+            return (int)ClampLong(_rules.CritBaseDamagePercent + _totals.CritDamageDelta, 100,
+                DamageModel.MaxCritDamagePercent);
+        }
+
+        private static long ClampLong(long v, long min, long max) => v < min ? min : v > max ? max : v;
+
+        private static int ClampInt(long v, int min, int max) => (int)ClampLong(v, min, max);
+
+        /// <summary>Σ block_reduction_mod (percentage points) active at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// REQ: combat.md#格擋 — armor's 格擋減免率 adds to the base / shield block value.
+        /// Pre: nowMs in CombatTime and >= Book's watermark. Post: none. Side effects: overwrites the modifier buffer only.
+        /// </remarks>
+        public long BlockReductionDelta(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return _totals.BlockReductionDelta;
+        }
+
+        /// <summary>Σ stagger_capacity_mod_percent active at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// REQ: combat.md#失衡與擊退 — armor's 失衡值 scales the stagger gauge capacity.
+        /// Pre: nowMs in CombatTime and >= Book's watermark. Post: none. Side effects: overwrites the modifier buffer only.
+        /// </remarks>
+        public long StaggerCapacityPercent(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return _totals.StaggerCapacityPercent;
         }
 
         /// <summary>Whether a shield is held (block uses block.shield_permille).</summary>
@@ -792,7 +866,7 @@ namespace Cosmimera.Combat
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
             int evasion = EffectMath.EvasionPermille(_stats, _agi, _totals.EvasionPercent, _rules);
-            int chance = _stats.HitChancePermille(move.AccuracyPercent, evasion);
+            int chance = _stats.HitChancePermille(cast.EffectiveAccuracyPercent, evasion);
             HitOutcome outcome = HitResolver.Resolve(geometricContact, invulnerable, chance, ref rng);
             if (outcome != HitOutcome.Hit)
             {
@@ -801,10 +875,16 @@ namespace Cosmimera.Combat
 
             int damage = 0;
             int preBlock = 0;
+            bool critical = false;
             if (move.DealsDamage)
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist);
+                critical = HitResolver.RollCrit(cast.CritRatePermille, ref rng);
+                if (critical)
+                {
+                    raw = DamageModel.ApplyCrit(raw, cast.CritDamagePercent);
+                }
                 if (damageTakenBonusPercent > 0)
                 {
                     raw = (int)System.Math.Min(int.MaxValue, ((long)raw * (100 + damageTakenBonusPercent) + 50) / 100);
@@ -822,7 +902,7 @@ namespace Cosmimera.Combat
                 if (Hp == 0)
                 {
                     // Q-C18 spirit (user decision 2026-11-07): nothing may fire on a fainted unit, so no heal revives it.
-                    return new HitReport(outcome, damage, 0, hpBefore, 0, false, preBlock);
+                    return new HitReport(outcome, damage, 0, hpBefore, 0, false, preBlock, critical);
                 }
             }
 
@@ -844,7 +924,7 @@ namespace Cosmimera.Combat
             }
 
             HealPercent(crossHeal + hitHeal + moveHeal, nowMs);
-            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock);
+            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock, critical);
         }
 
         /// <summary>Resolves a self/ally move landing on this combatant: no roll (user decision 2026-11-07).</summary>

@@ -810,6 +810,11 @@ namespace Cosmimera.GameData.Editor
                 ["move_speed_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
                 ["range_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
                 ["heal_percent_max_hp"] = new[] { ("percent", ParamKind.Percent) },
+                ["accuracy_mod"] = new[] { ("delta", ParamKind.Delta) },
+                ["crit_rate_mod"] = new[] { ("delta", ParamKind.Delta) },
+                ["crit_damage_mod"] = new[] { ("delta", ParamKind.Delta) },
+                ["stagger_capacity_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
+                ["block_reduction_mod"] = new[] { ("delta", ParamKind.Delta) },
             };
 
         private static void CheckRule(string where, string field, RuleDto dto,

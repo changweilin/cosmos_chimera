@@ -309,12 +309,18 @@ namespace Cosmimera.Combat.Tests
             {
                 Pcg32 oracle = rng;
                 HitOutcome expected = HitResolver.Resolve(true, false, chance, ref oracle);
+                if (expected == HitOutcome.Hit)
+                {
+                    // combat.md#暴擊: a landed damaging hit rolls crit next on the same stream.
+                    HitResolver.RollCrit(_cfg.CritBaseRatePermille, ref oracle);
+                }
+
                 long now = i * 3_000L;
                 HitReport r = target.ReceiveHostile(Cast(caster, Damage(power: 1, accuracy: 60), now), true, ref rng, now);
                 Assert.AreEqual(expected, r.Outcome);
                 Pcg32 a = rng;
                 Pcg32 b = oracle;
-                Assert.AreEqual(b.NextUInt(), a.NextUInt(), "exactly one draw per contact");
+                Assert.AreEqual(b.NextUInt(), a.NextUInt(), "one hit draw per contact, plus one crit draw on a damaging hit");
                 if (r.Outcome == HitOutcome.Miss)
                 {
                     misses++;
@@ -717,11 +723,12 @@ namespace Cosmimera.Combat.Tests
         }
 
         [Test]
-        public void Sure_hit_contact_still_draws_once()
+        public void Sure_hit_contact_still_draws_once_plus_the_crit_roll()
         {
             Combatant target = Make(con: 200);
             Pcg32 rng = Rng();
             Pcg32 expected = rng;
+            expected.NextUInt(DerivedStats.Permille);
             expected.NextUInt(DerivedStats.Permille);
             HitReport r = target.ReceiveHostile(Cast(Make(), Damage(power: 5, accuracy: 100), 0), true, ref rng, 0);
             Assert.AreEqual(HitOutcome.Hit, r.Outcome);

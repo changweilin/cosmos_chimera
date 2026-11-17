@@ -29,7 +29,8 @@ namespace Cosmimera.Combat.Tests
         {
             JObject b = BalanceJson();
             return new EffectRulesConfig((int)b["effects"]["multiplier_min_percent"],
-                (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"]);
+                (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"],
+                (int)b["crit"]["base_rate_permille"], (int)b["crit"]["base_damage_percent"]);
         }
 
         public static AiTuning AiTuning()

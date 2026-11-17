@@ -22,7 +22,7 @@ namespace Cosmimera.Combat
         /// </remarks>
         public EffectSpec(EffectType type, bool anyElement, Element element, int delta, int percent, int maxStacks)
         {
-            Contract.Requires(type >= EffectType.MasteryMod && type <= EffectType.HealPercentMaxHp, "undefined EffectType");
+            Contract.Requires(type >= EffectType.MasteryMod && type <= EffectType.BlockReductionMod, "undefined EffectType");
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
             Contract.Requires(!anyElement || type == EffectType.CdModPercent, "only cd_mod_percent accepts 'any'");
             if (type == EffectType.HealPercentMaxHp)
@@ -57,7 +57,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined Element. Side effects: none.</remarks>
         public Element Element { get; }
 
-        /// <summary>Signed modifier: percentage points (mastery, resist) or relative percent (cd, evasion, speed, range).</summary>
+        /// <summary>Signed modifier: percentage points (mastery, resist, accuracy, crit rate / damage, block reduction) or
+        /// relative percent (cd, evasion, speed, range, stagger capacity).</summary>
         /// <remarks>Pre: none. Post: -100..100; 0 for a heal. Side effects: none.</remarks>
         public int Delta { get; }
 
@@ -181,11 +182,17 @@ namespace Cosmimera.Combat
     {
         /// <summary>Validates and stores the constants.</summary>
         /// <remarks>
-        /// Pre: 0 &lt;= multiplierMinPercent &lt;= 100 &lt;= multiplierMaxPercent &lt;= 1000; 1 &lt;= fieldTickMs &lt;= 600000.
+        /// Pre: 0 &lt;= multiplierMinPercent &lt;= 100 &lt;= multiplierMaxPercent &lt;= 1000; 1 &lt;= fieldTickMs &lt;= 600000;
+        ///      0 &lt;= critBaseRatePermille &lt;= 1000; 100 &lt;= critBaseDamagePercent &lt;= 1000.
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
-        public EffectRulesConfig(int multiplierMinPercent, int multiplierMaxPercent, int fieldTickMs)
+        public EffectRulesConfig(int multiplierMinPercent, int multiplierMaxPercent, int fieldTickMs,
+            int critBaseRatePermille = 50, int critBaseDamagePercent = 150)
         {
+            Contract.Requires(critBaseRatePermille >= 0 && critBaseRatePermille <= 1000, "crit base rate must be 0..1000");
+            Contract.Requires(critBaseDamagePercent >= 100 && critBaseDamagePercent <= 1000, "crit damage must be 100..1000");
+            CritBaseRatePermille = critBaseRatePermille;
+            CritBaseDamagePercent = critBaseDamagePercent;
             Contract.Requires(multiplierMinPercent >= 0 && multiplierMinPercent <= 100, "multiplierMinPercent must be 0..100");
             Contract.Requires(multiplierMaxPercent >= 100 && multiplierMaxPercent <= 1000, "multiplierMaxPercent must be 100..1000");
             Contract.Requires(fieldTickMs >= 1 && fieldTickMs <= EffectBook.MaxDurationMs, "fieldTickMs must be 1..600000");
@@ -205,6 +212,14 @@ namespace Cosmimera.Combat
         /// <summary>Interval between field resolutions (Q-C17).</summary>
         /// <remarks>Pre: none. Post: 1..600000. Side effects: none.</remarks>
         public int FieldTickMs { get; }
+
+        /// <summary>Crit chance before crit_rate_mod (combat.md#暴擊), permille.</summary>
+        /// <remarks>Pre: none. Post: 0..1000. Side effects: none.</remarks>
+        public int CritBaseRatePermille { get; }
+
+        /// <summary>Crit damage multiplier before crit_damage_mod, percent.</summary>
+        /// <remarks>Pre: none. Post: 100..1000. Side effects: none.</remarks>
+        public int CritBaseDamagePercent { get; }
     }
 
     /// <summary>Summed modifiers active on one combatant at one instant. Reused buffer; fill with <see cref="EffectBook.Collect"/>.</summary>
@@ -231,6 +246,26 @@ namespace Cosmimera.Combat
         /// <summary>Σ range_mod_percent deltas.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public long RangePercent { get; private set; }
+
+        /// <summary>Σ accuracy_mod deltas (percentage points added to move accuracy).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long AccuracyDelta { get; private set; }
+
+        /// <summary>Σ crit_rate_mod deltas (percentage points).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long CritRateDelta { get; private set; }
+
+        /// <summary>Σ crit_damage_mod deltas (percentage points over the base crit multiplier).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long CritDamageDelta { get; private set; }
+
+        /// <summary>Σ stagger_capacity_mod_percent deltas (relative percent of the stagger gauge).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long StaggerCapacityPercent { get; private set; }
+
+        /// <summary>Σ block_reduction_mod deltas (percentage points added to the block reduction).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public long BlockReductionDelta { get; private set; }
 
         /// <summary>Σ mastery_mod deltas (percentage points) for <paramref name="element"/>.</summary>
         /// <remarks>Pre: element defined. Post: none. Side effects: none.</remarks>
@@ -259,6 +294,11 @@ namespace Cosmimera.Combat
             EvasionPercent = 0;
             MoveSpeedPercent = 0;
             RangePercent = 0;
+            AccuracyDelta = 0;
+            CritRateDelta = 0;
+            CritDamageDelta = 0;
+            StaggerCapacityPercent = 0;
+            BlockReductionDelta = 0;
         }
 
         internal void Add(in EffectSpec spec, int stacks)
@@ -291,6 +331,21 @@ namespace Cosmimera.Combat
                     break;
                 case EffectType.RangeModPercent:
                     RangePercent += amount;
+                    break;
+                case EffectType.AccuracyMod:
+                    AccuracyDelta += amount;
+                    break;
+                case EffectType.CritRateMod:
+                    CritRateDelta += amount;
+                    break;
+                case EffectType.CritDamageMod:
+                    CritDamageDelta += amount;
+                    break;
+                case EffectType.StaggerCapacityModPercent:
+                    StaggerCapacityPercent += amount;
+                    break;
+                case EffectType.BlockReductionMod:
+                    BlockReductionDelta += amount;
                     break;
             }
         }

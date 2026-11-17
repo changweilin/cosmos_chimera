@@ -55,6 +55,25 @@ namespace Cosmimera.Combat
             return damage < 1 ? 1 : (int)damage;
         }
 
+        /// <summary>Largest crit multiplier accepted, percent. Representability bound, not balance (base 150).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxCritDamagePercent = 1_000;
+
+        /// <summary>Applies a critical hit's multiplier. REQ: docs/design/combat.md#暴擊.</summary>
+        /// <remarks>
+        /// Pre: damage >= 0; 100 &lt;= critDamagePercent &lt;= MaxCritDamagePercent.
+        /// Post: round_half_up(damage × critDamagePercent / 100) capped at int.MaxValue; >= damage; 0 iff damage == 0.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static int ApplyCrit(int damage, int critDamagePercent)
+        {
+            Contract.Requires(damage >= 0, "damage must be nonnegative");
+            Contract.Requires(critDamagePercent >= 100 && critDamagePercent <= MaxCritDamagePercent,
+                "critDamagePercent must be 100..MaxCritDamagePercent");
+            long scaled = ((long)damage * critDamagePercent + 50) / 100;
+            return scaled > int.MaxValue ? int.MaxValue : (int)scaled;
+        }
+
         /// <summary>Scales base move power by an environmental percentage delta (e.g. weather elemental synergy).</summary>
         /// <remarks>
         /// Pre: 0 &lt;= power &lt;= MaxPower; -90 &lt;= deltaPercent &lt;= 100.

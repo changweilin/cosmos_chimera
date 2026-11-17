@@ -108,6 +108,9 @@ namespace Cosmimera.GameData
     {
         MasteryMod = 0, ResistMod = 1, CdModPercent = 2, EvasionModPercent = 3, MoveSpeedModPercent = 4,
         RangeModPercent = 5, HealPercentMaxHp = 6,
+        // Appended (serialized into imported .asset files). REQ: creatures.md#六大能力值, crafting.md#穿戴與數值 —
+        // weapon / armor stats that only skills and equipment raise.
+        AccuracyMod = 7, CritRateMod = 8, CritDamageMod = 9, StaggerCapacityModPercent = 10, BlockReductionMod = 11,
     }
 
     /// <summary>Planet size class: asteroid / moon / planet / supergiant = 320 / 640 / 960 / 1280 m. Numeric radius is not stored here.</summary>
