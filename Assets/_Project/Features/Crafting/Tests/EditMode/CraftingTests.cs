@@ -374,6 +374,12 @@ namespace Cosmimera.Crafting.Tests
             Assert.That(full.Count("raw_timber"), Is.EqualTo(int.MaxValue - 1), "inventory unchanged");
             Assert.That(gathering.Preview(100, "log", "spring", _catalog, forage, full, yields), Is.EqualTo(CraftResult.Depleted));
             Assert.That(gathering.HarvestOnKnockdown(5, "no_such_source", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.NoResource));
+            foreach (string tree in new[] { "broadleaf", "conifer", "umbrella", "swamp_tree" })
+            {
+                Assert.That(gathering.HarvestOnKnockdown(200 + tree.Length, tree, "spring", _catalog, forage, _bag, yields),
+                    Is.EqualTo(CraftResult.Success), tree + " is a timber source");
+                Assert.That(yields.Exists(y => y.Id == "raw_timber"), Is.True, tree);
+            }
             Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(-1, "log", "spring", _catalog, forage, _bag, yields));
             Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "monsoon", _catalog, forage, _bag, yields));
             Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "spring", _catalog, null, _bag, yields));

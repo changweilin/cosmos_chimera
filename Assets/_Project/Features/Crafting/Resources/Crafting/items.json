@@ -98,7 +98,11 @@
     "sources": [
       "log",
       "snag",
-      "bamboo"
+      "bamboo",
+      "broadleaf",
+      "conifer",
+      "umbrella",
+      "swamp_tree"
     ],
     "utility": "forage_berries",
     "quantity": 2,
