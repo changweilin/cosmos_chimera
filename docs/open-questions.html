@@ -87,12 +87,6 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
-<article id="Q-C71">
-  <header><a class="id" href="#Q-C71">Q-C71</a><span class="tag">影響 D0-S1（僅超載與防具部分）</span></header>
-  <p><span class="label">問題</span>Q-C69／Q-C70 回答後剩下兩點：(1) <b>「降格也套用到超載」</b>指什麼？超載一律需要魔術方塊副手才解鎖，若解讀為「超載型態的技能降為 ★」，則所有超載技能永遠是 ★；(2) 格擋率改名<b>格擋減免率</b>後，防具清單原本的<b>「格擋值」</b>是否就是同一項，或是另一項（例如架勢條容量）？</p>
-  <p><span class="label">暫定</span><span class="none">無</span></p>
-</article>
-
 
 
 
@@ -127,8 +121,6 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-C71':[R('overload','降格套用到超載',['超載型態的精通招式與特性一律以 ★ 版生效（預算因此以 ★+★＝720 計）（建議）','魔術方塊副手提供的超載整體能力值打折','其他（補充）']),
-          R('guard','防具「格擋值」',['與格擋減免率是同一項，只保留格擋減免率（建議）','另一項：架勢條容量加成','其他（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
