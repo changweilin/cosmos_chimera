@@ -87,18 +87,38 @@
 <h2>戰鬥與環境</h2>
 <div class="cards">
 
+<article id="Q-C61">
+  <header><a class="id" href="#Q-C61">Q-C61</a><span class="tag">影響 P3-31</span><span class="tag">forge</span></header>
+  <p><span class="label">問題</span><b>「習性」6 階的生態學名稱，以及資料欄位／ID 是否一起改</b>。「性格→習性」已定案，但各階新名稱未定。提案（依行為生態學的反掠食／領域行為用語）：</p>
+  <p><code>timid</code> 膽怯 → <b>迴避</b>（avoidant，0 m）· <code>cautious</code> 警惕 → <b>警戒</b>（vigilant，4 m）· <code>normal</code> 沉穩 → <b>耐受</b>（tolerant，8 m）· <code>territorial</code> 領地 → <b>護域</b>（territorial，14 m）· <code>fierce</code> 凶悍 → <b>攻擊</b>（aggressive，20 m）· <code>apex</code> 霸主 → <b>優勢</b>（dominant，28 m）</p>
+  <p>改 ID 的代價：Data／產生的 asset／<code>balance.json#ai.territory_mm</code>／棲位提案／forge 的 <code>catalog.js</code>、<code>designed.js</code>、creature schema 都要同步遷移；只改顯示名稱則只動字串。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（牽涉 schema 與程式，不只 Data 數值）</p>
+</article>
+
+<article id="Q-C62">
+  <header><a class="id" href="#Q-C62">Q-C62</a><span class="tag">影響 P3-31</span><span class="tag">RunPlanner</span></header>
+  <p><span class="label">問題</span><b>「相同生態棲位的不同種宙獸，巡邏範圍不可相同」的意思</b>。可能是 (a) 空間上不重疊——生態學的競爭排斥：同棲位的兩個物種不共用同一片活動區（同種個體可重疊）；或 (b) 數值不同——同棲位的各物種 <code>radius_mm</code> 取不同值；或兩者皆要。另需決定衝突時怎麼處理，以及沒有活動半徑的「無限制隨機」棲位（食腐、機會型雜食、巡獵）怎麼算。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（決定生成演算法，需升 <code>GeneratorVersion</code>）</p>
+</article>
+
+<article id="Q-C63">
+  <header><a class="id" href="#Q-C63">Q-C63</a><span class="tag">影響 Combat · Encounter</span></header>
+  <p><span class="label">問題</span><b>「野生宙獸最多與玩家 2 vs 2」的細節</b>。理解為：同時與玩家方交戰（<code>Engaged</code>）的野生宙獸最多 2 隻，對應玩家場上最多 2 隻。需決定：第 3 隻進入領域／被挑釁／被玩家招式擊中時怎麼辦；多人合作時上限怎麼算；BOSS 戰是否適用。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
+<article id="Q-C64">
+  <header><a class="id" href="#Q-C64">Q-C64</a><span class="tag">影響 P3-31</span><span class="tag">Data</span></header>
+  <p><span class="label">問題</span><b>現有 24 種物種的「逐階候選棲位與權重」由誰配</b>。棲位接入執行期必須每個物種每階段都有候選，否則生成失敗（規格禁止補預設棲位）。目前沒有這份資料；規則要求 AI 產出先進 <code>Data/_incoming</code> 經人工審核才入正式資料。</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
+
 </div>
 </section>
 
 <section>
 <h2>路人 NPC / 自然生物</h2>
 <div class="cards">
-
-<article id="Q-A5">
-  <header><a class="id" href="#Q-A5">Q-A5</a><span class="tag">影響 P3-18</span></header>
-  <p><span class="label">問題</span><b>不死／魔族（殭屍、骷髏、吸血鬼、惡魔）的定位</b>。既有 15 種族保留並規劃新增巨人、食人妖、機器人（多種樣態）已定案；上輪你為不死／魔族選了「其他」但未填備註。殭屍、骷髏、吸血鬼、惡魔要當和平聚落居民，還是只出現在遺跡／夜晚／當敵對 NPC？</p>
-  <p><span class="label">暫定</span>15 種族全部是居民；遺跡與巢穴無人居住</p>
-</article>
 
 </div>
 </section>
@@ -123,7 +143,15 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-A5':[R('undead','殭屍／骷髏／吸血鬼／惡魔',['都是和平居民（暫定）','只住在遺跡與巢穴周圍','只在夜晚出現','改為敵對 NPC（會攻擊）','其他（請在備註說明）'])],
+ 'Q-C61':[R('names','6 階名稱',['採用提案：迴避／警戒／耐受／護域／攻擊／優勢（建議）','其他（請在補充寫出 6 個名稱）']),
+          R('scope','改到哪一層',['欄位改 habit、值 ID 改 avoidant/vigilant/tolerant/territorial/aggressive/dominant，全面遷移（含 forge）（建議）','只改顯示名稱；欄位 temperament 與值 ID 保留'])],
+ 'Q-C62':[R('meaning','「巡邏範圍不可相同」指',['空間不重疊：同棲位不同物種的活動區不可重疊（競爭排斥）（建議）','只是半徑數值不同','兩者皆要','其他（補充）']),
+          R('conflict','重疊時',['沿固定環狀掃描把後生成者移到最近不重疊的陸地（建議）','放棄該個體（數量變少）','視為配置錯誤，生成失敗']),
+          R('unbounded','無限制隨機棲位（無活動半徑）',['以出生點為中心給一個排他半徑，只檢查出生區（建議）','不受此限'])],
+ 'Q-C63':[R('third','第 3 隻野生進入領域／被挑釁／被招式擊中',['不開戰，等交戰中的一隻倒下／被收服／脫戰才依距離遞補；被擊中也不加入（建議）','自動開戰受限，但挑釁或被擊中仍會加入（可超過 2）','開戰但在外圍待命不出招，有空位才上']),
+          R('coop','多人合作',['每位玩家各自最多 2 隻（建議）','全隊共 2 隻','其他（補充）']),
+          R('boss','BOSS／菁英',['BOSS 算在 2 隻內（BOSS + 至多 1 隻護衛）（建議）','BOSS 戰不受此限'])],
+ 'Q-C64':[R('who','候選棲位資料',['我依物種概念草擬進 _incoming，通過驗證後直接匯入接上執行期，你事後審（建議）','草擬進 _incoming 等你審過才匯入；這輪先只做棲位系統本身、不接執行期','你自己配'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
