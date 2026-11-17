@@ -144,7 +144,7 @@ namespace Cosmimera.Combat.Tests
             var slowEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit slowWild = slowEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            slowEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            slowEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             slowEncounter.SetWeather(WeatherProfiles.Fog);
             slowEncounter.SetPlayerMoveSpeedMs(1.0f); // <= SlowStealthSpeedThresholdMs (2.0 m/s)
             slowEncounter.Tick(Dt, Dt, AtMeters(12f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
@@ -153,7 +153,7 @@ namespace Cosmimera.Combat.Tests
             var fastEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit fastWild = fastEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            fastEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            fastEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             fastEncounter.SetWeather(WeatherProfiles.Fog);
             fastEncounter.SetPlayerMoveSpeedMs(5.0f); // > SlowStealthSpeedThresholdMs
             fastEncounter.Tick(Dt, Dt, AtMeters(12f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
@@ -167,7 +167,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             float3 playerAt = AtMeters(20f);
             e.SetGrassCoverProvider(d => math.distance(d, playerAt) < 1e-4f);
             e.SetPlayerMoveSpeedMs(speedMs);
@@ -264,7 +264,7 @@ namespace Cosmimera.Combat.Tests
                 var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
                 EncounterUnit wild = e.AddWildT(MakeCreature(mastery, Habit.Dominant),
                     null, AtMeters(0f), 10);
-                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
                 e.SetWeather(weather);
                 e.Tick(Dt, Dt, AtMeters(15f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
                 return math.distance(AtMeters(0f) * R, wild.Position);
@@ -284,7 +284,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 9);
             EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             e.SetWeatherProvider((_, t) => t < 1000 ? WeatherProfiles.Fog : WeatherProfiles.Clear);
             e.SetPlayerMoveSpeedMs(1.0f);
 
@@ -307,7 +307,7 @@ namespace Cosmimera.Combat.Tests
                 null, AtMeters(0f), 10);
             EncounterUnit boss = e.AddBossT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(200f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
 
             // PartyStealth halves Apex 28 m territory to 14 m. At 18 m, wild does not engage.
             e.SetExplorationUtilityModifiers(500, preventWildEscape: true);

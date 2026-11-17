@@ -86,13 +86,23 @@ namespace Cosmimera.GameData
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(hp >= 0 && speed >= 0 && yinAtk >= 0 && yangAtk >= 0 && yinDef >= 0 && yangDef >= 0,
                 "stats must be >= 0");
-            return new CreatureStats(Scale(hp, level), Scale(speed, level), Scale(yinAtk, level), Scale(yangAtk, level),
-                Scale(yinDef, level), Scale(yangDef, level));
+            return new CreatureStats(ScaleToLevel(hp, level), ScaleToLevel(speed, level), ScaleToLevel(yinAtk, level),
+                ScaleToLevel(yangAtk, level), ScaleToLevel(yinDef, level), ScaleToLevel(yangDef, level));
         }
 
-        // Int64 before multiplying: B up to Int32.MaxValue × 110 overflows Int32. One rounding at the end only, so low
-        // levels do not get the extra staircase a pre-rounded percentage would add.
-        private static int Scale(int b, int level) => (int)(((long)b * (level + 10) + 55) / 110);
+        /// <summary>One LV100 basis value scaled to <paramref name="level"/>: round_half_up(B × (L + 10) / 110).</summary>
+        /// <remarks>
+        /// REQ: level-progression.md#能力值縮放; also the player character's base defence (combat.md#玩家角色的守).
+        /// Pre: 1 &lt;= level &lt;= 100; b &gt;= 0. Post: 0..b, monotone in level, b at 100. Side effects: none.
+        /// </remarks>
+        public static int ScaleToLevel(int b, int level)
+        {
+            Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
+            Contract.Requires(b >= 0, "basis must be >= 0");
+            // Int64 before multiplying: B up to Int32.MaxValue × 110 overflows Int32. One rounding at the end only, so
+            // low levels do not get the extra staircase a pre-rounded percentage would add.
+            return (int)(((long)b * (level + 10) + 55) / 110);
+        }
     }
 
     /// <summary>An (element, integer) pair, used for mastery.</summary>

@@ -25,7 +25,7 @@
   "field": {"tick_ms": 1000},
   "effects": {"multiplier_min_percent": 10, "multiplier_max_percent": 300},
   "crit": {"base_rate_permille": 50, "base_damage_percent": 150},
-  "player": {"max_hp": 1000, "roll_duration_ms": 600, "roll_invulnerable_ms": 400, "roll_cooldown_ms": 800},
+  "player": {"max_hp": 1000, "roll_duration_ms": 600, "roll_invulnerable_ms": 400, "roll_cooldown_ms": 800, "base_defense": 100},
   "field_utilities": {"weather_control_cooldown_ms": 180000},
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
   "capture": {"base_percent": 60, "boss_percent": 100},

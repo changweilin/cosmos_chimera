@@ -77,7 +77,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit wild = e.AddWildT(Creature(Habit.Dominant), null, AtMeters(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
             if (percent != 0)
             {
                 wild.Combatant.Book.Apply("ms", 0, Speed(percent), durationMs, 0);

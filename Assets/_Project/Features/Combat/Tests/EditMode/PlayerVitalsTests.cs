@@ -218,5 +218,20 @@ namespace Cosmimera.Combat.Tests
             Assert.AreEqual(HitOutcome.Invulnerable, HitResolver.Resolve(true, p.IsInvulnerable(10), 1000, ref rng));
             Assert.AreEqual(untouched.NextUInt(1000), rng.NextUInt(1000));
         }
+
+        // REQ: combat.md#玩家角色的守 (Q-C75).
+        [Test]
+        public void Defence_scales_with_player_level_like_a_creature_stat_and_armor_adds_on_top()
+        {
+            Assert.That(PlayerDefence.Compute(100, 1, 0), Is.EqualTo(10));
+            Assert.That(PlayerDefence.Compute(100, 45, 0), Is.EqualTo(50));
+            Assert.That(PlayerDefence.Compute(100, 100, 0), Is.EqualTo(100), "LV100 matches an average adult creature");
+            Assert.That(PlayerDefence.Compute(100, 1, 25), Is.EqualTo(35));
+            Assert.That(PlayerDefence.Compute(1, 1, 0), Is.EqualTo(1), "never a zero ratio denominator");
+            Assert.That(PlayerDefence.Compute(100, 100, int.MaxValue), Is.EqualTo(int.MaxValue), "saturates");
+            Assert.Throws<ContractException>(() => PlayerDefence.Compute(0, 1, 0));
+            Assert.Throws<ContractException>(() => PlayerDefence.Compute(100, 0, 0));
+            Assert.Throws<ContractException>(() => PlayerDefence.Compute(100, 1, -1));
+        }
     }
 }

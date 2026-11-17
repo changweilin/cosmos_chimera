@@ -486,6 +486,8 @@ namespace Cosmimera.Combat
         private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
+        private int _playerYinDefence;
+        private int _playerYangDefence;
         private float3 _playerCenter;
         private float3 _playerPush;
         private DestructibleTable _objects;
@@ -1396,15 +1398,19 @@ namespace Cosmimera.Combat
         /// <paramref name="vitals"/> (dodge-roll i-frames apply); reaching 0 HP raises one PlayerDowned event.
         /// </summary>
         /// <remarks>
-        /// Pre: vitals non-null; no player attached yet.
-        /// Post: wild units may target <see cref="PlayerCharacterId"/> while !vitals.IsDowned.
+        /// Pre: vitals non-null; no player attached yet; yinDefence, yangDefence &gt;= 1 (see <see cref="PlayerDefence.Compute"/>).
+        /// Post: wild units may target <see cref="PlayerCharacterId"/> while !vitals.IsDowned; their hits use the
+        ///       attack/defence ratio against these defences (combat.md#玩家角色的守).
         /// Side effects: keeps a reference to vitals; Tick mutates it through ApplyDamage.
         /// </remarks>
-        public void AttachPlayer(PlayerVitals vitals)
+        public void AttachPlayer(PlayerVitals vitals, int yinDefence, int yangDefence)
         {
             Contract.Requires(vitals != null, "vitals must not be null");
             Contract.Requires(_player == null, "a player is already attached");
+            Contract.Requires(yinDefence >= 1 && yangDefence >= 1, "player defences must be >= 1");
             _player = vitals;
+            _playerYinDefence = yinDefence;
+            _playerYangDefence = yangDefence;
         }
 
         /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its habit.</summary>
@@ -2253,8 +2259,8 @@ namespace Cosmimera.Combat
             ResolveObjects(casterId, ctx, volume, anchor, forward, nowMs);
         }
 
-        // Provisional player defence (Q-C35): evasion 0 and resist 0, so only accuracy and dodge-roll i-frames stand
-        // between a move and the fixed player HP; timed effects are not applied (the character has no EffectBook).
+        // Player defence (Q-C35, Q-C75): evasion 0 and resist 0; the attack/defence ratio uses the level-based defence
+        // plus armor given to AttachPlayer. Timed effects are not applied (the character has no EffectBook).
         private void HitPlayer(int casterId, int slot, in CastContext ctx, long nowMs)
         {
             CastMove move = ctx.Move;
@@ -2263,7 +2269,9 @@ namespace Cosmimera.Combat
             int dealt = 0;
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
-                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0);
+                int defence = move.Polarity == Polarity.Yang ? _playerYangDefence : _playerYinDefence;
+                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0,
+                    _balance.Stats.AttackRatioPermille(ctx.Attack, defence));
                 if (HitResolver.RollCrit(ctx.CritRatePermille, ref _rng))
                 {
                     raw = DamageModel.ApplyCrit(raw, ctx.CritDamagePercent);

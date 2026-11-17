@@ -789,7 +789,11 @@ namespace Cosmimera.Bootstrap.Demo
             _playerEquipment = EquipmentRules.Collect(0, setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog,
                 EquipmentRules.PlayerGrips, balance.Grips);
             _vitals = new PlayerVitals(EquipmentRules.ApplyPlayer(balance.Player, _playerEquipment));
-            _encounter.AttachPlayer(_vitals);
+            // REQ: combat.md#玩家角色的守 (Q-C75) — fixed at departure like the other equipment bonuses.
+            int playerLevel = _progression.PlayerLevelOf(setup.PlayerExp);
+            _encounter.AttachPlayer(_vitals,
+                PlayerDefence.Compute(balance.PlayerBaseDefence, playerLevel, _playerEquipment.PlayerYinDefence),
+                PlayerDefence.Compute(balance.PlayerBaseDefence, playerLevel, _playerEquipment.PlayerYangDefence));
             _captureRng = new Pcg32(setup.Seed, 'K');
             // Own stream: drops must not shift capture or combat rolls, so the P2-12 XP regressions stay valid.
             _materialRng = new Pcg32(setup.Seed, 'D');

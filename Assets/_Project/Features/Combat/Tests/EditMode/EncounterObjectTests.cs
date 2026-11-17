@@ -128,7 +128,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit wild = e.AddWildT(FireBrawler(), null, At(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1_000_000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1_000_000, 600, 400, 800)), 100, 100);
             e.Provoke(wild.Id);
             player = _planet.ToWorld(At(3f), 0f);
             return e;

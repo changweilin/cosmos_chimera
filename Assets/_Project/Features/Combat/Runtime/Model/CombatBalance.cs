@@ -503,8 +503,9 @@ namespace Cosmimera.Combat
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
             TerritoryTuning territory, CollisionTuning collision, HorizonRangeTuning horizon,
             BossEnrageTuning enrage, int bossWindupPermille, StaggerTuning stagger, BlockTuning block,
-            CreatureRollTuning creatureRoll, GripTuning grips)
+            CreatureRollTuning creatureRoll, GripTuning grips, int playerBaseDefence)
         {
+            PlayerBaseDefence = playerBaseDefence;
             Block = block;
             Grips = grips;
             CreatureRoll = creatureRoll;
@@ -523,6 +524,10 @@ namespace Cosmimera.Combat
             CaptureBasePercent = captureBasePercent;
             CaptureBossPercent = captureBossPercent;
         }
+
+        /// <summary>LV100 basis of the player character's yin and yang defence (player.base_defense; combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int PlayerBaseDefence { get; }
 
         /// <summary>Boss windup scale in permille (boss.windup_permille; combat.md#前搖).</summary>
         /// <remarks>Pre: none. Post: 1..10000. Side effects: none.</remarks>
@@ -625,6 +630,8 @@ namespace Cosmimera.Combat
                 d.field.tick_ms, d.crit.base_rate_permille, d.crit.base_damage_percent);
             var ai = new AiTuning(d.ai.keep_distance_permille, d.ai.close_in_permille, d.ai.hold_permille,
                 d.ai.follow_leash_mm);
+            // An absent key parses as 0, which would put every hit on the player at the ratio cap.
+            Contract.Requires(d.player.base_defense >= 1, "player.base_defense must be >= 1");
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
                 d.player.roll_cooldown_ms);
             Contract.Requires(d.team.switch_cooldown_ms >= 0, "switch cooldown must be >= 0");
@@ -672,7 +679,7 @@ namespace Cosmimera.Combat
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
                 d.capture.base_percent, d.capture.boss_percent, territory, collision, horizon, enrage,
                 d.boss.windup_permille, stagger, block, creatureRoll,
-                RequireGrips(d.equipment));
+                RequireGrips(d.equipment), d.player.base_defense);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
@@ -745,6 +752,7 @@ namespace Cosmimera.Combat
             public int roll_duration_ms;
             public int roll_invulnerable_ms;
             public int roll_cooldown_ms;
+            public int base_defense;
         }
 
         [Serializable] private sealed class AiDto

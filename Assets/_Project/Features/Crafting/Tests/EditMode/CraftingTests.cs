@@ -121,7 +121,7 @@ namespace Cosmimera.Crafting.Tests
                     ""equipment"": { ""kind"": ""one_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
                     ""creature_effects"": [], ""weapon"": { ""element"": ""water"", ""element_mastery"": 5, ""power_permille"": 900, ""speed_permille"": 1100 } } }",
                 @"{ ""id"": ""test_shield"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
-                    ""equipment"": { ""kind"": ""shield"", ""target"": ""both"", ""player"": { ""max_hp_percent"": 5, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
+                    ""equipment"": { ""kind"": ""shield"", ""target"": ""both"", ""player"": { ""max_hp_percent"": 5, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0, ""yin_defense"": 30, ""yang_defense"": 12 },
                     ""creature_effects"": [ { ""type"": ""resist_mod"", ""params"": { ""delta"": 5, ""element"": ""earth"" } } ] } }",
             }) items.Add(JObject.Parse(json));
             return new CraftCatalog(items.ToString(), Data("craft-recipes"),
@@ -221,6 +221,8 @@ namespace Cosmimera.Crafting.Tests
             var entries = new[] { new EquippedItem(0, "off_hand", "test_shield"), new EquippedItem(0, "upper", "craft_iron_guard") };
             EquipmentModifiers mods = EquipmentRules.Collect(0, entries, catalog, EquipmentRules.PlayerGrips, Grips);
             Assert.That(mods.PlayerHpPercent, Is.EqualTo(20));
+            Assert.That(mods.PlayerYinDefence, Is.EqualTo(30), "combat.md#玩家角色的守: shield defence reaches the player");
+            Assert.That(mods.PlayerYangDefence, Is.EqualTo(12));
             Assert.That(mods.Weapons.HasShield, Is.False); Assert.That(mods.CreatureEffects, Is.Empty);
         }
 
@@ -245,7 +247,10 @@ namespace Cosmimera.Crafting.Tests
             JToken blade = null; foreach (JToken i in items) if ((string)i["id"] == "craft_iron_blade") blade = i;
             blade["equipment"]["player"]["max_hp_percent"] = 5;
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
-            blade["equipment"]["player"]["max_hp_percent"] = 0; blade["equipment"]["kind"] = "upper";
+            blade["equipment"]["player"]["max_hp_percent"] = 0;
+            blade["equipment"]["player"]["yin_defense"] = 10;
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")), "weapons give the player no defence");
+            ((JObject)blade["equipment"]["player"]).Remove("yin_defense"); blade["equipment"]["kind"] = "upper";
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
             blade["equipment"]["kind"] = "one_handed"; ((JObject)blade["equipment"]).Remove("weapon");
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));

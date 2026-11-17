@@ -104,7 +104,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, surface, 3);
             wild = e.AddWildT(def, null, start, 10);
             // Without vitals the character is not a target and the engaged wild would just hold position.
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
             e.Provoke(wild.Id);
             return e;
         }
