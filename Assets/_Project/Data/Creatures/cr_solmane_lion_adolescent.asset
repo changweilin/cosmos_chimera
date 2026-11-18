@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_solmane_lion_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_solmane_lion_adolescent
+  lineId: cr_solmane_lion
+  stage: 1
+  sizeClass: 0
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 9cc3e068522e89e4183892324066c8ae, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 3
+    tier: 2
+    qty: 5
+  resist: 0a0000000f000000e2ffffff23000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 20
+  - element: 8
+    value: 10
+  stats:
+    hp: 100
+    speed: 80
+    yinAtk: 80
+    yangAtk: 120
+    yinDef: 60
+    yangDef: 60
+  signatureMove: {fileID: 11400000, guid: f2b52ecfa43f0fe44bc42349813024c9, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
+  fieldUtility: 4
+  conceptJson: "{\"name_zh\":\"\u70C8\u967D\u9B03\u7345\",\"name_en\":null,\"stage_look\":\"*
+    \u5916\u89C0\u63CF\u8FF0\uFF1A\u9032\u5165\u4E9E\u6210\u5E74\u63DB\u6BDB\u8207\u9AA8\u9ABC\u62BD\u9577\u671F\uFF0C\u80A9\u80DB\u8207\u5F8C\u81C0\u808C\u8089\u8F2A\u5ED3\u65E5\u8DA8\u660E\u986F\uFF08Numeric
+    and morphological studies of the African lion - PMC9636809\uFF09\u3002\u539F\u672C\u67D4\u8EDF\u7684\u9838\u7D68\u6B63\u5F0F\u9EDE\u71C3\u70BA\u5169\u5C64\u5411\u5F8C\u7FFB\u9A30\u7684\u660E\u4EAE\u6A58\u91D1\u70C8\u7130\uFF08Solar_Mane\uFF09\uFF0C\u5C3E\u5C16\u706B\u82D7\u4EA6\u64F4\u5927\u70BA\u98FD\u6EFF\u7684\u70C8\u7130\u706B\u7403\u3002\u592A\u967D\u5E1D\u570B\u795E\u6BBF\u9A0E\u58EB\u5718\u6703\u5728\u6B64\u968E\u6BB5\u70BA\u5176\u96D9\u524D\u80A2\u4F69\u6234\u7D93\u904E\u8056\u5149\u6D17\u79AE\u7684\u300C\u8C61\u7259\u767D\u592A\u967D\u6D6E\u96D5\u8B77\u7532\uFF08Holy_Marble_Armor\uFF09\u300D\uFF0C\u4F7F\u5176\u5728\u9AD8\u901F\u5954\u8972\uFF08run\uFF09\u8207\u524D\u638C\u64B2\u64CA\u6642\u5177\u5099\u512A\u7570\u7684\u9632\u79A6\u8207\u7834\u7532\u80FD\u529B\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_solmane_lion/cr_solmane_lion_adolescent_05_wiki.md\",\"sha256\":\"aef18595ce12d0c0a86f547faddce8a2aed839480413ce9893b4787aaaa344c2\",\"drive_file_id\":\"1BkEb84vLT3RZYyydHBNC1ATxXmnCe30a\"},\"status\":\"review_required\",\"gameplay_archetype\":\"fire_mane_stalker\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -15,6 +15,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from encyclopedia_checks import check_encyclopedia
+
 try:
     from jsonschema import Draft202012Validator
     from referencing import Registry, Resource
@@ -28,6 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # batch can be validated with the exact same command before it is moved in.
 INT32_MAX = 2**31 - 1
 KINDS = {
+    "encyclopedia": "encyclopedia",
     "creatures": "creature",
     "moves": "move",
     "traits": "trait",
@@ -40,9 +43,10 @@ KINDS = {
     "craft-items": "craft-item",
     "craft-recipes": "craft-recipe",
     "craft-grips": "craft-grip",
+    "creature-grip-anims": "creature-grip-anim",
     "niches": "niche",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches", "encyclopedia", "creature-grip-anims")
 # Mirrors LandformSynth.KindIds (Assets/_Project/Features/WorldGen/Runtime/Model/LandformSynth.cs): every spawn point's
 # habitat is one of these (creature-ecology.md#生成順序), so a form's niche habitats must cover all of them.
 LANDFORM_KINDS = (
@@ -180,10 +184,12 @@ def _leaf_errors(err):
         yield err
 
 
-def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None) -> list[Finding]:
+def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None,
+             balance_path: Path | None = None) -> list[Finding]:
     """Validate every data file under root.
 
-    Pre: schema_dir contains one <stem>.schema.json per KINDS value plus common.schema.json.
+    Pre: schema_dir contains one <stem>.schema.json per KINDS value plus common.schema.json; balance_path (default
+         Data/balance.json) holds stat_budget.
     Post: returned findings are sorted (file, pointer); empty list == data is valid.
     Side effects: reads files only.
     """
@@ -194,8 +200,9 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
         raise FileNotFoundError(f"missing schemas in {schema_dir}: {missing}")
 
     records: dict[str, list[Record]] = {k: [] for k in KINDS}
+    validators = {stem: Draft202012Validator(schemas[stem], registry=registry) for stem in KINDS.values()}
     for folder, stem in KINDS.items():
-        validator = Draft202012Validator(schemas[stem], registry=registry)
+        validator = validators[stem]
         for path in sorted((root / folder).glob("*.json")):
             rel = path.relative_to(root).as_posix()
             doc = _load_json(path, rel, findings)
@@ -211,10 +218,66 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None)
                         records[folder].append(Record(folder, rel, i, item))
 
     _check_cross_refs(records, findings, retired_ids_path)
+    check_encyclopedia(records["encyclopedia"], findings, Finding)
+    balance = json.loads((balance_path or REPO_ROOT / "Data" / "balance.json").read_text(encoding="utf-8"))
+    _check_skill_stars(records, findings, balance["stat_budget"], validators)
     _check_niches(records, findings)
     _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
     return findings
+
+
+STAT_KEYS = ("hp", "speed", "yin_atk", "yang_atk", "yin_def", "yang_def")
+
+
+def _check_skill_stars(records: dict[str, list[Record]], findings: list[Finding], budget: dict, validators) -> None:
+    """REQ: creatures.md#綜合值預算, #技能星級 — star-adjusted six-stat budget, ★★★ unique to one line, and every
+    ★ downgraded version must still be a valid move / trait once merged over the full one."""
+    skills: dict[str, Record] = {}
+    for kind in ("moves", "traits"):
+        for r in records[kind]:
+            if isinstance(r.data.get("id"), str):
+                skills[r.data["id"]] = r
+            down = r.data.get("downgraded")
+            if isinstance(down, dict):
+                merged = {k: v for k, v in r.data.items() if k != "downgraded"}
+                merged.update(down)
+                merged["star"] = 1
+                stem = KINDS[kind]
+                for err in validators[stem].iter_errors([merged]):
+                    for leaf in _leaf_errors(err):
+                        findings.append(Finding("error", "downgraded_invalid", r.file, f"/{r.index}/downgraded",
+                                                f"★ version is not a valid {stem}: {_schema_message(leaf)}"))
+
+    lines_by_skill: dict[str, set] = {}
+    for r in records["creatures"]:
+        c = r.data
+        stars = []
+        for field in ("signature_move", "trait"):
+            hit = skills.get(c.get(field)) if isinstance(c.get(field), str) else None
+            star = hit.data.get("star") if hit is not None else None
+            if isinstance(star, int):
+                stars.append(star)
+                if star == 3:
+                    lines_by_skill.setdefault(c[field], set()).add(c.get("line_id"))
+        stats = c.get("stats")
+        stage = c.get("stage")
+        base = budget["base"].get(stage) if isinstance(stage, str) else None
+        complete = isinstance(stats, dict) and all(isinstance(stats.get(k), int) for k in STAT_KEYS)
+        if len(stars) != 2 or not complete or base is None:
+            continue  # schema / dangling-ref findings already cover these
+        target = base * (100 - budget["per_extra_star_percent"] * (sum(stars) - 2)) / 100
+        total = sum(stats[k] for k in STAT_KEYS)
+        tol = target * budget["tolerance_percent"] / 100
+        if abs(total - target) > tol:
+            findings.append(Finding("error", "stat_budget", r.file, f"/{r.index}/stats",
+                                    f"six-stat total {total} outside {target:g} ±{budget['tolerance_percent']}% "
+                                    f"({c.get('stage')}, skill stars {stars[0]}+{stars[1]})"))
+    for sid, lines in sorted(lines_by_skill.items()):
+        if len(lines) > 1:
+            r = skills[sid]
+            findings.append(Finding("error", "unique_skill_shared", r.file, f"/{r.index}/star",
+                                    f"★★★ skill '{sid}' is used by lines {sorted(map(str, lines))}; ★★★ is unique to one line"))
 
 
 def _check_niches(records: dict[str, list[Record]], findings: list[Finding]) -> None:

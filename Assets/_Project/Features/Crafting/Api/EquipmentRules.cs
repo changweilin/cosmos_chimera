@@ -10,9 +10,11 @@ namespace Cosmimera.Crafting
     /// <remarks>Pre: created by EquipmentRules. Post: immutable. Side effects: none.</remarks>
     public readonly struct EquipmentModifiers
     {
-        internal EquipmentModifiers(int hp, int speed, int roll, List<EffectSpec> effects, in WeaponLoadout weapons, bool handsValid)
+        internal EquipmentModifiers(int hp, int speed, int roll, int yinDefence, int yangDefence, List<EffectSpec> effects,
+            in WeaponLoadout weapons, bool handsValid)
         {
             PlayerHpPercent = hp; PlayerSpeedPercent = speed; PlayerRollPercent = roll; CreatureEffects = effects.AsReadOnly();
+            PlayerYinDefence = yinDefence; PlayerYangDefence = yangDefence;
             Weapons = weapons; HandsValid = handsValid;
         }
         /// <summary>Combined player maximum HP bonus.</summary>
@@ -24,6 +26,12 @@ namespace Cosmimera.Crafting
         /// <summary>Combined player roll cooldown modifier.</summary>
         /// <remarks>Pre: none. Post: -90..500. Side effects: none.</remarks>
         public int PlayerRollPercent { get; }
+        /// <summary>Combined player yin defence points from shield and armor (combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: 0..5 × EquipmentSpec.MaxPlayerDefence. Side effects: none.</remarks>
+        public int PlayerYinDefence { get; }
+        /// <summary>Combined player yang defence points from shield and armor (combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: 0..5 × EquipmentSpec.MaxPlayerDefence. Side effects: none.</remarks>
+        public int PlayerYangDefence { get; }
         /// <summary>Creature effects to apply without using partner slots.</summary>
         /// <remarks>Pre: constructed modifiers. Post: immutable, at most 32 entries. Side effects: none.</remarks>
         public IReadOnlyList<EffectSpec> CreatureEffects { get; }
@@ -101,18 +109,20 @@ namespace Cosmimera.Crafting
 
             GripMode[] required = RequiredGrips(main?.Kind, off?.Kind);
             bool handsValid = owner == 0 || required == null || Allowed(required, wearerGrips);
-            int hp = 0, speed = 0, roll = 0;
+            int hp = 0, speed = 0, roll = 0, yinDef = 0, yangDef = 0;
             var effects = new List<EffectSpec>();
             foreach ((string slot, EquipmentSpec spec) in known)
             {
                 bool hand = slot == EquipmentSlots.MainHand || slot == EquipmentSlots.OffHand;
                 if (hand && !handsValid) continue;
                 hp += spec.PlayerHpPercent; speed += spec.PlayerSpeedPercent; roll += spec.PlayerRollPercent;
+                yinDef += spec.PlayerYinDefence; yangDef += spec.PlayerYangDefence;
                 if (owner != 0) effects.AddRange(spec.CreatureEffects);
             }
             if (effects.Count > 32) throw new InvalidDataException("Combined equipment has more than 32 effects");
             WeaponLoadout weapons = owner == 0 || !handsValid ? default : BuildWeapons(main, off, tuning);
-            return new EquipmentModifiers(hp, Math.Max(-90, speed), Math.Max(-90, roll), effects, weapons, handsValid);
+            return new EquipmentModifiers(hp, Math.Max(-90, speed), Math.Max(-90, roll), yinDef, yangDef, effects, weapons,
+                handsValid);
         }
 
         private static WeaponLoadout BuildWeapons(EquipmentSpec main, EquipmentSpec off, GripTuning tuning)

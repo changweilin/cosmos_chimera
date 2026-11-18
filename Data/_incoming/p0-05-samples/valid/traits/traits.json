@@ -1,6 +1,7 @@
 [
   {
     "id": "sample_trait_placeholder",
+    "star": 1,
     "trigger": { "type": "on_hp_below", "params": { "percent": 30 } },
     "effects": [{ "type": "mastery_mod", "params": { "element": "fire", "delta": 20 } }]
   }

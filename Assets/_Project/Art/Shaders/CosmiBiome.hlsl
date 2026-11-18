@@ -13,6 +13,7 @@ CBUFFER_START(UnityPerMaterial)
     float _Relief;
     float4 _PoleAxis;
     half4 _DeepWater, _ShallowWater, _Shore, _Low, _Mid, _High, _Rock, _Snow, _Shadow, _Patch;
+    float _FrozenGround;
     float _SnowLine;
     float _PolarLat;
     float _Bands;
@@ -177,6 +178,10 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
     // Rock: hard-edged streaks (chisel marks) over the strata, plus sparse dark cracks from the grain channel.
     rockColor *= 1.0 + CosmiDab(broad.g) * 0.20 * _StrokeStrength + CosmiDab(fine.g) * 0.10 * _StrokeStrength;
     rockColor *= 1.0 - smoothstep(0.28, 0.4, fine.b) * 0.25;
+    // Broken ledges cast narrow bands over their foot; fine strata disappear before they alias at distance.
+    float shelfPhase = g.height * 1.1 + n.y * 0.49 + n.x * 2.1;
+    float shelf = smoothstep(0.70, 0.91, frac(shelfPhase)) * (1.0 - smoothstep(0.03, 0.35, fwidth(shelfPhase)));
+    rockColor *= 1.0 - shelf * 0.13;
     c = lerp(c, rockColor, rock);
     grass *= 1.0 - rock;
 
@@ -187,6 +192,29 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
     half3 snowColor = _Snow.rgb * lerp(0.95, 1.0, n.z) * (1.0 + CosmiDab(broad.r) * half3(0.07, 0.05, 0.02) * _StrokeStrength);
     c = lerp(c, snowColor, snow);
     grass *= 1.0 - snow;
+
+    if (_FrozenGround > 0.5)
+    {
+        float exposure = smoothstep(0.04, 0.31, g.slope + (n.x - 0.48) * 1.1 + broad.g * 0.20);
+        float seam = 1.0 - smoothstep(0.015, 0.065, abs(n.y + n.x * 0.22 - 0.56));
+        half3 ice = lerp(_ShallowWater.rgb * 0.76, _Mid.rgb, n.x * 0.65 + seam * 0.3);
+        float grazing = 1.0 - saturate(dot(g.normal, GetWorldSpaceNormalizeViewDir(positionWS)));
+        ice = lerp(ice, _Snow.rgb, grazing * grazing * 0.25);
+        c = lerp(snowColor, ice, exposure);
+        grass = 0.0;
+    }
+
+    if (_WaterGlow > 0.5 && g.height > _SeaLevel)
+    {
+        // Pale deposits pick out the edge of cooling basalt, with a narrow iron-red seam inside it.
+        float crust = n.y * 0.70 + n.x * 0.30 + fine.g * 0.035;
+        float fissure = abs(crust - 0.46);
+        float hotPatch = smoothstep(0.45, 0.64, n.x) * (1.0 - rock);
+        float rim = (1.0 - smoothstep(0.012, 0.043, fissure)) * hotPatch;
+        float core = (1.0 - smoothstep(0.002, 0.014 + fwidth(crust), fissure)) * hotPatch;
+        c = lerp(c, _Snow.rgb * 0.7, rim * 0.45);
+        c = lerp(c, _ShallowWater.rgb, core * 0.68);
+    }
 
     if (g.height < _SeaLevel + 0.1)
     {

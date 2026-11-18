@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Save",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.Codex.Api",
         "Cosmimera.Creatures",
         "Cosmimera.Crafting",
         "Cosmimera.GameData",

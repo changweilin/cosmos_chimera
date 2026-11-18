@@ -110,6 +110,16 @@
                 "type": "integer",
                 "minimum": -50,
                 "maximum": 100
+              },
+              "yin_defense": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
+              },
+              "yang_defense": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000
               }
             }
           },
@@ -196,6 +206,12 @@
                   "const": 0
                 },
                 "roll_cooldown_percent": {
+                  "const": 0
+                },
+                "yin_defense": {
+                  "const": 0
+                },
+                "yang_defense": {
                   "const": 0
                 }
               }

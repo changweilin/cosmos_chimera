@@ -1,4 +1,5 @@
 using System.IO;
+using Cosmimera.GameData;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -29,7 +30,8 @@ namespace Cosmimera.Combat.Tests
         {
             JObject b = BalanceJson();
             return new EffectRulesConfig((int)b["effects"]["multiplier_min_percent"],
-                (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"]);
+                (int)b["effects"]["multiplier_max_percent"], (int)b["field"]["tick_ms"],
+                (int)b["crit"]["base_rate_permille"], (int)b["crit"]["base_damage_percent"]);
         }
 
         public static AiTuning AiTuning()
@@ -59,7 +61,13 @@ namespace Cosmimera.Combat.Tests
                 (int)b["cd"]["min_permille"], (int)b["cd"]["half_stat"], (int)b["cd"]["floor_ms"],
                 (int)b["speed"]["base_mm_s"], (int)b["speed"]["gain_mm_s"], (int)b["speed"]["half_stat"],
                 (int)b["evasion"]["cap_permille"], (int)b["evasion"]["half_stat"],
-                (int)b["hit"]["floor_permille"]);
+                (int)b["hit"]["floor_permille"],
+                (int)b["hp"]["per_point"], (int)b["shared_base_stat"],
+                (int)b["damage"]["ratio_min_permille"], (int)b["damage"]["ratio_max_permille"]);
         }
+
+        // Equal attack and defence keep the attack/defence ratio at ×1, so damage expectations stay DamageModel.Compute.
+        public static CreatureStats Core(int hp, int speed, int atkDef = 25) =>
+            new CreatureStats(hp, speed, atkDef, atkDef, atkDef, atkDef);
     }
 }

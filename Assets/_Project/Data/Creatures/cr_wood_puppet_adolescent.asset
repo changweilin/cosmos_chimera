@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_wood_puppet_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_wood_puppet_adolescent
+  lineId: cr_wood_puppet
+  stage: 1
+  sizeClass: 0
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: cc23bcd8b9e99bb44aa110664d3e6390, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: ef7eeb9258091344fa4e98200f1821aa, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 710a5666209faee488ffdb8085a9b05a, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 1
+    tier: 2
+    qty: 5
+  resist: e2ffffff230000000f000000000000000a0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 20
+  stats:
+    hp: 125
+    speed: 25
+    yinAtk: 50
+    yangAtk: 100
+    yinDef: 75
+    yangDef: 125
+  signatureMove: {fileID: 11400000, guid: 6db500c3658e370498da0342af3c7f6f, type: 2}
+  trait: {fileID: 11400000, guid: e038bda6360067140bc9a88821836a12, type: 2}
+  fieldUtility: 2
+  conceptJson: "{\"name_zh\":\"\u85E4\u7E8F\u6728\u523A\u5080\u5121\",\"name_en\":null,\"stage_look\":\"*
+    \u6A19\u6E96\u5169\u6BB5\u5F0F\u5080\u5121\u8EAB\u8EC0 (Pelvis_Log / Torso_Log)\uFF1A\u6728\u6A01\u8EAB\u8EC0\u7D93\u904E\u6728\u9748\u529B\u4E8C\u6B21\u5851\u5F62\uFF0C\u5206\u5316\u70BA\u9748\u6D3B\u7684\u5012\u68AF\u5F62\u80F8\u8154\u8207\u7403\u7AA9\u95DC\u7BC0\u8170\u76E4\uFF0C\u56DB\u80A2\u95DC\u7BC0\u8655\u9032\u5316\u51FA\u5B8C\u6574\u7684\u5713\u8EF8\u9278\u93C8\uFF08L_Elbow,
+    R_Elbow, L_Knee, R_Knee\uFF09\uFF0C\u5177\u5099\u654F\u6377\u7684\u5954\u8DD1\u8207180\u5EA6\u65CB\u8F49\u9583\u907F\u80FD\u529B\u3002\\n*
+    \u7E8F\u7E5E\u751F\u6A5F\u85E4\u8513 (Sprout_Green)\uFF1A\u5145\u6EFF\u5F48\u6027\u7684\u9BAE\u7DA0\u6D3B\u9AD4\u85E4\u8513\u6CBF\u8457\u80F8\u8179\u69AB\u536F\u7E2B\u9699\u8207\u80A9\u8098\u95DC\u7BC0\u7DCA\u5BC6\u7E8F\u7E5E\uFF0C\u5982\u540C\u751F\u7269\u808C\u8171\u822C\u63D0\u4F9B\u5F37\u5927\u7684\u7206\u767C\u62C9\u529B\uFF0C\u540C\u6642\u80FD\u5728\u6230\u9B25\u53D7\u640D\u6642\u8FC5\u901F\u751F\u9577\u4FEE\u88DC\u7834\u640D\u6728\u76AE\u3002\\n*
+    \u53F3\u81C2\u92B3\u5229\u6728\u523A\u9310 (R_WoodHand)\uFF1A\u53F3\u524D\u81C2\u7531\u666E\u901A\u6728\u687F\u7279\u5316\u91CD\u7D44\u70BA\u4E00\u67C4\u9577\u9054
+    0.68 \u7C73\u7684\u87BA\u65CB\u9310\u5F62\u786C\u6728\u523A\u69CD\uFF0C\u5167\u90E8\u85CF\u6709\u9AD8\u5F35\u529B\u767C\u689D\u6728\u7C27\uFF0C\u53EF\u5728\u8FD1\u6230\u4E2D\u5982\u6A5F\u68B0\u5F48\u7C27\u822C\u731B\u529B\u5F48\u5C04\u523A\u51FA\u4E26\u9AD8\u901F\u65CB\u8F49\u947D\u64CA\u3002\\n*
+    \u80F8\u524D\u751F\u547D\u5E74\u8F2A\u7B26\u6587 (Socket_Core_FX / Chakra_Glow)\uFF1A\u80F8\u8154\u6B63\u4E2D\u592E\u6D6E\u73FE\u51FA\u6DF1\u523B\u5165\u6728\u7684\u540C\u5FC3\u5713\u751F\u547D\u5E74\u8F2A\u7B26\u6587\uFF0C\u5167\u90E8\u6E67\u52D5\u8457\u9AD8\u7D14\u5EA6\u7FE1\u7FE0\u9748\u5149\uFF08Emission
+    Strength 4.5\uFF09\uFF0C\u53EF\u88C2\u958B\u5C04\u51FA\u7B46\u76F4\u6FC3\u90C1\u7684\u751F\u547D\u6728\u9748\u5149\u675F\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_wood_puppet/cr_wood_puppet_adolescent_05_wiki.md\",\"sha256\":\"4fa87e7e8b4c1357e98c9aeb14d0be622b0dd0adf8e7337fb28945db9e73cbb5\",\"drive_file_id\":\"1r7hqsD49ZVgQQXixB-Mj8ridw5NKpFh0\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wood_plume_peafowl\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

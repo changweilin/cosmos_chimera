@@ -180,7 +180,7 @@ namespace Cosmimera.Bootstrap.Tests
         {
             var o = new RunOutcome();
             o.PartyExp.Add(partyExp);
-            o.Captured.Add(("b", VesselKind.GlassBead, 50));
+            o.Captured.Add(("b", VesselKind.GlassBead, 50, null, Habit.Tolerant));
             o.Materials.AddRange(materials);
             return o;
         }
@@ -287,6 +287,82 @@ namespace Cosmimera.Bootstrap.Tests
                 Outcome(0, new MaterialStack(Light1, 1)), P, _path, out _, out _, out _), "stock full with unowned party id");
             Assert.Throws<ContractException>(() => LobbyTransactions.Settle(full, new[] { 1 },
                 Outcome(0, new MaterialStack(Light1, 1)), P, "", out _, out _, out _), "stock full with empty path");
+        }
+
+        [Test]
+        public void Settle_preserves_ecology_Evolve_redraws_and_MigrateEcology_runs_once()
+        {
+            NicheDef MakeNiche(string id, string habitat, Habit habit)
+            {
+                var n = ScriptableObject.CreateInstance<NicheDef>();
+                JsonUtility.FromJsonOverwrite("{\"id\":\"" + id + "\",\"nameZh\":\"" + id + "\",\"habitatKinds\":[\"" +
+                    habitat + "\"],\"habits\":[{\"habit\":" + (int)habit + ",\"weight\":1}],\"mode\":0,\"radiusMm\":8000," +
+                    "\"speedPermille\":{\"mean\":300,\"individualSd\":0,\"actionSd\":0,\"min\":100,\"max\":500}," +
+                    "\"moveMs\":{\"mean\":2000,\"individualSd\":0,\"actionSd\":0,\"min\":500,\"max\":5000}," +
+                    "\"pauseMs\":{\"mean\":2000,\"individualSd\":0,\"actionSd\":0,\"min\":500,\"max\":5000}}", n);
+                return n;
+            }
+
+            CreatureDef MakeForm(string id, int stage, NicheDef niche)
+            {
+                var c = ScriptableObject.CreateInstance<CreatureDef>();
+                JsonUtility.FromJsonOverwrite("{\"id\":\"" + id + "\",\"lineId\":\"line\",\"stage\":" + stage +
+                    ",\"mastery\":[{\"element\":7,\"value\":15}]}", c);
+                using (var so = new UnityEditor.SerializedObject(c))
+                {
+                    UnityEditor.SerializedProperty niches = so.FindProperty("niches");
+                    niches.arraySize = 1;
+                    UnityEditor.SerializedProperty entry = niches.GetArrayElementAtIndex(0);
+                    entry.FindPropertyRelative("niche").objectReferenceValue = niche;
+                    entry.FindPropertyRelative("weight").intValue = 1;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+                return c;
+            }
+
+            NicheDef nicheA = MakeNiche("niche_a", "forest", Habit.Vigilant);
+            NicheDef nicheB = MakeNiche("niche_b", "volcano", Habit.Aggressive);
+            CreatureDef defA = MakeForm("a", 0, nicheA);
+            CreatureDef defB = MakeForm("a_1", 1, nicheB);
+
+            try
+            {
+                LobbySave live = Ready();
+                Assert.That(live.Get(1).HasEcology, Is.False);
+
+                // Legacy migration draws once and writes to disk; second call is a no-op.
+                Assert.That(LobbyTransactions.MigrateEcology(live, id => id == "a" ? defA : null, _path,
+                    out LobbySave migrated, out _), Is.EqualTo(CommitStatus.Committed));
+                Assert.That(migrated.Get(1).NicheId, Is.EqualTo("niche_a"));
+                Assert.That(migrated.Get(1).Habit, Is.EqualTo(Habit.Vigilant));
+                string written = File.ReadAllText(_path);
+                Assert.That(LobbyTransactions.MigrateEcology(migrated, id => id == "a" ? defA : null, _path,
+                    out LobbySave noop, out _), Is.EqualTo(CommitStatus.Committed));
+                Assert.That(noop, Is.SameAs(migrated));
+                Assert.That(File.ReadAllText(_path), Is.EqualTo(written));
+
+                // Capture keeps its drawn niche and habit through settlement.
+                RunOutcome outcome = Outcome(migrated.Get(1).Exp);
+                outcome.Captured.Add(("a", VesselKind.MagicCube, 0, "niche_b", Habit.Aggressive));
+                Assert.That(LobbyTransactions.Settle(migrated, new[] { 1 }, outcome, P, _path, out LobbySave settled,
+                    out _, out _), Is.EqualTo(CommitStatus.Committed));
+                Assert.That(settled.Get(3).NicheId, Is.EqualTo("niche_b"));
+                Assert.That(settled.Get(3).Habit, Is.EqualTo(Habit.Aggressive));
+
+                // Evolution redraws niche and habit from the evolved form without habitat filtering.
+                Assert.That(LobbyTransactions.Evolve(settled, 1, Req(), P, _path, out LobbySave evolved,
+                    out EvolutionResult evoResult, out _, defB), Is.EqualTo(CommitStatus.Committed));
+                Assert.That(evoResult.Succeeded, Is.True);
+                Assert.That(evolved.Get(1).NicheId, Is.EqualTo("niche_b"));
+                Assert.That(evolved.Get(1).Habit, Is.EqualTo(Habit.Aggressive));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(nicheA);
+                UnityEngine.Object.DestroyImmediate(nicheB);
+                UnityEngine.Object.DestroyImmediate(defA);
+                UnityEngine.Object.DestroyImmediate(defB);
+            }
         }
     }
 }

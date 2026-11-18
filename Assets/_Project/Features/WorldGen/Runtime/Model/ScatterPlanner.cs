@@ -145,8 +145,10 @@ namespace Cosmimera.WorldGen
     public readonly struct ScatterItem
     {
         internal ScatterItem(long cellKey, int kindIndex, ScatterShape shape, float3 direction, float altitudeM,
-            float sizeM, float yawDeg, string substanceId)
+            float sizeM, float yawDeg, string substanceId, int age = 1000, int health = 1000)
         {
+            Age = age;
+            Health = health;
             CellKey = cellKey;
             KindIndex = kindIndex;
             Shape = shape;
@@ -171,6 +173,15 @@ namespace Cosmimera.WorldGen
         /// <summary>Silhouette.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public ScatterShape Shape { get; }
+
+        /// <summary>Relative age 0 (sapling) – 1000 (oldest): the item's position within its size range.</summary>
+        /// <remarks>Pre: none. Post: 0 ≤ Age ≤ 1000. Side effects: none.</remarks>
+        public int Age { get; }
+
+        /// <summary>Plant health 0–1000 (planet-world.md#自然生物): 1000 for non-plants and understory, 0 for snags.</summary>
+        /// <remarks>Pre: none. Post: 0 ≤ Health ≤ 1000; a living tree's Health &gt; ScatterPlanner.DeadHealth unless it
+        /// stands in a plantation. Side effects: none.</remarks>
+        public int Health { get; }
 
         /// <summary>Ground point (unit direction).</summary>
         /// <remarks>Pre: none. Post: unit length. Side effects: none.</remarks>
@@ -289,10 +300,30 @@ namespace Cosmimera.WorldGen
         ///       4 = species follow the landform (ScatterBiomes) and forest stands; every item set changed;
         ///       5 = bedrock (ScatterGeology) swaps country rock and the catalog gained granite_tor, which shifts
         ///       every understory kind index by one; positions, sizes and canopy picks of planners without a
-        ///       geology map are otherwise as in 4.
+        ///       geology map are otherwise as in 4;
+        ///       6 = tree health (planet-world.md#自然生物): living trees outside plantations with Health ≤ DeadHealth
+        ///       become snags; every item gains Age/Health; positions and other picks as in 5.
         /// Side effects: none.
         /// </remarks>
-        public const int GeneratorVersion = 5;
+        public const int GeneratorVersion = 6;
+
+        /// <summary>Mean tree health (0–1000) outside secondary stands.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int HealthMean = 720;
+
+        /// <summary>Standard deviation of tree health.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int HealthSd = 130;
+
+        /// <summary>A secondary stand lowers mean health by this much.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int SecondaryHealthDrop = 80;
+
+        /// <summary>Health at or below which a living tree outside a plantation becomes a snag (≈ 3 %).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int DeadHealth = 470;
+
+        private static readonly int SnagIndex = ScatterBiomes.IndexOf("snag");
 
         /// <summary>Canopy cells along one edge of a forest stand (≈ 60 m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -660,6 +691,9 @@ namespace Cosmimera.WorldGen
             uint biomeRoll = rng.NextUInt();
             // Drawn last: version 4's draws keep their places in the stream.
             uint rockRoll = rng.NextUInt();
+            // Drawn after rockRoll (v6) as a mean-free offset: the stand that sets the mean is only known later, and
+            // BoundedNormal always consumes 12 draws, so nothing before it moves. ±1000 never clamps (6σ < 1000).
+            int healthOffset = BoundedNormal.Sample(ref rng, 0, HealthSd, -1000, 1000);
             // Cheap exit before any ground or stamp lookup: no stand can raise the chance past MaxDensityBoost.
             if (_placeChanceAt == null && placeRoll > math.min(1f, _placeChance * ScatterBiomes.MaxDensityBoost))
             {
@@ -731,9 +765,23 @@ namespace Cosmimera.WorldGen
                 kindIndex = ScatterGeology.Substitute(kindIndex, geology, rockRoll);
             }
 
+            // REQ: docs/design/planet-world.md#自然生物 — the unhealthiest tail of living trees stands dead; plantations are
+            // tended, so they never convert. Size keeps its roll, so a converted tree is as old as it would have been.
+            int health = 1000;
+            if (_kinds[kindIndex].Shape == ScatterShape.Tree)
+            {
+                int mean = wooded && forest == ForestType.Secondary ? HealthMean - SecondaryHealthDrop : HealthMean;
+                health = kindIndex == SnagIndex ? 0 : math.clamp(mean + healthOffset, 0, 1000);
+                if (health <= DeadHealth && kindIndex != SnagIndex && !(wooded && forest == ForestType.Plantation))
+                {
+                    kindIndex = SnagIndex;
+                    health = 0;
+                }
+            }
+
             ScatterKind kind = _kinds[kindIndex];
             item = new ScatterItem(key, kindIndex, kind.Shape, dir, alt, math.lerp(kind.MinSizeM, kind.MaxSizeM, sizeT),
-                yaw, kind.SubstanceId);
+                yaw, kind.SubstanceId, (int)(sizeT * 1000f), health);
             return true;
         }
 

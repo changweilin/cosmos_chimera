@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_verdant_aquila_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_verdant_aquila_overload
+  lineId: cr_verdant_aquila
+  stage: 3
+  sizeClass: 2
+  aiStyle: 1
+  niches:
+  - niche: {fileID: 11400000, guid: cc23bcd8b9e99bb44aa110664d3e6390, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 874d11c0092756d438b15f4af69cc211, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: b174183693e7c4641ac80d65b2442193, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: d8ffffff320000000f000000000000000a0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 30
+  - element: 6
+    value: 20
+  stats:
+    hp: 103
+    speed: 172
+    yinAtk: 115
+    yangAtk: 158
+    yinDef: 86
+    yangDef: 86
+  signatureMove: {fileID: 11400000, guid: 182a30010992e04489db8699fa0ad6e7, type: 2}
+  trait: {fileID: 11400000, guid: e038bda6360067140bc9a88821836a12, type: 2}
+  fieldUtility: 22
+  conceptJson: "{\"name_zh\":\"\u795E\u6728\u7A79\u5929\u66B4\u98A8\u9DF2\",\"name_en\":null,\"stage_look\":\"\u7576\u5343\u8449\u7FE1\u51A0\u5929\u9DF2\u9032\u5165\u6975\u9650\u8D85\u8F09\u72C0\u614B\uFF08overload_enter\uFF09\u6642\uFF0C\u80F8\u524D\u53E4\u6728\u6838\u5FC3\uFF08Verdant_Core\uFF09\u91CB\u653E\u5F37\u5EA6\u9054
+    5.0 \u7684\u6668\u66E6\u91D1\u751F\u547D\u5C04\u7DDA\u3002\u9AD8\u7A7A\u61F8\u505C\u7684\u4E09\u5C64\u5F0F\u5C71\u6BDB\u6AF8\u4E16\u754C\u6A39\u5DE8\u7FFC\u4EA4\u932F\u7DBB\u653E\u76DB\u590F\u7FE0\u7DA0\u8207\u6DF1\u79CB\u8000\u91D1\u7684\u66B4\u98A8\u5149\u5203\uFF08Roots
+    Plants\uFF09\uFF0C\u982D\u9802\u5C55\u958B\u4E09\u91CD\u540C\u5FC3\u65CB\u8F49\u7684\u4E16\u754C\u6A39\u5E74\u8F2A\u5149\u74B0\uFF08MDPI
+    Dendrochronology\uFF09\uFF0C\u5468\u8EAB\u74B0\u7E5E 10 \u9053\u9AD8\u901F\u87BA\u65CB\u6C23\u65CB\u98C4\u5E36\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_verdant_aquila/cr_verdant_aquila_overload_05_wiki.md\",\"sha256\":\"0bc360dc0b80d26b8d0244413021ef6ebe6edbc9e4ca40556c1c485a3dc50ae8\",\"drive_file_id\":\"1-xyjuOfxXKK-Bhh2h5tsdbHKzncKnU8J\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wood_canopy_regent\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

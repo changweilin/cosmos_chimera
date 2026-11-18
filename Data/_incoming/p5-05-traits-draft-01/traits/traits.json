@@ -1,6 +1,7 @@
 [
   {
     "id": "trait_metal_dense_alloy",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -23,6 +24,7 @@
   },
   {
     "id": "trait_metal_magnetic_recoil",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -41,6 +43,7 @@
   },
   {
     "id": "trait_metal_tempered_edge",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -67,6 +70,7 @@
   },
   {
     "id": "trait_wood_photosynthesis",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -84,6 +88,7 @@
   },
   {
     "id": "trait_wood_bark_reinforcement",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -107,6 +112,7 @@
   },
   {
     "id": "trait_wood_verdant_resonance",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -125,6 +131,7 @@
   },
   {
     "id": "trait_water_fluid_stance",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -147,6 +154,7 @@
   },
   {
     "id": "trait_water_torrent_flow",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -166,6 +174,7 @@
   },
   {
     "id": "trait_water_cleansing_tide",
+    "star": 1,
     "trigger": {
       "type": "on_hp_cross_below",
       "params": {
@@ -184,6 +193,7 @@
   },
   {
     "id": "trait_fire_blazing_fury",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -209,6 +219,7 @@
   },
   {
     "id": "trait_fire_heat_exhaust",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -226,6 +237,7 @@
   },
   {
     "id": "trait_fire_thermal_recharge",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -245,6 +257,7 @@
   },
   {
     "id": "trait_earth_monolith_posture",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -267,6 +280,7 @@
   },
   {
     "id": "trait_earth_tectonic_rebound",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -286,6 +300,7 @@
   },
   {
     "id": "trait_earth_stone_bastion",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -304,6 +319,7 @@
   },
   {
     "id": "trait_ice_permafrost_shell",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -326,6 +342,7 @@
   },
   {
     "id": "trait_ice_glacial_patience",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -343,6 +360,7 @@
   },
   {
     "id": "trait_ice_flash_freeze",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -361,6 +379,7 @@
   },
   {
     "id": "trait_wind_tailwind_glide",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -378,6 +397,7 @@
   },
   {
     "id": "trait_wind_cyclone_instability",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -402,6 +422,7 @@
   },
   {
     "id": "trait_wind_feather_grace",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -419,6 +440,7 @@
   },
   {
     "id": "trait_thunder_static_overload",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -445,6 +467,7 @@
   },
   {
     "id": "trait_thunder_grounding_circuit",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -463,6 +486,7 @@
   },
   {
     "id": "trait_thunder_spark_stride",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -481,6 +505,7 @@
   },
   {
     "id": "trait_light_aurora_veil",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -499,6 +524,7 @@
   },
   {
     "id": "trait_light_solar_overdrive",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -523,6 +549,7 @@
   },
   {
     "id": "trait_light_dawn_renewal",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -542,6 +569,7 @@
   },
   {
     "id": "trait_shadow_void_embrace",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -559,6 +587,7 @@
   },
   {
     "id": "trait_shadow_umbral_ambush",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -584,6 +613,7 @@
   },
   {
     "id": "trait_shadow_dusk_flicker",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {

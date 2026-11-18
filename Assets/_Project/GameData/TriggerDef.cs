@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Cosmimera.GameData
 {
-    /// <summary>Typed trait trigger. REQ: common.schema.json#/$defs/trigger, docs/design/creatures.md#特性.</summary>
+    /// <summary>Typed trait trigger. REQ: common.schema.json#/$defs/trigger, docs/design/creatures.md#被動技.</summary>
     /// <remarks>
     /// Which parameters exist depends on <see cref="Type"/>; reading one that the type does not carry is a
     /// contract violation rather than a silent 0, so a handler written against the wrong type fails in tests.

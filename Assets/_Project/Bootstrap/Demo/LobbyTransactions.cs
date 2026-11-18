@@ -7,7 +7,9 @@ using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
+using Cosmimera.GameData;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 
 namespace Cosmimera.Bootstrap.Demo
 {
@@ -82,7 +84,8 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: writes files on success.
         /// </remarks>
         public static CommitStatus Evolve(LobbySave live, int instanceId, in EvolutionRequirement requirement,
-            Progression progression, string path, out LobbySave next, out EvolutionResult result, out Exception error)
+            Progression progression, string path, out LobbySave next, out EvolutionResult result, out Exception error,
+            CreatureDef evolvedDef = null)
         {
             Contract.Requires(live != null && progression != null, "live and progression are required");
             // Checked here, not only in TryWrite: a Refused early return would otherwise hide a bad path (SOL r2 R2-04).
@@ -99,7 +102,17 @@ namespace Cosmimera.Bootstrap.Demo
                 return CommitStatus.Refused;
             }
 
-            candidate.SetSpecies(instanceId, result.Creature.SpeciesId);
+            if (evolvedDef != null && evolvedDef.Niches.Count > 0)
+            {
+                WildIndividual ind = WildIndividual.Draw(evolvedDef, null,
+                    WildIndividual.KeyFor(Fnv1a64(evolvedDef.Id), (ulong)instanceId));
+                candidate.SetSpecies(instanceId, result.Creature.SpeciesId, ind.Niche.Id, ind.Habit);
+            }
+            else
+            {
+                candidate.SetSpecies(instanceId, result.Creature.SpeciesId);
+            }
+
             if (!TryWrite(candidate, path, out error))
             {
                 return CommitStatus.WriteFailed;
@@ -107,6 +120,69 @@ namespace Cosmimera.Bootstrap.Demo
 
             next = candidate;
             return CommitStatus.Committed;
+        }
+
+        /// <summary>
+        /// One-time migration for legacy saves whose owned creatures have no drawn niche/habit yet.
+        /// REQ: docs/design/creature-ecology.md#戰鬥、障礙與重現性.
+        /// </summary>
+        /// <remarks>
+        /// Pre: live and defOf non-null; path non-empty.
+        /// Post: Committed with next == live (no disk write) when every owned creature already has ecology or lacks
+        ///       niche candidates; otherwise next has ecology drawn deterministically from each creature's InstanceId
+        ///       (no habitat filter) and persisted to path. WriteFailed leaves next == live and sets error.
+        /// Side effects: writes path only when at least one creature is migrated.
+        /// </remarks>
+        public static CommitStatus MigrateEcology(LobbySave live, Func<string, CreatureDef> defOf, string path,
+            out LobbySave next, out Exception error)
+        {
+            Contract.Requires(live != null && defOf != null, "live and defOf are required");
+            Contract.Requires(!string.IsNullOrEmpty(path), "path must not be empty");
+            next = live;
+            error = null;
+            LobbySave candidate = null;
+            foreach (OwnedCreature o in live.Owned)
+            {
+                if (o.HasEcology)
+                {
+                    continue;
+                }
+
+                CreatureDef def = defOf(o.SpeciesId);
+                if (def == null || def.Niches.Count == 0)
+                {
+                    continue;
+                }
+
+                candidate ??= live.Clone();
+                WildIndividual ind = WildIndividual.Draw(def, null,
+                    WildIndividual.KeyFor(0x4D494752UL, (ulong)o.InstanceId));
+                candidate.SetEcology(o.InstanceId, ind.Niche.Id, ind.Habit);
+            }
+
+            if (candidate == null)
+            {
+                return CommitStatus.Committed;
+            }
+
+            if (!TryWrite(candidate, path, out error))
+            {
+                return CommitStatus.WriteFailed;
+            }
+
+            next = candidate;
+            return CommitStatus.Committed;
+        }
+
+        private static ulong Fnv1a64(string text)
+        {
+            ulong h = 14695981039346656037UL;
+            for (int i = 0; i < text.Length; i++)
+            {
+                h = unchecked((h ^ text[i]) * 1099511628211UL);
+            }
+
+            return h;
         }
 
         /// <summary>Banks a finished run (XP, captures, materials) into the lobby save and persists it, or changes nothing.</summary>
@@ -168,9 +244,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             try
             {
-                foreach ((string speciesId, VesselKind vessel, int exp) in outcome.Captured)
+                foreach ((string speciesId, VesselKind vessel, int exp, string nicheId, Habit habit) in outcome.Captured)
                 {
-                    candidate.Add(speciesId, vessel, exp);
+                    candidate.Add(speciesId, vessel, exp, nicheId, habit);
                 }
 
                 hatched = ApplyHatchery(candidate, outcome.EggProgressPpm, hatch);
@@ -183,6 +259,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.AddMaterials(outcome.Materials);
+            candidate.Codex.Merge(outcome.Codex);
             // The run already spent from its departure copy: adding its final stock would duplicate old items.
             if (outcome.CraftStock != null && !candidate.CraftStock.TryExchange(candidate.CraftStock.Snapshot(), outcome.CraftStock))
             {

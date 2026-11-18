@@ -32,12 +32,7 @@
       "water": 10,
       "earth": 10
     },
-    "stats": {
-      "con": 20,
-      "str": 15,
-      "spi": 25,
-      "agi": 30
-    },
+    "stats": {"hp": 67, "speed": 101, "yin_atk": 30, "yang_atk": 50, "yin_def": 76, "yang_def": 76},
     "signature_move": "sample_ember_strike",
     "trait": "sample_trait_placeholder",
     "concept": {

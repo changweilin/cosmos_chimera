@@ -1,0 +1,247 @@
+{
+  "dex.unknown": {
+    "zh-TW": "？？？",
+    "en": "Unknown",
+    "ja": "？？？"
+  },
+  "dex.missing": {
+    "zh-TW": "資料待補",
+    "en": "Not documented",
+    "ja": "資料未記載"
+  },
+  "dex.characters": {
+    "zh-TW": "角色",
+    "en": "Characters",
+    "ja": "人物"
+  },
+  "dex.level.Unknown": {
+    "zh-TW": "未知",
+    "en": "Unknown",
+    "ja": "未知"
+  },
+  "dex.level.Basic": {
+    "zh-TW": "基本資料",
+    "en": "Basic",
+    "ja": "基本情報"
+  },
+  "dex.level.Complete": {
+    "zh-TW": "完整資料",
+    "en": "Complete",
+    "ja": "詳細情報"
+  },
+  "dex.hint.creature": {
+    "zh-TW": "遭遇此型態後開放基本資料。",
+    "en": "Encounter this form to reveal basic information.",
+    "ja": "この姿と遭遇すると基本情報が公開されます。"
+  },
+  "dex.hint.character": {
+    "zh-TW": "與此角色對話後開放基本資料。",
+    "en": "Talk to this character to reveal basic information.",
+    "ja": "この人物と会話すると基本情報が公開されます。"
+  },
+  "dex.hint.skill": {
+    "zh-TW": "目擊施放後開放基本資料。",
+    "en": "See this skill used to reveal basic information.",
+    "ja": "技の使用を見ると基本情報が公開されます。"
+  },
+  "dex.complete_hint.creature": {
+    "zh-TW": "捕獲此型態後解鎖完整資料。",
+    "en": "Capture this form to unlock full information.",
+    "ja": "この姿を捕獲すると詳細情報が解放されます。"
+  },
+  "dex.complete_hint.character": {
+    "zh-TW": "完成此角色任務後解鎖完整資料。",
+    "en": "Complete this character’s quest to unlock full information.",
+    "ja": "この人物の依頼を完了すると詳細情報が解放されます。"
+  },
+  "dex.complete_hint.skill": {
+    "zh-TW": "取得技能後解鎖完整資料。",
+    "en": "Acquire this skill to unlock full information.",
+    "ja": "技を習得すると詳細情報が解放されます。"
+  },
+  "dex.value": {
+    "zh-TW": "數值",
+    "en": "Value",
+    "ja": "数値"
+  },
+  "dex.authored": {
+    "zh-TW": "含新設計內容・待審",
+    "en": "Contains new design proposals · review required",
+    "ja": "新規設定を含む・要確認"
+  },
+  "dex.yin_atk": {
+    "zh-TW": "陰攻",
+    "en": "Yin ATK",
+    "ja": "陰攻"
+  },
+  "dex.yang_atk": {
+    "zh-TW": "陽攻",
+    "en": "Yang ATK",
+    "ja": "陽攻"
+  },
+  "dex.yin_def": {
+    "zh-TW": "陰守",
+    "en": "Yin DEF",
+    "ja": "陰守"
+  },
+  "dex.yang_def": {
+    "zh-TW": "陽守",
+    "en": "Yang DEF",
+    "ja": "陽守"
+  },
+  "dex.field.appearance": {
+    "zh-TW": "外觀／招式描述",
+    "en": "Appearance / action",
+    "ja": "外見・技の動作"
+  },
+  "dex.field.summary": {
+    "zh-TW": "基本簡介",
+    "en": "Summary",
+    "ja": "概要"
+  },
+  "dex.field.ecology": {
+    "zh-TW": "生態學",
+    "en": "Ecology",
+    "ja": "生態"
+  },
+  "dex.field.habits": {
+    "zh-TW": "習性",
+    "en": "Habits",
+    "ja": "習性"
+  },
+  "dex.field.habitat": {
+    "zh-TW": "棲地",
+    "en": "Habitat",
+    "ja": "生息地"
+  },
+  "dex.field.reproduction": {
+    "zh-TW": "生育與幼體",
+    "en": "Birth and young",
+    "ja": "誕生と幼体"
+  },
+  "dex.field.growth": {
+    "zh-TW": "成長與階段變化",
+    "en": "Growth",
+    "ja": "成長と変化"
+  },
+  "dex.field.occupation": {
+    "zh-TW": "職業",
+    "en": "Occupation",
+    "ja": "職業"
+  },
+  "dex.field.biography": {
+    "zh-TW": "生平",
+    "en": "Biography",
+    "ja": "来歴"
+  },
+  "dex.field.race": {
+    "zh-TW": "種族",
+    "en": "Species / race",
+    "ja": "種族"
+  },
+  "dex.field.physique": {
+    "zh-TW": "身材",
+    "en": "Physique",
+    "ja": "体格"
+  },
+  "dex.field.likes": {
+    "zh-TW": "喜好",
+    "en": "Likes",
+    "ja": "好きなもの"
+  },
+  "dex.field.dislikes": {
+    "zh-TW": "厭惡",
+    "en": "Dislikes",
+    "ja": "嫌いなもの"
+  },
+  "dex.field.description": {
+    "zh-TW": "招式描述",
+    "en": "Skill description",
+    "ja": "技の説明"
+  },
+  "dex.field.effects": {
+    "zh-TW": "功能與效果",
+    "en": "Effects",
+    "ja": "機能と効果"
+  },
+  "dex.field.field_effects": {
+    "zh-TW": "生活效果",
+    "en": "Field effects",
+    "ja": "生活での効果"
+  },
+  "dex.value.star": {
+    "zh-TW": "星級",
+    "en": "Rarity",
+    "ja": "希少度"
+  },
+  "dex.value.power": {
+    "zh-TW": "威力",
+    "en": "Power",
+    "ja": "威力"
+  },
+  "dex.value.cooldown_ms": {
+    "zh-TW": "冷卻",
+    "en": "Cooldown",
+    "ja": "再使用時間"
+  },
+  "dex.value.windup_ms": {
+    "zh-TW": "前搖",
+    "en": "Windup",
+    "ja": "発動準備"
+  },
+  "dex.value.accuracy": {
+    "zh-TW": "命中",
+    "en": "Accuracy",
+    "ja": "命中"
+  },
+  "dex.value.base_range_mm": {
+    "zh-TW": "基礎範圍",
+    "en": "Base range",
+    "ja": "基本範囲"
+  },
+  "dex.value.duration_ms": {
+    "zh-TW": "持續時間",
+    "en": "Duration",
+    "ja": "持続時間"
+  },
+  "dex.value.effect_duration_ms": {
+    "zh-TW": "效果時間",
+    "en": "Effect duration",
+    "ja": "効果時間"
+  },
+  "dex.value.field_duration_ms": {
+    "zh-TW": "場地時間",
+    "en": "Field duration",
+    "ja": "領域時間"
+  },
+  "dex.value.delta": {
+    "zh-TW": "效果變動量",
+    "en": "Effect change",
+    "ja": "効果変動量"
+  },
+  "dex.value.percent": {
+    "zh-TW": "百分比",
+    "en": "Percentage",
+    "ja": "割合"
+  },
+  "dex.value.max_stacks": {
+    "zh-TW": "疊加上限",
+    "en": "Max stacks",
+    "ja": "最大重複数"
+  },
+  "dex.value.distance_mm": {
+    "zh-TW": "移動距離",
+    "en": "Travel distance",
+    "ja": "移動距離"
+  },
+  "dex.value.height_mm": {
+    "zh-TW": "高度",
+    "en": "Height",
+    "ja": "高さ"
+  },
+  "dex.value.delay_ms": {
+    "zh-TW": "延遲",
+    "en": "Delay",
+    "ja": "遅延"
+  }
+}

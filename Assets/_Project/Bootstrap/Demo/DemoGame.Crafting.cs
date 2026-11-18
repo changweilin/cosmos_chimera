@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Save;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -26,6 +27,8 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Label(_copy.Ui("ui.craft.gear_preview"));
 
             DrawWearerSelector(ui);
+            GUILayout.Space(8f);
+            DrawPresetBar(ui);
             GUILayout.Space(8f);
 
             IReadOnlyCollection<GripMode> grips = WearerGrips(_equipmentOwner);
@@ -106,6 +109,85 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
+        }
+
+        private int _presetEditSlot = -1;
+        private string _presetEditText = string.Empty;
+
+        private void DrawPresetBar(AdventurePanel ui)
+        {
+            ui.Heading(_copy.Ui("ui.preset.title"));
+            for (int slot = 0; slot < LobbySave.MaxPresets; slot++)
+            {
+                LoadoutPreset preset = _save.GetPreset(slot);
+                if (preset == null && _presetEditSlot == slot) _presetEditSlot = -1;
+                GUILayout.BeginHorizontal();
+                if (_presetEditSlot == slot)
+                {
+                    _presetEditText = GUILayout.TextField(_presetEditText, LoadoutPreset.MaxNameLength, GUILayout.Width(200f));
+                    bool valid = !string.IsNullOrWhiteSpace(_presetEditText);
+                    bool wasEnabled = GUI.enabled;
+                    GUI.enabled = wasEnabled && valid;
+                    if (ui.Button(_copy.Ui("ui.preset.rename_ok")))
+                    {
+                        var candidate = _save.Clone();
+                        candidate.RenamePreset(slot, _presetEditText.Trim());
+                        ui.Message = CommitLobby(candidate) ? string.Empty : _partyMsg;
+                        _presetEditSlot = -1;
+                        GUI.enabled = wasEnabled;
+                        GUIUtility.ExitGUI();
+                    }
+
+                    GUI.enabled = wasEnabled;
+                    if (ui.Button(_copy.Ui("ui.preset.rename_cancel")))
+                    {
+                        _presetEditSlot = -1;
+                        GUIUtility.ExitGUI();
+                    }
+
+                    GUILayout.EndHorizontal();
+                    continue;
+                }
+
+                ui.Label((slot + 1) + ". " + (preset != null ? preset.Name : _copy.Ui("ui.preset.empty")));
+                if (preset != null && ui.Button(_copy.Ui("ui.preset.rename")))
+                {
+                    _presetEditSlot = slot;
+                    _presetEditText = preset.Name;
+                    GUIUtility.ExitGUI();
+                }
+
+                if (ui.Button(_copy.Ui("ui.preset.save")))
+                {
+                    var candidate = _save.Clone();
+                    candidate.SavePreset(slot, preset != null ? preset.Name
+                        : _copy.Ui("ui.preset.default_name").Replace("{n}", (slot + 1).ToString()));
+                    if (CommitLobby(candidate)) ui.Message = string.Empty; else ui.Message = _partyMsg;
+                    GUIUtility.ExitGUI();
+                }
+
+                if (preset != null && ui.Button(_copy.Ui("ui.preset.apply")))
+                {
+                    var candidate = _save.Clone();
+                    PresetApplyResult result = candidate.TryApplyPreset(slot, CraftCatalog);
+                    if (!result.Applied) ui.Message = _copy.Ui("ui.preset.failed");
+                    else if (!CommitLobby(candidate)) ui.Message = _partyMsg;
+                    else ui.Message = (result.MissingCreatures + result.MissingItems == 0) ? string.Empty
+                        : _copy.Ui("ui.preset.applied").Replace("{creatures}", result.MissingCreatures.ToString())
+                            .Replace("{items}", result.MissingItems.ToString());
+                    GUIUtility.ExitGUI();
+                }
+
+                if (preset != null && ui.Button(_copy.Ui("ui.preset.clear")))
+                {
+                    var candidate = _save.Clone();
+                    candidate.ClearPreset(slot);
+                    if (CommitLobby(candidate)) ui.Message = string.Empty; else ui.Message = _partyMsg;
+                    GUIUtility.ExitGUI();
+                }
+
+                GUILayout.EndHorizontal();
+            }
         }
 
         private void DrawWearerSelector(AdventurePanel ui)

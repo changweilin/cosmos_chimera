@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Planet;
+using Cosmimera.WorldGen;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;
@@ -45,6 +46,39 @@ namespace Cosmimera.Bootstrap.Tests
             foreach (GameObject root in _roots) Object.Destroy(root);
             _roots.Clear();
             yield return null;
+        }
+
+        [Test]
+        public void Volcanic_particles_persist_across_weather_and_stop_outside_the_biome()
+        {
+            var root = new GameObject("weather-test");
+            _roots.Add(root);
+            var view = new LocalWeatherView(root.transform);
+            try
+            {
+                var frame = PlanetFrame.FromUp(new float3(1f, 0f, 0f));
+                var rainy = new int[WeatherField.AttrCount];
+                rainy[(int)WeatherAttr.Rain] = 1000;
+                rainy[(int)WeatherAttr.Clouds] = 1000;
+                WeatherState raining = WeatherDynamics.Resolve(rainy);
+                WeatherState clear = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
+                view.Apply(Vector3.right * Radius, frame, raining, true);
+                Transform layers = root.transform.Find("Local weather");
+                var ash = layers.Find("Volcanic ash").GetComponent<ParticleSystem>();
+                var embers = layers.Find("Rising embers").GetComponent<ParticleSystem>();
+                var rain = layers.Find("Rain").GetComponent<ParticleSystem>();
+                Assert.That(ash.isEmitting && embers.isEmitting && rain.isEmitting);
+                Assert.That(Vector3.Dot(embers.transform.forward, Vector3.right), Is.Positive);
+                Assert.That(Vector3.Dot(ash.transform.forward, Vector3.right), Is.Negative);
+                view.Apply(Vector3.right * Radius, frame, clear, true);
+                Assert.That(ash.isEmitting && embers.isEmitting && !rain.isEmitting);
+                view.Apply(Vector3.right * Radius, frame, clear, false);
+                Assert.That(ash.isEmitting || embers.isEmitting, Is.False);
+            }
+            finally
+            {
+                view.Dispose();
+            }
         }
 
         [UnityTest]

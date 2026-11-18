@@ -59,7 +59,7 @@ All values are strictly integers following monotonic trade-offs (higher power co
 | `sweep` | 3 | 0 | 0 | 3 |
 | **合計** | 14 | 13 | 13 | **40** |
 
-同屬性＋同形狀＋同射程的招式組（近似重複候選，需靠數值或效果區隔）：無。
+同屬性＋同形狀＋同射程的主動技組（近似重複候選，需靠數值或效果區隔）：無。
 
 ### Per Range Class
 - `melee`: 14 moves (metal: 2, wood: 2, water: 2, fire: 2, earth: 1, ice: 1, wind: 1, thunder: 1, light: 1, shadow: 1)

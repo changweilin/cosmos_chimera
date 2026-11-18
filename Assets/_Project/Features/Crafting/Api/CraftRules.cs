@@ -77,6 +77,41 @@ namespace Cosmimera.Crafting
             Contract.Requires(catalog != null && utilities != null && inventory != null && yields != null, "all arguments required");
             yields.Clear();
             if (_harvested.Contains(nodeId)) return CraftResult.Depleted;
+            bool resource = CollectYields(source, season, catalog, utilities, inventory, yields);
+            if (yields.Count == 0) return resource ? CraftResult.MissingSkill : CraftResult.NoResource;
+            if (inventory.CanExchange(Array.Empty<CraftStack>(), yields)) return CraftResult.Success;
+            yields.Clear();
+            return CraftResult.CapacityExceeded;
+        }
+
+        /// <summary>Harvest of an object a creature's life-skill hit just knocked down (destructibles.md#傷害 擊倒＝收成).</summary>
+        /// <remarks>
+        /// REQ: destructibles.md#傷害 (Q-C77) — only the caster's life skills count (tools never do); a full bag still
+        /// spends the harvest, and the caller drops the yields on the ground.
+        /// Pre: as Preview; utilities are the caster's harvest utilities.
+        /// Post: Depleted (node already harvested) or NoResource/MissingSkill leave yields empty and depletion unchanged;
+        ///       otherwise the node is depleted and yields holds the harvest: Success means it is already in inventory,
+        ///       CapacityExceeded means inventory is unchanged and the caller must place yields on the ground.
+        /// Side effects: replaces yields; mutates depletion and, on Success, inventory.
+        /// </remarks>
+        public CraftResult HarvestOnKnockdown(long nodeId, string source, string season, CraftCatalog catalog,
+            IReadOnlyCollection<FieldUtility> utilities, CraftInventory inventory, List<CraftStack> yields)
+        {
+            Contract.Requires(nodeId >= 0 && !string.IsNullOrEmpty(source), "valid node and source required");
+            Contract.Requires(season == "spring" || season == "summer" || season == "autumn" || season == "winter", "invalid season");
+            Contract.Requires(catalog != null && utilities != null && inventory != null && yields != null, "all arguments required");
+            yields.Clear();
+            if (_harvested.Contains(nodeId)) return CraftResult.Depleted;
+            bool resource = CollectYields(source, season, catalog, utilities, null, yields);
+            if (yields.Count == 0) return resource ? CraftResult.MissingSkill : CraftResult.NoResource;
+            _harvested.Add(nodeId);
+            return inventory.TryExchange(Array.Empty<CraftStack>(), yields) ? CraftResult.Success : CraftResult.CapacityExceeded;
+        }
+
+        // toolStock null: tools do not count (knockdown harvest). Returns whether the source has any resource this season.
+        private static bool CollectYields(string source, string season, CraftCatalog catalog,
+            IReadOnlyCollection<FieldUtility> utilities, CraftInventory toolStock, List<CraftStack> yields)
+        {
             bool resource = false;
             foreach (CraftItem item in catalog.Items)
             {
@@ -86,13 +121,10 @@ namespace Cosmimera.Crafting
                 if (!matches) continue;
                 resource = true;
                 if (CraftRules.HasUtility(utilities, item.Utility) ||
-                    (item.GatherTool != null && inventory.Count(item.GatherTool) > 0))
+                    (toolStock != null && item.GatherTool != null && toolStock.Count(item.GatherTool) > 0))
                     yields.Add(new CraftStack(item.Id, item.Quantity));
             }
-            if (yields.Count == 0) return resource ? CraftResult.MissingSkill : CraftResult.NoResource;
-            if (inventory.CanExchange(Array.Empty<CraftStack>(), yields)) return CraftResult.Success;
-            yields.Clear();
-            return CraftResult.CapacityExceeded;
+            return resource;
         }
 
         /// <summary>Grants a node's previewed resources and depletes it, or leaves stock and depletion unchanged.</summary>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Capture;
+using Cosmimera.Codex;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
@@ -29,13 +30,28 @@ namespace Cosmimera.Save
     /// Version 8: creature entries add <c>visual_vessel</c> (appearance preserved on late-game vessel conversion); formats 1–7 default <c>VisualVessel</c> to <c>Vessel</c>.
     /// Version 9 (D0-U3): equipment slots become main_hand/off_hand/upper/lower/accessory; formats 7–8 migrate
     /// weapon → main_hand, armor → upper, accessory → accessory (crafting.md#穿戴與數值).
+    /// Version 10: root codex stores permanent knowledge; older saves recover owned forms.
+    /// Version 11 (P3-31): creature entries add <c>niche_id</c> and <c>habit</c>; formats 1–10 leave <c>NicheId</c> empty
+    /// until migrated once per individual via <c>SetEcology</c>.
+    /// Version 12: root <c>presets</c> — up to MaxPresets favourite loadouts (party, subs, equipment, appearance);
+    /// formats 1–11 load with none.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 9;
+        public const int FormatVersion = 13;
+
+        /// <summary>Number of favourite-loadout slots.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxPresets = 5;
+
+        private readonly LoadoutPreset[] _presets = new LoadoutPreset[MaxPresets];
+
+        /// <summary>Persistent encyclopedia knowledge, including known subjects no longer owned.</summary>
+        /// <remarks>Pre: main thread. Post: same instance for this save's lifetime. Side effects: mutating it changes this save.</remarks>
+        public CodexProgress Codex { get; } = new CodexProgress();
 
         /// <summary>Party size cap (creatures.md#隊伍規則: 6 主力).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -69,6 +85,65 @@ namespace Cosmimera.Save
         /// <summary>Starter line chosen in the lobby, or null before the first choice.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public string StarterLine { get; private set; }
+
+        /// <summary>Chosen player character id (P7-02a, beginner-quest.md).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string CharacterId { get; private set; } = string.Empty;
+
+        /// <summary>Assigned friend character id (next in ring order from CharacterId).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string FriendId { get; private set; } = string.Empty;
+
+        /// <summary>Assigned rival character id (second in ring order from CharacterId).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string RivalId { get; private set; } = string.Empty;
+
+        /// <summary>Rival's starter species id (counters player starter).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before tutorial completion). Side effects: none.</remarks>
+        public string RivalStarterId { get; private set; } = string.Empty;
+
+        /// <summary>Friend's starter species id (remaining starter).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before tutorial completion). Side effects: none.</remarks>
+        public string FriendStarterId { get; private set; } = string.Empty;
+
+        /// <summary>True once the beginner quest is finished (or migrated from an existing v1..v12 save with creatures).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TutorialDone { get; private set; }
+
+        /// <summary>Records beginner-quest completion and character/rival/friend assignments (P7-02a).</summary>
+        /// <remarks>
+        /// Pre: all ids non-null and non-whitespace.
+        /// Post: TutorialDone == true and all five ids match the arguments.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void CompleteTutorial(string characterId, string friendId, string rivalId,
+            string rivalStarterId, string friendStarterId)
+        {
+            Contract.Requires(!string.IsNullOrWhiteSpace(characterId) && !string.IsNullOrWhiteSpace(friendId) &&
+                !string.IsNullOrWhiteSpace(rivalId) && !string.IsNullOrWhiteSpace(rivalStarterId) &&
+                !string.IsNullOrWhiteSpace(friendStarterId), "all tutorial ids are required");
+            CharacterId = characterId;
+            FriendId = friendId;
+            RivalId = rivalId;
+            RivalStarterId = rivalStarterId;
+            FriendStarterId = friendStarterId;
+            TutorialDone = true;
+        }
+
+        /// <summary>Assigns player/friend/rival character ids for an existing pre-v13 save that skipped tutorial.</summary>
+        /// <remarks>
+        /// Pre: all three ids non-null and non-whitespace.
+        /// Post: CharacterId, FriendId, RivalId match the arguments.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetCharacters(string characterId, string friendId, string rivalId)
+        {
+            Contract.Requires(!string.IsNullOrWhiteSpace(characterId) && !string.IsNullOrWhiteSpace(friendId) &&
+                !string.IsNullOrWhiteSpace(rivalId), "character ids are required");
+            CharacterId = characterId;
+            FriendId = friendId;
+            RivalId = rivalId;
+        }
 
         /// <summary>Owned creatures in acquisition order.</summary>
         /// <remarks>Pre: none. Post: unique InstanceIds. Side effects: none.</remarks>
@@ -105,6 +180,139 @@ namespace Cosmimera.Save
             }
             _partners.Clear();
             _partners.AddRange(copy);
+        }
+
+        /// <summary>The favourite loadout in <paramref name="slot"/>, or null when the slot is empty.</summary>
+        /// <remarks>Pre: 0 &lt;= slot &lt; MaxPresets. Post: immutable preset or null. Side effects: none.</remarks>
+        public LoadoutPreset GetPreset(int slot)
+        {
+            Contract.Requires(slot >= 0 && slot < MaxPresets, "preset slot out of range");
+            return _presets[slot];
+        }
+
+        /// <summary>Stores the current party, subs, equipment and appearances in <paramref name="slot"/>, replacing its content.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= slot &lt; MaxPresets; name non-blank, at most LoadoutPreset.MaxNameLength; Party non-empty.
+        /// Post: GetPreset(slot) captures Party, Partners, the equipment of the player, every main and every sub, and their
+        ///       VisualVessel; nothing else in this save changes. Side effects: mutates this save.
+        /// </remarks>
+        public void SavePreset(int slot, string name)
+        {
+            Contract.Requires(slot >= 0 && slot < MaxPresets, "preset slot out of range");
+            Contract.Requires(_party.Count >= 1, "no party to store");
+            var covered = new HashSet<int> { 0 };
+            covered.UnionWith(_party);
+            foreach (PartnerPair p in _partners) covered.Add(p.SubInstanceId);
+
+            var equipment = new List<EquippedItem>();
+            foreach (EquippedItem e in _equipment.Snapshot()) if (covered.Contains(e.Owner)) equipment.Add(e);
+            var visuals = new List<VisualChoice>();
+            foreach (int id in covered) if (id != 0) visuals.Add(new VisualChoice(id, Get(id).VisualVessel));
+            _presets[slot] = new LoadoutPreset(name, _party, _partners, equipment, visuals);
+        }
+
+        /// <summary>Renames the preset in <paramref name="slot"/> without touching its content.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= slot &lt; MaxPresets; slot non-empty; name non-blank, at most LoadoutPreset.MaxNameLength.
+        /// Post: GetPreset(slot).Name == name; party, partners, equipment and visuals unchanged. Side effects: mutates this save.
+        /// </remarks>
+        public void RenamePreset(int slot, string name)
+        {
+            Contract.Requires(slot >= 0 && slot < MaxPresets, "preset slot out of range");
+            LoadoutPreset p = _presets[slot];
+            Contract.Requires(p != null, "preset slot is empty");
+            _presets[slot] = new LoadoutPreset(name, p.Party, p.Partners, p.Equipment, p.Visuals);
+        }
+
+        /// <summary>Empties a preset slot.</summary>
+        /// <remarks>Pre: 0 &lt;= slot &lt; MaxPresets. Post: GetPreset(slot) == null. Side effects: mutates this save.</remarks>
+        public void ClearPreset(int slot)
+        {
+            Contract.Requires(slot >= 0 && slot < MaxPresets, "preset slot out of range");
+            _presets[slot] = null;
+        }
+
+        /// <summary>Switches to the favourite loadout in <paramref name="slot"/>, all-or-nothing.</summary>
+        /// <remarks>
+        /// REQ: crafting.md#穿戴與數值 grip rules still apply — each entry goes through EquipmentLoadout.TryEquip.
+        /// Pre: 0 &lt;= slot &lt; MaxPresets; slot non-empty; catalog non-null.
+        /// Post: Applied false leaves this save untouched (no preset creature left in the roster, or a covered wearer's
+        ///       gear could not return to a full stack). Applied true: Party/Partners/VisualVessel follow the preset for creatures
+        ///       still owned; every covered wearer (player, preset mains and subs) is stripped to stock and re-equipped with
+        ///       what stock still holds. Entries that no longer resolve are counted in the result, never silently dropped
+        ///       from the stored preset. Creatures outside the preset keep their gear.
+        /// Side effects: mutates this save on success (party, partners, owned, equipment, craft stock).
+        /// </remarks>
+        public PresetApplyResult TryApplyPreset(int slot, CraftCatalog catalog)
+        {
+            Contract.Requires(slot >= 0 && slot < MaxPresets, "preset slot out of range");
+            Contract.Requires(catalog != null, "catalog is required");
+            LoadoutPreset preset = _presets[slot];
+            Contract.Requires(preset != null, "preset slot is empty");
+
+            // Work on a copy: equipment moves items through the bag, and a mid-way refusal must not leak.
+            LobbySave c = Clone();
+            int missingCreatures = 0, missingItems = 0;
+
+            var party = new List<int>();
+            foreach (int id in preset.Party)
+            {
+                if (c._owned.Exists(o => o.InstanceId == id)) party.Add(id); else missingCreatures++;
+            }
+
+            if (party.Count == 0) return new PresetApplyResult(false, missingCreatures, 0);
+
+            c._partners.Clear(); // SetParty refuses to promote a current sub
+            c.SetParty(party);
+            var pairs = new List<PartnerPair>();
+            var subs = new HashSet<int>();
+            var perMain = new Dictionary<int, int>();
+            foreach (PartnerPair pair in preset.Partners)
+            {
+                perMain.TryGetValue(pair.MainInstanceId, out int n);
+                bool fits = party.Contains(pair.MainInstanceId) && !party.Contains(pair.SubInstanceId) &&
+                    c._owned.Exists(o => o.InstanceId == pair.SubInstanceId) && n < PartnerLoadout.MaxSubsPerMain &&
+                    subs.Add(pair.SubInstanceId);
+                if (!fits) { missingCreatures++; continue; }
+                perMain[pair.MainInstanceId] = n + 1;
+                pairs.Add(pair);
+            }
+
+            c.SetPartners(pairs);
+
+            foreach (VisualChoice v in preset.Visuals)
+            {
+                int i = c._owned.FindIndex(o => o.InstanceId == v.InstanceId);
+                if (i < 0) { missingCreatures++; continue; }
+                OwnedCreature o = c._owned[i];
+                c._owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, o.Exp, v.Vessel, o.NicheId, o.Habit);
+            }
+
+            var covered = new HashSet<int> { 0 };
+            covered.UnionWith(party);
+            covered.UnionWith(subs);
+            foreach (EquippedItem e in c._equipment.Snapshot())
+            {
+                if (covered.Contains(e.Owner) && !c._equipment.TryUnequip(e.Owner, e.Slot, c._craftStock))
+                    return new PresetApplyResult(false, missingCreatures, 0);
+            }
+
+            foreach (EquippedItem e in preset.Equipment)
+            {
+                if (e.Owner != 0 && !covered.Contains(e.Owner)) continue; // creature already counted as missing
+                IReadOnlyCollection<GripMode> grips = e.Owner == 0
+                    ? EquipmentRules.PlayerGrips : catalog.GripsOf(c.Get(e.Owner).SpeciesId);
+                if (!c._equipment.TryEquip(e.Owner, e.Item, e.Slot, grips, catalog, c._craftStock)) missingItems++;
+            }
+
+            // Exchange first: it is the only step that can still refuse, and nothing here has been mutated yet.
+            if (!_craftStock.TryExchange(_craftStock.Snapshot(), c._craftStock.Snapshot()))
+                throw new InvalidOperationException("lobby save: preset bag swap overflowed");
+            _owned.Clear(); _owned.AddRange(c._owned);
+            _party.Clear(); _party.AddRange(c._party);
+            _partners.Clear(); _partners.AddRange(c._partners);
+            _equipment.Restore(c._equipment.Snapshot());
+            return new PresetApplyResult(true, missingCreatures, missingItems);
         }
 
         /// <summary>Eggs incubating in the hatchery, with their progress.</summary>
@@ -239,6 +447,8 @@ namespace Cosmimera.Save
             }
             c._craftStock.TryExchange(Array.Empty<CraftStack>(), _craftStock.Snapshot());
             c._equipment.Restore(_equipment.Snapshot());
+            c.Codex.Restore(Codex.Snapshot());
+            Array.Copy(_presets, c._presets, MaxPresets); // LoadoutPreset is immutable
 
             return c;
         }
@@ -251,11 +461,20 @@ namespace Cosmimera.Save
         /// Side effects: mutates this save.
         /// </remarks>
         public OwnedCreature ChooseStarter(string lineId, string speciesId, int exp)
+            => ChooseStarter(lineId, speciesId, exp, null, Habit.Tolerant);
+
+        /// <summary>Records the starter choice and adds the starter with its drawn ecology.</summary>
+        /// <remarks>
+        /// Pre: StarterLine == null; lineId and speciesId non-empty; exp &gt;= 0; habit is a defined Habit.
+        /// Post: StarterLine == lineId; the starter is owned with that exp and ecology, and is in the party.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public OwnedCreature ChooseStarter(string lineId, string speciesId, int exp, string nicheId, Habit habit)
         {
             Contract.Requires(StarterLine == null, "starter already chosen");
             Contract.Requires(!string.IsNullOrEmpty(lineId), "lineId must be non-empty");
             StarterLine = lineId;
-            return Add(speciesId, VesselKind.TalismanCard, exp);
+            return Add(speciesId, VesselKind.TalismanCard, exp, nicheId, habit);
         }
 
         /// <summary>Adds a captured creature; it joins the party if there is room.</summary>
@@ -267,6 +486,17 @@ namespace Cosmimera.Save
         /// Side effects: mutates this save.
         /// </remarks>
         public OwnedCreature Add(string speciesId, VesselKind vessel, int exp)
+            => Add(speciesId, vessel, exp, null, Habit.Tolerant);
+
+        /// <summary>Adds a captured creature with its individual ecology; it joins the party if there is room.</summary>
+        /// <remarks>
+        /// Pre: speciesId non-empty; vessel defined; exp &gt;= 0; habit is a defined Habit.
+        /// Post: one more owned creature with a fresh InstanceId, that exp, and that niche/habit; in Party iff Party had &lt; 6 before.
+        ///       <see cref="InvalidOperationException"/> in every build, with the save unchanged, once instance ids are
+        ///       exhausted.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public OwnedCreature Add(string speciesId, VesselKind vessel, int exp, string nicheId, Habit habit)
         {
             // Checked before any mutation: incrementing first would overflow the cursor and write a save FromJson rejects
             // (SOL P2-12 R4).
@@ -275,9 +505,10 @@ namespace Cosmimera.Save
                 throw new InvalidOperationException("lobby save: creature instance ids are exhausted");
             }
 
-            var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp);
+            var c = new OwnedCreature(_nextInstanceId, speciesId, vessel, exp, vessel, nicheId, habit);
             _nextInstanceId++;
             _owned.Add(c);
+            Codex.Record(CodexEvent.Capture, speciesId);
             if (_party.Count < MaxParty)
             {
                 _party.Add(c.InstanceId);
@@ -320,13 +551,13 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp, o.VisualVessel);
+            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, exp, o.VisualVessel, o.NicheId, o.Habit);
         }
 
         /// <summary>Replaces an owned creature's form after a successful lobby evolution.</summary>
         /// <remarks>
         /// Pre: instanceId owned; speciesId non-empty (the caller resolved it from the evolution requirement).
-        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, visual vessel, exp, party membership and order unchanged.
+        /// Post: Get(instanceId).SpeciesId == speciesId; id, vessel, visual vessel, exp, ecology, party membership and order unchanged.
         /// Side effects: mutates this save.
         /// </remarks>
         public void SetSpecies(int instanceId, string speciesId)
@@ -335,7 +566,38 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             OwnedCreature o = _owned[i];
-            _owned[i] = new OwnedCreature(o.InstanceId, speciesId, o.Vessel, o.Exp, o.VisualVessel);
+            _owned[i] = o.WithSpecies(speciesId);
+            Codex.Record(CodexEvent.Capture, speciesId);
+        }
+
+        /// <summary>Replaces an owned creature's form and redrawn ecology after a successful lobby evolution.</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; speciesId and nicheId non-empty; habit is a defined Habit.
+        /// Post: Get(instanceId) has the new SpeciesId, NicheId and Habit; id, vessel, visual vessel, exp, party membership and order unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetSpecies(int instanceId, string speciesId, string nicheId, Habit habit)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(speciesId), "speciesId must be non-empty");
+            Contract.Requires(!string.IsNullOrEmpty(nicheId), "nicheId must be non-empty");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            _owned[i] = _owned[i].WithSpecies(speciesId, nicheId, habit);
+            Codex.Record(CodexEvent.Capture, speciesId);
+        }
+
+        /// <summary>Assigns an owned creature's ecology (e.g. one-time legacy save migration).</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; nicheId non-empty; habit is a defined Habit.
+        /// Post: Get(instanceId).NicheId == nicheId and Habit == habit; all other fields unchanged.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetEcology(int instanceId, string nicheId, Habit habit)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(nicheId), "nicheId must be non-empty");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            _owned[i] = _owned[i].WithEcology(nicheId, habit);
         }
 
         /// <summary>Replaces an owned creature's functional capture-item category without changing its appearance (Q-C13).</summary>
@@ -350,6 +612,20 @@ namespace Cosmimera.Save
             int i = _owned.FindIndex(o => o.InstanceId == instanceId);
             Contract.Requires(i >= 0, "instance id is not owned");
             _owned[i] = _owned[i].WithVessel(vessel);
+        }
+
+        /// <summary>Changes only an owned creature's appearance; its functional vessel is untouched.</summary>
+        /// <remarks>
+        /// Pre: instanceId owned; vessel is a defined VesselKind.
+        /// Post: Get(instanceId).VisualVessel == vessel; every other field and party membership unchanged. Side effects: mutates this save.
+        /// </remarks>
+        public void SetVisualVessel(int instanceId, VesselKind vessel)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(VesselKind), vessel), "vessel must be a defined VesselKind");
+            int i = _owned.FindIndex(o => o.InstanceId == instanceId);
+            Contract.Requires(i >= 0, "instance id is not owned");
+            OwnedCreature o = _owned[i];
+            _owned[i] = new OwnedCreature(o.InstanceId, o.SpeciesId, o.Vessel, o.Exp, vessel, o.NicheId, o.Habit);
         }
 
         /// <summary>Owned creature by instance id.</summary>
@@ -380,7 +656,38 @@ namespace Cosmimera.Save
                 player_exp = PlayerExp,
                 partners = new PartnerDto[_partners.Count],
                 eggs = new EggDto[_eggs.Count],
+                character_id = CharacterId ?? string.Empty,
+                friend_id = FriendId ?? string.Empty,
+                rival_id = RivalId ?? string.Empty,
+                rival_starter_id = RivalStarterId ?? string.Empty,
+                friend_starter_id = FriendStarterId ?? string.Empty,
+                tutorial_done = TutorialDone,
             };
+            var presetDtos = new List<PresetDto>();
+            for (int slot = 0; slot < MaxPresets; slot++)
+            {
+                LoadoutPreset p = _presets[slot];
+                if (p == null) continue;
+                var pd = new PresetDto
+                {
+                    slot = slot, name = p.Name, party = new List<int>(p.Party).ToArray(),
+                    partners = new PartnerDto[p.Partners.Count], equipment = new EquipmentDto[p.Equipment.Count],
+                    visuals = new VisualDto[p.Visuals.Count],
+                };
+                for (int i = 0; i < pd.partners.Length; i++)
+                    pd.partners[i] = new PartnerDto { main = p.Partners[i].MainInstanceId, sub = p.Partners[i].SubInstanceId };
+                for (int i = 0; i < pd.equipment.Length; i++)
+                    pd.equipment[i] = new EquipmentDto { owner = p.Equipment[i].Owner, slot = p.Equipment[i].Slot, item = p.Equipment[i].Item };
+                for (int i = 0; i < pd.visuals.Length; i++)
+                    pd.visuals[i] = new VisualDto { instance_id = p.Visuals[i].InstanceId, vessel = (int)p.Visuals[i].Vessel };
+                presetDtos.Add(pd);
+            }
+
+            dto.presets = presetDtos.ToArray();
+            IReadOnlyList<CodexRecord> knowledge = Codex.Snapshot();
+            dto.codex = new CodexDto[knowledge.Count];
+            for (int i = 0; i < knowledge.Count; i++)
+                dto.codex[i] = new CodexDto { kind = (int)knowledge[i].Kind, id = knowledge[i].Id, level = (int)knowledge[i].Level };
             IReadOnlyList<CraftStack> craftStock = _craftStock.Snapshot();
             dto.craft_stock = new CraftDto[craftStock.Count];
             for (int i = 0; i < craftStock.Count; i++)
@@ -424,6 +731,7 @@ namespace Cosmimera.Save
                 {
                     instance_id = o.InstanceId, species_id = o.SpeciesId, vessel = (int)o.Vessel,
                     visual_vessel = (int)o.VisualVessel, exp = o.Exp,
+                    niche_id = o.NicheId ?? string.Empty, habit = (int)o.Habit,
                 };
             }
 
@@ -488,8 +796,17 @@ namespace Cosmimera.Save
                     visualVessel = (VesselKind)c.visual_vessel;
                 }
 
+                string nicheId = string.Empty;
+                Habit habit = Habit.Tolerant;
+                if (dto.version >= 11)
+                {
+                    Check(Enum.IsDefined(typeof(Habit), c.habit), "creature entry has an undefined habit");
+                    nicheId = c.niche_id ?? string.Empty;
+                    habit = (Habit)c.habit;
+                }
+
                 save._owned.Add(new OwnedCreature(c.instance_id, c.species_id, vessel,
-                    Math.Min(exp, progression.MaxExp), visualVessel));
+                    Math.Min(exp, progression.MaxExp), visualVessel, nicheId, habit));
             }
 
             // Party is the XP settlement roster, so a duplicate would be paid twice (SOL P2-12 R3). An owned roster always
@@ -576,6 +893,80 @@ namespace Cosmimera.Save
                 }
                 save._equipment.Restore(entries);
             }
+            if (dto.version >= 10)
+            {
+                Check(dto.codex != null, "missing codex records");
+                var knowledge = new List<CodexRecord>();
+                var knowledgeKeys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (CodexDto item in dto.codex)
+                {
+                    Check(item != null && Enum.IsDefined(typeof(CodexKind), item.kind) && !string.IsNullOrWhiteSpace(item.id)
+                        && (item.level == (int)CodexLevel.Basic || item.level == (int)CodexLevel.Complete), "invalid codex record");
+                    Check(knowledgeKeys.Add(item.kind + ":" + item.id), "duplicate codex record");
+                    knowledge.Add(new CodexRecord((CodexKind)item.kind, item.id, (CodexLevel)item.level));
+                }
+                save.Codex.Restore(knowledge);
+            }
+            if (dto.version >= 12)
+            {
+                foreach (PresetDto pd in dto.presets ?? Array.Empty<PresetDto>())
+                {
+                    Check(pd != null && pd.slot >= 0 && pd.slot < MaxPresets && save._presets[pd.slot] == null, "invalid or duplicate preset slot");
+                    Check(!string.IsNullOrWhiteSpace(pd.name) && pd.name.Length <= LoadoutPreset.MaxNameLength, "invalid preset name");
+                    int[] pparty = pd.party ?? new int[0];
+                    Check(pparty.Length >= 1 && pparty.Length <= MaxParty, "preset party must hold 1..6");
+                    var mains = new HashSet<int>();
+                    foreach (int id in pparty) Check(id >= 1 && mains.Add(id), "preset party ids must be distinct and >= 1");
+                    var pairs = new List<PartnerPair>();
+                    var psubs = new HashSet<int>();
+                    var perMain = new Dictionary<int, int>();
+                    foreach (PartnerDto pair in pd.partners ?? Array.Empty<PartnerDto>())
+                    {
+                        Check(pair != null && mains.Contains(pair.main) && !mains.Contains(pair.sub) && pair.sub >= 1 && psubs.Add(pair.sub),
+                            "invalid preset partner");
+                        perMain.TryGetValue(pair.main, out int n);
+                        Check(n < PartnerLoadout.MaxSubsPerMain, "preset main has too many subs");
+                        perMain[pair.main] = n + 1;
+                        pairs.Add(new PartnerPair(pair.main, pair.sub));
+                    }
+
+                    var gear = new List<EquippedItem>();
+                    var gearKeys = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (EquipmentDto e in pd.equipment ?? Array.Empty<EquipmentDto>())
+                    {
+                        Check(e != null && (e.owner == 0 || mains.Contains(e.owner) || psubs.Contains(e.owner)), "preset equipment owner outside preset");
+                        Check(EquipmentSlots.IsValid(e.slot) && CraftInventory.ValidId(e.item) && gearKeys.Add(e.owner + ":" + e.slot),
+                            "invalid or duplicate preset equipment");
+                        gear.Add(new EquippedItem(e.owner, e.slot, e.item));
+                    }
+
+                    var looks = new List<VisualChoice>();
+                    var lookIds = new HashSet<int>();
+                    foreach (VisualDto v in pd.visuals ?? Array.Empty<VisualDto>())
+                    {
+                        Check(v != null && v.instance_id >= 1 && lookIds.Add(v.instance_id) && Enum.IsDefined(typeof(VesselKind), v.vessel),
+                            "invalid preset visual");
+                        looks.Add(new VisualChoice(v.instance_id, (VesselKind)v.vessel));
+                    }
+
+                    save._presets[pd.slot] = new LoadoutPreset(pd.name, pparty, pairs, gear, looks);
+                }
+            }
+            if (dto.version >= 13)
+            {
+                save.CharacterId = dto.character_id ?? string.Empty;
+                save.FriendId = dto.friend_id ?? string.Empty;
+                save.RivalId = dto.rival_id ?? string.Empty;
+                save.RivalStarterId = dto.rival_starter_id ?? string.Empty;
+                save.FriendStarterId = dto.friend_starter_id ?? string.Empty;
+                save.TutorialDone = dto.tutorial_done;
+            }
+            else
+            {
+                save.TutorialDone = save._owned.Count > 0 || !string.IsNullOrEmpty(save.StarterLine);
+            }
+
+            foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
         }
 
@@ -680,6 +1071,37 @@ namespace Cosmimera.Save
             public EggDto[] eggs;
             public CraftDto[] craft_stock;
             public EquipmentDto[] equipment;
+            public CodexDto[] codex;
+            public PresetDto[] presets;
+            public string character_id;
+            public string friend_id;
+            public string rival_id;
+            public string rival_starter_id;
+            public string friend_starter_id;
+            public bool tutorial_done;
+        }
+
+        [Serializable] private sealed class PresetDto
+        {
+            public int slot;
+            public string name;
+            public int[] party;
+            public PartnerDto[] partners;
+            public EquipmentDto[] equipment;
+            public VisualDto[] visuals;
+        }
+
+        [Serializable] private sealed class VisualDto
+        {
+            public int instance_id;
+            public int vessel;
+        }
+
+        [Serializable] private sealed class CodexDto
+        {
+            public int kind;
+            public string id;
+            public int level;
         }
 
         [Serializable] private sealed class EquipmentDto
@@ -722,6 +1144,8 @@ namespace Cosmimera.Save
             public int vessel;
             public int visual_vessel;
             public int exp;
+            public string niche_id;
+            public int habit;
         }
 #pragma warning restore 0649, IDE1006
     }

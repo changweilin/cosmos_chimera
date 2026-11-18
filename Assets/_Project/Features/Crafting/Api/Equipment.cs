@@ -116,11 +116,14 @@ namespace Cosmimera.Crafting
             PlayerHpPercent = ReadDelta(json["player"], "max_hp_percent", 0, 100);
             PlayerSpeedPercent = ReadDelta(json["player"], "move_speed_percent", -50, 100);
             PlayerRollPercent = ReadDelta(json["player"], "roll_cooldown_percent", -50, 100);
+            PlayerYinDefence = ReadOptional(json["player"], "yin_defense", 0, MaxPlayerDefence);
+            PlayerYangDefence = ReadOptional(json["player"], "yang_defense", 0, MaxPlayerDefence);
             IsWeapon = Kind == EquipmentKind.OneHanded || Kind == EquipmentKind.TwoHanded;
             if (IsWeapon != (json["weapon"] != null)) throw new InvalidDataException("Weapon data must match a weapon kind");
             if (IsWeapon)
             {
-                if (Target == "player" || PlayerHpPercent != 0 || PlayerSpeedPercent != 0 || PlayerRollPercent != 0)
+                if (Target == "player" || PlayerHpPercent != 0 || PlayerSpeedPercent != 0 || PlayerRollPercent != 0 ||
+                    PlayerYinDefence != 0 || PlayerYangDefence != 0)
                     throw new InvalidDataException("Weapons give the player nothing");
                 JToken w = json["weapon"];
                 Weapon = new WeaponProfile(ParseElement((string)w["element"]), ReadDelta(w, "element_mastery", 0, 100),
@@ -142,6 +145,11 @@ namespace Cosmimera.Crafting
                     case "evasion_mod_percent": type = EffectType.EvasionModPercent; break;
                     case "move_speed_mod_percent": type = EffectType.MoveSpeedModPercent; break;
                     case "range_mod_percent": type = EffectType.RangeModPercent; break;
+                    case "accuracy_mod": type = EffectType.AccuracyMod; break;
+                    case "crit_rate_mod": type = EffectType.CritRateMod; break;
+                    case "crit_damage_mod": type = EffectType.CritDamageMod; break;
+                    case "stagger_capacity_mod_percent": type = EffectType.StaggerCapacityModPercent; break;
+                    case "block_reduction_mod": type = EffectType.BlockReductionMod; break;
                     default: throw new InvalidDataException("Equipment effect must be a continuous modifier");
                 }
                 int delta = ReadDelta(effect["params"], "delta", -100, 100);
@@ -179,6 +187,12 @@ namespace Cosmimera.Crafting
             return element;
         }
 
+        // Defence keys came after the first item drafts; absent means the item adds no defence.
+        private static int ReadOptional(JToken value, string name, int min, int max)
+        {
+            return value?[name] == null ? 0 : ReadDelta(value, name, min, max);
+        }
+
         private static int ReadDelta(JToken value, string name, int min, int max)
         {
             JToken field = value?[name];
@@ -208,6 +222,15 @@ namespace Cosmimera.Crafting
         /// <summary>Player roll cooldown modifier in percent.</summary>
         /// <remarks>Pre: none. Post: -50..100; 0 for weapons. Side effects: none.</remarks>
         public int PlayerRollPercent { get; }
+        /// <summary>Upper bound of one item's player defence points (data contract, not a balance target).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxPlayerDefence = 1000;
+        /// <summary>Player yin defence points added on top of the level base (combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: 0..MaxPlayerDefence; 0 for weapons. Side effects: none.</remarks>
+        public int PlayerYinDefence { get; }
+        /// <summary>Player yang defence points added on top of the level base (combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: 0..MaxPlayerDefence; 0 for weapons. Side effects: none.</remarks>
+        public int PlayerYangDefence { get; }
         /// <summary>Permanent creature modifiers, applied independently of partner traits.</summary>
         /// <remarks>Pre: none. Post: immutable non-instant effects. Side effects: none.</remarks>
         public IReadOnlyList<EffectSpec> CreatureEffects { get; }

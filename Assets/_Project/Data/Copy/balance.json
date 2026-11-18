@@ -1,7 +1,9 @@
 {
   "model_version": 1,
   "stat_effective_cap": 10000,
-  "hp": {"base": 600, "gain": 900, "half_stat": 100},
+  "hp": {"base": 600, "gain": 900, "half_stat": 100, "per_point": 10},
+  "shared_base_stat": 100,
+  "damage": {"ratio_min_permille": 250, "ratio_max_permille": 4000},
   "melee_volume": {"gain_permille": 1000, "half_stat": 100},
   "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000, "horizon_factor_permille": 775, "horizon_eye_height_mm": 1700},
   "cd": {"min_permille": 400, "half_stat": 100, "floor_ms": 250},
@@ -22,21 +24,22 @@
   "team": {"switch_cooldown_ms": 3000},
   "field": {"tick_ms": 1000},
   "effects": {"multiplier_min_percent": 10, "multiplier_max_percent": 300},
-  "player": {"max_hp": 1000, "roll_duration_ms": 600, "roll_invulnerable_ms": 400, "roll_cooldown_ms": 800},
-  "field_utilities": {"weather_control_cooldown_ms": 180000},
+  "crit": {"base_rate_permille": 50, "base_damage_percent": 150},
+  "player": {"max_hp": 1000, "roll_duration_ms": 600, "roll_invulnerable_ms": 400, "roll_cooldown_ms": 800, "base_defense": 100},
+  "field_utilities": {"weather_control_cooldown_ms": 180000, "harvest_damage_permille": 2000},
   "reference_move": {"cooldown_ms": 2000, "accuracy_percent": 100, "base_range_mm": 24000},
-  "capture": {"base_percent": 60, "boss_percent": 100},
+  "capture": {"base_percent": 60, "boss_percent": 100, "friendly_bonus_percent": 25},
   "stagger": {"gauge_hp_permille": 300, "regen_delay_ms": 3000, "regen_permille_per_s": 200, "duration_ms": 2000, "damage_taken_bonus_percent": 25, "knockback_hp_permille": 150, "knockback_mm": 1500},
   "block": {"base_permille": 350, "stance_hp_permille": 400, "stance_regen_delay_ms": 2000, "stance_regen_permille_per_s": 250, "guard_break_ms": 1500, "perfect_window_ms": 150, "move_speed_permille": 500, "reflect_percent": 25, "shield_permille": 750},
-  "equipment": {"two_handed_damage_percent": 30, "dual_wield_speed_percent": 15},
+  "equipment": {"two_handed_damage_percent": 35, "dual_wield_speed_percent": 25},
   "creature_roll": {"duration_ms": 600, "invulnerable_ms": 400, "cooldown_ms": 800, "perfect_dodge_ms": 150, "distance_height_permille": 1500},
   "boss": {"windup_permille": 1500, "enrage": [{"hp_below_percent": 66, "move_speed_percent": 15, "cd_reduction_percent": 15}, {"hp_below_percent": 33, "move_speed_percent": 30, "cd_reduction_percent": 30}]},
   "materials": {"normal": {"tier": 1, "chance_percent": 10, "qty": 1}, "elite": {"tier": 2, "chance_percent": 60, "qty": 1}, "boss": {"tier": 3, "chance_percent": 100, "qty": 1}},
   "ai": {"keep_distance_permille": 800, "close_in_permille": 500, "hold_permille": 900, "follow_leash_mm": 6000, "territory_mm": {"avoidant": 0, "vigilant": 4000, "tolerant": 8000, "territorial": 14000, "aggressive": 20000, "dominant": 28000}, "body_mm": {"xs": 200, "s": 400, "m": 700, "l": 1100, "xl": 1600, "character": 350}},
-  "stage_bands": {
-    "juvenile": {"min_stat": 10, "max_stat": 50, "total_stats": 100},
-    "adolescent": {"min_stat": 25, "max_stat": 100, "total_stats": 200},
-    "adult": {"min_stat": 50, "max_stat": 200, "total_stats": 400}
+  "stat_budget": {
+    "base": {"juvenile": 400, "adolescent": 500, "adult": 600, "overload": 720},
+    "per_extra_star_percent": 10,
+    "tolerance_percent": 5
   },
   "progression": {
     "level_max": 100,
@@ -49,7 +52,7 @@
     "appeared_weight": 4,
     "reserve_weight": 2,
     "rewards": {
-      "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640},
+      "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640, "trainer": 160},
       "reference_level": 10,
       "elite_multiplier": 2,
       "wild_level": {"boss_level_min": 5, "boss_level_max": 75, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_ice_snowman_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_ice_snowman_juvenile
+  lineId: cr_ice_snowman
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: da3346b48c2f9fc44a001b4e68340c73, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: e722903ce01b67d4aa8c7f6e3237c36f, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 5
+    tier: 1
+    qty: 3
+  resist: 00000000000000000a00000000000000ecffffff1400000005000000000000000000000000000000
+  mastery:
+  - element: 5
+    value: 15
+  stats:
+    hp: 104
+    speed: 24
+    yinAtk: 72
+    yangAtk: 40
+    yinDef: 80
+    yangDef: 80
+  signatureMove: {fileID: 11400000, guid: 3d6605c1e2c51f44cb83a3eb4d7d8cae, type: 2}
+  trait: {fileID: 11400000, guid: 95cc5be1bdd9dfd46b9a09ffe55cf438, type: 2}
+  fieldUtility: 17
+  conceptJson: "{\"name_zh\":\"\u7D68\u96EA\u5FAE\u9310\u7403\",\"name_en\":null,\"stage_look\":\"*
+    \u4E3B\u9AD4\u69CB\u9020 (Snow_Base / Snow_Head)\uFF1A\u7531\u4E0A\u4E0B\u5169\u9846\u6E3E\u5713\u98FD\u6EFF\u3001\u8868\u9762\u5E36\u6709\u81EA\u7136\u98A8\u5439\u58D3\u96EA\u51F9\u51F8\u8CEA\u611F\u7684\u7C97\u7CD9\u96EA\u7403\u758A\u5408\u800C\u6210\u3002\u7D14\u767D\u96EA\u5C64\u5177\u5099\u67D4\u548C\u7684\u6B21\u8868\u9762\u6563\u5C04\uFF08Subsurface
+    Scattering 0.35\uFF09\uFF0C\u5728\u661F\u5149\u4E0B\u5448\u73FE\u84EC\u9B06\u900F\u5149\u7684\u7C89\u96EA\u8CEA\u611F\u3002\\n*
+    \u982D\u9802\u659C\u63D2\u5C0F\u51B0\u9310 (Ice_Crystal)\uFF1A\u982D\u9802\u53F3\u4E0A\u65B9\u659C\u63D2\u8457\u4E00\u6839\u534A\u900F\u660E\u7684\u6DE1\u9752\u85CD\u516D\u7A1C\u5C0F\u51B0\u9310\uFF0C\u5982\u540C\u6234\u6B6A\u7684\u51B0\u6676\u5C0F\u5C16\u5E3D\uFF0C\u80FD\u4F5C\u70BA\u611F\u77E5\u5927\u6C23\u6FD5\u5EA6\u8207\u6EAB\u5EA6\u7684\u5929\u7136\u5929\u7DDA\uFF0C\u5728\u4F11\u7720\u6216\u8B66\u6212\u6642\u6703\u5076\u723E\u5FAE\u5E45\u986B\u52D5\u3002\\n*
+    \u6D6E\u7A7A\u5C0F\u96EA\u584A\u5C0F\u624B (L_IceArm_01..02 / R_IceArm_01..02)\uFF1A\u8EAB\u9AD4\u5169\u5074\u7531\u5FAE\u5F31\u5BD2\u971C\u78C1\u5834\u6258\u8209\u8457\u5169\u5718\u5713\u6EFE\u7684\u6D6E\u7A7A\u5C0F\u96EA\u584A\uFF0C\u524D\u7AEF\u5404\u7DB4\u6709\u4E00\u679A\u5C0F\u5DE7\u7684\u516B\u9762\u9AD4\u51B0\u6676\u6307\u5C16\uFF0C\u7DAD\u6301\u7121\u91CD\u529B\u6C89\u6D6E\u3002\\n*
+    \u51B0\u85CD\u773C\u7738\u8207\u521D\u751F\u51B0\u6838 (Frost_Glow)\uFF1A\u9762\u90E8\u5D4C\u6709\u4E00\u5C0D\u6563\u767C\u67D4\u548C\u51B0\u85CD\u81EA\u767C\u5149\u7684\u6676\u77F3\u773C\u7738\uFF0C\u80F8\u8154\u5167\u90E8\u96B1\u7D04\u900F\u51FA\u521D\u751F\u51B0\u6838\u7684\u5FAE\u5149\u3002\u79FB\u52D5\u6642\u4E0D\u4F9D\u8CF4\u96D9\u8DB3\u884C\u8D70\uFF0C\u800C\u662F\u4EE5\u5E95\u76E4\u96EA\u7403\u5728\u5730\u9762\u5E73\u6ED1\u6469\u64E6\u6ED1\u884C\u4EE3\u6B65\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_ice_snowman/cr_ice_snowman_juvenile_05_wiki.md\",\"sha256\":\"ab03aa22f45a2c2e0554461e5dbd9db689274d5adb5420f1bd96e97dbb68f78c\",\"drive_file_id\":\"1ol-PZ1mDCLBKo91RH3m_WVf8WiI7ObC0\"},\"status\":\"review_required\",\"gameplay_archetype\":\"ice_frost_fledgling\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

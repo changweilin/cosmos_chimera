@@ -73,7 +73,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -153,7 +153,7 @@ namespace Cosmimera.Combat.Tests
             EncounterUnit wild = e.AddWildT(Creature("w", Habit.Dominant), null, AtMeters(0f), 10);
             float3 player = _planet.ToWorld(AtMeters(10f), 0f);
             // Without vitals the character is not a target and the engaged wild would just hold position.
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
             for (long now = Dt; now <= 20_000; now += Dt)
             {
                 e.Tick(now, Dt, player, Free, CombatAi.NoTarget);
@@ -176,7 +176,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId("d");
             TestWild.WithHabit(c, Habit.Dominant).Set("line_d", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -189,7 +189,7 @@ namespace Cosmimera.Combat.Tests
             {
                 var e = new Encounter(_planet, _balance, surface, 3);
                 EncounterUnit wild = e.AddWildT(Dasher(), null, AtMeters(0f), 10);
-                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
                 e.Provoke(wild.Id);
                 float3 player = _planet.ToWorld(AtMeters(1f), 0f);
                 cast = false;

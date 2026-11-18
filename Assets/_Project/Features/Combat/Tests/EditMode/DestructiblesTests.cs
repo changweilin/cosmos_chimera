@@ -55,6 +55,23 @@ namespace Cosmimera.Combat.Tests
         private static DestructibleTable Table() => new DestructibleTable(Env());
 
         [Test]
+        public void Only_registered_live_objects_can_move_to_a_finite_center()
+        {
+            var table = Table();
+            int slot = table.Register(7, Composition.Of(Wood), 1, float3.zero);
+            var moved = new float3(3, -4, 5);
+            table.MoveCenter(slot, moved);
+            Assert.That(table.CenterOf(slot), Is.EqualTo(moved));
+            Assert.Throws<ContractException>(() => table.MoveCenter(-1, moved));
+            Assert.Throws<ContractException>(() => table.MoveCenter(slot, new float3(float.NaN)));
+            table.Unregister(7);
+            Assert.Throws<ContractException>(() => table.MoveCenter(slot, moved));
+            table.Register(7, Composition.Of(Wood), 1, moved);
+            table.ApplyHit(slot, Element.Fire, 100000, 0, 0);
+            Assert.Throws<ContractException>(() => table.MoveCenter(slot, moved));
+        }
+
+        [Test]
         public void Hp_scales_with_volume_and_has_a_floor_of_one()
         {
             DestructibleTable t = Table();

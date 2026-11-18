@@ -30,10 +30,13 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 動到星球內容生成（地貌、道路建築、程序化、BOSS、任務） | `docs/design/planet-world.md` |
 | 建築造型（地區×時代、主副風格、新舊毀損）、城牆、工廠、隧道、交通工具 | `docs/design/settlement-structures.md` |
 | 宙獸資料、屬性、能力值、進化、副手、關係表 | `docs/design/creatures.md` |
-| 生活招式／特性與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
-| 戰鬥、招式、CD、命中、召喚輪替 | `docs/design/combat.md` |
+| 生活主動技／被動技與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
+| 戰鬥、主動技、CD、命中、召喚輪替 | `docs/design/combat.md` |
 | 打擊感、頓幀震屏、格擋、地城氛圍、BOSS 戰回饋 | `docs/design/combat-feel.md` |
+| 天氣、時段（清晨／白天／黃昏／夜晚）、地形限定異象 | `docs/design/weather.md` |
 | 場景物件受擊、材質、破壞、剛體 | `docs/design/destructibles.md` + `docs/decisions/ADR-0009-destructible-physics.md` |
+| 新手任務（選角、好友／宿敵、御三家、初戰、首次 BOSS） | `docs/design/beginner-quest.md` |
+| 地形試煉（道館式）、戰鬥旅人、訓練家對戰 | `docs/design/trainer-battles.md` |
 | 大廳、星海選星、圖鑑、收服/取蛋 | `docs/design/lobby-meta.md` |
 | 連線、同步、存檔 | `docs/design/multiplayer.md` + `docs/architecture/netcode.md` |
 | AI 批次設計宙獸概念 | `docs/design/creature-concept-pipeline.md` |

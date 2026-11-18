@@ -1,6 +1,8 @@
 [
   {
     "id": "sample_poison_strike",
+    "star": 1,
+    "polarity": "yin",
     "element": "poison",
     "kind": "damage",
     "power": 30,

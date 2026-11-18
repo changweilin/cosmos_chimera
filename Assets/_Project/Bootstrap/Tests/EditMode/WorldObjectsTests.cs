@@ -62,6 +62,89 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Field_culture_v3_replays_the_three_families_on_one_road()
+        {
+            var regions = new[] { new RunRegion(0, VillageAt, new[] { 1 }, "forest", null, 1, 0),
+                new RunRegion(1, RuinAt, new[] { 0 }, "coast", null, 1, 1) };
+            var road = new RunRoad(RoadClass.Main, 0, 1, 4f, new[] { VillageAt, RuinAt }, new bool[2]);
+            var layout = new RunLayout(new[] { road }, new RunSettlement[0], new RunBuilding[0]);
+            var plan = new RunPlan(7, "verdant_planet", null, regions, 0, 1, new[] { 0, 1 }, new RunSpawn[0],
+                new RunQuestStep[0], VillageAt);
+            var field = FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => true, d => false);
+            Assert.That(FieldSpecimen.GeneratorVersion, Is.EqualTo(3));
+            var snapshot = File.ReadAllLines(Path.Combine(Application.dataPath, "_Project/Bootstrap/Tests/Snapshots/field-culture-v3.txt"));
+            Assert.That(field.ConvertAll(s => $"{s.Style},{s.Duty},{s.Age},{s.Damage}"), Is.EqualTo(snapshot));
+            Assert.That(FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => false, d => false), Is.Empty);
+        }
+
+        [Test]
+        public void Land_vehicles_shuttle_the_whole_clear_stretch_of_their_road()
+        {
+            var regions = new[] { new RunRegion(0, VillageAt, new[] { 1 }, "forest", null, 1, 0),
+                new RunRegion(1, RuinAt, new[] { 0 }, "coast", null, 1, 1) };
+            float roadM = math.distance(VillageAt, RuinAt) * Planet.Radius;
+            int count = (int)math.ceil(roadM / 6f) + 1;
+            var points = new float3[count];
+            for (int i = 0; i < count; i++) points[i] = math.normalize(math.lerp(VillageAt, RuinAt, i / (float)(count - 1)));
+            var road = new RunRoad(RoadClass.Main, 0, 1, 4f, points, new bool[count]);
+            var layout = new RunLayout(new[] { road }, new RunSettlement[0], new RunBuilding[0]);
+            var plan = new RunPlan(7, "verdant_planet", null, regions, 0, 1, new[] { 0, 1 }, new RunSpawn[0],
+                new RunQuestStep[0], VillageAt);
+            Assume.That(roadM, Is.GreaterThan(FieldSpecimen.MinLongRouteM + 20f));
+            System.Func<float3, bool> beyondVillage = d => math.distance(d, VillageAt) * Planet.Radius > 10f;
+            var field = FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, beyondVillage, d => false);
+            FieldSpecimen vehicle = field.Find(s => !s.Animal && s.Form > FieldForm.Hoist);
+            Assert.That(vehicle, Is.Not.Null);
+            float3 first = math.normalize(vehicle.RouteSurface(0)), last = math.normalize(vehicle.RouteSurface(vehicle.RouteCount - 1));
+            Assert.That(math.distance(first, VillageAt) * Planet.Radius, Is.InRange(10f, 16f));
+            Assert.That(math.distance(last, RuinAt) * Planet.Radius, Is.LessThan(0.5f));
+        }
+
+        private static RunRoad Straight(RoadClass roadClass, int from, int to, float3 a, float3 b)
+        {
+            int count = (int)math.ceil(math.distance(a, b) * Planet.Radius / 6f) + 1;
+            var points = new float3[count];
+            for (int i = 0; i < count; i++) points[i] = math.normalize(math.lerp(a, b, i / (float)(count - 1)));
+            return new RunRoad(roadClass, from, to, roadClass == RoadClass.Main ? 4f : 2.5f, points, new bool[count]);
+        }
+
+        [Test]
+        public void Some_land_vehicles_drive_one_way_round_a_closed_road_cycle()
+        {
+            float3 far = math.normalize(new float3(0, 1, 1));
+            var regions = new[] { new RunRegion(0, VillageAt, new[] { 1, 2 }, "forest", null, 1, 0),
+                new RunRegion(1, RuinAt, new[] { 0, 2 }, "coast", null, 1, 1),
+                new RunRegion(2, far, new[] { 0, 1 }, "forest", null, 1, 1) };
+            var layout = new RunLayout(new[] { Straight(RoadClass.Main, 0, 1, VillageAt, RuinAt),
+                Straight(RoadClass.Trail, 0, 2, VillageAt, far), Straight(RoadClass.Loop, 1, 2, RuinAt, far) },
+                new RunSettlement[0], new RunBuilding[0]);
+            int loops = 0, shuttles = 0;
+            for (ulong seed = 1; seed <= 60; seed++)
+            {
+                var plan = new RunPlan(seed, "verdant_planet", null, regions, 0, 1, new[] { 0, 1 }, new RunSpawn[0],
+                    new RunQuestStep[0], VillageAt);
+                foreach (FieldSpecimen s in FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, seed, d => 1f, d => true, d => false))
+                {
+                    if (s.Animal || s.Form <= FieldForm.Hoist) continue;
+                    if (!s.Loop) { shuttles++; continue; }
+                    loops++;
+                    Assert.That(math.distance(s.RouteUp(0), s.RouteUp(s.RouteCount - 1)), Is.LessThan(1e-4f));
+                    foreach (int k in new[] { 0, s.RouteCount / 3, 2 * s.RouteCount / 3 })
+                        Assert.That(math.distance(s.RouteUp(k), s.RouteUp(k + 1)) * Planet.Radius, Is.LessThan(4f));
+                    for (long t = 0; t < 600_000; t += 37_000)
+                    {
+                        s.Step(t);
+                        float3 at = s.Position, facing = s.Facing;
+                        s.Step(t + 500);
+                        Assert.That(math.dot(s.Position - at, facing), Is.GreaterThan(0f), $"seed {seed} t {t}: reversed");
+                    }
+                }
+            }
+            Assert.That(loops, Is.GreaterThan(0));
+            Assert.That(shuttles, Is.GreaterThan(loops));
+        }
+
+        [Test]
         public void Gathering_queries_only_nearby_intact_scatter_and_preserves_the_source_kind()
         {
             Rig r = Build();

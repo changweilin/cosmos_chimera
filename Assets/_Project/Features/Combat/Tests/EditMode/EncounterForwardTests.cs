@@ -55,7 +55,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, Habit.Aggressive).Set("line_" + id, CreatureStage.Juvenile, size, AiStyle.Charge,
                 null, null, 0, new List<EvolutionMaterial>(), new int[10],
-                new List<ElementValue> { new ElementValue(Element.Fire, 15) }, new CreatureStats(25, 25, 25, 25), m, null,
+                new List<ElementValue> { new ElementValue(Element.Fire, 15) }, new CreatureStats(78, 25, 25, 25, 25, 25), m, null,
                 "{}", false);
             return c;
         }

@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_earth_golem_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_earth_golem_juvenile
+  lineId: cr_earth_golem
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 15ae3551e17c51b4e8ccac0140008d91, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: de7a96f7337442c4d9822a6d6d6f4dab, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 4
+    tier: 1
+    qty: 3
+  resist: 000000000000000000000000050000001400000000000000ecffffff0a0000000000000000000000
+  mastery:
+  - element: 4
+    value: 15
+  stats:
+    hp: 100
+    speed: 20
+    yinAtk: 80
+    yangAtk: 80
+    yinDef: 60
+    yangDef: 60
+  signatureMove: {fileID: 11400000, guid: 170ce7bb174284a42b084b918ea83617, type: 2}
+  trait: {fileID: 11400000, guid: f735ffdf2062f93469199688adba577e, type: 2}
+  fieldUtility: 19
+  conceptJson: "{\"name_zh\":\"\u840C\u82BD\u5713\u58A9\u6CE5\u5076\",\"name_en\":null,\"stage_look\":\"*
+    \u5713\u58A9\u58A9\u7684\u9023\u9AD4\u6CE5\u584A\u8EC0\u5E79 (Hips_Stone / Spine_01
+    / Clay_Joint)\uFF1A\u4E3B\u9AD4\u7531\u6EAB\u6F64\u98FD\u6EFF\u7684\u9AD8\u5BC6\u5EA6\u9EC3\u571F\u9676\u6CE5\u634F\u5408\u800C\u6210\uFF0C\u5448\u73FE\u6E3E\u5713\u53EF\u611B\u7684\u846B\u8606\u58A9\u9020\u578B\u3002\u6CE5\u571F\u8868\u9762\u5E36\u6709\u5FAE\u6FD5\u6F64\u7684\u9676\u571F\u5149\u6FA4\uFF08Roughness
+    0.70\uFF09\uFF0C\u8179\u90E8\u8207\u5927\u8166\u888B\u4E4B\u9593\u5B8C\u5168\u7121\u7E2B\u5BE6\u5FC3\u9023\u63A5\uFF0C\u809A\u76AE\u5F8C\u65B9\u9472\u5D4C\u8457\u4E00\u584A\u5929\u7136\u98A8\u5316\u7684\u6696\u8272\u9D5D\u5375\u77F3\u8B77\u7247\u3002\\n*
+    \u77ED\u7C97\u96D9\u817F\u8207\u5C0F\u5CA9\u638C (L_Thigh / R_Thigh / L_StoneFoot
+    / R_StoneFoot)\uFF1A\u4E0B\u534A\u8EAB\u70BA\u4E00\u5C0D\u77ED\u7C97\u6566\u5BE6\u7684\u9EC3\u571F\u6CE5\u67F1\u5C0F\u817F\uFF0C\u7A69\u7A69\u8E29\u5728\u5169\u584A\u539A\u5BE6\u7684\u516B\u89D2\u6241\u5E73\u5C0F\u77F3\u9774\u4E0A\uFF1B\u8EAB\u9AD4\u5DE6\u53F3\u5169\u5074\u4F38\u51FA\u5713\u6F64\u7684\u77ED\u6CE5\u81C2\uFF0C\u672B\u7AEF\u5305\u88F9\u8457\u5C0F\u5DE7\u7684\u5713\u77F3\u62F3\u982D\uFF0C\u884C\u8D70\u6642\u6B65\u5C65\u6C89\u7A69\u537B\u5E36\u8457\u61A8\u614B\u53EF\u63AC\u7684\u5DE6\u53F3\u6416\u64FA\u3002\\n*
+    \u982D\u9802\u5C0F\u5AE9\u8349\u8207\u7121\u906E\u64CB\u61A8\u539A\u4E94\u5B98
+    (Head_Boulder / Amber_Core)\uFF1A\u5713\u6EFE\u6EFE\u7684\u6CE5\u5076\u8166\u888B\u9802\u7AEF\u7834\u571F\u9577\u51FA\u4E00\u64AE\u5145\u6EFF\u751F\u6A5F\u7684\u4E09\u8449\u7FE0\u7DA0\u5C0F\u5AE9\u8349\uFF0C\u96A8\u6B65\u4F10\u8F15\u8F15\u6643\u52D5\u3002\u6B63\u9762\uFF08-Y
+    \u65B9\u5411\uFF09\u8996\u91CE 100% \u6DE8\u7A7A\u7121\u906E\u64CB\uFF0C\u984D\u982D\u4E0A\u65B9\u9EDE\u7DB4\u8457\u5169\u5C0F\u584A\u9D5D\u5375\u77F3\u7709\u6BDB\uFF0C\u4E0B\u65B9\u9472\u5D4C\u8457\u4E00\u5C0D\u6563\u767C\u6EAB\u6F64\u6DF1\u9EC3\u5149\u8292\u7684\u5713\u65B9\u7425\u73C0\u5927\u773C\u8207\u5FAE\u7B11\u6CE5\u7E2B\u5634\uFF0C\u80F8\u53E3\u5247\u900F\u51FA\u521D\u751F\u5C0F\u7425\u73C0\u6838\u7684\u67D4\u548C\u5FAE\u5149\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_earth_golem/cr_earth_golem_juvenile_05_wiki.md\",\"sha256\":\"a40827c1edeed8a08e39bb67493ceeee8c9bde8f1d71a94d96083a0df86bd03e\",\"drive_file_id\":\"19nOTLUm1JLiTzzB6IlBkECMjyEG68chu\"},\"status\":\"review_required\",\"gameplay_archetype\":\"earth_pebble_pawn\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

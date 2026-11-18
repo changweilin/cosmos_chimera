@@ -32,8 +32,8 @@
 ### 輸入
 - 已存在的 ID（不得重用；含 `Data/retired-ids.txt`）：{{EXISTING_IDS}}
 - 原型資料（只用上表指定的 ID，取**意象**，id／名稱不得含神祇或人物真名）：{{ARCHETYPE_ROWS}}
-- 可引用的招式 ID（**未被任何宙獸使用**的）：{{FREE_MOVES}}
-- 可引用的特性 ID（**未被任何宙獸使用**的）：{{FREE_TRAITS}}
+- 可引用的主動技 ID（**未被任何宙獸使用**的）：{{FREE_MOVES}}
+- 可引用的被動技 ID（**未被任何宙獸使用**的）：{{FREE_TRAITS}}
 - 命名風格：英文 snake_case、`<屬性>_<名詞>[_<名詞>]`，同線三階詞根可辨識；id 全域唯一、`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`、≤ 64 字元。
 
 ### creatures 規則（每隻都必須符合，違反者整批退回）
@@ -53,7 +53,7 @@
 - `size_class`：幼年 XS／S、少年 M（可 L）、成年 L／XL；以身長界線為準（`creatures.md#體型級距`）。
 - `ai_style` 對齊 `signature_move` 的 `movement`／`range_class`（遠距→`keep_distance`、突進→`charge`、繞背→`flank`、近戰定點→`hold`）。
 - `niches` 逐隻指定候選棲位與正整數權重（`[{"niche": "<Data/_demo/niches 的 id>", "weight": n}]`），依外觀基底與角色挑 2–3 個；**各候選棲位 `habitat_kinds` 的聯集必須涵蓋全部 24 種地貌**（通常至少含一個 `niche_opportunistic_omnivore` 或 `niche_carrion_scavenger`）。習性由棲位抽出，不逐隻指定（`creature-ecology.md`）。
-- `signature_move`：從「可引用的招式」挑，**屬性與主屬性相同**，威力逐階遞增，整批不重複；`trait`：同線三階共用一個特性，整批不重複。
+- `signature_move`：從「可引用的主動技」挑，**屬性與主屬性相同**，威力逐階遞增，整批不重複；`trait`：同線三階共用一個被動技，整批不重複。
 - `concept` 必填鍵：`base`（外觀基底，生物／人形／器械／載具可複合）、`stage_look`、`archetype`（上表 ID）、`region`（上表地區原文）、`motifs_used`（陣列，僅意象）、`role`、`palette`。**不得填 `sensitivity`**，原型為 `review` 者本來就不在配額內。
 - 外觀意象與專精／抗性各自設計，不必強制一一對應（Q-C27）。
 
@@ -62,7 +62,7 @@
 - 格式 `{"a","b","kind","note"}`，**`a` 字典序小於 `b`**，無重複；`note` 為開發備註，說明同線進化即可。
 
 ### 自檢清單（輸出前逐項確認，不輸出）
-四維總和／範圍 · 弱點恰一個 · 抗性十鍵 · id 唯一且未被使用 · 招式屬性與威力遞增 · 特性整批不重複 · 無 `apex` · 無真名 id · edges `a < b`。
+四維總和／範圍 · 弱點恰一個 · 抗性十鍵 · id 唯一且未被使用 · 主動技屬性與威力遞增 · 被動技整批不重複 · 無 `apex` · 無真名 id · edges `a < b`。
 
 ## PROMPT 結束
 

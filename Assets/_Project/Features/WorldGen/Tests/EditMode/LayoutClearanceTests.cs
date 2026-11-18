@@ -129,6 +129,51 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => c.IsInsideBuilding(float3.zero, 0f));
             Assert.Throws<ContractException>(() => c.IsInsideBuilding(new float3(0, 1, 0), -1f));
             Assert.Throws<ContractException>(() => c.IsInsideBuilding(new float3(0, 1, 0), float.PositiveInfinity));
+            Assert.Throws<ContractException>(() => c.SettlementRadiusM(-1));
+            Assert.Throws<ContractException>(() => c.SettlementRadiusM(1));
+            Assert.Throws<ContractException>(() => c.IsInsideSettlement(float3.zero, 0f));
+            Assert.Throws<ContractException>(() => c.IsInsideSettlement(new float3(0, 1, 0), -0.1f));
+            Assert.Throws<ContractException>(() => c.IsInsideSettlement(new float3(0, 1, 0), float.NaN));
+            Assert.Throws<ContractException>(() => c.IsContainedInSettlement(-1, new float3(0, 1, 0), 0f));
+            Assert.Throws<ContractException>(() => c.IsContainedInSettlement(0, float3.zero, 0f));
+            Assert.Throws<ContractException>(() => c.IsContainedInSettlement(0, new float3(0, 1, 0), -0.1f));
+        }
+
+        [Test]
+        public void Inhabited_settlement_boundary_contains_residents_and_excludes_ruins_and_lairs()
+        {
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.Tribe), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.Town), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.City), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.CityState), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.Village), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.Ruins), Is.False);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.Lair), Is.False);
+
+            var c = new LayoutClearance(Planet, Layout(), 0f);
+            float radiusM = c.SettlementRadiusM(0);
+            Assert.That(radiusM, Is.GreaterThanOrEqualTo(LayoutClearance.MinSettlementRadiusM));
+            float3 center = new float3(0, 1, 0);
+            Assert.That(c.IsInsideSettlement(center, 0f), Is.True);
+            Assert.That(c.IsContainedInSettlement(0, center, 0.5f), Is.True);
+            Assert.That(c.IsInsideSettlement(new float3(0, -1, 0), 5f), Is.False, "antipode");
+
+            float3 justOutsideM = NearHouse(new float3(radiusM + 1.5f, 0f, 0f));
+            Assert.That(c.IsInsideSettlement(justOutsideM, 0f), Is.False);
+            Assert.That(c.IsInsideSettlement(justOutsideM, 2f), Is.True);
+            Assert.That(c.IsContainedInSettlement(0, justOutsideM, 0f), Is.False);
+
+            var ruin = new RunBuilding(0, BuildingKind.Hall, new float3(0, 1, 0), new float3(1, 0, 0), 6f, 4f, 0);
+            var ruins = new RunSettlement(0, 0, SettlementKind.Ruins, new float3(0, 1, 0), 0, 1);
+            var lairPillar = new RunBuilding(1, BuildingKind.Pillar, new float3(0, -1, 0), new float3(1, 0, 0), 4f, 4f, 0);
+            var lair = new RunSettlement(1, 1, SettlementKind.Lair, new float3(0, -1, 0), 1, 1);
+            var unhabited = new LayoutClearance(Planet,
+                new RunLayout(new RunRoad[0], new[] { ruins, lair }, new[] { ruin, lairPillar }), 0f);
+            Assert.That(unhabited.SettlementRadiusM(0), Is.Zero);
+            Assert.That(unhabited.SettlementRadiusM(1), Is.Zero);
+            Assert.That(unhabited.IsInsideSettlement(new float3(0, 1, 0), 10f), Is.False);
+            Assert.That(unhabited.IsInsideSettlement(new float3(0, -1, 0), 10f), Is.False);
+            Assert.That(unhabited.IsContainedInSettlement(0, new float3(0, 1, 0), 0f), Is.False);
         }
     }
 }

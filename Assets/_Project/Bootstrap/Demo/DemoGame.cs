@@ -5,6 +5,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -22,7 +23,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// </remarks>
     public sealed partial class DemoGame : MonoBehaviour
     {
-        private enum Screen { Lobby, StarSelect, Running, Results }
+        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest }
 
         private sealed class PlanetOption
         {
@@ -31,7 +32,10 @@ namespace Cosmimera.Bootstrap.Demo
             public float Radius;
             public CreatureStage BossStage;
             public WorldGen.PlanetElements Elements;
+            public bool IsBeginnerQuest;
         }
+
+        internal const ulong BeginnerQuestSeed = 20261117UL;
 
         [SerializeField] private GameDatabase _database;
         [SerializeField] private InputActionAsset _actions;
@@ -124,6 +128,11 @@ namespace Cosmimera.Bootstrap.Demo
             _bgm = bgmGo.AddComponent<BgmPlayer>();
             _bgm.Initialize(_bgmTable);
             _bgm.Play(BgmResolver.Town);
+
+            if (!_save.TutorialDone)
+            {
+                EnterBeginnerQuest();
+            }
         }
 
         private void LoadData()
@@ -140,6 +149,15 @@ namespace Cosmimera.Bootstrap.Demo
             _savePath = Path.Combine(Application.persistentDataPath, "lobby.json");
             _save = LobbySave.Load(_savePath, _progression,
                 id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
+            if (LobbyTransactions.MigrateEcology(_save, id => _database.TryGet(id, out CreatureDef d) ? d : null,
+                    _savePath, out LobbySave migrated, out System.Exception migrateError) == CommitStatus.Committed)
+            {
+                _save = migrated;
+            }
+            else if (migrateError != null)
+            {
+                Debug.LogException(migrateError);
+            }
             _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
 
             foreach (GameDef def in _database.All)
@@ -402,6 +420,9 @@ namespace Cosmimera.Bootstrap.Demo
                 case Screen.Results:
                     DrawResults();
                     break;
+                case Screen.BeginnerQuest:
+                    DrawBeginnerQuest();
+                    break;
             }
 
             GUILayout.EndArea();
@@ -447,6 +468,11 @@ namespace Cosmimera.Bootstrap.Demo
 
                 GUILayout.EndHorizontal();
             }
+            if (_save.Owned.Count <= 1)
+            {
+                GUILayout.Label(_copy.Ui("ui.beginner_quest.banner"), _text);
+                GUILayout.Label(_copy.Ui("ui.beginner_quest.hint_lobby"), _text);
+            }
             if (_save.StarterLine == null)
             {
                 GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
@@ -463,7 +489,16 @@ namespace Cosmimera.Bootstrap.Demo
                     if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
                     {
                         LobbySave candidate = _save.Clone();
-                        candidate.ChooseStarter(s.LineId, s.Id, _progression.XpThreshold(_progression.StarterLevel));
+                        int exp = _progression.XpThreshold(_progression.StarterLevel);
+                        if (s.Niches.Count > 0)
+                        {
+                            WildIndividual ind = WildIndividual.Draw(s, null, WildIndividual.KeyFor(0x53545254UL, 1UL));
+                            candidate.ChooseStarter(s.LineId, s.Id, exp, ind.Niche.Id, ind.Habit);
+                        }
+                        else
+                        {
+                            candidate.ChooseStarter(s.LineId, s.Id, exp);
+                        }
                         CommitLobby(candidate);
                         GUIUtility.ExitGUI();
                     }
@@ -628,8 +663,9 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            _database.TryGet(req.NextSpeciesId, out CreatureDef nextDef);
             CommitStatus status = LobbyTransactions.Evolve(_save, o.InstanceId, req, _progression, _savePath,
-                out LobbySave next, out EvolutionResult r, out System.Exception error);
+                out LobbySave next, out EvolutionResult r, out System.Exception error, nextDef);
             if (status == CommitStatus.Committed)
             {
                 _save = next;
@@ -729,7 +765,9 @@ namespace Cosmimera.Bootstrap.Demo
                 string boss = _copy.Ui("ui.star_select.boss_stage")
                     .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
                 string elementsLine = FormatPlanetElements(o.Elements);
-                GUILayout.Label($"{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
+                string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
+                string planetName = _copy.PlanetName(o.Type.Id, o.Seed);
+                GUILayout.Label($"{tag}{planetName}（{_copy.Planet(o.Type.Id)}）   {boss}   {size} (R={o.Radius:0} m)\n" +
                                 $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
@@ -779,7 +817,7 @@ namespace Cosmimera.Bootstrap.Demo
             string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
             GUILayout.Label(title, _title, GUILayout.Height(60));
             GUILayout.Label(_copy.Ui("ui.results.captured_list"), _text);
-            foreach ((string speciesId, VesselKind vessel, int exp) in _outcome.Captured)
+            foreach ((string speciesId, VesselKind vessel, int exp, _, _) in _outcome.Captured)
             {
                 GUILayout.Label("· " + _copy.Name(speciesId) + " LV" + _progression.LevelOf(exp) + "  (" +
                     _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
@@ -838,9 +876,24 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // REQ: docs/roadmap/demo.md + phase-7.md#P7-02 — Demo serves as the beginner quest; slot 0 guarantees
+            // a deterministic starter-friendly verdant asteroid before the player's first wild capture.
+            int startIndex = 0;
+            if (_save.Owned.Count <= 1 && types.Count > 0)
+            {
+                (PlanetTypeDef bType, ulong bSeed, CreatureStage bStage, float bRadius, WorldGen.PlanetElements bElem) =
+                    BuildBeginnerOption(types);
+                _options.Add(new PlanetOption
+                {
+                    Type = bType, Seed = bSeed, BossStage = bStage, Radius = bRadius,
+                    Elements = bElem, IsBeginnerQuest = true,
+                });
+                startIndex = 1;
+            }
+
             // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
             CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
-            for (int i = 0; i < 3 && types.Count > 0; i++)
+            for (int i = startIndex; i < 3 && types.Count > 0; i++)
             {
                 PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
                 ulong seed = _menuRng.NextUInt();
@@ -852,6 +905,32 @@ namespace Cosmimera.Bootstrap.Demo
                     Elements = WorldGen.PlanetElementDraw.Draw(seed, size, t.ElementBias),
                 });
             }
+        }
+
+        /// <summary>Builds the deterministic beginner-quest planet option (verdant asteroid, juvenile boss).</summary>
+        /// <remarks>
+        /// Pre: types is non-null and has at least one entry.
+        /// Post: returns a juvenile-boss 320 m planet option preferring "verdant_planet".
+        /// Side effects: none.
+        /// </remarks>
+        internal static (PlanetTypeDef type, ulong seed, CreatureStage bossStage, float radius, WorldGen.PlanetElements elements)
+            BuildBeginnerOption(IReadOnlyList<PlanetTypeDef> types)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(types != null && types.Count > 0, "types must be non-empty");
+            PlanetTypeDef chosen = types[0];
+            for (int i = 0; i < types.Count; i++)
+            {
+                if (types[i].Id == "verdant_planet")
+                {
+                    chosen = types[i];
+                    break;
+                }
+            }
+
+            const CreatureStage stage = CreatureStage.Juvenile;
+            PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
+            return (chosen, BeginnerQuestSeed, stage, RadiusFor(size),
+                WorldGen.PlanetElementDraw.Draw(BeginnerQuestSeed, size, chosen.ElementBias));
         }
 
         // REQ: planet-world.md#星球尺度 (Q-D1 settled 2026-11-11: asteroids play at 320 m). Explicit per size so a
@@ -905,6 +984,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
                     PlayerExp = _save.PlayerExp,
+                    Codex = _save.Codex,
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
                     WeatherControlCooldownMs = _weatherControlCooldownMs,
@@ -953,6 +1033,24 @@ namespace Cosmimera.Bootstrap.Demo
             if (isActiveAndEnabled && !_menuInput.enabled)
             {
                 _menuInput.Enable();
+            }
+
+            if (_activeRunIsBeginnerQuest)
+            {
+                _activeRunIsBeginnerQuest = false;
+                if (outcome.Victory)
+                {
+                    _save.CompleteTutorial(_bqCharacterId, _bqFriendId, _bqRivalId, _bqRivalStarterId, _bqFriendStarterId);
+                    _save.Codex.Record(Codex.CodexEvent.Capture, _bqCharacterId);
+                    TrySettle();
+                    return;
+                }
+
+                // REQ: beginner-quest.md#失敗與中斷 — failed/abandoned tutorial resets cleanly without saving.
+                _save = LobbySave.Load(_savePath, _progression,
+                    id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
+                EnterBeginnerQuest();
+                return;
             }
 
             TrySettle();

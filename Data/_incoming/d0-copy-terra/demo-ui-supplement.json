@@ -532,8 +532,8 @@
     "en": "[{key}] Roll"
   },
   "ui.hud.trait_label": {
-    "zh-TW": "特性：{trait}",
-    "en": "Trait: {trait}"
+    "zh-TW": "被動技：{trait}",
+    "en": "Passive Skill: {trait}"
   },
   "ui.journal.open": {
     "zh-TW": "冒險手冊",
@@ -576,8 +576,8 @@
     "en": "Use life skills after landing on a planet."
   },
   "ui.partner.hint": {
-    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定招式／特性／超載。",
-    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines move, trait, or overload."
+    "zh-TW": "每隻主力最多 4 隻副手。從倉庫選擇，須有關係連線且副手階段不可高於主力。器皿決定主動技／被動技／超載。",
+    "en": "Up to 4 reserve sub-partners per main. Requires a relation and a stage no higher than the main. Vessel determines active skill, passive skill, or overload."
   },
   "ui.partner.equip": {
     "zh-TW": "裝備副手",
@@ -644,12 +644,12 @@
     "en": "Creatures"
   },
   "ui.codex.kind.1": {
-    "zh-TW": "招式",
-    "en": "Moves"
+    "zh-TW": "主動技",
+    "en": "Active Skills"
   },
   "ui.codex.kind.2": {
-    "zh-TW": "特性",
-    "en": "Traits"
+    "zh-TW": "被動技",
+    "en": "Passive Skills"
   },
   "ui.codex.kind.3": {
     "zh-TW": "關係網",
@@ -676,12 +676,12 @@
     "en": "Resistance"
   },
   "ui.codex.move": {
-    "zh-TW": "招式",
-    "en": "Move"
+    "zh-TW": "主動技",
+    "en": "Active Skill"
   },
   "ui.codex.trait": {
-    "zh-TW": "特性",
-    "en": "Trait"
+    "zh-TW": "被動技",
+    "en": "Passive Skill"
   },
   "ui.codex.power": {
     "zh-TW": "威力",
@@ -1125,7 +1125,7 @@
   },
   "trigger.OnMoveUsed": {
     "zh-TW": "施招時觸發",
-    "en": "On move use"
+    "en": "On active skill use"
   },
   "trigger.OnHpBelow": {
     "zh-TW": "HP 低於門檻時",
@@ -1148,8 +1148,8 @@
     "en": "Resistance"
   },
   "effect.CdModPercent": {
-    "zh-TW": "招式冷卻",
-    "en": "Move cooldown"
+    "zh-TW": "主動技冷卻",
+    "en": "Active skill cooldown"
   },
   "effect.EvasionModPercent": {
     "zh-TW": "閃避",
@@ -1508,16 +1508,16 @@
     "en": "Gale"
   },
   "ui.weather.status": {
-    "zh-TW": "{weather} · {source} · 下次輪替 {seconds}s",
-    "en": "{weather} · {source} · Next cycle in {seconds}s"
+    "zh-TW": "{weather} · {phase} · {source}",
+    "en": "{weather} · {phase} · {source}"
   },
   "ui.weather.natural": {
     "zh-TW": "自然天氣",
     "en": "Natural"
   },
   "ui.weather.controlled": {
-    "zh-TW": "操縱天氣",
-    "en": "Controlled"
+    "zh-TW": "操縱中（剩 {seconds}s）",
+    "en": "Controlled ({seconds}s left)"
   },
   "ui.weather.movement": {
     "zh-TW": "天氣修正：移動 ×{move}／衝刺 ×{sprint}／翻滾 CD ×{roll}",
@@ -1544,12 +1544,12 @@
     "en": "While still or moving slowly (≤{speed} m/s), detection distance is halved again."
   },
   "ui.weather.element": {
-    "zh-TW": "{element}：威力 {power}%／招式 CD {cooldown}%",
-    "en": "{element}: power {power}% / move CD {cooldown}%"
+    "zh-TW": "{element}：威力 {power}%／主動技 CD {cooldown}%",
+    "en": "{element}: power {power}% / active skill CD {cooldown}%"
   },
   "ui.weather.no_element_effects": {
-    "zh-TW": "無屬性招式修正",
-    "en": "No elemental move modifiers"
+    "zh-TW": "無屬性主動技修正",
+    "en": "No elemental active skill modifiers"
   },
   "ui.weather.control": {
     "zh-TW": "操縱當前區域天氣",
@@ -1570,5 +1570,93 @@
   "ui.weather.on_cooldown": {
     "zh-TW": "天氣操縱仍在冷卻，切換區域不會重置。",
     "en": "Weather control is cooling down; changing regions does not reset it."
+  },
+  "ui.beginner_quest.banner": {
+    "zh-TW": "新手任務：選取御三家 → 降落新手星球探索戰鬥 → 收服野生宙獸 → 擊敗巢穴 BOSS",
+    "en": "Beginner Quest: Pick a Starter → Explore & Battle → Capture Wild Cosmimera → Defeat Nest Boss"
+  },
+  "ui.beginner_quest.planet_tag": {
+    "zh-TW": "【新手任務星球】",
+    "en": "[Beginner Quest]"
+  },
+  "ui.beginner_quest.hint_lobby": {
+    "zh-TW": "從新手任務星球展開冒險；可先在冒險手冊配置副手與裝備。",
+    "en": "Begin your expedition on the Beginner Quest planet; check the Adventure Journal for partners & gear."
+  },
+  "ui.weather.raddust": {
+    "zh-TW": "輻射塵",
+    "en": "Radioactive Dust"
+  },
+  "ui.weather.sporehaze": {
+    "zh-TW": "孢子霧",
+    "en": "Spore Haze"
+  },
+  "ui.weather.saltspray": {
+    "zh-TW": "鹽霧",
+    "en": "Salt Spray"
+  },
+  "ui.weather.volcanicash": {
+    "zh-TW": "火山灰",
+    "en": "Volcanic Ash"
+  },
+  "ui.weather.crystaldust": {
+    "zh-TW": "晶塵",
+    "en": "Crystal Dust"
+  },
+  "ui.weather.diamonddust": {
+    "zh-TW": "鑽石塵",
+    "en": "Diamond Dust"
+  },
+  "ui.weather.tornado": {
+    "zh-TW": "龍捲風",
+    "en": "Tornado"
+  },
+  "ui.weather.ionstorm": {
+    "zh-TW": "離子風暴",
+    "en": "Ion Storm"
+  },
+  "ui.weather.solarflare": {
+    "zh-TW": "太陽閃焰",
+    "en": "Solar Flare"
+  },
+  "ui.weather.miasma": {
+    "zh-TW": "瘴氣",
+    "en": "Miasma"
+  },
+  "ui.weather.overcast": {
+    "zh-TW": "陰天",
+    "en": "Overcast"
+  },
+  "ui.phase.dawn": {
+    "zh-TW": "清晨",
+    "en": "Dawn"
+  },
+  "ui.phase.day": {
+    "zh-TW": "白天",
+    "en": "Day"
+  },
+  "ui.phase.dusk": {
+    "zh-TW": "黃昏",
+    "en": "Dusk"
+  },
+  "ui.phase.night": {
+    "zh-TW": "夜晚",
+    "en": "Night"
+  },
+  "ui.weather.dispel": {
+    "zh-TW": "驅散異象",
+    "en": "Dispel phenomena"
+  },
+  "ui.weather.dispelled": {
+    "zh-TW": "已驅散本區異象。",
+    "en": "Phenomena dispelled in this region."
+  },
+  "ui.weather.not_here": {
+    "zh-TW": "此地無法召喚{weather}。",
+    "en": "{weather} cannot be summoned here."
+  },
+  "ui.weather.ground": {
+    "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
+    "en": "Ground cover {percent}% · move and jump ×{mult}"
   }
 }

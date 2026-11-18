@@ -166,6 +166,11 @@ namespace Cosmimera.Combat
         /// TargetId's stagger gauge (combat.md#格擋, Q-C59). A Faint or Staggered event may follow.
         /// </summary>
         Reflected = 12,
+        /// <summary>
+        /// A trainer battle ended (SourceId = trainer id, TargetId = CombatAi.NoTarget, Amount = 1 when the player won,
+        /// 0 when the player's creatures all fainted; trainer-battles.md#共用規則).
+        /// </summary>
+        TrainerBattleEnded = 13,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -206,6 +211,18 @@ namespace Cosmimera.Combat
         AlreadyUsedThisCombat = 8,
     }
 
+    /// <summary>Where a trainer stands in its battle with the player (trainer-battles.md#共用規則).</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum TrainerBattleState
+    {
+        /// <summary>Not fighting; creatures stay off the field. A trainer the player lost to returns here for a rematch.</summary>
+        Idle = 0,
+        /// <summary>Fighting the player.</summary>
+        Active = 1,
+        /// <summary>Beaten by the player; never challenges again this run.</summary>
+        Defeated = 2,
+    }
+
     /// <summary>One creature taking part in an encounter.</summary>
     /// <remarks>
     /// Pre: build through <see cref="Encounter.AddCreature"/>. Post: Combatant and moves fixed for the unit's lifetime.
@@ -214,7 +231,7 @@ namespace Cosmimera.Combat
     public sealed class EncounterUnit
     {
         internal EncounterUnit(int id, EncounterSide side, CreatureDef def, Combatant combatant, CastMove[] moves,
-            HitVolume[] volumes, RangeClass[] rangeClasses, float bodyRadiusM, int agi, float3 home)
+            HitVolume[] volumes, RangeClass[] rangeClasses, float bodyRadiusM, int speed, float3 home)
         {
             Id = id;
             Side = side;
@@ -226,7 +243,7 @@ namespace Cosmimera.Combat
             Volumes = volumes;
             RangeClasses = rangeClasses;
             BodyRadiusM = bodyRadiusM;
-            Agi = agi;
+            Speed = speed;
             Home = home;
         }
 
@@ -237,6 +254,11 @@ namespace Cosmimera.Combat
         /// <summary>Side.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public EncounterSide Side { get; }
+
+        /// <summary>Life skills that count for this unit's object hits: its own and its vessel-matched partners'
+        /// (destructibles.md#傷害). Empty unless set through <see cref="Encounter.SetHarvestUtilities"/>.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public IReadOnlyList<FieldUtility> HarvestUtilities { get; internal set; } = System.Array.Empty<FieldUtility>();
 
         /// <summary>Base species form assigned at creation (never changes during temporary overload).</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
@@ -346,7 +368,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: > 0; boss = BossSizePermille/1000 × balance body_mm. Side effects: none.</remarks>
         public float CollisionRadiusM { get; internal set; }
 
-        internal int Agi { get; set; }
+        // Level-scaled speed stat (creatures.md#六大能力值); move speed is derived from it.
+        internal int Speed { get; set; }
 
         /// <summary>Leash anchor for wild units (their spawn point); unused for the player's side.</summary>
         /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
@@ -374,8 +397,40 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: non-null for every Wild unit. Side effects: none.</remarks>
         public WildIndividual Individual { get; internal set; }
 
-        // Wild only: wants to fight (territory, provoke or hit) but the engagement cap is full (combat.md#交戰上限).
+        /// <summary>Wild only: wants to fight (territory, provoke or hit) but the engagement cap is full (combat.md#交戰上限).</summary>
         internal bool WantsEngage { get; set; }
+
+        /// <summary>Wild only: confrontation index in the owning Encounter, or -1.</summary>
+        /// <remarks>Pre: none. Post: >= -1. Side effects: none.</remarks>
+        public int ConfrontationId { get; internal set; } = -1;
+
+        /// <summary>Wild only: side (0 or 1) within the confrontation, or -1.</summary>
+        /// <remarks>Pre: none. Post: -1, 0, or 1. Side effects: none.</remarks>
+        public int ConfrontationSide { get; internal set; } = -1;
+
+        /// <summary>Wild only: relay order (0..3) within its confrontation side.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int ConfrontationOrder { get; internal set; }
+
+        /// <summary>True while this wild unit is fighting on the player's side in an active confrontation.</summary>
+        /// <remarks>Pre: none. Post: Wild only. Side effects: none.</remarks>
+        public bool IsConfrontationAlly { get; internal set; }
+
+        /// <summary>True after winning a confrontation: stays friendly, never aggros, capturable with bonus.</summary>
+        /// <remarks>Pre: none. Post: Wild only. Side effects: none.</remarks>
+        public bool IsFriendlyAfterConfrontation { get; internal set; }
+
+        /// <summary>Owning trainer id from <see cref="Encounter.RegisterTrainer"/>, or -1 for a wild or player creature.</summary>
+        /// <remarks>Pre: none. Post: -1 or a registered trainer id; fixed for the unit's lifetime. Side effects: none.</remarks>
+        public int TrainerId { get; internal set; } = -1;
+
+        /// <summary>Order in its trainer's team (lower fields first); 0 when not trainer-owned.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int TrainerOrder { get; internal set; }
+
+        /// <summary>True for a trainer's creature: never captured, taunted or petted (trainer-battles.md#共用規則).</summary>
+        /// <remarks>Pre: none. Post: equals TrainerId >= 0. Side effects: none.</remarks>
+        public bool IsTrainerOwned => TrainerId >= 0;
 
         // Distance (m) to the nearest intruder at the last engagement pass; orders who fills a free slot.
         internal float EngageDistanceM { get; set; }
@@ -481,10 +536,35 @@ namespace Cosmimera.Combat
         private readonly List<PlacedField> _fields = new List<PlacedField>(16);
         private readonly int[] _overloadMastery = new int[10];
         private readonly int[] _overloadResist = new int[10];
+        private enum ConfrontationState { Standoff = 0, Active = 1, Resolved = 2 }
+
+        private sealed class ConfrontationRecord
+        {
+            public ConfrontationRecord(int id, ConfrontationKind kind, float3 center)
+            {
+                Id = id;
+                Kind = kind;
+                Center = center;
+                State = ConfrontationState.Standoff;
+                AlliedSide = -1;
+            }
+
+            public int Id { get; }
+            public ConfrontationKind Kind { get; }
+            public float3 Center { get; }
+            public ConfrontationState State { get; set; }
+            public int AlliedSide { get; set; }
+        }
+
+        private readonly List<ConfrontationRecord> _confrontations = new List<ConfrontationRecord>(4);
+        private readonly List<TrainerBattleState> _trainers = new List<TrainerBattleState>(4);
+        private int _activeTrainer = -1;
         private Pcg32 _rng;
         private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
         private PlayerVitals _player;
+        private int _playerYinDefence;
+        private int _playerYangDefence;
         private float3 _playerCenter;
         private float3 _playerPush;
         private DestructibleTable _objects;
@@ -522,9 +602,118 @@ namespace Cosmimera.Combat
         private bool SupportFocuses => SupportMode == SupportMode.Focus || SupportMode == SupportMode.FocusAllOut;
 
         private bool SupportAllOut => SupportMode == SupportMode.FreeAllOut || SupportMode == SupportMode.FocusAllOut;
+        private bool _directControl;
+        private float3 _directMoveTangent;
+        private float3 _directFacingTangent;
+        private int _directTargetId = CombatAi.NoTarget;
+
+        /// <summary>True when the player directly controls the main creature in combat (combat.md, Q-C55).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool DirectControl => _directControl;
+
+        /// <summary>Enables or disables direct player control of the main creature.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: DirectControl == enabled; when false, pending direct movement/facing/target inputs are cleared.
+        /// Side effects: while DirectControl is true and an active main exists, the player character cannot be targeted.
+        /// </remarks>
+        public void SetDirectControl(bool enabled)
+        {
+            _directControl = enabled;
+            if (!enabled)
+            {
+                _directMoveTangent = float3.zero;
+                _directFacingTangent = float3.zero;
+                _directTargetId = CombatAi.NoTarget;
+            }
+        }
+
+        /// <summary>Sets movement, facing, and locked target for the directly controlled main creature.</summary>
+        /// <remarks>
+        /// Pre: moveTangent and facingTangent are finite.
+        /// Post: stored for the next Tick; zero vectors leave position/facing unchanged.
+        /// Side effects: none.
+        /// </remarks>
+        public void SetDirectInput(float3 moveTangent, float3 facingTangent, int targetId)
+        {
+            Contract.Requires(math.all(math.isfinite(moveTangent)) && math.all(math.isfinite(facingTangent)),
+                "direct input vectors must be finite");
+            _directMoveTangent = moveTangent;
+            _directFacingTangent = facingTangent;
+            _directTargetId = targetId;
+        }
+
+        /// <summary>Attempts to cast <paramref name="slot"/> on <paramref name="unitId"/> under direct player control.</summary>
+        /// <remarks>
+        /// Pre: unitId is a valid unit index; slot >= 0; nowMs >= LastTickMs.
+        /// Post: returns true iff a cast was accepted (windup started or immediate resolve ran).
+        /// Side effects: mutates unit cooldowns/windup, Events, and targets when windupMs == 0.
+        /// </remarks>
+        public bool TryDirectCast(int unitId, int slot, int targetId, long nowMs)
+        {
+            Contract.Requires(unitId >= 0 && unitId < _units.Count, "unknown unit");
+            Contract.Requires(slot >= 0, "slot must be non-negative");
+            Contract.Requires(nowMs >= _lastTickMs, "nowMs must not precede LastTickMs");
+            EncounterUnit u = _units[unitId];
+            if (!u.IsActive || u.Side != EncounterSide.Player || slot >= u.Moves.Count)
+            {
+                return false;
+            }
+
+            if (u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) || u.IsBlocking || IsRolling(u, nowMs) ||
+                u.WindupSlot != EncounterUnit.NoWindup)
+            {
+                return false;
+            }
+
+            int resolvedTarget = targetId;
+            if (resolvedTarget == ObjectTargetId)
+            {
+                if (!ObjectFocusIntact())
+                {
+                    resolvedTarget = CombatAi.NoTarget;
+                }
+            }
+            else if (!IsValidEnemy(u, resolvedTarget))
+            {
+                resolvedTarget = CombatAi.NoTarget;
+            }
+
+            HitVolume vol = u.Volumes[slot];
+            if (resolvedTarget == CombatAi.NoTarget && vol.Anchor == HitVolumeAnchor.AimPoint)
+            {
+                resolvedTarget = NearestValidEnemy(u);
+            }
+
+            int beforeEvents = _events.Count;
+            TryCast(u, PartnerOf(u), slot, resolvedTarget, nowMs);
+            return _events.Count > beforeEvents;
+        }
+
+        private int NearestValidEnemy(EncounterUnit self)
+        {
+            int best = CombatAi.NoTarget;
+            float bestDistSq = float.MaxValue;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (!IsValidEnemy(self, i))
+                {
+                    continue;
+                }
+
+                float d2 = math.lengthsq(_units[i].Position - self.Position);
+                if (d2 < bestDistSq)
+                {
+                    bestDistSq = d2;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
         private long _lastCombatReviveMs = -1;
 
-        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#特性觸發: "施放者的修正值在此刻
+        // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#被動技觸發: "施放者的修正值在此刻
         // 凍結…每次場地結算都用同一份"), so it outlives its caster fainting or being recalled.
         private readonly struct PlacedField
         {
@@ -629,7 +818,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            long capacityMilli = (long)_balance.Stagger.CapacityHp(t.Combatant.MaxHp) * 1000;
+            long capacityMilli = (long)StaggerCapacityHp(t, nowMs) * 1000;
             t.StaggerGaugeMilli = math.min(capacityMilli, t.StaggerGaugeMilli + (long)damage * 1000);
             if (t.StaggerGaugeMilli < capacityMilli)
             {
@@ -741,7 +930,7 @@ namespace Cosmimera.Combat
         // REQ: combat.md#格擋 (Q-C59): a perfect block returns reflect_percent of the move's damage, settled with the
         // attacker's own resist, and that damage fills the attacker's stagger gauge like any hit. A field can outlive
         // its caster, so an inactive attacker takes nothing.
-        private void Reflect(int attackerId, int blockerId, int slot, in CastContext ctx, long nowMs)
+        private void Reflect(int attackerId, int blockerId, int slot, in CastContext ctx, int extraPercent, long nowMs)
         {
             if (attackerId < 0 || attackerId >= _units.Count || !_units[attackerId].IsActive)
             {
@@ -749,7 +938,7 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit a = _units[attackerId];
-            int dealt = a.Combatant.ReceiveReflect(ctx, _balance.Block.ReflectPercent, nowMs);
+            int dealt = a.Combatant.ReceiveReflect(ctx, math.min(1000, _balance.Block.ReflectPercent + extraPercent), nowMs);
             UpdateBossStage(a);
             _events.Add(new EncounterEvent(EncounterEventKind.Reflected, blockerId, attackerId, slot, dealt));
             if (a.Combatant.IsFainted)
@@ -780,6 +969,23 @@ namespace Cosmimera.Combat
             _events.Add(new EncounterEvent(EncounterEventKind.GuardBroken, sourceId, t.Id, 0, 0));
         }
 
+        // REQ: combat.md#失衡與擊退 — armor's 失衡值 (stagger_capacity_mod_percent) scales the gauge, summed then applied
+        // once with the shared relative-percent clamp like every other relative modifier.
+        private int StaggerCapacityHp(EncounterUnit u, long nowMs)
+        {
+            return EffectMath.ApplyPercent(_balance.Stagger.CapacityHp(u.Combatant.MaxHp),
+                u.Combatant.StaggerCapacityPercent(nowMs), _balance.Effects);
+        }
+
+        // REQ: combat.md#格擋 — armor's 格擋減免率 adds percentage points to the base / shield block value. The block itself
+        // saturates at 100 %; only the excess goes to the perfect-block reflect, as extra percent of the move's damage.
+        private int BlockTotalPermille(EncounterUnit t, long nowMs)
+        {
+            int basePermille = t.Combatant.HasShield ? _balance.Block.ShieldPermille : _balance.Block.BasePermille;
+            long total = basePermille + t.Combatant.BlockReductionDelta(nowMs) * 10;
+            return total < 0 ? 0 : total > 2000 ? 2000 : (int)total;
+        }
+
         private void DrainStagger(EncounterUnit u, long nowMs, int dtMs)
         {
             StaggerTuning s = _balance.Stagger;
@@ -788,7 +994,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            long drain = (long)s.CapacityHp(u.Combatant.MaxHp) * s.RegenPermillePerS * dtMs / 1000;
+            long drain = (long)StaggerCapacityHp(u, nowMs) * s.RegenPermillePerS * dtMs / 1000;
             u.StaggerGaugeMilli = math.max(0L, u.StaggerGaugeMilli - drain);
         }
 
@@ -832,6 +1038,7 @@ namespace Cosmimera.Combat
         public const int NoSource = -1;
 
         private Func<float3, float> _terrainMoveSpeedMultiplier;
+        private Func<float3, float, bool> _isInsideSettlement;
         private WeatherProfile _weather = WeatherProfiles.Clear;
         private Func<float3, long, WeatherProfile> _weatherProvider;
         private float _playerMoveSpeedMs = 5.0f;
@@ -842,6 +1049,19 @@ namespace Cosmimera.Combat
         /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for grass or fog stealth.</summary>
         /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
         public const float SlowStealthSpeedThresholdMs = 2.0f;
+
+        /// <summary>Sets a deterministic check answering whether a body at <c>(direction, clearanceM)</c> overlaps an inhabited settlement.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#道路與建築, docs/design/creature-ecology.md, docs/design/trainer-battles.md —
+        /// wild and trainer creatures never wander or step from outside a settlement into one.
+        /// Pre: isInsideSettlement may be null (clears settlement check); otherwise pure and deterministic for (direction, clearanceM).
+        /// Post: subsequent wander target draws, steering, dashes and separation prevent Wild-side units from entering settlements.
+        /// Side effects: stores the callback.
+        /// </remarks>
+        public void SetSettlementCheck(Func<float3, float, bool> isInsideSettlement)
+        {
+            _isInsideSettlement = isInsideSettlement;
+        }
 
         /// <summary>Sets a deterministic terrain move-speed multiplier queried at each unit's ground direction.</summary>
         /// <remarks>
@@ -931,7 +1151,8 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// REQ: docs/design/field-utilities.md.
         /// Pre: none.
-        /// Post: non-boss active wild units have Engaged=false and Provoked=false; boss units remain unchanged. Returns true iff at least one unit disengaged.
+        /// Post: non-boss, non-trainer active wild units have Engaged=false and Provoked=false; boss and trainer-owned units
+        ///       remain unchanged (a trainer battle cannot be escaped, trainer-battles.md). Returns true iff at least one unit disengaged.
         /// Side effects: mutates wild engagement flags.
         /// </remarks>
         public bool ForceDisengageAllWild()
@@ -940,7 +1161,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked || w.WantsEngage))
+                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && !w.IsTrainerOwned &&
+                    (w.Engaged || w.Provoked || w.WantsEngage))
                 {
                     w.Engaged = false;
                     w.WantsEngage = false;
@@ -1089,6 +1311,300 @@ namespace Cosmimera.Combat
             return AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false, null, individual);
         }
 
+        /// <summary>Registers a wild confrontation from <see cref="RunPlan.Confrontations"/>.</summary>
+        /// <remarks>
+        /// Pre: kind defined; center unit length.
+        /// Post: returns the confrontation id to pass to <see cref="AddWildInConfrontation"/>.
+        /// Side effects: allocates a confrontation record.
+        /// </remarks>
+        public int RegisterConfrontation(ConfrontationKind kind, float3 center)
+        {
+            Contract.Requires(math.abs(math.lengthsq(center) - 1f) <= 2e-3f, "center must be unit length");
+            int id = _confrontations.Count;
+            _confrontations.Add(new ConfrontationRecord(id, kind, math.normalize(center)));
+            return id;
+        }
+
+        /// <summary>Adds a wild unit participating in a registered confrontation (order 0..1 fielded in standoff; 2+ wait as reserves).</summary>
+        /// <remarks>
+        /// Pre: as AddWild; confrontationId valid; side 0 or 1; order >= 0.
+        /// Post: unit added with confrontation metadata; Fielded iff order < 2.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddWildInConfrontation(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual, int confrontationId, int side, int order)
+        {
+            Contract.Requires(individual != null, "wild units need an individual");
+            Contract.Requires(confrontationId >= 0 && confrontationId < _confrontations.Count, "invalid confrontationId");
+            Contract.Requires(side == 0 || side == 1, "side must be 0 or 1");
+            Contract.Requires(order >= 0, "order must be >= 0");
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false, null, individual);
+            u.ConfrontationId = confrontationId;
+            u.ConfrontationSide = side;
+            u.ConfrontationOrder = order;
+            u.Fielded = order < 2;
+            return u;
+        }
+
+        /// <summary>True while the player is actively fighting on one side of a wild confrontation.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool HasActiveConfrontation
+        {
+            get
+            {
+                for (int i = 0; i < _confrontations.Count; i++)
+                {
+                    if (_confrontations[i].State == ConfrontationState.Active)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>Maximum player creatures allowed on the field right now (1 during a confrontation relay, else 2).</summary>
+        /// <remarks>Pre: none. Post: 1 or 2. Side effects: none.</remarks>
+        public int PlayerFieldCap => HasActiveConfrontation ? 1 : 2;
+
+        /// <summary>True when <paramref name="unitId"/> belongs to a confrontation still in standoff.</summary>
+        /// <remarks>Pre: valid unitId. Post: none. Side effects: none.</remarks>
+        public bool IsConfrontationStandoff(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            return u.ConfrontationId >= 0 && u.ConfrontationId < _confrontations.Count &&
+                _confrontations[u.ConfrontationId].State == ConfrontationState.Standoff;
+        }
+
+        /// <summary>Joins <paramref name="unitId"/>'s side in a standoff confrontation, starting the 1+1 vs 2 relay fight.</summary>
+        /// <remarks>
+        /// Pre: unitId valid; unit is in a Standoff confrontation.
+        /// Post: confrontation becomes Active; player field capped to 1; 1 wild ally + up to 2 wild enemies active.
+        /// Side effects: recalls excess player creatures; fields/unfields confrontation units.
+        /// </remarks>
+        public bool JoinConfrontation(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            if (u.ConfrontationId < 0 || u.ConfrontationId >= _confrontations.Count)
+            {
+                return false;
+            }
+
+            return ActivateConfrontation(u.ConfrontationId, u.ConfrontationSide);
+        }
+
+        /// <summary>Most creatures one side fields in a trainer battle (trainer-battles.md#共用規則).</summary>
+        /// <remarks>Pre: none. Post: constant; matches the player's two fielded creatures. Side effects: none.</remarks>
+        public const int TrainerFieldCap = 2;
+
+        /// <summary>Registers a trainer whose creatures are added with <see cref="AddTrainerCreature"/>.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: returns a new id (previous trainer count); TrainerState(id) == Idle.
+        /// Side effects: allocates a trainer record.
+        /// </remarks>
+        public int RegisterTrainer()
+        {
+            _trainers.Add(TrainerBattleState.Idle);
+            return _trainers.Count - 1;
+        }
+
+        /// <summary>Battle state of trainer <paramref name="trainerId"/>.</summary>
+        /// <remarks>Pre: trainerId registered. Post: defined value. Side effects: none.</remarks>
+        public TrainerBattleState TrainerState(int trainerId)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            return _trainers[trainerId];
+        }
+
+        /// <summary>True while a trainer battle is running; wild units neither join it nor start other fights.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool HasActiveTrainerBattle => _activeTrainer >= 0;
+
+        /// <summary>Adds a creature to a trainer's team; it waits off the field until <see cref="StartTrainerBattle"/>.</summary>
+        /// <remarks>
+        /// Pre: as AddCreature; trainerId registered and Idle; order >= 0 and unused by that trainer's other creatures.
+        /// Post: Wild-side unit with TrainerId == trainerId, TrainerOrder == order, Fielded == false, Individual == null.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddTrainerCreature(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            int trainerId, int order)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(_trainers[trainerId] == TrainerBattleState.Idle, "add creatures before the battle starts");
+            Contract.Requires(order >= 0, "order must be >= 0");
+            for (int i = 0; i < _units.Count; i++)
+            {
+                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].TrainerOrder != order,
+                    "order already used by this trainer");
+            }
+
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false);
+            u.TrainerId = trainerId;
+            u.TrainerOrder = order;
+            u.Fielded = false;
+            return u;
+        }
+
+        /// <summary>Starts trainer <paramref name="trainerId"/>'s battle: its lowest-order creatures take the field engaged.</summary>
+        /// <remarks>
+        /// REQ: trainer-battles.md#共用規則.
+        /// Pre: trainerId registered; it owns at least one creature.
+        /// Post: true iff the trainer was Idle, no other trainer battle or confrontation was active and no active wild unit
+        ///       was engaged, provoked or waiting to engage; then TrainerState == Active, HasActiveTrainerBattle, and up to
+        ///       TrainerFieldCap of its creatures (lowest order first) are Fielded and Engaged. False changes nothing.
+        /// Side effects: mutates the trainer record and its units.
+        /// </remarks>
+        public bool StartTrainerBattle(int trainerId)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(TrainerTeamSize(trainerId) > 0, "trainer has no creatures");
+            if (_trainers[trainerId] != TrainerBattleState.Idle || _activeTrainer >= 0 || HasActiveConfrontation)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && (w.Engaged || w.WantsEngage || w.Provoked))
+                {
+                    return false;
+                }
+            }
+
+            _trainers[trainerId] = TrainerBattleState.Active;
+            _activeTrainer = trainerId;
+            int fielded = 0;
+            while (fielded < TrainerFieldCap && FieldNextTrainerReserve(trainerId))
+            {
+                fielded++;
+            }
+
+            return true;
+        }
+
+        private int TrainerTeamSize(int trainerId)
+        {
+            int n = 0;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].TrainerId == trainerId)
+                {
+                    n++;
+                }
+            }
+
+            return n;
+        }
+
+        private bool FieldNextTrainerReserve(int trainerId)
+        {
+            EncounterUnit best = null;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId && !u.Fielded && !u.Combatant.IsFainted &&
+                    (best == null || u.TrainerOrder < best.TrainerOrder))
+                {
+                    best = u;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            best.Fielded = true;
+            Engage(best);
+            return true;
+        }
+
+        // REQ: trainer-battles.md#共用規則 — reserves relay in team order; the battle ends only when one side has no
+        // creature left (never by distance), and both sides are fully restored afterwards.
+        private void AdvanceTrainerBattle(long nowMs)
+        {
+            if (_activeTrainer < 0)
+            {
+                return;
+            }
+
+            int trainerId = _activeTrainer;
+            int fielded = 0;
+            int alive = 0;
+            bool playerAlive = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId)
+                {
+                    if (!u.Combatant.IsFainted)
+                    {
+                        alive++;
+                        if (u.Fielded)
+                        {
+                            fielded++;
+                        }
+                    }
+                }
+                else if (u.Side == EncounterSide.Player && !u.Combatant.IsFainted)
+                {
+                    playerAlive = true;
+                }
+            }
+
+            if (alive == 0 || !playerAlive)
+            {
+                EndTrainerBattle(trainerId, alive == 0, nowMs);
+                return;
+            }
+
+            while (fielded < TrainerFieldCap && FieldNextTrainerReserve(trainerId))
+            {
+                fielded++;
+            }
+        }
+
+        private void EndTrainerBattle(int trainerId, bool playerWon, long nowMs)
+        {
+            _trainers[trainerId] = playerWon ? TrainerBattleState.Defeated : TrainerBattleState.Idle;
+            _activeTrainer = -1;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId)
+                {
+                    u.Fielded = false;
+                    u.Engaged = false;
+                    u.WantsEngage = false;
+                    u.TargetId = CombatAi.NoTarget;
+                    RestoreFull(u, nowMs);
+                }
+                else if (u.Side == EncounterSide.Player)
+                {
+                    RestoreFull(u, nowMs);
+                }
+            }
+
+            _events.Add(new EncounterEvent(EncounterEventKind.TrainerBattleEnded, trainerId, CombatAi.NoTarget, 0,
+                playerWon ? 1 : 0));
+        }
+
+        private static void RestoreFull(EncounterUnit u, long nowMs)
+        {
+            Combatant c = u.Combatant;
+            if (c.IsFainted)
+            {
+                c.Revive(c.MaxHp, nowMs);
+            }
+            else if (c.Hp < c.MaxHp)
+            {
+                c.HealByPercent(100, nowMs);
+            }
+        }
+
         /// <summary>Adds a player creature with all equipped card moves and bead traits.</summary>
         /// <remarks>
         /// Pre: same as AddCreature; moves/traits non-null, each contains at most four non-null definitions.
@@ -1105,8 +1621,10 @@ namespace Cosmimera.Combat
             EncounterUnit unit = AddUnit(EncounterSide.Player, def, null, direction, level, false, moves);
             foreach (TraitDef trait in traits)
             {
-                var effects = new EffectSpec[trait.Effects.Count];
-                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(trait.Effects[i]);
+                // REQ: creatures.md#技能星級 — a partner-provided trait always works at ★.
+                IReadOnlyList<EffectDef> source = trait.EffectsFor(true);
+                var effects = new EffectSpec[source.Count];
+                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(source[i]);
                 unit.Combatant.Book.AddPartnerTrait(trait.Id, TriggerSpec.FromDef(trait.Trigger), effects);
             }
             return unit;
@@ -1146,8 +1664,9 @@ namespace Cosmimera.Combat
             {
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMoves != null ? partnerMoves[i - 1] : partnerMove;
                 defs[i] = m;
-                moves[i] = CastMove.FromDef(m);
-                volumes[i] = BuildVolume(m, s.Str, boss);
+                // REQ: creatures.md#技能星級 — slot 0 is the creature's own signature; every other slot is partner-provided.
+                moves[i] = CastMove.FromDef(m, i > 0);
+                volumes[i] = BuildVolume(m, boss);
                 ranges[i] = m.RangeClass;
             }
 
@@ -1156,7 +1675,7 @@ namespace Cosmimera.Combat
             FillElementTables(def, mastery, resist);
 
             EffectBook book = BookFor(def.Trait);
-            var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
+            var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
             float radius = BodyRadiusFor(def.SizeClass);
             int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
             if (boss)
@@ -1168,7 +1687,7 @@ namespace Cosmimera.Combat
             }
 
             float3 position = GroundPoint(direction, radius);
-            var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Agi, position)
+            var unit = new EncounterUnit(_units.Count, side, def, combatant, moves, volumes, ranges, radius, s.Speed, position)
             {
                 Level = level,
                 IsBoss = boss,
@@ -1228,22 +1747,18 @@ namespace Cosmimera.Combat
             }
 
             CreatureStats s = u.Def.Stats.AtLevel(level);
-            for (int i = 0; i < u.Volumes.Length; i++)
-            {
-                u.Volumes[i] = BuildVolume(u.MoveDefs[i], s.Str, u.IsBoss);
-            }
-
-            u.Combatant.Rescale(s.Con, s.Spi, s.Agi);
-            u.Agi = s.Agi;
+            u.Combatant.Rescale(s);
+            u.Speed = s.Speed;
             u.Level = level;
         }
 
-        private HitVolume BuildVolume(MoveDef m, int str, bool boss)
+        private HitVolume BuildVolume(MoveDef m, bool boss)
         {
             // MoveDef.Origin is only defined for bursts (its getter enforces that); Build ignores it otherwise.
             BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
-            HitVolume v = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm, str, _balance.Stats,
-                _balance.Hit);
+            // creatures.md#六大能力值: range is a shared base value now, so every creature feeds the same stat.
+            HitVolume v = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm,
+                _balance.Stats.Coefficients.SharedBaseStat, _balance.Stats, _balance.Hit);
             // Melee volumes are already "the body's reach" scaled by STR (combat.md#射程), so a larger boss body scales
             // them the same way. Ranged caps (36 m) and data-authored dash lengths stay untouched.
             if (!boss || m.RangeClass != RangeClass.Melee || v.DashDistanceMm > 0)
@@ -1268,6 +1783,17 @@ namespace Cosmimera.Combat
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Player && !u.Fielded && !u.Combatant.IsFainted,
                 "only an unfielded, conscious player-side unit can be fielded");
+            if (HasActiveConfrontation)
+            {
+                // REQ: creature-ecology.md#棲位食物鏈階級與野生對抗 — 1 player creature + 1 wild ally vs 2 wild enemies.
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    if (_units[i].Side == EncounterSide.Player && _units[i].Fielded)
+                    {
+                        Unfield(_units[i].Id);
+                    }
+                }
+            }
             u.Position = GroundPoint(math.normalize(direction), u.BodyRadiusM);
             u.Forward = PlanetFrame.FromUp(math.normalize(direction)).North;
             u.Fielded = true;
@@ -1379,15 +1905,35 @@ namespace Cosmimera.Combat
         /// <paramref name="vitals"/> (dodge-roll i-frames apply); reaching 0 HP raises one PlayerDowned event.
         /// </summary>
         /// <remarks>
-        /// Pre: vitals non-null; no player attached yet.
-        /// Post: wild units may target <see cref="PlayerCharacterId"/> while !vitals.IsDowned.
+        /// Pre: vitals non-null; no player attached yet; yinDefence, yangDefence &gt;= 1 (see <see cref="PlayerDefence.Compute"/>).
+        /// Post: wild units may target <see cref="PlayerCharacterId"/> while !vitals.IsDowned; their hits use the
+        ///       attack/defence ratio against these defences (combat.md#玩家角色的守).
         /// Side effects: keeps a reference to vitals; Tick mutates it through ApplyDamage.
         /// </remarks>
-        public void AttachPlayer(PlayerVitals vitals)
+        public void AttachPlayer(PlayerVitals vitals, int yinDefence, int yangDefence)
         {
             Contract.Requires(vitals != null, "vitals must not be null");
             Contract.Requires(_player == null, "a player is already attached");
+            Contract.Requires(yinDefence >= 1 && yangDefence >= 1, "player defences must be >= 1");
             _player = vitals;
+            _playerYinDefence = yinDefence;
+            _playerYangDefence = yangDefence;
+        }
+
+        /// <summary>Sets the life skills that give <paramref name="unitId"/>'s moves the harvest bonus on matching objects.</summary>
+        /// <remarks>
+        /// REQ: destructibles.md#傷害 (Q-C77) — the caster's own field_utility plus those of partners whose vessel matches;
+        /// the caller resolves the vessel rule. Other team members and tools never count.
+        /// Pre: unitId indexes Units; utilities non-null. Post: Units[unitId].HarvestUtilities is a copy of utilities.
+        /// Side effects: mutates the unit.
+        /// </remarks>
+        public void SetHarvestUtilities(int unitId, IReadOnlyCollection<FieldUtility> utilities)
+        {
+            Contract.Requires(utilities != null, "utilities must not be null");
+            var copy = new FieldUtility[utilities.Count];
+            int i = 0;
+            foreach (FieldUtility u in utilities) copy[i++] = u;
+            Get(unitId).HarvestUtilities = copy;
         }
 
         /// <summary>The player starts a fight with a wild unit (Focus on it), whatever its habit.</summary>
@@ -1395,13 +1941,24 @@ namespace Cosmimera.Combat
         /// Pre: unitId is an active Wild unit.
         /// Post: Engaged from the next Tick (if still active and the engagement cap allows, combat.md#交戰上限; otherwise it
         ///       waits for a slot); then it stays engaged until no intruder is within DisengageRadiusM. Engaged itself
-        ///       is unchanged until then.
+        ///       is unchanged until then. No effect on a trainer-owned unit or while a trainer battle runs
+        ///       (trainer-battles.md#共用規則).
         /// Side effects: mutates the unit.
         /// </remarks>
         public void Provoke(int unitId)
         {
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Wild && u.IsActive, "only an active wild unit can be provoked");
+            if (u.IsTrainerOwned || _activeTrainer >= 0)
+            {
+                return;
+            }
+
+            if (IsConfrontationStandoff(unitId))
+            {
+                ActivateConfrontation(u.ConfrontationId, 1 - u.ConfrontationSide);
+                return;
+            }
             // Deferred to the Tick: input is read before the host's between-battles step, and an Engaged flag set here
             // would make that step's level-ups look mid-fight (SetLevel's Q-C31 guard).
             u.Provoked = true;
@@ -1477,7 +2034,7 @@ namespace Cosmimera.Combat
             {
                 ApplyUnitForm(u, overloadForm, out CreatureStats scaled);
                 FillElementTables(overloadForm, _overloadMastery, _overloadResist);
-                u.Combatant.BeginOverload(scaled.Con, scaled.Spi, scaled.Agi, _overloadMastery, _overloadResist);
+                u.Combatant.BeginOverload(scaled, _overloadMastery, _overloadResist);
             }
             else
             {
@@ -1535,7 +2092,7 @@ namespace Cosmimera.Combat
             u.RangeClasses[0] = form.SignatureMove.RangeClass;
             for (int i = 0; i < u.Volumes.Length; i++)
             {
-                u.Volumes[i] = BuildVolume(u.MoveDefs[i], scaled.Str, u.IsBoss);
+                u.Volumes[i] = BuildVolume(u.MoveDefs[i], u.IsBoss);
             }
 
             float radius = BodyRadiusFor(form.SizeClass);
@@ -1549,7 +2106,7 @@ namespace Cosmimera.Combat
             u.Def = form;
             u.BodyRadiusM = radius;
             u.CollisionRadiusM = collisionMm * 0.001f;
-            u.Agi = scaled.Agi;
+            u.Speed = scaled.Speed;
             float3 dir = math.normalizesafe(u.Position, new float3(0f, 1f, 0f));
             u.Position = GroundPoint(dir, radius);
             if (form.Trait != null)
@@ -1711,21 +2268,65 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                if (!player && !u.Engaged)
+                if (!player && !u.Engaged && !u.IsConfrontationAlly)
                 {
                     if (u.WindupSlot != EncounterUnit.NoWindup)
                     {
                         CancelWindup(u, nowMs);
                     }
 
-                    Wander(u, nowMs, dtMs);
+                    if (IsConfrontationStandoff(u.Id))
+                    {
+                        FaceConfrontationOpponent(u);
+                    }
+                    else if (!u.IsFriendlyAfterConfrontation)
+                    {
+                        Wander(u, nowMs, dtMs);
+                    }
+
                     continue;
                 }
 
+                bool playerSide = player || u.IsConfrontationAlly;
                 EncounterUnit partner = PartnerOf(u);
                 AiRole role = !player || u.Id == mainId || mainId == CombatAi.NoTarget ? AiRole.Main : AiRole.Support;
+                if (_directControl && player && role == AiRole.Main)
+                {
+                    // REQ: combat.md (Q-C55) — direct player control replaces AI movement and auto-casting for the main.
+                    if (_directTargetId == ObjectTargetId && ObjectFocusIntact())
+                    {
+                        FillObjectEnemy(u);
+                        u.TargetId = ObjectTargetId;
+                    }
+                    else
+                    {
+                        u.TargetId = IsValidEnemy(u, _directTargetId) ? _directTargetId : CombatAi.NoTarget;
+                    }
+
+                    float3 up = Up(u.Position);
+                    float3 moveTan = _directMoveTangent - up * math.dot(up, _directMoveTangent);
+                    if (math.lengthsq(moveTan) > 1e-6f)
+                    {
+                        float3 destDir = math.normalize(up + math.normalize(moveTan) * 0.25f);
+                        Steer(u, destDir, nowMs, dtMs, u.IsBlocking ? _balance.Block.MoveSpeedPermille : 1000);
+                    }
+
+                    float3 faceTan = _directFacingTangent - up * math.dot(up, _directFacingTangent);
+                    if (math.lengthsq(faceTan) > 1e-6f)
+                    {
+                        u.Forward = math.normalize(faceTan);
+                    }
+
+                    if (u.WindupSlot != EncounterUnit.NoWindup && nowMs >= u.WindupEndsAtMs)
+                    {
+                        ResolveWindup(u, partner, nowMs);
+                    }
+
+                    continue;
+                }
+
                 AiCommand cmd = player && role == AiRole.Main ? command : new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
-                bool onObject = cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
+                bool onObject = player && cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
                 if (cmd.Kind == AiCommandKind.Focus && !onObject && !IsValidEnemy(u, cmd.TargetId))
                 {
                     cmd = new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
@@ -1734,7 +2335,7 @@ namespace Cosmimera.Combat
                 // REQ: combat.md#支援模式 — only a focus mode hands the main's target to the support.
                 int mainTarget = role == AiRole.Support && mainId >= 0 && SupportFocuses ? _units[mainId].TargetId
                     : CombatAi.NoTarget;
-                float3 leashAnchor = player ? playerPosition : u.Home;
+                float3 leashAnchor = playerSide ? playerPosition : u.Home;
                 if (onObject)
                 {
                     FillObjectEnemy(u);
@@ -1774,6 +2375,8 @@ namespace Cosmimera.Combat
             }
 
             BurnObjects(nowMs);
+            AdvanceConfrontations();
+            AdvanceTrainerBattle(nowMs);
             Separate(playerPosition);
         }
 
@@ -1819,23 +2422,26 @@ namespace Cosmimera.Combat
                     index = _objects.Register(c.Id, c.Composition, c.VolumeL, c.Center);
                 }
 
+                // REQ: destructibles.md#傷害 — the caster's life skill on its matching substance: ×harvest, and a break is a harvest.
+                bool harvest = casterId >= 0 && casterId < _units.Count &&
+                    HarvestRules.AnyHarvests(_units[casterId].HarvestUtilities, c.Composition.Dominant.Id);
                 ObjectHitResult r = _objects.ApplyHit(index, ctx.Move.Element,
-                    ctx.EffectivePower, ctx.MasteryPercent, nowMs);
+                    ctx.EffectivePower, ctx.MasteryPercent, nowMs, harvest ? _balance.HarvestDamagePermille : 1000);
                 _objectEvents.Add(new ObjectEvent(ObjectEventKind.Hit, c.Id, casterId, r.Damage, r.Reactions, r.Cause,
                     default, ctx.Move.Power));
                 if (r.Destroyed)
                 {
-                    EmitDestroyed(index, casterId, ctx.Move.Power);
+                    EmitDestroyed(index, casterId, ctx.Move.Power, harvest);
                 }
             }
         }
 
-        private void EmitDestroyed(int index, int sourceId, int power)
+        private void EmitDestroyed(int index, int sourceId, int power, bool harvested = false)
         {
             // REQ: destructibles.md#影素材 — night is judged where the object stood.
             ObjectDrop drop = _objects.RollDrop(index, _isNight(_planet.ToDirection(_objects.CenterOf(index))), ref _objectRng);
             _objectEvents.Add(new ObjectEvent(ObjectEventKind.Destroyed, _objects.IdOf(index), sourceId, 0,
-                ObjectReaction.None, _objects.CauseOf(index), drop, power));
+                ObjectReaction.None, _objects.CauseOf(index), drop, power, harvested));
         }
 
         /// <summary>
@@ -1861,7 +2467,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit u = _units[i];
-                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage)
+                if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage ||
+                    u.IsConfrontationAlly || u.IsTrainerOwned)
                 {
                     continue;
                 }
@@ -1938,8 +2545,8 @@ namespace Cosmimera.Combat
             return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
         }
 
-        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea, nor any unit into a building; its share of the
-        // overlap stays unresolved and later ticks (or the other body's own share) settle it.
+        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea, nor any unit into a building or a wild into a settlement;
+        // its share of the overlap stays unresolved and later ticks (or the other body's own share) settle it.
         private void PlaceIfAllowed(EncounterUnit u, float3 direction)
         {
             if (u.Side == EncounterSide.Wild && _surface.IsSea(direction))
@@ -1947,7 +2554,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            if (EntersBuilding(u, Up(u.Position), direction))
+            if (EntersRestrictedArea(u, Up(u.Position), direction))
             {
                 return;
             }
@@ -1955,11 +2562,26 @@ namespace Cosmimera.Combat
             Place(u, direction);
         }
 
+        private bool EntersRestrictedArea(EncounterUnit u, float3 from, float3 to) =>
+            EntersBuilding(u, from, to) || EntersSettlement(u, from, to);
+
         // REQ: planet-world.md#道路與建築. Only entering is refused: a unit that starts inside a footprint (a spawn on a lot,
         // a push from a third body) must be able to walk out, or it would be frozen for the rest of the run.
         private bool EntersBuilding(EncounterUnit u, float3 from, float3 to)
         {
             return _surface.IsBlocked(to, u.CollisionRadiusM) && !_surface.IsBlocked(from, u.CollisionRadiusM);
+        }
+
+        private bool EntersSettlement(EncounterUnit u, float3 from, float3 to)
+        {
+            return u.Side == EncounterSide.Wild && _isInsideSettlement != null &&
+                _isInsideSettlement(to, u.CollisionRadiusM) && !_isInsideSettlement(from, u.CollisionRadiusM);
+        }
+
+        private bool IsInsideSettlement(EncounterUnit u, float3 direction)
+        {
+            return u.Side == EncounterSide.Wild && _isInsideSettlement != null &&
+                _isInsideSettlement(direction, u.CollisionRadiusM);
         }
 
         private void Place(EncounterUnit u, float3 direction)
@@ -2132,8 +2754,8 @@ namespace Cosmimera.Combat
                     return;
                 }
 
-                // Same rule for a wall: a dash may not end inside a building it started outside of.
-                if (EntersBuilding(u, Up(u.Position), endDirection))
+                // Same rule for a wall or settlement: a dash may not end inside a building (or settlement for wilds) it started outside of.
+                if (EntersRestrictedArea(u, Up(u.Position), endDirection))
                 {
                     return;
                 }
@@ -2146,13 +2768,16 @@ namespace Cosmimera.Combat
         private void ResolveVolume(int casterId, EncounterSide side, int slot, in CastContext ctx, in HitVolume volume,
             float3 anchor, float3 forward, long nowMs)
         {
+            bool casterIsAlly = side == EncounterSide.Player ||
+                (casterId >= 0 && casterId < _units.Count && _units[casterId].IsConfrontationAlly);
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit t = _units[i];
                 // Any hostile volume hits every active enemy it touches (combat.md#場地 for fields; "被擊中即開戰" for the
                 // rest), including a wild unit that has not engaged; the Engaged gate only governs AI target choice
                 // (SOL D0-E1-01 for fields, D0-E2 E2-SOL-01 for caster/front volumes).
-                bool eligible = t.Side != side && t.IsActive;
+                bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+                bool eligible = casterIsAlly != targetIsAlly && t.IsActive;
                 if (!eligible ||
                     !MoveGeometry.Overlaps(volume, _planet, anchor, forward, t.Position, t.BodyRadiusM))
                 {
@@ -2165,8 +2790,8 @@ namespace Cosmimera.Combat
                 long sinceRoll = nowMs - t.RollStartedAtMs;
                 bool invulnerable = t.Side == EncounterSide.Player && sinceRoll >= 0 &&
                     sinceRoll < _balance.CreatureRoll.InvulnerableMs;
-                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus,
-                    blocked ? (t.Combatant.HasShield ? _balance.Block.ShieldPermille : _balance.Block.BasePermille) : 0,
+                int blockTotal = blocked ? BlockTotalPermille(t, nowMs) : 0;
+                HitReport r = t.Combatant.ReceiveHostile(ctx, true, ref _rng, nowMs, bonus, math.min(1000, blockTotal),
                     invulnerable);
                 bool hit = r.Outcome == HitOutcome.Hit;
                 UpdateBossStage(t);
@@ -2194,7 +2819,7 @@ namespace Cosmimera.Combat
 
                     if (perfectBlock)
                     {
-                        Reflect(casterId, t.Id, slot, ctx, nowMs);
+                        Reflect(casterId, t.Id, slot, ctx, math.max(0, blockTotal - 1000) / 10, nowMs);
                     }
                 }
                 if (r.Fainted)
@@ -2203,10 +2828,14 @@ namespace Cosmimera.Combat
                 }
                 else if (hit && t.Side == EncounterSide.Wild)
                 {
+                    if (casterIsAlly && IsConfrontationStandoff(t.Id))
+                    {
+                        ActivateConfrontation(t.ConfrontationId, 1 - t.ConfrontationSide);
+                    }
                     // Being hit starts the fight even outside its territory (avoidant only fights back, Q-C35); a MISS does
                     // not, or an avoidant unit would join from a roll it never felt (E2-SOL-02). A full cap makes it wait
                     // instead (combat.md#交戰上限: a hit does not add a third wild).
-                    if (!t.Engaged)
+                    else if (!t.Engaged && !t.IsConfrontationAlly && _activeTrainer < 0)
                     {
                         if (HasEngageSlot(t))
                         {
@@ -2227,7 +2856,7 @@ namespace Cosmimera.Combat
             }
 
             // The player character resolves last: its id is above every unit id, and targets resolve in id order.
-            if (side == EncounterSide.Wild && PlayerTargetable() &&
+            if (!casterIsAlly && PlayerTargetable() &&
                 MoveGeometry.Overlaps(volume, _planet, anchor, forward, _playerCenter, PlayerBodyRadiusM))
             {
                 HitPlayer(casterId, slot, ctx, nowMs);
@@ -2236,17 +2865,25 @@ namespace Cosmimera.Combat
             ResolveObjects(casterId, ctx, volume, anchor, forward, nowMs);
         }
 
-        // Provisional player defence (Q-C35): evasion 0 and resist 0, so only accuracy and dodge-roll i-frames stand
-        // between a move and the fixed player HP; timed effects are not applied (the character has no EffectBook).
+        // Player defence (Q-C35, Q-C75): evasion 0 and resist 0; the attack/defence ratio uses the level-based defence
+        // plus armor given to AttachPlayer. Timed effects are not applied (the character has no EffectBook).
         private void HitPlayer(int casterId, int slot, in CastContext ctx, long nowMs)
         {
             CastMove move = ctx.Move;
-            int chance = _balance.Stats.HitChancePermille(move.AccuracyPercent, 0);
+            int chance = _balance.Stats.HitChancePermille(ctx.EffectiveAccuracyPercent, 0);
             HitOutcome outcome = HitResolver.Resolve(true, _player.IsInvulnerable(nowMs), chance, ref _rng);
             int dealt = 0;
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
-                dealt = _player.ApplyDamage(DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0), nowMs);
+                int defence = move.Polarity == Polarity.Yang ? _playerYangDefence : _playerYinDefence;
+                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0,
+                    _balance.Stats.AttackRatioPermille(ctx.Attack, defence));
+                if (HitResolver.RollCrit(ctx.CritRatePermille, ref _rng))
+                {
+                    raw = DamageModel.ApplyCrit(raw, ctx.CritDamagePercent);
+                }
+
+                dealt = _player.ApplyDamage(raw, nowMs);
             }
 
             // An i-frame dodge (Invulnerable) shows the same MISS feedback as a missed roll.
@@ -2266,7 +2903,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: unitId indexes Units. Post: detached copy; drawing from it does not move the unit's stream. Side effects: none.</remarks>
         internal Pcg32 WanderRngForTests(int unitId) => Get(unitId).WanderRng;
 
-        private bool PlayerTargetable() => _player != null && !_player.IsDowned;
+        private bool PlayerTargetable() => _player != null && !_player.IsDowned &&
+            !(_directControl && _mainId >= 0 && _mainId < _units.Count && _units[_mainId].IsActive);
 
         private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter
             : id == ObjectTargetId ? _objectAim : _units[id].Position;
@@ -2343,8 +2981,18 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side != EncounterSide.Wild || !w.IsActive)
+                if (w.Side != EncounterSide.Wild || !w.IsActive ||
+                    w.IsConfrontationAlly || w.IsFriendlyAfterConfrontation || IsConfrontationStandoff(w.Id) ||
+                    w.IsTrainerOwned)
                 {
+                    continue;
+                }
+
+                // REQ: trainer-battles.md#共用規則 — wild units sit out a trainer battle; none was engaged when it started.
+                if (_activeTrainer >= 0)
+                {
+                    w.WantsEngage = false;
+                    w.Provoked = false;
                     continue;
                 }
 
@@ -2407,6 +3055,215 @@ namespace Cosmimera.Combat
             }
 
             FillEngageSlots();
+        }
+
+        private void FaceConfrontationOpponent(EncounterUnit u)
+        {
+            int enemySide = 1 - u.ConfrontationSide;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit other = _units[i];
+                if (other.ConfrontationId == u.ConfrontationId && other.ConfrontationSide == enemySide && other.IsActive)
+                {
+                    u.Forward = TangentToward(u.Position, other.Position, u.Forward);
+                    return;
+                }
+            }
+        }
+
+        private bool ActivateConfrontation(int confId, int alliedSide)
+        {
+            if (confId < 0 || confId >= _confrontations.Count)
+            {
+                return false;
+            }
+
+            ConfrontationRecord rec = _confrontations[confId];
+            if (rec.State != ConfrontationState.Standoff || (alliedSide != 0 && alliedSide != 1))
+            {
+                return false;
+            }
+
+            rec.State = ConfrontationState.Active;
+            rec.AlliedSide = alliedSide;
+            int enemySide = 1 - alliedSide;
+
+            // Keep at most 1 player creature fielded (1 player + 1 wild ally vs 2 wild enemies).
+            bool keptOnePlayer = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].Side == EncounterSide.Player && _units[i].Fielded)
+                {
+                    if (!keptOnePlayer)
+                    {
+                        keptOnePlayer = true;
+                    }
+                    else
+                    {
+                        Unfield(_units[i].Id);
+                    }
+                }
+            }
+
+            int allyFielded = 0;
+            int enemyFielded = 0;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.ConfrontationId != confId || u.Combatant.IsFainted)
+                {
+                    continue;
+                }
+
+                if (u.ConfrontationSide == alliedSide)
+                {
+                    u.IsConfrontationAlly = true;
+                    u.Engaged = false;
+                    u.WantsEngage = false;
+                    u.Fielded = allyFielded < 1;
+                    if (u.Fielded)
+                    {
+                        allyFielded++;
+                    }
+                }
+                else if (u.ConfrontationSide == enemySide)
+                {
+                    u.IsConfrontationAlly = false;
+                    if (enemyFielded < WildEngageCapPerPlayer)
+                    {
+                        u.Fielded = true;
+                        Engage(u);
+                        enemyFielded++;
+                    }
+                    else
+                    {
+                        u.Fielded = false;
+                        u.Engaged = false;
+                        u.WantsEngage = false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void AdvanceConfrontations()
+        {
+            for (int c = 0; c < _confrontations.Count; c++)
+            {
+                ConfrontationRecord rec = _confrontations[c];
+                if (rec.State != ConfrontationState.Active)
+                {
+                    continue;
+                }
+
+                int alliedSide = rec.AlliedSide;
+                int enemySide = 1 - alliedSide;
+                int activeAllies = 0;
+                int activeEnemies = 0;
+                int engagedEnemies = 0;
+                int aliveEnemies = 0;
+
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit u = _units[i];
+                    if (u.ConfrontationId != rec.Id)
+                    {
+                        continue;
+                    }
+
+                    if (u.ConfrontationSide == alliedSide && u.IsActive)
+                    {
+                        activeAllies++;
+                    }
+                    else if (u.ConfrontationSide == enemySide && !u.Combatant.IsFainted)
+                    {
+                        aliveEnemies++;
+                        if (u.Fielded)
+                        {
+                            activeEnemies++;
+                            if (u.Engaged)
+                            {
+                                engagedEnemies++;
+                            }
+                        }
+                    }
+                }
+
+                if (aliveEnemies == 0)
+                {
+                    // Victory: surviving allies become friendly and capturable with bonus.
+                    rec.State = ConfrontationState.Resolved;
+                    for (int i = 0; i < _units.Count; i++)
+                    {
+                        EncounterUnit u = _units[i];
+                        if (u.ConfrontationId == rec.Id && u.ConfrontationSide == alliedSide)
+                        {
+                            u.IsConfrontationAlly = false;
+                            if (!u.Combatant.IsFainted)
+                            {
+                                u.IsFriendlyAfterConfrontation = true;
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                if (activeEnemies > 0 && engagedEnemies == 0)
+                {
+                    // Player fled beyond disengage radius: end the confrontation cleanly and restore normal fielding cap.
+                    rec.State = ConfrontationState.Resolved;
+                    for (int i = 0; i < _units.Count; i++)
+                    {
+                        EncounterUnit u = _units[i];
+                        if (u.ConfrontationId == rec.Id)
+                        {
+                            u.IsConfrontationAlly = false;
+                            u.Engaged = false;
+                            u.WantsEngage = false;
+                        }
+                    }
+                    continue;
+                }
+
+                // Relay reserves into empty active slots (1 wild ally, up to 2 wild enemies).
+                if (activeAllies < 1)
+                {
+                    FieldNextConfrontationReserve(rec.Id, alliedSide, engage: false);
+                }
+
+                while (activeEnemies < WildEngageCapPerPlayer && FieldNextConfrontationReserve(rec.Id, enemySide, engage: true))
+                {
+                    activeEnemies++;
+                }
+            }
+        }
+
+        private bool FieldNextConfrontationReserve(int confId, int side, bool engage)
+        {
+            EncounterUnit best = null;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.ConfrontationId == confId && u.ConfrontationSide == side && !u.Fielded && !u.Combatant.IsFainted &&
+                    (best == null || u.ConfrontationOrder < best.ConfrontationOrder))
+                {
+                    best = u;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            best.Fielded = true;
+            if (engage)
+            {
+                Engage(best);
+            }
+
+            return true;
         }
 
         // REQ: combat.md#交戰上限 (Q-C63) — at most WildEngageCapPerPlayer non-boss wild units fight the player at once; a
@@ -2479,7 +3336,7 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side == EncounterSide.Wild && w.IsActive && w.Engaged && !w.IsBoss)
+                if (w.Side == EncounterSide.Wild && w.IsActive && w.Engaged && !w.IsBoss && !w.IsTrainerOwned)
                 {
                     n++;
                 }
@@ -2683,7 +3540,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < WanderSeaRetries; i++)
             {
                 target = WanderPoint(ref u.WanderRng, center, radiusM);
-                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, u.CollisionRadiusM))
+                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, u.CollisionRadiusM) &&
+                    !IsInsideSettlement(u, target))
                 {
                     return true;
                 }
@@ -2705,7 +3563,28 @@ namespace Cosmimera.Combat
             return math.normalize(up * math.cos(arc) + heading * math.sin(arc));
         }
 
-        private bool IsValidEnemy(EncounterUnit self, int id) => IsValidEnemy(self.Side, id);
+        private bool IsValidEnemy(EncounterUnit self, int id)
+        {
+            bool selfIsAlly = self.Side == EncounterSide.Player || self.IsConfrontationAlly;
+            if (id == PlayerCharacterId)
+            {
+                return !selfIsAlly && PlayerTargetable();
+            }
+
+            if (id < 0 || id >= _units.Count)
+            {
+                return false;
+            }
+
+            EncounterUnit t = _units[id];
+            bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+            if (selfIsAlly == targetIsAlly || !t.IsActive)
+            {
+                return false;
+            }
+
+            return selfIsAlly ? t.Engaged : true;
+        }
 
         private bool IsValidEnemy(EncounterSide side, int id)
         {
@@ -2720,12 +3599,14 @@ namespace Cosmimera.Combat
             }
 
             EncounterUnit t = _units[id];
-            if (t.Side == side || !t.IsActive)
+            bool targetIsAlly = t.Side == EncounterSide.Player || t.IsConfrontationAlly;
+            bool sideIsAlly = side == EncounterSide.Player;
+            if (sideIsAlly == targetIsAlly || !t.IsActive)
             {
                 return false;
             }
 
-            return t.Side == EncounterSide.Player || t.Engaged;
+            return sideIsAlly ? t.Engaged : true;
         }
 
         private void FillEnemies(EncounterUnit self)
@@ -2841,7 +3722,7 @@ namespace Cosmimera.Combat
                 return SteerResult.Blocked;
             }
 
-            if (EntersBuilding(u, up, next))
+            if (EntersRestrictedArea(u, up, next))
             {
                 if (!TrySlide(u, up, step, ref heading, ref next))
                 {
@@ -2886,7 +3767,7 @@ namespace Cosmimera.Combat
                         continue;
                     }
 
-                    if (!EntersBuilding(u, up, n))
+                    if (!EntersRestrictedArea(u, up, n))
                     {
                         heading = h;
                         next = n;
@@ -2920,15 +3801,17 @@ namespace Cosmimera.Combat
         private static float WeatherMoveSpeedScale(EncounterUnit u, in WeatherProfile weather)
         {
             IReadOnlyList<ElementValue> mastery = u.Def.Mastery;
+            // REQ: weather.md#地表累積 — ground deposits slow creatures too, except those of the matching element.
+            float ground = weather.CreatureGroundMultiplier(mastery);
             for (int i = 0; i < mastery.Count; i++)
             {
                 if (weather.IsFavouredElement(mastery[i].Element))
                 {
-                    return weather.AdaptedCreatureMoveSpeedMultiplier;
+                    return weather.AdaptedCreatureMoveSpeedMultiplier * ground;
                 }
             }
 
-            return weather.CreatureMoveSpeedMultiplier;
+            return weather.CreatureMoveSpeedMultiplier * ground;
         }
 
         private float3 Up(float3 position) => _planet.ToDirection(position);

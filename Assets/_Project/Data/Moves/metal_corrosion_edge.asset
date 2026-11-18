@@ -34,3 +34,18 @@ MonoBehaviour:
   baseRangeMm: 2000
   movement: 0
   origin: 0
+  star: 1
+  polarity: 1
+  hasDowngraded: 0
+  downPower: -1
+  downCooldownMs: -1
+  downAccuracy: -1
+  downHasEffect: 0
+  downEffect:
+    type: 0
+    anyElement: 0
+    element: 0
+    delta: 0
+    percent: 0
+    maxStacks: 0
+  downEffectDurationMs: -1

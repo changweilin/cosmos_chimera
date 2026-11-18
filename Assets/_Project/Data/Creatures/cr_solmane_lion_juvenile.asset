@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_solmane_lion_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_solmane_lion_juvenile
+  lineId: cr_solmane_lion
+  stage: 0
+  sizeClass: 4
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 2
+  evolvesTo: {fileID: 11400000, guid: c4ec8244812bccf40b388121695b76a1, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 3
+    tier: 1
+    qty: 3
+  resist: 050000000a000000ecffffff14000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 15
+  - element: 8
+    value: 5
+  stats:
+    hp: 80
+    speed: 64
+    yinAtk: 64
+    yangAtk: 96
+    yinDef: 48
+    yangDef: 48
+  signatureMove: {fileID: 11400000, guid: 9dc4f6e42ab3e0e47a6bdede360dc047, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
+  fieldUtility: 29
+  conceptJson: "{\"name_zh\":\"\u6668\u5149\u5E7C\u7345\",\"name_en\":null,\"stage_look\":\"*
+    \u5916\u89C0\u63CF\u8FF0\uFF1A\u525B\u5F9E\u6EAB\u71B1\u7684\u592A\u967D\u706B\u6676\u86CB\u4E2D\u7834\u6BBC\u7FFB\u6EFE\u800C\u51FA\uFF08\u5C0D\u61C9\u5C08\u5C6C\u52D5\u4F5C
+    hatch\uFF09\u3002\u9AD4\u614B\u9075\u5FAA\u5E7C\u5E74\u7345\u79D1\u52D5\u7269\u982D\u8EAB\u6BD4\uFF0C\u64C1\u6709\u5713\u6EFE\u6EFE\u7684\u67D4\u8EDF\u5C0F\u809A\u76AE\u8207\u77ED\u7C97\u8089\u4E4E\u4E4E\u7684\u56DB\u80A2\u8089\u588A\uFF08Scaling
+    and mechanics of carnivoran footpads - PMC2894873\uFF09\u3002\u984D\u982D\u6B63\u4E2D\u592E\u5929\u751F\u5E36\u6709\u767D\u91D1\u5149\u8292\u7684\u300C\u91D1\u661F\u5341\u5B57\u5370\u8A18\uFF08Sol_Core\uFF09\u300D\uFF0C\u8116\u9838\u5468\u570D\u74B0\u7E5E\u8457\u4E00\u5708\u5982\u6E05\u6668\u7B2C\u4E00\u9053\u967D\u5149\u822C\u6EAB\u6696\u67D4\u548C\u7684\u84EC\u9B06\u91D1\u8272\u7D68\u6BDB\u9818\uFF0C\u5C3E\u5DF4\u672B\u7AEF\u6416\u66F3\u8457\u4E00\u5C0F\u7C07\u6046\u6EAB\u4E0D\u50B7\u4EBA\u7684\u6A58\u91D1\u706B\u82D7\u3002\\n  
+    * \u4E94\u5B98\u8207\u62D3\u64B2\u6AA2\u6838\uFF1A\u5E7C\u7345\u5713\u6F64\u7684\u96D9\u8033\u3001\u5927\u800C\u660E\u4EAE\u7684\u65E5\u66DC\u5341\u5B57\u96D9\u77B3\u3001\u91D1\u8272\u9F3B\u982D\u8207\u4E0B\u984E\u5B8C\u5168\u5916\u9732\u7121\u906E\u64CB\uFF1B\u5168\u8EAB\u8EC0\u5E79\u3001\u9838\u90E8\u8207\u56DB\u80A2\u63A1\u9023\u7E8C\u5C01\u9589\u6D41\u5F62\u62D3\u64B2\uFF08Manifold
+    Lofted Topology\uFF09\uFF0C\u7121\u4EFB\u4F55\u61F8\u7A7A\u6216\u7A7F\u6A21\u554F\u984C\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_solmane_lion/cr_solmane_lion_juvenile_05_wiki.md\",\"sha256\":\"83c46b89977c359cddf4a883f80fd878011f4c4c721d6bafa4839b2fceb83b66\",\"drive_file_id\":\"1HllPIgWCbw7igxv1N-eUqrhN_iDlI9Pz\"},\"status\":\"review_required\",\"gameplay_archetype\":\"fire_ember_cub\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

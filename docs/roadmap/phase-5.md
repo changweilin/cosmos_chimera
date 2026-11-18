@@ -1,6 +1,6 @@
 # P5 內容擴量
 
-**出口條件**：≥ 60 條進化線（≥ 180 隻）、≥ 150 招式、≥ 60 特性、關係表連通；屬性/地區分布平均；通過平衡試玩。
+**出口條件**：≥ 60 條進化線（≥ 180 隻）、≥ 150 主動技、≥ 60 被動技、關係表連通；屬性/地區分布平均；通過平衡試玩。
 讀：`../design/creature-concept-pipeline.md`、`../design/creatures.md`
 **開工前需定案**：無（Q-T3 的 3D 工具選型已移交其他專案）
 
@@ -10,11 +10,12 @@
 | P5-02 | 文化原型考據庫（各地區、敏感度標記） | ARGON | OPUS + 人工 | 每地區 ≥ 15 原型 | 🟨 |
 | P5-03 | 宙獸批次初稿（每批 20–50） | TERRA / HYDROGEN | SONNET | 每批通過驗證工具 | 🟦 |
 | P5-04 | 概念圖 prompt 與美術生產，經 `tools/prompt-forge` | TERRA | 人工 | 每線 4 型態（含超載）概念圖 | 🟨 |
-| P5-05 | 招式/特性批次 | TERRA / HYDROGEN | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
+| P5-05 | 主動技/被動技批次 | TERRA / HYDROGEN | SONNET + SOL | 無重複效果、平衡在範圍內 | ⬜ |
 | P5-06 | 關係表建議與連通性分析 | ARGON | SONNET | 每隻至少 2 條邊；無孤島 | ✅ |
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | 🟦 |
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | 🟨 |
 | P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | ✅ |
+| P5-10 | 地形試煉 BOSS 新物種：10 條專屬進化線（各持該屬性 `immune_<地形>`，規格 [trainer-battles.md#地形試煉](../design/trainer-battles.md#地形試煉)） | TERRA／HYDROGEN（初稿，`Data/_incoming/`）→ ARGON（文化考據） | 不同廠商一致性審＋人工定稿 | `validate-data` 0 error；10 地形各 1 線；BOSS 型態階段符合星球階級 | ⬜ |
 
 ## 未收尾紀錄
 [log/phase-5.md](log/phase-5.md)（partial／blocked 才寫；舊紀錄為封存）。

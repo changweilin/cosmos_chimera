@@ -2,16 +2,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cosmimera.local/schemas/trait.schema.json",
   "title": "Trait file (array of traits)",
-  "description": "REQ: docs/design/creatures.md#特性 — passive = trigger + effects, data-driven.",
+  "description": "REQ: docs/design/creatures.md#被動技 — passive = trigger + effects, data-driven.",
   "type": "array",
   "items": { "$ref": "#/$defs/trait" },
   "$defs": {
     "trait": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "trigger", "effects"],
+      "required": ["id", "star", "trigger", "effects"],
       "properties": {
         "id": { "$ref": "common.schema.json#/$defs/id" },
+        "star": { "$ref": "common.schema.json#/$defs/star" },
+        "downgraded": {
+          "description": "★ version used when a partner provides this trait (creatures.md#技能星級). Required iff star >= 2; replaces the effects.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["effects"],
+          "properties": {
+            "effects": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "common.schema.json#/$defs/effect" } }
+          }
+        },
         "trigger": { "$ref": "common.schema.json#/$defs/trigger" },
         "effects": {
           "description": "1..8 effects (GameData TraitDef.MaxEffects).",
@@ -20,7 +30,12 @@
       },
       "allOf": [
         {
-          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#特性觸發).",
+          "if": { "properties": { "star": { "const": 1 } } },
+          "then": { "not": { "required": ["downgraded"] } },
+          "else": { "required": ["downgraded"] }
+        },
+        {
+          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#被動技觸發).",
           "if": { "properties": { "trigger": { "properties": { "type": { "enum": ["always", "on_hp_below", "on_hp_above"] } } } } },
           "then": { "properties": { "effects": { "items": { "properties": { "type": { "not": { "const": "heal_percent_max_hp" } } } } } } }
         }

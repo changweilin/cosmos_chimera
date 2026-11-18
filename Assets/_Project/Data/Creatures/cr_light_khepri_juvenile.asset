@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_light_khepri_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_light_khepri_juvenile
+  lineId: cr_light_khepri
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 8ea272888593fbc47a22e6faa533325b, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: da3346b48c2f9fc44a001b4e68340c73, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 2
+  evolvesTo: {fileID: 11400000, guid: 73acb54732a0f004394df83ed501c261, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 8
+    tier: 1
+    qty: 3
+  resist: 0000000000000000fbffffff0a0000000000000000000000000000000000000014000000ecffffff
+  mastery:
+  - element: 8
+    value: 15
+  stats:
+    hp: 88
+    speed: 32
+    yinAtk: 80
+    yangAtk: 48
+    yinDef: 80
+    yangDef: 72
+  signatureMove: {fileID: 11400000, guid: 404053ca538459a458392db820d55669, type: 2}
+  trait: {fileID: 11400000, guid: 17db6c338dfe7fb4ea1a4430f1175f2b, type: 2}
+  fieldUtility: 20
+  conceptJson: "{\"name_zh\":\"\u6668\u66E6\u73E0\u5149\u5C0F\u91D1\u7532\",\"name_en\":null,\"stage_look\":\"*
+    \u6EFE\u5713\u5446\u840C\u7684\u91D1\u5DE5\u5916\u9AA8\u9ABC\u8207\u9752\u91D1\u77F3\u80CC\u7532
+    (Thorax_Main / L_Elytron, R_Elytron)\uFF1A\u5E7C\u5E74\u671F\u9AD4\u578B\u5B0C\u5C0F\u6E3E\u5713\uFF0C\u8179\u90E8\u8207\u516D\u8DB3\u63A1\u7528\u6EAB\u6F64\u98FD\u548C\u7684\u300C\u6CD5\u8001\u7D14\u91D1\uFF08Pharaoh_Gold\uFF0CMetallic
+    1.0, Roughness 0.2\uFF09\u300D\u6253\u9020\uFF0C\u80CC\u90E8\u5247\u8986\u84CB\u8457\u4E00\u9AD4\u9589\u5408\u7684\u6DF1\u6D77\u975B\u85CD\u300C\u9752\u91D1\u77F3\u80CC\u7532\uFF08Lapis_Lazuli\uFF0CRoughness
+    0.35\uFF09\u300D\uFF0C\u4E2D\u7E2B\u9472\u5D4C\u4E00\u9053\u7CBE\u7DFB\u7684\u9EC3\u91D1\u6D6E\u96D5\u810A\u7DDA\u3002\u982D\u80F8\u4E4B\u9593\u4EE5\u539A\u5BE6\u7684\u7D14\u91D1\u9838\u74B0\u5B8C\u5168\u7121\u7E2B\u56FA\u63A5\uFF0C\u7D55\u7121\u4EFB\u4F55\u65B7\u88C2\u6216\u7834\u5716\u3002\\n*
+    \u7121\u906E\u64CB\u6668\u66E6\u5927\u773C\u8207\u521D\u751F\u5713\u89D2 (Head_Pharaoh)\uFF1A\u6B63\u9762\uFF08+Z
+    \u65B9\u5411\uFF09\u8996\u91CE 100% \u6DE8\u7A7A\u7121\u906E\u64CB\uFF0C\u5713\u6F64\u7684\u9EC3\u91D1\u8166\u888B\u4E0A\u9472\u5D4C\u8457\u4E00\u5C0D\u6563\u767C\u91D1\u767D\u67D4\u5149\u7684\u592A\u967D\u8907\u773C\uFF0C\u5916\u570D\u52FE\u52D2\u9ED1\u66DC\u77F3\u773C\u7DDA\uFF1B\u984D\u9802\u6B63\u4E2D\u592E\u9577\u6709\u4E00\u652F\u5446\u840C\u5713\u920D\u7684\u9ED1\u66DC\u77F3\u5C0F\u7368\u89D2\uFF0C\u5169\u5074\u4F38\u51FA\u672B\u7AEF\u5E36\u6709\u4E09\u7247\u6DF1\u85CD\u6247\u8449\u7684\u53EF\u611B\u91D1\u9F9C\u5B50\u89F8\u89D2\uFF08Scarab
+    Beetle Lamellate Antennae - Britannica\uFF09\u3002\\n* \u73CD\u73E0\u822C\u61F8\u6D6E\u6668\u66E6\u5149\u7403
+    (Sun_Disc_Root -> Sun_Disc_Spin)\uFF1A\u5728\u5E36\u6709\u4E09\u679A\u9ED1\u66DC\u77F3\u6316\u6398\u9F52\u7684\u524D\u80A2\uFF08Leg_FL,
+    Leg_FR\uFF09\u524D\u65B9\u4F4E\u8655\uFF0C\u61F8\u6D6E\u8457\u4E00\u9846\u5C0F\u5982\u73CD\u73E0\u3001\u5916\u74B0\u7D14\u91D1\u7D30\u7B8D\u7684\u300C\u6668\u66E6\u5149\u7403\uFF08Aten_Sun_Core\uFF09\u300D\u3002\u5149\u7403\u4F4D\u7F6E\u7CBE\u6E96\u8A2D\u5B9A\u65BC\u524D\u8DB3\u638C\u9593\u9AD8\u5EA6\uFF0C\u5B8C\u5168\u4E0D\u906E\u64CB\u5E7C\u87F2\u53EF\u611B\u7684\u81C9\u9F90\u8207\u80F8\u53E3\u5FAE\u5149\u5BF6\u77F3\uFF08Socket_Core_FX\uFF09\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_light_khepri/cr_light_khepri_juvenile_05_wiki.md\",\"sha256\":\"cc5ec92825e75530d22050e0aead7360147bdd94810aa0cfade44db30b0b0957\",\"drive_file_id\":\"1gJUsPqzlNdHGjmSjGRPCzlgyj_CXLQ7w\"},\"status\":\"review_required\",\"gameplay_archetype\":\"sun_mirror_chick\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

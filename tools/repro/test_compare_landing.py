@@ -13,7 +13,7 @@ spec.loader.exec_module(rc)
 def report(angle=0.0, radius=640, bits=None):
     if bits is None:
         bits = ",".join(struct.pack(">f", v).hex() for v in (math.cos(angle), math.sin(angle), 0))
-    return f"# cosmimera repro-probe v5\nlava adult 1 {radius} a b c d 5 p q {bits}\n"
+    return f"# cosmimera repro-probe v5\nlava adult 1 {radius} a b c d 5 p q w {bits}\n"
 
 
 @pytest.mark.parametrize("radius", [320, 640, 1280])

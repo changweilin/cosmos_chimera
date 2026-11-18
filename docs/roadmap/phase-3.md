@@ -23,9 +23,9 @@
 | P3-14 | 城牆（`design/settlement-structures.md#城牆`）：城邦石牆／小鎮木柵／村落籬笆／遺跡殘牆，規則層牆段與城門，可破壞 | OPUS（規則）+ SONNET（表現） | SOL | 角色與宙獸只能由城門進出；牆段可被打壞後通行；快照測試（升 `GeneratorVersion`）；牆高石牆 3–10 m、木柵 1–3 m | ⬜ |
 | P3-15 | 工廠（`#工廠`）：`BuildingKind.Factory`（都市、遺跡廢棄工廠）＋機房／工廠地城的地表入口（接 P3-07） | OPUS（規則）+ SONNET（表現） | SOL | 都市必有工廠地塊且不重疊；快照測試 | ⬜ |
 | P3-16 | 隧道（`#隧道`）：高山／峽谷地貌的洞口，傳送到獨立室內場景（依賴 P3-07） | OPUS（規則）+ SONNET（實作） | SOL | 兩端洞口互通；宙獸隨行；無封死 | ⬜ |
-| P3-17 | NPC 載具（`#交通工具`）：五類載具沿道路移動，規則層路徑與碰撞，可破壞掉素材 | OPUS（規則）+ SONNET（表現） | SOL | 同 seed 各客戶端位置一致；可被打壞並掉落；不卡住角色與宙獸 | ⬜ |
-| P3-18 | 路人 NPC：依地區×時代＋主／副風格程序化生成外觀，同一聚落內造型／年齡／健康有界常態抽樣（規格 `design/characters.md#路人-npc`；基底模型等美術匯入 P1-16） | Claude Fable | SOL | 同 seed 各客戶端路人一致；同聚落內個體差異可見且不離開風格 | 🟦 |
-| P3-19 | 自然生物：依環境生成，個體造型／年齡／健康有界常態抽樣（規格 `design/planet-world.md#自然生物`：植物年齡／健康、氛圍動物可被打壞掉素材、野生宙獸個體差異） | 待定 | SOL | 同 seed 一致；每種地貌有可辨識的生物組合 | ⬜ |
+| P3-17 | NPC 載具（`#交通工具`）：五類載具沿道路移動，規則層路徑與碰撞，可破壞掉素材 | OPUS（規則）+ SONNET（表現） | SOL | 同 seed 各客戶端位置一致；可被打壞並掉落；不卡住角色與宙獸 | 🟦 |
+| P3-18 | 路人 NPC：依地區×時代＋主／副風格程序化生成外觀，星球人口與職業基準、區域→聚落→個人織物有界常態抽樣（規格 `design/characters.md#路人-npc`；基底模型等美術匯入 P1-16） | Claude Fable | SOL | 同 seed 各客戶端路人一致；同聚落內個體差異可見且不離開風格 | 🟦 |
+| P3-19 | 自然生物：依環境生成，個體造型／年齡／健康有界常態抽樣（規格 `design/planet-world.md#自然生物`：植物年齡／健康、氛圍動物可被打壞掉素材、野生宙獸個體差異） | 待定 | SOL | 同 seed 一致；每種地貌有可辨識的生物組合 | 🟦 |
 | P3-20 | 植被下層（`design/planet-world.md#散佈`）：`ScatterPlanner` 第二層（灌木／箭竹／芒草，依星球類型×海拔帶，`GeneratorVersion` 2，冠層逐位元不變）＋ `SceneryMeshes` 三種程序化網格 | FABLE | SOL | 冠層快照不變；每種下層植被在其海拔帶出現；芒草不擋、灌木與箭竹擋；同 seed 一致 | 🟨 |
 | P3-21 | 作物田（稻／麥／甘蔗／玉米／煙草／可可／咖啡／茶／樟／葡萄／蘋果／橄欖；規格 `design/planet-world.md#作物田`：規則層地塊、每聚落隨機、草原型可隱匿／樹林型給樹果） | 待定 | SOL | 田地不落海、不與建築重疊；快照測試（升 `GeneratorVersion`）；作物分型與尺寸未定 | ⬜ |
 | P3-22 | 火山地熱地物（熔岩流／火山灰／泥火山／間歇噴泉／硫磺；規格 `#火山地熱`：規則層危險地形，熔岩可走但持續傷害） | 待定 | SOL | 每種地物各有規則測試；同 seed 各客戶端位置與週期一致；數值未定 | ⬜ |
@@ -33,11 +33,14 @@
 | P3-24 | 地質變體（洞穴／山谷／山脈的岩性；規格 `#地質變體`）：**(a)** 每塊印章抽基岩（`ScatterGeology`：喀斯特／玄武岩／花崗岩／板岩），只換一般岩石與地表岩色，`ScatterPlanner.GeneratorVersion` 5、新物種 `granite_tor`；**(b)** `LandformSynth` v2 四種基岩地貌 `karst`／`basalt_terrace`／`granite_domes`／`slate_cliffs`（基岩固定、各有地形設定與物種表），並補上 `grassland`／`desert`／`swamp`／`mountain` 的生成器；親和標籤（`TemplatePlanner.Kinds`） | FABLE | SOL | (a) 每種地質可辨識（規則測試；實景未經目視）；(b) v1 十二種地貌逐位元不變、快照依版本重訂；形狀只看過離線 hillshade，實景未經目視 | 🟨 |
 | P3-25 | 散佈依地貌印章：冠層密度依當地印章（`TemplatePlanner.ScatterDensity`）；**選種依地貌**（Q-W15：`ScatterBiomes` 物種目錄＋16 張地貌表、林型＝闊葉／針葉／混合／人工／次生、礦脈／石材／寒帶物種、下層密度依地貌；`TemplatePlanner.ScatterBiome`；`ScatterPlanner.GeneratorVersion` 4）＋ `SceneryMeshes` 11 個新造型 | FABLE | SOL | 每個地貌只長自己表內的物種；林班內林型一致、人工林單一樹種樹齡；下層物種守海拔帶；同 seed 一致；快照依版本重訂；新造型未經目視 | ✅ |
 | P3-26 | 季節（規格 `design/planet-world.md#季節`：每顆星球由 seed 抽一季、整場不變；外觀＋天氣＋物種與可採集物）。**已做**：`WorldGen.Seasons`（規則層抽季節）＋四季外觀（`ScatterField` 葉色／冬季落葉與積雪、`PlanetLook` 草地變色）。**未做**：天氣（Q-W20）、物種與可採集物（Q-W21）、HUD 顯示季節 | FABLE | SOL | 同 seed 各客戶端季節一致；四季外觀可辨識（`Logs/season-*.png`）；四季物件與碰撞相同 | 🟦 |
-| P3-27 | 礦物與採礦（規格 `#礦物`：寶石↔十屬性珠寶、生活招式「採礦」、土／金屬性招式採礦、一般招式掉落極少；天然氣併入 P3-22） | 待定 | SOL | 每種寶石掉對應屬性珠寶；採礦與一般招式掉落量有別；對應表與數值未定 | ⬜ |
+| P3-27 | 礦物與採礦（規格 `#礦物`：寶石↔十屬性珠寶、生活主動技「採礦」、土／金屬性主動技採礦、一般主動技掉落極少；天然氣併入 P3-22） | 待定 | SOL | 每種寶石掉對應屬性珠寶；採礦與一般主動技掉落量有別；對應表與數值未定 | ⬜ |
 | P3-28 | 寒帶地形（`#寒帶地形`）：`LandformSynth` v2 `tundra`／`glacier`／`cirque`／`moraine`；冰晶星偏好＋所有星球寒帶（\|y\| > 0.7）改抽寒帶地貌；各有地形設定、物種表、天氣偏向；表現層每塊印章自己的雪線。**海上冰山等 P3-23** | FABLE | SOL | 冰河地貌只在冰晶星與寒帶出現（規則測試）；快照依版本重訂；形狀只看過離線 hillshade，實景與雪線未經目視 | 🟨 |
 | P3-29 | 奇觀地標（`design/planet-world.md#奇觀地標`）：規則層 `LandmarkPlanner`（八種：高塔／神廟／空島／太空電梯／太空站／迷宮／坑道／地城門；避開海、道路、建築、生成點；實心者擋角色與宙獸、散佈避開）＋表現層 `LandmarkMeshes`（地區×時代×功能×年齡的程序化網格）＋ `LandmarkView`，已接進 `RunSession`。**未做**：內部與進入（Q-W26、P3-07）、互動／破壞（Q-W25）、遠景 LOD 與霧外可見性 | FABLE | SOL | 同 seed 一致（快照）；奇觀不落海、不壓道路建築生成點、彼此不重疊；每種造型可辨識（`Logs/landmark-*.png`）；實景未經目視 | 🟨 |
 | P3-30 | 地城暗黑氛圍表現層（`design/combat-feel.md` 〈地城氛圍〉）：點光源照明、暗角、降飽和、音場、菁英詞綴名牌、擊倒爆散與掉落噴灑；只套進階地形地城 | SONNET | 人工 | 一般地表外觀不變；Steam Deck 幀率；人工試玩 | ⬜ |
-| P3-31 | 野生宙獸生態（`design/creature-ecology.md`）：物種候選依出生環境抽棲位→習性；四種遊蕩模式與速度／移動／停留的個體間、行動間標準差；同棲位異種活動區不重疊；交戰上限 2 vs 2。資料、importer、`RunEcology`、`Encounter`、觀察已接線；存檔未接 | Codex（設計／提案）、Claude Opus（實作） | SOL／人工 | 提案通過 schema 與語義檢查；正式資料、importer、生成、戰鬥領域、觀察、收服／存檔完整遷移，EditMode／PlayMode 與重現性驗收 | 🟦 |
+| P3-31 | 野生宙獸生態（`design/creature-ecology.md`）：物種候選依出生環境抽棲位→習性；四種遊蕩模式與速度／移動／停留的個體間、行動間標準差；同棲位異種活動區不重疊；交戰上限 2 vs 2。資料、importer、`RunEcology`、`Encounter`、觀察、存檔 v11（保留棲位／習性、進化重抽、舊存檔遷移）與 `ReproProbe` v7 已接線 | Codex（設計／提案）、Claude Opus（實作） | SOL／人工 | 提案通過 schema 與語義檢查；正式資料、importer、生成、戰鬥領域、觀察、收服／存檔完整遷移，EditMode／PlayMode 與重現性驗收 | 🟦 |
+| P3-32 | 戰鬥旅人（[trainer-battles.md](../design/trainer-battles.md)#戰鬥旅人）：10 職業資料、各星球生成（獨立亂數流）、強度介於野生與 BOSS、視線挑戰與迴避；外觀用路人 NPC 程序化佔位；職業名稱文案 TERRA | OPUS（規則）+ SONNET（表現） | SOL＋ARGON（重現性必審） | 同 seed 同結果；既有生成序列不變；等級夾在野生與 BOSS 之間 | ⬜ |
+| P3-33 | 地形試煉（[trainer-battles.md](../design/trainer-battles.md)#地形試煉）：10 位試煉主（固定 seed 路人佔位）、引導入地城（免除免疫限制）→守關菁英→試煉主＋地城 BOSS 對玩家→必定收服 BOSS（P5-10 新物種，定稿前用現有持有物種替身）、進階器皿配方＋試煉章、再戰；依賴 P3-13／P3-07、P2-18 | SONNET | OPUS | 每種進階地形一條完整流程 PlayMode 測試 | ⬜ |
+| P3-34 | 天氣與時段改版（`design/weather.md`）：規則層 `DayPhase`（當地太陽仰角 → 清晨／白天／黃昏／夜晚）、`WeatherField`（整數擬布朗＋均值回歸的 8 基礎＋10 地形異象向量）、`WeatherDynamics`（75 門檻、主導天氣、強度縮放修正）；`WeatherKind` 加 10 異象、時段光／影修正與夜晚視野；地表累積（1 秒固定步長整數積分）影響移速與跳躍；天氣操縱改為 180 秒傾向覆寫並可召喚（限原生地貌）／驅散異象；表現層太陽與 `LocalWeatherView` 改吃向量。**未做**：異象特殊效果（傷害、落雷、漏斗、致盲等）、輻射塵的聚落周邊、晝夜活動性（待 Q-W36） | OPUS | SOL＋ARGON（重現性必審） | 同 (seed, 區域, timeMs) 跨後端逐位元相同；異象不出現在非指定地貌（規則測試）；時段由太陽方向推得且與畫面一致；`ReproProbe` 覆蓋；`GeneratorVersion` 遞增 | 🟨 |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

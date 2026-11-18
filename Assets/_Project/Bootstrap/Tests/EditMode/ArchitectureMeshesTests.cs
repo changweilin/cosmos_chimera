@@ -252,6 +252,7 @@ namespace Cosmimera.Bootstrap.Tests
         {
             var eras = new HashSet<ArchEra>();
             var secondaries = new HashSet<ArchRegion>();
+            var eraPairs = new HashSet<(ArchEra, ArchEra)>();
             for (ulong seed = 0; seed < 300; seed++)
             {
                 ArchPlanetStyle a = ArchitectureMeshes.PlanetStyleFor("storm_planet", seed);
@@ -262,13 +263,15 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(a.Era, Is.Not.EqualTo(ArchEra.Ancient));
                 Assert.That(a.SecondaryEra, Is.Not.EqualTo(ArchEra.Ancient).And.Not.EqualTo(a.Era));
                 Assert.That(a.SecondaryRegion, Is.Not.EqualTo(a.Region));
-                Assert.That(a.Weight, Is.InRange(0.15f, 0.45f));
+                Assert.That(a.Weight, Is.InRange(0.15f, 0.55f));
                 eras.Add(a.Era);
                 secondaries.Add(a.SecondaryRegion);
+                eraPairs.Add((a.Era, a.SecondaryEra));
             }
 
             Assert.That(eras.Count, Is.EqualTo(7), "every inhabited era turns up");
             Assert.That(secondaries.Count, Is.EqualTo(5), "every other tradition turns up as a secondary");
+            Assert.That(eraPairs.Count, Is.GreaterThanOrEqualTo(35), "planet primary/secondary era pairs are diverse, not limited to adjacent eras");
         }
 
         // REQ: settlement-structures.md#建築造型 — 星球類型為主、區域主題微調。

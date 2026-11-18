@@ -86,6 +86,41 @@ namespace Cosmimera.Bootstrap.Tests
             }
         }
 
+        [TestCase(NpcRace.Human, 0.4f, 0.95f)]
+        [TestCase(NpcRace.Merfolk, 0.1f, 0.7f)]
+        [TestCase(NpcRace.Dragonkin, 0.9f, 0.2f)]
+        public void Stride_plants_one_sole_and_returns_to_rest(NpcRace race, float age, float health)
+        {
+            var root = new GameObject("Stride");
+            try
+            {
+                NpcSpec spec = Spec(race, NpcRole.Guard, ArchEra.Future, age: age, health: health);
+                Mesh mesh = NpcMeshes.Build(spec, root.transform, out ResidentStride gait);
+                _meshes.Add(mesh);
+                Transform left = gait.Bones[5], right = gait.Bones[6];
+                Vector3 restL = left.position, restR = right.position;
+                bool lifts = false;
+                for (int i = 0; i < 24; i++)
+                {
+                    gait.Advance(0.04f, true);
+                    float riseL = left.position.y - restL.y, riseR = right.position.y - restR.y;
+                    Assert.That(math.min(riseL, riseR), Is.EqualTo(0f).Within(1e-5f));
+                    Assert.That(Quaternion.Angle(left.rotation, Quaternion.identity), Is.LessThan(0.1f));
+                    lifts |= math.max(riseL, riseR) > 0.001f;
+                }
+
+                Assert.That(lifts, Is.True);
+                for (int i = 0; i < 5; i++) gait.Advance(0f, true);
+                Assert.That(Vector3.Distance(left.position, restL), Is.LessThan(1e-5f));
+                Assert.That(Vector3.Distance(right.position, restR), Is.LessThan(1e-5f));
+                Assert.That(root.transform.position, Is.EqualTo(Vector3.zero));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         [TestCaseSource(nameof(RaceByEra))]
         public void Every_race_in_every_era_keeps_the_mesh_contracts(NpcRace race, ArchEra era)
         {
@@ -271,7 +306,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor("storm_planet", seed);
                 ArchMix mix = ArchitectureMeshes.MixFor(planet, SettlementKind.City, "coast", seed, (int)(seed % 5));
-                Assert.That(mix.TertiaryShare, Is.InRange(0.08f, 0.4f));
+                Assert.That(mix.TertiaryShare, Is.InRange(0.18f, 0.43f));
                 Assert.That(mix.TertiaryRegion, Is.Not.EqualTo(planet.Region));
                 Assert.That(mix.TertiaryRegion, Is.Not.EqualTo(mix.SecondaryRegion));
                 Assert.That(mix.TertiaryEra, Is.Not.EqualTo(planet.Era));

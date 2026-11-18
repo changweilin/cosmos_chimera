@@ -32,12 +32,7 @@
     "mastery": {
       "light": 15
     },
-    "stats": {
-      "con": 25,
-      "str": 30,
-      "spi": 30,
-      "agi": 15
-    },
+    "stats": {"hp": 70, "speed": 42, "yin_atk": 84, "yang_atk": 50, "yin_def": 77, "yang_def": 77},
     "signature_move": "light_mirror_glint",
     "trait": "trait_light_heliostat_focus",
     "field_utility": "scout_potential",
@@ -88,12 +83,7 @@
     "mastery": {
       "light": 25
     },
-    "stats": {
-      "con": 45,
-      "str": 60,
-      "spi": 60,
-      "agi": 35
-    },
+    "stats": {"hp": 80, "speed": 62, "yin_atk": 107, "yang_atk": 64, "yin_def": 94, "yang_def": 93},
     "signature_move": "light_heliostat_beam",
     "trait": "trait_light_heliostat_focus",
     "field_utility": "fly",
@@ -136,12 +126,7 @@
       "light": 40,
       "fire": 15
     },
-    "stats": {
-      "con": 90,
-      "str": 120,
-      "spi": 120,
-      "agi": 70
-    },
+    "stats": {"hp": 96, "speed": 75, "yin_atk": 77, "yang_atk": 128, "yin_def": 112, "yang_def": 112},
     "signature_move": "light_solar_array_lance",
     "trait": "trait_light_heliostat_focus",
     "field_utility": "immune_temple",
@@ -192,12 +177,7 @@
     "mastery": {
       "shadow": 15
     },
-    "stats": {
-      "con": 20,
-      "str": 25,
-      "spi": 20,
-      "agi": 35
-    },
+    "stats": {"hp": 59, "speed": 104, "yin_atk": 45, "yang_atk": 74, "yin_def": 59, "yang_def": 59},
     "signature_move": "shadow_nightpaw_swipe",
     "trait": "trait_shadow_longnight_stalker",
     "field_utility": "party_stealth",
@@ -248,12 +228,7 @@
     "mastery": {
       "shadow": 25
     },
-    "stats": {
-      "con": 40,
-      "str": 45,
-      "spi": 45,
-      "agi": 70
-    },
+    "stats": {"hp": 75, "speed": 131, "yin_atk": 84, "yang_atk": 50, "yin_def": 80, "yang_def": 80},
     "signature_move": "shadow_longnight_lunge",
     "trait": "trait_shadow_longnight_stalker",
     "field_utility": "steal_item",
@@ -296,12 +271,7 @@
       "shadow": 40,
       "ice": 15
     },
-    "stats": {
-      "con": 75,
-      "str": 90,
-      "spi": 85,
-      "agi": 150
-    },
+    "stats": {"hp": 85, "speed": 170, "yin_atk": 102, "yang_atk": 61, "yin_def": 91, "yang_def": 91},
     "signature_move": "shadow_lone_hunter_ambush",
     "trait": "trait_shadow_longnight_stalker",
     "field_utility": "immune_labyrinth",
@@ -352,12 +322,7 @@
     "mastery": {
       "thunder": 15
     },
-    "stats": {
-      "con": 30,
-      "str": 30,
-      "spi": 20,
-      "agi": 20
-    },
+    "stats": {"hp": 81, "speed": 54, "yin_atk": 81, "yang_atk": 49, "yin_def": 68, "yang_def": 67},
     "signature_move": "thunder_starblaze_charge",
     "trait": "trait_thunder_storm_gallop",
     "field_utility": "quick_escape",
@@ -410,12 +375,7 @@
       "thunder": 25,
       "wind": 10
     },
-    "stats": {
-      "con": 60,
-      "str": 55,
-      "spi": 40,
-      "agi": 45
-    },
+    "stats": {"hp": 103, "speed": 77, "yin_atk": 94, "yang_atk": 56, "yin_def": 85, "yang_def": 85},
     "signature_move": "thunder_galloping_discharge",
     "trait": "trait_thunder_storm_gallop",
     "field_utility": "mount",
@@ -459,12 +419,7 @@
       "thunder": 40,
       "wind": 20
     },
-    "stats": {
-      "con": 120,
-      "str": 110,
-      "spi": 80,
-      "agi": 90
-    },
+    "stats": {"hp": 123, "speed": 92, "yin_atk": 113, "yang_atk": 68, "yin_def": 102, "yang_def": 102},
     "signature_move": "thunder_skyhoof_stampede",
     "trait": "trait_thunder_storm_gallop",
     "field_utility": "immune_tower",

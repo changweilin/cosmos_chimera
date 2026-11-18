@@ -5,89 +5,70 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class WeatherControlTests
     {
-        private const int Cooldown = WeatherPlanner.DefaultSlotDurationMs;
+        private const int Cooldown = 180_000;
 
         [Test]
-        public void Skill_and_cooldown_refusals_preserve_weather_and_the_original_deadline()
+        public void Refusals_change_nothing_and_applied_starts_the_shared_cooldown()
         {
             var control = new WeatherControl(Cooldown);
+            Assert.That(control.TryApply(1, WeatherKind.Rain, 0, false, false, false), Is.EqualTo(WeatherControlResult.MissingSkill));
+            Assert.That(control.OverridesFor(1), Is.Empty);
             Assert.That(control.CooldownRemainingMs(0), Is.Zero);
-            Assert.That(control.TryApply(1, WeatherKind.Rain, 0, false), Is.EqualTo(WeatherControlResult.MissingSkill));
-            Assert.That(control.TryGetOverride(1, 0, out WeatherProfile absent), Is.False);
-            Assert.That(absent.Kind, Is.EqualTo(WeatherKind.Clear));
-            Assert.That(control.CooldownRemainingMs(0), Is.Zero);
-            Assert.That(control.TryApply(1, WeatherKind.Rain, 0, true), Is.EqualTo(WeatherControlResult.Applied));
-            Assert.That(control.TryApply(2, WeatherKind.Gale, 1, true), Is.EqualTo(WeatherControlResult.OnCooldown));
-            Assert.That(control.TryApply(1, WeatherKind.Clear, 1, false), Is.EqualTo(WeatherControlResult.MissingSkill));
-            Assert.That(control.TryGetOverride(1, 1, out WeatherProfile weather), Is.True);
-            Assert.That(weather.Kind, Is.EqualTo(WeatherKind.Rain));
-            Assert.That(control.TryGetOverride(2, 1, out _), Is.False);
-            Assert.That(control.CooldownRemainingMs(Cooldown - 1), Is.EqualTo(1));
-            Assert.That(control.CooldownRemainingMs(Cooldown), Is.Zero);
-            Assert.That(control.TryApply(2, WeatherKind.Clear, Cooldown, true), Is.EqualTo(WeatherControlResult.Applied));
-            Assert.That(control.TryGetOverride(2, Cooldown, out weather), Is.True, "clear weather is also an explicit override");
-            Assert.That(weather.Kind, Is.EqualTo(WeatherKind.Clear));
+
+            Assert.That(control.TryApply(1, WeatherKind.Rain, 0, true, false, false), Is.EqualTo(WeatherControlResult.Applied));
+            Assert.That(control.OverridesFor(1).Count, Is.EqualTo(1));
+            Assert.That(control.TryApply(2, WeatherKind.Gale, 1, true, false, false), Is.EqualTo(WeatherControlResult.OnCooldown));
+            Assert.That(control.TryDispelExotics(2, 1, true), Is.EqualTo(WeatherControlResult.OnCooldown));
+            Assert.That(control.OverridesFor(2), Is.Empty, "leaving does not carry weather to another region");
+            Assert.That(control.CooldownRemainingMs(1), Is.EqualTo(Cooldown - 1));
+            Assert.That(control.TryApply(2, WeatherKind.Clear, Cooldown, true, false, false), Is.EqualTo(WeatherControlResult.Applied));
         }
 
         [Test]
-        public void A_last_millisecond_cast_expires_at_the_next_slot_but_keeps_its_full_cooldown()
+        public void Exotics_need_native_terrain_and_base_weather_is_refused_indoors()
         {
             var control = new WeatherControl(Cooldown);
-            long castAt = WeatherPlanner.DefaultSlotDurationMs - 1;
-            Assert.That(control.TryApply(4, WeatherKind.Fog, castAt, true), Is.EqualTo(WeatherControlResult.Applied));
-            Assert.That(control.TryGetOverride(4, castAt, out _), Is.True);
-            Assert.That(control.TryGetOverride(5, castAt, out _), Is.False, "leaving does not carry weather to another region");
-            Assert.That(control.TryGetOverride(4, castAt, out _), Is.True, "returning in the same slot preserves the override");
-            Assert.That(control.TryGetOverride(4, castAt + 1, out _), Is.False);
-            Assert.That(control.CooldownRemainingMs(castAt + 1), Is.EqualTo(Cooldown - 1));
-            Assert.That(control.TryApply(5, WeatherKind.Blizzard, castAt + 1, true), Is.EqualTo(WeatherControlResult.OnCooldown));
-            Assert.That(control.TryApply(5, WeatherKind.Blizzard, castAt + Cooldown, true), Is.EqualTo(WeatherControlResult.Applied));
+            Assert.That(control.TryApply(0, WeatherKind.VolcanicAsh, 0, true, false, false), Is.EqualTo(WeatherControlResult.NotHere));
+            Assert.That(control.TryApply(0, WeatherKind.Rain, 0, true, false, true), Is.EqualTo(WeatherControlResult.NotHere));
+            Assert.That(control.CooldownRemainingMs(0), Is.Zero, "refusals do not start the cooldown");
+            Assert.That(control.TryApply(0, WeatherKind.RadDust, 0, true, true, true), Is.EqualTo(WeatherControlResult.Applied),
+                "an exotic native to an indoor dungeon may be summoned there");
+            WeatherOverride pin = control.OverridesFor(0)[0];
+            Assert.That(pin.Value((int)WeatherKind.RadDust), Is.EqualTo(1000));
+            Assert.That(pin.Mask & 0xFFu, Is.Zero, "an exotic summon leaves base attributes natural");
         }
 
         [Test]
-        public void Applying_to_another_region_does_not_erase_an_existing_override()
-        {
-            var control = new WeatherControl(1);
-            control.TryApply(1, WeatherKind.Rain, 0, true);
-            control.TryApply(2, WeatherKind.Gale, 1, true);
-            Assert.That(control.TryGetOverride(1, 1, out WeatherProfile first), Is.True);
-            Assert.That(first.Kind, Is.EqualTo(WeatherKind.Rain));
-            Assert.That(control.TryGetOverride(2, 1, out WeatherProfile second), Is.True);
-            Assert.That(second.Kind, Is.EqualTo(WeatherKind.Gale));
-        }
-
-        [Test]
-        public void Extreme_clock_values_do_not_overflow_expiry_or_cooldown()
+        public void Pin_lasts_for_the_hold_and_dispel_clears_every_exotic()
         {
             var control = new WeatherControl(Cooldown);
-            Assert.That(control.TryApply(0, WeatherKind.Gale, long.MaxValue, true), Is.EqualTo(WeatherControlResult.Applied));
-            Assert.That(control.TryGetOverride(0, long.MaxValue, out WeatherProfile weather), Is.True);
-            Assert.That(weather.Kind, Is.EqualTo(WeatherKind.Gale));
-            Assert.That(control.CooldownRemainingMs(long.MaxValue), Is.EqualTo(Cooldown));
-            var early = new WeatherControl(Cooldown);
-            early.TryApply(0, WeatherKind.Rain, 0, true);
-            Assert.That(early.CooldownRemainingMs(long.MaxValue), Is.Zero);
-            Assert.That(early.TryGetOverride(0, long.MaxValue, out _), Is.False);
+            Assert.That(control.TryDispelExotics(3, 1000, true), Is.EqualTo(WeatherControlResult.Applied));
+            Assert.That(control.PinnedRemainingMs(3, 1000), Is.EqualTo(WeatherField.OverrideHoldMs));
+            Assert.That(control.PinnedRemainingMs(3, 1000 + WeatherField.OverrideHoldMs - 1), Is.EqualTo(1));
+            Assert.That(control.PinnedRemainingMs(3, 1000 + WeatherField.OverrideHoldMs), Is.Zero);
+            Assert.That(control.PinnedRemainingMs(4, 1000), Is.Zero);
+            WeatherOverride pin = control.OverridesFor(3)[0];
+            for (int i = (int)WeatherKind.RadDust; i <= (int)WeatherKind.Miasma; i++) Assert.That(pin.Value(i), Is.Zero);
+            Assert.That(pin.Mask, Is.EqualTo(0x3FF00u));
         }
 
         [Test]
-        public void Invalid_inputs_fail_before_mutating_the_controller()
+        public void Contracts_reject_invalid_arguments()
         {
             Assert.Throws<ContractException>(() => new WeatherControl(0));
-            Assert.Throws<ContractException>(() => new WeatherControl(-1));
             var control = new WeatherControl(Cooldown);
-            Assert.Throws<ContractException>(() => control.TryApply(-1, WeatherKind.Rain, 0, true));
-            Assert.Throws<ContractException>(() => control.TryApply(0, (WeatherKind)(-1), 0, true));
-            Assert.Throws<ContractException>(() => control.TryApply(0, (WeatherKind)8, 0, true));
-            Assert.Throws<ContractException>(() => control.TryApply(0, WeatherKind.Rain, -1, true));
-            Assert.Throws<ContractException>(() => control.TryGetOverride(-1, 0, out _));
-            Assert.Throws<ContractException>(() => control.TryGetOverride(0, -1, out _));
-            Assert.Throws<ContractException>(() => control.CooldownRemainingMs(-1));
-            Assert.That(control.CooldownRemainingMs(0), Is.Zero);
-            control.TryApply(0, WeatherKind.Rain, 100, true);
-            Assert.Throws<ContractException>(() => control.TryApply(0, WeatherKind.Fog, 99, true));
-            Assert.Throws<ContractException>(() => control.TryGetOverride(0, 99, out _));
+            Assert.Throws<ContractException>(() => control.TryApply(-1, WeatherKind.Rain, 0, true, false, false));
+            Assert.Throws<ContractException>(() => control.TryApply(0, (WeatherKind)(-1), 0, true, false, false));
+            Assert.Throws<ContractException>(() => control.TryApply(0, (WeatherKind)18, 0, true, false, false));
+            Assert.Throws<ContractException>(() => control.TryApply(0, WeatherKind.Rain, -1, true, false, false));
+            Assert.Throws<ContractException>(() => control.TryDispelExotics(-1, 0, true));
+            Assert.Throws<ContractException>(() => control.OverridesFor(-1));
+            Assert.Throws<ContractException>(() => control.PinnedRemainingMs(0, -1));
+
+            control.TryApply(0, WeatherKind.Rain, 100, true, false, false);
+            Assert.Throws<ContractException>(() => control.TryApply(0, WeatherKind.Fog, 99, true, false, false));
             Assert.Throws<ContractException>(() => control.CooldownRemainingMs(99));
+            Assert.Throws<ContractException>(() => control.OverridesFor(0)[0].Value(18));
         }
     }
 }

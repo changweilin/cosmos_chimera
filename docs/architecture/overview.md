@@ -10,12 +10,12 @@ Assets/_Project/
 │   ├── WorldGen/            # 骨架/生物群系/區域圖/POI/地城（純 C# + Jobs）
 │   ├── Player/              # 角色控制、攝影機
 │   ├── Creatures/           # 宙獸模型、進化、隊伍、副手規則
-│   ├── Combat/              # 傷害、CD、命中、招式執行、AI 行為
+│   ├── Combat/              # 傷害、CD、命中、主動技執行、AI 行為
 │   ├── Capture/             # 收服、蛋、孵化
 │   ├── Food/                # 食物獲取、料理、食用與 Buff 規則
 │   ├── Crafting/            # 原料背包、採集／加工／製作、裝備與穿戴規則
 │   ├── Lobby/               # 地球大廳、星海選星
-│   ├── Codex/               # 圖鑑/招式表/特性表/關係表 UI
+│   ├── Codex/               # 圖鑑/主動技表/被動技表/關係表 UI
 │   ├── Net/                 # 連線、同步、房間
 │   └── Save/                # 存檔與版本遷移
 ├── Data/                    # importer 產出的 ScriptableObject（勿手改）
@@ -38,11 +38,12 @@ tools/                       # 資料驗證、匯入、AI prompt 模板
 ```
 Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet → Core
                  Net ──▶ (Combat, Creatures, Planet 的 Api)
-                 Save ─▶ (Creatures, Capture, Crafting 的 Api)
+                 Save ─▶ (Creatures, Capture, Crafting、Codex.Api 的 Api)
                  Food ─▶ (Combat, Creatures 的 Api)
              Crafting ─▶ (Combat, GameData 的公開效果／資料型別)
 ```
 `Core` 不引用任何 feature；`Planet` 不知道宙獸存在。
+`Codex.Api` 是只依賴 Core 的純 C# 解鎖狀態與事件組件；Save 引用此葉節點，不引用圖鑑 UI，避免存檔反向依賴表現層。
 `GameData` 只引用 Core；除了 Planet、Player 以外的 feature 都可以引用它（ADR-0004）。
 
 ## 資料流

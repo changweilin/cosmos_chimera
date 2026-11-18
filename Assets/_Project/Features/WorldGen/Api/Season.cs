@@ -42,5 +42,14 @@ namespace Cosmimera.WorldGen
             var rng = new Pcg32(seed, 'Y');
             return (Season)rng.NextUInt(Count);
         }
+
+        /// <summary>The season of a planet for rules (weather), or null on planets that have no seasons.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#季節 — only planets with vegetation (verdant, storm, twilight, mineral) have seasons.
+        /// Pre: planetTypeId may be null. Post: For(seed) on those four types, else null. Side effects: none.
+        /// </remarks>
+        public static Season? ForPlanet(ulong seed, string planetTypeId) =>
+            planetTypeId is "verdant_planet" or "storm_planet" or "twilight_planet" or "mineral_planet"
+                ? For(seed) : (Season?)null;
     }
 }

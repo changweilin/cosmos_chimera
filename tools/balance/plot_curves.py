@@ -60,9 +60,9 @@ def main():
     model = DerivedStats()
     c = json.loads(PROPOSAL.read_text(encoding="utf-8"))
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    anchors = " / ".join(f'{stage} {band["total_stats"] / 4:g}' for stage, band in c["stage_bands"].items())
+    anchors = " / ".join(f'{stage} {total / 6:g}' for stage, total in c["stat_budget"]["base"].items())
     footer = f'Design anchors per stat: {anchors}; effective stat cap {c["stat_effective_cap"]}.'
-    for name, xmax in (("design-band", max(1, c["stage_bands"]["adult"]["max_stat"])),
+    for name, xmax in (("design-band", max(1, c["stat_budget"]["base"]["overload"])),
                        ("saturation", c["stat_effective_cap"])):
         xs = list(range(xmax + 1)) if xmax <= 1000 else sorted(set(range(0, xmax + 1, 25)) | {1, 25, 50, 100, 200, xmax})
         rows = [(x, model.derive(x, x, x, x)) for x in xs]

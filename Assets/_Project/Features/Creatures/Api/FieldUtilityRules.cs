@@ -184,6 +184,11 @@ namespace Cosmimera.Creatures
     /// </remarks>
     public static class FieldUtilityRules
     {
+        /// <summary>Whether this sub-partner vessel can provide a crafting skill.</summary>
+        /// <remarks>Pre: defined vessel. Post: true for a glass bead or talisman card. Side effects: none.</remarks>
+        public static bool VesselSupportsCraftingSkill(VesselKind vessel) =>
+            vessel == VesselKind.GlassBead || vessel == VesselKind.TalismanCard;
+
         /// <summary>Flat capture chance bonus (percentage points) granted by <see cref="FieldUtility.CatchRateUp"/>.</summary>
         /// <remarks>Pre: none. Post: constant 15. Side effects: none.</remarks>
         public const int CatchRateBonusPercentValue = 15;

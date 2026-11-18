@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_metal_vault_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_metal_vault_overload
+  lineId: cr_metal_vault
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: f6368ccae57091a4b8628dafbf136ffc, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 320000000a00000000000000d8ffffff0f0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 0
+    value: 30
+  stats:
+    hp: 175
+    speed: 43
+    yinAtk: 86
+    yangAtk: 129
+    yinDef: 129
+    yangDef: 158
+  signatureMove: {fileID: 11400000, guid: 230702af6d75caf4dac85b6ba0ddc1cb, type: 2}
+  trait: {fileID: 11400000, guid: b2943f285c302af4192bc8d7f773d39d, type: 2}
+  fieldUtility: 15
+  conceptJson: "{\"name_zh\":\"\u592A\u7A7A\u96FB\u68AF\u8981\u585E\u5821\u58D8\",\"name_en\":null,\"stage_look\":\"*
+    \u82B1\u74E3\u5F0F\u7206\u958B\u8CA8\u6AC3\u5916\u58C1\u8207\u9226\u5408\u91D1\u6B66\u5668\u6A21\u7D44\u67B6
+    (Main_Container_Hull & Hatch_Top/Front)\uFF1A\u7576\u5167\u90E8\u5FAE\u578B\u805A\u8B8A\u6838\u5FC3\uFF08Socket_Core_FX\uFF09\u9032\u5165\u6975\u9650\u8D85\u8F09\u5171\u9CF4\uFF0C\u539F\u672C\u7DCA\u5BC6\u9396\u6B7B\u7684\u8CA8\u6AC3\u5916\u58C1\u5168\u9762\u50CF\u82B1\u74E3\u822C\u5411\u5916\u7206\u958B\u5C55\u958B\uFF08\u53C3\u8003\u4E09\u500D\u5C55\u958B\u5BB9\u7A4D\u65B9\u8259
+    HDT Global TRICON \u8207\u52A0\u9AD8\u5C55\u958B\u7CFB\u7D71 Weatherhaven EHMECC\uFF09\uFF01\u5DE6\u53F3\u5169\u5074\u8207\u5F8C\u65B9\u7684\u539A\u91CD\u8907\u5408\u88DD\u7532\u677F\u7531\u934D\u927B\u6DB2\u58D3\u6490\u687F\u5411\u5916\u659C\u5411\u63A8\u958B\u61F8\u639B\uFF0C\u5FB9\u5E95\u986F\u9732\u51FA\u5167\u90E8\u9AD8\u5BC6\u5EA6\u7684\u9280\u767D\u300C\u9226\u5408\u91D1\u5782\u76F4\u767C\u5C04\u6B66\u5668\u6A21\u7D44\u67B6\uFF08Titanium
+    VLS Weapon Racks\uFF09\u300D\u8207\u4E5D\u5BAE\u683C\u7425\u73C0\u8272\u9AD8\u7206\u5F48\u982D\u8259\uFF0C\u4E2D\u592E\u805A\u8B8A\u6838\u5FC3\u8207\u5168\u8EAB\u6D29\u58D3\u95A5\u540C\u6B65\u8F49\u70BA\u523A\u76EE\u7684\u8B66\u544A\u7D05\u5149\uFF08Emission
+    4.0\uFF09\u3002\\n* \u56DB\u7D44\u5DE8\u578B\u99D0\u92E4\u92FC\u6A01\u6B7B\u6B7B\u624E\u5165\u5730\u9762
+    (Foot_FL, Foot_FR, Foot_RL, Foot_RR)\uFF1A\u5E95\u76E4\u516B\u89D2\u8981\u585E\u57FA\u5EA7\u5411\u5916\u659C\u4F38\u51FA\u56DB\u689D\u7C97\u58EF\u7684\u5916\u4F38\u652F\u817F\u6A11\uFF0C\u6BCF\u689D\u652F\u817F\u914D\u7F6E\u5DE8\u578B\u934D\u927B\u6DB2\u58D3\u5343\u65A4\u9802\u8207\u5DE5\u7A0B\u6A58\u9EC3\u300C\u91CD\u578B\u706B\u7832\u99D0\u92E4\u92FC\u6A01\uFF08Artillery
+    Outrigger Spades\uFF09\u300D\uFF08\u8003\u64DA Power-Packer Hydraulic Outrigger
+    Stabilizers \u8207 Bison Container Lifting Jacks\uFF09\uFF0C\u5C07\u56DB\u679A\u9310\u5F62\u9226\u92FC\u5730\u9328\u6DF1\u6DF1\u6253\u5165\u5730\u5E95\u5CA9\u5C64\uFF0C\u62B5\u92B7\u4E00\u5207\u5F8C\u5EA7\u529B\u8207\u885D\u64CA\u6CE2\u3002\\n*
+    \u6B63\u9762\u96D9\u806F\u88DD\u91CD\u578B\u96FB\u78C1\u78C1\u8ECC\u7832\u53F0
+    (Socket_Front & Socket_Head)\uFF1A\u5728 100% \u6DE8\u7A7A\u7121\u906E\u64CB\u7684\u6B63\u9762\u706B\u63A7\u96F7\u9054\u6A4B\u4E0B\u65B9\uFF0C\u539F\u672C\u7684\u7A7F\u7532\u767C\u5C04\u7BA1\u5168\u9762\u5C55\u958B\u5EF6\u4F38\u70BA\u4E00\u9580\u9577\u9054
+    0.92 \u7C73\u7684\u300C\u96D9\u806F\u88DD\u91CD\u578B\u96FB\u78C1\u78C1\u8ECC\u7832\uFF08Twin-Rail
+    Electromagnetic Railgun\uFF09\u300D\uFF0C\u5169\u9053\u93E1\u9762\u934D\u927B\u52A0\u901F\u5C0E\u8ECC\u4E2D\u592E\u5954\u6E67\u8457\u71BE\u7D05\u7684\u9AD8\u58D3\u6D1B\u502B\u8332\u96FB\u6F3F\u5149\u8ECC\uFF0C\u7BB1\u9802\u5247\u5347\u8D77\u96D9\u5929\u7DDA\u592A\u7A7A\u96FB\u68AF\u76F8\u4F4D\u9663\u5217\u96F7\u9054\u5854\uFF08Socket_Head\uFF09\uFF0C\u5316\u8EAB\u93AE\u5B88\u6230\u5834\u7684\u7D42\u6975\u79FB\u52D5\u8981\u585E\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_metal_vault/cr_metal_vault_overload_05_wiki.md\",\"sha256\":\"45d78a2acfcb6cdffb53a4995777240c3b2902e6bd7db426c32e76a91d389867\",\"drive_file_id\":\"1jG6Vrsoj9em3SDD31dStGTpol6b4nRqs\"},\"status\":\"review_required\",\"gameplay_archetype\":\"metal_chronos_engine\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

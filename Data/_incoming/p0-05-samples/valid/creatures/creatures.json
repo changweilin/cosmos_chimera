@@ -29,12 +29,7 @@
     "mastery": {
       "fire": 15
     },
-    "stats": {
-      "con": 20,
-      "str": 15,
-      "spi": 25,
-      "agi": 30
-    },
+    "stats": {"hp": 67, "speed": 101, "yin_atk": 30, "yang_atk": 50, "yin_def": 76, "yang_def": 76},
     "signature_move": "sample_ember_strike",
     "trait": "sample_trait_placeholder",
     "concept": {
@@ -76,12 +71,7 @@
       "fire": 25,
       "wind": 10
     },
-    "stats": {
-      "con": 45,
-      "str": 35,
-      "spi": 50,
-      "agi": 55
-    },
+    "stats": {"hp": 90, "speed": 109, "yin_atk": 70, "yang_atk": 42, "yin_def": 95, "yang_def": 94},
     "signature_move": "sample_flame_burst",
     "trait": "sample_trait_placeholder",
     "concept": {
@@ -114,12 +104,7 @@
       "fire": 40,
       "wind": 20
     },
-    "stats": {
-      "con": 75,
-      "str": 60,
-      "spi": 85,
-      "agi": 80
-    },
+    "stats": {"hp": 109, "speed": 117, "yin_atk": 52, "yang_atk": 88, "yin_def": 117, "yang_def": 117},
     "signature_move": "sample_solar_flare",
     "trait": "sample_trait_placeholder",
     "concept": {

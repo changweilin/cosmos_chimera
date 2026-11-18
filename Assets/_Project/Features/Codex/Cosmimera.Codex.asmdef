@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Codex",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.Codex.Api",
         "Cosmimera.Combat",
         "Cosmimera.Capture",
         "Cosmimera.Creatures"

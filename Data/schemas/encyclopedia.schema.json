@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/encyclopedia.schema.json",
+  "title": "Shared character, creature and skill encyclopedia",
+  "description": "REQ: docs/design/encyclopedia.md. Player unlock progress is stored separately.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/entry" },
+  "$defs": {
+    "text": { "type": ["string", "null"], "minLength": 1 },
+    "strings": { "oneOf": [{ "type": "null" }, { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }] },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "storage", "path", "sha256"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "storage": { "enum": ["drive", "repository"] },
+        "path": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[:\\\\]).+" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "drive_file_id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      },
+      "if": { "properties": { "storage": { "const": "drive" } } },
+      "then": { "required": ["drive_file_id"] },
+      "else": { "not": { "required": ["drive_file_id"] } }
+    },
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "subject_id", "game_id", "status", "basic", "details", "sources", "assets"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/id" },
+        "kind": { "enum": ["creature", "character", "skill"] },
+        "subject_id": { "$ref": "common.schema.json#/$defs/id" },
+        "game_id": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
+        "status": { "enum": ["draft", "review_required", "approved"] },
+        "authored_fields": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(basic|details)\\.[a-z_]+$" } },
+        "stage": { "enum": ["juvenile", "adolescent", "adult", "overload"] },
+        "skill_type": { "enum": ["move", "trait", "field_utility"] },
+        "basic": {
+          "type": "object", "additionalProperties": false,
+          "required": ["name_zh", "name_en", "appearance", "summary"],
+          "properties": {
+            "name_zh": { "$ref": "#/$defs/text" }, "name_en": { "$ref": "#/$defs/text" },
+            "appearance": { "$ref": "#/$defs/text" }, "summary": { "$ref": "#/$defs/text" }
+          }
+        },
+        "details": { "type": "object" },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } },
+        "assets": {
+          "type": "object", "additionalProperties": false,
+          "required": ["wiki", "portrait", "model"],
+          "properties": {
+            "wiki": { "$ref": "#/$defs/text" }, "portrait": { "$ref": "#/$defs/text" },
+            "model": { "$ref": "#/$defs/text" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "creature" } } },
+          "then": {
+            "required": ["stage"], "not": { "required": ["skill_type"] },
+            "properties": { "details": {
+              "type": "object", "additionalProperties": false,
+              "required": ["ecology", "habits", "habitat", "reproduction", "growth"],
+              "properties": {
+                "ecology": { "$ref": "#/$defs/text" }, "habits": { "$ref": "#/$defs/text" },
+                "habitat": { "$ref": "#/$defs/text" }, "reproduction": { "$ref": "#/$defs/text" },
+                "growth": { "$ref": "#/$defs/text" }
+              }
+            } },
+            "if": { "properties": { "stage": { "const": "juvenile" } } },
+            "then": { "properties": { "details": { "properties": { "growth": { "type": "null" } } } } },
+            "else": { "properties": { "details": { "properties": { "reproduction": { "type": "null" } } } } }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "character" } } },
+          "then": {
+            "not": { "anyOf": [{ "required": ["stage"] }, { "required": ["skill_type"] }] },
+            "properties": { "details": {
+              "type": "object", "additionalProperties": false,
+              "required": ["occupation", "biography", "race", "physique", "likes", "dislikes"],
+              "properties": {
+                "occupation": { "$ref": "#/$defs/text" }, "biography": { "$ref": "#/$defs/text" },
+                "race": { "$ref": "#/$defs/text" }, "physique": { "$ref": "#/$defs/text" },
+                "likes": { "$ref": "#/$defs/strings" }, "dislikes": { "$ref": "#/$defs/strings" }
+              }
+            } }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "skill" } } },
+          "then": {
+            "required": ["skill_type"], "not": { "required": ["stage"] },
+            "properties": { "details": {
+              "type": "object", "additionalProperties": false,
+              "required": ["description", "effects", "field_effects", "value_refs"],
+              "properties": {
+                "description": { "$ref": "#/$defs/text" }, "effects": { "$ref": "#/$defs/text" },
+                "field_effects": { "$ref": "#/$defs/text" },
+                "value_refs": { "type": "array", "uniqueItems": true, "items": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["source", "pointer", "unit"],
+                  "properties": {
+                    "source": { "$ref": "common.schema.json#/$defs/id" },
+                    "pointer": { "type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)+$" },
+                    "unit": { "type": "string", "minLength": 1 }
+                  }
+                } }
+              }
+            } }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -3,199 +3,693 @@
     "id": "niche_ground_grazer",
     "name_zh": "地表食草",
     "resource_zh": "草本嫩葉；開闊地短距採食",
-    "habitat_kinds": ["river_valley", "fjord", "plateau", "archipelago", "eternal_day", "grassland", "tundra", "cirque", "moraine"],
-    "habit_weights": {"avoidant": 4, "vigilant": 4, "tolerant": 2},
+    "habitat_kinds": [
+      "river_valley",
+      "fjord",
+      "plateau",
+      "archipelago",
+      "eternal_day",
+      "grassland",
+      "tundra",
+      "cirque",
+      "moraine"
+    ],
+    "habit_weights": {
+      "avoidant": 4,
+      "vigilant": 4,
+      "tolerant": 2
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 14000,
-      "speed_permille": {"mean": 280, "individual_sd": 42, "action_sd": 56, "min": 50, "max": 900},
-      "move_ms": {"mean": 5000, "individual_sd": 1000, "action_sd": 1500, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 5500, "individual_sd": 1375, "action_sd": 2200, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 280,
+        "individual_sd": 42,
+        "action_sd": 56,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 5000,
+        "individual_sd": 1000,
+        "action_sd": 1500,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 5500,
+        "individual_sd": 1375,
+        "action_sd": 2200,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_edge_browser",
     "name_zh": "林緣食葉",
     "resource_zh": "灌木與低枝葉；林緣往返採食",
-    "habitat_kinds": ["forest", "river_valley", "swamp"],
-    "habit_weights": {"avoidant": 2, "vigilant": 4, "tolerant": 3, "territorial": 1},
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "swamp"
+    ],
+    "habit_weights": {
+      "avoidant": 2,
+      "vigilant": 4,
+      "tolerant": 3,
+      "territorial": 1
+    },
     "wander": {
       "mode": "shuttle",
       "radius_mm": 18000,
-      "speed_permille": {"mean": 250, "individual_sd": 37, "action_sd": 50, "min": 50, "max": 900},
-      "move_ms": {"mean": 7000, "individual_sd": 1400, "action_sd": 2100, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 7000, "individual_sd": 1750, "action_sd": 2800, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 250,
+        "individual_sd": 37,
+        "action_sd": 50,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 7000,
+        "individual_sd": 1400,
+        "action_sd": 2100,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 7000,
+        "individual_sd": 1750,
+        "action_sd": 2800,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_fruit_disperser",
     "name_zh": "食果傳種",
     "resource_zh": "成熟果實；串訪離散果源",
-    "habitat_kinds": ["forest", "river_valley"],
-    "habit_weights": {"avoidant": 2, "vigilant": 4, "tolerant": 3, "territorial": 1},
+    "habitat_kinds": [
+      "forest",
+      "river_valley"
+    ],
+    "habit_weights": {
+      "avoidant": 2,
+      "vigilant": 4,
+      "tolerant": 3,
+      "territorial": 1
+    },
     "wander": {
       "mode": "loop",
       "radius_mm": 24000,
-      "speed_permille": {"mean": 380, "individual_sd": 57, "action_sd": 76, "min": 50, "max": 900},
-      "move_ms": {"mean": 9000, "individual_sd": 1800, "action_sd": 2700, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 4500, "individual_sd": 1125, "action_sd": 1800, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 380,
+        "individual_sd": 57,
+        "action_sd": 76,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 9000,
+        "individual_sd": 1800,
+        "action_sd": 2700,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 4500,
+        "individual_sd": 1125,
+        "action_sd": 1800,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_nectar_visitor",
     "name_zh": "訪花食蜜",
     "resource_zh": "花蜜與花粉；串訪花叢，不預設飛行",
-    "habitat_kinds": ["forest", "river_valley", "plateau", "archipelago", "eternal_day", "grassland"],
-    "habit_weights": {"avoidant": 4, "vigilant": 4, "tolerant": 2},
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "plateau",
+      "archipelago",
+      "eternal_day",
+      "grassland"
+    ],
+    "habit_weights": {
+      "avoidant": 4,
+      "vigilant": 4,
+      "tolerant": 2
+    },
     "wander": {
       "mode": "loop",
       "radius_mm": 16000,
-      "speed_permille": {"mean": 450, "individual_sd": 67, "action_sd": 90, "min": 50, "max": 900},
-      "move_ms": {"mean": 6000, "individual_sd": 1200, "action_sd": 1800, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 2500, "individual_sd": 625, "action_sd": 1000, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 450,
+        "individual_sd": 67,
+        "action_sd": 90,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 6000,
+        "individual_sd": 1200,
+        "action_sd": 1800,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 2500,
+        "individual_sd": 625,
+        "action_sd": 1000,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_ground_granivore",
     "name_zh": "地表食籽",
     "resource_zh": "種子與穀粒；地表斑塊覓食",
-    "habitat_kinds": ["forest", "plateau", "eternal_day", "grassland", "desert", "tundra"],
-    "habit_weights": {"avoidant": 5, "vigilant": 4, "tolerant": 1},
+    "habitat_kinds": [
+      "forest",
+      "plateau",
+      "eternal_day",
+      "grassland",
+      "desert",
+      "tundra"
+    ],
+    "habit_weights": {
+      "avoidant": 5,
+      "vigilant": 4,
+      "tolerant": 1
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 9000,
-      "speed_permille": {"mean": 330, "individual_sd": 49, "action_sd": 66, "min": 50, "max": 900},
-      "move_ms": {"mean": 3000, "individual_sd": 600, "action_sd": 900, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 4000, "individual_sd": 1000, "action_sd": 1600, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 330,
+        "individual_sd": 49,
+        "action_sd": 66,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 3000,
+        "individual_sd": 600,
+        "action_sd": 900,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 4000,
+        "individual_sd": 1000,
+        "action_sd": 1600,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_understory_insectivore",
     "name_zh": "林下食蟲",
     "resource_zh": "林下昆蟲與小型無脊椎動物；頻繁換位",
-    "habitat_kinds": ["forest", "river_valley", "swamp"],
-    "habit_weights": {"avoidant": 2, "vigilant": 5, "tolerant": 3},
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "swamp"
+    ],
+    "habit_weights": {
+      "avoidant": 2,
+      "vigilant": 5,
+      "tolerant": 3
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 12000,
-      "speed_permille": {"mean": 420, "individual_sd": 63, "action_sd": 84, "min": 50, "max": 900},
-      "move_ms": {"mean": 4000, "individual_sd": 800, "action_sd": 1200, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 3000, "individual_sd": 750, "action_sd": 1200, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 420,
+        "individual_sd": 63,
+        "action_sd": 84,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 4000,
+        "individual_sd": 800,
+        "action_sd": 1200,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 3000,
+        "individual_sd": 750,
+        "action_sd": 1200,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 2,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_detritivore",
     "name_zh": "腐屑食者",
     "resource_zh": "枯葉與腐朽有機物；潮濕地表慢速採食",
-    "habitat_kinds": ["forest", "fjord", "archipelago", "cave", "swamp", "karst"],
-    "habit_weights": {"avoidant": 3, "vigilant": 3, "tolerant": 4},
+    "habitat_kinds": [
+      "forest",
+      "fjord",
+      "archipelago",
+      "cave",
+      "swamp",
+      "karst"
+    ],
+    "habit_weights": {
+      "avoidant": 3,
+      "vigilant": 3,
+      "tolerant": 4
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 7000,
-      "speed_permille": {"mean": 160, "individual_sd": 24, "action_sd": 32, "min": 50, "max": 900},
-      "move_ms": {"mean": 3500, "individual_sd": 700, "action_sd": 1050, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 10000, "individual_sd": 2500, "action_sd": 4000, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 160,
+        "individual_sd": 24,
+        "action_sd": 32,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 3500,
+        "individual_sd": 700,
+        "action_sd": 1050,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 10000,
+        "individual_sd": 2500,
+        "action_sd": 4000,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_carrion_scavenger",
     "name_zh": "食腐",
     "resource_zh": "動物殘骸；廣域機會搜尋",
-    "habitat_kinds": ["forest", "river_valley", "volcano", "rift_valley", "ice_field", "fjord", "plateau", "archipelago", "canyon", "cave", "eternal_day", "eternal_night", "grassland", "desert", "swamp", "mountain", "tundra", "glacier", "cirque", "moraine", "karst", "basalt_terrace", "granite_domes", "slate_cliffs"],
-    "habit_weights": {"vigilant": 4, "tolerant": 4, "territorial": 2},
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "volcano",
+      "rift_valley",
+      "ice_field",
+      "fjord",
+      "plateau",
+      "archipelago",
+      "canyon",
+      "cave",
+      "eternal_day",
+      "eternal_night",
+      "grassland",
+      "desert",
+      "swamp",
+      "mountain",
+      "tundra",
+      "glacier",
+      "cirque",
+      "moraine",
+      "karst",
+      "basalt_terrace",
+      "granite_domes",
+      "slate_cliffs"
+    ],
+    "habit_weights": {
+      "vigilant": 4,
+      "tolerant": 4,
+      "territorial": 2
+    },
     "wander": {
       "mode": "unbounded_random",
       "radius_mm": null,
       "exclusion_radius_mm": 20000,
-      "speed_permille": {"mean": 480, "individual_sd": 72, "action_sd": 96, "min": 50, "max": 900},
-      "move_ms": {"mean": 14000, "individual_sd": 2800, "action_sd": 4200, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 4000, "individual_sd": 1000, "action_sd": 1600, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 480,
+        "individual_sd": 72,
+        "action_sd": 96,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 14000,
+        "individual_sd": 2800,
+        "action_sd": 4200,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 4000,
+        "individual_sd": 1000,
+        "action_sd": 1600,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 2,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_ambush_predator",
     "name_zh": "伏擊掠食",
     "resource_zh": "掩蔽處的小型獵物；長停留、短距換位",
-    "habitat_kinds": ["forest", "rift_valley", "canyon", "cave", "swamp", "karst", "slate_cliffs"],
-    "habit_weights": {"vigilant": 3, "tolerant": 2, "territorial": 4, "aggressive": 1},
+    "habitat_kinds": [
+      "forest",
+      "rift_valley",
+      "canyon",
+      "cave",
+      "swamp",
+      "karst",
+      "slate_cliffs"
+    ],
+    "habit_weights": {
+      "vigilant": 3,
+      "tolerant": 2,
+      "territorial": 4,
+      "aggressive": 1
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 10000,
-      "speed_permille": {"mean": 240, "individual_sd": 36, "action_sd": 48, "min": 50, "max": 900},
-      "move_ms": {"mean": 2500, "individual_sd": 500, "action_sd": 750, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 16000, "individual_sd": 4000, "action_sd": 6400, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 240,
+        "individual_sd": 36,
+        "action_sd": 48,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 2500,
+        "individual_sd": 500,
+        "action_sd": 750,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 16000,
+        "individual_sd": 4000,
+        "action_sd": 6400,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 3,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_patrol_hunter",
     "name_zh": "巡獵掠食",
     "resource_zh": "沿固定獵徑搜尋獵物；反覆巡行",
-    "habitat_kinds": ["forest", "ice_field", "fjord", "plateau", "canyon", "eternal_night", "grassland", "desert", "mountain", "tundra", "glacier", "moraine"],
-    "habit_weights": {"vigilant": 2, "tolerant": 3, "territorial": 3, "aggressive": 2},
+    "habitat_kinds": [
+      "forest",
+      "ice_field",
+      "fjord",
+      "plateau",
+      "canyon",
+      "eternal_night",
+      "grassland",
+      "desert",
+      "mountain",
+      "tundra",
+      "glacier",
+      "moraine"
+    ],
+    "habit_weights": {
+      "vigilant": 2,
+      "tolerant": 3,
+      "territorial": 3,
+      "aggressive": 2
+    },
     "wander": {
       "mode": "loop",
       "radius_mm": 32000,
-      "speed_permille": {"mean": 520, "individual_sd": 78, "action_sd": 104, "min": 50, "max": 900},
-      "move_ms": {"mean": 12000, "individual_sd": 2400, "action_sd": 3600, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 4500, "individual_sd": 1125, "action_sd": 1800, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 520,
+        "individual_sd": 78,
+        "action_sd": 104,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 12000,
+        "individual_sd": 2400,
+        "action_sd": 3600,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 4500,
+        "individual_sd": 1125,
+        "action_sd": 1800,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 3,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_apex_predator",
     "name_zh": "頂級掠食",
     "resource_zh": "食物網高營養級獵物；廣域搜尋，並非必定狂暴",
-    "habitat_kinds": ["forest", "rift_valley", "ice_field", "plateau", "canyon", "eternal_night", "grassland", "desert", "mountain", "tundra", "glacier"],
-    "habit_weights": {"tolerant": 2, "territorial": 4, "aggressive": 3, "dominant": 1},
+    "habitat_kinds": [
+      "forest",
+      "rift_valley",
+      "ice_field",
+      "plateau",
+      "canyon",
+      "eternal_night",
+      "grassland",
+      "desert",
+      "mountain",
+      "tundra",
+      "glacier"
+    ],
+    "habit_weights": {
+      "tolerant": 2,
+      "territorial": 4,
+      "aggressive": 3,
+      "dominant": 1
+    },
     "wander": {
       "mode": "unbounded_random",
       "radius_mm": null,
       "exclusion_radius_mm": 30000,
-      "speed_permille": {"mean": 460, "individual_sd": 69, "action_sd": 92, "min": 50, "max": 900},
-      "move_ms": {"mean": 18000, "individual_sd": 3600, "action_sd": 5400, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 8000, "individual_sd": 2000, "action_sd": 3200, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 460,
+        "individual_sd": 69,
+        "action_sd": 92,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 18000,
+        "individual_sd": 3600,
+        "action_sd": 5400,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 8000,
+        "individual_sd": 2000,
+        "action_sd": 3200,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 4,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_opportunistic_omnivore",
     "name_zh": "機會型雜食",
     "resource_zh": "果實、小型動物與零散有機物；探索分散資源",
-    "habitat_kinds": ["forest", "river_valley", "volcano", "rift_valley", "ice_field", "fjord", "plateau", "archipelago", "canyon", "cave", "eternal_day", "eternal_night", "grassland", "desert", "swamp", "mountain", "tundra", "glacier", "cirque", "moraine", "karst", "basalt_terrace", "granite_domes", "slate_cliffs"],
-    "habit_weights": {"avoidant": 1, "vigilant": 3, "tolerant": 4, "territorial": 2},
+    "habitat_kinds": [
+      "forest",
+      "river_valley",
+      "volcano",
+      "rift_valley",
+      "ice_field",
+      "fjord",
+      "plateau",
+      "archipelago",
+      "canyon",
+      "cave",
+      "eternal_day",
+      "eternal_night",
+      "grassland",
+      "desert",
+      "swamp",
+      "mountain",
+      "tundra",
+      "glacier",
+      "cirque",
+      "moraine",
+      "karst",
+      "basalt_terrace",
+      "granite_domes",
+      "slate_cliffs"
+    ],
+    "habit_weights": {
+      "avoidant": 1,
+      "vigilant": 3,
+      "tolerant": 4,
+      "territorial": 2
+    },
     "wander": {
       "mode": "unbounded_random",
       "radius_mm": null,
       "exclusion_radius_mm": 15000,
-      "speed_permille": {"mean": 360, "individual_sd": 54, "action_sd": 72, "min": 50, "max": 900},
-      "move_ms": {"mean": 10000, "individual_sd": 2000, "action_sd": 3000, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 5000, "individual_sd": 1250, "action_sd": 2000, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 360,
+        "individual_sd": 54,
+        "action_sd": 72,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 10000,
+        "individual_sd": 2000,
+        "action_sd": 3000,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 5000,
+        "individual_sd": 1250,
+        "action_sd": 2000,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 2,
+    "trophic_group": "food_web"
   },
   {
     "id": "niche_mineral_feeder",
     "name_zh": "食礦",
     "resource_zh": "露出岩礦；礦點與棲所間往返，幻想食性",
-    "habitat_kinds": ["volcano", "rift_valley", "canyon", "cave", "desert", "mountain", "glacier", "cirque", "moraine", "karst", "basalt_terrace", "granite_domes", "slate_cliffs"],
-    "habit_weights": {"vigilant": 2, "tolerant": 4, "territorial": 3, "aggressive": 1},
+    "habitat_kinds": [
+      "volcano",
+      "rift_valley",
+      "canyon",
+      "cave",
+      "desert",
+      "mountain",
+      "glacier",
+      "cirque",
+      "moraine",
+      "karst",
+      "basalt_terrace",
+      "granite_domes",
+      "slate_cliffs"
+    ],
+    "habit_weights": {
+      "vigilant": 2,
+      "tolerant": 4,
+      "territorial": 3,
+      "aggressive": 1
+    },
     "wander": {
       "mode": "shuttle",
       "radius_mm": 15000,
-      "speed_permille": {"mean": 200, "individual_sd": 30, "action_sd": 40, "min": 50, "max": 900},
-      "move_ms": {"mean": 6500, "individual_sd": 1300, "action_sd": 1950, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 12000, "individual_sd": 3000, "action_sd": 4800, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 200,
+        "individual_sd": 30,
+        "action_sd": 40,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 6500,
+        "individual_sd": 1300,
+        "action_sd": 1950,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 12000,
+        "individual_sd": 3000,
+        "action_sd": 4800,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "abiotic"
   },
   {
     "id": "niche_ambient_energy_feeder",
     "name_zh": "環境能量採食",
     "resource_zh": "火山熱源、晶體等穩定能量點；幻想食性",
-    "habitat_kinds": ["volcano", "rift_valley", "ice_field", "plateau", "cave", "eternal_day", "eternal_night", "mountain", "glacier", "basalt_terrace"],
-    "habit_weights": {"avoidant": 1, "vigilant": 2, "tolerant": 4, "territorial": 3},
+    "habitat_kinds": [
+      "volcano",
+      "rift_valley",
+      "ice_field",
+      "plateau",
+      "cave",
+      "eternal_day",
+      "eternal_night",
+      "mountain",
+      "glacier",
+      "basalt_terrace"
+    ],
+    "habit_weights": {
+      "avoidant": 1,
+      "vigilant": 2,
+      "tolerant": 4,
+      "territorial": 3
+    },
     "wander": {
       "mode": "bounded_random",
       "radius_mm": 11000,
-      "speed_permille": {"mean": 180, "individual_sd": 27, "action_sd": 36, "min": 50, "max": 900},
-      "move_ms": {"mean": 4500, "individual_sd": 900, "action_sd": 1350, "min": 500, "max": 60000},
-      "pause_ms": {"mean": 14000, "individual_sd": 3500, "action_sd": 5600, "min": 250, "max": 60000}
-    }
+      "speed_permille": {
+        "mean": 180,
+        "individual_sd": 27,
+        "action_sd": 36,
+        "min": 50,
+        "max": 900
+      },
+      "move_ms": {
+        "mean": 4500,
+        "individual_sd": 900,
+        "action_sd": 1350,
+        "min": 500,
+        "max": 60000
+      },
+      "pause_ms": {
+        "mean": 14000,
+        "individual_sd": 3500,
+        "action_sd": 5600,
+        "min": 250,
+        "max": 60000
+      }
+    },
+    "trophic_tier": 1,
+    "trophic_group": "abiotic"
   }
 ]

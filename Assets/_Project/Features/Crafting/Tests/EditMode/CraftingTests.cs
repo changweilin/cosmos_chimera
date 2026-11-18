@@ -103,7 +103,7 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<ContractException>(() => CraftRules.CanCraft(null, AllSkills, _bag));
         }
 
-        private static readonly GripTuning Grips = new GripTuning(30, 15);
+        private static readonly GripTuning Grips = new GripTuning(35, 25);
         private static readonly GripMode[] TwoHand = { GripMode.TwoHanded };
         private static readonly GripMode[] Dual = { GripMode.DualWield };
         private static readonly GripMode[] Shield = { GripMode.OneHandShield };
@@ -116,16 +116,16 @@ namespace Cosmimera.Crafting.Tests
                 @"{ ""id"": ""test_greatsword"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
                     ""equipment"": { ""kind"": ""two_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
                     ""creature_effects"": [ { ""type"": ""range_mod_percent"", ""params"": { ""delta"": 10 } } ],
-                    ""weapon"": { ""element"": ""fire"", ""element_mastery"": 20, ""power_permille"": 2000, ""speed_permille"": 900 } } }",
+                    ""weapon"": { ""element"": ""fire"", ""element_mastery"": 20, ""power_permille"": 1000, ""speed_permille"": 900 } } }",
                 @"{ ""id"": ""test_dagger"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
                     ""equipment"": { ""kind"": ""one_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
                     ""creature_effects"": [], ""weapon"": { ""element"": ""water"", ""element_mastery"": 5, ""power_permille"": 900, ""speed_permille"": 1100 } } }",
                 @"{ ""id"": ""test_shield"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
-                    ""equipment"": { ""kind"": ""shield"", ""target"": ""both"", ""player"": { ""max_hp_percent"": 5, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
+                    ""equipment"": { ""kind"": ""shield"", ""target"": ""both"", ""player"": { ""max_hp_percent"": 5, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0, ""yin_defense"": 30, ""yang_defense"": 12 },
                     ""creature_effects"": [ { ""type"": ""resist_mod"", ""params"": { ""delta"": 5, ""element"": ""earth"" } } ] } }",
             }) items.Add(JObject.Parse(json));
             return new CraftCatalog(items.ToString(), Data("craft-recipes"),
-                @"[{ ""species"": ""s_two"", ""grips"": [""two_handed"", ""one_hand_shield""] }]");
+                @"[{ ""species"": ""s_two"", ""grips"": [""two_handed""] }]");
         }
 
         [Test]
@@ -190,12 +190,12 @@ namespace Cosmimera.Crafting.Tests
             CraftCatalog catalog = GearCatalog();
             WeaponLoadout Weapons(params EquippedItem[] e) => EquipmentRules.Collect(1, e, catalog, EquipmentRules.PlayerGrips, Grips).Weapons;
             WeaponLoadout two = Weapons(new EquippedItem(1, "main_hand", "test_greatsword"));
-            Assert.That(two.HandCount, Is.EqualTo(1)); Assert.That(two.PowerBonusPercent, Is.EqualTo(30));
-            Assert.That(two.PowerPermille(two.First), Is.EqualTo(2600));
+            Assert.That(two.HandCount, Is.EqualTo(1)); Assert.That(two.PowerBonusPercent, Is.EqualTo(35));
+            Assert.That(two.PowerPermille(two.First), Is.EqualTo(1350));
             WeaponLoadout dual = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_dagger"));
-            Assert.That(dual.HandCount, Is.EqualTo(2)); Assert.That(dual.SpeedBonusPercent, Is.EqualTo(15));
+            Assert.That(dual.HandCount, Is.EqualTo(2)); Assert.That(dual.SpeedBonusPercent, Is.EqualTo(25));
             Assert.That(dual.Hand(0).Element, Is.EqualTo(Element.Metal)); Assert.That(dual.Hand(1).Element, Is.EqualTo(Element.Water));
-            Assert.That(dual.SpeedPermille(dual.Hand(1)), Is.EqualTo(1265));
+            Assert.That(dual.SpeedPermille(dual.Hand(1)), Is.EqualTo(1375));
             WeaponLoadout shield = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_shield"));
             Assert.That(shield.HasShield && shield.HandCount == 1 && shield.PowerBonusPercent == 0 && shield.SpeedBonusPercent == 0, Is.True);
         }
@@ -221,6 +221,8 @@ namespace Cosmimera.Crafting.Tests
             var entries = new[] { new EquippedItem(0, "off_hand", "test_shield"), new EquippedItem(0, "upper", "craft_iron_guard") };
             EquipmentModifiers mods = EquipmentRules.Collect(0, entries, catalog, EquipmentRules.PlayerGrips, Grips);
             Assert.That(mods.PlayerHpPercent, Is.EqualTo(20));
+            Assert.That(mods.PlayerYinDefence, Is.EqualTo(30), "combat.md#玩家角色的守: shield defence reaches the player");
+            Assert.That(mods.PlayerYangDefence, Is.EqualTo(12));
             Assert.That(mods.Weapons.HasShield, Is.False); Assert.That(mods.CreatureEffects, Is.Empty);
         }
 
@@ -245,12 +247,16 @@ namespace Cosmimera.Crafting.Tests
             JToken blade = null; foreach (JToken i in items) if ((string)i["id"] == "craft_iron_blade") blade = i;
             blade["equipment"]["player"]["max_hp_percent"] = 5;
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
-            blade["equipment"]["player"]["max_hp_percent"] = 0; blade["equipment"]["kind"] = "upper";
+            blade["equipment"]["player"]["max_hp_percent"] = 0;
+            blade["equipment"]["player"]["yin_defense"] = 10;
+            Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")), "weapons give the player no defence");
+            ((JObject)blade["equipment"]["player"]).Remove("yin_defense"); blade["equipment"]["kind"] = "upper";
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
             blade["equipment"]["kind"] = "one_handed"; ((JObject)blade["equipment"]).Remove("weapon");
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
-            foreach (string grips in new[] { @"[{""species"":""a"",""grips"":[]}]", @"[{""species"":""a"",""grips"":[""dual_wield"",""dual_wield""]}]",
-                @"[{""species"":""a"",""grips"":[""sword""]}]", @"[{""species"":""a"",""grips"":[""dual_wield""]},{""species"":""a"",""grips"":[""two_handed""]}]" })
+            foreach (string grips in new[] { @"[{""species"":""a"",""grips"":[]}]", @"[{""species"":""a"",""grips"":[""two_handed"",""one_hand_shield""]}]",
+                @"[{""species"":""a"",""grips"":[""dual_wield"",""dual_wield""]}]", @"[{""species"":""a"",""grips"":[""sword""]}]",
+                @"[{""species"":""a"",""grips"":[""dual_wield""]},{""species"":""a"",""grips"":[""two_handed""]}]" })
                 Assert.Throws<InvalidDataException>(() => new CraftCatalog(Data("craft-items"), Data("craft-recipes"), grips));
         }
 
@@ -264,11 +270,15 @@ namespace Cosmimera.Crafting.Tests
         }
 
         [Test]
-        public void Shipped_grips_cover_every_staged_species()
+        public void Shipped_grips_cover_every_staged_species_with_one_grip_and_distinct_starter_grips()
         {
             var catalog = new CraftCatalog(Data("craft-items"), Data("craft-recipes"), Data("craft-grips"));
-            Assert.That(catalog.GripsOf("star_blaze_foal"), Is.EqualTo(new[] { GripMode.TwoHanded }));
-            Assert.That(catalog.GripsOf("sun_array_skyheron"), Is.EquivalentTo(new[] { GripMode.OneHandShield, GripMode.TwoHanded }));
+            foreach (string sun in new[] { "sun_mirror_chick", "sun_heliostat_heron", "sun_array_skyheron" })
+                Assert.That(catalog.GripsOf(sun), Is.EqualTo(new[] { GripMode.OneHandShield }));
+            foreach (string moon in new[] { "moon_night_pup", "moon_shade_wolf", "moon_longnight_wolf" })
+                Assert.That(catalog.GripsOf(moon), Is.EqualTo(new[] { GripMode.DualWield }));
+            foreach (string star in new[] { "star_blaze_foal", "star_storm_colt", "star_skyhoof_steed" })
+                Assert.That(catalog.GripsOf(star), Is.EqualTo(new[] { GripMode.TwoHanded }));
         }
 
         [Test]
@@ -341,6 +351,43 @@ namespace Cosmimera.Crafting.Tests
             const string badCapture = @"[{ ""id"": ""bad_cap"", ""category"": ""raw"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
                 ""capture"": { ""mode"": ""advanced"", ""element"": ""fire"", ""base_percent"": 50, ""advanced_bonus_percent"": 20 } }]";
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(badCapture, "[]"));
+        }
+
+        // REQ: destructibles.md#傷害 擊倒＝收成 (Q-C77).
+        [Test]
+        public void Knockdown_harvest_uses_only_caster_skills_spends_the_node_and_reports_a_full_bag()
+        {
+            var gathering = new CraftGathering();
+            var yields = new List<CraftStack>();
+            var forage = new[] { FieldUtility.ForageBerries };
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, new FieldUtility[0], _bag, yields),
+                Is.EqualTo(CraftResult.MissingSkill));
+            Assert.That(yields, Is.Empty);
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Success),
+                "a refused harvest did not spend the node");
+            Assert.That(yields, Is.Not.Empty);
+            foreach (CraftStack stack in yields) Assert.That(_bag.Count(stack.Id), Is.GreaterThanOrEqualTo(stack.Quantity));
+            Assert.That(gathering.HarvestOnKnockdown(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Depleted));
+            Assert.That(gathering.Preview(1, "log", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.Depleted),
+                "the knockdown harvest is the node's one harvest");
+
+            // Capacity is int.MaxValue per id: one stack just below it leaves no room for the harvest.
+            var full = new CraftInventory();
+            Assert.That(full.TryExchange(Empty, new[] { new CraftStack("raw_timber", int.MaxValue - 1) }), Is.True);
+            Assert.That(gathering.HarvestOnKnockdown(100, "log", "spring", _catalog, forage, full, yields), Is.EqualTo(CraftResult.CapacityExceeded));
+            Assert.That(yields, Is.Not.Empty, "the caller drops these on the ground");
+            Assert.That(full.Count("raw_timber"), Is.EqualTo(int.MaxValue - 1), "inventory unchanged");
+            Assert.That(gathering.Preview(100, "log", "spring", _catalog, forage, full, yields), Is.EqualTo(CraftResult.Depleted));
+            Assert.That(gathering.HarvestOnKnockdown(5, "no_such_source", "spring", _catalog, forage, _bag, yields), Is.EqualTo(CraftResult.NoResource));
+            foreach (string tree in new[] { "broadleaf", "conifer", "umbrella", "swamp_tree" })
+            {
+                Assert.That(gathering.HarvestOnKnockdown(200 + tree.Length, tree, "spring", _catalog, forage, _bag, yields),
+                    Is.EqualTo(CraftResult.Success), tree + " is a timber source");
+                Assert.That(yields.Exists(y => y.Id == "raw_timber"), Is.True, tree);
+            }
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(-1, "log", "spring", _catalog, forage, _bag, yields));
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "monsoon", _catalog, forage, _bag, yields));
+            Assert.Throws<ContractException>(() => gathering.HarvestOnKnockdown(2, "log", "spring", _catalog, null, _bag, yields));
         }
     }
 }

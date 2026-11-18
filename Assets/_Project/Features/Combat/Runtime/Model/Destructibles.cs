@@ -208,6 +208,16 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: as registered. Side effects: none.</remarks>
         public float3 CenterOf(int index) => Get(index).Center;
 
+        /// <summary>Moves a registered object's hit centre with its rule-layer position.</summary>
+        /// <remarks>Pre: valid registered live index and finite center. Post: CenterOf returns center. Side effects: updates the slot.</remarks>
+        public void MoveCenter(int index, float3 center)
+        {
+            Slot slot = Get(index);
+            Contract.Requires(slot.Registered && !slot.Destroyed && math.all(math.isfinite(center)), "live slot and finite center required");
+            slot.Center = center;
+            _slots[index] = slot;
+        }
+
         /// <summary>Why slot <paramref name="index"/> was destroyed.</summary>
         /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: meaningful only once destroyed. Side effects: none.</remarks>
         public DestroyCause CauseOf(int index) => Get(index).Cause;
@@ -240,13 +250,16 @@ namespace Cosmimera.Combat
         /// <summary>Applies one move hit (geometry already touched; objects never roll).</summary>
         /// <remarks>
         /// Pre: 0 &lt;= index &lt; Count; the slot is not destroyed; 0 &lt;= power &lt;= DamageModel.MaxPower;
-        ///      0 &lt;= masteryPercent &lt;= DamageModel.MaxMasteryPercent; nowMs &gt;= 0.
-        /// Post: damage = DamageModel(power, mastery, resist) × reaction percent (one rounding, min 1 unless immune);
+        ///      0 &lt;= masteryPercent &lt;= DamageModel.MaxMasteryPercent; nowMs &gt;= 0; 1000 &lt;= harvestPermille &lt;= 10000.
+        /// Post: damage = DamageModel(power, mastery, resist) × reaction percent × harvestPermille / 1000 (one rounding,
+        ///       min 1 unless immune);
         ///       brittleness is judged before this hit's own freeze; Destroyed iff Hp reached 0.
         /// Side effects: mutates the slot (HP, burning, frozen window); on destruction adds the id to the destroyed set.
         /// </remarks>
-        public ObjectHitResult ApplyHit(int index, Element element, int power, int masteryPercent, long nowMs)
+        public ObjectHitResult ApplyHit(int index, Element element, int power, int masteryPercent, long nowMs,
+            int harvestPermille = 1000)
         {
+            Contract.Requires(harvestPermille >= 1000 && harvestPermille <= 10000, "harvestPermille must be 1000..10000");
             Contract.Requires(index >= 0 && index < _slots.Count, "index out of range");
             Contract.Requires(!_slots[index].Destroyed, "object already destroyed");
             Contract.Requires(nowMs >= 0, "nowMs must be >= 0");
@@ -310,7 +323,7 @@ namespace Cosmimera.Combat
             }
 
             int baseDamage = DamageModel.Compute(power, masteryPercent, sub.Resist(element));
-            long scaled = ((long)baseDamage * percent + 50) / 100;
+            long scaled = ((long)baseDamage * percent * harvestPermille + 50_000) / 100_000;
             int damage = scaled > int.MaxValue ? int.MaxValue : (int)scaled;
             // REQ: destructibles.md#掉落機率 — a flammable finished by fire counts as burnt (charcoal), not only a burn-out.
             DestroyCause cause = (reactions & ObjectReaction.Melted) != 0 ? DestroyCause.Melted

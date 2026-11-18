@@ -76,12 +76,46 @@ namespace Cosmimera.WorldGen
         public int Hops { get; }
     }
 
+    /// <summary>Ecological confrontation kind between two wild groups.</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum ConfrontationKind
+    {
+        /// <summary>Same niche, different species, at adjacent territory boundaries (equal counts).</summary>
+        SameNiche = 0,
+        /// <summary>Different food-web trophic tiers (fewer upper vs more lower).</summary>
+        Trophic = 1,
+    }
+
+    /// <summary>A low-probability wild confrontation placed by RunEcology.</summary>
+    /// <remarks>Pre: produced by RunEcology.Apply. Post: immutable. Side effects: none.</remarks>
+    public readonly struct RunConfrontation
+    {
+        internal RunConfrontation(int id, ConfrontationKind kind, float3 center)
+        {
+            Id = id;
+            Kind = kind;
+            Center = center;
+        }
+
+        /// <summary>Confrontation id (index in RunPlan.Confrontations).</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int Id { get; }
+
+        /// <summary>Same-niche or trophic confrontation.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public ConfrontationKind Kind { get; }
+
+        /// <summary>Unit direction where the two sides face off.</summary>
+        /// <remarks>Pre: none. Post: unit length. Side effects: none.</remarks>
+        public float3 Center { get; }
+    }
+
     /// <summary>A wild creature placement.</summary>
     /// <remarks>Pre: produced by RunPlanner. Post: immutable. Side effects: none.</remarks>
     public readonly struct RunSpawn
     {
         internal RunSpawn(int region, int group, float3 direction, string creatureId, SpawnRole role,
-            WildIndividual individual = null)
+            WildIndividual individual = null, int confrontationId = -1, int confrontationSide = -1, int confrontationOrder = 0)
         {
             Region = region;
             Group = group;
@@ -89,6 +123,9 @@ namespace Cosmimera.WorldGen
             CreatureId = creatureId;
             Role = role;
             Individual = individual;
+            ConfrontationId = confrontationId;
+            ConfrontationSide = confrontationSide;
+            ConfrontationOrder = confrontationOrder;
         }
 
         /// <summary>Region index.</summary>
@@ -114,6 +151,18 @@ namespace Cosmimera.WorldGen
         /// <summary>Niche, habit and wander means of this individual (creature-ecology.md), set by RunEcology.</summary>
         /// <remarks>Pre: none. Post: null in a plan straight from RunPlanner; non-null after RunEcology.Apply. Side effects: none.</remarks>
         public WildIndividual Individual { get; }
+
+        /// <summary>Index in RunPlan.Confrontations, or -1 if this spawn is not in a wild confrontation.</summary>
+        /// <remarks>Pre: none. Post: -1 or valid index. Side effects: none.</remarks>
+        public int ConfrontationId { get; }
+
+        /// <summary>Side (0 or 1) within the confrontation, or -1 if not in one.</summary>
+        /// <remarks>Pre: none. Post: -1, 0, or 1. Side effects: none.</remarks>
+        public int ConfrontationSide { get; }
+
+        /// <summary>Relay order (0..3) within its confrontation side.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int ConfrontationOrder { get; }
     }
 
     /// <summary>One step of the main quest chain.</summary>
@@ -198,7 +247,8 @@ namespace Cosmimera.WorldGen
     public sealed class RunPlan
     {
         internal RunPlan(ulong seed, string planetTypeId, string chainId, RunRegion[] regions, int landing, int boss,
-            int[] route, RunSpawn[] spawns, RunQuestStep[] quest, float3 landingDirection, PlanetElements elements = null)
+            int[] route, RunSpawn[] spawns, RunQuestStep[] quest, float3 landingDirection, PlanetElements elements = null,
+            RunConfrontation[] confrontations = null)
         {
             Seed = seed;
             PlanetTypeId = planetTypeId;
@@ -211,11 +261,12 @@ namespace Cosmimera.WorldGen
             Quest = quest;
             LandingDirection = landingDirection;
             Elements = elements;
+            Confrontations = confrontations ?? System.Array.Empty<RunConfrontation>();
         }
 
-        internal RunPlan WithSpawns(RunSpawn[] spawns)
+        internal RunPlan WithSpawns(RunSpawn[] spawns, RunConfrontation[] confrontations = null)
             => new RunPlan(Seed, PlanetTypeId, ChainId, (RunRegion[])Regions, LandingRegion, BossRegion, (int[])MainRoute,
-                spawns, (RunQuestStep[])Quest, LandingDirection, Elements);
+                spawns, (RunQuestStep[])Quest, LandingDirection, Elements, confrontations);
 
         /// <summary>Planet seed.</summary>
         /// <remarks>Pre: none. Post: as given. Side effects: none.</remarks>
@@ -260,5 +311,9 @@ namespace Cosmimera.WorldGen
         /// <summary>Main and sub-elements with their percentages for this planet.</summary>
         /// <remarks>Pre: none. Post: non-null; Percents sum to 100. Side effects: none.</remarks>
         public PlanetElements Elements { get; }
+
+        /// <summary>Low-probability wild confrontations (creature-ecology.md#棲位食物鏈階級與野生對抗).</summary>
+        /// <remarks>Pre: none. Post: non-null; empty before RunEcology.Apply. Side effects: none.</remarks>
+        public IReadOnlyList<RunConfrontation> Confrontations { get; }
     }
 }

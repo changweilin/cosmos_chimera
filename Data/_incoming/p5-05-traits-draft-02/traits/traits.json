@@ -1,6 +1,7 @@
 [
   {
     "id": "trait_metal_siege_anchoring",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -24,6 +25,7 @@
   },
   {
     "id": "trait_metal_clockwork_precision",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -42,6 +44,7 @@
   },
   {
     "id": "trait_metal_reinforce_protocol",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -60,6 +63,7 @@
   },
   {
     "id": "trait_wood_canopy_reach",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -81,6 +85,7 @@
   },
   {
     "id": "trait_wood_bramble_wall",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -100,6 +105,7 @@
   },
   {
     "id": "trait_wood_spore_regeneration",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -118,6 +124,7 @@
   },
   {
     "id": "trait_water_calm_waters",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -143,6 +150,7 @@
   },
   {
     "id": "trait_water_undertow_escape",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -160,6 +168,7 @@
   },
   {
     "id": "trait_water_spring_surge",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -177,6 +186,7 @@
   },
   {
     "id": "trait_fire_pyroclastic_burst",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -201,6 +211,7 @@
   },
   {
     "id": "trait_fire_wildfire_momentum",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -219,6 +230,7 @@
   },
   {
     "id": "trait_fire_conflagration_flare",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -236,6 +248,7 @@
   },
   {
     "id": "trait_earth_crag_attunement",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -258,6 +271,7 @@
   },
   {
     "id": "trait_earth_landslide_charge",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -276,6 +290,7 @@
   },
   {
     "id": "trait_earth_unyielding_mantle",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -295,6 +310,7 @@
   },
   {
     "id": "trait_ice_glacier_bastion",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {
@@ -320,6 +336,7 @@
   },
   {
     "id": "trait_ice_rime_shatter",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -338,6 +355,7 @@
   },
   {
     "id": "trait_ice_frostbite_edge",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -357,6 +375,7 @@
   },
   {
     "id": "trait_wind_breeze_cadence",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -380,6 +399,7 @@
   },
   {
     "id": "trait_wind_aloft_vigilance",
+    "star": 1,
     "trigger": {
       "type": "on_hp_above",
       "params": {
@@ -397,6 +417,7 @@
   },
   {
     "id": "trait_wind_gale_gust",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -414,6 +435,7 @@
   },
   {
     "id": "trait_thunder_lightning_pivot",
+    "star": 1,
     "trigger": {
       "type": "on_ally_swap",
       "params": {
@@ -438,6 +460,7 @@
   },
   {
     "id": "trait_thunder_discharge_sprint",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -456,6 +479,7 @@
   },
   {
     "id": "trait_thunder_fulgur_reach",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -474,6 +498,7 @@
   },
   {
     "id": "trait_light_radiant_core",
+    "star": 1,
     "trigger": {
       "type": "always",
       "params": {}
@@ -497,6 +522,7 @@
   },
   {
     "id": "trait_light_mirage_arrival",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -514,6 +540,7 @@
   },
   {
     "id": "trait_light_halo_rebound",
+    "star": 1,
     "trigger": {
       "type": "on_move_used",
       "params": {
@@ -532,6 +559,7 @@
   },
   {
     "id": "trait_shadow_nightfall_creed",
+    "star": 1,
     "trigger": {
       "type": "on_summon",
       "params": {
@@ -556,6 +584,7 @@
   },
   {
     "id": "trait_shadow_smoke_veil",
+    "star": 1,
     "trigger": {
       "type": "on_hit_taken",
       "params": {
@@ -574,6 +603,7 @@
   },
   {
     "id": "trait_shadow_abyssal_haste",
+    "star": 1,
     "trigger": {
       "type": "on_hp_below",
       "params": {

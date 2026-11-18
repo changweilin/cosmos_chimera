@@ -120,5 +120,35 @@ namespace Cosmimera.Creatures.Tests
             Assert.Throws<ContractException>(() => new MaterialShortfall(key, -1, 4));
             Assert.Throws<ContractException>(() => new MaterialShortfall(default, 0, 1));
         }
+
+        [Test]
+        public void Ecology_fields_default_preserve_and_update()
+        {
+            var raw = new OwnedCreature(1, "a", VesselKind.TalismanCard, 0);
+            Assert.IsFalse(raw.HasEcology);
+            Assert.AreEqual("", raw.NicheId);
+            Assert.AreEqual(Habit.Tolerant, raw.Habit);
+
+            OwnedCreature migrated = raw.WithEcology("niche_ground_grazer", Habit.Vigilant);
+            Assert.IsTrue(migrated.HasEcology);
+            Assert.AreEqual("niche_ground_grazer", migrated.NicheId);
+            Assert.AreEqual(Habit.Vigilant, migrated.Habit);
+
+            OwnedCreature converted = migrated.WithVessel(VesselKind.MagicCube);
+            Assert.AreEqual("niche_ground_grazer", converted.NicheId);
+            Assert.AreEqual(Habit.Vigilant, converted.Habit);
+
+            OwnedCreature redrawn = converted.WithSpecies("b", "niche_apex_predator", Habit.Dominant);
+            Assert.AreEqual("b", redrawn.SpeciesId);
+            Assert.AreEqual("niche_apex_predator", redrawn.NicheId);
+            Assert.AreEqual(Habit.Dominant, redrawn.Habit);
+
+            Assert.Throws<ContractException>(() =>
+                new OwnedCreature(1, "a", VesselKind.GlassBead, 0, VesselKind.GlassBead, "niche_x", (Habit)99));
+            Assert.Throws<ContractException>(() => raw.WithEcology("", Habit.Tolerant));
+            Assert.Throws<ContractException>(() => raw.WithEcology(null, Habit.Tolerant));
+            Assert.Throws<ContractException>(() => default(OwnedCreature).WithEcology("niche_x", Habit.Tolerant));
+            Assert.Throws<ContractException>(() => raw.WithSpecies("b", "", Habit.Tolerant));
+        }
     }
 }

@@ -13,6 +13,8 @@ namespace Cosmimera.Creatures
     public enum XpSource
     {
         Wild = 0, Capture = 1, QuestStep = 2, QuestChain = 3, Boss = 4,
+        /// <summary>A trainer creature knocked out (trainer-battles.md#共用規則).</summary>
+        Trainer = 5,
     }
 
     /// <summary>One reward recipient of an event: a main (Owner == -1) or a sidekick of mains[Owner].</summary>
@@ -150,7 +152,7 @@ namespace Cosmimera.Creatures
 
             _floorLevels = d.migration_stage_floor_levels;
             RewardsDto r = d.rewards;
-            _baseXp = new[] { r.base_xp.wild, r.base_xp.capture, r.base_xp.quest_step, r.base_xp.quest_chain, r.base_xp.boss };
+            _baseXp = new[] { r.base_xp.wild, r.base_xp.capture, r.base_xp.quest_step, r.base_xp.quest_chain, r.base_xp.boss, r.base_xp.trainer };
             _referenceLevel = r.reference_level;
             _eliteMultiplier = r.elite_multiplier;
             _bossLevelMin = r.wild_level.boss_level_min;
@@ -207,7 +209,7 @@ namespace Cosmimera.Creatures
 
             RewardsDto r = d.rewards;
             Check(r.base_xp.wild >= 0 && r.base_xp.capture >= 0 && r.base_xp.quest_step >= 0 &&
-                r.base_xp.quest_chain >= 0 && r.base_xp.boss >= 0, "base xp must be >= 0");
+                r.base_xp.quest_chain >= 0 && r.base_xp.boss >= 0 && r.base_xp.trainer >= 0, "base xp must be >= 0");
             Check(r.reference_level >= MinLevel && r.reference_level < d.level_max, "reference_level out of range");
             // Same envelope as tools/balance/level_rewards.py (SOL P2-12 R5): C# and Python must accept the same configs.
             Check(r.elite_multiplier >= 1 && r.elite_multiplier <= 100, "elite_multiplier must be 1..100");
@@ -571,6 +573,8 @@ namespace Cosmimera.Creatures
             public int quest_step;
             public int quest_chain;
             public int boss;
+            // Absent in configs older than P2-18; JsonUtility then reads 0 (no trainer XP).
+            public int trainer;
         }
 
         [Serializable] private sealed class WildLevelDto

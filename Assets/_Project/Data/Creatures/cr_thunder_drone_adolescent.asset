@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_thunder_drone_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_thunder_drone_adolescent
+  lineId: cr_thunder_drone
+  stage: 1
+  sizeClass: 0
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 874d11c0092756d438b15f4af69cc211, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 8b6a32691c50ae24a916bb7b7bb69a3c, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 7
+    tier: 2
+    qty: 5
+  resist: 05000000000000000000000000000000f6ffffff000000001400000023000000e2ffffff00000000
+  mastery:
+  - element: 7
+    value: 20
+  stats:
+    hp: 60
+    speed: 120
+    yinAtk: 130
+    yangAtk: 60
+    yinDef: 70
+    yangDef: 60
+  signatureMove: {fileID: 11400000, guid: 0ce411d88f37c8746a9974a0729548f0, type: 2}
+  trait: {fileID: 11400000, guid: 43da7c9e8d6b7424ead7e33f57b4835e, type: 2}
+  fieldUtility: 21
+  conceptJson: "{\"name_zh\":\"\u56DB\u8EF8\u96FB\u91DD\u5DE1\u908F\u6A5F\",\"name_en\":null,\"stage_look\":\"\u6D88\u5149\u6DF1\u7070\u5C0E\u89D2\u7ACB\u65B9\u9AD4\u6A5F\u6BBC\u3001\u56DB\u8EF8\u78B3\u7E96\u7DAD\u659C\u4F38\u6A5F\u81C2\u8207\u56DB\u8449\u6DB5\u9053\u63A8\u9032\u5668\u3001\u5169\u5074\u4E0B\u984E\u9AD8\u58D3\u96FB\u6975\u91DD\u3001\u6B63\u9762\u5012\u54C1\u5B57\u4E09\u93E1\u982D\u611F\u6E2C\u96F2\u53F0\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_thunder_drone/cr_thunder_drone_adolescent_05_wiki.md\",\"sha256\":\"cd49583127ba06746e354ce8c7be9ec8539f6279f9a7dfdffcd0d2858a86a1bd\",\"drive_file_id\":\"1iTI19bcTUT7bQHyQVIpa0iXu9hCz7J_t\"},\"status\":\"review_required\",\"gameplay_archetype\":\"star_storm_colt\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

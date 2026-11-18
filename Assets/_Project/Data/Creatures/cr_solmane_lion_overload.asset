@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_solmane_lion_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_solmane_lion_overload
+  lineId: cr_solmane_lion
+  stage: 3
+  sizeClass: 2
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 9cc3e068522e89e4183892324066c8ae, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0a0000000f000000d8ffffff32000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 30
+  - element: 8
+    value: 20
+  stats:
+    hp: 146
+    speed: 115
+    yinAtk: 115
+    yangAtk: 172
+    yinDef: 86
+    yangDef: 86
+  signatureMove: {fileID: 11400000, guid: d4e431ecfc93eeb4aa29b957a5e9d1f9, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
+  fieldUtility: 24
+  conceptJson: "{\"name_zh\":\"\u5168\u66DC\u65E5\u5195\u5929\u754C\u8056\u5929\u7345\",\"name_en\":null,\"stage_look\":\"*
+    \u5916\u89C0\u63CF\u8FF0\uFF1A\u7576\u5FC3\u81DF\u8655\u7684\u300C\u795E\u8056\u6838\u805A\u8B8A\u53CD\u61C9\u6838\u5FC3\uFF08Socket_Core_FX\uFF09\u300D\u5B8C\u5168\u89E3\u5C01\uFF08\u89F8\u767C
+    overload_enter\uFF09\uFF0C\u706B\u9B03\u65E5\u66DC\u8056\u7345\u5C07\u7A81\u7834\u751F\u7269\u8089\u9AD4\u6975\u9650\uFF0C\u5316\u70BA\u534A\u7B49\u96E2\u5B50\u614B\u7684\u6046\u661F\u71BE\u71B1\u9AD4\uFF08Solar
+    Prominences - NASA\uFF09\u3002\u5176\u96D9\u80A9\u9B03\u6BDB\u5982\u65E5\u73E5\u7206\u767C\u822C\u5411\u5169\u5074\u9AD8\u7A7A\u5C55\u958B\u70BA\u4E00\u5C0D\u906E\u5929\u853D\u65E5\u7684\u96D9\u5C64\u300C\u5149\u706B\u5149\u7FFC\u300D\uFF0C\u80CC\u5F8C\u4E0A\u65B9\uFF08Halo_Solar_Root\uFF09\u5347\u8D77\u4E00\u8F2A\u7531\u5F6D\u7279\u5229\u5EAB\u65AF\u767D\u5927\u7406\u77F3\u5916\u74B0\u300124K
+    \u7D14\u91D1\u4E2D\u74B0\u3001\u767D\u91D1\u7B49\u96E2\u5B50\u5167\u74B0\u8207\u5341\u516D\u9053\u5341\u5B57\u661F\u8292\u69CB\u6210\u7684\u5DE8\u5927\u5BE6\u9AD4\u300C\u795E\u8056\u65E5\u8F2A\u5341\u5B57\u5149\u5195\u300D\uFF0C\u56DB\u8DB3\u8E0F\u5730\u4E4B\u8655\u7686\u71C3\u8D77\u7480\u74A8\u7684\u592A\u967D\u91D1\u708E\u706B\u74B0\uFF08Socket_Ground_FX\uFF09\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_solmane_lion/cr_solmane_lion_overload_05_wiki.md\",\"sha256\":\"40b1993598c2ac28c6992bcfdd402860cb2b66667e858fb16fcd6ce6be181953\",\"drive_file_id\":\"1bTgshDzrHrwIn9V-i53aeImv19osKYU0\"},\"status\":\"review_required\",\"gameplay_archetype\":\"fire_pyre_monarch\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

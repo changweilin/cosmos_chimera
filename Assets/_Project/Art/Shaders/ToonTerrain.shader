@@ -19,6 +19,7 @@ Shader "Cosmimera/ToonTerrain"
         _Rock ("Rock", Color) = (0.45, 0.42, 0.4, 1)
         _Snow ("Snow", Color) = (0.94, 0.96, 1, 1)
         _Patch ("Sunlit Patch Tint", Color) = (1.1, 1.06, 0.84, 1)
+        _FrozenGround ("Perennial Ice", Float) = 0
         _SnowLine ("Snow Line (0..1 of relief)", Float) = 0.8
         _PolarLat ("Polar Latitude (sin)", Float) = 0.85
         _Bands ("Light Bands", Float) = 3

@@ -17,11 +17,11 @@ OPUS 概念與數值初配；命名與圖鑑文案由 TERRA 補在 `copy-terra.j
 |---|---|---|
 | 日 | STR、SPI 高，AGI 低 | STR 只加遠程射程（`ranged_distance`），SPI 縮短 CD；站得遠所以不需要閃避 |
 | 月 | AGI 最高（成年 150） | 移速與閃避；近戰判定體隨 STR 縮放，所以 STR 維持中等 |
-| 星 | CON 最高 | 衝鋒在前排吃傷害；搭配特性「受擊疊雷專精」 |
+| 星 | CON 最高 | 衝鋒在前排吃傷害；搭配被動技「受擊疊雷專精」 |
 
-衍生值（`tools/balance/derived_stats.py`，招式＝各自的 signature move）：
+衍生值（`tools/balance/derived_stats.py`，主動技＝各自的 signature move）：
 
-| id | 階段 | HP | 移速 m/s | 閃避‰ | 招式 CD ms | 招式射程/判定 |
+| id | 階段 | HP | 移速 m/s | 閃避‰ | 主動技 CD ms | 主動技射程/判定 |
 |---|---|---|---|---|---|---|
 | sun_mirror_chick | 幼年 | 780 | 4.26 | 36 | 1293 | 26.76 m |
 | sun_heliostat_heron | 少年 | 879 | 4.518 | 75 | 3100 | 28.488 m |
@@ -36,10 +36,10 @@ OPUS 概念與數值初配；命名與圖鑑文案由 TERRA 補在 `copy-terra.j
 ## 需要人工決定的點
 1. **抗性呈軟三角**：日弱影（−20/−30/−40）、月弱雷、星弱光。這讓三隻互相克制、選哪隻開局都有明確的弱點，但等於在御三家之間放了一個小型相剋表。Q-C1 說「沒有全域相剋表」，這裡只是三隻自己的 `resist`，不違反資料契約；若不想要，把三個負值改成各自不同的屬性即可。
 2. **日線定位已裁決（2026-11-08，P5-08 A8）**：三招均為瞬發 `line` 光束，不採引導／持續施法；`light_mirror_glint` 為 `both`（閃避 −10%／3 s），`light_solar_array_lance` 為 `both`（光抗 −10／6 s）。
-3. **特性每條線共用一個**（三階段引用同一個 trait id）；也可以改成每階段升級版。
+3. **被動技每條線共用一個**（三階段引用同一個 trait id）；也可以改成每階段升級版。
 4. 只放了同線 `evolution_family` 邊；跨線關係留給 P5-06。
-5. 星成年的突進招 `range_class: mid`、路徑 12 m：大於近戰突進，仍遠小於 Q-C19 的 36 m 上限。範圍放電由少年招式（caster burst）負責；幼年與成年精通招皆為直線突進。三階 `concept.role` 已逐階對齊（2026-11-08，P5-08 A8）。
-6. 中英名稱與圖鑑文案在 `copy-terra.json`（TERRA）。Opus 驗收：數量 9/9/3、id 一致、不含原型真名／音譯、繁中 49–52 字、英文 30–33 字；`star_blaze_foal` 英文名原案 Voltrot 與既有作品角色過近，改為 Voltfoal。TERRA 另指出月成年外觀原寫「瞬間消失、從背後現身」與招式（直線突進）不符，已改成雪幕掩護下貼地疾衝。
+5. 星成年的突進招 `range_class: mid`、路徑 12 m：大於近戰突進，仍遠小於 Q-C19 的 36 m 上限。範圍放電由少年主動技（caster burst）負責；幼年與成年精通招皆為直線突進。三階 `concept.role` 已逐階對齊（2026-11-08，P5-08 A8）。
+6. 中英名稱與圖鑑文案在 `copy-terra.json`（TERRA）。Opus 驗收：數量 9/9/3、id 一致、不含原型真名／音譯、繁中 49–52 字、英文 30–33 字；`star_blaze_foal` 英文名原案 Voltrot 與既有作品角色過近，改為 Voltfoal。TERRA 另指出月成年外觀原寫「瞬間消失、從背後現身」與主動技（直線突進）不符，已改成雪幕掩護下貼地疾衝。
 
 ## temperament（2026-11-10，D0-E2 / Q-C35，待人工）
 Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少年 `normal`、成年 `fierce`。領域半徑見 `Data/balance.json#ai.territory_mm`。
@@ -48,5 +48,5 @@ Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少
 三線依使用者定案逐階一致：日 `keep_distance`、月 `flank`、星 `charge`（`docs/design/combat.md#戰鬥-ai`）。
 
 ## 修訂 2026-11-07（P5-08 A6/A13，使用者裁決）
-- A13 精通招與 P5-05 招式池去重（Claude Opus 提案，SOL 已複核）：`shadow_nightpaw_swipe` damage 35 → both 30＋目標影抗 −5／4 s（原與 `shadow_dusk_fang` 八欄相同；改 sweep 會與 `shadow_umbral_fang` 相同，故保留 front）；`light_mirror_glint` 40 → both 38＋目標閃避 −10%／3 s；`light_solar_array_lance` 110 → both 95＋目標光抗 −10／6 s（威力 38／95 依 SOL 複核：35 低於招式池帶 −22%、100 計入隊友共享降抗後 +22.5%）。月線三招因此一致帶「削弱影抗」。
+- A13 精通招與 P5-05 主動技池去重（Claude Opus 提案，SOL 已複核）：`shadow_nightpaw_swipe` damage 35 → both 30＋目標影抗 −5／4 s（原與 `shadow_dusk_fang` 八欄相同；改 sweep 會與 `shadow_umbral_fang` 相同，故保留 front）；`light_mirror_glint` 40 → both 38＋目標閃避 −10%／3 s；`light_solar_array_lance` 110 → both 95＋目標光抗 −10／6 s（威力 38／95 依 SOL 複核：35 低於主動技池帶 −22%、100 計入隊友共享降抗後 +22.5%）。月線三招因此一致帶「削弱影抗」。
 - A6 月線三階的 `concept.role`、`stage_look`、圖鑑與 `trait_shadow_longnight_stalker` 文案由 TERRA 改寫為繞背、直線突進、貼身作戰（戰鬥沒有潛行或自動後撤）；`docs/design/creatures.md` 月線定位同步。

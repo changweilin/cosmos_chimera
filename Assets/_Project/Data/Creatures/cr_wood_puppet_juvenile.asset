@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_wood_puppet_juvenile
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_wood_puppet_juvenile
+  lineId: cr_wood_puppet
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: da3346b48c2f9fc44a001b4e68340c73, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: cc23bcd8b9e99bb44aa110664d3e6390, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 1d5a59a47bc44fd4394c3598081e882e, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 25
+  evolutionMaterials:
+  - element: 1
+    tier: 1
+    qty: 3
+  resist: ecffffff140000000a00000000000000050000000000000000000000000000000000000000000000
+  mastery:
+  - element: 1
+    value: 15
+  stats:
+    hp: 100
+    speed: 20
+    yinAtk: 40
+    yangAtk: 80
+    yinDef: 60
+    yangDef: 100
+  signatureMove: {fileID: 11400000, guid: 2ee372000a40e73499e704b23ba8cd9e, type: 2}
+  trait: {fileID: 11400000, guid: e038bda6360067140bc9a88821836a12, type: 2}
+  fieldUtility: 28
+  conceptJson: "{\"name_zh\":\"\u5341\u5B57\u7A3B\u8349\u6728\u6A01\u5076\",\"name_en\":null,\"stage_look\":\"*
+    \u622A\u9802\u77ED\u6728\u6A01\u8EAB\u8EC0 (Pelvis_Log / Torso_Log)\uFF1A\u4E3B\u9AD4\u7531\u5169\u6BB5\u672A\u53BB\u76AE\u7684\u622A\u9802\u51B7\u6749\u77ED\u6728\u6A01\u900F\u904E\u7C21\u6613\u5713\u6728\u69AB\u4E0A\u4E0B\u4E32\u63A5\u800C\u6210\u3002\u6DF1\u8910\u8272\u7684\u7C97\u7CD9\u6A39\u76AE\u8868\u9762\u4FDD\u7559\u8457\u5929\u7136\u7684\u7E31\u5411\u88C2\u7D0B\u8207\u5207\u9762\u5E74\u8F2A\u51F9\u51F8\u7D30\u7BC0
+    (Bark_Wood, Roughness 0.85)\u3002\\n* \u7A3B\u8349\u4EBA\u9762\u8C8C\u8207\u5341\u5B57\u8EAB\u5F62
+    (Head_Sprout / L_Shoulder / R_Shoulder)\uFF1A\u982D\u90E8\u6728\u6A01\u6B63\u9762\u4EE5\u7126\u75D5\u8207\u5200\u523B\u52FE\u52D2\u51FA\u8CEA\u6A38\u7684\u7A3B\u8349\u4EBA\u4E94\u5B98\uFF0C\u96D9\u773C\u8207\u7E2B\u7DDA\u5634\u89D2\u900F\u51FA\u67D4\u548C\u7684\u7FE1\u7FE0\u7DA0\u5FAE\u5149
+    (Chakra_Glow)\u3002\u96D9\u81C2\u70BA\u4E00\u6839\u6A6B\u7A7F\u80F8\u8154\u6728\u6A01\u7684\u5341\u5B57\u5F62\u539F\u6728\u6A6B\u687F\uFF0C\u4F7F\u5176\u6574\u9AD4\u8F2A\u5ED3\u5448\u73FE\u9BAE\u660E\u7684\u7530\u9593\u5341\u5B57\u6728\u5076\u9020\u578B\u3002\\n*
+    \u521D\u751F\u96D9\u8449\u5AE9\u82BD (Bonsai_Trunk / Branch_01..02)\uFF1A\u982D\u9802\u622A\u65B7\u9762\u4E2D\u592E\u7834\u6728\u9577\u51FA\u4E00\u682A\u9BAE\u5AE9\u6B32\u6EF4\u7684\u7FE0\u7DA0\u96D9\u8449\u5E7C\u82D7
+    (Sprout_Green, Subsurface 0.2)\uFF0C\u6703\u96A8\u8457\u5E7C\u9AD4\u6416\u6643\u7684\u6B65\u4F10\u8207\u5FAE\u98A8\u8F15\u5DE7\u64FA\u52D5\u3002\\n*
+    \u6B65\u5C65\u6416\u6643\u7684\u52D5\u614B\u7279\u5FB5\uFF1A\u7531\u65BC\u819D\u90E8\u8207\u8E1D\u90E8\u5C1A\u672A\u5206\u5316\u51FA\u7CBE\u5BC6\u9278\u93C8\uFF0C\u5E7C\u5E74\u6728\u5076\u884C\u8D70\u6642\u4EF0\u8CF4\u77ED\u6728\u6A01\u96D9\u8DB3\u4EA4\u66FF\u786C\u6027\u9EDE\u5730\uFF0C\u6B65\u4F10\u5E36\u8457\u7B28\u62D9\u53EF\u611B\u7684\u5DE6\u53F3\u6416\u6643\u8207\u6728\u982D\u78B0\u649E\u7684\u300C\u53E9\u3001\u53E9\u300D\u8072\u97FF\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_wood_puppet/cr_wood_puppet_juvenile_05_wiki.md\",\"sha256\":\"8d78ff6879bc513064d7ca512c0f2fb063907e196a048fac67d0e50a018171bf\",\"drive_file_id\":\"1mzJVD43kmcXGg54IvAEc-TqPm_QfquIm\"},\"status\":\"review_required\",\"gameplay_archetype\":\"wood_fern_chick\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

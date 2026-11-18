@@ -31,6 +31,7 @@ namespace Cosmimera.Player
         private ViewOrbit _orbit;
         private float2 _pendingLook;
         private bool _configured;
+        private float _defaultEyeHeight;
 
         /// <summary>True when the first-person camera is live.</summary>
         /// <remarks>Pre: none. Post: false after Configure. Side effects: none.</remarks>
@@ -184,6 +185,32 @@ namespace Cosmimera.Player
         /// height stays within 0.25 % of the default 1.6 m; PlanetConfig allows |Center| ≤ 16000 and R ≤ 8000, so every
         /// supported surface point is inside (SOL P1 r11 N23: at 1e8 m the 1.6 m eye height rounded to 0).</remarks>
         public const float MaxTargetComponent = 32768f;
+
+        /// <summary>Switches the camera tracking target without resetting the orbit.</summary>
+        /// <remarks>
+        /// Pre: Configure called; target non-null, not pivot/worldUp or descendant of either, finite and within MaxTargetComponent.
+        /// Post: camera tracks target; if eyeHeight > 0, eye height is set to eyeHeight, else restored to serialized default.
+        /// Side effects: updates _target and _eyeHeight.
+        /// </remarks>
+        public void SetTarget(Transform target, float eyeHeight = -1f)
+        {
+            Contract.Requires(_configured, "Configure has not been called");
+            Contract.Requires(target != null, "target is required");
+            Contract.Requires(!target.IsChildOf(_pivot) && (_worldUp == null || !target.IsChildOf(_worldUp)),
+                "target must not be parented to pivot or worldUp");
+            float3 offset = (float3)target.position - _planet.Center;
+            Contract.Requires(math.all(math.isfinite(offset)) && math.cmax(math.abs(offset)) > 1e-3f,
+                "target must be finite and away from the planet centre");
+            Contract.Requires(math.cmax(math.abs((float3)target.position)) <= MaxTargetComponent,
+                "target position exceeds MaxTargetComponent");
+            if (_defaultEyeHeight <= 0f)
+            {
+                _defaultEyeHeight = _eyeHeight;
+            }
+
+            _target = target;
+            _eyeHeight = eyeHeight > 0f ? eyeHeight : _defaultEyeHeight;
+        }
 
         /// <summary>Switches between third and first person.</summary>
         /// <remarks>Pre: Configure called. Post: IsFirstPerson toggled; exactly one camera has the higher priority. Side effects: priorities.</remarks>

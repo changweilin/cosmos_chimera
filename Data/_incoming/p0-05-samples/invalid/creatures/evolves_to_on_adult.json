@@ -21,12 +21,7 @@
       "fire": 40,
       "wind": 20
     },
-    "stats": {
-      "con": 75,
-      "str": 60,
-      "spi": 85,
-      "agi": 80
-    },
+    "stats": {"hp": 109, "speed": 117, "yin_atk": 52, "yang_atk": 88, "yin_def": 117, "yang_def": 117},
     "signature_move": "sample_solar_flare",
     "trait": "sample_trait_placeholder",
     "concept": {

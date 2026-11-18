@@ -23,8 +23,10 @@ namespace Cosmimera.Combat
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public CastMove(string id, Element element, MoveKind kind, int power, int accuracyPercent, int baseCooldownMs,
-            bool hasEffect, in EffectSpec effect, int effectDurationMs)
+            bool hasEffect, in EffectSpec effect, int effectDurationMs, Polarity polarity = Polarity.Yin)
         {
+            Contract.Requires(polarity == Polarity.Yin || polarity == Polarity.Yang, "undefined Polarity");
+            Polarity = polarity;
             Contract.Requires(!string.IsNullOrEmpty(id), "id must be non-empty");
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
             Contract.Requires(kind >= MoveKind.Damage && kind <= MoveKind.Both, "undefined MoveKind");
@@ -66,6 +68,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public Element Element { get; }
 
+        /// <summary>Damage polarity: selects 陰攻/陽攻 and 陰守/陽守 (combat.md#傷害公式).</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public Polarity Polarity { get; }
+
         /// <summary>Damage, effect or both.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public MoveKind Kind { get; }
@@ -102,12 +108,24 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: def != null and importer-validated. Post: same values as def. Side effects: none.</remarks>
         public static CastMove FromDef(MoveDef def)
         {
+            return FromDef(def, false);
+        }
+
+        /// <summary>Converts an imported definition, using its ★ version when <paramref name="downgraded"/>.</summary>
+        /// <remarks>
+        /// REQ: creatures.md#技能星級 — a skill provided by a partner always works at ★.
+        /// Pre: def != null and importer-validated. Post: def's values, or its stored ★ values where present when
+        ///      downgraded (identical to FromDef(def) for a ★ move). Side effects: none.
+        /// </remarks>
+        public static CastMove FromDef(MoveDef def, bool downgraded)
+        {
             Contract.Requires(def != null, "def must not be null");
-            bool hasEffect = def.Effect != null;
-            EffectSpec effect = hasEffect ? EffectSpec.FromDef(def.Effect) : default;
-            int duration = def.HasEffectDuration ? def.EffectDurationMs : 0;
-            return new CastMove(def.Id, def.Element, def.Kind, def.Power, def.Accuracy, def.CooldownMs, hasEffect, effect,
-                duration);
+            EffectDef effectDef = def.EffectFor(downgraded);
+            bool hasEffect = effectDef != null;
+            EffectSpec effect = hasEffect ? EffectSpec.FromDef(effectDef) : default;
+            int duration = def.HasEffectDuration ? def.EffectDurationMsFor(downgraded) : 0;
+            return new CastMove(def.Id, def.Element, def.Kind, def.PowerFor(downgraded), def.AccuracyFor(downgraded),
+                def.CooldownMsFor(downgraded), hasEffect, effect, duration, def.Polarity);
         }
     }
 
@@ -232,8 +250,13 @@ namespace Cosmimera.Combat
     public readonly struct CastContext
     {
         internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs,
-            int powerDeltaPercent = 0, int weaponPowerPermille = 1000)
+            int powerDeltaPercent = 0, int weaponPowerPermille = 1000, int accuracyDelta = 0, int critRatePermille = 0,
+            int critDamagePercent = 100, int attack = 0)
         {
+            Attack = attack;
+            AccuracyDelta = accuracyDelta;
+            CritRatePermille = critRatePermille;
+            CritDamageOffsetPercent = critDamagePercent - 100;
             // Stored as an offset so default(CastContext) stays a neutral ×1.
             WeaponPowerOffsetPermille = weaponPowerPermille - 1000;
             Move = move;
@@ -270,6 +293,36 @@ namespace Cosmimera.Combat
 
         private int WeaponPowerOffsetPermille { get; }
 
+        /// <summary>Caster's attack for the move's polarity (陰攻 or 陽攻) frozen at cast time (combat.md#傷害公式).</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int Attack { get; }
+
+        /// <summary>Caster's accuracy_mod sum frozen at cast time, percentage points.</summary>
+        /// <remarks>Pre: none. Post: none (0 on default). Side effects: none.</remarks>
+        public int AccuracyDelta { get; }
+
+        /// <summary>Move accuracy plus <see cref="AccuracyDelta"/>, clamped for the hit roll.</summary>
+        /// <remarks>Pre: none. Post: 0..DerivedStats.MaxAccuracyPercent. Side effects: none.</remarks>
+        public int EffectiveAccuracyPercent
+        {
+            get
+            {
+                long a = (long)Move.AccuracyPercent + AccuracyDelta;
+                return a < 0 ? 0 : a > DerivedStats.MaxAccuracyPercent ? DerivedStats.MaxAccuracyPercent : (int)a;
+            }
+        }
+
+        /// <summary>Caster's crit chance frozen at cast time (combat.md#暴擊), permille.</summary>
+        /// <remarks>Pre: none. Post: 0..1000 (0 on default: no crit). Side effects: none.</remarks>
+        public int CritRatePermille { get; }
+
+        // Offset so default(CastContext) is a neutral ×1.
+        private int CritDamageOffsetPercent { get; }
+
+        /// <summary>Caster's crit multiplier frozen at cast time, percent.</summary>
+        /// <remarks>Pre: none. Post: 100..DamageModel.MaxCritDamagePercent (100 on default). Side effects: none.</remarks>
+        public int CritDamagePercent => 100 + CritDamageOffsetPercent;
+
         /// <summary>Weapon multiplier on move power frozen at cast time, permille (1000 when unarmed).</summary>
         /// <remarks>Pre: none. Post: 1..DamageModel.MaxWeaponPermille for an Accepted cast. Side effects: none.</remarks>
         public int WeaponPowerPermille => 1000 + WeaponPowerOffsetPermille;
@@ -289,8 +342,9 @@ namespace Cosmimera.Combat
         }
 
         internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied,
-            int preBlockDamage)
+            int preBlockDamage, bool critical = false)
         {
+            Critical = critical;
             PreBlockDamage = preBlockDamage;
             Outcome = outcome;
             Damage = damage;
@@ -334,6 +388,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool EffectApplied { get; }
 
+        /// <summary>Whether the damage was a critical hit (combat.md#暴擊).</summary>
+        /// <remarks>Pre: none. Post: false unless Outcome == Hit and the move deals damage. Side effects: none.</remarks>
+        public bool Critical { get; }
+
         /// <summary>Whether this move took the combatant to 0 HP.</summary>
         /// <remarks>Pre: none. Post: true iff HpBefore >= 1 and HpAfter == 0. Side effects: none.</remarks>
         public bool Fainted => HpBefore >= 1 && HpAfter == 0;
@@ -342,7 +400,7 @@ namespace Cosmimera.Combat
     /// <summary>
     /// One creature in combat: HP, move cooldowns, trait/effect book. Resolves casts it makes and moves that land on
     /// it, in a fixed order every peer replays identically.
-    /// REQ: docs/design/combat.md#傷害公式, #命中與閃避, #CD, #效果疊加, #特性觸發.
+    /// REQ: docs/design/combat.md#傷害公式, #命中與閃避, #CD, #效果疊加, #被動技觸發.
     /// </summary>
     /// <remarks>
     /// Order (user decisions 2026-11-07):
@@ -361,15 +419,13 @@ namespace Cosmimera.Combat
 
         private readonly DerivedStats _stats;
         private readonly EffectRulesConfig _rules;
-        private int _spi;
-        private int _agi;
+        private CreatureStats _core;
         private readonly int[] _mastery = new int[ElementCount];
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
         private int _hpMultiplier = 1;
         private int _preOverloadMaxHp;
-        private int _preOverloadSpi;
-        private int _preOverloadAgi;
+        private CreatureStats _preOverloadCore;
         private int[] _preOverloadMastery;
         private int[] _preOverloadResist;
         private bool _hasOverloadFormStats;
@@ -378,17 +434,17 @@ namespace Cosmimera.Combat
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
-        /// Pre: stats, rules, book non-null; con, spi, agi >= 0; masteryByElement and resistByElement have exactly 10
-        ///      entries indexed by <see cref="Element"/>; mastery 0..DamageModel.MaxMasteryPercent; resist
-        ///      −ResistClamp..ResistClamp; 1 &lt;= moveSlots &lt;= MoveCooldowns.MaxSlots.
-        /// Post: Hp == MaxHp == stats.MaxHp(con); Book == book; every slot ready.
+        /// Pre: stats, rules, book non-null; every core stat >= 0 (core is already level-scaled); masteryByElement and
+        ///      resistByElement have exactly 10 entries indexed by <see cref="Element"/>; mastery
+        ///      0..DamageModel.MaxMasteryPercent; resist −ResistClamp..ResistClamp; 1 &lt;= moveSlots &lt;= MoveCooldowns.MaxSlots.
+        /// Post: Hp == MaxHp == stats.MaxHpFromPoints(core.Hp); Core == core; Book == book; every slot ready.
         /// Side effects: copies the element tables; allocates per-combatant buffers (construction only).
         /// </remarks>
-        public Combatant(DerivedStats stats, EffectRulesConfig rules, int con, int spi, int agi,
+        public Combatant(DerivedStats stats, EffectRulesConfig rules, in CreatureStats core,
             IReadOnlyList<int> masteryByElement, IReadOnlyList<int> resistByElement, EffectBook book, int moveSlots)
         {
             Contract.Requires(stats != null && rules != null && book != null, "stats, rules and book must not be null");
-            Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
+            RequireCore(core);
             Contract.Requires(masteryByElement != null && masteryByElement.Count == ElementCount,
                 "masteryByElement needs one entry per Element");
             Contract.Requires(resistByElement != null && resistByElement.Count == ElementCount,
@@ -405,40 +461,48 @@ namespace Cosmimera.Combat
 
             _stats = stats;
             _rules = rules;
-            _spi = spi;
-            _agi = agi;
+            _core = core;
             Book = book;
-            MaxHp = stats.MaxHp(con);
+            MaxHp = stats.MaxHpFromPoints(core.Hp);
             Hp = MaxHp;
             Cooldowns = new MoveCooldowns(moveSlots);
         }
 
-        /// <summary>Max HP from CON.</summary>
-        /// <remarks>Pre: none. Post: >= HpBase >= 1. Side effects: none.</remarks>
+        /// <summary>Max HP from the HP stat (× the boss multiplier).</summary>
+        /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
         public int MaxHp { get; private set; }
+
+        /// <summary>Current (level-scaled; overload form while overloaded) six core stats.</summary>
+        /// <remarks>Pre: none. Post: every value >= 0. Side effects: none.</remarks>
+        public CreatureStats Core => _core;
+
+        private static void RequireCore(in CreatureStats core)
+        {
+            Contract.Requires(core.Hp >= 0 && core.Speed >= 0 && core.YinAtk >= 0 && core.YangAtk >= 0 && core.YinDef >= 0
+                && core.YangDef >= 0, "stats must be nonnegative");
+        }
 
         /// <summary>
         /// Re-derives the stat-driven values after a level-up between battles (Q-C31, 2026-11-09: growth applies when
         /// the battle ends). The damage already taken is kept: Hp rises by exactly the MaxHp increase.
         /// </summary>
         /// <remarks>
-        /// Pre: !IsFainted (a fainted creature earns no XP); con, spi, agi >= 0; stats.MaxHp(con) × HP multiplier >= MaxHp
-        ///      (levels never go down, and the stat curves are monotone).
-        /// Post: MaxHp == stats.MaxHp(con) × the multiplier set by <see cref="MultiplyMaxHp"/> (1 if never set);
-        ///       Hp == old Hp + (new MaxHp − old MaxHp); SPI/AGI-derived values use the new
-        ///       stats from the next query; cooldowns, effects and mastery/resist unchanged.
+        /// Pre: !IsFainted (a fainted creature earns no XP); every core stat >= 0; MaxHpFromPoints(core.Hp) × HP multiplier
+        ///      >= MaxHp (levels never go down, and level scaling is monotone).
+        /// Post: MaxHp == stats.MaxHpFromPoints(core.Hp) × the multiplier set by <see cref="MultiplyMaxHp"/> (1 if never set);
+        ///       Hp == old Hp + (new MaxHp − old MaxHp); Core == core from the next query; cooldowns, effects and
+        ///       mastery/resist unchanged.
         /// Side effects: mutates this combatant.
         /// </remarks>
-        internal void Rescale(int con, int spi, int agi)
+        internal void Rescale(in CreatureStats core)
         {
             Contract.Requires(!IsFainted, "a fainted combatant cannot level up");
-            Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
-            int maxHp = _stats.MaxHp(con) * _hpMultiplier;
+            RequireCore(core);
+            int maxHp = (int)System.Math.Min(int.MaxValue, (long)_stats.MaxHpFromPoints(core.Hp) * _hpMultiplier);
             Contract.Requires(maxHp >= MaxHp, "a level-up never lowers MaxHp");
             Hp += maxHp - MaxHp;
             MaxHp = maxHp;
-            _spi = spi;
-            _agi = agi;
+            _core = core;
         }
 
         /// <summary>Multiplies MaxHp for this combatant's whole life (boss fights: HP ×3, Q-C48) and refills HP.</summary>
@@ -508,23 +572,22 @@ namespace Cosmimera.Combat
 
         /// <summary>Enters temporary combat overload by switching to the overload form's stats, mastery and resist (Q-C12).</summary>
         /// <remarks>
-        /// Pre: !IsFainted &amp;&amp; !IsOverloaded; con, spi, agi >= 0; masteryByElement and resistByElement have 10 valid entries.
-        /// Post: IsOverloaded == true; MaxHp == _stats.MaxHp(con) * _hpMultiplier; Hp grows by max(0, newMaxHp - oldMaxHp)
-        ///       and is clamped to 1..MaxHp; SPI/AGI/mastery/resist match the overload form.
-        /// Side effects: mutates MaxHp, Hp, SPI, AGI, mastery, resist and IsOverloaded; snapshots pre-overload values.
+        /// Pre: !IsFainted &amp;&amp; !IsOverloaded; every core stat >= 0; masteryByElement and resistByElement have 10 valid entries.
+        /// Post: IsOverloaded == true; MaxHp == MaxHpFromPoints(core.Hp) * _hpMultiplier; Hp grows by max(0, newMaxHp - oldMaxHp)
+        ///       and is clamped to 1..MaxHp; Core/mastery/resist match the overload form.
+        /// Side effects: mutates MaxHp, Hp, Core, mastery, resist and IsOverloaded; snapshots pre-overload values.
         /// </remarks>
-        internal void BeginOverload(int con, int spi, int agi, IReadOnlyList<int> masteryByElement, IReadOnlyList<int> resistByElement)
+        internal void BeginOverload(in CreatureStats core, IReadOnlyList<int> masteryByElement, IReadOnlyList<int> resistByElement)
         {
             Contract.Requires(!IsFainted && !IsOverloaded, "must be alive and not already overloaded");
-            Contract.Requires(con >= 0 && spi >= 0 && agi >= 0, "stats must be nonnegative");
+            RequireCore(core);
             Contract.Requires(masteryByElement != null && masteryByElement.Count == ElementCount,
                 "masteryByElement needs one entry per Element");
             Contract.Requires(resistByElement != null && resistByElement.Count == ElementCount,
                 "resistByElement needs one entry per Element");
 
             _preOverloadMaxHp = MaxHp;
-            _preOverloadSpi = _spi;
-            _preOverloadAgi = _agi;
+            _preOverloadCore = _core;
             _preOverloadMastery ??= new int[ElementCount];
             _preOverloadResist ??= new int[ElementCount];
             System.Array.Copy(_mastery, _preOverloadMastery, ElementCount);
@@ -541,7 +604,7 @@ namespace Cosmimera.Combat
                 _resist[i] = resistByElement[i];
             }
 
-            int newMaxHp = _stats.MaxHp(con) * _hpMultiplier;
+            int newMaxHp = (int)System.Math.Min(int.MaxValue, (long)_stats.MaxHpFromPoints(core.Hp) * _hpMultiplier);
             int delta = newMaxHp - MaxHp;
             MaxHp = newMaxHp;
             if (delta > 0)
@@ -553,8 +616,7 @@ namespace Cosmimera.Combat
                 Hp = MaxHp;
             }
 
-            _spi = spi;
-            _agi = agi;
+            _core = core;
             IsOverloaded = true;
         }
 
@@ -578,8 +640,7 @@ namespace Cosmimera.Combat
 
             if (_hasOverloadFormStats)
             {
-                _spi = _preOverloadSpi;
-                _agi = _preOverloadAgi;
+                _core = _preOverloadCore;
                 System.Array.Copy(_preOverloadMastery, _mastery, ElementCount);
                 System.Array.Copy(_preOverloadResist, _resist, ElementCount);
                 _hasOverloadFormStats = false;
@@ -676,7 +737,7 @@ namespace Cosmimera.Combat
             }
 
             int mastery = EffectMath.EffectiveMastery(_mastery[(int)move.Element], masteryDelta);
-            int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _spi,
+            int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _core.Speed,
                 _totals.CdPercent(move.Element) + weather.CdDeltaPercent(move.Element), _rules);
             if (speed != 1000)
             {
@@ -687,7 +748,8 @@ namespace Cosmimera.Combat
 
             Cooldowns.Start(slot, nowMs, cd);
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
-                weather.PowerDeltaPercent(move.Element), weaponPower);
+                weather.PowerDeltaPercent(move.Element), weaponPower, ClampInt(_totals.AccuracyDelta, -1000, 1000),
+                CritRatePermille(), CritDamagePercent(), _core.Attack(move.Polarity));
             return CastResult.Accepted;
         }
 
@@ -706,6 +768,44 @@ namespace Cosmimera.Combat
             _acceptedCasts = 0;
         }
 
+        // REQ: combat.md#暴擊 — base from balance.json#crit, raised by crit_rate_mod / crit_damage_mod percentage points.
+        private int CritRatePermille()
+        {
+            return (int)ClampLong(_rules.CritBaseRatePermille + _totals.CritRateDelta * 10, 0, DerivedStats.Permille);
+        }
+
+        private int CritDamagePercent()
+        {
+            return (int)ClampLong(_rules.CritBaseDamagePercent + _totals.CritDamageDelta, 100,
+                DamageModel.MaxCritDamagePercent);
+        }
+
+        private static long ClampLong(long v, long min, long max) => v < min ? min : v > max ? max : v;
+
+        private static int ClampInt(long v, int min, int max) => (int)ClampLong(v, min, max);
+
+        /// <summary>Σ block_reduction_mod (percentage points) active at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// REQ: combat.md#格擋 — armor's 格擋減免率 adds to the base / shield block value.
+        /// Pre: nowMs in CombatTime and >= Book's watermark. Post: none. Side effects: overwrites the modifier buffer only.
+        /// </remarks>
+        public long BlockReductionDelta(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return _totals.BlockReductionDelta;
+        }
+
+        /// <summary>Σ stagger_capacity_mod_percent active at <paramref name="nowMs"/>.</summary>
+        /// <remarks>
+        /// REQ: combat.md#失衡與擊退 — armor's 失衡值 scales the stagger gauge capacity.
+        /// Pre: nowMs in CombatTime and >= Book's watermark. Post: none. Side effects: overwrites the modifier buffer only.
+        /// </remarks>
+        public long StaggerCapacityPercent(long nowMs)
+        {
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            return _totals.StaggerCapacityPercent;
+        }
+
         /// <summary>Whether a shield is held (block uses block.shield_permille).</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool HasShield => _weapons.HasShield;
@@ -721,7 +821,7 @@ namespace Cosmimera.Combat
         public int MoveSpeedMmS(long nowMs)
         {
             Book.Collect(nowMs, Hp, MaxHp, _totals);
-            return EffectMath.MoveSpeedMmS(_stats, _agi, _totals.MoveSpeedPercent, _rules);
+            return EffectMath.MoveSpeedMmS(_stats, _core.Speed, _totals.MoveSpeedPercent, _rules);
         }
 
         /// <summary>Σ range_mod_percent active at <paramref name="nowMs"/>, as a cast starting now would see it before its own on_move_used.</summary>
@@ -791,8 +891,9 @@ namespace Cosmimera.Combat
             int hpBefore = Hp;
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
-            int evasion = EffectMath.EvasionPermille(_stats, _agi, _totals.EvasionPercent, _rules);
-            int chance = _stats.HitChancePermille(move.AccuracyPercent, evasion);
+            int evasion = EffectMath.EvasionPermille(_stats, _stats.Coefficients.SharedBaseStat, _totals.EvasionPercent,
+                _rules);
+            int chance = _stats.HitChancePermille(cast.EffectiveAccuracyPercent, evasion);
             HitOutcome outcome = HitResolver.Resolve(geometricContact, invulnerable, chance, ref rng);
             if (outcome != HitOutcome.Hit)
             {
@@ -801,10 +902,17 @@ namespace Cosmimera.Combat
 
             int damage = 0;
             int preBlock = 0;
+            bool critical = false;
             if (move.DealsDamage)
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-                int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist);
+                int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
+                    _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
+                critical = HitResolver.RollCrit(cast.CritRatePermille, ref rng);
+                if (critical)
+                {
+                    raw = DamageModel.ApplyCrit(raw, cast.CritDamagePercent);
+                }
                 if (damageTakenBonusPercent > 0)
                 {
                     raw = (int)System.Math.Min(int.MaxValue, ((long)raw * (100 + damageTakenBonusPercent) + 50) / 100);
@@ -822,7 +930,7 @@ namespace Cosmimera.Combat
                 if (Hp == 0)
                 {
                     // Q-C18 spirit (user decision 2026-11-07): nothing may fire on a fainted unit, so no heal revives it.
-                    return new HitReport(outcome, damage, 0, hpBefore, 0, false, preBlock);
+                    return new HitReport(outcome, damage, 0, hpBefore, 0, false, preBlock, critical);
                 }
             }
 
@@ -834,7 +942,7 @@ namespace Cosmimera.Combat
             int moveHeal = 0;
             if (move.HasEffect && move.Effect.IsInstant)
             {
-                // combat.md#招式效果: the target is whoever the shape hits, so a heal on an enemy shape heals that enemy.
+                // combat.md#主動技效果: the target is whoever the shape hits, so a heal on an enemy shape heals that enemy.
                 moveHeal = move.Effect.Percent;
             }
             else if (move.HasEffect)
@@ -844,7 +952,7 @@ namespace Cosmimera.Combat
             }
 
             HealPercent(crossHeal + hitHeal + moveHeal, nowMs);
-            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock);
+            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock, critical);
         }
 
         /// <summary>Resolves a self/ally move landing on this combatant: no roll (user decision 2026-11-07).</summary>
@@ -871,7 +979,8 @@ namespace Cosmimera.Combat
             {
                 Book.Collect(nowMs, Hp, MaxHp, _totals);
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-                int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist);
+                int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist,
+                    _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)
@@ -923,7 +1032,9 @@ namespace Cosmimera.Combat
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
             int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
-            int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist);
+            // combat.md#傷害公式: the reflected move turns back on its caster, so its own defence applies (like its resist).
+            int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
+                _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
             long scaled = ((long)raw * percent + 50) / 100;
             int amount = (int)System.Math.Min(int.MaxValue, raw > 0 && scaled == 0 ? 1 : scaled);
             int hpBefore = Hp;
@@ -940,7 +1051,7 @@ namespace Cosmimera.Combat
 
         /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
         /// <remarks>
-        /// REQ: combat.md#特性觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
+        /// REQ: combat.md#被動技觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal
         /// through here is the only way it reaches Hp (ARGON cast review K2).
         /// Pre: !IsFainted (a fainted creature cannot enter); nowMs in CombatTime and >= every watermark of Book.
         /// Post: returns HP restored (>= 0); Hp == previous Hp + result &lt;= MaxHp.

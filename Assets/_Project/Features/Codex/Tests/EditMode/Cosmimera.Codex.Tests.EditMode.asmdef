@@ -1,0 +1,9 @@
+{
+  "name": "Cosmimera.Codex.Tests.EditMode",
+  "references": ["Cosmimera.Codex.Api", "Cosmimera.Core", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll"],
+  "autoReferenced": false,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+}

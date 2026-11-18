@@ -89,12 +89,19 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(shader != null && reliefM > 0f, "shader required; relief > 0");
             var m = new Material(shader);
             Fill(m, PaletteFor(planetTypeId), config, reliefM, season);
+            m.SetFloat("_FrozenGround", planetTypeId == "ice_crystal_planet" ? 1f : 0f);
             return m;
         }
 
         /// <summary>What settles on upward faces in winter on a planet type: its own snow (ash on a lava world).</summary>
         /// <remarks>Pre: none (unknown ids read as verdant). Post: the terrain palette's snow colour. Side effects: none.</remarks>
         public static Color SnowColor(string planetTypeId) => PaletteFor(planetTypeId).Snow;
+
+        internal static Color RoadColor(string id, bool main)
+        {
+            Palette p = PaletteFor(id);
+            return Color.Lerp(p.Rock, p.Shore, main ? 0.38f : 0.65f);
+        }
 
         // REQ: planet-world.md#季節 (草地隨季節變色; 配色暫定). Summer is the authored palette. The shift scales with how
         // much of the ground is turf (Palette.Grass), so ice and lava worlds, whose "low ground" is not grass, keep
@@ -418,6 +425,8 @@ namespace Cosmimera.Bootstrap.Demo
         private Color _dusk;
         private Color _night;
         private float _dayLengthS;
+        private long _simMs;
+        private float _sinceSimS;
         private float _cloudCover = 0.42f;
         private float _wind = 1f;
         private float _baseFogStartM;
@@ -444,6 +453,18 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Sets the simulation clock the sun position is drawn from.</summary>
+        /// <remarks>
+        /// Pre: simMs &gt;= 0. Post: the next LateUpdate places the sun at WorldGen.SolarClock's angle for simMs.
+        /// Side effects: none until then.
+        /// </remarks>
+        public void SetSimulationTime(long simMs)
+        {
+            Contract.Requires(simMs >= 0, "simMs must be >= 0");
+            if (simMs != _simMs) _sinceSimS = 0f;
+            _simMs = simMs;
         }
 
         /// <summary>Caps visibility for local weather while retaining the planet's clear-weather fog range.</summary>
@@ -521,7 +542,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            _sun.transform.Rotate((Vector3)_poleAxis, 360f * Time.deltaTime / _dayLengthS, Space.World);
+            // REQ: weather.md#時段 — the drawn sun follows simulation time on the same axis and angle as WorldGen.SolarClock,
+            // so day phases in the rules match what is on screen. Frame time only interpolates between 50 ms ticks.
+            _sinceSimS = math.min(_sinceSimS + Time.deltaTime, 0.1f);
+            double turns = (_simMs + _sinceSimS * 1000.0) / (_dayLengthS * 1000.0);
+            float angle = (float)((turns - math.floor(turns)) * 2.0 * math.PI_DBL);
+            var toSun = new float3(math.cos(angle), 0f, math.sin(angle));
+            _sun.transform.rotation = Quaternion.LookRotation(-(Vector3)toSun, (Vector3)_poleAxis);
             float3 cam = _camera.transform.position;
             if (math.distance(cam, _planet.Center) < _planet.Radius * 0.5f)
             {

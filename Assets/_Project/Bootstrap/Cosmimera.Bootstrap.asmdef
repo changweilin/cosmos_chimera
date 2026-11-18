@@ -14,6 +14,7 @@
         "Cosmimera.Capture",
         "Cosmimera.Lobby",
         "Cosmimera.Codex",
+        "Cosmimera.Codex.Api",
         "Cosmimera.Net",
         "Cosmimera.Save",
         "Unity.Mathematics",

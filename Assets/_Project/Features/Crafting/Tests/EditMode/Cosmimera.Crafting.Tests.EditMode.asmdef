@@ -3,6 +3,7 @@
     "rootNamespace": "Cosmimera.Crafting.Tests",
     "references": [
         "Cosmimera.Core",
+        "Cosmimera.Creatures",
         "Cosmimera.GameData",
         "Cosmimera.Crafting",
         "UnityEngine.TestRunner",

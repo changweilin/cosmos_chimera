@@ -213,7 +213,7 @@
   "trait": {
     "trait_id": "trait_light_heliostat_focus",
     "name_zh": "逐光聚焦",
-    "idea_zh": "使用光屬性招式後，鏡光暫時延伸招式範圍，此效果可疊加。"
+    "idea_zh": "使用光屬性主動技後，鏡光暫時延伸主動技範圍，此效果可疊加。"
   },
   "overload_visual": "待定案 Q-C12：成年環形鏡陣九瓣展成前後雙層偏心日冕，鏡羽側緣溢出熾金光邊；汲雲氣球管被光熱蒸汽撐起，苔絨尾羽流線化，頸與喙仍保留鷺鳥辨識；並非永久進化。",
   "continuity_anchors": [

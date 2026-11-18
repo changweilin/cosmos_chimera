@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_fire_wisp_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_fire_wisp_adolescent
+  lineId: cr_fire_wisp
+  stage: 1
+  sizeClass: 0
+  aiStyle: 1
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: aad80b2dfb47156418a5ae72a9d6c07d, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 3
+    tier: 2
+    qty: 5
+  resist: 0a0000000f000000e2ffffff23000000000000000000000000000000000000000000000000000000
+  mastery:
+  - element: 3
+    value: 20
+  stats:
+    hp: 60
+    speed: 120
+    yinAtk: 100
+    yangAtk: 120
+    yinDef: 50
+    yangDef: 50
+  signatureMove: {fileID: 11400000, guid: f2b52ecfa43f0fe44bc42349813024c9, type: 2}
+  trait: {fileID: 11400000, guid: 893cd60e5701882458a180ef71f1841a, type: 2}
+  fieldUtility: 4
+  conceptJson: "{\"name_zh\":\"\u96D9\u68CD\u706B\u722A\u4F8D\",\"name_en\":null,\"stage_look\":\"*
+    \u96D9\u5C64\u7194\u5CA9\u70AD\u5EA7\u8207\u6D41\u7DDA\u578B\u706B\u8EC0 (Flame_Base
+    / Flame_Mid)\uFF1A\u96A8\u8457\u71B1\u80FD\u5BC6\u5EA6\u500D\u589E\uFF0C\u5E95\u90E8\u9ED1\u70AD\u64F4\u5C55\u70BA\u7A69\u56FA\u7684\u96D9\u5C64\u7194\u5CA9\u7D50\u6676\u70AD\u5EA7\uFF0C\u4E3B\u9AD4\u706B\u82D7\u62BD\u9AD8\u81F3
+    1.48 \u7C73\uFF0C\u7130\u5FC3\u8207\u70AD\u5EA7\u7DCA\u5BC6\u76F8\u9023\uFF0C\u6B63\u9762\u96D9\u7738\u86FB\u8B8A\u70BA\u92B3\u5229\u98AF\u723D\u7684\u67F3\u8449\u91D1\u8292\u773C\uFF0C\u80F8\u53E3\u6D6E\u73FE\u83F1\u5F62\u9AD8\u6EAB\u706B\u6838\u5370\u8A18\u3002\\n*
+    \u5DE6\u53F3\u5074\u8EAB\u5C55\u51FA\u71D2\u706B\u68CD\u8207\u70C8\u706B\u70AD\u722A
+    (L_Poker_Arm / R_Poker_Arm / L_Flame_Blade / R_Flame_Blade)\uFF1A\u81EA\u70C8\u7130\u8EC0\u5E79\u5DE6\u53F3\u5169\u5074\uFF08\u7D55\u4E0D\u6A6B\u8D8A\u6216\u906E\u64CB\u81C9\u90E8\u6B63\u9762\uFF09\u5411\u5916\u4F38\u5C55\u51FA\u5169\u96BB\u935B\u9435\u8CEA\u611F\u7684\u6DF1\u9ED1\u71D2\u706B\u68CD\u6A5F\u68B0\u81C2\u3002\u6BCF\u96BB\u71D2\u706B\u68CD\u524D\u7AEF\u7684\u5206\u53C9\u706B\u9257\u5404\u7DCA\u7DCA\u593E\u8457\u4E00\u584A\u71D2\u5F97\u901A\u7D05\u7684\u70C8\u706B\u70AD\u584A\uFF0C\u4E26\u5F9E\u70AD\u584A\u524D\u7AEF\u6FC0\u5C04\u51FA\u4E09\u9053\u92D2\u5229\u7684\u5F27\u5F62\u70C8\u7130\u706B\u722A\uFF0C\u5177\u5099\u5F37\u608D\u7684\u6495\u88C2\u8207\u683C\u64CB\u80FD\u529B\u3002\\n*
+    \u4E09\u8ECC\u6D6E\u6E38\u9B3C\u706B (Orbit_Wisp_01..03)\uFF1A\u80CC\u5F8C\u7684\u706B\u661F\u6210\u9577\u70BA\u4E09\u9846\u62F3\u982D\u5927\u5C0F\u7684\u534A\u900F\u660E\u566A\u6CE2\u8DF3\u52D5\u9B3C\u706B\uFF0C\u96A8\u547C\u5438\u7BC0\u594F\u5728\u8EAB\u5F8C\u5448\u4E09\u89D2\u8ECC\u8DE1\u9AD8\u901F\u6E38\u8D70\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_fire_wisp/cr_fire_wisp_adolescent_05_wiki.md\",\"sha256\":\"0e6cc20c0e2b6439891753c84f745f01ec373987710a461d17f7f26e1fa8e08a\",\"drive_file_id\":\"147OzvQ87We65V-ktWn453sV6FhFMSYve\"},\"status\":\"review_required\",\"gameplay_archetype\":\"fire_mane_stalker\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

@@ -18,6 +18,7 @@ namespace Cosmimera.Bootstrap.Tests
     public sealed class ReproProbeTests
     {
         private PlanetTypeDef _type;
+        private NicheDef _niche;
         private CreatureDef _adult;
         private CreatureDef _juvenile;
         private CreatureDef _adolescent;
@@ -29,16 +30,32 @@ namespace Cosmimera.Bootstrap.Tests
         {
             _type = ScriptableObject.CreateInstance<PlanetTypeDef>();
             JsonUtility.FromJsonOverwrite("{\"id\":\"probe\",\"size\":1,\"terrainTags\":[\"forest\"],\"elementBias\":[0]}", _type);
+            _niche = ScriptableObject.CreateInstance<NicheDef>();
+            string kindsJson = "[\"" + string.Join("\",\"", LandformSynth.Kinds) + "\"]";
+            JsonUtility.FromJsonOverwrite("{\"id\":\"niche_probe\",\"nameZh\":\"niche_probe\",\"habitatKinds\":" + kindsJson +
+                ",\"habits\":[{\"habit\":0,\"weight\":1}],\"mode\":2,\"radiusMm\":10000," +
+                "\"speedPermille\":{\"mean\":300,\"individualSd\":40,\"actionSd\":50,\"min\":50,\"max\":900}," +
+                "\"moveMs\":{\"mean\":5000,\"individualSd\":1000,\"actionSd\":1500,\"min\":500,\"max\":60000}," +
+                "\"pauseMs\":{\"mean\":5000,\"individualSd\":1200,\"actionSd\":2000,\"min\":250,\"max\":60000}}", _niche);
             _adult = Species("adult", 2);
             _juvenile = Species("juvenile", 0);
             _adolescent = Species("adolescent", 1);
         }
 
-        private static CreatureDef Species(string id, int stage)
+        private CreatureDef Species(string id, int stage)
         {
             var creature = ScriptableObject.CreateInstance<CreatureDef>();
-            JsonUtility.FromJsonOverwrite("{\"id\":\"" + id + "\",\"stage\":" + stage +
+            JsonUtility.FromJsonOverwrite("{\"id\":\"" + id + "\",\"lineId\":\"" + id + "\",\"stage\":" + stage +
                 ",\"mastery\":[{\"element\":0,\"value\":15}]}", creature);
+            using (var so = new UnityEditor.SerializedObject(creature))
+            {
+                UnityEditor.SerializedProperty niches = so.FindProperty("niches");
+                niches.arraySize = 1;
+                UnityEditor.SerializedProperty entry = niches.GetArrayElementAtIndex(0);
+                entry.FindPropertyRelative("niche").objectReferenceValue = _niche;
+                entry.FindPropertyRelative("weight").intValue = 1;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
             return creature;
         }
 
@@ -46,6 +63,7 @@ namespace Cosmimera.Bootstrap.Tests
         public void TearDown()
         {
             Object.DestroyImmediate(_type);
+            Object.DestroyImmediate(_niche);
             Object.DestroyImmediate(_adult);
             Object.DestroyImmediate(_juvenile);
             Object.DestroyImmediate(_adolescent);
@@ -70,6 +88,7 @@ namespace Cosmimera.Bootstrap.Tests
         [TestCase("no-adult")]
         [TestCase("null")]
         [TestCase("no-mastery")]
+        [TestCase("no-niche")]
         public void Invalid_wild_pool_is_rejected_before_generation(string invalid)
         {
             CreatureDef[] pool = invalid == "empty" ? Array.Empty<CreatureDef>() :
@@ -78,6 +97,7 @@ namespace Cosmimera.Bootstrap.Tests
                 invalid == "no-adult" ? new[] { _juvenile, _adolescent } :
                 invalid == "null" ? new[] { _juvenile, _adolescent, _adult, null } : new[] { _juvenile, _adolescent, _adult };
             if (invalid == "no-mastery") JsonUtility.FromJsonOverwrite("{\"mastery\":[]}", _adult);
+            if (invalid == "no-niche") JsonUtility.FromJsonOverwrite("{\"niches\":[]}", _adult);
             Assert.Throws<ContractException>(() => Report(new[] { _type }, pool, radius:
                 _ => throw new AssertionException("generation started before validation")));
         }
@@ -88,7 +108,7 @@ namespace Cosmimera.Bootstrap.Tests
             CreatureDef[] pool = { _juvenile, _adolescent, _adult };
             string first = Report(new[] { _type }, pool);
             Assert.That(Report(new[] { _type }, pool), Is.EqualTo(first));
-            StringAssert.Contains("planDiscrete landingBits\n", first);
+            StringAssert.Contains("planDiscrete weather landingBits\n", first);
             foreach (string row in first.Split('\n'))
             {
                 if (row.Length == 0 || row[0] == '#') continue;
@@ -102,7 +122,7 @@ namespace Cosmimera.Bootstrap.Tests
                 RunPlan plan = RunPlanner.Generate(config, seed, _type, stage, pool, _vocabulary, d => !view.IsSea(d));
                 string expected = math.asuint(plan.LandingDirection.x).ToString("x8") + "," +
                     math.asuint(plan.LandingDirection.y).ToString("x8") + "," + math.asuint(plan.LandingDirection.z).ToString("x8");
-                Assert.That(columns[11], Is.EqualTo(expected));
+                Assert.That(columns[12], Is.EqualTo(expected));
             }
         }
 
@@ -117,7 +137,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 if (row.Length == 0 || row[0] == '#') continue;
                 string[] columns = row.Split(' ');
-                Assert.That(columns.Length, Is.EqualTo(12));
+                Assert.That(columns.Length, Is.EqualTo(13));
                 Assert.That(columns[3], Is.EqualTo(columns[1] == "adult" ? "960" : "640"), row);
                 keys.Add(columns[0] + " " + columns[1] + " " + columns[2]);
             }

@@ -63,7 +63,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, habit).Set("line_" + id, CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), move ?? Move("bite_" + id, RangeClass.Melee, 2000), null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), move ?? Move("bite_" + id, RangeClass.Melee, 2000), null, "{}", false);
             return c;
         }
 
@@ -231,9 +231,10 @@ namespace Cosmimera.Combat.Tests
         // (NextUInt(1000)); an i-frame dodge costs none. Same-seed self-replay cannot see an extra draw, so compare a
         // run that dodges the first contact against one that takes it.
         [Test]
-        public void A_player_contact_costs_one_combat_draw_and_an_iframe_dodge_costs_none()
+        public void A_player_contact_costs_hit_and_crit_draws_and_an_iframe_dodge_costs_none()
         {
             long contactAt = -1;
+            bool contactHit = false;
             Encounter taken = NewPlayerFight(out _);
             for (int t = 1; t <= 400 && contactAt < 0; t++)
             {
@@ -244,6 +245,7 @@ namespace Cosmimera.Combat.Tests
                         (ev.Kind == EncounterEventKind.Hit || ev.Kind == EncounterEventKind.Miss))
                     {
                         contactAt = t;
+                        contactHit = ev.Kind == EncounterEventKind.Hit;
                     }
                 }
             }
@@ -269,6 +271,12 @@ namespace Cosmimera.Combat.Tests
 
             Pcg32 expected = dodged.RngForTests;
             expected.NextUInt(1000);
+            if (contactHit)
+            {
+                // combat.md#暴擊: a landed damaging hit on the player rolls crit next.
+                expected.NextUInt(1000);
+            }
+
             Pcg32 actual = taken.RngForTests;
             for (int i = 0; i < 4; i++)
             {
@@ -281,7 +289,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             vitals = new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800));
-            e.AttachPlayer(vitals);
+            e.AttachPlayer(vitals, 100, 100);
             return e;
         }
 
@@ -378,7 +386,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1, 600, 400, 800));
-            e.AttachPlayer(vitals);
+            e.AttachPlayer(vitals, 100, 100);
             int t = 1;
             for (; t <= 400 && !vitals.IsDowned; t++)
             {
@@ -409,7 +417,7 @@ namespace Cosmimera.Combat.Tests
                 null, AtMeters(0f), 50);
             e.Field(a.Id, AtMeters(1f), false, 0);
             e.Field(b.Id, AtMeters(-1f), false, 0);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
             var order = new List<int>();
             for (int t = 1; t <= 200 && order.Count == 0; t++)
             {
@@ -427,13 +435,44 @@ namespace Cosmimera.Combat.Tests
                 "every target touched, ascending id, character last");
         }
 
+        // REQ: combat.md#玩家角色的守 (Q-C75) — same seed, same wild; only the player's defence differs.
+        [Test]
+        public void Player_damage_follows_the_attack_defence_ratio()
+        {
+            int FirstHit(int defence)
+            {
+                var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
+                e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
+                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1_000_000, 600, 400, 800)), defence, defence);
+                for (int t = 1; t <= 400; t++)
+                {
+                    e.Tick(t * 50L, 50, Feet(1.5f), Free, CombatAi.NoTarget);
+                    foreach (EncounterEvent ev in e.Events)
+                    {
+                        if (ev.Kind == EncounterEventKind.Hit && ev.TargetId == Encounter.PlayerCharacterId && ev.Amount > 0)
+                        {
+                            return ev.Amount;
+                        }
+                    }
+                }
+
+                Assert.Fail("the wild never hit the player");
+                return 0;
+            }
+
+            int soft = FirstHit(1);
+            int hard = FirstHit(int.MaxValue);
+            Assert.That(soft, Is.GreaterThan(hard), "low defence takes more damage");
+            Assert.That(soft, Is.InRange(hard * 15, hard * 17), "ratio cap ×4 vs floor ×0.25 is a 16× spread");
+        }
+
         [Test]
         public void Wild_attacks_the_player_character_and_downs_it_once()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(150, 600, 400, 800));
-            e.AttachPlayer(vitals);
+            e.AttachPlayer(vitals, 100, 100);
             int hits = 0;
             int downed = 0;
             long downedAt = -1;
@@ -489,7 +528,7 @@ namespace Cosmimera.Combat.Tests
             EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             e.Field(mine.Id, AtMeters(2f), false, 0);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800));
-            e.AttachPlayer(vitals);
+            e.AttachPlayer(vitals, 100, 100);
             e.Tick(50, 50, Feet(10f), new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget), mine.Id);
             Assert.That(wild.TargetId, Is.EqualTo(mine.Id));
         }
@@ -500,7 +539,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
             var vitals = new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800));
-            e.AttachPlayer(vitals);
+            e.AttachPlayer(vitals, 100, 100);
             int misses = 0;
             for (int t = 1; t <= 200; t++)
             {
@@ -525,9 +564,9 @@ namespace Cosmimera.Combat.Tests
         public void AttachPlayer_preconditions()
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 1);
-            Assert.Throws<ContractException>(() => e.AttachPlayer(null));
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
-            Assert.Throws<ContractException>(() => e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800))));
+            Assert.Throws<ContractException>(() => e.AttachPlayer(null, 100, 100));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
+            Assert.Throws<ContractException>(() => e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100));
         }
 
         [Test]
@@ -590,7 +629,7 @@ namespace Cosmimera.Combat.Tests
         [Test]
         public void MultiplyMaxHp_is_once_and_before_damage()
         {
-            var c = new Combatant(_balance.Stats, _balance.Effects, 10, 10, 10, new int[10], new int[10], new EffectBook(), 1);
+            var c = new Combatant(_balance.Stats, _balance.Effects, BalanceFixture.Core(68, 10, 10), new int[10], new int[10], new EffectBook(), 1);
             int max = c.MaxHp;
             Assert.Throws<ContractException>(() => c.MultiplyMaxHp(0));
             c.MultiplyMaxHp(2);

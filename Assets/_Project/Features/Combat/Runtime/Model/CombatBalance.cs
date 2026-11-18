@@ -501,10 +501,13 @@ namespace Cosmimera.Combat
     {
         private CombatBalance(DerivedStats stats, HitVolumeDefaults hit, EffectRulesConfig effects, AiTuning ai,
             int switchCooldownMs, PlayerVitalsConfig player, int captureBasePercent, int captureBossPercent,
+            int captureFriendlyBonusPercent,
             TerritoryTuning territory, CollisionTuning collision, HorizonRangeTuning horizon,
             BossEnrageTuning enrage, int bossWindupPermille, StaggerTuning stagger, BlockTuning block,
-            CreatureRollTuning creatureRoll, GripTuning grips)
+            CreatureRollTuning creatureRoll, GripTuning grips, int playerBaseDefence, int harvestDamagePermille)
         {
+            PlayerBaseDefence = playerBaseDefence;
+            HarvestDamagePermille = harvestDamagePermille;
             Block = block;
             Grips = grips;
             CreatureRoll = creatureRoll;
@@ -522,7 +525,16 @@ namespace Cosmimera.Combat
             Player = player;
             CaptureBasePercent = captureBasePercent;
             CaptureBossPercent = captureBossPercent;
+            CaptureFriendlyBonusPercent = captureFriendlyBonusPercent;
         }
+
+        /// <summary>LV100 basis of the player character's yin and yang defence (player.base_defense; combat.md#玩家角色的守).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int PlayerBaseDefence { get; }
+
+        /// <summary>Object damage multiplier for a caster whose life skill matches the object's substance (destructibles.md#傷害).</summary>
+        /// <remarks>Pre: none. Post: 1000..10000 (field_utilities.harvest_damage_permille). Side effects: none.</remarks>
+        public int HarvestDamagePermille { get; }
 
         /// <summary>Boss windup scale in permille (boss.windup_permille; combat.md#前搖).</summary>
         /// <remarks>Pre: none. Post: 1..10000. Side effects: none.</remarks>
@@ -592,6 +604,10 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
         public int CaptureBossPercent { get; }
 
+        /// <summary>Capture chance bonus for a friendly wild ally after winning a confrontation (capture.friendly_bonus_percent).</summary>
+        /// <remarks>Pre: none. Post: 0..100. Side effects: none.</remarks>
+        public int CaptureFriendlyBonusPercent { get; }
+
         /// <summary>Parses balance.json text.</summary>
         /// <remarks>
         /// Pre: json is the content of Data/balance.json (all sections present; values within each config's Pre).
@@ -604,11 +620,12 @@ namespace Cosmimera.Combat
             Dto d = JsonUtility.FromJson<Dto>(json);
             Contract.Requires(d != null && d.hp != null && d.melee_volume != null && d.ranged_distance != null &&
                 d.cd != null && d.speed != null && d.evasion != null && d.hit != null && d.hit_volume != null &&
-                d.team != null && d.field != null && d.effects != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
+                d.team != null && d.field != null && d.effects != null && d.crit != null && d.damage != null && d.player != null && d.ai != null && d.ai.territory_mm != null &&
                 d.ai.body_mm != null &&
                 d.capture != null, "balance json is missing a section");
             Contract.Requires(d.capture.base_percent >= 0 && d.capture.base_percent <= 100 &&
-                d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100, "capture percents must be 0..100");
+                d.capture.boss_percent >= 0 && d.capture.boss_percent <= 100 &&
+                d.capture.friendly_bonus_percent >= 0 && d.capture.friendly_bonus_percent <= 100, "capture percents must be 0..100");
 
             var coefficients = new DerivedStatsCoefficients(d.model_version, d.stat_effective_cap,
                 d.hp.@base, d.hp.gain, d.hp.half_stat,
@@ -616,14 +633,20 @@ namespace Cosmimera.Combat
                 d.ranged_distance.gain_permille, d.ranged_distance.half_stat, d.ranged_distance.cap_mm,
                 d.cd.min_permille, d.cd.half_stat, d.cd.floor_ms,
                 d.speed.base_mm_s, d.speed.gain_mm_s, d.speed.half_stat,
-                d.evasion.cap_permille, d.evasion.half_stat, d.hit.floor_permille);
+                d.evasion.cap_permille, d.evasion.half_stat, d.hit.floor_permille,
+                d.hp.per_point, d.shared_base_stat, d.damage.ratio_min_permille, d.damage.ratio_max_permille);
             HitVolumeDto h = d.hit_volume;
             var hit = new HitVolumeDefaults(h.height_mm, h.front_width_mm, h.sweep_angle_deg, h.cone_angle_deg,
                 h.line_width_mm, h.arc_landing_radius_mm, h.field_radius_mm, h.target_cast_mid_mm, h.target_cast_long_mm);
             var effects = new EffectRulesConfig(d.effects.multiplier_min_percent, d.effects.multiplier_max_percent,
-                d.field.tick_ms);
+                d.field.tick_ms, d.crit.base_rate_permille, d.crit.base_damage_percent);
             var ai = new AiTuning(d.ai.keep_distance_permille, d.ai.close_in_permille, d.ai.hold_permille,
                 d.ai.follow_leash_mm);
+            Contract.Requires(d.field_utilities != null, "balance json is missing field_utilities");
+            Contract.Requires(d.field_utilities.harvest_damage_permille >= 1000 && d.field_utilities.harvest_damage_permille <= 10000,
+                "field_utilities.harvest_damage_permille must be 1000..10000");
+            // An absent key parses as 0, which would put every hit on the player at the ratio cap.
+            Contract.Requires(d.player.base_defense >= 1, "player.base_defense must be >= 1");
             var player = new PlayerVitalsConfig(d.player.max_hp, d.player.roll_duration_ms, d.player.roll_invulnerable_ms,
                 d.player.roll_cooldown_ms);
             Contract.Requires(d.team.switch_cooldown_ms >= 0, "switch cooldown must be >= 0");
@@ -669,15 +692,16 @@ namespace Cosmimera.Combat
             var creatureRoll = new CreatureRollTuning(cr.duration_ms, cr.invulnerable_ms, cr.cooldown_ms, cr.perfect_dodge_ms,
                 cr.distance_height_permille);
             return new CombatBalance(new DerivedStats(coefficients), hit, effects, ai, d.team.switch_cooldown_ms, player,
-                d.capture.base_percent, d.capture.boss_percent, territory, collision, horizon, enrage,
+                d.capture.base_percent, d.capture.boss_percent, d.capture.friendly_bonus_percent, territory, collision, horizon, enrage,
                 d.boss.windup_permille, stagger, block, creatureRoll,
-                RequireGrips(d.equipment));
+                RequireGrips(d.equipment), d.player.base_defense, d.field_utilities.harvest_damage_permille);
         }
 
         // Field names mirror balance.json keys because JsonUtility maps by name.
 #pragma warning disable 0649, IDE1006
         [Serializable] private sealed class Dto
         {
+            public FieldUtilitiesDto field_utilities;
             public int model_version;
             public int stat_effective_cap;
             public HpDto hp;
@@ -691,6 +715,9 @@ namespace Cosmimera.Combat
             public TeamDto team;
             public FieldDto field;
             public EffectsDto effects;
+            public CritDto crit;
+            public int shared_base_stat;
+            public DamageDto damage;
             public PlayerDto player;
             public AiDto ai;
             public CaptureDto capture;
@@ -701,7 +728,8 @@ namespace Cosmimera.Combat
             public EquipmentDto equipment;
         }
 
-        [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; }
+        [Serializable] private sealed class HpDto { public int @base; public int gain; public int half_stat; public int per_point; }
+        [Serializable] private sealed class DamageDto { public int ratio_min_permille; public int ratio_max_permille; }
         [Serializable] private sealed class GainDto { public int gain_permille; public int half_stat; }
         [Serializable] private sealed class RangedDto
         {
@@ -718,7 +746,8 @@ namespace Cosmimera.Combat
         [Serializable] private sealed class TeamDto { public int switch_cooldown_ms; }
         [Serializable] private sealed class FieldDto { public int tick_ms; }
         [Serializable] private sealed class EffectsDto { public int multiplier_min_percent; public int multiplier_max_percent; }
-        [Serializable] private sealed class CaptureDto { public int base_percent; public int boss_percent; }
+        [Serializable] private sealed class CritDto { public int base_rate_permille; public int base_damage_percent; }
+        [Serializable] private sealed class CaptureDto { public int base_percent; public int boss_percent; public int friendly_bonus_percent; }
 
         [Serializable] private sealed class HitVolumeDto
         {
@@ -733,12 +762,18 @@ namespace Cosmimera.Combat
             public int target_cast_long_mm;
         }
 
+        [Serializable] private sealed class FieldUtilitiesDto
+        {
+            public int harvest_damage_permille;
+        }
+
         [Serializable] private sealed class PlayerDto
         {
             public int max_hp;
             public int roll_duration_ms;
             public int roll_invulnerable_ms;
             public int roll_cooldown_ms;
+            public int base_defense;
         }
 
         [Serializable] private sealed class AiDto

@@ -55,6 +55,52 @@ namespace Cosmimera.Combat
             return damage < 1 ? 1 : (int)damage;
         }
 
+        /// <summary>As <see cref="Compute(int, int, int)"/>, scaled by an attack/defence ratio. REQ: combat.md#傷害公式.</summary>
+        /// <remarks>
+        /// Pre: as the three-argument overload; 1 &lt;= ratioPermille &lt;= DerivedStatsCoefficients.MaxDamageRatioPermille.
+        /// Post: round_half_up(power × ratio/1000 × (100+m) × (100−clamp(r))/10000), at least 1 unless power == 0 or
+        ///       immune; equals the three-argument overload when ratioPermille == 1000; non-decreasing in ratioPermille.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static int Compute(int power, int masteryPercent, int resistPercent, int ratioPermille)
+        {
+            Contract.Requires(power >= 0 && power <= MaxPower, "power must be in 0..MaxPower");
+            Contract.Requires(masteryPercent >= 0 && masteryPercent <= MaxMasteryPercent,
+                "masteryPercent must be in 0..MaxMasteryPercent");
+            Contract.Requires(ratioPermille >= 1 && ratioPermille <= DerivedStatsCoefficients.MaxDamageRatioPermille,
+                "ratioPermille must be 1..MaxDamageRatioPermille");
+            int resist = resistPercent < -ResistClamp ? -ResistClamp
+                : resistPercent > ResistClamp ? ResistClamp : resistPercent;
+            if (power == 0 || resist == ResistClamp)
+            {
+                return 0;
+            }
+
+            // 1e5 · 1e4 · 1100 · 200 = 2.2e14 before the divide: Int64 with room; the result fits Int32 (≤ 2.2e7).
+            long scaled = (long)power * ratioPermille * (100 + masteryPercent) * (100 - resist);
+            long damage = (scaled + 5_000_000) / 10_000_000;
+            return damage < 1 ? 1 : (int)damage;
+        }
+
+        /// <summary>Largest crit multiplier accepted, percent. Representability bound, not balance (base 150).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxCritDamagePercent = 1_000;
+
+        /// <summary>Applies a critical hit's multiplier. REQ: docs/design/combat.md#暴擊.</summary>
+        /// <remarks>
+        /// Pre: damage >= 0; 100 &lt;= critDamagePercent &lt;= MaxCritDamagePercent.
+        /// Post: round_half_up(damage × critDamagePercent / 100) capped at int.MaxValue; >= damage; 0 iff damage == 0.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static int ApplyCrit(int damage, int critDamagePercent)
+        {
+            Contract.Requires(damage >= 0, "damage must be nonnegative");
+            Contract.Requires(critDamagePercent >= 100 && critDamagePercent <= MaxCritDamagePercent,
+                "critDamagePercent must be 100..MaxCritDamagePercent");
+            long scaled = ((long)damage * critDamagePercent + 50) / 100;
+            return scaled > int.MaxValue ? int.MaxValue : (int)scaled;
+        }
+
         /// <summary>Scales base move power by an environmental percentage delta (e.g. weather elemental synergy).</summary>
         /// <remarks>
         /// Pre: 0 &lt;= power &lt;= MaxPower; -90 &lt;= deltaPercent &lt;= 100.

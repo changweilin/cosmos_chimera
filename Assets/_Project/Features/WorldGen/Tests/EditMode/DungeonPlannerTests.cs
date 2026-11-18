@@ -10,8 +10,9 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class DungeonPlannerTests
     {
-        // Pinned discrete digest of seed 12345 at R = 640 on this fixture, isLand null (DungeonPlanner v1, SettlementPlanner v2).
-        private const ulong SnapshotSeed12345V1 = 2328280189737537727UL;
+        // Pinned discrete digest of seed 12345 at R = 640 on this fixture, isLand null (DungeonPlanner v1, SettlementPlanner v3:
+        // its loop roads add gates, so the digest moved without a DungeonPlanner change).
+        private const ulong SnapshotSeed12345V1 = 7404800088664272562UL;
 
         private static readonly float[] Radii = { 320f, 640f, 960f };
         private readonly List<Object> _created = new List<Object>();
@@ -37,7 +38,7 @@ namespace Cosmimera.WorldGen.Tests
                     Element e = line == "wood" ? Element.Wood : line == "fire" ? Element.Fire : Element.Water;
                     c.Set(line, (CreatureStage)stage, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                         new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(e, 15) },
-                        new CreatureStats(25, 25, 25, 25), null, null, "{}", false);
+                        new CreatureStats(78, 25, 25, 25, 25, 25), null, null, "{}", false);
                     _pool.Add(c);
                 }
             }

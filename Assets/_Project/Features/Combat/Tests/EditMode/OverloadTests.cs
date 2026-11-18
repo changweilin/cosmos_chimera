@@ -57,7 +57,7 @@ namespace Cosmimera.Combat.Tests
             c.SetId(id);
             TestWild.WithHabit(c, Habit.Tolerant).Set("line_" + id, stage, CreatureSizeClass.L, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
-                new CreatureStats(25, 25, 25, 25), move, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), move, null, "{}", false);
             return c;
         }
 

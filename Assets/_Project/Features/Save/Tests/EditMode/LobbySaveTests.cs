@@ -234,5 +234,32 @@ namespace Cosmimera.Save.Tests
             string badVisual = "{\"version\":" + LobbySave.FormatVersion + ",\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":1,\"visual_vessel\":9,\"exp\":10}]}";
             Assert.Throws<InvalidDataException>(() => Parse(badVisual));
         }
+
+        [Test]
+        public void Ecology_round_trips_in_v11_and_migrates_from_v10()
+        {
+            var s = new LobbySave();
+            s.Add("a", VesselKind.TalismanCard, 42, "niche_patrol_hunter", Habit.Territorial);
+            Assert.That(s.Get(1).HasEcology, Is.True);
+            Assert.That(s.Get(1).NicheId, Is.EqualTo("niche_patrol_hunter"));
+            Assert.That(s.Get(1).Habit, Is.EqualTo(Habit.Territorial));
+
+            LobbySave roundTrip = Parse(s.ToJson());
+            Assert.That(roundTrip.Get(1).NicheId, Is.EqualTo("niche_patrol_hunter"));
+            Assert.That(roundTrip.Get(1).Habit, Is.EqualTo(Habit.Territorial));
+
+            const string v10 = "{\"version\":10,\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":1,\"visual_vessel\":1,\"exp\":10}],\"codex\":[]}";
+            LobbySave legacy = Parse(v10);
+            Assert.That(legacy.Get(1).HasEcology, Is.False);
+            Assert.That(legacy.Get(1).NicheId, Is.EqualTo(""));
+            Assert.That(legacy.Get(1).Habit, Is.EqualTo(Habit.Tolerant));
+
+            legacy.SetEcology(1, "niche_edge_browser", Habit.Avoidant);
+            Assert.That(legacy.Get(1).NicheId, Is.EqualTo("niche_edge_browser"));
+            Assert.That(legacy.Get(1).Habit, Is.EqualTo(Habit.Avoidant));
+
+            string badHabit = "{\"version\":" + LobbySave.FormatVersion + ",\"next_instance_id\":2,\"party\":[1],\"owned\":[{\"instance_id\":1,\"species_id\":\"a\",\"vessel\":1,\"visual_vessel\":1,\"exp\":10,\"niche_id\":\"niche_x\",\"habit\":99}]}";
+            Assert.Throws<InvalidDataException>(() => Parse(badHabit));
+        }
     }
 }

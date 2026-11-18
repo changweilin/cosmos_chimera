@@ -2,7 +2,7 @@
 
 完整公式、曲線與原因見 [derived-stats.md](../derived-stats.md)。
 
-JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accuracy 保留整數百分比；距離 mm、速度 mm/s、時間 ms。版本與統計點數也為整數。
+JSON 所有葉節點均為整數。率採千分比（1000=100%），主動技 accuracy 保留整數百分比；距離 mm、速度 mm/s、時間 ms。版本與統計點數也為整數。
 
 | Key | 說明 |
 |---|---|
@@ -27,12 +27,15 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `evasion.cap_permille` | 閃避漸近上限，400 表 40% |
 | `evasion.half_stat` | 閃避達上限一半時的 AGI |
 | `hit.floor_permille` | 幾何命中後擲骰的最低機率；50 表 5% |
-| `reference_move.cooldown_ms` | 工具預設 / 範例用招式 CD，正式執行時須傳招式自己的值 |
-| `reference_move.accuracy_percent` | 工具預設 / 範例用招式命中百分比，100 表 100% |
+| `reference_move.cooldown_ms` | 工具預設 / 範例用主動技 CD，正式執行時須傳主動技自己的值 |
+| `reference_move.accuracy_percent` | 工具預設 / 範例用主動技命中百分比，100 表 100% |
 | `reference_move.base_range_mm` | 工具預設 / 範例用遠程基礎距離，非現有 schema 的新欄位 |
-| `stage_bands.<stage>.min_stat` | 該階段每項能力的軟製作下界，非 runtime clamp |
-| `stage_bands.<stage>.max_stat` | 該階段每項能力的軟製作上界，非 schema maximum |
-| `stage_bands.<stage>.total_stats` | 該階段四項總點數預算；不是單項上限 |
+| `stat_budget.base.<stage>` | 六能力值總和的階段基準（★+★）：幼年 400／少年 500／成年 600／超載 720 |
+| `stat_budget.per_extra_star_percent` | 精通主動技＋被動技星數每超過 2 一星，預算扣的百分比（10） |
+| `stat_budget.tolerance_percent` | validate-data 容許的預算誤差（±5%） |
+| `hp.per_point` | 最大 HP ＝ HP 點 × 此值（Q-C72，10）；`hp.base/gain/half_stat` 為舊 CON 曲線，執行期不再使用 |
+| `shared_base_stat` | 射程／判定範圍與閃避曲線的共同輸入（全宙獸相同，暫定 100） |
+| `damage.ratio_min_permille` / `ratio_max_permille` | 攻守比上下限（250 = ×0.25、4000 = ×4）；守為 0 時取上限 |
 
 | `hit_volume.height_mm` | 所有判定體的總高度（melee 乘線性倍率）；下限 2，讓半高至少 1 mm |
 | `hit_volume.front_width_mm` / `line_width_mm` | front / line 矩形寬度 |
@@ -52,6 +55,7 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 `python tools/validate_data.py` 不掃描 `balance.json`；係數型別 / 算術包絡由參考 loader（`tools/balance` 測試）與 C# `DerivedStatsCoefficients` 建構子檢查。
 | `field.tick_ms` | Q-C17：場地兩次結算的間隔；放置當下即結算第一次 |
 | `effects.multiplier_min_percent` / `multiplier_max_percent` | P2-09：相對百分比效果（cd/evasion/speed/range）加總後的倍率 100+Σ 夾在此區間（暫定 10–300） |
+| `crit.base_rate_permille` / `base_damage_percent` | 暴擊基礎爆率（50 = 5%）與爆傷倍率（150 = ×1.5）；`crit_rate_mod`／`crit_damage_mod` 以百分點加上去（[combat.md#暴擊](../combat.md#暴擊)） |
 | `team.switch_cooldown_ms` | P2-06 共用切換冷卻：換手或主動收回後開始；開場召喚與倒下後補位不觸發，但會等冷卻結束 |
 | `player.max_hp` | 玩家角色固定 HP，不由能力值推導（P2-06 暫定） |
 | `player.roll_duration_ms` | 一次翻滾全長 |
@@ -63,10 +67,10 @@ JSON 所有葉節點均為整數。率採千分比（1000=100%），招式 accur
 | `ai.follow_leash_mm` | P2-10 跟隨待命：離玩家超過此地表距離才往回走（> 0） |
 | `ai.territory_mm.{avoidant,vigilant,tolerant,territorial,aggressive,dominant}` | D0-E2 野生領域半徑（依個體習性取 0/4/8/14/20/28 m）；入侵者進入即開戰；0＝不主動開戰（Q-C35；0 ≤ 值 < 40 m 脫戰距離） |
 | `stagger.*` | 失衡與擊退（[combat.md#失衡與擊退](../combat.md)，暫定）：`gauge_hp_permille` 失衡槽容量（最大 HP 千分比，1–10000）、`regen_delay_ms` 最後受傷後多久開始回復、`regen_permille_per_s` 每秒回復容量千分比、`duration_ms` 失衡時間、`damage_taken_bonus_percent` 失衡中受傷加成、`knockback_hp_permille` 單擊達此最大 HP 千分比即擊退、`knockback_mm` 擊退距離（0–36000） |
-| `block.*` | 格擋（[combat.md#格擋](../combat.md)，暫定）：`base_permille` 無盾格擋減傷千分比（0–1000）、`stance_hp_permille` 架勢條容量（最大 HP 千分比，1–10000）、`stance_regen_delay_ms` 最後一次格擋後多久開始回復、`stance_regen_permille_per_s` 每秒回復容量千分比、`guard_break_ms` 破防硬直（1–600000）、`perfect_window_ms` 完美格擋窗口（命中前放開，0–1000）、`move_speed_permille` 格擋中移速千分比、`reflect_percent` 完美格擋反傷（被擋招式傷害的百分比，0–1000）、`shield_permille` 持盾格擋減傷千分比（base_permille–1000） |
+| `block.*` | 格擋（[combat.md#格擋](../combat.md)，暫定）：`base_permille` 無盾格擋減傷千分比（0–1000）、`stance_hp_permille` 架勢條容量（最大 HP 千分比，1–10000）、`stance_regen_delay_ms` 最後一次格擋後多久開始回復、`stance_regen_permille_per_s` 每秒回復容量千分比、`guard_break_ms` 破防硬直（1–600000）、`perfect_window_ms` 完美格擋窗口（命中前放開，0–1000）、`move_speed_permille` 格擋中移速千分比、`reflect_percent` 完美格擋反傷（被擋主動技傷害的百分比，0–1000）、`shield_permille` 持盾格擋減傷千分比（base_permille–1000） |
 | `equipment.*` | 持握加成（[crafting.md#穿戴與數值](../crafting.md#穿戴與數值)，暫定）：`two_handed_damage_percent` 雙手武器傷害加成、`dual_wield_speed_percent` 雙持攻速加成（各 0–500） |
 | `creature_roll.*` | 主控宙獸翻滾（[combat.md#完美閃避](../combat.md)，暫定，與 `player` 翻滾同值）：`duration_ms`、`invulnerable_ms`（≤ duration）、`cooldown_ms`（≥ duration，從開始算）、`perfect_dodge_ms` 完美閃避窗口（≤ invulnerable）、`distance_height_permille` 翻滾距離（身高千分比，身高＝2 × `ai.body_mm`，0–10000） |
-| `boss.windup_permille` | BOSS 招式前搖倍率（1500＝×1.5；[combat.md#前搖](../combat.md)） |
+| `boss.windup_permille` | BOSS 主動技前搖倍率（1500＝×1.5；[combat.md#前搖](../combat.md)） |
 | `boss.enrage[]` | BOSS 狂暴階段（[combat.md#BOSS-階段](../combat.md)，暫定 Q-C53）：`hp_below_percent`（1–99，嚴格遞減，HP·100 < 值·MaxHP 時成立）、`move_speed_percent`（0–100，相對移速）、`cd_reduction_percent`（0–100，全屬性 CD 相對縮短；程式內取負值）；1–8 段，後段取代前段 |
 
 ## progression

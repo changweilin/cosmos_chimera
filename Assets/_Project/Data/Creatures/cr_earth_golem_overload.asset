@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_earth_golem_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_earth_golem_overload
+  lineId: cr_earth_golem
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 424a113e43da4a446b4920afcf848276, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0000000000000000000000000a0000003200000000000000d8ffffff0f0000000000000000000000
+  mastery:
+  - element: 4
+    value: 30
+  stats:
+    hp: 180
+    speed: 36
+    yinAtk: 144
+    yangAtk: 144
+    yinDef: 108
+    yangDef: 108
+  signatureMove: {fileID: 11400000, guid: dc0f4797247d39142bb167400422d239, type: 2}
+  trait: {fileID: 11400000, guid: f735ffdf2062f93469199688adba577e, type: 2}
+  fieldUtility: 11
+  conceptJson: "{\"name_zh\":\"\u7194\u5CA9\u7FA4\u5CF0\u6CF0\u5766\",\"name_en\":null,\"stage_look\":\"*
+    \u80CC\u90E8\u9686\u8D77\u4E09\u5EA7\u8073\u7ACB\u5C71\u5CF0 (Spine_02 / Plate_Rock
+    / Amber_Core)\uFF1A\u7576\u7425\u73C0\u5730\u6838\u9032\u5165\u6975\u9650\u8D85\u8F09\u5171\u9CF4\uFF0C\u9676\u6CE5\u539A\u5CA9\u5076\u5316\u8EAB\u70BA\u5730\u52D5\u5C71\u6416\u7684\u79FB\u52D5\u5CA9\u77F3\u8981\u585E\uFF01\u5176\u5F8C\u80CC\uFF08+Y
+    \u65B9\u5411\uFF09\u62D4\u5730\u9686\u8D77\u4E09\u5EA7\u9AD8\u8073\u5165\u96F2\u7684\u96AA\u5CFB\u7384\u6B66\u5CA9\u5C71\u5CF0\uFF08\u6700\u9AD8\u4E3B\u5CF0\u9054
+    2.24 \u7C73\uFF09\uFF0C\u5CF0\u9802\u706B\u5C71\u53E3\u5674\u767C\u8457\u71BE\u71B1\u7684\u5730\u5FC3\u7194\u5CA9\u706B\u5149\uFF0C\u5728\u6B63\u9762\u8996\u89D2\u4E2D\u5F62\u6210\u5A01\u9707\u5929\u5730\u7684\u80CC\u5C71\u8F2A\u5ED3\uFF0C\u540C\u6642\u78BA\u4FDD\u6B63\u9762\u81C9\u90E8\u8207\u96D9\u7738
+    100% \u6E05\u6670\u986F\u9732\u3002\\n* \u56DB\u80A2\u74B0\u7E5E\u61F8\u6D6E\u91CD\u529B\u5CA9\u584A
+    (Orbit_Rock_01..04)\uFF1A\u8D85\u8F09\u5F15\u767C\u7684\u5C40\u90E8\u5927\u5730\u5F15\u529B\u9006\u8F49\uFF0C\u4F7F\u5468\u906D\u56DB\u584A\u7E8F\u7E5E\u8457\u7425\u73C0\u78C1\u74B0\u7684\u5DE8\u578B\u591A\u9762\u9AD4\u300C\u61F8\u6D6E\u91CD\u529B\u5CA9\u584A\u300D\u812B\u96E2\u5730\u9762\uFF0C\u74B0\u7E5E\u5728\u6CF0\u5766\u56DB\u80A2\u8207\u96D9\u80A9\u5916\u570D\u81EA\u4E3B\u9AD8\u901F\u516C\u8F49\uFF0C\u65E2\u53EF\u5728\u9632\u79A6\u6642\u9396\u5B9A\u6210\u591A\u91CD\u77F3\u9580\uFF0C\u4EA6\u53EF\u5728\u653B\u64CA\u6642\u5316\u70BA\u6D41\u661F\u7FA4\u7838\u5411\u6575\u9663\u3002\\n*
+    \u5468\u8EAB\u88C2\u9699\u5730\u5FC3\u7194\u5CA9\u5954\u9A30 (Amber_Core)\uFF1A\u8981\u585E\u7D1A\u80F8\u93A7\u3001\u96D9\u817F\u8B77\u811B\u8207\u5DE8\u578B\u96D9\u9318\u62F3\u5957\u7684\u98A8\u5316\u88C2\u9699\u5FB9\u5E95\u5F35\u958B\uFF0C\u8D64\u6A59\u4EA4\u7E54\u7684\u91D1\u9EC3\u5730\u5FC3\u7194\u5CA9\u5728\u5168\u8EAB\u88C2\u8C37\u4E2D\u5954\u9A30\u6D41\u6DCC\uFF0C\u982D\u9802\u5169\u5074\u63DA\u8D77\u5A01\u56B4\u7684\u7425\u73C0\u7194\u5CA9\u96D9\u89D2\uFF0C\u5C55\u73FE\u5927\u5730\u6CF0\u5766\u7684\u7121\u4E0A\u5A01\u58D3\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_earth_golem/cr_earth_golem_overload_05_wiki.md\",\"sha256\":\"267af4dc872f1d3ead48577893ff56f139e4c0afe802604421df712470910389\",\"drive_file_id\":\"145Dkz7RAminBqUbFBHciga0DMtjEff_n\"},\"status\":\"review_required\",\"gameplay_archetype\":\"earth_auric_sovereign\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

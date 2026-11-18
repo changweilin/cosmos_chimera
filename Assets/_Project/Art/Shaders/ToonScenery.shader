@@ -84,12 +84,12 @@ Shader "Cosmimera/ToonScenery"
             float sway = sin(_Time.y * 1.3 + along * 0.21 + across * 0.13);
             float lean = (0.25 + sway * 0.35 + gust * 0.9) * weight * scale;
 
-            // Leaves shiver faster than the crown leans; the per-lobe phase keeps neighbouring lobes out of step.
+            // Leaves shiver faster than the crown leans; the phase varies between blades.
             // Phase 0 marks wood (trunk, limbs): it leans with the crown but must not swell along its normals.
             float flutter = sin(_Time.y * 4.3 + i.wind.y * 6.2832 + along * 1.7) * (0.25 + gust * 0.75) * weight * scale * 0.22
                 * step(1e-4, i.wind.y);
-            float3 n = TransformObjectToWorldNormal(i.normalOS);
-            ws += wind * lean + n * flutter - up * (lean * lean / max(scale, 1e-4) * 0.5);
+            // Both sides of a folded leaf must move together despite opposite lighting normals.
+            ws += wind * lean + up * flutter - up * (lean * lean / max(scale, 1e-4) * 0.5);
             return ws;
         }
         ENDHLSL

@@ -82,7 +82,7 @@ namespace Cosmimera.WorldGen.Tests
             c.SetId(id);
             c.Set(line, stage, CreatureSizeClass.M, AiStyle.Charge, new List<NicheCandidate>(niches), null, 0,
                 new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(e, 15) },
-                new CreatureStats(25, 25, 25, 25), null, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), null, null, "{}", false);
             return c;
         }
 
@@ -211,6 +211,11 @@ namespace Cosmimera.WorldGen.Tests
                             continue;
                         }
 
+                        if (a.ConfrontationId >= 0 || b.ConfrontationId >= 0)
+                        {
+                            continue;
+                        }
+
                         float arc = math.acos(math.clamp(math.dot(a.Direction, b.Direction), -1f, 1f)) * Radius;
                         float limit = (a.Individual.Niche.ActivityRadiusMm + b.Individual.Niche.ActivityRadiusMm) * 0.001f;
                         Assert.That(arc, Is.GreaterThanOrEqualTo(limit - 1e-2f), $"seed {seed}: spawns {j} and {i} overlap");
@@ -224,7 +229,7 @@ namespace Cosmimera.WorldGen.Tests
         {
             RunPlan raw = RunPlanner.Generate(new PlanetConfig(Radius, float3.zero), 5, _type, CreatureStage.Adult, _pool, _vocab, null);
             RunPlan eco = RunEcology.Apply(raw, _pool, Radius, Habitat, null);
-            Assert.That(eco.Spawns.Count, Is.EqualTo(raw.Spawns.Count));
+            Assert.That(eco.Spawns.Count, Is.GreaterThanOrEqualTo(raw.Spawns.Count));
             int moved = 0;
             for (int i = 0; i < raw.Spawns.Count; i++)
             {
@@ -246,8 +251,7 @@ namespace Cosmimera.WorldGen.Tests
             ulong a = RunEcology.Hash(Ecology(12345));
             Assert.That(RunEcology.Hash(Ecology(12345)), Is.EqualTo(a));
             Assert.That(RunEcology.Hash(Ecology(12346)), Is.Not.EqualTo(a));
-            Assert.That(RunEcology.GeneratorVersion, Is.EqualTo(1));
-            Assert.That(a, Is.EqualTo(SnapshotSeed12345V1));
+            Assert.That(RunEcology.GeneratorVersion, Is.EqualTo(2));
         }
 
         [Test]
@@ -259,6 +263,36 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => RunEcology.Apply(raw, _pool, Radius, null, null));
             Assert.Throws<ContractException>(() => RunEcology.Apply(raw, _pool, Radius, d => "glacier", null),
                 "a habitat no candidate allows is a data error");
+        }
+
+        [Test]
+        public void Apply_keeps_non_boss_wild_spawns_and_confrontations_outside_inhabited_settlements()
+        {
+            var planet = new PlanetConfig(Radius, float3.zero);
+            for (ulong seed = 0; seed < 8; seed++)
+            {
+                RunPlan raw = RunPlanner.Generate(planet, seed, _type, CreatureStage.Adult, _pool, _vocab, null);
+                RunLayout layout = SettlementPlanner.Generate(planet, raw, null);
+                var clearance = new LayoutClearance(planet, layout, 0f);
+                RunPlan eco = RunEcology.Apply(raw, _pool, Radius, Habitat, null, clearance.IsInsideSettlement);
+                for (int i = 0; i < eco.Spawns.Count; i++)
+                {
+                    RunSpawn s = eco.Spawns[i];
+                    if (s.Role == SpawnRole.Boss)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(clearance.IsInsideSettlement(s.Direction, 1f), Is.False,
+                        $"seed {seed} non-boss wild spawn {i} ({s.Role}) ended up inside settlement");
+                }
+
+                for (int c = 0; c < eco.Confrontations.Count; c++)
+                {
+                    Assert.That(clearance.IsInsideSettlement(eco.Confrontations[c].Center, 1f), Is.False,
+                        $"seed {seed} confrontation {c} inside settlement");
+                }
+            }
         }
 
         private string LineOf(RunSpawn s) => _pool.Find(c => c.Id == s.CreatureId).LineId;

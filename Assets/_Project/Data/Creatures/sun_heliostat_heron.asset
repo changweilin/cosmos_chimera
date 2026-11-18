@@ -37,10 +37,12 @@ MonoBehaviour:
   - element: 8
     value: 25
   stats:
-    con: 45
-    str: 60
-    spi: 60
-    agi: 35
+    hp: 80
+    speed: 62
+    yinAtk: 107
+    yangAtk: 64
+    yinDef: 94
+    yangDef: 93
   signatureMove: {fileID: 11400000, guid: a314afc1a8575e943b5066cffc96ec33, type: 2}
   trait: {fileID: 11400000, guid: 17db6c338dfe7fb4ea1a4430f1175f2b, type: 2}
   fieldUtility: 13

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Unity.Mathematics;
 
@@ -23,7 +24,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
         /// <summary>Radius of the circle a resident blocks (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -51,6 +52,92 @@ namespace Cosmimera.WorldGen
         private static readonly int[] BaseWeight = { 20, 10, 10, 8, 8, 6, 6, 6, 4, 3, 3, 4, 3, 3, 3 };
 
         private static readonly int[] Lifespan = { 80, 600, 250, 45, 60, 60, 120, 90, 400, 80, 80, 80, 900, 1000, 800 };
+
+        private static readonly NpcDutySpec[] DutySpecs =
+        {
+            new NpcDutySpec(NpcDuty.IdlePlay, WanderMode.BoundedRandom, 6000,
+                new WanderDistribution(240, 40, 50, 80, 600), new WanderDistribution(2500, 700, 1000, 500, 10000),
+                new WanderDistribution(3000, 900, 1200, 500, 15000)),
+            new NpcDutySpec(NpcDuty.FieldTending, WanderMode.Shuttle, 8000,
+                new WanderDistribution(220, 30, 40, 80, 500), new WanderDistribution(4000, 800, 1200, 500, 15000),
+                new WanderDistribution(5000, 1200, 1800, 500, 20000)),
+            new NpcDutySpec(NpcDuty.CatchSorting, WanderMode.BoundedRandom, 7000,
+                new WanderDistribution(250, 35, 45, 80, 600), new WanderDistribution(3500, 800, 1100, 500, 12000),
+                new WanderDistribution(4500, 1100, 1500, 500, 18000)),
+            new NpcDutySpec(NpcDuty.NetMending, WanderMode.BoundedRandom, 6000,
+                new WanderDistribution(200, 30, 35, 80, 450), new WanderDistribution(3000, 600, 900, 500, 10000),
+                new WanderDistribution(6000, 1500, 2000, 500, 24000)),
+            new NpcDutySpec(NpcDuty.OreSorting, WanderMode.Shuttle, 7000,
+                new WanderDistribution(220, 30, 40, 80, 500), new WanderDistribution(3500, 700, 1000, 500, 12000),
+                new WanderDistribution(5000, 1200, 1600, 500, 20000)),
+            new NpcDutySpec(NpcDuty.WorkshopCraft, WanderMode.BoundedRandom, 5000,
+                new WanderDistribution(200, 25, 35, 80, 450), new WanderDistribution(2500, 600, 800, 500, 9000),
+                new WanderDistribution(6500, 1500, 2000, 500, 25000)),
+            new NpcDutySpec(NpcDuty.MarketHawking, WanderMode.Shuttle, 8000,
+                new WanderDistribution(250, 35, 45, 80, 550), new WanderDistribution(3500, 700, 1000, 500, 12000),
+                new WanderDistribution(4500, 1000, 1500, 500, 18000)),
+            new NpcDutySpec(NpcDuty.TownPatrol, WanderMode.Loop, 12000,
+                new WanderDistribution(300, 40, 50, 100, 700), new WanderDistribution(5500, 1000, 1400, 800, 18000),
+                new WanderDistribution(3000, 800, 1000, 400, 12000)),
+            new NpcDutySpec(NpcDuty.ArchiveStudy, WanderMode.BoundedRandom, 5000,
+                new WanderDistribution(180, 25, 30, 80, 400), new WanderDistribution(2500, 500, 750, 500, 9000),
+                new WanderDistribution(7500, 1800, 2200, 500, 28000)),
+            new NpcDutySpec(NpcDuty.ShrineBlessing, WanderMode.BoundedRandom, 6000,
+                new WanderDistribution(190, 25, 30, 80, 420), new WanderDistribution(3000, 600, 850, 500, 10000),
+                new WanderDistribution(7000, 1600, 2000, 500, 25000)),
+            new NpcDutySpec(NpcDuty.HerbTriage, WanderMode.BoundedRandom, 6000,
+                new WanderDistribution(230, 30, 40, 80, 520), new WanderDistribution(3000, 650, 900, 500, 11000),
+                new WanderDistribution(5500, 1300, 1800, 500, 20000)),
+            new NpcDutySpec(NpcDuty.CargoHauling, WanderMode.Shuttle, 10000,
+                new WanderDistribution(260, 35, 45, 100, 600), new WanderDistribution(5000, 1000, 1300, 700, 16000),
+                new WanderDistribution(4000, 1000, 1300, 500, 15000)),
+            new NpcDutySpec(NpcDuty.StreetBusking, WanderMode.Loop, 7000,
+                new WanderDistribution(240, 35, 45, 80, 550), new WanderDistribution(3500, 800, 1000, 500, 12000),
+                new WanderDistribution(5500, 1300, 1800, 500, 22000)),
+            new NpcDutySpec(NpcDuty.CivicInspect, WanderMode.Loop, 11000,
+                new WanderDistribution(260, 35, 45, 90, 600), new WanderDistribution(4500, 900, 1200, 600, 15000),
+                new WanderDistribution(4500, 1100, 1500, 500, 18000)),
+        };
+
+        /// <summary>Settlement duty corresponding to <paramref name="role"/>.</summary>
+        /// <remarks>Pre: role defined. Post: defined NpcDuty. Side effects: none.</remarks>
+        public static NpcDuty DutyFor(NpcRole role)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(NpcRole), role), "role must be defined");
+            return (NpcDuty)(int)role;
+        }
+
+        /// <summary>Bounded wander specification for <paramref name="duty"/>.</summary>
+        /// <remarks>Pre: duty defined. Post: valid NpcDutySpec with Duty == duty. Side effects: none.</remarks>
+        public static NpcDutySpec DutySpecFor(NpcDuty duty)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(NpcDuty), duty), "duty must be defined");
+            return DutySpecs[(int)duty];
+        }
+
+        /// <summary>Deterministically draws individual duty wander means for <paramref name="role"/> from <paramref name="residentSeed"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/characters.md#職業與聚落職務.
+        /// Pre: role defined.
+        /// Post: returns DutyFor(role); outputs match DutySpecFor(duty) bounds; independent stream ('D').
+        /// Side effects: none.
+        /// </remarks>
+        public static NpcDuty DrawDuty(NpcRole role, ulong residentSeed, out WanderMode mode, out int radiusMm,
+            out int speedPermilleMean, out int moveMsMean, out int pauseMsMean)
+        {
+            NpcDuty duty = DutyFor(role);
+            NpcDutySpec spec = DutySpecFor(duty);
+            var rng = new Pcg32(residentSeed, 'D');
+            mode = spec.Mode;
+            radiusMm = spec.RadiusMm;
+            speedPermilleMean = BoundedNormal.Sample(ref rng, spec.SpeedPermille.Mean, spec.SpeedPermille.IndividualSd,
+                spec.SpeedPermille.Min, spec.SpeedPermille.Max);
+            moveMsMean = BoundedNormal.Sample(ref rng, spec.MoveMs.Mean, spec.MoveMs.IndividualSd,
+                spec.MoveMs.Min, spec.MoveMs.Max);
+            pauseMsMean = BoundedNormal.Sample(ref rng, spec.PauseMs.Mean, spec.PauseMs.IndividualSd,
+                spec.PauseMs.Min, spec.PauseMs.Max);
+            return duty;
+        }
 
         // Rows: Tribe, Town, City, CityState, Village (SettlementKind order); columns: NpcRole.
         private static readonly int[][] RoleWeight =
@@ -152,6 +239,16 @@ namespace Cosmimera.WorldGen
             int planetSecondary = 100 + (int)rng.NextUInt(301);
             int planetMinority = 30 + (int)rng.NextUInt(91);
 
+            var culture = new Pcg32(plan.Seed, 'C');
+            int planetAge = (int)culture.NextUInt(121) - 60;
+            int planetHealth = (int)culture.NextUInt(161) - 80;
+            int planetTextile = 150 + (int)culture.NextUInt(701);
+            var tradeWeights = new int[RoleCount];
+            for (int i = 0; i < RoleCount; i++)
+            {
+                tradeWeights[i] = 60 + (int)culture.NextUInt(101);
+            }
+
             var clearance = new LayoutClearance(planet, layout, 0f);
             var profiles = new List<SettlementPopulace>();
             var residents = new List<RunResident>();
@@ -181,15 +278,25 @@ namespace Cosmimera.WorldGen
                     second = themed >= 0 && themed != (int)primary ? (NpcRace)themed : other;
                 }
 
+                // Settlements in the same region inherit the same textile tradition, regardless of traversal order.
+                var regionCulture = new Pcg32(plan.Seed, 0x43520000UL + (uint)s.Region);
+                int regionalTextile = BoundedNormal.Sample(ref regionCulture, planetTextile, 65, planetTextile - 150, planetTextile + 150);
+                int townTextile = BoundedNormal.Sample(ref culture, regionalTextile, 35,
+                    math.max(0, regionalTextile - 85), math.min(1000, regionalTextile + 85));
                 int secondaryShare = math.clamp(planetSecondary + GaussMilli(ref rng) * 80 / 1000, 0, 480);
                 int minorityShare = math.clamp(planetMinority + GaussMilli(ref rng) * 40 / 1000, 0, 250);
-                int meanAge = math.clamp(KindAge(s.Kind) + temper.AgeShiftPermille + GaussMilli(ref rng) * 40 / 1000, 200, 650);
+                int meanAge = math.clamp(KindAge(s.Kind) + planetAge + temper.AgeShiftPermille + GaussMilli(ref rng) * 40 / 1000, 200, 650);
                 int meanHealth = math.clamp(
-                    KindHealth(s.Kind) + ThemeHealth(theme) + temper.HealthShiftPermille + GaussMilli(ref rng) * 50 / 1000, 300, 950);
+                    KindHealth(s.Kind) + planetHealth + ThemeHealth(theme) + temper.HealthShiftPermille + GaussMilli(ref rng) * 50 / 1000, 300, 950);
 
                 int first = residents.Count;
                 placed.Clear();
                 int[] roles = RoleWeights(s.Kind, theme);
+                for (int role = 0; role < roles.Length; role++)
+                {
+                    roles[role] *= BoundedNormal.Sample(ref culture, tradeWeights[role], 12, tradeWeights[role] - 30, tradeWeights[role] + 30);
+                }
+
                 for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
                 {
                     RunBuilding building = layout.Buildings[b];
@@ -207,9 +314,15 @@ namespace Cosmimera.WorldGen
                         if (Stand(planet, building, id.Seed, clearance, isStandable, placed, out float3 at, out float3 facing))
                         {
                             placed.Add(at);
+                            NpcDuty duty = DrawDuty(id.Role, id.Seed, out WanderMode wanderMode, out int wanderRadiusMm,
+                                out int speedPermilleMean, out int moveMsMean, out int pauseMsMean);
+                            var loom = new Pcg32(id.Seed, 'T');
+                            int textile = BoundedNormal.Sample(ref loom, townTextile, 75,
+                                math.max(0, townTextile - 180), math.min(1000, townTextile + 180));
                             residents.Add(new RunResident(s.Index, b, id.Race, id.Role, id.Sex, id.AgePermille,
                                 math.max(1, id.AgePermille * Lifespan[(int)id.Race] / 1000), StageFor(id.AgePermille),
-                                id.HealthPermille, id.Stature, id.Bulk, id.Style, id.Seed, at, facing));
+                                id.HealthPermille, id.Stature, id.Bulk, id.Style, textile, id.Seed, at, facing,
+                                duty, wanderMode, wanderRadiusMm, speedPermilleMean, moveMsMean, pauseMsMean));
                         }
                     }
                 }
@@ -218,7 +331,8 @@ namespace Cosmimera.WorldGen
                     first, residents.Count - first));
             }
 
-            return new RunPopulace(primary, secondary, profiles.ToArray(), residents.ToArray(), planet.Radius);
+            return new RunPopulace(primary, secondary, profiles.ToArray(), residents.ToArray(), planet.Radius,
+                clearance, isStandable);
         }
 
         /// <summary>Order-sensitive FNV-1a digest of the populace's discrete content (no float directions).</summary>
@@ -266,6 +380,7 @@ namespace Cosmimera.WorldGen
                 Mix(unchecked((ulong)r.StatureZMilli));
                 Mix(unchecked((ulong)r.BulkZMilli));
                 Mix(unchecked((ulong)r.StyleZMilli));
+                Mix((ulong)r.TextilePermille);
                 Mix(r.Seed);
             }
 
@@ -496,7 +611,8 @@ namespace Cosmimera.WorldGen
                 float lateral = (rng.NextFloat() - 0.5f) * (building.WidthM + 3f);
                 float turn = (rng.NextFloat() - 0.5f) * 3.5f;
                 float3 d = math.normalize(up + (building.Facing * forward + across * lateral) / planet.Radius);
-                if ((isStandable != null && !isStandable(d)) || clearance.IsInsideBuilding(d, BodyRadiusM + 0.2f))
+                if ((isStandable != null && !isStandable(d)) || clearance.IsInsideBuilding(d, BodyRadiusM + 0.2f) ||
+                    !clearance.IsContainedInSettlement(building.Settlement, d, BodyRadiusM))
                 {
                     continue;
                 }

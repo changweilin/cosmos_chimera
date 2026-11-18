@@ -7,7 +7,7 @@ FLASH 產出之 10 條完整三段進化線（共 30 隻宙獸）初稿。包含
 
 ## 1. 十條進化線總覽（涵蓋全部 10 屬性、8 個 P5-02 地區）
 
-| line_id | 主屬性 | 地區 | 文化原型 ID | 弱點 | 精通招式（幼年 / 少年 / 成年） | 共用特性 |
+| line_id | 主屬性 | 地區 | 文化原型 ID | 弱點 | 精通主動技（幼年 / 少年 / 成年） | 共用被動技 |
 |---|---|---|---|---|---|---|
 | `line_metal_citadelbull` | metal | 西亞/中東 | `arch_lamassu` | `fire` | `metal_corrosion_edge` (35) / `metal_scrap_barrage` (80) / `metal_anvil_drop` (100) | `trait_metal_clockwork_precision` |
 | `line_wood_crownvine` | wood | 東南亞 | `arch_neang_neak` | `metal` | `wood_splinter_thrust` (30) / `wood_thorn_snare` (50) / `wood_timber_fall` (95) | `trait_wood_spore_regeneration` |
@@ -22,15 +22,15 @@ FLASH 產出之 10 條完整三段進化線（共 30 隻宙獸）初稿。包含
 
 ---
 
-## 2. 30 隻宙獸數值與特性表
+## 2. 30 隻宙獸數值與被動技表
 
 - 幼年（`juvenile`）：總點數 100（單項 10–50）、演化等級 20–27、主專精 15、主抗 +20／唯一弱點 -20。
 - 少年（`adolescent`）：總點數 200（單項 25–100）、演化等級 37–47、主專精 25、主抗 +35／唯一弱點 -30。
 - 成年（`adult`）：總點數 400（單項 50–200）、主專精 40（金加土、木加水、雷加火、光加雷四線加 15 副專精）、主抗 +50／唯一弱點 -40。
 - 10 條線主要弱點形成 10 屬性完整對射（每種屬性恰出現 1 次，無次要弱點）。
-- 性格（`temperament`）同線單調不減，且未使用 `apex`。`ai_style` 嚴格依現行精通招式之 `movement`/`range_class`/能力值對齊。
+- 性格（`temperament`）同線單調不減，且未使用 `apex`。`ai_style` 嚴格依現行精通主動技之 `movement`/`range_class`/能力值對齊。
 
-| id | 階段 | 體型 | ai_style | temperament | CON/STR/SPI/AGI | 專精 | 抗性（非零） | 精通招式 |
+| id | 階段 | 體型 | ai_style | temperament | CON/STR/SPI/AGI | 專精 | 抗性（非零） | 精通主動技 |
 |---|---|---|---|---|---|---|---|---|
 | `metal_gate_calf` | 幼年 | S | hold | cautious | 38/26/22/14 | metal:15 | metal +20, earth +10, light +5, fire -20 | `metal_corrosion_edge` (35) |
 | `metal_winged_bull` | 少年 | M | hold | normal | 76/52/44/28 | metal:25 | metal +35, earth +15, light +10, fire -30 | `metal_scrap_barrage` (80) |
@@ -67,9 +67,9 @@ FLASH 產出之 10 條完整三段進化線（共 30 隻宙獸）初稿。包含
 
 ## 3. 驗證與待續工作
 
-- **驗證**：合併 `p2-08-starters-draft-01`、`p5-03-creatures-draft-01`、`p5-05-moves-draft-01..06`、`p5-05-traits-draft-01..03`、`p5-06-relations-draft-01`、`p3-planet-types-draft-01`、`p3-12-env-materials-draft-01` 後執行 `tools/validate_data.py`：**0 error(s), 0 warning(s)**；全數語意／數值帶／原型／招式／特性約束腳本驗收通過。
+- **驗證**：合併 `p2-08-starters-draft-01`、`p5-03-creatures-draft-01`、`p5-05-moves-draft-01..06`、`p5-05-traits-draft-01..03`、`p5-06-relations-draft-01`、`p3-planet-types-draft-01`、`p3-12-env-materials-draft-01` 後執行 `tools/validate_data.py`：**0 error(s), 0 warning(s)**；全數語意／數值帶／原型／主動技／被動技約束腳本驗收通過。
 - **待續**：
   1. TERRA：中英顯示名稱與圖鑑文案（`copy-terra.json`）及 forge `gen_designed.py` 納入。
-  2. SOL：30 隻宙獸數值與招式／特性平衡模擬（P5-07）。
+  2. SOL：30 隻宙獸數值與主動技／被動技平衡模擬（P5-07）。
   3. ARGON：與既有 30 隻跨線關係邊建議（P5-06）。
   4. SONNET + 人工：原型敏感度與設計定稿審核。

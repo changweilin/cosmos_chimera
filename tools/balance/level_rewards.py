@@ -92,8 +92,11 @@ class LevelRewards:
             raise ValueError("migration requires three stage floor levels")
         for floor in self.stage_floors:
             _integer(floor, "migration floor", 1, self.curve.level_max)
-        if set(self.rules["source_base_xp"]) != {"wild", "capture", "quest_step", "quest_chain", "boss"}:
-            raise ValueError("reward sources must match the five documented events")
+        sources = set(self.rules["source_base_xp"])
+        required = {"wild", "capture", "quest_step", "quest_chain", "boss"}
+        # "trainer" (P2-18) is optional so configs older than trainer battles still load, matching C#.
+        if not required <= sources or not sources <= required | {"trainer"}:
+            raise ValueError("reward sources must match the documented events")
         for value in self.rules["source_base_xp"].values():
             _integer(value, "source base XP")
         _integer(self.rules["elite_multiplier"], "elite_multiplier", 1, 100)

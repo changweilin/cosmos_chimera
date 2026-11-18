@@ -44,7 +44,7 @@ namespace Cosmimera.Combat
 
     /// <summary>Weapons a combatant swings, with grip bonuses folded in; default is unarmed (no change to casts).</summary>
     /// <remarks>
-    /// REQ: docs/design/crafting.md#穿戴與數值 — two-handed +30% damage, dual wield alternates hands with +15% speed,
+    /// REQ: docs/design/crafting.md#穿戴與數值 — two-handed +35% damage, dual wield alternates hands with +25% speed,
     /// a shield raises the block value. Grip bonuses arrive as data (Data/balance.json#equipment).
     /// Pre: built through the constructor or default. Post: immutable. Side effects: none.
     /// </remarks>

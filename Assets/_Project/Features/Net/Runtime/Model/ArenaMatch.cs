@@ -20,7 +20,7 @@ namespace Cosmimera.Net.Runtime.Model
     {
         internal ArenaUnit(int unitId, int participantId, int teamIndex, int rosterIndex, CreatureDef def,
             Combatant combatant, CastMove[] moves, MoveDef[] moveDefs, HitVolume[] volumes, RangeClass[] rangeClasses,
-            float bodyRadiusM, float collisionRadiusM, int agi, int level, bool overloadUnlocked, float3 position,
+            float bodyRadiusM, float collisionRadiusM, int speed, int level, bool overloadUnlocked, float3 position,
             float3 forward)
         {
             UnitId = unitId;
@@ -35,7 +35,7 @@ namespace Cosmimera.Net.Runtime.Model
             RangeClasses = rangeClasses;
             BodyRadiusM = bodyRadiusM;
             CollisionRadiusM = collisionRadiusM;
-            Agi = agi;
+            Speed = speed;
             Level = level;
             OverloadUnlocked = overloadUnlocked;
             Position = position;
@@ -82,9 +82,9 @@ namespace Cosmimera.Net.Runtime.Model
         /// <remarks>Pre: none. Post: > 0. Side effects: none.</remarks>
         public float CollisionRadiusM { get; }
 
-        /// <summary>Agility at the unit's level.</summary>
+        /// <summary>Speed stat at the unit's level (creatures.md#六大能力值).</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
-        public int Agi { get; }
+        public int Speed { get; }
 
         /// <summary>Level (1..100).</summary>
         /// <remarks>Pre: none. Post: 1..100. Side effects: none.</remarks>
@@ -612,10 +612,11 @@ namespace Cosmimera.Net.Runtime.Model
             {
                 MoveDef m = i == 0 ? spec.Def.SignatureMove : spec.PartnerMove;
                 moveDefs[i] = m;
-                moves[i] = CastMove.FromDef(m);
+                // REQ: creatures.md#技能星級 — the partner move (slot 1) works at ★.
+                moves[i] = CastMove.FromDef(m, i > 0);
                 BurstOrigin origin = m.Shape == MoveShape.Burst ? m.Origin : BurstOrigin.Caster;
                 volumes[i] = MoveGeometry.Build(m.Shape, m.Movement, m.RangeClass, origin, m.BaseRangeMm,
-                    s.Str, _balance.Stats, _balance.Hit);
+                    _balance.Stats.Coefficients.SharedBaseStat, _balance.Stats, _balance.Hit);
                 ranges[i] = m.RangeClass;
             }
 
@@ -632,14 +633,14 @@ namespace Cosmimera.Net.Runtime.Model
             }
 
             EffectBook book = BookFor(spec.Def.Trait);
-            var combatant = new Combatant(_balance.Stats, _balance.Effects, s.Con, s.Spi, s.Agi, mastery, resist, book, slots);
+            var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
             float bodyRadiusM = Encounter.BodyRadiusFor(spec.Def.SizeClass);
             float collisionRadiusM = _balance.Collision.BodyMm(spec.Def.SizeClass) * 0.001f;
             float3 pos = GroundPoint(direction, bodyRadiusM);
             float3 fwd = PlanetFrame.FromUp(direction).North;
 
             return new ArenaUnit(_units.Count, participantId, teamIndex, rosterIndex, spec.Def, combatant, moves,
-                moveDefs, volumes, ranges, bodyRadiusM, collisionRadiusM, s.Agi, spec.Level, spec.OverloadUnlocked,
+                moveDefs, volumes, ranges, bodyRadiusM, collisionRadiusM, s.Speed, spec.Level, spec.OverloadUnlocked,
                 pos, fwd);
         }
 

@@ -41,8 +41,8 @@ namespace Cosmimera.Bootstrap.Demo
         private const int LampEvery = 5;
         private const float ArchRiseM = 2.2f;
 
-        private static readonly Color MainRoad = C(0x8A7F6E);
-        private static readonly Color Trail = C(0x9C7A54);
+        private Material _mainRoad;
+        private Material _trail;
         private static readonly Color BridgeStone = C(0x9A958C);
         private static readonly Color BridgeMoss = C(0x5F7F4A);
         private static readonly Color BridgeLamp = C(0xFFD27A);
@@ -106,6 +106,8 @@ namespace Cosmimera.Bootstrap.Demo
                 _mixes[i] = ArchitectureMeshes.MixFor(_style, s.Kind, theme, seed, i);
             }
 
+            _mainRoad = RoadMaterial(PlanetLook.RoadColor(planetTypeId, true));
+            _trail = RoadMaterial(PlanetLook.RoadColor(planetTypeId, false));
             foreach (RunRoad road in layout.Roads)
             {
                 _roads.Add(BuildRoad(road));
@@ -117,6 +119,9 @@ namespace Cosmimera.Bootstrap.Demo
                 _buildings.Add(BuildBuilding(building, i, layout.Settlements[building.Settlement]));
             }
         }
+
+        private Material RoadMaterial(Color soil) => _sceneryShader == null ? MaterialFor(soil, 0f) :
+            Own(PlanetLook.SceneryMaterial(_sceneryShader, soil, soil, 0f, 0f, 0f, 0f));
 
         private GameObject BuildRoad(RunRoad road)
         {
@@ -141,6 +146,7 @@ namespace Cosmimera.Bootstrap.Demo
             int rows = centres.Count;
             float3 origin = _config.ToWorld(centres[0], _groundAltitude(centres[0]));
             var vertices = new Vector3[rows * Columns];
+            var colors = new Color[vertices.Length];
             var column = new float3[Columns];
             var ground = new float[Columns];
             var sides = new float3[rows];
@@ -154,9 +160,23 @@ namespace Cosmimera.Bootstrap.Demo
                 float3 side = math.normalize(math.cross(up, ahead));
                 float rowMax = float.MinValue;
                 float rowMin = float.MaxValue;
+                float3 site = up * _config.Radius;
+                float halfWidth = road.WidthM * 0.5f;
+                float left = _groundAltitude(math.normalize(site - side * halfWidth));
+                float right = _groundAltitude(math.normalize(site + side * halfWidth));
+                // On a traverse the uphill bank encroaches on the shoulder; stay inside the scatter clearance.
+                float crossGrade = math.clamp((right - left) / road.WidthM, -1f, 1f);
                 for (int c = 0; c < Columns; c++)
                 {
                     float offsetM = (c / (Columns - 1f) - 0.5f) * road.WidthM;
+                    if (!bridges[r])
+                    {
+                        offsetM *= 0.91f + 0.07f * noise.snoise(site * 0.22f + c)
+                            - 0.19f * math.max(0f, math.sign(offsetM) * crossGrade);
+                    }
+                    float tone = bridges[r] ? 1f : 0.90f + noise.snoise(site * 0.7f + c) * 0.09f
+                        + (c == 1 || c == 3 ? 0.09f : 0f);
+                    colors[r * Columns + c] = new Color(tone, tone, tone, 1f);
                     column[c] = math.normalize(up + side * (offsetM / _config.Radius));
                     ground[c] = _groundAltitude(column[c]);
                     rowMax = math.max(rowMax, ground[c]);
@@ -202,6 +222,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             mesh.vertices = vertices;
+            mesh.colors = colors;
             mesh.triangles = triangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -212,7 +233,7 @@ namespace Cosmimera.Bootstrap.Demo
             go.transform.SetPositionAndRotation(new Vector3(origin.x, origin.y, origin.z), Quaternion.identity);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = MaterialFor(road.Class == RoadClass.Main ? MainRoad : Trail, 0f);
+            renderer.sharedMaterial = road.Class == RoadClass.Main ? _mainRoad : _trail;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             if (anyBridge)
             {

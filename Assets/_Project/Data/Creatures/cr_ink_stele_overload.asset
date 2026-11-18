@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_ink_stele_overload
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_ink_stele_overload
+  lineId: cr_ink_stele
+  stage: 3
+  sizeClass: 2
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 11400000, guid: 45ee9e9383669af42af176f951a3a23e, type: 2}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 00000000000000000500000000000000000000001e0000000a000000d8fffffff1ffffff32000000
+  mastery:
+  - element: 4
+    value: 20
+  - element: 9
+    value: 30
+  stats:
+    hp: 160
+    speed: 57
+    yinAtk: 172
+    yangAtk: 72
+    yinDef: 144
+    yangDef: 115
+  signatureMove: {fileID: 11400000, guid: 0a9fdaa0dc0531644bbf16427e77d103, type: 2}
+  trait: {fileID: 11400000, guid: 4def9f90fad392141bb29705c8094ecc, type: 2}
+  fieldUtility: 9
+  conceptJson: "{\"name_zh\":\"\u842C\u53E4\u592A\u865B\u58A8\u7891\u5C71\u795E\",\"name_en\":null,\"stage_look\":\"\u7576\u9AD4\u5167\u592A\u53E4\u7981\u5236\u5168\u9762\u89E3\u5C01\uFF0C\u80CC\u4E0A\u93AE\u754C\u795E\u7891\u5D29\u89E3\u7834\u7A7A\u3001\u6607\u83EF\u70BA\u4E00\u5EA7\u9AD8\u8073\u5165\u96F2\u7684\u300C\u5343\u5C64\u592A\u865B\u53E4\u95A3\u6A13\u7FA4\u7891\u77E9\u9663\u300D\u2014\u2014\u4E2D\u592E\u4E3B\u7891\u5316\u70BA\u901A\u5929\u7384\u77F3\u795E\u67F1\uFF0C\u5176\u4E0A\u61F8\u6D6E\u4E09\u91CD\u98DB\u7C37\u53E4\u95A3\u8207\u516B\u5EA7\u74B0\u7E5E\u93AE\u754C\u526F\u7891\u3002\u9F8D\u9F9C\u4E0B\u534A\u8EAB\u8EC0\u5E79\u534A\u5316\u70BA\u541E\u566C\u5149\u7DDA\u7684\u6DF1\u6DF5\u9ED1\u6D1E\u6C34\u58A8\u87BA\u65CB\u6F29\u6E26\uFF0C\u516D\u689D\u72C2\u8349\u6C34\u58A8\u5DE8\u89F8\u624B\u5982\u9ED1\u9F8D\u9A30\u7A7A\u7FFB\u6E67\uFF1B\u5468\u8EAB\u61F8\u6D6E\u5341\u516D\u679A\u74B0\u5F62\u516C\u8F49\u7684\u91D1\u7D05\u7843\u7802\u771F\u8A00\u53E4\u7BC6\u8207\u56DB\u91CD\u592A\u865B\u7159\u96F2\u6C23\u74B0\uFF0C\u5B9B\u5982\u5C07\u6574\u7247\u6C34\u58A8\u5C71\u6CB3\u80CC\u8CA0\u65BC\u8EAB\u7684\u592A\u53E4\u795E\u9748\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_ink_stele/cr_ink_stele_overload_05_wiki.md\",\"sha256\":\"88fdafaff05389da2ff0cb949e5fd7c97308f61bea8badfddff0a7a2adbcefb3\",\"drive_file_id\":\"1XtAMtWvdCj6gKC1ADdSo2nXBnpTsMkc1\"},\"status\":\"review_required\",\"gameplay_archetype\":\"moon_longnight_wolf\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

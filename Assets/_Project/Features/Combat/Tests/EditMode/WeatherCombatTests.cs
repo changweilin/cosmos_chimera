@@ -57,7 +57,7 @@ namespace Cosmimera.Combat.Tests
             TestWild.WithHabit(c, habit).Set("line_wx", CreatureStage.Juvenile, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                 new List<EvolutionMaterial>(), new int[10],
                 new List<ElementValue> { new ElementValue(masteryElement, 15) },
-                new CreatureStats(25, 25, 25, 25), m, null, "{}", false);
+                new CreatureStats(78, 25, 25, 25, 25, 25), m, null, "{}", false);
             return c;
         }
 
@@ -82,7 +82,7 @@ namespace Cosmimera.Combat.Tests
         }
 
         private Combatant MakeCombatant() =>
-            new Combatant(_balance.Stats, _balance.Effects, 30, 20, 20, new int[10], new int[10], new EffectBook(), 2);
+            new Combatant(_balance.Stats, _balance.Effects, BalanceFixture.Core(80, 20), new int[10], new int[10], new EffectBook(), 2);
 
         [Test]
         public void BeginCast_and_ReceiveHostile_apply_weather_cooldown_and_power_modifiers()
@@ -91,6 +91,11 @@ namespace Cosmimera.Combat.Tests
             Combatant waterTarget = MakeCombatant();
             Combatant fireTarget = MakeCombatant();
             Combatant clearTarget = MakeCombatant();
+            // Shared base evasion (creatures.md#六大能力值) would let one seed miss all three; this test is about power.
+            var noEvasion = new[] { new EffectSpec(EffectType.EvasionModPercent, false, default, -100, 0, 1) };
+            waterTarget.Book.SetEquipmentEffects(noEvasion);
+            fireTarget.Book.SetEquipmentEffects(noEvasion);
+            clearTarget.Book.SetEquipmentEffects(noEvasion);
 
             var waterMove = new CastMove("w", Element.Water, MoveKind.Damage, 100, 100, 2000, false, default, default);
             var fireMove = new CastMove("f", Element.Fire, MoveKind.Damage, 100, 100, 2000, false, default, default);
@@ -139,7 +144,7 @@ namespace Cosmimera.Combat.Tests
             var slowEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit slowWild = slowEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            slowEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            slowEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             slowEncounter.SetWeather(WeatherProfiles.Fog);
             slowEncounter.SetPlayerMoveSpeedMs(1.0f); // <= SlowStealthSpeedThresholdMs (2.0 m/s)
             slowEncounter.Tick(Dt, Dt, AtMeters(12f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
@@ -148,7 +153,7 @@ namespace Cosmimera.Combat.Tests
             var fastEncounter = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit fastWild = fastEncounter.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            fastEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            fastEncounter.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             fastEncounter.SetWeather(WeatherProfiles.Fog);
             fastEncounter.SetPlayerMoveSpeedMs(5.0f); // > SlowStealthSpeedThresholdMs
             fastEncounter.Tick(Dt, Dt, AtMeters(12f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
@@ -162,7 +167,7 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 7);
             EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire), null, AtMeters(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             float3 playerAt = AtMeters(20f);
             e.SetGrassCoverProvider(d => math.distance(d, playerAt) < 1e-4f);
             e.SetPlayerMoveSpeedMs(speedMs);
@@ -259,7 +264,7 @@ namespace Cosmimera.Combat.Tests
                 var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
                 EncounterUnit wild = e.AddWildT(MakeCreature(mastery, Habit.Dominant),
                     null, AtMeters(0f), 10);
-                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)));
+                e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(100000, 600, 400, 800)), 100, 100);
                 e.SetWeather(weather);
                 e.Tick(Dt, Dt, AtMeters(15f) * R, new AiCommand(AiCommandKind.Free, CombatAi.NoTarget), CombatAi.NoTarget);
                 return math.distance(AtMeters(0f) * R, wild.Position);
@@ -279,7 +284,7 @@ namespace Cosmimera.Combat.Tests
             var e = new Encounter(_planet, _balance, new FlatSurface(), 9);
             EncounterUnit wild = e.AddWildT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(0f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
             e.SetWeatherProvider((_, t) => t < 1000 ? WeatherProfiles.Fog : WeatherProfiles.Clear);
             e.SetPlayerMoveSpeedMs(1.0f);
 
@@ -302,7 +307,7 @@ namespace Cosmimera.Combat.Tests
                 null, AtMeters(0f), 10);
             EncounterUnit boss = e.AddBossT(MakeCreature(Element.Fire, Habit.Dominant),
                 null, AtMeters(200f), 10);
-            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)));
+            e.AttachPlayer(new PlayerVitals(new PlayerVitalsConfig(1000, 600, 400, 800)), 100, 100);
 
             // PartyStealth halves Apex 28 m territory to 14 m. At 18 m, wild does not engage.
             e.SetExplorationUtilityModifiers(500, preventWildEscape: true);

@@ -1,0 +1,304 @@
+{
+  "creatures": [
+    {
+      "id": "cr_aqua_slime_juvenile",
+      "name_zh": "微露凝膠水滴",
+      "name_en": "微露凝膠水滴"
+    },
+    {
+      "id": "cr_aqua_slime_adolescent",
+      "name_zh": "碧浪鰭凝膠水怪",
+      "name_en": "碧浪鰭凝膠水怪"
+    },
+    {
+      "id": "cr_aqua_slime_adult",
+      "name_zh": "澤影水母史萊姆",
+      "name_en": "澤影水母史萊姆"
+    },
+    {
+      "id": "cr_aqua_slime_overload",
+      "name_zh": "暴雨渦旋水神將",
+      "name_en": "暴雨渦旋水神將"
+    },
+    {
+      "id": "cr_chrono_beetle_juvenile",
+      "name_zh": "發條幼甲蟲",
+      "name_en": "發條幼甲蟲"
+    },
+    {
+      "id": "cr_chrono_beetle_adolescent",
+      "name_zh": "雙叉游絲甲蟲",
+      "name_en": "雙叉游絲甲蟲"
+    },
+    {
+      "id": "cr_chrono_beetle_adult",
+      "name_zh": "巨角避雷懷錶金龜",
+      "name_en": "巨角避雷懷錶金龜"
+    },
+    {
+      "id": "cr_chrono_beetle_overload",
+      "name_zh": "逆時雷暴機神金龜",
+      "name_en": "逆時雷暴機神金龜"
+    },
+    {
+      "id": "cr_earth_golem_juvenile",
+      "name_zh": "萌芽圓墩泥偶",
+      "name_en": "萌芽圓墩泥偶"
+    },
+    {
+      "id": "cr_earth_golem_adolescent",
+      "name_zh": "裂紋重錘石偶",
+      "name_en": "裂紋重錘石偶"
+    },
+    {
+      "id": "cr_earth_golem_adult",
+      "name_zh": "珀核晶簇岩怪",
+      "name_en": "珀核晶簇岩怪"
+    },
+    {
+      "id": "cr_earth_golem_overload",
+      "name_zh": "熔岩群峰泰坦",
+      "name_en": "熔岩群峰泰坦"
+    },
+    {
+      "id": "cr_fire_wisp_juvenile",
+      "name_zh": "躍火炭芯靈",
+      "name_en": "躍火炭芯靈"
+    },
+    {
+      "id": "cr_fire_wisp_adolescent",
+      "name_zh": "雙棍火爪侍",
+      "name_en": "雙棍火爪侍"
+    },
+    {
+      "id": "cr_fire_wisp_adult",
+      "name_zh": "浮灶雙劍衛",
+      "name_en": "浮灶雙劍衛"
+    },
+    {
+      "id": "cr_fire_wisp_overload",
+      "name_zh": "日冕等離子炎神",
+      "name_en": "日冕等離子炎神"
+    },
+    {
+      "id": "cr_frostblade_penguin_juvenile",
+      "name_zh": "剛從透著幽藍冷光的冰蛋中破殼滾出",
+      "name_en": "剛從透著幽藍冷光的冰蛋中破殼滾出"
+    },
+    {
+      "id": "cr_frostblade_penguin_adolescent",
+      "name_zh": "經歷首次換羽後，體態收束為符合流體力學的水滴流線型",
+      "name_en": "經歷首次換羽後，體態收束為符合流體力學的水滴流線型"
+    },
+    {
+      "id": "cr_frostblade_penguin_adult",
+      "name_zh": "歷經極地深海高壓與暴風雪洗禮的族群主力獵手。雙肩覆蓋棱角分明的霜鋼肩甲，背部披掛厚實的海軍藍防寒羽絨重甲；雙翼徹底武裝化為一對雙刃極光冰鋼斬刀，兼具高速迴旋斬擊",
+      "name_en": "歷經極地深海高壓與暴風雪洗禮的族群主力獵手。雙肩覆蓋棱角分明的霜鋼肩甲，背部披掛厚實的海軍藍防寒羽絨重甲；雙翼徹底武裝化為一對雙刃極光冰鋼斬刀，兼具高速迴旋斬擊"
+    },
+    {
+      "id": "cr_frostblade_penguin_overload",
+      "name_zh": "當胸前冰川紋章進入極限超載",
+      "name_en": "當胸前冰川紋章進入極限超載"
+    },
+    {
+      "id": "cr_ice_snowman_juvenile",
+      "name_zh": "絨雪微錐球",
+      "name_en": "絨雪微錐球"
+    },
+    {
+      "id": "cr_ice_snowman_adolescent",
+      "name_zh": "霜錐魔晶侍",
+      "name_en": "霜錐魔晶侍"
+    },
+    {
+      "id": "cr_ice_snowman_adult",
+      "name_zh": "凜風冰鎧衛",
+      "name_en": "凜風冰鎧衛"
+    },
+    {
+      "id": "cr_ice_snowman_overload",
+      "name_zh": "極寒暴雪魔神",
+      "name_en": "極寒暴雪魔神"
+    },
+    {
+      "id": "cr_ink_stele_juvenile",
+      "name_zh": "懸空墨硯精",
+      "name_en": "懸空墨硯精"
+    },
+    {
+      "id": "cr_ink_stele_adolescent",
+      "name_zh": "負碑墨玄龜",
+      "name_en": "負碑墨玄龜"
+    },
+    {
+      "id": "cr_ink_stele_adult",
+      "name_zh": "玄岩龍龜馱碑獸",
+      "name_en": "玄岩龍龜馱碑獸"
+    },
+    {
+      "id": "cr_ink_stele_overload",
+      "name_zh": "萬古太虛墨碑山神",
+      "name_en": "萬古太虛墨碑山神"
+    },
+    {
+      "id": "cr_light_khepri_juvenile",
+      "name_zh": "晨曦珠光小金甲",
+      "name_en": "晨曦珠光小金甲"
+    },
+    {
+      "id": "cr_light_khepri_adolescent",
+      "name_zh": "荷魯斯金翼聖甲蟲",
+      "name_en": "荷魯斯金翼聖甲蟲"
+    },
+    {
+      "id": "cr_light_khepri_adult",
+      "name_zh": "凱布利神光巨甲蟲",
+      "name_en": "凱布利神光巨甲蟲"
+    },
+    {
+      "id": "cr_light_khepri_overload",
+      "name_zh": "天穹拉神至高神殿態",
+      "name_en": "天穹拉神至高神殿態"
+    },
+    {
+      "id": "cr_metal_vault_juvenile",
+      "name_zh": "裝甲彈藥補給爬箱",
+      "name_en": "裝甲彈藥補給爬箱"
+    },
+    {
+      "id": "cr_metal_vault_adolescent",
+      "name_zh": "武裝貨櫃輪式裝甲車",
+      "name_en": "武裝貨櫃輪式裝甲車"
+    },
+    {
+      "id": "cr_metal_vault_adult",
+      "name_zh": "重裝工兵防暴堡壘",
+      "name_en": "重裝工兵防暴堡壘"
+    },
+    {
+      "id": "cr_metal_vault_overload",
+      "name_zh": "太空電梯要塞堡壘",
+      "name_en": "太空電梯要塞堡壘"
+    },
+    {
+      "id": "cr_shadow_eye_juvenile",
+      "name_zh": "黑霧絨球瞳",
+      "name_en": "黑霧絨球瞳"
+    },
+    {
+      "id": "cr_shadow_eye_adolescent",
+      "name_zh": "破篷幽爪靈",
+      "name_en": "破篷幽爪靈"
+    },
+    {
+      "id": "cr_shadow_eye_adult",
+      "name_zh": "破面虛空魔客",
+      "name_en": "破面虛空魔客"
+    },
+    {
+      "id": "cr_shadow_eye_overload",
+      "name_zh": "深淵巨瞳視界",
+      "name_en": "深淵巨瞳視界"
+    },
+    {
+      "id": "cr_solmane_lion_juvenile",
+      "name_zh": "晨光幼獅",
+      "name_en": "晨光幼獅"
+    },
+    {
+      "id": "cr_solmane_lion_adolescent",
+      "name_zh": "烈陽鬃獅",
+      "name_en": "烈陽鬃獅"
+    },
+    {
+      "id": "cr_solmane_lion_adult",
+      "name_zh": "火鬃日曜聖獅",
+      "name_en": "火鬃日曜聖獅"
+    },
+    {
+      "id": "cr_solmane_lion_overload",
+      "name_zh": "全曜日冕天界聖天獅",
+      "name_en": "全曜日冕天界聖天獅"
+    },
+    {
+      "id": "cr_thunder_drone_juvenile",
+      "name_zh": "微電同軸偵察球",
+      "name_en": "微電同軸偵察球"
+    },
+    {
+      "id": "cr_thunder_drone_adolescent",
+      "name_zh": "四軸電針巡邏機",
+      "name_en": "四軸電針巡邏機"
+    },
+    {
+      "id": "cr_thunder_drone_adult",
+      "name_zh": "六軸特斯拉哨戒塔",
+      "name_en": "六軸特斯拉哨戒塔"
+    },
+    {
+      "id": "cr_thunder_drone_overload",
+      "name_zh": "天頂軌道電磁衛星",
+      "name_en": "天頂軌道電磁衛星"
+    },
+    {
+      "id": "cr_verdant_aquila_juvenile",
+      "name_zh": "嫩芽小鷹",
+      "name_en": "嫩芽小鷹"
+    },
+    {
+      "id": "cr_verdant_aquila_adolescent",
+      "name_zh": "碧羽風隼",
+      "name_en": "碧羽風隼"
+    },
+    {
+      "id": "cr_verdant_aquila_adult",
+      "name_zh": "千葉翡冠天鷲",
+      "name_en": "千葉翡冠天鷲"
+    },
+    {
+      "id": "cr_verdant_aquila_overload",
+      "name_zh": "神木穹天暴風鷲",
+      "name_en": "神木穹天暴風鷲"
+    },
+    {
+      "id": "cr_wind_bird_juvenile",
+      "name_zh": "絨雲旋尾雛雀",
+      "name_en": "絨雲旋尾雛雀"
+    },
+    {
+      "id": "cr_wind_bird_adolescent",
+      "name_zh": "青冠流風刃雀",
+      "name_en": "青冠流風刃雀"
+    },
+    {
+      "id": "cr_wind_bird_adult",
+      "name_zh": "嵐天三尾翔風鳥",
+      "name_en": "嵐天三尾翔風鳥"
+    },
+    {
+      "id": "cr_wind_bird_overload",
+      "name_zh": "罡風天穹狂鷹",
+      "name_en": "罡風天穹狂鷹"
+    },
+    {
+      "id": "cr_wood_puppet_juvenile",
+      "name_zh": "十字稻草木樁偶",
+      "name_en": "十字稻草木樁偶"
+    },
+    {
+      "id": "cr_wood_puppet_adolescent",
+      "name_zh": "藤纏木刺傀儡",
+      "name_en": "藤纏木刺傀儡"
+    },
+    {
+      "id": "cr_wood_puppet_adult",
+      "name_zh": "古木盆景守衛魔偶",
+      "name_en": "古木盆景守衛魔偶"
+    },
+    {
+      "id": "cr_wood_puppet_overload",
+      "name_zh": "千機靈木神將",
+      "name_en": "千機靈木神將"
+    }
+  ]
+}

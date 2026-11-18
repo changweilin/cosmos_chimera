@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: cr_metal_vault_adolescent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: cr_metal_vault_adolescent
+  lineId: cr_metal_vault
+  stage: 1
+  sizeClass: 0
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: f6368ccae57091a4b8628dafbf136ffc, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 0
+    tier: 2
+    qty: 5
+  resist: 230000000a00000000000000e2ffffff0f0000000000000000000000000000000000000000000000
+  mastery:
+  - element: 0
+    value: 20
+  stats:
+    hp: 120
+    speed: 30
+    yinAtk: 60
+    yangAtk: 90
+    yinDef: 90
+    yangDef: 110
+  signatureMove: {fileID: 11400000, guid: ca0604872800edb4396a0236cae8b7be, type: 2}
+  trait: {fileID: 11400000, guid: b2943f285c302af4192bc8d7f773d39d, type: 2}
+  fieldUtility: 1
+  conceptJson: "{\"name_zh\":\"\u6B66\u88DD\u8CA8\u6AC3\u8F2A\u5F0F\u88DD\u7532\u8ECA\",\"name_en\":null,\"stage_look\":\"*
+    \u6A21\u7D44\u5316\u6B66\u88DD\u8CA8\u6AC3\u8ECA\u9AD4\u8207\u80CC\u90E8\u6C23\u52D5\u63A8\u9032\u5668
+    (Main_Container_Hull / Vault_Base)\uFF1A\u9032\u5165\u5C11\u5E74\u671F\u5F8C\uFF0C\u7BB1\u9AD4\u64F4\u5C55\u70BA\u6A19\u6E96
+    ISO \u6230\u8853\u6B66\u88DD\u8CA8\u6AC3\u6BD4\u4F8B\uFF08\u53C3\u8003 Weatherhaven
+    MECC\uFF09\uFF0C\u9802\u90E8\u524D\u7DE3\u52A0\u88DD\u50BE\u659C\u9632\u7206\u88DD\u7532\u7709\u677F\uFF0C\u7BB1\u9AD4\u5DE6\u53F3\u5169\u5074\u5370\u6709\u5927\u5E45\u9192\u76EE\u7684\u9EC3\u9ED1\u5371\u96AA\u8B66\u793A\u659C\u7D0B\uFF08Hazard_Stripe\uFF09\u3002\u8CA8\u6AC3\u5F8C\u80CC\u4E0B\u65B9\u589E\u8A2D\u5169\u5177\u5927\u53E3\u5F91\u6C23\u52D5\u63A8\u9032\u5674\u53E3\uFF0C\u53EF\u5728\u9AD8\u901F\u6ED1\u885D\u6642\u63D0\u4F9B\u5F37\u52C1\u63A8\u529B\u3002\\n*
+    \u4E09\u6BB5\u5F0F\u6DB2\u58D3\u6298\u758A\u63A8\u687F\u6A5F\u68B0\u81C2 (L/R_Piston_01..03
+    -> L/R_ShieldClaw)\uFF1A\u7BB1\u9AD4\u5DE6\u53F3\u5169\u5074\u6B63\u5F0F\u5C55\u958B\u5169\u689D\u539A\u91CD\u7684\u300C\u4E09\u6BB5\u5F0F\u6DB2\u58D3\u6298\u758A\u63A8\u687F\u6A5F\u68B0\u81C2\u300D\u2014\u2014\u7B2C\u4E00\u6BB5\u70BA\u91CD\u578B\u80A9\u90E8\u8F49\u5854\u8207\u5DE5\u7A0B\u6A58\u9EC3\u5916\u6DB2\u58D3\u7F38\u7B52\uFF08Piston_01\uFF09\uFF0C\u7B2C\u4E8C\u6BB5\u70BA\u9AD8\u93E1\u9762\u53CD\u5C04\u7684\u55AE\u8EF8\u7C97\u58EF\u934D\u927B\u4F38\u7E2E\u63A8\u687F\u8207\u88DD\u7532\u8098\u5EA7\uFF08Piston_02\uFF09\uFF0C\u7B2C\u4E09\u6BB5\u70BA\u4E0A\u4E0B\u4E26\u806F\u96D9\u934D\u927B\u963B\u5C3C\u687F\uFF08Piston_03\uFF09\uFF0C\u672B\u7AEF\u9023\u63A5\u5E36\u6709\u4E0A\u4E0B\u958B\u5408\u5DE5\u5175\u91CD\u722A\u8207\u5074\u8B77\u76FE\u677F\u7684\u8907\u5408\u6A5F\u68B0\u722A\uFF08ShieldClaw\uFF09\u3002\u6240\u6709\u95DC\u7BC0\u5957\u7B52\u8207\u63A8\u687F\u5747
+    100% \u5BE6\u5FC3\u54AC\u5408\u9023\u63A5\uFF0C\u4E14\u56B4\u683C\u914D\u7F6E\u65BC\u7BB1\u9AD4\u5169\u5074\uFF0C\u7D55\u4E0D\u906E\u64CB\u6B63\u9762\u611F\u6E2C\u5668\u8207\u8259\u9580\u3002\\n*
+    \u56DB\u8F2A\u6DB2\u58D3\u61F8\u540A\u5E95\u76E4 (Foot_FL, Foot_FR, Foot_RL,
+    Foot_RR)\uFF1A\u56DB\u652F\u6A5F\u68B0\u8DB3\u5E95\u90E8\u5168\u9762\u6574\u5408\u9AD8\u627F\u8F09\u96FB\u52D5\u6EFE\u8F2A\u8207\u934D\u927B\u8F2A\u8F42\uFF0C\u5E73\u6642\u53EF\u9396\u6B7B\u6EFE\u8F2A\u4F5C\u70BA\u56DB\u8DB3\u9081\u6B65\uFF0C\u9032\u5165\u9AD8\u901F\u5954\u8DD1\uFF08run\uFF09\u6642\u5247\u76F4\u63A5\u964D\u4E0B\u5E95\u76E4\u6EFE\u8F2A\uFF0C\u5316\u8EAB\u8CBC\u5730\u72C2\u98C6\u7684\u8F2A\u5F0F\u88DD\u7532\u8CA8\u6AC3\u8ECA\u3002\",\"source_wiki\":{\"id\":\"wiki\",\"storage\":\"drive\",\"path\":\"creatures/cr_metal_vault/cr_metal_vault_adolescent_05_wiki.md\",\"sha256\":\"3a7dbc751014089f41aafd42cc75447a8311c536be55b700b7ed5e26ac1069d2\",\"drive_file_id\":\"1ZgXK2uCn3qEne-xg-X0pTD-6HFHLSuDw\"},\"status\":\"review_required\",\"gameplay_archetype\":\"metal_gear_strider\",\"gameplay_note\":\"\u6578\u503C\u8207\u5019\u9078\u68F2\u4F4D\u6CBF\u73FE\u6709\u5C6C\u6027\u539F\u578B\u8349\u64EC\uFF1B\u6280\u80FD\u66AB\u5171\u7528\u65E2\u6709\u62DB\u5F0F\uFF0C\u4E0D\u4EE3\u8868
+    wiki \u6240\u6709\u6B66\u88DD\u6548\u679C\u5747\u5DF2\u5BE6\u88DD\u3002\"}"
+  needsSensitivityReview: 0

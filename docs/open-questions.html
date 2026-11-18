@@ -77,6 +77,18 @@
 <p style="color:var(--muted);font-size:13px">選擇會自動存在這個瀏覽器（localStorage）。agent 讀不到——按「複製決策」貼回對話，或下載 JSON 存成 <code>docs/open-questions.answers.json</code>。</p>
 
 <section>
+<h2>地形試煉與戰鬥旅人（已照暫定先行，可推翻）</h2>
+<div class="cards">
+<article id="Q-G10">
+  <header><a class="id" href="#Q-G10">Q-G10 追問</a><span class="tag">影響 P5-10、P3-33、資料契約</span></header>
+  <p><span class="label">已定</span>10 種試煉 BOSS 各為<b>單一型態</b>（不做三段進化線）。</p>
+  <p><span class="label">問題</span>BOSS 階段隨星球大小不同（矮行星少年、行星成年、超巨星成年＋超載），單一型態只能有一個 <code>stage</code>。(A) 固定為<b>成年</b>，矮行星上以等級／能力值縮放代替少年；(B) 型態<b>不帶階段</b>（新 <code>stage: boss</code>，資料契約與驗證器要改）；(C) 每種試煉只出現在特定大小的星球。另：收服後可以進化嗎（單一型態＝不可進化）？可以收服嗎？</p>
+  <p><span class="label">建議</span>A；可收服、不可進化。</p>
+</article>
+</div>
+</section>
+
+<section>
 <h2>多人</h2>
 <div class="cards">
 
@@ -86,6 +98,7 @@
 <section>
 <h2>戰鬥與環境</h2>
 <div class="cards">
+
 
 
 
@@ -121,6 +134,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
+ 'Q-G10':[R('ok','單一型態的階段',['A 固定成年＋縮放','B 新增 stage: boss','C 限定星球大小','改（補充）']),R('cap','收服／進化',['可收服、不可進化','不可收服','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

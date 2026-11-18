@@ -7,7 +7,7 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 
 ## 1. 七條進化線總覽
 
-| line_id | 主要屬性 | 地區 | 文化原型 ID | 外觀基底 (概念公式) | 戰鬥定位 | 精通招式（幼年 / 少年 / 成年） | 共用特性 |
+| line_id | 主要屬性 | 地區 | 文化原型 ID | 外觀基底 (概念公式) | 戰鬥定位 | 精通主動技（幼年 / 少年 / 成年） | 共用被動技 |
 |---|---|---|---|---|---|---|---|
 | `line_metal_gearclock` | metal | 西亞/中東 | `arch_al_jazari` | 器械 (machine) | 前排坦克（近戰→遠距突進） | `metal_needle_thrust` (30) / `metal_iron_cleave` (60) / `metal_lance_charge` (110) | `trait_metal_dense_alloy` |
 | `line_wood_vinecrest` | wood | 東南亞 | `arch_sarimanok` | 生物 (creature) | 中排輸出，上場自我治療 | `wood_briar_dash` (35) / `wood_root_spear` (85) / `wood_canopy_crush` (105) | `trait_wood_photosynthesis` |
@@ -27,7 +27,7 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 - 成年（adult）：總點數 400，單項能力值範圍 50–200，專精為主要屬性 40（金、水、冰三線加 15 點次要專精），抗性本屬性 +50 / 弱點屬性 -40。
 - 各項能力值隨階段嚴格單調不減（$S_{\text{adult}} \ge S_{\text{adolescent}} \ge S_{\text{juvenile}}$）。
 
-| id | 階段 | 體型 | CON | STR | SPI | AGI | 總計 | 專精 (Mastery) | 抗性 (Resist，非零項，由高到低) | 精通招式 (Signature Move) |
+| id | 階段 | 體型 | CON | STR | SPI | AGI | 總計 | 專精 (Mastery) | 抗性 (Resist，非零項，由高到低) | 精通主動技 (Signature Move) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `metal_clock_chick` | 幼年 | S | 40 | 28 | 18 | 14 | 100 | metal: 15 | metal +20, earth +10, wood +5, fire -20 | `metal_needle_thrust` (30) |
 | `metal_gear_strider` | 少年 | M | 80 | 55 | 37 | 28 | 200 | metal: 25 | metal +35, earth +15, wood +10, fire -30 | `metal_iron_cleave` (60) |
@@ -68,15 +68,15 @@ FLASH 產出之 7 條完整三段進化線（共 21 隻宙獸）初稿。包含 
 
 ## 4. 待決問題
 
-1. **精通招式之狀態/位移升級**：本批 21 隻宙獸精選之招式均為 P5-05 Batch 01 基礎傷害技。效果詞彙已由 P2-01 定案、P5-05 batch 05／06 提供 effect 招式；部分高階招式（如 `ice_blizzard_vortex`、`wood_canopy_crush`）可評估轉為 `kind: "both"` 帶控制減益。
-2. **成年副專精之後續招式池搭配**：本批有 3 條線（金加土、水加風、冰加金）在成年開放次要專精（15%），其餘 4 條線保持純單屬性。副手與超載機制解鎖後，是否需額外配置次要屬性之招式，留待 P5-06 關係網與 P5-07 平衡模擬驗證。
+1. **精通主動技之狀態/位移升級**：本批 21 隻宙獸精選之主動技均為 P5-05 Batch 01 基礎傷害技。效果詞彙已由 P2-01 定案、P5-05 batch 05／06 提供 effect 主動技；部分高階主動技（如 `ice_blizzard_vortex`、`wood_canopy_crush`）可評估轉為 `kind: "both"` 帶控制減益。
+2. **成年副專精之後續主動技池搭配**：本批有 3 條線（金加土、水加風、冰加金）在成年開放次要專精（15%），其餘 4 條線保持純單屬性。副手與超載機制解鎖後，是否需額外配置次要屬性之主動技，留待 P5-06 關係網與 P5-07 平衡模擬驗證。
 3. **跨線關係邊構建**：`relations/edges.json` 目前僅包含 14 條線內 `evolution_family` 關係邊。跨文化與生態關係（如 `myth_kin`、`rival_symbiosis`、`tool_kin`）將在 P5-06 統一進行全圖景連通性配對。
 
 ## 命名與文案（TERRA）
-中英名稱與圖鑑文案在 `copy-terra.json`。TERRA 指出 15 隻的 `concept.role` 承諾了戰鬥系統沒有的機制（牽引、屏障、聚怪、減速、持續治癒）或與精通招式射程不符；Opus 已把 21 隻的 `role` 改寫成與實際招式／特性一致（上表同步）。若要保留原本的定位構想，需換精通招式或等 effect 招式（P5-05 batch 05 類）指派，**待人工決定**。
+中英名稱與圖鑑文案在 `copy-terra.json`。TERRA 指出 15 隻的 `concept.role` 承諾了戰鬥系統沒有的機制（牽引、屏障、聚怪、減速、持續治癒）或與精通主動技射程不符；Opus 已把 21 隻的 `role` 改寫成與實際主動技／被動技一致（上表同步）。若要保留原本的定位構想，需換精通主動技或等 effect 主動技（P5-05 batch 05 類）指派，**待人工決定**。
 
 ## temperament（2026-11-10，D0-E2 / Q-C35，待人工）
 Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少年 `normal`、成年 `fierce`。領域半徑見 `Data/balance.json#ai.territory_mm`。
 
 ## ai_style（2026-11-07，P2-10 / Q-C21，待人工）
-Claude Opus 依精通招式機械式指定（非設計定稿）：dash → `charge`；long → `keep_distance`；melee 非 dash → AGI ≥ STR 為 `flank`、否則 `hold`；mid 非 dash → `hold`。結果：金 hold/hold/charge、木 charge/keep_distance/hold、水 hold/hold/keep_distance、火 hold/charge/keep_distance、土 hold/hold/charge、冰 hold/keep_distance/keep_distance、風 flank/keep_distance/keep_distance。同一線跨階換風格是因為精通招式射程本身逐階改變；若希望每線一致，需人工選定並換招。
+Claude Opus 依精通主動技機械式指定（非設計定稿）：dash → `charge`；long → `keep_distance`；melee 非 dash → AGI ≥ STR 為 `flank`、否則 `hold`；mid 非 dash → `hold`。結果：金 hold/hold/charge、木 charge/keep_distance/hold、水 hold/hold/keep_distance、火 hold/charge/keep_distance、土 hold/hold/charge、冰 hold/keep_distance/keep_distance、風 flank/keep_distance/keep_distance。同一線跨階換風格是因為精通主動技射程本身逐階改變；若希望每線一致，需人工選定並換招。

@@ -59,6 +59,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Core.Contracts.Contract.Requires(creature != null && creature.Mastery.Count > 0,
                     "wild pool entries need a main element");
+                Core.Contracts.Contract.Requires(creature.Niches != null && creature.Niches.Count > 0,
+                    "wild pool entries need at least one niche candidate");
                 poolStages.Add(creature.Stage);
             }
 
@@ -70,14 +72,16 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v6\n");
+            sb.Append("# cosmimera repro-probe v8\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
+                .Append(" RunEcology.GeneratorVersion ").Append(RunEcology.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" LandformSynth.GeneratorVersion ").Append(LandformSynth.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
+                .Append(" WeatherField.GeneratorVersion ").Append(WeatherField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
-            sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete landingBits\n");
+            sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete weather landingBits\n");
             foreach (PlanetTypeDef type in sorted)
             {
                 foreach (CreatureStage stage in BossStages)
@@ -124,6 +128,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 RunPlan plan = RunPlanner.Generate(config, seed, type, stage, wildPool, vocabulary, isLand);
+                plan = RunEcology.Apply(plan, wildPool, radius, TemplatePlanner.HabitatAt(planetTemplates, type.Id), isLand);
 
                 ulong baseBits = Fnv.Offset, baseMm = Fnv.Offset, surfBits = Fnv.Offset, surfMm = Fnv.Offset;
                 int sea = 0;
@@ -155,8 +160,9 @@ namespace Cosmimera.Bootstrap.Demo
                     .Append(surfBits.ToString("x16")).Append(' ')
                     .Append(surfMm.ToString("x16")).Append(' ')
                     .Append(sea.ToString(CultureInfo.InvariantCulture)).Append(' ')
-                    .Append(RunPlanner.Hash(plan).ToString("x16")).Append(' ')
+                    .Append(RunEcology.Hash(plan).ToString("x16")).Append(' ')
                     .Append(DiscreteHash(plan).ToString("x16")).Append(' ')
+                    .Append(WeatherHash(plan, type.Id, seed, TemplatePlanner.SurfaceProfile(planetTemplates, type.Id)).ToString("x16")).Append(' ')
                     // ADR-0007: landing is geometry, so preserve bits for same-backend checks and let policy b
                     // measure displacement without contaminating the authoritative discrete digest.
                     .Append(math.asuint(plan.LandingDirection.x).ToString("x8")).Append(',')
@@ -222,6 +228,20 @@ namespace Cosmimera.Bootstrap.Demo
                 Fnv.Mix(ref h, (uint)s.Group);
                 Fnv.Mix(ref h, s.CreatureId);
                 Fnv.Mix(ref h, (uint)s.Role);
+                Fnv.Mix(ref h, s.Individual.Niche.Id);
+                Fnv.Mix(ref h, (uint)s.Individual.Habit);
+                Fnv.Mix(ref h, (uint)s.Individual.SpeedPermilleMean);
+                Fnv.Mix(ref h, (uint)s.Individual.MoveMsMean);
+                Fnv.Mix(ref h, (uint)s.Individual.PauseMsMean);
+                Fnv.Mix(ref h, (uint)(s.ConfrontationId + 1));
+                Fnv.Mix(ref h, (uint)(s.ConfrontationSide + 1));
+                Fnv.Mix(ref h, (uint)s.ConfrontationOrder);
+            }
+
+            foreach (RunConfrontation c in plan.Confrontations)
+            {
+                Fnv.Mix(ref h, (uint)c.Id);
+                Fnv.Mix(ref h, (uint)c.Kind);
             }
 
             foreach (RunQuestStep q in plan.Quest)
@@ -231,6 +251,27 @@ namespace Cosmimera.Bootstrap.Demo
                 Fnv.Mix(ref h, (uint)q.Count);
                 Fnv.Mix(ref h, (uint)q.Element);
                 Fnv.Mix(ref h, (uint)(q.TargetSpawn + 1));
+            }
+
+            return h;
+        }
+
+        // REQ: weather.md#演化 — clients compute weather locally, so the integer vector must match bit for bit across
+        // backends; sampled per region at its centre terrain over two in-game hours.
+        private static ulong WeatherHash(RunPlan plan, string planetTypeId, ulong seed, Func<float3, TerrainProfile> terrainAt)
+        {
+            ulong h = Fnv.Offset;
+            var vector = new int[WeatherField.AttrCount];
+            Season? season = Seasons.ForPlanet(seed, planetTypeId);
+            foreach (RunRegion region in plan.Regions)
+            {
+                var site = new WeatherSite(seed, planetTypeId, season, region.Index, region.Center, terrainAt(region.Center).Id);
+                for (long t = 0; t < 7_200_000; t += 450_000)
+                {
+                    WeatherField.Evaluate(site, t, null, vector);
+                    foreach (int v in vector) Fnv.Mix(ref h, (uint)v);
+                    Fnv.Mix(ref h, (uint)SolarClock.SunPhaseAt(region.Center, t));
+                }
             }
 
             return h;

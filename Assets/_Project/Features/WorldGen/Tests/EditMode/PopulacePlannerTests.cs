@@ -12,7 +12,7 @@ namespace Cosmimera.WorldGen.Tests
     {
         // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, neutral temper, isStandable null
         // (PopulacePlanner v1).
-        private const ulong SnapshotSeed12345V1 = 4311297554248266902UL;
+        private const ulong SnapshotSeed12345V2 = 779921664237015050UL;
 
         private static readonly string[] PlanetTypes =
         {
@@ -37,7 +37,7 @@ namespace Cosmimera.WorldGen.Tests
                     Element e = line == "wood" ? Element.Wood : line == "fire" ? Element.Fire : Element.Water;
                     c.Set(line, (CreatureStage)stage, CreatureSizeClass.M, AiStyle.Charge, null, null, 0,
                         new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(e, 15) },
-                        new CreatureStats(25, 25, 25, 25), null, null, "{}", false);
+                        new CreatureStats(78, 25, 25, 25, 25, 25), null, null, "{}", false);
                     _pool.Add(c);
                 }
             }
@@ -284,6 +284,35 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Textile_varies_within_a_town_and_across_planets()
+        {
+            int lowest = 1000, highest = 0, widestTown = 0;
+            for (ulong seed = 0; seed < 32; seed++)
+            {
+                RunPopulace people = Make(seed).people;
+                foreach (SettlementPopulace town in people.Settlements)
+                {
+                    if (town.ResidentCount < 2) continue;
+                    int min = 1000, max = 0;
+                    for (int i = town.FirstResident; i < town.FirstResident + town.ResidentCount; i++)
+                    {
+                        int textile = people.Residents[i].TextilePermille;
+                        Assert.That(textile, Is.InRange(0, 1000));
+                        min = math.min(min, textile);
+                        max = math.max(max, textile);
+                    }
+
+                    widestTown = math.max(widestTown, max - min);
+                    lowest = math.min(lowest, min);
+                    highest = math.max(highest, max);
+                }
+            }
+
+            Assert.That(widestTown, Is.InRange(100, 360));
+            Assert.That(highest - lowest, Is.GreaterThan(700));
+        }
+
+        [Test]
         public void Planet_type_favours_its_own_peoples()
         {
             int[] lava = PopulacePlanner.RaceWeights("lava_planet"), plain = PopulacePlanner.RaceWeights(null);
@@ -358,14 +387,68 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => new PopulaceTemper(0, -201));
             Assert.Throws<ContractException>(() => people.IsBlocked(float3.zero, 0f));
             Assert.Throws<ContractException>(() => people.IsBlocked(new float3(0f, 1f, 0f), -1f));
+            Assert.Throws<ContractException>(() => people.Step(-1, 50));
+            Assert.Throws<ContractException>(() => people.Step(0, 0));
+            Assert.Throws<ContractException>(() => people.Step(0, 1001));
+            Assert.Throws<ContractException>(() => people.CurrentDirection(-1));
+            Assert.Throws<ContractException>(() => people.CurrentFacing(people.Residents.Count));
+            Assert.Throws<ContractException>(() => PopulacePlanner.DutyFor((NpcRole)99));
+            Assert.Throws<ContractException>(() => PopulacePlanner.DutySpecFor((NpcDuty)99));
+        }
+
+        [Test]
+        public void Residents_receive_role_duties_and_step_strictly_inside_their_settlement()
+        {
+            var (planet, _, layout, people) = Make(7);
+            var clearance = new LayoutClearance(planet, layout, 0f);
+            Assert.That(people.StepVersion, Is.Zero);
+            Assert.That(people.Residents.Count, Is.GreaterThan(0));
+
+            for (int i = 0; i < people.Residents.Count; i++)
+            {
+                RunResident r = people.Residents[i];
+                NpcDutySpec spec = PopulacePlanner.DutySpecFor(r.Duty);
+                Assert.That(r.Duty, Is.EqualTo(PopulacePlanner.DutyFor(r.Role)));
+                Assert.That(r.WanderMode, Is.EqualTo(spec.Mode));
+                Assert.That(r.SpeedPermilleMean, Is.InRange(spec.SpeedPermille.Min, spec.SpeedPermille.Max));
+                Assert.That(r.MoveMsMean, Is.InRange(spec.MoveMs.Min, spec.MoveMs.Max));
+                Assert.That(r.PauseMsMean, Is.InRange(spec.PauseMs.Min, spec.PauseMs.Max));
+                Assert.That(clearance.IsContainedInSettlement(r.Settlement, r.Direction, PopulacePlanner.BodyRadiusM), Is.True);
+            }
+
+            long now = 0;
+            const int dt = 100;
+            for (int step = 0; step < 250; step++)
+            {
+                now += dt;
+                people.Step(now, dt);
+            }
+
+            Assert.That(people.StepVersion, Is.EqualTo(250));
+            int moved = 0;
+            for (int i = 0; i < people.Residents.Count; i++)
+            {
+                RunResident r = people.Residents[i];
+                float3 live = people.CurrentDirection(i);
+                Assert.That(clearance.IsInsideBuilding(live, PopulacePlanner.BodyRadiusM), Is.False, $"resident {i} inside building");
+                Assert.That(clearance.IsContainedInSettlement(r.Settlement, live, PopulacePlanner.BodyRadiusM), Is.True,
+                    $"resident {i} stepped outside settlement {r.Settlement}");
+                Assert.That(people.IsBlocked(live, 0f), Is.True);
+                if (math.distance(live, r.Direction) * planet.Radius > 0.1f)
+                {
+                    moved++;
+                }
+            }
+
+            Assert.That(moved, Is.GreaterThan(0), "at least some NPCs wander inside town over 25 s");
         }
 
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(PopulacePlanner.GeneratorVersion, Is.EqualTo(1), "bump the pin with the version");
+            Assert.That(PopulacePlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
             ulong h = PopulacePlanner.Hash(Make(12345).people);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V1), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
         }
     }
 }

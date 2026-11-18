@@ -11,13 +11,13 @@ import os
 import struct
 import sys
 
-COLUMNS = ["baseBits", "baseMm", "surfBits", "surfMm", "seaCount", "plan", "planDiscrete", "landingBits"]
+COLUMNS = ["baseBits", "baseMm", "surfBits", "surfMm", "seaCount", "plan", "planDiscrete", "weather", "landingBits"]
 # ADR-0007: content must agree exactly; geometry may differ by up to 3 mm across backends (IL2CPP measured 2.2 mm).
-DISCRETE_COLUMNS = ["seaCount", "planDiscrete"]
+DISCRETE_COLUMNS = ["seaCount", "planDiscrete", "weather"]
 TOLERANCE_M = 0.003
 # Must equal ReproProbe.SampleCount: policy b only counts as evidence when every report row has its full sample set.
 SAMPLES_PER_ROW = 2048
-# v5 rows: type stage seed radius <COLUMNS>; samples: type stage seed k baseBits surfBits. A row key without the
+# v8 rows: type stage seed radius <COLUMNS>; samples: type stage seed k baseBits surfBits. A row key without the
 # boss stage would collide, since juvenile and adolescent bosses share R=640 (ReproProbe.BossStages).
 KEY_COLUMNS = 4
 RADIUS_INDEX = 3
