@@ -4,7 +4,7 @@
 
 > 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`。
 
-採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。製造擴充（D0-U4）改以製造專屬 `field_utility` 提供裁縫／鍛造／木工／珠寶等資格，見 [crafting.md#製造擴充](crafting.md#製造擴充)。
+採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。製造擴充（D0-U4）改以製造專屬 `field_utility` 提供裁縫／鍛造／木工／珠寶／附魔（含採集＞加工＞附魔循環）等資格，見 [crafting.md#製造擴充](crafting.md#製造擴充)。
 
 ## 1. 隊伍與副手生效規則
 - **主力（6 隻）**：直接貢獻各自的 `field_utility`（不論 Move 或 Trait）。
