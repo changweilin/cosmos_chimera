@@ -224,7 +224,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             data.EmitSmooth(wood, 0, null);
-            EmitCrown(data, lobes, crownCentre, 0.42f, 1.02f, 0.17f, ref rng);
+            EmitCrown(data, lobes, 0.42f, 1.02f, 0.17f, ref rng);
         }
 
         private static void BuildUmbrella(MeshData data, ref Pcg32 rng)
@@ -255,7 +255,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             data.EmitSmooth(wood, 0, null);
-            EmitCrown(data, lobes, crownCentre, 0.68f, 0.98f, 0.1f, ref rng);
+            EmitCrown(data, lobes, 0.68f, 0.98f, 0.1f, ref rng);
         }
 
         private static void BuildConifer(MeshData data, ref Pcg32 rng)
@@ -273,41 +273,26 @@ namespace Cosmimera.Bootstrap.Demo
                 float f = t / (float)(tiers - 1);
                 float baseY = math.lerp(0.2f, 0.8f, f);
                 float radius = math.lerp(0.31f, 0.1f, f) * (0.94f + rng.NextFloat() * 0.12f);
-                float apexY = baseY + math.lerp(0.3f, 0.24f, f);
-                float3 axis = SpineAt(spine, baseY / 0.96f);
-                axis.y = 0f;
-                float phase = 0.15f + 0.8f * rng.NextFloat();
+                var needles = new Part();
+                var boughs = new Part();
                 float turn = rng.NextFloat() * math.PI * 2f;
-                float tone = 0.94f + rng.NextFloat() * 0.1f;
-
-                var skirt = new Part();
-                var under = new Part();
-                int apex = skirt.Add(axis + new float3(0f, apexY, 0f), Tint(1.02f * tone, 1f), Wind(apexY, 0f, phase));
-                int hub = under.Add(axis + new float3(0f, baseY + 0.07f, 0f), Tint(0.5f, 1f), Wind(baseY, 0f, phase));
-                var rim = new int[sides];
-                var rimUnder = new int[sides];
+                float3 hub = SpineAt(spine, baseY / 0.96f) + new float3(0f, radius * 0.7f, 0f);
                 for (int k = 0; k < sides; k++)
                 {
-                    // Alternate long and short points: a saw-toothed hem reads as boughs, a round one as a cone.
-                    bool tip = (k & 1) == 0;
-                    float r = radius * (tip ? 1f : 0.74f) * (0.92f + rng.NextFloat() * 0.16f);
                     float a = turn + k * math.PI * 2f / sides;
-                    float3 p = axis + new float3(math.cos(a) * r, baseY - (tip ? 0.035f : 0f), math.sin(a) * r);
-                    rim[k] = skirt.Add(p, Tint((tip ? 1.08f : 0.86f) * tone, tip ? 0.15f : 1f), Wind(p.y, r, phase));
-                    rimUnder[k] = under.Add(p, Tint(0.62f, 1f), Wind(p.y, r, phase));
+                    float3 branch = new float3(math.cos(a), -0.58f, math.sin(a)) * radius;
+                    Twig(boughs, hub, hub + branch, radius * 0.036f);
+                    float phase = rng.NextFloat();
+                    for (int j = 0; j < 10; j++)
+                    {
+                        float u = j / 10f;
+                        float bearing = a + ((j & 1) == 0 ? 1f : -1f) * (0.75f - u * 0.4f);
+                        float length = radius * (0.57f - u * 0.24f);
+                        CrownBlade(needles, hub + branch * u, bearing, length, -0.35f, 0.20f, 0.88f, phase);
+                    }
                 }
-
-                float3 inside = axis + new float3(0f, baseY + 0.12f, 0f);
-                for (int k = 0; k < sides; k++)
-                {
-                    int next = (k + 1) % sides;
-                    skirt.Tri(apex, rim[k], rim[next], inside);
-                    under.Tri(hub, rimUnder[k], rimUnder[next], inside);
-                }
-
-                // Separate parts so the hem between the lit top and the dark underside stays a hard crease.
-                data.EmitSmooth(skirt, 1, null);
-                data.EmitSmooth(under, 1, null);
+                data.EmitSmooth(boughs, 0, null);
+                data.EmitSmooth(needles, 1, null);
             }
         }
 
@@ -421,50 +406,68 @@ namespace Cosmimera.Bootstrap.Demo
         private static float2 Wind(float y, float radial, float phase) =>
             new float2(math.saturate(y) * math.saturate(y) + 0.6f * radial, phase);
 
-        // Foliage lobes: displaced icospheres with flattened undersides. Their normals are pulled toward the crown's
-        // centre so the cel bands wrap the whole crown as one mass instead of shading every lobe as its own ball.
-        private static void EmitCrown(MeshData data, List<Lobe> lobes, float3 crownCentre, float bottomY, float topY,
+        // Sample the crown envelope in equal-area bands so no pole gathers a tuft of overlapping blades.
+        private static void EmitCrown(MeshData data, List<Lobe> lobes, float bottomY, float topY,
             float bump, ref Pcg32 rng)
         {
+            var leaves = new Part();
+            var twigs = new Part();
+            float3 fork = lobes[0].Centre - new float3(0f, lobes[0].Radii.y * 0.56f, 0f);
             foreach (Lobe lobe in lobes)
             {
-                Ico ico = Ico.Get(lobe.Detail);
-                var part = new Part();
-                float3 offset = new float3(rng.NextFloat(), rng.NextFloat(), rng.NextFloat()) * 37f;
-                float tone = 0.95f + rng.NextFloat() * 0.1f;
-                float phase = 0.1f + 0.9f * rng.NextFloat();
-                foreach (float3 unit in ico.Vertices)
+                Twig(twigs, fork, lobe.Centre, lobe.Radii.x * 0.047f);
+                float turn = rng.NextFloat() * math.PI * 2f;
+                int shoots = lobe.Detail * 7;
+                for (int i = 0; i < shoots; i++)
                 {
-                    float3 d = unit;
-                    float swell = 1f + bump * noise.snoise(d * 2.1f + offset) + bump * 0.4f * noise.snoise(d * 4.7f + offset);
-                    float3 local = d * lobe.Radii * swell;
-                    if (local.y < 0f)
+                    float y = 1f - 2f * (i + 0.5f) / shoots;
+                    float a = turn + GoldenAngle * i + Signed(ref rng) * 0.18f;
+                    float r = math.sqrt(1f - y * y);
+                    float3 shell = new float3(r * math.cos(a), y < 0f ? y * 0.65f : y, r * math.sin(a));
+                    float3 shoot = lobe.Radii * shell * (0.91f + bump * Signed(ref rng));
+                    Twig(twigs, lobe.Centre, lobe.Centre + shoot, lobe.Radii.x * 0.024f);
+                    float phase = rng.NextFloat();
+                    for (int j = 0; j < 6; j++)
                     {
-                        local.y *= 0.6f;
+                        float u = 0.20f + j * 0.15f;
+                        float3 root = lobe.Centre + shoot * u;
+                        float bearing = a + ((j & 1) == 0 ? 1f : -1f) * (0.88f - 0.38f * u);
+                        float length = lobe.Radii.x * (0.58f - u * 0.19f + Signed(ref rng) * 0.06f);
+                        float tone = math.lerp(0.72f, 1.05f, math.saturate((root.y - bottomY) / (topY - bottomY)));
+                        CrownBlade(leaves, root, bearing, length, y * 0.44f - u * 0.38f, 0.31f, tone, phase);
                     }
-
-                    float3 p = lobe.Centre + local;
-                    float h = math.saturate((p.y - bottomY) / (topY - bottomY));
-                    float under = d.y < 0f ? math.lerp(1f, 0.8f, -d.y) : 1f;
-                    float radial = math.length(p.xz - crownCentre.xz);
-                    part.Add(p, Tint(math.lerp(0.7f, 1.07f, h) * under * tone, 1f), Wind(p.y, radial, phase));
                 }
+            }
+            data.EmitSmooth(twigs, 0, null);
+            data.EmitSmooth(leaves, 1, null);
+        }
 
-                for (int t = 0; t < ico.Triangles.Length; t += 3)
-                {
-                    part.Tri(ico.Triangles[t], ico.Triangles[t + 1], ico.Triangles[t + 2], lobe.Centre);
-                }
+        private static void Twig(Part wood, float3 start, float3 end, float radius)
+        {
+            Tube(wood, new[] { start, end }, 3, (i, _) => radius * (i == 0 ? 1f : 0.35f), BarkColor);
+        }
 
-                data.EmitSmooth(part, 1, (p, n, c) =>
-                {
-                    float3 outward = math.normalize(p - (crownCentre - new float3(0f, 0.08f, 0f)));
-                    float3 soft = math.normalize(math.lerp(n, outward, 0.55f));
-                    float h = math.saturate((p.y - bottomY) / (topY - bottomY));
-                    // Accent = the sunlit top tone: only upward faces high in the crown take it.
-                    float sunlit = math.smoothstep(0.3f, 0.85f, soft.y) * math.smoothstep(0.35f, 0.8f, h);
-                    c.a = 1f - sunlit;
-                    return (soft, c);
-                });
+        // Separate upper and lower vertices preserve back-face culling and lighting at ten vertices per leaf.
+        private static void CrownBlade(Part part, float3 root, float angle, float length, float droop,
+            float widthRatio, float tone, float phase)
+        {
+            float3 axis = new float3(math.cos(angle), droop, math.sin(angle)) * length;
+            float3 middle = root + axis * 0.44f;
+            float3 wide = Across(angle) * (length * widthRatio);
+            float3 fold = new float3(0f, length * 0.11f, 0f);
+            float2 wind = Wind(root.y, math.length(root.xz), phase);
+            for (int face = 0; face < 2; face++)
+            {
+                float3 inside = middle + fold * (face == 0 ? -3f : 3f);
+                int stem = part.Add(root, Tint(tone * 0.85f, 1f), wind);
+                int left = part.Add(middle - wide, Tint(tone, 0.88f), wind);
+                int ridge = part.Add(middle + fold, Tint(tone * 1.08f, 0.65f), wind);
+                int right = part.Add(middle + wide, Tint(tone, 0.88f), wind);
+                int tip = part.Add(root + axis, Tint(tone * 1.04f, 0.62f), Wind(root.y + axis.y, math.length(root.xz), phase));
+                part.Tri(stem, left, ridge, inside);
+                part.Tri(stem, ridge, right, inside);
+                part.Tri(tip, ridge, left, inside);
+                part.Tri(tip, right, ridge, inside);
             }
         }
 
@@ -506,7 +509,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             data.EmitSmooth(wood, 0, null);
-            EmitCrown(data, lobes, crownCentre, 0.02f, 0.68f, 0.2f, ref rng);
+            EmitCrown(data, lobes, 0.02f, 0.68f, 0.2f, ref rng);
         }
 
         private static void BuildCaneClump(MeshData data, ref Pcg32 rng)
@@ -956,7 +959,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             data.EmitSmooth(wood, 0, null);
-            EmitCrown(data, lobes, crownCentre, 0.52f, 0.92f, 0.14f, ref rng);
+            EmitCrown(data, lobes, 0.52f, 0.92f, 0.14f, ref rng);
             data.EmitFaceted(strands, 1, FacetCos, null);
         }
 

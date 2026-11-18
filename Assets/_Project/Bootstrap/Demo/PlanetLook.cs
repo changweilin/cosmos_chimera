@@ -89,12 +89,19 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(shader != null && reliefM > 0f, "shader required; relief > 0");
             var m = new Material(shader);
             Fill(m, PaletteFor(planetTypeId), config, reliefM, season);
+            m.SetFloat("_FrozenGround", planetTypeId == "ice_crystal_planet" ? 1f : 0f);
             return m;
         }
 
         /// <summary>What settles on upward faces in winter on a planet type: its own snow (ash on a lava world).</summary>
         /// <remarks>Pre: none (unknown ids read as verdant). Post: the terrain palette's snow colour. Side effects: none.</remarks>
         public static Color SnowColor(string planetTypeId) => PaletteFor(planetTypeId).Snow;
+
+        internal static Color RoadColor(string id, bool main)
+        {
+            Palette p = PaletteFor(id);
+            return Color.Lerp(p.Rock, p.Shore, main ? 0.38f : 0.65f);
+        }
 
         // REQ: planet-world.md#季節 (草地隨季節變色; 配色暫定). Summer is the authored palette. The shift scales with how
         // much of the ground is turf (Palette.Grass), so ice and lava worlds, whose "low ground" is not grass, keep

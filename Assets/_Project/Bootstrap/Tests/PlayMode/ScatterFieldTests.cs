@@ -375,6 +375,8 @@ namespace Cosmimera.Bootstrap.Tests
                 float back = rows[r].size * 3.2f + 6f;
                 camera.transform.position = new Vector3(2f, rows[r].size * 0.9f, r * 40f - back);
                 camera.transform.LookAt(new Vector3(0f, rows[r].size * 0.45f, r * 40f));
+                // Let URP refresh visibility after moving between distant rows.
+                yield return null;
                 Shoot(camera, System.IO.Path.Combine(dir, "scenery-" + rows[r].archetype + ".png"));
             }
         }

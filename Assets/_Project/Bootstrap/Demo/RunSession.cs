@@ -303,6 +303,8 @@ namespace Cosmimera.Bootstrap.Demo
         private TerrainProfile _playerTerrain;
         private WeatherProfile _playerWeather = WeatherProfiles.Clear;
         private AtmosphereDriver _atmosphere;
+        private LocalWeatherView _weatherView;
+        private float _baseCloud, _baseWind;
         private WeatherControl _weatherControl;
         private Action<RunOutcome> _onEnd;
 
@@ -691,6 +693,9 @@ namespace Cosmimera.Bootstrap.Demo
                 PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
             (float grassDensity, float snowLine, float polarLat, float cloudCover, float wind) =
                 PlanetLook.Scenery(setup.PlanetType.Id);
+            _baseCloud = cloudCover;
+            _baseWind = wind;
+            if (scenery != null) _weatherView = new LocalWeatherView(transform);
             atmosphere.SetWeather(cloudCover, wind);
             if (scenery != null)
             {
@@ -952,6 +957,17 @@ namespace Cosmimera.Bootstrap.Demo
             float3 direction = _rig.Config.ToDirection(player);
             _playerTerrain = _terrainAt(direction);
             _playerWeather = WeatherAt(direction, _nowMs);
+            WeatherKind kind = _playerWeather.Kind;
+            bool volcanic = _setup.PlanetType.Id == "lava_planet" || _playerTerrain.Id is "volcano" or "volcano_foothills";
+            _weatherView?.Apply(player, PlanetFrame.FromUp(direction), kind, volcanic);
+            float strength = kind switch
+            {
+                WeatherKind.Thunderstorm or WeatherKind.Blizzard or WeatherKind.Sandstorm => 1f,
+                WeatherKind.Rain or WeatherKind.Gale => 0.65f,
+                WeatherKind.Fog => 0.35f,
+                _ => 0f,
+            };
+            _atmosphere.SetWeather(math.lerp(_baseCloud, 0.96f, strength), _baseWind + strength * 1.4f);
             ApplyPlayerEnvironment();
             _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
         }
@@ -3070,6 +3086,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDestroy()
         {
+            _weatherView?.Dispose();
             CloseJournal();
             _inputHints?.Dispose();
             _globalInput?.Dispose();
