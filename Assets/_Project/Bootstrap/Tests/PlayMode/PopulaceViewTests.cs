@@ -260,6 +260,50 @@ namespace Cosmimera.Bootstrap.Tests
                 rows.Add(("faces-" + race, faces));
             }
 
+            // Face shapes: the first seed that draws each of the six, one human woman and one man per shape.
+            for (int sex = 0; sex < 2; sex++)
+            {
+                var shapes = new List<NpcSpec>();
+                foreach (NpcMeshes.FaceShape shape in System.Enum.GetValues(typeof(NpcMeshes.FaceShape)))
+                {
+                    for (ulong seed = 1000; seed < 3000; seed++)
+                    {
+                        var spec = new NpcSpec(NpcRace.Human, NpcRole.None, (NpcSex)sex, 0.35f, 0.85f, 0f, 0f, ArchRegion.Verdant,
+                            ArchEra.Agrarian, ArchRegion.Verdant, ArchEra.Agrarian, 0f, seed, 0.5f, 3ul);
+                        if (NpcMeshes.ShapeOf(spec) == shape)
+                        {
+                            shapes.Add(spec);
+                            break;
+                        }
+                    }
+                }
+
+                rows.Add(("faces-shapes-" + (NpcSex)sex, shapes));
+            }
+
+            // Mixed blood: one human seed, half of another race each.
+            var mixed = new List<NpcSpec>();
+            foreach (NpcRace other in new[] { NpcRace.Elf, NpcRace.Orc, NpcRace.Dwarf, NpcRace.Demon, NpcRace.Avian, NpcRace.Dragonkin, NpcRace.Merfolk })
+            {
+                mixed.Add(new NpcSpec(NpcRace.Human, NpcRole.None, NpcSex.Female, 0.35f, 0.85f, 0f, 0f, ArchRegion.Verdant,
+                    ArchEra.Agrarian, ArchRegion.Verdant, ArchEra.Agrarian, 0f, 1200ul + (ulong)other, 0.5f, 3ul,
+                    NpcHeritage.Pure.WithBlood(other, 0.5f).WithCulture(ArchRegion.Twilight, ArchEra.Steampunk, 0.4f)));
+            }
+
+            rows.Add(("heads-mixed", mixed));
+
+            // Weight at one height: lean to heavy, women then men.
+            var builds = new List<NpcSpec>();
+            float[] bulks = { -3f, -1.5f, 0f, 1.5f, 3f };
+            for (int i = 0; i < 10; i++)
+            {
+                // Labourers of a hot region: vests and wraps leave the arms and calves bare.
+                builds.Add(new NpcSpec(NpcRace.Human, NpcRole.Laborer, (NpcSex)(i / 5), 0.4f, 0.85f, 0f, bulks[i % 5], ArchRegion.Lava,
+                    ArchEra.Primal, ArchRegion.Lava, ArchEra.Primal, 0f, 1300ul + (ulong)i));
+            }
+
+            rows.Add(("builds", builds));
+
             // One village as the planner draws it: same race mix, age and health spread, and style borrowing.
             var (_, layout, people) = Make(7);
             ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor("verdant_planet", 7);

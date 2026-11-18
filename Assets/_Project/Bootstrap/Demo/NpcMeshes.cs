@@ -13,13 +13,20 @@ namespace Cosmimera.Bootstrap.Demo
     {
         /// <summary>Describes one resident.</summary>
         /// <remarks>
-        /// Pre: defined enums; textile01, age01 and health01 in [0, 1]; statureZ and bulkZ in [−3.5, 3.5]; borrowShare in [0, 1].
+        /// Pre: defined enums; textile01, age01 and health01 in [0, 1]; statureZ and bulkZ in [−3.5, 3.5]; borrowShare in [0, 1];
+        ///      no blood line of heritage is race.
         /// Post: properties return the arguments. Side effects: none.
         /// </remarks>
         public NpcSpec(NpcRace race, NpcRole role, NpcSex sex, float age01, float health01, float statureZ, float bulkZ,
             ArchRegion region, ArchEra era, ArchRegion borrowRegion, ArchEra borrowEra, float borrowShare, ulong seed, float textile01 = 0.5f,
-            ulong cultureSeed = 0ul)
+            ulong cultureSeed = 0ul, NpcHeritage heritage = default)
         {
+            for (int i = 0; i < heritage.BloodLines; i++)
+            {
+                Contract.Requires(heritage.BloodRace(i) != race, "a blood line differs from the resident's own race");
+            }
+
+            Heritage = heritage;
             Contract.Requires(Enum.IsDefined(typeof(NpcRace), race) && Enum.IsDefined(typeof(NpcRole), role) &&
                               Enum.IsDefined(typeof(NpcSex), sex), "race, role and sex must be defined");
             Contract.Requires(Enum.IsDefined(typeof(ArchRegion), region) && Enum.IsDefined(typeof(ArchEra), era) &&
@@ -105,6 +112,176 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Seed shared by everyone of one settlement: its dye shift, favoured cut, hairstyle and hat habit.</summary>
         /// <remarks>Pre: none. Post: as constructed (0 = a neutral culture). Side effects: none.</remarks>
         public ulong CultureSeed { get; }
+
+        /// <summary>Mixed ancestry and the family cultures the resident carries besides the settlement's.</summary>
+        /// <remarks>Pre: none. Post: as constructed (default = pure blood, no family culture); no blood line repeats Race. Side effects: none.</remarks>
+        public NpcHeritage Heritage { get; }
+    }
+
+    /// <summary>
+    /// A resident's other blood lines (混血) and family cultures (跨文化), up to <see cref="MaxLines"/> of each.
+    /// REQ: characters.md#路人-npc (混血與跨文化).
+    /// </summary>
+    /// <remarks>
+    /// Blood lines are races besides NpcSpec.Race, which keeps the remaining (dominant) share. Culture lines are a
+    /// region × era the family came from; each line's share is the odds that one garment is cut in it.
+    /// Pre: built from <see cref="Pure"/> and the With* methods. Post: immutable. Side effects: none.
+    /// </remarks>
+    public readonly struct NpcHeritage
+    {
+        /// <summary>Most extra lines of each kind.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int MaxLines = 3;
+
+        /// <summary>Most share all blood lines together may take: the resident's own race always keeps half or more.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxBloodShare = 0.5f;
+
+        /// <summary>Most share all culture lines together may take: the settlement's styles always keep the rest.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MaxCultureShare = 0.6f;
+
+        private readonly NpcRace _r0, _r1, _r2;
+        private readonly float _b0, _b1, _b2;
+        private readonly ArchRegion _g0, _g1, _g2;
+        private readonly ArchEra _e0, _e1, _e2;
+        private readonly float _c0, _c1, _c2;
+
+        private NpcHeritage(int blood, NpcRace r0, NpcRace r1, NpcRace r2, float b0, float b1, float b2, int culture,
+            ArchRegion g0, ArchRegion g1, ArchRegion g2, ArchEra e0, ArchEra e1, ArchEra e2, float c0, float c1, float c2)
+        {
+            BloodLines = blood;
+            _r0 = r0;
+            _r1 = r1;
+            _r2 = r2;
+            _b0 = b0;
+            _b1 = b1;
+            _b2 = b2;
+            CultureLines = culture;
+            _g0 = g0;
+            _g1 = g1;
+            _g2 = g2;
+            _e0 = e0;
+            _e1 = e1;
+            _e2 = e2;
+            _c0 = c0;
+            _c1 = c1;
+            _c2 = c2;
+        }
+
+        /// <summary>No other blood, no family culture.</summary>
+        /// <remarks>Pre: none. Post: BloodLines == CultureLines == 0. Side effects: none.</remarks>
+        public static NpcHeritage Pure => default;
+
+        /// <summary>Extra blood lines.</summary>
+        /// <remarks>Pre: none. Post: in [0, MaxLines]. Side effects: none.</remarks>
+        public int BloodLines { get; }
+
+        /// <summary>Extra culture lines.</summary>
+        /// <remarks>Pre: none. Post: in [0, MaxLines]. Side effects: none.</remarks>
+        public int CultureLines { get; }
+
+        /// <summary>Sum of the blood shares.</summary>
+        /// <remarks>Pre: none. Post: in [0, MaxBloodShare]. Side effects: none.</remarks>
+        public float BloodShareTotal => _b0 + _b1 + _b2;
+
+        /// <summary>Sum of the culture shares.</summary>
+        /// <remarks>Pre: none. Post: in [0, MaxCultureShare]. Side effects: none.</remarks>
+        public float CultureShareTotal => _c0 + _c1 + _c2;
+
+        /// <summary>Race of blood line <paramref name="i"/>.</summary>
+        /// <remarks>Pre: 0 ≤ i &lt; BloodLines. Post: defined; differs from every other line. Side effects: none.</remarks>
+        public NpcRace BloodRace(int i)
+        {
+            Contract.Requires(i >= 0 && i < BloodLines, "i in [0, BloodLines)");
+            return i == 0 ? _r0 : i == 1 ? _r1 : _r2;
+        }
+
+        /// <summary>Share of blood line <paramref name="i"/>.</summary>
+        /// <remarks>Pre: 0 ≤ i &lt; BloodLines. Post: in (0, MaxBloodShare]. Side effects: none.</remarks>
+        public float BloodShare(int i)
+        {
+            Contract.Requires(i >= 0 && i < BloodLines, "i in [0, BloodLines)");
+            return i == 0 ? _b0 : i == 1 ? _b1 : _b2;
+        }
+
+        /// <summary>Region of culture line <paramref name="i"/>.</summary>
+        /// <remarks>Pre: 0 ≤ i &lt; CultureLines. Post: defined. Side effects: none.</remarks>
+        public ArchRegion CultureRegion(int i)
+        {
+            Contract.Requires(i >= 0 && i < CultureLines, "i in [0, CultureLines)");
+            return i == 0 ? _g0 : i == 1 ? _g1 : _g2;
+        }
+
+        /// <summary>Era of culture line <paramref name="i"/>.</summary>
+        /// <remarks>Pre: 0 ≤ i &lt; CultureLines. Post: defined. Side effects: none.</remarks>
+        public ArchEra CultureEra(int i)
+        {
+            Contract.Requires(i >= 0 && i < CultureLines, "i in [0, CultureLines)");
+            return i == 0 ? _e0 : i == 1 ? _e1 : _e2;
+        }
+
+        /// <summary>Share of culture line <paramref name="i"/>.</summary>
+        /// <remarks>Pre: 0 ≤ i &lt; CultureLines. Post: in (0, MaxCultureShare]. Side effects: none.</remarks>
+        public float CultureShare(int i)
+        {
+            Contract.Requires(i >= 0 && i < CultureLines, "i in [0, CultureLines)");
+            return i == 0 ? _c0 : i == 1 ? _c1 : _c2;
+        }
+
+        /// <summary>This heritage plus one blood line.</summary>
+        /// <remarks>
+        /// Pre: BloodLines &lt; MaxLines; defined race not yet among the lines; share &gt; 0 and BloodShareTotal + share ≤ MaxBloodShare.
+        /// Post: a copy with the line appended. Side effects: none.
+        /// </remarks>
+        public NpcHeritage WithBlood(NpcRace race, float share)
+        {
+            Contract.Requires(BloodLines < MaxLines, "at most MaxLines blood lines");
+            Contract.Requires(Enum.IsDefined(typeof(NpcRace), race), "race must be defined");
+            Contract.Requires(share > 0f && BloodShareTotal + share <= MaxBloodShare + 1e-5f, "blood shares in (0, MaxBloodShare] together");
+            for (int i = 0; i < BloodLines; i++)
+            {
+                Contract.Requires(BloodRace(i) != race, "a blood line appears once");
+            }
+
+            return BloodLines switch
+            {
+                0 => new NpcHeritage(1, race, _r1, _r2, share, 0f, 0f, CultureLines, _g0, _g1, _g2, _e0, _e1, _e2, _c0, _c1, _c2),
+                1 => new NpcHeritage(2, _r0, race, _r2, _b0, share, 0f, CultureLines, _g0, _g1, _g2, _e0, _e1, _e2, _c0, _c1, _c2),
+                _ => new NpcHeritage(3, _r0, _r1, race, _b0, _b1, share, CultureLines, _g0, _g1, _g2, _e0, _e1, _e2, _c0, _c1, _c2),
+            };
+        }
+
+        /// <summary>This heritage plus one family culture.</summary>
+        /// <remarks>
+        /// Pre: CultureLines &lt; MaxLines; defined region and era; share &gt; 0 and CultureShareTotal + share ≤ MaxCultureShare.
+        /// Post: a copy with the line appended. Side effects: none.
+        /// </remarks>
+        public NpcHeritage WithCulture(ArchRegion region, ArchEra era, float share)
+        {
+            Contract.Requires(CultureLines < MaxLines, "at most MaxLines culture lines");
+            Contract.Requires(Enum.IsDefined(typeof(ArchRegion), region) && Enum.IsDefined(typeof(ArchEra), era), "region and era must be defined");
+            Contract.Requires(share > 0f && CultureShareTotal + share <= MaxCultureShare + 1e-5f, "culture shares in (0, MaxCultureShare] together");
+            return CultureLines switch
+            {
+                0 => new NpcHeritage(BloodLines, _r0, _r1, _r2, _b0, _b1, _b2, 1, region, _g1, _g2, era, _e1, _e2, share, 0f, 0f),
+                1 => new NpcHeritage(BloodLines, _r0, _r1, _r2, _b0, _b1, _b2, 2, _g0, region, _g2, _e0, era, _e2, _c0, share, 0f),
+                _ => new NpcHeritage(BloodLines, _r0, _r1, _r2, _b0, _b1, _b2, 3, _g0, _g1, region, _e0, _e1, era, _c0, _c1, share),
+            };
+        }
+
+        /// <summary>Share of <paramref name="race"/> in a resident whose own race is <paramref name="own"/>.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]; own plus every blood line sums to 1. Side effects: none.</remarks>
+        public float ShareOf(NpcRace race, NpcRace own)
+        {
+            float share = race == own ? 1f - BloodShareTotal : 0f;
+            for (int i = 0; i < BloodLines; i++)
+            {
+                share += BloodRace(i) == race ? BloodShare(i) : 0f;
+            }
+
+            return share;
+        }
     }
 
     /// <summary>
@@ -176,14 +353,159 @@ namespace Cosmimera.Bootstrap.Demo
             return new NpcSpec(resident.Race, resident.Role, resident.Sex, resident.AgePermille / 1000f,
                 resident.HealthPermille / 1000f, math.clamp(resident.StatureZMilli / 1000f, -3.5f, 3.5f),
                 math.clamp(resident.BulkZMilli / 1000f, -3.5f, 3.5f), region, era,
-                third ? mix.TertiaryRegion : mix.SecondaryRegion, third ? mix.TertiaryEra : mix.SecondaryEra, share, resident.Seed, resident.TextilePermille / 1000f, culture);
+                third ? mix.TertiaryRegion : mix.SecondaryRegion, third ? mix.TertiaryEra : mix.SecondaryEra, share, resident.Seed, resident.TextilePermille / 1000f, culture,
+                HeritageFor(resident.Race, region, era, resident.Seed));
+        }
+
+        /// <summary>Odds a resident carries one or more other blood lines (混血).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float MixedBloodOdds = 0.15f;
+
+        /// <summary>Odds a resident's family carries one or more cultures from elsewhere (跨文化).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float FamilyCultureOdds = 0.25f;
+
+        /// <summary>Odds of each further line once one is drawn: every added element is rarer than the last.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const float FurtherLineOdds = 0.3f;
+
+        /// <summary>The blood lines and family cultures of the resident with <paramref name="seed"/>.</summary>
+        /// <remarks>
+        /// REQ: characters.md#路人-npc (混血與跨文化).
+        /// Pre: defined race, region and era.
+        /// Post: P(k blood lines) = MixedBloodOdds × FurtherLineOdds^(k−1) × (1 − FurtherLineOdds) for k &lt; MaxLines (likewise
+        ///       culture lines with FamilyCultureOdds); undead (Zombie, Skeleton) neither carry nor give blood; blood races
+        ///       are distinct, differ from <paramref name="race"/> and come with shares largest first, each ≥ 1/16; no
+        ///       culture line equals (region, Worn(era)) and none is Ancient. Same arguments, same heritage.
+        /// Side effects: none.
+        /// </remarks>
+        public static NpcHeritage HeritageFor(NpcRace race, ArchRegion region, ArchEra era, ulong seed)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(NpcRace), race) && Enum.IsDefined(typeof(ArchRegion), region) &&
+                              Enum.IsDefined(typeof(ArchEra), era), "race, region and era must be defined");
+            // Own stream: adding heritage did not reshuffle any other draw of the resident.
+            var rng = new Pcg32(Salt ^ seed, 0x484552ul);
+            NpcHeritage h = NpcHeritage.Pure;
+            int blood = Lines(MixedBloodOdds, ref rng);
+            if (Undead(race))
+            {
+                blood = 0;
+            }
+
+            float[] bloodShares = Shares(blood, NpcHeritage.MaxBloodShare, ref rng);
+            var taken = new bool[RaceCount];
+            taken[(int)race] = true;
+            for (int i = 0; i < blood; i++)
+            {
+                NpcRace pick = PickLiving(taken, ref rng);
+                taken[(int)pick] = true;
+                h = h.WithBlood(pick, bloodShares[i]);
+            }
+
+            int cultures = Lines(FamilyCultureOdds, ref rng);
+            float[] cultureShares = Shares(cultures, NpcHeritage.MaxCultureShare, ref rng);
+            for (int i = 0; i < cultures; i++)
+            {
+                ArchRegion g;
+                ArchEra e;
+                do
+                {
+                    g = (ArchRegion)rng.NextUInt(RegionCount);
+                    e = WornEras[rng.NextUInt((uint)WornEras.Length)];
+                }
+                while (g == region && e == Worn(era));
+
+                h = h.WithCulture(g, e, cultureShares[i]);
+            }
+
+            return h;
+        }
+
+        private static readonly int RaceCount = Enum.GetValues(typeof(NpcRace)).Length;
+        private static readonly uint RegionCount = (uint)Enum.GetValues(typeof(ArchRegion)).Length;
+
+        private static readonly ArchEra[] WornEras =
+        {
+            ArchEra.Primal, ArchEra.Agrarian, ArchEra.Mercantile, ArchEra.Industrial, ArchEra.Steampunk, ArchEra.Future, ArchEra.Wasteland,
+        };
+
+        private static bool Undead(NpcRace race) => race == NpcRace.Zombie || race == NpcRace.Skeleton;
+
+        private static int Lines(float first, ref Pcg32 rng)
+        {
+            if (rng.NextFloat() >= first)
+            {
+                return 0;
+            }
+
+            int lines = 1;
+            while (lines < NpcHeritage.MaxLines && rng.NextFloat() < FurtherLineOdds)
+            {
+                lines++;
+            }
+
+            return lines;
+        }
+
+        // Each line keeps at least 1/16 (a great-great-grandparent) so a third line is never invisible noise; the rest is
+        // split by uniform weights and sorted so line 0 is always the strongest.
+        private static float[] Shares(int lines, float cap, ref Pcg32 rng)
+        {
+            var shares = new float[lines];
+            if (lines == 0)
+            {
+                return shares;
+            }
+
+            const float Floor = 1f / 16f;
+            float total = math.lerp(Floor * (lines + 1), cap, rng.NextFloat());
+            float sum = 0f;
+            for (int i = 0; i < lines; i++)
+            {
+                shares[i] = 0.5f + rng.NextFloat();
+                sum += shares[i];
+            }
+
+            for (int i = 0; i < lines; i++)
+            {
+                shares[i] = Floor + (total - Floor * lines) * shares[i] / sum;
+            }
+
+            Array.Sort(shares);
+            Array.Reverse(shares);
+            return shares;
+        }
+
+        private static NpcRace PickLiving(bool[] taken, ref Pcg32 rng)
+        {
+            uint open = 0;
+            for (int r = 0; r < RaceCount; r++)
+            {
+                open += taken[r] || Undead((NpcRace)r) ? 0u : 1u;
+            }
+
+            uint pick = rng.NextUInt(open);
+            for (int r = 0; r < RaceCount; r++)
+            {
+                if (taken[r] || Undead((NpcRace)r))
+                {
+                    continue;
+                }
+
+                if (pick-- == 0)
+                {
+                    return (NpcRace)r;
+                }
+            }
+
+            return NpcRace.Human;
         }
 
         /// <summary>Standing height of <paramref name="spec"/> to the top of the skull, metres.</summary>
         /// <remarks>Pre: none. Post: in [0.5, 2.7]; children are shorter, the old and the ill a little. Side effects: none.</remarks>
         public static float HeightM(in NpcSpec spec)
         {
-            Traits t = TraitsFor(spec.Race);
+            Traits t = TraitsOf(spec);
             float grown = math.lerp(0.52f, 1f, math.smoothstep(0.03f, 0.25f, spec.Age01));
             float sex = spec.Sex == NpcSex.Female ? 0.95f : 1f;
             float old = 1f - 0.04f * math.smoothstep(0.6f, 0.9f, spec.Age01);
@@ -205,7 +527,7 @@ namespace Cosmimera.Bootstrap.Demo
             var rng = new Pcg32(Salt ^ spec.Seed, ((ulong)spec.Race << 16) | ((ulong)spec.Role << 8) | (ulong)spec.Sex);
             var body = new Fig();
             var glow = new Fig();
-            Traits traits = TraitsFor(spec.Race);
+            Traits traits = TraitsOf(spec);
             Look look = Look.Draw(spec, traits, ref rng);
             Rig rig = Rig.Pose(spec, traits, look, ref rng);
             Flesh(body, glow, spec, traits, rig, look);
@@ -279,6 +601,41 @@ namespace Cosmimera.Bootstrap.Demo
             _ => new Traits { HeightM = 1.72f, Head = 1f, LegShare = 0.6f, Shoulder = 0.125f, Bulk = 1f, Arm = 1f, Fat = 0.22f },
         };
 
+        // A mixed resident's frame is the share-weighted mean of every blood line's; scales and fur (Furred) stay the own
+        // race's, since a half-elf dwarf still grows a beard where a half-dwarf avian has nowhere to grow one.
+        // REQ: characters.md#路人-npc (混血與跨文化).
+        private static Traits TraitsOf(in NpcSpec spec)
+        {
+            Traits t = TraitsFor(spec.Race);
+            NpcHeritage h = spec.Heritage;
+            if (h.BloodLines == 0)
+            {
+                return t;
+            }
+
+            float own = 1f - h.BloodShareTotal;
+            var m = new Traits
+            {
+                HeightM = t.HeightM * own, Head = t.Head * own, LegShare = t.LegShare * own, Shoulder = t.Shoulder * own,
+                Bulk = t.Bulk * own, Arm = t.Arm * own, Hunch = t.Hunch * own, Fat = t.Fat * own, Furred = t.Furred,
+            };
+            for (int i = 0; i < h.BloodLines; i++)
+            {
+                Traits o = TraitsFor(h.BloodRace(i));
+                float k = h.BloodShare(i);
+                m.HeightM += o.HeightM * k;
+                m.Head += o.Head * k;
+                m.LegShare += o.LegShare * k;
+                m.Shoulder += o.Shoulder * k;
+                m.Bulk += o.Bulk * k;
+                m.Arm += o.Arm * k;
+                m.Hunch += o.Hunch * k;
+                m.Fat += o.Fat * k;
+            }
+
+            return m;
+        }
+
         private static readonly int[][] SkinTones =
         {
             new[] { 0xF2D2B6, 0xE0B08A, 0xC68E63, 0x9A6541, 0x6E4630, 0xF6DEC8 },
@@ -349,11 +706,17 @@ namespace Cosmimera.Bootstrap.Demo
                 var l = default(Look);
                 ArchEra era = Worn(spec.Era), borrowEra = Worn(spec.BorrowEra);
                 // Each garment on its own coin, so two people of one mixed town still differ in what they borrowed.
-                l.UpperEra = rng.NextFloat() < spec.BorrowShare ? borrowEra : era;
-                l.LowerEra = rng.NextFloat() < spec.BorrowShare ? borrowEra : era;
-                l.HeadEra = rng.NextFloat() < spec.BorrowShare ? borrowEra : era;
-                l.PieceRegion = rng.NextFloat() < spec.BorrowShare ? spec.BorrowRegion : spec.Region;
-                ArchRegion palette = rng.NextFloat() < spec.BorrowShare * 0.7f ? spec.BorrowRegion : spec.Region;
+                // A family culture (跨文化) claims a garment before the town's mix is consulted: grandmother's shawl is
+                // worn whatever the street wears. Pure residents draw nothing extra here.
+                l.UpperEra = GarmentEra(spec, era, borrowEra, ref rng);
+                l.LowerEra = GarmentEra(spec, era, borrowEra, ref rng);
+                l.HeadEra = GarmentEra(spec, era, borrowEra, ref rng);
+                int pieceLine = FamilyLine(spec.Heritage, ref rng);
+                l.PieceRegion = pieceLine >= 0 ? spec.Heritage.CultureRegion(pieceLine)
+                    : rng.NextFloat() < spec.BorrowShare ? spec.BorrowRegion : spec.Region;
+                int paletteLine = FamilyLine(spec.Heritage, ref rng);
+                ArchRegion palette = paletteLine >= 0 ? spec.Heritage.CultureRegion(paletteLine)
+                    : rng.NextFloat() < spec.BorrowShare * 0.7f ? spec.BorrowRegion : spec.Region;
 
                 Culture culture = Culture.For(spec.CultureSeed, l.UpperEra);
                 bool young = spec.Age01 < 0.16f;
@@ -361,22 +724,28 @@ namespace Cosmimera.Bootstrap.Demo
                 // A blend of two neighbouring tones: a continuum, not six paint chips.
                 int tone = (int)rng.NextUInt((uint)tones.Length);
                 Color skin = Color.Lerp(Hex(tones[tone]), Hex(tones[math.min(tone + 1, tones.Length - 1)]), rng.NextFloat() * 0.6f);
+                NpcHeritage blood = spec.Heritage;
+                for (int i = 0; i < blood.BloodLines; i++)
+                {
+                    // Each blood line pulls the skin toward one of its own tones by its share; 0.85 keeps the own race's
+                    // tone readable even at half blood, so a half-merfolk human is sea-tinted, not merfolk blue.
+                    skin = Color.Lerp(skin, Pick(SkinTones[(int)blood.BloodRace(i)], ref rng), 0.85f * blood.BloodShare(i));
+                }
                 // Illness drains colour before it bends the back.
                 float pallor = (1f - spec.Health01) * 0.4f;
                 l.Skin = Color.Lerp(skin, Hex(0xB8B4A8), pallor);
                 l.Bone = Hex(0xE8E2D0);
 
                 int hairPick = (int)rng.NextUInt((uint)HairTones.Length);
-                Color hair = spec.Race switch
+                Color hair = RaceHairTone(spec.Race, hairPick, ref rng);
+                for (int i = 0; i < blood.BloodLines; i++)
                 {
-                    NpcRace.Elf => rng.NextUInt(3) == 0 ? Hex(0xE8E4D8) : Hex(HairTones[hairPick]),
-                    NpcRace.Angel => rng.NextUInt(2) == 0 ? Hex(0xF4EFE0) : Hex(0xE0C070),
-                    NpcRace.Vampire => rng.NextUInt(3) == 0 ? Hex(0xE4E0E8) : Hex(0x1A1A20),
-                    NpcRace.Demon => Hex(0x1A1A20),
-                    NpcRace.Goblin => Hex(0x2A2018),
-                    NpcRace.Zombie => Color.Lerp(Hex(HairTones[hairPick]), Hex(0x6A6A60), 0.5f),
-                    _ => Hex(HairTones[hairPick]),
-                };
+                    // Hair is inherited whole, not mixed: a quarter-elf is dark-haired or silver-haired, never grey-ish.
+                    if (rng.NextFloat() < blood.BloodShare(i))
+                    {
+                        hair = RaceHairTone(blood.BloodRace(i), hairPick, ref rng);
+                    }
+                }
                 // Dyed hair is an adult choice, and the undead and the celestial keep the colour they were made with.
                 bool dyeable = !young && spec.Race != NpcRace.Zombie && spec.Race != NpcRace.Angel;
                 if (dyeable && rng.NextFloat() < culture.DyedHairOdds)
@@ -457,11 +826,14 @@ namespace Cosmimera.Bootstrap.Demo
                 l.Hat = rng.NextFloat() < culture.HatOdds;
                 l.HairStyle = PickHair(spec, culture, grey, ref rng);
                 (l.Muscle, l.Fat) = Physique(spec, traits, young, ageless, ref rng);
-                float beardOdds = spec.Race == NpcRace.Dwarf ? 0.95f : spec.Race == NpcRace.Human ? 0.3f + 0.4f * grey : 0f;
+                // Beards follow the blood that grows them (a half-dwarf elf may well wear one); fur and scales grow none.
+                float humanBeard = 0.3f + 0.4f * grey;
+                float beardOdds = traits.Furred ? 0f
+                    : 0.95f * blood.ShareOf(NpcRace.Dwarf, spec.Race) + humanBeard * blood.ShareOf(NpcRace.Human, spec.Race);
                 l.Beard = spec.Sex == NpcSex.Male && !l.Child && spec.Age01 > 0.25f && rng.NextFloat() < beardOdds;
                 if (l.Beard)
                 {
-                    bool dwarf = spec.Race == NpcRace.Dwarf;
+                    bool dwarf = blood.ShareOf(NpcRace.Dwarf, spec.Race) >= 0.5f;
                     // A dwarf's beard is worn long and dressed; a human's is as often trimmed to nothing much.
                     l.BeardStyle = Weighted(dwarf ? BeardOddsDwarf : BeardOddsHuman, ref rng);
                     l.BeardLength = dwarf ? math.lerp(1.3f, 2.4f, rng.NextFloat()) : math.lerp(0.5f, 1f, rng.NextFloat());
@@ -474,6 +846,49 @@ namespace Cosmimera.Bootstrap.Demo
                 l.Bandaged = spec.Health01 < 0.45f && spec.Race != NpcRace.Skeleton;
                 return l;
             }
+        }
+
+        private static Color RaceHairTone(NpcRace race, int hairPick, ref Pcg32 rng) => race switch
+        {
+            NpcRace.Elf => rng.NextUInt(3) == 0 ? Hex(0xE8E4D8) : Hex(HairTones[hairPick]),
+            NpcRace.Angel => rng.NextUInt(2) == 0 ? Hex(0xF4EFE0) : Hex(0xE0C070),
+            NpcRace.Vampire => rng.NextUInt(3) == 0 ? Hex(0xE4E0E8) : Hex(0x1A1A20),
+            NpcRace.Demon => Hex(0x1A1A20),
+            NpcRace.Goblin => Hex(0x2A2018),
+            NpcRace.Zombie => Color.Lerp(Hex(HairTones[hairPick]), Hex(0x6A6A60), 0.5f),
+            _ => Hex(HairTones[hairPick]),
+        };
+
+        // Index of the family culture that claims one garment, or −1 for the town's own mix. No draw for a pure family.
+        private static int FamilyLine(in NpcHeritage h, ref Pcg32 rng)
+        {
+            if (h.CultureLines == 0)
+            {
+                return -1;
+            }
+
+            float u = rng.NextFloat();
+            for (int i = 0; i < h.CultureLines; i++)
+            {
+                u -= h.CultureShare(i);
+                if (u < 0f)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static ArchEra GarmentEra(in NpcSpec spec, ArchEra era, ArchEra borrowEra, ref Pcg32 rng)
+        {
+            int line = FamilyLine(spec.Heritage, ref rng);
+            if (line >= 0)
+            {
+                return Worn(spec.Heritage.CultureEra(line));
+            }
+
+            return rng.NextFloat() < spec.BorrowShare ? borrowEra : era;
         }
 
         // ---- culture: what one settlement shares ---------------------------------------------------------------
@@ -705,7 +1120,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private struct Rig
         {
-            public float H, HeadR, ArmR, LegR, TrunkX, TrunkZ, Bulk, Belly;
+            public float H, HeadR, ArmR, LegR, TrunkX, TrunkZ, Bulk, Belly, NeckR;
+            // Limb radii at the root, the belly of the upper segment, the joint, the belly of the lower segment and the
+            // far joint, metres. Clothes are lofted through the same nodes, so a sleeve never cuts into a heavy arm.
+            public float ThighR, ThighMidR, KneeRad, CalfR, AnkleRad;
+            public float UpperR, UpperMidR, ElbowRad, ForeR, WristR;
             public float3 Hip, Waist, Chest, Neck, Head, Fwd;
             public float3 ShoulderL, ShoulderR, ElbowL, ElbowR, HandL, HandR;
             public float3 HipL, HipR, KneeL, KneeR, AnkleL, AnkleR;
@@ -733,9 +1152,9 @@ namespace Cosmimera.Bootstrap.Demo
                 float fArm = math.clamp(1f + 0.09f * m + 0.9f * fatDev, 0.75f, 1.4f);
                 float fLeg = math.clamp(1f + 0.07f * m + 0.8f * fatDev, 0.8f, 1.35f);
                 float fDepth = math.clamp(1f + 0.04f * m + 0.9f * fatDev, 0.85f, 1.3f);
-                float fBelly = math.clamp(1f + 2.2f * fatDev - 0.03f * m, 0.8f, 1.6f);
+                float fBelly = math.clamp(1f + (female ? 1.8f : 2.6f) * fatDev - 0.03f * m, 0.8f, 1.65f);
                 float fPosture = math.clamp(-0.015f * m, -0.04f, 0.03f);
-                hip *= math.clamp(1f + 0.7f * fatDev, 0.9f, 1.2f);
+                hip *= math.clamp(1f + (female ? 1f : 0.5f) * fatDev, 0.9f, 1.25f);
                 bool ageless = spec.Race == NpcRace.Vampire || spec.Race == NpcRace.Angel || spec.Race == NpcRace.Demon;
                 float frail = ageless ? 0f : math.smoothstep(0.7f, 0.98f, spec.Age01);
                 // Long illness takes the flesh off the limbs before it takes the colour from the skin.
@@ -746,6 +1165,30 @@ namespace Cosmimera.Bootstrap.Demo
                 r.TrunkX = shoulder * 0.92f;
                 r.TrunkZ = 0.07f * r.H * math.sqrt(r.Bulk) * (1f + math.max(0f, 0.12f * spec.BulkZ)) * fDepth;
                 r.Belly = fBelly * (1f - 0.5f * wasting);
+
+                // Where the weight sits along a limb. Fat gathers on the upper arm and thigh, hardly at the joints; muscle
+                // fills the forearm and calf. Women carry it lower (thigh, hip), men higher (belly, upper arm). So a lean
+                // figure shows its knees and elbows, a heavy one tapers to slim wrists and ankles.
+                // REQ: characters.md#路人-npc (體型).
+                float low = female ? 1.25f : 0.85f, high = female ? 1f : 1.15f;
+                float thighK = math.clamp(1f + 0.65f * low * fatDev + 0.02f * m, 0.88f, 1.25f);
+                float kneeK = math.clamp(1f - 0.4f * fatDev - 0.015f * m, 0.9f, 1.08f);
+                float calfK = math.clamp(1f - 0.15f * fatDev + 0.05f * m, 0.88f, 1.15f);
+                float ankleK = math.clamp(1f - 0.45f * fatDev - 0.015f * m, 0.88f, 1.08f);
+                float upperK = math.clamp(1f + 0.6f * high * fatDev + 0.025f * m, 0.88f, 1.22f);
+                float foreK = math.clamp(1f - 0.15f * fatDev + 0.06f * m, 0.88f, 1.15f);
+                float wristK = math.clamp(1f - 0.45f * fatDev - 0.015f * m, 0.88f, 1.08f);
+                r.ThighR = r.LegR * 1.15f * thighK;
+                r.ThighMidR = r.LegR * 1.1f * thighK;
+                r.KneeRad = r.LegR * 0.86f * kneeK;
+                r.CalfR = r.LegR * 0.92f * calfK;
+                r.AnkleRad = r.LegR * 0.6f * ankleK;
+                r.UpperR = r.ArmR * 1.15f * upperK;
+                r.UpperMidR = r.ArmR * 1.1f * upperK;
+                r.ElbowRad = r.ArmR * 0.86f * kneeK;
+                r.ForeR = r.ArmR * 0.95f * foreK;
+                r.WristR = r.ArmR * 0.68f * wristK;
+                r.NeckR = r.HeadR * 0.42f * math.sqrt(t.Bulk) * math.clamp(1f + 0.9f * fatDev + 0.04f * m, 0.88f, 1.3f) * (1f - 0.5f * wasting);
 
                 float lean = math.clamp(t.Hunch + look.Stoop + fPosture, 0f, 0.6f);
                 // Leaning shortens the figure; the legs keep their length so the feet stay on the ground.
@@ -812,8 +1255,11 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 float3 hip = s < 0 ? r.HipL : r.HipR, knee = s < 0 ? r.KneeL : r.KneeR, ankle = s < 0 ? r.AnkleL : r.AnkleR;
                 b.Leg = s;
-                b.Tube(hip, knee, r.LegR * 1.15f, r.LegR * 0.9f, skin, dark, 7);
-                b.Tube(knee, ankle, r.LegR * 0.9f, r.LegR * 0.62f, dark, skin, 7);
+                float3 thigh = math.lerp(hip, knee, 0.32f), calf = math.lerp(knee, ankle, 0.3f);
+                b.Tube(hip, thigh, r.ThighR, r.ThighMidR, skin, skin, 7);
+                b.Tube(thigh, knee, r.ThighMidR, r.KneeRad, skin, dark, 7);
+                b.Tube(knee, calf, r.KneeRad, r.CalfR, dark, dark, 7);
+                b.Tube(calf, ankle, r.CalfR, r.AnkleRad, dark, skin, 7);
                 if (bones)
                 {
                     b.Ball(knee, new float3(r.LegR * 1.5f), skin, 6, 4);
@@ -829,8 +1275,11 @@ namespace Cosmimera.Bootstrap.Demo
 
                 b.Leg = 0;
                 float3 shoulder = s < 0 ? r.ShoulderL : r.ShoulderR, elbow = s < 0 ? r.ElbowL : r.ElbowR, hand = s < 0 ? r.HandL : r.HandR;
-                b.Tube(shoulder, elbow, r.ArmR * 1.15f, r.ArmR * 0.9f, skin, dark, 6);
-                b.Tube(elbow, hand, r.ArmR * 0.9f, r.ArmR * 0.7f, dark, skin, 6);
+                float3 upper = math.lerp(shoulder, elbow, 0.38f), fore = math.lerp(elbow, hand, 0.25f);
+                b.Tube(shoulder, upper, r.UpperR, r.UpperMidR, skin, skin, 6);
+                b.Tube(upper, elbow, r.UpperMidR, r.ElbowRad, skin, dark, 6);
+                b.Tube(elbow, fore, r.ElbowRad, r.ForeR, dark, dark, 6);
+                b.Tube(fore, hand, r.ForeR, r.WristR, dark, skin, 6);
                 b.Ball(hand, new float3(r.ArmR * 1.25f), skin, 6, 4);
                 b.Ball(shoulder, new float3(r.ArmR * 1.3f), skin, 6, 4);
             }
@@ -864,7 +1313,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }, 8, true, true);
             }
 
-            b.Tube(r.Chest, r.Head, r.HeadR * 0.42f * math.sqrt(t.Bulk), r.HeadR * 0.38f * math.sqrt(t.Bulk), dark, skin, 6);
+            b.Tube(r.Chest, r.Head, r.NeckR, r.NeckR * 0.9f, dark, skin, 6);
             Tail(b, spec, r, look);
             Wings(b, glow, spec, r, look);
         }
@@ -1011,8 +1460,19 @@ namespace Cosmimera.Bootstrap.Demo
             Face f = Face.Draw(spec, look, ageless, ref hv);
             // Ears, like noses, keep growing for life.
             float ear = math.clamp(1f + 0.15f * Gauss(ref hv), 0.75f, 1.35f) * (ageless ? 1f : 1f + 0.12f * math.smoothstep(0.6f, 0.95f, spec.Age01));
-            var skull = new float3(0.92f * f.SkullW, f.SkullH, 0.97f * f.SkullD) * hr;
-            b.Ball(c, skull, skin, 9, 6);
+            var hs = new HeadShape(f);
+            if (spec.Race == NpcRace.Skeleton)
+            {
+                // Bone is a cranium plus a separate jaw (drawn below), not a fleshed face shape.
+                b.Ball(c, new float3(0.92f * f.SkullW, f.SkullH, 0.97f * f.SkullD) * hr, skin, 14, 8);
+            }
+            else
+            {
+                HeadShell(b, c, hr, hs, skin);
+            }
+
+            // Rooted a little inside the outline, as on the old sphere: a plain ear shows its rim, not a triangle on a stalk.
+            float earSide = 0.93f * hs.Width(-0.05f);
             Color eye = Pick(HumanIris, ref hv);
             bool lit = false, eyes = true;
             float eyeSize = 0.12f, eyeX = 0.4f, eyeY = 0.05f, eyeZ = 0.84f;
@@ -1024,13 +1484,13 @@ namespace Cosmimera.Bootstrap.Demo
                 case NpcRace.Elf:
                     if (hv.NextUInt(4) != 0)
                     {
-                        Ears(b, c, hr, skin, math.lerp(0.55f, 1.1f, hv.NextFloat()) * ear, math.lerp(0.3f, 0.75f, hv.NextFloat()),
+                        Ears(b, c, hr, earSide, skin, math.lerp(0.55f, 1.1f, hv.NextFloat()) * ear, math.lerp(0.3f, 0.75f, hv.NextFloat()),
                             math.lerp(0.1f, 0.4f, hv.NextFloat()));
                     }
                     else
                     {
                         // The long level ear of the old lineages.
-                        Ears(b, c, hr, skin, 0.2f * ear, 0.35f, math.lerp(0.6f, 0.95f, hv.NextFloat()) * ear);
+                        Ears(b, c, hr, earSide, skin, 0.2f * ear, 0.35f, math.lerp(0.6f, 0.95f, hv.NextFloat()) * ear);
                     }
 
                     eye = Pick(ElfIris, ref hv);
@@ -1039,7 +1499,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     float bulb = math.lerp(0.17f, 0.3f, hv.NextFloat()) * f.NoseW;
                     Color ruddy = Color.Lerp(Shade(skin, 0.94f), Hex(0xC86A5A), 0.3f * hv.NextFloat());
-                    b.Ball(c + new float3(0f, -0.15f * hr, 0.92f * hr), new float3(bulb, bulb * 0.9f, bulb) * hr, ruddy, 6, 4);
+                    b.Ball(c + new float3(0f, -0.15f, hs.Front(0f, -0.15f) - 0.04f) * hr, new float3(bulb, bulb * 0.9f, bulb) * hr, ruddy, 6, 4);
                     // A shelf of brow: a dwarf's face is framed by hair above and below.
                     float brow = math.lerp(0.08f, 0.15f, hv.NextFloat()) * f.BrowThick, tilt = f.BrowSlant;
                     for (int s = -1; s <= 1; s += 2)
@@ -1048,7 +1508,7 @@ namespace Cosmimera.Bootstrap.Demo
                             brow * hr, 0.09f * hr, Shade(look.Hair, 0.9f));
                     }
 
-                    Ears(b, c, hr, skin, 0.2f * ear, 0.2f, 0.05f * ear);
+                    Ears(b, c, hr, earSide, skin, 0.2f * ear, 0.2f, 0.05f * ear);
                     break;
                 }
                 case NpcRace.Goblin:
@@ -1056,13 +1516,13 @@ namespace Cosmimera.Bootstrap.Demo
                     uint style = hv.NextUInt(3);
                     float size = math.lerp(0.8f, 1.4f, hv.NextFloat());
                     (float up, float back, float outward) = style == 0 ? (0.35f, 0.15f, 1.1f) : style == 1 ? (-0.35f, 0.25f, 0.95f) : (0.95f, 0.35f, 0.55f);
-                    Ears(b, c, hr, skin, up * size, back, outward * size, hv.NextUInt(5) == 0 ? 0.6f : 1f);
+                    Ears(b, c, hr, earSide, skin, up * size, back, outward * size, hv.NextUInt(5) == 0 ? 0.6f : 1f);
                     float len = math.lerp(0.45f, 0.9f, hv.NextFloat()), droop = math.lerp(-0.15f, 0.3f, hv.NextFloat());
                     b.Tube(c + new float3(0f, -0.1f * hr, 0.85f * hr), c + new float3(0f, (-0.1f - droop) * hr, (0.85f + len) * hr), 0.15f * hr, 0.03f,
                         skin, Shade(skin, 0.9f), 5);
                     if (hv.NextUInt(10) < 3)
                     {
-                        b.Tube(c + new float3(0.15f, -0.48f, 0.84f) * hr, c + new float3(0.16f, -0.32f, 0.88f) * hr, 0.05f * hr, 0.01f * hr, look.Bone,
+                        b.Tube(c + new float3(0.15f, -0.48f, hs.Front(0.15f, -0.48f) - 0.02f) * hr, c + new float3(0.16f, -0.32f, hs.Front(0.16f, -0.32f) + 0.02f) * hr, 0.05f * hr, 0.01f * hr, look.Bone,
                             look.Bone, 4);
                     }
 
@@ -1074,13 +1534,13 @@ namespace Cosmimera.Bootstrap.Demo
                 case NpcRace.Orc:
                 {
                     float jaw = math.lerp(0.85f, 1.15f, hv.NextFloat());
-                    b.Ball(c + new float3(0f, -0.42f * hr, 0.3f * hr), new float3(0.8f * jaw, 0.5f, 0.78f) * hr, Shade(skin, 0.95f), 8, 5);
                     float len = math.lerp(0.22f, 0.38f, hv.NextFloat()), splay = math.lerp(0f, 0.12f, hv.NextFloat());
                     int broken = hv.NextUInt(5) == 0 ? (hv.NextUInt(2) == 0 ? -1 : 1) : 0;
                     for (int s = -1; s <= 1; s += 2)
                     {
                         float l = len * (broken == s ? 0.45f : 1f);
-                        b.Tube(c + new float3(s * 0.32f * jaw, -0.55f, 0.82f) * hr, c + new float3(s * (0.34f * jaw + splay), -0.55f + l, 0.9f) * hr,
+                        b.Tube(c + new float3(s * 0.32f * jaw, -0.55f, hs.Front(0.32f * jaw, -0.55f) - 0.04f) * hr,
+                            c + new float3(s * (0.34f * jaw + splay), -0.55f + l, hs.Front(0.32f * jaw, -0.55f) + 0.04f) * hr,
                             0.08f * hr, broken == s ? 0.05f * hr : 0.02f, look.Bone, look.Bone, 5);
                     }
 
@@ -1094,12 +1554,12 @@ namespace Cosmimera.Bootstrap.Demo
                         // War paint under the eyes in the clan's colour.
                         for (int s = -1; s <= 1; s += 2)
                         {
-                            b.Slab(c + new float3(s * 0.42f, -0.05f, 0.86f) * hr, c + new float3(s * 0.4f, -0.36f, 0.8f) * hr, 0.07f * hr, 0.03f * hr,
+                            b.Slab(c + new float3(s * 0.42f, -0.05f, hs.Front(0.42f, -0.05f)) * hr, c + new float3(s * 0.4f, -0.36f, hs.Front(0.4f, -0.36f)) * hr, 0.07f * hr, 0.03f * hr,
                                 Shade(look.Accent, 0.8f));
                         }
                     }
 
-                    Ears(b, c, hr, skin, math.lerp(0.15f, 0.5f, hv.NextFloat()) * ear, 0.3f, 0.2f * ear);
+                    Ears(b, c, hr, earSide, skin, math.lerp(0.15f, 0.5f, hv.NextFloat()) * ear, 0.3f, 0.2f * ear);
                     eye = Pick(OrcIris, ref hv);
                     break;
                 }
@@ -1259,7 +1719,7 @@ namespace Cosmimera.Bootstrap.Demo
                     if (hv.NextUInt(2) == 0)
                     {
                         // Stitches across the face, darker than the skin they hold together.
-                        float3 from = c + new float3(-0.5f, 0.35f, 0.75f) * hr, to = c + new float3(0.1f, -0.3f, 0.92f) * hr;
+                        float3 from = c + new float3(-0.5f, 0.35f, hs.Front(-0.5f, 0.35f) + 0.01f) * hr, to = c + new float3(0.1f, -0.3f, hs.Front(0.1f, -0.3f) + 0.01f) * hr;
                         b.Slab(from, to, 0.03f * hr, 0.03f * hr, Shade(skin, 0.5f));
                         for (int i = 1; i <= 3; i++)
                         {
@@ -1270,10 +1730,10 @@ namespace Cosmimera.Bootstrap.Demo
 
                     if (hv.NextUInt(10) < 4)
                     {
-                        b.Ball(c + new float3(0f, -0.48f, 0.84f) * hr, new float3(0.2f, 0.14f, 0.08f) * hr, Hex(0x2A1E20), 6, 3);
+                        b.Ball(c + new float3(0f, -0.48f, hs.Front(0f, -0.48f) - 0.04f) * hr, new float3(0.2f, 0.14f, 0.08f) * hr, Hex(0x2A1E20), 6, 3);
                     }
 
-                    Ears(b, c, hr, skin, 0.18f * ear, 0.2f, 0.05f, hv.NextUInt(4) == 0 ? 0f : 1f);
+                    Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f, hv.NextUInt(4) == 0 ? 0f : 1f);
                     break;
                 }
                 case NpcRace.Skeleton:
@@ -1325,13 +1785,13 @@ namespace Cosmimera.Bootstrap.Demo
                 }
                 case NpcRace.Vampire:
                 {
-                    Ears(b, c, hr, skin, math.lerp(0.15f, 0.6f, hv.NextFloat()) * ear, 0.4f, 0.1f);
+                    Ears(b, c, hr, earSide, skin, math.lerp(0.15f, 0.6f, hv.NextFloat()) * ear, 0.4f, 0.1f);
                     eye = Pick(VampireEyes, ref hv);
                     lit = true;
                     float fang = math.lerp(0.12f, 0.22f, hv.NextFloat());
                     for (int s = -1; s <= 1; s += 2)
                     {
-                        b.Tube(c + new float3(s * 0.14f * hr, -0.42f * hr, 0.86f * hr), c + new float3(s * 0.14f * hr, (-0.42f - fang) * hr, 0.86f * hr),
+                        b.Tube(c + new float3(s * 0.14f, -0.42f, hs.Front(0.14f, -0.42f) - 0.02f) * hr, c + new float3(s * 0.14f, -0.42f - fang, hs.Front(0.14f, -0.42f) - 0.02f) * hr,
                             0.035f * hr, 0.005f, Color.white, Color.white, 4);
                     }
 
@@ -1341,17 +1801,17 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     Color horn = Pick(DemonHorns, ref hv);
                     Horns(b, c, hr, horn, Color.Lerp(horn, Hex(0x5A4A48), 0.4f), 4u + hv.NextUInt(5), math.lerp(0.8f, 1.25f, hv.NextFloat()));
-                    Ears(b, c, hr, skin, math.lerp(0.3f, 0.6f, hv.NextFloat()) * ear, 0.3f, 0.35f);
+                    Ears(b, c, hr, earSide, skin, math.lerp(0.3f, 0.6f, hv.NextFloat()) * ear, 0.3f, 0.35f);
                     eye = Pick(DemonEyes, ref hv);
                     lit = true;
                     break;
                 }
                 case NpcRace.Angel:
-                    Ears(b, c, hr, skin, 0.18f * ear, 0.2f, 0.05f);
+                    Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f);
                     eye = Pick(AngelIris, ref hv);
                     break;
                 default:
-                    Ears(b, c, hr, skin, 0.18f * ear, 0.2f, 0.05f * ear);
+                    Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f * ear);
                     break;
             }
 
@@ -1360,34 +1820,26 @@ namespace Cosmimera.Bootstrap.Demo
                              spec.Race == NpcRace.Demon;
             eyeX *= f.EyeSpread;
             eyeSize *= f.EyeSize;
+            // Eyes sit in the skull, not on it: from here eyeZ is the skull's own front at the eye, and every eye below is
+            // placed so only a shallow cap shows past it. A skeleton's lights stay deep in their sockets.
+            if (spec.Race != NpcRace.Skeleton)
+            {
+                eyeZ = hs.Front(eyeX, eyeY);
+            }
+
+            Blood(b, spec, c, hr, hs, earSide, skin, ear, ref eye, out Color odd, ref hv);
             if (plainFace)
             {
                 float fl = f.FaceLen;
                 Color shade = Shade(skin, 0.93f);
-                // Bone gives a face its width (cheekbones), fat its roundness (the soft cheek below them).
-                for (int s = -1; s <= 1; s += 2)
-                {
-                    // Placed on the skull's own width, or a narrow skull wears its cheekbones like handles.
-                    b.Ball(c + new float3(s * 0.48f * f.CheekW * f.SkullW, -0.2f, 0.5f) * hr, new float3(0.22f, 0.16f, 0.24f) * hr, skin, 6, 4);
-                    if (f.Cheek > 0.08f)
-                    {
-                        b.Ball(c + new float3(s * 0.4f * f.SkullW, -0.36f * fl, 0.47f) * hr, new float3(0.26f, 0.2f, 0.26f) * hr * (1f + 0.8f * f.Cheek), skin, 8, 5);
-                    }
-                }
-
-                // Jaw and chin: the widest variation between faces is below the mouth, not around the eyes.
-                b.Ball(c + new float3(0f, -0.62f * fl, 0.25f) * hr, new float3(0.75f * f.JawW, 0.32f * fl, 0.55f) * hr, skin, 8, 4);
-                b.Ball(c + new float3(0f, -0.78f * fl - 0.05f * (f.ChinH - 1f), 0.62f + f.ChinJut) * hr, new float3(0.28f * f.ChinW, 0.2f * f.ChinH, 0.25f) * hr,
-                    skin, 6, 3);
-                if (f.Jowl > 0f)
-                {
-                    b.Ball(c + new float3(0f, -0.86f * fl, 0.32f) * hr, new float3(0.6f, 0.22f, 0.48f) * hr * (0.7f + 0.3f * f.Jowl), shade, 8, 4);
-                }
+                // Cheekbones, jaw, chin and soft cheeks are the head's own surface (HeadShape); what is added below is
+                // only what stands off it: nose, lips, brows, eyes.
 
                 // Nose: a bridge from between the eyes to a tip, plus the wings of the nostrils. Length, width,
                 // projection and the tip's tilt are drawn apart, so a long nose can be narrow or broad, hooked or snub.
-                float3 tip = c + new float3(0f, -0.1f - 0.1f * f.NoseLen + f.Tip, 0.93f + 0.1f * f.NoseLen + 0.08f * f.Bridge) * hr;
-                b.Tube(c + new float3(0f, eyeY - 0.02f, 0.86f) * hr, tip, 0.055f * f.NoseW * hr, 0.08f * f.NoseW * hr, shade, shade, 5);
+                float tipY = -0.1f - 0.1f * f.NoseLen + f.Tip;
+                float3 tip = c + new float3(0f, tipY, hs.Front(0f, tipY) + 0.08f + 0.1f * (f.NoseLen - 1f) + 0.08f * f.Bridge) * hr;
+                b.Tube(c + new float3(0f, eyeY - 0.02f, hs.Front(0f, eyeY) - 0.1f) * hr, tip, 0.055f * f.NoseW * hr, 0.08f * f.NoseW * hr, shade, shade, 5);
                 b.Ball(tip, new float3(0.1f * f.NoseW, 0.09f, 0.1f) * hr, shade, 6, 3);
                 for (int s = -1; s <= 1; s += 2)
                 {
@@ -1400,7 +1852,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Color hollow = Color.Lerp(skin, Hex(0x5A4048), 0.35f);
                     for (int s = -1; s <= 1; s += 2)
                     {
-                        b.Ball(c + new float3(s * eyeX, eyeY - 0.17f, eyeZ - 0.02f) * hr, new float3(0.2f, 0.07f, 0.1f) * hr, hollow, 6, 3);
+                        b.Ball(c + new float3(s * eyeX, eyeY - 0.17f, hs.Front(eyeX, eyeY - 0.17f) - 0.07f) * hr, new float3(0.2f, 0.07f, 0.1f) * hr, hollow, 6, 3);
                     }
                 }
 
@@ -1410,7 +1862,8 @@ namespace Cosmimera.Bootstrap.Demo
                     for (int i = 0; i < 8; i++)
                     {
                         float s = (i & 1) == 0 ? -1f : 1f;
-                        float3 at = c + new float3(s * (0.22f + 0.07f * (i % 3)), -0.12f - 0.05f * ((i >> 1) % 2), 0.9f) * hr;
+                        float fx = s * (0.22f + 0.07f * (i % 3)), fy = -0.12f - 0.05f * ((i >> 1) % 2);
+                        float3 at = c + new float3(fx, fy, hs.Front(fx, fy) + 0.005f) * hr;
                         b.Ball(at, new float3(0.025f * hr), freckle, 4, 2);
                     }
                 }
@@ -1419,9 +1872,11 @@ namespace Cosmimera.Bootstrap.Demo
                 // The mouth never rises into the nose however short the face.
                 float mouthY = math.min(-0.42f * math.lerp(1f, fl, 0.5f) + f.MouthY, (tip.y - c.y) / hr - 0.16f);
                 Color lip = Color.Lerp(skin, Hex(0x653F46), 0.56f), upperLip = Shade(lip, 0.9f);
-                float3 mouth = c + new float3(0f, mouthY, 0.88f) * hr;
+                float3 mouth = c + new float3(0f, mouthY, hs.Front(0f, mouthY)) * hr;
                 float w = 0.19f * f.LipW;
-                float3 cornerL = mouth + new float3(-w, f.Curve, -0.06f * f.LipW) * hr, cornerR = mouth + new float3(w, f.Curve, -0.06f * f.LipW) * hr;
+                // The corners follow the face round: a wide jaw keeps the mouth flat, a narrow one wraps it back.
+                float cornerZ = hs.Front(w, mouthY) - 0.01f;
+                float3 cornerL = c + new float3(-w, mouthY + f.Curve, cornerZ) * hr, cornerR = c + new float3(w, mouthY + f.Curve, cornerZ) * hr;
                 float3 top = mouth + new float3(0f, 0.022f, 0.012f) * hr, bottom = mouth + new float3(0f, -0.03f, 0.012f) * hr;
                 float up = 0.035f * f.LipUp * hr, low = 0.045f * f.LipLow * hr, corner = 0.018f * hr;
                 b.Tube(cornerL, top, corner, up, upperLip, upperLip, 5);
@@ -1435,8 +1890,10 @@ namespace Cosmimera.Bootstrap.Demo
                 float thick = 0.06f * f.BrowThick * hr;
                 for (int s = -1; s <= 1; s += 2)
                 {
-                    float3 inner = c + new float3(s * (eyeX - 0.18f + f.BrowGap), eyeY + 0.25f + f.BrowSlant, eyeZ + 0.06f) * hr;
-                    float3 outer = c + new float3(s * (eyeX + 0.18f * f.BrowLen), eyeY + 0.21f - f.BrowSlant, eyeZ - 0.06f) * hr;
+                    float ix = eyeX - 0.18f + f.BrowGap, iy = eyeY + 0.25f + f.BrowSlant;
+                    float ox = eyeX + 0.18f * f.BrowLen, oy = eyeY + 0.21f - f.BrowSlant;
+                    float3 inner = c + new float3(s * ix, iy, hs.Front(ix, iy) + 0.03f) * hr;
+                    float3 outer = c + new float3(s * ox, oy, hs.Front(ox, oy) + 0.02f) * hr;
                     float3 peak = math.lerp(inner, outer, 0.55f) + new float3(0f, 0.02f + f.BrowArch, 0.01f) * hr;
                     b.Slab(inner, peak, 0.07f * hr, thick, browTone);
                     b.Slab(peak, outer, 0.07f * hr, thick * 0.8f, browTone);
@@ -1450,23 +1907,42 @@ namespace Cosmimera.Bootstrap.Demo
 
             for (int s = -1; s <= 1 && eyes; s += 2)
             {
-                float3 socket = c + new float3(s * eyeX, eyeY, eyeZ) * hr;
+                // The front of the skull at this eye; whites, iris and lid are all set against it, so a wide or narrow
+                // skull keeps the same shallow eye instead of one that floats in front of the face.
+                float3 surface = c + new float3(s * eyeX, eyeY, eyeZ) * hr;
                 float open = 1f;
+                float depth = 0.32f * eyeSize;
+                float3 iris;
                 if (plainFace && !lit)
                 {
                     // Two overlapping halves, the outer one raised or lowered: almond, upturned, downturned or round
-                    // eyes from ellipsoids alone. The lid crease thickens as the eye narrows (hooded, sleepy, old).
+                    // eyes from ellipsoids alone. Whites are flattened lenses that clear the skin by 0.015 head radii;
+                    // the upper lid overhangs them and thickens as the eye narrows (hooded, sleepy, old).
                     open = f.EyeOpen;
                     float tilt = f.EyeTilt;
+                    const float WhiteDepth = 0.06f, Clear = 0.015f;
                     Color white = Hex(0xEEE2CF);
-                    b.Ball(socket + new float3(-s * 0.06f, -tilt * 0.35f, 0f) * hr, new float3(0.15f, 0.13f * open, 0.11f) * hr, white, 8, 4);
-                    b.Ball(socket + new float3(s * 0.07f, tilt * 0.35f, 0f) * hr, new float3(0.15f, 0.12f * open, 0.11f) * hr, white, 8, 4);
-                    b.Slab(socket + new float3(-s * 0.2f, 0.12f * open - tilt * 0.35f, 0.03f) * hr, socket + new float3(s * 0.21f, 0.11f * open + tilt * 0.35f, 0.03f) * hr,
-                        0.05f * hr, 0.03f * hr * (2.2f - open), Shade(skin, 0.82f));
-                    socket.z += 0.095f * hr;
+                    float3 whites = surface + new float3(0f, 0f, Clear - WhiteDepth) * hr;
+                    b.Ball(whites + new float3(-s * 0.06f, -tilt * 0.35f, 0f) * hr, new float3(0.15f, 0.13f * open, WhiteDepth) * hr, white, 8, 4);
+                    b.Ball(whites + new float3(s * 0.07f, tilt * 0.35f, 0f) * hr, new float3(0.15f, 0.12f * open, WhiteDepth) * hr, white, 8, 4);
+                    b.Slab(surface + new float3(-s * 0.2f, 0.12f * open - tilt * 0.35f, Clear) * hr, surface + new float3(s * 0.21f, 0.11f * open + tilt * 0.35f, Clear) * hr,
+                        0.045f * hr, 0.03f * hr * (2.2f - open), Shade(skin, 0.82f));
+                    // The iris clears the whites by a hair, never a hemisphere: a painted iris, as the toon look wants.
+                    iris = surface + new float3(0f, 0f, Clear + 0.006f) * hr - new float3(0f, 0f, depth * hr);
+                }
+                else
+                {
+                    iris = surface + new float3(0f, 0f, 0.025f) * hr - new float3(0f, 0f, depth * hr);
                 }
 
-                (lit ? glow : b).Ball(socket, new float3(eyeSize, eyeSize * 1.15f * math.min(1f, open), eyeSize * 0.6f) * hr, eye, 6, 4);
+                if (spec.Race == NpcRace.Skeleton)
+                {
+                    iris = surface;
+                    depth = 0.6f * eyeSize;
+                }
+
+                Color tone = s > 0 && odd.a > 0f ? odd : eye;
+                (lit ? glow : b).Ball(iris, new float3(eyeSize, eyeSize * 1.15f * math.min(1f, open), depth) * hr, tone, 6, 4);
             }
 
             if (!t.Furred)
@@ -1480,6 +1956,303 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        // The head as one surface, not a sphere with a jaw and cheekbones stuck on: horizontal superellipse sections from
+        // the underside of the chin to the crown. Width is set at four heights (chin, angle of the jaw, cheekbones,
+        // temples), each section also has a depth, a forward shift (the jaw and chin sit in front of the neck) and a
+        // squareness exponent (2 = round, larger = flat sides and front, the square jaw). Between the keys a monotone
+        // cubic keeps the outline smooth without bulging past either key; above the temples the cranium is an
+        // elliptical dome. Units are head radii with the origin at the head centre.
+        // REQ: characters.md#路人-npc (臉型).
+        private readonly struct HeadShape
+        {
+            private const float TempleY = 0.2f;
+            private readonly float[] _y, _w, _d, _z, _n;
+
+            public readonly float Top, Bottom;
+
+            public HeadShape(in Face f)
+            {
+                float fl = f.FaceLen, sq = f.JawAngle, fat = f.Cheek, jowl = f.Jowl;
+                Top = f.SkullH;
+                Bottom = -(0.78f * fl + 0.2f * f.ChinH) - 0.06f * jowl;
+                float jawY = -0.62f * fl;
+                float chinY = math.min(Bottom + 0.14f * f.ChinH, jawY - 0.06f);
+                float cranium = 0.97f * f.SkullD;
+                float chin = 0.3f * f.ChinW * (1f + 0.4f * jowl);
+                _y = new[] { Bottom, chinY, jawY, -0.18f * fl, TempleY };
+                // Soft cheeks and a double chin widen the lower face; they belong to the outline, not to extra balls.
+                _w = new[] { 0.45f * chin, chin, 0.74f * f.JawW * (1f + 0.25f * fat), 0.9f * f.CheekW * (1f + 0.3f * fat), 0.9f * f.SkullW };
+                _d = new[] { 0.12f + 0.08f * jowl, 0.36f + 0.1f * jowl, 0.6f + 0.1f * fat, 0.9f * cranium, cranium };
+                _z = new[] { 0.5f + f.ChinJut, 0.5f + f.ChinJut, 0.2f, 0.05f + 0.04f * fat, 0f };
+                _n = new[] { 2f, 2f + 1.2f * sq, 2f + 2.6f * sq, 2f + 0.6f * sq, 2f };
+            }
+
+            // Half width of the section at height y.
+            public float Width(float y) => y > TempleY ? _w[4] * Dome(y) : Pchip(_y, _w, y);
+
+            // Half depth of the section at height y.
+            public float Depth(float y) => y > TempleY ? _d[4] * Dome(y) : Pchip(_y, _d, y);
+
+            // Forward shift of the section's centre at height y.
+            public float Shift(float y) => y > TempleY ? 0f : Pchip(_y, _z, y);
+
+            // Superellipse exponent of the section at height y.
+            public float Exponent(float y) => y > TempleY ? 2f : Pchip(_y, _n, y);
+
+            // Depth of the front surface at (x, y); past the section's edge, its centre (a side-set eye stays in the head).
+            public float Front(float x, float y)
+            {
+                float w = Width(y), n = Exponent(y);
+                if (w < 1e-4f)
+                {
+                    return Shift(y);
+                }
+
+                float u = math.min(1f, math.abs(x) / w);
+                return Shift(y) + Depth(y) * math.pow(math.max(0f, 1f - math.pow(u, n)), 1f / n);
+            }
+
+            private float Dome(float y)
+            {
+                float t = math.saturate((y - TempleY) / math.max(1e-3f, Top - TempleY));
+                return math.sqrt(1f - t * t);
+            }
+
+            // Monotone cubic (Fritsch–Butland slopes), level at both end keys: the temple is the widest point of the
+            // cranium and the chin's underside levels off.
+            private static float Pchip(float[] xs, float[] ys, float x)
+            {
+                int last = xs.Length - 1;
+                if (x <= xs[0])
+                {
+                    return ys[0];
+                }
+
+                if (x >= xs[last])
+                {
+                    return ys[last];
+                }
+
+                int i = 0;
+                while (x > xs[i + 1])
+                {
+                    i++;
+                }
+
+                float h = xs[i + 1] - xs[i], t = (x - xs[i]) / h, t2 = t * t, t3 = t2 * t;
+                return (2f * t3 - 3f * t2 + 1f) * ys[i] + (t3 - 2f * t2 + t) * h * Slope(xs, ys, i) +
+                       (-2f * t3 + 3f * t2) * ys[i + 1] + (t3 - t2) * h * Slope(xs, ys, i + 1);
+            }
+
+            private static float Slope(float[] xs, float[] ys, int i)
+            {
+                if (i == 0 || i == xs.Length - 1)
+                {
+                    return 0f;
+                }
+
+                float d0 = (ys[i] - ys[i - 1]) / (xs[i] - xs[i - 1]), d1 = (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]);
+                return d0 * d1 <= 0f ? 0f : 2f / (1f / d0 + 1f / d1);
+            }
+        }
+
+        // 18 sections × 16 around, spaced by a cosine so the chin and crown, where the outline turns fastest, get the
+        // most rows. Shading darkens toward the chin like a Ball's.
+        private static void HeadShell(Fig b, float3 c, float hr, in HeadShape hs, Color tone)
+        {
+            const int Rows = 18, Sides = 16;
+            var points = new float3[Rows * Sides];
+            var tones = new Color[Rows];
+            Color low = Shade(tone, 0.88f);
+            for (int i = 0; i < Rows; i++)
+            {
+                float u = (i + 1f) / (Rows + 1f);
+                float y = math.lerp(hs.Bottom, hs.Top, 0.5f - 0.5f * math.cos(math.PI * u));
+                float w = hs.Width(y), d = hs.Depth(y), z = hs.Shift(y), e = 2f / hs.Exponent(y);
+                tones[i] = Color.Lerp(low, tone, math.saturate((y - hs.Bottom) / (hs.Top - hs.Bottom)));
+                for (int k = 0; k < Sides; k++)
+                {
+                    float a = k * math.PI * 2f / Sides, ca = math.cos(a), sa = math.sin(a);
+                    float x = w * math.sign(ca) * math.pow(math.abs(ca), e), zz = z + d * math.sign(sa) * math.pow(math.abs(sa), e);
+                    points[i * Sides + k] = c + new float3(x, y, zz) * hr;
+                }
+            }
+
+            b.Shell(points, tones, Rows, Sides, c + new float3(0f, hs.Bottom, hs.Shift(hs.Bottom)) * hr, c + new float3(0f, hs.Top, 0f) * hr, low, tone);
+        }
+
+        /// <summary>The face shape drawn for <paramref name="spec"/> and its head's half widths at temple, cheekbone, jaw and chin, and chin-to-crown height (head radii).</summary>
+        /// <remarks>Pre: none. Post: widths &gt; 0; same spec, same result. Side effects: none.</remarks>
+        internal static (FaceShape shape, float temple, float cheek, float jaw, float chin, float height) HeadOf(in NpcSpec spec)
+        {
+            Face f = FaceOf(spec);
+            var hs = new HeadShape(f);
+            float fl = f.FaceLen;
+            return (f.Shape, hs.Width(TempleProbe), hs.Width(-0.18f * fl), hs.Width(-0.62f * fl), hs.Width(-0.78f * fl), hs.Top - hs.Bottom);
+        }
+
+        private const float TempleProbe = 0.2f;
+
+        // Mixed blood shows as a trace of the other race's signature part, sized by its share: a quarter-elf's ear is
+        // barely pointed, a half-orc's tusks just clear the lip. Where the own race already grows that kind of part
+        // (horns, big ears, fangs) the own one stands alone. Eyes take a blood line's colour by its share, and about one
+        // mixed resident in ten has one eye of each.
+        // REQ: characters.md#路人-npc (混血與跨文化).
+        private static void Blood(Fig b, in NpcSpec spec, float3 c, float hr, in HeadShape skull, float earSide, Color skin, float ear, ref Color eye,
+            out Color odd, ref Pcg32 hv)
+        {
+            odd = Color.clear;
+            NpcHeritage h = spec.Heritage;
+            if (h.BloodLines == 0)
+            {
+                return;
+            }
+
+            NpcRace own = spec.Race;
+            bool plainEars = own == NpcRace.Human || own == NpcRace.Dwarf || own == NpcRace.Orc || own == NpcRace.Vampire ||
+                             own == NpcRace.Angel || own == NpcRace.Demon;
+            bool horned = own == NpcRace.Demon || own == NpcRace.Dragonkin;
+            for (int i = 0; i < h.BloodLines; i++)
+            {
+                NpcRace race = h.BloodRace(i);
+                float share = h.BloodShare(i);
+                // Half blood draws the trace at 0.8 of the pure part, a 1/16 line at about a third.
+                float k = 0.25f + 1.1f * share;
+                int[] palette = EyePalette(race);
+                if (palette != null && hv.NextFloat() < share)
+                {
+                    eye = Pick(palette, ref hv);
+                }
+
+                switch (race)
+                {
+                    case NpcRace.Elf when plainEars:
+                        Ears(b, c, hr, earSide, skin, 0.85f * k * ear, 0.5f * k, 0.12f * k * ear);
+                        break;
+                    case NpcRace.Goblin when plainEars:
+                        Ears(b, c, hr, earSide, skin, 0.3f * k * ear, 0.2f * k, 1f * k * ear);
+                        break;
+                    case NpcRace.Werewolf when plainEars:
+                        for (int s = -1; s <= 1; s += 2)
+                        {
+                            float3 root = c + new float3(s * 0.55f, 0.65f, -0.1f) * hr;
+                            b.Tube(root, root + new float3(s * 0.15f, 0.55f * k, -0.05f) * hr, 0.22f * k * hr, 0.02f, skin, Shade(skin, 0.8f), 4);
+                        }
+
+                        break;
+                    case NpcRace.Merfolk when plainEars:
+                        for (int s = -1; s <= 1; s += 2)
+                        {
+                            float3 root = c + new float3(s * earSide, 0f, 0f) * hr;
+                            b.Panel(root + new float3(0f, 0.2f * hr, 0.08f * hr), root + new float3(0f, -0.22f * hr, 0.08f * hr),
+                                root + new float3(s * 0.6f * k, 0.2f * k, -0.35f * k) * hr, Shade(Pick(SkinTones[(int)NpcRace.Merfolk], ref hv), 1.05f));
+                        }
+
+                        break;
+                    case NpcRace.Orc when own != NpcRace.Orc && own != NpcRace.Avian && own != NpcRace.Lizardfolk && own != NpcRace.Dragonkin && own != NpcRace.Werewolf:
+                        for (int s = -1; s <= 1; s += 2)
+                        {
+                            float3 at = c + new float3(s * 0.3f, -0.55f, skull.Front(0.3f, -0.55f) + 0.04f) * hr;
+                            b.Tube(at, at + new float3(s * 0.02f, 0.22f * k, 0.04f) * hr, 0.06f * k * hr, 0.015f, Hex(0xE8E2D0), Hex(0xE8E2D0), 5);
+                        }
+
+                        break;
+                    case NpcRace.Vampire when own != NpcRace.Vampire && own != NpcRace.Avian:
+                        for (int s = -1; s <= 1; s += 2)
+                        {
+                            float3 at = c + new float3(s * 0.13f, -0.42f, skull.Front(0.13f, -0.42f) + 0.02f) * hr;
+                            b.Tube(at, at - new float3(0f, 0.13f * k, 0f) * hr, 0.03f * hr, 0.005f, Color.white, Color.white, 4);
+                        }
+
+                        break;
+                    case NpcRace.Demon when !horned:
+                    case NpcRace.Dragonkin when !horned:
+                    {
+                        // Horn buds: the roots grow with the share, not only the length, or a trace reads as two pins.
+                        Color root = race == NpcRace.Demon ? Pick(DemonHorns, ref hv) : Hex(0xE8E2D0);
+                        float sweep = race == NpcRace.Demon ? 0.15f : -0.4f;
+                        for (int s = -1; s <= 1; s += 2)
+                        {
+                            float3 a = c + new float3(s * 0.42f, 0.72f, 0.15f) * hr;
+                            b.Tube(a, a + new float3(s * 0.12f, 0.5f, sweep) * hr * k, 0.13f * k * hr, 0.015f, root, Shade(root, 0.8f), 5);
+                        }
+
+                        if (race == NpcRace.Dragonkin)
+                        {
+                            Scales(b, c, hr, skull, Shade(skin, 0.86f), k);
+                        }
+
+                        break;
+                    }
+                    case NpcRace.Lizardfolk when !horned && own != NpcRace.Lizardfolk:
+                        Scales(b, c, hr, skull, Shade(skin, 0.86f), k);
+                        break;
+                    case NpcRace.Avian when own != NpcRace.Avian:
+                    {
+                        // A tuft of crown feathers swept back: plumage in place of, or through, the hair.
+                        Color plume = Pick(PlumeCrowns, ref hv);
+                        for (int j = -1; j <= 1; j++)
+                        {
+                            float3 root = c + new float3(j * 0.18f, 0.85f, -0.35f) * hr;
+                            b.Panel(root + new float3(-0.06f, 0f, 0.1f) * hr, root + new float3(0.06f, 0f, -0.1f) * hr,
+                                root + new float3(j * 0.2f, 0.35f, -0.5f) * hr * k, Shade(plume, 1f - 0.08f * math.abs(j)));
+                        }
+
+                        break;
+                    }
+                    case NpcRace.Angel when own != NpcRace.Angel:
+                    {
+                        // Gilt freckles across the cheekbones: the celestial line shows in the skin before the eyes.
+                        Color gilt = Color.Lerp(skin, Hex(0xF0C860), 0.7f);
+                        for (int j = 0; j < 6; j++)
+                        {
+                            float x = ((j & 1) == 0 ? -1f : 1f) * (0.24f + 0.08f * (j % 3)), y = -0.08f - 0.05f * (j / 3);
+                            b.Ball(c + new float3(x, y, skull.Front(x, y) + 0.005f) * hr, new float3(0.022f * hr), gilt, 4, 2);
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            if (hv.NextUInt(10) == 0)
+            {
+                int[] palette = EyePalette(h.BloodRace((int)hv.NextUInt((uint)h.BloodLines)));
+                odd = palette != null ? Pick(palette, ref hv) : Color.clear;
+            }
+        }
+
+        // A patch of five overlapping scales on each temple, flattened against the skull.
+        private static void Scales(Fig b, float3 c, float hr, in HeadShape skull, Color tone, float k)
+        {
+            for (int s = -1; s <= 1; s += 2)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    float x = s * (0.62f + 0.06f * (j % 2)), y = 0.32f - 0.12f * j;
+                    float z = skull.Front(x, y);
+                    b.Ball(c + new float3(x, y, z - 0.02f) * hr, new float3(0.09f, 0.07f, 0.04f) * k * hr, tone, 5, 3);
+                }
+            }
+        }
+
+        private static int[] EyePalette(NpcRace race) => race switch
+        {
+            NpcRace.Human => HumanIris,
+            NpcRace.Dwarf => HumanIris,
+            NpcRace.Elf => ElfIris,
+            NpcRace.Orc => OrcIris,
+            NpcRace.Angel => AngelIris,
+            NpcRace.Goblin => GoblinEyes,
+            NpcRace.Lizardfolk => ReptileEyes,
+            NpcRace.Dragonkin => ReptileEyes,
+            NpcRace.Werewolf => WolfEyes,
+            NpcRace.Vampire => VampireEyes,
+            NpcRace.Demon => DemonEyes,
+            NpcRace.Merfolk => MerfolkEyes,
+            _ => null,
+        };
+
         // One face: every field is a bounded normal around the race's mean (set by FaceMean), shifted by sex and age.
         // Multipliers sit near 1, offsets near 0 (head radii).
         // REQ: characters.md#路人-npc (臉).
@@ -1490,20 +2263,27 @@ namespace Cosmimera.Bootstrap.Demo
             public float NoseLen, NoseW, Bridge, Tip;
             public float EyeSize, EyeSpread, EyeTilt, EyeOpen;
             public float BrowThick, BrowArch, BrowSlant, BrowLen, BrowGap;
+            public float JawAngle;  // 0 a rounded jaw .. 1 a squared corner at the angle of the jaw
+            public FaceShape Shape;
 
             public static Face Draw(in NpcSpec spec, in Look look, bool ageless, ref Pcg32 rng)
             {
-                Face m = FaceMean(spec.Race);
                 float sex = spec.Sex == NpcSex.Male ? 1f : -1f;
                 bool child = look.Child;
                 float elder = ageless ? 0f : math.smoothstep(0.6f, 0.95f, spec.Age01);
                 float fat = look.Fat - (spec.Sex == NpcSex.Female ? 0.06f : 0f);
+                FaceShape shape = PickShape(spec, child, fat, ref rng);
+                // Race mean, then the face shape on top: the shape is a family resemblance, the normals below are the person.
+                Face m = MeanOf(spec);
+                Add(ref m, ShapeMean(shape), 1f);
                 var f = default(Face);
+                f.Shape = shape;
+                f.JawAngle = math.saturate(m.JawAngle + 0.15f * Gauss(ref rng));
                 f.SkullW = N(1f + m.SkullW, 0.04f, ref rng);
                 f.SkullH = N(1f + m.SkullH, 0.04f, ref rng);
                 f.SkullD = N(1f + m.SkullD, 0.04f, ref rng);
                 f.CheekW = N(1f + m.CheekW, 0.08f, ref rng);
-                f.Cheek = math.clamp(2.5f * (fat - 0.2f) + (child ? 0.25f : 0f) + 0.06f * Gauss(ref rng), 0f, 0.45f);
+                f.Cheek = math.clamp(2.5f * (fat - 0.2f) + (child ? 0.25f : 0f) + m.Cheek + 0.06f * Gauss(ref rng), 0f, 0.45f);
                 f.FaceLen = N(1f + m.FaceLen - (child ? 0.1f : 0f), 0.06f, ref rng);
                 f.JawW = N(1f + m.JawW + 0.06f * sex - (child ? 0.12f : 0f), 0.08f, ref rng);
                 f.ChinW = N(1f + m.ChinW + 0.08f * sex, 0.12f, ref rng);
@@ -1534,6 +2314,139 @@ namespace Cosmimera.Bootstrap.Demo
             // Bounded normal (|z| ≤ 3.46) never reaches zero or flips a multiplier for these σ, so no clamp is needed
             // beyond the few fields that can collide with a neighbour (tip, lids).
             private static float N(float mean, float sigma, ref Pcg32 rng) => mean + sigma * Gauss(ref rng);
+
+            // A mixed face averages the race means by blood share: a half-orc has half an orc's jaw, not a coin-flip one.
+            private static Face MeanOf(in NpcSpec spec)
+            {
+                NpcHeritage h = spec.Heritage;
+                Face m = default;
+                Add(ref m, FaceMean(spec.Race), 1f - h.BloodShareTotal);
+                for (int i = 0; i < h.BloodLines; i++)
+                {
+                    Add(ref m, FaceMean(h.BloodRace(i)), h.BloodShare(i));
+                }
+
+                return m;
+            }
+
+            private static void Add(ref Face a, in Face b, float k)
+            {
+                a.SkullW += k * b.SkullW;
+                a.SkullH += k * b.SkullH;
+                a.SkullD += k * b.SkullD;
+                a.CheekW += k * b.CheekW;
+                a.Cheek += k * b.Cheek;
+                a.FaceLen += k * b.FaceLen;
+                a.JawW += k * b.JawW;
+                a.ChinW += k * b.ChinW;
+                a.ChinJut += k * b.ChinJut;
+                a.ChinH += k * b.ChinH;
+                a.Jowl += k * b.Jowl;
+                a.LipW += k * b.LipW;
+                a.LipUp += k * b.LipUp;
+                a.LipLow += k * b.LipLow;
+                a.MouthY += k * b.MouthY;
+                a.Curve += k * b.Curve;
+                a.NoseLen += k * b.NoseLen;
+                a.NoseW += k * b.NoseW;
+                a.Bridge += k * b.Bridge;
+                a.Tip += k * b.Tip;
+                a.EyeSize += k * b.EyeSize;
+                a.EyeSpread += k * b.EyeSpread;
+                a.EyeTilt += k * b.EyeTilt;
+                a.EyeOpen += k * b.EyeOpen;
+                a.BrowThick += k * b.BrowThick;
+                a.BrowArch += k * b.BrowArch;
+                a.BrowSlant += k * b.BrowSlant;
+                a.BrowLen += k * b.BrowLen;
+                a.BrowGap += k * b.BrowGap;
+                a.JawAngle += k * b.JawAngle;
+            }
+
+            // Fat rounds a face and children's faces are round before bone sets them; men run square, women oval or heart.
+            private static FaceShape PickShape(in NpcSpec spec, bool child, float fat, ref Pcg32 rng)
+            {
+                float[] odds = (float[])ShapeOdds.Clone();
+                bool male = spec.Sex == NpcSex.Male;
+                odds[(int)FaceShape.Square] *= male ? 1.8f : 0.6f;
+                odds[(int)FaceShape.Oval] *= male ? 1f : 1.3f;
+                odds[(int)FaceShape.InvertedTriangle] *= male ? 0.8f : 1.4f;
+                float plump = math.saturate((fat - 0.24f) * 8f);
+                odds[(int)FaceShape.Round] *= (child ? 3f : 1f) * (1f + 3f * plump);
+                odds[(int)FaceShape.Long] *= 1f - 0.7f * plump;
+                odds[(int)FaceShape.InvertedTriangle] *= 1f - 0.7f * plump;
+                NpcHeritage h = spec.Heritage;
+                Lean(odds, spec.Race, 1f - h.BloodShareTotal);
+                for (int i = 0; i < h.BloodLines; i++)
+                {
+                    Lean(odds, h.BloodRace(i), h.BloodShare(i));
+                }
+
+                return (FaceShape)Weighted(odds, ref rng);
+            }
+
+            private static void Lean(float[] odds, NpcRace race, float share)
+            {
+                float[] lean = (int)race < RaceShape.Length ? RaceShape[(int)race] : null;
+                for (int i = 0; lean != null && i < odds.Length; i++)
+                {
+                    odds[i] *= math.lerp(1f, lean[i], share);
+                }
+            }
+        }
+
+        /// <summary>The six face shapes (臉型).</summary>
+        internal enum FaceShape
+        {
+            Oval, Round, Long, Square, Triangle, InvertedTriangle,
+        }
+
+        // Base odds of each face shape (oval, round, long, square, triangle, inverted triangle).
+        private static readonly float[] ShapeOdds = { 3f, 1.5f, 1.2f, 1.2f, 0.6f, 1f };
+
+        // Per race, multipliers on the face-shape odds; null = the human odds.
+        private static readonly float[][] RaceShape =
+        {
+            null,                                         // Human
+            new[] { 1.5f, 0.3f, 2f, 0.4f, 0.2f, 2f },     // Elf
+            new[] { 0.6f, 2f, 0.3f, 2.5f, 1.2f, 0.3f },   // Dwarf
+            new[] { 0.6f, 1.2f, 0.4f, 0.5f, 0.6f, 3f },   // Goblin: a big cranium over a small chin
+            new[] { 0.5f, 0.8f, 0.6f, 3f, 2.5f, 0.2f },   // Orc
+            null, null, null, null,                       // Avian, Merfolk, Lizardfolk, Dragonkin
+            new[] { 1f, 0.3f, 2f, 1f, 1f, 1f },           // Zombie: the flesh has fallen in
+            null,                                         // Skeleton
+            null,                                         // Werewolf
+            new[] { 1.2f, 0.2f, 2.5f, 0.6f, 0.3f, 2f },   // Vampire
+            new[] { 2f, 1.5f, 0.6f, 0.4f, 0.2f, 1f },     // Angel
+            new[] { 1f, 0.4f, 1.2f, 1.2f, 0.8f, 2f },     // Demon
+        };
+
+        // What each shape adds to the race mean. Width is read at three heights (temples = skull, cheekbones, jaw); length
+        // and the chin finish it. Triangle = narrow brow over a wide jaw; inverted triangle = wide brow tapering to a point.
+        // REQ: characters.md#路人-npc (臉型).
+        private static Face ShapeMean(FaceShape shape) => shape switch
+        {
+            FaceShape.Round => new Face { FaceLen = -0.14f, SkullW = 0.07f, CheekW = 0.06f, JawW = 0.12f, ChinW = 0.2f, ChinH = -0.15f, Cheek = 0.15f },
+            FaceShape.Long => new Face { FaceLen = 0.2f, SkullW = -0.06f, SkullH = 0.07f, CheekW = -0.04f, JawW = -0.06f, ChinH = 0.22f },
+            FaceShape.Square => new Face { FaceLen = -0.03f, JawW = 0.18f, ChinW = 0.36f, ChinH = -0.1f, JawAngle = 0.9f },
+            FaceShape.Triangle => new Face { SkullW = -0.08f, CheekW = -0.04f, JawW = 0.2f, ChinW = 0.25f, JawAngle = 0.6f },
+            FaceShape.InvertedTriangle => new Face { SkullW = 0.06f, CheekW = 0.1f, JawW = -0.18f, ChinW = -0.4f, ChinH = 0.12f, ChinJut = 0.025f },
+            _ => new Face { JawW = -0.03f, ChinW = -0.06f, JawAngle = 0.1f },
+        };
+
+        /// <summary>The face shape drawn for <paramref name="spec"/> (what Build gives it).</summary>
+        /// <remarks>Pre: none. Post: defined; same spec, same shape. Side effects: none.</remarks>
+        internal static FaceShape ShapeOf(in NpcSpec spec) => FaceOf(spec).Shape;
+
+        // Replays Build's draws up to the face: the main stream through the look, then the head stream's first draws.
+        private static Face FaceOf(in NpcSpec spec)
+        {
+            var rng = new Pcg32(Salt ^ spec.Seed, ((ulong)spec.Race << 16) | ((ulong)spec.Role << 8) | (ulong)spec.Sex);
+            Traits traits = TraitsOf(spec);
+            Look look = Look.Draw(spec, traits, ref rng);
+            var hv = new Pcg32(Salt ^ spec.Seed, 0x48454144ul);
+            bool ageless = spec.Race == NpcRace.Vampire || spec.Race == NpcRace.Angel || spec.Race == NpcRace.Demon;
+            return Face.Draw(spec, look, ageless, ref hv);
         }
 
         // Each race's departure from the human mean face (0 = same as a human).
@@ -1548,7 +2461,7 @@ namespace Cosmimera.Bootstrap.Demo
             NpcRace.Goblin => new Face { SkullW = 0.04f, EyeSize = 0.1f },
             NpcRace.Orc => new Face
             {
-                JawW = 0.15f, ChinW = 0.2f, NoseW = 0.35f, NoseLen = -0.15f, Bridge = -0.3f, LipUp = 0.2f, LipLow = 0.3f,
+                JawW = 0.25f, ChinW = 0.25f, JawAngle = 0.3f, ChinJut = 0.04f, NoseW = 0.35f, NoseLen = -0.15f, Bridge = -0.3f, LipUp = 0.2f, LipLow = 0.3f,
                 BrowThick = 0.4f, EyeSize = -0.1f, EyeOpen = -0.1f,
             },
             NpcRace.Zombie => new Face { CheekW = -0.1f, LipUp = -0.3f, LipLow = -0.3f, EyeOpen = 0.1f, Curve = -0.03f },
@@ -1772,7 +2685,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // `up` and `back` sweep the tip; `out` splays it: an elf's ear points back and up, a goblin's straight out. A right
         // ear scaled below 1 is torn; at 0 it is gone.
-        private static void Ears(Fig b, float3 c, float hr, Color skin, float up, float back, float outward, float rightScale = 1f)
+        private static void Ears(Fig b, float3 c, float hr, float side, Color skin, float up, float back, float outward, float rightScale = 1f)
         {
             for (int s = -1; s <= 1; s += 2)
             {
@@ -1782,7 +2695,7 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
-                float3 root = c + new float3(s * 0.86f * hr, 0f, -0.05f * hr);
+                float3 root = c + new float3(s * side * hr, 0f, -0.05f * hr);
                 b.Panel(root + new float3(0f, 0.18f * hr, 0.1f * hr), root + new float3(0f, -0.2f * hr, 0.05f * hr),
                     root + new float3(s * (0.15f + outward * k) * hr, up * k * hr, -back * k * hr), Shade(skin, 0.93f));
             }
@@ -1921,9 +2834,14 @@ namespace Cosmimera.Bootstrap.Demo
                 if (!bareLegs && !look.Skirt)
                 {
                     float loose = low == ArchEra.Mercantile || low == ArchEra.Future ? 1.08f : 1.3f;
-                    b.Tube(hip, knee, r.LegR * 1.15f * loose, r.LegR * 0.9f * loose, legCloth, Shade(legCloth, 0.92f), 7);
-                    b.Tube(knee, math.lerp(knee, ankle, 0.9f), r.LegR * 0.9f * loose, r.LegR * 0.7f * loose, Shade(legCloth, 0.92f),
-                        Shade(legCloth, 0.85f), 7);
+                    // Same nodes as the leg beneath (Flesh), each scaled by the cut's ease, so cloth clears flesh everywhere.
+                    float3 thigh = math.lerp(hip, knee, 0.32f), calf = math.lerp(knee, ankle, 0.3f), cuffAt = math.lerp(knee, ankle, 0.9f);
+                    float kneeCloth = math.max(r.KneeRad, r.CalfR) * loose;
+                    float cuffR = math.lerp(r.CalfR, r.AnkleRad, 0.6f / 0.7f) * loose * 1.1f;
+                    b.Tube(hip, thigh, r.ThighR * loose, r.ThighMidR * loose, legCloth, legCloth, 7);
+                    b.Tube(thigh, knee, r.ThighMidR * loose, kneeCloth, legCloth, Shade(legCloth, 0.92f), 7);
+                    b.Tube(knee, calf, kneeCloth, r.CalfR * loose, Shade(legCloth, 0.92f), Shade(legCloth, 0.9f), 7);
+                    b.Tube(calf, cuffAt, r.CalfR * loose, cuffR, Shade(legCloth, 0.9f), Shade(legCloth, 0.85f), 7);
                 }
 
                 if (boot > 0f)
@@ -1950,7 +2868,7 @@ namespace Cosmimera.Bootstrap.Demo
                 float fall = look.Fall;
                 float flare = look.Cut == Cut.Wrap ? 0.6f : low == ArchEra.Industrial ? 2f : low == ArchEra.Future ? 1.2f : 1.6f;
                 Color skirt = robed ? cloth : look.Cut == Cut.Wrap ? look.Accent : cloth2;
-                float skirtX = math.abs(r.HipR.x) + r.LegR * 1.5f, skirtZ = math.max(r.TrunkZ * 1.1f, r.LegR * 1.6f);
+                float skirtX = math.abs(r.HipR.x) + math.max(r.LegR * 1.5f, r.ThighR * 1.2f), skirtZ = math.max(r.TrunkZ * 1.1f, math.max(r.LegR * 1.6f, r.ThighR * 1.3f));
                 b.Loft(new[]
                 {
                     new Ring(r.Hip + new float3(0f, 0.03f * h, 0f), skirtX * 0.95f, skirtZ * 0.95f, skirt),
@@ -1965,7 +2883,7 @@ namespace Cosmimera.Bootstrap.Demo
             float3 hemAt = r.Hip - new float3(0f, legLen * hem, 0f);
             float hemFlare = 1f + hem * 0.5f;
             // Cloth hangs outside the legs it covers: never narrower than the thighs (plus their trousers) at the hip.
-            float thighX = math.abs(r.HipR.x) + r.LegR * 1.75f, thighZ = r.LegR * 1.9f;
+            float thighX = math.abs(r.HipR.x) + math.max(r.LegR * 1.75f, r.ThighR * 1.38f), thighZ = math.max(r.LegR * 1.9f, r.ThighR * 1.5f);
             Color lowTone = look.UpperEra == ArchEra.Wasteland ? Shade(cloth2, 1.05f) : Shade(cloth, 0.88f);
             float hemX = math.max(r.TrunkX * 0.9f * fit * hemFlare, thighX * (1f + 0.12f * hem));
             float hemZ = math.max(r.TrunkZ * 1.05f * fit * hemFlare, thighZ);
@@ -2623,6 +3541,41 @@ namespace Cosmimera.Bootstrap.Demo
                         Tri(a, b, c, outward);
                         Tri(a, c, d, outward);
                     }
+                }
+            }
+
+            // Closed rows of `sides` points (bottom to top, each counter-clockwise seen from above) joined into one surface,
+            // closed by a pole at each end. Winding follows the row order, so overhangs (the back of a chin) face out too.
+            public void Shell(float3[] points, Color[] rowTones, int rows, int sides, float3 bottom, float3 top, Color bottomTone, Color topTone)
+            {
+                int first = Part.P.Count;
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int k = 0; k < sides; k++)
+                    {
+                        V(points[i * sides + k], rowTones[i]);
+                    }
+                }
+
+                int poleA = V(bottom, bottomTone), poleB = V(top, topTone);
+                for (int i = 0; i + 1 < rows; i++)
+                {
+                    for (int k = 0; k < sides; k++)
+                    {
+                        int n = (k + 1) % sides;
+                        int a = first + i * sides + k, b = first + i * sides + n, c = first + (i + 1) * sides + n, d = first + (i + 1) * sides + k;
+                        float3 outward = math.cross(Part.P[d] - Part.P[a], Part.P[b] - Part.P[a]) + math.cross(Part.P[b] - Part.P[c], Part.P[d] - Part.P[c]);
+                        Tri(a, b, c, outward);
+                        Tri(a, c, d, outward);
+                    }
+                }
+
+                int topRow = first + (rows - 1) * sides;
+                for (int k = 0; k < sides; k++)
+                {
+                    int n = (k + 1) % sides;
+                    Tri(poleA, first + k, first + n, Part.P[first + k] + Part.P[first + n] - 2f * bottom + new float3(0f, -0.5f, 0f) * math.length(Part.P[first + k] - bottom));
+                    Tri(poleB, topRow + k, topRow + n, new float3(0f, 1f, 0f));
                 }
             }
 
