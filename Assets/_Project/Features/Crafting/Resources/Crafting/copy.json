@@ -299,6 +299,61 @@
     "en": "Cannot change equipment: grip not allowed, item missing or stack full.",
     "ja": "変更できません。持ち方が合わない、アイテム不足、または所持数の上限です。"
   },
+  "ui.preset.title": {
+    "zh-TW": "最愛組合（主力隊伍・副手・裝備・外觀）",
+    "en": "Favourite sets (party, subs, gear, appearance)",
+    "ja": "お気に入り編成（主力・サブ・装備・外見）"
+  },
+  "ui.preset.default_name": {
+    "zh-TW": "組合 {n}",
+    "en": "Set {n}",
+    "ja": "編成 {n}"
+  },
+  "ui.preset.empty": {
+    "zh-TW": "（空）",
+    "en": "(empty)",
+    "ja": "（空）"
+  },
+  "ui.preset.save": {
+    "zh-TW": "儲存目前設置",
+    "en": "Save current",
+    "ja": "現在の編成を保存"
+  },
+  "ui.preset.apply": {
+    "zh-TW": "套用",
+    "en": "Apply",
+    "ja": "適用"
+  },
+  "ui.preset.clear": {
+    "zh-TW": "刪除",
+    "en": "Delete",
+    "ja": "削除"
+  },
+  "ui.preset.rename": {
+    "zh-TW": "改名",
+    "en": "Rename",
+    "ja": "名前変更"
+  },
+  "ui.preset.rename_ok": {
+    "zh-TW": "確定",
+    "en": "OK",
+    "ja": "決定"
+  },
+  "ui.preset.rename_cancel": {
+    "zh-TW": "取消",
+    "en": "Cancel",
+    "ja": "キャンセル"
+  },
+  "ui.preset.applied": {
+    "zh-TW": "已套用。缺少的宙獸 {creatures} 項、裝備 {items} 項已略過。",
+    "en": "Applied. Skipped {creatures} missing creature entries and {items} gear entries.",
+    "ja": "適用しました。見つからない宙獣 {creatures} 件、装備 {items} 件はスキップしました。"
+  },
+  "ui.preset.failed": {
+    "zh-TW": "無法套用：組合中的宙獸已不在，或換下的裝備放不回背包。",
+    "en": "Cannot apply: no creature from the set remains, or gear cannot return to a full bag.",
+    "ja": "適用できません。編成の宙獣がいないか、外した装備を所持品に戻せません。"
+  },
   "ui.craft.gear_preview": {
     "zh-TW": "穿戴效果將於出發時套用；外觀維持現狀。",
     "en": "Equipment bonuses apply at departure; appearance stays unchanged.",
