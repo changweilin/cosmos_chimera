@@ -125,7 +125,7 @@ namespace Cosmimera.Crafting.Tests
                     ""creature_effects"": [ { ""type"": ""resist_mod"", ""params"": { ""delta"": 5, ""element"": ""earth"" } } ] } }",
             }) items.Add(JObject.Parse(json));
             return new CraftCatalog(items.ToString(), Data("craft-recipes"),
-                @"[{ ""species"": ""s_two"", ""grips"": [""two_handed"", ""one_hand_shield""] }]");
+                @"[{ ""species"": ""s_two"", ""grips"": [""two_handed""] }]");
         }
 
         [Test]
@@ -254,8 +254,9 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
             blade["equipment"]["kind"] = "one_handed"; ((JObject)blade["equipment"]).Remove("weapon");
             Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")));
-            foreach (string grips in new[] { @"[{""species"":""a"",""grips"":[]}]", @"[{""species"":""a"",""grips"":[""dual_wield"",""dual_wield""]}]",
-                @"[{""species"":""a"",""grips"":[""sword""]}]", @"[{""species"":""a"",""grips"":[""dual_wield""]},{""species"":""a"",""grips"":[""two_handed""]}]" })
+            foreach (string grips in new[] { @"[{""species"":""a"",""grips"":[]}]", @"[{""species"":""a"",""grips"":[""two_handed"",""one_hand_shield""]}]",
+                @"[{""species"":""a"",""grips"":[""dual_wield"",""dual_wield""]}]", @"[{""species"":""a"",""grips"":[""sword""]}]",
+                @"[{""species"":""a"",""grips"":[""dual_wield""]},{""species"":""a"",""grips"":[""two_handed""]}]" })
                 Assert.Throws<InvalidDataException>(() => new CraftCatalog(Data("craft-items"), Data("craft-recipes"), grips));
         }
 
@@ -269,11 +270,15 @@ namespace Cosmimera.Crafting.Tests
         }
 
         [Test]
-        public void Shipped_grips_cover_every_staged_species()
+        public void Shipped_grips_cover_every_staged_species_with_one_grip_and_distinct_starter_grips()
         {
             var catalog = new CraftCatalog(Data("craft-items"), Data("craft-recipes"), Data("craft-grips"));
-            Assert.That(catalog.GripsOf("star_blaze_foal"), Is.EqualTo(new[] { GripMode.TwoHanded }));
-            Assert.That(catalog.GripsOf("sun_array_skyheron"), Is.EquivalentTo(new[] { GripMode.OneHandShield, GripMode.TwoHanded }));
+            foreach (string sun in new[] { "sun_mirror_chick", "sun_heliostat_heron", "sun_array_skyheron" })
+                Assert.That(catalog.GripsOf(sun), Is.EqualTo(new[] { GripMode.OneHandShield }));
+            foreach (string moon in new[] { "moon_night_pup", "moon_shade_wolf", "moon_longnight_wolf" })
+                Assert.That(catalog.GripsOf(moon), Is.EqualTo(new[] { GripMode.DualWield }));
+            foreach (string star in new[] { "star_blaze_foal", "star_storm_colt", "star_skyhoof_steed" })
+                Assert.That(catalog.GripsOf(star), Is.EqualTo(new[] { GripMode.TwoHanded }));
         }
 
         [Test]

@@ -14,8 +14,7 @@
   {
     "species": "sun_array_skyheron",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   },
   {
@@ -33,8 +32,7 @@
   {
     "species": "moon_longnight_wolf",
     "grips": [
-      "dual_wield",
-      "two_handed"
+      "dual_wield"
     ]
   },
   {
@@ -52,8 +50,7 @@
   {
     "species": "star_skyhoof_steed",
     "grips": [
-      "two_handed",
-      "one_hand_shield"
+      "two_handed"
     ]
   },
   {
@@ -71,8 +68,7 @@
   {
     "species": "metal_chronos_engine",
     "grips": [
-      "two_handed",
-      "one_hand_shield"
+      "two_handed"
     ]
   },
   {
@@ -90,8 +86,7 @@
   {
     "species": "wood_canopy_regent",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   },
   {
@@ -109,8 +104,7 @@
   {
     "species": "water_catamaran_serpent",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   },
   {
@@ -128,8 +122,7 @@
   {
     "species": "fire_pyre_monarch",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   },
   {
@@ -147,8 +140,7 @@
   {
     "species": "earth_auric_sovereign",
     "grips": [
-      "two_handed",
-      "one_hand_shield"
+      "two_handed"
     ]
   },
   {
@@ -166,8 +158,7 @@
   {
     "species": "ice_tundra_dreadnought",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   },
   {
@@ -185,8 +176,7 @@
   {
     "species": "wind_monsoon_galeon",
     "grips": [
-      "one_hand_shield",
-      "two_handed"
+      "one_hand_shield"
     ]
   }
 ]

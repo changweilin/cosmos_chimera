@@ -43,9 +43,10 @@ KINDS = {
     "craft-items": "craft-item",
     "craft-recipes": "craft-recipe",
     "craft-grips": "craft-grip",
+    "creature-grip-anims": "creature-grip-anim",
     "niches": "niche",
 }
-ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches", "encyclopedia")
+ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches", "encyclopedia", "creature-grip-anims")
 # Mirrors LandformSynth.KindIds (Assets/_Project/Features/WorldGen/Runtime/Model/LandformSynth.cs): every spawn point's
 # habitat is one of these (creature-ecology.md#生成順序), so a form's niche habitats must cover all of them.
 LANDFORM_KINDS = (

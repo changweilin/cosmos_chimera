@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/creature-grip-anim.schema.json",
+  "title": "Creature weapon-grip animation format (art-asset-pipeline.md#武器持有動作格式)",
+  "description": "Per-grip animation clip format and socket bindings for creature GLB animation generation.",
+  "type": "array",
+  "minItems": 3,
+  "maxItems": 3,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id",
+      "spec",
+      "grip_mode",
+      "fps",
+      "clip_prefix_pattern",
+      "alternates_hands",
+      "sockets",
+      "pose_rules",
+      "clips"
+    ],
+    "properties": {
+      "id": { "$ref": "common.schema.json#/$defs/id" },
+      "spec": { "const": "cosmimera-creature-grip-anim/1" },
+      "grip_mode": {
+        "enum": ["two_handed", "dual_wield", "one_hand_shield"]
+      },
+      "fps": { "const": 30 },
+      "clip_prefix_pattern": { "const": "cr_<stage>_" },
+      "alternates_hands": { "type": "boolean" },
+      "sockets": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "role", "required"],
+          "properties": {
+            "name": { "enum": ["Socket_Weapon_R", "Socket_Weapon_L"] },
+            "role": { "enum": ["main_weapon", "two_hand_support", "off_weapon", "off_shield"] },
+            "required": { "type": "boolean" }
+          }
+        }
+      },
+      "pose_rules": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["idle_stance", "locomotion_rule", "guard_rule", "attack_rule"],
+        "properties": {
+          "idle_stance": { "type": "string", "minLength": 1 },
+          "locomotion_rule": { "type": "string", "minLength": 1 },
+          "guard_rule": { "type": "string", "minLength": 1 },
+          "attack_rule": { "type": "string", "minLength": 1 }
+        }
+      },
+      "clips": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action_id",
+            "description",
+            "category",
+            "hand",
+            "frames",
+            "duration_ms",
+            "loop",
+            "root_motion",
+            "active_sockets",
+            "events",
+            "motion_notes"
+          ],
+          "properties": {
+            "action_id": { "$ref": "common.schema.json#/$defs/id" },
+            "description": { "type": "string", "minLength": 1 },
+            "category": { "enum": ["stance", "locomotion", "guard", "melee", "dash"] },
+            "hand": { "enum": ["both", "right", "left", "off_shield", "none"] },
+            "frames": { "$ref": "common.schema.json#/$defs/positiveInt" },
+            "duration_ms": { "$ref": "common.schema.json#/$defs/positiveInt" },
+            "loop": { "type": "boolean" },
+            "root_motion": { "type": "boolean" },
+            "active_sockets": {
+              "type": "array",
+              "items": { "enum": ["Socket_Weapon_R", "Socket_Weapon_L"] },
+              "uniqueItems": true
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "frame", "time_ms"],
+                "properties": {
+                  "name": { "enum": ["ev_hit", "ev_spawn_fx", "ev_release", "ev_footstep", "ev_end_lock"] },
+                  "frame": { "$ref": "common.schema.json#/$defs/nonNegativeInt" },
+                  "time_ms": { "$ref": "common.schema.json#/$defs/nonNegativeInt" }
+                }
+              }
+            },
+            "motion_notes": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

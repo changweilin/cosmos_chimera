@@ -99,13 +99,17 @@ Steam Deck 是效能下限（`vision.md`），面數上限以 4 人 × 2 隻宙�
 
 ### 插槽骨（特效與互動掛點，必備）
 - 角色：`Socket_HandR_Prop`、`Socket_HandL_Prop`、`Socket_Back_Pack`、`Socket_Throw`、`Socket_Head_FX`
-- 宙獸：`Socket_Mouth`、`Socket_Head`、`Socket_Core_FX`、`Socket_Front`（射擊出口）、`Socket_PetTouch`（被撫摸點）、`Socket_Ground_FX`
+- 宙獸：`Socket_Mouth`、`Socket_Head`、`Socket_Core_FX`、`Socket_Front`（射擊出口）、`Socket_PetTouch`（被撫摸點）、`Socket_Ground_FX`、`Socket_Weapon_R`（主手武器掛點）、`Socket_Weapon_L`（副手武器／盾牌／雙手輔助掛點）
 
 ## 動作
 clip ID、幀數、迴圈與事件的唯一來源是 `tools/prompt-forge/catalog.js` 的 `ACTIONS`；改動時同步 bump catalog 版本（見 `tools/prompt-forge/README.md`）。
 - 事件名：`ev_hit`（傷害判定幀）、`ev_spawn_fx`、`ev_release`（投擲離手）、`ev_footstep`、`ev_end_lock`（可接下一動作）。
 - 撫摸：角色依宙獸 `size_class` 播 `chr_pet_xs|s|m|l|xl`（XS：托在掌心輕撫）；宙獸播對應的 `cr_<stage>_petted`，兩者以 `Socket_PetTouch` 對位。
 - 攻擊動作依 `combat.md#主動技形狀` 分類命名。
+- <a id="武器持有動作格式"></a>**武器持有動作格式（宙獸 GLB 生成動作動畫用）**：每隻宙獸固定一種持有模式（`two_handed`／`dual_wield`／`one_hand_shield`，見 `crafting.md#穿戴與數值`），三種模式各自的掛點角色、姿態規範與動作 clip 格式定義於 `Data/creature-grip-anims/creature-grip-anims.json`（schema：`Data/schemas/creature-grip-anim.schema.json`、`cosmimera-creature-grip-anim/1`）：
+  - `two_handed`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（雙手輔助）共同承托；重型前搖與橫掃。
+  - `dual_wield`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（副手）各自獨立；近戰與突進依左右輪流規則拆為 `_r`／`_l`（`atk_melee_front_r`/`_l`、`atk_melee_sweep_r`/`_l`、`atk_dash_r`/`_l`）。
+  - `one_hand_shield`：`Socket_Weapon_R`（主手單手武器）與 `Socket_Weapon_L`（副手盾牌）；舉盾格擋與盾反為主。
 
 ## 版本
 - prompt 第一行為任務標頭：`[COSMIMERA-TASK spec=… tool=… catalog=… template=<id>@<ver> task_id=… seed=…]`，manifest 必須原樣抄回，日後可追溯是哪一版規格產出的。

@@ -79,10 +79,21 @@ def test_non_weapon_cannot_carry_weapon_profile(crafting):
     assert any(f.code == "schema" for f in errors(crafting))
 
 
-@pytest.mark.parametrize("grips", [[], ["two_handed", "dual_wield", "one_hand_shield"], ["dual_wield", "dual_wield"], ["sword"]])
-def test_grip_rows_hold_one_or_two_distinct_known_grips(crafting, grips):
+@pytest.mark.parametrize("grips", [[], ["two_handed", "one_hand_shield"], ["two_handed", "dual_wield", "one_hand_shield"], ["dual_wield", "dual_wield"], ["sword"]])
+def test_grip_rows_hold_exactly_one_known_grip(crafting, grips):
     mutate(crafting, "craft-grips", lambda rows: rows[0].update(grips=grips))
     assert any(f.code == "schema" for f in errors(crafting))
+
+
+def test_starters_belong_to_distinct_grip_modes(crafting):
+    rows = json.loads((crafting / "craft-grips" / "craft-grips.json").read_text(encoding="utf-8"))
+    by_species = {r["species"]: r["grips"] for r in rows}
+    sun = {tuple(by_species[s]) for s in ("sun_mirror_chick", "sun_heliostat_heron", "sun_array_skyheron")}
+    moon = {tuple(by_species[s]) for s in ("moon_night_pup", "moon_shade_wolf", "moon_longnight_wolf")}
+    star = {tuple(by_species[s]) for s in ("star_blaze_foal", "star_storm_colt", "star_skyhoof_steed")}
+    assert sun == {("one_hand_shield",)}
+    assert moon == {("dual_wield",)}
+    assert star == {("two_handed",)}
 
 
 def test_grip_species_listed_once(crafting):

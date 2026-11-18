@@ -130,7 +130,7 @@ namespace Cosmimera.Crafting
 
         /// <summary>Parses item, recipe and species grip arrays, rejecting duplicate ids and missing item references.</summary>
         /// <remarks>
-        /// Pre: all three JSON strings non-null; grips rows are {species, grips: 1..2 distinct grip ids}.
+        /// Pre: all three JSON strings non-null; grips rows are {species, grips: 1 grip id}.
         /// Post: fully validated catalog or exception, no partial publication. Side effects: allocates.
         /// </remarks>
         public CraftCatalog(string itemsJson, string recipesJson, string gripsJson)
@@ -190,7 +190,7 @@ namespace Cosmimera.Crafting
             {
                 Check(row is JObject, "grip row must be an object");
                 string species = Id(row["species"]);
-                Check(row["grips"] is JArray array && array.Count >= 1 && array.Count <= 2, "a species holds 1..2 grips");
+                Check(row["grips"] is JArray array && array.Count == 1, "a species holds 1 grip");
                 var modes = new List<GripMode>();
                 foreach (JToken token in (JArray)row["grips"])
                 {
@@ -203,8 +203,8 @@ namespace Cosmimera.Crafting
             }
         }
 
-        /// <summary>Grips a species form may use; empty when the data lists none.</summary>
-        /// <remarks>REQ: crafting.md#穿戴與數值. Pre: speciesId non-null. Post: 0..2 distinct grips, independent copy. Side effects: allocates.</remarks>
+        /// <summary>Fixed grip a species form may use; empty when the data lists none.</summary>
+        /// <remarks>REQ: crafting.md#穿戴與數值. Pre: speciesId non-null. Post: 0..1 grip, independent copy. Side effects: allocates.</remarks>
         public IReadOnlyCollection<GripMode> GripsOf(string speciesId)
         {
             Contract.Requires(speciesId != null, "speciesId required");
