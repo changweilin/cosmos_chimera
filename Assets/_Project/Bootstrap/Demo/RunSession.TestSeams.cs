@@ -377,6 +377,17 @@ namespace Cosmimera.Bootstrap.Demo
             RenderCameraTo(path);
         }
 
+        internal void CaptureSpecimenForTests(string path, Transform specimen)
+        {
+            Vector3 focus = specimen.position + specimen.up * 0.95f;
+            Vector3 eye = focus + specimen.right * 4.2f + specimen.forward * 4.4f + specimen.up * 2.2f;
+            float3 dir = _rig.Config.ToDirection(eye);
+            float3 clearance = _rig.Config.ToWorld(dir, _surface.GroundAltitude(dir) + 1.6f);
+            if (math.dot((float3)eye - clearance, dir) < 0f) eye = clearance;
+            _rig.Camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(focus - eye, specimen.up));
+            RenderCameraTo(path);
+        }
+
         private void RenderCameraTo(string path)
         {
             var rt = new RenderTexture(1280, 720, 24);

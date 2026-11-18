@@ -9,11 +9,11 @@ using Unity.Mathematics;
 namespace Cosmimera.Bootstrap.Demo
 {
     /// <summary>
-    /// Joins world generation (scatter, buildings) to the combat rule layer: the destructible lookup moves hit, and the
+    /// Joins terrain scatter, settlement buildings and moving field objects to the combat rule layer: the destructible lookup moves hit, and the
     /// blocking test creatures obey. REQ: docs/design/destructibles.md (碰撞, 狀態保留, 實作分層), ADR-0009.
     /// </summary>
     /// <remarks>
-    /// Ids: a scatter item is its cell key (≥ 0, below ScatterPlanner.KeyCount); building i is <see cref="BuildingIdBase"/> + i. Both are
+    /// Ids: a scatter item is its cell key (≥ 0, below ScatterPlanner.KeyCount); building i is <see cref="BuildingIdBase"/> + i. Treasure and field objects use separate higher ranges. All are
     /// derived from the generation result, so every peer and every LOD rebuild agrees.
     /// Pre: built once per run on the host. Post: see members. Side effects: caches scatter cells (inside the planner).
     /// </remarks>
@@ -26,6 +26,42 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>First treasure-chest id (Q-W3); above all building ids.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const long TreasureIdBase = 1L << 41;
+
+        internal const long FieldIdBase = 1L << 42;
+        private IReadOnlyList<FieldSpecimen> _field = Array.Empty<FieldSpecimen>();
+        private Composition[] _fieldComposition = Array.Empty<Composition>();
+
+        internal void AttachField(IReadOnlyList<FieldSpecimen> field)
+        {
+            _field = field;
+            foreach (var item in field) MaxHitRadiusM = math.max(MaxHitRadiusM, item.Radius);
+            _fieldComposition = new Composition[field.Count];
+            for (int i = 0; i < field.Count; i++)
+            {
+                var item = field[i];
+                string material = item.Animal ? "fiber" : item.Form == FieldForm.SteamCar || item.Form == FieldForm.MineCart ? "metal" : "wood";
+                if (!_env.TryGetSubstance(material, out Substance sub)) throw new InvalidOperationException("Missing field substance " + material);
+                _fieldComposition[i] = Composition.Of(sub);
+            }
+        }
+
+        internal void StepField(long nowMs)
+        {
+            for (int i = 0; i < _field.Count; i++)
+            {
+                if (_table.IsDestroyed(FieldIdBase + i)) continue;
+                _field[i].Step(nowMs);
+                int slot = _table.IndexOf(FieldIdBase + i);
+                if (slot >= 0) _table.MoveCenter(slot, _field[i].Center);
+            }
+        }
+
+        private DestructibleCandidate FieldCandidate(int i)
+        {
+            var item = _field[i];
+            return new DestructibleCandidate(FieldIdBase + i, item.Center, item.Radius, _fieldComposition[i],
+                (int)((item.Animal ? 24 : 410) * item.Scale * item.Scale * item.Scale));
+        }
 
         private const float StoreyM = 3f; // SettlementView.StoreyM: HP and drop odds follow the drawn volume
         private const float TreasureHitRadiusM = 0.9f;
@@ -105,15 +141,15 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         /// <inheritdoc />
-        public float MaxHitRadiusM { get; }
+        public float MaxHitRadiusM { get; private set; }
 
         /// <summary>Whether <paramref name="id"/> names a building.</summary>
         /// <remarks>Pre: none. Post: true iff BuildingIdBase ≤ id &lt; TreasureIdBase. Side effects: none.</remarks>
         public static bool IsBuilding(long id) => id >= BuildingIdBase && id < TreasureIdBase;
 
         /// <summary>Whether <paramref name="id"/> names a treasure chest (Q-W3).</summary>
-        /// <remarks>Pre: none. Post: true iff id ≥ TreasureIdBase. Side effects: none.</remarks>
-        public static bool IsTreasure(long id) => id >= TreasureIdBase;
+        /// <remarks>Pre: none. Post: true iff TreasureIdBase ≤ id &lt; FieldIdBase. Side effects: none.</remarks>
+        public static bool IsTreasure(long id) => id >= TreasureIdBase && id < FieldIdBase;
 
         internal bool HasFoliage(float3 direction, float reachM)
         {
@@ -209,15 +245,28 @@ namespace Cosmimera.Bootstrap.Demo
                     into.Add(TreasureCandidate(r));
                 }
             }
+
+            for (int i = 0; i < _field.Count; i++)
+            {
+                var item = _field[i];
+                if (math.distance(item.Center, worldPoint) <= radiusM + item.Radius && !_table.IsDestroyed(FieldIdBase + i))
+                    into.Add(FieldCandidate(i));
+            }
         }
 
         /// <summary>The candidate Query would report for <paramref name="id"/>, if that object exists in this run.</summary>
         /// <remarks>
-        /// Pre: none. Post: true iff id is a building index or a scatter cell holding an item (destroyed ones included);
+        /// Pre: none. Post: true iff id belongs to a generated building, scatter item, chest or field object (destroyed ones included);
         ///      the candidate equals Query's for that id. Side effects: may cache the scatter cell.
         /// </remarks>
         public bool TryGet(long id, out DestructibleCandidate candidate)
         {
+            if (id >= FieldIdBase)
+            {
+                long i = id - FieldIdBase;
+                candidate = i < _field.Count ? FieldCandidate((int)i) : default;
+                return i < _field.Count;
+            }
             if (IsTreasure(id))
             {
                 int region = (int)(id - TreasureIdBase);
@@ -282,6 +331,12 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             float3 up = math.normalize(direction);
+            for (int i = 0; i < _field.Count; i++)
+            {
+                var item = _field[i];
+                if (item.Solid && math.distance(up, item.Direction) * _planet.Radius <= clearanceM + item.Radius &&
+                    !_table.IsDestroyed(FieldIdBase + i)) return true;
+            }
             _items.Clear();
             _scatter.Query(up, clearanceM + _scatter.MaxBlockRadiusM, _items);
             foreach (ScatterItem it in _items)
@@ -309,11 +364,16 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>UI copy key naming what <paramref name="candidate"/> is (target HUD line).</summary>
         /// <remarks>
         /// Pre: candidate came from this instance's Query.
-        /// Post: ui.object.building, or ui.object.&lt;species id&gt; of the scatter item (ScatterBiomes catalog).
+        /// Post: ui.object.building, ui.object.&lt;species id&gt; for scatter, or the field object category.
         /// Side effects: caches scatter cells; allocates nothing beyond Query's own caching.
         /// </remarks>
         public string NameKey(in DestructibleCandidate candidate)
         {
+            if (candidate.Id >= FieldIdBase)
+            {
+                var item = _field[(int)(candidate.Id - FieldIdBase)];
+                return item.Animal ? "ui.object.fauna" : item.Form <= FieldForm.Hoist ? "ui.object.machine" : "ui.object.vehicle";
+            }
             if (IsBuilding(candidate.Id) || IsTreasure(candidate.Id))
             {
                 return "ui.object.building";
@@ -336,10 +396,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Whether a hit can knock object <paramref name="id"/> loose before it is destroyed.</summary>
         /// <remarks>
         /// Grass is rooted and has no body to roll: it only bends until it is destroyed (and has no collider to wake).
-        /// Pre: none. Post: false iff id is a non-blocking scatter item of this run. Side effects: may cache the scatter cell.
+        /// Pre: none. Post: field objects and non-blocking scatter cannot be shoved. Side effects: may cache the scatter cell.
         /// </remarks>
         public bool CanBeShoved(long id) =>
-            id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem it) || it.Blocks;
+            id < FieldIdBase && (id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem it) || it.Blocks);
 
         /// <summary>Applies a destruction to generation-side state: a destroyed building stops blocking.</summary>
         /// <remarks>

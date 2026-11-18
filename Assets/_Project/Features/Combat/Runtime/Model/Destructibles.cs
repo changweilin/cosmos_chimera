@@ -208,6 +208,16 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: as registered. Side effects: none.</remarks>
         public float3 CenterOf(int index) => Get(index).Center;
 
+        /// <summary>Moves a registered object's hit centre with its rule-layer position.</summary>
+        /// <remarks>Pre: valid registered live index and finite center. Post: CenterOf returns center. Side effects: updates the slot.</remarks>
+        public void MoveCenter(int index, float3 center)
+        {
+            Slot slot = Get(index);
+            Contract.Requires(slot.Registered && !slot.Destroyed && math.all(math.isfinite(center)), "live slot and finite center required");
+            slot.Center = center;
+            _slots[index] = slot;
+        }
+
         /// <summary>Why slot <paramref name="index"/> was destroyed.</summary>
         /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: meaningful only once destroyed. Side effects: none.</remarks>
         public DestroyCause CauseOf(int index) => Get(index).Cause;

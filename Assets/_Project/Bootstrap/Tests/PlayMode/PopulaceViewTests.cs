@@ -21,7 +21,7 @@ namespace Cosmimera.Bootstrap.Tests
 
         private static float Hills(float3 d) => 3f * math.sin(d.x * 400f) * math.cos(d.z * 340f);
 
-        private static (RunPlan plan, RunLayout layout, RunPopulace people) Make(ulong seed)
+        internal static (RunPlan plan, RunLayout layout, RunPopulace people) Make(ulong seed)
         {
             var db = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
             Assert.That(db, Is.Not.Null);

@@ -37,3 +37,4 @@
 - 2026-11-18 · Claude Opus · partial · P3-34 PlayMode：修正同一 tick 內操縱天氣讀到舊快取（`WeatherService` 快取改含覆寫數，並在新覆寫早於已積分時間時重算地表累積），補 EditMode 回歸；天氣相關 PlayMode 6/6、EditMode Weather 51/51＋SolarClock 6/6 通過。全套 PlayMode 157 中 82 失敗，皆為既有的 URP `UniversalCameraData has already been created` 連鎖（單獨跑則通過），未處理 · 下一步：Q-W36、人工試玩
 - 2026-11-18 · Codex · partial · P3-18 已驗證星球文化分層與衣料對照圖，實景與角色動態美術待驗收 · 下一步：在聚落鏡頭檢查人群剪影、表情與步態。
 - 2026-11-18 · Codex · partial · P3-18 行走已接入聚落移動，地面測試台已驗證；斜坡接地、持物上身與工作動作仍待打磨 · 下一步：在聚落實景檢查坡地步態與人群效能。
+- 2026-11-18 · Codex · partial · P3-17／19 第一批機械、載具、動物與破壞掉落已接入 Demo；跨聚落運輸、獸拉牽引、鋪軌與植物／宙獸外觀仍待製作 · 下一步：實景驗收不同地區的外觀、動線、碰撞及 Steam Deck 幀率。

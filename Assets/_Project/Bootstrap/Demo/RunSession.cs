@@ -334,6 +334,7 @@ namespace Cosmimera.Bootstrap.Demo
         private WorldObjects _worldObjects;
         private DestructibleTable _objectTable;
         private SettlementView _settlementView;
+        private FieldSpecimenView _fieldView;
         private LandmarkLayout _landmarks;
         private LandmarkView _landmarkView;
         private RunPopulace _populace;
@@ -682,6 +683,7 @@ namespace Cosmimera.Bootstrap.Demo
                     TemplatePlanner.ScatterGeologyAt(templates, geologies, baseGeology))
                 : new ScatterPlanner(config, setup.Seed, setup.PlanetType.Id, surface.GroundAltitude, isSea,
                     isOpenGround, terrainProfile.ScatterDensity);
+            List<FieldSpecimen> field = null;
             DestructibleTable objects = null;
             if (setup.EnvMaterials != null)
             {
@@ -690,6 +692,11 @@ namespace Cosmimera.Bootstrap.Demo
                 _objectTable = objects;
                 _worldObjects = new WorldObjects(config, scatter, _layout, clearance, surface.GroundAltitude,
                     setup.EnvMaterials, objects, _dungeon, _plan);
+                field = FieldSpecimen.Generate(config, _layout, _plan, setup.PlanetType.Id, setup.Seed, surface.GroundAltitude,
+                    d => !_worldObjects.IsBlocked(d, 1.6f) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.6f) &&
+                         math.distancesq(d, landingAt) > landingGap * landingGap, surface.IsSea);
+                _worldObjects.AttachField(field);
+                _worldObjects.StepField(_nowMs);
                 surface.Objects = _worldObjects;
             }
             _quest = new QuestTracker(_plan);
@@ -786,6 +793,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
                     setup.PlanetType.Id, setup.Seed, _plan);
+                Shader fieldShader = scenery?.Props ?? Shader.Find("Cosmimera/ToonScenery");
+                if (field != null && fieldShader != null)
+                {
+                    var fieldRoot = new GameObject("FieldSpecimens");
+                    fieldRoot.transform.SetParent(transform, false);
+                    _fieldView = fieldRoot.AddComponent<FieldSpecimenView>();
+                    _fieldView.Configure(field, fieldShader);
+                }
                 var landmarkRoot = new GameObject("Landmarks");
                 landmarkRoot.transform.SetParent(transform, false);
                 _landmarkView = landmarkRoot.AddComponent<LandmarkView>();
@@ -1051,6 +1066,8 @@ namespace Cosmimera.Bootstrap.Demo
         private void StepCombat()
         {
             _nowMs += TickMs;
+            _worldObjects?.StepField(_nowMs);
+            _fieldView?.Sync(_nowMs);
             float3 player = PlayerPosition();
             UpdateEnvironment(player);
             TrackWalk(player);
@@ -2278,7 +2295,12 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
             }
-            else if (WorldObjects.IsBuilding(ev.ObjectId))
+            else if (ev.ObjectId >= WorldObjects.FieldIdBase)
+                {
+                    var root = _fieldView?.Root((int)(ev.ObjectId - WorldObjects.FieldIdBase));
+                    if (root) root.SetActive(false);
+                }
+                else if (WorldObjects.IsBuilding(ev.ObjectId))
                 {
                     _settlementView?.RemoveBuilding((int)(ev.ObjectId - WorldObjects.BuildingIdBase));
                 }
@@ -2372,6 +2394,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return woken;
             }
 
+            if (id >= WorldObjects.FieldIdBase) return _fieldView?.Root((int)(id - WorldObjects.FieldIdBase));
             if (WorldObjects.IsTreasure(id))
             {
                 return _dungeonView?.MarkerFor((int)(id - WorldObjects.TreasureIdBase));
@@ -2459,6 +2482,8 @@ namespace Cosmimera.Bootstrap.Demo
             _views[u.Id] = view;
             _viewDefs[u.Id] = u.Def;
             _viewRoles[u.Id] = role;
+            // Combat can attach the camera before the first render-frame pose update.
+            view.Root.position = u.Position;
             view.Root.gameObject.SetActive(u.Fielded);
         }
 

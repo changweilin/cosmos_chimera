@@ -854,6 +854,9 @@
     "en": "Flower patch",
     "ja": "花むら"
   },
+  "ui.object.fauna": {"zh-TW": "野生動物", "en": "Wild animal", "ja": "野生動物"},
+  "ui.object.machine": {"zh-TW": "機械", "en": "Machine", "ja": "機械"},
+  "ui.object.vehicle": {"zh-TW": "載具", "en": "Vehicle", "ja": "乗り物"},
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",

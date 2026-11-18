@@ -103,26 +103,7 @@ namespace Cosmimera.Bootstrap.Tests
                 }
             }
 
-            string balanceJson = Load<TextAsset>(Copy + "balance.json").text;
-            Progression progression = Progression.FromJson(balanceJson);
-            var copy = new DemoCopy("zh-TW", Load<TextAsset>(Copy + "strings.json").text, Load<TextAsset>(Copy + "names.json").text,
-                Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
-                Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
-            var session = new GameObject("Run").AddComponent<RunSession>();
-            session.Configure(copy, CombatBalance.FromJson(balanceJson),
-                Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
-                Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
-                new RunSetup
-                {
-                    PlanetType = type, Seed = seed, Radius = RadiusM, BossStage = Stage, Party = party,
-                    PartyIds = Enumerable.Range(1, party.Count).ToList(),
-                    PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
-                    Progression = progression, Materials = MaterialDrops.FromJson(balanceJson),
-                    EnvMaterials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text),
-                }, wild, _ => { }, Load<Shader>(Shaders + "ToonTerrain.shader"), Load<Shader>(Shaders + "ToonOutlined.shader"),
-                Load<Shader>(Shaders + "Stars.shader"),
-                new SceneryShaders(Load<Shader>(Shaders + "ToonSky.shader"), Load<Shader>(Shaders + "ToonGrass.shader"),
-                    Load<Shader>(Shaders + "ToonWater.shader"), Load<Shader>(Shaders + "ToonScenery.shader")));
+            var session = OpenPlanet(type, seed, RadiusM, Stage, party, wild);
 
             float deadline = Time.realtimeSinceStartup + 60f;
             while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
@@ -168,6 +149,33 @@ namespace Cosmimera.Bootstrap.Tests
 
             Object.Destroy(session.gameObject);
             yield return null;
+        }
+
+        internal static RunSession OpenPlanet(PlanetTypeDef type, ulong seed, float radius, CreatureStage stage,
+            List<CreatureDef> party, List<CreatureDef> wild)
+        {
+            string balanceJson = Load<TextAsset>(Copy + "balance.json").text;
+            Progression progression = Progression.FromJson(balanceJson);
+            var copy = new DemoCopy("zh-TW", Load<TextAsset>(Copy + "strings.json").text, Load<TextAsset>(Copy + "names.json").text,
+                Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
+                Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
+            var session = new GameObject("Run").AddComponent<RunSession>();
+            session.Configure(copy, CombatBalance.FromJson(balanceJson),
+                Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+                Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
+                new RunSetup
+                {
+                    PlanetType = type, Seed = seed, Radius = radius, BossStage = stage, Party = party,
+                    PartyIds = Enumerable.Range(1, party.Count).ToList(),
+                    PartyExp = Enumerable.Repeat(progression.XpThreshold(progression.StarterLevel), party.Count).ToList(),
+                    Progression = progression, Materials = MaterialDrops.FromJson(balanceJson),
+                    EnvMaterials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text),
+                }, wild, _ => { }, Load<Shader>(Shaders + "ToonTerrain.shader"), Load<Shader>(Shaders + "ToonOutlined.shader"),
+                Load<Shader>(Shaders + "Stars.shader"),
+                new SceneryShaders(Load<Shader>(Shaders + "ToonSky.shader"), Load<Shader>(Shaders + "ToonGrass.shader"),
+                    Load<Shader>(Shaders + "ToonWater.shader"), Load<Shader>(Shaders + "ToonScenery.shader")));
+
+            return session;
         }
     }
 }

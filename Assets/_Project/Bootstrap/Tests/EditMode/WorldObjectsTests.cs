@@ -62,6 +62,22 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Field_culture_v1_replays_the_three_families_on_one_road()
+        {
+            var regions = new[] { new RunRegion(0, VillageAt, new[] { 1 }, "forest", null, 1, 0),
+                new RunRegion(1, RuinAt, new[] { 0 }, "coast", null, 1, 1) };
+            var road = new RunRoad(RoadClass.Main, 0, 1, 4f, new[] { VillageAt, RuinAt }, new bool[2]);
+            var layout = new RunLayout(new[] { road }, new RunSettlement[0], new RunBuilding[0]);
+            var plan = new RunPlan(7, "verdant_planet", null, regions, 0, 1, new[] { 0, 1 }, new RunSpawn[0],
+                new RunQuestStep[0], VillageAt);
+            var field = FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => true, d => false);
+            Assert.That(FieldSpecimen.GeneratorVersion, Is.EqualTo(1));
+            var snapshot = File.ReadAllLines(Path.Combine(Application.dataPath, "_Project/Bootstrap/Tests/Snapshots/field-culture-v1.txt"));
+            Assert.That(field.ConvertAll(s => $"{s.Style},{s.Duty},{s.Age},{s.Damage}"), Is.EqualTo(snapshot));
+            Assert.That(FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => false, d => false), Is.Empty);
+        }
+
+        [Test]
         public void Gathering_queries_only_nearby_intact_scatter_and_preserves_the_source_kind()
         {
             Rig r = Build();
