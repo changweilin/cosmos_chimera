@@ -97,6 +97,11 @@
 <section>
 <h2>戰鬥與環境</h2>
 <div class="cards">
+<article id="Q-W36">
+  <header><a class="id" href="#Q-W36">Q-W36</a><span class="tag">影響 P3-34、P3-31 生態</span></header>
+  <p><span class="label">問題</span><b>野生個體在「非活躍時段」怎麼表現？</b>晝夜活動性已定（屬性＋習性推導，見 <a href="design/creature-ecology.md#晝夜活動性">creature-ecology.md〈晝夜活動性〉</a>）。但野生宙獸生成後就固定、不重生，所以原定的「夜晚出沒權重 ×2」沒有地方套用。(A) <b>休息</b>：留在家域不遊蕩、領域縮為「迴避」，被打或被靠近才醒；(B) <b>隱匿</b>：離開地圖（看不到也無法互動），進入活躍時段才回到家域；(C) <b>新增出沒機制</b>：每區域依時段補生／退場野生個體（影響存檔與同步，工作量最大）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（此題未定前晝夜活動性不接線，天氣與時段其餘部分已實作）</p>
+</article>
 
 
 
@@ -133,6 +138,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
+ 'Q-W36':[R('ok','非活躍時段的表現',['A 休息（家域原地、領域縮為迴避）','B 隱匿（離開地圖）','C 新增時段出沒機制','改（補充）'])],
  'Q-G10':[R('ok','試煉 BOSS 新物種的範圍',['照暫定','單一型態','改（補充）']),T('note','補充','若改，寫新規則')],
 };
 const KEY='cosmimera-open-questions-v1';

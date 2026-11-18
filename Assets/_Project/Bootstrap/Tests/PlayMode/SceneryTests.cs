@@ -57,7 +57,12 @@ namespace Cosmimera.Bootstrap.Tests
             try
             {
                 var frame = PlanetFrame.FromUp(new float3(1f, 0f, 0f));
-                view.Apply(Vector3.right * Radius, frame, WeatherKind.Rain, true);
+                var rainy = new int[WeatherField.AttrCount];
+                rainy[(int)WeatherAttr.Rain] = 1000;
+                rainy[(int)WeatherAttr.Clouds] = 1000;
+                WeatherState raining = WeatherDynamics.Resolve(rainy);
+                WeatherState clear = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
+                view.Apply(Vector3.right * Radius, frame, raining, true);
                 Transform layers = root.transform.Find("Local weather");
                 var ash = layers.Find("Volcanic ash").GetComponent<ParticleSystem>();
                 var embers = layers.Find("Rising embers").GetComponent<ParticleSystem>();
@@ -65,9 +70,9 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(ash.isEmitting && embers.isEmitting && rain.isEmitting);
                 Assert.That(Vector3.Dot(embers.transform.forward, Vector3.right), Is.Positive);
                 Assert.That(Vector3.Dot(ash.transform.forward, Vector3.right), Is.Negative);
-                view.Apply(Vector3.right * Radius, frame, WeatherKind.Clear, true);
+                view.Apply(Vector3.right * Radius, frame, clear, true);
                 Assert.That(ash.isEmitting && embers.isEmitting && !rain.isEmitting);
-                view.Apply(Vector3.right * Radius, frame, WeatherKind.Clear, false);
+                view.Apply(Vector3.right * Radius, frame, clear, false);
                 Assert.That(ash.isEmitting || embers.isEmitting, Is.False);
             }
             finally

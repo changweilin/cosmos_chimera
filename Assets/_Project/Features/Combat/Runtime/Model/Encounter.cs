@@ -3626,15 +3626,17 @@ namespace Cosmimera.Combat
         private static float WeatherMoveSpeedScale(EncounterUnit u, in WeatherProfile weather)
         {
             IReadOnlyList<ElementValue> mastery = u.Def.Mastery;
+            // REQ: weather.md#地表累積 — ground deposits slow creatures too, except those of the matching element.
+            float ground = weather.CreatureGroundMultiplier(mastery);
             for (int i = 0; i < mastery.Count; i++)
             {
                 if (weather.IsFavouredElement(mastery[i].Element))
                 {
-                    return weather.AdaptedCreatureMoveSpeedMultiplier;
+                    return weather.AdaptedCreatureMoveSpeedMultiplier * ground;
                 }
             }
 
-            return weather.CreatureMoveSpeedMultiplier;
+            return weather.CreatureMoveSpeedMultiplier * ground;
         }
 
         private float3 Up(float3 position) => _planet.ToDirection(position);

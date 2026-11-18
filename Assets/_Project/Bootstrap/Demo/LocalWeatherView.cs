@@ -1,5 +1,6 @@
 using Cosmimera.Planet;
 using Cosmimera.WorldGen;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -66,14 +67,17 @@ namespace Cosmimera.Bootstrap.Demo
             return ps;
         }
 
-        internal void Apply(Vector3 position, PlanetFrame frame, WeatherKind kind, bool volcanic)
+        internal void Apply(Vector3 position, PlanetFrame frame, in WeatherState weather, bool volcanic)
         {
             _root.SetPositionAndRotation(position, Quaternion.LookRotation(frame.North, frame.Up));
-            bool storm = kind == WeatherKind.Thunderstorm;
-            Set(_rain, storm ? 510f : kind == WeatherKind.Rain ? 250f : 0f, 8f, storm ? 0.42f : 0.16f, -1f);
-            Set(_snow, kind == WeatherKind.Blizzard ? 84f : 0f, 5f, 0.62f, -1f);
-            Set(_dust, kind == WeatherKind.Sandstorm ? 80f : 0f, 3f, 1f, -0.24f);
-            Set(_ash, volcanic ? 34f : 0f, 5f, 0.36f, -1f);
+            // REQ: weather.md#生效 — particle density follows effective strength, not a single dominant label.
+            float rain = weather.RainPermille / 1000f, snow = weather.SnowPermille / 1000f, sand = weather.SandPermille / 1000f;
+            float thunder = weather.ThunderPermille / 1000f, wind = weather.WindPermille / 1000f, ash = weather.AshPermille / 1000f;
+            Set(_rain, rain * (250f + 260f * thunder), 8f, 0.16f + 0.26f * math.max(thunder, wind), -1f);
+            Set(_snow, snow * 84f, 5f, 0.62f, -1f);
+            Set(_dust, sand * 80f, 3f, 1f, -0.24f);
+            // Volcanic ground keeps its light ash fall in any weather; an ash-fall phenomenon thickens it.
+            Set(_ash, (volcanic ? 34f : 0f) + ash * 120f, 5f, 0.36f, -1f);
             Set(_embers, volcanic ? 13f : 0f, 0.6f, 0.24f, 1f);
         }
 

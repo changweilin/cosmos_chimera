@@ -109,7 +109,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Run-wide weather-control cooldown loaded from balance.json.</summary>
         /// <remarks>Pre: greater than zero. Post: used for this run's controller. Side effects: none.</remarks>
-        public int WeatherControlCooldownMs = WeatherPlanner.DefaultSlotDurationMs;
+        public int WeatherControlCooldownMs = WeatherField.OverrideHoldMs;
 
         /// <summary>Party forms in party order (≤ 6; the first 4 are the deploy pool, P2-06).</summary>
         /// <remarks>Pre: 1..6 entries. Post: none. Side effects: none.</remarks>
@@ -306,6 +306,8 @@ namespace Cosmimera.Bootstrap.Demo
         private LocalWeatherView _weatherView;
         private float _baseCloud, _baseWind;
         private WeatherControl _weatherControl;
+        private WeatherService _weather;
+        private WeatherState _playerWeatherState;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
@@ -600,6 +602,13 @@ namespace Cosmimera.Bootstrap.Demo
             TerrainProfile terrainProfile = TerrainProfiles.ForPlanetType(setup.PlanetType.Id);
             _terrainAt = TemplatePlanner.SurfaceProfile(templates, setup.PlanetType.Id);
             _playerTerrain = terrainProfile;
+            // REQ: weather.md#演化 — lava and ice planets have no season; a capture override only applies where seasons exist.
+            Season? weatherSeason = Seasons.ForPlanet(setup.Seed, setup.PlanetType.Id);
+            if (weatherSeason.HasValue && setup.Season.HasValue) weatherSeason = setup.Season;
+            RunPlan weatherPlan = _plan;
+            _weather = new WeatherService(setup.Seed, setup.PlanetType.Id, weatherSeason,
+                d => RunPlanner.RegionAt(weatherPlan, d), r => weatherPlan.Regions[r].Center, d => _terrainAt(d).Id,
+                _weatherControl);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
             // REQ: planet-world.md#奇觀地標 — wonders go on land that no wall band owns; scatter then keeps the same
@@ -690,7 +699,7 @@ namespace Cosmimera.Bootstrap.Demo
             AtmosphereDriver atmosphere = gameObject.AddComponent<AtmosphereDriver>();
             _atmosphere = atmosphere;
             atmosphere.Configure(_rig.Camera, _rig.Sun, config, new float3(0f, 1f, 0f),
-                PlanetLook.Sky(setup.PlanetType.Id), 600f, balance.Horizon.EyeHeightMm / 1000f);
+                PlanetLook.Sky(setup.PlanetType.Id), SolarClock.DayLengthMs / 1000f, balance.Horizon.EyeHeightMm / 1000f);
             (float grassDensity, float snowLine, float polarLat, float cloudCover, float wind) =
                 PlanetLook.Scenery(setup.PlanetType.Id);
             _baseCloud = cloudCover;
@@ -936,18 +945,25 @@ namespace Cosmimera.Bootstrap.Demo
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
         }
 
-        private WeatherProfile WeatherAt(float3 direction, long nowMs)
-        {
-            int region = RunPlanner.RegionAt(_plan, direction);
-            return _weatherControl.TryGetOverride(region, nowMs, out WeatherProfile controlled) ? controlled :
-                WeatherPlanner.WeatherAt(_setup.Seed, _setup.PlanetType.Id, _terrainAt(direction).Id, nowMs);
-        }
+        private WeatherProfile WeatherAt(float3 direction, long nowMs) => _weather.ProfileAt(direction, nowMs);
 
         private WeatherControlResult TryControlWeather(WeatherKind kind)
         {
             float3 player = PlayerPosition();
-            int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player));
-            WeatherControlResult result = _weatherControl.TryApply(region, kind, _nowMs, _utilityModifiers.CanWeatherControl);
+            float3 direction = _rig.Config.ToDirection(player);
+            int region = _weather.RegionAt(direction);
+            bool native = WeatherProfiles.IsExotic(kind) && _weather.IsNativeExotic(direction, kind);
+            WeatherControlResult result = _weatherControl.TryApply(region, kind, _nowMs, _utilityModifiers.CanWeatherControl,
+                native, _weather.IsIndoor(direction));
+            if (result == WeatherControlResult.Applied) UpdateEnvironment(player);
+            return result;
+        }
+
+        private WeatherControlResult TryDispelExotics()
+        {
+            float3 player = PlayerPosition();
+            int region = _weather.RegionAt(_rig.Config.ToDirection(player));
+            WeatherControlResult result = _weatherControl.TryDispelExotics(region, _nowMs, _utilityModifiers.CanWeatherControl);
             if (result == WeatherControlResult.Applied) UpdateEnvironment(player);
             return result;
         }
@@ -957,17 +973,14 @@ namespace Cosmimera.Bootstrap.Demo
             float3 direction = _rig.Config.ToDirection(player);
             _playerTerrain = _terrainAt(direction);
             _playerWeather = WeatherAt(direction, _nowMs);
-            WeatherKind kind = _playerWeather.Kind;
+            WeatherState state = _weather.StateAt(direction, _nowMs);
+            _playerWeatherState = state;
             bool volcanic = _setup.PlanetType.Id == "lava_planet" || _playerTerrain.Id is "volcano" or "volcano_foothills";
-            _weatherView?.Apply(player, PlanetFrame.FromUp(direction), kind, volcanic);
-            float strength = kind switch
-            {
-                WeatherKind.Thunderstorm or WeatherKind.Blizzard or WeatherKind.Sandstorm => 1f,
-                WeatherKind.Rain or WeatherKind.Gale => 0.65f,
-                WeatherKind.Fog => 0.35f,
-                _ => 0f,
-            };
-            _atmosphere.SetWeather(math.lerp(_baseCloud, 0.96f, strength), _baseWind + strength * 1.4f);
+            _weatherView?.Apply(player, PlanetFrame.FromUp(direction), state, volcanic);
+            float cloud = math.max(_baseCloud, state.CloudsPermille / 1000f);
+            float storm = math.max(math.max(state.RainPermille, state.SnowPermille), math.max(state.SandPermille, state.ThunderPermille)) / 1000f;
+            _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm), _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f));
+            _atmosphere.SetSimulationTime(_nowMs);
             ApplyPlayerEnvironment();
             _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
         }
@@ -977,9 +990,12 @@ namespace Cosmimera.Bootstrap.Demo
             float terrain = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.MoveSpeedMultiplier) : _playerTerrain.MoveSpeedMultiplier;
             float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.SprintSpeedMultiplier) : _playerTerrain.SprintSpeedMultiplier;
             float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.GroundAccelerationMultiplier) : _playerTerrain.GroundAccelerationMultiplier;
+            // REQ: weather.md#地表累積 — water, snow, sand or ash on the ground slows walking, sprinting and jumping alike.
+            float ground = _playerWeather.PlayerGroundMultiplier;
             _rig.Character.SetTerrainModifiers(
-                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
-                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
+                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
+                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
+            _rig.Character.SetJumpHeightMultiplier(ground);
         }
 
         private void StepCombat()
@@ -2254,13 +2270,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private bool IsNight(float3 direction)
         {
-            if (_rig == null || _rig.Sun == null)
-            {
-                return false;
-            }
-
-            float3 toSun = -(float3)_rig.Sun.transform.forward;
-            return math.dot(math.normalize(direction), toSun) < 0f;
+            // REQ: weather.md#時段 — the rule-layer sun (SolarClock), not the drawn light, so every client agrees.
+            return SolarClock.SunElevationPermille(math.normalize(direction), _nowMs) < 0;
         }
 
         private void ApplyPlayerPush()

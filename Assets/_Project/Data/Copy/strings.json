@@ -2095,9 +2095,9 @@
     "ja": "強風"
   },
   "ui.weather.status": {
-    "zh-TW": "{weather} · {source} · 下次輪替 {seconds}s",
-    "en": "{weather} · {source} · Next cycle in {seconds}s",
-    "ja": "{weather} · {source} · 次の切替まで {seconds}秒"
+    "zh-TW": "{weather} · {phase} · {source}",
+    "en": "{weather} · {phase} · {source}",
+    "ja": "{weather} · {phase} · {source}"
   },
   "ui.weather.natural": {
     "zh-TW": "自然天氣",
@@ -2105,9 +2105,9 @@
     "ja": "自然の天候"
   },
   "ui.weather.controlled": {
-    "zh-TW": "操縱天氣",
-    "en": "Controlled",
-    "ja": "操作中の天候"
+    "zh-TW": "操縱中（剩 {seconds}s）",
+    "en": "Controlled ({seconds}s left)",
+    "ja": "操作中（残り {seconds}秒）"
   },
   "ui.weather.movement": {
     "zh-TW": "天氣修正：移動 ×{move}／衝刺 ×{sprint}／翻滾 CD ×{roll}",
@@ -2188,5 +2188,100 @@
     "zh-TW": "從新手任務星球展開冒險；可先在冒險手冊配置副手與裝備。",
     "en": "Begin your expedition on the Beginner Quest planet; check the Adventure Journal for partners & gear.",
     "ja": "初心者クエスト惑星から冒険を始めよう。冒険手帳でパートナーや装備も確認できます。"
+  },
+  "ui.weather.raddust": {
+    "zh-TW": "輻射塵",
+    "en": "Radioactive Dust",
+    "ja": "放射性の塵"
+  },
+  "ui.weather.sporehaze": {
+    "zh-TW": "孢子霧",
+    "en": "Spore Haze",
+    "ja": "胞子の霧"
+  },
+  "ui.weather.saltspray": {
+    "zh-TW": "鹽霧",
+    "en": "Salt Spray",
+    "ja": "塩霧"
+  },
+  "ui.weather.volcanicash": {
+    "zh-TW": "火山灰",
+    "en": "Volcanic Ash",
+    "ja": "火山灰"
+  },
+  "ui.weather.crystaldust": {
+    "zh-TW": "晶塵",
+    "en": "Crystal Dust",
+    "ja": "晶塵"
+  },
+  "ui.weather.diamonddust": {
+    "zh-TW": "鑽石塵",
+    "en": "Diamond Dust",
+    "ja": "ダイヤモンドダスト"
+  },
+  "ui.weather.tornado": {
+    "zh-TW": "龍捲風",
+    "en": "Tornado",
+    "ja": "竜巻"
+  },
+  "ui.weather.ionstorm": {
+    "zh-TW": "離子風暴",
+    "en": "Ion Storm",
+    "ja": "イオン嵐"
+  },
+  "ui.weather.solarflare": {
+    "zh-TW": "太陽閃焰",
+    "en": "Solar Flare",
+    "ja": "太陽フレア"
+  },
+  "ui.weather.miasma": {
+    "zh-TW": "瘴氣",
+    "en": "Miasma",
+    "ja": "瘴気"
+  },
+  "ui.weather.overcast": {
+    "zh-TW": "陰天",
+    "en": "Overcast",
+    "ja": "曇り"
+  },
+  "ui.phase.dawn": {
+    "zh-TW": "清晨",
+    "en": "Dawn",
+    "ja": "明け方"
+  },
+  "ui.phase.day": {
+    "zh-TW": "白天",
+    "en": "Day",
+    "ja": "昼"
+  },
+  "ui.phase.dusk": {
+    "zh-TW": "黃昏",
+    "en": "Dusk",
+    "ja": "夕暮れ"
+  },
+  "ui.phase.night": {
+    "zh-TW": "夜晚",
+    "en": "Night",
+    "ja": "夜"
+  },
+  "ui.weather.dispel": {
+    "zh-TW": "驅散異象",
+    "en": "Dispel phenomena",
+    "ja": "異常気象を払う"
+  },
+  "ui.weather.dispelled": {
+    "zh-TW": "已驅散本區異象。",
+    "en": "Phenomena dispelled in this region.",
+    "ja": "この地域の異常気象を払いました。"
+  },
+  "ui.weather.not_here": {
+    "zh-TW": "此地無法召喚{weather}。",
+    "en": "{weather} cannot be summoned here.",
+    "ja": "ここでは{weather}を呼べません。"
+  },
+  "ui.weather.ground": {
+    "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
+    "en": "Ground cover {percent}% · move and jump ×{mult}",
+    "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
   }
 }

@@ -69,39 +69,5 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => WeatherProfiles.Rain.CdDeltaPercent((Element)(-1)));
             Assert.Throws<ContractException>(() => WeatherProfiles.Rain.IsFavouredElement((Element)10));
         }
-
-        [Test]
-        public void WeatherPlanner_is_deterministic_and_varies_by_time_planet_and_terrain()
-        {
-            WeatherProfile a = WeatherPlanner.WeatherAt(12345UL, "ice_crystal_planet", "ice_field", 0);
-            WeatherProfile b = WeatherPlanner.WeatherAt(12345UL, "ice_crystal_planet", "ice_field", 0);
-            WeatherProfile c = WeatherPlanner.WeatherAt(12345UL, "ice_crystal_planet", "ice_field",
-                WeatherPlanner.DefaultSlotDurationMs - 1);
-            Assert.That(b.Kind, Is.EqualTo(a.Kind));
-            Assert.That(c.Kind, Is.EqualTo(a.Kind));
-
-            // Across many time slots, dynamic weather changes rather than staying locked forever.
-            var iceKinds = new HashSet<WeatherKind>();
-            var lavaKinds = new HashSet<WeatherKind>();
-            for (int slot = 0; slot < 24; slot++)
-            {
-                long t = (long)slot * WeatherPlanner.DefaultSlotDurationMs;
-                iceKinds.Add(WeatherPlanner.WeatherAt(12345UL, "ice_crystal_planet", "ice_field", t).Kind);
-                lavaKinds.Add(WeatherPlanner.WeatherAt(12345UL, "lava_planet", "volcano", t).Kind);
-            }
-
-            Assert.That(iceKinds.Count, Is.GreaterThan(1));
-            Assert.That(lavaKinds.Count, Is.GreaterThan(1));
-            Assert.That(iceKinds.Contains(WeatherKind.Blizzard), Is.True);
-            Assert.That(lavaKinds.Contains(WeatherKind.Heatwave), Is.True);
-        }
-
-        [Test]
-        public void WeatherPlanner_rejects_invalid_time_or_slot_duration()
-        {
-            Assert.Throws<ContractException>(() => WeatherPlanner.WeatherAt(1UL, "verdant_planet", "forest", -1));
-            Assert.Throws<ContractException>(() => WeatherPlanner.WeatherAt(1UL, "verdant_planet", "forest", 0, 0));
-            Assert.Throws<ContractException>(() => WeatherPlanner.WeatherAt(1UL, "verdant_planet", "forest", 0, -10));
-        }
     }
 }

@@ -347,12 +347,27 @@ namespace Cosmimera.Bootstrap.Demo
 
         private string WeatherStatusText()
         {
-            int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(PlayerPosition()));
-            bool controlled = _weatherControl.TryGetOverride(region, _nowMs, out _);
-            long remaining = WeatherPlanner.DefaultSlotDurationMs - _nowMs % WeatherPlanner.DefaultSlotDurationMs;
-            return _copy.Ui("ui.weather.status").Replace("{weather}", WeatherName(_playerWeather.Kind))
-                .Replace("{source}", _copy.Ui(controlled ? "ui.weather.controlled" : "ui.weather.natural"))
-                .Replace("{seconds}", Math.Ceiling(remaining / 1000d).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            float3 direction = _rig.Config.ToDirection(PlayerPosition());
+            int pinned = _weatherControl.PinnedRemainingMs(_weather.RegionAt(direction), _nowMs);
+            string weather = _playerWeather.Kind == WeatherKind.Clear && _playerWeatherState.Overcast
+                ? _copy.Ui("ui.weather.overcast") : WeatherName(_playerWeather.Kind);
+            if (_playerWeather.Exotic != WeatherKind.Clear && _playerWeatherState.BaseKind != WeatherKind.Clear)
+                weather += " + " + WeatherName(_playerWeatherState.BaseKind);
+            string source = pinned > 0
+                ? _copy.Ui("ui.weather.controlled").Replace("{seconds}",
+                    Math.Ceiling(pinned / 1000d).ToString(System.Globalization.CultureInfo.InvariantCulture))
+                : _copy.Ui("ui.weather.natural");
+            return _copy.Ui("ui.weather.status").Replace("{weather}", weather)
+                .Replace("{phase}", _copy.Ui("ui.phase." + _weather.PhaseAt(direction, _nowMs).ToString().ToLowerInvariant()))
+                .Replace("{source}", source);
+        }
+
+        private string WeatherGroundText()
+        {
+            float ground = _playerWeather.PlayerGroundMultiplier;
+            int percent = (int)Math.Round((1f - ground) / 0.125f * 100f);
+            return _copy.Ui("ui.weather.ground").Replace("{percent}", percent.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                .Replace("{mult}", ground.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
         }
 
         private string WeatherMovementText() => _copy.Ui("ui.weather.movement")
@@ -365,6 +380,7 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Heading(_copy.Ui("ui.weather.title"));
             ui.Label(WeatherStatusText());
             ui.Label(WeatherMovementText());
+            if (_playerWeather.PlayerGroundMultiplier < 1f) ui.Label(WeatherGroundText());
             ui.Label(_copy.Ui("ui.weather.visibility").Replace("{meters}", RenderSettings.fogEndDistance.ToString("0")));
             ui.Label(_copy.Ui("ui.weather.creatures")
                 .Replace("{base}", _playerWeather.CreatureMoveSpeedMultiplier.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
@@ -395,15 +411,32 @@ namespace Cosmimera.Bootstrap.Demo
             int remaining = _weatherControl.CooldownRemainingMs(_nowMs);
             ui.Label(remaining == 0 ? _copy.Ui("ui.hud.cd_ready") : _copy.Ui("ui.weather.cooldown")
                 .Replace("{seconds}", Math.Ceiling(remaining / 1000d).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            float3 here = _rig.Config.ToDirection(PlayerPosition());
+            bool indoor = _weather.IsIndoor(here);
             foreach (WeatherProfile weather in WeatherProfiles.All)
             {
+                // REQ: weather.md#天氣操縱 — exotics only where native; indoors only exotics.
+                bool exotic = WeatherProfiles.IsExotic(weather.Kind);
+                if (exotic ? !_weather.IsNativeExotic(here, weather.Kind) : indoor) continue;
                 if (!ui.Button(WeatherName(weather.Kind), remaining == 0)) continue;
-                WeatherControlResult result = TryControlWeather(weather.Kind);
-                string key = result == WeatherControlResult.Applied ? "ui.weather.applied"
-                    : result == WeatherControlResult.MissingSkill ? "ui.weather.missing_skill" : "ui.weather.on_cooldown";
-                ui.Message = _copy.Ui(key).Replace("{weather}", WeatherName(weather.Kind));
-                GUIUtility.ExitGUI();
+                ShowControlResult(ui, TryControlWeather(weather.Kind), WeatherName(weather.Kind), "ui.weather.applied");
             }
+
+            if (ui.Button(_copy.Ui("ui.weather.dispel"), remaining == 0))
+                ShowControlResult(ui, TryDispelExotics(), "", "ui.weather.dispelled");
+        }
+
+        private void ShowControlResult(AdventurePanel ui, WeatherControlResult result, string weatherName, string appliedKey)
+        {
+            string key = result switch
+            {
+                WeatherControlResult.Applied => appliedKey,
+                WeatherControlResult.MissingSkill => "ui.weather.missing_skill",
+                WeatherControlResult.NotHere => "ui.weather.not_here",
+                _ => "ui.weather.on_cooldown",
+            };
+            ui.Message = _copy.Ui(key).Replace("{weather}", weatherName);
+            GUIUtility.ExitGUI();
         }
 
         private void DrawSkills(AdventurePanel ui)

@@ -108,7 +108,7 @@ namespace Cosmimera.Bootstrap.Tests
             CreatureDef[] pool = { _juvenile, _adolescent, _adult };
             string first = Report(new[] { _type }, pool);
             Assert.That(Report(new[] { _type }, pool), Is.EqualTo(first));
-            StringAssert.Contains("planDiscrete landingBits\n", first);
+            StringAssert.Contains("planDiscrete weather landingBits\n", first);
             foreach (string row in first.Split('\n'))
             {
                 if (row.Length == 0 || row[0] == '#') continue;
@@ -122,7 +122,7 @@ namespace Cosmimera.Bootstrap.Tests
                 RunPlan plan = RunPlanner.Generate(config, seed, _type, stage, pool, _vocabulary, d => !view.IsSea(d));
                 string expected = math.asuint(plan.LandingDirection.x).ToString("x8") + "," +
                     math.asuint(plan.LandingDirection.y).ToString("x8") + "," + math.asuint(plan.LandingDirection.z).ToString("x8");
-                Assert.That(columns[11], Is.EqualTo(expected));
+                Assert.That(columns[12], Is.EqualTo(expected));
             }
         }
 
@@ -137,7 +137,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 if (row.Length == 0 || row[0] == '#') continue;
                 string[] columns = row.Split(' ');
-                Assert.That(columns.Length, Is.EqualTo(12));
+                Assert.That(columns.Length, Is.EqualTo(13));
                 Assert.That(columns[3], Is.EqualTo(columns[1] == "adult" ? "960" : "640"), row);
                 keys.Add(columns[0] + " " + columns[1] + " " + columns[2]);
             }

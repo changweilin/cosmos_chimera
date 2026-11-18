@@ -1508,16 +1508,16 @@
     "en": "Gale"
   },
   "ui.weather.status": {
-    "zh-TW": "{weather} · {source} · 下次輪替 {seconds}s",
-    "en": "{weather} · {source} · Next cycle in {seconds}s"
+    "zh-TW": "{weather} · {phase} · {source}",
+    "en": "{weather} · {phase} · {source}"
   },
   "ui.weather.natural": {
     "zh-TW": "自然天氣",
     "en": "Natural"
   },
   "ui.weather.controlled": {
-    "zh-TW": "操縱天氣",
-    "en": "Controlled"
+    "zh-TW": "操縱中（剩 {seconds}s）",
+    "en": "Controlled ({seconds}s left)"
   },
   "ui.weather.movement": {
     "zh-TW": "天氣修正：移動 ×{move}／衝刺 ×{sprint}／翻滾 CD ×{roll}",
@@ -1582,5 +1582,81 @@
   "ui.beginner_quest.hint_lobby": {
     "zh-TW": "從新手任務星球展開冒險；可先在冒險手冊配置副手與裝備。",
     "en": "Begin your expedition on the Beginner Quest planet; check the Adventure Journal for partners & gear."
+  },
+  "ui.weather.raddust": {
+    "zh-TW": "輻射塵",
+    "en": "Radioactive Dust"
+  },
+  "ui.weather.sporehaze": {
+    "zh-TW": "孢子霧",
+    "en": "Spore Haze"
+  },
+  "ui.weather.saltspray": {
+    "zh-TW": "鹽霧",
+    "en": "Salt Spray"
+  },
+  "ui.weather.volcanicash": {
+    "zh-TW": "火山灰",
+    "en": "Volcanic Ash"
+  },
+  "ui.weather.crystaldust": {
+    "zh-TW": "晶塵",
+    "en": "Crystal Dust"
+  },
+  "ui.weather.diamonddust": {
+    "zh-TW": "鑽石塵",
+    "en": "Diamond Dust"
+  },
+  "ui.weather.tornado": {
+    "zh-TW": "龍捲風",
+    "en": "Tornado"
+  },
+  "ui.weather.ionstorm": {
+    "zh-TW": "離子風暴",
+    "en": "Ion Storm"
+  },
+  "ui.weather.solarflare": {
+    "zh-TW": "太陽閃焰",
+    "en": "Solar Flare"
+  },
+  "ui.weather.miasma": {
+    "zh-TW": "瘴氣",
+    "en": "Miasma"
+  },
+  "ui.weather.overcast": {
+    "zh-TW": "陰天",
+    "en": "Overcast"
+  },
+  "ui.phase.dawn": {
+    "zh-TW": "清晨",
+    "en": "Dawn"
+  },
+  "ui.phase.day": {
+    "zh-TW": "白天",
+    "en": "Day"
+  },
+  "ui.phase.dusk": {
+    "zh-TW": "黃昏",
+    "en": "Dusk"
+  },
+  "ui.phase.night": {
+    "zh-TW": "夜晚",
+    "en": "Night"
+  },
+  "ui.weather.dispel": {
+    "zh-TW": "驅散異象",
+    "en": "Dispel phenomena"
+  },
+  "ui.weather.dispelled": {
+    "zh-TW": "已驅散本區異象。",
+    "en": "Phenomena dispelled in this region."
+  },
+  "ui.weather.not_here": {
+    "zh-TW": "此地無法召喚{weather}。",
+    "en": "{weather} cannot be summoned here."
+  },
+  "ui.weather.ground": {
+    "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
+    "en": "Ground cover {percent}% · move and jump ×{mult}"
   }
 }

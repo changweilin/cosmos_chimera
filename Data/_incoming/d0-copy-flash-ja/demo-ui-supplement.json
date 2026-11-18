@@ -1131,13 +1131,13 @@
     "ja": "強風"
   },
   "ui.weather.status": {
-    "ja": "{weather} · {source} · 次の切替まで {seconds}秒"
+    "ja": "{weather} · {phase} · {source}"
   },
   "ui.weather.natural": {
     "ja": "自然の天候"
   },
   "ui.weather.controlled": {
-    "ja": "操作中の天候"
+    "ja": "操作中（残り {seconds}秒）"
   },
   "ui.weather.movement": {
     "ja": "天候補正：移動 ×{move}／ダッシュ ×{sprint}／回避CD ×{roll}"
@@ -1186,5 +1186,62 @@
   },
   "ui.beginner_quest.hint_lobby": {
     "ja": "初心者クエスト惑星から冒険を始めよう。冒険手帳でパートナーや装備も確認できます。"
+  },
+  "ui.weather.raddust": {
+    "ja": "放射性の塵"
+  },
+  "ui.weather.sporehaze": {
+    "ja": "胞子の霧"
+  },
+  "ui.weather.saltspray": {
+    "ja": "塩霧"
+  },
+  "ui.weather.volcanicash": {
+    "ja": "火山灰"
+  },
+  "ui.weather.crystaldust": {
+    "ja": "晶塵"
+  },
+  "ui.weather.diamonddust": {
+    "ja": "ダイヤモンドダスト"
+  },
+  "ui.weather.tornado": {
+    "ja": "竜巻"
+  },
+  "ui.weather.ionstorm": {
+    "ja": "イオン嵐"
+  },
+  "ui.weather.solarflare": {
+    "ja": "太陽フレア"
+  },
+  "ui.weather.miasma": {
+    "ja": "瘴気"
+  },
+  "ui.weather.overcast": {
+    "ja": "曇り"
+  },
+  "ui.phase.dawn": {
+    "ja": "明け方"
+  },
+  "ui.phase.day": {
+    "ja": "昼"
+  },
+  "ui.phase.dusk": {
+    "ja": "夕暮れ"
+  },
+  "ui.phase.night": {
+    "ja": "夜"
+  },
+  "ui.weather.dispel": {
+    "ja": "異常気象を払う"
+  },
+  "ui.weather.dispelled": {
+    "ja": "この地域の異常気象を払いました。"
+  },
+  "ui.weather.not_here": {
+    "ja": "ここでは{weather}を呼べません。"
+  },
+  "ui.weather.ground": {
+    "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
   }
 }

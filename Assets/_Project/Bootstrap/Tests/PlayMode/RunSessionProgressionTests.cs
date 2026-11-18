@@ -1167,7 +1167,7 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [UnityTest]
-        public IEnumerator Weather_control_stays_in_its_cast_region_expires_at_the_slot_and_keeps_a_run_wide_cooldown()
+        public IEnumerator Weather_control_pins_its_cast_region_for_the_hold_then_releases_with_a_run_wide_cooldown()
         {
             Env env = LoadEnv();
             CreatureDef weatherUser = env.Wild.First(c => c.FieldUtility == FieldUtility.WeatherControl);
@@ -1181,6 +1181,7 @@ namespace Cosmimera.Bootstrap.Tests
             var encounter = (Encounter)typeof(RunSession).GetField("_encounter", Private).GetValue(s);
             var plan = (RunPlan)typeof(RunSession).GetField("_plan", Private).GetValue(s);
             var profile = typeof(RunSession).GetField("_playerWeather", Private);
+            var state = typeof(RunSession).GetField("_playerWeatherState", Private);
             var apply = typeof(RunSession).GetMethod("TryControlWeather", Private);
             var status = typeof(RunSession).GetMethod("WeatherStatusText", Private);
             var clock = typeof(RunSession).GetField("_nowMs", Private);
@@ -1188,55 +1189,52 @@ namespace Cosmimera.Bootstrap.Tests
                 if (unit.Side == EncounterSide.Wild) encounter.Remove(unit.Id);
             float3 origin = s.DirectionForTests(s.PlayerPositionForTests);
             int castRegion = RunPlanner.RegionAt(plan, origin);
-            WeatherProfile natural = (WeatherProfile)profile.GetValue(s);
-            WeatherKind target = natural.Kind == WeatherKind.Fog ? WeatherKind.Gale : WeatherKind.Fog;
+            WeatherState natural = (WeatherState)state.GetValue(s);
+            WeatherKind target = natural.BaseKind == WeatherKind.Fog ? WeatherKind.Gale : WeatherKind.Fog;
             Assert.That((WeatherControlResult)apply.Invoke(s, new object[] { target }), Is.EqualTo(WeatherControlResult.Applied));
             long castAt = s.NowMsForTests;
-            Assert.That(((WeatherProfile)profile.GetValue(s)).Kind, Is.EqualTo(target), "player effects change immediately while the handbook is paused");
-            Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(WeatherProfiles.For(target).PlayerVisibilityRadiusM));
-            StringAssert.Contains(env.Copy.Ui("ui.weather.controlled"), (string)status.Invoke(s, null));
+            Assert.That(((WeatherState)state.GetValue(s)).BaseKind, Is.EqualTo(target), "player effects change immediately while the handbook is paused");
+            var rig = (PlanetRig)typeof(RunSession).GetField("_rig", Private).GetValue(s);
+            float clearFogEnd = math.max(250f, rig.Config.Radius * 0.5f);
+            Assert.That(RenderSettings.fogEndDistance,
+                Is.EqualTo(math.min(((WeatherProfile)profile.GetValue(s)).PlayerVisibilityRadiusM, clearFogEnd)));
+            Assert.That(control.PinnedRemainingMs(castRegion, castAt), Is.EqualTo(WeatherField.OverrideHoldMs));
+            StringAssert.DoesNotContain(env.Copy.Ui("ui.weather.natural"), (string)status.Invoke(s, null));
             var combatWeather = typeof(Encounter).GetMethod("WeatherAt", Private);
-            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter, new object[] { origin, castAt })).Kind, Is.EqualTo(target));
+            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter, new object[] { origin, castAt })).Kind,
+                Is.EqualTo(((WeatherProfile)profile.GetValue(s)).Kind));
 
             float3 other = plan.Regions.First(r => RunPlanner.RegionAt(plan, r.Center) != castRegion).Center;
             ParkAt(s, other);
             Step(s);
-            Assert.That(((WeatherProfile)profile.GetValue(s)).Kind, Is.EqualTo(natural.Kind), "weather does not follow the player");
+            Assert.That(control.PinnedRemainingMs(RunPlanner.RegionAt(plan, other), s.NowMsForTests), Is.Zero, "weather does not follow the player");
             StringAssert.Contains(env.Copy.Ui("ui.weather.natural"), (string)status.Invoke(s, null));
             Assert.That((WeatherControlResult)apply.Invoke(s, new object[] { WeatherKind.Clear }), Is.EqualTo(WeatherControlResult.OnCooldown));
             ParkAt(s, origin);
             Step(s);
-            Assert.That(((WeatherProfile)profile.GetValue(s)).Kind, Is.EqualTo(target), "returning in the same slot preserves the override");
+            Assert.That(((WeatherState)state.GetValue(s)).BaseKind, Is.EqualTo(target), "returning within the hold preserves the override");
 
-            long boundary = (castAt / WeatherPlanner.DefaultSlotDurationMs + 1) * WeatherPlanner.DefaultSlotDurationMs;
-            clock.SetValue(s, boundary - 50L);
+            clock.SetValue(s, castAt + WeatherField.OverrideHoldMs - 50L);
             Step(s);
-            Assert.That(control.TryGetOverride(castRegion, s.NowMsForTests, out _), Is.False);
-            Assert.That(((WeatherProfile)profile.GetValue(s)).Kind, Is.EqualTo(WeatherPlanner.WeatherAt(12345,
-                env.Type.Id, TerrainProfiles.ForPlanetType(env.Type.Id).Id, boundary).Kind));
-            Assert.That(control.CooldownRemainingMs(s.NowMsForTests), Is.GreaterThan(0), "slot expiry does not reset the cast cooldown");
-            Assert.That((WeatherControlResult)apply.Invoke(s, new object[] { WeatherKind.Clear }), Is.EqualTo(WeatherControlResult.OnCooldown));
-            clock.SetValue(s, castAt + WeatherPlanner.DefaultSlotDurationMs - 50L);
-            Step(s);
+            Assert.That(control.PinnedRemainingMs(castRegion, s.NowMsForTests), Is.Zero, "the hold has ended");
+            StringAssert.Contains(env.Copy.Ui("ui.weather.natural"), (string)status.Invoke(s, null));
+            Assert.That(control.CooldownRemainingMs(s.NowMsForTests), Is.Zero);
             Assert.That((WeatherControlResult)apply.Invoke(s, new object[] { WeatherKind.Clear }), Is.EqualTo(WeatherControlResult.Applied));
-            Assert.That(((WeatherProfile)profile.GetValue(s)).Kind, Is.EqualTo(WeatherKind.Clear));
-            StringAssert.Contains(env.Copy.Ui("ui.weather.controlled"), (string)status.Invoke(s, null));
+            Assert.That(((WeatherState)state.GetValue(s)).BaseKind, Is.EqualTo(WeatherKind.Clear));
         }
 
         [UnityTest]
-        public IEnumerator Dynamic_weather_reaches_combat_movement_visibility_and_rolls_then_changes_at_the_slot_boundary()
+        public IEnumerator Dynamic_weather_reaches_combat_movement_visibility_and_rolls()
         {
             Env env = LoadEnv();
-            string terrain = TerrainProfiles.ForPlanetType(env.Type.Id).Id;
-            ulong seed = Enumerable.Range(1, 512).Select(i => (ulong)i).First(value =>
-                WeatherPlanner.WeatherAt(value, env.Type.Id, terrain, 1000).Kind == WeatherKind.Thunderstorm &&
-                WeatherPlanner.WeatherAt(value, env.Type.Id, terrain, WeatherPlanner.DefaultSlotDurationMs).Kind == WeatherKind.Clear);
             var run = new Run();
-            yield return Launch(env, seed, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
+            yield return Launch(env, 12345, env.Progression.XpThreshold(env.Progression.StarterLevel), run);
             RunSession s = run.Session;
             const System.Reflection.BindingFlags Private = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
             var rig = (PlanetRig)typeof(RunSession).GetField("_rig", Private).GetValue(s);
             var encounter = (Encounter)typeof(RunSession).GetField("_encounter", Private).GetValue(s);
+            var control = (WeatherControl)typeof(RunSession).GetField("_weatherControl", Private).GetValue(s);
+            var service = (WeatherService)typeof(RunSession).GetField("_weather", Private).GetValue(s);
             var clock = typeof(RunSession).GetField("_nowMs", Private);
             var roll = typeof(RunSession).GetField("_rollRequested", Private);
             var lastRoll = typeof(RunSession).GetField("_lastRollAtMs", Private);
@@ -1245,17 +1243,24 @@ namespace Cosmimera.Bootstrap.Tests
             foreach (EncounterUnit unit in encounter.Units)
                 if (unit.Side == EncounterSide.Wild) encounter.Remove(unit.Id);
 
+            // Pin a thunderstorm through the rule-layer controller so the test does not depend on the seed's sky.
+            float3 here = rig.Config.ToDirection(s.PlayerPositionForTests);
+            Assert.That(control.TryApply(service.RegionAt(here), WeatherKind.Thunderstorm, s.NowMsForTests, true, false, false),
+                Is.EqualTo(WeatherControlResult.Applied));
             roll.SetValue(s, true);
             Step(s);
             long started = s.NowMsForTests;
             Assert.That((long)lastRoll.GetValue(s), Is.EqualTo(started));
-            WeatherProfile weather = WeatherPlanner.WeatherAt(seed, env.Type.Id, terrain, started);
+            WeatherProfile weather = service.ProfileAt(here, started);
+            Assert.That(weather.PlayerRollCooldownMultiplier, Is.GreaterThan(1f));
             var modifiers = (TeamUtilityModifiers)typeof(RunSession).GetField("_utilityModifiers", Private).GetValue(s);
-            float baseMove = TerrainProfiles.For(terrain).MoveSpeedMultiplier * modifiers.MoveSpeedPermille / 1000f;
-            Assert.That((float)motorScale.GetValue(rig.Character), Is.EqualTo(baseMove * weather.PlayerMoveSpeedMultiplier).Within(1e-6f));
-            Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(weather.PlayerVisibilityRadiusM));
-            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter,
-                new object[] { rig.Config.ToDirection(s.PlayerPositionForTests), started })).Kind, Is.EqualTo(weather.Kind));
+            var terrainAt = (System.Func<float3, TerrainProfile>)typeof(RunSession).GetField("_terrainAt", Private).GetValue(s);
+            float baseMove = terrainAt(here).MoveSpeedMultiplier * modifiers.MoveSpeedPermille / 1000f;
+            Assert.That((float)motorScale.GetValue(rig.Character),
+                Is.EqualTo(baseMove * weather.PlayerMoveSpeedMultiplier * weather.PlayerGroundMultiplier).Within(1e-5f));
+            Assert.That(RenderSettings.fogEndDistance,
+                Is.EqualTo(math.min(weather.PlayerVisibilityRadiusM, math.max(250f, rig.Config.Radius * 0.5f))));
+            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter, new object[] { here, started })).Kind, Is.EqualTo(weather.Kind));
 
             clock.SetValue(s, started + env.Balance.Player.RollCooldownMs - 50L);
             roll.SetValue(s, true);
@@ -1266,13 +1271,6 @@ namespace Cosmimera.Bootstrap.Tests
             roll.SetValue(s, true);
             Step(s);
             Assert.That((long)lastRoll.GetValue(s), Is.EqualTo(started + cooldown), "the weather-adjusted deadline permits a roll");
-
-            clock.SetValue(s, (long)WeatherPlanner.DefaultSlotDurationMs - 50L);
-            Step(s);
-            Assert.That((float)motorScale.GetValue(rig.Character), Is.EqualTo(baseMove).Within(1e-6f));
-            Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(math.max(250f, rig.Config.Radius * 0.5f)), "clear weather restores the planet fog range");
-            Assert.That(((WeatherProfile)combatWeather.Invoke(encounter,
-                new object[] { rig.Config.ToDirection(s.PlayerPositionForTests), s.NowMsForTests })).Kind, Is.EqualTo(WeatherKind.Clear));
         }
 
         [UnityTest]

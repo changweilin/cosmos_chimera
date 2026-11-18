@@ -70,6 +70,7 @@ namespace Cosmimera.Player
         private float _terrainMoveSpeedScale = 1f;
         private float _terrainSprintSpeedScale = 1f;
         private float _terrainGroundAccelScale = 1f;
+        private float _jumpHeightScale = 1f;
 
         /// <summary>Applies landform movement and friction multipliers (1 = neutral).</summary>
         /// <remarks>
@@ -94,6 +95,25 @@ namespace Cosmimera.Player
             }
         }
 
+        /// <summary>Scales jump height (e.g. by weather deposits on the ground).</summary>
+        /// <remarks>
+        /// REQ: docs/design/weather.md#地表累積.
+        /// Pre: multiplier finite and in (0, 1].
+        /// Post: the next jump rises to the serialized jump height × multiplier.
+        /// Side effects: reapplies motor settings when configured.
+        /// </remarks>
+        public void SetJumpHeightMultiplier(float multiplier)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(math.isfinite(multiplier) && multiplier > 0f && multiplier <= 1f,
+                "jump multiplier must be in (0, 1]");
+            if (multiplier == _jumpHeightScale) return;
+            _jumpHeightScale = multiplier;
+            if (_configured)
+            {
+                ApplyMotorSettings();
+            }
+        }
+
         private void ApplyMotorSettings()
         {
             MotorSettings baseSettings = MotorSettings.Default;
@@ -101,7 +121,7 @@ namespace Cosmimera.Player
             _settings.WalkSpeed = math.min(MotorSettings.MaxSpeed, _walkSpeed * _terrainMoveSpeedScale);
             _settings.SprintSpeed = math.clamp(_sprintSpeed * _terrainSprintSpeedScale, _settings.WalkSpeed, MotorSettings.MaxSpeed);
             _settings.GroundAcceleration = math.min(MotorSettings.MaxAcceleration, baseSettings.GroundAcceleration * _terrainGroundAccelScale);
-            _settings.JumpHeight = _jumpHeight;
+            _settings.JumpHeight = _jumpHeight * _jumpHeightScale;
             _settings.MaxSlopeDegrees = _maxSlopeDegrees;
             Cosmimera.Core.Contracts.Contract.Requires(_settings.IsValid, "serialized motor tuning is out of range (MotorSettings.IsValid)");
         }

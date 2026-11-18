@@ -425,6 +425,8 @@ namespace Cosmimera.Bootstrap.Demo
         private Color _dusk;
         private Color _night;
         private float _dayLengthS;
+        private long _simMs;
+        private float _sinceSimS;
         private float _cloudCover = 0.42f;
         private float _wind = 1f;
         private float _baseFogStartM;
@@ -451,6 +453,18 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Sets the simulation clock the sun position is drawn from.</summary>
+        /// <remarks>
+        /// Pre: simMs &gt;= 0. Post: the next LateUpdate places the sun at WorldGen.SolarClock's angle for simMs.
+        /// Side effects: none until then.
+        /// </remarks>
+        public void SetSimulationTime(long simMs)
+        {
+            Contract.Requires(simMs >= 0, "simMs must be >= 0");
+            if (simMs != _simMs) _sinceSimS = 0f;
+            _simMs = simMs;
         }
 
         /// <summary>Caps visibility for local weather while retaining the planet's clear-weather fog range.</summary>
@@ -528,7 +542,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            _sun.transform.Rotate((Vector3)_poleAxis, 360f * Time.deltaTime / _dayLengthS, Space.World);
+            // REQ: weather.md#時段 — the drawn sun follows simulation time on the same axis and angle as WorldGen.SolarClock,
+            // so day phases in the rules match what is on screen. Frame time only interpolates between 50 ms ticks.
+            _sinceSimS = math.min(_sinceSimS + Time.deltaTime, 0.1f);
+            double turns = (_simMs + _sinceSimS * 1000.0) / (_dayLengthS * 1000.0);
+            float angle = (float)((turns - math.floor(turns)) * 2.0 * math.PI_DBL);
+            var toSun = new float3(math.cos(angle), 0f, math.sin(angle));
+            _sun.transform.rotation = Quaternion.LookRotation(-(Vector3)toSun, (Vector3)_poleAxis);
             float3 cam = _camera.transform.position;
             if (math.distance(cam, _planet.Center) < _planet.Radius * 0.5f)
             {
