@@ -234,6 +234,32 @@ namespace Cosmimera.Bootstrap.Tests
 
             rows.Add(("age-health", ages));
 
+            // Head variety: six people of one race each, framed at head height.
+            foreach (NpcRace race in System.Enum.GetValues(typeof(NpcRace)))
+            {
+                var heads = new List<NpcSpec>();
+                for (int i = 0; i < 6; i++)
+                {
+                    heads.Add(new NpcSpec(race, NpcRole.None, (NpcSex)(i & 1), 0.3f + 0.08f * i, 0.85f, 0f, 0f, ArchRegion.Verdant,
+                        ArchEra.Agrarian, ArchRegion.Verdant, ArchEra.Agrarian, 0f, (ulong)(600 + 13 * i + (int)race), 0.5f, (ulong)(1 + i)));
+                }
+
+                rows.Add(("heads-" + race, heads));
+            }
+
+            // Face close-ups: five people of one plain-faced race, same height and weight, different seeds.
+            foreach (NpcRace race in new[] { NpcRace.Human, NpcRace.Elf, NpcRace.Orc, NpcRace.Vampire, NpcRace.Demon })
+            {
+                var faces = new List<NpcSpec>();
+                for (int i = 0; i < 5; i++)
+                {
+                    faces.Add(new NpcSpec(race, NpcRole.None, (NpcSex)(i & 1), 0.3f + 0.1f * i, 0.85f, 0f, 0f, ArchRegion.Verdant,
+                        ArchEra.Agrarian, ArchRegion.Verdant, ArchEra.Agrarian, 0f, (ulong)(900 + 7 * i + (int)race), 0.5f, 3ul));
+                }
+
+                rows.Add(("faces-" + race, faces));
+            }
+
             // One village as the planner draws it: same race mix, age and health spread, and style borrowing.
             var (_, layout, people) = Make(7);
             ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor("verdant_planet", 7);
@@ -263,15 +289,18 @@ namespace Cosmimera.Bootstrap.Tests
 
             const float RowGap = 30f;
             const float Spacing = 1.2f;
+            const float HeadSpacing = 0.75f;
+            const float FaceSpacing = 0.5f;
             for (int r = 0; r < rows.Count; r++)
             {
                 List<NpcSpec> specs = rows[r].specs;
+                float spacing = rows[r].name.StartsWith("faces-") ? FaceSpacing : rows[r].name.StartsWith("heads-") ? HeadSpacing : Spacing;
                 for (int i = 0; i < specs.Count; i++)
                 {
                     var go = new GameObject(rows[r].name + "_" + i);
                     go.transform.SetParent(stage.transform, false);
-                    go.transform.localPosition = new Vector3((i - (specs.Count - 1) * 0.5f) * Spacing, 0f, r * RowGap);
-                    go.transform.localRotation = Quaternion.Euler(0f, 180f + (i - (specs.Count - 1) * 0.5f) * 5f - 20f, 0f);
+                    go.transform.localPosition = new Vector3((i - (specs.Count - 1) * 0.5f) * spacing, 0f, r * RowGap);
+                    go.transform.localRotation = Quaternion.Euler(0f, 180f + (i - (specs.Count - 1) * 0.5f) * 5f - (rows[r].name.StartsWith("faces-") ? 8f : 20f), 0f);
                     if (rows[r].name == "stride")
                     {
                         go.transform.localRotation = Quaternion.Euler(0f, 117f, 0f);
@@ -299,10 +328,13 @@ namespace Cosmimera.Bootstrap.Tests
             yield return null;
             for (int r = 0; r < rows.Count; r++)
             {
-                float span = rows[r].specs.Count * Spacing + 1.2f;
+                bool close = rows[r].name.StartsWith("faces-");
+                bool heads = close || rows[r].name.StartsWith("heads-");
+                float span = rows[r].specs.Count * (close ? FaceSpacing : heads ? HeadSpacing : Spacing) + (heads ? 0.2f : 1.2f);
                 float back = span * 1.06f;
-                camera.transform.position = new Vector3(0f, 1.7f, r * RowGap - back);
-                camera.transform.LookAt(new Vector3(0f, 1.05f, r * RowGap));
+                float eye = heads ? NpcMeshes.HeightM(rows[r].specs[0]) * 0.9f : 1.05f;
+                camera.transform.position = new Vector3(0f, heads ? eye + 0.1f : 1.7f, r * RowGap - back);
+                camera.transform.LookAt(new Vector3(0f, eye, r * RowGap));
                 ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "npc-" + rows[r].name + ".png"));
             }
         }
