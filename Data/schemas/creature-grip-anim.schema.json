@@ -18,6 +18,7 @@
       "alternates_hands",
       "sockets",
       "pose_rules",
+      "weapon_types",
       "clips"
     ],
     "properties": {
@@ -46,12 +47,38 @@
       "pose_rules": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["idle_stance", "locomotion_rule", "guard_rule", "attack_rule"],
+        "required": ["idle_stance", "locomotion_rule", "guard_rule", "attack_rule", "ranged_rule", "virtual_hand_rule"],
         "properties": {
           "idle_stance": { "type": "string", "minLength": 1 },
           "locomotion_rule": { "type": "string", "minLength": 1 },
           "guard_rule": { "type": "string", "minLength": 1 },
-          "attack_rule": { "type": "string", "minLength": 1 }
+          "attack_rule": { "type": "string", "minLength": 1 },
+          "ranged_rule": { "type": "string", "minLength": 1 },
+          "virtual_hand_rule": { "type": "string", "minLength": 1 }
+        }
+      },
+      "weapon_types": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["melee", "ranged"],
+        "properties": {
+          "melee": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "common.schema.json#/$defs/id" },
+            "uniqueItems": true
+          },
+          "ranged": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "common.schema.json#/$defs/id" },
+            "uniqueItems": true
+          },
+          "offhand": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/id" },
+            "uniqueItems": true
+          }
         }
       },
       "clips": {
@@ -64,6 +91,7 @@
             "action_id",
             "description",
             "category",
+            "weapon_distance",
             "hand",
             "frames",
             "duration_ms",
@@ -76,7 +104,8 @@
           "properties": {
             "action_id": { "$ref": "common.schema.json#/$defs/id" },
             "description": { "type": "string", "minLength": 1 },
-            "category": { "enum": ["stance", "locomotion", "guard", "melee", "dash"] },
+            "category": { "enum": ["stance", "locomotion", "guard", "melee", "dash", "ranged"] },
+            "weapon_distance": { "enum": ["any", "melee", "ranged"] },
             "hand": { "enum": ["both", "right", "left", "off_shield", "none"] },
             "frames": { "$ref": "common.schema.json#/$defs/positiveInt" },
             "duration_ms": { "$ref": "common.schema.json#/$defs/positiveInt" },
