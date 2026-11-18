@@ -1,5 +1,5 @@
 using Cosmimera.Bootstrap.Demo;
-using Cosmimera.Capture;
+using Cosmimera.Creatures;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
 using Cosmimera.Save;
@@ -16,7 +16,7 @@ namespace Cosmimera.Bootstrap.Tests
             (string f1, string r1) = BeginnerQuestRules.AssignCompanions("ye_chengxi");
             Assert.That(f1, Is.EqualTo("luo_en"));
             Assert.That(r1, Is.EqualTo("yumori_sumiha"));
-            Assert.That(BeginnerQuestRules.SignatureVessel("ye_chengxi"), Is.EqualTo(VesselKind.GlassOrb));
+            Assert.That(BeginnerQuestRules.SignatureVessel("ye_chengxi"), Is.EqualTo(VesselKind.GlassBead));
             Assert.That(BeginnerQuestRules.SignatureVessel("luo_en"), Is.EqualTo(VesselKind.MagicCube));
             Assert.That(BeginnerQuestRules.SignatureVessel("yumori_sumiha"), Is.EqualTo(VesselKind.TalismanCard));
 

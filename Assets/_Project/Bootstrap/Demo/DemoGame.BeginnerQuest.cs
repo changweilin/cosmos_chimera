@@ -65,7 +65,7 @@ namespace Cosmimera.Bootstrap.Demo
                 VesselKind vessel = BeginnerQuestRules.SignatureVessel(cid);
                 string vesselLabel = vessel switch
                 {
-                    VesselKind.GlassOrb => "琉璃珠",
+                    VesselKind.GlassBead => "琉璃珠",
                     VesselKind.MagicCube => "魔術方塊",
                     VesselKind.TalismanCard => "符籙卡片",
                     _ => vessel.ToString(),
@@ -210,7 +210,7 @@ namespace Cosmimera.Bootstrap.Demo
                     VolumeProfile = _volumeProfile,
                     Database = _database,
                     Owned = new List<OwnedCreature>(_save.Owned),
-                    Partners = PartnerLoadout.Empty,
+                    Partners = new PartnerLoadout(_runPartyIds),
                     CraftStock = _save.CraftStock.Snapshot(),
                     Equipment = _save.Equipment.Snapshot(),
                     IsBeginnerQuest = true,

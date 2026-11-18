@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Cosmimera.Capture;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.GameData;
@@ -96,11 +95,6 @@ namespace Cosmimera.Crafting
             _ => FieldUtility.CookFire,
         };
 
-        /// <summary>True when a sub-partner with <paramref name="vessel"/> can supply a crafting category skill.</summary>
-        /// <remarks>REQ: crafting.md#製造擴充 — magic cube sub-partners never provide crafting skills.</remarks>
-        public static bool VesselSupportsCraftingSkill(VesselKind vessel) =>
-            vessel == VesselKind.GlassOrb || vessel == VesselKind.TalismanCard;
-
         /// <summary>Number of random affixes rolled for <paramref name="quality"/>.</summary>
         /// <remarks>Pre: none. Post: 0..3. Side effects: none.</remarks>
         public static int AffixCountFor(ItemQuality quality) => quality switch
@@ -122,7 +116,7 @@ namespace Cosmimera.Crafting
         {
             int count = AffixCountFor(quality);
             var result = new List<CraftAffix>(count);
-            var rng = new Pcg32(seed ^ ((ulong)quality + 0x9E3779B97F4A7C15UL));
+            var rng = new Pcg32(seed ^ ((ulong)quality + 0x9E3779B97F4A7C15UL), 0);
             for (int i = 0; i < count; i++)
             {
                 string stat = AffixPool[(int)rng.NextUInt((uint)AffixPool.Length)];

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Cosmimera.Capture;
+using Cosmimera.Creatures;
 using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
 
@@ -61,7 +61,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: characterId non-null. Post: valid VesselKind. Side effects: none.</remarks>
         public static VesselKind SignatureVessel(string characterId) => characterId switch
         {
-            "ye_chengxi" => VesselKind.GlassOrb,
+            "ye_chengxi" => VesselKind.GlassBead,
             "luo_en" => VesselKind.MagicCube,
             "yumori_sumiha" => VesselKind.TalismanCard,
             _ => VesselKind.TalismanCard,

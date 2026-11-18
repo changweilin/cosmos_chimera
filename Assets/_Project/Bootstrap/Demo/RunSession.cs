@@ -985,7 +985,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _bqTrainerId = _encounter.RegisterTrainer();
                 EncounterUnit rival = _encounter.AddTrainerCreature(_setup.RivalStarter, null,
-                    BesidePlayer(player, 2), _progression.StarterLevel, _bqTrainerId);
+                    BesidePlayer(player, 2), _progression.StarterLevel, _bqTrainerId, 0);
                 _bqRivalUnitId = rival.Id;
                 CreateView(rival, SpawnRole.Normal);
                 _encounter.StartTrainerBattle(_bqTrainerId);
@@ -1325,19 +1325,14 @@ namespace Cosmimera.Bootstrap.Demo
             if (_bqTrainerId >= 0)
             {
                 TrainerBattleState state = _encounter.TrainerState(_bqTrainerId);
-                if (state == TrainerBattleState.Won || state == TrainerBattleState.Lost)
+                if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle)
                 {
-                    bool won = state == TrainerBattleState.Won;
+                    bool won = state == TrainerBattleState.Defeated;
                     _bqTrainerId = -1;
                     if (_bqRivalUnitId >= 0)
                     {
                         _encounter.Remove(_bqRivalUnitId);
                         _bqRivalUnitId = -1;
-                    }
-
-                    foreach (int id in _team.Pool)
-                    {
-                        _encounter.Units[id].Combatant.FullHeal();
                     }
 
                     RefillField(PlayerPosition());
