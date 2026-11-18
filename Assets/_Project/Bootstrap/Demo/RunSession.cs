@@ -582,20 +582,19 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
                 setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
-            // REQ: creature-ecology.md — niche, habit and wander means per spawn; same-niche species keep their areas apart.
-            _habitatAt = TemplatePlanner.HabitatAt(templates, setup.PlanetType.Id);
-            _plan = RunEcology.Apply(_plan, wildPool, config.Radius, _habitatAt, isLand);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
+            // passes its own body radius to IsInsideBuilding).
+            var clearance = new LayoutClearance(config, _layout, 1.5f);
+            // REQ: creature-ecology.md — niche, habit, wander means and out-of-settlement relocation per spawn.
+            _habitatAt = TemplatePlanner.HabitatAt(templates, setup.PlanetType.Id);
+            _plan = RunEcology.Apply(_plan, wildPool, config.Radius, _habitatAt, isLand, clearance.IsInsideSettlement);
             PlanetWalls walls = null;
             if (setup.Dungeon)
             {
                 _dungeon = DungeonPlanner.Generate(config, _plan, _layout, isLand);
                 walls = DungeonPlanner.BuildWalls(config, _plan, _dungeon);
             }
-
-            // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
-            // passes its own body radius to IsInsideBuilding).
-            var clearance = new LayoutClearance(config, _layout, 1.5f);
             var surface = new HeightSurface(height, templates, clearance, walls, config.Radius);
             _surface = surface;
             System.Func<float3, bool> isSea = templates != null ? (d => templates.View.IsSea(d)) : null;
@@ -799,6 +798,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _encounter = new Encounter(config, balance, surface, setup.Seed);
             _encounter.SetTerrainMoveSpeedMultiplier(d => _terrainAt(d).MoveSpeedMultiplier);
+            _encounter.SetSettlementCheck(clearance.IsInsideSettlement);
             _encounter.SetWeatherProvider(WeatherAt);
             if (objects != null)
             {
@@ -1045,6 +1045,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             float3 playerUp = _rig.Config.ToDirection(player);
             float3 velocity = _rig.Character.Velocity;
+            _populace?.Step(_nowMs, TickMs);
             _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();

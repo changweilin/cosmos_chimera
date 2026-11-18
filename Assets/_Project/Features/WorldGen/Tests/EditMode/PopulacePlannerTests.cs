@@ -358,6 +358,60 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => new PopulaceTemper(0, -201));
             Assert.Throws<ContractException>(() => people.IsBlocked(float3.zero, 0f));
             Assert.Throws<ContractException>(() => people.IsBlocked(new float3(0f, 1f, 0f), -1f));
+            Assert.Throws<ContractException>(() => people.Step(-1, 50));
+            Assert.Throws<ContractException>(() => people.Step(0, 0));
+            Assert.Throws<ContractException>(() => people.Step(0, 1001));
+            Assert.Throws<ContractException>(() => people.CurrentDirection(-1));
+            Assert.Throws<ContractException>(() => people.CurrentFacing(people.Residents.Count));
+            Assert.Throws<ContractException>(() => PopulacePlanner.DutyFor((NpcRole)99));
+            Assert.Throws<ContractException>(() => PopulacePlanner.DutySpecFor((NpcDuty)99));
+        }
+
+        [Test]
+        public void Residents_receive_role_duties_and_step_strictly_inside_their_settlement()
+        {
+            var (planet, _, layout, people) = Make(7);
+            var clearance = new LayoutClearance(planet, layout, 0f);
+            Assert.That(people.StepVersion, Is.Zero);
+            Assert.That(people.Residents.Count, Is.GreaterThan(0));
+
+            for (int i = 0; i < people.Residents.Count; i++)
+            {
+                RunResident r = people.Residents[i];
+                NpcDutySpec spec = PopulacePlanner.DutySpecFor(r.Duty);
+                Assert.That(r.Duty, Is.EqualTo(PopulacePlanner.DutyFor(r.Role)));
+                Assert.That(r.WanderMode, Is.EqualTo(spec.Mode));
+                Assert.That(r.SpeedPermilleMean, Is.InRange(spec.SpeedPermille.Min, spec.SpeedPermille.Max));
+                Assert.That(r.MoveMsMean, Is.InRange(spec.MoveMs.Min, spec.MoveMs.Max));
+                Assert.That(r.PauseMsMean, Is.InRange(spec.PauseMs.Min, spec.PauseMs.Max));
+                Assert.That(clearance.IsContainedInSettlement(r.Settlement, r.Direction, PopulacePlanner.BodyRadiusM), Is.True);
+            }
+
+            long now = 0;
+            const int dt = 100;
+            for (int step = 0; step < 250; step++)
+            {
+                now += dt;
+                people.Step(now, dt);
+            }
+
+            Assert.That(people.StepVersion, Is.EqualTo(250));
+            int moved = 0;
+            for (int i = 0; i < people.Residents.Count; i++)
+            {
+                RunResident r = people.Residents[i];
+                float3 live = people.CurrentDirection(i);
+                Assert.That(clearance.IsInsideBuilding(live, PopulacePlanner.BodyRadiusM), Is.False, $"resident {i} inside building");
+                Assert.That(clearance.IsContainedInSettlement(r.Settlement, live, PopulacePlanner.BodyRadiusM), Is.True,
+                    $"resident {i} stepped outside settlement {r.Settlement}");
+                Assert.That(people.IsBlocked(live, 0f), Is.True);
+                if (math.distance(live, r.Direction) * planet.Radius > 0.1f)
+                {
+                    moved++;
+                }
+            }
+
+            Assert.That(moved, Is.GreaterThan(0), "at least some NPCs wander inside town over 25 s");
         }
 
         [Test]

@@ -229,5 +229,43 @@ namespace Cosmimera.Combat.Tests
                 Assert.That(math.abs(LateralOf(wild.Position)), Is.LessThan(50f));
             }
         }
+
+        [Test]
+        public void Settlement_check_blocks_wild_and_dash_but_allows_player_units()
+        {
+            var openSurface = new Wall(1000f, 1000f, 0f);
+            bool SettlementBand(float3 dir, float clearanceM)
+            {
+                float m = math.atan2(dir.x, dir.y) * R;
+                float lat = math.asin(math.clamp(dir.z, -1f, 1f)) * R;
+                return m >= 3f - clearanceM && math.abs(lat) <= 50f + clearanceM;
+            }
+
+            // Wild chasing & dashing across the edge is held outside.
+            Encounter e = Engaged(openSurface, Creature("w_settle", Habit.Dominant, MoveShape.Line, MoveMovement.Dash),
+                At(0f), out EncounterUnit wild);
+            e.SetSettlementCheck(SettlementBand);
+            float3 player = _planet.ToWorld(At(10f), 0f);
+            for (long now = Dt; now <= 8_000; now += Dt)
+            {
+                e.Tick(now, Dt, player, Free, CombatAi.NoTarget);
+                Assert.That(SettlementBand(_planet.ToDirection(wild.Position), math.max(0f, wild.CollisionRadiusM - TolM)),
+                    Is.False, $"wild crossed settlement boundary at t={now}");
+            }
+
+            Assert.That(AlongOf(wild.Position), Is.GreaterThan(1f), "wild still walked toward boundary");
+
+            // Player-side partner following the player walks straight into the settlement.
+            var pe = new Encounter(_planet, _balance, openSurface, 9);
+            pe.SetSettlementCheck(SettlementBand);
+            EncounterUnit ally = pe.AddCreature(EncounterSide.Player, Creature("p_settle", Habit.Dominant), null, At(0f), 10);
+            pe.Field(ally.Id, At(0f), false, 0);
+            for (long now = Dt; now <= 6_000; now += Dt)
+            {
+                pe.Tick(now, Dt, player, Free, ally.Id);
+            }
+
+            Assert.That(AlongOf(ally.Position), Is.GreaterThan(3.5f), "player creature may enter inhabited settlements");
+        }
     }
 }

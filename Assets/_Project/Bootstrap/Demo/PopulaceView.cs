@@ -34,6 +34,11 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<Renderer> _renderers = new List<Renderer>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
         private readonly List<Material> _materials = new List<Material>();
+        private readonly List<int> _residentIndices = new List<int>();
+        private PlanetConfig _config;
+        private RunPopulace _populace;
+        private Func<float3, float> _groundAltitude;
+        private int _syncedStepVersion;
         private Func<float3> _focus;
         private float _nextCull;
 
@@ -61,6 +66,10 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(populace != null && layout != null && groundAltitude != null && shader != null,
                 "populace, layout, groundAltitude and shader are required");
             Contract.Requires(_roots.Count == 0, "Configure must be called once");
+            _config = config;
+            _populace = populace;
+            _groundAltitude = groundAltitude;
+            _syncedStepVersion = populace.StepVersion;
             _focus = focus;
             ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor(planetTypeId, seed);
             Material[] materials = sceneryShader != null
@@ -102,12 +111,27 @@ namespace Cosmimera.Bootstrap.Demo
                     capsule.center = new Vector3(0f, capsule.height * 0.5f, 0f);
                     _roots.Add(root);
                     _renderers.Add(renderer);
+                    _residentIndices.Add(i);
                 }
             }
         }
 
         private void Update()
         {
+            if (_populace != null && _syncedStepVersion != _populace.StepVersion)
+            {
+                _syncedStepVersion = _populace.StepVersion;
+                for (int i = 0; i < _roots.Count; i++)
+                {
+                    int idx = _residentIndices[i];
+                    float3 dir = _populace.CurrentDirection(idx);
+                    float3 facing = _populace.CurrentFacing(idx);
+                    float3 world = _config.ToWorld(dir, _groundAltitude(dir) - SinkM);
+                    _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                        Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
+                }
+            }
+
             if (_focus == null || Time.unscaledTime < _nextCull)
             {
                 return;

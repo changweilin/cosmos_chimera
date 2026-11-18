@@ -39,16 +39,18 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: plan from RunPlanner.Generate with the same wildPool (every CreatureId resolves); planetRadius &gt; 0;
         ///      habitatAt deterministic, mapping unit directions to landform ids; isLand null (all land) or the predicate
-        ///      the plan was generated with.
-        /// Post: same spawn count, order, regions, groups, ids and roles; Individual non-null; for every pair of spawns
-        ///       with the same niche and different line ids the activity caps (Niche.ActivityRadiusMm) do not overlap; a
-        ///       moved spawn is the first ring point (RunPlanner.NearestLand order) that is land, allowed by its niche and
-        ///       clear of every earlier same-niche other-line cap. Same inputs → same output.
+        ///      the plan was generated with; isInsideSettlement null or a pure predicate `(direction, marginM) => bool`
+        ///      identifying inhabited settlements (non-boss wild spawns keep outside them).
+        /// Post: same spawn count, order, regions, groups, ids and roles; Individual non-null; no non-boss spawn lies inside
+        ///       isInsideSettlement(dir, 1f); for every pair of spawns with the same niche and different line ids the
+        ///       activity caps (Niche.ActivityRadiusMm) do not overlap; a moved spawn is the first ring point
+        ///       (RunPlanner.NearestLand order) that is land, outside settlements, allowed by its niche and clear of every
+        ///       earlier same-niche other-line cap. Same inputs → same output.
         /// Side effects: allocates. Throws ContractException in every build when a form has no candidate for its habitat
         ///          or no clear point exists (data / configuration errors, creature-ecology.md).
         /// </remarks>
         public static RunPlan Apply(RunPlan plan, IReadOnlyList<CreatureDef> wildPool, float planetRadius,
-            Func<float3, string> habitatAt, Func<float3, bool> isLand)
+            Func<float3, string> habitatAt, Func<float3, bool> isLand, Func<float3, float, bool> isInsideSettlement = null)
         {
             Contract.Requires(plan != null && wildPool != null && habitatAt != null, "plan, wildPool and habitatAt are required");
             Contract.Requires(planetRadius > 0f, "planetRadius must be > 0");
@@ -68,11 +70,15 @@ namespace Cosmimera.WorldGen
                 WildIndividual ind = WildIndividual.Draw(form, habitatAt(s.Direction), WildIndividual.KeyFor(plan.Seed, (ulong)i));
                 float capRad = ind.Niche.ActivityRadiusMm * 0.001f / planetRadius;
                 float3 dir = s.Direction;
-                if (Conflicts(placed, dir, capRad, ind.Niche, form.LineId))
+                bool inTown = s.Role != SpawnRole.Boss && isInsideSettlement != null && isInsideSettlement(dir, 1f);
+                if (inTown || Conflicts(placed, dir, capRad, ind.Niche, form.LineId))
                 {
                     NicheDef niche = ind.Niche;
                     string line = form.LineId;
-                    bool Clear(float3 p) => (isLand == null || isLand(p)) && niche.Allows(habitatAt(p)) &&
+                    bool checkTown = s.Role != SpawnRole.Boss && isInsideSettlement != null;
+                    bool Clear(float3 p) => (isLand == null || isLand(p)) &&
+                        (!checkTown || !isInsideSettlement(p, 1f)) &&
+                        niche.Allows(habitatAt(p)) &&
                         !Conflicts(placed, p, capRad, niche, line);
                     if (!RunPlanner.FirstInRings(dir, Clear, out dir))
                     {
@@ -85,7 +91,8 @@ namespace Cosmimera.WorldGen
                 spawns.Add(new RunSpawn(s.Region, s.Group, dir, s.CreatureId, s.Role, ind));
             }
 
-            RunConfrontation[] confrontations = BuildConfrontations(plan, spawns, placed, byId, planetRadius, habitatAt, isLand);
+            RunConfrontation[] confrontations = BuildConfrontations(plan, spawns, placed, byId, planetRadius, habitatAt, isLand,
+                isInsideSettlement);
             return plan.WithSpawns(spawns.ToArray(), confrontations);
         }
 
@@ -116,7 +123,8 @@ namespace Cosmimera.WorldGen
         }
 
         private static RunConfrontation[] BuildConfrontations(RunPlan plan, List<RunSpawn> spawns, List<Placed> placed,
-            Dictionary<string, CreatureDef> byId, float planetRadius, Func<float3, string> habitatAt, Func<float3, bool> isLand)
+            Dictionary<string, CreatureDef> byId, float planetRadius, Func<float3, string> habitatAt, Func<float3, bool> isLand,
+            Func<float3, float, bool> isInsideSettlement)
         {
             var rng = new Pcg32(plan.Seed, 'C');
             var confrontations = new List<RunConfrontation>(MaxConfrontationsPerPlan);
@@ -158,15 +166,17 @@ namespace Cosmimera.WorldGen
                     }
 
                     ConfrontationKind kind = sameNiche ? ConfrontationKind.SameNiche : ConfrontationKind.Trophic;
-                    float3 center = ComputeConfrontationCenter(placed[i], placed[j], sameNiche, isLand);
+                    float3 center = ComputeConfrontationCenter(placed[i], placed[j], sameNiche, isLand, isInsideSettlement);
                     int confId = confrontations.Count;
                     confrontations.Add(new RunConfrontation(confId, kind, center));
 
                     float3 axis = TangentToward(center, placed[j].Dir);
                     float3 side = math.normalize(math.cross(center, axis));
 
-                    PlaceConfrontationSide(plan.Seed, confId, 0, i, center, -axis, side, spawns, byId, planetRadius, habitatAt, isLand);
-                    PlaceConfrontationSide(plan.Seed, confId, 1, j, center, axis, side, spawns, byId, planetRadius, habitatAt, isLand);
+                    PlaceConfrontationSide(plan.Seed, confId, 0, i, center, -axis, side, spawns, byId, planetRadius, habitatAt, isLand,
+                        isInsideSettlement);
+                    PlaceConfrontationSide(plan.Seed, confId, 1, j, center, axis, side, spawns, byId, planetRadius, habitatAt, isLand,
+                        isInsideSettlement);
                     break;
                 }
             }
@@ -174,12 +184,14 @@ namespace Cosmimera.WorldGen
             return confrontations.ToArray();
         }
 
-        private static float3 ComputeConfrontationCenter(in Placed a, in Placed b, bool sameNiche, Func<float3, bool> isLand)
+        private static float3 ComputeConfrontationCenter(in Placed a, in Placed b, bool sameNiche, Func<float3, bool> isLand,
+            Func<float3, float, bool> isInsideSettlement)
         {
             float t = sameNiche ? a.CapRad / math.max(1e-6f, a.CapRad + b.CapRad) : 0.5f;
             float3 sum = math.lerp(a.Dir, b.Dir, t);
             float3 center = math.lengthsq(sum) > 1e-8f ? math.normalize(sum) : a.Dir;
-            if (isLand != null && !isLand(center) && RunPlanner.FirstInRings(center, isLand, out float3 land))
+            bool Clear(float3 p) => (isLand == null || isLand(p)) && (isInsideSettlement == null || !isInsideSettlement(p, 1f));
+            if (!Clear(center) && RunPlanner.FirstInRings(center, Clear, out float3 land))
             {
                 center = land;
             }
@@ -201,11 +213,12 @@ namespace Cosmimera.WorldGen
 
         private static void PlaceConfrontationSide(ulong seed, int confId, int sideIndex, int leadSpawnIndex,
             float3 center, float3 outward, float3 perp, List<RunSpawn> spawns, Dictionary<string, CreatureDef> byId,
-            float planetRadius, Func<float3, string> habitatAt, Func<float3, bool> isLand)
+            float planetRadius, Func<float3, string> habitatAt, Func<float3, bool> isLand,
+            Func<float3, float, bool> isInsideSettlement)
         {
             RunSpawn lead = spawns[leadSpawnIndex];
             int count = lead.Individual.Niche.ConfrontationGroupSize;
-            float3 leadPos = OffsetOnSphere(center, outward, perp, StandoffHalfSpanM, 0f, planetRadius, isLand);
+            float3 leadPos = OffsetOnSphere(center, outward, perp, StandoffHalfSpanM, 0f, planetRadius, isLand, isInsideSettlement);
             spawns[leadSpawnIndex] = new RunSpawn(lead.Region, lead.Group, leadPos, lead.CreatureId, lead.Role,
                 lead.Individual, confId, sideIndex, 0);
 
@@ -214,7 +227,7 @@ namespace Cosmimera.WorldGen
             {
                 float backM = StandoffHalfSpanM + k * ReserveStepM;
                 float latM = (k % 2 == 1 ? 1f : -1f) * 1.2f;
-                float3 pos = OffsetOnSphere(center, outward, perp, backM, latM, planetRadius, isLand);
+                float3 pos = OffsetOnSphere(center, outward, perp, backM, latM, planetRadius, isLand, isInsideSettlement);
                 int idx = spawns.Count;
                 WildIndividual ind = WildIndividual.Draw(form, habitatAt(pos), WildIndividual.KeyFor(seed, (ulong)idx));
                 spawns.Add(new RunSpawn(lead.Region, lead.Group, pos, lead.CreatureId, SpawnRole.Normal,
@@ -223,10 +236,11 @@ namespace Cosmimera.WorldGen
         }
 
         private static float3 OffsetOnSphere(float3 origin, float3 forward, float3 right, float forwardM, float rightM,
-            float planetRadius, Func<float3, bool> isLand)
+            float planetRadius, Func<float3, bool> isLand, Func<float3, float, bool> isInsideSettlement)
         {
             float3 p = math.normalize(origin + (forward * forwardM + right * rightM) / planetRadius);
-            if (isLand != null && !isLand(p) && RunPlanner.FirstInRings(p, isLand, out float3 land))
+            bool Clear(float3 q) => (isLand == null || isLand(q)) && (isInsideSettlement == null || !isInsideSettlement(q, 1f));
+            if (!Clear(p) && RunPlanner.FirstInRings(p, Clear, out float3 land))
             {
                 return land;
             }

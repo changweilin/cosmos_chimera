@@ -265,6 +265,36 @@ namespace Cosmimera.WorldGen.Tests
                 "a habitat no candidate allows is a data error");
         }
 
+        [Test]
+        public void Apply_keeps_non_boss_wild_spawns_and_confrontations_outside_inhabited_settlements()
+        {
+            var planet = new PlanetConfig(Radius, float3.zero);
+            for (ulong seed = 0; seed < 8; seed++)
+            {
+                RunPlan raw = RunPlanner.Generate(planet, seed, _type, CreatureStage.Adult, _pool, _vocab, null);
+                RunLayout layout = SettlementPlanner.Generate(planet, raw, null);
+                var clearance = new LayoutClearance(planet, layout, 0f);
+                RunPlan eco = RunEcology.Apply(raw, _pool, Radius, Habitat, null, clearance.IsInsideSettlement);
+                for (int i = 0; i < eco.Spawns.Count; i++)
+                {
+                    RunSpawn s = eco.Spawns[i];
+                    if (s.Role == SpawnRole.Boss)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(clearance.IsInsideSettlement(s.Direction, 1f), Is.False,
+                        $"seed {seed} non-boss wild spawn {i} ({s.Role}) ended up inside settlement");
+                }
+
+                for (int c = 0; c < eco.Confrontations.Count; c++)
+                {
+                    Assert.That(clearance.IsInsideSettlement(eco.Confrontations[c].Center, 1f), Is.False,
+                        $"seed {seed} confrontation {c} inside settlement");
+                }
+            }
+        }
+
         private string LineOf(RunSpawn s) => _pool.Find(c => c.Id == s.CreatureId).LineId;
     }
 }

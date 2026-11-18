@@ -56,9 +56,24 @@ namespace Cosmimera.WorldGen
         private readonly int[] _roadFirst;
         private readonly Segment[] _segments;
         private readonly Footprint[] _buildings;
+        private readonly float3[] _settlementCenters;
+        private readonly float[] _settlementRadiiM;
         private readonly float _radius;
         private readonly float _marginM;
         private bool[] _removed;
+
+        /// <summary>Clearance ring added around the farthest building corner of an inhabited settlement (m).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
+        public const float SettlementApronM = 4.5f;
+
+        /// <summary>Minimum bounding radius of a non-empty inhabited settlement (m).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
+        public const float MinSettlementRadiusM = 12f;
+
+        /// <summary>True when <paramref name="kind"/> is an inhabited settlement (城內); false for Ruins and Lair.</summary>
+        /// <remarks>Pre: none. Post: true iff kind is Tribe, Town, City, CityState or Village. Side effects: none.</remarks>
+        public static bool IsInhabited(SettlementKind kind) =>
+            kind != SettlementKind.Ruins && kind != SettlementKind.Lair;
 
         /// <summary>Indexes <paramref name="layout"/> on <paramref name="planet"/> with a clearance of <paramref name="marginM"/>.</summary>
         /// <remarks>
@@ -113,6 +128,30 @@ namespace Cosmimera.WorldGen
                 float3 across = math.normalize(math.cross(b.Direction, b.Facing));
                 _buildings[i] = new Footprint(b.Direction, b.Facing, across, b.WidthM * 0.5f, b.DepthM * 0.5f);
             }
+
+            _settlementCenters = new float3[layout.Settlements.Count];
+            _settlementRadiiM = new float[layout.Settlements.Count];
+            for (int s = 0; s < layout.Settlements.Count; s++)
+            {
+                RunSettlement settlement = layout.Settlements[s];
+                _settlementCenters[s] = settlement.Center;
+                if (!IsInhabited(settlement.Kind) || settlement.BuildingCount <= 0)
+                {
+                    continue;
+                }
+
+                float reachM = MinSettlementRadiusM;
+                int end = settlement.FirstBuilding + settlement.BuildingCount;
+                for (int b = settlement.FirstBuilding; b < end && b < layout.Buildings.Count; b++)
+                {
+                    RunBuilding building = layout.Buildings[b];
+                    float distM = math.distance(settlement.Center, building.Direction) * _radius;
+                    float halfDiagM = 0.5f * math.sqrt(building.WidthM * building.WidthM + building.DepthM * building.DepthM);
+                    reachM = math.max(reachM, distM + halfDiagM + SettlementApronM);
+                }
+
+                _settlementRadiiM[s] = reachM;
+            }
         }
 
         /// <summary>True when <paramref name="direction"/> is farther than the margin from every road and building.</summary>
@@ -165,6 +204,74 @@ namespace Cosmimera.WorldGen
                 "direction must be finite and non-zero");
             Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
             return InsideBuilding(math.normalize(direction), marginM, true);
+        }
+
+        /// <summary>Bounding radius (m) of settlement <paramref name="settlementIndex"/>, or 0 if uninhabited or empty.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= settlementIndex &lt; layout.Settlements.Count.
+        /// Post: 0 for Ruins, Lair or empty settlements; &gt;= MinSettlementRadiusM for inhabited settlements with buildings.
+        /// Side effects: none.
+        /// </remarks>
+        public float SettlementRadiusM(int settlementIndex)
+        {
+            Contract.Requires(settlementIndex >= 0 && settlementIndex < _settlementRadiiM.Length, "settlementIndex out of range");
+            return _settlementRadiiM[settlementIndex];
+        }
+
+        /// <summary>True when a body of radius <paramref name="marginM"/> at <paramref name="direction"/> overlaps any inhabited settlement.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#道路與建築, docs/design/creature-ecology.md, docs/design/trainer-battles.md —
+        /// wild creatures and trainers never spawn in or enter inhabited settlements.
+        /// Pre: direction finite and non-zero (normalized internally); marginM finite and &gt;= 0.
+        /// Post: true iff for some inhabited non-empty settlement s, distance(p, s.Center) * R &lt;= SettlementRadiusM(s) + marginM.
+        /// Side effects: none.
+        /// </remarks>
+        public bool IsInsideSettlement(float3 direction, float marginM = 0f)
+        {
+            Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
+                "direction must be finite and non-zero");
+            Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
+            float3 p = math.normalize(direction);
+            for (int s = 0; s < _settlementCenters.Length; s++)
+            {
+                float r = _settlementRadiiM[s];
+                if (r <= 0f)
+                {
+                    continue;
+                }
+
+                if (math.dot(p, _settlementCenters[s]) > 0f &&
+                    math.distance(p, _settlementCenters[s]) * _radius <= r + marginM)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>True when a body of radius <paramref name="bodyRadiusM"/> at <paramref name="direction"/> stays wholly inside settlement <paramref name="settlementIndex"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/characters.md#路人-npc — settlement NPCs never wander outside their town.
+        /// Pre: 0 &lt;= settlementIndex &lt; layout.Settlements.Count; direction finite and non-zero; bodyRadiusM finite and &gt;= 0.
+        /// Post: true iff SettlementRadiusM(settlementIndex) &gt; 0 and distance(p, center) * R + bodyRadiusM &lt;= SettlementRadiusM(settlementIndex).
+        /// Side effects: none.
+        /// </remarks>
+        public bool IsContainedInSettlement(int settlementIndex, float3 direction, float bodyRadiusM = 0f)
+        {
+            Contract.Requires(settlementIndex >= 0 && settlementIndex < _settlementRadiiM.Length, "settlementIndex out of range");
+            Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
+                "direction must be finite and non-zero");
+            Contract.Requires(math.isfinite(bodyRadiusM) && bodyRadiusM >= 0f, "bodyRadiusM must be finite and >= 0");
+            float r = _settlementRadiiM[settlementIndex];
+            if (r <= 0f)
+            {
+                return false;
+            }
+
+            float3 p = math.normalize(direction);
+            float3 center = _settlementCenters[settlementIndex];
+            return math.dot(p, center) > 0f && math.distance(p, center) * _radius + bodyRadiusM <= r;
         }
 
         /// <summary>Stops building <paramref name="index"/> from blocking bodies (it was destroyed).</summary>

@@ -57,7 +57,35 @@
 ### 生成與遭遇
 - 數量（暫定）：小行星 3、矮行星 6、行星 10、超巨星 14。位置在道路旁與區域交界，不在聚落內、不在進階地形地城內、不在 BOSS 巢穴附近。
 - 規則層新增獨立亂數流（同 seed + 同 `GeneratorVersion` → 同結果），不改動既有生成的序列。
-- **挑戰**：旅人視線 12 m 內發現玩家後走近開戰；開戰前玩家離開 25 m 可迴避。
+- **挑戰**：旅人視線內依職能觸發對戰（見下節〈職能〉）；開戰前玩家離開 25 m 可迴避。
+
+### <a id="職務與職能"></a>職務與職能（等同野生宙獸棲位與習性）
+比照 [creature-ecology.md](creature-ecology.md)，訓練家個體以**職務（`TrainerDuty`，等同棲位）**與**職能（`TrainerFunction`，等同習性）**決定野外活動模式、反應距離與出現地貌；不直接以單一職業名稱固定遊蕩半徑。
+
+#### 職能（`TrainerFunction`，對應習性 `Habit`）
+| ID | 名稱 | 主動挑戰距離 | 行為 |
+|---|---|---|---|
+| `observant` | 考據／專注 | 0 m | 專注考據、採集或調律，不主動攔路開戰，僅由玩家主動對話／互動觸發對戰 |
+| `escort` | 護衛／戒備 | 4 m | 看守據點或護送行囊，近身 4 m 才主動迎戰 |
+| `sparring` | 歷練／切磋 | 8 m | 標準感應距離 8 m 內發現玩家即上前切磋 |
+| `warden` | 巡守／管轄 | 14 m | 中遠距 14 m 主動盤查對戰 |
+| `pursuit` | 追獵／懸賞 | 20 m | 遠距 20 m 主動衝鋒挑戰 |
+| `champion` | 征討／霸主 | 28 m | 超廣域 28 m 壓制追擊 |
+
+#### 職務（`TrainerDuty`，對應棲位 `Niche`）
+共 14 種野外／道路職務，各自定義允許地貌 `habitat_kinds`、職能權重 `function_weights`、四種遊蕩模式（`shuttle`／`loop`／`bounded_random`／`unbounded_random`）與兩層有界常態分布（速度千分比、移動預算 ms、停留時間 ms 之 `mean`／`individual_sd`／`action_sd`／`min`／`max`）：
+- **驛道／巡守類**：`duty_road_courier`（古道驛傳，`shuttle`）、`duty_circuit_patrol`（山林巡守，`loop`）、`duty_frontier_trailblazing`（荒原拓荒，`unbounded_random`）、`duty_trial_wardenship`（試煉鎮守，`bounded_random`）
+- **採集／勘探／考據類**：`duty_waterside_angling`（水域垂釣，`bounded_random`）、`duty_prospect_mining`（礦脈勘探，`shuttle`）、`duty_botanical_foraging`（植群採集，`loop`）、`duty_ruin_excavation`（遺蹟考據，`bounded_random`）、`duty_leyline_tuning`（以太調律，`bounded_random`）
+- **武藝／巡禮／遊歷／追獵類**：`duty_martial_training`（荒野苦修，`bounded_random`）、`duty_shrine_pilgrimage`（聖地巡禮，`loop`）、`duty_roving_minstrel`（雲遊傳唱，`unbounded_random`）、`duty_night_watch`（暗夜潛行，`bounded_random`）、`duty_bounty_hunting`（懸賞追獵，`unbounded_random`）
+
+#### 職業體系（遊戲內職業＋地區×時代職業）
+每位訓練家的職業來源涵蓋三軸，並各自提供候選職務與權重（所有地貌聯集須涵蓋全部 24 種地貌標籤）：
+1. **遊戲內職業**：上表 10 種戰鬥旅人（`trv_*`）、地形試煉主、十屬性生活技能導師、探索者／研究員／孵蛋師／行商。
+2. **星球地區（6 類）× 聚落時代（8 時代）職業**：`era_primitive_totem_hunter`（原始圖騰獵師）、`era_agrarian_field_warden`（農耕巡田武者）、`era_mercantile_caravan_guard`（商貿護隊鏢師）、`era_industrial_rail_inspector`（工業鐵道巡檢）、`era_steampunk_airship_navigator`（蒸汽飛艇領航）、`era_future_orbital_ranger`（未來星軌巡航）、`era_wasteland_salvage_hunter`（廢土拾荒獵人）、`era_ancient_relic_keeper`（遠古遺蹟守衛）。
+3. **跨文化地區（12 地區）× 文化時間線（15 時代）職業**（對應 `catalog.js`）：東亞符劍修者（`cul_east_asia_talisman_swordsman`）、南亞氣脈苦行者（`cul_south_asia_prana_ascetic`）、東南亞季風領航者（`cul_southeast_asia_monsoon_wayfinder`）、西亞星盤學者（`cul_middle_east_astrolabe_scholar`）、非洲太陽能地脈師（`cul_africa_solarpunk_geomancer`）、歐洲高奇幻魔導騎士（`cul_europe_high_fantasy_mage_knight`）、美洲峽谷空騎手（`cul_americas_canyon_sky_rider`）、大洋洲星象航海師（`cul_oceania_star_navigator`）、中亞草原獵鷹師（`cul_central_asia_steppe_falconer`）、極地極光雪橇斥候（`cul_polar_aurora_sled_scout`）、世界都市賽博駭客（`cul_cosmopolis_cyber_netrunner`）、星際曲率開拓者（`cul_interstellar_warp_pioneer`）。
+
+- **生成順序**：依出生點地貌篩選職業候選職務 → 依權重抽定個體職務 → 自該職務的 `function_weights` 抽職能 → 兩層 Irwin–Hall 常態抽出個體遊蕩平均參數；**同職務不同職業的活動區不可重疊**（競爭排斥，重疊時環狀移位）。
+- **城內外邊界**：訓練家與野生宙獸只生成並活動於有人居住的聚落（部落／小鎮／都市／城邦／村落）範圍之外；生成避開聚落範圍，遊蕩與戰鬥移動皆不會進入城內。
 
 ### <a id="旅人圖鑑"></a>職業圖鑑
 - 以**職業**為圖鑑主體（`CodexKind.Character`，ID 為職業 ID），不是個別旅人。

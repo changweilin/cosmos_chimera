@@ -11,7 +11,7 @@
 | 性別 | 男 / 女（預設各 50%）；中性外觀為可選項，預設權重 0 |
 | 年齡 | **青少年（13–19）佔 50%**；其餘：兒童 10%、青年 25%、中年 10%、長者 5% |
 | 性格 / 風格 / 興趣 / 喜好 / 厭惡 | 各自從選項池抽取（性格 2、興趣 2、喜好 2、厭惡 2） |
-| 定位 | 玩家角色預設、隊友 NPC、大廳 NPC、星球原住民 NPC、對手 |
+| 定位與職務 | 玩家角色預設、隊友 NPC、大廳 NPC、星球原住民 NPC、對手訓練家（含遊戲內職業與各地區×時代職業，對應訓練家候選職務 `duties` 與職能 `trainer_function`，見 [trainer-battles.md#職務與職能](trainer-battles.md#職務與職能)） |
 | 慣用收服道具 | 符籙卡片 / 琉璃珠 / 魔術方塊（影響道具外觀與投擲動作，見 `lobby-meta.md#收服道具`） |
 
 選項池與權重的唯一來源：`../cosmos_chimera_forge/catalog.js`。
@@ -68,8 +68,11 @@
 | 聚落 | 60 % 沿用星球的主／副；25 % 副種族改為區域主題的種族（森林→精靈、河岸與海岸→魚人、高地→鳥人、隕坑→龍人、冰棚→狼人、峽谷→矮人、遺跡→骷髏），主題無對應時另抽；15 % 是飛地（副種族或另一種族為主，星球主種族為副）。副種族佔比 = 星球值（10–40 %）＋常態偏移；其他種族 3–12 %＋常態偏移 |
 | 個人 | 依聚落佔比擲一次：主／副／其他（其他＝全種族依星球權重再抽） |
 
-### 職業
+### 職業與聚落職務
 無（兒童與無業）、農夫、獵人／採集者、漁夫、礦工、工匠、商人、守衛、學者、祭司、治療師、搬運工、藝人、領袖（`NpcRole`）。權重依聚落種類（部落重採獵、村落重農、都市重工商、城邦重守衛與學者）× 區域主題（海岸漁夫 ×3、峽谷與隕坑礦工 ×3、森林獵人 ×3…）× 種族傾向（各種族兩個職業 ×2，不設禁止）。兒童一律無職業。職業是規則層欄位；穿什麼由表現層依時代決定。
+
+- **聚落職務（`NpcDuty`）**：每個 `NpcRole` 對應固定聚落職務——`None`→`IdlePlay`（空地嬉戲／閒晃）、`Farmer`→`FieldTending`（田園照料）、`Forager`→`CatchSorting`（獵獲整理）、`Fisher`→`NetMending`（網具修整）、`Miner`→`OreSorting`（礦石分類）、`Artisan`→`WorkshopCraft`（工坊鍛造）、`Merchant`→`MarketHawking`（市集兜售）、`Guard`→`TownPatrol`（城鎮巡邏）、`Scholar`→`ArchiveStudy`（典籍研讀）、`Cleric`→`ShrineBlessing`（壇前祈福）、`Healer`→`HerbTriage`（草藥調劑）、`Laborer`→`CargoHauling`（貨物搬運）、`Performer`→`StreetBusking`（街頭獻藝）、`Leader`→`CivicInspect`（政務巡視）。
+- **城內活動與遊蕩**：每個職務定義有界遊蕩模式（`shuttle`／`loop`／`bounded_random`）與兩層有界常態速度／移動時間／停留時間參數；`RunPopulace.Step` 依個別職務推進位置，並以 `LayoutClearance.IsContainedInSettlement` 約束所有路點與每一步移動，**NPC 嚴格留在所屬有人居住聚落邊界內，不會跑到城外**。
 
 ### 年齡與健康（有界常態）
 抽樣一律用四個整數均勻亂數之和（Irwin–Hall，|z| ≤ 3.46σ，不經浮點）。

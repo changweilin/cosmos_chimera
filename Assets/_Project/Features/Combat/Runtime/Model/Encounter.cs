@@ -929,6 +929,7 @@ namespace Cosmimera.Combat
         public const int NoSource = -1;
 
         private Func<float3, float> _terrainMoveSpeedMultiplier;
+        private Func<float3, float, bool> _isInsideSettlement;
         private WeatherProfile _weather = WeatherProfiles.Clear;
         private Func<float3, long, WeatherProfile> _weatherProvider;
         private float _playerMoveSpeedMs = 5.0f;
@@ -939,6 +940,19 @@ namespace Cosmimera.Combat
         /// <summary>Maximum ground speed (m/s) that still qualifies as stationary/slow-moving for grass or fog stealth.</summary>
         /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
         public const float SlowStealthSpeedThresholdMs = 2.0f;
+
+        /// <summary>Sets a deterministic check answering whether a body at <c>(direction, clearanceM)</c> overlaps an inhabited settlement.</summary>
+        /// <remarks>
+        /// REQ: docs/design/planet-world.md#道路與建築, docs/design/creature-ecology.md, docs/design/trainer-battles.md —
+        /// wild and trainer creatures never wander or step from outside a settlement into one.
+        /// Pre: isInsideSettlement may be null (clears settlement check); otherwise pure and deterministic for (direction, clearanceM).
+        /// Post: subsequent wander target draws, steering, dashes and separation prevent Wild-side units from entering settlements.
+        /// Side effects: stores the callback.
+        /// </remarks>
+        public void SetSettlementCheck(Func<float3, float, bool> isInsideSettlement)
+        {
+            _isInsideSettlement = isInsideSettlement;
+        }
 
         /// <summary>Sets a deterministic terrain move-speed multiplier queried at each unit's ground direction.</summary>
         /// <remarks>
@@ -2387,8 +2401,8 @@ namespace Cosmimera.Combat
             return math.atan2(math.length(math.cross(a, b)), math.dot(a, b)) * planetRadius;
         }
 
-        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea, nor any unit into a building; its share of the
-        // overlap stays unresolved and later ticks (or the other body's own share) settle it.
+        // REQ: combat.md#只在陸地. A push never moves a wild onto the sea, nor any unit into a building or a wild into a settlement;
+        // its share of the overlap stays unresolved and later ticks (or the other body's own share) settle it.
         private void PlaceIfAllowed(EncounterUnit u, float3 direction)
         {
             if (u.Side == EncounterSide.Wild && _surface.IsSea(direction))
@@ -2396,7 +2410,7 @@ namespace Cosmimera.Combat
                 return;
             }
 
-            if (EntersBuilding(u, Up(u.Position), direction))
+            if (EntersRestrictedArea(u, Up(u.Position), direction))
             {
                 return;
             }
@@ -2404,11 +2418,26 @@ namespace Cosmimera.Combat
             Place(u, direction);
         }
 
+        private bool EntersRestrictedArea(EncounterUnit u, float3 from, float3 to) =>
+            EntersBuilding(u, from, to) || EntersSettlement(u, from, to);
+
         // REQ: planet-world.md#道路與建築. Only entering is refused: a unit that starts inside a footprint (a spawn on a lot,
         // a push from a third body) must be able to walk out, or it would be frozen for the rest of the run.
         private bool EntersBuilding(EncounterUnit u, float3 from, float3 to)
         {
             return _surface.IsBlocked(to, u.CollisionRadiusM) && !_surface.IsBlocked(from, u.CollisionRadiusM);
+        }
+
+        private bool EntersSettlement(EncounterUnit u, float3 from, float3 to)
+        {
+            return u.Side == EncounterSide.Wild && _isInsideSettlement != null &&
+                _isInsideSettlement(to, u.CollisionRadiusM) && !_isInsideSettlement(from, u.CollisionRadiusM);
+        }
+
+        private bool IsInsideSettlement(EncounterUnit u, float3 direction)
+        {
+            return u.Side == EncounterSide.Wild && _isInsideSettlement != null &&
+                _isInsideSettlement(direction, u.CollisionRadiusM);
         }
 
         private void Place(EncounterUnit u, float3 direction)
@@ -2581,8 +2610,8 @@ namespace Cosmimera.Combat
                     return;
                 }
 
-                // Same rule for a wall: a dash may not end inside a building it started outside of.
-                if (EntersBuilding(u, Up(u.Position), endDirection))
+                // Same rule for a wall or settlement: a dash may not end inside a building (or settlement for wilds) it started outside of.
+                if (EntersRestrictedArea(u, Up(u.Position), endDirection))
                 {
                     return;
                 }
@@ -3366,7 +3395,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < WanderSeaRetries; i++)
             {
                 target = WanderPoint(ref u.WanderRng, center, radiusM);
-                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, u.CollisionRadiusM))
+                if (!_surface.IsSea(target) && !_surface.IsBlocked(target, u.CollisionRadiusM) &&
+                    !IsInsideSettlement(u, target))
                 {
                     return true;
                 }
@@ -3547,7 +3577,7 @@ namespace Cosmimera.Combat
                 return SteerResult.Blocked;
             }
 
-            if (EntersBuilding(u, up, next))
+            if (EntersRestrictedArea(u, up, next))
             {
                 if (!TrySlide(u, up, step, ref heading, ref next))
                 {
@@ -3592,7 +3622,7 @@ namespace Cosmimera.Combat
                         continue;
                     }
 
-                    if (!EntersBuilding(u, up, n))
+                    if (!EntersRestrictedArea(u, up, n))
                     {
                         heading = h;
                         next = n;
