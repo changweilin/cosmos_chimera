@@ -758,7 +758,8 @@ namespace Cosmimera.Bootstrap.Demo
                     .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
                 string elementsLine = FormatPlanetElements(o.Elements);
                 string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
-                GUILayout.Label($"{tag}{_copy.Ui("ui.star_select.planet_type")}：{_copy.Planet(o.Type.Id)}   {boss}   {size} (R={o.Radius:0} m)\n" +
+                string planetName = _copy.PlanetName(o.Type.Id, o.Seed);
+                GUILayout.Label($"{tag}{planetName}（{_copy.Planet(o.Type.Id)}）   {boss}   {size} (R={o.Radius:0} m)\n" +
                                 $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {

@@ -19,6 +19,10 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Dictionary<string, string> _themes = new Dictionary<string, string>();
         private readonly Dictionary<string, string[]> _steps = new Dictionary<string, string[]>();
         private readonly Dictionary<string, string[]> _epithets = new Dictionary<string, string[]>();
+        private readonly Dictionary<string, string[]> _planetWeatherAffixes = new Dictionary<string, string[]>();
+        private readonly Dictionary<string, string[]> _planetTerrainAffixes = new Dictionary<string, string[]>();
+        private readonly string _lang;
+        private string _planetNameFormat = "{weather}的{terrain}星";
         private readonly List<string> _chainIds = new List<string>();
         private readonly Dictionary<string, string> _chainTitles = new Dictionary<string, string>();
         private readonly List<string> _themeIds = new List<string>();
@@ -33,6 +37,7 @@ namespace Cosmimera.Bootstrap.Demo
             string epithets)
         {
             Contract.Requires(lang == "zh-TW" || lang == "en" || lang == "ja", "lang must be zh-TW, en or ja");
+            _lang = lang;
             foreach (KeyValuePair<string, JToken> kv in JObject.Parse(strings))
             {
                 _ui[kv.Key] = Localized(kv.Value, lang);
@@ -95,6 +100,61 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 _epithets[(string)b["planet_type"]] = list.ToArray();
+            }
+
+            UnityEngine.TextAsset planetAffixes = UnityEngine.Resources.Load<UnityEngine.TextAsset>("PlanetAffixes/affixes");
+            if (planetAffixes != null)
+            {
+                LoadPlanetAffixes(planetAffixes.text);
+            }
+        }
+
+        /// <summary>Loads or replaces the planet weather/terrain affix library from JSON.</summary>
+        /// <remarks>
+        /// Pre: json is non-null JSON matching PlanetAffixes/affixes structure.
+        /// Post: planet weather/terrain affix dictionaries populated for this instance's language.
+        /// Side effects: mutates internal planet affix tables; allocates.
+        /// </remarks>
+        public void LoadPlanetAffixes(string json)
+        {
+            Contract.Requires(json != null, "json must not be null");
+            _planetWeatherAffixes.Clear();
+            _planetTerrainAffixes.Clear();
+            JObject root = JObject.Parse(json);
+            if (root["format"] is JObject fmt)
+            {
+                string f = Localized(fmt, _lang);
+                if (!string.IsNullOrEmpty(f))
+                {
+                    _planetNameFormat = f;
+                }
+            }
+
+            ReadAffixMap(root["weather_affixes"] as JObject, _planetWeatherAffixes, _lang);
+            ReadAffixMap(root["terrain_affixes"] as JObject, _planetTerrainAffixes, _lang);
+        }
+
+        private static void ReadAffixMap(JObject source, Dictionary<string, string[]> target, string lang)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<string, JToken> kv in source)
+            {
+                if (kv.Value is not JArray arr)
+                {
+                    continue;
+                }
+
+                var items = new List<string>(arr.Count);
+                foreach (JToken entry in arr)
+                {
+                    items.Add(Localized(entry, lang));
+                }
+
+                target[kv.Key] = items.ToArray();
             }
         }
 
@@ -165,6 +225,27 @@ namespace Cosmimera.Bootstrap.Demo
         public string Epithet(string planetType, int variant)
         {
             return _epithets.TryGetValue(planetType, out string[] e) && e.Length > 0 ? e[(variant % e.Length + e.Length) % e.Length] : string.Empty;
+        }
+
+        /// <summary>Deterministic "XX的OO星" name drawn from the planet type's weather and terrain affix libraries.</summary>
+        /// <remarks>
+        /// Pre: none (unknown planetTypeId falls back to <see cref="Planet"/>).
+        /// Post: non-null, non-empty localized planet name; identical (planetTypeId, seed) returns identical name.
+        /// Side effects: allocates formatted string.
+        /// </remarks>
+        public string PlanetName(string planetTypeId, ulong seed)
+        {
+            if (string.IsNullOrEmpty(planetTypeId)
+                || !_planetWeatherAffixes.TryGetValue(planetTypeId, out string[] weathers) || weathers.Length == 0
+                || !_planetTerrainAffixes.TryGetValue(planetTypeId, out string[] terrains) || terrains.Length == 0)
+            {
+                return Planet(planetTypeId);
+            }
+
+            WorldGen.PlanetNameIndices pick = WorldGen.PlanetNameDraw.Draw(planetTypeId, seed, weathers.Length, terrains.Length);
+            return _planetNameFormat
+                .Replace("{weather}", weathers[pick.WeatherIndex])
+                .Replace("{terrain}", terrains[pick.TerrainIndex]);
         }
     }
 }

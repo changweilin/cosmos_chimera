@@ -190,12 +190,12 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: defined, != Region. Side effects: none.</remarks>
         public ArchRegion SecondaryRegion { get; }
 
-        /// <summary>Secondary era: one the primary era grew out of or is growing into.</summary>
+        /// <summary>Secondary era: any inhabited era other than <see cref="Era"/>.</summary>
         /// <remarks>Pre: none. Post: defined, != Era, never Ancient. Side effects: none.</remarks>
         public ArchEra SecondaryEra { get; }
 
         /// <summary>Mean share of secondary traits before the region theme adjusts it.</summary>
-        /// <remarks>Pre: none. Post: in [0.15, 0.45]. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: in [0.15, 0.55]. Side effects: none.</remarks>
         public float Weight { get; }
     }
 
@@ -365,9 +365,9 @@ namespace Cosmimera.Bootstrap.Demo
         // REQ: settlement-structures.md#建築造型 (副風格的抽法). Shares of a planet's settlements whose secondary
         // style departs from the planet's own; the rest keep it, so a planet still reads as one culture.
         private const float ThemeLeanShare = 0.5f;
-        private const float ForeignRegionShare = 0.2f;
-        private const float OtherKinEraShare = 0.25f;
-        private const float DistantEraShare = 0.15f;
+        private const float ForeignRegionShare = 0.30f;
+        private const float OtherKinEraShare = 0.20f;
+        private const float DistantEraShare = 0.22f;
 
         /// <summary>Regional tradition of a planet type.</summary>
         /// <remarks>Pre: none (unknown or null ids read as verdant, like PlanetLook). Post: defined. Side effects: none.</remarks>
@@ -417,17 +417,19 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>
         /// REQ: settlement-structures.md#建築造型 (整顆星球同一時代，由 seed 獨立抽).
         /// Pre: none (unknown or null ids read as verdant). Post: same arguments, same style on every client; Era and
-        /// SecondaryEra are never Ancient; SecondaryRegion != Region. Side effects: none.
+        /// SecondaryEra are never Ancient and SecondaryEra != Era; SecondaryRegion != Region; Weight in [0.15, 0.55]. Side effects: none.
         /// </remarks>
         public static ArchPlanetStyle PlanetStyleFor(string planetTypeId, ulong seed)
         {
             ArchRegion region = RegionFor(planetTypeId);
             var rng = new Pcg32(Salt ^ seed, 0x455241ul);
-            ArchEra era = InhabitedEras[rng.NextUInt((uint)InhabitedEras.Length)];
+            int eraIndex = (int)rng.NextUInt((uint)InhabitedEras.Length);
+            ArchEra era = InhabitedEras[eraIndex];
             // Skip over the primary: five other traditions, each equally likely.
             var secondary = (ArchRegion)(((int)region + 1 + (int)rng.NextUInt(5)) % 6);
-            ArchEra[] kin = Kin(era);
-            return new ArchPlanetStyle(region, era, secondary, kin[rng.NextUInt((uint)kin.Length)], 0.15f + 0.3f * rng.NextFloat());
+            // Any of the six other inhabited eras can be the planet's secondary era, giving 7 x 6 = 42 era pairs.
+            int secondaryEraIndex = (eraIndex + 1 + (int)rng.NextUInt((uint)(InhabitedEras.Length - 1))) % InhabitedEras.Length;
+            return new ArchPlanetStyle(region, era, secondary, InhabitedEras[secondaryEraIndex], 0.15f + 0.40f * rng.NextFloat());
         }
 
         /// <summary>Era a settlement of <paramref name="kind"/> is drawn in on a planet of <paramref name="planet"/>.</summary>
@@ -521,7 +523,7 @@ namespace Cosmimera.Bootstrap.Demo
                 : planet.SecondaryEra;
             (float eraAge, float eraDamage) = EraWear(planet.Era);
             var mix = new ArchMix(secondary, secondaryEra,
-                math.clamp(planet.Weight + theme.weight + 0.12f * Gauss(ref rng), 0f, 0.7f),
+                math.clamp(planet.Weight + theme.weight + 0.16f * Gauss(ref rng), 0f, 0.7f),
                 math.saturate(eraAge + upkeep + theme.age + 0.08f * Gauss(ref rng)),
                 math.saturate(eraDamage + theme.damage + 0.04f * Gauss(ref rng)),
                 theme.pitch, theme.plinth);
@@ -557,7 +559,7 @@ namespace Cosmimera.Bootstrap.Demo
                 SettlementKind.Town => 0.04f,
                 _ => 0f,
             };
-            return mix.WithTertiary(thirdRegion, thirdEra, math.clamp(0.08f + reach + 0.22f * third.NextFloat(), 0f, 0.5f));
+            return mix.WithTertiary(thirdRegion, thirdEra, math.clamp(0.10f + reach + 0.25f * third.NextFloat(), 0f, 0.5f));
         }
 
         // Irwin–Hall(4) scaled to unit variance: bounded (|g| ≤ 3.47), so no draw can push a roof past MaxOverhangM,
