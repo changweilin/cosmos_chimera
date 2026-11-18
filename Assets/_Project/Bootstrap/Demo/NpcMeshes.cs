@@ -186,7 +186,9 @@ namespace Cosmimera.Bootstrap.Demo
         ///       halos, carried poles) or farther than <see cref="MaxReachM"/> from the vertical axis.
         /// Side effects: allocates a Mesh the caller owns (and must destroy).
         /// </remarks>
-        public static Mesh Build(in NpcSpec spec)
+        public static Mesh Build(in NpcSpec spec) => Build(spec, null, out _);
+
+        internal static Mesh Build(in NpcSpec spec, Transform root, out ResidentStride stride)
         {
             var rng = new Pcg32(Salt ^ spec.Seed, ((ulong)spec.Race << 16) | ((ulong)spec.Role << 8) | (ulong)spec.Sex);
             var body = new Fig();
@@ -206,7 +208,11 @@ namespace Cosmimera.Bootstrap.Demo
             var data = new SceneryMeshes.MeshData(SubMeshCount);
             data.EmitFaceted(body.Part, BodySubMesh, FacetCos, null);
             data.EmitFaceted(glow.Part, GlowSubMesh, FacetCos, null);
-            return data.ToMesh("Npc_" + spec.Race + "_" + spec.Role);
+            Mesh mesh = data.ToMesh("Npc_" + spec.Race + "_" + spec.Role);
+            stride = root == null ? null : new ResidentStride(root, mesh, rig.HipL, rig.HipR, rig.KneeL, rig.KneeR, rig.AnkleL, rig.AnkleR, spec);
+            // UV1 carries construction tags through facet splitting. It belongs to wind in the scenery shader.
+            mesh.SetUVs(1, Array.Empty<Vector2>());
+            return mesh;
         }
 
         // The contract's envelope, enforced rather than hoped for: every pose and prop is authored inside it, and a
@@ -512,6 +518,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int s = -1; s <= 1; s += 2)
             {
                 float3 hip = s < 0 ? r.HipL : r.HipR, knee = s < 0 ? r.KneeL : r.KneeR, ankle = s < 0 ? r.AnkleL : r.AnkleR;
+                b.Leg = s;
                 b.Tube(hip, knee, r.LegR * 1.15f, r.LegR * 0.9f, skin, dark, 7);
                 b.Tube(knee, ankle, r.LegR * 0.9f, r.LegR * 0.62f, dark, skin, 7);
                 if (bones)
@@ -523,9 +530,11 @@ namespace Cosmimera.Bootstrap.Demo
                 float len = spec.Race == NpcRace.Werewolf || spec.Race == NpcRace.Avian || spec.Race == NpcRace.Lizardfolk ||
                             spec.Race == NpcRace.Dragonkin ? 2.6f : 2f;
                 Color footTone = spec.Race == NpcRace.Avian ? Hex(0xE0A83A) : dark;
+                b.Leg = 2 * s;
                 b.Ball(new float3(ankle.x, foot * 0.55f, ankle.z + foot * (len - 1.2f) * 0.5f),
                     new float3(foot * 0.95f, foot * 0.6f, foot * len * 0.6f), footTone, 7, 4, -0.5f);
 
+                b.Leg = 0;
                 float3 shoulder = s < 0 ? r.ShoulderL : r.ShoulderR, elbow = s < 0 ? r.ElbowL : r.ElbowR, hand = s < 0 ? r.HandL : r.HandR;
                 b.Tube(shoulder, elbow, r.ArmR * 1.15f, r.ArmR * 0.9f, skin, dark, 6);
                 b.Tube(elbow, hand, r.ArmR * 0.9f, r.ArmR * 0.7f, dark, skin, 6);
@@ -618,8 +627,10 @@ namespace Cosmimera.Bootstrap.Demo
                     // Calf fins: the swimmer's silhouette without taking the legs away from someone who walks to market.
                     for (int s = -1; s <= 1; s += 2)
                     {
+                        b.Leg = s;
                         float3 knee = s < 0 ? r.KneeL : r.KneeR, ankle = s < 0 ? r.AnkleL : r.AnkleR;
                         b.Panel(knee, ankle, (knee + ankle) * 0.5f + new float3(0f, -0.02f * r.H, -0.1f * r.H), Shade(look.Accent, 1.05f));
+                        b.Leg = 0;
                     }
 
                     break;
@@ -1001,6 +1012,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int s = -1; s <= 1; s += 2)
             {
                 float3 hip = s < 0 ? r.HipL : r.HipR, knee = s < 0 ? r.KneeL : r.KneeR, ankle = s < 0 ? r.AnkleL : r.AnkleR;
+                b.Leg = s;
                 if (!bareLegs && !look.Skirt)
                 {
                     float loose = low == ArchEra.Mercantile || low == ArchEra.Future ? 1.08f : 1.3f;
@@ -1014,15 +1026,20 @@ namespace Cosmimera.Bootstrap.Demo
                     float3 top = math.lerp(ankle, knee, boot * 1.6f);
                     b.Tube(top, ankle - new float3(0f, 0.02f * h, 0f), r.LegR * 1.02f, r.LegR * 0.8f, bootTone, Shade(bootTone, 0.85f), 7);
                     float foot = r.LegR * 1.3f;
+                    b.Leg = 2 * s;
                     b.Ball(new float3(ankle.x, foot * 0.55f, ankle.z + foot * 0.45f), new float3(foot, foot * 0.62f, foot * 1.3f),
                         Shade(bootTone, 0.9f), 7, 4, -0.5f);
                     if (low == ArchEra.Future)
                     {
+                        glow.Leg = s;
                         glow.Hoop(math.lerp(ankle, knee, 0.5f), r.LegR * 1.05f, 0.008f * h, look.Glow);
+                        glow.Leg = 0;
                     }
                 }
             }
 
+            b.Leg = 0;
+            b.ClothHipWidth = r.HipR.x;
             if (look.Skirt)
             {
                 float fall = robed ? 0.93f : low == ArchEra.Steampunk || low == ArchEra.Primal ? 0.5f : 0.9f;
@@ -1060,6 +1077,7 @@ namespace Cosmimera.Bootstrap.Demo
                 new Ring(r.Chest - r.Fwd * (0.05f * h), r.TrunkX * fit, r.TrunkZ * 1.1f * fit, cloth),
                 new Ring(r.Chest + new float3(0f, 0.005f * h, 0f), r.TrunkX * 0.8f * fit, r.TrunkZ * 0.85f * fit, Shade(cloth, 1.04f)),
             }, 16, true, false, math.lerp(0.025f, 0.085f, spec.Textile01));
+            b.ClothHipWidth = 0f;
             // Belt: the one line every era agrees on, and where pouches and lanterns hang.
             Color belt = look.UpperEra == ArchEra.Future ? look.Glow : look.Leather;
             (look.UpperEra == ArchEra.Future ? glow : b).Hoop(math.lerp(r.Hip, r.Waist, 0.6f), r.TrunkX * 0.9f * fit, 0.012f * h, belt,
@@ -1491,8 +1509,10 @@ namespace Cosmimera.Bootstrap.Demo
                                 Shade(linen, 0.9f), 6);
                             break;
                         default:
+                            b.Leg = -1;
                             b.Tube(math.lerp(r.KneeL, r.AnkleL, 0.1f), math.lerp(r.KneeL, r.AnkleL, 0.6f), r.LegR * 1.45f, r.LegR * 1.3f, linen,
                                 Shade(linen, 0.9f), 7);
+                            b.Leg = 0;
                             break;
                     }
                 }
@@ -1529,10 +1549,14 @@ namespace Cosmimera.Bootstrap.Demo
         {
             public readonly SceneryMeshes.Part Part = new SceneryMeshes.Part();
 
+            internal int Leg;
+            internal float ClothHipWidth;
+
             private int V(float3 p, Color c)
             {
                 c.a = 1f;
-                return Part.Add(p, c, float2.zero);
+                float side = ClothHipWidth > 0f ? math.clamp(p.x / ClothHipWidth, -1f, 1f) : Leg;
+                return Part.Add(p, c, new float2(side, ClothHipWidth > 0f ? 0.7f : 1f));
             }
 
             private void Tri(int a, int b, int c, float3 outward)

@@ -32,6 +32,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private readonly List<GameObject> _roots = new List<GameObject>();
         private readonly List<Renderer> _renderers = new List<Renderer>();
+        private readonly List<ResidentStride> _strides = new List<ResidentStride>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
         private readonly List<Material> _materials = new List<Material>();
         private readonly List<int> _residentIndices = new List<int>();
@@ -94,15 +95,22 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     RunResident resident = populace.Residents[i];
                     NpcSpec spec = NpcMeshes.SpecFor(resident, style.Region, era, mix);
-                    Mesh mesh = NpcMeshes.Build(spec);
-                    _meshes.Add(mesh);
                     float3 world = config.ToWorld(resident.Direction, groundAltitude(resident.Direction) - SinkM);
                     var root = new GameObject("Resident_" + resident.Race + "_" + resident.Role);
                     root.transform.SetParent(transform, false);
                     root.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
                         Quaternion.LookRotation((Vector3)resident.Facing, (Vector3)resident.Direction));
-                    root.AddComponent<MeshFilter>().sharedMesh = mesh;
-                    var renderer = root.AddComponent<MeshRenderer>();
+                    Mesh mesh = NpcMeshes.Build(spec, root.transform, out ResidentStride stride);
+                    var renderer = root.AddComponent<SkinnedMeshRenderer>();
+                    renderer.sharedMesh = mesh;
+                    renderer.bones = stride.Bones;
+                    renderer.rootBone = root.transform;
+                    Bounds bounds = mesh.bounds;
+                    bounds.Expand(new Vector3(0f, stride.LegLength * 0.3f, stride.LegLength));
+                    renderer.localBounds = bounds;
+                    _meshes.Add(mesh);
+                    stride.PreviousDirection = resident.Direction;
+                    _strides.Add(stride);
                     renderer.sharedMaterials = materials;
                     float height = NpcMeshes.HeightM(spec);
                     var capsule = root.AddComponent<CapsuleCollider>();
@@ -127,6 +135,9 @@ namespace Cosmimera.Bootstrap.Demo
                     float3 dir = _populace.CurrentDirection(idx);
                     float3 facing = _populace.CurrentFacing(idx);
                     float3 world = _config.ToWorld(dir, _groundAltitude(dir) - SinkM);
+                    ResidentStride stride = _strides[i];
+                    stride.Advance(math.distance(dir, stride.PreviousDirection) * _config.Radius, _renderers[i].enabled);
+                    stride.PreviousDirection = dir;
                     _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
                         Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
                 }

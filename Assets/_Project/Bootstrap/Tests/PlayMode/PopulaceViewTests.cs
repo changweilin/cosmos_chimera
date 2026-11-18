@@ -82,11 +82,36 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(Vector3.Dot(t.forward, (Vector3)r.Facing), Is.GreaterThan(0.999f));
                 float altitude = t.position.magnitude - Radius;
                 Assert.That(altitude, Is.EqualTo(Hills(r.Direction)).Within(0.1f));
-                Assert.That(t.GetComponent<MeshRenderer>().sharedMaterials.Length, Is.EqualTo(NpcMeshes.SubMeshCount));
+                Assert.That(t.GetComponent<SkinnedMeshRenderer>().sharedMaterials.Length, Is.EqualTo(NpcMeshes.SubMeshCount));
                 var capsule = t.GetComponent<CapsuleCollider>();
                 Assert.That(capsule.radius, Is.EqualTo(PopulacePlanner.BodyRadiusM));
                 Assert.That(capsule.height, Is.InRange(0.8f, 2.7f));
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Settlement_motion_reaches_the_visible_rig()
+        {
+            var (plan, layout, people) = Make(7);
+            PopulaceView view = View(people, layout, plan, true);
+            for (int tick = 1; tick <= 160; tick++)
+            {
+                people.Step(tick * 50, 50);
+                if (tick % 4 != 0) continue;
+                yield return null;
+                for (int i = 0; i < view.Residents.Count; i++)
+                {
+                    if (math.distance(people.CurrentDirection(i), people.Residents[i].Direction) * Radius < 0.1f) continue;
+                    Transform root = view.Residents[i].transform;
+                    Transform[] bones = root.GetComponent<SkinnedMeshRenderer>().bones;
+                    if (Quaternion.Angle(bones[1].localRotation, Quaternion.identity) < 0.2f) continue;
+                    Assert.That(Vector3.Dot(root.up, (Vector3)people.CurrentDirection(i)), Is.GreaterThan(0.99999f));
+                    Assert.That(root.GetComponent<CapsuleCollider>().enabled, Is.True);
+                    yield break;
+                }
+            }
+
+            Assert.Fail("Expected a moving resident to articulate its visible leg within eight simulation seconds.");
         }
 
         [UnityTest]
@@ -102,7 +127,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 GameObject go = view.Residents[i];
                 bool close = math.distance((float3)go.transform.position, near) < PopulaceView.DrawDistanceM;
-                Assert.That(go.GetComponent<MeshRenderer>().enabled, Is.EqualTo(close));
+                Assert.That(go.GetComponent<SkinnedMeshRenderer>().enabled, Is.EqualTo(close));
                 Assert.That(go.GetComponent<CapsuleCollider>().enabled, Is.True);
                 drawn += close ? 1 : 0;
                 hidden += close ? 0 : 1;
@@ -231,6 +256,11 @@ namespace Cosmimera.Bootstrap.Tests
                 rows.Add(("crowd-" + s.Kind, crowd));
             }
 
+            var walk = new List<NpcSpec>();
+            for (int i = 0; i < 5; i++) walk.Add(new NpcSpec(NpcRace.Human, NpcRole.Guard, NpcSex.Male, 0.4f,
+                0.92f, 0f, 0f, ArchRegion.Storm, ArchEra.Mercantile, ArchRegion.Storm, ArchEra.Mercantile, 0f, 43));
+            rows.Add(("stride", walk));
+
             const float RowGap = 30f;
             const float Spacing = 1.2f;
             for (int r = 0; r < rows.Count; r++)
@@ -242,6 +272,18 @@ namespace Cosmimera.Bootstrap.Tests
                     go.transform.SetParent(stage.transform, false);
                     go.transform.localPosition = new Vector3((i - (specs.Count - 1) * 0.5f) * Spacing, 0f, r * RowGap);
                     go.transform.localRotation = Quaternion.Euler(0f, 180f + (i - (specs.Count - 1) * 0.5f) * 5f - 20f, 0f);
+                    if (rows[r].name == "stride")
+                    {
+                        go.transform.localRotation = Quaternion.Euler(0f, 117f, 0f);
+                        Mesh mesh = NpcMeshes.Build(specs[i], go.transform, out ResidentStride gait);
+                        var skinned = go.AddComponent<SkinnedMeshRenderer>();
+                        skinned.sharedMesh = mesh;
+                        skinned.bones = gait.Bones;
+                        skinned.rootBone = go.transform;
+                        skinned.sharedMaterials = materials;
+                        gait.Pose((i - 1) * math.PI * 0.5f, 1f);
+                        continue;
+                    }
                     go.AddComponent<MeshFilter>().sharedMesh = NpcMeshes.Build(specs[i]);
                     go.AddComponent<MeshRenderer>().sharedMaterials = materials;
                 }
