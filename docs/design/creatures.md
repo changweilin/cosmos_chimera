@@ -70,6 +70,8 @@
 ## 主動技（`Data/moves/`）
 `id, element, kind(damage|effect|both), power, effect{...}, cooldown_ms, accuracy(%), range_class(melee|mid|long), shape, base_range_mm, movement?, origin?`
 
+主動技依 `range_class` 區分近攻（`melee`）與遠攻（`mid`／`long`），傷害技另有 `polarity`（`yin`／`yang`）；武器須與之匹配才有加成（見 [crafting.md#武器數值模型](crafting.md#武器數值模型)）。
+
 形狀、爆發中心、位移與每招基礎範圍契約統一定義於 `combat.md#主動技形狀（動畫與特效分類用）` 及〈力量 → 範圍/射程〉；`power` 與 `mastery` 的表示域見〈傷害公式〉，其餘非負整數受 C# Int32 上限約束。
 
 （P5-08 A2）草稿主動技 ID `water_aqua_cutter` → `water_crest_slicer`、`wind_air_slash` → `wind_zephyr_cutter`，避開既有作品主動技名稱；舊 ID 登記於 `Data/retired-ids.txt`，不得重用。

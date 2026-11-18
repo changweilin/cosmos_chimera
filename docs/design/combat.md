@@ -23,7 +23,7 @@ crit    → damage × crit_damage                        # 見〈暴擊〉
 - 以 Int64 計算中間值，只在最後四捨五入（half up）；威力非零且非免疫的命中至少 1 點。`power` 表示域為 0..100000，有效專精為 0..1000；這是資料／API 契約上限，非平衡目標。P2-09 必須保證修正後專精符合此域，負值先歸零；疊加規則另由 P2-09 定義。
 
 ## CD
-`effective_cd = max(cd_floor, move.cooldown_ms × f(速度))`，`f` 為遞減函數，`cd_floor` 防止極端速度值打破節奏。
+`effective_cd = max(cd_floor, move.cooldown_ms × f(速度))`，`f` 為遞減函數，`cd_floor` 防止極端速度值打破節奏。武器速度倍率、基礎威力倍率與距離／陰陽匹配規則見 [crafting.md#武器數值模型](crafting.md#武器數值模型)。
 
 ## 命中與閃避
 **兩段判定**（Q-C7 定案）：先做幾何命中（判定體/彈道碰到才算），碰到後再擲骰：
