@@ -103,7 +103,7 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<ContractException>(() => CraftRules.CanCraft(null, AllSkills, _bag));
         }
 
-        private static readonly GripTuning Grips = new GripTuning(30, 15);
+        private static readonly GripTuning Grips = new GripTuning(35, 25);
         private static readonly GripMode[] TwoHand = { GripMode.TwoHanded };
         private static readonly GripMode[] Dual = { GripMode.DualWield };
         private static readonly GripMode[] Shield = { GripMode.OneHandShield };
@@ -116,7 +116,7 @@ namespace Cosmimera.Crafting.Tests
                 @"{ ""id"": ""test_greatsword"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
                     ""equipment"": { ""kind"": ""two_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
                     ""creature_effects"": [ { ""type"": ""range_mod_percent"", ""params"": { ""delta"": 10 } } ],
-                    ""weapon"": { ""element"": ""fire"", ""element_mastery"": 20, ""power_permille"": 2000, ""speed_permille"": 900 } } }",
+                    ""weapon"": { ""element"": ""fire"", ""element_mastery"": 20, ""power_permille"": 1000, ""speed_permille"": 900 } } }",
                 @"{ ""id"": ""test_dagger"", ""category"": ""equipment"", ""sources"": [], ""utility"": ""none"", ""quantity"": 1, ""season"": ""all"",
                     ""equipment"": { ""kind"": ""one_handed"", ""target"": ""creature"", ""player"": { ""max_hp_percent"": 0, ""move_speed_percent"": 0, ""roll_cooldown_percent"": 0 },
                     ""creature_effects"": [], ""weapon"": { ""element"": ""water"", ""element_mastery"": 5, ""power_permille"": 900, ""speed_permille"": 1100 } } }",
@@ -190,12 +190,12 @@ namespace Cosmimera.Crafting.Tests
             CraftCatalog catalog = GearCatalog();
             WeaponLoadout Weapons(params EquippedItem[] e) => EquipmentRules.Collect(1, e, catalog, EquipmentRules.PlayerGrips, Grips).Weapons;
             WeaponLoadout two = Weapons(new EquippedItem(1, "main_hand", "test_greatsword"));
-            Assert.That(two.HandCount, Is.EqualTo(1)); Assert.That(two.PowerBonusPercent, Is.EqualTo(30));
-            Assert.That(two.PowerPermille(two.First), Is.EqualTo(2600));
+            Assert.That(two.HandCount, Is.EqualTo(1)); Assert.That(two.PowerBonusPercent, Is.EqualTo(35));
+            Assert.That(two.PowerPermille(two.First), Is.EqualTo(1350));
             WeaponLoadout dual = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_dagger"));
-            Assert.That(dual.HandCount, Is.EqualTo(2)); Assert.That(dual.SpeedBonusPercent, Is.EqualTo(15));
+            Assert.That(dual.HandCount, Is.EqualTo(2)); Assert.That(dual.SpeedBonusPercent, Is.EqualTo(25));
             Assert.That(dual.Hand(0).Element, Is.EqualTo(Element.Metal)); Assert.That(dual.Hand(1).Element, Is.EqualTo(Element.Water));
-            Assert.That(dual.SpeedPermille(dual.Hand(1)), Is.EqualTo(1265));
+            Assert.That(dual.SpeedPermille(dual.Hand(1)), Is.EqualTo(1375));
             WeaponLoadout shield = Weapons(new EquippedItem(1, "main_hand", "craft_iron_blade"), new EquippedItem(1, "off_hand", "test_shield"));
             Assert.That(shield.HasShield && shield.HandCount == 1 && shield.PowerBonusPercent == 0 && shield.SpeedBonusPercent == 0, Is.True);
         }

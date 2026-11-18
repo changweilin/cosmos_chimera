@@ -48,14 +48,14 @@ namespace Cosmimera.Combat.Tests
         public void Two_handed_bonus_scales_power_and_matching_element_adds_mastery()
         {
             Combatant c = Make();
-            c.SetWeapons(new WeaponLoadout(1, Fire, default, 30, 0, false));
+            c.SetWeapons(new WeaponLoadout(1, Fire, default, 35, 0, false));
             CastContext fire = Cast(c, Damage(Element.Fire), 0, 0);
-            Assert.That(fire.WeaponPowerPermille, Is.EqualTo(1950));
-            Assert.That(fire.EffectivePower, Is.EqualTo(98)); // 50 × 1.95 rounded half up
+            Assert.That(fire.WeaponPowerPermille, Is.EqualTo(2025));
+            Assert.That(fire.EffectivePower, Is.EqualTo(101)); // 50 × 2.025 rounded half up
             Assert.That(fire.MasteryPercent, Is.EqualTo(20));
             CastContext water = Cast(c, Damage(Element.Water), 0, 1);
             Assert.That(water.MasteryPercent, Is.Zero, "element mastery only for the weapon's element");
-            Assert.That(water.WeaponPowerPermille, Is.EqualTo(1950));
+            Assert.That(water.WeaponPowerPermille, Is.EqualTo(2025));
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Cosmimera.Combat.Tests
             Combatant plain = Make();
             int baseCd = Cast(plain, Damage(Element.Water), 0, 0).CooldownMs;
             Combatant c = Make();
-            c.SetWeapons(new WeaponLoadout(2, Fire, Water, 0, 15, false));
+            c.SetWeapons(new WeaponLoadout(2, Fire, Water, 0, 25, false));
             CastContext first = Cast(c, Damage(Element.Water), 0, 0);
             Assert.That(first.WeaponPowerPermille, Is.EqualTo(1500));
             Assert.That(first.MasteryPercent, Is.Zero, "first hand is fire");
