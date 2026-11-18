@@ -11,6 +11,8 @@ namespace Cosmimera.WorldGen
         Main = 0,
         /// <summary>Branch trail connecting an off-route region to the network.</summary>
         Trail = 1,
+        /// <summary>Extra trail between Gabriel neighbours that closes a cycle of ≤ 4 roads (vehicle loop routes).</summary>
+        Loop = 2,
     }
 
     /// <summary>Settlement kind; decides which building kinds it holds.</summary>
@@ -186,8 +188,11 @@ namespace Cosmimera.WorldGen
             Buildings = buildings;
         }
 
-        /// <summary>Main roads in route order, then trails in ascending ToRegion order.</summary>
-        /// <remarks>Pre: none. Post: Count == regions − 1 (a spanning tree of the region graph). Side effects: none.</remarks>
+        /// <summary>Main roads in route order, then trails in ascending ToRegion order, then loop roads.</summary>
+        /// <remarks>
+        /// Pre: none. Post: the non-Loop roads (Count − loops == regions − 1) form a spanning tree of the region graph;
+        /// 0–2 Loop roads follow, each closing a cycle of ≤ 4 roads. Side effects: none.
+        /// </remarks>
         public IReadOnlyList<RunRoad> Roads { get; }
 
         /// <summary>Settlements: starting town, villages in route order, lair, then ruins in region order.</summary>

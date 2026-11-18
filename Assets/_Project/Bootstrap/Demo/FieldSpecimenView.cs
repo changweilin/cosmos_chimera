@@ -8,6 +8,7 @@ namespace Cosmimera.Bootstrap.Demo
     {
         private IReadOnlyList<FieldSpecimen> _items;
         private GameObject[] _roots;
+        private readonly Dictionary<int, GameObject> _tracks = new Dictionary<int, GameObject>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
         private readonly List<(Transform part, Vector3 axis, float speed, bool wing, int phase)> _motion = new List<(Transform,Vector3,float,bool,int)>();
         private Material _material;
@@ -41,6 +42,7 @@ namespace Cosmimera.Bootstrap.Demo
                             Attach(root, wheel, new Vector3(side * 0.6496f,0.35f,axle * 0.73f), Vector3.right, 340f / item.Scale,
                                 false, item.Style, ref bounds);
                 }
+                if (item.Form == FieldForm.MineCart) Track(i, item);
                 root.transform.localScale = Vector3.one * item.Scale;
                 if (item.Solid)
                 {
@@ -70,7 +72,19 @@ namespace Cosmimera.Bootstrap.Demo
             bounds.Encapsulate(pivot + mesh.bounds.max);
         }
 
+        // Rails are scenery, not part of the destructible cart: they outlive it and never block (spec: carts block, track does not).
+        private void Track(int index, FieldSpecimen item)
+        {
+            Mesh mesh = new FieldMeshes(item).BuildTrack(out float3 origin);
+            var track = new GameObject("Track");
+            track.transform.SetParent(transform, false);
+            track.transform.SetPositionAndRotation((Vector3)origin, Quaternion.identity);
+            Draw(track, mesh);
+            _tracks[index] = track;
+        }
+
         internal GameObject Root(int index) => _roots[index];
+        internal GameObject TrackOf(int index) => _tracks.TryGetValue(index, out var track) ? track : null;
 
         internal void Sync(long nowMs)
         {

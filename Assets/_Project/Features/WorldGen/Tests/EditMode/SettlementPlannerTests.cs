@@ -11,7 +11,7 @@ namespace Cosmimera.WorldGen.Tests
     public sealed class SettlementPlannerTests
     {
         // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v2).
-        private const ulong SnapshotSeed12345V2 = 12544250319596664072UL;
+        private const ulong SnapshotSeed12345V3 = 12227026268872262454UL;
 
         private const float Radius = 640f;
         private readonly List<Object> _created = new List<Object>();
@@ -73,7 +73,14 @@ namespace Cosmimera.WorldGen.Tests
             {
                 RunPlan plan = Plan(seed);
                 RunLayout layout = SettlementPlanner.Generate(_planet, plan, null);
-                Assert.That(layout.Roads.Count, Is.EqualTo(plan.Regions.Count - 1), $"seed {seed}");
+                int loops = 0;
+                foreach (RunRoad road in layout.Roads)
+                {
+                    if (road.Class == RoadClass.Loop) loops++;
+                }
+
+                Assert.That(layout.Roads.Count - loops, Is.EqualTo(plan.Regions.Count - 1), $"seed {seed}");
+                Assert.That(loops, Is.InRange(0, 2), $"seed {seed}");
                 var parent = new int[plan.Regions.Count];
                 for (int i = 0; i < parent.Length; i++)
                 {
@@ -85,6 +92,11 @@ namespace Cosmimera.WorldGen.Tests
                 foreach (RunRoad road in layout.Roads)
                 {
                     CollectionAssert.Contains(plan.Regions[road.FromRegion].Neighbors, road.ToRegion, $"seed {seed}");
+                    if (road.Class == RoadClass.Loop)
+                    {
+                        continue;
+                    }
+
                     int ra = Find(road.FromRegion), rb = Find(road.ToRegion);
                     Assert.That(ra, Is.Not.EqualTo(rb), $"seed {seed}: road closes a cycle");
                     parent[ra] = rb;
@@ -105,6 +117,65 @@ namespace Cosmimera.WorldGen.Tests
 
                 Assert.That(main, Is.EqualTo(plan.MainRoute.Count - 1), $"seed {seed}");
             }
+        }
+
+        [Test]
+        public void Loop_roads_close_short_cycles_and_appear_on_most_planets()
+        {
+            int withLoops = 0;
+            for (ulong seed = 0; seed < 200; seed++)
+            {
+                RunPlan plan = Plan(seed);
+                RunLayout layout = SettlementPlanner.Generate(_planet, plan, null);
+                var adjacent = new System.Collections.Generic.List<int>[plan.Regions.Count];
+                for (int r = 0; r < adjacent.Length; r++) adjacent[r] = new System.Collections.Generic.List<int>();
+                var joined = new System.Collections.Generic.HashSet<long>();
+                bool any = false;
+                foreach (RunRoad road in layout.Roads)
+                {
+                    Assert.That(joined.Add(EdgeKey(road.FromRegion, road.ToRegion)), Is.True, $"seed {seed}: duplicate road");
+                    if (road.Class == RoadClass.Loop)
+                    {
+                        any = true;
+                        Assert.That(road.FromRegion, Is.LessThan(road.ToRegion));
+                        Assert.That(road.WidthM, Is.EqualTo(SettlementPlanner.TrailWidthM));
+                        Assert.That(TreeHops(adjacent, road.FromRegion, road.ToRegion), Is.InRange(2, 3), $"seed {seed}");
+                        int boss = plan.MainRoute[plan.MainRoute.Count - 1];
+                        Assert.That(road.FromRegion != boss && road.ToRegion != boss, Is.True, $"seed {seed}: loop at the boss");
+                        Assert.That(adjacent[road.FromRegion].Count >= 2 && adjacent[road.ToRegion].Count >= 2, Is.True,
+                            $"seed {seed}: loop erases a dead end");
+                        continue;
+                    }
+
+                    adjacent[road.FromRegion].Add(road.ToRegion);
+                    adjacent[road.ToRegion].Add(road.FromRegion);
+                }
+
+                if (any) withLoops++;
+            }
+
+            Assert.That(withLoops, Is.GreaterThan(100));
+        }
+
+        private static int TreeHops(System.Collections.Generic.List<int>[] adjacent, int from, int to)
+        {
+            var depth = new int[adjacent.Length];
+            for (int i = 0; i < depth.Length; i++) depth[i] = -1;
+            var queue = new System.Collections.Generic.Queue<int>();
+            depth[from] = 0;
+            queue.Enqueue(from);
+            while (queue.Count > 0)
+            {
+                int at = queue.Dequeue();
+                foreach (int n in adjacent[at])
+                {
+                    if (depth[n] >= 0) continue;
+                    depth[n] = depth[at] + 1;
+                    queue.Enqueue(n);
+                }
+            }
+
+            return depth[to];
         }
 
         [Test]
@@ -274,9 +345,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
+            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(3), "bump the pin with the version");
             ulong h = SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(12345), null));
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V3), "actual " + h);
         }
     }
 }

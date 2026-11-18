@@ -61,6 +61,50 @@ namespace Cosmimera.Bootstrap.Demo
             return Finish();
         }
 
+        /// <summary>Builds the mine-cart rail bed under the whole shuttle route, relative to <paramref name="origin"/>.</summary>
+        /// <remarks>
+        /// Pre: spec.Form == MineCart. Post: mesh spans every route sample; origin == RouteSurface(0) in world space.
+        /// Side effects: allocates a Mesh the caller owns.
+        /// </remarks>
+        internal Mesh BuildTrack(out float3 origin)
+        {
+            // REQ: docs/design/settlement-structures.md#交通工具（礦車／軌道）
+            origin = _spec.RouteSurface(0);
+            int n = _spec.RouteCount;
+            // Vertices stay origin-relative: absolute coordinates at R=640 m lose ~0.1 mm per ulp, enough to shimmer thin rails.
+            var points = new float3[n];
+            var sides = new float3[n];
+            for (int k = 0; k < n; k++) points[k] = _spec.RouteSurface(k) - origin;
+            for (int k = 0; k < n; k++)
+            {
+                float3 tangent = points[math.min(k + 1, n - 1)] - points[math.max(k - 1, 0)];
+                sides[k] = math.normalizesafe(math.cross(_spec.RouteUp(k), tangent));
+            }
+            // Gauge matches the cart's wheel track (±0.6496 local) so the wheels sit on the rails at every scale.
+            float gauge = 0.6496f * _spec.Scale;
+            Color rail = Color.Lerp(_frame, new Color(0.42f, 0.44f, 0.47f), 0.6f);
+            Color sleeper = Color.Lerp(_frame, _pale, 0.18f);
+            float carry = 0f;
+            for (int k = 0; k + 1 < n; k++)
+            {
+                float3 upA = _spec.RouteUp(k), upB = _spec.RouteUp(k + 1);
+                for (int s = -1; s <= 1; s += 2)
+                    Spar(points[k] + sides[k] * (s * gauge) + upA * 0.03f,
+                        points[k + 1] + sides[k + 1] * (s * gauge) + upB * 0.03f, 0.035f, 0.035f, rail, 4);
+                float length = math.distance(points[k], points[k + 1]);
+                for (; carry < length; carry += 0.8f)
+                {
+                    float t = carry / length;
+                    float3 at = math.lerp(points[k], points[k + 1], t);
+                    float3 up = math.normalize(math.lerp(upA, upB, t));
+                    float3 side = math.normalizesafe(math.lerp(sides[k], sides[k + 1], t)) * (gauge + 0.22f);
+                    Spar(at - side - up * 0.03f, at + side - up * 0.03f, 0.055f, 0.055f, sleeper, 4);
+                }
+                carry -= length;
+            }
+            return Finish();
+        }
+
         private Mesh Finish()
         {
             var data = new SceneryMeshes.MeshData();
@@ -310,6 +354,71 @@ namespace Cosmimera.Bootstrap.Demo
                         }
                 }
             }
+            if (f == FieldForm.Wagon || f == FieldForm.Sled) DraftBeast(deck);
+        }
+
+        internal enum DraftKind { Ox, Horse, Reindeer, Lizard }
+
+        internal static DraftKind DraftFor(FieldSpecimen spec) => spec.Region switch
+        {
+            ArchRegion.Ice => DraftKind.Reindeer,
+            ArchRegion.Lava => DraftKind.Lizard,
+            _ => spec.Style < 500 ? DraftKind.Ox : DraftKind.Horse,
+        };
+
+        // REQ: docs/design/settlement-structures.md#交通工具 — the beast is part of the vehicle mesh so it moves, blocks
+        // and breaks with it; no separate destructible. Build and coat reuse the vehicle's own Style/Age draws.
+        private void DraftBeast(float deck)
+        {
+            DraftKind kind = DraftFor(_spec);
+            Color coat = kind switch
+            {
+                DraftKind.Reindeer => new Color(0.46f,0.36f,0.27f),
+                DraftKind.Lizard => new Color(0.42f,0.16f,0.11f),
+                DraftKind.Horse => new Color(0.52f,0.29f,0.15f),
+                _ => new Color(0.36f,0.24f,0.17f),
+            };
+            coat = Color.Lerp(coat, new Color(0.78f,0.72f,0.62f), _spec.Age * 0.00035f);
+            Color hoof = Color.Lerp(coat, Ink, 0.6f);
+            bool lizard = kind == DraftKind.Lizard;
+            float build = 0.9f + _spec.Style * 0.0002f;
+            float legY = lizard ? 0.32f : kind == DraftKind.Horse ? 0.78f : 0.66f;
+            float3 torso = P(0, legY + (lizard ? 0.05f : 0.22f), 2.45f);
+            float3 bodyR = lizard ? P(0.34f,0.2f,0.78f) * build : P(0.36f,0.36f,0.72f) * build;
+            Oval(torso, bodyR, coat);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                Spar(P(s * 0.5f,deck + 0.1f,1.15f), P(s * 0.42f,torso.y,torso.z - 0.25f), 0.04f, 0.035f, _frame);
+                for (int end = -1; end <= 1; end += 2)
+                {
+                    float3 hip = torso + P(s * bodyR.x * 0.62f, -bodyR.y * 0.4f, end * bodyR.z * 0.6f);
+                    float3 foot = lizard ? hip + P(s * 0.28f,-legY + 0.04f,0) : P(hip.x,0.06f,hip.z);
+                    Spar(hip, foot, lizard ? 0.075f : 0.085f, 0.055f, coat);
+                    Oval(foot, P(0.07f,0.05f,0.08f), hoof);
+                }
+            }
+            float3 neck = torso + P(0, lizard ? 0.02f : bodyR.y * 0.6f, bodyR.z * 0.85f);
+            float3 head = neck + (lizard ? P(0,0.02f,0.32f) : kind == DraftKind.Horse ? P(0,0.42f,0.3f) : P(0,0.12f,0.34f));
+            Spar(neck, head, lizard ? 0.17f : 0.2f, 0.13f, coat);
+            Oval(head + P(0,0,0.1f), lizard ? P(0.15f,0.1f,0.24f) : P(0.15f,0.16f,0.26f), coat);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                Oval(head + P(s * 0.13f,0.05f,0.12f), P(0.03f,0.035f,0.03f), Ink);
+                if (kind == DraftKind.Ox)
+                    Spar(head + P(s * 0.1f,0.12f,0f), head + P(s * 0.34f,0.24f,0.08f), 0.045f, 0.015f, _pale);
+                if (kind == DraftKind.Reindeer)
+                {
+                    float3 beam = head + P(s * 0.27f,0.52f,-0.12f);
+                    Spar(head + P(s * 0.08f,0.14f,0f), beam, 0.035f, 0.022f, _pale);
+                    Spar(math.lerp(head, beam, 0.6f) + P(0,0.1f,0), beam + P(s * 0.05f,0.12f,0.2f), 0.02f, 0.01f, _pale);
+                }
+                if (kind == DraftKind.Horse)
+                    Spar(head + P(s * 0.06f,0.14f,-0.08f), head + P(s * 0.07f,0.3f,-0.1f), 0.035f, 0.01f, coat);
+            }
+            float3 tailRoot = torso - P(0, lizard ? 0f : -bodyR.y * 0.2f, bodyR.z * 0.95f);
+            Spar(tailRoot, tailRoot + (lizard ? P(0,-0.12f,-0.85f) : P(0,-0.45f,-0.12f)),
+                lizard ? 0.13f : 0.045f, 0.015f, kind == DraftKind.Horse ? Color.Lerp(coat, Ink, 0.45f) : coat);
+            Oval(torso + P(0,bodyR.y * 0.75f,-0.1f), P(0.22f,0.06f,0.18f), _accent);
         }
 
         private void Feathers(int side, bool bird, float3 shoulder)

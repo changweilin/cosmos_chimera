@@ -58,9 +58,10 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345()
         {
+            // Version 6 (P3-19): weak trees become snags, so the canopy digest was re-pinned; understory unchanged.
             // Version 5 (P3-24 a): granite_tor joined the canopy catalog, shifting every understory kind index by one,
             // so the understory digest was re-pinned; the canopy digest is version 4's (no geology map → same items).
-            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(5), "new version: re-pin the digests below");
+            Assert.That(ScatterPlanner.GeneratorVersion, Is.EqualTo(6), "new version: re-pin the digests below");
             float3 up = math.normalize(new float3(1, 1, 1));
             Assert.That(Digest(Planner(), up, true), Is.EqualTo(UnderstoryDigest));
             Assert.That(Digest(Planner(), up), Is.EqualTo(SnapshotDigest));
@@ -125,7 +126,7 @@ namespace Cosmimera.WorldGen.Tests
             });
         }
 
-        private const ulong SnapshotDigest = 6165704317201438783ul;
+        private const ulong SnapshotDigest = 10931489910376922669ul;
         private const ulong UnderstoryDigest = 7627125579741782239ul;
 
         [Test]
@@ -240,6 +241,45 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(ice.ContainsKey("broadleaf"), Is.False);
             Dictionary<string, int> swamp = CanopyCensus(WithBiome("swamp"));
             Assert.That(swamp.Keys, Is.SupersetOf(new[] { "swamp_tree", "log", "snag" }));
+        }
+
+        [Test]
+        public void Weakest_living_trees_stand_dead_outside_plantations()
+        {
+            ScatterPlanner p = WithBiome("forest");
+            int n = p.CellsPerFace;
+            int living = 0, ailing = 0, plantationWeak = 0;
+            var healthByType = new Dictionary<ForestType, List<int>>();
+            for (long k = 0; k < 6L * n * n; k++)
+            {
+                if (!p.TryGetItem(k, out ScatterItem it)) continue;
+                Assert.That(it.Age, Is.InRange(0, 1000));
+                Assert.That(it.Health, Is.InRange(0, 1000));
+                ScatterKind kind = p.Kinds[it.KindIndex];
+                if (kind.Shape != ScatterShape.Tree) continue;
+                ForestType type = p.ForestTypeOfCell(k);
+                if (kind.Id == "snag")
+                {
+                    Assert.That(it.Health, Is.EqualTo(0));
+                    continue;
+                }
+
+                living++;
+                if (it.Health <= ScatterPlanner.DeadHealth)
+                {
+                    Assert.That(type, Is.EqualTo(ForestType.Plantation), "only tended stands keep weak trees alive");
+                    plantationWeak++;
+                }
+
+                if (it.Health < 600) ailing++;
+                if (!healthByType.TryGetValue(type, out List<int> list)) healthByType[type] = list = new List<int>();
+                list.Add(it.Health);
+            }
+
+            Assert.That(living, Is.GreaterThan(1000));
+            Assert.That(ailing, Is.GreaterThan(0), "some living trees look unwell");
+            static double Mean(List<int> xs) { double s = 0; foreach (int x in xs) s += x; return s / xs.Count; }
+            Assert.That(Mean(healthByType[ForestType.Secondary]), Is.LessThan(Mean(healthByType[ForestType.Mixed]) - 40));
         }
 
         [Test]

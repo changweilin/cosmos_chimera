@@ -66,7 +66,7 @@ namespace Cosmimera.Combat.Tests
             CreatureDef def = MakeCreature("c_test", sig);
             var enc = new Encounter(_planet, _balance, new FlatSurface(), 123UL);
             var vitals = new PlayerVitals(_balance.Player);
-            enc.AttachPlayer(vitals, 0, 0);
+            enc.AttachPlayer(vitals, 100, 100);
 
             float3 playerDir = math.normalize(new float3(0f, 1f, 0f));
             float3 playerPos = _planet.ToWorld(playerDir, 0f);
@@ -74,7 +74,7 @@ namespace Cosmimera.Combat.Tests
             enc.Field(main.Id, playerDir, false, 1000);
 
             float3 wildDir = math.normalize(new float3(0.005f, 1f, 0f));
-            EncounterUnit wild = enc.AddWild(def, null, wildDir, 10, null);
+            EncounterUnit wild = enc.AddWildT(def, null, wildDir, 10);
             enc.Provoke(wild.Id);
 
             enc.SetDirectControl(true);
@@ -108,7 +108,9 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => enc.SetDirectInput(new float3(float.NaN, 0f, 0f), float3.zero, -1));
             Assert.Throws<ContractException>(() => enc.TryDirectCast(-1, 0, -1, 1000));
             Assert.Throws<ContractException>(() => enc.TryDirectCast(main.Id, -1, -1, 1000));
-            Assert.Throws<ContractException>(() => enc.TryDirectCast(main.Id, 0, -1, -1));
+            // LastTickMs starts at long.MinValue, so the "nowMs precedes LastTickMs" guard needs a real tick first.
+            enc.Tick(1000, 50, _planet.ToWorld(dir, 0f), Free, main.Id);
+            Assert.Throws<ContractException>(() => enc.TryDirectCast(main.Id, 0, -1, 999));
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 2;
+        public const int GeneratorVersion = 3;
 
         /// <summary>Paved width of a main road (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -68,8 +68,11 @@ namespace Cosmimera.WorldGen
         /// <summary>Generates the layout of <paramref name="plan"/>.</summary>
         /// <remarks>
         /// Pre: planet valid and the one plan was generated for; plan non-null; isLand null (all land) or deterministic.
-        /// Post: Roads form a spanning tree of the region graph: one Main road per consecutive MainRoute pair, one Trail
-        ///       from every off-route region to its BFS parent (fewer hops, smallest index). Every road vertex is unit, the
+        /// Post: Main and Trail roads form a spanning tree of the region graph: one Main road per consecutive MainRoute
+        ///       pair, one Trail from every off-route region to its BFS parent (fewer hops, smallest index). Then up to
+        ///       1 + U{0,1} Loop roads between Gabriel neighbours not yet joined whose tree path is ≤ 3 roads (shortest
+        ///       first), so each closes a cycle of ≤ 4 roads; neither end is the boss region or a leaf of the tree;
+        ///       fewer when fewer candidates exist. Every road vertex is unit, the
         ///       first/last equal the end sites, and Bridge[i] == (isLand != null &amp;&amp; !isLand(Points[i])).
         ///       Settlements: one starting town (Tribe/Town/City/CityState allowed by planet size) centred at
         ///       LandingDirection, one Village per route region strictly between landing and boss, one Lair of 6
@@ -134,7 +137,94 @@ namespace Cosmimera.WorldGen
                     TrailWidthM, count, radius, isLand, ref rng);
             }
 
+            // REQ: docs/design/settlement-structures.md#交通工具 — loops for vehicles. Drawn last so the tree roads and
+            // every settlement keep the exact v2 draws; only the appended loop roads differ.
+            int loops = 1 + (int)rng.NextUInt(2);
+            foreach ((int a, int b) in LoopCandidates(regions, roads, route[route.Count - 1]))
+            {
+                if (loops-- == 0)
+                {
+                    break;
+                }
+
+                roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng));
+            }
+
             return new RunLayout(roads.ToArray(), settlements.ToArray(), buildings.ToArray());
+        }
+
+        private const int MaxLoopRoads = 4;
+
+        // Neighbour pairs (a < b) not joined by a road whose tree path is short enough, nearest first, ties by (a, b).
+        // Never at the boss region or a tree leaf: DungeonPlanner turns every road crossing into a gate, and a loop
+        // there would bypass the sealed arena or erase the dead ends that hold treasure (planet-world.md#地表地牢).
+        // Pure graph + site geometry: no RNG, so the candidate order never depends on earlier draws.
+        private static List<(int, int)> LoopCandidates(IReadOnlyList<RunRegion> regions, List<RunRoad> tree, int boss)
+        {
+            var adjacent = new List<int>[regions.Count];
+            for (int r = 0; r < regions.Count; r++)
+            {
+                adjacent[r] = new List<int>();
+            }
+
+            foreach (RunRoad road in tree)
+            {
+                adjacent[road.FromRegion].Add(road.ToRegion);
+                adjacent[road.ToRegion].Add(road.FromRegion);
+            }
+
+            var found = new List<(int a, int b, float dot)>();
+            var depth = new int[regions.Count];
+            var queue = new Queue<int>();
+            for (int a = 0; a < regions.Count; a++)
+            {
+                for (int i = 0; i < depth.Length; i++)
+                {
+                    depth[i] = -1;
+                }
+
+                depth[a] = 0;
+                queue.Enqueue(a);
+                while (queue.Count > 0)
+                {
+                    int at = queue.Dequeue();
+                    if (depth[at] == MaxLoopRoads - 1)
+                    {
+                        continue;
+                    }
+
+                    foreach (int n in adjacent[at])
+                    {
+                        if (depth[n] < 0)
+                        {
+                            depth[n] = depth[at] + 1;
+                            queue.Enqueue(n);
+                        }
+                    }
+                }
+
+                if (a == boss || adjacent[a].Count < 2)
+                {
+                    continue;
+                }
+
+                foreach (int b in regions[a].Neighbors)
+                {
+                    if (b == boss || adjacent[b].Count < 2)
+                    {
+                        continue;
+                    }
+
+                    // depth 1 = already a road; > 1 within the bound = closes a cycle of depth + 1 roads.
+                    if (b > a && depth[b] > 1)
+                    {
+                        found.Add((a, b, math.dot(regions[a].Center, regions[b].Center)));
+                    }
+                }
+            }
+
+            found.Sort((x, y) => x.dot != y.dot ? y.dot.CompareTo(x.dot) : x.a != y.a ? x.a.CompareTo(y.a) : x.b.CompareTo(y.b));
+            return found.ConvertAll(f => (f.a, f.b));
         }
 
         /// <summary>Order-sensitive FNV-1a digest of the layout's discrete content (no float directions).</summary>

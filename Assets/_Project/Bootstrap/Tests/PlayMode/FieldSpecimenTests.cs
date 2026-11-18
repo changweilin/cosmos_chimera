@@ -54,6 +54,38 @@ namespace Cosmimera.Bootstrap.Tests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator Mine_carts_run_on_a_non_blocking_track_that_spans_their_route()
+        {
+            List<FieldSpecimen> items = null;
+            int cart = -1;
+            for (ulong seed = 1; cart < 0 && seed <= 48; seed++)
+            {
+                items = Samples(seed, seed % 3 == 0 ? "ice_crystal_planet" : "verdant_planet");
+                cart = items.FindIndex(s => s.Form == FieldForm.MineCart);
+            }
+            Assert.That(cart, Is.GreaterThanOrEqualTo(0));
+            var root = new GameObject("field-track");
+            try
+            {
+                var view = root.AddComponent<FieldSpecimenView>();
+                view.Configure(items, Shader.Find("Cosmimera/ToonScenery"));
+                GameObject track = view.TrackOf(cart);
+                Assert.That(track, Is.Not.Null);
+                Assert.That(track.GetComponent<Collider>(), Is.Null);
+                Bounds bounds = track.GetComponent<MeshFilter>().sharedMesh.bounds;
+                bounds.center += track.transform.position;
+                bounds.Expand(0.01f);
+                var item = items[cart];
+                Assert.That(bounds.Contains(item.RouteSurface(0)), Is.True);
+                Assert.That(bounds.Contains(item.RouteSurface(item.RouteCount - 1)), Is.True);
+                for (int i = 0; i < items.Count; i++)
+                    if (i != cart && items[i].Form != FieldForm.MineCart) Assert.That(view.TrackOf(i), Is.Null);
+            }
+            finally { Object.Destroy(root); }
+            yield return null;
+        }
+
         [Test]
         public void Moving_targets_keep_damage_at_their_current_location_and_stay_destroyed()
         {

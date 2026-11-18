@@ -600,7 +600,19 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             Palette second = look.VariantsB != null ? look.VariantsB[(int)((hash >> 4) % (uint)look.VariantsB.Length)] : look.B;
+            if (item.Shape == ScatterShape.Tree && look.RoleB == Role.Leaf) second = Ailing(second, item.Health);
             Model(parent, mesh, scale, first, MaterialFor(second.Color, look.RoleB, second));
+        }
+
+        // REQ: docs/design/planet-world.md#自然生物 — weaker trees yellow. Three steps, not a ramp: materials are cached
+        // per colour, and a continuous fade would create one material per tree.
+        private static Palette Ailing(Palette leaf, int health)
+        {
+            float fade = health >= 700 ? 0f : health >= 600 ? 0.18f : health >= 520 ? 0.34f : 0.5f;
+            if (fade == 0f) return leaf;
+            Color dry = C(0xB39A52);
+            return new Palette(Color.Lerp(leaf.Color, dry, fade), leaf.Accent, Color.Lerp(leaf.Top, dry, fade * 0.8f),
+                leaf.Glow, leaf.Sway);
         }
 
         private static void Capsule(Transform parent, float centreY, float radius, float height, int direction)

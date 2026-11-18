@@ -80,9 +80,10 @@
 <h2>地形試煉與戰鬥旅人（已照暫定先行，可推翻）</h2>
 <div class="cards">
 <article id="Q-G10">
-  <header><a class="id" href="#Q-G10">Q-G10</a><span class="tag">影響 P5-10、P3-33</span></header>
-  <p><span class="label">問題</span><b>試煉 BOSS 新物種的範圍</b>。10 種試煉 BOSS 全新設計：每種是完整三段進化線，還是只有 BOSS 階段的單一型態？</p>
-  <p><span class="label">暫定</span>完整三段進化線（符合現行 <code>line_id</code>／<code>stage</code> 資料契約）；只有 BOSS 型態必須持有 <code>immune_&lt;地形&gt;</code>（已寫入 <a href="design/trainer-battles.md#地形試煉">trainer-battles.md〈地形試煉〉</a>，照此實作）</p>
+  <header><a class="id" href="#Q-G10">Q-G10 追問</a><span class="tag">影響 P5-10、P3-33、資料契約</span></header>
+  <p><span class="label">已定</span>10 種試煉 BOSS 各為<b>單一型態</b>（不做三段進化線）。</p>
+  <p><span class="label">問題</span>BOSS 階段隨星球大小不同（矮行星少年、行星成年、超巨星成年＋超載），單一型態只能有一個 <code>stage</code>。(A) 固定為<b>成年</b>，矮行星上以等級／能力值縮放代替少年；(B) 型態<b>不帶階段</b>（新 <code>stage: boss</code>，資料契約與驗證器要改）；(C) 每種試煉只出現在特定大小的星球。另：收服後可以進化嗎（單一型態＝不可進化）？可以收服嗎？</p>
+  <p><span class="label">建議</span>A；可收服、不可進化。</p>
 </article>
 </div>
 </section>
@@ -97,11 +98,6 @@
 <section>
 <h2>戰鬥與環境</h2>
 <div class="cards">
-<article id="Q-W36">
-  <header><a class="id" href="#Q-W36">Q-W36</a><span class="tag">影響 P3-34、P3-31 生態</span></header>
-  <p><span class="label">問題</span><b>野生個體在「非活躍時段」怎麼表現？</b>晝夜活動性已定（屬性＋習性推導，見 <a href="design/creature-ecology.md#晝夜活動性">creature-ecology.md〈晝夜活動性〉</a>）。但野生宙獸生成後就固定、不重生，所以原定的「夜晚出沒權重 ×2」沒有地方套用。(A) <b>休息</b>：留在家域不遊蕩、領域縮為「迴避」，被打或被靠近才醒；(B) <b>隱匿</b>：離開地圖（看不到也無法互動），進入活躍時段才回到家域；(C) <b>新增出沒機制</b>：每區域依時段補生／退場野生個體（影響存檔與同步，工作量最大）。</p>
-  <p><span class="label">暫定</span><span class="none">無</span>（此題未定前晝夜活動性不接線，天氣與時段其餘部分已實作）</p>
-</article>
 
 
 
@@ -138,8 +134,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-W36':[R('ok','非活躍時段的表現',['A 休息（家域原地、領域縮為迴避）','B 隱匿（離開地圖）','C 新增時段出沒機制','改（補充）'])],
- 'Q-G10':[R('ok','試煉 BOSS 新物種的範圍',['照暫定','單一型態','改（補充）']),T('note','補充','若改，寫新規則')],
+ 'Q-G10':[R('ok','單一型態的階段',['A 固定成年＋縮放','B 新增 stage: boss','C 限定星球大小','改（補充）']),R('cap','收服／進化',['可收服、不可進化','不可收服','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

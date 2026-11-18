@@ -11,9 +11,12 @@ namespace Cosmimera.Bootstrap.Demo
 
     internal sealed class FieldSpecimen
     {
-        internal const int GeneratorVersion = 1;
+        internal const int GeneratorVersion = 3;
+        internal const int LoopPercent = 30;
         internal readonly FieldForm Form;
         internal readonly int Style, Age, Damage, Duty;
+        /// <summary>True: drives one way round a closed road cycle (route[0] == route[^1]); false: shuttles end to end.</summary>
+        internal readonly bool Loop;
         internal readonly ArchRegion Region;
         internal readonly ArchEra Era, DetailEra;
         internal readonly ArchMix Mix;
@@ -26,12 +29,19 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal bool Animal => Form >= FieldForm.Hare;
         internal bool Solid => !Animal && Form != FieldForm.Balloon && Form != FieldForm.Skiff;
-        internal float Radius => (Animal ? 0.65f : 1.55f) * Scale;
-        internal float3 Center => Position + Direction * ((Animal ? 0.44f : 1f) * Scale);
+        internal bool Drafted => Form == FieldForm.Wagon || Form == FieldForm.Sled;
+        // Drafted vehicles span ~4.6 m (cart + beast ahead along Facing); one sphere centred mid-length covers both.
+        internal float Radius => (Animal ? 0.65f : Drafted ? 2.3f : 1.55f) * Scale;
+        internal float3 Center => Position + Direction * ((Animal ? 0.44f : 1f) * Scale) + (Drafted ? Facing * (1.1f * Scale) : float3.zero);
+        internal int RouteCount => _route.Length;
+        internal float3 RouteUp(int k) => _route[k];
+        internal float3 RouteSurface(int k) => _planet.ToWorld(_route[k], _heights[k]);
 
         private FieldSpecimen(FieldForm form, ArchPlanetStyle culture, ArchMix mix, int style, int age, int damage,
-            int duty, ArchEra detailEra, PlanetConfig planet, float3[] route, float[] heights, float routeLength, int phase)
+            int duty, ArchEra detailEra, PlanetConfig planet, float3[] route, float[] heights, float routeLength, int phase,
+            bool loop = false)
         {
+            Loop = loop;
             Form = form;
             Region = culture.Region;
             Era = culture.Era;
@@ -46,20 +56,20 @@ namespace Cosmimera.Bootstrap.Demo
             _route = route;
             _heights = heights;
             _legMs = math.max(1000, (int)(1000f * routeLength / (Animal ? 1.3f : 2f)));
-            _phaseMs = phase % (2 * _legMs);
+            _phaseMs = phase % (loop ? _legMs : 2 * _legMs);
             Step(0);
         }
 
         internal void Step(long nowMs)
         {
-            int time = (int)((nowMs + _phaseMs) % (2 * _legMs));
-            float t = Form <= FieldForm.Hoist ? 0f : 1f - math.abs(time - _legMs) / (float)_legMs;
+            int time = (int)((nowMs + _phaseMs) % (Loop ? _legMs : 2 * _legMs));
+            float t = Form <= FieldForm.Hoist ? 0f : Loop ? time / (float)_legMs : 1f - math.abs(time - _legMs) / (float)_legMs;
             float sample = t * (_route.Length - 1);
             int i = math.min((int)sample, _route.Length - 2);
             Direction = math.normalize(math.lerp(_route[i], _route[i + 1], sample - i));
             float3 tangent = _route[i + 1] - _route[i];
             Facing = math.normalize(tangent - Direction * math.dot(tangent, Direction));
-            if (time >= _legMs && Form > FieldForm.Hoist) Facing = -Facing;
+            if (!Loop && time >= _legMs && Form > FieldForm.Hoist) Facing = -Facing;
             Position = _planet.ToWorld(Direction, math.lerp(_heights[i], _heights[i + 1], sample - i));
         }
 
@@ -74,8 +84,9 @@ namespace Cosmimera.Bootstrap.Demo
             var common = new Pcg32(seed, 0xC017u);
             int design = common.NextInt(150, 851), occupation = common.NextInt(150, 851);
             var wear = ArchitectureMeshes.EraWear(culture.Era);
-            int ageMean = Nearby(ref common, (int)(1000 * wear.age), 60);
-            int damageMean = Nearby(ref common, (int)(1000 * wear.damage), 55);
+            int ageMean = Nearby(ref common, (int)math.round(1000f * wear.age), 60);
+            int damageMean = Nearby(ref common, (int)math.round(1000f * wear.damage), 55);
+            List<(int road, bool forward)>[] cycleOf = Cycles(layout);
             for (int r = 0; r < layout.Roads.Count; r++)
             {
                 RunRoad road = layout.Roads[r];
@@ -105,6 +116,33 @@ namespace Cosmimera.Bootstrap.Demo
                         offset *= rng.NextInt(0, 2) == 0 ? -1f : 1f;
                         FieldForm form = Choose(family, culture, duty, water);
                         bool aquatic = form == FieldForm.Fish || form == FieldForm.Skiff;
+                        if (family == 1 && !aquatic && cycleOf[r] != null)
+                        {
+                            // Own stream per road: choosing loop vs shuttle must not shift any earlier draw.
+                            var pick = new Pcg32(seed ^ 0x100Ful, (ulong)r);
+                            if (pick.NextInt(0, 100) < LoopPercent &&
+                                Polyline(cycleOf[r], layout, out List<float3> ring, out List<bool> ringBridge) &&
+                                Sample(ring, ringBridge, form, ground, clear, sea, out float3[] dirs, out float[] alts,
+                                    out bool[] ok) && Array.TrueForAll(ok, x => x))
+                            {
+                                float ringLength = 0f;
+                                for (int k = 1; k < dirs.Length; k++) ringLength += math.distance(dirs[k - 1], dirs[k]) * planet.Radius;
+                                result.Add(new FieldSpecimen(form, culture, finish, style, age, damage, duty, detailEra, planet,
+                                    dirs, alts, ringLength, rng.NextInt(0, 60000), loop: true));
+                                break;
+                            }
+                        }
+                        if (family == 1 && !aquatic)
+                        {
+                            // REQ: docs/design/settlement-structures.md#交通工具 — land vehicles run the whole road
+                            // (settlement to settlement, bridges included). The road does not depend on j, so a retry
+                            // cannot help: no clear run means the slot is skipped.
+                            if (LongRoute(planet, road, form, ground, clear, sea, out float3[] longRoute, out float[] longHeights,
+                                    out float longLength))
+                                result.Add(new FieldSpecimen(form, culture, finish, style, age, damage, duty, detailEra, planet,
+                                    longRoute, longHeights, longLength, rng.NextInt(0, 60000)));
+                            break;
+                        }
                         int segments = math.min(family == 1 ? 6 : 1, road.Points.Count - 1 - j);
                         int steps = segments * 7;
                         var route = new float3[steps + 1];
@@ -136,6 +174,123 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
             return result;
+        }
+
+        internal const float MinLongRouteM = 20f;
+        private const int LongStepsPerSegment = 2; // road vertices are ≤ ~8 m apart; 4 m samples keep the cart on the curve
+        private const float BridgeDeckM = 0.6f, RoadLiftM = 0.12f; // mirror SettlementView so carts ride the drawn deck
+
+        // Longest contiguous clear stretch along the road centre line. Ends inside settlements, at the landing gap or at
+        // walls are trimmed rather than rejecting the whole road.
+        private static bool LongRoute(PlanetConfig planet, RunRoad road, FieldForm form, Func<float3, float> ground,
+            Func<float3, bool> clear, Func<float3, bool> sea, out float3[] route, out float[] heights, out float length)
+        {
+            Sample(road.Points, road.Bridge, form, ground, clear, sea, out float3[] dirs, out float[] alts, out bool[] ok);
+            int samples = dirs.Length, bestStart = 0, bestCount = 0;
+            for (int k = 0, start = 0; k <= samples; k++)
+            {
+                if (k < samples && ok[k]) continue;
+                if (k - start > bestCount) { bestStart = start; bestCount = k - start; }
+                start = k + 1;
+            }
+            route = null;
+            heights = null;
+            length = 0f;
+            if (bestCount < 2) return false;
+            route = new float3[bestCount];
+            heights = new float[bestCount];
+            for (int k = 0; k < bestCount; k++)
+            {
+                route[k] = dirs[bestStart + k];
+                heights[k] = alts[bestStart + k];
+                if (k > 0) length += math.distance(route[k - 1], route[k]) * planet.Radius;
+            }
+            return length >= MinLongRouteM;
+        }
+
+        // Densifies a road-centre polyline and classifies each sample; a row touching a bridge vertex rides the deck.
+        private static bool Sample(IReadOnlyList<float3> points, IReadOnlyList<bool> bridges, FieldForm form,
+            Func<float3, float> ground, Func<float3, bool> clear, Func<float3, bool> sea,
+            out float3[] dirs, out float[] alts, out bool[] ok)
+        {
+            int segments = points.Count - 1, samples = segments * LongStepsPerSegment + 1;
+            dirs = new float3[samples];
+            alts = new float[samples];
+            ok = new bool[samples];
+            for (int k = 0; k < samples; k++)
+            {
+                int segment = math.min(k / LongStepsPerSegment, segments - 1);
+                float along = k / (float)LongStepsPerSegment - segment;
+                float3 dir = math.normalize(math.lerp(points[segment], points[segment + 1], along));
+                bool bridge = bridges[segment] || bridges[segment + 1];
+                float alt = ground(dir);
+                bool wet = sea(dir) || alt < 0f;
+                dirs[k] = dir;
+                ok[k] = clear(dir) && (!wet || bridge || form == FieldForm.Balloon);
+                alts[k] = form == FieldForm.Balloon ? math.max(alt, 0f) + 4f :
+                    bridge ? math.max(BridgeDeckM, alt + RoadLiftM) : alt + 0.08f;
+            }
+            return samples >= 2;
+        }
+
+        // REQ: docs/design/settlement-structures.md#交通工具 — each Loop road plus the tree path between its ends is one
+        // closed cycle; every road on it (the loop road included) may host a loop vehicle. First cycle wins on overlap.
+        private static List<(int road, bool forward)>[] Cycles(RunLayout layout)
+        {
+            var cycleOf = new List<(int, bool)>[layout.Roads.Count];
+            for (int l = 0; l < layout.Roads.Count; l++)
+            {
+                RunRoad loop = layout.Roads[l];
+                if (loop.Class != RoadClass.Loop) continue;
+                var via = new Dictionary<int, (int road, bool forward, int from)>();
+                var queue = new Queue<int>();
+                via[loop.ToRegion] = (-1, true, -1);
+                queue.Enqueue(loop.ToRegion);
+                while (queue.Count > 0 && !via.ContainsKey(loop.FromRegion))
+                {
+                    int at = queue.Dequeue();
+                    for (int r = 0; r < layout.Roads.Count; r++)
+                    {
+                        RunRoad road = layout.Roads[r];
+                        if (road.Class == RoadClass.Loop) continue;
+                        int next = road.FromRegion == at ? road.ToRegion : road.ToRegion == at ? road.FromRegion : -1;
+                        if (next < 0 || via.ContainsKey(next)) continue;
+                        via[next] = (r, road.FromRegion == at, at);
+                        queue.Enqueue(next);
+                    }
+                }
+                if (!via.ContainsKey(loop.FromRegion)) continue;
+                // via[x] records travel from -> x outward from ToRegion, which is exactly the ToRegion -> FromRegion leg.
+                var back = new List<(int, bool)>();
+                for (int at = loop.FromRegion; at != loop.ToRegion; at = via[at].from)
+                    back.Add((via[at].road, via[at].forward));
+                back.Reverse();
+                var cycle = new List<(int, bool)> { (l, true) };
+                cycle.AddRange(back);
+                foreach ((int road, bool _) in cycle)
+                    if (cycleOf[road] == null) cycleOf[road] = cycle;
+            }
+            return cycleOf;
+        }
+
+        // Concatenates the cycle's oriented polylines; the shared joint vertex appears once and the ring closes on itself.
+        private static bool Polyline(List<(int road, bool forward)> cycle, RunLayout layout, out List<float3> points,
+            out List<bool> bridges)
+        {
+            points = new List<float3>();
+            bridges = new List<bool>();
+            foreach ((int index, bool forward) in cycle)
+            {
+                RunRoad road = layout.Roads[index];
+                int n = road.Points.Count;
+                for (int k = points.Count == 0 ? 0 : 1; k < n; k++)
+                {
+                    int at = forward ? k : n - 1 - k;
+                    points.Add(road.Points[at]);
+                    bridges.Add(road.Bridge[at]);
+                }
+            }
+            return points.Count >= 4 && math.distance(points[0], points[points.Count - 1]) < 1e-4f;
         }
 
         private static FieldForm Choose(int family, ArchPlanetStyle culture, int duty, bool water)
