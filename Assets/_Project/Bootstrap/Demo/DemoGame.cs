@@ -23,7 +23,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// </remarks>
     public sealed partial class DemoGame : MonoBehaviour
     {
-        private enum Screen { Lobby, StarSelect, Running, Results }
+        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest }
 
         private sealed class PlanetOption
         {
@@ -128,6 +128,11 @@ namespace Cosmimera.Bootstrap.Demo
             _bgm = bgmGo.AddComponent<BgmPlayer>();
             _bgm.Initialize(_bgmTable);
             _bgm.Play(BgmResolver.Town);
+
+            if (!_save.TutorialDone)
+            {
+                EnterBeginnerQuest();
+            }
         }
 
         private void LoadData()
@@ -414,6 +419,9 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 case Screen.Results:
                     DrawResults();
+                    break;
+                case Screen.BeginnerQuest:
+                    DrawBeginnerQuest();
                     break;
             }
 
@@ -1025,6 +1033,24 @@ namespace Cosmimera.Bootstrap.Demo
             if (isActiveAndEnabled && !_menuInput.enabled)
             {
                 _menuInput.Enable();
+            }
+
+            if (_activeRunIsBeginnerQuest)
+            {
+                _activeRunIsBeginnerQuest = false;
+                if (outcome.Victory)
+                {
+                    _save.CompleteTutorial(_bqCharacterId, _bqFriendId, _bqRivalId, _bqRivalStarterId, _bqFriendStarterId);
+                    _save.Codex.Record(Codex.CodexEvent.Capture, _bqCharacterId);
+                    TrySettle();
+                    return;
+                }
+
+                // REQ: beginner-quest.md#失敗與中斷 — failed/abandoned tutorial resets cleanly without saving.
+                _save = LobbySave.Load(_savePath, _progression,
+                    id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
+                EnterBeginnerQuest();
+                return;
             }
 
             TrySettle();

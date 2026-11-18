@@ -41,7 +41,7 @@ namespace Cosmimera.Save
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 12;
+        public const int FormatVersion = 13;
 
         /// <summary>Number of favourite-loadout slots.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -85,6 +85,65 @@ namespace Cosmimera.Save
         /// <summary>Starter line chosen in the lobby, or null before the first choice.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public string StarterLine { get; private set; }
+
+        /// <summary>Chosen player character id (P7-02a, beginner-quest.md).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string CharacterId { get; private set; } = string.Empty;
+
+        /// <summary>Assigned friend character id (next in ring order from CharacterId).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string FriendId { get; private set; } = string.Empty;
+
+        /// <summary>Assigned rival character id (second in ring order from CharacterId).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before selection). Side effects: none.</remarks>
+        public string RivalId { get; private set; } = string.Empty;
+
+        /// <summary>Rival's starter species id (counters player starter).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before tutorial completion). Side effects: none.</remarks>
+        public string RivalStarterId { get; private set; } = string.Empty;
+
+        /// <summary>Friend's starter species id (remaining starter).</summary>
+        /// <remarks>Pre: none. Post: non-null (empty before tutorial completion). Side effects: none.</remarks>
+        public string FriendStarterId { get; private set; } = string.Empty;
+
+        /// <summary>True once the beginner quest is finished (or migrated from an existing v1..v12 save with creatures).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TutorialDone { get; private set; }
+
+        /// <summary>Records beginner-quest completion and character/rival/friend assignments (P7-02a).</summary>
+        /// <remarks>
+        /// Pre: all ids non-null and non-whitespace.
+        /// Post: TutorialDone == true and all five ids match the arguments.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void CompleteTutorial(string characterId, string friendId, string rivalId,
+            string rivalStarterId, string friendStarterId)
+        {
+            Contract.Requires(!string.IsNullOrWhiteSpace(characterId) && !string.IsNullOrWhiteSpace(friendId) &&
+                !string.IsNullOrWhiteSpace(rivalId) && !string.IsNullOrWhiteSpace(rivalStarterId) &&
+                !string.IsNullOrWhiteSpace(friendStarterId), "all tutorial ids are required");
+            CharacterId = characterId;
+            FriendId = friendId;
+            RivalId = rivalId;
+            RivalStarterId = rivalStarterId;
+            FriendStarterId = friendStarterId;
+            TutorialDone = true;
+        }
+
+        /// <summary>Assigns player/friend/rival character ids for an existing pre-v13 save that skipped tutorial.</summary>
+        /// <remarks>
+        /// Pre: all three ids non-null and non-whitespace.
+        /// Post: CharacterId, FriendId, RivalId match the arguments.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetCharacters(string characterId, string friendId, string rivalId)
+        {
+            Contract.Requires(!string.IsNullOrWhiteSpace(characterId) && !string.IsNullOrWhiteSpace(friendId) &&
+                !string.IsNullOrWhiteSpace(rivalId), "character ids are required");
+            CharacterId = characterId;
+            FriendId = friendId;
+            RivalId = rivalId;
+        }
 
         /// <summary>Owned creatures in acquisition order.</summary>
         /// <remarks>Pre: none. Post: unique InstanceIds. Side effects: none.</remarks>
@@ -597,6 +656,12 @@ namespace Cosmimera.Save
                 player_exp = PlayerExp,
                 partners = new PartnerDto[_partners.Count],
                 eggs = new EggDto[_eggs.Count],
+                character_id = CharacterId ?? string.Empty,
+                friend_id = FriendId ?? string.Empty,
+                rival_id = RivalId ?? string.Empty,
+                rival_starter_id = RivalStarterId ?? string.Empty,
+                friend_starter_id = FriendStarterId ?? string.Empty,
+                tutorial_done = TutorialDone,
             };
             var presetDtos = new List<PresetDto>();
             for (int slot = 0; slot < MaxPresets; slot++)
@@ -887,6 +952,19 @@ namespace Cosmimera.Save
                     save._presets[pd.slot] = new LoadoutPreset(pd.name, pparty, pairs, gear, looks);
                 }
             }
+            if (dto.version >= 13)
+            {
+                save.CharacterId = dto.character_id ?? string.Empty;
+                save.FriendId = dto.friend_id ?? string.Empty;
+                save.RivalId = dto.rival_id ?? string.Empty;
+                save.RivalStarterId = dto.rival_starter_id ?? string.Empty;
+                save.FriendStarterId = dto.friend_starter_id ?? string.Empty;
+                save.TutorialDone = dto.tutorial_done;
+            }
+            else
+            {
+                save.TutorialDone = save._owned.Count > 0 || !string.IsNullOrEmpty(save.StarterLine);
+            }
 
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
@@ -995,6 +1073,12 @@ namespace Cosmimera.Save
             public EquipmentDto[] equipment;
             public CodexDto[] codex;
             public PresetDto[] presets;
+            public string character_id;
+            public string friend_id;
+            public string rival_id;
+            public string rival_starter_id;
+            public string friend_starter_id;
+            public bool tutorial_done;
         }
 
         [Serializable] private sealed class PresetDto

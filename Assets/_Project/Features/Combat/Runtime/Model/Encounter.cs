@@ -602,6 +602,115 @@ namespace Cosmimera.Combat
         private bool SupportFocuses => SupportMode == SupportMode.Focus || SupportMode == SupportMode.FocusAllOut;
 
         private bool SupportAllOut => SupportMode == SupportMode.FreeAllOut || SupportMode == SupportMode.FocusAllOut;
+        private bool _directControl;
+        private float3 _directMoveTangent;
+        private float3 _directFacingTangent;
+        private int _directTargetId = CombatAi.NoTarget;
+
+        /// <summary>True when the player directly controls the main creature in combat (combat.md, Q-C55).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool DirectControl => _directControl;
+
+        /// <summary>Enables or disables direct player control of the main creature.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: DirectControl == enabled; when false, pending direct movement/facing/target inputs are cleared.
+        /// Side effects: while DirectControl is true and an active main exists, the player character cannot be targeted.
+        /// </remarks>
+        public void SetDirectControl(bool enabled)
+        {
+            _directControl = enabled;
+            if (!enabled)
+            {
+                _directMoveTangent = float3.zero;
+                _directFacingTangent = float3.zero;
+                _directTargetId = CombatAi.NoTarget;
+            }
+        }
+
+        /// <summary>Sets movement, facing, and locked target for the directly controlled main creature.</summary>
+        /// <remarks>
+        /// Pre: moveTangent and facingTangent are finite.
+        /// Post: stored for the next Tick; zero vectors leave position/facing unchanged.
+        /// Side effects: none.
+        /// </remarks>
+        public void SetDirectInput(float3 moveTangent, float3 facingTangent, int targetId)
+        {
+            Contract.Requires(math.all(math.isfinite(moveTangent)) && math.all(math.isfinite(facingTangent)),
+                "direct input vectors must be finite");
+            _directMoveTangent = moveTangent;
+            _directFacingTangent = facingTangent;
+            _directTargetId = targetId;
+        }
+
+        /// <summary>Attempts to cast <paramref name="slot"/> on <paramref name="unitId"/> under direct player control.</summary>
+        /// <remarks>
+        /// Pre: unitId is a valid unit index; slot >= 0; nowMs >= LastTickMs.
+        /// Post: returns true iff a cast was accepted (windup started or immediate resolve ran).
+        /// Side effects: mutates unit cooldowns/windup, Events, and targets when windupMs == 0.
+        /// </remarks>
+        public bool TryDirectCast(int unitId, int slot, int targetId, long nowMs)
+        {
+            Contract.Requires(unitId >= 0 && unitId < _units.Count, "unknown unit");
+            Contract.Requires(slot >= 0, "slot must be non-negative");
+            Contract.Requires(nowMs >= _lastTickMs, "nowMs must not precede LastTickMs");
+            EncounterUnit u = _units[unitId];
+            if (!u.IsActive || u.Side != EncounterSide.Player || slot >= u.Moves.Count)
+            {
+                return false;
+            }
+
+            if (u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) || u.IsBlocking || IsRolling(u, nowMs) ||
+                u.WindupSlot != EncounterUnit.NoWindup)
+            {
+                return false;
+            }
+
+            int resolvedTarget = targetId;
+            if (resolvedTarget == ObjectTargetId)
+            {
+                if (!ObjectFocusIntact())
+                {
+                    resolvedTarget = CombatAi.NoTarget;
+                }
+            }
+            else if (!IsValidEnemy(u, resolvedTarget))
+            {
+                resolvedTarget = CombatAi.NoTarget;
+            }
+
+            HitVolume vol = u.Volumes[slot];
+            if (resolvedTarget == CombatAi.NoTarget && vol.Anchor == HitVolumeAnchor.AimPoint)
+            {
+                resolvedTarget = NearestValidEnemy(u);
+            }
+
+            int beforeEvents = _events.Count;
+            TryCast(u, PartnerOf(u), slot, resolvedTarget, nowMs);
+            return _events.Count > beforeEvents;
+        }
+
+        private int NearestValidEnemy(EncounterUnit self)
+        {
+            int best = CombatAi.NoTarget;
+            float bestDistSq = float.MaxValue;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (!IsValidEnemy(self, i))
+                {
+                    continue;
+                }
+
+                float d2 = math.lengthsq(_units[i].Position - self.Position);
+                if (d2 < bestDistSq)
+                {
+                    bestDistSq = d2;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
         private long _lastCombatReviveMs = -1;
 
         // A field is ground-anchored and keeps the caster modifiers frozen at cast (combat.md#被動技觸發: "施放者的修正值在此刻
@@ -2181,6 +2290,41 @@ namespace Cosmimera.Combat
                 bool playerSide = player || u.IsConfrontationAlly;
                 EncounterUnit partner = PartnerOf(u);
                 AiRole role = !player || u.Id == mainId || mainId == CombatAi.NoTarget ? AiRole.Main : AiRole.Support;
+                if (_directControl && player && role == AiRole.Main)
+                {
+                    // REQ: combat.md (Q-C55) — direct player control replaces AI movement and auto-casting for the main.
+                    if (_directTargetId == ObjectTargetId && ObjectFocusIntact())
+                    {
+                        FillObjectEnemy(u);
+                        u.TargetId = ObjectTargetId;
+                    }
+                    else
+                    {
+                        u.TargetId = IsValidEnemy(u, _directTargetId) ? _directTargetId : CombatAi.NoTarget;
+                    }
+
+                    float3 up = Up(u.Position);
+                    float3 moveTan = _directMoveTangent - up * math.dot(up, _directMoveTangent);
+                    if (math.lengthsq(moveTan) > 1e-6f)
+                    {
+                        float3 destDir = math.normalize(up + math.normalize(moveTan) * 0.25f);
+                        Steer(u, destDir, nowMs, dtMs, u.IsBlocking ? _balance.Block.MoveSpeedPermille : 1000);
+                    }
+
+                    float3 faceTan = _directFacingTangent - up * math.dot(up, _directFacingTangent);
+                    if (math.lengthsq(faceTan) > 1e-6f)
+                    {
+                        u.Forward = math.normalize(faceTan);
+                    }
+
+                    if (u.WindupSlot != EncounterUnit.NoWindup && nowMs >= u.WindupEndsAtMs)
+                    {
+                        ResolveWindup(u, partner, nowMs);
+                    }
+
+                    continue;
+                }
+
                 AiCommand cmd = player && role == AiRole.Main ? command : new AiCommand(AiCommandKind.Free, CombatAi.NoTarget);
                 bool onObject = player && cmd.Kind == AiCommandKind.Focus && cmd.TargetId == ObjectTargetId && ObjectFocusIntact();
                 if (cmd.Kind == AiCommandKind.Focus && !onObject && !IsValidEnemy(u, cmd.TargetId))
@@ -2759,7 +2903,8 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: unitId indexes Units. Post: detached copy; drawing from it does not move the unit's stream. Side effects: none.</remarks>
         internal Pcg32 WanderRngForTests(int unitId) => Get(unitId).WanderRng;
 
-        private bool PlayerTargetable() => _player != null && !_player.IsDowned;
+        private bool PlayerTargetable() => _player != null && !_player.IsDowned &&
+            !(_directControl && _mainId >= 0 && _mainId < _units.Count && _units[_mainId].IsActive);
 
         private float3 TargetPosition(int id) => id == PlayerCharacterId ? _playerCenter
             : id == ObjectTargetId ? _objectAim : _units[id].Position;

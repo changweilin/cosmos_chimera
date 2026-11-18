@@ -177,6 +177,18 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Fixed departure equipment for the player and owned party members.</summary>
         /// <remarks>Pre: null or validated saved assignments. Post: unchanged throughout the run. Side effects: none.</remarks>
         public IReadOnlyList<EquippedItem> Equipment;
+
+        /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, initial rival battle).</summary>
+        public bool IsBeginnerQuest;
+
+        /// <summary>Assigned rival character id when <see cref="IsBeginnerQuest"/> is true.</summary>
+        public string RivalId;
+
+        /// <summary>Rival's LV10 starter species for the initial trainer battle.</summary>
+        public CreatureDef RivalStarter;
+
+        /// <summary>Player character's signature juvenile vessel granted after the initial battle.</summary>
+        public VesselKind PlayerStarterVessel;
     }
 
     /// <summary>
@@ -407,6 +419,19 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _menuDown;
         private InputAction _menuSubmit;
         private InputAction _menuCancel;
+        private InputActionMap _combatInput;
+        private InputAction[] _castActions;
+        private InputAction _blockAction;
+        private InputAction _supportModeAction;
+        private InputAction _quickWheelAction;
+        private InputAction _returnToPlayerAction;
+        private bool _returnedToPlayer;
+        private bool _quickWheelOpen;
+        private int _quickWheelIndex;
+        private float _mainJumpOffsetM;
+        private float _mainJumpVelMs;
+        private int _bqTrainerId = -1;
+        private int _bqRivalUnitId = -1;
 
         private enum InteractChoice
         {
@@ -555,6 +580,19 @@ namespace Cosmimera.Bootstrap.Demo
             _menuDown = _menuInput.FindAction("Down", true);
             _menuSubmit = _menuInput.FindAction("Submit", true);
             _menuCancel = _menuInput.FindAction("Cancel", true);
+            _combatInput = actions.FindActionMap("DemoCombat", true).Clone();
+            _castActions = new[]
+            {
+                _combatInput.FindAction("Cast1", true),
+                _combatInput.FindAction("Cast2", true),
+                _combatInput.FindAction("Cast3", true),
+                _combatInput.FindAction("Cast4", true),
+                _combatInput.FindAction("Cast5", true),
+            };
+            _blockAction = _combatInput.FindAction("Block", true);
+            _supportModeAction = _combatInput.FindAction("SupportMode", true);
+            _quickWheelAction = _combatInput.FindAction("QuickWheel", true);
+            _returnToPlayerAction = _combatInput.FindAction("ReturnToPlayer", true);
             if (isActiveAndEnabled)
             {
                 _runInput.Enable();
@@ -943,9 +981,21 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
+            if (_setup.IsBeginnerQuest && _setup.RivalStarter != null)
+            {
+                _bqTrainerId = _encounter.RegisterTrainer();
+                EncounterUnit rival = _encounter.AddTrainerCreature(_setup.RivalStarter, null,
+                    BesidePlayer(player, 2), _progression.StarterLevel, _bqTrainerId);
+                _bqRivalUnitId = rival.Id;
+                CreateView(rival, SpawnRole.Normal);
+                _encounter.StartTrainerBattle(_bqTrainerId);
+                _vessel = _setup.PlayerStarterVessel;
+                Toast($"{BeginnerQuestRules.CharacterDisplayName(_setup.RivalId)}：來一場初戰吧！");
+            }
         }
 
-        private WeatherProfile WeatherAt(float3 direction, long nowMs) => _weather.ProfileAt(direction, nowMs);
+        private WeatherProfile WeatherAt(float3 direction, long nowMs) =>
+            _setup.IsBeginnerQuest ? WeatherProfiles.For(WeatherKind.Clear) : _weather.ProfileAt(direction, nowMs);
 
         private WeatherControlResult TryControlWeather(WeatherKind kind)
         {
@@ -1019,14 +1069,42 @@ namespace Cosmimera.Bootstrap.Demo
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
             BeforeTickForTests?.Invoke();
 #endif
-            // REQ: combat.md (Q-C33) — Space / Gamepad buttonSouth triggers player roll i-frames.
+            // REQ: combat.md (Q-C33 / P2-17) — Space / Gamepad West triggers player roll in exploration or main creature roll in direct combat.
             if (_rollRequested)
             {
                 _rollRequested = false;
-                if (_vitals.TryRoll(_nowMs, _playerWeather, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
+                if (IsDirectControlling)
+                {
+                    EncounterUnit mainU = _encounter.Units[_mainId];
+                    float3 mUp = _rig.Config.ToDirection(mainU.Position);
+                    float3 rollDir = ComputeDirectMoveTangent(mUp);
+                    if (math.lengthsq(rollDir) <= 1e-6f)
+                    {
+                        rollDir = -mainU.Forward;
+                    }
+
+                    _encounter.TryRoll(_mainId, _nowMs, rollDir);
+                }
+                else if (_vitals.TryRoll(_nowMs, _playerWeather, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
                 {
                     _lastRollAtMs = _nowMs;
                 }
+            }
+
+            if (IsDirectControlling)
+            {
+                EncounterUnit mainU = _encounter.Units[_mainId];
+                float3 mUp = _rig.Config.ToDirection(mainU.Position);
+                float3 moveTan = ComputeDirectMoveTangent(mUp);
+                float3 faceTan = math.lengthsq(moveTan) > 1e-6f ? math.normalize(moveTan) : float3.zero;
+                _encounter.SetDirectInput(moveTan, faceTan, CurrentDirectTargetId());
+                UpdateCharacterAutoFollow(player, mainU.Position);
+                StepMainJump(TickMs * 0.001f);
+            }
+            else
+            {
+                _mainJumpOffsetM = 0f;
+                _mainJumpVelMs = 0f;
             }
 
             // REQ: combat.md (Q-C12) — Overload command for the main Adult creature during combat.
@@ -1099,6 +1177,15 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _team.EndCombat();
                 _encounter.EndCombatOverload();
+                bool wasReturned = _returnedToPlayer;
+                _returnedToPlayer = false;
+                _quickWheelOpen = false;
+                if (wasReturned)
+                {
+                    RefillField(player);
+                }
+
+                UpdateDirectControlState();
             }
 
             if (playerDowned)
@@ -1229,19 +1316,40 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ExpireKnockedOut()
         {
-            foreach (KeyValuePair<int, WildInfo> kv in _wild)
-            {
-                WildInfo w = kv.Value;
-                if (!w.Gone && w.KnockedOutAtMs >= 0 && _nowMs - w.KnockedOutAtMs > KnockedOutWindowMs)
-                {
-                    w.Gone = true;
-                    _encounter.Remove(kv.Key);
-                }
-            }
+            // REQ: combat.md#收服時機 (Q-C55) — knocked-out wild creatures remain on the ground until captured
+            // or their region unloads, rather than expiring on a 20s timer.
         }
 
         private void CheckEnd()
         {
+            if (_bqTrainerId >= 0)
+            {
+                TrainerBattleState state = _encounter.TrainerState(_bqTrainerId);
+                if (state == TrainerBattleState.Won || state == TrainerBattleState.Lost)
+                {
+                    bool won = state == TrainerBattleState.Won;
+                    _bqTrainerId = -1;
+                    if (_bqRivalUnitId >= 0)
+                    {
+                        _encounter.Remove(_bqRivalUnitId);
+                        _bqRivalUnitId = -1;
+                    }
+
+                    foreach (int id in _team.Pool)
+                    {
+                        _encounter.Units[id].Combatant.FullHeal();
+                    }
+
+                    RefillField(PlayerPosition());
+                    List<DialogueLine> lines = BeginnerQuestRules.FirstBattleOutcomeDialogue(_setup.RivalId ?? string.Empty, won);
+                    if (lines.Count > 0)
+                    {
+                        Toast(lines[0].Speaker + "：" + lines[0].FallbackText);
+                    }
+                    return;
+                }
+            }
+
             bool anyLeft = false;
             foreach (int id in _team.Pool)
             {
@@ -1254,11 +1362,12 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            // The boss stays capturable for the knocked-out window; the run ends when it is captured or that window closes.
+            // REQ: combat.md#收服時機 (Q-C55 / P2-17) — knocked-out wilds stay until captured or region unload;
+            // the boss stays until captured or the player leaves the boss region.
             if (_bossDownAtMs >= 0)
             {
                 int bossUnit = BossUnit();
-                if (_wild[bossUnit].Gone)
+                if (_wild[bossUnit].Gone || _region != _plan.BossRegion)
                 {
                     End(true, false);
                 }
@@ -1279,6 +1388,12 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            if (IsDirectControlling)
+            {
+                ReadDirectCombatInput();
+                return;
+            }
+
             if (_interactAction.WasPressedThisFrame())
             {
                 OpenInteract();
@@ -1287,11 +1402,13 @@ namespace Cosmimera.Bootstrap.Demo
             if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
+                UpdateDirectControlState();
             }
 
             if (_selectSecondAction.WasPressedThisFrame() && _team.Active.Count > 1)
             {
                 _mainId = _team.Active[1];
+                UpdateDirectControlState();
             }
 
             if (_switchAction.WasPressedThisFrame())
@@ -1332,7 +1449,14 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (PressedWithoutCommand(_captureAction))
             {
-                TryCapture();
+                if (_team.InCombat)
+                {
+                    Toast("戰鬥中無法投擲收服，請先結束戰鬥或脫戰");
+                }
+                else
+                {
+                    TryCapture();
+                }
             }
 
             if (_rollAction.WasPressedThisFrame())
@@ -1376,6 +1500,14 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(global != null && global.FindAction("Journal") != null &&
                 global.FindAction("Codex") != null && actions.FindAction("Player/CommandModifier") != null,
                 "actions must contain DemoGlobal/Journal, DemoGlobal/Codex and Player/CommandModifier");
+
+            InputActionMap combat = actions.FindActionMap("DemoCombat");
+            Core.Contracts.Contract.Requires(combat != null, "actions must contain the DemoCombat map");
+            foreach (string name in new[] { "Cast1", "Cast2", "Cast3", "Cast4", "Cast5", "Block",
+                         "SupportMode", "QuickWheel", "ReturnToPlayer" })
+            {
+                Core.Contracts.Contract.Requires(combat.FindAction(name) != null, "DemoCombat is missing " + name);
+            }
 
             return map;
         }
@@ -1701,7 +1833,9 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _appeared.Clear();
             _team.BeginCombat();
-            // REQ: lobby-meta.md#???? (Q-M3): each battle (one BeginCombat) advances incubating eggs.
+            _returnedToPlayer = false;
+            UpdateDirectControlState();
+            // REQ: lobby-meta.md#孵蛋進度 (Q-M3): each battle (one BeginCombat) advances incubating eggs.
             _outcome.EggProgressPpm += EggProgress.Battles(1, EggHatchConfig, _utilityModifiers.HasEggHatchBoost);
         }
 
@@ -2373,7 +2507,10 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
-                t.SetPositionAndRotation(u.Position, quaternion.LookRotationSafe(u.Forward, up));
+                float3 viewPos = u.Id == _mainId && _mainJumpOffsetM > 0f
+                    ? u.Position + up * _mainJumpOffsetM
+                    : u.Position;
+                t.SetPositionAndRotation(viewPos, quaternion.LookRotationSafe(u.Forward, up));
                 t.localScale = u.Combatant.IsOverloaded && u.Def == u.BaseDef
                     ? new Vector3(1.15f, 1.15f, 1.15f)
                     : Vector3.one;
@@ -2695,6 +2832,8 @@ namespace Cosmimera.Bootstrap.Demo
             _feedback?.DrawFloatingTexts(_rig.Camera);
             _hitFeel?.DrawOverlay();
             DrawLockMarker();
+            DrawBossTopBar();
+            DrawDirectCombatHud();
             DrawQuestPanel();
             DrawTeamPanel();
             DrawControlsPanel();
@@ -3086,6 +3225,10 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _runInput?.Enable();
             _globalInput?.Enable();
+            if (IsDirectControlling)
+            {
+                _combatInput?.Enable();
+            }
         }
 
         private void OnDisable()
@@ -3093,6 +3236,7 @@ namespace Cosmimera.Bootstrap.Demo
             CloseJournal();
             _globalInput?.Disable();
             _runInput?.Disable();
+            _combatInput?.Disable();
             _menuInput?.Disable();
         }
 
@@ -3103,6 +3247,7 @@ namespace Cosmimera.Bootstrap.Demo
             _inputHints?.Dispose();
             _globalInput?.Dispose();
             _runInput?.Dispose();
+            _combatInput?.Dispose();
             _menuInput?.Dispose();
             _feedback?.Dispose();
             _hitFeel?.Dispose();

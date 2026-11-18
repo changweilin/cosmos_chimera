@@ -21,6 +21,18 @@ namespace Cosmimera.Player
         private InputAction _toggleView;
         private InputAction _commandModifier;
 
+        /// <summary>When true, Move/Jump/Sprint are not forwarded to SphericalCharacter (e.g. direct creature control).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool SuppressCharacterInput { get; set; }
+
+        /// <summary>Current movement input vector from Player/Move.</summary>
+        /// <remarks>Pre: none. Post: finite 2D vector. Side effects: none.</remarks>
+        public Vector2 MoveInput => _move != null ? _move.ReadValue<Vector2>() : Vector2.zero;
+
+        /// <summary>True on frames where Player/Jump was pressed.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool JumpPressedThisFrame => _jump != null && _jump.WasPressedThisFrame();
+
         /// <summary>Binds actions and targets.</summary>
         /// <remarks>
         /// Pre: actions, character, rig non-null; actions contains Player/Move, Player/Look, Player/Jump, Player/Sprint,
@@ -87,7 +99,10 @@ namespace Cosmimera.Player
                 _rig.ToggleView();
             }
 
-            _character.SetInput(_move.ReadValue<Vector2>(), _rig.Heading, _sprint.IsPressed(), _jump.WasPressedThisFrame());
+            if (!SuppressCharacterInput)
+            {
+                _character.SetInput(_move.ReadValue<Vector2>(), _rig.Heading, _sprint.IsPressed(), _jump.WasPressedThisFrame());
+            }
         }
     }
 }
