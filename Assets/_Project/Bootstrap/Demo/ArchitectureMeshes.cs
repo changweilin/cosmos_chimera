@@ -448,7 +448,7 @@ namespace Cosmimera.Bootstrap.Demo
         ///       secondary region is never the planet's own (the planet's secondary, the theme's, or a third
         ///       tradition), and the secondary era is any inhabited era but the planet's (mostly its kin); the
         ///       tertiary region is neither the planet's nor the secondary, the tertiary era neither the planet's nor
-        ///       the secondary era, and TertiaryShare is in [0.08, 0.4].
+        ///       the secondary era, and TertiaryShare is in [0.10, 0.45].
         /// Side effects: none.
         /// </remarks>
         public static ArchMix MixFor(in ArchPlanetStyle planet, SettlementKind kind, string themeId, ulong seed, int settlementIndex)

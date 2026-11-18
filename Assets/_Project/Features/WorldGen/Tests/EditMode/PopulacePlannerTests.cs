@@ -12,7 +12,7 @@ namespace Cosmimera.WorldGen.Tests
     {
         // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, neutral temper, isStandable null
         // (PopulacePlanner v1).
-        private const ulong SnapshotSeed12345V1 = 4311297554248266902UL;
+        private const ulong SnapshotSeed12345V2 = 779921664237015050UL;
 
         private static readonly string[] PlanetTypes =
         {
@@ -284,6 +284,35 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Textile_varies_within_a_town_and_across_planets()
+        {
+            int lowest = 1000, highest = 0, widestTown = 0;
+            for (ulong seed = 0; seed < 32; seed++)
+            {
+                RunPopulace people = Make(seed).people;
+                foreach (SettlementPopulace town in people.Settlements)
+                {
+                    if (town.ResidentCount < 2) continue;
+                    int min = 1000, max = 0;
+                    for (int i = town.FirstResident; i < town.FirstResident + town.ResidentCount; i++)
+                    {
+                        int textile = people.Residents[i].TextilePermille;
+                        Assert.That(textile, Is.InRange(0, 1000));
+                        min = math.min(min, textile);
+                        max = math.max(max, textile);
+                    }
+
+                    widestTown = math.max(widestTown, max - min);
+                    lowest = math.min(lowest, min);
+                    highest = math.max(highest, max);
+                }
+            }
+
+            Assert.That(widestTown, Is.InRange(100, 360));
+            Assert.That(highest - lowest, Is.GreaterThan(700));
+        }
+
+        [Test]
         public void Planet_type_favours_its_own_peoples()
         {
             int[] lava = PopulacePlanner.RaceWeights("lava_planet"), plain = PopulacePlanner.RaceWeights(null);
@@ -417,9 +446,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(PopulacePlanner.GeneratorVersion, Is.EqualTo(1), "bump the pin with the version");
+            Assert.That(PopulacePlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
             ulong h = PopulacePlanner.Hash(Make(12345).people);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V1), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
         }
     }
 }

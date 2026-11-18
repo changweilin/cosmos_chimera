@@ -185,7 +185,7 @@ namespace Cosmimera.WorldGen
     public readonly struct RunResident
     {
         internal RunResident(int settlement, int building, NpcRace race, NpcRole role, NpcSex sex, int agePermille,
-            int ageYears, NpcLifeStage stage, int healthPermille, int statureZMilli, int bulkZMilli, int styleZMilli,
+            int ageYears, NpcLifeStage stage, int healthPermille, int statureZMilli, int bulkZMilli, int styleZMilli, int textilePermille,
             ulong seed, float3 direction, float3 facing, NpcDuty duty, WanderMode wanderMode, int wanderRadiusMm,
             int speedPermilleMean, int moveMsMean, int pauseMsMean)
         {
@@ -200,6 +200,7 @@ namespace Cosmimera.WorldGen
             HealthPermille = healthPermille;
             StatureZMilli = statureZMilli;
             BulkZMilli = bulkZMilli;
+            TextilePermille = textilePermille;
             StyleZMilli = styleZMilli;
             Seed = seed;
             Direction = direction;
@@ -259,6 +260,10 @@ namespace Cosmimera.WorldGen
         /// <summary>How far the outfit strays from the settlement's mean style mix, standard deviations × 1000.</summary>
         /// <remarks>Pre: none. Post: in [−3464, 3464]. Side effects: none.</remarks>
         public int StyleZMilli { get; }
+
+        /// <summary>Local textile tradition, from narrow workaday hems to broad contrasting borders.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1000]. Side effects: none.</remarks>
+        public int TextilePermille { get; }
 
         /// <summary>Seed of everything else the presentation varies (hair, colours, pose, which garments are borrowed).</summary>
         /// <remarks>Pre: none. Post: as generated; differs between residents of one run with overwhelming probability. Side effects: none.</remarks>

@@ -13,11 +13,11 @@ namespace Cosmimera.Bootstrap.Demo
     {
         /// <summary>Describes one resident.</summary>
         /// <remarks>
-        /// Pre: defined enums; age01 and health01 in [0, 1]; statureZ and bulkZ in [−3.5, 3.5]; borrowShare in [0, 1].
+        /// Pre: defined enums; textile01, age01 and health01 in [0, 1]; statureZ and bulkZ in [−3.5, 3.5]; borrowShare in [0, 1].
         /// Post: properties return the arguments. Side effects: none.
         /// </remarks>
         public NpcSpec(NpcRace race, NpcRole role, NpcSex sex, float age01, float health01, float statureZ, float bulkZ,
-            ArchRegion region, ArchEra era, ArchRegion borrowRegion, ArchEra borrowEra, float borrowShare, ulong seed)
+            ArchRegion region, ArchEra era, ArchRegion borrowRegion, ArchEra borrowEra, float borrowShare, ulong seed, float textile01 = 0.5f)
         {
             Contract.Requires(Enum.IsDefined(typeof(NpcRace), race) && Enum.IsDefined(typeof(NpcRole), role) &&
                               Enum.IsDefined(typeof(NpcSex), sex), "race, role and sex must be defined");
@@ -27,6 +27,8 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(age01 >= 0f && age01 <= 1f && health01 >= 0f && health01 <= 1f && borrowShare >= 0f &&
                               borrowShare <= 1f, "age01, health01 and borrowShare in [0, 1]");
             Contract.Requires(math.abs(statureZ) <= 3.5f && math.abs(bulkZ) <= 3.5f, "statureZ and bulkZ in [-3.5, 3.5]");
+            Contract.Requires(textile01 >= 0f && textile01 <= 1f, "textile01 in [0, 1]");
+            Textile01 = textile01;
             Race = race;
             Role = role;
             Sex = sex;
@@ -45,6 +47,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Race.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public NpcRace Race { get; }
+
+        /// <summary>Width and dye contrast of the local woven border.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float Textile01 { get; }
 
         /// <summary>Trade.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -158,7 +164,7 @@ namespace Cosmimera.Bootstrap.Demo
             return new NpcSpec(resident.Race, resident.Role, resident.Sex, resident.AgePermille / 1000f,
                 resident.HealthPermille / 1000f, math.clamp(resident.StatureZMilli / 1000f, -3.5f, 3.5f),
                 math.clamp(resident.BulkZMilli / 1000f, -3.5f, 3.5f), region, era,
-                third ? mix.TertiaryRegion : mix.SecondaryRegion, third ? mix.TertiaryEra : mix.SecondaryEra, share, resident.Seed);
+                third ? mix.TertiaryRegion : mix.SecondaryRegion, third ? mix.TertiaryEra : mix.SecondaryEra, share, resident.Seed, resident.TextilePermille / 1000f);
         }
 
         /// <summary>Standing height of <paramref name="spec"/> to the top of the skull, metres.</summary>
@@ -340,7 +346,7 @@ namespace Cosmimera.Bootstrap.Demo
                 float grey = ageless ? 0f : math.smoothstep(0.5f, 0.82f, spec.Age01);
                 l.Hair = Color.Lerp(hair, Hex(0xD8D6D0), grey);
 
-                int set = (int)rng.NextUInt(3) * 3;
+                int set = math.min(2, (int)(3f * math.saturate(spec.Textile01 + 0.10f * Gauss(ref rng)))) * 3;
                 int[] wardrobe = Wardrobe[(int)palette];
                 Color cloth = Hex(wardrobe[set]), cloth2 = Hex(wardrobe[set + 1]), accent = Hex(wardrobe[set + 2]);
                 // The era decides what the cloth is made of; the region still shows through as its dye.
@@ -855,6 +861,10 @@ namespace Cosmimera.Bootstrap.Demo
             if (plainFace)
             {
                 b.Ball(c + new float3(0f, -0.14f * hr, 0.93f * hr), new float3(0.11f, 0.14f, 0.13f) * hr, Shade(skin, 0.93f), 5, 3);
+                Color lip = Color.Lerp(skin, Hex(0x653F46), 0.56f);
+                float3 mouth = c + new float3(0f, -0.42f, 0.88f) * hr;
+                b.Tube(mouth - new float3(0.19f, -0.025f, 0.05f) * hr, mouth, hr * 0.024f, hr * 0.04f, lip, lip, 5);
+                b.Tube(mouth, mouth + new float3(0.19f, 0.025f, -0.05f) * hr, hr * 0.04f, hr * 0.024f, lip, lip, 5);
                 // Brows: the cheapest feature that gives a face a direction to look in.
                 for (int s = -1; s <= 1; s += 2)
                 {
@@ -870,7 +880,14 @@ namespace Cosmimera.Bootstrap.Demo
 
             for (int s = -1; s <= 1; s += 2)
             {
-                (lit ? glow : b).Ball(c + new float3(s * eyeX, eyeY, eyeZ) * hr, new float3(eyeSize, eyeSize * 1.15f, eyeSize * 0.6f) * hr, eye, 6, 4);
+                float3 socket = c + new float3(s * eyeX, eyeY, eyeZ) * hr;
+                if (plainFace && !lit)
+                {
+                    b.Ball(socket, new float3(0.22f, 0.14f, 0.11f) * hr, Hex(0xEEE2CF), 8, 4);
+                    socket.z += 0.095f * hr;
+                }
+
+                (lit ? glow : b).Ball(socket, new float3(eyeSize, eyeSize * 1.15f, eyeSize * 0.6f) * hr, eye, 6, 4);
             }
 
             if (!t.Furred)
@@ -954,6 +971,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ArchEra.Future => (0.06f, 2, 1.07f),
                 _ => (0.5f, 1, 1.2f),
             };
+            hem *= math.lerp(0.78f, 1.14f, spec.Textile01);
             if (robed)
             {
                 hem = 0.9f;
@@ -1027,16 +1045,21 @@ namespace Cosmimera.Bootstrap.Demo
             // Cloth hangs outside the legs it covers: never narrower than the thighs (plus their trousers) at the hip.
             float thighX = math.abs(r.HipR.x) + r.LegR * 1.75f, thighZ = r.LegR * 1.9f;
             Color lowTone = look.UpperEra == ArchEra.Wasteland ? Shade(cloth2, 1.05f) : Shade(cloth, 0.88f);
+            float hemX = math.max(r.TrunkX * 0.9f * fit * hemFlare, thighX * (1f + 0.12f * hem));
+            float hemZ = math.max(r.TrunkZ * 1.05f * fit * hemFlare, thighZ);
+            float border = math.lerp(0.07f, 0.32f, spec.Textile01);
+            Color braid = Color.Lerp(lowTone, look.Accent, math.lerp(0.32f, 0.85f, spec.Textile01));
             b.Loft(new[]
             {
-                new Ring(hemAt, math.max(r.TrunkX * 0.9f * fit * hemFlare, thighX * (1f + 0.12f * hem)),
-                    math.max(r.TrunkZ * 1.05f * fit * hemFlare, thighZ), lowTone),
+                new Ring(hemAt, hemX, hemZ, Shade(braid, 0.76f)),
+                new Ring(math.lerp(hemAt, r.Hip, border * 0.74f), hemX, hemZ, braid),
+                new Ring(math.lerp(hemAt, r.Hip, border), hemX, hemZ, lowTone),
                 new Ring(r.Hip, math.max(r.TrunkX * 0.86f * fit, thighX), math.max(r.TrunkZ * 1.02f * fit, thighZ),
                     look.UpperEra == ArchEra.Wasteland ? lowTone : Shade(cloth, 0.94f)),
                 new Ring(r.Waist, r.TrunkX * 0.84f * fit * (1f + math.max(0f, 0.1f * spec.BulkZ)), r.TrunkZ * fit * (1f + math.max(0f, 0.1f * spec.BulkZ)), cloth),
                 new Ring(r.Chest - r.Fwd * (0.05f * h), r.TrunkX * fit, r.TrunkZ * 1.1f * fit, cloth),
                 new Ring(r.Chest + new float3(0f, 0.005f * h, 0f), r.TrunkX * 0.8f * fit, r.TrunkZ * 0.85f * fit, Shade(cloth, 1.04f)),
-            }, 9, true, false);
+            }, 16, true, false, math.lerp(0.025f, 0.085f, spec.Textile01));
             // Belt: the one line every era agrees on, and where pouches and lanterns hang.
             Color belt = look.UpperEra == ArchEra.Future ? look.Glow : look.Leather;
             (look.UpperEra == ArchEra.Future ? glow : b).Hoop(math.lerp(r.Hip, r.Waist, 0.6f), r.TrunkX * 0.9f * fit, 0.012f * h, belt,
@@ -1602,15 +1625,21 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             // Horizontal elliptical rings joined in order; `open` ends are left without a cap (hems, cuffs, capes).
-            public void Loft(Ring[] rings, int sides, bool capBottom, bool capTop)
+            public void Loft(Ring[] rings, int sides, bool capBottom, bool capTop, float hemPleat = 0f)
             {
                 int first = Part.P.Count;
-                foreach (Ring ring in rings)
+                for (int row = 0; row < rings.Length; row++)
                 {
+                    Ring ring = rings[row];
                     for (int k = 0; k < sides; k++)
                     {
                         float a = k * math.PI * 2f / sides;
-                        V(ring.Centre + new float3(math.cos(a) * ring.Rx, 0f, math.sin(a) * ring.Rz), ring.Tone);
+                        // Alternate folds open below the waist. Raising the inner stripe at each ridge weaves a chevron.
+                        float ridge = (k & 1) == 0 ? hemPleat : 0f;
+                        float flare = 1f + ridge * math.saturate(1f - row / 4f);
+                        float peak = row == 1 && hemPleat > 0f && (k & 1) == 0
+                            ? (rings[2].Centre.y - rings[0].Centre.y) * 0.24f : 0f;
+                        V(ring.Centre + new float3(math.cos(a) * ring.Rx * flare, peak, math.sin(a) * ring.Rz * flare), ring.Tone);
                     }
                 }
 

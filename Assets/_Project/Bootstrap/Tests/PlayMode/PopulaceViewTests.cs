@@ -162,6 +162,14 @@ namespace Cosmimera.Bootstrap.Tests
                 rows.Add(("races-" + (half + 1), races));
             }
 
+            var textiles = new List<NpcSpec>();
+            for (int i = 0; i < 6; i++)
+            {
+                textiles.Add(new NpcSpec(NpcRace.Elf, NpcRole.None, NpcSex.Male, 0.42f, 0.8f, 0f, 0f,
+                    ArchRegion.Crystal, ArchEra.Agrarian, ArchRegion.Crystal, ArchEra.Agrarian, 0f, 47, i / 5f));
+            }
+
+            rows.Add(("textiles", textiles));
             var byEra = new List<NpcSpec>();
             foreach (ArchEra era in eras)
             {
@@ -204,9 +212,10 @@ namespace Cosmimera.Bootstrap.Tests
             // One village as the planner draws it: same race mix, age and health spread, and style borrowing.
             var (_, layout, people) = Make(7);
             ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor("verdant_planet", 7);
+            int lineupCount = rows.Count;
             foreach (SettlementPopulace home in people.Settlements)
             {
-                if (home.ResidentCount < 8 || rows.Count > 9)
+                if (home.ResidentCount < 8 || rows.Count >= lineupCount + 3)
                 {
                     continue;
                 }

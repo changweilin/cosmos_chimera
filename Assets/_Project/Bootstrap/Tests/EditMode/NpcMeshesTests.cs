@@ -271,7 +271,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 ArchPlanetStyle planet = ArchitectureMeshes.PlanetStyleFor("storm_planet", seed);
                 ArchMix mix = ArchitectureMeshes.MixFor(planet, SettlementKind.City, "coast", seed, (int)(seed % 5));
-                Assert.That(mix.TertiaryShare, Is.InRange(0.08f, 0.4f));
+                Assert.That(mix.TertiaryShare, Is.InRange(0.18f, 0.43f));
                 Assert.That(mix.TertiaryRegion, Is.Not.EqualTo(planet.Region));
                 Assert.That(mix.TertiaryRegion, Is.Not.EqualTo(mix.SecondaryRegion));
                 Assert.That(mix.TertiaryEra, Is.Not.EqualTo(planet.Era));

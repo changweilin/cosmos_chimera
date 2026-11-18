@@ -24,7 +24,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
         /// <summary>Radius of the circle a resident blocks (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -239,6 +239,16 @@ namespace Cosmimera.WorldGen
             int planetSecondary = 100 + (int)rng.NextUInt(301);
             int planetMinority = 30 + (int)rng.NextUInt(91);
 
+            var culture = new Pcg32(plan.Seed, 'C');
+            int planetAge = (int)culture.NextUInt(121) - 60;
+            int planetHealth = (int)culture.NextUInt(161) - 80;
+            int planetTextile = 150 + (int)culture.NextUInt(701);
+            var tradeWeights = new int[RoleCount];
+            for (int i = 0; i < RoleCount; i++)
+            {
+                tradeWeights[i] = 60 + (int)culture.NextUInt(101);
+            }
+
             var clearance = new LayoutClearance(planet, layout, 0f);
             var profiles = new List<SettlementPopulace>();
             var residents = new List<RunResident>();
@@ -268,15 +278,25 @@ namespace Cosmimera.WorldGen
                     second = themed >= 0 && themed != (int)primary ? (NpcRace)themed : other;
                 }
 
+                // Settlements in the same region inherit the same textile tradition, regardless of traversal order.
+                var regionCulture = new Pcg32(plan.Seed, 0x43520000UL + (uint)s.Region);
+                int regionalTextile = BoundedNormal.Sample(ref regionCulture, planetTextile, 65, planetTextile - 150, planetTextile + 150);
+                int townTextile = BoundedNormal.Sample(ref culture, regionalTextile, 35,
+                    math.max(0, regionalTextile - 85), math.min(1000, regionalTextile + 85));
                 int secondaryShare = math.clamp(planetSecondary + GaussMilli(ref rng) * 80 / 1000, 0, 480);
                 int minorityShare = math.clamp(planetMinority + GaussMilli(ref rng) * 40 / 1000, 0, 250);
-                int meanAge = math.clamp(KindAge(s.Kind) + temper.AgeShiftPermille + GaussMilli(ref rng) * 40 / 1000, 200, 650);
+                int meanAge = math.clamp(KindAge(s.Kind) + planetAge + temper.AgeShiftPermille + GaussMilli(ref rng) * 40 / 1000, 200, 650);
                 int meanHealth = math.clamp(
-                    KindHealth(s.Kind) + ThemeHealth(theme) + temper.HealthShiftPermille + GaussMilli(ref rng) * 50 / 1000, 300, 950);
+                    KindHealth(s.Kind) + planetHealth + ThemeHealth(theme) + temper.HealthShiftPermille + GaussMilli(ref rng) * 50 / 1000, 300, 950);
 
                 int first = residents.Count;
                 placed.Clear();
                 int[] roles = RoleWeights(s.Kind, theme);
+                for (int role = 0; role < roles.Length; role++)
+                {
+                    roles[role] *= BoundedNormal.Sample(ref culture, tradeWeights[role], 12, tradeWeights[role] - 30, tradeWeights[role] + 30);
+                }
+
                 for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
                 {
                     RunBuilding building = layout.Buildings[b];
@@ -296,9 +316,12 @@ namespace Cosmimera.WorldGen
                             placed.Add(at);
                             NpcDuty duty = DrawDuty(id.Role, id.Seed, out WanderMode wanderMode, out int wanderRadiusMm,
                                 out int speedPermilleMean, out int moveMsMean, out int pauseMsMean);
+                            var loom = new Pcg32(id.Seed, 'T');
+                            int textile = BoundedNormal.Sample(ref loom, townTextile, 75,
+                                math.max(0, townTextile - 180), math.min(1000, townTextile + 180));
                             residents.Add(new RunResident(s.Index, b, id.Race, id.Role, id.Sex, id.AgePermille,
                                 math.max(1, id.AgePermille * Lifespan[(int)id.Race] / 1000), StageFor(id.AgePermille),
-                                id.HealthPermille, id.Stature, id.Bulk, id.Style, id.Seed, at, facing,
+                                id.HealthPermille, id.Stature, id.Bulk, id.Style, textile, id.Seed, at, facing,
                                 duty, wanderMode, wanderRadiusMm, speedPermilleMean, moveMsMean, pauseMsMean));
                         }
                     }
@@ -357,6 +380,7 @@ namespace Cosmimera.WorldGen
                 Mix(unchecked((ulong)r.StatureZMilli));
                 Mix(unchecked((ulong)r.BulkZMilli));
                 Mix(unchecked((ulong)r.StyleZMilli));
+                Mix((ulong)r.TextilePermille);
                 Mix(r.Seed);
             }
 
