@@ -35,6 +35,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 打擊感、頓幀震屏、格擋、地城氛圍、BOSS 戰回饋 | `docs/design/combat-feel.md` |
 | 場景物件受擊、材質、破壞、剛體 | `docs/design/destructibles.md` + `docs/decisions/ADR-0009-destructible-physics.md` |
 | 新手任務（選角、好友／宿敵、御三家、初戰、首次 BOSS） | `docs/design/beginner-quest.md` |
+| 地形試煉（道館式）、戰鬥旅人、訓練家對戰 | `docs/design/trainer-battles.md` |
 | 大廳、星海選星、圖鑑、收服/取蛋 | `docs/design/lobby-meta.md` |
 | 連線、同步、存檔 | `docs/design/multiplayer.md` + `docs/architecture/netcode.md` |
 | AI 批次設計宙獸概念 | `docs/design/creature-concept-pipeline.md` |

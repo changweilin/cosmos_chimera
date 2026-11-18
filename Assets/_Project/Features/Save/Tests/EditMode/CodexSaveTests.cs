@@ -47,7 +47,11 @@ namespace Cosmimera.Save.Tests
             var save = new LobbySave();
             save.Add("cr_aqua_slime_juvenile", VesselKind.GlassBead, 0);
             save.Codex.Record(CodexEvent.Encounter, "never_captured");
-            var loaded = Parse(save.ToJson().Replace("\"version\": 10", "\"version\": 9"));
+            // Tie the downgrade to the live format version: a hard-coded "10" silently stopped matching at v11.
+            string json = save.ToJson();
+            string current = "\"version\": " + LobbySave.FormatVersion;
+            Assert.That(json, Does.Contain(current), "precondition: the save must be rewritten as a pre-codex (v9) file");
+            var loaded = Parse(json.Replace(current, "\"version\": 9"));
             Assert.That(loaded.Codex.Get(CodexKind.Creature, "cr_aqua_slime_juvenile"), Is.EqualTo(CodexLevel.Complete));
             Assert.That(loaded.Codex.Get(CodexKind.Creature, "never_captured"), Is.EqualTo(CodexLevel.Unknown));
         }

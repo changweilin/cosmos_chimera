@@ -1107,6 +1107,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            // REQ: trainer-battles.md#共用規則 — a trainer's creature is never a capture target and pays the trainer pool.
+            if (u.IsTrainerOwned)
+            {
+                Reward(XpSource.Trainer, u.Level, false, new HashSet<int>(_appeared));
+                return;
+            }
+
             WildInfo w = _wild[unitId];
             w.KnockedOutAtMs = _nowMs;
             SpawnRole role = RoleOf(w);

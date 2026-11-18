@@ -15,6 +15,7 @@
 | P5-07 | 數值平衡模擬（自動對戰 Monte Carlo） | SOL（模型）+ SONNET（工具） | OPUS | 屬性勝率差 < 10% | 🟦 |
 | P5-08 | 全資料集一致性掃描 | ARGON | 人工 | 命名/設定無矛盾報告 | 🟨 |
 | P5-09 | 美術交付驗收工具：檢查 `Art/_incoming/<task_id>/manifest.json`、命名、尺寸，搬入 `Assets/_Project/Art/` | SONNET | 人工 | 不合規交付有清楚報告；合規者一鍵搬移 | ✅ |
+| P5-10 | 地形試煉 BOSS 新物種：10 條專屬進化線（各持該屬性 `immune_<地形>`，規格 [trainer-battles.md#地形試煉](../design/trainer-battles.md#地形試煉)） | TERRA／HYDROGEN（初稿，`Data/_incoming/`）→ ARGON（文化考據） | 不同廠商一致性審＋人工定稿 | `validate-data` 0 error；10 地形各 1 線；BOSS 型態階段符合星球階級 | ⬜ |
 
 ## 未收尾紀錄
 [log/phase-5.md](log/phase-5.md)（partial／blocked 才寫；舊紀錄為封存）。

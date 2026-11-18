@@ -31,6 +31,7 @@ namespace Cosmimera.Creatures.Tests
             "quest_step" => XpSource.QuestStep,
             "quest_chain" => XpSource.QuestChain,
             "boss" => XpSource.Boss,
+            "trainer" => XpSource.Trainer,
             _ => throw new System.ArgumentException(s),
         };
 

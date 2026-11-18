@@ -52,7 +52,7 @@
     "appeared_weight": 4,
     "reserve_weight": 2,
     "rewards": {
-      "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640},
+      "base_xp": {"wild": 80, "capture": 40, "quest_step": 80, "quest_chain": 160, "boss": 640, "trainer": 160},
       "reference_level": 10,
       "elite_multiplier": 2,
       "wild_level": {"boss_level_min": 5, "boss_level_max": 75, "per_tier": 2, "role_bonus": {"normal": 0, "elite": 3, "boss": 5}},

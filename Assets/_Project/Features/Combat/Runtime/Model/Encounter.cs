@@ -166,6 +166,11 @@ namespace Cosmimera.Combat
         /// TargetId's stagger gauge (combat.md#格擋, Q-C59). A Faint or Staggered event may follow.
         /// </summary>
         Reflected = 12,
+        /// <summary>
+        /// A trainer battle ended (SourceId = trainer id, TargetId = CombatAi.NoTarget, Amount = 1 when the player won,
+        /// 0 when the player's creatures all fainted; trainer-battles.md#共用規則).
+        /// </summary>
+        TrainerBattleEnded = 13,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -204,6 +209,18 @@ namespace Cosmimera.Combat
         AlreadyOverloaded = 7,
         /// <summary>Unit already used its once-per-combat overload.</summary>
         AlreadyUsedThisCombat = 8,
+    }
+
+    /// <summary>Where a trainer stands in its battle with the player (trainer-battles.md#共用規則).</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum TrainerBattleState
+    {
+        /// <summary>Not fighting; creatures stay off the field. A trainer the player lost to returns here for a rematch.</summary>
+        Idle = 0,
+        /// <summary>Fighting the player.</summary>
+        Active = 1,
+        /// <summary>Beaten by the player; never challenges again this run.</summary>
+        Defeated = 2,
     }
 
     /// <summary>One creature taking part in an encounter.</summary>
@@ -403,6 +420,18 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: Wild only. Side effects: none.</remarks>
         public bool IsFriendlyAfterConfrontation { get; internal set; }
 
+        /// <summary>Owning trainer id from <see cref="Encounter.RegisterTrainer"/>, or -1 for a wild or player creature.</summary>
+        /// <remarks>Pre: none. Post: -1 or a registered trainer id; fixed for the unit's lifetime. Side effects: none.</remarks>
+        public int TrainerId { get; internal set; } = -1;
+
+        /// <summary>Order in its trainer's team (lower fields first); 0 when not trainer-owned.</summary>
+        /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
+        public int TrainerOrder { get; internal set; }
+
+        /// <summary>True for a trainer's creature: never captured, taunted or petted (trainer-battles.md#共用規則).</summary>
+        /// <remarks>Pre: none. Post: equals TrainerId >= 0. Side effects: none.</remarks>
+        public bool IsTrainerOwned => TrainerId >= 0;
+
         // Distance (m) to the nearest intruder at the last engagement pass; orders who fills a free slot.
         internal float EngageDistanceM { get; set; }
 
@@ -528,6 +557,8 @@ namespace Cosmimera.Combat
         }
 
         private readonly List<ConfrontationRecord> _confrontations = new List<ConfrontationRecord>(4);
+        private readonly List<TrainerBattleState> _trainers = new List<TrainerBattleState>(4);
+        private int _activeTrainer = -1;
         private Pcg32 _rng;
         private readonly int _rangeCapMm;
         private long _lastTickMs = long.MinValue;
@@ -997,7 +1028,8 @@ namespace Cosmimera.Combat
         /// <remarks>
         /// REQ: docs/design/field-utilities.md.
         /// Pre: none.
-        /// Post: non-boss active wild units have Engaged=false and Provoked=false; boss units remain unchanged. Returns true iff at least one unit disengaged.
+        /// Post: non-boss, non-trainer active wild units have Engaged=false and Provoked=false; boss and trainer-owned units
+        ///       remain unchanged (a trainer battle cannot be escaped, trainer-battles.md). Returns true iff at least one unit disengaged.
         /// Side effects: mutates wild engagement flags.
         /// </remarks>
         public bool ForceDisengageAllWild()
@@ -1006,7 +1038,8 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && (w.Engaged || w.Provoked || w.WantsEngage))
+                if (w.Side == EncounterSide.Wild && w.IsActive && !w.IsBoss && !w.IsTrainerOwned &&
+                    (w.Engaged || w.Provoked || w.WantsEngage))
                 {
                     w.Engaged = false;
                     w.WantsEngage = false;
@@ -1236,6 +1269,217 @@ namespace Cosmimera.Combat
             }
 
             return ActivateConfrontation(u.ConfrontationId, u.ConfrontationSide);
+        }
+
+        /// <summary>Most creatures one side fields in a trainer battle (trainer-battles.md#共用規則).</summary>
+        /// <remarks>Pre: none. Post: constant; matches the player's two fielded creatures. Side effects: none.</remarks>
+        public const int TrainerFieldCap = 2;
+
+        /// <summary>Registers a trainer whose creatures are added with <see cref="AddTrainerCreature"/>.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: returns a new id (previous trainer count); TrainerState(id) == Idle.
+        /// Side effects: allocates a trainer record.
+        /// </remarks>
+        public int RegisterTrainer()
+        {
+            _trainers.Add(TrainerBattleState.Idle);
+            return _trainers.Count - 1;
+        }
+
+        /// <summary>Battle state of trainer <paramref name="trainerId"/>.</summary>
+        /// <remarks>Pre: trainerId registered. Post: defined value. Side effects: none.</remarks>
+        public TrainerBattleState TrainerState(int trainerId)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            return _trainers[trainerId];
+        }
+
+        /// <summary>True while a trainer battle is running; wild units neither join it nor start other fights.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool HasActiveTrainerBattle => _activeTrainer >= 0;
+
+        /// <summary>Adds a creature to a trainer's team; it waits off the field until <see cref="StartTrainerBattle"/>.</summary>
+        /// <remarks>
+        /// Pre: as AddCreature; trainerId registered and Idle; order >= 0 and unused by that trainer's other creatures.
+        /// Post: Wild-side unit with TrainerId == trainerId, TrainerOrder == order, Fielded == false, Individual == null.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddTrainerCreature(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            int trainerId, int order)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(_trainers[trainerId] == TrainerBattleState.Idle, "add creatures before the battle starts");
+            Contract.Requires(order >= 0, "order must be >= 0");
+            for (int i = 0; i < _units.Count; i++)
+            {
+                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].TrainerOrder != order,
+                    "order already used by this trainer");
+            }
+
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false);
+            u.TrainerId = trainerId;
+            u.TrainerOrder = order;
+            u.Fielded = false;
+            return u;
+        }
+
+        /// <summary>Starts trainer <paramref name="trainerId"/>'s battle: its lowest-order creatures take the field engaged.</summary>
+        /// <remarks>
+        /// REQ: trainer-battles.md#共用規則.
+        /// Pre: trainerId registered; it owns at least one creature.
+        /// Post: true iff the trainer was Idle, no other trainer battle or confrontation was active and no active wild unit
+        ///       was engaged, provoked or waiting to engage; then TrainerState == Active, HasActiveTrainerBattle, and up to
+        ///       TrainerFieldCap of its creatures (lowest order first) are Fielded and Engaged. False changes nothing.
+        /// Side effects: mutates the trainer record and its units.
+        /// </remarks>
+        public bool StartTrainerBattle(int trainerId)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(TrainerTeamSize(trainerId) > 0, "trainer has no creatures");
+            if (_trainers[trainerId] != TrainerBattleState.Idle || _activeTrainer >= 0 || HasActiveConfrontation)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit w = _units[i];
+                if (w.Side == EncounterSide.Wild && w.IsActive && (w.Engaged || w.WantsEngage || w.Provoked))
+                {
+                    return false;
+                }
+            }
+
+            _trainers[trainerId] = TrainerBattleState.Active;
+            _activeTrainer = trainerId;
+            int fielded = 0;
+            while (fielded < TrainerFieldCap && FieldNextTrainerReserve(trainerId))
+            {
+                fielded++;
+            }
+
+            return true;
+        }
+
+        private int TrainerTeamSize(int trainerId)
+        {
+            int n = 0;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                if (_units[i].TrainerId == trainerId)
+                {
+                    n++;
+                }
+            }
+
+            return n;
+        }
+
+        private bool FieldNextTrainerReserve(int trainerId)
+        {
+            EncounterUnit best = null;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId && !u.Fielded && !u.Combatant.IsFainted &&
+                    (best == null || u.TrainerOrder < best.TrainerOrder))
+                {
+                    best = u;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            best.Fielded = true;
+            Engage(best);
+            return true;
+        }
+
+        // REQ: trainer-battles.md#共用規則 — reserves relay in team order; the battle ends only when one side has no
+        // creature left (never by distance), and both sides are fully restored afterwards.
+        private void AdvanceTrainerBattle(long nowMs)
+        {
+            if (_activeTrainer < 0)
+            {
+                return;
+            }
+
+            int trainerId = _activeTrainer;
+            int fielded = 0;
+            int alive = 0;
+            bool playerAlive = false;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId)
+                {
+                    if (!u.Combatant.IsFainted)
+                    {
+                        alive++;
+                        if (u.Fielded)
+                        {
+                            fielded++;
+                        }
+                    }
+                }
+                else if (u.Side == EncounterSide.Player && !u.Combatant.IsFainted)
+                {
+                    playerAlive = true;
+                }
+            }
+
+            if (alive == 0 || !playerAlive)
+            {
+                EndTrainerBattle(trainerId, alive == 0, nowMs);
+                return;
+            }
+
+            while (fielded < TrainerFieldCap && FieldNextTrainerReserve(trainerId))
+            {
+                fielded++;
+            }
+        }
+
+        private void EndTrainerBattle(int trainerId, bool playerWon, long nowMs)
+        {
+            _trainers[trainerId] = playerWon ? TrainerBattleState.Defeated : TrainerBattleState.Idle;
+            _activeTrainer = -1;
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.TrainerId == trainerId)
+                {
+                    u.Fielded = false;
+                    u.Engaged = false;
+                    u.WantsEngage = false;
+                    u.TargetId = CombatAi.NoTarget;
+                    RestoreFull(u, nowMs);
+                }
+                else if (u.Side == EncounterSide.Player)
+                {
+                    RestoreFull(u, nowMs);
+                }
+            }
+
+            _events.Add(new EncounterEvent(EncounterEventKind.TrainerBattleEnded, trainerId, CombatAi.NoTarget, 0,
+                playerWon ? 1 : 0));
+        }
+
+        private static void RestoreFull(EncounterUnit u, long nowMs)
+        {
+            Combatant c = u.Combatant;
+            if (c.IsFainted)
+            {
+                c.Revive(c.MaxHp, nowMs);
+            }
+            else if (c.Hp < c.MaxHp)
+            {
+                c.HealByPercent(100, nowMs);
+            }
         }
 
         /// <summary>Adds a player creature with all equipped card moves and bead traits.</summary>
@@ -1574,13 +1818,19 @@ namespace Cosmimera.Combat
         /// Pre: unitId is an active Wild unit.
         /// Post: Engaged from the next Tick (if still active and the engagement cap allows, combat.md#交戰上限; otherwise it
         ///       waits for a slot); then it stays engaged until no intruder is within DisengageRadiusM. Engaged itself
-        ///       is unchanged until then.
+        ///       is unchanged until then. No effect on a trainer-owned unit or while a trainer battle runs
+        ///       (trainer-battles.md#共用規則).
         /// Side effects: mutates the unit.
         /// </remarks>
         public void Provoke(int unitId)
         {
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Wild && u.IsActive, "only an active wild unit can be provoked");
+            if (u.IsTrainerOwned || _activeTrainer >= 0)
+            {
+                return;
+            }
+
             if (IsConfrontationStandoff(unitId))
             {
                 ActivateConfrontation(u.ConfrontationId, 1 - u.ConfrontationSide);
@@ -1968,6 +2218,7 @@ namespace Cosmimera.Combat
 
             BurnObjects(nowMs);
             AdvanceConfrontations();
+            AdvanceTrainerBattle(nowMs);
             Separate(playerPosition);
         }
 
@@ -2059,7 +2310,7 @@ namespace Cosmimera.Combat
             {
                 EncounterUnit u = _units[i];
                 if (u.Side != EncounterSide.Wild || !u.IsActive || u.Engaged || u.Provoked || u.WantsEngage ||
-                    u.IsConfrontationAlly)
+                    u.IsConfrontationAlly || u.IsTrainerOwned)
                 {
                     continue;
                 }
@@ -2411,7 +2662,7 @@ namespace Cosmimera.Combat
                     // Being hit starts the fight even outside its territory (avoidant only fights back, Q-C35); a MISS does
                     // not, or an avoidant unit would join from a roll it never felt (E2-SOL-02). A full cap makes it wait
                     // instead (combat.md#交戰上限: a hit does not add a third wild).
-                    else if (!t.Engaged && !t.IsConfrontationAlly)
+                    else if (!t.Engaged && !t.IsConfrontationAlly && _activeTrainer < 0)
                     {
                         if (HasEngageSlot(t))
                         {
@@ -2557,8 +2808,17 @@ namespace Cosmimera.Combat
             {
                 EncounterUnit w = _units[i];
                 if (w.Side != EncounterSide.Wild || !w.IsActive ||
-                    w.IsConfrontationAlly || w.IsFriendlyAfterConfrontation || IsConfrontationStandoff(w.Id))
+                    w.IsConfrontationAlly || w.IsFriendlyAfterConfrontation || IsConfrontationStandoff(w.Id) ||
+                    w.IsTrainerOwned)
                 {
+                    continue;
+                }
+
+                // REQ: trainer-battles.md#共用規則 — wild units sit out a trainer battle; none was engaged when it started.
+                if (_activeTrainer >= 0)
+                {
+                    w.WantsEngage = false;
+                    w.Provoked = false;
                     continue;
                 }
 
@@ -2902,7 +3162,7 @@ namespace Cosmimera.Combat
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
-                if (w.Side == EncounterSide.Wild && w.IsActive && w.Engaged && !w.IsBoss)
+                if (w.Side == EncounterSide.Wild && w.IsActive && w.Engaged && !w.IsBoss && !w.IsTrainerOwned)
                 {
                     n++;
                 }

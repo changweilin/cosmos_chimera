@@ -38,6 +38,8 @@
 | P3-29 | 奇觀地標（`design/planet-world.md#奇觀地標`）：規則層 `LandmarkPlanner`（八種：高塔／神廟／空島／太空電梯／太空站／迷宮／坑道／地城門；避開海、道路、建築、生成點；實心者擋角色與宙獸、散佈避開）＋表現層 `LandmarkMeshes`（地區×時代×功能×年齡的程序化網格）＋ `LandmarkView`，已接進 `RunSession`。**未做**：內部與進入（Q-W26、P3-07）、互動／破壞（Q-W25）、遠景 LOD 與霧外可見性 | FABLE | SOL | 同 seed 一致（快照）；奇觀不落海、不壓道路建築生成點、彼此不重疊；每種造型可辨識（`Logs/landmark-*.png`）；實景未經目視 | 🟨 |
 | P3-30 | 地城暗黑氛圍表現層（`design/combat-feel.md` 〈地城氛圍〉）：點光源照明、暗角、降飽和、音場、菁英詞綴名牌、擊倒爆散與掉落噴灑；只套進階地形地城 | SONNET | 人工 | 一般地表外觀不變；Steam Deck 幀率；人工試玩 | ⬜ |
 | P3-31 | 野生宙獸生態（`design/creature-ecology.md`）：物種候選依出生環境抽棲位→習性；四種遊蕩模式與速度／移動／停留的個體間、行動間標準差；同棲位異種活動區不重疊；交戰上限 2 vs 2。資料、importer、`RunEcology`、`Encounter`、觀察、存檔 v11（保留棲位／習性、進化重抽、舊存檔遷移）與 `ReproProbe` v7 已接線 | Codex（設計／提案）、Claude Opus（實作） | SOL／人工 | 提案通過 schema 與語義檢查；正式資料、importer、生成、戰鬥領域、觀察、收服／存檔完整遷移，EditMode／PlayMode 與重現性驗收 | 🟦 |
+| P3-32 | 戰鬥旅人（[trainer-battles.md](../design/trainer-battles.md)#戰鬥旅人）：10 職業資料、各星球生成（獨立亂數流）、強度介於野生與 BOSS、視線挑戰與迴避；外觀用路人 NPC 程序化佔位；職業名稱文案 TERRA | OPUS（規則）+ SONNET（表現） | SOL＋ARGON（重現性必審） | 同 seed 同結果；既有生成序列不變；等級夾在野生與 BOSS 之間 | ⬜ |
+| P3-33 | 地形試煉（[trainer-battles.md](../design/trainer-battles.md)#地形試煉）：10 位試煉主（固定 seed 路人佔位）、引導入地城（免除免疫限制）→守關菁英→試煉主＋地城 BOSS 對玩家→必定收服 BOSS（P5-10 新物種，定稿前用現有持有物種替身）、進階器皿配方＋試煉章、再戰；依賴 P3-13／P3-07、P2-18 | SONNET | OPUS | 每種進階地形一條完整流程 PlayMode 測試 | ⬜ |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

@@ -77,42 +77,12 @@
 <p style="color:var(--muted);font-size:13px">選擇會自動存在這個瀏覽器（localStorage）。agent 讀不到——按「複製決策」貼回對話，或下載 JSON 存成 <code>docs/open-questions.answers.json</code>。</p>
 
 <section>
-<h2>新手任務（P7-02；已照暫定先行，可推翻）</h2>
+<h2>地形試煉與戰鬥旅人（已照暫定先行，可推翻）</h2>
 <div class="cards">
-<article id="Q-B1">
-  <header><a class="id" href="#Q-B1">Q-B1</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>宿敵與好友的御三家分配</b>。玩家選定御三家後，宿敵與好友各拿哪一隻？</p>
-  <p><span class="label">暫定</span>宿敵拿剋制玩家的那隻（日＜月＜星＜日，由抗性推得），好友拿剩下一隻（<a href="design/beginner-quest.md">beginner-quest.md</a>〈御三家剋制〉）（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B2">
-  <header><a class="id" href="#Q-B2">Q-B2</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>初次對戰的勝敗處理</b>。輸給宿敵時怎麼辦？等級、經驗與回復？</p>
-  <p><span class="label">暫定</span>雙方 LV10；勝敗都繼續、戰後全回復；只差台詞與經驗（勝全額、敗一半，數值在 Data/）（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B3">
-  <header><a class="id" href="#Q-B3">Q-B3</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>起始捕捉道具</b>。御三家個體的 vessel 與好友交付的捕捉道具數量</p>
-  <p><span class="label">暫定</span>御三家 vessel＝主人角色慣用類別、幼年階；好友交付 5 個玩家角色類別的幼年階基本器皿（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B4">
-  <header><a class="id" href="#Q-B4">Q-B4</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>好友在野外是否同行</b>。好友是否帶御三家跟隨玩家一起戰鬥？</p>
-  <p><span class="label">暫定</span>不同行；只在營地與任務步驟切換時以對話框出現（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B5">
-  <header><a class="id" href="#Q-B5">Q-B5</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>新手任務失敗與中斷</b>。全滅、中途關閉遊戲的處理</p>
-  <p><span class="label">暫定</span>全滅→回營地全回復、保留任務進度與收服；關閉遊戲→不存，下次以新 seed 重來（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B6">
-  <header><a class="id" href="#Q-B6">Q-B6</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>大廳開放時機與舊存檔</b>。新手任務完成前能否進大廳？舊存檔如何處理？</p>
-  <p><span class="label">暫定</span>完成前大廳鎖定；已有持有宙獸的舊存檔視為已完成，大廳補選角色，好友／宿敵依環狀順序推得（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
-</article>
-<article id="Q-B7">
-  <header><a class="id" href="#Q-B7">Q-B7</a><span class="tag">影響 P7-02</span></header>
-  <p><span class="label">問題</span><b>新手小行星的星球類型</b>。小行星的星球類型（青翠／熔岩／冰晶等）是否限定？</p>
-  <p><span class="label">暫定</span>六種隨機；只排除進階地形地城與奇觀地城（已寫入 <a href="design/beginner-quest.md">beginner-quest.md</a>，照此實作）</p>
+<article id="Q-G10">
+  <header><a class="id" href="#Q-G10">Q-G10</a><span class="tag">影響 P5-10、P3-33</span></header>
+  <p><span class="label">問題</span><b>試煉 BOSS 新物種的範圍</b>。10 種試煉 BOSS 全新設計：每種是完整三段進化線，還是只有 BOSS 階段的單一型態？</p>
+  <p><span class="label">暫定</span>完整三段進化線（符合現行 <code>line_id</code>／<code>stage</code> 資料契約）；只有 BOSS 型態必須持有 <code>immune_&lt;地形&gt;</code>（已寫入 <a href="design/trainer-battles.md#地形試煉">trainer-battles.md〈地形試煉〉</a>，照此實作）</p>
 </article>
 </div>
 </section>
@@ -163,13 +133,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-B1':[R('ok','宿敵與好友的御三家分配',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B2':[R('ok','初次對戰的勝敗處理',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B3':[R('ok','起始捕捉道具',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B4':[R('ok','好友在野外是否同行',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B5':[R('ok','新手任務失敗與中斷',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B6':[R('ok','大廳開放時機與舊存檔',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
- 'Q-B7':[R('ok','新手小行星的星球類型',['照暫定','改（補充）']),T('note','補充','若改，寫新規則')],
+ 'Q-G10':[R('ok','試煉 BOSS 新物種的範圍',['照暫定','單一型態','改（補充）']),T('note','補充','若改，寫新規則')],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
