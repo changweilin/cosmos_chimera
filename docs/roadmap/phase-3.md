@@ -15,7 +15,7 @@
 | P3-04b | 主動操縱天氣與戰術資訊（`design/field-utilities.md#主動操縱天氣`）：合格隊伍在手冊選八種天氣，覆寫施放區域至下一個自然時段，共用冷卻 180 秒；HUD／手冊顯示當地天氣、來源、倒數與戰鬥修正，繁中／英／日文案外部化 | Codex | OPUS | 無能力／冷卻中拒絕且不改狀態；離區不攜帶、返回仍有效；到期回自然天氣且不清冷卻；API 契約與三語接線有回歸 | ✅ |
 | P3-05 | 區域圖（Voronoi + 連通保證）+ 區域詞綴 | OPUS | SONNET | 1000 個 seed 測試：100% 可達 BOSS | ✅ |
 | P3-06 | POI 佈置、宙獸棲地、野生宙獸生成（依 Q-M2） | SONNET | OPUS | POI 密度符合每 km² 預算 | ✅ |
-| P3-07 | 暗黑式地城：房間模組 + 拼接規則 + 詞綴 | OPUS（規則）+ SONNET（實作） | SOL | 快照測試；無封死房間 | ⬜ |
+| P3-07 | 暗黑式地城：房間模組 + 拼接規則 + 詞綴。**規則層已做**：`WorldGen.RoomDungeonPlanner` → `RoomDungeon`（每地形獨立亂數流、房間樹、守關房→BOSS 死路、寶藏死路、開放程度環路、菁英詞綴、模組外形＋旋轉）與 `AdvancedTerrains` 十地形表。**未做**：手作房間模組與表現層、進入方式（Q-W42）、星球上的配置（Q-W41） | OPUS（規則）+ SONNET（實作） | SOL | 快照測試；無封死房間 | 🟦 |
 | P3-08 | 任務鏈生成與 BOSS 戰框架 | SONNET | OPUS | 每星球至少 1 主線 + 1 BOSS | ✅ |
 | P3-09 | 散佈系統（植被/岩石/互動物件 per biome） | SONNET | — | 無浮空/穿地物件 | ✅ |
 | P3-12 | 可破壞場景物件（`design/destructibles.md`、ADR-0009、ADR-0010）：規則層物件表／物質反應／破壞集合／素材與珠寶掉落／夜間影素材；散佈位置移到規則層，樹／灌木／岩石阻擋；表現層剛體喚醒、球面重力、碎片、地上素材；目標切換可鎖定物件；1 m 自動拾取（Q-M6）、休眠寫回規則層（Q-M7）、迷霧隱蔽（Q-C37）與草叢隱蔽已接線 | OPUS（規則）+ SONNET（表現） | SOL／OPUS（草叢接線） | 每種物質與反應各有測試；十種屬性都有掉落來源；同 seed 破壞後 LOD 重建不復活；PlayMode：建築／樹破壞後角色與宙獸可通過 | 🟨 |
@@ -39,7 +39,7 @@
 | P3-30 | 地城暗黑氛圍表現層（`design/combat-feel.md` 〈地城氛圍〉）：點光源照明、暗角、降飽和、音場、菁英詞綴名牌、擊倒爆散與掉落噴灑；只套進階地形地城 | SONNET | 人工 | 一般地表外觀不變；Steam Deck 幀率；人工試玩 | ⬜ |
 | P3-31 | 野生宙獸生態（`design/creature-ecology.md`）：物種候選依出生環境抽棲位→習性；四種遊蕩模式與速度／移動／停留的個體間、行動間標準差；同棲位異種活動區不重疊；交戰上限 2 vs 2。資料、importer、`RunEcology`、`Encounter`、觀察、存檔 v11（保留棲位／習性、進化重抽、舊存檔遷移）與 `ReproProbe` v7 已接線 | Codex（設計／提案）、Claude Opus（實作） | SOL／人工 | 提案通過 schema 與語義檢查；正式資料、importer、生成、戰鬥領域、觀察、收服／存檔完整遷移，EditMode／PlayMode 與重現性驗收 | 🟦 |
 | P3-32 | 戰鬥旅人（[trainer-battles.md](../design/trainer-battles.md)#戰鬥旅人）：10+ 職業資料（32 職業／14 職務／6 職能）、各星球生成（獨立亂數流、`maxStage` 限制、`TrainerPlanner.Hash` 鎖版）、強度介於野生與 BOSS、視線挑戰（`IsInSight`／`StepPursuit`）與 25 m 迴避、`Observant` 互動觸發；外觀用路人 NPC 程序化佔位（`NpcMeshes.SpecForTrainer`／`TrainerView`）；三語職業／職務／職能與 HUD 文案、已接線 `RunSession` | OPUS（規則）+ SONNET（表現） | SOL＋ARGON（重現性必審） | 同 seed 同結果；既有生成序列不變；等級夾在野生與 BOSS 之間 | 🟨 |
-| P3-33 | 地形試煉（[trainer-battles.md](../design/trainer-battles.md)#地形試煉）：10 位試煉主（固定 seed 路人佔位）、引導入地城（免除免疫限制）→守關菁英→試煉主＋地城 BOSS 對玩家→必定收服 BOSS（P5-10 新物種，定稿前用現有持有物種替身）、進階器皿配方＋試煉章、再戰；依賴 P3-13／P3-07、P2-18 | SONNET | OPUS | 每種進階地形一條完整流程 PlayMode 測試 | ⬜ |
+| P3-33 | 地形試煉（[trainer-battles.md](../design/trainer-battles.md)#地形試煉）：10 位試煉主（固定 seed 路人佔位）、引導入地城（免除免疫限制）→守關菁英→試煉主＋地城 BOSS 對玩家→必定收服 BOSS（P5-10 新物種，定稿前用現有持有物種替身）、進階器皿配方＋試煉章、再戰；依賴 P3-13／P3-07、P2-18。**規則層已做**：`TrialPlanner`（BOSS＝持免疫線的星球同階型態：矮行星少年／行星成年／超巨星成年＋超載，試煉主隊同屬性同型態同等級）、`TrialProgress`（對話→守關→競技場→最終戰→勝利／落敗保留步驟、試煉中免除免疫、必定收服一次、首勝獎勵）、`Encounter.AddTrialBoss`（BOSS 先上場、倒下不補位、超巨星上場即超載）。**未做**：`RunSession` 接線與試煉主佔位外觀（等 Q-W41／Q-W42） | SONNET | OPUS | 每種進階地形一條完整流程 PlayMode 測試 | 🟦 |
 | P3-34 | 天氣與時段改版（`design/weather.md`）：規則層 `DayPhase`（當地太陽仰角 → 清晨／白天／黃昏／夜晚）、`WeatherField`（整數擬布朗＋均值回歸的 8 基礎＋10 地形異象向量）、`WeatherDynamics`（75 門檻、主導天氣、強度縮放修正）；`WeatherKind` 加 10 異象、時段光／影修正與夜晚視野；地表累積（1 秒固定步長整數積分）影響移速與跳躍；天氣操縱改為 180 秒傾向覆寫並可召喚（限原生地貌）／驅散異象；表現層太陽與 `LocalWeatherView` 改吃向量。**未做**：異象特殊效果（傷害、落雷、漏斗、致盲等）、輻射塵的聚落周邊、晝夜活動性（待 Q-W36） | OPUS | SOL＋ARGON（重現性必審） | 同 (seed, 區域, timeMs) 跨後端逐位元相同；異象不出現在非指定地貌（規則測試）；時段由太陽方向推得且與畫面一致；`ReproProbe` 覆蓋；`GeneratorVersion` 遞增 | 🟨 |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 

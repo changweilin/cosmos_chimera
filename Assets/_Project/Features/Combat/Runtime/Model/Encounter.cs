@@ -273,8 +273,15 @@ namespace Cosmimera.Combat
         public int Level { get; internal set; }
 
         /// <summary>Whether this unit is a planet boss (HP ×3, body and melee volumes ×1.5 — D0-R2).</summary>
-        /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss or AddTrialBoss. Side effects: none.</remarks>
         public bool IsBoss { get; internal set; }
+
+        /// <summary>True for a terrain trial's dungeon boss fighting for the trial master (trainer-battles.md#地形試煉).</summary>
+        /// <remarks>Pre: none. Post: implies IsBoss and IsTrainerOwned; fixed at creation. Side effects: none.</remarks>
+        public bool IsTrialBoss { get; internal set; }
+
+        // Set for a supergiant trial boss: it enters the field already overloaded.
+        internal bool OverloadOnField { get; set; }
 
         /// <summary>Boss enrage stage reached so far (combat.md#BOSS-階段, Q-C48); 0 = opening stage.</summary>
         /// <remarks>
@@ -1436,13 +1443,45 @@ namespace Cosmimera.Combat
             Contract.Requires(order >= 0, "order must be >= 0");
             for (int i = 0; i < _units.Count; i++)
             {
-                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].TrainerOrder != order,
-                    "order already used by this trainer");
+                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].IsTrialBoss ||
+                                  _units[i].TrainerOrder != order, "order already used by this trainer");
             }
 
             EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false);
             u.TrainerId = trainerId;
             u.TrainerOrder = order;
+            u.Fielded = false;
+            return u;
+        }
+
+        /// <summary>
+        /// Adds a terrain trial's dungeon boss to the trial master's team: it takes the field first, beside the master's
+        /// lowest-order creature, and its slot is not refilled after it faints. REQ: trainer-battles.md#地形試煉.
+        /// </summary>
+        /// <remarks>
+        /// Pre: as AddBoss; trainerId registered and Idle; the trainer has no trial boss yet; overloaded only for an Adult def.
+        /// Post: as AddBoss (HP and size multipliers), plus TrainerId == trainerId, TrainerOrder == 0 ordered ahead of
+        ///       every other creature, IsTrialBoss, Fielded == false. When overloaded it is overloaded each time it is
+        ///       fielded, until the trainer battle ends.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddTrialBoss(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual, int trainerId, bool overloaded)
+        {
+            Contract.Requires(individual != null, "wild units need an individual");
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(_trainers[trainerId] == TrainerBattleState.Idle, "add creatures before the battle starts");
+            Contract.Requires(!overloaded || (def != null && def.Stage == CreatureStage.Adult), "only an adult can overload");
+            for (int i = 0; i < _units.Count; i++)
+            {
+                Contract.Requires(_units[i].TrainerId != trainerId || !_units[i].IsTrialBoss, "trainer already has a trial boss");
+            }
+
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, true, null, individual);
+            u.TrainerId = trainerId;
+            u.TrainerOrder = 0;
+            u.IsTrialBoss = true;
+            u.OverloadOnField = overloaded;
             u.Fielded = false;
             return u;
         }
@@ -1506,7 +1545,7 @@ namespace Cosmimera.Combat
             {
                 EncounterUnit u = _units[i];
                 if (u.TrainerId == trainerId && !u.Fielded && !u.Combatant.IsFainted &&
-                    (best == null || u.TrainerOrder < best.TrainerOrder))
+                    (best == null || u.IsTrialBoss || (!best.IsTrialBoss && u.TrainerOrder < best.TrainerOrder)))
                 {
                     best = u;
                 }
@@ -1519,6 +1558,11 @@ namespace Cosmimera.Combat
 
             best.Fielded = true;
             Engage(best);
+            if (best.OverloadOnField && !best.Combatant.IsOverloaded)
+            {
+                BeginUnitOverload(best);
+            }
+
             return true;
         }
 
@@ -1548,6 +1592,11 @@ namespace Cosmimera.Combat
                             fielded++;
                         }
                     }
+                    else if (u.IsTrialBoss && u.Fielded)
+                    {
+                        // REQ: trainer-battles.md#地形試煉 — once the boss falls its slot stays empty.
+                        fielded++;
+                    }
                 }
                 else if (u.Side == EncounterSide.Player && !u.Combatant.IsFainted)
                 {
@@ -1576,6 +1625,15 @@ namespace Cosmimera.Combat
                 EncounterUnit u = _units[i];
                 if (u.TrainerId == trainerId)
                 {
+                    if (u.Combatant.IsOverloaded)
+                    {
+                        u.Combatant.EndOverload();
+                        if (u.Def != u.BaseDef)
+                        {
+                            ApplyUnitForm(u, u.BaseDef, out _);
+                        }
+                    }
+
                     u.Fielded = false;
                     u.Engaged = false;
                     u.WantsEngage = false;
@@ -2029,6 +2087,13 @@ namespace Cosmimera.Combat
                 return OverloadResult.AlreadyUsedThisCombat;
             }
 
+            BeginUnitOverload(u);
+            _overloadedThisCombat.Add(unitId);
+            return OverloadResult.Ok;
+        }
+
+        private void BeginUnitOverload(EncounterUnit u)
+        {
             CreatureDef overloadForm = u.BaseDef.OverloadForm;
             if (overloadForm != null)
             {
@@ -2040,9 +2105,6 @@ namespace Cosmimera.Combat
             {
                 u.Combatant.BeginOverload();
             }
-
-            _overloadedThisCombat.Add(unitId);
-            return OverloadResult.Ok;
         }
 
         /// <summary>Reverts all overloaded units and resets per-combat overload usage when combat ends (Q-C12).</summary>

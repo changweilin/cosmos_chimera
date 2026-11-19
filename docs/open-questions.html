@@ -77,13 +77,17 @@
 <p style="color:var(--muted);font-size:13px">選擇會自動存在這個瀏覽器（localStorage）。agent 讀不到——按「複製決策」貼回對話，或下載 JSON 存成 <code>docs/open-questions.answers.json</code>。</p>
 
 <section>
-<h2>地形試煉與戰鬥旅人（已照暫定先行，可推翻）</h2>
+<h2>地形試煉與進階地城</h2>
 <div class="cards">
-<article id="Q-G10">
-  <header><a class="id" href="#Q-G10">Q-G10 追問</a><span class="tag">影響 P5-10、P3-33、資料契約</span></header>
-  <p><span class="label">已定</span>10 種試煉 BOSS 各為<b>單一型態</b>（不做三段進化線）。</p>
-  <p><span class="label">問題</span>BOSS 階段隨星球大小不同（矮行星少年、行星成年、超巨星成年＋超載），單一型態只能有一個 <code>stage</code>。(A) 固定為<b>成年</b>，矮行星上以等級／能力值縮放代替少年；(B) 型態<b>不帶階段</b>（新 <code>stage: boss</code>，資料契約與驗證器要改）；(C) 每種試煉只出現在特定大小的星球。另：收服後可以進化嗎（單一型態＝不可進化）？可以收服嗎？</p>
-  <p><span class="label">建議</span>A；可收服、不可進化。</p>
+<article id="Q-W41">
+  <header><a class="id" href="#Q-W41">Q-W41</a><span class="tag">影響 P3-33、P3-07 接線、P3-29 奇觀</span></header>
+  <p><span class="label">問題</span><b>一顆星球上出現哪些進階地形、幾個、放在哪？</b>目前區域主題只有一般主題（遺跡、森林…），沒有任何區域是進階地形，所以試煉主與進階地城都無處可放。<a href="design/planet-world.md#進階地形地城">planet-world.md〈進階地形地城〉</a>只定了「依星球階級可出現哪些」與兩種地城形態。(A) <b>抽區域</b>：依尺寸可出現的進階地形中，按星球主／副屬性比例加權抽 2／3／4 個（矮行星／行星／超巨星），各佔一個非降落、非 BOSS 區域；地表型（雨林／火山／冰棚／迷宮）整區成封閉迷宮，室內型以該區奇觀為入口；(B) <b>全出</b>：可出現的全部都出（矮行星 5、行星 8、超巨星 10 個區域）；(C) <b>只依奇觀</b>：只有生成成功的奇觀地標（坑道、高塔、空島、迷宮、神廟、地城門）才是進階地形入口，其餘 5 種等補奇觀造型。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（規則層 <code>AdvancedTerrains</code>／<code>RoomDungeonPlanner</code>／<code>TrialPlanner</code>／<code>TrialProgress</code> 已完成；未定前不接進 <code>RunSession</code>）</p>
+</article>
+<article id="Q-W42">
+  <header><a class="id" href="#Q-W42">Q-W42</a><span class="tag">影響 P3-07 表現層、P3-16 隧道、P3-33；可能需 ADR</span></header>
+  <p><span class="label">問題</span><b>室內／地下房間地城在球面引擎裡怎麼呈現？</b>規格寫「由地表入口進入後切換至獨立程序化房間地城」，但角色移動、重力與攝影機都以 <code>PlanetFrame</code>（球心為下）為準。(A) <b>獨立 additive 場景＋平面座標系</b>：進入時載入房間場景、隱藏星球，需要平面版 <code>PlanetFrame</code>（ADR，最正統，工作量大）；(B) <b>星球上的口袋空間</b>：房間網格鋪在遠離地表的球面高空或星球內部殼層，仍用球面重力（不需改移動，但 28 m 房間在 R=640 球面上有可見曲率）；(C) <b>就地蓋在地表</b>：房間網格鋪在該進階地形區域，牆加屋頂模擬室內（最省，但不算「獨立場景」，也擋不住遠景）。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（房間拼接規則層已完成，表現層未開工）</p>
 </article>
 </div>
 </section>
@@ -134,7 +138,8 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-G10':[R('ok','單一型態的階段',['A 固定成年＋縮放','B 新增 stage: boss','C 限定星球大小','改（補充）']),R('cap','收服／進化',['可收服、不可進化','不可收服','改（補充）'])],
+ 'Q-W41':[R('pick','進階地形配置',['A 依屬性加權抽 2／3／4 區','B 可出現的全出','C 只依奇觀地標','改（補充）'])],
+ 'Q-W42':[R('scene','室內地城呈現',['A 獨立場景＋平面座標系','B 星球上的口袋空間','C 就地蓋在地表','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
