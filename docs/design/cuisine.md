@@ -145,4 +145,4 @@ produce_milk                                       chill_brew
 - Schema：`ingredient.schema.json` 加 `role`、`tags`、`cook_heal_percent`、`effect`、`duration_add_ms`、`processed_from`／`process`；`category` 加 `fungi`、`critter`；`source` 加 `forage_fungi`。`food.schema.json` 的 `cooking_method` 加 `chill_brew`。新 ID 一律 `snake_case`、永不重用。
 - 示範目錄目前寫在 `FoodCatalog.CreateDefault()`，尚未有 `Data/food/**` importer。
 - 冒險手冊「生活技能」：加工清單、鍋（選方式 → 加入食材 → 預覽成品 → 料理）。玩家位於已發現的有人聚落內時視為聚落廚房。
-- 食物生活技持有物種：`fishing`／`forage_berries`／`cook_fire` 在 demo 池；其餘 12 項分配給 P5-03 草稿 02 的 12 個型態（見 [field-utilities.md](field-utilities.md) §4／§5 持有物種欄），**該批尚未接入 demo 池**（缺命名文案）。接入前這些加工與料理方式只能在聚落廚房使用，肉／禽／蟲／作物／乳／菇無法在野外採集。
+- 食物生活技持有物種：`fishing`／`forage_berries`／`cook_fire` 在 demo 池；其餘 12 項分配給 P5-03 草稿 02 的 12 個型態（見 [field-utilities.md](field-utilities.md) §4／§5 持有物種欄），該批已在 demo 池（野外生成、可收服；三語命名為待審初稿）。隊伍沒有對應持有者時，該加工與料理方式只能在聚落廚房使用，對應食材無法在野外採集。

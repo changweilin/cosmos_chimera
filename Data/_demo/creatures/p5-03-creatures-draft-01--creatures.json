@@ -33,8 +33,8 @@
       "metal": 15
     },
     "stats": {"hp": 102, "speed": 36, "yin_atk": 43, "yang_atk": 71, "yin_def": 74, "yang_def": 74},
-    "signature_move": "metal_needle_thrust",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_escapement_jab",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "magnet_pickup_double",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -84,8 +84,8 @@
       "metal": 25
     },
     "stats": {"hp": 128, "speed": 45, "yin_atk": 53, "yang_atk": 88, "yin_def": 93, "yang_def": 93},
-    "signature_move": "metal_iron_cleave",
-    "trait": "trait_metal_dense_alloy",
+    "signature_move": "metal_ratchet_sweep",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "immune_laboratory",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -126,9 +126,9 @@
       "metal": 40,
       "earth": 15
     },
-    "stats": {"hp": 157, "speed": 52, "yin_atk": 63, "yang_atk": 104, "yin_def": 112, "yang_def": 112},
-    "signature_move": "metal_lance_charge",
-    "trait": "trait_metal_dense_alloy",
+    "stats": {"hp": 157, "speed": 52, "yin_atk": 104, "yang_atk": 63, "yin_def": 112, "yang_def": 112},
+    "signature_move": "metal_pendulum_ram",
+    "trait": "trait_metal_pendulum_cadence",
     "field_utility": "catch_rate_up",
     "concept": {
       "base": "精密青銅發條機關 × 鐘錶齒輪與水力平衡連桿",
@@ -178,8 +178,8 @@
       "wood": 15
     },
     "stats": {"hp": 81, "speed": 47, "yin_atk": 28, "yang_atk": 46, "yin_def": 99, "yang_def": 99},
-    "signature_move": "wood_briar_dash",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_frond_dart",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "forage_berries",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -229,8 +229,8 @@
       "wood": 25
     },
     "stats": {"hp": 100, "speed": 59, "yin_atk": 35, "yang_atk": 58, "yin_def": 124, "yang_def": 124},
-    "signature_move": "wood_root_spear",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_plumage_volley",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "immune_rainforest",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -271,8 +271,8 @@
       "wood": 40
     },
     "stats": {"hp": 120, "speed": 71, "yin_atk": 71, "yang_atk": 43, "yin_def": 148, "yang_def": 147},
-    "signature_move": "wood_canopy_crush",
-    "trait": "trait_wood_photosynthesis",
+    "signature_move": "wood_bloom_detonation",
+    "trait": "trait_wood_crest_resilience",
     "field_utility": "return_village",
     "concept": {
       "base": "熱帶彩翼錦禽 × 蔓生藤蔓羽冠",
@@ -321,9 +321,9 @@
     "mastery": {
       "water": 15
     },
-    "stats": {"hp": 56, "speed": 67, "yin_atk": 64, "yang_atk": 107, "yin_def": 53, "yang_def": 53},
-    "signature_move": "water_crest_slicer",
-    "trait": "trait_water_torrent_flow",
+    "stats": {"hp": 56, "speed": 67, "yin_atk": 107, "yang_atk": 64, "yin_def": 53, "yang_def": 53},
+    "signature_move": "water_wake_jet",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "fishing",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -373,8 +373,8 @@
       "water": 25
     },
     "stats": {"hp": 70, "speed": 88, "yin_atk": 131, "yang_atk": 79, "yin_def": 66, "yang_def": 66},
-    "signature_move": "water_torrent_burst",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_spray_fan",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "immune_deep_sea",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -416,8 +416,8 @@
       "wind": 15
     },
     "stats": {"hp": 84, "speed": 105, "yin_atk": 158, "yang_atk": 95, "yin_def": 79, "yang_def": 79},
-    "signature_move": "water_deluge_crater",
-    "trait": "trait_water_torrent_flow",
+    "signature_move": "water_monsoon_swell",
+    "trait": "trait_water_keel_momentum",
     "field_utility": "dive",
     "concept": {
       "base": "潮汐海鰻 × 雙體風帆外甲浮筒（生物 × 載具）",
@@ -467,8 +467,8 @@
       "fire": 15
     },
     "stats": {"hp": 78, "speed": 47, "yin_atk": 62, "yang_atk": 104, "yin_def": 55, "yang_def": 54},
-    "signature_move": "fire_ember_lash",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_cinder_claw",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "cook_fire",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -517,9 +517,9 @@
     "mastery": {
       "fire": 25
     },
-    "stats": {"hp": 97, "speed": 57, "yin_atk": 78, "yang_atk": 130, "yin_def": 69, "yang_def": 69},
-    "signature_move": "fire_blaze_charge",
-    "trait": "trait_fire_thermal_recharge",
+    "stats": {"hp": 97, "speed": 57, "yin_atk": 130, "yang_atk": 78, "yin_def": 69, "yang_def": 69},
+    "signature_move": "fire_mane_pounce",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "immune_volcano",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -560,8 +560,8 @@
       "fire": 40
     },
     "stats": {"hp": 117, "speed": 68, "yin_atk": 91, "yang_atk": 152, "yin_def": 86, "yang_def": 86},
-    "signature_move": "fire_inferno_cataclysm",
-    "trait": "trait_fire_thermal_recharge",
+    "signature_move": "fire_solar_crucible",
+    "trait": "trait_fire_furnace_escalation",
     "field_utility": "egg_hatch_boost",
     "concept": {
       "base": "烈焰雄獅 × 砂岩熔核甲胄",
@@ -610,9 +610,9 @@
     "mastery": {
       "earth": 15
     },
-    "stats": {"hp": 97, "speed": 32, "yin_atk": 35, "yang_atk": 59, "yin_def": 89, "yang_def": 88},
-    "signature_move": "earth_pebble_shot",
-    "trait": "trait_earth_tectonic_rebound",
+    "stats": {"hp": 97, "speed": 32, "yin_atk": 59, "yang_atk": 35, "yin_def": 89, "yang_def": 88},
+    "signature_move": "earth_shale_bolt",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "drop_rate_up",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -662,8 +662,8 @@
       "earth": 25
     },
     "stats": {"hp": 120, "speed": 42, "yin_atk": 74, "yang_atk": 44, "yin_def": 110, "yang_def": 110},
-    "signature_move": "earth_seismic_slam",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_ritual_quake",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "immune_cave",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -704,8 +704,8 @@
       "earth": 40
     },
     "stats": {"hp": 146, "speed": 50, "yin_atk": 86, "yang_atk": 51, "yin_def": 134, "yang_def": 133},
-    "signature_move": "earth_rampart_rush",
-    "trait": "trait_earth_tectonic_rebound",
+    "signature_move": "earth_monolith_charge",
+    "trait": "trait_earth_gilded_bulwark",
     "field_utility": "open_obstacle",
     "concept": {
       "base": "黃金礦脈人形 × 儀典岩鎧石偶（人形）",
@@ -755,8 +755,8 @@
       "ice": 15
     },
     "stats": {"hp": 74, "speed": 85, "yin_atk": 41, "yang_atk": 68, "yin_def": 66, "yang_def": 66},
-    "signature_move": "ice_shard_flurry",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_rime_breath",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "prevent_escape",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -806,8 +806,8 @@
       "ice": 25
     },
     "stats": {"hp": 93, "speed": 107, "yin_atk": 51, "yang_atk": 85, "yin_def": 82, "yang_def": 82},
-    "signature_move": "ice_glacier_lance",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_antler_javelin",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "mount",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -849,8 +849,8 @@
       "metal": 15
     },
     "stats": {"hp": 112, "speed": 128, "yin_atk": 61, "yang_atk": 101, "yin_def": 99, "yang_def": 99},
-    "signature_move": "ice_blizzard_vortex",
-    "trait": "trait_ice_flash_freeze",
+    "signature_move": "ice_permafrost_halo",
+    "trait": "trait_ice_antler_refraction",
     "field_utility": "immune_ice_cap",
     "concept": {
       "base": "永凍鹿角神獸 × 冰裂鍛鐵關節與鞍軛連動機關（生物 × 器械）",
@@ -900,8 +900,8 @@
       "wind": 15
     },
     "stats": {"hp": 43, "speed": 122, "yin_atk": 51, "yang_atk": 86, "yin_def": 49, "yang_def": 49},
-    "signature_move": "wind_gale_claw",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_flute_slash",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "weather_control",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
@@ -950,9 +950,9 @@
     "mastery": {
       "wind": 25
     },
-    "stats": {"hp": 54, "speed": 153, "yin_atk": 64, "yang_atk": 107, "yin_def": 61, "yang_def": 61},
-    "signature_move": "wind_vacuum_blade",
-    "trait": "trait_wind_tailwind_glide",
+    "stats": {"hp": 54, "speed": 153, "yin_atk": 107, "yang_atk": 64, "yin_def": 61, "yang_def": 61},
+    "signature_move": "wind_reed_crescent",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "levitate",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",
@@ -993,8 +993,8 @@
       "wind": 40
     },
     "stats": {"hp": 64, "speed": 183, "yin_atk": 131, "yang_atk": 78, "yin_def": 72, "yang_def": 72},
-    "signature_move": "wind_tempest_sphere",
-    "trait": "trait_wind_tailwind_glide",
+    "signature_move": "wind_gale_symphony",
+    "trait": "trait_wind_reed_harmonics",
     "field_utility": "immune_space",
     "concept": {
       "base": "氣流排笛輕舟 × 幾何刺繡風帆滑翔翼（載具）",

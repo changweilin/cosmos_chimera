@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: earth_pillar_chimera
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: earth_pillar_chimera
+  lineId: line_earth_pillarbeast
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 874d11c0092756d438b15f4af69cc211, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: be625c1749111de469d0dea2297e54ea, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 45
+  evolutionMaterials:
+  - element: 4
+    tier: 2
+    qty: 5
+  resist: 0f00000000000000000000000a0000002300000000000000e2ffffff000000000000000000000000
+  mastery:
+  - element: 4
+    value: 25
+  stats:
+    hp: 94
+    speed: 74
+    yinAtk: 115
+    yangAtk: 69
+    yinDef: 74
+    yangDef: 74
+  signatureMove: {fileID: 11400000, guid: 75010f4666a6d7a48933822a3d84afd0, type: 2}
+  trait: {fileID: 11400000, guid: d5cc1a9f80fb56049a84fb97dab31874, type: 2}
+  fieldUtility: 34
+  conceptJson: "{\"base\":\"\u6D6E\u96D5\u77F3\u7345\u8C61\u7378 \xD7 \u80A9\u80DB\u9472\u5D4C\u5ECA\u67F1\u77F3\u58A9\u8207\u4FEE\u9577\u77F3\u7259\",\"stage_look\":\"\u96D9\u80A9\u625B\u8457\u795E\u5EDF\u77F3\u67F1\u8B77\u7532\uFF0C\u8C61\u9F3B\u8207\u5229\u722A\u7686\u70BA\u786C\u8CEA\u82B1\u5D17\u5CA9\u69CB\u9020\uFF0C\u9A30\u8E8D\u64B2\u64CA\u6975\u5177\u885D\u64CA\u529B\",\"archetype\":\"arch_yali\",\"region\":\"\u5357\u4E9E\",\"motifs_used\":[\"\u7345\u8EAB\u8C61\u9F3B\u9577\u7259\",\"\u795E\u5EDF\u77F3\u96D5\u5ECA\u67F1\",\"\u9A30\u8E8D\u5229\u722A\"],\"role\":\"\u4E2D\u8DDD\u7A81\u9032\uFF1A\u88C2\u9699\u76F4\u7DDA\u885D\u649E\uFF08\u65BD\u653E\u571F\u62DB\u63D0\u9AD8\u79FB\u52D5\u901F\u5EA6\uFF09\",\"palette\":\"\u5927\u5730\u8D6D\u77F3\u3001\u9676\u571F\u78DA\u7D05\u3001\u8C61\u7259\u767D\"}"
+  needsSensitivityReview: 0

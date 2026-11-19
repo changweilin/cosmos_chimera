@@ -69,7 +69,7 @@ FLASH 產出之 10 條完整三段進化線（共 30 隻宙獸）初稿。包含
 
 - **驗證**：合併 `p2-08-starters-draft-01`、`p5-03-creatures-draft-01`、`p5-05-moves-draft-01..06`、`p5-05-traits-draft-01..03`、`p5-06-relations-draft-01`、`p3-planet-types-draft-01`、`p3-12-env-materials-draft-01` 後執行 `tools/validate_data.py`：**0 error(s), 0 warning(s)**；全數語意／數值帶／原型／主動技／被動技約束腳本驗收通過。
 - **待續**：
-  1. TERRA：中英顯示名稱與圖鑑文案（`copy-terra.json`）及 forge `gen_designed.py` 納入。
+  1. ~~TERRA：中英顯示名稱與圖鑑文案（`copy-terra.json`）~~ 已由 Claude agent 起草（2026-11-19，待人工審核；日文名在 `d0-names-flash-ja/names-ja.json`）；forge `gen_designed.py` 納入待續。
   2. SOL：30 隻宙獸數值與主動技／被動技平衡模擬（P5-07）。
   3. ARGON：與既有 30 隻跨線關係邊建議（P5-06）。
   4. SONNET + 人工：原型敏感度與設計定稿審核。

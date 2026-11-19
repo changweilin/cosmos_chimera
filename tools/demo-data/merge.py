@@ -18,6 +18,7 @@ BATCHES = [
     "p5-05-moves-draft-05", "p5-05-moves-draft-06",
     "p5-05-traits-draft-01", "p5-05-traits-draft-02", "p5-05-traits-draft-03",
     "p5-06-relations-draft-01", "p3-12-env-materials-draft-01",
+    "p5-03-creatures-draft-02", "p5-06-relations-draft-02",
     "life-crafting-draft-01", "p3-31-ecology-draft-01",
 ]
 KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-materials", "craft-items", "craft-recipes", "niches"]
@@ -25,7 +26,7 @@ KINDS = ["creatures", "moves", "traits", "relations", "planet-types", "env-mater
 COPY_OUT = Path("Assets/_Project/Data/Copy")
 CRAFT_OUT = Path("Assets/_Project/Features/Crafting/Resources/Crafting")
 D0_COPY = ["affixes", "region-themes", "quest-templates", "boss-epithets", "strings"]
-NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01"]
+NAME_SOURCES = ["p2-08-starters-draft-01", "p5-03-creatures-draft-01", "p5-03-creatures-draft-02"]
 ENV_MATERIALS_BATCH = "p3-12-env-materials-draft-01"
 
 

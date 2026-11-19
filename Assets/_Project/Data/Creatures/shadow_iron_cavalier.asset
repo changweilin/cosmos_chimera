@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: shadow_iron_cavalier
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: shadow_iron_cavalier
+  lineId: line_shadow_ironsteed
+  stage: 2
+  sizeClass: 2
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 0f00000000000000000000000000000000000000140000000000000000000000d8ffffff32000000
+  mastery:
+  - element: 9
+    value: 40
+  stats:
+    hp: 103
+    speed: 120
+    yinAtk: 112
+    yangAtk: 67
+    yinDef: 99
+    yangDef: 99
+  signatureMove: {fileID: 11400000, guid: 2a8e20963783fc44bb262e1e336a9f72, type: 2}
+  trait: {fileID: 11400000, guid: 4d0466e10426b2c41bc11fb43e1a3f64, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u7384\u9435\u91CD\u88DD\u5E7D\u9A0E\u7378 \xD7 \u51CD\u571F\u6697\u5F71\u9B03\u51A0\u8207\u5171\u9CF4\u7434\u5F26\u93A7\u7247\",\"stage_look\":\"\u8EAB\u62AB\u7E41\u679D\u5DE8\u6A39\u7D0B\u7384\u9435\u91CD\u93A7\u7684\u6975\u5BD2\u9ED1\u99AC\uFF0C\u8E44\u8E0F\u971C\u5F71\u4F34\u96A8\u5171\u9CF4\u562F\u97F3\uFF0C\u767C\u52D5\u8D85\u9577\u8DDD\u8CAB\u7A7F\u885D\u92D2\",\"archetype\":\"arch_nyurgun_bootur\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u7384\u9435\u91CD\u93A7\u9ED1\u99D2\",\"\u7E41\u679D\u4E16\u754C\u5DE8\u6A39\",\"\u53E3\u7C27\u7434\u97F3\u6CE2\",\"\u6975\u5BD2\u51CD\u571F\"],\"role\":\"\u9577\u8DDD\u7A81\u9032\uFF1A\u9060\u8DDD\u5E7D\u5F71\u76F4\u7DDA\u885D\u92D2\uFF08\u65BD\u653E\u5F71\u62DB\u77ED\u66AB\u63D0\u9AD8\u79FB\u52D5\u901F\u5EA6\uFF09\",\"palette\":\"\u865B\u7A7A\u6DF1\u7D2B\u3001\u6697\u5F71\u5E7D\u9ED1\u3001\u7384\u9435\u9752\u9ED1\u3001\u51B0\u6676\u5929\u85CD\"}"
+  needsSensitivityReview: 0

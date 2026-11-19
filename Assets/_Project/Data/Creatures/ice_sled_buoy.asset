@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: ice_sled_buoy
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: ice_sled_buoy
+  lineId: line_ice_driftvessel
+  stage: 0
+  sizeClass: 4
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 2551378a19c07ef4183722e963e467ad, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 21
+  evolutionMaterials:
+  - element: 5
+    tier: 1
+    qty: 3
+  resist: 00000000050000000a00000000000000ecffffff1400000000000000000000000000000000000000
+  mastery:
+  - element: 5
+    value: 15
+  stats:
+    hp: 63
+    speed: 86
+    yinAtk: 48
+    yangAtk: 81
+    yinDef: 61
+    yangDef: 61
+  signatureMove: {fileID: 11400000, guid: bbc2e1f8115bf2e47ac7be60997d5bba, type: 2}
+  trait: {fileID: 11400000, guid: 644ab8ffe29ab0347a7b9b6a9ce55a10, type: 2}
+  fieldUtility: 64
+  conceptJson: "{\"base\":\"\u5FAE\u578B\u6975\u5730\u6728\u96EA\u6A47 \xD7 \u61F8\u639B\u6DF1\u6D77\u63A1\u6C34\u74F6\u7684\u6D6E\u51B0\u63A2\u6E2C\u5100\",\"stage_look\":\"\u624B\u638C\u5927\u5C0F\u7684\u96D9\u6A47\u51B0\u6ED1\u88DD\u7F6E\uFF0C\u4E2D\u592E\u73BB\u7483\u63A1\u6C34\u74F6\u9583\u8457\u51B0\u85CD\u7D50\u6676\uFF0C\u8CBC\u5730\u6ED1\u884C\u7121\u8072\",\"archetype\":\"arch_fridtjof_nansen\",\"region\":\"\u6975\u5730\",\"motifs_used\":[\"\u6DF1\u6D77\u63A1\u6C34\u74F6\",\"\u6975\u5730\u96D9\u677F\u96EA\u6A47\"],\"role\":\"\u8FD1\u6230\u7A81\u9032\uFF1A\u77ED\u8DDD\u51B0\u9762\u6ED1\u884C\u649E\u64CA\uFF08\u65BD\u653E\u51B0\u62DB\u66AB\u6642\u63D0\u9AD8\u51B0\u5C08\u7CBE\uFF09\",\"palette\":\"\u51B0\u6676\u5929\u85CD\u3001\u971C\u96EA\u900F\u767D\u3001\u5361\u5176\u68D5\"}"
+  needsSensitivityReview: 0

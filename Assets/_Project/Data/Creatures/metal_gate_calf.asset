@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: metal_gate_calf
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: metal_gate_calf
+  lineId: line_metal_citadelbull
+  stage: 0
+  sizeClass: 0
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 6636f892477efe746ba955ed08db47ea, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 26
+  evolutionMaterials:
+  - element: 0
+    tier: 1
+    qty: 4
+  resist: 140000000000000000000000ecffffff0a0000000000000000000000000000000500000000000000
+  mastery:
+  - element: 0
+    value: 15
+  stats:
+    hp: 99
+    speed: 36
+    yinAtk: 41
+    yangAtk: 68
+    yinDef: 78
+    yangDef: 78
+  signatureMove: {fileID: 11400000, guid: ea198c857c977104fa4e31be3ba761cd, type: 2}
+  trait: {fileID: 11400000, guid: af25daff5998d2747a0f72d5808c0a28, type: 2}
+  fieldUtility: 37
+  conceptJson: "{\"base\":\"\u9752\u9285\u9444\u9020\u5B88\u8B77\u5E7C\u725B \xD7
+    \u57CE\u9580\u6D6E\u96D5\u9285\u74B0\u8207\u5C0F\u5DE7\u647A\u758A\u7FBD\u7FFC\",\"stage_look\":\"\u56DB\u8DB3\u77ED\u58EF\u7684\u9752\u9285\u5C0F\u725B\uFF0C\u80CC\u810A\u5D4C\u6709\u8FF7\u4F60\u96D9\u7FFC\u9285\u677F\u8207\u62F1\u9580\u7D0B\u7AE0\u8B77\u984D\uFF0C\u8E0F\u6B65\u6C89\u7A69\",\"archetype\":\"arch_lamassu\",\"region\":\"\u897F\u4E9E/\u4E2D\u6771\",\"motifs_used\":[\"\u4E94\u8DB3\u77F3\u96D5\u516C\u725B\",\"\u96D9\u91CD\u96C4\u9DF9\u5DE8\u7FFC\",\"\u4E9E\u8FF0\u738B\u57CE\u62F1\u9580\"],\"role\":\"\u524D\u6392\u56FA\u5B88\uFF1A\u8FD1\u8DDD\u524D\u65B9\u524A\u5F31\u91D1\u6297\u6027\uFF08\u9AD8\u8840\u91CF\u6642\u7E2E\u77ED\u91D1\u62DB
+    CD\uFF09\",\"palette\":\"\u9EC3\u9285\u91D1\u3001\u7384\u9435\u9752\u9ED1\u3001\u8C61\u7259\u767D\"}"
+  needsSensitivityReview: 0

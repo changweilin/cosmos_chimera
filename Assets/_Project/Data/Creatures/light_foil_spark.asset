@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: light_foil_spark
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: light_foil_spark
+  lineId: line_light_foilprism
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: b61610e34c89b29478539c0ba9cd4cb5, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 21
+  evolutionMaterials:
+  - element: 8
+    tier: 1
+    qty: 3
+  resist: 050000000000000000000000000000000000000000000000000000000a00000014000000ecffffff
+  mastery:
+  - element: 8
+    value: 15
+  stats:
+    hp: 58
+    speed: 53
+    yinAtk: 49
+    yangAtk: 82
+    yinDef: 79
+    yangDef: 79
+  signatureMove: {fileID: 11400000, guid: 82f0a8f3973dd9f4a85278603ffe852a, type: 2}
+  trait: {fileID: 11400000, guid: b6e32ee15e8239f40a0e4a0180116085, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u8FF7\u4F60\u91D1\u7B94\u7A1C\u93E1\u7403\u5100 \xD7
+    \u7E5E\u8EF8\u65CB\u8F49\u7684\u96D9\u9EDE\u5FAE\u5149\",\"stage_look\":\"\u6F02\u6D6E\u5728\u534A\u7A7A\u7684\u91D1\u8272\u8584\u7B94\u7A1C\u93E1\uFF0C\u8868\u9762\u4E0D\u6642\u9583\u720D\u87A2\u5149\u9EDE\u9EDE\uFF0C\u8FD1\u8EAB\u4EE5\u5149\u523A\u81EA\u885B\",\"archetype\":\"arch_ernest_rutherford\",\"region\":\"\u5927\u6D0B\u6D32\",\"motifs_used\":[\"\u91D1\u7B94\u6563\u5C04\u5149\u675F\",\"\u539F\u5B50\u884C\u661F\u8ECC\u8DE1\"],\"role\":\"\u8FD1\u6230\u7E8C\u6230\uFF1A\u8CBC\u8EAB\u524D\u65B9\u9583\u5149\u7A81\u523A\uFF08\u65BD\u653E\u5149\u62DB\u56DE\u5FA9
+    6% \u751F\u547D\uFF09\",\"palette\":\"\u8000\u65E5\u5149\u91D1\u3001\u6708\u83EF\u767D\u3001\u6668\u66E6\u91D1\"}"
+  needsSensitivityReview: 0

@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: shadow_reverb_charger
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: shadow_reverb_charger
+  lineId: line_shadow_ironsteed
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 9c1599456e829e44b8e9661f893d78d0, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 47
+  evolutionMaterials:
+  - element: 9
+    tier: 2
+    qty: 5
+  resist: 0a000000000000000000000000000000000000000f0000000000000000000000e2ffffff23000000
+  mastery:
+  - element: 9
+    value: 25
+  stats:
+    hp: 86
+    speed: 100
+    yinAtk: 93
+    yangAtk: 56
+    yinDef: 83
+    yangDef: 82
+  signatureMove: {fileID: 11400000, guid: 954a703086138a247ac720e07f6efc05, type: 2}
+  trait: {fileID: 11400000, guid: 4d0466e10426b2c41bc11fb43e1a3f64, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u91CD\u7532\u9ED1\u6230\u99AC \xD7 \u51B0\u971C\u679D\u6748\u9B03\u98FE\u8207\u97F3\u6CE2\u5F26\u7247\u80A9\u93A7\",\"stage_look\":\"\u62AB\u8986\u5C64\u758A\u7384\u9435\u7532\u7247\u7684\u4FEE\u9577\u6230\u99D2\uFF0C\u9B03\u6BDB\u5B9B\u5982\u4E16\u754C\u5DE8\u6A39\u679D\u6792\u7D50\u8457\u9ED1\u971C\uFF0C\u76F4\u7DDA\u7A81\u9032\u8FC5\u6377\",\"archetype\":\"arch_nyurgun_bootur\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u7384\u9435\u91CD\u93A7\u9ED1\u99D2\",\"\u7E41\u679D\u4E16\u754C\u5DE8\u6A39\",\"\u53E3\u7C27\u7434\u97F3\u6CE2\"],\"role\":\"\u4E2D\u8DDD\u7A81\u9032\uFF1A\u66AE\u5F71\u76F4\u7DDA\u885D\u523A\uFF08\u65BD\u653E\u5F71\u62DB\u77ED\u66AB\u63D0\u9AD8\u79FB\u52D5\u901F\u5EA6\uFF09\",\"palette\":\"\u865B\u7A7A\u6DF1\u7D2B\u3001\u6697\u5F71\u5E7D\u9ED1\u3001\u7D14\u6DE8\u51B0\u85CD\"}"
+  needsSensitivityReview: 0

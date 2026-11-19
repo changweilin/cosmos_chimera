@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wind_crossbow_fledgling
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wind_crossbow_fledgling
+  lineId: line_wind_mistwing
+  stage: 0
+  sizeClass: 0
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: da3346b48c2f9fc44a001b4e68340c73, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 2
+  evolvesTo: {fileID: 11400000, guid: adb39fd134b388a4f8e954ce99bc5108, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 20
+  evolutionMaterials:
+  - element: 6
+    tier: 1
+    qty: 3
+  resist: 00000000050000000a0000000000000000000000ecffffff14000000000000000000000000000000
+  mastery:
+  - element: 6
+    value: 15
+  stats:
+    hp: 54
+    speed: 103
+    yinAtk: 73
+    yangAtk: 44
+    yinDef: 63
+    yangDef: 63
+  signatureMove: {fileID: 11400000, guid: 13eeece7dfcc85c45afbd6aafb8b6714, type: 2}
+  trait: {fileID: 11400000, guid: e8dc960e5384e804092600e2c3d3f587, type: 2}
+  fieldUtility: 33
+  conceptJson: "{\"base\":\"\u6D77\u9727\u5E7C\u4FE1\u5929\u7FC1 \xD7 \u7FFC\u7DE3\u5E36\u8457\u6728\u8CEA\u5F29\u81C2\u7D0B\u98FE\",\"stage_look\":\"\u767D\u7070\u7D68\u6BDB\u5C0F\u6D77\u9CE5\uFF0C\u7FFC\u68A2\u523B\u6709\u7D30\u7DFB\u6728\u5F13\u5F35\u5F26\u7D0B\u8DEF\uFF0C\u9806\u8457\u6D77\u98A8\u75BE\u901F\u8CBC\u5730\u7AC4\u884C\",\"archetype\":\"arch_ancient_mariner_albatross\",\"region\":\"\u6975\u5730\",\"motifs_used\":[\"\u7A7F\u9727\u5DE8\u7FFC\u4FE1\u5929\u7FC1\",\"\u6728\u67C4\u5341\u5B57\u5F29\"],\"role\":\"\u8FD1\u6230\u7A81\u9032\uFF1A\u77ED\u8DDD\u9806\u98A8\u76F4\u7DDA\u7A81\u8972\uFF08\u9AD8\u8840\u91CF\u6642\u63D0\u9AD8\u9583\u907F\u7387\uFF09\",\"palette\":\"\u6D41\u7DDA\u6DE1\u9752\u3001\u6708\u83EF\u767D\u3001\u5361\u5176\u68D5\"}"
+  needsSensitivityReview: 0

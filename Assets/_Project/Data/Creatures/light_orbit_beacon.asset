@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: light_orbit_beacon
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: light_orbit_beacon
+  lineId: line_light_foilprism
+  stage: 1
+  sizeClass: 1
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 8ea272888593fbc47a22e6faa533325b, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 1ba9e92ef3a42e4409c41cb362ba00c0, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 41
+  evolutionMaterials:
+  - element: 8
+    tier: 2
+    qty: 5
+  resist: 0a0000000000000000000000000000000000000000000000000000000f00000023000000e2ffffff
+  mastery:
+  - element: 8
+    value: 25
+  stats:
+    hp: 73
+    speed: 66
+    yinAtk: 61
+    yangAtk: 102
+    yinDef: 99
+    yangDef: 99
+  signatureMove: {fileID: 11400000, guid: d5df69648b2aefa4093bb89002598944, type: 2}
+  trait: {fileID: 11400000, guid: b6e32ee15e8239f40a0e4a0180116085, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u4EBA\u5F62\u534A\u8EAB\u5149\u5B78\u5100\u5076 \xD7
+    \u74B0\u7E5E\u80A9\u5074\u7684\u4E09\u91CD\u661F\u8ECC\u5149\u74B0\u8207\u96FB\u78C1\u7DDA\u5708\",\"stage_look\":\"\u5916\u6846\u70BA\u534A\u5713\u9583\u720D\u87A2\u5149\u5C4F\uFF0C\u80F8\u53E3\u91D1\u7B94\u6838\u5FC3\u5C04\u51FA\u7B46\u76F4\u805A\u7126\u5149\u69CD\",\"archetype\":\"arch_ernest_rutherford\",\"region\":\"\u5927\u6D0B\u6D32\",\"motifs_used\":[\"\u91D1\u7B94\u6563\u5C04\u5149\u675F\",\"\u539F\u5B50\u884C\u661F\u8ECC\u8DE1\",\"\u653E\u5C04\u7DDA\u9583\u720D\u5C4F\"],\"role\":\"\u4E2D\u6392\u8F38\u51FA\u3001\u7E8C\u6230\uFF1A\u4E2D\u8DDD\u76F4\u7DDA\u805A\u7126\u5149\u69CD\uFF08\u65BD\u653E\u5149\u62DB\u56DE\u5FA9
+    6% \u751F\u547D\uFF09\",\"palette\":\"\u8000\u65E5\u5149\u91D1\u3001\u934D\u9280\u92FC\u767D\u3001\u7425\u73C0\u91D1\"}"
+  needsSensitivityReview: 0

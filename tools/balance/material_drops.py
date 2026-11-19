@@ -17,6 +17,9 @@ from level_rewards import Creature, LevelRewards
 
 PROPOSAL = REPO / "Data/_incoming/p2-05-material-proposal"
 LEVELS = REPO / "Data/_incoming/p2-12-level-proposal/evolution-levels.json"
+# Why: proposal.md argues from this exact 30-form pool (e.g. option A has no wild light/shadow/thunder);
+# later demo batches change that premise and need a revised proposal, not a silently re-derived table.
+ANALYZED_BATCHES = ("p2-08-starters-draft-01", "p5-03-creatures-draft-01")
 ROLES = ("normal", "elite", "boss")
 STAGES = ("juvenile", "adolescent", "adult")
 
@@ -39,7 +42,7 @@ def _probability(value):
 
 
 class Catalog:
-    """Read staged/formal creatures, excluding every incoming batch.
+    """Read the staged creatures of ANALYZED_BATCHES (formal creatures too), excluding every incoming batch.
 
     Pre: repository data and the separate level proposal are readable/valid.
     Post: unique complete three-form lines; all requirements have fixed gates;
@@ -58,6 +61,8 @@ class Catalog:
         self.sources = []
         for path in sorted((REPO / "Data").rglob("*.json")):
             if "_incoming" in path.parts or path.parent.name != "creatures":
+                continue
+            if "_demo" in path.parts and path.name.split("--")[0] not in ANALYZED_BATCHES:
                 continue
             self.sources.append(path.relative_to(REPO).as_posix())
             for creature in _read(path):

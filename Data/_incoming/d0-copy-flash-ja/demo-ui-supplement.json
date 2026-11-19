@@ -752,6 +752,108 @@
   "utility.CulinaryPrep": {
     "ja": "下ごしらえ"
   },
+  "utility.FreezePrep": {
+    "ja": "急速冷凍保存"
+  },
+  "utility.ForageFungi": {
+    "ja": "茸採取"
+  },
+  "utility.FermentCure": {
+    "ja": "発酵熟成"
+  },
+  "utility.SmokeDry": {
+    "ja": "燻製乾燥"
+  },
+  "utility.ChillBrew": {
+    "ja": "冷製調合"
+  },
+  "utility.IceStride": {
+    "ja": "氷結歩行"
+  },
+  "utility.SenseTreasure": {
+    "ja": "秘宝感知"
+  },
+  "utility.WeatherWard": {
+    "ja": "悪天候耐性"
+  },
+  "utility.CampBeacon": {
+    "ja": "野営ビーコン"
+  },
+  "utility.GatherEssence": {
+    "ja": "星屑採取"
+  },
+  "utility.CraftSmeltFire": {
+    "ja": "熾火精錬"
+  },
+  "utility.CraftSmeltMetal": {
+    "ja": "精金精錬"
+  },
+  "utility.CraftSmeltThunder": {
+    "ja": "電弧精錬"
+  },
+  "utility.CraftWeaveWood": {
+    "ja": "植繊織物"
+  },
+  "utility.CraftWeaveWind": {
+    "ja": "風梭織物"
+  },
+  "utility.CraftWeaveShadow": {
+    "ja": "暗影織物"
+  },
+  "utility.CraftTailorWood": {
+    "ja": "森葉裁縫"
+  },
+  "utility.CraftTailorShadow": {
+    "ja": "影糸裁縫"
+  },
+  "utility.CraftTailorLight": {
+    "ja": "光織裁縫"
+  },
+  "utility.CraftSmithMetal": {
+    "ja": "百錬鍛造"
+  },
+  "utility.CraftSmithFire": {
+    "ja": "炎炉鍛造"
+  },
+  "utility.CraftSmithEarth": {
+    "ja": "岩鎚鍛造"
+  },
+  "utility.CraftCarpentryWood": {
+    "ja": "原木木工"
+  },
+  "utility.CraftCarpentryEarth": {
+    "ja": "堅岩木工"
+  },
+  "utility.CraftCarpentryWind": {
+    "ja": "流風木工"
+  },
+  "utility.CraftJewelcraftLight": {
+    "ja": "輝光宝飾"
+  },
+  "utility.CraftJewelcraftEarth": {
+    "ja": "岩晶宝飾"
+  },
+  "utility.CraftJewelcraftIce": {
+    "ja": "氷琢宝飾"
+  },
+  "utility.CraftDyeWood": {
+    "ja": "草木染め"
+  },
+  "utility.CraftDyeWater": {
+    "ja": "水洗染色"
+  },
+  "utility.CraftDyeLight": {
+    "ja": "流光染色"
+  },
+  "utility.CraftEnchantLight": {
+    "ja": "聖光付与"
+  },
+  "utility.CraftEnchantFire": {
+    "ja": "炎印付与"
+  },
+  "utility.CraftEnchantShadow": {
+    "ja": "幽影付与"
+  },
   "ingredient.category.MeatGround": {
     "ja": "獣肉"
   },
@@ -1017,7 +1119,109 @@
     "ja": "作物収穫"
   },
   "utility.desc.CulinaryPrep": {
-    "ja": "下ごしらえ"
+    "ja": "穀物や香草を挽き冷製の下ごしらえを行い料理品質を上げる"
+  },
+  "utility.desc.FreezePrep": {
+    "ja": "生鮮食材を急速冷凍して保存し冷製・精製料理の下地にする"
+  },
+  "utility.desc.ForageFungi": {
+    "ja": "洞窟や湿地・木陰で食用キノコやトリュフを採取する"
+  },
+  "utility.desc.FermentCure": {
+    "ja": "肉・魚・乳製品を発酵熟成し料理バフの効果時間を延ばす"
+  },
+  "utility.desc.SmokeDry": {
+    "ja": "肉や果実を燻製乾燥させ携行食料として素早く回復する"
+  },
+  "utility.desc.ChillBrew": {
+    "ja": "火を使わず冷製ドリンクを調合し冷却と状態異常耐性を得る"
+  },
+  "utility.desc.IceStride": {
+    "ja": "水面を一時凍らせて渡り氷雪地形の滑り・減速を防ぐ"
+  },
+  "utility.desc.SenseTreasure": {
+    "ja": "宝箱・鉱脈・晶簇・遺跡の隠しノードの感知範囲を広げる"
+  },
+  "utility.desc.WeatherWard": {
+    "ja": "吹雪・雷雨・砂塵・濃霧による視界や回避のペナルティを半減する"
+  },
+  "utility.desc.CampBeacon": {
+    "ja": "野営中に低位の野生を遠ざけ帰還用ビーコンを1つ設置する"
+  },
+  "utility.desc.GatherEssence": {
+    "ja": "晶簇や霊苔、異象ノードから付与用の霊質素材を採取する"
+  },
+  "utility.desc.CraftSmeltFire": {
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltMetal": {
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltThunder": {
+    "ja": "高圧電弧で原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftWeaveWood": {
+    "ja": "繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveWind": {
+    "ja": "気流で繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveShadow": {
+    "ja": "繊維を緻密な布地へ織り上げる"
+  },
+  "utility.desc.CraftTailorWood": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorShadow": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorLight": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftSmithMetal": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithFire": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithEarth": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftCarpentryWood": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryEarth": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryWind": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftJewelcraftLight": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftEarth": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftIce": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftDyeWood": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeWater": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeLight": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftEnchantLight": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantFire": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantShadow": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
   },
   "ing_boar_flank": {
     "ja": "イノシシのバラ肉"
