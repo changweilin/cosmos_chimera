@@ -266,13 +266,53 @@ def _check_skill_stars(records: dict[str, list[Record]], findings: list[Finding]
         complete = isinstance(stats, dict) and all(isinstance(stats.get(k), int) for k in STAT_KEYS)
         if len(stars) != 2 or not complete or base is None:
             continue  # schema / dangling-ref findings already cover these
-        target = base * (100 - budget["per_extra_star_percent"] * (sum(stars) - 2)) / 100
+        target = base * (100 - budget["per_extra_star_percent"] * (sum(stars) - 2)) // 100
         total = sum(stats[k] for k in STAT_KEYS)
-        tol = target * budget["tolerance_percent"] / 100
-        if abs(total - target) > tol:
+        resist = c.get("resist")
+        mastery = c.get("mastery")
+        if not (isinstance(resist, dict) and len(resist) == 10 and all(isinstance(v, int) for v in resist.values())
+                and isinstance(mastery, dict) and mastery and all(isinstance(v, int) for v in mastery.values())):
+            continue
+
+        # REQ: docs/design/creatures.md#綜合值預算與三池交換
+        nonzero_mastery = [v for v in mastery.values() if v > 0]
+        if not (budget["element_nonzero_min"] <= len(nonzero_mastery) <= budget["element_nonzero_max"]):
+            findings.append(Finding("error", "mastery_count", r.file, f"/{r.index}/mastery",
+                                    f"expected {budget['element_nonzero_min']}..{budget['element_nonzero_max']} "
+                                    f"non-zero elements, got {len(nonzero_mastery)}"))
+        if max(mastery.values()) != budget["element_max"]:
+            findings.append(Finding("error", "mastery_max", r.file, f"/{r.index}/mastery",
+                                    f"at least one element must be at max {budget['element_max']}"))
+
+        resist_total = sum(resist.values())
+        resist_base = budget["resist_shares"] * budget["resist_points_per_share"]
+        mastery_total = sum(mastery.values())
+        elem_num = budget["element_points_numerator"]
+        elem_den = budget["element_points_denominator"]
+        elem_base = budget["element_shares"] * elem_num // elem_den
+
+        if (resist_total - resist_base) % budget["resist_points_per_share"] != 0:
+            findings.append(Finding("error", "resist_share_unit", r.file, f"/{r.index}/resist",
+                                    f"resist total {resist_total} must differ from {resist_base} by a multiple of "
+                                    f"{budget['resist_points_per_share']}"))
+            continue
+        if (mastery_total - elem_base) % elem_num != 0:
+            findings.append(Finding("error", "mastery_share_unit", r.file, f"/{r.index}/mastery",
+                                    f"mastery total {mastery_total} must differ from {elem_base} by a multiple of "
+                                    f"{elem_num} ({elem_den} shares)"))
+            continue
+
+        d_stats = total - target
+        d_resist = (resist_total - resist_base) // budget["resist_points_per_share"]
+        d_elem = ((mastery_total - elem_base) * elem_den) // elem_num
+        if d_stats + d_resist + d_elem != 0:
             findings.append(Finding("error", "stat_budget", r.file, f"/{r.index}/stats",
-                                    f"six-stat total {total} outside {target:g} ±{budget['tolerance_percent']}% "
-                                    f"({c.get('stage')}, skill stars {stars[0]}+{stars[1]})"))
+                                    f"share sum mismatch: stats Δ{d_stats:+d}, resist Δ{d_resist:+d}, "
+                                    f"mastery Δ{d_elem:+d} (must sum to 0; {c.get('stage')}, stars {stars[0]}+{stars[1]})"))
+        elif (abs(d_stats) + abs(d_resist) + abs(d_elem)) // 2 > budget["exchange_max_shares"]:
+            transferred = (abs(d_stats) + abs(d_resist) + abs(d_elem)) // 2
+            findings.append(Finding("error", "stat_exchange_limit", r.file, f"/{r.index}/stats",
+                                    f"cross-pool exchange {transferred} shares exceeds max {budget['exchange_max_shares']}"))
     for sid, lines in sorted(lines_by_skill.items()):
         if len(lines) > 1:
             r = skills[sid]
@@ -542,9 +582,10 @@ def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
         return
     for i, m in enumerate(materials):
         el = m.get("element") if isinstance(m, dict) else None
-        if isinstance(el, str) and el not in mastery:
+        if isinstance(el, str) and mastery.get(el, 0) <= 0:
             findings.append(Finding("error", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
-                                    f"'{el}' is not one of this creature's mastery elements {sorted(mastery)} (Q-C9)"))
+                                    f"'{el}' is not one of this creature's active mastery elements "
+                                    f"{sorted(k for k, v in mastery.items() if v > 0)} (Q-C9)"))
 
 
 def _check_env_materials(

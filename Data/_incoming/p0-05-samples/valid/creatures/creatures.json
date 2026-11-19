@@ -15,21 +15,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": -25,
-      "fire": 25,
-      "earth": 0,
-      "ice": -10,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 100,
+      "wood": 110,
+      "water": 75,
+      "fire": 125,
+      "earth": 100,
+      "ice": 90,
+      "wind": 100,
+      "thunder": 100,
+      "light": 100,
+      "shadow": 100
     },
     "mastery": {
-      "fire": 15
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
-    "stats": {"hp": 67, "speed": 101, "yin_atk": 30, "yang_atk": 50, "yin_def": 76, "yang_def": 76},
+    "stats": {
+      "hp": 67,
+      "speed": 101,
+      "yin_atk": 30,
+      "yang_atk": 50,
+      "yin_def": 76,
+      "yang_def": 76
+    },
     "signature_move": "sample_ember_strike",
     "trait": "sample_trait_placeholder",
     "concept": {
@@ -37,7 +46,12 @@
       "archetype": "trickster"
     },
     "ai_style": "charge",
-    "niches": [{"niche": "niche_sample_generalist", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_sample_generalist",
+        "weight": 1
+      }
+    ],
     "size_class": "S"
   },
   {
@@ -56,22 +70,31 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 20,
-      "water": -30,
-      "fire": 40,
-      "earth": 0,
-      "ice": -15,
-      "wind": 5,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 107,
+      "wood": 117,
+      "water": 67,
+      "fire": 137,
+      "earth": 97,
+      "ice": 82,
+      "wind": 102,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 25,
-      "wind": 10
+      "fire": 125,
+      "wind": 80,
+      "wood": 55,
+      "metal": 40
     },
-    "stats": {"hp": 90, "speed": 109, "yin_atk": 70, "yang_atk": 42, "yin_def": 95, "yang_def": 94},
+    "stats": {
+      "hp": 90,
+      "speed": 109,
+      "yin_atk": 70,
+      "yang_atk": 42,
+      "yin_def": 95,
+      "yang_def": 94
+    },
     "signature_move": "sample_flame_burst",
     "trait": "sample_trait_placeholder",
     "concept": {
@@ -79,7 +102,12 @@
       "archetype": "magical beast"
     },
     "ai_style": "hold",
-    "niches": [{"niche": "niche_sample_generalist", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_sample_generalist",
+        "weight": 1
+      }
+    ],
     "size_class": "M"
   },
   {
@@ -89,22 +117,31 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 15,
-      "wood": 30,
-      "water": -40,
-      "fire": 60,
-      "earth": 0,
-      "ice": -20,
-      "wind": 15,
-      "thunder": 0,
-      "light": 10,
-      "shadow": -10
+      "metal": 109,
+      "wood": 124,
+      "water": 54,
+      "fire": 154,
+      "earth": 94,
+      "ice": 74,
+      "wind": 109,
+      "thunder": 94,
+      "light": 104,
+      "shadow": 84
     },
     "mastery": {
-      "fire": 40,
-      "wind": 20
+      "fire": 125,
+      "wind": 80,
+      "wood": 55,
+      "metal": 40
     },
-    "stats": {"hp": 109, "speed": 117, "yin_atk": 52, "yang_atk": 88, "yin_def": 117, "yang_def": 117},
+    "stats": {
+      "hp": 109,
+      "speed": 117,
+      "yin_atk": 52,
+      "yang_atk": 88,
+      "yin_def": 117,
+      "yang_def": 117
+    },
     "signature_move": "sample_solar_flare",
     "trait": "sample_trait_placeholder",
     "concept": {
@@ -112,7 +149,12 @@
       "archetype": "solar guardian"
     },
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_sample_generalist", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_sample_generalist",
+        "weight": 1
+      }
+    ],
     "size_class": "L"
   }
 ]

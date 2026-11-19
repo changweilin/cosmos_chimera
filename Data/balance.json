@@ -3,7 +3,7 @@
   "stat_effective_cap": 10000,
   "hp": {"base": 600, "gain": 900, "half_stat": 100, "per_point": 10},
   "shared_base_stat": 100,
-  "damage": {"ratio_min_permille": 250, "ratio_max_permille": 4000},
+  "damage": {"ratio_min_permille": 250, "ratio_max_permille": 4000, "exp_step": 50, "level_diff_double_step": 25},
   "melee_volume": {"gain_permille": 1000, "half_stat": 100},
   "ranged_distance": {"gain_permille": 500, "half_stat": 100, "cap_mm": 36000, "horizon_factor_permille": 775, "horizon_eye_height_mm": 1700},
   "cd": {"min_permille": 400, "half_stat": 100, "floor_ms": 250},
@@ -52,7 +52,19 @@
   "stat_budget": {
     "base": {"juvenile": 400, "adolescent": 500, "adult": 600, "overload": 720},
     "per_extra_star_percent": 10,
-    "tolerance_percent": 5
+    "tolerance_percent": 5,
+    "resist_shares": 200,
+    "resist_points_per_share": 5,
+    "resist_min": 25,
+    "resist_max": 175,
+    "element_shares": 200,
+    "element_points_numerator": 3,
+    "element_points_denominator": 2,
+    "element_min": 0,
+    "element_max": 125,
+    "element_nonzero_min": 3,
+    "element_nonzero_max": 5,
+    "exchange_max_shares": 50
   },
   "progression": {
     "level_max": 100,

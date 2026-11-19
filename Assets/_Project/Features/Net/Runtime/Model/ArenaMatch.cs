@@ -902,7 +902,7 @@ namespace Cosmimera.Net.Runtime.Model
                 else if (outcome == HitOutcome.Hit && ctx.Move.DealsDamage)
                 {
                     int power = DamageModel.ScalePower(ctx.Move.Power, ctx.PowerDeltaPercent);
-                    int dmg = DamageModel.Compute(power, ctx.MasteryPercent, 0);
+                    int dmg = DamageModel.Compute(power, ctx.MasteryPercent, DamageModel.NeutralStat);
                     int dealt = p.Vitals.ApplyDamage(dmg, nowMs);
                     _events.Add(new ArenaEvent(ArenaEventKind.Hit, caster.ParticipantId, casterUnitId,
                         PlayerTargetBaseId + i, slot, dealt));

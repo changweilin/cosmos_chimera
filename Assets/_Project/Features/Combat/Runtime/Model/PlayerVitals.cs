@@ -18,21 +18,20 @@ namespace Cosmimera.Combat
     /// <summary>The player character's yin or yang defence (combat.md#玩家角色的守, Q-C75).</summary>
     public static class PlayerDefence
     {
-        /// <summary>Level base plus armor points for one polarity.</summary>
+        /// <summary>Base defence plus armor points for one polarity.</summary>
         /// <remarks>
-        /// REQ: combat.md#玩家角色的守 — the base scales like a creature stat, so an LV100 player without armor matches an
-        /// average adult creature's defence (100) and a fresh LV1 player is not pinned at the ×4 ratio cap.
+        /// REQ: combat.md#玩家角色的守 — baseDefence (100, matching average adult creature defence) is not scaled by
+        /// player level; level difference enters via the damage formula's level multiplier instead.
         /// Pre: baseDefence &gt;= 1; 1 &lt;= playerLevel &lt;= 100; armorPoints &gt;= 0.
-        /// Post: ScaleToLevel(baseDefence, playerLevel) + armorPoints, saturated at int.MaxValue; &gt;= 1.
+        /// Post: baseDefence + armorPoints, saturated at int.MaxValue; &gt;= 1.
         /// Side effects: none.
         /// </remarks>
         public static int Compute(int baseDefence, int playerLevel, int armorPoints)
         {
             Contract.Requires(baseDefence >= 1, "baseDefence must be >= 1");
+            Contract.Requires(playerLevel >= 1 && playerLevel <= 100, "playerLevel must be 1..100");
             Contract.Requires(armorPoints >= 0, "armorPoints must be >= 0");
-            long total = (long)CreatureStats.ScaleToLevel(baseDefence, playerLevel) + armorPoints;
-            // ScaleToLevel(1, 1) rounds to 0; the floor keeps a valid ratio denominator for tiny bases.
-            if (total < 1) total = 1;
+            long total = (long)baseDefence + armorPoints;
             return total > int.MaxValue ? int.MaxValue : (int)total;
         }
     }

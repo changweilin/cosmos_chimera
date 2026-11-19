@@ -2938,8 +2938,8 @@ namespace Cosmimera.Combat
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
                 int defence = move.Polarity == Polarity.Yang ? _playerYangDefence : _playerYinDefence;
-                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0,
-                    _balance.Stats.AttackRatioPermille(ctx.Attack, defence));
+                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, DamageModel.NeutralStat,
+                    ctx.Attack, defence);
                 if (HitResolver.RollCrit(ctx.CritRatePermille, ref _rng))
                 {
                     raw = DamageModel.ApplyCrit(raw, ctx.CritDamagePercent);

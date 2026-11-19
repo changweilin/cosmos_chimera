@@ -103,7 +103,7 @@
       "type": "integer", "minimum": 0, "maximum": 1000
     },
     "resistPercent": {
-      "description": "Negative = weakness. combat.md clamps to ±100, so values beyond that are meaningless.",
+      "description": "Negative = weakness. Used by destructibles/env-materials (-100..100).",
       "type": "integer",
       "minimum": -100,
       "maximum": 100

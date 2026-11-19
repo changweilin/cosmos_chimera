@@ -39,18 +39,19 @@
         "evolves_to": { "oneOf": [{ "$ref": "common.schema.json#/$defs/id" }, { "type": "null" }] },
         "evolution": { "oneOf": [{ "$ref": "#/$defs/evolution" }, { "type": "null" }] },
         "resist": {
-          "description": "All ten keys required: a missing key would silently read as 0 and hide authoring mistakes.",
+          "description": "All ten keys required (25..175; 100 = 1x). REQ: docs/design/creatures.md.",
           "type": "object",
           "required": ["metal", "wood", "water", "fire", "earth", "ice", "wind", "thunder", "light", "shadow"],
           "propertyNames": { "$ref": "common.schema.json#/$defs/element" },
-          "additionalProperties": { "$ref": "common.schema.json#/$defs/resistPercent" }
+          "additionalProperties": { "type": "integer", "minimum": 25, "maximum": 175 }
         },
         "mastery": {
+          "description": "Elemental attack values (0..125, 3..5 non-zero elements, at least one at 125). Checked by tools/validate-data.",
           "type": "object",
-          "minProperties": 1,
-          "maxProperties": 3,
+          "minProperties": 3,
+          "maxProperties": 10,
           "propertyNames": { "$ref": "common.schema.json#/$defs/element" },
-          "additionalProperties": { "$ref": "common.schema.json#/$defs/masteryPercent" }
+          "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 125 }
         },
         "stats": {
           "description": "Six core stats at LV100 (creatures.md#六大能力值). The total must match the star-adjusted stage budget (creatures.md#綜合值預算), checked by tools/validate-data.",

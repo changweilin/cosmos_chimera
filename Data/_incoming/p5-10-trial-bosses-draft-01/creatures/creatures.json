@@ -6,27 +6,38 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_ambient_energy_feeder", "weight": 3 },
-      { "niche": "niche_mineral_feeder", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 0,
-      "water": 0,
-      "fire": -40,
-      "earth": 20,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 15,
-      "shadow": 0
+      "metal": 145,
+      "wood": 95,
+      "water": 95,
+      "fire": 56,
+      "earth": 115,
+      "ice": 96,
+      "wind": 96,
+      "thunder": 96,
+      "light": 110,
+      "shadow": 96
     },
     "mastery": {
-      "metal": 40,
-      "earth": 15
+      "metal": 125,
+      "earth": 80,
+      "light": 55,
+      "ice": 40
     },
     "stats": {
       "hp": 115,
@@ -61,27 +72,38 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_ground_grazer", "weight": 3 },
-      { "niche": "niche_edge_browser", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 50,
-      "water": 20,
-      "fire": 0,
-      "earth": 15,
-      "ice": -40,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 95,
+      "wood": 145,
+      "water": 115,
+      "fire": 95,
+      "earth": 110,
+      "ice": 56,
+      "wind": 96,
+      "thunder": 96,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "wood": 40,
-      "water": 15
+      "wood": 125,
+      "water": 80,
+      "earth": 55,
+      "wind": 40
     },
     "stats": {
       "hp": 140,
@@ -116,26 +138,37 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_apex_predator", "weight": 3 },
-      { "niche": "niche_ambush_predator", "weight": 2 },
-      { "niche": "niche_carrion_scavenger", "weight": 1 }
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 50,
-      "fire": 0,
-      "earth": 0,
-      "ice": 20,
-      "wind": 0,
-      "thunder": -40,
-      "light": 0,
-      "shadow": 0
+      "metal": 95,
+      "wood": 110,
+      "water": 145,
+      "fire": 95,
+      "earth": 96,
+      "ice": 115,
+      "wind": 96,
+      "thunder": 56,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "water": 40
+      "water": 125,
+      "ice": 100,
+      "wood": 75
     },
     "stats": {
       "hp": 105,
@@ -170,27 +203,38 @@
     "size_class": "XL",
     "ai_style": "charge",
     "niches": [
-      { "niche": "niche_apex_predator", "weight": 3 },
-      { "niche": "niche_mineral_feeder", "weight": 2 },
-      { "niche": "niche_carrion_scavenger", "weight": 1 }
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 15,
-      "wood": 0,
-      "water": -40,
-      "fire": 50,
-      "earth": 20,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 110,
+      "wood": 95,
+      "water": 56,
+      "fire": 145,
+      "earth": 115,
+      "ice": 95,
+      "wind": 96,
+      "thunder": 96,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "fire": 40,
-      "earth": 15
+      "fire": 125,
+      "earth": 80,
+      "metal": 55,
+      "wind": 40
     },
     "stats": {
       "hp": 110,
@@ -225,26 +269,37 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_mineral_feeder", "weight": 3 },
-      { "niche": "niche_patrol_hunter", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 20,
-      "wood": -40,
-      "water": 0,
-      "fire": 15,
-      "earth": 50,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 115,
+      "wood": 56,
+      "water": 95,
+      "fire": 110,
+      "earth": 145,
+      "ice": 95,
+      "wind": 96,
+      "thunder": 96,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "earth": 40
+      "earth": 125,
+      "metal": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 135,
@@ -279,26 +334,37 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_patrol_hunter", "weight": 3 },
-      { "niche": "niche_apex_predator", "weight": 2 },
-      { "niche": "niche_carrion_scavenger", "weight": 1 }
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_apex_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 0,
-      "water": 20,
-      "fire": 0,
-      "earth": 0,
-      "ice": 50,
-      "wind": 15,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 56,
+      "wood": 95,
+      "water": 115,
+      "fire": 95,
+      "earth": 96,
+      "ice": 145,
+      "wind": 110,
+      "thunder": 96,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "ice": 40
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 130,
@@ -333,27 +399,38 @@
     "size_class": "L",
     "ai_style": "charge",
     "niches": [
-      { "niche": "niche_ambient_energy_feeder", "weight": 3 },
-      { "niche": "niche_patrol_hunter", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 20,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": -40,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 50,
-      "light": 15,
-      "shadow": 0
+      "metal": 115,
+      "wood": 95,
+      "water": 95,
+      "fire": 96,
+      "earth": 56,
+      "ice": 96,
+      "wind": 96,
+      "thunder": 145,
+      "light": 110,
+      "shadow": 96
     },
     "mastery": {
-      "thunder": 40,
-      "metal": 15
+      "thunder": 125,
+      "metal": 80,
+      "light": 55,
+      "fire": 40
     },
     "stats": {
       "hp": 95,
@@ -388,26 +465,37 @@
     "size_class": "XL",
     "ai_style": "charge",
     "niches": [
-      { "niche": "niche_patrol_hunter", "weight": 3 },
-      { "niche": "niche_apex_predator", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_apex_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 15,
-      "wind": 50,
-      "thunder": 20,
-      "light": 0,
-      "shadow": -40
+      "metal": 95,
+      "wood": 95,
+      "water": 96,
+      "fire": 96,
+      "earth": 96,
+      "ice": 110,
+      "wind": 145,
+      "thunder": 115,
+      "light": 96,
+      "shadow": 56
     },
     "mastery": {
-      "wind": 40
+      "wind": 125,
+      "thunder": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 90,
@@ -442,26 +530,37 @@
     "size_class": "XL",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_ambush_predator", "weight": 3 },
-      { "niche": "niche_ambient_energy_feeder", "weight": 2 },
-      { "niche": "niche_carrion_scavenger", "weight": 1 }
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 20,
-      "fire": 0,
-      "earth": 0,
-      "ice": 15,
-      "wind": 0,
-      "thunder": 0,
-      "light": -40,
-      "shadow": 50
+      "metal": 95,
+      "wood": 95,
+      "water": 115,
+      "fire": 96,
+      "earth": 96,
+      "ice": 110,
+      "wind": 96,
+      "thunder": 96,
+      "light": 56,
+      "shadow": 145
     },
     "mastery": {
-      "shadow": 40
+      "shadow": 125,
+      "water": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 100,
@@ -496,27 +595,38 @@
     "size_class": "L",
     "ai_style": "keep_distance",
     "niches": [
-      { "niche": "niche_ground_grazer", "weight": 3 },
-      { "niche": "niche_ambient_energy_feeder", "weight": 2 },
-      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
     ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 20,
-      "wood": 0,
-      "water": 0,
-      "fire": 15,
-      "earth": 0,
-      "ice": 0,
-      "wind": -40,
-      "thunder": 0,
-      "light": 50,
-      "shadow": 0
+      "metal": 115,
+      "wood": 95,
+      "water": 95,
+      "fire": 110,
+      "earth": 96,
+      "ice": 96,
+      "wind": 56,
+      "thunder": 96,
+      "light": 145,
+      "shadow": 96
     },
     "mastery": {
-      "light": 40,
-      "fire": 15
+      "light": 125,
+      "fire": 80,
+      "metal": 55,
+      "earth": 40
     },
     "stats": {
       "hp": 105,

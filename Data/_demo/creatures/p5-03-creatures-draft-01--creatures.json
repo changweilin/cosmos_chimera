@@ -5,7 +5,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_detritivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "metal_gear_strider",
     "evolution": {
       "level": 28,
@@ -18,21 +31,30 @@
       ]
     },
     "resist": {
-      "metal": 20,
-      "wood": 5,
-      "water": 0,
-      "fire": -20,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 118,
+      "wood": 103,
+      "water": 98,
+      "fire": 79,
+      "earth": 108,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "metal": 15
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
-    "stats": {"hp": 102, "speed": 36, "yin_atk": 43, "yang_atk": 71, "yin_def": 74, "yang_def": 74},
+    "stats": {
+      "hp": 102,
+      "speed": 36,
+      "yin_atk": 43,
+      "yang_atk": 71,
+      "yin_def": 74,
+      "yang_def": 74
+    },
     "signature_move": "metal_escapement_jab",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "magnet_pickup_double",
@@ -56,7 +78,16 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "metal_chronos_engine",
     "evolution": {
       "level": 48,
@@ -69,21 +100,30 @@
       ]
     },
     "resist": {
-      "metal": 35,
-      "wood": 10,
-      "water": 0,
-      "fire": -30,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 132,
+      "wood": 107,
+      "water": 97,
+      "fire": 67,
+      "earth": 112,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 25
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
-    "stats": {"hp": 128, "speed": 45, "yin_atk": 53, "yang_atk": 88, "yin_def": 93, "yang_def": 93},
+    "stats": {
+      "hp": 128,
+      "speed": 45,
+      "yin_atk": 53,
+      "yang_atk": 88,
+      "yin_def": 93,
+      "yang_def": 93
+    },
     "signature_move": "metal_ratchet_sweep",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "immune_laboratory",
@@ -107,26 +147,48 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 10,
-      "water": 0,
-      "fire": -40,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 146,
+      "wood": 106,
+      "water": 96,
+      "fire": 57,
+      "earth": 111,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 40,
-      "earth": 15
+      "metal": 125,
+      "earth": 80,
+      "wood": 55,
+      "wind": 40
     },
-    "stats": {"hp": 157, "speed": 52, "yin_atk": 104, "yang_atk": 63, "yin_def": 112, "yang_def": 112},
+    "stats": {
+      "hp": 157,
+      "speed": 52,
+      "yin_atk": 104,
+      "yang_atk": 63,
+      "yin_def": 112,
+      "yang_def": 112
+    },
     "signature_move": "metal_pendulum_ram",
     "trait": "trait_metal_pendulum_cadence",
     "field_utility": "catch_rate_up",
@@ -150,7 +212,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_ground_granivore", "weight": 3}, {"niche": "niche_fruit_disperser", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wood_plume_peafowl",
     "evolution": {
       "level": 24,
@@ -163,21 +238,30 @@
       ]
     },
     "resist": {
-      "metal": -20,
-      "wood": 20,
-      "water": 10,
-      "fire": 0,
-      "earth": 5,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 79,
+      "wood": 118,
+      "water": 108,
+      "fire": 98,
+      "earth": 103,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wood": 15
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
-    "stats": {"hp": 81, "speed": 47, "yin_atk": 28, "yang_atk": 46, "yin_def": 99, "yang_def": 99},
+    "stats": {
+      "hp": 81,
+      "speed": 47,
+      "yin_atk": 28,
+      "yang_atk": 46,
+      "yin_def": 99,
+      "yang_def": 99
+    },
     "signature_move": "wood_frond_dart",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "forage_berries",
@@ -201,7 +285,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_fruit_disperser", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wood_canopy_regent",
     "evolution": {
       "level": 40,
@@ -214,21 +311,30 @@
       ]
     },
     "resist": {
-      "metal": -30,
-      "wood": 35,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 67,
+      "wood": 132,
+      "water": 112,
+      "fire": 97,
+      "earth": 107,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 25
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
-    "stats": {"hp": 100, "speed": 59, "yin_atk": 35, "yang_atk": 58, "yin_def": 124, "yang_def": 124},
+    "stats": {
+      "hp": 100,
+      "speed": 59,
+      "yin_atk": 35,
+      "yang_atk": 58,
+      "yin_def": 124,
+      "yang_def": 124
+    },
     "signature_move": "wood_plumage_volley",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "immune_rainforest",
@@ -252,25 +358,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_fruit_disperser", "weight": 3}, {"niche": "niche_edge_browser", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_fruit_disperser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_edge_browser",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 57,
+      "wood": 146,
+      "water": 111,
+      "fire": 96,
+      "earth": 106,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 40
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
-    "stats": {"hp": 120, "speed": 71, "yin_atk": 71, "yang_atk": 43, "yin_def": 148, "yang_def": 147},
+    "stats": {
+      "hp": 120,
+      "speed": 71,
+      "yin_atk": 71,
+      "yang_atk": 43,
+      "yin_def": 148,
+      "yang_def": 147
+    },
     "signature_move": "wood_bloom_detonation",
     "trait": "trait_wood_crest_resilience",
     "field_utility": "return_village",
@@ -294,7 +422,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_detritivore", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_detritivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "water_skiff_eel",
     "evolution": {
       "level": 22,
@@ -307,21 +448,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 20,
-      "fire": 10,
-      "earth": 0,
-      "ice": 5,
-      "wind": 0,
-      "thunder": -20,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 118,
+      "fire": 108,
+      "earth": 99,
+      "ice": 103,
+      "wind": 99,
+      "thunder": 79,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "water": 15
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
-    "stats": {"hp": 56, "speed": 67, "yin_atk": 107, "yang_atk": 64, "yin_def": 53, "yang_def": 53},
+    "stats": {
+      "hp": 56,
+      "speed": 67,
+      "yin_atk": 107,
+      "yang_atk": 64,
+      "yin_def": 53,
+      "yang_def": 53
+    },
     "signature_move": "water_wake_jet",
     "trait": "trait_water_keel_momentum",
     "field_utility": "fishing",
@@ -345,7 +495,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_detritivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "water_catamaran_serpent",
     "evolution": {
       "level": 38,
@@ -358,21 +521,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 35,
-      "fire": 15,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -30,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 132,
+      "fire": 112,
+      "earth": 97,
+      "ice": 107,
+      "wind": 97,
+      "thunder": 67,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "water": 25
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
-    "stats": {"hp": 70, "speed": 88, "yin_atk": 131, "yang_atk": 79, "yin_def": 66, "yang_def": 66},
+    "stats": {
+      "hp": 70,
+      "speed": 88,
+      "yin_atk": 131,
+      "yang_atk": 79,
+      "yin_def": 66,
+      "yang_def": 66
+    },
     "signature_move": "water_spray_fan",
     "trait": "trait_water_keel_momentum",
     "field_utility": "immune_deep_sea",
@@ -396,26 +568,48 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 50,
-      "fire": 15,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -40,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 146,
+      "fire": 111,
+      "earth": 97,
+      "ice": 106,
+      "wind": 97,
+      "thunder": 57,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "water": 40,
-      "wind": 15
+      "water": 125,
+      "wind": 80,
+      "fire": 55,
+      "ice": 40
     },
-    "stats": {"hp": 84, "speed": 105, "yin_atk": 158, "yang_atk": 95, "yin_def": 79, "yang_def": 79},
+    "stats": {
+      "hp": 84,
+      "speed": 105,
+      "yin_atk": 158,
+      "yang_atk": 95,
+      "yin_def": 79,
+      "yang_def": 79
+    },
     "signature_move": "water_monsoon_swell",
     "trait": "trait_water_keel_momentum",
     "field_utility": "dive",
@@ -439,7 +633,16 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_opportunistic_omnivore", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
     "evolves_to": "fire_mane_stalker",
     "evolution": {
       "level": 26,
@@ -452,21 +655,30 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 10,
-      "water": -20,
-      "fire": 20,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 103,
+      "wood": 108,
+      "water": 79,
+      "fire": 118,
+      "earth": 98,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "fire": 15
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
-    "stats": {"hp": 78, "speed": 47, "yin_atk": 62, "yang_atk": 104, "yin_def": 55, "yang_def": 54},
+    "stats": {
+      "hp": 78,
+      "speed": 47,
+      "yin_atk": 62,
+      "yang_atk": 104,
+      "yin_def": 55,
+      "yang_def": 54
+    },
     "signature_move": "fire_cinder_claw",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "cook_fire",
@@ -490,7 +702,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": "fire_pyre_monarch",
     "evolution": {
       "level": 44,
@@ -503,21 +728,30 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -30,
-      "fire": 35,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 107,
+      "wood": 112,
+      "water": 67,
+      "fire": 132,
+      "earth": 97,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 25
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
-    "stats": {"hp": 97, "speed": 57, "yin_atk": 130, "yang_atk": 78, "yin_def": 69, "yang_def": 69},
+    "stats": {
+      "hp": 97,
+      "speed": 57,
+      "yin_atk": 130,
+      "yang_atk": 78,
+      "yin_def": 69,
+      "yang_def": 69
+    },
     "signature_move": "fire_mane_pounce",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "immune_volcano",
@@ -541,25 +775,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_apex_predator", "weight": 4}, {"niche": "niche_ambient_energy_feeder", "weight": 1}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -40,
-      "fire": 50,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 106,
+      "wood": 111,
+      "water": 57,
+      "fire": 146,
+      "earth": 96,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 40
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
-    "stats": {"hp": 117, "speed": 68, "yin_atk": 91, "yang_atk": 152, "yin_def": 86, "yang_def": 86},
+    "stats": {
+      "hp": 117,
+      "speed": 68,
+      "yin_atk": 91,
+      "yang_atk": 152,
+      "yin_def": 86,
+      "yang_def": 86
+    },
     "signature_move": "fire_solar_crucible",
     "trait": "trait_fire_furnace_escalation",
     "field_utility": "egg_hatch_boost",
@@ -583,7 +839,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_detritivore", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "earth_gilded_warden",
     "evolution": {
       "level": 30,
@@ -596,21 +865,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 5,
-      "earth": 20,
-      "ice": 0,
-      "wind": -20,
-      "thunder": 10,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 99,
+      "fire": 103,
+      "earth": 118,
+      "ice": 99,
+      "wind": 79,
+      "thunder": 108,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "earth": 15
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
-    "stats": {"hp": 97, "speed": 32, "yin_atk": 59, "yang_atk": 35, "yin_def": 89, "yang_def": 88},
+    "stats": {
+      "hp": 97,
+      "speed": 32,
+      "yin_atk": 59,
+      "yang_atk": 35,
+      "yin_def": 89,
+      "yang_def": 88
+    },
     "signature_move": "earth_shale_bolt",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "drop_rate_up",
@@ -634,7 +912,16 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "earth_auric_sovereign",
     "evolution": {
       "level": 50,
@@ -647,21 +934,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 35,
-      "ice": 0,
-      "wind": -30,
-      "thunder": 15,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 97,
+      "fire": 107,
+      "earth": 132,
+      "ice": 97,
+      "wind": 67,
+      "thunder": 112,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "earth": 25
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
-    "stats": {"hp": 120, "speed": 42, "yin_atk": 74, "yang_atk": 44, "yin_def": 110, "yang_def": 110},
+    "stats": {
+      "hp": 120,
+      "speed": 42,
+      "yin_atk": 74,
+      "yang_atk": 44,
+      "yin_def": 110,
+      "yang_def": 110
+    },
     "signature_move": "earth_ritual_quake",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "immune_cave",
@@ -685,25 +981,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 50,
-      "ice": 0,
-      "wind": -40,
-      "thunder": 15,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 97,
+      "fire": 106,
+      "earth": 146,
+      "ice": 97,
+      "wind": 57,
+      "thunder": 111,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "earth": 40
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
-    "stats": {"hp": 146, "speed": 50, "yin_atk": 86, "yang_atk": 51, "yin_def": 134, "yang_def": 133},
+    "stats": {
+      "hp": 146,
+      "speed": 50,
+      "yin_atk": 86,
+      "yang_atk": 51,
+      "yin_def": 134,
+      "yang_def": 133
+    },
     "signature_move": "earth_monolith_charge",
     "trait": "trait_earth_gilded_bulwark",
     "field_utility": "open_obstacle",
@@ -727,7 +1045,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_ground_granivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "ice_rime_strider",
     "evolution": {
       "level": 25,
@@ -740,21 +1071,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 10,
-      "fire": 0,
-      "earth": -20,
-      "ice": 20,
-      "wind": 5,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 108,
+      "fire": 99,
+      "earth": 79,
+      "ice": 118,
+      "wind": 103,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "ice": 15
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
-    "stats": {"hp": 74, "speed": 85, "yin_atk": 41, "yang_atk": 68, "yin_def": 66, "yang_def": 66},
+    "stats": {
+      "hp": 74,
+      "speed": 85,
+      "yin_atk": 41,
+      "yang_atk": 68,
+      "yin_def": 66,
+      "yang_def": 66
+    },
     "signature_move": "ice_rime_breath",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "prevent_escape",
@@ -778,7 +1118,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ground_grazer", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": "ice_tundra_dreadnought",
     "evolution": {
       "level": 43,
@@ -791,21 +1144,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -30,
-      "ice": 35,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 112,
+      "fire": 97,
+      "earth": 67,
+      "ice": 132,
+      "wind": 107,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 25
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
-    "stats": {"hp": 93, "speed": 107, "yin_atk": 51, "yang_atk": 85, "yin_def": 82, "yang_def": 82},
+    "stats": {
+      "hp": 93,
+      "speed": 107,
+      "yin_atk": 51,
+      "yang_atk": 85,
+      "yin_def": 82,
+      "yang_def": 82
+    },
     "signature_move": "ice_antler_javelin",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "mount",
@@ -829,26 +1191,48 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_apex_predator", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 111,
+      "fire": 97,
+      "earth": 57,
+      "ice": 146,
+      "wind": 106,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 40,
-      "metal": 15
+      "ice": 125,
+      "metal": 80,
+      "water": 55,
+      "wind": 40
     },
-    "stats": {"hp": 112, "speed": 128, "yin_atk": 61, "yang_atk": 101, "yin_def": 99, "yang_def": 99},
+    "stats": {
+      "hp": 112,
+      "speed": 128,
+      "yin_atk": 61,
+      "yang_atk": 101,
+      "yin_def": 99,
+      "yang_def": 99
+    },
     "signature_move": "ice_permafrost_halo",
     "trait": "trait_ice_antler_refraction",
     "field_utility": "immune_ice_cap",
@@ -872,7 +1256,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
-    "niches": [{"niche": "niche_nectar_visitor", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wind_flute_cruiser",
     "evolution": {
       "level": 20,
@@ -885,21 +1282,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -20,
-      "wind": 20,
-      "thunder": -5,
-      "light": 0,
-      "shadow": 0
+      "metal": 99,
+      "wood": 109,
+      "water": 99,
+      "fire": 99,
+      "earth": 100,
+      "ice": 80,
+      "wind": 119,
+      "thunder": 95,
+      "light": 100,
+      "shadow": 100
     },
     "mastery": {
-      "wind": 15
+      "wind": 125,
+      "wood": 100,
+      "earth": 75
     },
-    "stats": {"hp": 43, "speed": 122, "yin_atk": 51, "yang_atk": 86, "yin_def": 49, "yang_def": 49},
+    "stats": {
+      "hp": 43,
+      "speed": 122,
+      "yin_atk": 51,
+      "yang_atk": 86,
+      "yin_def": 49,
+      "yang_def": 49
+    },
     "signature_move": "wind_flute_slash",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "weather_control",
@@ -923,7 +1329,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 3}, {"niche": "niche_nectar_visitor", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wind_monsoon_galeon",
     "evolution": {
       "level": 35,
@@ -936,21 +1355,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -30,
-      "wind": 35,
-      "thunder": -10,
-      "light": 0,
-      "shadow": 0
+      "metal": 99,
+      "wood": 114,
+      "water": 99,
+      "fire": 99,
+      "earth": 99,
+      "ice": 69,
+      "wind": 134,
+      "thunder": 89,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wind": 25
+      "wind": 125,
+      "wood": 100,
+      "metal": 75
     },
-    "stats": {"hp": 54, "speed": 153, "yin_atk": 107, "yang_atk": 64, "yin_def": 61, "yang_def": 61},
+    "stats": {
+      "hp": 54,
+      "speed": 153,
+      "yin_atk": 107,
+      "yang_atk": 64,
+      "yin_def": 61,
+      "yang_def": 61
+    },
     "signature_move": "wind_reed_crescent",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "levitate",
@@ -974,25 +1402,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -40,
-      "wind": 50,
-      "thunder": -10,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 113,
+      "water": 98,
+      "fire": 98,
+      "earth": 99,
+      "ice": 59,
+      "wind": 148,
+      "thunder": 89,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wind": 40
+      "wind": 125,
+      "wood": 100,
+      "earth": 75
     },
-    "stats": {"hp": 64, "speed": 183, "yin_atk": 131, "yang_atk": 78, "yin_def": 72, "yang_def": 72},
+    "stats": {
+      "hp": 64,
+      "speed": 183,
+      "yin_atk": 131,
+      "yang_atk": 78,
+      "yin_def": 72,
+      "yang_def": 72
+    },
     "signature_move": "wind_gale_symphony",
     "trait": "trait_wind_reed_harmonics",
     "field_utility": "immune_space",

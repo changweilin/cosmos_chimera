@@ -3,14 +3,12 @@ using Cosmimera.Core.Contracts;
 namespace Cosmimera.Combat
 {
     /// <summary>
-    /// Damage rule: power × (1 + mastery%) × (1 − clamp(resist%, −100, 100)). No attack/defence stats, no global
-    /// type chart; STR never enters here. REQ: docs/design/combat.md#傷害公式 (Q-C1, Q-C2).
+    /// Exponential damage rule: power × 2^((attack − defence + mastery − resist + 2·levelDiff) / 50).
+    /// REQ: docs/design/combat.md#傷害公式.
     /// </summary>
     /// <remarks>
-    /// Integer-only (Int64 intermediate, one rounding at the end) so host and clients agree bit-for-bit and the
-    /// result matches the P2-02 integer conventions. Rounding (half up, minimum 1 for a non-immune hit) was
-    /// approved on 2026-11-06: without the minimum, a 20-power move into 99% resist rounds to 0
-    /// and reads as immunity, which only resist 100 is supposed to mean.
+    /// Integer-only fixed-point (2^20 scale with a 50-entry table and one half-up rounding at the end) so host and
+    /// clients agree bit-for-bit without floating-point pow drift. Non-zero power always deals at least 1 damage.
     /// </remarks>
     public static class DamageModel
     {
@@ -18,68 +16,79 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const int MaxPower = 100_000;
 
-        /// <summary>Largest effective mastery percent accepted. Representability bound, not balance.</summary>
+        /// <summary>Largest effective mastery value accepted. Representability bound, not balance.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const int MaxMasteryPercent = 1_000;
 
-        /// <summary>Resist magnitude the formula saturates at: +100 = immune, −100 = double damage.</summary>
+        /// <summary>Maximum absolute effective resist accepted by Combatant/EffectMath.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int ResistClamp = 100;
+        public const int ResistClamp = 300;
 
-        /// <summary>Damage dealt by a move of <paramref name="power"/> to a target.</summary>
+        /// <summary>Neutral baseline for attack, defence, mastery, and resist (multiplier = 1×).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int NeutralStat = 100;
+
+        // round(2^(r / 50) * 2^20) for r = 0..49.
+        private static readonly long[] Pow2StepTable =
+        {
+            1048576, 1063214, 1078055, 1093105, 1108364, 1123836, 1139524, 1155431, 1171560, 1187915,
+            1204498, 1221312, 1238361, 1255647, 1273176, 1290948, 1308969, 1327242, 1345770, 1364556,
+            1383604, 1402919, 1422503, 1442360, 1462495, 1482910, 1503611, 1524601, 1545883, 1567463,
+            1589344, 1611530, 1634027, 1656837, 1679965, 1703417, 1727196, 1751306, 1775754, 1800542,
+            1825677, 1851162, 1877004, 1903206, 1929773, 1956712, 1984027, 2011723, 2039805, 2068280,
+        };
+
+        /// <summary>Damage dealt by a move of <paramref name="power"/> when attack equals defence and levelDiff is 0.</summary>
         /// <remarks>
-        /// Pre: 0 &lt;= power &lt;= MaxPower; 0 &lt;= masteryPercent &lt;= MaxMasteryPercent (the attacker's effective
-        /// mastery in the move's element, after trait modifiers — the caller floors negative sums at 0);
-        /// resistPercent is any int (the target's effective resist in the move's element; clamped here).
-        /// Post: 0 &lt;= result &lt;= MaxPower × 11 × 2;
-        /// result == 0 iff power == 0 or clamp(resistPercent) == 100;
-        /// non-decreasing in power and masteryPercent, non-increasing in resistPercent.
+        /// Pre: 0 &lt;= power &lt;= MaxPower; 0 &lt;= masteryPercent &lt;= MaxMasteryPercent; resistPercent in -ResistClamp..ResistClamp.
+        /// Post: 0 iff power == 0, else >= 1; non-decreasing in power and masteryPercent, non-increasing in resistPercent.
         /// Side effects: none (pure).
         /// </remarks>
         public static int Compute(int power, int masteryPercent, int resistPercent)
         {
-            Contract.Requires(power >= 0 && power <= MaxPower, "power must be in 0..MaxPower");
-            Contract.Requires(masteryPercent >= 0 && masteryPercent <= MaxMasteryPercent,
-                "masteryPercent must be in 0..MaxMasteryPercent");
-
-            int resist = resistPercent < -ResistClamp ? -ResistClamp
-                : resistPercent > ResistClamp ? ResistClamp : resistPercent;
-            if (power == 0 || resist == ResistClamp)
-            {
-                return 0;
-            }
-
-            // power·(100+m)·(100−r) / 10000, max 1e5·1100·200 = 2.2e10: needs Int64, result fits Int32.
-            long scaled = (long)power * (100 + masteryPercent) * (100 - resist);
-            long damage = (scaled + 5_000) / 10_000;
-            return damage < 1 ? 1 : (int)damage;
+            return Compute(power, masteryPercent, resistPercent, NeutralStat, NeutralStat, 0);
         }
 
-        /// <summary>As <see cref="Compute(int, int, int)"/>, scaled by an attack/defence ratio. REQ: combat.md#傷害公式.</summary>
+        /// <summary>Damage dealt by a move of <paramref name="power"/> using exponential atk/def, mastery, resist, and levelDiff.</summary>
         /// <remarks>
-        /// Pre: as the three-argument overload; 1 &lt;= ratioPermille &lt;= DerivedStatsCoefficients.MaxDamageRatioPermille.
-        /// Post: round_half_up(power × ratio/1000 × (100+m) × (100−clamp(r))/10000), at least 1 unless power == 0 or
-        ///       immune; equals the three-argument overload when ratioPermille == 1000; non-decreasing in ratioPermille.
+        /// Pre: 0 &lt;= power &lt;= MaxPower; 0 &lt;= masteryPercent &lt;= MaxMasteryPercent;
+        ///      resistPercent in -ResistClamp..ResistClamp; attack >= 0; defence >= 0.
+        /// Post: 0 iff power == 0, else >= 1 (capped at int.MaxValue);
+        ///       approximates round_half_up(power × 2^((attack − defence + masteryPercent − resistPercent + 2·levelDiff) / 50));
+        ///       non-decreasing in power, masteryPercent, attack, levelDiff; non-increasing in resistPercent, defence.
         /// Side effects: none (pure).
         /// </remarks>
-        public static int Compute(int power, int masteryPercent, int resistPercent, int ratioPermille)
+        public static int Compute(int power, int masteryPercent, int resistPercent, int attack, int defence, int levelDiff = 0)
         {
             Contract.Requires(power >= 0 && power <= MaxPower, "power must be in 0..MaxPower");
             Contract.Requires(masteryPercent >= 0 && masteryPercent <= MaxMasteryPercent,
                 "masteryPercent must be in 0..MaxMasteryPercent");
-            Contract.Requires(ratioPermille >= 1 && ratioPermille <= DerivedStatsCoefficients.MaxDamageRatioPermille,
-                "ratioPermille must be 1..MaxDamageRatioPermille");
-            int resist = resistPercent < -ResistClamp ? -ResistClamp
-                : resistPercent > ResistClamp ? ResistClamp : resistPercent;
-            if (power == 0 || resist == ResistClamp)
+            Contract.Requires(attack >= 0 && defence >= 0, "attack and defence must be nonnegative");
+            if (power == 0)
             {
                 return 0;
             }
 
-            // 1e5 · 1e4 · 1100 · 200 = 2.2e14 before the divide: Int64 with room; the result fits Int32 (≤ 2.2e7).
-            long scaled = (long)power * ratioPermille * (100 + masteryPercent) * (100 - resist);
-            long damage = (scaled + 5_000_000) / 10_000_000;
-            return damage < 1 ? 1 : (int)damage;
+            int resist = resistPercent < -ResistClamp ? -ResistClamp
+                : resistPercent > ResistClamp ? ResistClamp : resistPercent;
+            long delta = (long)attack - defence + masteryPercent - resist + (long)levelDiff * 2;
+            long k = delta >= 0 ? delta / 50 : (delta - 49) / 50;
+            int r = (int)(delta - k * 50);
+
+            if (k >= 20)
+            {
+                return int.MaxValue;
+            }
+
+            if (k <= -30)
+            {
+                return 1;
+            }
+
+            long num = (long)power * Pow2StepTable[r];
+            int shift = 20 - (int)k; // 1..49: fits Int64 without shift overflow.
+            long damage = (num + (1L << (shift - 1))) >> shift;
+            return damage < 1 ? 1 : damage > int.MaxValue ? int.MaxValue : (int)damage;
         }
 
         /// <summary>Largest crit multiplier accepted, percent. Representability bound, not balance (base 150).</summary>

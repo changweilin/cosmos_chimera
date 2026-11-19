@@ -2,23 +2,26 @@
 
 即時動作戰鬥。探索中玩家操作角色（移動、翻滾、投擲收服、下指令）。**戰鬥中玩家直接操作主控宙獸的移動與出招**（Q-C55，取代 Q-C8「玩家只下指令」）：攝影機跟隨主控，角色只剩外觀、自動跟隨主控，不會被打、不能翻滾也不能投擲；支援宙獸仍由 AI 施招。輸出全部來自宙獸，場上同時最多 2 隻。出招鍵見 [controls.md](controls.md)。原本的四個指令（集火／自由／跟隨／撤退）改為**切換主控／切換支援模式（[支援模式](#支援模式)）／更換備援或道具（快捷輪盤，戰鬥不暫停）／回到角色**（按鍵見 controls.md）。**回到角色**＝收回在場宙獸、改操作角色，角色恢復探索規則（會被打、可翻滾、投擲仍要等戰鬥結束），直到脫戰。**瞄準**：前方類判定（front／line／sweep／cone、burst 以自身為中心）朝主控面向；瞄準點招（burst 目標點／arc／field）打鎖定目標，無鎖定時取面前最近的敵人。**戰敗＝上場池全部倒下**（已收服者保留）。**P2-17 接線前執行期仍是舊流程**（AI 施招、角色可被打）。回饋分級、格擋、地城氛圍與 BOSS 加強見 [combat-feel.md](combat-feel.md)。
 
-## 傷害公式（係數是 tunable，放在 `Data/balance.json`）
-比值、上下限與 `D = 0` 取上限見 `DerivedStats.AttackRatioPermille`；係數 `Data/balance.json#damage`。攻擊方的攻在施放被接受時凍結（同專精），目標的守在命中時讀取。
+## 傷害公式（設計規格；現行程式／`Data/balance.json` 仍為舊制比值公式，待遷移）
+陰陽攻守、元素攻擊（`mastery`）與抗性（`resist`）皆採**以 2 為底、每 50 點差值為 2 倍**的指數縮放（基準點 `100` ＝ 1×；`150` ＝ 2×、`50` ＝ 1/2）。攻擊方的攻與元素攻擊在施放被接受時凍結，目標的守與抗性在命中時讀取。
 
+```text
+A         = move.polarity == yang ? attacker.陽攻 : attacker.陰攻
+D         = move.polarity == yang ? target.陽守   : target.陰守
+E         = attacker.mastery[move.element]
+R         = target.resist[move.element]
+atk_mult  = 2^((A − D) / 50)
+elem_mult = 2^((E − 100) / 50)            # 100 為 1×；125 ≈ 1.414×；0 = 0.25×
+res_mult  = 2^(−(R − 100) / 50)           # 100 為 1×；150 = 0.5×；50 = 2×；25 ≈ 2.828×；175 ≈ 0.354×
+lvl_mult  = f_level(attacker.level − target.level)   # 等級差倍率（待定係數，放 Data/balance.json）
+damage    = move.power × atk_mult × elem_mult × res_mult × lvl_mult
+crit      → damage × crit_damage          # 見〈暴擊〉
 ```
-A       = move.polarity == yang ? attacker.陽攻 : attacker.陰攻
-D       = move.polarity == yang ? target.陽守   : target.陰守
-ratio   = clamp(A / D, ratio_min, ratio_max)          # 暫定 0.25 / 4；D = 0 時取 ratio_max
-raw     = move.power × ratio × (1 + attacker.mastery[move.element] / 100)
-damage  = raw × (1 − clamp(target.resist[move.element], −100, 100) / 100)
-crit    → damage × crit_damage                        # 見〈暴擊〉
-```
-- `resist < 0` 表示弱點（受到更多傷害）；`resist = 100` 表示免疫。
-- 沒有全域相剋表。攻守取自[六大能力值](creatures.md#六大能力值)，[等級](level-progression.md)縮放攻守，所以等級經由攻守比進入傷害；專精、主動技威力與抗性不隨等級縮放。
-- 以比值計算：雙方同等級同預算時約 ×1，夾住避免極端偏科一擊必殺或完全打不動。
-- 沒有六能力值的目標：**場景物件**攻守比固定 ×1（只看屬性、物質與生活技能加成，見 [destructibles.md#傷害](destructibles.md#傷害)）。
-- <a id="玩家角色的守"></a>**玩家角色**沒有六能力值，陰守／陽守 = 底值 + 防具加值。底值依[玩家等級](level-progression.md#玩家等級) P 用與宙獸相同的等級縮放：`(100 × (P + 10) + 55) // 110`（LV1 為 10、LV100 為 100；100 = 成年宙獸平均守，`Data/balance.json#player.base_defense`）。防具（盾、上身、下身）可加陰守、陽守點數（[crafting.md#穿戴與數值](crafting.md#穿戴與數值)），沒穿防具時只有底值。
-- 代價型（`self`／`ally`）用施放者的攻對承受者的守；完美格擋反傷用攻擊者自己的攻對自己的守（主動技反彈回施放者，同抗性的處理）。
+- **抗性與弱點**：`R < 100` 表示弱點（受到更多傷害）、`R > 100` 表示抗性（減少受傷）；基礎抗性範圍 25–175，不再有 `resist = 100` 免疫（實作時以定點數／查表計算指數確保跨端決定性）。
+- **等級不縮放攻守**：陰陽攻守**不隨等級線性縮放**（直接以物種基礎值＋裝備／被動修正進入 `A − D`），以維持同級對戰「每 50 點差 ＝ 2 倍」的關係不因低等級被壓縮；等級差改由獨立倍率 `lvl_mult` 體現。
+- **沒有六能力值的目標**：**場景物件** `atk_mult` 與 `lvl_mult` 固定 ×1（只看屬性、物質與生活技能加成，見 [destructibles.md#傷害](destructibles.md#傷害)）。
+- <a id="玩家角色的守"></a>**玩家角色**沒有六能力值，陰守／陽守 = **底值 100 + 防具加值**（`Data/balance.json#player.base_defense`；底值不再隨玩家等級線性縮放，直接對應成年宙獸平均守，等級差改走 `lvl_mult`）。防具（盾、上身、下身）可加陰守、陽守點數（[crafting.md#穿戴與數值](crafting.md#穿戴與數值)），沒穿防具時只有底值。
+- 代價型（`self`／`ally`）用施放者的攻對承受者的守（`lvl_mult` 依雙方等級差或 ×1）；完美格擋反傷用攻擊者自己的攻對自己的守（主動技反彈回施放者，同抗性的處理）。
 - <a id="暴擊"></a>**暴擊**：命中擲骰成功後再擲暴擊（同一 `Pcg32` 戰鬥 stream，順序固定在命中之後；爆率 0 時不擲）；基礎爆率 5%、爆傷 150%（`Data/balance.json#crit`），`crit_rate_mod`／`crit_damage_mod` 以百分點加上（爆率夾 0–100%、爆傷 100–1000%），在施放被接受時凍結。打宙獸與玩家角色都會暴擊；不擲骰的 `self`／`ally` 主動技、完美格擋反傷與場景物件不暴擊。暴擊乘在公式傷害上，之後才套失衡加傷與格擋。
 - 以 Int64 計算中間值，只在最後四捨五入（half up）；威力非零且非免疫的命中至少 1 點。`power` 表示域為 0..100000，有效專精為 0..1000；這是資料／API 契約上限，非平衡目標。P2-09 必須保證修正後專精符合此域，負值先歸零；疊加規則另由 P2-09 定義。
 

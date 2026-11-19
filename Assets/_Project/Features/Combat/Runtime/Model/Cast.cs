@@ -462,7 +462,7 @@ namespace Cosmimera.Combat
                 Contract.Requires(masteryByElement[i] >= 0 && masteryByElement[i] <= DamageModel.MaxMasteryPercent,
                     "mastery must be 0..MaxMasteryPercent");
                 Contract.Requires(resistByElement[i] >= -DamageModel.ResistClamp && resistByElement[i] <= DamageModel.ResistClamp,
-                    "resist must be -100..100");
+                    "resist must be -ResistClamp..ResistClamp");
                 _mastery[i] = masteryByElement[i];
                 _resist[i] = resistByElement[i];
             }
@@ -607,7 +607,7 @@ namespace Cosmimera.Combat
                 Contract.Requires(masteryByElement[i] >= 0 && masteryByElement[i] <= DamageModel.MaxMasteryPercent,
                     "mastery must be 0..MaxMasteryPercent");
                 Contract.Requires(resistByElement[i] >= -DamageModel.ResistClamp && resistByElement[i] <= DamageModel.ResistClamp,
-                    "resist must be -100..100");
+                    "resist must be -ResistClamp..ResistClamp");
                 _mastery[i] = masteryByElement[i];
                 _resist[i] = resistByElement[i];
             }
@@ -950,7 +950,7 @@ namespace Cosmimera.Combat
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
-                    _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
+                    cast.Attack, _core.Defence(move.Polarity));
                 critical = HitResolver.RollCrit(cast.CritRatePermille, ref rng);
                 if (critical)
                 {
@@ -1023,7 +1023,7 @@ namespace Cosmimera.Combat
                 Book.Collect(nowMs, Hp, MaxHp, _totals);
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist,
-                    _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
+                    cast.Attack, _core.Defence(move.Polarity));
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)
@@ -1077,7 +1077,7 @@ namespace Cosmimera.Combat
             int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
             // combat.md#傷害公式: the reflected move turns back on its caster, so its own defence applies (like its resist).
             int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
-                _stats.AttackRatioPermille(cast.Attack, _core.Defence(move.Polarity)));
+                cast.Attack, _core.Defence(move.Polarity));
             long scaled = ((long)raw * percent + 50) / 100;
             int amount = (int)System.Math.Min(int.MaxValue, raw > 0 && scaled == 0 ? 1 : scaled);
             int hpBefore = Hp;

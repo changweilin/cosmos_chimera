@@ -31,19 +31,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 20,
-      "fire": 10,
-      "earth": 0,
-      "ice": 5,
-      "wind": 0,
-      "thunder": -20,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 118,
+      "fire": 108,
+      "earth": 99,
+      "ice": 103,
+      "wind": 99,
+      "thunder": 79,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "water": 15
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 100,
@@ -104,19 +106,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 35,
-      "fire": 15,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -30,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 132,
+      "fire": 112,
+      "earth": 97,
+      "ice": 107,
+      "wind": 97,
+      "thunder": 67,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "water": 20
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 125,
@@ -168,19 +172,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 50,
-      "fire": 15,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -40,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 146,
+      "fire": 111,
+      "earth": 97,
+      "ice": 106,
+      "wind": 97,
+      "thunder": 57,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "water": 25
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 150,
@@ -232,19 +238,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 50,
-      "fire": 15,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -40,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 146,
+      "fire": 111,
+      "earth": 97,
+      "ice": 106,
+      "wind": 97,
+      "thunder": 57,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "water": 30
+      "water": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 180,
@@ -306,20 +314,22 @@
       ]
     },
     "resist": {
-      "metal": 20,
-      "wood": 5,
-      "water": 0,
-      "fire": -20,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 118,
+      "wood": 103,
+      "water": 98,
+      "fire": 79,
+      "earth": 108,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "metal": 15,
-      "thunder": 5
+      "metal": 125,
+      "thunder": 80,
+      "earth": 55,
+      "wood": 40
     },
     "stats": {
       "hp": 72,
@@ -376,20 +386,22 @@
       ]
     },
     "resist": {
-      "metal": 35,
-      "wood": 10,
-      "water": 0,
-      "fire": -30,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 132,
+      "wood": 107,
+      "water": 97,
+      "fire": 67,
+      "earth": 112,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 20,
-      "thunder": 10
+      "metal": 125,
+      "thunder": 80,
+      "earth": 55,
+      "wood": 40
     },
     "stats": {
       "hp": 90,
@@ -441,20 +453,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 10,
-      "water": 0,
-      "fire": -40,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 146,
+      "wood": 106,
+      "water": 96,
+      "fire": 57,
+      "earth": 111,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 25,
-      "thunder": 15
+      "metal": 125,
+      "thunder": 80,
+      "earth": 55,
+      "wood": 40
     },
     "stats": {
       "hp": 108,
@@ -506,20 +520,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 10,
-      "water": 0,
-      "fire": -40,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 146,
+      "wood": 106,
+      "water": 96,
+      "fire": 57,
+      "earth": 111,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 30,
-      "thunder": 20
+      "metal": 125,
+      "thunder": 80,
+      "earth": 55,
+      "wood": 40
     },
     "stats": {
       "hp": 131,
@@ -581,19 +597,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 5,
-      "earth": 20,
-      "ice": 0,
-      "wind": -20,
-      "thunder": 10,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 99,
+      "fire": 103,
+      "earth": 118,
+      "ice": 99,
+      "wind": 79,
+      "thunder": 108,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "earth": 15
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 100,
@@ -650,19 +668,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 35,
-      "ice": 0,
-      "wind": -30,
-      "thunder": 15,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 97,
+      "fire": 107,
+      "earth": 132,
+      "ice": 97,
+      "wind": 67,
+      "thunder": 112,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "earth": 20
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 125,
@@ -714,19 +734,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 50,
-      "ice": 0,
-      "wind": -40,
-      "thunder": 15,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 97,
+      "fire": 106,
+      "earth": 146,
+      "ice": 97,
+      "wind": 57,
+      "thunder": 111,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "earth": 25
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 150,
@@ -778,19 +800,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 50,
-      "ice": 0,
-      "wind": -40,
-      "thunder": 15,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 97,
+      "fire": 106,
+      "earth": 146,
+      "ice": 97,
+      "wind": 57,
+      "thunder": 111,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "earth": 30
+      "earth": 125,
+      "thunder": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 180,
@@ -848,19 +872,21 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 10,
-      "water": -20,
-      "fire": 20,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 103,
+      "wood": 108,
+      "water": 79,
+      "fire": 118,
+      "earth": 98,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "fire": 15
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 48,
@@ -921,19 +947,21 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -30,
-      "fire": 35,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 107,
+      "wood": 112,
+      "water": 67,
+      "fire": 132,
+      "earth": 97,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 20
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 60,
@@ -985,19 +1013,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -40,
-      "fire": 50,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 106,
+      "wood": 111,
+      "water": 57,
+      "fire": 146,
+      "earth": 96,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 25
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 72,
@@ -1049,19 +1079,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -40,
-      "fire": 50,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 106,
+      "wood": 111,
+      "water": 57,
+      "fire": 146,
+      "earth": 96,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 30
+      "fire": 125,
+      "wood": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 88,
@@ -1123,20 +1155,22 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 10,
-      "fire": 0,
-      "earth": -20,
-      "ice": 20,
-      "wind": 5,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 108,
+      "fire": 99,
+      "earth": 79,
+      "ice": 118,
+      "wind": 103,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "ice": 15,
-      "water": 5
+      "ice": 125,
+      "water": 80,
+      "wind": 55,
+      "fire": 40
     },
     "stats": {
       "hp": 64,
@@ -1197,20 +1231,22 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -30,
-      "ice": 35,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 112,
+      "fire": 97,
+      "earth": 67,
+      "ice": 132,
+      "wind": 107,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 20,
-      "water": 10
+      "ice": 125,
+      "water": 80,
+      "wind": 55,
+      "metal": 40
     },
     "stats": {
       "hp": 80,
@@ -1262,20 +1298,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 111,
+      "fire": 97,
+      "earth": 57,
+      "ice": 146,
+      "wind": 106,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 25,
-      "water": 15
+      "ice": 125,
+      "water": 80,
+      "wind": 55,
+      "fire": 40
     },
     "stats": {
       "hp": 96,
@@ -1327,20 +1365,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 111,
+      "fire": 97,
+      "earth": 57,
+      "ice": 146,
+      "wind": 106,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 30,
-      "water": 20
+      "ice": 125,
+      "water": 80,
+      "wind": 55,
+      "fire": 40
     },
     "stats": {
       "hp": 118,
@@ -1402,19 +1442,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 10,
-      "fire": 0,
-      "earth": -20,
-      "ice": 20,
-      "wind": 5,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 98,
+      "water": 108,
+      "fire": 99,
+      "earth": 79,
+      "ice": 118,
+      "wind": 103,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "ice": 15
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 104,
@@ -1475,19 +1517,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -30,
-      "ice": 35,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 112,
+      "fire": 97,
+      "earth": 67,
+      "ice": 132,
+      "wind": 107,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 20
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 130,
@@ -1539,19 +1583,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 111,
+      "fire": 97,
+      "earth": 57,
+      "ice": 146,
+      "wind": 106,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 25
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 156,
@@ -1603,19 +1649,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 15,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 10,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 111,
+      "fire": 97,
+      "earth": 57,
+      "ice": 146,
+      "wind": 106,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 30
+      "ice": 125,
+      "water": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 188,
@@ -1677,20 +1725,22 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -20,
-      "light": -5,
-      "shadow": 20
+      "metal": 99,
+      "wood": 99,
+      "water": 99,
+      "fire": 100,
+      "earth": 100,
+      "ice": 109,
+      "wind": 100,
+      "thunder": 80,
+      "light": 95,
+      "shadow": 119
     },
     "mastery": {
-      "shadow": 15,
-      "earth": 5
+      "shadow": 125,
+      "earth": 80,
+      "ice": 55,
+      "fire": 40
     },
     "stats": {
       "hp": 88,
@@ -1747,20 +1797,22 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 20,
-      "wind": 5,
-      "thunder": -30,
-      "light": -10,
-      "shadow": 35
+      "metal": 98,
+      "wood": 98,
+      "water": 98,
+      "fire": 98,
+      "earth": 98,
+      "ice": 118,
+      "wind": 103,
+      "thunder": 68,
+      "light": 88,
+      "shadow": 133
     },
     "mastery": {
-      "shadow": 20,
-      "earth": 10
+      "shadow": 125,
+      "earth": 80,
+      "ice": 55,
+      "wind": 40
     },
     "stats": {
       "hp": 110,
@@ -1812,20 +1864,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": 0,
-      "ice": 30,
-      "wind": 10,
-      "thunder": -40,
-      "light": -15,
-      "shadow": 50
+      "metal": 96,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 96,
+      "ice": 126,
+      "wind": 106,
+      "thunder": 56,
+      "light": 81,
+      "shadow": 146
     },
     "mastery": {
-      "shadow": 25,
-      "earth": 15
+      "shadow": 125,
+      "earth": 80,
+      "ice": 55,
+      "wind": 40
     },
     "stats": {
       "hp": 132,
@@ -1877,20 +1931,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": 0,
-      "ice": 30,
-      "wind": 10,
-      "thunder": -40,
-      "light": -15,
-      "shadow": 50
+      "metal": 96,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 96,
+      "ice": 126,
+      "wind": 106,
+      "thunder": 56,
+      "light": 81,
+      "shadow": 146
     },
     "mastery": {
-      "shadow": 30,
-      "earth": 20
+      "shadow": 125,
+      "earth": 80,
+      "ice": 55,
+      "wind": 40
     },
     "stats": {
       "hp": 160,
@@ -1952,19 +2008,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": -5,
-      "fire": 10,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 20,
-      "shadow": -20
+      "metal": 99,
+      "wood": 99,
+      "water": 95,
+      "fire": 109,
+      "earth": 99,
+      "ice": 100,
+      "wind": 100,
+      "thunder": 100,
+      "light": 119,
+      "shadow": 80
     },
     "mastery": {
-      "light": 15
+      "light": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 88,
@@ -2025,19 +2083,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": -10,
-      "fire": 15,
-      "earth": 0,
-      "ice": 5,
-      "wind": 0,
-      "thunder": 0,
-      "light": 35,
-      "shadow": -30
+      "metal": 98,
+      "wood": 98,
+      "water": 89,
+      "fire": 113,
+      "earth": 99,
+      "ice": 103,
+      "wind": 99,
+      "thunder": 99,
+      "light": 133,
+      "shadow": 69
     },
     "mastery": {
-      "light": 20
+      "light": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 110,
@@ -2089,19 +2149,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": -15,
-      "fire": 25,
-      "earth": 0,
-      "ice": 10,
-      "wind": 5,
-      "thunder": 0,
-      "light": 50,
-      "shadow": -40
+      "metal": 96,
+      "wood": 97,
+      "water": 82,
+      "fire": 121,
+      "earth": 97,
+      "ice": 106,
+      "wind": 101,
+      "thunder": 97,
+      "light": 146,
+      "shadow": 57
     },
     "mastery": {
-      "light": 25
+      "light": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 132,
@@ -2153,19 +2215,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": -15,
-      "fire": 25,
-      "earth": 0,
-      "ice": 10,
-      "wind": 5,
-      "thunder": 0,
-      "light": 50,
-      "shadow": -40
+      "metal": 96,
+      "wood": 97,
+      "water": 82,
+      "fire": 121,
+      "earth": 97,
+      "ice": 106,
+      "wind": 101,
+      "thunder": 97,
+      "light": 146,
+      "shadow": 57
     },
     "mastery": {
-      "light": 30
+      "light": 125,
+      "fire": 100,
+      "ice": 75
     },
     "stats": {
       "hp": 160,
@@ -2227,19 +2291,21 @@
       ]
     },
     "resist": {
-      "metal": 20,
-      "wood": 5,
-      "water": 0,
-      "fire": -20,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 118,
+      "wood": 103,
+      "water": 98,
+      "fire": 79,
+      "earth": 108,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "metal": 15
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
     "stats": {
       "hp": 96,
@@ -2296,19 +2362,21 @@
       ]
     },
     "resist": {
-      "metal": 35,
-      "wood": 10,
-      "water": 0,
-      "fire": -30,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 132,
+      "wood": 107,
+      "water": 97,
+      "fire": 67,
+      "earth": 112,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 20
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
     "stats": {
       "hp": 120,
@@ -2360,19 +2428,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 10,
-      "water": 0,
-      "fire": -40,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 146,
+      "wood": 106,
+      "water": 96,
+      "fire": 57,
+      "earth": 111,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 25
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
     "stats": {
       "hp": 144,
@@ -2424,19 +2494,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 10,
-      "water": 0,
-      "fire": -40,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 146,
+      "wood": 106,
+      "water": 96,
+      "fire": 57,
+      "earth": 111,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "metal": 30
+      "metal": 125,
+      "earth": 100,
+      "wood": 75
     },
     "stats": {
       "hp": 175,
@@ -2498,19 +2570,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -20,
-      "light": -5,
-      "shadow": 20
+      "metal": 99,
+      "wood": 99,
+      "water": 99,
+      "fire": 100,
+      "earth": 100,
+      "ice": 109,
+      "wind": 100,
+      "thunder": 80,
+      "light": 95,
+      "shadow": 119
     },
     "mastery": {
-      "shadow": 15
+      "shadow": 125,
+      "ice": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 48,
@@ -2567,19 +2641,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 20,
-      "wind": 5,
-      "thunder": -30,
-      "light": -10,
-      "shadow": 35
+      "metal": 98,
+      "wood": 98,
+      "water": 98,
+      "fire": 98,
+      "earth": 98,
+      "ice": 118,
+      "wind": 103,
+      "thunder": 68,
+      "light": 88,
+      "shadow": 133
     },
     "mastery": {
-      "shadow": 20
+      "shadow": 125,
+      "ice": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 60,
@@ -2631,19 +2707,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": 0,
-      "ice": 30,
-      "wind": 10,
-      "thunder": -40,
-      "light": -15,
-      "shadow": 50
+      "metal": 96,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 96,
+      "ice": 126,
+      "wind": 106,
+      "thunder": 56,
+      "light": 81,
+      "shadow": 146
     },
     "mastery": {
-      "shadow": 25
+      "shadow": 125,
+      "ice": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 72,
@@ -2695,19 +2773,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": 0,
-      "ice": 30,
-      "wind": 10,
-      "thunder": -40,
-      "light": -15,
-      "shadow": 50
+      "metal": 96,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 96,
+      "ice": 126,
+      "wind": 106,
+      "thunder": 56,
+      "light": 81,
+      "shadow": 146
     },
     "mastery": {
-      "shadow": 30
+      "shadow": 125,
+      "ice": 100,
+      "wind": 75
     },
     "stats": {
       "hp": 88,
@@ -2765,20 +2845,22 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 10,
-      "water": -20,
-      "fire": 20,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 103,
+      "wood": 108,
+      "water": 79,
+      "fire": 118,
+      "earth": 98,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "fire": 15,
-      "light": 5
+      "fire": 125,
+      "light": 80,
+      "wood": 55,
+      "metal": 40
     },
     "stats": {
       "hp": 80,
@@ -2839,20 +2921,22 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -30,
-      "fire": 35,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 107,
+      "wood": 112,
+      "water": 67,
+      "fire": 132,
+      "earth": 97,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 20,
-      "light": 10
+      "fire": 125,
+      "light": 80,
+      "wood": 55,
+      "metal": 40
     },
     "stats": {
       "hp": 100,
@@ -2904,20 +2988,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -40,
-      "fire": 50,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 106,
+      "wood": 111,
+      "water": 57,
+      "fire": 146,
+      "earth": 96,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 25,
-      "light": 15
+      "fire": 125,
+      "light": 80,
+      "wood": 55,
+      "metal": 40
     },
     "stats": {
       "hp": 120,
@@ -2969,20 +3055,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 15,
-      "water": -40,
-      "fire": 50,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 106,
+      "wood": 111,
+      "water": 57,
+      "fire": 146,
+      "earth": 96,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 30,
-      "light": 20
+      "fire": 125,
+      "light": 80,
+      "wood": 55,
+      "metal": 40
     },
     "stats": {
       "hp": 146,
@@ -3040,19 +3128,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": -5,
-      "ice": 0,
-      "wind": 10,
-      "thunder": 20,
-      "light": -20,
-      "shadow": 0
+      "metal": 99,
+      "wood": 99,
+      "water": 99,
+      "fire": 100,
+      "earth": 95,
+      "ice": 100,
+      "wind": 109,
+      "thunder": 119,
+      "light": 80,
+      "shadow": 100
     },
     "mastery": {
-      "thunder": 15
+      "thunder": 125,
+      "wind": 100,
+      "fire": 75
     },
     "stats": {
       "hp": 48,
@@ -3113,19 +3203,21 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": -10,
-      "ice": 0,
-      "wind": 20,
-      "thunder": 35,
-      "light": -30,
-      "shadow": 0
+      "metal": 103,
+      "wood": 98,
+      "water": 98,
+      "fire": 98,
+      "earth": 88,
+      "ice": 98,
+      "wind": 118,
+      "thunder": 133,
+      "light": 68,
+      "shadow": 98
     },
     "mastery": {
-      "thunder": 20
+      "thunder": 125,
+      "wind": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 60,
@@ -3177,19 +3269,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": -15,
-      "ice": 0,
-      "wind": 30,
-      "thunder": 50,
-      "light": -40,
-      "shadow": 0
+      "metal": 106,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 81,
+      "ice": 96,
+      "wind": 126,
+      "thunder": 146,
+      "light": 56,
+      "shadow": 96
     },
     "mastery": {
-      "thunder": 25
+      "thunder": 125,
+      "wind": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 72,
@@ -3241,19 +3335,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 5,
-      "fire": 0,
-      "earth": -15,
-      "ice": 0,
-      "wind": 30,
-      "thunder": 50,
-      "light": -40,
-      "shadow": 0
+      "metal": 106,
+      "wood": 96,
+      "water": 101,
+      "fire": 96,
+      "earth": 81,
+      "ice": 96,
+      "wind": 126,
+      "thunder": 146,
+      "light": 56,
+      "shadow": 96
     },
     "mastery": {
-      "thunder": 30
+      "thunder": 125,
+      "wind": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 89,
@@ -3315,20 +3411,22 @@
       ]
     },
     "resist": {
-      "metal": -20,
-      "wood": 20,
-      "water": 10,
-      "fire": 0,
-      "earth": 5,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 79,
+      "wood": 118,
+      "water": 108,
+      "fire": 98,
+      "earth": 103,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wood": 15,
-      "wind": 5
+      "wood": 125,
+      "wind": 80,
+      "water": 55,
+      "earth": 40
     },
     "stats": {
       "hp": 56,
@@ -3389,20 +3487,22 @@
       ]
     },
     "resist": {
-      "metal": -30,
-      "wood": 35,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 67,
+      "wood": 132,
+      "water": 112,
+      "fire": 97,
+      "earth": 107,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 20,
-      "wind": 10
+      "wood": 125,
+      "wind": 80,
+      "water": 55,
+      "earth": 40
     },
     "stats": {
       "hp": 70,
@@ -3454,20 +3554,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 57,
+      "wood": 146,
+      "water": 111,
+      "fire": 96,
+      "earth": 106,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 25,
-      "wind": 15
+      "wood": 125,
+      "wind": 80,
+      "water": 55,
+      "earth": 40
     },
     "stats": {
       "hp": 84,
@@ -3519,20 +3621,22 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 57,
+      "wood": 146,
+      "water": 111,
+      "fire": 96,
+      "earth": 106,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 30,
-      "wind": 20
+      "wood": 125,
+      "wind": 80,
+      "water": 55,
+      "earth": 40
     },
     "stats": {
       "hp": 103,
@@ -3594,19 +3698,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -20,
-      "wind": 20,
-      "thunder": -5,
-      "light": 0,
-      "shadow": 0
+      "metal": 99,
+      "wood": 109,
+      "water": 99,
+      "fire": 99,
+      "earth": 100,
+      "ice": 80,
+      "wind": 119,
+      "thunder": 95,
+      "light": 100,
+      "shadow": 100
     },
     "mastery": {
-      "wind": 15
+      "wind": 125,
+      "wood": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 48,
@@ -3667,19 +3773,21 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -30,
-      "wind": 35,
-      "thunder": -10,
-      "light": 0,
-      "shadow": 0
+      "metal": 99,
+      "wood": 114,
+      "water": 99,
+      "fire": 99,
+      "earth": 99,
+      "ice": 69,
+      "wind": 134,
+      "thunder": 89,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wind": 20
+      "wind": 125,
+      "wood": 100,
+      "metal": 75
     },
     "stats": {
       "hp": 60,
@@ -3731,19 +3839,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -40,
-      "wind": 50,
-      "thunder": -10,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 113,
+      "water": 98,
+      "fire": 98,
+      "earth": 99,
+      "ice": 59,
+      "wind": 148,
+      "thunder": 89,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wind": 25
+      "wind": 125,
+      "wood": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 72,
@@ -3795,19 +3905,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": -40,
-      "wind": 50,
-      "thunder": -10,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 113,
+      "water": 98,
+      "fire": 98,
+      "earth": 99,
+      "ice": 59,
+      "wind": 148,
+      "thunder": 89,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wind": 30
+      "wind": 125,
+      "wood": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 88,
@@ -3869,19 +3981,21 @@
       ]
     },
     "resist": {
-      "metal": -20,
-      "wood": 20,
-      "water": 10,
-      "fire": 0,
-      "earth": 5,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 79,
+      "wood": 118,
+      "water": 108,
+      "fire": 98,
+      "earth": 103,
+      "ice": 98,
+      "wind": 99,
+      "thunder": 99,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "wood": 15
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 100,
@@ -3942,19 +4056,21 @@
       ]
     },
     "resist": {
-      "metal": -30,
-      "wood": 35,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 67,
+      "wood": 132,
+      "water": 112,
+      "fire": 97,
+      "earth": 107,
+      "ice": 97,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 20
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 125,
@@ -4006,19 +4122,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 57,
+      "wood": 146,
+      "water": 111,
+      "fire": 96,
+      "earth": 106,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 25
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 150,
@@ -4070,19 +4188,21 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 15,
-      "fire": 0,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 57,
+      "wood": 146,
+      "water": 111,
+      "fire": 96,
+      "earth": 106,
+      "ice": 96,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "wood": 30
+      "wood": 125,
+      "water": 100,
+      "earth": 75
     },
     "stats": {
       "hp": 180,

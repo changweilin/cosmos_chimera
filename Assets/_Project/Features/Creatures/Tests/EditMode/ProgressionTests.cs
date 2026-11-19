@@ -70,7 +70,8 @@ namespace Cosmimera.Creatures.Tests
                 int b = (int)c["base"];
                 CreatureStats s = new CreatureStats(b, b, b, b, b, b).AtLevel((int)c["level"]);
                 Assert.AreEqual((int)c["value"], s.Hp, $"base {b} level {c["level"]}");
-                Assert.AreEqual(s.Hp, s.YangDef);
+                Assert.AreEqual((int)c["value"], s.Speed, $"base {b} level {c["level"]}");
+                Assert.AreEqual(b, s.YangDef);
             }
         }
 

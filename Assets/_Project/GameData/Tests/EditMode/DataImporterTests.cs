@@ -102,8 +102,8 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(CreatureSizeClass.L, cub.EvolvesTo.EvolvesTo.SizeClass);
             Assert.AreEqual("sample_ember_strike", cub.SignatureMove.Id);
             Assert.AreEqual("sample_trait_placeholder", cub.Trait.Id);
-            Assert.AreEqual(25, cub.GetResist(Element.Fire));
-            Assert.AreEqual(-25, cub.GetResist(Element.Water));
+            Assert.AreEqual(125, cub.GetResist(Element.Fire));
+            Assert.AreEqual(75, cub.GetResist(Element.Water));
             Assert.AreEqual(25, cub.EvolutionLevel);
             Assert.AreEqual("sample_fox_beast", cub.EvolvesTo.Id);
             CreatureDef lord = cub.EvolvesTo.EvolvesTo;
@@ -589,18 +589,18 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(DamageModel.MaxPower, (int)common["$defs"]["movePower"]["maximum"]);
             Assert.AreEqual(DamageModel.MaxMasteryPercent, (int)common["$defs"]["masteryPercent"]["maximum"]);
             Assert.AreEqual("common.schema.json#/$defs/movePower", (string)moves["$defs"]["move"]["properties"]["power"]["$ref"]);
-            Assert.AreEqual("common.schema.json#/$defs/masteryPercent", (string)creatures["$defs"]["creature"]["properties"]["mastery"]["additionalProperties"]["$ref"]);
+            Assert.AreEqual(125, (int)creatures["$defs"]["creature"]["properties"]["mastery"]["additionalProperties"]["maximum"]);
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": " + DamageModel.MaxPower + ",");
-            ReplaceInFile("creatures/creatures.json", "\"fire\": 15", "\"fire\": " + DamageModel.MaxMasteryPercent);
+            ReplaceInFile("creatures/creatures.json", "\"fire\": 125", "\"fire\": 125");
 
             DataImporter.Import(_src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(DamageModel.MaxPower, move.Power);
-            Assert.AreEqual(DamageModel.MaxMasteryPercent, cub.Mastery[0].Value);
-            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, -100), 0);
-            Assert.AreEqual(0, DamageModel.Compute(move.Power, cub.Mastery[0].Value, 100));
+            Assert.AreEqual(125, cub.Mastery[0].Value);
+            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, 25), 0);
+            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, 175), 0);
         }
 
         [TestCase("front", MoveShape.Front)]

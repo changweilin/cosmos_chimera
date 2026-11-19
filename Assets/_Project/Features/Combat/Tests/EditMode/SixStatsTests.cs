@@ -71,34 +71,32 @@ namespace Cosmimera.Combat.Tests
         }
 
         [Test]
-        public void Ratio_damage_matches_the_plain_formula_at_x1_and_scales_with_the_ratio()
+        public void Exponential_damage_doubles_every_50_points_and_matches_three_arg_at_equal_atk_def()
         {
-            Assert.That(DamageModel.Compute(60, 20, 10, 1000), Is.EqualTo(DamageModel.Compute(60, 20, 10)));
-            Assert.That(DamageModel.Compute(60, 0, 0, 2000), Is.EqualTo(120));
-            Assert.That(DamageModel.Compute(60, 0, 0, 250), Is.EqualTo(15));
-            Assert.That(DamageModel.Compute(1, 0, 99, 250), Is.EqualTo(1), "a non-immune hit still deals 1");
-            Assert.That(DamageModel.Compute(60, 0, 100, 4000), Is.Zero, "immunity stays 0");
-            Assert.Throws<ContractException>(() => DamageModel.Compute(60, 0, 0, 0));
-            Assert.Throws<ContractException>(
-                () => DamageModel.Compute(60, 0, 0, DerivedStatsCoefficients.MaxDamageRatioPermille + 1));
+            Assert.That(DamageModel.Compute(60, 120, 110, 100, 100), Is.EqualTo(DamageModel.Compute(60, 120, 110)));
+            Assert.That(DamageModel.Compute(60, 100, 100, 150, 100), Is.EqualTo(120));
+            Assert.That(DamageModel.Compute(60, 100, 100, 50, 100), Is.EqualTo(30));
+            Assert.That(DamageModel.Compute(1, 0, 175, 25, 175), Is.EqualTo(1), "non-zero power still deals >= 1");
+            Assert.Throws<ContractException>(() => DamageModel.Compute(60, 100, 100, -1, 100));
+            Assert.Throws<ContractException>(() => DamageModel.Compute(60, 100, 100, 100, -1));
         }
 
         [Test]
         public void Polarity_picks_the_attack_and_defence_pair()
         {
-            // Yang attacker 100 vs yang defence 50 → ×2; yin attacker 25 vs yin defence 100 → ×0.25.
+            // Yang attacker 100 vs yang defence 50 -> +50 (2x); yin attacker 25 vs yin defence 100 -> -75.
             Combatant attacker = Make(new CreatureStats(100, 30, 25, 100, 25, 25));
             var rng = new Pcg32(3UL, 1UL);
             CastContext yang = Cast(attacker, Hit(Polarity.Yang));
             Assert.That(yang.Attack, Is.EqualTo(100));
             HitReport r = Make(new CreatureStats(100, 30, 25, 25, 100, 50)).ReceiveHostile(yang, true, ref rng, 0);
-            Assert.That(r.Damage, Is.EqualTo(DamageModel.Compute(60, 0, 0, 2000)));
+            Assert.That(r.Damage, Is.EqualTo(DamageModel.Compute(60, 0, 0, 100, 50)));
 
             Combatant yinCaster = Make(new CreatureStats(100, 30, 25, 100, 25, 25));
             CastContext yin = Cast(yinCaster, Hit(Polarity.Yin));
             Assert.That(yin.Attack, Is.EqualTo(25));
             r = Make(new CreatureStats(100, 30, 25, 25, 100, 50)).ReceiveHostile(yin, true, ref rng, 0);
-            Assert.That(r.Damage, Is.EqualTo(DamageModel.Compute(60, 0, 0, 250)));
+            Assert.That(r.Damage, Is.EqualTo(DamageModel.Compute(60, 0, 0, 25, 100)));
         }
 
         [Test]

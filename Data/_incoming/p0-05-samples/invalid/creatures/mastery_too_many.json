@@ -15,22 +15,24 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": -25,
-      "fire": 25,
-      "earth": 0,
-      "ice": -10,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 100,
+      "wood": 100,
+      "water": 100,
+      "fire": 100,
+      "earth": 100,
+      "ice": 100,
+      "wind": 100,
+      "thunder": 100,
+      "light": 100,
+      "shadow": 100
     },
     "mastery": {
-      "fire": 15,
-      "wind": 10,
-      "water": 10,
-      "earth": 10
+      "fire": 125,
+      "wind": 50,
+      "water": 50,
+      "earth": 25,
+      "metal": 25,
+      "wood": 25
     },
     "stats": {"hp": 67, "speed": 101, "yin_atk": 30, "yang_atk": 50, "yin_def": 76, "yang_def": 76},
     "signature_move": "sample_ember_strike",
