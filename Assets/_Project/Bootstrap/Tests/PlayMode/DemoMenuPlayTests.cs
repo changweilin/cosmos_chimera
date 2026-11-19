@@ -123,10 +123,10 @@ namespace Cosmimera.Bootstrap.Tests
                 preview.SetPlayerTarget(null, null, "capsule", "craft_iron_blade", "craft_iron_guard", "craft_gem_pendant");
                 preview.Rotate(45f);
                 Assert.That(preview.Yaw, Is.EqualTo(225f).Within(0.01f));
-                preview.Render();
+                preview.SyncPose();
 
                 preview.SetCreatureTarget(starters[0], 1, "craft_copper_rod", "craft_linen_outfit", "");
-                preview.Render();
+                preview.SyncPose();
             }
 
             game.GetType().GetMethod("CloseJournal", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(game, null);

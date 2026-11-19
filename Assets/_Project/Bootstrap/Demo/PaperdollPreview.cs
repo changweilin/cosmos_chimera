@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Cosmimera.Bootstrap.Demo
 {
@@ -63,7 +62,11 @@ namespace Cosmimera.Bootstrap.Demo
             _rt.Create();
 
             _camera = camGo.AddComponent<Camera>();
-            _camera.enabled = false;
+            // URP renders this camera itself each frame (targetTexture set, drawn before the main camera
+            // via lower depth). A manual Camera.Render() from OnGUI runs nested inside
+            // UniversalRenderPipeline.Render and corrupts its frame data (UniversalCameraData "already created").
+            _camera.enabled = true;
+            _camera.depth = -100f;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = new Color(0.05f, 0.07f, 0.12f, 1f);
             _camera.fieldOfView = 32f;
@@ -152,12 +155,16 @@ namespace Cosmimera.Bootstrap.Demo
             SyncGear(weaponId, armorId, accessoryId, isCreature: true);
         }
 
-        internal void Render()
+        /// <summary>Applies the current yaw to the stage so the next pipeline frame shows it.</summary>
+        /// <remarks>
+        /// Pre: main thread; safe to call from OnGUI (it never triggers a render).
+        /// Post: the preview pivot faces <see cref="Yaw"/>; <see cref="Texture"/> updates on the next URP frame.
+        /// Side effects: modifies the pivot transform; no-op after Dispose.
+        /// </remarks>
+        internal void SyncPose()
         {
-            if (_disposed || _camera == null || _rt == null) return;
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
+            if (_disposed || _pivot == null) return;
             _pivot.localRotation = Quaternion.Euler(0f, _yaw, 0f);
-            _camera.Render();
         }
 
         private void FrameModel(bool isCreature)

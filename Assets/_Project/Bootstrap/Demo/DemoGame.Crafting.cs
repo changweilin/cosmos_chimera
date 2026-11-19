@@ -394,10 +394,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _paperdollPreview.SetCreatureTarget(def, _equipmentOwner, weaponId, armorId, accessoryId);
             }
 
-            if (Event.current.type == EventType.Repaint)
-            {
-                _paperdollPreview.Render();
-            }
+            _paperdollPreview.SyncPose();
         }
 
         private void DrawLobbyCrafting(AdventurePanel ui, HashSet<GameData.FieldUtility> utilities)
