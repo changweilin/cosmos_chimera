@@ -481,5 +481,93 @@
         }
       ]
     }
+  },
+  {
+    "id": "raw_stardust",
+    "category": "raw",
+    "tier": 1,
+    "sources": [
+      "crystal"
+    ],
+    "utility": "gather_essence",
+    "quantity": 2,
+    "season": "all"
+  },
+  {
+    "id": "raw_aether_core",
+    "category": "raw",
+    "tier": 2,
+    "sources": [
+      "crystal",
+      "gem_geode"
+    ],
+    "utility": "gather_essence",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "raw_astral_marrow",
+    "category": "raw",
+    "tier": 3,
+    "sources": [
+      "gem_geode"
+    ],
+    "utility": "gather_essence",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_sigil_stone_t1",
+    "category": "processed",
+    "tier": 1,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_sigil_stone_t2",
+    "category": "processed",
+    "tier": 2,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_sigil_stone_t3",
+    "category": "processed",
+    "tier": 3,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_magic_stone",
+    "category": "processed",
+    "tier": 3,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_mithril_ingot",
+    "category": "processed",
+    "tier": 3,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
+  },
+  {
+    "id": "craft_adamant_ingot",
+    "category": "processed",
+    "tier": 3,
+    "sources": [],
+    "utility": "none",
+    "quantity": 1,
+    "season": "all"
   }
 ]

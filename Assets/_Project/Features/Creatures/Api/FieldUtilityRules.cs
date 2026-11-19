@@ -38,7 +38,8 @@ namespace Cosmimera.Creatures
             bool canSetTrap = false,
             bool canCastNet = false,
             bool canHarvestCrops = false,
-            bool canCulinaryPrep = false)
+            bool canCulinaryPrep = false,
+            bool canGatherEssence = false)
         {
             CatchRateBonusPercent = catchRateBonusPercent;
             DropRateBonusPercent = dropRateBonusPercent;
@@ -66,6 +67,7 @@ namespace Cosmimera.Creatures
             CanCastNet = canCastNet;
             CanHarvestCrops = canHarvestCrops;
             CanCulinaryPrep = canCulinaryPrep;
+            CanGatherEssence = canGatherEssence;
         }
 
         /// <summary>Flat bonus (percentage points) added to capture rolls.</summary>
@@ -171,6 +173,10 @@ namespace Cosmimera.Creatures
         /// <summary>True when the team has culinary prep mastery for cold-mix, grinding, and quality bonuses.</summary>
         /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
         public bool CanCulinaryPrep { get; }
+
+        /// <summary>True when the team can gather enchanting essences (or has DropRateUp / ScoutPotential fallback).</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanGatherEssence { get; }
     }
 
     /// <summary>
@@ -255,6 +261,22 @@ namespace Cosmimera.Creatures
                 case FieldUtility.SetTrap:
                 case FieldUtility.CastNet:
                 case FieldUtility.HarvestCrops:
+                case FieldUtility.CraftSmeltMetal:
+                case FieldUtility.CraftSmeltThunder:
+                case FieldUtility.CraftWeaveWind:
+                case FieldUtility.CraftWeaveShadow:
+                case FieldUtility.CraftTailorShadow:
+                case FieldUtility.CraftTailorLight:
+                case FieldUtility.CraftSmithFire:
+                case FieldUtility.CraftSmithEarth:
+                case FieldUtility.CraftCarpentryEarth:
+                case FieldUtility.CraftCarpentryWind:
+                case FieldUtility.CraftJewelcraftEarth:
+                case FieldUtility.CraftJewelcraftIce:
+                case FieldUtility.CraftDyeWater:
+                case FieldUtility.CraftDyeLight:
+                case FieldUtility.CraftEnchantFire:
+                case FieldUtility.CraftEnchantShadow:
                     return FieldUtilityKind.Move;
 
                 default:
@@ -480,13 +502,14 @@ namespace Cosmimera.Creatures
             bool castNet = false;
             bool harvestCrops = false;
             bool culinaryPrep = false;
+            bool gatherEssence = false;
 
             foreach (FieldUtility u in activeUtilities)
             {
                 switch (u)
                 {
                     case FieldUtility.CatchRateUp: catchBonus = CatchRateBonusPercentValue; break;
-                    case FieldUtility.DropRateUp: dropBonus = DropRateBonusPercentValue; break;
+                    case FieldUtility.DropRateUp: dropBonus = DropRateBonusPercentValue; gatherEssence = true; break;
                     case FieldUtility.MagnetPickupDouble: pickupMult = 2; break;
                     case FieldUtility.PartyStealth: detectPermille = StealthDetectionPermille; break;
                     case FieldUtility.Mount:
@@ -505,7 +528,7 @@ namespace Cosmimera.Creatures
                     case FieldUtility.CampfireRevive: campfireRevive = true; break;
                     case FieldUtility.OpenObstacle: openObstacle = true; break;
                     case FieldUtility.StealItem: stealItem = true; break;
-                    case FieldUtility.ScoutPotential: scoutPotential = true; break;
+                    case FieldUtility.ScoutPotential: scoutPotential = true; gatherEssence = true; break;
                     case FieldUtility.Dive: dive = true; break;
                     case FieldUtility.Fishing: fishing = true; break;
                     case FieldUtility.ForageBerries: forageBerries = true; break;
@@ -518,6 +541,7 @@ namespace Cosmimera.Creatures
                     case FieldUtility.CastNet: castNet = true; break;
                     case FieldUtility.HarvestCrops: harvestCrops = true; break;
                     case FieldUtility.CulinaryPrep: culinaryPrep = true; break;
+                    case FieldUtility.GatherEssence: gatherEssence = true; break;
                 }
             }
 
@@ -547,7 +571,8 @@ namespace Cosmimera.Creatures
                 setTrap,
                 castNet,
                 harvestCrops,
-                culinaryPrep);
+                culinaryPrep,
+                gatherEssence);
         }
 
         /// <summary>Checks whether <paramref name="utility"/> aligns thematically and mechanically with <paramref name="element"/>.</summary>
@@ -601,6 +626,31 @@ namespace Cosmimera.Creatures
                 case FieldUtility.CastNet: return element == Element.Water || element == Element.Wind;
                 case FieldUtility.HarvestCrops: return element == Element.Wood || element == Element.Earth || element == Element.Metal;
                 case FieldUtility.CulinaryPrep: return element == Element.Ice || element == Element.Wood || element == Element.Metal || element == Element.Water;
+                case FieldUtility.GatherEssence: return element == Element.Earth || element == Element.Light || element == Element.Metal;
+                case FieldUtility.CraftSmeltFire:
+                case FieldUtility.CraftSmithFire:
+                case FieldUtility.CraftEnchantFire: return element == Element.Fire;
+                case FieldUtility.CraftSmeltMetal:
+                case FieldUtility.CraftSmithMetal: return element == Element.Metal;
+                case FieldUtility.CraftSmeltThunder: return element == Element.Thunder;
+                case FieldUtility.CraftWeaveWood:
+                case FieldUtility.CraftTailorWood:
+                case FieldUtility.CraftCarpentryWood:
+                case FieldUtility.CraftDyeWood: return element == Element.Wood;
+                case FieldUtility.CraftWeaveWind:
+                case FieldUtility.CraftCarpentryWind: return element == Element.Wind;
+                case FieldUtility.CraftWeaveShadow:
+                case FieldUtility.CraftTailorShadow:
+                case FieldUtility.CraftEnchantShadow: return element == Element.Shadow;
+                case FieldUtility.CraftTailorLight:
+                case FieldUtility.CraftJewelcraftLight:
+                case FieldUtility.CraftDyeLight:
+                case FieldUtility.CraftEnchantLight: return element == Element.Light;
+                case FieldUtility.CraftSmithEarth:
+                case FieldUtility.CraftCarpentryEarth:
+                case FieldUtility.CraftJewelcraftEarth: return element == Element.Earth;
+                case FieldUtility.CraftJewelcraftIce: return element == Element.Ice;
+                case FieldUtility.CraftDyeWater: return element == Element.Water;
                 default: return false;
             }
         }

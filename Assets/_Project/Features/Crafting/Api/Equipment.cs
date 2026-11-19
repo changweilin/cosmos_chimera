@@ -126,8 +126,11 @@ namespace Cosmimera.Crafting
                     PlayerYinDefence != 0 || PlayerYangDefence != 0)
                     throw new InvalidDataException("Weapons give the player nothing");
                 JToken w = json["weapon"];
+                WeaponRange range = w["range"] == null ? WeaponRange.Melee : ParseWeaponRange((string)w["range"]);
+                WeaponPolarity polarity = w["polarity"] == null ? WeaponPolarity.Balanced : ParseWeaponPolarity((string)w["polarity"]);
                 Weapon = new WeaponProfile(ParseElement((string)w["element"]), ReadDelta(w, "element_mastery", 0, 100),
-                    ReadDelta(w, "power_permille", 1, DamageModel.MaxWeaponPermille), ReadDelta(w, "speed_permille", 100, 10000));
+                    ReadDelta(w, "power_permille", 1, DamageModel.MaxWeaponPermille), ReadDelta(w, "speed_permille", 100, 10000),
+                    range, polarity);
             }
             if (!(json["creature_effects"] is JArray effects) || effects.Count > 32)
                 throw new InvalidDataException("Equipment requires at most 32 effects");
@@ -186,6 +189,21 @@ namespace Cosmimera.Crafting
                 !Enum.IsDefined(typeof(Element), element)) throw new InvalidDataException("Invalid equipment element");
             return element;
         }
+
+        private static WeaponRange ParseWeaponRange(string id) => id switch
+        {
+            "melee" => WeaponRange.Melee,
+            "ranged" => WeaponRange.Ranged,
+            _ => throw new InvalidDataException("Invalid weapon range: " + id),
+        };
+
+        private static WeaponPolarity ParseWeaponPolarity(string id) => id switch
+        {
+            "balanced" => WeaponPolarity.Balanced,
+            "yin" => WeaponPolarity.Yin,
+            "yang" => WeaponPolarity.Yang,
+            _ => throw new InvalidDataException("Invalid weapon polarity: " + id),
+        };
 
         // Defence keys came after the first item drafts; absent means the item adds no defence.
         private static int ReadOptional(JToken value, string name, int min, int max)

@@ -54,11 +54,8 @@ namespace Cosmimera.Crafting
                 : CraftResult.MissingMaterials;
         }
 
-        internal static bool HasUtility(IReadOnlyCollection<FieldUtility> utilities, FieldUtility required)
-        {
-            foreach (FieldUtility utility in utilities) if (utility == required) return true;
-            return false;
-        }
+        internal static bool HasUtility(IReadOnlyCollection<FieldUtility> utilities, FieldUtility required) =>
+            CraftingExpansionRules.SatisfiesSkill(utilities, required);
     }
 
     /// <summary>Run-scoped depletion of gathering nodes without changing scatter generation or meshes.</summary>

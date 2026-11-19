@@ -23,10 +23,13 @@ namespace Cosmimera.Combat
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public CastMove(string id, Element element, MoveKind kind, int power, int accuracyPercent, int baseCooldownMs,
-            bool hasEffect, in EffectSpec effect, int effectDurationMs, Polarity polarity = Polarity.Yin)
+            bool hasEffect, in EffectSpec effect, int effectDurationMs, Polarity polarity = Polarity.Yin,
+            RangeClass rangeClass = RangeClass.Melee)
         {
             Contract.Requires(polarity == Polarity.Yin || polarity == Polarity.Yang, "undefined Polarity");
+            Contract.Requires(rangeClass >= RangeClass.Melee && rangeClass <= RangeClass.Long, "undefined RangeClass");
             Polarity = polarity;
+            RangeClass = rangeClass;
             Contract.Requires(!string.IsNullOrEmpty(id), "id must be non-empty");
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
             Contract.Requires(kind >= MoveKind.Damage && kind <= MoveKind.Both, "undefined MoveKind");
@@ -71,6 +74,10 @@ namespace Cosmimera.Combat
         /// <summary>Damage polarity: selects 陰攻/陽攻 and 陰守/陽守 (combat.md#傷害公式).</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
         public Polarity Polarity { get; }
+
+        /// <summary>Coarse engagement distance band used for weapon-move range matching.</summary>
+        /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
+        public RangeClass RangeClass { get; }
 
         /// <summary>Damage, effect or both.</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -125,7 +132,7 @@ namespace Cosmimera.Combat
             EffectSpec effect = hasEffect ? EffectSpec.FromDef(effectDef) : default;
             int duration = def.HasEffectDuration ? def.EffectDurationMsFor(downgraded) : 0;
             return new CastMove(def.Id, def.Element, def.Kind, def.PowerFor(downgraded), def.AccuracyFor(downgraded),
-                def.CooldownMsFor(downgraded), hasEffect, effect, duration, def.Polarity);
+                def.CooldownMsFor(downgraded), hasEffect, effect, duration, def.Polarity, def.RangeClass);
         }
     }
 
@@ -431,6 +438,7 @@ namespace Cosmimera.Combat
         private bool _hasOverloadFormStats;
         private WeaponLoadout _weapons;
         private long _acceptedCasts;
+        private readonly bool[] _elementFloor100 = new bool[ElementCount];
 
         /// <summary>Creates a combatant at full HP with all moves ready.</summary>
         /// <remarks>
@@ -721,24 +729,40 @@ namespace Cosmimera.Combat
             long masteryDelta = _totals.MasteryDelta(move.Element);
             int weaponPower = 1000;
             int speed = 1000;
+            int weaponAcc = 0;
+            int weaponCritRate = 0;
+            int weaponCritDmg = 0;
+            int weaponCdPct = 0;
             if (_weapons.HandCount > 0)
             {
-                // REQ: crafting.md#武器數值模型 — dual wield alternates hands per accepted cast; a hand's element
-                // mastery counts only when it matches the move.
+                // REQ: crafting.md#武器數值模型 — dual wield alternates hands per accepted cast; a mismatched hand
+                // (distance or polarity) grants zero weapon bonuses for that cast.
                 WeaponProfile hand = _weapons.Hand(_acceptedCasts);
-                if (hand.Element == move.Element)
-                {
-                    masteryDelta += hand.ElementMastery;
-                }
-
-                weaponPower = _weapons.PowerPermille(hand);
-                speed = _weapons.SpeedPermille(hand);
                 _acceptedCasts++;
+                if (hand.MatchesMove(move.RangeClass, move.DealsDamage, move.Polarity))
+                {
+                    if (hand.Element == move.Element)
+                    {
+                        masteryDelta += hand.ElementMastery;
+                    }
+
+                    weaponPower = _weapons.PowerPermille(hand);
+                    speed = _weapons.SpeedPermille(hand);
+                    weaponAcc = hand.Affixes.AccuracyDelta;
+                    weaponCritRate = hand.Affixes.CritRateDelta;
+                    weaponCritDmg = hand.Affixes.CritDamageDelta;
+                    weaponCdPct = hand.Affixes.CdPercentDelta;
+                }
             }
 
             int mastery = EffectMath.EffectiveMastery(_mastery[(int)move.Element], masteryDelta);
+            if (_elementFloor100[(int)move.Element] && mastery < 100)
+            {
+                mastery = 100;
+            }
+
             int cd = EffectMath.EffectiveCooldownMs(_stats, move.BaseCooldownMs, _core.Speed,
-                _totals.CdPercent(move.Element) + weather.CdDeltaPercent(move.Element), _rules);
+                _totals.CdPercent(move.Element) + weather.CdDeltaPercent(move.Element) + weaponCdPct, _rules);
             if (speed != 1000)
             {
                 long sped = ((long)cd * 1000 + speed - 1) / speed;
@@ -747,10 +771,29 @@ namespace Cosmimera.Combat
             }
 
             Cooldowns.Start(slot, nowMs, cd);
+            int critRatePermille = (int)ClampLong(_rules.CritBaseRatePermille + (_totals.CritRateDelta + weaponCritRate) * 10,
+                0, DerivedStats.Permille);
+            int critDamagePercent = (int)ClampLong(_rules.CritBaseDamagePercent + _totals.CritDamageDelta + weaponCritDmg,
+                100, DamageModel.MaxCritDamagePercent);
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
-                weather.PowerDeltaPercent(move.Element), weaponPower, ClampInt(_totals.AccuracyDelta, -1000, 1000),
-                CritRatePermille(), CritDamagePercent(), _core.Attack(move.Polarity));
+                weather.PowerDeltaPercent(move.Element), weaponPower,
+                ClampInt(_totals.AccuracyDelta + weaponAcc, -1000, 1000),
+                critRatePermille, critDamagePercent, _core.Attack(move.Polarity));
             return CastResult.Accepted;
+        }
+
+        /// <summary>Sets or clears the post-bonus 100% element effectiveness floor for <paramref name="element"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/crafting.md#製造擴充 — accessory elemental affix guarantees >= 100% after all bonuses.
+        /// Pre: Book.WatermarkMs == 0; element defined.
+        /// Post: casts of element clamp effective mastery to at least 100.
+        /// Side effects: mutates element floor flag.
+        /// </remarks>
+        public void SetElementMasteryFloor(Element element, bool enabled)
+        {
+            Contract.Requires(Book.WatermarkMs == 0, "element floors must be assigned before simulation time advances");
+            Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
+            _elementFloor100[(int)element] = enabled;
         }
 
         /// <summary>Replaces the departure weapon loadout; default(WeaponLoadout) is unarmed.</summary>

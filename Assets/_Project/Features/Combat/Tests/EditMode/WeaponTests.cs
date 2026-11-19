@@ -100,5 +100,44 @@ namespace Cosmimera.Combat.Tests
             Assert.That(DamageModel.ScalePower(100, 10, 1000), Is.EqualTo(DamageModel.ScalePower(100, 10)));
             Assert.Throws<ContractException>(() => DamageModel.ScalePower(100, 0, 0));
         }
+
+        [Test]
+        public void Weapon_range_and_polarity_mismatch_grants_zero_bonuses_and_accessory_floor_clamps_to_100()
+        {
+            var yinMelee = new WeaponProfile(Element.Fire, 25, 1500, 2000, WeaponRange.Melee, WeaponPolarity.Yin,
+                new WeaponAffixes(10, 15, 30, -20));
+            Combatant c = Make();
+            c.SetWeapons(new WeaponLoadout(1, yinMelee, default, 35, 0, false));
+            c.SetElementMasteryFloor(Element.Water, true);
+
+            // Matching melee + yin damage move gets all weapon bonuses.
+            var matchMove = new CastMove("m_match", Element.Fire, MoveKind.Damage, 50, 100, 2000, false, default, 0,
+                Polarity.Yin, RangeClass.Melee);
+            CastContext matchCtx = Cast(c, matchMove, 0, 0);
+            Assert.That(matchCtx.MasteryPercent, Is.EqualTo(25));
+            Assert.That(matchCtx.WeaponPowerPermille, Is.GreaterThan(1500));
+            Assert.That(matchCtx.AccuracyDelta, Is.EqualTo(10));
+
+            // Mismatched polarity (Yang) or mismatched range (Long) grants zero weapon bonuses.
+            var wrongPolarity = new CastMove("m_yang", Element.Fire, MoveKind.Damage, 50, 100, 2000, false, default, 0,
+                Polarity.Yang, RangeClass.Melee);
+            CastContext yangCtx = Cast(c, wrongPolarity, 10000, 0);
+            Assert.That(yangCtx.MasteryPercent, Is.Zero);
+            Assert.That(yangCtx.WeaponPowerPermille, Is.EqualTo(1000));
+            Assert.That(yangCtx.AccuracyDelta, Is.Zero);
+
+            var wrongRange = new CastMove("m_ranged", Element.Fire, MoveKind.Damage, 50, 100, 2000, false, default, 0,
+                Polarity.Yin, RangeClass.Long);
+            CastContext rangedCtx = Cast(c, wrongRange, 20000, 0);
+            Assert.That(rangedCtx.MasteryPercent, Is.Zero);
+            Assert.That(rangedCtx.WeaponPowerPermille, Is.EqualTo(1000));
+
+            // Pure effect move checks distance only, and Water floor clamps mastery to 100%.
+            var pureEffect = new CastMove("m_buff", Element.Water, MoveKind.Effect, 0, 100, 2000, true,
+                new EffectSpec(EffectType.AccuracyMod, false, default, 5, 0, 1), 1000, Polarity.Yang, RangeClass.Melee);
+            CastContext buffCtx = Cast(c, pureEffect, 30000, 0);
+            Assert.That(buffCtx.MasteryPercent, Is.EqualTo(100));
+            Assert.That(buffCtx.AccuracyDelta, Is.EqualTo(10));
+        }
     }
 }

@@ -25,8 +25,14 @@
           "capture",
           "trap",
           "tool",
-          "equipment"
+          "equipment",
+          "fashion"
         ]
+      },
+      "tier": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 3
       },
       "sources": {
         "type": "array",
@@ -173,6 +179,23 @@
                 "type": "integer",
                 "minimum": 100,
                 "maximum": 10000
+              },
+              "range": {
+                "enum": [
+                  "melee",
+                  "ranged"
+                ]
+              },
+              "polarity": {
+                "enum": [
+                  "balanced",
+                  "yin",
+                  "yang"
+                ]
+              },
+              "weapon_type": {
+                "type": "string",
+                "maxLength": 64
               }
             }
           }

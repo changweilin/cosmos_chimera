@@ -142,7 +142,7 @@ namespace Cosmimera.Crafting
                 string id = Id(item["id"]);
                 Check(!_items.ContainsKey(id), "duplicate item id: " + id);
                 string category = Text(item["category"]);
-                Check(Array.IndexOf(new[] { "raw", "processed", "capture", "trap", "tool", "equipment" }, category) >= 0, "invalid category");
+                Check(Array.IndexOf(new[] { "raw", "processed", "capture", "trap", "tool", "equipment", "fashion" }, category) >= 0, "invalid category");
                 var sources = new List<string>();
                 Check(item["sources"] is JArray, "sources must be an array");
                 foreach (JToken source in (JArray)item["sources"]) sources.Add(Id(source));

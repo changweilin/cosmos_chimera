@@ -492,9 +492,9 @@ namespace Cosmimera.Bootstrap.Demo
                     QuickEscape();
                     GUIUtility.ExitGUI();
                 }
-                else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
+                else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
                     && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl) ui.Label(_copy.Ui("ui.skills.unavailable"));
-                else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
+                else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
                     utility != FieldUtility.CatchRateUp && utility != FieldUtility.DropRateUp &&
                     utility != FieldUtility.PreventEscape && utility != FieldUtility.MagnetPickupDouble &&
                     utility != FieldUtility.ForageBerries && utility != FieldUtility.ProduceMilk &&
