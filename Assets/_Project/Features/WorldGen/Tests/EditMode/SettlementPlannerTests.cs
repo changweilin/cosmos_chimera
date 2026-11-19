@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class SettlementPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v2).
-        private const ulong SnapshotSeed12345V3 = 12227026268872262454UL;
+        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v4).
+        private const ulong SnapshotSeed12345V4 = 11360243014706446998UL;
 
         private const float Radius = 640f;
         private readonly List<Object> _created = new List<Object>();
@@ -343,11 +343,79 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Non_mainland_settlements_only_spawn_on_planet_plus_and_start_stays_on_land()
+        {
+            // Continent around (0,1,0), ocean midband, and an island cap near (0,-1,0).
+            System.Func<float3, bool> archipelagic = d => d.y > 0.35f || d.y < -0.75f;
+            foreach (float smallRadius in new[] { 320f, 640f })
+            {
+                var p = new PlanetConfig(smallRadius, float3.zero);
+                RunPlan plan = RunPlanner.Generate(p, 7, _type, CreatureStage.Adult, _pool, _vocab, archipelagic);
+                RunLayout layout = SettlementPlanner.Generate(p, plan, archipelagic);
+                Assert.That(layout.Settlements[0].Domain, Is.EqualTo(SettlementDomain.Land));
+                foreach (RunSettlement s in layout.Settlements)
+                {
+                    Assert.That(s.Domain, Is.EqualTo(SettlementDomain.Land), $"radius {smallRadius}");
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.SkyTribe));
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.DeepSeaCity));
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.IslandSettlement));
+                }
+            }
+
+            foreach (float bigRadius in new[] { 960f, 1280f })
+            {
+                var p = new PlanetConfig(bigRadius, float3.zero);
+                bool sawSky = false, sawDeep = false, sawIsland = false;
+                for (ulong seed = 0; seed < 12 && (!sawSky || !sawDeep || !sawIsland); seed++)
+                {
+                    RunPlan plan = RunPlanner.Generate(p, seed, _type, CreatureStage.Adult, _pool, _vocab, archipelagic);
+                    RunLayout layout = SettlementPlanner.Generate(p, plan, archipelagic);
+                    Assert.That(layout.Settlements[0].Domain, Is.EqualTo(SettlementDomain.Land));
+                    foreach (RunSettlement s in layout.Settlements)
+                    {
+                        if (s.Kind == SettlementKind.SkyTribe)
+                        {
+                            sawSky = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.SkyIsland));
+                            Assert.That(s.AltitudeM, Is.InRange(1f, bigRadius));
+                            Assert.That(s.BuildingCount, Is.InRange(2, 3));
+                        }
+                        else if (s.Kind == SettlementKind.DeepSeaCity)
+                        {
+                            sawDeep = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.DeepSea));
+                            Assert.That(s.AltitudeM, Is.LessThan(-1f));
+                            Assert.That(s.BuildingCount, Is.InRange(1, 4));
+                            for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
+                            {
+                                Assert.That(archipelagic(layout.Buildings[b].Direction), Is.False);
+                            }
+                        }
+                        else if (s.Kind == SettlementKind.IslandSettlement)
+                        {
+                            sawIsland = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.Island));
+                            Assert.That(s.BuildingCount, Is.InRange(1, 3));
+                            for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
+                            {
+                                Assert.That(archipelagic(layout.Buildings[b].Direction), Is.True);
+                            }
+                        }
+                    }
+                }
+
+                Assert.That(sawSky, Is.True, $"radius {bigRadius} should place a SkyTribe");
+                Assert.That(sawDeep, Is.True, $"radius {bigRadius} should place a DeepSeaCity");
+                Assert.That(sawIsland, Is.True, $"radius {bigRadius} should place an IslandSettlement");
+            }
+        }
+
+        [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(3), "bump the pin with the version");
+            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(4), "bump the pin with the version");
             ulong h = SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(12345), null));
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V3), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V4), "actual " + h);
         }
     }
 }

@@ -480,12 +480,27 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (FieldUtility utility in _utilities)
             {
                 ui.Label(_copy.Ui("utility." + utility) + " · " + _copy.Ui("utility.desc." + utility));
-                bool toggle = utility == FieldUtility.Mount || utility == FieldUtility.Levitate || utility == FieldUtility.PartyStealth;
+                bool toggle = utility == FieldUtility.Mount || utility == FieldUtility.Fly || utility == FieldUtility.Levitate ||
+                              utility == FieldUtility.Swim || utility == FieldUtility.Dive || utility == FieldUtility.PartyStealth;
                 if (toggle && ui.Button(_copy.Ui(_enabledUtilities.Contains(utility) ? "ui.skills.stop" : "ui.skills.use")))
                 {
                     if (!_enabledUtilities.Remove(utility)) _enabledUtilities.Add(utility);
                     ApplyUtilities();
                     GUIUtility.ExitGUI();
+                }
+                else if (utility == FieldUtility.ReturnVillage && _layout != null)
+                {
+                    for (int sIdx = 0; sIdx < _layout.Settlements.Count; sIdx++)
+                    {
+                        if (!_discoveredSettlements.Contains(sIdx)) continue;
+                        RunSettlement target = _layout.Settlements[sIdx];
+                        string targetName = SettlementDisplayName(target);
+                        if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + targetName))
+                        {
+                            ui.Message = TryReturnToSettlement(sIdx, targetName);
+                            GUIUtility.ExitGUI();
+                        }
+                    }
                 }
                 else if (utility == FieldUtility.QuickEscape && ui.Button(_copy.Ui("ui.skills.use"), CanQuickEscape()))
                 {
@@ -493,7 +508,7 @@ namespace Cosmimera.Bootstrap.Demo
                     GUIUtility.ExitGUI();
                 }
                 else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
-                    && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl) ui.Label(_copy.Ui("ui.skills.unavailable"));
+                    && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl && utility != FieldUtility.ReturnVillage) ui.Label(_copy.Ui("ui.skills.unavailable"));
                 else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
                     utility != FieldUtility.CatchRateUp && utility != FieldUtility.DropRateUp &&
                     utility != FieldUtility.PreventEscape && utility != FieldUtility.MagnetPickupDouble &&
@@ -542,6 +557,58 @@ namespace Cosmimera.Bootstrap.Demo
             return engaged;
         }
 
+        private string SettlementDisplayName(RunSettlement settlement)
+        {
+            if (settlement.Index == 0) return _copy.Ui("ui.skills.return_start");
+            return settlement.Kind switch
+            {
+                SettlementKind.SkyTribe => _copy.Ui("ui.skills.return_sky"),
+                SettlementKind.DeepSeaCity => _copy.Ui("ui.skills.return_deep_sea"),
+                SettlementKind.IslandSettlement => _copy.Ui("ui.skills.return_island"),
+                _ => _copy.Ui("ui.skills.return_village").Replace("{index}", settlement.Index.ToString()),
+            };
+        }
+
+        private string TryReturnToSettlement(int settlementIndex, string targetName)
+        {
+            if (_layout == null || settlementIndex < 0 || settlementIndex >= _layout.Settlements.Count)
+            {
+                return _copy.Ui("ui.skills.unavailable");
+            }
+
+            RunSettlement target = _layout.Settlements[settlementIndex];
+            ReturnSettlementResult access = SpatialTraversalRules.CanReturnToSettlement(
+                _utilityModifiers, target.Domain, _discoveredSettlements.Contains(settlementIndex));
+            if (access.RequiresDive)
+            {
+                return _copy.Ui("ui.skills.return_needs_dive").Replace("{target}", targetName);
+            }
+
+            if (!access.Allowed)
+            {
+                return _copy.Ui("ui.skills.unavailable");
+            }
+
+            RelocatePlayerAndParty(target.Center, SettlementAltitudeAt(target) + 1f);
+            return _copy.Ui("ui.skills.returned").Replace("{target}", targetName);
+        }
+
+        private void RelocatePlayerAndParty(float3 destination, float altitudeM)
+        {
+            _encounter.ForceDisengageAllWild();
+            _encounter.RelocateParty(destination);
+            var body = _rig.Character.GetComponent<Rigidbody>();
+            Vector3 position = _rig.Config.ToWorld(destination, altitudeM);
+            body.position = position;
+            body.linearVelocity = Vector3.zero;
+            _rig.Character.transform.position = position;
+            _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
+            _lockedTarget = -1;
+            _lockedObjectId = -1;
+            _encounter.ClearObjectFocus();
+            UpdateEnvironment(position);
+        }
+
         private void QuickEscape()
         {
             if (!CanQuickEscape()) { _journal.Message = _copy.Ui("ui.skills.no_battle"); return; }
@@ -564,18 +631,7 @@ namespace Cosmimera.Bootstrap.Demo
                     { safe = false; break; }
                 }
                 if (!safe) continue;
-                _encounter.ForceDisengageAllWild();
-                _encounter.RelocateParty(destination);
-                var body = _rig.Character.GetComponent<Rigidbody>();
-                Vector3 position = _rig.Config.ToWorld(destination, _rig.SurfaceHeight(destination) + 1f);
-                body.position = position;
-                body.linearVelocity = Vector3.zero;
-                _rig.Character.transform.position = position;
-                _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
-                _lockedTarget = -1;
-                _lockedObjectId = -1;
-                _encounter.ClearObjectFocus();
-                UpdateEnvironment(position);
+                RelocatePlayerAndParty(destination, _rig.SurfaceHeight(destination) + 1f);
                 _journal.Message = _copy.Ui("ui.skills.escaped");
                 return;
             }

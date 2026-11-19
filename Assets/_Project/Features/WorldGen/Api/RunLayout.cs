@@ -33,6 +33,26 @@ namespace Cosmimera.WorldGen
         Ruins = 5,
         /// <summary>Pillar ring around the boss spawn (BOSS 巢穴).</summary>
         Lair = 6,
+        /// <summary>Smaller island settlement across water (島嶼聚落; Planet+).</summary>
+        IslandSettlement = 7,
+        /// <summary>Smaller tribe perched on a sky island below stratosphere (空島部落; Planet+).</summary>
+        SkyTribe = 8,
+        /// <summary>Smaller underwater settlement anchored on deep seabed (深海城市; Planet+).</summary>
+        DeepSeaCity = 9,
+    }
+
+    /// <summary>Vertical or aquatic domain of a settlement, governing traversal and return rules.</summary>
+    /// <remarks>Pre: none. Post: stable values. Side effects: none.</remarks>
+    public enum SettlementDomain
+    {
+        /// <summary>Mainland surface terrain (starting towns always use this domain).</summary>
+        Land = 0,
+        /// <summary>Sea-separated island terrain reachable across water via Swim or Dive.</summary>
+        Island = 1,
+        /// <summary>Floating sky island at or below stratosphere height (1.0 R), reachable via Fly or Levitate.</summary>
+        SkyIsland = 2,
+        /// <summary>Deep-sea floor (> 1 m depth), reachable via Dive.</summary>
+        DeepSea = 3,
     }
 
     /// <summary>Building kind (rule-layer footprint only; art is chosen by the presentation layer).</summary>
@@ -139,7 +159,15 @@ namespace Cosmimera.WorldGen
     /// <remarks>Pre: produced by SettlementPlanner. Post: immutable. Side effects: none.</remarks>
     public sealed class RunSettlement
     {
-        internal RunSettlement(int index, int region, SettlementKind kind, float3 center, int firstBuilding, int buildingCount)
+        internal RunSettlement(
+            int index,
+            int region,
+            SettlementKind kind,
+            float3 center,
+            int firstBuilding,
+            int buildingCount,
+            SettlementDomain domain = SettlementDomain.Land,
+            float altitudeM = 0f)
         {
             Index = index;
             Region = region;
@@ -147,6 +175,8 @@ namespace Cosmimera.WorldGen
             Center = center;
             FirstBuilding = firstBuilding;
             BuildingCount = buildingCount;
+            Domain = domain;
+            AltitudeM = altitudeM;
         }
 
         /// <summary>Index in RunLayout.Settlements.</summary>
@@ -169,9 +199,17 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
         public int FirstBuilding { get; }
 
-        /// <summary>Number of buildings (lots on sea are dropped, so it may be 0).</summary>
+        /// <summary>Number of buildings (lots on sea are dropped for surface settlements, so it may be 0).</summary>
         /// <remarks>Pre: none. Post: >= 0; Buildings[FirstBuilding .. +BuildingCount) belong here. Side effects: none.</remarks>
         public int BuildingCount { get; }
+
+        /// <summary>Vertical/aquatic domain where this settlement exists.</summary>
+        /// <remarks>Pre: none. Post: defined <see cref="SettlementDomain"/>; index 0 starting town is always Land. Side effects: none.</remarks>
+        public SettlementDomain Domain { get; }
+
+        /// <summary>Settlement vertical datum offset in meters (> 0 for SkyIsland deck, &lt; 0 nominal depth for DeepSea, 0 for ground).</summary>
+        /// <remarks>Pre: none. Post: finite float in meters. Side effects: none.</remarks>
+        public float AltitudeM { get; }
     }
 
     /// <summary>Roads and settlements of one planet run, generated from a RunPlan.</summary>

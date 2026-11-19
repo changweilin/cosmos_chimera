@@ -100,5 +100,25 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(copy.PlanetName("unknown_planet", 1), Is.EqualTo(copy.Planet("unknown_planet")));
         }
+
+        [TestCase("zh-TW")]
+        [TestCase("en")]
+        [TestCase("ja")]
+        public void Shipped_traversal_and_return_copy_resolves(string language)
+        {
+            string strings = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Data", "Copy", "strings.json"));
+            var copy = new DemoCopy(language, strings, "{\"entries\":[]}", "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            foreach (string key in new[]
+                     {
+                         "utility.Swim", "utility.Dive", "utility.Fly", "utility.Levitate", "utility.ReturnVillage",
+                         "utility.desc.Swim", "utility.desc.Dive", "utility.desc.Fly", "utility.desc.Levitate", "utility.desc.ReturnVillage",
+                         "ui.skills.returned", "ui.skills.return_needs_dive", "ui.skills.return_start",
+                         "ui.skills.return_sky", "ui.skills.return_deep_sea", "ui.skills.return_island", "ui.skills.return_village",
+                     })
+            {
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+        }
     }
 }

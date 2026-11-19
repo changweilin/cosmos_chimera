@@ -139,7 +139,7 @@ namespace Cosmimera.WorldGen
             return duty;
         }
 
-        // Rows: Tribe, Town, City, CityState, Village (SettlementKind order); columns: NpcRole.
+        // Rows: Tribe, Town, City, CityState, Village, IslandSettlement, SkyTribe, DeepSeaCity; columns: NpcRole.
         private static readonly int[][] RoleWeight =
         {
             new[] { 4, 4, 12, 6, 2, 6, 2, 6, 1, 5, 4, 4, 3, 2 },
@@ -147,6 +147,9 @@ namespace Cosmimera.WorldGen
             new[] { 5, 3, 1, 2, 3, 12, 12, 7, 6, 4, 4, 12, 5, 3 },
             new[] { 4, 3, 1, 2, 3, 10, 10, 12, 7, 6, 4, 9, 4, 5 },
             new[] { 4, 14, 6, 5, 3, 6, 3, 3, 1, 3, 3, 6, 2, 1 },
+            new[] { 4, 8, 6, 4, 2, 7, 4, 5, 2, 4, 6, 5, 3, 2 },
+            new[] { 5, 4, 10, 4, 3, 6, 3, 4, 5, 7, 3, 3, 5, 2 },
+            new[] { 4, 3, 3, 8, 4, 9, 9, 6, 6, 5, 5, 5, 4, 3 },
         };
 
         /// <summary>Years a member of <paramref name="race"/> lives (the undead: the life they had).</summary>
@@ -311,7 +314,7 @@ namespace Cosmimera.WorldGen
                             continue;
                         }
 
-                        if (Stand(planet, building, id.Seed, clearance, isStandable, placed, out float3 at, out float3 facing))
+                        if (Stand(planet, s.Domain, building, id.Seed, clearance, isStandable, placed, out float3 at, out float3 facing))
                         {
                             placed.Add(at);
                             NpcDuty duty = DrawDuty(id.Role, id.Seed, out WanderMode wanderMode, out int wanderRadiusMm,
@@ -502,7 +505,14 @@ namespace Cosmimera.WorldGen
 
         private static int[] RoleWeights(SettlementKind kind, string theme)
         {
-            int row = kind == SettlementKind.Village ? 4 : (int)kind;
+            int row = kind switch
+            {
+                SettlementKind.Village => 4,
+                SettlementKind.IslandSettlement => 5,
+                SettlementKind.SkyTribe => 6,
+                SettlementKind.DeepSeaCity => 7,
+                _ => (int)kind,
+            };
             var w = (int[])RoleWeight[row].Clone();
             void Favour(NpcRole role, int times) => w[(int)role] *= times;
             // The land decides the work: a harbour fishes, a canyon digs.
@@ -555,6 +565,9 @@ namespace Cosmimera.WorldGen
         private static int KindAge(SettlementKind kind) => kind switch
         {
             SettlementKind.Tribe => 360,
+            SettlementKind.SkyTribe => 350,
+            SettlementKind.IslandSettlement => 380,
+            SettlementKind.DeepSeaCity => 390,
             SettlementKind.Village => 430,
             SettlementKind.Town => 400,
             SettlementKind.City => 370,
@@ -564,6 +577,9 @@ namespace Cosmimera.WorldGen
         private static int KindHealth(SettlementKind kind) => kind switch
         {
             SettlementKind.Tribe => 760,
+            SettlementKind.SkyTribe => 780,
+            SettlementKind.IslandSettlement => 790,
+            SettlementKind.DeepSeaCity => 820,
             SettlementKind.Village => 740,
             SettlementKind.Town => 780,
             SettlementKind.City => 800,
@@ -598,20 +614,23 @@ namespace Cosmimera.WorldGen
         }
 
         // Somewhere on the apron in front of the building's entrance, turned loosely toward the street.
-        private static bool Stand(in PlanetConfig planet, in RunBuilding building, ulong seed, LayoutClearance clearance,
-            Func<float3, bool> isStandable, List<float3> placed, out float3 at, out float3 facing)
+        private static bool Stand(in PlanetConfig planet, SettlementDomain domain, in RunBuilding building, ulong seed,
+            LayoutClearance clearance, Func<float3, bool> isStandable, List<float3> placed, out float3 at, out float3 facing)
         {
             var rng = new Pcg32(seed, 'P');
             float3 up = building.Direction;
             float3 across = math.normalize(math.cross(up, building.Facing));
             float gap = ResidentGapM / planet.Radius;
+            bool checkSurfaceStandable = isStandable != null &&
+                (domain == SettlementDomain.Land || domain == SettlementDomain.Island);
             for (int attempt = 0; attempt < StandAttempts; attempt++)
             {
                 float forward = building.DepthM * 0.5f + BodyRadiusM + 0.6f + rng.NextFloat() * 3f;
                 float lateral = (rng.NextFloat() - 0.5f) * (building.WidthM + 3f);
                 float turn = (rng.NextFloat() - 0.5f) * 3.5f;
                 float3 d = math.normalize(up + (building.Facing * forward + across * lateral) / planet.Radius);
-                if ((isStandable != null && !isStandable(d)) || clearance.IsInsideBuilding(d, BodyRadiusM + 0.2f) ||
+                if ((checkSurfaceStandable && !isStandable(d)) ||
+                    clearance.IsInsideSettlementBuildings(building.Settlement, d, BodyRadiusM + 0.2f) ||
                     !clearance.IsContainedInSettlement(building.Settlement, d, BodyRadiusM))
                 {
                     continue;

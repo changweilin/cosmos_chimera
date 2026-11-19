@@ -904,8 +904,12 @@
     "en": "Fly"
   },
   "utility.Levitate": {
-    "zh-TW": "懸浮",
+    "zh-TW": "浮空",
     "en": "Levitate"
+  },
+  "utility.Swim": {
+    "zh-TW": "游泳",
+    "en": "Swim"
   },
   "utility.CatchRateUp": {
     "zh-TW": "收服強化",
@@ -1248,16 +1252,20 @@
     "en": "Clear obstacles"
   },
   "utility.desc.Dive": {
-    "zh-TW": "潛水",
-    "en": "Dive"
+    "zh-TW": "於水面低速泳渡並潛入超過 1 公尺深的深海與海底遺跡",
+    "en": "Swim slowly at the surface and dive below 1 m depth to reach deep-sea cities"
   },
   "utility.desc.Fly": {
-    "zh-TW": "飛翔",
-    "en": "Fly"
+    "zh-TW": "於平流層（星球半徑高度）內高速飛行並前往空島部落",
+    "en": "Fly swiftly up to the stratosphere (planet radius) to reach sky tribes"
   },
   "utility.desc.Levitate": {
-    "zh-TW": "忽略地形減速",
-    "en": "Ignore terrain slowdown"
+    "zh-TW": "懸浮並突破平流層上限前往太空站（直達 1.6 R）",
+    "en": "Levitate above the stratosphere to reach space stations (up to 1.6 R)"
+  },
+  "utility.desc.Swim": {
+    "zh-TW": "於水面快速泳渡並涉水過河或登島（水深上限 1 公尺）",
+    "en": "Swim rapidly across rivers and coastal waters up to 1 m depth"
   },
   "utility.desc.CatchRateUp": {
     "zh-TW": "提高收服成功率",
@@ -1288,8 +1296,8 @@
     "en": "Faster travel, ignoring terrain slowdown"
   },
   "utility.desc.ReturnVillage": {
-    "zh-TW": "返回村落",
-    "en": "Return to village"
+    "zh-TW": "傳送回起始城鎮或已造訪聚落（深海城市需潛水）",
+    "en": "Teleport to the starting town or visited settlements (deep-sea requires Dive)"
   },
   "utility.desc.PartyStealth": {
     "zh-TW": "縮小野生偵測範圍",
@@ -1658,5 +1666,33 @@
   "ui.weather.ground": {
     "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
     "en": "Ground cover {percent}% · move and jump ×{mult}"
+  },
+  "ui.skills.returned": {
+    "zh-TW": "已傳送至 {target}",
+    "en": "Teleported to {target}"
+  },
+  "ui.skills.return_needs_dive": {
+    "zh-TW": "{target}位於深海，需要生活技「潛水」才能傳送",
+    "en": "{target} lies in the deep sea and requires Dive to return"
+  },
+  "ui.skills.return_start": {
+    "zh-TW": "起始城鎮",
+    "en": "Starting Town"
+  },
+  "ui.skills.return_sky": {
+    "zh-TW": "空島部落",
+    "en": "Sky Tribe"
+  },
+  "ui.skills.return_deep_sea": {
+    "zh-TW": "深海城市",
+    "en": "Deep-Sea City"
+  },
+  "ui.skills.return_island": {
+    "zh-TW": "島嶼聚落",
+    "en": "Island Settlement"
+  },
+  "ui.skills.return_village": {
+    "zh-TW": "村落 #{index}",
+    "en": "Village #{index}"
   }
 }

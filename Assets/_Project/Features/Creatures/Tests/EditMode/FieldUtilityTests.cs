@@ -215,5 +215,75 @@ namespace Cosmimera.Creatures.Tests
             Assert.IsTrue(mods.CanHarvestCrops);
             Assert.IsTrue(mods.CanCulinaryPrep);
         }
+
+        [Test]
+        public void SpatialTraversalRules_WaterAltitudeAndReturn_EnforceSpecLimits()
+        {
+            Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.Swim));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.Swim, Element.Water));
+            Assert.IsFalse(FieldUtilityRules.IsElementAligned(FieldUtility.Swim, Element.Wind));
+
+            TeamUtilityModifiers none = FieldUtilityRules.ComputeTeamModifiers(new HashSet<FieldUtility>());
+            WaterAccessResult shallowNone = SpatialTraversalRules.EvaluateWaterAccess(none, 0.8f);
+            Assert.IsTrue(shallowNone.CanCrossSurface);
+            Assert.IsFalse(shallowNone.CanSubmerge);
+            Assert.IsTrue(shallowNone.CanReachTargetDepth);
+            Assert.AreEqual(FieldUtilityRules.ShallowWadeSpeedPermille, shallowNone.SurfaceSpeedPermille);
+
+            WaterAccessResult deepNone = SpatialTraversalRules.EvaluateWaterAccess(none, 3f);
+            Assert.IsFalse(deepNone.CanCrossSurface);
+            Assert.IsFalse(deepNone.CanReachTargetDepth);
+
+            TeamUtilityModifiers swimOnly = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.Swim });
+            Assert.IsTrue(swimOnly.CanSwim);
+            WaterAccessResult swimDeepSurface = SpatialTraversalRules.EvaluateWaterAccess(swimOnly, 3f);
+            Assert.IsTrue(swimDeepSurface.CanCrossSurface);
+            Assert.IsFalse(swimDeepSurface.CanSubmerge);
+            Assert.IsFalse(swimDeepSurface.CanReachTargetDepth);
+            Assert.AreEqual(FieldUtilityRules.SwimSpeedPermille, swimDeepSurface.SurfaceSpeedPermille);
+
+            TeamUtilityModifiers diveOnly = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.Dive });
+            WaterAccessResult diveWater = SpatialTraversalRules.EvaluateWaterAccess(diveOnly, 3f);
+            Assert.IsTrue(diveWater.CanCrossSurface);
+            Assert.IsTrue(diveWater.CanSubmerge);
+            Assert.IsTrue(diveWater.CanReachTargetDepth);
+            Assert.AreEqual(FieldUtilityRules.DiveSurfaceSpeedPermille, diveWater.SurfaceSpeedPermille);
+            Assert.Less(diveWater.SurfaceSpeedPermille, swimDeepSurface.SurfaceSpeedPermille);
+            Assert.AreEqual(FieldUtilityRules.DiveUnderwaterSpeedPermille, diveWater.UnderwaterSpeedPermille);
+
+            const float R = 960f;
+            Assert.AreEqual(R, SpatialTraversalRules.StratosphereAltitudeM(R), 1e-3f);
+            Assert.AreEqual(R * 1.25f, SpatialTraversalRules.SpaceStationAltitudeM(R), 1e-3f);
+            Assert.AreEqual(R * 1.6f, SpatialTraversalRules.SpaceCeilingAltitudeM(R), 1e-3f);
+
+            TeamUtilityModifiers flyOnly = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.Fly });
+            AltitudeAccessResult flyAtStrato = SpatialTraversalRules.EvaluateAltitudeAccess(flyOnly, R, R);
+            Assert.IsTrue(flyAtStrato.CanLiftOff);
+            Assert.IsTrue(flyAtStrato.CanReachTargetAltitude);
+            Assert.IsFalse(flyAtStrato.IgnoresStratosphereCap);
+            Assert.AreEqual(FieldUtilityRules.FlySpeedPermille, flyAtStrato.AirSpeedPermille);
+
+            AltitudeAccessResult flyAtStation = SpatialTraversalRules.EvaluateAltitudeAccess(flyOnly, R, SpatialTraversalRules.SpaceStationAltitudeM(R));
+            Assert.IsFalse(flyAtStation.CanReachTargetAltitude);
+            Assert.AreEqual(0, flyAtStation.AirSpeedPermille);
+
+            TeamUtilityModifiers levOnly = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.Levitate });
+            AltitudeAccessResult levAtStation = SpatialTraversalRules.EvaluateAltitudeAccess(levOnly, R, SpatialTraversalRules.SpaceStationAltitudeM(R));
+            Assert.IsTrue(levAtStation.CanLiftOff);
+            Assert.IsTrue(levAtStation.CanReachTargetAltitude);
+            Assert.IsTrue(levAtStation.IgnoresStratosphereCap);
+            Assert.AreEqual(FieldUtilityRules.LevitateSpeedPermille, levAtStation.AirSpeedPermille);
+
+            TeamUtilityModifiers retOnly = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.ReturnVillage });
+            Assert.IsTrue(SpatialTraversalRules.CanReturnToSettlement(retOnly, Cosmimera.WorldGen.SettlementDomain.Land, true).Allowed);
+            Assert.IsTrue(SpatialTraversalRules.CanReturnToSettlement(retOnly, Cosmimera.WorldGen.SettlementDomain.SkyIsland, true).Allowed);
+            Assert.IsFalse(SpatialTraversalRules.CanReturnToSettlement(retOnly, Cosmimera.WorldGen.SettlementDomain.Land, false).Allowed);
+            ReturnSettlementResult deepNoDive = SpatialTraversalRules.CanReturnToSettlement(retOnly, Cosmimera.WorldGen.SettlementDomain.DeepSea, true);
+            Assert.IsFalse(deepNoDive.Allowed);
+            Assert.IsTrue(deepNoDive.RequiresDive);
+
+            TeamUtilityModifiers retAndDive = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.ReturnVillage, FieldUtility.Dive });
+            Assert.IsTrue(SpatialTraversalRules.CanReturnToSettlement(retAndDive, Cosmimera.WorldGen.SettlementDomain.DeepSea, true).Allowed);
+        }
     }
 }

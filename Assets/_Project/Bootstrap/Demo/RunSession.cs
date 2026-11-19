@@ -8,6 +8,7 @@ using Cosmimera.Creatures;
 using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.Player;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -326,6 +327,10 @@ namespace Cosmimera.Bootstrap.Demo
         private RunPlan _plan;
         private System.Func<float3, string> _habitatAt;
         private RunLayout _layout;
+        private bool _hasOcean;
+        private float _playerWaterDepthM;
+        private float _playerAltitudeM;
+        private readonly HashSet<int> _discoveredSettlements = new HashSet<int>();
         private DungeonLayout _dungeon;
         private HeightSurface _surface;
         private DungeonView _dungeonView;
@@ -612,6 +617,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
+            _hasOcean = templates != null;
             System.Func<float3, bool> isLand = null;
             if (templates != null)
             {
@@ -622,6 +628,11 @@ namespace Cosmimera.Bootstrap.Demo
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
                 setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
             _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            _discoveredSettlements.Clear();
+            if (_layout.Settlements.Count > 0 && LayoutClearance.IsInhabited(_layout.Settlements[0].Kind))
+            {
+                _discoveredSettlements.Add(0);
+            }
             // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
             // passes its own body radius to IsInsideBuilding).
             var clearance = new LayoutClearance(config, _layout, 1.5f);
@@ -1037,6 +1048,11 @@ namespace Cosmimera.Bootstrap.Demo
         {
             float3 direction = _rig.Config.ToDirection(player);
             _playerTerrain = _terrainAt(direction);
+            _playerAltitudeM = _rig.Config.Altitude(player);
+            float groundAltM = _surface != null ? _surface.GroundAltitude(direction) : _playerAltitudeM;
+            _playerWaterDepthM = _hasOcean && (_rig.IsSea(direction) || groundAltM < PlanetLook.SeaLevelM)
+                ? math.max(0f, PlanetLook.SeaLevelM - groundAltM)
+                : 0f;
             _playerWeather = WeatherAt(direction, _nowMs);
             WeatherState state = _weather.StateAt(direction, _nowMs);
             _playerWeatherState = state;
@@ -1052,15 +1068,34 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ApplyPlayerEnvironment()
         {
+            if (_rig == null || _rig.Character == null) return;
             float terrain = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.MoveSpeedMultiplier) : _playerTerrain.MoveSpeedMultiplier;
             float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.SprintSpeedMultiplier) : _playerTerrain.SprintSpeedMultiplier;
             float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.GroundAccelerationMultiplier) : _playerTerrain.GroundAccelerationMultiplier;
             // REQ: weather.md#地表累積 — water, snow, sand or ash on the ground slows walking, sprinting and jumping alike.
             float ground = _playerWeather.PlayerGroundMultiplier;
+            WaterAccessResult water = SpatialTraversalRules.EvaluateWaterAccess(_utilityModifiers, math.max(0f, _playerWaterDepthM));
+            AltitudeAccessResult altitude = SpatialTraversalRules.EvaluateAltitudeAccess(_utilityModifiers, _rig.Config.Radius, math.max(0f, _playerAltitudeM));
+            float wadeScale = _hasOcean && _playerWaterDepthM > 0.05f && _playerWaterDepthM <= FieldUtilityRules.DiveDepthThresholdM &&
+                              !_utilityModifiers.CanSwim && !_utilityModifiers.CanDive
+                ? water.SurfaceSpeedPermille / 1000f
+                : 1f;
             _rig.Character.SetTerrainModifiers(
-                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
-                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
+                terrain * wadeScale * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
+                sprint * wadeScale * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
             _rig.Character.SetJumpHeightMultiplier(ground);
+            bool enforceWater = _hasOcean && (_playerWaterDepthM > 0f || _playerAltitudeM <= PlanetLook.SeaLevelM + 0.5f);
+            _rig.Character.SetTraversalEnvelope(new TraversalEnvelope(
+                altitude.CanLiftOff,
+                altitude.MaxAltitudeM,
+                altitude.AirSpeedPermille / 1000f,
+                water.CanCrossSurface && (_utilityModifiers.CanSwim || _utilityModifiers.CanDive),
+                water.CanSubmerge,
+                PlanetLook.SeaLevelM,
+                FieldUtilityRules.DiveDepthThresholdM,
+                water.SurfaceSpeedPermille / 1000f,
+                water.UnderwaterSpeedPermille / 1000f,
+                enforceWater));
         }
 
         private void StepCombat()
@@ -1774,8 +1809,31 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private float SettlementAltitudeAt(RunSettlement settlement) =>
+            settlement.Domain == SettlementDomain.SkyIsland
+                ? settlement.AltitudeM
+                : (_surface != null ? _surface.GroundAltitude(settlement.Center) : settlement.AltitudeM);
+
         private void UpdateRegion(float3 player)
         {
+            if (_layout != null)
+            {
+                float3 playerDir = _rig.Config.ToDirection(player);
+                float playerAlt = _rig.Config.Altitude(player);
+                float radiusM = _rig.Config.Radius;
+                float discoveryRadiusM = math.max(24f, LayoutClearance.MinSettlementRadiusM + 8f);
+                for (int i = 0; i < _layout.Settlements.Count; i++)
+                {
+                    RunSettlement s = _layout.Settlements[i];
+                    if (!LayoutClearance.IsInhabited(s.Kind) || _discoveredSettlements.Contains(i)) continue;
+                    if (math.distance(playerDir, s.Center) * radiusM > discoveryRadiusM) continue;
+                    if (math.abs(playerAlt - SettlementAltitudeAt(s)) <= 25f)
+                    {
+                        _discoveredSettlements.Add(i);
+                    }
+                }
+            }
+
             int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player));
             if (region != _region)
             {

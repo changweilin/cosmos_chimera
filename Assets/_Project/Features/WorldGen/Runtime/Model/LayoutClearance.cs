@@ -56,8 +56,11 @@ namespace Cosmimera.WorldGen
         private readonly int[] _roadFirst;
         private readonly Segment[] _segments;
         private readonly Footprint[] _buildings;
+        private readonly int[] _buildingSettlement;
+        private readonly bool[] _buildingOnSurface;
         private readonly float3[] _settlementCenters;
         private readonly float[] _settlementRadiiM;
+        private readonly bool[] _settlementIsSurface;
         private readonly float _radius;
         private readonly float _marginM;
         private bool[] _removed;
@@ -122,19 +125,28 @@ namespace Cosmimera.WorldGen
             _segments = segments.ToArray();
 
             _buildings = new Footprint[layout.Buildings.Count];
+            _buildingSettlement = new int[layout.Buildings.Count];
+            _buildingOnSurface = new bool[layout.Buildings.Count];
             for (int i = 0; i < _buildings.Length; i++)
             {
                 RunBuilding b = layout.Buildings[i];
                 float3 across = math.normalize(math.cross(b.Direction, b.Facing));
                 _buildings[i] = new Footprint(b.Direction, b.Facing, across, b.WidthM * 0.5f, b.DepthM * 0.5f);
+                _buildingSettlement[i] = b.Settlement;
+                SettlementDomain dom = b.Settlement >= 0 && b.Settlement < layout.Settlements.Count
+                    ? layout.Settlements[b.Settlement].Domain
+                    : SettlementDomain.Land;
+                _buildingOnSurface[i] = dom == SettlementDomain.Land || dom == SettlementDomain.Island;
             }
 
             _settlementCenters = new float3[layout.Settlements.Count];
             _settlementRadiiM = new float[layout.Settlements.Count];
+            _settlementIsSurface = new bool[layout.Settlements.Count];
             for (int s = 0; s < layout.Settlements.Count; s++)
             {
                 RunSettlement settlement = layout.Settlements[s];
                 _settlementCenters[s] = settlement.Center;
+                _settlementIsSurface[s] = settlement.Domain == SettlementDomain.Land || settlement.Domain == SettlementDomain.Island;
                 if (!IsInhabited(settlement.Kind) || settlement.BuildingCount <= 0)
                 {
                     continue;
@@ -166,7 +178,7 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
                 "direction must be finite and non-zero");
             float3 p = math.normalize(direction);
-            if (InsideBuilding(p, _marginM, false))
+            if (InsideBuilding(p, _marginM, false, surfaceOnly: true, filterSettlement: -1))
             {
                 return false;
             }
@@ -191,11 +203,11 @@ namespace Cosmimera.WorldGen
             return true;
         }
 
-        /// <summary>True when <paramref name="direction"/> lies inside a building footprint grown by <paramref name="marginM"/>.</summary>
+        /// <summary>True when <paramref name="direction"/> lies inside a surface building footprint grown by <paramref name="marginM"/>.</summary>
         /// <remarks>
         /// REQ: planet-world.md#道路與建築 (建築與角色、宙獸碰撞): a body of radius marginM centred here would overlap a wall.
         /// Pre: direction finite and non-zero (normalized internally); marginM finite and ≥ 0.
-        /// Post: independent of the constructor margin and of roads; same footprint test IsClear uses.
+        /// Post: independent of the constructor margin and of roads; ignores airborne SkyIsland and underwater DeepSea settlements.
         /// Side effects: none.
         /// </remarks>
         public bool IsInsideBuilding(float3 direction, float marginM)
@@ -203,7 +215,22 @@ namespace Cosmimera.WorldGen
             Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
                 "direction must be finite and non-zero");
             Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
-            return InsideBuilding(math.normalize(direction), marginM, true);
+            return InsideBuilding(math.normalize(direction), marginM, true, surfaceOnly: true, filterSettlement: -1);
+        }
+
+        /// <summary>True when <paramref name="direction"/> lies inside any building footprint belonging to <paramref name="settlementIndex"/>.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= settlementIndex &lt; layout.Settlements.Count; direction finite and non-zero; marginM finite and &gt;= 0.
+        /// Post: true iff direction overlaps an unremoved building owned by <paramref name="settlementIndex"/> (works across all domains).
+        /// Side effects: none.
+        /// </remarks>
+        public bool IsInsideSettlementBuildings(int settlementIndex, float3 direction, float marginM)
+        {
+            Contract.Requires(settlementIndex >= 0 && settlementIndex < _settlementRadiiM.Length, "settlementIndex out of range");
+            Contract.Requires(math.all(math.isfinite(direction)) && math.lengthsq(direction) > 0f,
+                "direction must be finite and non-zero");
+            Contract.Requires(math.isfinite(marginM) && marginM >= 0f, "marginM must be finite and >= 0");
+            return InsideBuilding(math.normalize(direction), marginM, true, surfaceOnly: false, filterSettlement: settlementIndex);
         }
 
         /// <summary>Bounding radius (m) of settlement <paramref name="settlementIndex"/>, or 0 if uninhabited or empty.</summary>
@@ -235,7 +262,7 @@ namespace Cosmimera.WorldGen
             for (int s = 0; s < _settlementCenters.Length; s++)
             {
                 float r = _settlementRadiiM[s];
-                if (r <= 0f)
+                if (!_settlementIsSurface[s] || r <= 0f)
                 {
                     continue;
                 }
@@ -289,11 +316,21 @@ namespace Cosmimera.WorldGen
             _removed[index] = true;
         }
 
-        private bool InsideBuilding(float3 p, float marginM, bool skipRemoved)
+        private bool InsideBuilding(float3 p, float marginM, bool skipRemoved, bool surfaceOnly, int filterSettlement)
         {
             for (int i = 0; i < _buildings.Length; i++)
             {
                 if (skipRemoved && _removed != null && _removed[i])
+                {
+                    continue;
+                }
+
+                if (surfaceOnly && !_buildingOnSurface[i])
+                {
+                    continue;
+                }
+
+                if (filterSettlement >= 0 && _buildingSettlement[i] != filterSettlement)
                 {
                     continue;
                 }

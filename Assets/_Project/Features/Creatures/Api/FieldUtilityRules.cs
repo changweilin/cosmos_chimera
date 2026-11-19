@@ -39,7 +39,10 @@ namespace Cosmimera.Creatures
             bool canCastNet = false,
             bool canHarvestCrops = false,
             bool canCulinaryPrep = false,
-            bool canGatherEssence = false)
+            bool canGatherEssence = false,
+            bool canSwim = false,
+            bool canFly = false,
+            bool canLevitate = false)
         {
             CatchRateBonusPercent = catchRateBonusPercent;
             DropRateBonusPercent = dropRateBonusPercent;
@@ -68,6 +71,9 @@ namespace Cosmimera.Creatures
             CanHarvestCrops = canHarvestCrops;
             CanCulinaryPrep = canCulinaryPrep;
             CanGatherEssence = canGatherEssence;
+            CanSwim = canSwim;
+            CanFly = canFly;
+            CanLevitate = canLevitate;
         }
 
         /// <summary>Flat bonus (percentage points) added to capture rolls.</summary>
@@ -177,6 +183,18 @@ namespace Cosmimera.Creatures
         /// <summary>True when the team can gather enchanting essences (or has DropRateUp / ScoutPotential fallback).</summary>
         /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
         public bool CanGatherEssence { get; }
+
+        /// <summary>True when the team can swim rapidly on the water surface (up to 1 m depth).</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanSwim { get; }
+
+        /// <summary>True when the team can fly within the stratosphere altitude cap (1.0 R).</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanFly { get; }
+
+        /// <summary>True when the team can levitate past the stratosphere cap up to space stations (1.6 R).</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanLevitate { get; }
     }
 
     /// <summary>
@@ -215,6 +233,42 @@ namespace Cosmimera.Creatures
         /// <remarks>Pre: none. Post: constant 1250. Side effects: none.</remarks>
         public const int FlySpeedPermille = 1250;
 
+        /// <summary>Wading speed permille in shallow water (depth &lt;= 1 m) without Swim or Dive.</summary>
+        /// <remarks>Pre: none. Post: constant 800. Side effects: none.</remarks>
+        public const int ShallowWadeSpeedPermille = 800;
+
+        /// <summary>Surface water speed permille when <see cref="FieldUtility.Swim"/> is active.</summary>
+        /// <remarks>Pre: none. Post: constant 1150. Side effects: none.</remarks>
+        public const int SwimSpeedPermille = 1150;
+
+        /// <summary>Surface water speed permille when <see cref="FieldUtility.Dive"/> is active without <see cref="FieldUtility.Swim"/>.</summary>
+        /// <remarks>Pre: none. Post: constant 850. Side effects: none.</remarks>
+        public const int DiveSurfaceSpeedPermille = 850;
+
+        /// <summary>Underwater speed permille when <see cref="FieldUtility.Dive"/> is active.</summary>
+        /// <remarks>Pre: none. Post: constant 1000. Side effects: none.</remarks>
+        public const int DiveUnderwaterSpeedPermille = 1000;
+
+        /// <summary>Aerial speed permille when <see cref="FieldUtility.Levitate"/> is active.</summary>
+        /// <remarks>Pre: none. Post: constant 1000. Side effects: none.</remarks>
+        public const int LevitateSpeedPermille = 1000;
+
+        /// <summary>Maximum water depth (m) reachable without <see cref="FieldUtility.Dive"/>.</summary>
+        /// <remarks>Pre: none. Post: constant 1f. Side effects: none.</remarks>
+        public const float DiveDepthThresholdM = 1f;
+
+        /// <summary>Stratosphere upper altitude limit expressed as a multiple of <c>PlanetConfig.Radius</c>.</summary>
+        /// <remarks>Pre: none. Post: constant 1f. Side effects: none.</remarks>
+        public const float StratosphereRadiusFactor = 1f;
+
+        /// <summary>Space station orbital altitude expressed as a multiple of <c>PlanetConfig.Radius</c>.</summary>
+        /// <remarks>Pre: none. Post: constant 1.25f. Side effects: none.</remarks>
+        public const float SpaceStationRadiusFactor = 1.25f;
+
+        /// <summary>Maximum orbital ceiling reachable with <see cref="FieldUtility.Levitate"/> as a multiple of <c>PlanetConfig.Radius</c>.</summary>
+        /// <remarks>Pre: none. Post: constant 1.6f. Side effects: none.</remarks>
+        public const float SpaceCeilingRadiusFactor = 1.6f;
+
         private static readonly FieldUtility[] TerrainImmunityByElement =
         {
             FieldUtility.ImmuneLaboratory, // Metal = 0
@@ -244,6 +298,7 @@ namespace Cosmimera.Creatures
                     return FieldUtilityKind.None;
 
                 case FieldUtility.OpenObstacle:
+                case FieldUtility.Swim:
                 case FieldUtility.Dive:
                 case FieldUtility.Fly:
                 case FieldUtility.Levitate:
@@ -503,6 +558,9 @@ namespace Cosmimera.Creatures
             bool harvestCrops = false;
             bool culinaryPrep = false;
             bool gatherEssence = false;
+            bool swim = false;
+            bool fly = false;
+            bool levitate = false;
 
             foreach (FieldUtility u in activeUtilities)
             {
@@ -517,10 +575,14 @@ namespace Cosmimera.Creatures
                         ignoreSlow = true;
                         break;
                     case FieldUtility.Fly:
+                        fly = true;
                         if (FlySpeedPermille > speedPermille) speedPermille = FlySpeedPermille;
                         ignoreSlow = true;
                         break;
-                    case FieldUtility.Levitate: ignoreSlow = true; break;
+                    case FieldUtility.Levitate:
+                        levitate = true;
+                        ignoreSlow = true;
+                        break;
                     case FieldUtility.PreventEscape: preventEscape = true; break;
                     case FieldUtility.QuickEscape: quickEscape = true; break;
                     case FieldUtility.WeatherControl: weatherControl = true; break;
@@ -530,6 +592,7 @@ namespace Cosmimera.Creatures
                     case FieldUtility.StealItem: stealItem = true; break;
                     case FieldUtility.ScoutPotential: scoutPotential = true; gatherEssence = true; break;
                     case FieldUtility.Dive: dive = true; break;
+                    case FieldUtility.Swim: swim = true; break;
                     case FieldUtility.Fishing: fishing = true; break;
                     case FieldUtility.ForageBerries: forageBerries = true; break;
                     case FieldUtility.ProduceMilk: produceMilk = true; break;
@@ -572,7 +635,10 @@ namespace Cosmimera.Creatures
                 castNet,
                 harvestCrops,
                 culinaryPrep,
-                gatherEssence);
+                gatherEssence,
+                swim,
+                fly,
+                levitate);
         }
 
         /// <summary>Checks whether <paramref name="utility"/> aligns thematically and mechanically with <paramref name="element"/>.</summary>
@@ -604,6 +670,7 @@ namespace Cosmimera.Creatures
                 case FieldUtility.ForageBerries: return element == Element.Wood;
                 case FieldUtility.ProduceMilk: return element == Element.Wood || element == Element.Earth;
                 case FieldUtility.Fishing:
+                case FieldUtility.Swim:
                 case FieldUtility.Dive: return element == Element.Water;
                 case FieldUtility.CookFire: return element == Element.Fire;
                 case FieldUtility.EggHatchBoost:

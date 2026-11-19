@@ -477,8 +477,11 @@ namespace Cosmimera.Bootstrap.Demo
             float upkeep = kind switch
             {
                 SettlementKind.Tribe => 0.05f,
+                SettlementKind.IslandSettlement => 0.05f,
+                SettlementKind.SkyTribe => 0.05f,
                 SettlementKind.Village => 0.1f,
                 SettlementKind.City => -0.05f,
+                SettlementKind.DeepSeaCity => -0.05f,
                 SettlementKind.CityState => -0.1f,
                 _ => 0f,
             };

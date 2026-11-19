@@ -23,7 +23,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
         /// <summary>Free ground kept between a solid landmark's footprint and any road or building (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -85,12 +85,12 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: planet valid and the one plan was generated for; plan non-null; layout non-null and generated from plan;
         ///      isBuildable null (everywhere) or deterministic (false on sea and on ground something else owns).
-        /// Post: at most GroundCountFor(R) ground wonders plus one SpaceElevator, and one SpaceStation exactly when the
-        ///       elevator was placed (same Direction, AltitudeM == the elevator's HeightM). A wonder whose site search
-        ///       fails is dropped. For every landmark with a footprint: the centre is buildable, and for Solid ones so
-        ///       are 8 points on the footprint rim; a Solid footprint keeps LayoutGapM from every road and building;
-        ///       every footprint keeps SpawnGapM from every spawn, 25 m from the landing point and LandmarkGapM from
-        ///       every other footprint. Same inputs → same layout.
+        /// Post: at most GroundCountFor(R) ground wonders, plus one SpaceElevator on Planet+ (R >= 960 m) and one
+        ///       SpaceStation at 1.25 R when the elevator is placed (above the 1.0 R stratosphere limit). SkyIsland
+        ///       wonders stay within &lt;= 1.0 R. A wonder whose site search fails is dropped. For every landmark with a
+        ///       footprint: the centre is buildable, and for Solid ones so are 8 points on the footprint rim; a Solid
+        ///       footprint keeps LayoutGapM from every road and building; every footprint keeps SpawnGapM from every
+        ///       spawn, 25 m from the landing point and LandmarkGapM from every other footprint. Same inputs → same layout.
         /// Side effects: allocates; calls isBuildable.
         /// </remarks>
         public static LandmarkLayout Generate(in PlanetConfig planet, RunPlan plan, RunLayout layout, Func<float3, bool> isBuildable)
@@ -111,9 +111,10 @@ namespace Cosmimera.WorldGen
 
             int ground = GroundCountFor(radius);
             var placed = new List<RunLandmark>(ground + 2);
-            for (int k = -1; k < ground; k++)
+            int firstSlot = radius >= SettlementPlanner.PlanetMinRadiusM ? -1 : 0;
+            for (int k = firstSlot; k < ground; k++)
             {
-                // The elevator goes first: it is the one wonder every planet should have, so it gets the emptiest map.
+                // The elevator goes first on Planet+ worlds: it is the one wonder that reaches the 1.25 R station.
                 LandmarkKind kind = k < 0 ? LandmarkKind.SpaceElevator : deck[k % deck.Length];
                 int variant = (int)rng.NextUInt((uint)VariantCount(kind));
                 Size(kind, radius, ref rng, out float footprint, out float height, out float altitude);
@@ -200,11 +201,15 @@ namespace Cosmimera.WorldGen
                 case LandmarkKind.SkyIsland:
                     footprint = 14f + 2f * rng.NextUInt(5);
                     height = 12f + 2f * rng.NextUInt(5);
-                    altitude = 50f + 5f * rng.NextUInt(9);
+                    int minSkyM = (int)math.round(math.min(50f, radius * 0.25f));
+                    int maxSkyM = (int)math.floor(radius * 0.90f);
+                    altitude = maxSkyM > minSkyM
+                        ? minSkyM + rng.NextUInt((uint)(maxSkyM - minSkyM + 1))
+                        : minSkyM;
                     break;
                 case LandmarkKind.SpaceElevator:
                     footprint = 9f;
-                    height = math.round(radius * 0.75f);
+                    height = math.round(radius * 1.25f);
                     break;
                 case LandmarkKind.Labyrinth:
                     footprint = 14f + rng.NextUInt(5);

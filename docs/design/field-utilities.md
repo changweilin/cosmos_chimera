@@ -83,9 +83,9 @@
 | **水下／深海** | 下水深度 **> 1 m** | **深海城市**（行星 `R ≥ 960` 以上）、海底地物（P3-23） | `dive`（`1000` permille；`swim` 無法下潛 `> 1 m`） | `immune_deep_sea`（深海地城） |
 
 - **平流層、空島與太空站高度**：平流層高度 = `1.0 R`（`PlanetConfig.Radius`），為空島（含空島部落）存在上限；太空電梯與太空站規格高度定為 **`1.25 R`**（高於平流層 `0.25 R`，探索上限 `1.6 R`）。同時持有 `fly` 與 `levitate` 時，`≤ 1.0 R` 採 `fly` 速度（`1250`），突破 `1.0 R` 無縫轉 `levitate`（`1000`）。
-- **水深 1 m 分界與泳速分工**：水深 `≤ 1 m` 可步行涉水（`800`）；水面過河／登島以 `swim` 最快（`1150`，契合屬性 `水／冰／木`），`dive` 亦可於水面通行但較慢（`850`），同時持有時水面取較高者（`1150`）；**下水超過 `1 m`** 僅能使用 `dive`（水下 `1000`）。以上速度倍率為設計暫定值，實作時收斂至 `Data/balance.json#field_utilities`。
-- **起始城鎮與非大陸聚落**：起始城鎮必在陸地；空島部落、深海城市與隔水海島聚落僅於**行星以上（`R ≥ 960`）**生成且規模較大陸聚落小（見 [planet-world.md#道路與建築](planet-world.md#道路與建築)）。`return_village` 僅限傳送至**已抵達登錄**的聚落或起始城鎮；傳送至深海城市時仍須隊伍具備 `dive`（防卡死），空島部落不限。
-- **實作待接線**：`swim` 補入 `common.schema.json`、`GameDataEnums.cs`、`FieldUtilityRules.cs`、三語文案與 P5 持有物種；`LandmarkPlanner` v2 將太空電梯／太空站高度由現行 v1 `0.75 R` 調升至 `1.25 R`；水域／飛行／浮空移動與非大陸聚落生成於 P3-23／P3-29 後續接線。
+- **水深 1 m 分界與泳速分工**：水深 `≤ 1 m` 可步行涉水（`800`）；水面過河／登島以 `swim` 最快（`1150`，契合屬性 `水／冰／木`），`dive` 亦可於水面通行但較慢（`850`），同時持有時水面取較高者（`1150`）；**下水超過 `1 m`** 僅能使用 `dive`（水下 `1000`）。以上速度倍率已收斂於 `Data/balance.json#field_utilities` 與 `FieldUtilityRules`／`SpatialTraversalRules`。
+- **起始城鎮與非大陸聚落**：起始城鎮必在陸地（`SettlementDomain.Land`）；空島部落（`SkyTribe`）、深海城市（`DeepSeaCity`）與隔水海島聚落（`IslandSettlement`）僅於**行星以上（`R ≥ 960`）**生成且規模較大陸聚落小（見 [planet-world.md#道路與建築](planet-world.md#道路與建築)）。`return_village` 僅限傳送至**已抵達登錄**的聚落或起始城鎮；傳送至深海城市時仍須隊伍具備 `dive`（防卡死），空島部落不限。
+- **實作現況**：`swim` 已補入 `common.schema.json`、`GameDataEnums.cs`、`FieldUtilityRules.cs`、`SpatialTraversalRules.cs` 與三語文案；`SettlementPlanner` v4 與 `LandmarkPlanner` v2 已實作 `1.25 R` 太空電梯／太空站與行星以上非大陸聚落；`SphericalCharacter`（`TraversalEnvelope`）與 `RunSession` 已接線水深 `1 m` 門檻、`swim`／`dive` 水面與水下移動、`fly` `1.0 R` 平流層上限、`levitate` `1.6 R` 浮空與 `ReturnVillage` 已發現聚落傳送。P5 正式物種分配待後續內容批次補齊。
 
 ## 5. 被動生活被動技（Trait × 8，琉璃珠副手可提供）
 | ID | 契合屬性 | 場外生活效果 | 與戰鬥／環境／屬性之契合聯動 | D0 持有物種 |

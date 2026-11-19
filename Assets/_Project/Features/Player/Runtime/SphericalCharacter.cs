@@ -4,6 +4,110 @@ using UnityEngine;
 
 namespace Cosmimera.Player
 {
+    /// <summary>
+    /// Runtime spatial traversal bounds pushed from active field utilities (Swim, Dive, Fly, Levitate) and water state.
+    /// </summary>
+    /// <remarks>
+    /// Pre: speed scales and shallow depth finite and &gt;= 0; maxAltitudeM finite and &gt;= 0; seaLevelM finite.
+    /// Post: immutable value used by <see cref="SphericalCharacter"/> in FixedUpdate without per-frame allocation.
+    /// Side effects: none.
+    /// </remarks>
+    public readonly struct TraversalEnvelope
+    {
+        /// <summary>Neutral ground-only traversal envelope.</summary>
+        /// <remarks>Pre: none. Post: all abilities inactive. Side effects: none.</remarks>
+        public static TraversalEnvelope Default => default;
+
+        /// <summary>Creates a validated spatial traversal envelope for <see cref="SphericalCharacter"/>.</summary>
+        /// <remarks>
+        /// Pre: all floats finite; maxAltitudeM, maxShallowDepthM, and speed scales &gt;= 0.
+        /// Post: immutable envelope matching arguments.
+        /// Side effects: none.
+        /// </remarks>
+        public TraversalEnvelope(
+            bool aerialActive,
+            float maxAltitudeM,
+            float airSpeedScale,
+            bool canSurfaceSwim,
+            bool canDive,
+            float seaLevelM,
+            float maxShallowDepthM,
+            float waterSurfaceSpeedScale,
+            float underwaterSpeedScale,
+            bool enforceWaterBoundary)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(maxAltitudeM) && maxAltitudeM >= 0f,
+                "maxAltitudeM must be finite and >= 0");
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(airSpeedScale) && airSpeedScale >= 0f,
+                "airSpeedScale must be finite and >= 0");
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(seaLevelM),
+                "seaLevelM must be finite");
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(maxShallowDepthM) && maxShallowDepthM >= 0f,
+                "maxShallowDepthM must be finite and >= 0");
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(waterSurfaceSpeedScale) && waterSurfaceSpeedScale >= 0f,
+                "waterSurfaceSpeedScale must be finite and >= 0");
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.isfinite(underwaterSpeedScale) && underwaterSpeedScale >= 0f,
+                "underwaterSpeedScale must be finite and >= 0");
+
+            AerialActive = aerialActive;
+            MaxAltitudeM = maxAltitudeM;
+            AirSpeedScale = airSpeedScale;
+            CanSurfaceSwim = canSurfaceSwim;
+            CanDive = canDive;
+            SeaLevelM = seaLevelM;
+            MaxShallowDepthM = maxShallowDepthM;
+            WaterSurfaceSpeedScale = waterSurfaceSpeedScale;
+            UnderwaterSpeedScale = underwaterSpeedScale;
+            EnforceWaterBoundary = enforceWaterBoundary;
+        }
+
+        /// <summary>True when Fly or Levitate aerial motion is enabled.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool AerialActive { get; }
+
+        /// <summary>Upper radial altitude limit above sea level in meters.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0f. Side effects: none.</remarks>
+        public float MaxAltitudeM { get; }
+
+        /// <summary>Horizontal/vertical air speed scale multiplier.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0f. Side effects: none.</remarks>
+        public float AirSpeedScale { get; }
+
+        /// <summary>True when the character can swim across water surface without sinking.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanSurfaceSwim { get; }
+
+        /// <summary>True when the character can submerge deeper than <see cref="MaxShallowDepthM"/>.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanDive { get; }
+
+        /// <summary>Reference water surface altitude above planet radius (m).</summary>
+        /// <remarks>Pre: none. Post: finite float. Side effects: none.</remarks>
+        public float SeaLevelM { get; }
+
+        /// <summary>Maximum permitted water depth (m) without Dive (typically 1 m).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0f. Side effects: none.</remarks>
+        public float MaxShallowDepthM { get; }
+
+        /// <summary>Horizontal speed scale while swimming at the water surface.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0f. Side effects: none.</remarks>
+        public float WaterSurfaceSpeedScale { get; }
+
+        /// <summary>3D speed scale while submerged with Dive active.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0f. Side effects: none.</remarks>
+        public float UnderwaterSpeedScale { get; }
+
+        /// <summary>True when ocean surface/depth boundaries are enforced in FixedUpdate.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool EnforceWaterBoundary { get; }
+    }
+
     /// <summary>Rigidbody glue that walks a capsule over the planet using <see cref="SphericalMotor"/>.</summary>
     /// <remarks>
     /// Pre: <see cref="Configure"/> is called once before the first FixedUpdate; the GameObject has a Rigidbody and a
@@ -71,6 +175,26 @@ namespace Cosmimera.Player
         private float _terrainSprintSpeedScale = 1f;
         private float _terrainGroundAccelScale = 1f;
         private float _jumpHeightScale = 1f;
+        private TraversalEnvelope _traversal;
+        private float _verticalInput;
+        private float3 _lastSafeSurfaceDir;
+        private bool _hasSafeSurfaceDir;
+
+        /// <summary>Current radial altitude above <see cref="PlanetConfig.Radius"/> (m).</summary>
+        /// <remarks>Pre: none. Post: finite altitude after Configure; 0 before Configure. Side effects: none.</remarks>
+        public float AltitudeM => _configured ? _planet.Altitude(_body.position) : 0f;
+
+        /// <summary>Updates active spatial traversal rules (Swim, Dive, Fly, Levitate, water boundaries).</summary>
+        /// <remarks>Pre: none. Post: following FixedUpdate steps enforce <paramref name="envelope"/>. Side effects: mutates traversal state.</remarks>
+        public void SetTraversalEnvelope(in TraversalEnvelope envelope) => _traversal = envelope;
+
+        /// <summary>Sets vertical intent in [-1, 1] used during Fly, Levitate, or Dive movement.</summary>
+        /// <remarks>Pre: <paramref name="vertical"/> is finite. Post: clamped vertical axis stored. Side effects: none.</remarks>
+        public void SetVerticalInput(float vertical)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(math.isfinite(vertical), "vertical must be finite");
+            _verticalInput = math.clamp(vertical, -1f, 1f);
+        }
 
         /// <summary>Applies landform movement and friction multipliers (1 = neutral).</summary>
         /// <remarks>
@@ -188,6 +312,54 @@ namespace Cosmimera.Player
             float3 up = PlanetFrame.At(_planet, position).Up;
             GroundContact ground = ProbeGround(position, up);
 
+            if (_traversal.AerialActive)
+            {
+                StepAerial(position, up, ground);
+                return;
+            }
+
+            if (_traversal.EnforceWaterBoundary)
+            {
+                float altitude = _planet.Altitude(position);
+                float depth = _traversal.SeaLevelM - altitude;
+
+                if (_traversal.CanDive && depth > 0.05f && (_verticalInput < 0f || depth > 0.35f))
+                {
+                    StepUnderwaterSwim(up, ground, altitude, depth);
+                    return;
+                }
+
+                if (_traversal.CanSurfaceSwim && depth >= 0.2f)
+                {
+                    if (ground.Hit && altitude - ground.Distance >= _traversal.SeaLevelM - 0.15f && _verticalInput >= 0f)
+                    {
+                        _lastSafeSurfaceDir = up;
+                        _hasSafeSurfaceDir = true;
+                        StepGroundMotor(up, ground);
+                        return;
+                    }
+
+                    StepSurfaceSwim(up, altitude, depth);
+                    return;
+                }
+
+                if (depth <= _traversal.MaxShallowDepthM)
+                {
+                    _lastSafeSurfaceDir = up;
+                    _hasSafeSurfaceDir = true;
+                    StepGroundMotor(up, ground);
+                    return;
+                }
+
+                ClampDeepWaterEntry(up);
+                return;
+            }
+
+            StepGroundMotor(up, ground);
+        }
+
+        private void StepGroundMotor(float3 up, GroundContact ground)
+        {
             if (!_state.Grounded)
             {
                 // Feed back what physics actually did vertically: a ceiling stops a jump, a steep slope holds the body,
@@ -207,6 +379,148 @@ namespace Cosmimera.Player
 
             _body.linearVelocity = _state.Velocity;
             ApplyRotation(up, _state.Facing, immediate: false);
+        }
+
+        private void StepAerial(float3 position, float3 up, GroundContact ground)
+        {
+            float altitude = _planet.Altitude(position);
+            float baseSpeed = (_input.Sprint ? _sprintSpeed : _walkSpeed) * _traversal.AirSpeedScale;
+            float climb = _verticalInput * baseSpeed;
+
+            if (altitude >= _traversal.MaxAltitudeM && climb > 0f)
+            {
+                climb = 0f;
+            }
+
+            if (altitude > _traversal.MaxAltitudeM + 0.02f)
+            {
+                _body.position = _planet.ToWorld(up, _traversal.MaxAltitudeM);
+            }
+
+            float minFloor = _traversal.EnforceWaterBoundary && !_traversal.CanDive
+                ? _traversal.SeaLevelM - _traversal.MaxShallowDepthM
+                : float.NegativeInfinity;
+            if (altitude <= minFloor && climb < 0f)
+            {
+                climb = 0f;
+            }
+
+            if (altitude < minFloor)
+            {
+                _body.position = _planet.ToWorld(up, minFloor);
+            }
+
+            if (ground.Hit && ground.Distance <= 0.03f && climb < 0f)
+            {
+                climb = 0f;
+            }
+
+            float3 moveDir = TangentMoveDirection(up);
+            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+                ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
+                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
+            _state.Grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
+            _state.VerticalSpeed = climb;
+            _state.Velocity = moveDir * baseSpeed + up * climb;
+            _body.linearVelocity = _state.Velocity;
+            ApplyRotation(up, _state.Facing, immediate: false);
+        }
+
+        private void StepSurfaceSwim(float3 up, float altitude, float depth)
+        {
+            float speed = (_input.Sprint ? _sprintSpeed : _walkSpeed) * _traversal.WaterSurfaceSpeedScale;
+            float radialVel = math.clamp((_traversal.SeaLevelM - altitude) * 6f, -4f, 4f);
+            float minAlt = _traversal.SeaLevelM - _traversal.MaxShallowDepthM;
+            if (!_traversal.CanDive && altitude < minAlt)
+            {
+                _body.position = _planet.ToWorld(up, minAlt);
+                radialVel = math.max(0f, radialVel);
+            }
+
+            float3 moveDir = TangentMoveDirection(up);
+            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+                ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
+                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
+            _state.Grounded = false;
+            _state.VerticalSpeed = radialVel;
+            _state.Velocity = moveDir * speed + up * radialVel;
+            _body.linearVelocity = _state.Velocity;
+            _lastSafeSurfaceDir = up;
+            _hasSafeSurfaceDir = true;
+            ApplyRotation(up, _state.Facing, immediate: false);
+        }
+
+        private void StepUnderwaterSwim(float3 up, GroundContact ground, float altitude, float depth)
+        {
+            float speed = (_input.Sprint ? _sprintSpeed : _walkSpeed) * _traversal.UnderwaterSpeedScale;
+            float climb = _verticalInput * speed;
+            if (altitude >= _traversal.SeaLevelM && climb > 0f)
+            {
+                climb = 0f;
+            }
+
+            if (ground.Hit && ground.Distance <= 0.03f && climb < 0f)
+            {
+                climb = 0f;
+            }
+
+            float3 moveDir = TangentMoveDirection(up);
+            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+                ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
+                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
+            _state.Grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
+            _state.VerticalSpeed = climb;
+            _state.Velocity = moveDir * speed + up * climb;
+            _body.linearVelocity = _state.Velocity;
+            if (depth <= _traversal.MaxShallowDepthM)
+            {
+                _lastSafeSurfaceDir = up;
+                _hasSafeSurfaceDir = true;
+            }
+
+            ApplyRotation(up, _state.Facing, immediate: false);
+        }
+
+        private void ClampDeepWaterEntry(float3 up)
+        {
+            float clampedAlt = _traversal.SeaLevelM - _traversal.MaxShallowDepthM;
+            float3 pushTangent = _hasSafeSurfaceDir
+                ? SphericalMotor.TangentOr(_lastSafeSurfaceDir - up, up, -_state.Facing)
+                : -SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
+            float3 safePos = _planet.ToWorld(up, clampedAlt) + pushTangent * 0.25f;
+            _body.position = safePos;
+            float3 safeUp = PlanetFrame.At(_planet, safePos).Up;
+            _state.Facing = SphericalMotor.TangentOr(_state.Facing, safeUp, pushTangent);
+            _state.Grounded = false;
+            _state.VerticalSpeed = 0f;
+            _state.Velocity = float3.zero;
+            _body.linearVelocity = Vector3.zero;
+            ApplyRotation(safeUp, _state.Facing, immediate: false);
+        }
+
+        private float3 TangentMoveDirection(float3 up)
+        {
+            float3 fallback = SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
+            float3 camFwd = SphericalMotor.TangentOr(_input.ViewForward, up, fallback);
+            float3 camRight = math.normalize(math.cross(up, camFwd));
+            float3 desired = camFwd * _input.Move.y + camRight * _input.Move.x;
+            return math.lengthsq(desired) > 1e-6f ? math.normalize(desired) : float3.zero;
+        }
+
+        private float3 RotateFacingToward(float3 up, float3 currentFacing, float3 desiredDir, float dt)
+        {
+            float3 cur = SphericalMotor.TangentOr(currentFacing, up, desiredDir);
+            float3 tgt = SphericalMotor.TangentOr(desiredDir, up, cur);
+            float maxRad = math.radians(_settings.TurnRateDegrees) * dt;
+            float dot = math.clamp(math.dot(cur, tgt), -1f, 1f);
+            float angle = math.acos(dot);
+            if (angle <= maxRad || angle < 1e-4f)
+            {
+                return tgt;
+            }
+
+            float t = maxRad / angle;
+            return SphericalMotor.TangentOr(math.lerp(cur, tgt, t), up, tgt);
         }
 
         private GroundContact ProbeGround(float3 position, float3 up)

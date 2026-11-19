@@ -233,7 +233,11 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
-                into.Add(BuildingCandidate(i));
+                DestructibleCandidate candidate = BuildingCandidate(i);
+                if (math.distance(worldPoint, candidate.Center) <= radiusM + candidate.HitRadiusM)
+                {
+                    into.Add(candidate);
+                }
             }
 
             for (int i = 0; i < _treasureRegions.Count; i++)
@@ -309,10 +313,12 @@ namespace Cosmimera.Bootstrap.Demo
         private DestructibleCandidate BuildingCandidate(int i)
         {
             RunBuilding b = _layout.Buildings[i];
+            RunSettlement s = _layout.Settlements[b.Settlement];
+            float baseAlt = s.Domain == SettlementDomain.SkyIsland ? s.AltitudeM : _groundAltitude(b.Direction);
             float storeyH = b.Storeys * StoreyM;
             long volumeL = (long)math.round(b.WidthM * b.DepthM * storeyH * 1000f);
             return new DestructibleCandidate(BuildingIdBase + i,
-                _planet.ToWorld(b.Direction, _groundAltitude(b.Direction) + storeyH * 0.5f),
+                _planet.ToWorld(b.Direction, baseAlt + storeyH * 0.5f),
                 BuildingHitRadius(b), _env.Building(MaterialOf(i)), (int)math.min(volumeL, int.MaxValue));
         }
 

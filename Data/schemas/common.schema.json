@@ -78,7 +78,8 @@
         "craft_dye_light",
         "craft_enchant_light",
         "craft_enchant_fire",
-        "craft_enchant_shadow"
+        "craft_enchant_shadow",
+        "swim"
       ]
     },
     "percent": { "type": "integer", "minimum": 0, "maximum": 100 },

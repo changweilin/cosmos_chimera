@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class LandmarkPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v1).
-        private const ulong SnapshotSeed12345V1 = 4764574909514260500UL;
+        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v2).
+        private const ulong SnapshotSeed12345V2 = 3355366971367836007UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -98,6 +98,10 @@ namespace Cosmimera.WorldGen.Tests
                         bool floats = l.Kind == LandmarkKind.SkyIsland || l.Kind == LandmarkKind.SpaceStation;
                         Assert.That(l.Solid, Is.EqualTo(!floats));
                         Assert.That(l.AltitudeM > 0f, Is.EqualTo(floats));
+                        if (l.Kind == LandmarkKind.SkyIsland)
+                        {
+                            Assert.That(l.AltitudeM, Is.LessThanOrEqualTo(radius));
+                        }
                         Assert.That(l.FootprintRadiusM > 0f, Is.EqualTo(l.Kind != LandmarkKind.SpaceStation));
                     }
                 }
@@ -107,10 +111,23 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void The_station_sits_on_top_of_the_elevator_and_only_then()
         {
+            foreach (float smallRadius in new[] { 320f, 640f })
+            {
+                for (ulong seed = 0; seed < 10; seed++)
+                {
+                    LandmarkLayout small = Make(seed, smallRadius).marks;
+                    foreach (RunLandmark l in small.Landmarks)
+                    {
+                        Assert.That(l.Kind, Is.Not.EqualTo(LandmarkKind.SpaceElevator));
+                        Assert.That(l.Kind, Is.Not.EqualTo(LandmarkKind.SpaceStation));
+                    }
+                }
+            }
+
             int elevators = 0;
             for (ulong seed = 0; seed < 100; seed++)
             {
-                LandmarkLayout marks = Make(seed).marks;
+                LandmarkLayout marks = Make(seed, 960f).marks;
                 int elevator = -1, station = -1;
                 foreach (RunLandmark l in marks.Landmarks)
                 {
@@ -132,7 +149,7 @@ namespace Cosmimera.WorldGen.Tests
                     Assert.That(station, Is.EqualTo(elevator + 1));
                     Assert.That(math.distance(marks.Landmarks[station].Direction, marks.Landmarks[elevator].Direction), Is.Zero);
                     Assert.That(marks.Landmarks[station].AltitudeM, Is.EqualTo(marks.Landmarks[elevator].HeightM));
-                    Assert.That(marks.Landmarks[elevator].HeightM, Is.EqualTo(480f));
+                    Assert.That(marks.Landmarks[elevator].HeightM, Is.EqualTo(1200f));
                 }
             }
 
@@ -201,7 +218,7 @@ namespace Cosmimera.WorldGen.Tests
             var seen = new HashSet<int>();
             for (ulong seed = 0; seed < 300; seed++)
             {
-                foreach (RunLandmark l in Make(seed).marks.Landmarks)
+                foreach (RunLandmark l in Make(seed, 960f).marks.Landmarks)
                 {
                     seen.Add((int)l.Kind * 16 + l.Variant);
                 }
@@ -306,9 +323,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(1), "bump the pin with the version");
+            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
             ulong h = LandmarkPlanner.Hash(Make(12345).marks);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V1), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
         }
     }
 }

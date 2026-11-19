@@ -854,9 +854,6 @@
     "en": "Flower patch",
     "ja": "花むら"
   },
-  "ui.object.fauna": {"zh-TW": "野生動物", "en": "Wild animal", "ja": "野生動物"},
-  "ui.object.machine": {"zh-TW": "機械", "en": "Machine", "ja": "機械"},
-  "ui.object.vehicle": {"zh-TW": "載具", "en": "Vehicle", "ja": "乗り物"},
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",
@@ -1343,9 +1340,14 @@
     "ja": "飛行"
   },
   "utility.Levitate": {
-    "zh-TW": "懸浮",
+    "zh-TW": "浮空",
     "en": "Levitate",
     "ja": "浮遊"
+  },
+  "utility.Swim": {
+    "zh-TW": "游泳",
+    "en": "Swim",
+    "ja": "泳ぐ"
   },
   "utility.CatchRateUp": {
     "zh-TW": "收服強化",
@@ -1773,19 +1775,24 @@
     "ja": "障害物除去"
   },
   "utility.desc.Dive": {
-    "zh-TW": "潛水",
-    "en": "Dive",
-    "ja": "潜水"
+    "zh-TW": "於水面低速泳渡並潛入超過 1 公尺深的深海與海底遺跡",
+    "en": "Swim slowly at the surface and dive below 1 m depth to reach deep-sea cities",
+    "ja": "水面を低速で進み、水深 1 m 超の深海や海底都市へ潜る"
   },
   "utility.desc.Fly": {
-    "zh-TW": "飛翔",
-    "en": "Fly",
-    "ja": "飛行"
+    "zh-TW": "於平流層（星球半徑高度）內高速飛行並前往空島部落",
+    "en": "Fly swiftly up to the stratosphere (planet radius) to reach sky tribes",
+    "ja": "成層圏（惑星半径高度）まで高速飛行し、空島集落へ到達する"
   },
   "utility.desc.Levitate": {
-    "zh-TW": "忽略地形減速",
-    "en": "Ignore terrain slowdown",
-    "ja": "地形の減速を無視"
+    "zh-TW": "懸浮並突破平流層上限前往太空站（直達 1.6 R）",
+    "en": "Levitate above the stratosphere to reach space stations (up to 1.6 R)",
+    "ja": "成層圏の上限を超えて浮遊し、宇宙ステーションへ到達する（上限 1.6 R）"
+  },
+  "utility.desc.Swim": {
+    "zh-TW": "於水面快速泳渡並涉水過河或登島（水深上限 1 公尺）",
+    "en": "Swim rapidly across rivers and coastal waters up to 1 m depth",
+    "ja": "水面を素早く泳ぎ、川や浅瀬（水深 1 m まで）を渡る"
   },
   "utility.desc.CatchRateUp": {
     "zh-TW": "提高收服成功率",
@@ -1823,9 +1830,9 @@
     "ja": "移動速度を上げ地形の減速を無視"
   },
   "utility.desc.ReturnVillage": {
-    "zh-TW": "返回村落",
-    "en": "Return to village",
-    "ja": "村へ帰還"
+    "zh-TW": "傳送回起始城鎮或已造訪聚落（深海城市需潛水）",
+    "en": "Teleport to the starting town or visited settlements (deep-sea requires Dive)",
+    "ja": "始まりの街や訪問済み集落へ帰還する（深海都市は潜水が必要）"
   },
   "utility.desc.PartyStealth": {
     "zh-TW": "縮小野生偵測範圍",
@@ -2286,5 +2293,40 @@
     "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
     "en": "Ground cover {percent}% · move and jump ×{mult}",
     "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
+  },
+  "ui.skills.returned": {
+    "zh-TW": "已傳送至 {target}",
+    "en": "Teleported to {target}",
+    "ja": "{target} へ帰還しました"
+  },
+  "ui.skills.return_needs_dive": {
+    "zh-TW": "{target}位於深海，需要生活技「潛水」才能傳送",
+    "en": "{target} lies in the deep sea and requires Dive to return",
+    "ja": "{target}は深海にあるため「潜水」が必要です"
+  },
+  "ui.skills.return_start": {
+    "zh-TW": "起始城鎮",
+    "en": "Starting Town",
+    "ja": "始まりの街"
+  },
+  "ui.skills.return_sky": {
+    "zh-TW": "空島部落",
+    "en": "Sky Tribe",
+    "ja": "空島集落"
+  },
+  "ui.skills.return_deep_sea": {
+    "zh-TW": "深海城市",
+    "en": "Deep-Sea City",
+    "ja": "深海都市"
+  },
+  "ui.skills.return_island": {
+    "zh-TW": "島嶼聚落",
+    "en": "Island Settlement",
+    "ja": "島嶼集落"
+  },
+  "ui.skills.return_village": {
+    "zh-TW": "村落 #{index}",
+    "en": "Village #{index}",
+    "ja": "村 #{index}"
   }
 }

@@ -450,5 +450,38 @@ namespace Cosmimera.WorldGen.Tests
             ulong h = PopulacePlanner.Hash(Make(12345).people);
             Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
         }
+
+        [Test]
+        public void Planet_plus_non_mainland_settlements_receive_valid_residents()
+        {
+            var type = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            _created.Add(type);
+            type.SetId("verdant_planet");
+            type.Set(new List<string> { "forest", "river_valley" }, new List<Element> { Element.Wood, Element.Water });
+            var bigPlanet = new PlanetConfig(960f, float3.zero);
+            System.Func<float3, bool> archipelagic = d => d.y > 0.35f || d.y < -0.75f;
+            RunPlan plan = RunPlanner.Generate(bigPlanet, 7, type, CreatureStage.Adult, _pool, _vocab, archipelagic);
+            RunLayout layout = SettlementPlanner.Generate(bigPlanet, plan, archipelagic);
+            RunPopulace populace = PopulacePlanner.Generate(bigPlanet, plan, layout, default, archipelagic);
+            var clearance = new LayoutClearance(bigPlanet, layout, 0f);
+
+            int nonMainlandProfiles = 0;
+            foreach (SettlementPopulace sp in populace.Settlements)
+            {
+                SettlementKind kind = layout.Settlements[sp.Settlement].Kind;
+                if (kind == SettlementKind.SkyTribe || kind == SettlementKind.DeepSeaCity || kind == SettlementKind.IslandSettlement)
+                {
+                    nonMainlandProfiles++;
+                    Assert.That(sp.ResidentCount, Is.GreaterThan(0), $"non-mainland settlement {kind} should have residents");
+                }
+            }
+
+            Assert.That(nonMainlandProfiles, Is.GreaterThan(0));
+            foreach (RunResident r in populace.Residents)
+            {
+                Assert.That(clearance.IsInsideSettlementBuildings(r.Settlement, r.Direction, PopulacePlanner.BodyRadiusM), Is.False);
+                Assert.That(clearance.IsContainedInSettlement(r.Settlement, r.Direction, PopulacePlanner.BodyRadiusM), Is.True);
+            }
+        }
     }
 }

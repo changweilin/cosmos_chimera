@@ -680,6 +680,9 @@
   "utility.Levitate": {
     "ja": "浮遊"
   },
+  "utility.Swim": {
+    "ja": "泳ぐ"
+  },
   "utility.CatchRateUp": {
     "ja": "捕獲強化"
   },
@@ -936,13 +939,16 @@
     "ja": "障害物除去"
   },
   "utility.desc.Dive": {
-    "ja": "潜水"
+    "ja": "水面を低速で進み、水深 1 m 超の深海や海底都市へ潜る"
   },
   "utility.desc.Fly": {
-    "ja": "飛行"
+    "ja": "成層圏（惑星半径高度）まで高速飛行し、空島集落へ到達する"
   },
   "utility.desc.Levitate": {
-    "ja": "地形の減速を無視"
+    "ja": "成層圏の上限を超えて浮遊し、宇宙ステーションへ到達する（上限 1.6 R）"
+  },
+  "utility.desc.Swim": {
+    "ja": "水面を素早く泳ぎ、川や浅瀬（水深 1 m まで）を渡る"
   },
   "utility.desc.CatchRateUp": {
     "ja": "捕獲率を上昇"
@@ -966,7 +972,7 @@
     "ja": "移動速度を上げ地形の減速を無視"
   },
   "utility.desc.ReturnVillage": {
-    "ja": "村へ帰還"
+    "ja": "始まりの街や訪問済み集落へ帰還する（深海都市は潜水が必要）"
   },
   "utility.desc.PartyStealth": {
     "ja": "野生の感知範囲を縮小"
@@ -1243,5 +1249,26 @@
   },
   "ui.weather.ground": {
     "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
+  },
+  "ui.skills.returned": {
+    "ja": "{target} へ帰還しました"
+  },
+  "ui.skills.return_needs_dive": {
+    "ja": "{target}は深海にあるため「潜水」が必要です"
+  },
+  "ui.skills.return_start": {
+    "ja": "始まりの街"
+  },
+  "ui.skills.return_sky": {
+    "ja": "空島集落"
+  },
+  "ui.skills.return_deep_sea": {
+    "ja": "深海都市"
+  },
+  "ui.skills.return_island": {
+    "ja": "島嶼集落"
+  },
+  "ui.skills.return_village": {
+    "ja": "村 #{index}"
   }
 }

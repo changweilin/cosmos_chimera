@@ -22,7 +22,11 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 3;
+        public const int GeneratorVersion = 4;
+
+        /// <summary>Minimum planet radius (m) where non-mainland settlements and space stations appear (Planet size+).</summary>
+        /// <remarks>Pre: none. Post: constant 960 m. Side effects: none.</remarks>
+        public const float PlanetMinRadiusM = 960f;
 
         /// <summary>Paved width of a main road (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -150,6 +154,11 @@ namespace Cosmimera.WorldGen
                 roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng));
             }
 
+            if (radius >= PlanetMinRadiusM)
+            {
+                AddNonMainlandSettlements(settlements, buildings, plan, radius, isLand);
+            }
+
             return new RunLayout(roads.ToArray(), settlements.ToArray(), buildings.ToArray());
         }
 
@@ -254,8 +263,10 @@ namespace Cosmimera.WorldGen
             foreach (RunSettlement s in layout.Settlements)
             {
                 Mix(ref h, (ulong)s.Kind);
+                Mix(ref h, (ulong)s.Domain);
                 Mix(ref h, (ulong)s.Region);
                 Mix(ref h, (ulong)s.BuildingCount);
+                Mix(ref h, (ulong)math.round(s.AltitudeM * 100f));
             }
 
             foreach (RunBuilding b in layout.Buildings)
@@ -325,10 +336,24 @@ namespace Cosmimera.WorldGen
             return new RunRoad(roadClass, from, to, roadClass == RoadClass.Main ? MainWidthM : TrailWidthM, points, bridge);
         }
 
+        private enum LotSurfaceRule
+        {
+            DryLandOnly,
+            DeepSeaOnly,
+            AirborneAny,
+        }
+
         // Lots line both sides of a road through the centre: even lots on one side, odd on the other, centred on it.
         private static void AddLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
             SettlementKind kind, float3 center, float3 roadAxis, float roadWidthM, int count, float radius,
-            Func<float3, bool> isLand, ref Pcg32 rng)
+            Func<float3, bool> isLand, ref Pcg32 rng) =>
+            AddLotsWithDomain(settlements, buildings, region, kind, SettlementDomain.Land, 0f, center, roadAxis,
+                roadWidthM, count, radius, isLand, LotSurfaceRule.DryLandOnly, allowEmpty: true, ref rng);
+
+        private static bool AddLotsWithDomain(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
+            SettlementKind kind, SettlementDomain domain, float altitudeM, float3 center, float3 roadAxis,
+            float roadWidthM, int count, float radius, Func<float3, bool> isLand, LotSurfaceRule surfaceRule,
+            bool allowEmpty, ref Pcg32 rng)
         {
             int index = settlements.Count;
             int first = buildings.Count;
@@ -342,15 +367,210 @@ namespace Cosmimera.WorldGen
                 float along = (k / 2 - (rows - 1) * 0.5f) * LotSpacingM;
                 float lateral = side * (roadWidthM * 0.5f + SetbackM + depth * 0.5f);
                 float3 pos = Offset(center, roadAxis * along + normal * lateral, radius);
-                if (isLand != null && !isLand(pos))
+                if (isLand != null)
                 {
-                    continue;
+                    bool land = isLand(pos);
+                    if (surfaceRule == LotSurfaceRule.DryLandOnly && !land) continue;
+                    if (surfaceRule == LotSurfaceRule.DeepSeaOnly && land) continue;
                 }
 
                 buildings.Add(new RunBuilding(index, bk, pos, Tangent(pos, -side * normal), width, depth, storeys));
             }
 
-            settlements.Add(new RunSettlement(index, region, kind, center, first, buildings.Count - first));
+            int built = buildings.Count - first;
+            if (!allowEmpty && built == 0)
+            {
+                return false;
+            }
+
+            settlements.Add(new RunSettlement(index, region, kind, center, first, built, domain, altitudeM));
+            return true;
+        }
+
+        // Places smaller non-mainland settlements (SkyTribe, DeepSeaCity, IslandSettlement) on Planet+ (R >= 960 m)
+        // using an independent RNG stream ('O') so mainland roads, towns and ruins stay unaffected.
+        private static void AddNonMainlandSettlements(List<RunSettlement> settlements, List<RunBuilding> buildings,
+            RunPlan plan, float radius, Func<float3, bool> isLand)
+        {
+            var rng = new Pcg32(plan.Seed, 'O');
+            IReadOnlyList<RunRegion> regions = plan.Regions;
+
+            // 1. SkyTribe: floats inside [0.25 R, 0.85 R], strictly <= 1.0 R stratosphere ceiling.
+            int skyRegion = PickNonLandingRegion(regions, plan.LandingRegion, plan.BossRegion, ref rng);
+            float3 skySite = regions[skyRegion].Center;
+            float skyAltM = math.round(math.lerp(radius * 0.25f, radius * 0.85f, rng.NextFloat()));
+            int skyLots = 2 + (int)rng.NextUInt(2);
+            AddLotsWithDomain(settlements, buildings, skyRegion, SettlementKind.SkyTribe, SettlementDomain.SkyIsland,
+                skyAltM, skySite, RandomAxis(skySite, ref rng), TrailWidthM, skyLots, radius, isLand,
+                LotSurfaceRule.AirborneAny, allowEmpty: false, ref rng);
+
+            if (isLand == null)
+            {
+                return;
+            }
+
+            // 2. DeepSeaCity: anchored on ocean seafloor (> 1 m depth), reachable via Dive.
+            if (TryFindOceanSite(settlements, regions, radius, isLand, ref rng, out float3 seaSite, out int seaRegion))
+            {
+                float seaDepthM = 12f + (int)rng.NextUInt(13);
+                int seaLots = 3 + (int)rng.NextUInt(2);
+                AddLotsWithDomain(settlements, buildings, seaRegion, SettlementKind.DeepSeaCity, SettlementDomain.DeepSea,
+                    -seaDepthM, seaSite, RandomAxis(seaSite, ref rng), TrailWidthM, seaLots, radius, isLand,
+                    LotSurfaceRule.DeepSeaOnly, allowEmpty: false, ref rng);
+            }
+
+            // 3. IslandSettlement: land site separated from starting town by sea, reachable via Swim or Dive.
+            if (TryFindIslandSite(settlements, regions, plan.LandingDirection, radius, isLand, ref rng,
+                out float3 islandSite, out int islandRegion))
+            {
+                int islandLots = 2 + (int)rng.NextUInt(2);
+                AddLotsWithDomain(settlements, buildings, islandRegion, SettlementKind.IslandSettlement,
+                    SettlementDomain.Island, 0f, islandSite, RandomAxis(islandSite, ref rng), TrailWidthM, islandLots,
+                    radius, isLand, LotSurfaceRule.DryLandOnly, allowEmpty: false, ref rng);
+            }
+        }
+
+        private static int PickNonLandingRegion(IReadOnlyList<RunRegion> regions, int landingRegion, int bossRegion,
+            ref Pcg32 rng)
+        {
+            if (regions.Count <= 1) return landingRegion;
+            int start = (int)rng.NextUInt((uint)regions.Count);
+            for (int offset = 0; offset < regions.Count; offset++)
+            {
+                int r = (start + offset) % regions.Count;
+                if (r != landingRegion && r != bossRegion) return r;
+            }
+
+            return (landingRegion + 1) % regions.Count;
+        }
+
+        private static bool TryFindOceanSite(List<RunSettlement> settlements, IReadOnlyList<RunRegion> regions, float radius,
+            Func<float3, bool> isLand, ref Pcg32 rng, out float3 site, out int region)
+        {
+            float3 fallback = float3.zero;
+            bool hasFallback = false;
+            for (int attempt = 0; attempt < 64; attempt++)
+            {
+                float3 p = SampleSphere(ref rng);
+                if (isLand(p) || HasSurfaceSettlementNear(settlements, p, radius, 48f))
+                {
+                    continue;
+                }
+
+                if (!hasFallback)
+                {
+                    fallback = p;
+                    hasFallback = true;
+                }
+
+                PlanetFrame f = PlanetFrame.FromUp(p);
+                if (!isLand(Offset(p, f.East * 24f, radius)) &&
+                    !isLand(Offset(p, -f.East * 24f, radius)) &&
+                    !isLand(Offset(p, f.North * 24f, radius)) &&
+                    !isLand(Offset(p, -f.North * 24f, radius)))
+                {
+                    site = p;
+                    region = NearestRegion(regions, p);
+                    return true;
+                }
+            }
+
+            if (hasFallback)
+            {
+                site = fallback;
+                region = NearestRegion(regions, fallback);
+                return true;
+            }
+
+            site = float3.zero;
+            region = 0;
+            return false;
+        }
+
+        private static bool TryFindIslandSite(List<RunSettlement> settlements, IReadOnlyList<RunRegion> regions,
+            float3 landingDir, float radius, Func<float3, bool> isLand, ref Pcg32 rng, out float3 site, out int region)
+        {
+            for (int attempt = 0; attempt < 64; attempt++)
+            {
+                float3 p = SampleSphere(ref rng);
+                if (!isLand(p) || HasSurfaceSettlementNear(settlements, p, radius, 45f))
+                {
+                    continue;
+                }
+
+                bool separatedByWater = false;
+                for (int step = 1; step <= 3 && !separatedByWater; step++)
+                {
+                    float t = step * 0.25f;
+                    float3 blended = math.lerp(landingDir, p, t);
+                    if (math.lengthsq(blended) <= 1e-6f)
+                    {
+                        continue;
+                    }
+
+                    float3 arc = math.normalize(blended);
+                    if (!isLand(arc))
+                    {
+                        separatedByWater = true;
+                    }
+                }
+
+                if (separatedByWater)
+                {
+                    site = p;
+                    region = NearestRegion(regions, p);
+                    return true;
+                }
+            }
+
+            site = float3.zero;
+            region = 0;
+            return false;
+        }
+
+        private static bool HasSurfaceSettlementNear(List<RunSettlement> settlements, float3 p, float radius, float minGapM)
+        {
+            float maxDist2 = (minGapM / radius) * (minGapM / radius);
+            for (int i = 0; i < settlements.Count; i++)
+            {
+                RunSettlement s = settlements[i];
+                if (s.Domain == SettlementDomain.SkyIsland) continue;
+                if (math.distancesq(s.Center, p) < maxDist2) return true;
+            }
+
+            return false;
+        }
+
+        private static int NearestRegion(IReadOnlyList<RunRegion> regions, float3 dir)
+        {
+            int best = 0;
+            float bestDot = float.MinValue;
+            for (int i = 0; i < regions.Count; i++)
+            {
+                float d = math.dot(regions[i].Center, dir);
+                if (d > bestDot)
+                {
+                    bestDot = d;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        private static float3 SampleSphere(ref Pcg32 rng)
+        {
+            float z = rng.NextFloat() * 2f - 1f;
+            float phi = rng.NextFloat() * 2f * math.PI;
+            float r = math.sqrt(math.max(0f, 1f - z * z));
+            return math.normalize(new float3(r * math.cos(phi), z, r * math.sin(phi)));
+        }
+
+        private static float3 RandomAxis(float3 up, ref Pcg32 rng)
+        {
+            PlanetFrame f = PlanetFrame.FromUp(up);
+            float ang = rng.NextFloat() * 2f * math.PI;
+            return math.normalize(f.East * math.cos(ang) + f.North * math.sin(ang));
         }
 
         private static void AddLair(List<RunSettlement> settlements, List<RunBuilding> buildings, RunPlan plan, float radius,
@@ -436,6 +656,12 @@ namespace Cosmimera.WorldGen
                     return roll < 50 ? BuildingKind.Tower : BuildingKind.House;
                 case SettlementKind.Village:
                     return lot == 0 ? BuildingKind.Hall : roll < 20 ? BuildingKind.Tower : BuildingKind.House;
+                case SettlementKind.IslandSettlement:
+                    return lot == 0 ? BuildingKind.Hall : BuildingKind.House;
+                case SettlementKind.SkyTribe:
+                    return lot == 0 ? BuildingKind.Hall : roll < 50 ? BuildingKind.Tent : BuildingKind.Tower;
+                case SettlementKind.DeepSeaCity:
+                    return lot == 0 ? BuildingKind.Hall : roll < 45 ? BuildingKind.Tower : BuildingKind.House;
                 default:
                     return roll < 50 ? BuildingKind.Tower : BuildingKind.House;
             }

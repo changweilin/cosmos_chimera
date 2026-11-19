@@ -118,6 +118,14 @@ namespace Cosmimera.Bootstrap.Demo
                 RunBuilding building = layout.Buildings[i];
                 _buildings.Add(BuildBuilding(building, i, layout.Settlements[building.Settlement]));
             }
+
+            foreach (RunSettlement s in layout.Settlements)
+            {
+                if (s.Domain == SettlementDomain.SkyIsland && s.BuildingCount > 0)
+                {
+                    BuildSkyDeck(layout, s);
+                }
+            }
         }
 
         private Material RoadMaterial(Color soil) => _sceneryShader == null ? MaterialFor(soil, 0f) :
@@ -421,15 +429,19 @@ namespace Cosmimera.Bootstrap.Demo
         {
             float3 up = b.Direction;
             float3 across = math.normalize(math.cross(up, b.Facing));
-            float lo = _groundAltitude(up);
+            bool isSky = settlement.Domain == SettlementDomain.SkyIsland;
+            float lo = isSky ? settlement.AltitudeM : _groundAltitude(up);
             float hi = lo;
-            for (int i = 0; i < 4; i++)
+            if (!isSky)
             {
-                float3 corner = b.Facing * ((i & 1) == 0 ? 0.5f : -0.5f) * b.DepthM +
-                                across * ((i & 2) == 0 ? 0.5f : -0.5f) * b.WidthM;
-                float alt = _groundAltitude(math.normalize(up + corner / _config.Radius));
-                lo = math.min(lo, alt);
-                hi = math.max(hi, alt);
+                for (int i = 0; i < 4; i++)
+                {
+                    float3 corner = b.Facing * ((i & 1) == 0 ? 0.5f : -0.5f) * b.DepthM +
+                                    across * ((i & 2) == 0 ? 0.5f : -0.5f) * b.WidthM;
+                    float alt = _groundAltitude(math.normalize(up + corner / _config.Radius));
+                    lo = math.min(lo, alt);
+                    hi = math.max(hi, alt);
+                }
             }
 
             float baseAlt = lo - SinkM;
@@ -456,6 +468,83 @@ namespace Cosmimera.Bootstrap.Demo
             box.size = body;
             box.center = new Vector3(0f, body.y * 0.5f, 0f);
             return root;
+        }
+
+        private void BuildSkyDeck(RunLayout layout, RunSettlement s)
+        {
+            float maxDistM = LayoutClearance.MinSettlementRadiusM;
+            int end = math.min(s.FirstBuilding + s.BuildingCount, layout.Buildings.Count);
+            for (int i = s.FirstBuilding; i < end; i++)
+            {
+                RunBuilding b = layout.Buildings[i];
+                float distM = math.distance(s.Center, b.Direction) * _config.Radius;
+                float halfDiagM = 0.5f * math.sqrt(b.WidthM * b.WidthM + b.DepthM * b.DepthM);
+                maxDistM = math.max(maxDistM, distM + halfDiagM + LayoutClearance.SettlementApronM);
+            }
+
+            const float thicknessM = 3f;
+            float3 world = _config.ToWorld(s.Center, s.AltitudeM);
+            PlanetFrame frame = PlanetFrame.FromUp(s.Center);
+            var deck = new GameObject("SkyIslandDeck_" + s.Index);
+            deck.transform.SetParent(transform, false);
+            deck.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                Quaternion.LookRotation((Vector3)frame.North, (Vector3)s.Center));
+            Mesh mesh = BuildDiscMesh(maxDistM, thicknessM);
+            _meshes.Add(mesh);
+            deck.AddComponent<MeshFilter>().sharedMesh = mesh;
+            deck.AddComponent<MeshRenderer>().sharedMaterial = _mainRoad;
+            var collider = deck.AddComponent<BoxCollider>();
+            collider.size = new Vector3(maxDistM * 2f, thicknessM, maxDistM * 2f);
+            collider.center = new Vector3(0f, -thicknessM * 0.5f, 0f);
+        }
+
+        private static Mesh BuildDiscMesh(float radiusM, float thicknessM)
+        {
+            const int sides = 16;
+            var verts = new Vector3[sides * 2 + 2];
+            verts[0] = Vector3.zero;
+            verts[1] = new Vector3(0f, -thicknessM, 0f);
+            for (int i = 0; i < sides; i++)
+            {
+                float ang = i * (2f * math.PI / sides);
+                float c = math.cos(ang);
+                float s = math.sin(ang);
+                verts[2 + i] = new Vector3(c * radiusM, 0f, s * radiusM);
+                verts[2 + sides + i] = new Vector3(c * radiusM * 0.65f, -thicknessM, s * radiusM * 0.65f);
+            }
+
+            var tris = new int[sides * 12];
+            int t = 0;
+            for (int i = 0; i < sides; i++)
+            {
+                int next = (i + 1) % sides;
+                int topA = 2 + i;
+                int topB = 2 + next;
+                int botA = 2 + sides + i;
+                int botB = 2 + sides + next;
+
+                // Top cap (+Y)
+                tris[t++] = 0;
+                tris[t++] = topB;
+                tris[t++] = topA;
+
+                // Bottom tip (-Y)
+                tris[t++] = 1;
+                tris[t++] = botA;
+                tris[t++] = botB;
+
+                // Rim quad
+                tris[t++] = topA;
+                tris[t++] = topB;
+                tris[t++] = botA;
+                tris[t++] = topB;
+                tris[t++] = botB;
+                tris[t++] = botA;
+            }
+
+            var mesh = new Mesh { name = "SkyIslandDeck", vertices = verts, triangles = tris };
+            mesh.RecalculateNormals();
+            return mesh;
         }
 
         /// <summary>Hides building <paramref name="index"/> and its colliders (it was destroyed; destructibles.md#碰撞).</summary>

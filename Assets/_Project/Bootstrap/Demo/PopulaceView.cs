@@ -36,6 +36,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<Mesh> _meshes = new List<Mesh>();
         private readonly List<Material> _materials = new List<Material>();
         private readonly List<int> _residentIndices = new List<int>();
+        private readonly List<bool> _residentIsSky = new List<bool>();
+        private readonly List<float> _residentSkyAltM = new List<float>();
         private PlanetConfig _config;
         private RunPopulace _populace;
         private Func<float3, float> _groundAltitude;
@@ -91,11 +93,13 @@ namespace Cosmimera.Bootstrap.Demo
                 string theme = plan != null && settlement.Region < plan.Regions.Count ? plan.Regions[settlement.Region].ThemeId : null;
                 ArchMix mix = ArchitectureMeshes.MixFor(style, settlement.Kind, theme, seed, settlement.Index);
                 ArchEra era = ArchitectureMeshes.SettlementEra(style, settlement.Kind);
+                bool isSky = settlement.Domain == SettlementDomain.SkyIsland;
                 for (int i = home.FirstResident; i < home.FirstResident + home.ResidentCount; i++)
                 {
                     RunResident resident = populace.Residents[i];
                     NpcSpec spec = NpcMeshes.SpecFor(resident, style.Region, era, mix);
-                    float3 world = config.ToWorld(resident.Direction, groundAltitude(resident.Direction) - SinkM);
+                    float alt = isSky ? settlement.AltitudeM : groundAltitude(resident.Direction);
+                    float3 world = config.ToWorld(resident.Direction, alt - SinkM);
                     var root = new GameObject("Resident_" + resident.Race + "_" + resident.Role);
                     root.transform.SetParent(transform, false);
                     root.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
@@ -120,6 +124,8 @@ namespace Cosmimera.Bootstrap.Demo
                     _roots.Add(root);
                     _renderers.Add(renderer);
                     _residentIndices.Add(i);
+                    _residentIsSky.Add(isSky);
+                    _residentSkyAltM.Add(settlement.AltitudeM);
                 }
             }
         }
@@ -134,7 +140,8 @@ namespace Cosmimera.Bootstrap.Demo
                     int idx = _residentIndices[i];
                     float3 dir = _populace.CurrentDirection(idx);
                     float3 facing = _populace.CurrentFacing(idx);
-                    float3 world = _config.ToWorld(dir, _groundAltitude(dir) - SinkM);
+                    float alt = _residentIsSky[i] ? _residentSkyAltM[i] : _groundAltitude(dir);
+                    float3 world = _config.ToWorld(dir, alt - SinkM);
                     ResidentStride stride = _strides[i];
                     stride.Advance(math.distance(dir, stride.PreviousDirection) * _config.Radius, _renderers[i].enabled);
                     stride.PreviousDirection = dir;

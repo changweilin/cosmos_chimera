@@ -162,5 +162,117 @@ namespace Cosmimera.Player.Tests
             Assert.IsTrue(_character.IsGrounded, "did not land");
             Assert.AreEqual(1.2f, apex, 0.25f, "jump apex");
         }
+
+        [UnityTest]
+        public IEnumerator Fly_stops_at_stratosphere_and_levitate_passes_it()
+        {
+            float3 dir = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(dir, new float3(0f, 0f, 1f));
+
+            var body = _character.GetComponent<Rigidbody>();
+            body.position = _config.ToWorld(dir, _radius - 8f);
+            _character.transform.position = body.position;
+
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 60; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, _radius + 0.1f, "Fly must stay within 1.0 R stratosphere");
+            }
+
+            Assert.Greater(_character.AltitudeM, _radius - 1f, "Fly did not climb to stratosphere");
+
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius * 1.6f, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.Greater(_character.AltitudeM, _radius + 5f, "Levitate must exceed 1.0 R stratosphere");
+            Assert.LessOrEqual(_character.AltitudeM, _radius * 1.6f + 0.1f, "Levitate stays within 1.6 R ceiling");
+        }
+
+        [UnityTest]
+        public IEnumerator Water_depth_gate_swim_surface_speed_and_dive_submersion()
+        {
+            float3 dir = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(dir, new float3(0f, 0f, 1f));
+            float seaLevel = _height.Sample(dir) + 3.5f;
+            var body = _character.GetComponent<Rigidbody>();
+
+            // Without Swim or Dive, entry past 1 m water depth is blocked above SeaLevel - 1 m.
+            body.position = _config.ToWorld(dir, seaLevel - 1.5f);
+            _character.transform.position = body.position;
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 0.8f, underwaterSpeedScale: 0f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 10; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+            Assert.GreaterOrEqual(_character.AltitudeM, seaLevel - 1.05f, "Without Dive, cannot stay deeper than 1 m");
+
+            // Swim moves faster at surface than Dive alone; neither submerges > 1 m with Swim alone.
+            float3 swimStart = dir;
+            body.position = _config.ToWorld(swimStart, seaLevel);
+            _character.transform.position = body.position;
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: true, canDive: false, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1.15f, underwaterSpeedScale: 0f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(-1f);
+                yield return new WaitForFixedUpdate();
+            }
+            float swimArc = math.distance(_config.ToDirection(_character.transform.position), swimStart) * _radius;
+            Assert.GreaterOrEqual(_character.AltitudeM, seaLevel - 1.05f, "Swim must not submerge below 1 m");
+
+            float3 diveSurfStart = _config.ToDirection(_character.transform.position);
+            body.position = _config.ToWorld(diveSurfStart, seaLevel);
+            _character.transform.position = body.position;
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: true, canDive: true, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 0.85f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+            float diveSurfArc = math.distance(_config.ToDirection(_character.transform.position), diveSurfStart) * _radius;
+            Assert.Greater(swimArc, diveSurfArc, "Swim must move faster on water surface than Dive");
+
+            // With Dive holding descend, player submerges deeper than 1 m.
+            body.position = _config.ToWorld(dir, seaLevel - 0.5f);
+            _character.transform.position = body.position;
+            for (int i = 0; i < 30; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, false, false);
+                _character.SetVerticalInput(-1f);
+                yield return new WaitForFixedUpdate();
+            }
+            Assert.Less(_character.AltitudeM, seaLevel - 1.2f, "Dive should submerge past 1 m");
+        }
     }
 }

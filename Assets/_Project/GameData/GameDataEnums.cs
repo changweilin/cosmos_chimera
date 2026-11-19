@@ -206,6 +206,7 @@ namespace Cosmimera.GameData
         CraftEnchantLight = 60,
         CraftEnchantFire = 61,
         CraftEnchantShadow = 62,
+        Swim = 63,
     }
 
     /// <summary>Life-skill methods for acquiring raw food ingredients.</summary>
