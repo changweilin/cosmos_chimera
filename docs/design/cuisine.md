@@ -43,6 +43,7 @@ produce_milk                                       chill_brew
 
 - 加工是**確定性**的一對一轉換：先驗證技能與背包容量，再扣原料給成品；拒絕時不變（同 [crafting.md](crafting.md#加工與製作) 交易規則）。
 - 加工品保留原料的 `effect` 與元素；`effect` 只因研磨翻倍，其他加工不改效果。
+- 醃漬品：野莓 → 醃漬野莓 `ing_pickled_berry`、野生根菜 → 醃漬根菜 `ing_pickled_root`。
 
 ## 4. 料理判定（`PotCookingRules`，純函式）
 
@@ -127,8 +128,12 @@ produce_milk                                       chill_brew
 | `food_glowcap_tonic` | 夜光菇藥湯 | stew | 夜光菇 2＋發酵酒麴 1 | 影專精 +10、會心 +10 |
 | `food_truffle_butter_grill` | 松露奶油烤菇 | grill | 松露 1＋奶油 1＋任一 `fungi` 1 | 豐收 +15 |
 | `food_honey_glazed_nuts` | 蜜漬堅果 | cold_mix | 堅殼栗 2＋蜂蜜 1 | 馴服 +6、堅守 Lv1 |
+| `food_chilled_seafood_salad` | 冰鎮海鮮沙拉（漁獲冷盤） | cold_mix | 冰鮮蝦 1＋海帶扇貝 1＋海鹽 1 | 銳眼 Lv2（命中 +6、暴擊率 +6）、淨化 |
+| `food_golden_wheat_tempura` | 金穗天婦羅（禽蛋麵點） | deep_fry | 麵粉 1＋食用油 1＋天巢蛋 1＋任一 `berry_herb` 1 | 全 CD −8% |
+| `food_pickled_root_hare_stew` | 醃根菜燉兔肉 | stew | 醃漬根菜 1＋陷阱兔肉 1＋任一 `grain_crop` 1 | 影專精 +10、失衡耐性 +10%（300 s） |
+| `food_pickled_berry_cooler` | 醃莓冰飲 | chill_brew | 醃漬野莓 1＋冰薄荷 1＋蜂蜜 1 | 全 CD −4%、馴服 +3（300 s） |
 
-- 招牌料理在首次做出時記入圖鑑「食譜」頁（[encyclopedia.md](encyclopedia.md)）；之後在料理介面可一鍵帶入投料。未發現的食譜顯示為「？」，提示所需方式與一項食材類別。
+- **食譜發現**：招牌料理以**自由投料**首次做出時記為已發現（`LobbySave` v16 `discovered_recipes`，跨 run 保留；如圖鑑知識，放棄 run 也保留）。未發現的食譜在冒險手冊料理介面與圖鑑「食譜」分頁顯示為「？？？」，提示料理方式與第一項需求的食材類別，無料理按鈕。已發現者顯示投料，可「帶入投料」（填入鍋並選好方式）或直接料理。
 - 燻乾品（如燻兔肉乾 `ing_smoked_hare`）屬加工食材，可直接食用，不另設料理 ID。
 - 金色油籽為堅果（`nut`），須先榨油才能用於自由炒／炸；既有招牌料理仍直接指定油籽。
 - 招牌食譜的類別需求（「任一 X」）用「帶入食譜」時優先扣原料，再扣加工品。
@@ -140,4 +145,4 @@ produce_milk                                       chill_brew
 - Schema：`ingredient.schema.json` 加 `role`、`tags`、`cook_heal_percent`、`effect`、`duration_add_ms`、`processed_from`／`process`；`category` 加 `fungi`、`critter`；`source` 加 `forage_fungi`。`food.schema.json` 的 `cooking_method` 加 `chill_brew`。新 ID 一律 `snake_case`、永不重用。
 - 示範目錄目前寫在 `FoodCatalog.CreateDefault()`，尚未有 `Data/food/**` importer。
 - 冒險手冊「生活技能」：加工清單、鍋（選方式 → 加入食材 → 預覽成品 → 料理）。玩家位於已發現的有人聚落內時視為聚落廚房。
-- `chill_brew`、`freeze_prep`、`ferment_cure`、`smoke_dry`、`forage_fungi` 的持有物種尚為 P5 預留；在此之前只能在聚落廚房使用這些加工與料理方式（`forage_fungi` 尚無法採集）。
+- 食物生活技持有物種：`fishing`／`forage_berries`／`cook_fire` 在 demo 池；其餘 12 項分配給 P5-03 草稿 02 的 12 個型態（見 [field-utilities.md](field-utilities.md) §4／§5 持有物種欄），**該批尚未接入 demo 池**（缺命名文案）。接入前這些加工與料理方式只能在聚落廚房使用，肉／禽／蟲／作物／乳／菇無法在野外採集。

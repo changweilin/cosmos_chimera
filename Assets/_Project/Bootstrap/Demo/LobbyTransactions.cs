@@ -235,6 +235,10 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Contract.Requires(CraftInventory.ValidId(trialId), "completed trial ids must be valid snake_case");
             }
+            foreach (string recipeId in outcome.DiscoveredRecipes)
+            {
+                Contract.Requires(CraftInventory.ValidId(recipeId), "discovered recipe ids must be valid snake_case");
+            }
             if (live.WouldOverflow(outcome.Materials, out overflow))
             {
                 return CommitStatus.StockFull;
@@ -269,6 +273,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             candidate.AddMaterials(outcome.Materials);
             candidate.Codex.Merge(outcome.Codex);
+            // Recipe discovery is knowledge, like the codex: kept on abandon (cuisine.md#6).
+            var recipeIds = new List<string>(outcome.DiscoveredRecipes);
+            recipeIds.Sort(StringComparer.Ordinal);
+            foreach (string recipeId in recipeIds) candidate.RecordRecipeDiscovered(recipeId);
             if (!outcome.Abandoned)
             {
                 if (outcome.TrainerBattles.Count > 0)

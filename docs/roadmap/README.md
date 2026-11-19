@@ -69,4 +69,6 @@ D0 已可完整跑一場（EditMode 2114/2114、PlayMode 129/129）；瓶頸是*
 
 19. **P1-17 程序化器物外觀（🟦，`../design/gear-looks.md`）**：a 規則層、b 每件外觀標記、c 佔位網格 `GearMeshes`（大廳紙娃娃、關卡內宙獸虛擬大手／飾品與 `NpcMeshes` 職業道具）與 d 格擋護盾特徵（`BlockShieldSpec`／`BuildBlockShield`）已接線（截圖 `Logs/paperdoll-*.png`、`Logs/gear-*.png`，`COSMIMERA_CAPTURE=1` 跑 `GearLineupTests` 重拍），**挑截圖**；e 手工部件庫隨 P1-16。人工試玩：手冊「道具」同 id 多件切換、製作地顯示、紙娃娃外觀、關卡內虛擬大手／格擋護盾（三語、實體手把）。
 
+20. **料理多路線（規格 `../design/cuisine.md`）**：12 項食物生活技已草擬分配給 `p5-03-creatures-draft-02` 的 12 個型態（使用者事後審），**該批接入 demo 池**前須補三語命名（含其招式／特性名）、重新匯入 `GameDatabase.asset`、更新生成快照；接入前野外取不到肉／禽／蟲／作物／乳／菇。審查：`LobbySave` v16 `discovered_recipes`（存檔格式必審）。人工試玩：自由投料發現招牌料理、「？？？」提示、帶入投料、圖鑑「食譜」分頁與重開存檔、4 道新料理與醃漬（三語、實體手把）。
+
 此節只寫「下一步」，不寫歷史；完成後改寫或刪除該條（歷史在 commit）。

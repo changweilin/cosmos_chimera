@@ -1568,6 +1568,36 @@
   "food_dubious_mash": {
     "ja": "失敗料理"
   },
+  "ing_pickled_berry": {
+    "ja": "ベリーの漬物"
+  },
+  "ing_pickled_root": {
+    "ja": "根菜の漬物"
+  },
+  "food_chilled_seafood_salad": {
+    "ja": "冷やし海鮮サラダ"
+  },
+  "food_golden_wheat_tempura": {
+    "ja": "金穂の天ぷら"
+  },
+  "food_pickled_root_hare_stew": {
+    "ja": "根菜漬けと兎肉の煮込み"
+  },
+  "food_pickled_berry_cooler": {
+    "ja": "ベリー漬けの冷たい飲み物"
+  },
+  "ui.skills.recipe_unknown": {
+    "ja": "？？？ · {method} · {category}が必要"
+  },
+  "ui.skills.recipe_fill": {
+    "ja": "鍋に入れる"
+  },
+  "ui.skills.recipe_new": {
+    "ja": "新しいレシピ！"
+  },
+  "dex.recipes": {
+    "ja": "レシピ"
+  },
   "gather.ForageFungi": {
     "ja": "キノコ採り"
   },

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Cosmimera.Creatures;
 using Cosmimera.Codex;
+using Cosmimera.Food;
 using Cosmimera.GameData;
 using UnityEngine;
 
@@ -38,7 +39,8 @@ namespace Cosmimera.Bootstrap.Demo
                 if (_database.TryGet(creature.SpeciesId, out CreatureDef definition))
                     EncyclopediaCatalog.RecordOwned(_save.Codex, definition);
             _journal = new AdventurePanel(_copy, initialPage);
-            _codex = new CodexPanel(_database, _copy, IsOwnedSpecies, _portraits, _save.Codex);
+            _codex = new CodexPanel(_database, _copy, IsOwnedSpecies, _portraits, _save.Codex,
+                FoodCatalog.CreateDefault(), _save.IsRecipeDiscovered);
             _partnerMain = _save.Party[0];
             _confirmPending = false;
         }

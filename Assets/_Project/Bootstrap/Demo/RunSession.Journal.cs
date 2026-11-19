@@ -114,6 +114,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void ConfigureJournal()
         {
             if (_setup.Codex != null) _outcome.Codex.Merge(_setup.Codex);
+            if (_setup.DiscoveredRecipes != null) _outcome.DiscoveredRecipes.UnionWith(_setup.DiscoveredRecipes);
             foreach (CreatureDef creature in _setup.Party) EncyclopediaCatalog.RecordOwned(_outcome.Codex, creature);
             if (_setup.Database != null && _setup.Owned != null)
                 foreach (OwnedCreature creature in _setup.Owned)
@@ -153,7 +154,8 @@ namespace Cosmimera.Bootstrap.Demo
                 if (utility != FieldUtility.Mount && utility != FieldUtility.Fly && utility != FieldUtility.Levitate &&
                     utility != FieldUtility.PartyStealth) _enabledUtilities.Add(utility);
             ApplyUtilities();
-            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits, _outcome.Codex);
+            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits, _outcome.Codex,
+                _foodCatalog, _outcome.DiscoveredRecipes.Contains);
         }
 
         private bool OwnsSpecies(string species)
@@ -529,11 +531,23 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Heading(_copy.Ui("ui.skills.recipes"));
             foreach (RecipeSpec recipe in _foodCatalog.Recipes)
             {
+                // REQ: docs/design/cuisine.md#6 — undiscovered recipes show only their method and one ingredient category.
+                if (!_outcome.DiscoveredRecipes.Contains(recipe.Id))
+                {
+                    ui.Label(RecipeHintText(recipe));
+                    continue;
+                }
                 CookRefusalReason reason = CookingRules.CanCook(recipe, _foodCatalog, _foodInventory, cooking);
-                ui.Label(_copy.Ui(recipe.OutputFoodId) + " · " + _copy.Ui("cook." + reason));
+                ui.Label(_copy.Ui(recipe.OutputFoodId) + " · " + _copy.Ui("dish.method." + recipe.Method) + " · " + _copy.Ui("cook." + reason));
                 foreach (RecipeIngredientRequirement requirement in recipe.Requirements)
                     ui.Label("· " + (requirement.IsCategoryMatch ? _copy.Ui("ingredient.category." + requirement.Category)
                         : _copy.Ui(requirement.IngredientId)) + " ×" + requirement.Quantity);
+                if (ui.Button(_copy.Ui("ui.skills.recipe_fill")))
+                {
+                    if (_foodInventory.TryPlanRecipePot(recipe, _foodCatalog, _pot)) _potMethod = recipe.Method;
+                    else ui.Message = _copy.Ui("cook." + CookRefusalReason.MissingIngredients);
+                    GUIUtility.ExitGUI();
+                }
                 if (ui.Button(_copy.Ui("ui.skills.cook"), reason == CookRefusalReason.None))
                 {
                     reason = CookingRules.TryCook(recipe, _foodCatalog, _foodInventory, cooking, out CookOutcome outcome);
@@ -547,6 +561,10 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
         }
+
+        private string RecipeHintText(RecipeSpec recipe) => _copy.Ui("ui.skills.recipe_unknown")
+            .Replace("{method}", _copy.Ui("dish.method." + recipe.Method))
+            .Replace("{category}", _copy.Ui("ingredient.category." + CookingRules.RecipeHintCategory(recipe, _foodCatalog)));
 
         private void EnqueueQuality(string foodId, int quantity, CookingQuality quality)
         {
@@ -623,6 +641,9 @@ namespace Cosmimera.Bootstrap.Demo
                 EnqueueQuality(cooked.Food.Id, cooked.Quantity, cooked.Quality);
                 _pot.Clear();
                 ui.Message = FoodName(cooked.Food) + " ×" + cooked.Quantity + " · " + _copy.Ui("quality." + cooked.Quality);
+                // Only a free-form pot can discover a recipe: the recipe list shows undiscovered ones as hints without buttons.
+                if (cooked.Kind == PotDishKind.Signature && _outcome.DiscoveredRecipes.Add(cooked.Recipe.Id))
+                    ui.Message += " · " + _copy.Ui("ui.skills.recipe_new");
             }
             else ui.Message = _copy.Ui("cook." + cooked.Refusal);
             GUIUtility.ExitGUI();

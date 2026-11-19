@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cosmimera.Codex;
+using Cosmimera.Food;
 using Cosmimera.GameData;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -10,6 +11,7 @@ namespace Cosmimera.Bootstrap.Demo
     internal sealed class CodexPanel
     {
         private const int PageSize = 8;
+        private const int RecipeTab = 5;
         private readonly GameDatabase _database;
         private readonly DemoCopy _copy;
         private readonly Func<string, bool> _owned;
@@ -25,12 +27,23 @@ namespace Cosmimera.Bootstrap.Demo
         private GUIStyle _nodeStyle;
         private readonly List<JObject> _knownRelations = new List<JObject>();
         private readonly List<string> _hiddenNames = new List<string>();
+        private readonly FoodCatalog _foods;
+        private readonly Func<string, bool> _recipeKnown;
+        private readonly List<RecipeSpec> _recipes = new List<RecipeSpec>();
 
         internal CodexPanel(GameDatabase database, DemoCopy copy, Func<string, bool> owned,
-            ConceptPortraitTable portraits = null, CodexProgress progress = null)
+            ConceptPortraitTable portraits = null, CodexProgress progress = null,
+            FoodCatalog foods = null, Func<string, bool> recipeKnown = null)
         {
             _database = database; _copy = copy; _owned = owned; _portraits = portraits;
             _progress = progress ?? new CodexProgress();
+            _foods = foods; _recipeKnown = recipeKnown ?? (_ => false);
+            if (_foods != null)
+            {
+                _recipes.AddRange(_foods.Recipes);
+                // Catalog enumeration order is not a contract; a fixed order keeps pages stable between openings.
+                _recipes.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
+            }
             Refresh();
         }
 
@@ -80,12 +93,15 @@ namespace Cosmimera.Bootstrap.Demo
         internal void Draw(AdventurePanel ui)
         {
             GUILayout.BeginHorizontal();
-            for (int i = 0; i < 5; i++)
+            int tabs = _foods != null ? RecipeTab + 1 : RecipeTab;
+            for (int i = 0; i < tabs; i++)
             {
-                if (!ui.Button(_copy.Ui(i == 4 ? "dex.characters" : "ui.codex.kind." + i))) continue;
+                string label = i == RecipeTab ? "dex.recipes" : i == 4 ? "dex.characters" : "ui.codex.kind." + i;
+                if (!ui.Button(_copy.Ui(label))) continue;
                 _kind = i; Refresh(); GUIUtility.ExitGUI();
             }
             GUILayout.EndHorizontal();
+            if (_kind == RecipeTab) { DrawRecipes(ui); return; }
             ui.Label(_copy.Ui("ui.codex.search"));
             string search = ui.TextField("CodexSearch", _search);
             if (search != _search) { _search = search; Refresh(); GUIUtility.ExitGUI(); }
@@ -137,6 +153,37 @@ namespace Cosmimera.Bootstrap.Demo
                 Link(ui, CodexKind.Skill, creature.Trait.Id);
                 DrawKnownRelations(creature);
                 foreach (RelationLink link in _database.GetRelations(creature.Id)) Link(ui, CodexKind.Creature, link.Other.Id);
+            }
+        }
+
+        // REQ: docs/design/cuisine.md#6 — the codex recipe page; unknown entries reveal only method and one category.
+        private void DrawRecipes(AdventurePanel ui)
+        {
+            int known = 0;
+            foreach (RecipeSpec recipe in _recipes) if (_recipeKnown(recipe.Id)) known++;
+            int pages = Math.Max(1, (_recipes.Count + PageSize - 1) / PageSize);
+            if (_page >= pages) _page = 0;
+            GUILayout.BeginHorizontal();
+            if (ui.Button("◀", _page > 0)) { _page--; GUIUtility.ExitGUI(); }
+            ui.Label($"{_page + 1}/{pages} · {known}/{_recipes.Count}");
+            if (ui.Button("▶", _page + 1 < pages)) { _page++; GUIUtility.ExitGUI(); }
+            GUILayout.EndHorizontal();
+            for (int i = _page * PageSize; i < Math.Min(_recipes.Count, (_page + 1) * PageSize); i++)
+            {
+                RecipeSpec recipe = _recipes[i];
+                string method = _copy.Ui("dish.method." + recipe.Method);
+                if (!_recipeKnown(recipe.Id))
+                {
+                    ui.Label(_copy.Ui("ui.skills.recipe_unknown").Replace("{method}", method).Replace("{category}",
+                        _copy.Ui("ingredient.category." + CookingRules.RecipeHintCategory(recipe, _foods))));
+                    continue;
+                }
+                ui.Heading(_copy.Ui(recipe.OutputFoodId) + " · " + method);
+                var parts = new List<string>(recipe.Requirements.Count);
+                foreach (RecipeIngredientRequirement requirement in recipe.Requirements)
+                    parts.Add((requirement.IsCategoryMatch ? _copy.Ui("ingredient.category." + requirement.Category)
+                        : _copy.Ui(requirement.IngredientId)) + " ×" + requirement.Quantity);
+                ui.Label(string.Join(" + ", parts));
             }
         }
 

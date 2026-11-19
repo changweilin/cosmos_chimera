@@ -35,6 +35,7 @@
     "stats": {"hp": 99, "speed": 36, "yin_atk": 41, "yang_atk": 68, "yin_def": 78, "yang_def": 78},
     "signature_move": "metal_corrosion_edge",
     "trait": "trait_metal_clockwork_precision",
+    "field_utility": "culinary_prep",
     "concept": {
       "base": "青銅鑄造守護幼牛 × 城門浮雕銅環與小巧摺疊羽翼",
       "stage_look": "四足短壯的青銅小牛，背脊嵌有迷你雙翼銅板與拱門紋章護額，踏步沉穩",
@@ -179,6 +180,7 @@
     "stats": {"hp": 74, "speed": 51, "yin_atk": 41, "yang_atk": 68, "yin_def": 83, "yang_def": 83},
     "signature_move": "wood_splinter_thrust",
     "trait": "trait_wood_spore_regeneration",
+    "field_utility": "harvest_crops",
     "concept": {
       "base": "掌心大小的嫩芽小水蛇 × 頭頂含苞檳榔花枝",
       "stage_look": "盤繞在枝條上的翡翠細蛇，頭頂綻開一束潔白檳榔小花與細絲飄帶",
@@ -322,6 +324,7 @@
     "stats": {"hp": 89, "speed": 47, "yin_atk": 50, "yang_atk": 84, "yin_def": 65, "yang_def": 65},
     "signature_move": "water_cascade_jab",
     "trait": "trait_water_cleansing_tide",
+    "field_utility": "cast_net",
     "concept": {
       "base": "白膚抹香小鯨 × 背鰭插著一小截鈍化青銅魚叉",
       "stage_look": "圓潤雪白的小鯨魚，額頭有淡淡舊傷痕與小型水花噴孔，魚叉飾角閃爍微光",
@@ -463,6 +466,7 @@
     "stats": {"hp": 82, "speed": 54, "yin_atk": 46, "yang_atk": 76, "yin_def": 71, "yang_def": 71},
     "signature_move": "fire_spark_jab",
     "trait": "trait_fire_cinder_screen",
+    "field_utility": "smoke_dry",
     "concept": {
       "base": "炭木鱗甲幼鱷 × 背上冒出暖紅火芽",
       "stage_look": "披著厚實木皮斑紋甲殼的小鱷魚，甲縫透出微弱紅火光澤與零星火星",
@@ -512,6 +516,7 @@
     "stats": {"hp": 102, "speed": 68, "yin_atk": 57, "yang_atk": 95, "yin_def": 89, "yang_def": 89},
     "signature_move": "fire_cinder_slash",
     "trait": "trait_fire_cinder_screen",
+    "field_utility": "hunt_ground",
     "concept": {
       "base": "熔炭樹皮大顎鱷 × 背脊生出粗壯猴麵包樹瘤",
       "stage_look": "背甲呈現猴麵包樹般圓碩樹瘤，內部燃燒熾紅火脈，橫掃尾擊揚起灼熱灰燼",
@@ -604,6 +609,7 @@
     "stats": {"hp": 76, "speed": 59, "yin_atk": 92, "yang_atk": 55, "yin_def": 59, "yang_def": 59},
     "signature_move": "earth_stone_skate",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "forage_fungi",
     "concept": {
       "base": "石雕幼獅 × 卷曲短象鼻與浮雕蓮瓣項圈",
       "stage_look": "灰褐砂岩雕塑般的小獅獸，鼻尖翹起小巧象牙，四爪踩踏碎石迅速滑步",
@@ -653,6 +659,7 @@
     "stats": {"hp": 94, "speed": 74, "yin_atk": 115, "yang_atk": 69, "yin_def": 74, "yang_def": 74},
     "signature_move": "earth_fault_dash",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "set_trap",
     "concept": {
       "base": "浮雕石獅象獸 × 肩胛鑲嵌廊柱石墩與修長石牙",
       "stage_look": "雙肩扛著神廟石柱護甲，象鼻與利爪皆為硬質花崗岩構造，騰躍撲擊極具衝擊力",
@@ -694,6 +701,7 @@
     "stats": {"hp": 113, "speed": 89, "yin_atk": 137, "yang_atk": 83, "yin_def": 89, "yang_def": 89},
     "signature_move": "earth_tectonic_lance",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "produce_milk",
     "concept": {
       "base": "神廟守護巨雕獅象 × 蓮座浮雕肩盾與岩柱重砲象鼻",
       "stage_look": "身披蓮座與神廟石柱雕刻的宏偉石獸，象牙如雙重岩槍向前延伸，能遠距貫穿岩脈",
@@ -745,6 +753,7 @@
     "stats": {"hp": 63, "speed": 86, "yin_atk": 48, "yang_atk": 81, "yin_def": 61, "yang_def": 61},
     "signature_move": "ice_glaze_slide",
     "trait": "trait_ice_frostbite_edge",
+    "field_utility": "freeze_prep",
     "concept": {
       "base": "微型極地木雪橇 × 懸掛深海採水瓶的浮冰探測儀",
       "stage_look": "手掌大小的雙橇冰滑裝置，中央玻璃採水瓶閃著冰藍結晶，貼地滑行無聲",
@@ -794,6 +803,7 @@
     "stats": {"hp": 79, "speed": 108, "yin_atk": 101, "yang_atk": 60, "yin_def": 76, "yang_def": 76},
     "signature_move": "ice_floe_crash",
     "trait": "trait_ice_frostbite_edge",
+    "field_utility": "chill_brew",
     "concept": {
       "base": "抗冰圓底探險快艇 × 浮冰觀測儀與雙板滑冰龍骨",
       "stage_look": "弧形木甲船身覆滿冰晶裝甲，桅頂架設旋轉觀測銅儀，能乘浮冰衝撞敵陣",
@@ -886,6 +896,7 @@
     "stats": {"hp": 54, "speed": 103, "yin_atk": 73, "yang_atk": 44, "yin_def": 63, "yang_def": 63},
     "signature_move": "wind_draft_step",
     "trait": "trait_wind_aloft_vigilance",
+    "field_utility": "hunt_sky",
     "concept": {
       "base": "海霧幼信天翁 × 翼緣帶著木質弩臂紋飾",
       "stage_look": "白灰絨毛小海鳥，翼梢刻有細緻木弓張弦紋路，順著海風疾速貼地竄行",
@@ -1311,6 +1322,7 @@
     "stats": {"hp": 69, "speed": 80, "yin_atk": 45, "yang_atk": 74, "yin_def": 66, "yang_def": 66},
     "signature_move": "shadow_dusk_fang",
     "trait": "trait_shadow_fade_step",
+    "field_utility": "ferment_cure",
     "concept": {
       "base": "玄鐵色幼駒 × 頸繫迷你銀製口簧琴護符",
       "stage_look": "墨黑短毛覆著冷硬青灰鐵斑的小馬駒，奔跑時頸側發出低沉共鳴震音",

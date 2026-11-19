@@ -64,13 +64,15 @@ namespace Cosmimera.Save
     /// Version 15 (P4-10, trainer-battles.md#職業圖鑑): root <c>trainer_battles</c> (per-profession battle counts
     /// unlocking character codex entries at 1 and 10 battles) and <c>completed_trials</c> (terrain trial badges).
     /// Formats 1–14 load with empty counts and no completed trials.
+    /// Version 16 (cuisine.md#6): root <c>discovered_recipes</c> — signature recipe ids the player has cooked at least once;
+    /// formats 1–15 load with none.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 15;
+        public const int FormatVersion = 16;
 
         /// <summary>Cumulative battles against one trainer profession required for <see cref="CodexLevel.Complete"/>.</summary>
         /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: constant 10. Side effects: none.</remarks>
@@ -100,6 +102,37 @@ namespace Cosmimera.Save
         private readonly EquipmentLoadout _equipment = new EquipmentLoadout();
         private readonly Dictionary<string, int> _trainerBattles = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly HashSet<string> _completedTrials = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _discoveredRecipes = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>True when signature recipe <paramref name="recipeId"/> has been cooked in some run.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: recipeId non-empty. Post: discovery state. Side effects: none.</remarks>
+        public bool IsRecipeDiscovered(string recipeId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(recipeId), "recipeId must be non-empty");
+            return _discoveredRecipes.Contains(recipeId);
+        }
+
+        /// <summary>Sorted snapshot of discovered signature recipe ids.</summary>
+        /// <remarks>Pre: none. Post: sorted ordinal list. Side effects: allocates.</remarks>
+        public IReadOnlyList<string> DiscoveredRecipesSnapshot()
+        {
+            if (_discoveredRecipes.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var list = new List<string>(_discoveredRecipes);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>Records that signature recipe <paramref name="recipeId"/> has been cooked.</summary>
+        /// <remarks>Pre: recipeId valid snake_case id. Post: IsRecipeDiscovered(recipeId); returns true iff newly discovered. Side effects: mutates the discovered set.</remarks>
+        public bool RecordRecipeDiscovered(string recipeId)
+        {
+            Contract.Requires(CraftInventory.ValidId(recipeId), "recipeId must be valid snake_case id");
+            return _discoveredRecipes.Add(recipeId);
+        }
 
         /// <summary>Cumulative battle count recorded for <paramref name="professionId"/> (0 if never battled).</summary>
         /// <remarks>Pre: professionId non-empty. Post: &gt;= 0. Side effects: none.</remarks>
@@ -590,6 +623,10 @@ namespace Cosmimera.Save
             {
                 c._completedTrials.Add(trial);
             }
+            foreach (string recipe in _discoveredRecipes)
+            {
+                c._discoveredRecipes.Add(recipe);
+            }
             Array.Copy(_presets, c._presets, MaxPresets); // LoadoutPreset is immutable
 
             return c;
@@ -817,6 +854,13 @@ namespace Cosmimera.Save
             for (int i = 0; i < completedTrials.Count; i++)
             {
                 dto.completed_trials[i] = completedTrials[i];
+            }
+
+            IReadOnlyList<string> recipes = DiscoveredRecipesSnapshot();
+            dto.discovered_recipes = new string[recipes.Count];
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                dto.discovered_recipes[i] = recipes[i];
             }
             var presetDtos = new List<PresetDto>();
             for (int slot = 0; slot < MaxPresets; slot++)
@@ -1167,6 +1211,16 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 16)
+            {
+                var seenRecipes = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string recipeId in dto.discovered_recipes ?? Array.Empty<string>())
+                {
+                    Check(CraftInventory.ValidId(recipeId) && seenRecipes.Add(recipeId), "invalid discovered recipe entry");
+                    save.RecordRecipeDiscovered(recipeId);
+                }
+            }
+
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
         }
@@ -1307,6 +1361,7 @@ namespace Cosmimera.Save
             public bool tutorial_done;
             public TrainerCountDto[] trainer_battles;
             public string[] completed_trials;
+            public string[] discovered_recipes;
         }
 
         [Serializable] private sealed class TrainerCountDto

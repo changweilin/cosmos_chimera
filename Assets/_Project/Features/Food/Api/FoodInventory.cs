@@ -172,6 +172,36 @@ namespace Cosmimera.Food
             return true;
         }
 
+        /// <summary>Lists the ingredient units <paramref name="recipe"/> would take, without consuming them (journal "帶入食譜").</summary>
+        /// <remarks>
+        /// REQ: docs/design/cuisine.md#6 — category requirements take raw goods before processed goods, as cooking does.
+        /// Pre: recipe, catalog, pot non-null.
+        /// Post: true → pot holds one id per unit (ids grouped, ordinal order) and PotCookingRules resolves it to this
+        ///       recipe whenever no more specific recipe matches; false → pot is empty (stock short).
+        /// Side effects: overwrites pot; allocates.
+        /// </remarks>
+        public bool TryPlanRecipePot(RecipeSpec recipe, FoodCatalog catalog, List<string> pot)
+        {
+            Contract.Requires(recipe != null, "recipe must not be null");
+            Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(pot != null, "pot must not be null");
+            pot.Clear();
+            var plan = new Dictionary<string, int>();
+            if (!TryPlanConsumption(recipe, catalog, plan))
+            {
+                return false;
+            }
+
+            var ids = new List<string>(plan.Keys);
+            ids.Sort(StringComparer.Ordinal);
+            foreach (string id in ids)
+            {
+                for (int i = 0; i < plan[id]; i++) pot.Add(id);
+            }
+
+            return true;
+        }
+
         /// <summary>Empties all ingredients and cooked food (e.g. at run end).</summary>
         /// <remarks>Pre: none. Post: all counts == 0. Side effects: clears internal dictionaries.</remarks>
         public void Clear()

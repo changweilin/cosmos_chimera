@@ -988,6 +988,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
                     PlayerExp = _save.PlayerExp,
                     Codex = _save.Codex,
+                    DiscoveredRecipes = _save.DiscoveredRecipesSnapshot(),
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
                     WeatherControlCooldownMs = _weatherControlCooldownMs,

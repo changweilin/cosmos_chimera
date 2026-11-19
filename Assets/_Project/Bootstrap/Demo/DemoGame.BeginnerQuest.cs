@@ -201,6 +201,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Party = party,
                     PlayerExp = _save.PlayerExp,
                     Codex = _save.Codex,
+                    DiscoveredRecipes = _save.DiscoveredRecipesSnapshot(),
                     PartyIds = new List<int>(_runPartyIds),
                     PartyExp = partyExp,
                     Progression = _progression,

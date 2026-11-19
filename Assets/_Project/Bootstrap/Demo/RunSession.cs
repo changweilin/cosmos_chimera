@@ -26,6 +26,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Encyclopedia facts retained on victory, defeat or abandon.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: mutations change the outcome.</remarks>
         public CodexProgress Codex { get; } = new CodexProgress();
+
+        /// <summary>Signature recipe ids known by the end of the run, departure knowledge included; kept on abandon like Codex.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: none. Post: non-null; valid snake_case ids. Side effects: mutations change the outcome.</remarks>
+        public readonly HashSet<string> DiscoveredRecipes = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>Boss knocked out.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Victory;
@@ -98,6 +102,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Departure knowledge; copied into the outcome, never mutated by the run.</summary>
         /// <remarks>Pre: null or a valid progress. Post: departure remains unchanged. Side effects: none.</remarks>
         public CodexProgress Codex;
+
+        /// <summary>Departure signature recipe discoveries; copied into the outcome, never mutated by the run.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: null or valid snake_case ids. Post: departure remains unchanged. Side effects: none.</remarks>
+        public IReadOnlyList<string> DiscoveredRecipes;
         /// <summary>Planet type.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public PlanetTypeDef PlanetType;

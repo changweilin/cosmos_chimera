@@ -9,6 +9,7 @@
         "Cosmimera.Core",
         "Cosmimera.Creatures",
         "Cosmimera.Crafting",
+        "Cosmimera.Food",
         "Cosmimera.GameData",
         "Cosmimera.Planet",
         "Cosmimera.Player",

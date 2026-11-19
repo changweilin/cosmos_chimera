@@ -400,5 +400,20 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(afterClear.HasTrialBadge("verdant_trial"), Is.True);
             Assert.That(Reload().ToJson(), Is.EqualTo(afterClear.ToJson()));
         }
+
+        [Test]
+        public void Settle_keeps_discovered_recipes_even_when_abandoned()
+        {
+            // REQ: docs/design/cuisine.md#6 — recipe discovery is knowledge, banked like the codex.
+            LobbySave live = Ready();
+            RunOutcome abandoned = Outcome(live.Get(1).Exp);
+            abandoned.Abandoned = true;
+            abandoned.DiscoveredRecipes.Add("recipe_food_steamed_sea_bass");
+            Assert.That(LobbyTransactions.Settle(live, new[] { 1 }, abandoned, P, _path, out LobbySave after,
+                out _, out _), Is.EqualTo(CommitStatus.Committed));
+            Assert.That(after.IsRecipeDiscovered("recipe_food_steamed_sea_bass"), Is.True);
+            Assert.That(live.IsRecipeDiscovered("recipe_food_steamed_sea_bass"), Is.False);
+            Assert.That(Reload().ToJson(), Is.EqualTo(after.ToJson()));
+        }
     }
 }

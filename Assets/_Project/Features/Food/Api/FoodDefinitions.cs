@@ -613,6 +613,8 @@ namespace Cosmimera.Food
             Processed(cat, ProcessKind.Smoke, "ing_wild_berry", "ing_dried_berry");
             Processed(cat, ProcessKind.Smoke, "ing_beast_prime_rib", "ing_smoked_rib");
             Processed(cat, ProcessKind.Ferment, "ing_smoked_rib", "ing_aged_beast_meat");
+            Processed(cat, ProcessKind.Ferment, "ing_wild_berry", "ing_pickled_berry");
+            Processed(cat, ProcessKind.Ferment, "ing_wild_root", "ing_pickled_root");
 
             // Cooked foods covering all 7 CookingMethods
             RegisterDish(cat, "food_charred_boar_skewer", CookingMethod.Grill, FoodTarget.PlayerAndParty, Element.Fire, 1, 1,
@@ -693,6 +695,27 @@ namespace Cosmimera.Food
                 new[] { RecipeIngredientRequirement.ById("ing_hard_chestnut", 2), RecipeIngredientRequirement.ById("ing_wild_honey", 1) },
                 new FoodEffectSpec(15, 15, 0, false, 0, 6, 0, 150_000,
                     new[] { new EffectSpec(EffectType.StaggerCapacityModPercent, false, Element.Metal, 10, 0, 1), new EffectSpec(EffectType.BlockReductionMod, false, Element.Metal, 5, 0, 1) }));
+
+            // Route showcase dishes (cuisine.md#5 漁獲冷盤／禽蛋麵點, #3 醃漬); numbers provisional per Q-F3.
+            RegisterDish(cat, "food_chilled_seafood_salad", CookingMethod.ColdMix, FoodTarget.PlayerAndParty, Element.Ice, 2, 1,
+                new[] { RecipeIngredientRequirement.ById("ing_chilled_shrimp", 1), RecipeIngredientRequirement.ById("ing_net_kelp_scallop", 1), RecipeIngredientRequirement.ById("ing_sea_salt", 1) },
+                new FoodEffectSpec(25, 20, 0, true, 0, 0, 0, 150_000,
+                    new[] { new EffectSpec(EffectType.AccuracyMod, false, default, 6, 0, 1), new EffectSpec(EffectType.CritRateMod, false, default, 6, 0, 1) }));
+
+            RegisterDish(cat, "food_golden_wheat_tempura", CookingMethod.DeepFry, FoodTarget.PlayerAndParty, Element.Light, 2, 1,
+                new[] { RecipeIngredientRequirement.ById("ing_wheat_flour", 1), RecipeIngredientRequirement.ById("ing_seed_oil", 1), RecipeIngredientRequirement.ById("ing_sky_nest_egg", 1), RecipeIngredientRequirement.ByCategory(IngredientCategory.BerryHerb, 1) },
+                new FoodEffectSpec(35, 30, 0, false, 0, 0, 0, 150_000,
+                    new[] { new EffectSpec(EffectType.CdModPercent, true, default, -8, 0, 1) }));
+
+            RegisterDish(cat, "food_pickled_root_hare_stew", CookingMethod.Stew, FoodTarget.PlayerAndParty, Element.Shadow, 2, 1,
+                new[] { RecipeIngredientRequirement.ById("ing_pickled_root", 1), RecipeIngredientRequirement.ById("ing_snare_hare_meat", 1), RecipeIngredientRequirement.ByCategory(IngredientCategory.GrainCrop, 1) },
+                new FoodEffectSpec(35, 30, 0, false, 0, 0, 0, 300_000,
+                    new[] { new EffectSpec(EffectType.MasteryMod, false, Element.Shadow, 10, 0, 1), new EffectSpec(EffectType.StaggerCapacityModPercent, false, Element.Metal, 10, 0, 1) }));
+
+            RegisterDish(cat, "food_pickled_berry_cooler", CookingMethod.ChillBrew, FoodTarget.PlayerAndParty, Element.Ice, 1, 1,
+                new[] { RecipeIngredientRequirement.ById("ing_pickled_berry", 1), RecipeIngredientRequirement.ById("ing_ice_mint", 1), RecipeIngredientRequirement.ById("ing_wild_honey", 1) },
+                new FoodEffectSpec(15, 20, 0, false, 0, 3, 0, 300_000,
+                    new[] { new EffectSpec(EffectType.CdModPercent, true, default, -4, 0, 1) }));
 
             // Failure dish for pots that miss their method's conditions (cuisine.md#4).
             cat.RegisterFood(new FoodItemSpec(PotCookingRules.DubiousFoodId, null, FoodTarget.PlayerAndParty, Element.Earth, 1,

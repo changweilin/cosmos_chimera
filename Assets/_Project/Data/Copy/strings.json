@@ -3164,6 +3164,56 @@
     "en": "Dubious mash",
     "ja": "失敗料理"
   },
+  "ing_pickled_berry": {
+    "zh-TW": "醃漬野莓",
+    "en": "Pickled berries",
+    "ja": "ベリーの漬物"
+  },
+  "ing_pickled_root": {
+    "zh-TW": "醃漬根菜",
+    "en": "Pickled roots",
+    "ja": "根菜の漬物"
+  },
+  "food_chilled_seafood_salad": {
+    "zh-TW": "冰鎮海鮮沙拉",
+    "en": "Chilled seafood salad",
+    "ja": "冷やし海鮮サラダ"
+  },
+  "food_golden_wheat_tempura": {
+    "zh-TW": "金穗天婦羅",
+    "en": "Golden wheat tempura",
+    "ja": "金穂の天ぷら"
+  },
+  "food_pickled_root_hare_stew": {
+    "zh-TW": "醃根菜燉兔肉",
+    "en": "Pickled root and hare stew",
+    "ja": "根菜漬けと兎肉の煮込み"
+  },
+  "food_pickled_berry_cooler": {
+    "zh-TW": "醃莓冰飲",
+    "en": "Pickled berry cooler",
+    "ja": "ベリー漬けの冷たい飲み物"
+  },
+  "ui.skills.recipe_unknown": {
+    "zh-TW": "？？？ · {method} · 需要{category}",
+    "en": "??? · {method} · needs {category}",
+    "ja": "？？？ · {method} · {category}が必要"
+  },
+  "ui.skills.recipe_fill": {
+    "zh-TW": "帶入投料",
+    "en": "Fill pot",
+    "ja": "鍋に入れる"
+  },
+  "ui.skills.recipe_new": {
+    "zh-TW": "新食譜！",
+    "en": "New recipe!",
+    "ja": "新しいレシピ！"
+  },
+  "dex.recipes": {
+    "zh-TW": "食譜",
+    "en": "Recipes",
+    "ja": "レシピ"
+  },
   "gather.ForageFungi": {
     "zh-TW": "採菇",
     "en": "Forage fungi",

@@ -18,9 +18,9 @@ namespace Cosmimera.Save.Tests
             LobbySave.FromJson(json, Progression, _ => CreatureStage.Juvenile);
 
         [Test]
-        public void Format_version_is_15_and_trainer_battles_unlock_codex_tiers()
+        public void Format_version_is_at_least_15_and_trainer_battles_unlock_codex_tiers()
         {
-            Assert.That(LobbySave.FormatVersion, Is.EqualTo(15));
+            Assert.That(LobbySave.FormatVersion, Is.GreaterThanOrEqualTo(15));
             Assert.That(LobbySave.ProfessionCompleteBattles, Is.EqualTo(10));
 
             var save = new LobbySave();
@@ -46,7 +46,7 @@ namespace Cosmimera.Save.Tests
 
             string json = save.ToJson();
             LobbySave reloaded = Load(json);
-            Assert.That(reloaded.LoadedFormatVersion, Is.EqualTo(15));
+            Assert.That(reloaded.LoadedFormatVersion, Is.EqualTo(LobbySave.FormatVersion));
             Assert.That(reloaded.TrainerBattleCountOf("trv_hiker"), Is.EqualTo(10));
             Assert.That(reloaded.Codex.Get(CodexKind.Character, "trv_hiker"), Is.EqualTo(CodexLevel.Complete));
             Assert.That(reloaded.HasTrialBadge("verdant_trial"), Is.True);
@@ -90,7 +90,7 @@ namespace Cosmimera.Save.Tests
             Assert.That(v14.LoadedFormatVersion, Is.EqualTo(14));
             Assert.That(v14.TrainerBattlesSnapshot(), Is.Empty);
             Assert.That(v14.CompletedTrialsSnapshot(), Is.Empty);
-            Assert.That(v14.ToJson(), Does.Contain("\"version\": 15"));
+            Assert.That(v14.ToJson(), Does.Contain("\"version\": " + LobbySave.FormatVersion));
         }
 
         [TestCase("\"trainer_battles\":[{\"id\":\"BadId\",\"count\":1}]")]

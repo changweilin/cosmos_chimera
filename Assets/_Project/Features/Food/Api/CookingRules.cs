@@ -267,6 +267,24 @@ namespace Cosmimera.Food
             return CookRefusalReason.None;
         }
 
+        /// <summary>The ingredient category an undiscovered recipe reveals as its hint ("？" entry, cuisine.md#6).</summary>
+        /// <remarks>
+        /// Pre: recipe and catalog non-null; recipe has at least one requirement whose id (if any) is registered.
+        /// Post: the first requirement's category (an id requirement reports its ingredient's category). Deterministic.
+        /// Side effects: none.
+        /// </remarks>
+        public static IngredientCategory RecipeHintCategory(RecipeSpec recipe, FoodCatalog catalog)
+        {
+            Contract.Requires(recipe != null, "recipe must not be null");
+            Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(recipe.Requirements.Count > 0, "recipe must have requirements");
+            RecipeIngredientRequirement first = recipe.Requirements[0];
+            if (first.IsCategoryMatch) return first.Category;
+            bool known = catalog.TryGetIngredient(first.IngredientId, out IngredientSpec ingredient);
+            Contract.Requires(known, "recipe ingredient must be registered: " + first.IngredientId);
+            return ingredient.Category;
+        }
+
         /// <summary>Returns the scaled buff duration in milliseconds for <paramref name="quality"/>, clamped to EffectBook.MaxDurationMs.</summary>
         /// <remarks>
         /// Pre: baseDurationMs &gt;= 0.
