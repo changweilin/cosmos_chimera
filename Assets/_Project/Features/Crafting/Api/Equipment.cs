@@ -145,6 +145,18 @@ namespace Cosmimera.Crafting
                 Weapon = new WeaponProfile(ParseElement((string)w["element"]), ReadDelta(w, "element_mastery", 0, 100),
                     ReadDelta(w, "power_permille", 1, DamageModel.MaxWeaponPermille), ReadDelta(w, "speed_permille", 100, 10000),
                     range, polarity);
+                // Optional: drafts before the weapon-type table carry only range/polarity; looks then use the kind's generic shape.
+                string typeId = (string)w["weapon_type"];
+                if (typeId != null)
+                {
+                    WeaponType type = ParseWeaponType(typeId);
+                    WeaponTypeSpec typeSpec = CraftingExpansionRules.GetWeaponTypeSpec(type);
+                    if (typeSpec.IsTwoHanded != (Kind == EquipmentKind.TwoHanded))
+                        throw new InvalidDataException("Weapon type hands must match the weapon kind: " + typeId);
+                    if (typeSpec.Range != range) throw new InvalidDataException("Weapon type range must match the weapon range: " + typeId);
+                    HasWeaponType = true;
+                    WeaponType = type;
+                }
             }
             if (!(json["creature_effects"] is JArray effects) || effects.Count > 32)
                 throw new InvalidDataException("Equipment requires at most 32 effects");
@@ -211,6 +223,28 @@ namespace Cosmimera.Crafting
             _ => throw new InvalidDataException("Invalid weapon range: " + id),
         };
 
+        // REQ: crafting.md#武器數值模型 — ids as in Data/creature-grip-anims (weapon_types).
+        private static WeaponType ParseWeaponType(string id) => id switch
+        {
+            "dagger_claw" => WeaponType.DaggerClaw,
+            "sword_1h" => WeaponType.SwordScimitar,
+            "axe_1h" => WeaponType.HandAxe,
+            "mace_1h" => WeaponType.Mace,
+            "twinblade_staff" => WeaponType.TwinbladeStaff,
+            "spear_halberd" => WeaponType.SpearHalberd,
+            "greatsword" => WeaponType.Greatsword,
+            "greataxe_hammer" => WeaponType.GreataxeHammer,
+            "thrown_shuriken" => WeaponType.ThrowingBlade,
+            "hand_crossbow" => WeaponType.HandCrossbow,
+            "wand_gun" => WeaponType.WandPistol,
+            "javelin" => WeaponType.Javelin,
+            "repeater_bow" => WeaponType.RepeatingCrossbow,
+            "longbow" => WeaponType.Longbow,
+            "magic_staff" => WeaponType.Staff,
+            "heavy_crossbow_cannon" => WeaponType.HeavyCrossbowCannon,
+            _ => throw new InvalidDataException("Invalid weapon type: " + id),
+        };
+
         private static WeaponPolarity ParseWeaponPolarity(string id) => id switch
         {
             "balanced" => WeaponPolarity.Balanced,
@@ -245,6 +279,12 @@ namespace Cosmimera.Crafting
         /// <summary>Weapon base numbers; meaningless unless IsWeapon.</summary>
         /// <remarks>Pre: none. Post: constructed iff IsWeapon. Side effects: none.</remarks>
         public WeaponProfile Weapon { get; }
+        /// <summary>Whether the data names a weapon type (crafting.md#武器數值模型).</summary>
+        /// <remarks>Pre: none. Post: false for non-weapons; false for weapons whose data omits weapon_type. Side effects: none.</remarks>
+        public bool HasWeaponType { get; }
+        /// <summary>Named weapon type; meaningless unless HasWeaponType.</summary>
+        /// <remarks>Pre: none. Post: when HasWeaponType, its hands match Kind and its range matches Weapon.Range. Side effects: none.</remarks>
+        public WeaponType WeaponType { get; }
         /// <summary>Player maximum HP bonus in percent.</summary>
         /// <remarks>Pre: none. Post: 0..100; 0 for weapons. Side effects: none.</remarks>
         public int PlayerHpPercent { get; }

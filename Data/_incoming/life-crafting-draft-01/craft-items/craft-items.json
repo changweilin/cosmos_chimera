@@ -363,7 +363,8 @@
         "element": "metal",
         "element_mastery": 15,
         "power_permille": 1000,
-        "speed_permille": 1000
+        "speed_permille": 1000,
+        "weapon_type": "sword_1h"
       }
     }
   },

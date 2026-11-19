@@ -12,6 +12,8 @@
 
 不在範圍：戰利品／寶箱掉落與商店貨品（經濟系統另議）。
 
+器物類別取自物品資料：武器依 `equipment.weapon.weapon_type`（16 種，同 [crafting.md#武器數值模型](crafting.md#武器數值模型)；未填時單手畫成劍、雙手畫成大劍），盾、上身、下身、飾品依 `equipment.kind`。
+
 ## 美術路線（分段）
 1. **規則層**：`GearLooks.Sample` 由（器物類別、用途情境、風格混合、新舊／毀損平均、seed）抽出 `GearLookSpec`。純 C#、可重現（同 seed 同結果，只用 `Pcg32`），可 EditMode 測試。
 2. **佔位網格**：程序化網格依 `GearLookSpec` 組裝，供實景驗收比例與配色。

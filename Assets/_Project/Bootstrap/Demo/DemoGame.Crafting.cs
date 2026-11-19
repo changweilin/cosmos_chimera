@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
@@ -40,9 +41,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ui.Label(_copy.Ui("ui.craft.grips").Replace("{grips}", string.Join(" / ", names)));
             }
 
-            // Appearance assets are unchanged by D0-U3, so the preview keeps its three-piece inputs.
-            UpdatePaperdollPreview(FindEquippedItem(_equipmentOwner, EquipmentSlots.MainHand),
-                FindEquippedItem(_equipmentOwner, EquipmentSlots.Upper), FindEquippedItem(_equipmentOwner, EquipmentSlots.Accessory));
+            UpdatePaperdollPreview(EquippedGear(_equipmentOwner));
 
             GUILayout.BeginHorizontal();
 
@@ -372,9 +371,46 @@ namespace Cosmimera.Bootstrap.Demo
             return string.Empty;
         }
 
-        private void UpdatePaperdollPreview(string weaponId, string armorId, string accessoryId)
+        private static readonly string[] PaperdollSlots =
         {
-            _paperdollPreview ??= new PaperdollPreview(_toonShader);
+            EquipmentSlots.MainHand, EquipmentSlots.OffHand, EquipmentSlots.Upper, EquipmentSlots.Lower, EquipmentSlots.Accessory,
+        };
+
+        private readonly StringBuilder _gearKeyBuilder = new StringBuilder();
+        private string _previewGearKey;
+        private List<PaperdollGear> _previewGear = new List<PaperdollGear>();
+
+        // REQ: gear-looks.md#外觀與數值 — each worn copy is drawn from its own look tag. Sampling runs only when the
+        // worn set changes, not on every OnGUI pass.
+        private IReadOnlyList<PaperdollGear> EquippedGear(int owner)
+        {
+            _gearKeyBuilder.Clear().Append(owner);
+            foreach (string slot in PaperdollSlots)
+            {
+                if (!_save.Equipment.TryGetEntry(owner, slot, out EquippedItem entry)) continue;
+                _gearKeyBuilder.Append('|').Append(slot).Append(':').Append(entry.Item).Append(':').Append(entry.Look.Origin.PlanetTypeId)
+                    .Append(':').Append(entry.Look.Origin.PlanetSeed).Append(':').Append(entry.Look.Seed);
+            }
+            string key = _gearKeyBuilder.ToString();
+            if (key == _previewGearKey) return _previewGear;
+
+            _previewGearKey = key;
+            _previewGear = new List<PaperdollGear>();
+            foreach (string slot in PaperdollSlots)
+            {
+                if (!_save.Equipment.TryGetEntry(owner, slot, out EquippedItem entry)) continue;
+                // An item dropped from the catalog has no kind to draw; the slot UI still lists it by id.
+                if (!CraftCatalog.TryGetItem(entry.Item, out CraftItem item) || item.Equipment == null) continue;
+                GearLookSpec spec = GearLooks.ForCopy(GearLooks.KindFor(item.Equipment), entry.Look);
+                _previewGear.Add(new PaperdollGear(slot, slot + ":" + entry.Item + ":" + entry.Look.Origin.PlanetTypeId + ":" +
+                    entry.Look.Origin.PlanetSeed + ":" + entry.Look.Seed, spec));
+            }
+            return _previewGear;
+        }
+
+        private void UpdatePaperdollPreview(IReadOnlyList<PaperdollGear> gear)
+        {
+            _paperdollPreview ??= new PaperdollPreview(_toonShader, _sceneryShader);
             if (_equipmentOwner == 0)
             {
                 CharacterModelEntry? entry = _characterModels != null && _selectedCharacterIndex >= 0
@@ -385,13 +421,13 @@ namespace Cosmimera.Bootstrap.Demo
                     entry?.prefab,
                     entry?.animatorController,
                     entry?.id ?? "capsule",
-                    weaponId, armorId, accessoryId);
+                    gear);
             }
             else
             {
                 OwnedCreature owned = _save.Get(_equipmentOwner);
                 _database.TryGet(owned.SpeciesId, out CreatureDef def);
-                _paperdollPreview.SetCreatureTarget(def, _equipmentOwner, weaponId, armorId, accessoryId);
+                _paperdollPreview.SetCreatureTarget(def, _equipmentOwner, gear);
             }
 
             _paperdollPreview.SyncPose();

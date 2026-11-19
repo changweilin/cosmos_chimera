@@ -117,16 +117,25 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(journal, Is.Not.Null);
             Assert.That(journal.Current, Is.EqualTo(AdventurePanel.Page.Items));
 
-            using (var preview = new PaperdollPreview(null))
+            var cradle = new Cosmimera.Crafting.ItemLook(Cosmimera.Crafting.GearOrigin.Cradle, 7);
+            PaperdollGear Gear(string slot, GearKind kind) => new PaperdollGear(slot, slot + kind, GearLooks.ForCopy(kind, cradle));
+            var worn = new[]
+            {
+                Gear(Cosmimera.Crafting.EquipmentSlots.MainHand, GearKind.Sword), Gear(Cosmimera.Crafting.EquipmentSlots.OffHand, GearKind.Shield),
+                Gear(Cosmimera.Crafting.EquipmentSlots.Upper, GearKind.Upper), Gear(Cosmimera.Crafting.EquipmentSlots.Lower, GearKind.Lower),
+                Gear(Cosmimera.Crafting.EquipmentSlots.Accessory, GearKind.Accessory),
+            };
+            using (var preview = new PaperdollPreview(null, null))
             {
                 Assert.That(preview.Texture, Is.Not.Null);
-                preview.SetPlayerTarget(null, null, "capsule", "craft_iron_blade", "craft_iron_guard", "craft_gem_pendant");
+                preview.SetPlayerTarget(null, null, "capsule", worn);
                 preview.Rotate(45f);
                 Assert.That(preview.Yaw, Is.EqualTo(225f).Within(0.01f));
                 preview.SyncPose();
 
-                preview.SetCreatureTarget(starters[0], 1, "craft_copper_rod", "craft_linen_outfit", "");
+                preview.SetCreatureTarget(starters[0], 1, worn);
                 preview.SyncPose();
+                preview.SetCreatureTarget(starters[0], 1, System.Array.Empty<PaperdollGear>());
             }
 
             game.GetType().GetMethod("CloseJournal", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(game, null);

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using Cosmimera.Bootstrap.Demo;
 using Cosmimera.Core.Contracts;
+using Cosmimera.Crafting;
 using Cosmimera.WorldGen;
 using NUnit.Framework;
 using UnityEngine;
@@ -189,6 +190,82 @@ namespace Cosmimera.Bootstrap.Tests
                 Q(s.ValueShift).ToString(CultureInfo.InvariantCulture), Q(s.Age).ToString(CultureInfo.InvariantCulture),
                 Q(s.Damage).ToString(CultureInfo.InvariantCulture),
             });
+        }
+
+        private static EquipmentSpec Spec(string equipment)
+        {
+            var catalog = new CraftCatalog("[{ \"id\": \"gear_a\", \"category\": \"equipment\", \"sources\": [], \"utility\": \"none\", " +
+                "\"quantity\": 1, \"season\": \"all\", \"equipment\": " + equipment + " }]", "[]");
+            Assert.That(catalog.TryGetItem("gear_a", out CraftItem item), Is.True);
+            return item.Equipment;
+        }
+
+        private static string Weapon(string kind, string extra) =>
+            "{ \"kind\": \"" + kind + "\", \"target\": \"creature\", \"player\": { \"max_hp_percent\": 0, \"move_speed_percent\": 0, " +
+            "\"roll_cooldown_percent\": 0 }, \"creature_effects\": [], \"weapon\": { \"element\": \"metal\", \"element_mastery\": 1, " +
+            "\"power_permille\": 1000, \"speed_permille\": 1000" + extra + " } }";
+
+        private static string Armor(string kind) =>
+            "{ \"kind\": \"" + kind + "\", \"target\": \"both\", \"player\": { \"max_hp_percent\": 0, \"move_speed_percent\": 0, " +
+            "\"roll_cooldown_percent\": 0 }, \"creature_effects\": [] }";
+
+        [TestCase("one_handed", "", GearKind.Sword)]
+        [TestCase("two_handed", "", GearKind.Greatsword)]
+        [TestCase("one_handed", ", \"weapon_type\": \"dagger_claw\"", GearKind.Dagger)]
+        [TestCase("one_handed", ", \"weapon_type\": \"mace_1h\"", GearKind.Mace)]
+        [TestCase("two_handed", ", \"weapon_type\": \"spear_halberd\"", GearKind.Spear)]
+        [TestCase("two_handed", ", \"range\": \"ranged\", \"weapon_type\": \"magic_staff\"", GearKind.MagicStaff)]
+        [TestCase("one_handed", ", \"range\": \"ranged\", \"weapon_type\": \"thrown_shuriken\"", GearKind.ThrowingBlade)]
+        public void Weapons_draw_as_their_named_type(string kind, string extra, GearKind expected)
+        {
+            Assert.That(GearLooks.KindFor(Spec(Weapon(kind, extra))), Is.EqualTo(expected));
+        }
+
+        [TestCase("shield", GearKind.Shield)]
+        [TestCase("upper", GearKind.Upper)]
+        [TestCase("lower", GearKind.Lower)]
+        [TestCase("accessory", GearKind.Accessory)]
+        public void Armor_and_accessories_draw_as_their_slot(string kind, GearKind expected)
+        {
+            Assert.That(GearLooks.KindFor(Spec(Armor(kind))), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void Every_weapon_type_maps_to_a_weapon_family()
+        {
+            foreach (WeaponType type in Enum.GetValues(typeof(WeaponType)))
+            {
+                WeaponTypeSpec spec = CraftingExpansionRules.GetWeaponTypeSpec(type);
+                string hands = spec.IsTwoHanded ? "two_handed" : "one_handed";
+                string range = spec.Range == Cosmimera.Combat.WeaponRange.Ranged ? ", \"range\": \"ranged\"" : "";
+                string id = WeaponIds[(int)type];
+                GearKind kind = GearLooks.KindFor(Spec(Weapon(hands, range + ", \"weapon_type\": \"" + id + "\"")));
+                Assert.That((int)kind, Is.EqualTo((int)type), id);
+                Assert.That(GearLooks.FamilyOf(kind), Is.Not.EqualTo(GearFamily.Garment).And.Not.EqualTo(GearFamily.Ornament).And.Not.EqualTo(GearFamily.Shield));
+            }
+        }
+
+        private static readonly string[] WeaponIds =
+        {
+            "dagger_claw", "sword_1h", "axe_1h", "mace_1h", "twinblade_staff", "spear_halberd", "greatsword", "greataxe_hammer",
+            "thrown_shuriken", "hand_crossbow", "wand_gun", "javelin", "repeater_bow", "longbow", "magic_staff", "heavy_crossbow_cannon",
+        };
+
+        [Test]
+        public void A_copy_looks_like_its_origin_planet_and_is_brand_new()
+        {
+            var lava = new ItemLook(new GearOrigin("lava_planet", 42), 9);
+            GearLookSpec a = GearLooks.ForCopy(GearKind.Sword, lava), b = GearLooks.ForCopy(GearKind.Sword, lava);
+            ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor("lava_planet", 42);
+            Assert.That(a.Palette, Is.EqualTo(new GearStyle(style.Region, style.Era)));
+            Assert.That(a.Context, Is.EqualTo(GearContext.Combat));
+            Assert.That(a.Age, Is.EqualTo(0f));
+            Assert.That(a.Damage, Is.EqualTo(0f));
+            Assert.That(b.Length, Is.EqualTo(a.Length));
+            Assert.That(b.HueShift, Is.EqualTo(a.HueShift));
+            Assert.That(GearLooks.ForCopy(GearKind.Sword, new ItemLook(lava.Origin, 10)).Length, Is.Not.EqualTo(a.Length));
+            Assert.Throws<ContractException>(() => GearLooks.ForCopy(GearKind.Sword, default));
+            Assert.Throws<ContractException>(() => GearLooks.KindFor(null));
         }
     }
 }

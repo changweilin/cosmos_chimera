@@ -67,6 +67,6 @@ D0 已可完整跑一場（EditMode 2114/2114、PlayMode 129/129）；瓶頸是*
 
 18. **P3-17／19 實景驗收**（役畜、整路折返、環狀道路與繞行、礦車軌道、枯木轉換與病樹褪色皆未經目視）：沿道路檢查地區間的機械與載具剪影、陸地與橋側動物的動線、角色阻擋與主動技破壞掉落；檢查 Steam Deck 表現與遠距辨識。
 
-19. **P1-17 程序化器物外觀（🟦，`../design/gear-looks.md`）**：a 規則層 `GearLooks.Sample`、b 每件外觀標記（存檔 v14、手冊換裝同 id 多件左右切換挑選）已接；c 佔位網格產生器 `GearMeshes`（21 類器物，測試台截圖 `Logs/gear-<時代>-<0..2>.png`，`COSMIMERA_CAPTURE=1` 跑 `GearLineupTests` 重拍）已接，**挑截圖**；接著把它接到紙娃娃、虛擬大手、NPC 穿戴與宙獸飾品（等 paperdoll 修正分支 `claude/dazzling-grothendieck-8128fe` 合併；物品→武器類型需在 craft-items 加 `weapon_type`），d 格擋護盾特徵。人工試玩：手冊「道具」同 id 多件的切換與製作地顯示（三語、實體手把）。
+19. **P1-17 程序化器物外觀（🟦，`../design/gear-looks.md`）**：a 規則層、b 每件外觀標記、c 佔位網格 `GearMeshes` 已接到大廳紙娃娃（玩家：手部掛點與衣物套在骨架上；宙獸：虛擬大手持武器／盾、飾品掛前方；截圖 `Logs/paperdoll-*.png`、`Logs/gear-*.png`，`COSMIMERA_CAPTURE=1` 跑 `GearLineupTests` 重拍），**挑截圖**。接著：關卡內宙獸虛擬大手與 NPC 穿戴／職業道具改用 `GearMeshes`，d 格擋護盾特徵。人工試玩：手冊「道具」同 id 多件切換、製作地顯示與紙娃娃外觀（三語、實體手把）。
 
 此節只寫「下一步」，不寫歷史；完成後改寫或刪除該條（歷史在 commit）。

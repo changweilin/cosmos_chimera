@@ -194,8 +194,24 @@
                 ]
               },
               "weapon_type": {
-                "type": "string",
-                "maxLength": 64
+                "enum": [
+                  "dagger_claw",
+                  "sword_1h",
+                  "axe_1h",
+                  "mace_1h",
+                  "twinblade_staff",
+                  "spear_halberd",
+                  "greatsword",
+                  "greataxe_hammer",
+                  "thrown_shuriken",
+                  "hand_crossbow",
+                  "wand_gun",
+                  "javelin",
+                  "repeater_bow",
+                  "longbow",
+                  "magic_staff",
+                  "heavy_crossbow_cannon"
+                ]
               }
             }
           }

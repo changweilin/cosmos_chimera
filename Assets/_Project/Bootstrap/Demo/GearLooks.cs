@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.Crafting;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 
@@ -293,6 +294,52 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Source for gear the player crafts: pure planet style, brand new, never wearing down.</summary>
         /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: defined enums. Post: Weight, AgeMean and DamageMean are 0. Side effects: none.</remarks>
         public static ArchMix Crafted(ArchRegion region, ArchEra era) => new ArchMix(region, era, 0f, 0f, 0f);
+
+        // Indexed by WeaponType: crafting.md#武器數值模型 and gear-looks.md#部件槽 list the same sixteen types.
+        private static readonly GearKind[] WeaponKinds =
+        {
+            GearKind.Dagger, GearKind.Sword, GearKind.Axe, GearKind.Mace,
+            GearKind.Twinblade, GearKind.Spear, GearKind.Greatsword, GearKind.GreataxeHammer,
+            GearKind.ThrowingBlade, GearKind.HandCrossbow, GearKind.Wand, GearKind.Javelin,
+            GearKind.RepeaterBow, GearKind.Longbow, GearKind.MagicStaff, GearKind.HeavyCrossbow,
+        };
+
+        /// <summary>Gear kind an equipment item is drawn as.</summary>
+        /// <remarks>
+        /// REQ: gear-looks.md#範圍.
+        /// Pre: spec non-null; spec.WeaponType defined when spec.HasWeaponType.
+        /// Post: the named weapon type's kind; a weapon without one draws as Sword (one-handed) or Greatsword (two-handed);
+        ///       Shield, Upper, Lower and Accessory map to the same-named kind. Side effects: none.
+        /// </remarks>
+        public static GearKind KindFor(EquipmentSpec spec)
+        {
+            Contract.Requires(spec != null, "spec non-null");
+            switch (spec.Kind)
+            {
+                case EquipmentKind.OneHanded:
+                case EquipmentKind.TwoHanded:
+                    if (!spec.HasWeaponType) return spec.Kind == EquipmentKind.TwoHanded ? GearKind.Greatsword : GearKind.Sword;
+                    Contract.Requires(Enum.IsDefined(typeof(WeaponType), spec.WeaponType), "weapon type defined");
+                    return WeaponKinds[(int)spec.WeaponType];
+                case EquipmentKind.Shield: return GearKind.Shield;
+                case EquipmentKind.Upper: return GearKind.Upper;
+                case EquipmentKind.Lower: return GearKind.Lower;
+                default: return GearKind.Accessory;
+            }
+        }
+
+        /// <summary>Look of one crafted copy: its origin planet's style, combat context, brand new.</summary>
+        /// <remarks>
+        /// REQ: gear-looks.md#外觀與數值 (風格由星球推得; 玩家與宙獸成品固定戰鬥情境; 出廠全新).
+        /// Pre: kind defined; look constructed (non-empty origin planet id).
+        /// Post: same (kind, look) → equal spec on every client; Age == 0 and Damage == 0. Side effects: none.
+        /// </remarks>
+        public static GearLookSpec ForCopy(GearKind kind, ItemLook look)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(look.Origin.PlanetTypeId), "look must be constructed");
+            ArchPlanetStyle style = ArchitectureMeshes.PlanetStyleFor(look.Origin.PlanetTypeId, look.Origin.PlanetSeed);
+            return Sample(kind, GearContext.Combat, style.Region, style.Era, Crafted(style.Region, style.Era), look.Seed);
+        }
 
         /// <summary>Samples the look of one item.</summary>
         /// <remarks>
