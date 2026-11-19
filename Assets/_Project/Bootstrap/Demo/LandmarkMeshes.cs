@@ -152,8 +152,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Material colours of <paramref name="spec"/>, in the slots of <see cref="ArchitectureMeshes"/>.</summary>
         /// <remarks>
-        /// Pre: none. Post: sky islands are rock (wall slot), turf (roof slot) and water-blue glow; everything else is
-        /// the tower palette of its region and era, weathering more strongly with age. Side effects: none.
+        /// Pre: none. Post: sky islands are rock (wall slot), turf (roof slot) and water-blue glow; the giant tree, trench
+        /// mouth, crater and ice castle use their own material colours (bark and leaves, sea rock and blue light, basalt
+        /// and lava, ice) nudged toward the region's wall; everything else is the tower palette of its region and era,
+        /// weathering more strongly with age. Side effects: none.
         /// </remarks>
         public static ArchPalette PaletteFor(in LandmarkSpec spec)
         {
@@ -163,6 +165,25 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Color rock = Color.Lerp(new Color(0.42f, 0.4f, 0.38f), p.Wall, 0.3f);
                 return new ArchPalette(rock, p.Weathering, p.Trim, new Color(0.72f, 0.93f, 1f), p.Weathering, 0.9f);
+            }
+
+            // Entrance wonders of nature (planet-world.md#進階地形地城) read by their material, not the region's masonry;
+            // a fifth of the region's wall tone keeps them from looking pasted in.
+            Color Local(Color c) => Color.Lerp(c, p.Wall, 0.2f);
+            switch (spec.Kind)
+            {
+                case LandmarkKind.GiantTree:
+                    return new ArchPalette(Local(new Color(0.42f, 0.3f, 0.2f)), new Color(0.24f, 0.52f, 0.22f),
+                        new Color(0.36f, 0.27f, 0.18f), new Color(0.75f, 1f, 0.55f), p.Weathering, strength);
+                case LandmarkKind.TrenchMouth:
+                    return new ArchPalette(Local(new Color(0.4f, 0.42f, 0.44f)), p.Weathering, new Color(0.95f, 0.55f, 0.5f),
+                        new Color(0.2f, 0.75f, 1f), p.Weathering, strength);
+                case LandmarkKind.Crater:
+                    return new ArchPalette(Local(new Color(0.24f, 0.21f, 0.2f)), new Color(0.32f, 0.27f, 0.25f),
+                        new Color(0.3f, 0.26f, 0.24f), new Color(1f, 0.48f, 0.12f), p.Weathering, strength);
+                case LandmarkKind.IceCastle:
+                    return new ArchPalette(Local(new Color(0.78f, 0.9f, 0.98f)), new Color(0.85f, 0.95f, 1f),
+                        new Color(0.6f, 0.82f, 0.98f), new Color(0.65f, 0.95f, 1f), p.Weathering, strength * 0.5f);
             }
 
             return new ArchPalette(p.Wall, p.Roof, p.Trim, p.Glow, p.Weathering, strength);
@@ -213,6 +234,21 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 case LandmarkKind.MineShaft:
                     BuildMine(g, spec, tech, ref rng);
+                    break;
+                case LandmarkKind.ComputeCenter:
+                    BuildComputeCenter(g, spec, tech, ref rng);
+                    break;
+                case LandmarkKind.GiantTree:
+                    BuildGiantTree(g, spec, ref rng);
+                    break;
+                case LandmarkKind.TrenchMouth:
+                    BuildTrenchMouth(g, spec, ref rng);
+                    break;
+                case LandmarkKind.Crater:
+                    BuildCrater(g, spec, ref rng);
+                    break;
+                case LandmarkKind.IceCastle:
+                    BuildIceCastle(g, spec, ref rng);
                     break;
                 default:
                     BuildGate(g, spec, tech, ref rng);
@@ -1365,6 +1401,264 @@ namespace Cosmimera.Bootstrap.Demo
 
         // A low round terrace out to the footprint's edge: the rule layer blocks the whole circle, so the ground it
         // blocks has to look built on.
+        // ---- advanced terrain entrances (planet-world.md#進階地形地城) ------------------------------------------------
+
+        // Variant 0: a tall rack block among lower ones, glowing vents; 1: a hall ringed by waisted cooling towers.
+        private static void BuildComputeCenter(Geo[] g, in LandmarkSpec s, Tech tech, ref Pcg32 rng)
+        {
+            float fr = s.FootprintRadiusM, h = s.HeightM;
+            var up = new float3(0f, 1f, 0f);
+            Terrace(g[W], fr, 0.6f);
+            if (s.Variant == 0)
+            {
+                float core = fr * 0.32f;
+                Box(g[W], new float3(0f, 0.6f, 0f), core, core, h - 0.6f, math.PI * 0.5f, 0.85f, 1.05f, 0.92f);
+                for (int k = 0; k < 4; k++)
+                {
+                    float a = math.PI * 0.25f + k * math.PI * 0.5f;
+                    float bh = h * (0.35f + 0.1f * rng.NextUInt(3));
+                    float3 c = Dir(a) * fr * 0.58f + new float3(0f, 0.6f, 0f);
+                    Box(g[W], c, fr * 0.16f, fr * 0.16f, bh, a, 0.8f, 1f);
+                    Box(g[R], c + new float3(0f, bh, 0f), fr * 0.17f, fr * 0.17f, 0.4f, a, 0.9f, 0.9f);
+                }
+
+                // Vent strips up each face of the core: the machines inside never sleep.
+                for (int k = 0; k < 4; k++)
+                {
+                    float a = k * math.PI * 0.5f;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        float3 c = Dir(a) * (core + 0.02f) + Dir(a + math.PI * 0.5f) * (i - 1) * core * 0.55f + new float3(0f, 2.2f, 0f);
+                        Box(g[G], c, 0.18f, 0.08f, (h - 4f) * 0.8f, a, 1f, 1f);
+                    }
+                }
+            }
+            else
+            {
+                Box(g[W], new float3(0f, 0.6f, 0f), fr * 0.3f, fr * 0.24f, h * 0.35f, math.PI * 0.5f, 0.85f, 1f);
+                for (int k = 0; k < 5; k++)
+                {
+                    float a = math.PI * 0.5f + (k + 0.5f) * math.PI * 2f / 5f;
+                    float3 c = Dir(a) * fr * 0.62f;
+                    float r = fr * 0.2f;
+                    // Hyperboloid shell: wide foot, pinched waist, flared lip.
+                    Lathe(g[W], c, up, new[]
+                    {
+                        new float2(r, -SinkM), new float2(r, 0.6f), new float2(r * 0.62f, h * 0.6f), new float2(r * 0.72f, h - 0.6f),
+                        new float2(r * 0.6f, h - 0.6f), new float2(r * 0.6f, h * 0.7f), new float2(0f, h * 0.7f),
+                    }, 12, 0f, 0.8f, 1.05f);
+                    Torus(g[G], c + new float3(0f, h * 0.45f, 0f), up, r * 0.66f, 0.12f, 16, 4, 1f);
+                }
+            }
+
+            Box(g[T], new float3(0f, 0.6f, fr * 0.3f), 1.2f, 0.4f, 3f, math.PI * 0.5f, 0.75f, 0.9f);
+            Box(g[G], new float3(0f, 0.6f, fr * 0.3f + 0.42f), 1.0f, 0.04f, 2.7f, math.PI * 0.5f, 1f, 1f);
+        }
+
+        // Variant 0: buttress roots fanning from a straight trunk under stacked crowns; 1: a strangler fig's braided trunks.
+        private static void BuildGiantTree(Geo[] g, in LandmarkSpec s, ref Pcg32 rng)
+        {
+            float fr = s.FootprintRadiusM, h = s.HeightM;
+            var up = new float3(0f, 1f, 0f);
+            float3 seed = new float3(rng.NextFloat(), rng.NextFloat(), rng.NextFloat()) * 31f;
+            float trunk = fr * 0.24f;
+            float crownBase = h * 0.62f;
+            if (s.Variant == 0)
+            {
+                Lathe(g[W], float3.zero, up, new[]
+                {
+                    new float2(trunk * 1.3f, -SinkM), new float2(trunk * 1.2f, 2f), new float2(trunk, 6f), new float2(trunk * 0.8f, crownBase),
+                    new float2(trunk * 0.6f, crownBase + 3f), new float2(0f, crownBase + 3f),
+                }, 10, 0f, 0.7f, 0.95f);
+                int roots = 6 + (int)rng.NextUInt(3);
+                for (int k = 0; k < roots; k++)
+                {
+                    float a = k * math.PI * 2f / roots + rng.NextFloat() * 0.3f;
+                    // Plank buttresses: thin, tall at the trunk, running out to the footprint edge at ground level.
+                    Hexa(g[W], new[]
+                    {
+                        Dir(a) * trunk * 0.8f - up * SinkM - Dir(a + math.PI * 0.5f) * 0.25f, Dir(a) * fr * 0.95f - up * SinkM - Dir(a + math.PI * 0.5f) * 0.2f,
+                        Dir(a) * fr * 0.95f - up * SinkM + Dir(a + math.PI * 0.5f) * 0.2f, Dir(a) * trunk * 0.8f - up * SinkM + Dir(a + math.PI * 0.5f) * 0.25f,
+                        Dir(a) * trunk * 0.8f + up * 7f - Dir(a + math.PI * 0.5f) * 0.2f, Dir(a) * fr * 0.95f + up * 0.3f - Dir(a + math.PI * 0.5f) * 0.15f,
+                        Dir(a) * fr * 0.95f + up * 0.3f + Dir(a + math.PI * 0.5f) * 0.15f, Dir(a) * trunk * 0.8f + up * 7f + Dir(a + math.PI * 0.5f) * 0.2f,
+                    }, 0.65f, 0.9f);
+                }
+            }
+            else
+            {
+                // Root mound: the fig's aerial roots have buried the host's foot out to the footprint edge.
+                Lathe(g[W], float3.zero, up, new[]
+                {
+                    new float2(fr * 0.97f, -SinkM), new float2(fr * 0.97f, 0.3f), new float2(fr * 0.6f, 1.2f), new float2(0f, 1.6f),
+                }, 12, 0f, 0.65f, 0.8f, (i, k, p) => i == 2 ? p + up * (0.3f * noise.snoise(p * 0.4f + seed)) : p);
+                for (int k = 0; k < 5; k++)
+                {
+                    float a0 = k * math.PI * 2f / 5f;
+                    // Trunks root into the mound; the mound alone carries the sunk base.
+                    float3 prev = Dir(a0) * trunk * 1.4f - up * 1f;
+                    for (int i = 1; i <= 6; i++)
+                    {
+                        float t = i / 6f;
+                        float a = a0 + t * math.PI * 0.9f;
+                        float3 next = Dir(a) * trunk * math.lerp(1.4f, 0.5f, t) + up * (crownBase + 3f) * t;
+                        Beam(g[W], prev, next, math.lerp(1.3f, 0.7f, t), 0.7f, 0.95f);
+                        prev = next;
+                    }
+                }
+            }
+
+            // Crowns: lumpy layered balls, kept above the head so the ground under them stays walkable.
+            int crowns = 4 + (int)rng.NextUInt(3);
+            for (int k = 0; k < crowns; k++)
+            {
+                float a = k * math.PI * 2f / crowns + rng.NextFloat();
+                float t = k / (float)crowns;
+                float r = math.lerp(fr * 0.75f, fr * 0.45f, t);
+                float3 c = Dir(a) * fr * 0.35f * (1f - t) + up * math.lerp(crownBase + 2f, h - r * 0.5f, t);
+                Lathe(g[R], c, up, Ball(r, 6), 10, a, 0.8f, 1.05f,
+                    (i, j, p) => p * (1f + 0.18f * noise.snoise(p * 0.3f + seed + k)) * new float3(1f, 0.6f, 1f));
+            }
+
+            Box(g[G], new float3(0f, 0f, trunk * 1.1f), 0.9f, 0.1f, 2.4f, math.PI * 0.5f, 1f, 1f);
+        }
+
+        // Variant 0: a rocky rim around a rift that drops into glowing water; 1: an atoll of coral spires around it.
+        private static void BuildTrenchMouth(Geo[] g, in LandmarkSpec s, ref Pcg32 rng)
+        {
+            float fr = s.FootprintRadiusM, h = s.HeightM;
+            var up = new float3(0f, 1f, 0f);
+            float3 seed = new float3(rng.NextFloat(), rng.NextFloat(), rng.NextFloat()) * 23f;
+            float lip = fr * 0.62f;
+            Lathe(g[W], float3.zero, up, new[]
+            {
+                new float2(fr * 0.97f, -SinkM), new float2(fr * 0.97f, 0.4f), new float2(fr * 0.8f, h), new float2(lip, h),
+                new float2(lip * 0.92f, -1f), new float2(lip * 0.8f, -SinkM + 0.2f), new float2(0f, -SinkM + 0.2f),
+            }, 18, 0f, 0.75f, 0.5f, (i, k, p) =>
+            {
+                if (i == 0 || i >= 5)
+                {
+                    return p;
+                }
+
+                float3 q = p + up * (0.6f * noise.snoise(p * 0.25f + seed));
+                float reach = math.length(q.xz);
+                if (reach > fr * 0.97f)
+                {
+                    q.xz *= fr * 0.97f / reach;
+                }
+
+                return q;
+            });
+            Lathe(g[G], float3.zero, up, new[] { new float2(lip * 0.78f, -1.8f), new float2(0f, -1.8f) }, 18, 0f, 1f, 1f);
+            int spires = s.Variant == 0 ? 3 : 9;
+            for (int k = 0; k < spires; k++)
+            {
+                float a = k * math.PI * 2f / spires + rng.NextFloat() * 0.4f;
+                float r = s.Variant == 0 ? 0.9f : 0.55f;
+                // Spires stand on the rim at 0.6 h; their tips stay within HeightM + 4 m.
+                float sh = s.Variant == 0 ? h * 0.6f : h * 0.4f + 1f + rng.NextUInt(3);
+                float3 c = Dir(a) * fr * 0.78f + up * (h * 0.6f);
+                Lathe(s.Variant == 0 ? g[W] : g[T], c, up, new[]
+                {
+                    new float2(r, -1f), new float2(r * 0.7f, sh * 0.5f), new float2(r * 0.3f, sh), new float2(0f, sh + 0.4f),
+                }, 7, a, 0.8f, 1.1f);
+            }
+        }
+
+        // Variant 0: a steep cone with a glowing crater; 1: a broad caldera with a broken rim.
+        private static void BuildCrater(Geo[] g, in LandmarkSpec s, ref Pcg32 rng)
+        {
+            float fr = s.FootprintRadiusM, h = s.HeightM;
+            var up = new float3(0f, 1f, 0f);
+            float3 seed = new float3(rng.NextFloat(), rng.NextFloat(), rng.NextFloat()) * 17f;
+            bool caldera = s.Variant == 1;
+            float rim = fr * (caldera ? 0.62f : 0.38f);
+            float bowl = caldera ? h * 0.55f : h * 0.7f;
+            Lathe(g[W], float3.zero, up, new[]
+            {
+                new float2(fr * 0.97f, -SinkM), new float2(fr * 0.97f, 0.3f), new float2(fr * 0.7f, h * 0.35f), new float2(rim * 1.15f, h * 0.9f),
+                new float2(rim, h), new float2(rim * 0.8f, bowl), new float2(rim * 0.5f, bowl - 0.8f), new float2(0f, bowl - 0.8f),
+            }, 20, 0f, 0.7f, 0.55f, (i, k, p) =>
+            {
+                if (i == 0)
+                {
+                    return p;
+                }
+
+                // A caldera's rim slumps in places; a cone's flank is gullied.
+                float n = noise.snoise(p * (caldera ? 0.12f : 0.3f) + seed);
+                float3 q = p + up * (i >= 3 && i <= 4 ? (caldera ? 2.5f : 0.8f) * n : 0.4f * n);
+                float reach = math.length(q.xz);
+                if (reach > fr * 0.97f)
+                {
+                    q.xz *= fr * 0.97f / reach;
+                }
+
+                return q;
+            });
+            Lathe(g[G], float3.zero, up, new[] { new float2(rim * 0.72f, bowl - 0.5f), new float2(0f, bowl - 0.5f) }, 20, 0f, 1f, 1f);
+            // Lava tongues spilling down the entrance side read as the way in.
+            for (int i = 0; i < 2; i++)
+            {
+                float a = math.PI * 0.5f + (i - 0.5f) * 0.35f;
+                Beam(g[G], Dir(a) * rim * 1.05f + up * (h * 0.92f), Dir(a) * fr * 0.8f + up * 0.6f, 0.7f, 1f, 1f);
+            }
+        }
+
+        // Variant 0: a keep of ice spires inside a low curtain wall; 1: a glacier arch flanked by leaning spires.
+        private static void BuildIceCastle(Geo[] g, in LandmarkSpec s, ref Pcg32 rng)
+        {
+            float fr = s.FootprintRadiusM, h = s.HeightM;
+            var up = new float3(0f, 1f, 0f);
+            Terrace(g[W], fr, 0.5f);
+            if (s.Variant == 0)
+            {
+                Lathe(g[W], float3.zero, up, new[]
+                {
+                    new float2(fr * 0.86f, 0.5f), new float2(fr * 0.86f, 4f), new float2(fr * 0.78f, 4f), new float2(fr * 0.78f, 0.5f),
+                }, 16, math.PI / 16f, 0.85f, 1.05f);
+                float keep = fr * 0.3f;
+                Lathe(g[W], float3.zero, up, new[]
+                {
+                    new float2(keep, 0.5f), new float2(keep * 0.85f, h * 0.55f), new float2(keep * 0.5f, h * 0.55f), new float2(0f, h),
+                }, 6, 0f, 0.85f, 1.1f);
+                for (int k = 0; k < 4; k++)
+                {
+                    float a = math.PI * 0.25f + k * math.PI * 0.5f;
+                    float sh = h * (0.45f + 0.08f * rng.NextUInt(3));
+                    Lathe(g[T], Dir(a) * fr * 0.55f, up, new[]
+                    {
+                        new float2(1.4f, 0.5f), new float2(1.1f, sh * 0.7f), new float2(0f, sh),
+                    }, 6, a, 0.9f, 1.2f);
+                }
+            }
+            else
+            {
+                float span = fr * 0.4f, rise = h * 0.45f;
+                const int Stones = 8;
+                for (int i = 0; i < Stones; i++)
+                {
+                    float a0 = math.PI * i / Stones, a1 = math.PI * (i + 1) / Stones;
+                    float3 c = new float3(0f, 0.5f, 0f);
+                    float3 i0 = c + new float3(math.cos(a0) * span, math.sin(a0) * rise, 0f), i1 = c + new float3(math.cos(a1) * span, math.sin(a1) * rise, 0f);
+                    float3 o0 = c + new float3(math.cos(a0) * (span + 3f), math.sin(a0) * (rise + 3f), 0f), o1 = c + new float3(math.cos(a1) * (span + 3f), math.sin(a1) * (rise + 3f), 0f);
+                    float3 d = new float3(0f, 0f, 2.5f);
+                    Hexa(g[W], new[] { i0 - d, i1 - d, i1 + d, i0 + d, o0 - d, o1 - d, o1 + d, o0 + d }, 0.9f, 1.1f);
+                }
+
+                for (int k = 0; k < 6; k++)
+                {
+                    float a = math.PI + (k + 0.5f) * math.PI / 6f;
+                    float sh = h * (0.6f + 0.1f * rng.NextUInt(5));
+                    float3 foot = Dir(a) * fr * 0.6f;
+                    Lathe(g[T], foot, up, new[] { new float2(1.6f, 0.5f), new float2(1.1f, sh * 0.6f), new float2(0f, sh) }, 6, a, 0.9f, 1.2f);
+                }
+            }
+
+            // Cold light at the threshold.
+            Box(g[G], new float3(0f, 0.5f, fr * 0.3f), 1.2f, 0.05f, 3f, math.PI * 0.5f, 1f, 1f);
+        }
+
         private static void Terrace(Geo geo, float footprintM, float height)
         {
             Lathe(geo, float3.zero, new float3(0f, 1f, 0f), new[]

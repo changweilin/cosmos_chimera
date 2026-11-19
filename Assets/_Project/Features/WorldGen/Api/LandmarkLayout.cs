@@ -27,6 +27,16 @@ namespace Cosmimera.WorldGen
         MineShaft = 6,
         /// <summary>地城: a monumental gate over a stair going down.</summary>
         DungeonGate = 7,
+        /// <summary>研究室運算中心: server-rack blocks or a ring of cooling towers; entrance of the laboratory terrain.</summary>
+        ComputeCenter = 8,
+        /// <summary>雨林神木: a buttress-rooted giant tree; entrance of the rainforest terrain.</summary>
+        GiantTree = 9,
+        /// <summary>深海海溝口: a rimmed rift opening down toward the deep; entrance of the deep-sea terrain.</summary>
+        TrenchMouth = 10,
+        /// <summary>火山口: a cone with a glowing crater; entrance of the volcano terrain.</summary>
+        Crater = 11,
+        /// <summary>冰冠城堡: a castle of ice spires; entrance of the ice-cap terrain.</summary>
+        IceCastle = 12,
     }
 
     /// <summary>One wonder placed on the planet.</summary>
@@ -99,11 +109,25 @@ namespace Cosmimera.WorldGen
         private readonly RunLandmark[] _landmarks;
         private readonly float _radius;
 
-        internal LandmarkLayout(RunLandmark[] landmarks, float radius)
+        internal LandmarkLayout(RunLandmark[] landmarks, float radius, int entranceIndex, string entranceTerrainId)
         {
             _landmarks = landmarks;
             _radius = radius;
+            EntranceIndex = entranceIndex;
+            EntranceTerrainId = entranceTerrainId;
         }
+
+        /// <summary>Index of the one landmark that is this planet's advanced dungeon entrance, or −1 when there is none.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#進階地形地城 — exactly one entrance per planet, on a landmark.
+        /// Pre: none. Post: −1 iff EntranceTerrainId is null (asteroids, or a site search that failed); otherwise the
+        ///      landmark's Kind == DungeonEntrance.KindFor(EntranceTerrainId). Side effects: none.
+        /// </remarks>
+        public int EntranceIndex { get; }
+
+        /// <summary>Canonical advanced terrain id behind the entrance, or null when there is no entrance.</summary>
+        /// <remarks>Pre: none. Post: null or an AdvancedTerrains id that appears on this planet's size. Side effects: none.</remarks>
+        public string EntranceTerrainId { get; }
 
         /// <summary>Landmarks in generation order (space elevator and its station first when they were placed).</summary>
         /// <remarks>Pre: none. Post: Landmarks[i].Index == i. Side effects: none.</remarks>

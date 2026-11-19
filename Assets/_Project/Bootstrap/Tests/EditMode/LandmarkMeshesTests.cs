@@ -25,6 +25,11 @@ namespace Cosmimera.Bootstrap.Tests
             LandmarkKind.SpaceStation => (0f, 24f),
             LandmarkKind.Labyrinth => (16f, 11f),
             LandmarkKind.MineShaft => (7f, 10f),
+            LandmarkKind.ComputeCenter => (11f, 18f),
+            LandmarkKind.GiantTree => (9f, 36f),
+            LandmarkKind.TrenchMouth => (10f, 5f),
+            LandmarkKind.Crater => (16f, 13f),
+            LandmarkKind.IceCastle => (13f, 23f),
             _ => (7f, 8f),
         };
 
@@ -179,6 +184,19 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(island.Roof, Is.EqualTo(verdant.Weathering), "turf is the region's growth colour");
             ArchPalette old = LandmarkMeshes.PaletteFor(Spec(LandmarkKind.Tower, 0, ArchEra.Mercantile, age: 1f));
             Assert.That(old.WeatheringStrength, Is.GreaterThanOrEqualTo(verdant.WeatheringStrength));
+        }
+
+        [Test]
+        public void Nature_entrances_read_by_their_material()
+        {
+            ArchPalette tree = LandmarkMeshes.PaletteFor(Spec(LandmarkKind.GiantTree, 0, ArchEra.Mercantile));
+            Assert.That(tree.Roof.g, Is.GreaterThan(tree.Roof.r).And.GreaterThan(tree.Roof.b), "leaves are green");
+            ArchPalette crater = LandmarkMeshes.PaletteFor(Spec(LandmarkKind.Crater, 0, ArchEra.Future, ArchRegion.Ice));
+            Assert.That(crater.Glow.r, Is.GreaterThan(crater.Glow.b), "lava glows warm even on an ice world");
+            ArchPalette ice = LandmarkMeshes.PaletteFor(Spec(LandmarkKind.IceCastle, 0, ArchEra.Mercantile, ArchRegion.Lava));
+            Assert.That(ice.Wall.b, Is.GreaterThan(ice.Wall.r), "ice stays cold on a lava world");
+            ArchPalette trench = LandmarkMeshes.PaletteFor(Spec(LandmarkKind.TrenchMouth, 0, ArchEra.Mercantile));
+            Assert.That(trench.Glow.b, Is.GreaterThan(trench.Glow.r), "the deep glows blue");
         }
 
         [Test]

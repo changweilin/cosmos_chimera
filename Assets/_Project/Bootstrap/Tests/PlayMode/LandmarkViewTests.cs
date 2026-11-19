@@ -154,6 +154,11 @@ namespace Cosmimera.Bootstrap.Tests
                 ("labyrinth", LandmarkKind.Labyrinth, 16f, 11f, 0f, 40f),
                 ("mine", LandmarkKind.MineShaft, 7f, 10f, 0f, 20f),
                 ("dungeon-gate", LandmarkKind.DungeonGate, 7f, 9f, 0f, 20f),
+                ("compute-center", LandmarkKind.ComputeCenter, 11f, 18f, 0f, 30f),
+                ("giant-tree", LandmarkKind.GiantTree, 9f, 36f, 0f, 30f),
+                ("trench-mouth", LandmarkKind.TrenchMouth, 10f, 5f, 0f, 28f),
+                ("crater", LandmarkKind.Crater, 16f, 13f, 0f, 38f),
+                ("ice-castle", LandmarkKind.IceCastle, 13f, 23f, 0f, 32f),
             };
             ArchEra[] eras = { ArchEra.Agrarian, ArchEra.Mercantile, ArchEra.Steampunk, ArchEra.Future, ArchEra.Wasteland, ArchEra.Ancient };
             for (int r = 0; r < rows.Length; r++)

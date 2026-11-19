@@ -79,18 +79,6 @@
 <section>
 <h2>地形試煉與進階地城</h2>
 <div class="cards">
-<article id="Q-W43">
-  <header><a class="id" href="#Q-W43">Q-W43 追問</a><span class="tag">影響 P3-29 奇觀、P3-33、P3-07 接線</span></header>
-  <p><span class="label">已定</span>入口只在奇觀地標；地面奇觀 2／3／4 座（矮行星／行星／超巨星）；每顆星球恰好一個地城入口。</p>
-  <p><span class="label">問題</span>現有奇觀能對應的進階地形只有：坑道→礦坑（土）、高塔→高塔（雷）、空島／太空電梯→太空（風）、迷宮→迷宮（影）、神廟→神廟（光）。<b>(1)</b> 機房（金）、雨林（木）、深海（水）、火山（火）、冰棚（冰）沒有奇觀：(A) 新增 5 種奇觀造型（研究室運算中心、雨林神木、深海海溝口、火山口、冰冠城堡）；(B) 先共用「地城門」作這 5 種的入口，造型之後再補。照現況矮行星只有礦坑一種可選。<b>(2)</b> 入口地形怎麼抽：(A) 依星球主／副屬性比例加權，在該尺寸可出現者中抽；(B) 均勻抽。<b>(3)</b> 原「地表封閉迷宮型」（雨林／火山／冰棚／迷宮）：(A) 全部 10 種都改成進入獨立場景的房間地城；(B) 保留地表迷宮，奇觀立在迷宮中央當入口標記。</p>
-  <p><span class="label">建議</span>(1) B 先共用地城門、(2) A、(3) A。</p>
-</article>
-<article id="Q-W44">
-  <header><a class="id" href="#Q-W44">Q-W44 追問</a><span class="tag">影響 P3-07 表現層、P3-16 隧道、P3-33；需 ADR</span></header>
-  <p><span class="label">已定</span>室內地城為獨立場景＋平面座標系。</p>
-  <p><span class="label">問題</span>角色、宙獸戰鬥（<code>Encounter</code>）、攝影機與碰撞全以「球心為下」的單位方向向量運作（約 30 個檔案）。(A) <b>真平面</b>：引入重力場抽象（球面／平面兩種），重構 Planet／Player／Combat 讓平面場景用固定的上方；工作量大、影響戰鬥與連線同步。(B) <b>大半徑近平面</b>：獨立場景用另一顆半徑 8000 m（引擎上限）的 <code>PlanetConfig</code>，房間鋪在其表面，100 m 外地面只下沉約 0.6 m、肉眼看是平面；移動、戰鬥、碰撞不用改。</p>
-  <p><span class="label">建議</span>B（日後若要真平面再換成 A，房間規則層不受影響）。</p>
-</article>
 </div>
 </section>
 
@@ -140,8 +128,6 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-W43':[R('nolm','5 種無奇觀地形',['A 新增 5 種奇觀','B 先共用地城門','改（補充）']),R('draw','入口地形抽法',['A 依屬性比例加權','B 均勻','改（補充）']),R('maze','地表迷宮型',['A 全改獨立場景','B 保留地表迷宮＋奇觀','改（補充）'])],
- 'Q-W44':[R('flat','平面座標系實作',['A 真平面（重構）','B 大半徑近平面','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

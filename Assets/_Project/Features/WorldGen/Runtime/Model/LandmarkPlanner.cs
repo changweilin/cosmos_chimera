@@ -23,7 +23,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 3;
+        public const int GeneratorVersion = 4;
 
         /// <summary>Free ground kept between a solid landmark's footprint and any road or building (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -39,13 +39,16 @@ namespace Cosmimera.WorldGen
 
         private const float LandingGapM = 25f;
         private const int SiteAttempts = 40;
+        // The entrance must exist (one per planet), so its site search keeps going far longer than an ordinary wonder's.
+        private const int EntranceSiteAttempts = 400;
         private const int RimSamples = 8;
 
         // Dealt in shuffled order and repeated, so a small planet still shows as many different kinds as it has slots.
         private static readonly LandmarkKind[] GroundKinds =
         {
             LandmarkKind.Tower, LandmarkKind.Temple, LandmarkKind.SkyIsland, LandmarkKind.Labyrinth, LandmarkKind.MineShaft,
-            LandmarkKind.DungeonGate,
+            LandmarkKind.DungeonGate, LandmarkKind.ComputeCenter, LandmarkKind.GiantTree, LandmarkKind.TrenchMouth,
+            LandmarkKind.Crater, LandmarkKind.IceCastle,
         };
 
         /// <summary>Number of variants of <paramref name="kind"/>.</summary>
@@ -64,6 +67,11 @@ namespace Cosmimera.WorldGen
                 case LandmarkKind.Labyrinth:
                 case LandmarkKind.MineShaft:
                 case LandmarkKind.DungeonGate:
+                case LandmarkKind.ComputeCenter:
+                case LandmarkKind.GiantTree:
+                case LandmarkKind.TrenchMouth:
+                case LandmarkKind.Crater:
+                case LandmarkKind.IceCastle:
                     return 2;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "undefined LandmarkKind");
@@ -86,12 +94,16 @@ namespace Cosmimera.WorldGen
         /// <remarks>
         /// Pre: planet valid and the one plan was generated for; plan non-null; layout non-null and generated from plan;
         ///      isBuildable null (everywhere) or deterministic (false on sea and on ground something else owns).
-        /// Post: at most GroundCountFor(R) ground wonders, plus one SpaceElevator on Planet+ (R >= 960 m) and one
+        /// Post: at most GroundCountFor(R) ground wonders, plus one SpaceElevator on Planet+ (R >= 960 m, or whenever the
+        ///       entrance is space) and one
         ///       SpaceStation at 1.25 R when the elevator is placed (above the 1.0 R stratosphere limit). SkyIsland
         ///       wonders stay within &lt;= 1.0 R. A wonder whose site search fails is dropped. For every landmark with a
         ///       footprint: the centre is buildable, and for Solid ones so are 8 points on the footprint rim; a Solid
         ///       footprint keeps LayoutGapM from every road and building; every footprint keeps SpawnGapM from every
-        ///       spawn, 25 m from the landing point and LandmarkGapM from every other footprint. Same inputs → same layout.
+        ///       spawn, 25 m from the landing point and LandmarkGapM from every other footprint. Unless the planet is an
+        ///       asteroid, DungeonEntrance.TryDraw(plan.Seed, size, plan.Elements) picks the entrance terrain and its
+        ///       landmark is placed before every ordinary ground wonder (the elevator itself for space), taking one of the
+        ///       GroundCountFor(R) ground slots; EntranceIndex is −1 only if that site search fails. Same inputs → same layout.
         /// Side effects: allocates; calls isBuildable.
         /// </remarks>
         public static LandmarkLayout Generate(in PlanetConfig planet, RunPlan plan, RunLayout layout, Func<float3, bool> isBuildable)
@@ -111,17 +123,49 @@ namespace Cosmimera.WorldGen
             }
 
             int ground = GroundCountFor(radius);
-            var placed = new List<RunLandmark>(ground + 2);
-            int firstSlot = radius >= SettlementPlanner.PlanetMinRadiusM ? -1 : 0;
-            for (int k = firstSlot; k < ground; k++)
+            bool hasEntrance = DungeonEntrance.TryDraw(plan.Seed, RunPlanner.SizeForRadius(radius), plan.Elements,
+                out AdvancedTerrainSpec entrance);
+            LandmarkKind entranceKind = hasEntrance ? DungeonEntrance.KindFor(entrance.Id) : LandmarkKind.DungeonGate;
+            bool entranceIsElevator = hasEntrance && entranceKind == LandmarkKind.SpaceElevator;
+            bool elevator = radius >= SettlementPlanner.PlanetMinRadiusM || entranceIsElevator;
+
+            // Slot order: elevator (the one wonder that reaches the 1.25 R station), then the entrance, then the deck.
+            var slots = new List<LandmarkKind>(ground + 1);
+            int entranceSlot = -1;
+            if (elevator)
             {
-                // The elevator goes first on Planet+ worlds: it is the one wonder that reaches the 1.25 R station.
-                LandmarkKind kind = k < 0 ? LandmarkKind.SpaceElevator : deck[k % deck.Length];
+                if (entranceIsElevator)
+                {
+                    entranceSlot = slots.Count;
+                }
+
+                slots.Add(LandmarkKind.SpaceElevator);
+            }
+
+            int ordinary = ground;
+            if (hasEntrance && !entranceIsElevator)
+            {
+                entranceSlot = slots.Count;
+                slots.Add(entranceKind);
+                ordinary--;
+            }
+
+            for (int k = 0; k < ordinary; k++)
+            {
+                slots.Add(deck[k % deck.Length]);
+            }
+
+            var placed = new List<RunLandmark>(slots.Count + 1);
+            int entranceIndex = -1;
+            for (int slot = 0; slot < slots.Count; slot++)
+            {
+                LandmarkKind kind = slots[slot];
                 int variant = (int)rng.NextUInt((uint)VariantCount(kind));
                 Size(kind, radius, ref rng, out float footprint, out float height, out float altitude);
                 bool solid = kind != LandmarkKind.SkyIsland;
                 LayoutClearance clearance = solid ? new LayoutClearance(planet, layout, footprint + LayoutGapM) : null;
-                for (int attempt = 0; attempt < SiteAttempts; attempt++)
+                int attempts = slot == entranceSlot ? EntranceSiteAttempts : SiteAttempts;
+                for (int attempt = 0; attempt < attempts; attempt++)
                 {
                     int region = (int)rng.NextUInt((uint)regions.Count);
                     float angle = rng.NextFloat() * 2f * math.PI;
@@ -141,6 +185,11 @@ namespace Cosmimera.WorldGen
 
                     int owner = Nearest(regions, pos);
                     float3 facing = math.normalize(regions[owner].Center - pos * math.dot(regions[owner].Center, pos));
+                    if (slot == entranceSlot)
+                    {
+                        entranceIndex = placed.Count;
+                    }
+
                     placed.Add(new RunLandmark(placed.Count, kind, variant, owner, pos, facing, footprint, height, altitude, solid));
                     if (kind == LandmarkKind.SpaceElevator)
                     {
@@ -153,13 +202,13 @@ namespace Cosmimera.WorldGen
                 }
             }
 
-            return new LandmarkLayout(placed.ToArray(), radius);
+            return new LandmarkLayout(placed.ToArray(), radius, entranceIndex, entranceIndex >= 0 ? entrance.Id : null);
         }
 
         /// <summary>Order-sensitive FNV-1a digest of the layout's discrete content (no float directions).</summary>
         /// <remarks>
         /// Pre: layout non-null. Post: same layout → same value; covers count and each landmark's kind, variant, region,
-        ///      solidity and sizes in centimetres.
+        ///      solidity and sizes in centimetres, and the entrance index.
         /// Side effects: none.
         /// </remarks>
         public static ulong Hash(LandmarkLayout layout)
@@ -167,6 +216,7 @@ namespace Cosmimera.WorldGen
             Contract.Requires(layout != null, "layout must not be null");
             ulong h = 14695981039346656037UL;
             Mix(ref h, (ulong)layout.Landmarks.Count);
+            Mix(ref h, (ulong)(layout.EntranceIndex + 1));
             foreach (RunLandmark l in layout.Landmarks)
             {
                 Mix(ref h, (ulong)l.Kind);
@@ -223,6 +273,26 @@ namespace Cosmimera.WorldGen
                 case LandmarkKind.DungeonGate:
                     footprint = 6f + 0.5f * rng.NextUInt(5);
                     height = 7f + rng.NextUInt(4);
+                    break;
+                case LandmarkKind.ComputeCenter:
+                    footprint = 10f + 0.75f * rng.NextUInt(5);
+                    height = 14f + 2f * rng.NextUInt(5);
+                    break;
+                case LandmarkKind.GiantTree:
+                    footprint = 8f + 0.75f * rng.NextUInt(5);
+                    height = 30f + 3f * rng.NextUInt(6);
+                    break;
+                case LandmarkKind.TrenchMouth:
+                    footprint = 9f + 0.75f * rng.NextUInt(5);
+                    height = 4f + rng.NextUInt(4);
+                    break;
+                case LandmarkKind.Crater:
+                    footprint = 14f + rng.NextUInt(5);
+                    height = 10f + 1.5f * rng.NextUInt(5);
+                    break;
+                case LandmarkKind.IceCastle:
+                    footprint = 11f + rng.NextUInt(5);
+                    height = 18f + 2f * rng.NextUInt(6);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "kind has no ground size");

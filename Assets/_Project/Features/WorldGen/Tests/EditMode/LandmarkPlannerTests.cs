@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class LandmarkPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v3: Q-W41 ground counts 2／2／3／4).
-        private const ulong SnapshotSeed12345V3 = 15346270906682451476UL;
+        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v4: Q-W43 entrance landmark per planet).
+        private const ulong SnapshotSeed12345V4 = 4762683139348853091UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -320,12 +320,56 @@ namespace Cosmimera.WorldGen.Tests
             Assert.Throws<ContractException>(() => marks.IsBlocked(new float3(0f, 1f, 0f), -1f));
         }
 
+        // REQ: planet-world.md#進階地形地城 (Q-W41, Q-W43) — one entrance per planet, on its terrain's landmark.
+        [Test]
+        public void Every_planet_but_an_asteroid_has_exactly_one_entrance_on_its_landmark()
+        {
+            foreach (float radius in new[] { 320f, 640f, 960f, 1280f })
+            {
+                PlanetSize size = radius < 480f ? PlanetSize.Asteroid : radius < 800f ? PlanetSize.Moon
+                    : radius < 1120f ? PlanetSize.Planet : PlanetSize.Supergiant;
+                for (ulong seed = 0; seed < 40; seed++)
+                {
+                    var (_, plan, _, marks) = Make(seed, radius);
+                    if (size == PlanetSize.Asteroid)
+                    {
+                        Assert.That(marks.EntranceIndex, Is.EqualTo(-1));
+                        Assert.That(marks.EntranceTerrainId, Is.Null);
+                        continue;
+                    }
+
+                    Assert.That(marks.EntranceIndex, Is.GreaterThanOrEqualTo(0), $"no entrance R={radius} seed={seed}");
+                    Assert.That(AdvancedTerrains.TryGet(marks.EntranceTerrainId, out AdvancedTerrainSpec spec), Is.True);
+                    Assert.That(AdvancedTerrains.AppearsOn(spec, size), Is.True);
+                    Assert.That(marks.Landmarks[marks.EntranceIndex].Kind, Is.EqualTo(DungeonEntrance.KindFor(spec.Id)));
+                    bool anyShare = false;
+                    foreach (AdvancedTerrainSpec t in AdvancedTerrains.All)
+                    {
+                        anyShare |= AdvancedTerrains.AppearsOn(t, size) && plan.Elements.PercentOf(t.Element) > 0;
+                    }
+
+                    if (anyShare)
+                    {
+                        Assert.That(plan.Elements.PercentOf(spec.Element), Is.GreaterThan(0), "drawn by element share");
+                    }
+
+                    int ground = 0;
+                    foreach (RunLandmark l in marks.Landmarks)
+                    {
+                        ground += l.Kind == LandmarkKind.SpaceElevator || l.Kind == LandmarkKind.SpaceStation ? 0 : 1;
+                    }
+
+                    Assert.That(ground, Is.LessThanOrEqualTo(LandmarkPlanner.GroundCountFor(radius)));
+                }
+            }
+        }
+
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(3), "bump the pin with the version");
+            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(4), "bump the pin with the version");
             ulong h = LandmarkPlanner.Hash(Make(12345).marks);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V3), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V4), "actual " + h);
         }
     }
 }
