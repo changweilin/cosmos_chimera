@@ -266,6 +266,7 @@ namespace Cosmimera.Bootstrap.Demo
                 error = new InvalidOperationException("Final crafting stock exceeds capacity");
                 return CommitStatus.WriteFailed;
             }
+            if (outcome.CraftStock != null && outcome.CraftLooks != null) candidate.CraftStock.RestoreLooks(outcome.CraftLooks);
             if (!TryWrite(candidate, path, out error))
             {
                 return CommitStatus.WriteFailed;

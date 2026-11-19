@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
+using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Save;
@@ -977,6 +978,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             _menuInput.Disable();
             _confirmPending = false;
+            // REQ: gear-looks.md#外觀與數值 — lobby crafting styles gear after the last departed planet; persisted at settlement.
+            _save.SetLastPlanet(new GearOrigin(o.Type.Id, o.Seed));
             _lobbyCamera.gameObject.SetActive(false);
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
@@ -992,6 +995,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
                     Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
                     CraftStock = _save.CraftStock.Snapshot(),
+                    CraftLooks = _save.CraftStock.LookSnapshot(),
                     Equipment = _save.Equipment.Snapshot(),
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));

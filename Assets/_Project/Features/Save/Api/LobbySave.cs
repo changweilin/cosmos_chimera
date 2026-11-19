@@ -35,13 +35,16 @@ namespace Cosmimera.Save
     /// until migrated once per individual via <c>SetEcology</c>.
     /// Version 12: root <c>presets</c> — up to MaxPresets favourite loadouts (party, subs, equipment, appearance);
     /// formats 1–11 load with none.
+    /// Version 14 (P1-17b, gear-looks.md#外觀與數值): craft stacks add <c>looks</c> (tagged copies, oldest first), equipment
+    /// entries add <c>look</c>, root <c>last_planet</c> names the planet lobby crafting takes its style from. Formats 1–13
+    /// load untagged (each copy reads ItemLook.Default) with the cradle planet as last planet.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 13;
+        public const int FormatVersion = 14;
 
         /// <summary>Number of favourite-loadout slots.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -73,6 +76,18 @@ namespace Cosmimera.Save
         /// <summary>Player and owned-creature equipment; item copies are reserved outside CraftStock.</summary>
         /// <remarks>Pre: main thread; callers validate owner ids against Owned. Post: same instance. Side effects: mutations change this save.</remarks>
         public EquipmentLoadout Equipment => _equipment;
+
+        /// <summary>Planet lobby crafting takes its gear style from: the most recently departed planet, else the cradle planet.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: none. Post: constructed origin. Side effects: none.</remarks>
+        public GearOrigin LastPlanet { get; private set; } = GearOrigin.Cradle;
+
+        /// <summary>Records the planet just departed for.</summary>
+        /// <remarks>Pre: origin constructed. Post: LastPlanet == origin. Side effects: mutates this save.</remarks>
+        public void SetLastPlanet(GearOrigin origin)
+        {
+            Contract.Requires(CraftInventory.ValidId(origin.PlanetTypeId), "origin must be constructed");
+            LastPlanet = origin;
+        }
 
         /// <summary>Cumulative player XP (level-progression.md#玩家等級).</summary>
         /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
@@ -302,12 +317,12 @@ namespace Cosmimera.Save
                 if (e.Owner != 0 && !covered.Contains(e.Owner)) continue; // creature already counted as missing
                 IReadOnlyCollection<GripMode> grips = e.Owner == 0
                     ? EquipmentRules.PlayerGrips : catalog.GripsOf(c.Get(e.Owner).SpeciesId);
-                if (!c._equipment.TryEquip(e.Owner, e.Item, e.Slot, grips, catalog, c._craftStock)) missingItems++;
+                // The preset remembers which copy was worn; fall back to the newest copy if that one is gone.
+                int copy = c._craftStock.Count(e.Item) > 0 ? c._craftStock.FindCopy(e.Item, e.Look) : -1;
+                if (!c._equipment.TryEquip(e.Owner, e.Item, e.Slot, grips, catalog, c._craftStock, copy)) missingItems++;
             }
 
-            // Exchange first: it is the only step that can still refuse, and nothing here has been mutated yet.
-            if (!_craftStock.TryExchange(_craftStock.Snapshot(), c._craftStock.Snapshot()))
-                throw new InvalidOperationException("lobby save: preset bag swap overflowed");
+            _craftStock.CopyFrom(c._craftStock);
             _owned.Clear(); _owned.AddRange(c._owned);
             _party.Clear(); _party.AddRange(c._party);
             _partners.Clear(); _partners.AddRange(c._partners);
@@ -435,7 +450,7 @@ namespace Cosmimera.Save
             var c = new LobbySave
             {
                 StarterLine = StarterLine, _nextInstanceId = _nextInstanceId, LoadedFormatVersion = LoadedFormatVersion,
-                PlayerExp = PlayerExp,
+                PlayerExp = PlayerExp, LastPlanet = LastPlanet,
             };
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
@@ -445,7 +460,7 @@ namespace Cosmimera.Save
             {
                 c._materials.Add(m.Key, m.Qty);
             }
-            c._craftStock.TryExchange(Array.Empty<CraftStack>(), _craftStock.Snapshot());
+            c._craftStock.CopyFrom(_craftStock);
             c._equipment.Restore(_equipment.Snapshot());
             c.Codex.Restore(Codex.Snapshot());
             Array.Copy(_presets, c._presets, MaxPresets); // LoadoutPreset is immutable
@@ -677,7 +692,7 @@ namespace Cosmimera.Save
                 for (int i = 0; i < pd.partners.Length; i++)
                     pd.partners[i] = new PartnerDto { main = p.Partners[i].MainInstanceId, sub = p.Partners[i].SubInstanceId };
                 for (int i = 0; i < pd.equipment.Length; i++)
-                    pd.equipment[i] = new EquipmentDto { owner = p.Equipment[i].Owner, slot = p.Equipment[i].Slot, item = p.Equipment[i].Item };
+                    pd.equipment[i] = new EquipmentDto { owner = p.Equipment[i].Owner, slot = p.Equipment[i].Slot, item = p.Equipment[i].Item, look = ToDto(p.Equipment[i].Look) };
                 for (int i = 0; i < pd.visuals.Length; i++)
                     pd.visuals[i] = new VisualDto { instance_id = p.Visuals[i].InstanceId, vessel = (int)p.Visuals[i].Vessel };
                 presetDtos.Add(pd);
@@ -689,9 +704,20 @@ namespace Cosmimera.Save
             for (int i = 0; i < knowledge.Count; i++)
                 dto.codex[i] = new CodexDto { kind = (int)knowledge[i].Kind, id = knowledge[i].Id, level = (int)knowledge[i].Level };
             IReadOnlyList<CraftStack> craftStock = _craftStock.Snapshot();
+            var tagged = new Dictionary<string, IReadOnlyList<ItemLook>>(StringComparer.Ordinal);
+            foreach (ItemLookList list in _craftStock.LookSnapshot()) tagged[list.Id] = list.Looks;
             dto.craft_stock = new CraftDto[craftStock.Count];
             for (int i = 0; i < craftStock.Count; i++)
-                dto.craft_stock[i] = new CraftDto { id = craftStock[i].Id, qty = craftStock[i].Quantity };
+            {
+                var cd = new CraftDto { id = craftStock[i].Id, qty = craftStock[i].Quantity, looks = Array.Empty<LookDto>() };
+                if (tagged.TryGetValue(cd.id, out IReadOnlyList<ItemLook> looks))
+                {
+                    cd.looks = new LookDto[looks.Count];
+                    for (int k = 0; k < looks.Count; k++) cd.looks[k] = ToDto(looks[k]);
+                }
+                dto.craft_stock[i] = cd;
+            }
+            dto.last_planet = new OriginDto { planet = LastPlanet.PlanetTypeId, seed = unchecked((long)LastPlanet.PlanetSeed) };
             IReadOnlyList<EquippedItem> equipment = _equipment.Snapshot();
             dto.equipment = new EquipmentDto[equipment.Count];
             for (int i = 0; i < equipment.Count; i++)
@@ -699,7 +725,7 @@ namespace Cosmimera.Save
                 EquippedItem item = equipment[i];
                 if (item.Owner != 0 && !_owned.Exists(o => o.InstanceId == item.Owner))
                     throw new InvalidOperationException("Equipment owner is not owned");
-                dto.equipment[i] = new EquipmentDto { owner = item.Owner, slot = item.Slot, item = item.Item };
+                dto.equipment[i] = new EquipmentDto { owner = item.Owner, slot = item.Slot, item = item.Item, look = ToDto(item.Look) };
             }
             for (int i = 0; i < _eggs.Count; i++)
             {
@@ -869,17 +895,34 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 14 && dto.last_planet != null && !string.IsNullOrEmpty(dto.last_planet.planet))
+            {
+                Check(CraftInventory.ValidId(dto.last_planet.planet), "invalid last planet");
+                save.LastPlanet = new GearOrigin(dto.last_planet.planet, unchecked((ulong)dto.last_planet.seed));
+            }
+
             if (dto.version >= 7)
             {
                 var craftIds = new HashSet<string>(StringComparer.Ordinal);
                 var stacks = new List<CraftStack>();
+                var lookLists = new List<ItemLookList>();
                 foreach (CraftDto item in dto.craft_stock ?? Array.Empty<CraftDto>())
                 {
                     Check(item != null && CraftInventory.ValidId(item.id), "invalid crafting item id");
                     Check(item.qty > 0 && craftIds.Add(item.id), "invalid or duplicate crafting stack");
                     stacks.Add(new CraftStack(item.id, item.qty));
+                    if (dto.version < 14 || item.looks == null || item.looks.Length == 0) continue;
+                    Check(item.looks.Length <= item.qty, "crafting stack has more looks than copies");
+                    var looks = new List<ItemLook>(item.looks.Length);
+                    foreach (LookDto l in item.looks)
+                    {
+                        Check(TryFromDto(l, out ItemLook look), "invalid item look");
+                        looks.Add(look);
+                    }
+                    lookLists.Add(new ItemLookList(item.id, looks));
                 }
                 Check(save._craftStock.TryExchange(Array.Empty<CraftStack>(), stacks), "crafting inventory overflow");
+                save._craftStock.RestoreLooks(lookLists);
                 var entries = new List<EquippedItem>();
                 var slots = new HashSet<string>(StringComparer.Ordinal);
                 foreach (EquipmentDto item in dto.equipment ?? Array.Empty<EquipmentDto>())
@@ -889,7 +932,7 @@ namespace Cosmimera.Save
                     string slot = dto.version >= 9 ? item.slot : EquipmentSlots.MigrateLegacy(item.slot);
                     Check(EquipmentSlots.IsValid(slot), "invalid equipment slot");
                     Check(CraftInventory.ValidId(item.item) && slots.Add(item.owner + ":" + slot), "invalid or duplicate equipment entry");
-                    entries.Add(new EquippedItem(item.owner, slot, item.item));
+                    entries.Add(EntryFromDto(dto.version, item.owner, slot, item.item, item.look));
                 }
                 save._equipment.Restore(entries);
             }
@@ -937,7 +980,7 @@ namespace Cosmimera.Save
                         Check(e != null && (e.owner == 0 || mains.Contains(e.owner) || psubs.Contains(e.owner)), "preset equipment owner outside preset");
                         Check(EquipmentSlots.IsValid(e.slot) && CraftInventory.ValidId(e.item) && gearKeys.Add(e.owner + ":" + e.slot),
                             "invalid or duplicate preset equipment");
-                        gear.Add(new EquippedItem(e.owner, e.slot, e.item));
+                        gear.Add(EntryFromDto(dto.version, e.owner, e.slot, e.item, e.look));
                     }
 
                     var looks = new List<VisualChoice>();
@@ -1057,6 +1100,30 @@ namespace Cosmimera.Save
             }
         }
 
+        private static LookDto ToDto(ItemLook look) => new LookDto
+        {
+            planet = look.Origin.PlanetTypeId, planet_seed = unchecked((long)look.Origin.PlanetSeed), seed = unchecked((long)look.Seed),
+        };
+
+        // JsonUtility fills a missing nested object with an empty instance, so "no look" is an empty planet id.
+        private static bool TryFromDto(LookDto dto, out ItemLook look)
+        {
+            look = default;
+            if (dto == null || !CraftInventory.ValidId(dto.planet)) return false;
+            look = new ItemLook(new GearOrigin(dto.planet, unchecked((ulong)dto.planet_seed)), unchecked((ulong)dto.seed));
+            return true;
+        }
+
+        private static EquippedItem EntryFromDto(int version, int owner, string slot, string item, LookDto look)
+        {
+            if (version >= 14 && look != null && !string.IsNullOrEmpty(look.planet))
+            {
+                Check(TryFromDto(look, out ItemLook parsed), "invalid equipment look");
+                return new EquippedItem(owner, slot, item, parsed);
+            }
+            return new EquippedItem(owner, slot, item);
+        }
+
 #pragma warning disable 0649, IDE1006
         [Serializable] private sealed class Dto
         {
@@ -1073,6 +1140,7 @@ namespace Cosmimera.Save
             public EquipmentDto[] equipment;
             public CodexDto[] codex;
             public PresetDto[] presets;
+            public OriginDto last_planet;
             public string character_id;
             public string friend_id;
             public string rival_id;
@@ -1109,12 +1177,28 @@ namespace Cosmimera.Save
             public int owner;
             public string slot;
             public string item;
+            public LookDto look;
         }
 
         [Serializable] private sealed class CraftDto
         {
             public string id;
             public int qty;
+            public LookDto[] looks;
+        }
+
+        // Seeds are stored as their 64-bit pattern in a long: JsonUtility round-trips long exactly.
+        [Serializable] private sealed class LookDto
+        {
+            public string planet;
+            public long planet_seed;
+            public long seed;
+        }
+
+        [Serializable] private sealed class OriginDto
+        {
+            public string planet;
+            public long seed;
         }
 
         [Serializable] private sealed class EggDto

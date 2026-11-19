@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
@@ -87,6 +88,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ui.Label("[" + _copy.Ui("ui.craft.kind." + item.Equipment.Kind) + "] " + _copy.Ui(item.Id)
                     + " ×" + _save.CraftStock.Count(item.Id));
                 CraftJournal.DrawGearStats(ui, _copy, item);
+                int copy = DrawCopyPicker(ui, item.Id);
                 foreach (string slot in EquipmentSlots.All)
                 {
                     if (!item.Equipment.Fits(slot) || !ui.Button(_copy.Ui("ui.craft.equip_to").Replace("{slot}", _copy.Ui("ui.craft.slot." + slot))))
@@ -95,7 +97,7 @@ namespace Cosmimera.Bootstrap.Demo
                     }
 
                     var candidate = _save.Clone();
-                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, slot, grips, CraftCatalog, candidate.CraftStock)
+                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, slot, grips, CraftCatalog, candidate.CraftStock, copy)
                         ? (CommitLobby(candidate) ? string.Empty : _partyMsg) : _copy.Ui("ui.craft.equip_failed");
                     GUIUtility.ExitGUI();
                 }
@@ -109,6 +111,35 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
+        }
+
+        // REQ: gear-looks.md#外觀與數值 — with several copies of one item, the player flips through them and picks one.
+        private readonly Dictionary<string, int> _copyPick = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        private int DrawCopyPicker(AdventurePanel ui, string id)
+        {
+            int total = _save.CraftStock.Count(id);
+            _copyPick.TryGetValue(id, out int pick);
+            pick = Mathf.Clamp(pick, 0, total - 1);
+            ItemLook look = _save.CraftStock.LookOf(id, pick);
+            string origin = look.Origin.PlanetTypeId == GearOrigin.CradlePlanetTypeId
+                ? string.Empty : " · " + _copy.Ui("ui.paperdoll.copy_origin").Replace("{planet}", _copy.Planet(look.Origin.PlanetTypeId));
+            string label = _copy.Ui("ui.paperdoll.copy_pick").Replace("{n}", (pick + 1).ToString())
+                .Replace("{total}", total.ToString()) + origin;
+            if (total <= 1)
+            {
+                ui.Label(label);
+            }
+            else
+            {
+                GUILayout.BeginHorizontal();
+                if (ui.Button("◀")) pick = (pick + total - 1) % total;
+                ui.Label(label);
+                if (ui.Button("▶")) pick = (pick + 1) % total;
+                GUILayout.EndHorizontal();
+            }
+            _copyPick[id] = pick;
+            return pick;
         }
 
         private int _presetEditSlot = -1;
@@ -376,7 +407,8 @@ namespace Cosmimera.Bootstrap.Demo
             CraftRecipe recipe = CraftJournal.DrawRecipes(ui, _copy, CraftCatalog, _save.CraftStock, utilities, _showLockedCrafts);
             if (recipe == null) return;
             var candidate = _save.Clone();
-            CraftResult result = CraftRules.TryCraft(recipe, utilities, candidate.CraftStock);
+            // REQ: gear-looks.md#外觀與數值 — lobby crafting takes its style from the most recently departed planet.
+            CraftResult result = CraftRules.TryCraft(recipe, utilities, candidate.CraftStock, CraftCatalog, _save.LastPlanet);
             ui.Message = result == CraftResult.Success
                 ? (CommitLobby(candidate) ? _copy.Ui("craft.result.Success") : _partyMsg) : _copy.Ui("craft.result." + result);
             GUIUtility.ExitGUI();

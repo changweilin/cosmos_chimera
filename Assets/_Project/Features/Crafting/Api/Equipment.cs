@@ -86,7 +86,18 @@ namespace Cosmimera.Crafting
         public EquippedItem(int owner, string slot, string item)
         {
             Contract.Requires(owner >= 0 && EquipmentSlots.IsValid(slot) && CraftInventory.ValidId(item), "invalid equipment assignment");
-            Owner = owner; Slot = slot; Item = item;
+            Owner = owner; Slot = slot; Item = item; Look = ItemLook.Default(item, 0);
+        }
+
+        /// <summary>Creates a saved equipment assignment for one concrete copy.</summary>
+        /// <remarks>
+        /// REQ: docs/design/gear-looks.md#外觀與數值.
+        /// Pre: as the three-argument constructor; look constructed. Post: arguments retained. Side effects: none.
+        /// </remarks>
+        public EquippedItem(int owner, string slot, string item, ItemLook look) : this(owner, slot, item)
+        {
+            Contract.Requires(CraftInventory.ValidId(look.Origin.PlanetTypeId), "look must be constructed");
+            Look = look;
         }
         /// <summary>Player zero or owned-creature instance id.</summary>
         /// <remarks>Pre: none. Post: nonnegative. Side effects: none.</remarks>
@@ -97,6 +108,9 @@ namespace Cosmimera.Crafting
         /// <summary>Equipped item, reserved outside the material bag.</summary>
         /// <remarks>Pre: constructed entry. Post: valid id. Side effects: none.</remarks>
         public string Item { get; }
+        /// <summary>Look of the equipped copy (ItemLook.Default(Item, 0) for assignments saved before looks existed).</summary>
+        /// <remarks>Pre: constructed entry. Post: constructed look. Side effects: none.</remarks>
+        public ItemLook Look { get; }
     }
 
     /// <summary>Equipment bonuses supplied by crafting data.</summary>
@@ -319,59 +333,79 @@ namespace Cosmimera.Crafting
         /// <remarks>
         /// REQ: crafting.md#穿戴與數值 — a two-handed weapon occupies both hands; the resulting hands must match one of
         /// <paramref name="grips"/> (pass <see cref="EquipmentRules.PlayerGrips"/> for the player).
-        /// Pre: owner nonnegative; id, slot, grips, catalog and inventory non-null.
-        /// Post: false leaves bag and equipment unchanged (unknown/unfit item, wrong wearer, grip not allowed, full bag);
-        ///       true moves one copy out of the bag and puts the displaced items (the slot's item; both hands for a
-        ///       two-handed weapon; the two-handed weapon when filling the off hand) back.
+        /// REQ: gear-looks.md#外觀與數值 — the player picks which copy (and so which look) to wear.
+        /// Pre: owner nonnegative; id, slot, grips, catalog and inventory non-null; copy is -1 (newest copy) or a valid copy index.
+        /// Post: false leaves bag and equipment unchanged (unknown/unfit item, wrong wearer, grip not allowed, full bag, no copy);
+        ///       true moves the chosen copy (with its look) out of the bag and puts the displaced copies (the slot's item; both
+        ///       hands for a two-handed weapon; the two-handed weapon when filling the off hand) back with their looks.
         /// Side effects: mutates both on success.
         /// </remarks>
         public bool TryEquip(int owner, string id, string slot, IReadOnlyCollection<GripMode> grips, CraftCatalog catalog,
-            CraftInventory inventory)
+            CraftInventory inventory, int copy = -1)
         {
             Contract.Requires(owner >= 0 && id != null && slot != null && grips != null && catalog != null && inventory != null,
                 "valid arguments required");
             if (!catalog.TryGetItem(id, out CraftItem item) || item.Equipment == null || !item.Equipment.Allows(owner) ||
                 !item.Equipment.Fits(slot)) return false;
+            int held = inventory.Count(id);
+            Contract.Requires(copy >= -1 && copy < Math.Max(held, 1), "copy index out of range");
+            if (held == 0) return false;
+            // The newest copy is O(1) to take; picking an old untagged copy pins the untagged copies above it.
+            if (copy < 0) copy = held - 1;
             var displaced = new List<string>();
             string main = ItemIn(owner, EquipmentSlots.MainHand), off = ItemIn(owner, EquipmentSlots.OffHand);
             string newMain = main, newOff = off;
+            // Holds the slots whose copies go back to the bag, so each returns with its own look.
             if (slot == EquipmentSlots.MainHand)
             {
-                if (main != null) displaced.Add(main);
+                if (main != null) displaced.Add(EquipmentSlots.MainHand);
                 newMain = id;
-                if (item.Equipment.Kind == EquipmentKind.TwoHanded && off != null) { displaced.Add(off); newOff = null; }
+                if (item.Equipment.Kind == EquipmentKind.TwoHanded && off != null) { displaced.Add(EquipmentSlots.OffHand); newOff = null; }
             }
             else if (slot == EquipmentSlots.OffHand)
             {
-                if (off != null) displaced.Add(off);
+                if (off != null) displaced.Add(EquipmentSlots.OffHand);
                 newOff = id;
-                if (main != null && KindOf(main, catalog) == EquipmentKind.TwoHanded) { displaced.Add(main); newMain = null; }
+                if (main != null && KindOf(main, catalog) == EquipmentKind.TwoHanded) { displaced.Add(EquipmentSlots.MainHand); newMain = null; }
             }
             else
             {
-                string current = ItemIn(owner, slot);
-                if (current != null) displaced.Add(current);
+                if (ItemIn(owner, slot) != null) displaced.Add(slot);
             }
             if (EquipmentRules.RequiredGrips(KindOf(newMain, catalog), KindOf(newOff, catalog)) is GripMode[] required &&
                 !AnyAllowed(required, grips)) return false;
-            var gains = new CraftStack[displaced.Count];
-            for (int i = 0; i < gains.Length; i++) gains[i] = new CraftStack(displaced[i], 1);
-            if (!inventory.TryExchange(new[] { new CraftStack(id, 1) }, gains)) return false;
+            var puts = new List<ItemCopy>(displaced.Count);
+            foreach (string slotOf in displaced) puts.Add(new ItemCopy(EntryIn(owner, slotOf).Item, EntryIn(owner, slotOf).Look));
+            if (!inventory.TryMoveCopies(id, copy, puts, out ItemLook look)) return false;
             _entries.RemoveAll(e => e.Owner == owner && (e.Slot == slot ||
                 (e.Slot == EquipmentSlots.MainHand && newMain == null) || (e.Slot == EquipmentSlots.OffHand && newOff == null)));
-            _entries.Add(new EquippedItem(owner, slot, id));
+            _entries.Add(new EquippedItem(owner, slot, id, look));
             return true;
         }
 
-        /// <summary>Returns one equipped item to stock, refusing full stacks without removing equipment.</summary>
-        /// <remarks>Pre: owner nonnegative; slot valid; inventory non-null. Post: success removes exactly one assignment. Side effects: mutates both on success.</remarks>
+        /// <summary>Equipped entry (item and look) in an owner's slot.</summary>
+        /// <remarks>Pre: owner nonnegative; slot valid. Post: false iff the slot is empty. Side effects: none.</remarks>
+        public bool TryGetEntry(int owner, string slot, out EquippedItem entry)
+        {
+            Contract.Requires(owner >= 0 && EquipmentSlots.IsValid(slot), "valid owner and slot required");
+            int index = _entries.FindIndex(e => e.Owner == owner && e.Slot == slot);
+            entry = index < 0 ? default : _entries[index];
+            return index >= 0;
+        }
+
+        /// <summary>Returns one equipped copy (with its look) to stock, refusing full stacks without removing equipment.</summary>
+        /// <remarks>Pre: owner nonnegative; slot valid; inventory non-null. Post: success removes exactly one assignment and adds its copy as the newest. Side effects: mutates both on success.</remarks>
         public bool TryUnequip(int owner, string slot, CraftInventory inventory)
         {
             Contract.Requires(owner >= 0 && EquipmentSlots.IsValid(slot) && inventory != null, "valid arguments required");
             int index = _entries.FindIndex(e => e.Owner == owner && e.Slot == slot);
-            if (index < 0 || !inventory.TryExchange(Array.Empty<CraftStack>(), new[] { new CraftStack(_entries[index].Item, 1) })) return false;
+            if (index < 0) return false;
+            EquippedItem e0 = _entries[index];
+            if (!inventory.TryMoveCopies(null, 0, new[] { new ItemCopy(e0.Item, e0.Look) }, out _)) return false;
             _entries.RemoveAt(index); return true;
         }
+
+        private EquippedItem EntryIn(int owner, string slot) => _entries.Find(e => e.Owner == owner && e.Slot == slot);
 
         // Retired ids have no kind; they hold their slot but never constrain the grip.
         private static EquipmentKind? KindOf(string id, CraftCatalog catalog) =>

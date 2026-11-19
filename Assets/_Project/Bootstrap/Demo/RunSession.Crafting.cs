@@ -29,6 +29,7 @@ namespace Cosmimera.Bootstrap.Demo
             _craftCatalog = CraftJournal.LoadCatalog();
             if (_setup.CraftStock != null && !_craftInventory.TryExchange(Array.Empty<CraftStack>(), _setup.CraftStock))
                 throw new InvalidOperationException("Departure crafting stock exceeds capacity");
+            if (_setup.CraftLooks != null) _craftInventory.RestoreLooks(_setup.CraftLooks);
         }
 
         private void DrawCrafting(AdventurePanel ui)
@@ -57,7 +58,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (!any) ui.Label(_copy.Ui("ui.craft.no_nodes"));
             CraftRecipe selected = CraftJournal.DrawRecipes(ui, _copy, _craftCatalog, _craftInventory, _enabledUtilities, _showLockedGathering);
             if (selected == null) return;
-            ui.Message = _copy.Ui("craft.result." + CraftRules.TryCraft(selected, _enabledUtilities, _craftInventory));
+            ui.Message = _copy.Ui("craft.result." + CraftRules.TryCraft(selected, _enabledUtilities, _craftInventory,
+                _craftCatalog, new GearOrigin(_setup.PlanetType.Id, _setup.Seed)));
             GUIUtility.ExitGUI();
         }
 

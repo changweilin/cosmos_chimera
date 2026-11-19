@@ -67,6 +67,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Final crafting stock including departure items; null for legacy outcomes.</summary>
         /// <remarks>Pre: non-null entries valid. Post: replaces departure stock at settlement. Side effects: none.</remarks>
         public IReadOnlyList<CraftStack> CraftStock;
+
+        /// <summary>Final tagged copy looks matching <see cref="CraftStock"/>; null for legacy outcomes.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: consistent with CraftStock. Post: replaces lobby looks at settlement. Side effects: none.</remarks>
+        public IReadOnlyList<ItemLookList> CraftLooks;
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -174,6 +178,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Persistent crafting stock copied into this run.</summary>
         /// <remarks>Pre: null or valid stacks. Post: never mutated by the run. Side effects: none.</remarks>
         public IReadOnlyList<CraftStack> CraftStock;
+
+        /// <summary>Tagged copy looks of <see cref="CraftStock"/>, or null when nothing is tagged.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: no more looks per id than CraftStock holds. Post: never mutated by the run. Side effects: none.</remarks>
+        public IReadOnlyList<ItemLookList> CraftLooks;
 
         /// <summary>Fixed departure equipment for the player and owned party members.</summary>
         /// <remarks>Pre: null or validated saved assignments. Post: unchanged throughout the run. Side effects: none.</remarks>
@@ -2319,6 +2327,7 @@ namespace Cosmimera.Bootstrap.Demo
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _outcome.CraftStock = _craftInventory.Snapshot();
+            _outcome.CraftLooks = _craftInventory.LookSnapshot();
             _onEnd(_outcome);
         }
 

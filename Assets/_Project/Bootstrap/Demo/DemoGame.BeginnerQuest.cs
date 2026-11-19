@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Capture;
 using Cosmimera.Codex;
+using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Save;
@@ -187,6 +188,7 @@ namespace Cosmimera.Bootstrap.Demo
             _activeRunIsBeginnerQuest = true;
             _menuInput.Disable();
             _confirmPending = false;
+            _save.SetLastPlanet(new GearOrigin(bType.Id, randomSeed));
             _lobbyCamera.gameObject.SetActive(false);
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
@@ -212,6 +214,7 @@ namespace Cosmimera.Bootstrap.Demo
                     Owned = new List<OwnedCreature>(_save.Owned),
                     Partners = new PartnerLoadout(_runPartyIds),
                     CraftStock = _save.CraftStock.Snapshot(),
+                    CraftLooks = _save.CraftStock.LookSnapshot(),
                     Equipment = _save.Equipment.Snapshot(),
                     IsBeginnerQuest = true,
                     RivalId = _bqRivalId,

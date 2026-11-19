@@ -409,6 +409,16 @@
     "en": "Equip to {slot}",
     "ja": "{slot}に装備"
   },
+  "ui.paperdoll.copy_pick": {
+    "zh-TW": "第 {n}/{total} 件",
+    "en": "Copy {n}/{total}",
+    "ja": "{total}個中{n}個目"
+  },
+  "ui.paperdoll.copy_origin": {
+    "zh-TW": "製作於{planet}",
+    "en": "Made on {planet}",
+    "ja": "{planet}で製作"
+  },
   "ui.craft.grips": {
     "zh-TW": "持握方式：{grips}",
     "en": "Grips: {grips}",
