@@ -29,6 +29,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 動到球形星球、重力、地形、區塊 LOD、地平線 | `docs/architecture/planet-tech.md` + `docs/decisions/ADR-0001-cube-sphere.md` |
 | 動到星球內容生成（地貌、道路建築、程序化、BOSS、任務） | `docs/design/planet-world.md` |
 | 建築造型（地區×時代、主副風格、新舊毀損）、城牆、工廠、隧道、交通工具 | `docs/design/settlement-structures.md` |
+| 服裝、飾品、武器、防具外觀（程序化五軸、紙娃娃、虛擬大手、格擋護盾） | `docs/design/gear-looks.md` |
 | 宙獸資料、屬性、能力值、進化、副手、關係表 | `docs/design/creatures.md` |
 | 生活主動技／被動技與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
 | 戰鬥、主動技、CD、命中、召喚輪替 | `docs/design/combat.md` |
