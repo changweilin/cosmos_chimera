@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Cosmimera.Capture;
 using Cosmimera.Codex;
 using Cosmimera.Combat;
+using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
@@ -71,6 +72,23 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Final tagged copy looks matching <see cref="CraftStock"/>; null for legacy outcomes.</summary>
         /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: consistent with CraftStock. Post: replaces lobby looks at settlement. Side effects: none.</remarks>
         public IReadOnlyList<ItemLookList> CraftLooks;
+
+        /// <summary>Per-profession trainer battles completed during this run (dropped on abandon at settlement).</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: valid snake_case keys and counts &gt;= 1. Side effects: none.</remarks>
+        public readonly Dictionary<string, int> TrainerBattles = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>Terrain trial badges earned during this run (dropped on abandon at settlement).</summary>
+        /// <remarks>Pre: none. Post: valid snake_case terrain trial ids. Side effects: none.</remarks>
+        public readonly HashSet<string> CompletedTrials = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>Records one completed battle (victory or defeat) against trainer profession <paramref name="professionId"/>.</summary>
+        /// <remarks>Pre: professionId valid snake_case id. Post: TrainerBattles[professionId] incremented by 1. Side effects: mutates TrainerBattles.</remarks>
+        public void RecordTrainerBattle(string professionId)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            TrainerBattles.TryGetValue(professionId, out int count);
+            TrainerBattles[professionId] = count + 1;
+        }
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -352,6 +370,9 @@ namespace Cosmimera.Bootstrap.Demo
         private LandmarkView _landmarkView;
         private RunPopulace _populace;
         private PopulaceView _populaceView;
+        private RunTrainers _trainers;
+        private TrainerView _trainerView;
+        private IReadOnlyList<CreatureDef> _wildPool;
         private ScatterField _scatterField;
         private ObjectPhysics _objectPhysics;
         private EnvMaterials _envMaterials;
@@ -451,6 +472,9 @@ namespace Cosmimera.Bootstrap.Demo
         private float _mainJumpVelMs;
         private int _bqTrainerId = -1;
         private int _bqRivalUnitId = -1;
+        private int _activeWanderingTrainerIndex = -1;
+        private int _activeEncounterTrainerId = -1;
+        private readonly List<int> _activeTrainerUnitIds = new List<int>();
 
         private enum InteractChoice
         {
@@ -574,6 +598,7 @@ namespace Cosmimera.Bootstrap.Demo
             _copy = copy;
             _progression = setup.Progression;
             _drops = setup.Materials;
+            _wildPool = wildPool;
             _partyExp = setup.PartyExp.ToArray();
             _playerExp = setup.PlayerExp;
             _balance = balance;
@@ -688,6 +713,20 @@ namespace Cosmimera.Bootstrap.Demo
                 d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
                      math.distancesq(d, landingAt) > landingGap * landingGap);
             surface.Populace = _populace;
+            if (wildPool != null && wildPool.Count > 0)
+            {
+                int maxTier = 1;
+                for (int r = 0; r < _plan.Regions.Count; r++)
+                {
+                    maxTier = math.max(maxTier, _plan.Regions[r].Tier);
+                }
+
+                int wildNormalMax = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Normal);
+                int bossLv = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Boss);
+                _trainers = TrainerPlanner.Generate(config, _plan, _layout, wildPool, _habitatAt,
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f),
+                    wildNormalMax, bossLv, maxStage: setup.BossStage);
+            }
             System.Func<float3, bool> isOpenGround =
                 d => clearance.IsClear(d) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.5f);
             // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
@@ -837,6 +876,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _populaceView = populaceRoot.AddComponent<PopulaceView>();
                 _populaceView.Configure(config, _populace, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
                     setup.PlanetType.Id, setup.Seed, _plan, PlayerPosition);
+                if (_trainers != null)
+                {
+                    var trainersRoot = new GameObject("Trainers");
+                    trainersRoot.transform.SetParent(transform, false);
+                    _trainerView = trainersRoot.AddComponent<TrainerView>();
+                    _trainerView.Configure(config, _trainers, surface.GroundAltitude, toonShader, scenery?.Props,
+                        setup.PlanetType.Id, setup.Seed, PlayerPosition);
+                }
                 if (_dungeon != null)
                 {
                     var dungeonRoot = new GameObject("Dungeon");
@@ -1191,6 +1238,32 @@ namespace Cosmimera.Bootstrap.Demo
             float3 playerUp = _rig.Config.ToDirection(player);
             float3 velocity = _rig.Character.Velocity;
             _populace?.Step(_nowMs, TickMs);
+            if (_trainers != null)
+            {
+                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                {
+                    _trainers.Step(_nowMs, TickMs);
+                    TrainerPursuitResult pursuit = _trainers.StepPursuit(playerUp, _rig.Config.Radius, TickMs, out int trainerIdx);
+                    if (pursuit == TrainerPursuitResult.Spotted && trainerIdx >= 0)
+                    {
+                        string profName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[trainerIdx].ProfessionId);
+                        Toast(_copy.Ui("ui.trainer.spotted").Replace("{trainer}", profName));
+                    }
+                    else if (pursuit == TrainerPursuitResult.Evaded && trainerIdx >= 0)
+                    {
+                        string profName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[trainerIdx].ProfessionId);
+                        Toast(_copy.Ui("ui.trainer.evaded").Replace("{trainer}", profName));
+                    }
+                    else if (pursuit == TrainerPursuitResult.Engaged && trainerIdx >= 0)
+                    {
+                        StartWanderingTrainerBattle(trainerIdx);
+                    }
+                }
+                else if (_trainers.PursuingTrainer >= 0)
+                {
+                    _trainers.CancelPursuit();
+                }
+            }
             _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             ApplyObjectEvents();
@@ -1412,6 +1485,43 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            if (_activeEncounterTrainerId >= 0)
+            {
+                TrainerBattleState state = _encounter.TrainerState(_activeEncounterTrainerId);
+                bool poolAlive = false;
+                foreach (int id in _team.Pool)
+                {
+                    poolAlive |= !_encounter.Units[id].Combatant.IsFainted;
+                }
+
+                if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle || !poolAlive)
+                {
+                    bool won = state == TrainerBattleState.Defeated;
+                    int wIdx = _activeWanderingTrainerIndex;
+                    _activeEncounterTrainerId = -1;
+                    _activeWanderingTrainerIndex = -1;
+                    CleanupActiveTrainerUnits();
+
+                    if (wIdx >= 0 && _trainers != null && wIdx < _trainers.Trainers.Count)
+                    {
+                        string profId = _trainers.Trainers[wIdx].ProfessionId;
+                        _outcome.RecordTrainerBattle(profId);
+                        string profName = _copy.Ui("ui.trainer.prof." + profId);
+                        if (won)
+                        {
+                            _trainers.MarkDefeated(wIdx);
+                            RefillField(PlayerPosition());
+                            Toast(_copy.Ui("ui.trainer.victory").Replace("{trainer}", profName));
+                            return;
+                        }
+
+                        Toast(_copy.Ui("ui.trainer.defeat").Replace("{trainer}", profName));
+                        End(false, false);
+                        return;
+                    }
+                }
+            }
+
             bool anyLeft = false;
             foreach (int id in _team.Pool)
             {
@@ -1591,11 +1701,110 @@ namespace Cosmimera.Bootstrap.Demo
             _interactable = _interactTarget < 0 ? _encounter.NearestInteractable(player) : -1;
         }
 
+        private bool StartWanderingTrainerBattle(int trainerIndex)
+        {
+            if (_ended || _trainers == null || _wildPool == null || _wildPool.Count == 0 ||
+                trainerIndex < 0 || trainerIndex >= _trainers.Trainers.Count || _trainers.IsDefeated(trainerIndex) ||
+                _team.InCombat || _encounter.HasActiveTrainerBattle || _bqTrainerId >= 0 || _activeEncounterTrainerId >= 0)
+            {
+                return false;
+            }
+
+            float3 player = PlayerPosition();
+            RefillField(player);
+            if (_team.Active.Count == 0)
+            {
+                return false;
+            }
+
+            if (_interactTarget >= 0)
+            {
+                CloseInteract();
+            }
+
+            _trainers.CancelPursuit();
+            RunTrainer trainer = _trainers.Trainers[trainerIndex];
+            float3 tDir = _trainers.CurrentDirection(trainerIndex);
+            int encTrainerId = _encounter.RegisterTrainer();
+            _activeTrainerUnitIds.Clear();
+            for (int m = 0; m < trainer.Team.Count; m++)
+            {
+                TrainerTeamMember member = trainer.Team[m];
+                CreatureDef def = FindForm(_wildPool, member.CreatureId);
+                float3 spawnDir = BesidePlayer(tDir, m + 1);
+                EncounterUnit u = _encounter.AddTrainerCreature(def, null, spawnDir, member.Level, encTrainerId, m);
+                _activeTrainerUnitIds.Add(u.Id);
+                CreateView(u, SpawnRole.Normal);
+            }
+
+            if (!_encounter.StartTrainerBattle(encTrainerId))
+            {
+                CleanupActiveTrainerUnits();
+                return false;
+            }
+
+            _activeWanderingTrainerIndex = trainerIndex;
+            _activeEncounterTrainerId = encTrainerId;
+            if (!_team.InCombat)
+            {
+                BeginCombat();
+            }
+
+            RecordAppearances();
+            string profName = _copy.Ui("ui.trainer.prof." + trainer.ProfessionId);
+            Toast(_copy.Ui("ui.trainer.challenge").Replace("{trainer}", profName));
+            return true;
+        }
+
+        private void CleanupActiveTrainerUnits()
+        {
+            for (int i = 0; i < _activeTrainerUnitIds.Count; i++)
+            {
+                int uid = _activeTrainerUnitIds[i];
+                if (_lockedTarget == uid)
+                {
+                    _lockedTarget = -1;
+                }
+
+                _encounter.Remove(uid);
+                if (_views.TryGetValue(uid, out ICreatureView view))
+                {
+                    view.Dispose();
+                    _views.Remove(uid);
+                    _viewDefs.Remove(uid);
+                    _viewRoles.Remove(uid);
+                }
+
+                if (_blockShields.TryGetValue(uid, out GameObject shield))
+                {
+                    if (shield != null)
+                    {
+                        Destroy(shield);
+                    }
+
+                    _blockShields.Remove(uid);
+                }
+            }
+
+            _activeTrainerUnitIds.Clear();
+        }
+
         private void OpenInteract()
         {
             int id = _encounter.NearestInteractable(PlayerPosition());
             if (id < 0)
             {
+                if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                    _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                {
+                    int trainerIdx = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
+                        _rig.Config.Radius);
+                    if (trainerIdx >= 0)
+                    {
+                        StartWanderingTrainerBattle(trainerIdx);
+                    }
+                }
+
                 return;
             }
 
@@ -1809,7 +2018,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 int region = u.Side == EncounterSide.Player ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player))
-                    : RegionOf(_wild[u.Id]);
+                    : (u.IsTrainerOwned ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(u.Position)) : RegionOf(_wild[u.Id]));
                 string affix = _plan.Regions[region].AffixId;
                 if (affix == null || !affix.EndsWith("_surge"))
                 {
@@ -2062,6 +2271,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private bool AnyEngaged()
         {
+            if (_encounter.HasActiveTrainerBattle)
+            {
+                return true;
+            }
+
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 if (_encounter.Units[kv.Key].Engaged && _encounter.Units[kv.Key].IsActive)
@@ -2597,13 +2811,18 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (_viewDefs.TryGetValue(u.Id, out CreatureDef shownDef) && shownDef != u.Def)
+                if (!_views.TryGetValue(u.Id, out ICreatureView view))
                 {
-                    _views[u.Id].Dispose();
-                    CreateView(u, _viewRoles[u.Id]);
+                    continue;
                 }
 
-                ICreatureView view = _views[u.Id];
+                if (_viewDefs.TryGetValue(u.Id, out CreatureDef shownDef) && shownDef != u.Def)
+                {
+                    view.Dispose();
+                    CreateView(u, _viewRoles[u.Id]);
+                    view = _views[u.Id];
+                }
+
                 Transform t = view.Root;
                 bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
                 if (_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone)
@@ -3035,6 +3254,22 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 if (_interactable < 0)
                 {
+                    if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                        _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                    {
+                        int nearTrainer = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
+                            _rig.Config.Radius);
+                        if (nearTrainer >= 0)
+                        {
+                            string tName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[nearTrainer].ProfessionId);
+                            string tPrompt = _copy.Ui("ui.trainer.interact_prompt")
+                                .Replace("{key}", BindingLabel(_interactAction))
+                                .Replace("{trainer}", tName);
+                            GUI.Box(new Rect(Screen.width / 2f - 180, Screen.height - 330, 360, 40), GUIContent.none);
+                            GUI.Label(new Rect(Screen.width / 2f - 175, Screen.height - 328, 350, 36), tPrompt, style);
+                        }
+                    }
+
                     return;
                 }
 

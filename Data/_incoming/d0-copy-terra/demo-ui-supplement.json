@@ -1694,5 +1694,237 @@
   "ui.skills.return_village": {
     "zh-TW": "村落 #{index}",
     "en": "Village #{index}"
+  },
+  "ui.trainer.prof.trv_rookie": {
+    "zh-TW": "見習旅人",
+    "en": "Novice Traveler"
+  },
+  "ui.trainer.prof.trv_hiker": {
+    "zh-TW": "登山客",
+    "en": "Hiker"
+  },
+  "ui.trainer.prof.trv_angler": {
+    "zh-TW": "釣客",
+    "en": "Angler"
+  },
+  "ui.trainer.prof.trv_ranger": {
+    "zh-TW": "森林巡守",
+    "en": "Forest Ranger"
+  },
+  "ui.trainer.prof.trv_brawler": {
+    "zh-TW": "拳術家",
+    "en": "Brawler"
+  },
+  "ui.trainer.prof.trv_scholar": {
+    "zh-TW": "學者",
+    "en": "Scholar"
+  },
+  "ui.trainer.prof.trv_bard": {
+    "zh-TW": "吟遊詩人",
+    "en": "Bard"
+  },
+  "ui.trainer.prof.trv_pilgrim": {
+    "zh-TW": "巡禮祭司",
+    "en": "Pilgrim Cleric"
+  },
+  "ui.trainer.prof.trv_nightwalker": {
+    "zh-TW": "夜行者",
+    "en": "Nightwalker"
+  },
+  "ui.trainer.prof.trv_bounty": {
+    "zh-TW": "賞金獵人",
+    "en": "Bounty Hunter"
+  },
+  "ui.trainer.prof.trv_trial_master": {
+    "zh-TW": "地形試煉主",
+    "en": "Terrain Trial Master"
+  },
+  "ui.trainer.prof.trv_artisan_mentor": {
+    "zh-TW": "生活技能導師",
+    "en": "Life-Skill Mentor"
+  },
+  "ui.trainer.prof.era_primitive_totem_hunter": {
+    "zh-TW": "原始圖騰獵師",
+    "en": "Primitive Totem Hunter"
+  },
+  "ui.trainer.prof.era_agrarian_field_warden": {
+    "zh-TW": "農耕巡田武者",
+    "en": "Agrarian Field Warden"
+  },
+  "ui.trainer.prof.era_mercantile_caravan_guard": {
+    "zh-TW": "商貿護隊鏢師",
+    "en": "Mercantile Caravan Guard"
+  },
+  "ui.trainer.prof.era_industrial_rail_inspector": {
+    "zh-TW": "工業鐵道巡檢",
+    "en": "Industrial Rail Inspector"
+  },
+  "ui.trainer.prof.era_steampunk_airship_navigator": {
+    "zh-TW": "蒸汽飛艇領航",
+    "en": "Steampunk Airship Navigator"
+  },
+  "ui.trainer.prof.era_future_orbital_ranger": {
+    "zh-TW": "未來星軌巡航",
+    "en": "Future Orbital Ranger"
+  },
+  "ui.trainer.prof.era_wasteland_salvage_hunter": {
+    "zh-TW": "廢土拾荒獵人",
+    "en": "Wasteland Salvage Hunter"
+  },
+  "ui.trainer.prof.era_ancient_relic_keeper": {
+    "zh-TW": "遠古遺蹟守衛",
+    "en": "Ancient Relic Keeper"
+  },
+  "ui.trainer.prof.cul_east_asia_talisman_swordsman": {
+    "zh-TW": "東亞符劍修者",
+    "en": "East Asian Talisman Swordsman"
+  },
+  "ui.trainer.prof.cul_south_asia_prana_ascetic": {
+    "zh-TW": "南亞氣脈苦行者",
+    "en": "South Asian Prana Ascetic"
+  },
+  "ui.trainer.prof.cul_southeast_asia_monsoon_wayfinder": {
+    "zh-TW": "東南亞季風領航者",
+    "en": "Southeast Asian Monsoon Wayfinder"
+  },
+  "ui.trainer.prof.cul_middle_east_astrolabe_scholar": {
+    "zh-TW": "西亞星盤學者",
+    "en": "West Asian Astrolabe Scholar"
+  },
+  "ui.trainer.prof.cul_africa_solarpunk_geomancer": {
+    "zh-TW": "非洲太陽能地脈師",
+    "en": "African Solarpunk Geomancer"
+  },
+  "ui.trainer.prof.cul_europe_high_fantasy_mage_knight": {
+    "zh-TW": "歐洲高奇幻魔導騎士",
+    "en": "European High-Fantasy Mage Knight"
+  },
+  "ui.trainer.prof.cul_americas_canyon_sky_rider": {
+    "zh-TW": "美洲峽谷空騎手",
+    "en": "Americas Canyon Sky Rider"
+  },
+  "ui.trainer.prof.cul_oceania_star_navigator": {
+    "zh-TW": "大洋洲星象航海師",
+    "en": "Oceanian Star Navigator"
+  },
+  "ui.trainer.prof.cul_central_asia_steppe_falconer": {
+    "zh-TW": "中亞草原獵鷹師",
+    "en": "Central Asian Steppe Falconer"
+  },
+  "ui.trainer.prof.cul_polar_aurora_sled_scout": {
+    "zh-TW": "極地極光雪橇斥候",
+    "en": "Polar Aurora Sled Scout"
+  },
+  "ui.trainer.prof.cul_cosmopolis_cyber_netrunner": {
+    "zh-TW": "世界都市賽博駭客",
+    "en": "Cosmopolis Cyber Netrunner"
+  },
+  "ui.trainer.prof.cul_interstellar_warp_pioneer": {
+    "zh-TW": "星際曲率開拓者",
+    "en": "Interstellar Warp Pioneer"
+  },
+  "ui.trainer.duty.duty_road_courier": {
+    "zh-TW": "古道驛傳",
+    "en": "Road Courier"
+  },
+  "ui.trainer.duty.duty_circuit_patrol": {
+    "zh-TW": "山林巡守",
+    "en": "Circuit Patrol"
+  },
+  "ui.trainer.duty.duty_waterside_angling": {
+    "zh-TW": "水域垂釣",
+    "en": "Waterside Angling"
+  },
+  "ui.trainer.duty.duty_prospect_mining": {
+    "zh-TW": "礦脈勘探",
+    "en": "Prospect Mining"
+  },
+  "ui.trainer.duty.duty_botanical_foraging": {
+    "zh-TW": "植群採集",
+    "en": "Botanical Foraging"
+  },
+  "ui.trainer.duty.duty_ruin_excavation": {
+    "zh-TW": "遺蹟考據",
+    "en": "Ruin Excavation"
+  },
+  "ui.trainer.duty.duty_martial_training": {
+    "zh-TW": "荒野苦修",
+    "en": "Martial Training"
+  },
+  "ui.trainer.duty.duty_shrine_pilgrimage": {
+    "zh-TW": "聖地巡禮",
+    "en": "Shrine Pilgrimage"
+  },
+  "ui.trainer.duty.duty_roving_minstrel": {
+    "zh-TW": "雲遊傳唱",
+    "en": "Roving Minstrel"
+  },
+  "ui.trainer.duty.duty_night_watch": {
+    "zh-TW": "暗夜潛行",
+    "en": "Night Watch"
+  },
+  "ui.trainer.duty.duty_bounty_hunting": {
+    "zh-TW": "懸賞追獵",
+    "en": "Bounty Hunting"
+  },
+  "ui.trainer.duty.duty_frontier_trailblazing": {
+    "zh-TW": "荒原拓荒",
+    "en": "Frontier Trailblazing"
+  },
+  "ui.trainer.duty.duty_leyline_tuning": {
+    "zh-TW": "以太調律",
+    "en": "Leyline Tuning"
+  },
+  "ui.trainer.duty.duty_trial_wardenship": {
+    "zh-TW": "試煉鎮守",
+    "en": "Trial Wardenship"
+  },
+  "ui.trainer.fn.observant": {
+    "zh-TW": "考據專注",
+    "en": "Observant"
+  },
+  "ui.trainer.fn.escort": {
+    "zh-TW": "護衛戒備",
+    "en": "Escort"
+  },
+  "ui.trainer.fn.sparring": {
+    "zh-TW": "歷練切磋",
+    "en": "Sparring"
+  },
+  "ui.trainer.fn.warden": {
+    "zh-TW": "巡守管轄",
+    "en": "Warden"
+  },
+  "ui.trainer.fn.pursuit": {
+    "zh-TW": "追獵懸賞",
+    "en": "Pursuit"
+  },
+  "ui.trainer.fn.champion": {
+    "zh-TW": "征討霸主",
+    "en": "Champion"
+  },
+  "ui.trainer.interact_prompt": {
+    "zh-TW": "[{key}] 挑戰 {trainer}",
+    "en": "[{key}] Challenge {trainer}"
+  },
+  "ui.trainer.spotted": {
+    "zh-TW": "{trainer} 注意到了你！",
+    "en": "{trainer} spotted you!"
+  },
+  "ui.trainer.evaded": {
+    "zh-TW": "甩開了 {trainer} 的追擊！",
+    "en": "Escaped pursuit by {trainer}!"
+  },
+  "ui.trainer.challenge": {
+    "zh-TW": "{trainer} 發起了對戰！",
+    "en": "{trainer} challenged you to a battle!"
+  },
+  "ui.trainer.victory": {
+    "zh-TW": "擊敗了 {trainer}！",
+    "en": "Defeated {trainer}!"
+  },
+  "ui.trainer.defeat": {
+    "zh-TW": "敗給了 {trainer}……",
+    "en": "Defeated by {trainer}..."
   }
 }

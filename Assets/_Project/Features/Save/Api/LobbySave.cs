@@ -11,6 +11,29 @@ using UnityEngine;
 
 namespace Cosmimera.Save
 {
+    /// <summary>Cumulative battle count recorded against one wandering trainer profession ID.</summary>
+    /// <remarks>Pre: professionId valid snake_case id; count &gt;= 1. Post: immutable. Side effects: none.</remarks>
+    public readonly struct TrainerBattleCount
+    {
+        /// <summary>Creates a battle count entry for one profession.</summary>
+        /// <remarks>Pre: professionId valid snake_case id; count &gt;= 1. Post: fields equal arguments. Side effects: none.</remarks>
+        public TrainerBattleCount(string professionId, int count)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            Contract.Requires(count >= 1, "count must be >= 1");
+            ProfessionId = professionId;
+            Count = count;
+        }
+
+        /// <summary>Trainer profession identifier (<c>trv_*</c>, <c>era_*</c> or <c>cul_*</c>).</summary>
+        /// <remarks>Pre: none. Post: valid snake_case id. Side effects: none.</remarks>
+        public string ProfessionId { get; }
+
+        /// <summary>Cumulative recorded battles across non-abandoned runs.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
+        public int Count { get; }
+    }
+
     /// <summary>
     /// Lobby save: owned creatures and party. REQ: lobby-meta.md#進度保存 — Q-M4 roguelite: no mid-planet state is
     /// ever saved; a run only adds creatures here when it ends (victory, defeat or abandon).
@@ -38,13 +61,20 @@ namespace Cosmimera.Save
     /// Version 14 (P1-17b, gear-looks.md#外觀與數值): craft stacks add <c>looks</c> (tagged copies, oldest first), equipment
     /// entries add <c>look</c>, root <c>last_planet</c> names the planet lobby crafting takes its style from. Formats 1–13
     /// load untagged (each copy reads ItemLook.Default) with the cradle planet as last planet.
+    /// Version 15 (P4-10, trainer-battles.md#職業圖鑑): root <c>trainer_battles</c> (per-profession battle counts
+    /// unlocking character codex entries at 1 and 10 battles) and <c>completed_trials</c> (terrain trial badges).
+    /// Formats 1–14 load with empty counts and no completed trials.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 14;
+        public const int FormatVersion = 15;
+
+        /// <summary>Cumulative battles against one trainer profession required for <see cref="CodexLevel.Complete"/>.</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: constant 10. Side effects: none.</remarks>
+        public const int ProfessionCompleteBattles = 10;
 
         /// <summary>Number of favourite-loadout slots.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -68,6 +98,93 @@ namespace Cosmimera.Save
         private readonly MaterialInventory _materials = new MaterialInventory();
         private readonly CraftInventory _craftStock = new CraftInventory();
         private readonly EquipmentLoadout _equipment = new EquipmentLoadout();
+        private readonly Dictionary<string, int> _trainerBattles = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly HashSet<string> _completedTrials = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>Cumulative battle count recorded for <paramref name="professionId"/> (0 if never battled).</summary>
+        /// <remarks>Pre: professionId non-empty. Post: &gt;= 0. Side effects: none.</remarks>
+        public int TrainerBattleCountOf(string professionId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(professionId), "professionId must be non-empty");
+            return _trainerBattles.TryGetValue(professionId, out int count) ? count : 0;
+        }
+
+        /// <summary>Sorted snapshot of all trainer professions with at least one recorded battle.</summary>
+        /// <remarks>Pre: none. Post: sorted by ProfessionId ordinal. Side effects: allocates.</remarks>
+        public IReadOnlyList<TrainerBattleCount> TrainerBattlesSnapshot()
+        {
+            if (_trainerBattles.Count == 0)
+            {
+                return Array.Empty<TrainerBattleCount>();
+            }
+
+            var keys = new List<string>(_trainerBattles.Keys);
+            keys.Sort(StringComparer.Ordinal);
+            var list = new List<TrainerBattleCount>(keys.Count);
+            foreach (string key in keys)
+            {
+                list.Add(new TrainerBattleCount(key, _trainerBattles[key]));
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Adds <paramref name="delta"/> completed battles against <paramref name="professionId"/> and advances the
+        /// corresponding <see cref="CodexKind.Character"/> entry (Basic at 1, Complete at <see cref="ProfessionCompleteBattles"/>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/trainer-battles.md#職業圖鑑.
+        /// Pre: professionId valid snake_case id; delta &gt;= 1.
+        /// Post: TrainerBattleCountOf(professionId) increased by delta (saturating at int.MaxValue); Codex updated.
+        /// Side effects: mutates trainer battle counts and Codex.
+        /// </remarks>
+        public void AddTrainerBattles(string professionId, int delta)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            Contract.Requires(delta >= 1, "delta must be >= 1");
+
+            _trainerBattles.TryGetValue(professionId, out int existing);
+            long sum = (long)existing + delta;
+            int total = sum >= int.MaxValue ? int.MaxValue : (int)sum;
+            _trainerBattles[professionId] = total;
+
+            Codex.Record(CodexEvent.Dialogue, professionId);
+            if (total >= ProfessionCompleteBattles)
+            {
+                Codex.Record(CodexEvent.CharacterQuest, professionId);
+            }
+        }
+
+        /// <summary>True when the terrain trial badge for <paramref name="terrainId"/> has been earned.</summary>
+        /// <remarks>Pre: terrainId non-empty. Post: boolean badge state. Side effects: none.</remarks>
+        public bool HasTrialBadge(string terrainId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(terrainId), "terrainId must be non-empty");
+            return _completedTrials.Contains(terrainId);
+        }
+
+        /// <summary>Sorted snapshot of completed terrain trial identifiers.</summary>
+        /// <remarks>Pre: none. Post: sorted ordinal list. Side effects: allocates.</remarks>
+        public IReadOnlyList<string> CompletedTrialsSnapshot()
+        {
+            if (_completedTrials.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var list = new List<string>(_completedTrials);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>Records completion of the terrain trial for <paramref name="terrainId"/>.</summary>
+        /// <remarks>Pre: terrainId valid snake_case id. Post: HasTrialBadge(terrainId) is true; returns true iff newly earned. Side effects: mutates completed trial set.</remarks>
+        public bool RecordTrialCompleted(string terrainId)
+        {
+            Contract.Requires(CraftInventory.ValidId(terrainId), "terrainId must be valid snake_case id");
+            return _completedTrials.Add(terrainId);
+        }
 
         /// <summary>Persistent gathering and crafting inventory, separate from evolution materials and run-only food.</summary>
         /// <remarks>Pre: main thread. Post: same inventory for this save's lifetime. Side effects: mutating it changes this save.</remarks>
@@ -451,6 +568,8 @@ namespace Cosmimera.Save
             {
                 StarterLine = StarterLine, _nextInstanceId = _nextInstanceId, LoadedFormatVersion = LoadedFormatVersion,
                 PlayerExp = PlayerExp, LastPlanet = LastPlanet,
+                CharacterId = CharacterId, FriendId = FriendId, RivalId = RivalId,
+                RivalStarterId = RivalStarterId, FriendStarterId = FriendStarterId, TutorialDone = TutorialDone,
             };
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
@@ -463,6 +582,14 @@ namespace Cosmimera.Save
             c._craftStock.CopyFrom(_craftStock);
             c._equipment.Restore(_equipment.Snapshot());
             c.Codex.Restore(Codex.Snapshot());
+            foreach (KeyValuePair<string, int> kv in _trainerBattles)
+            {
+                c._trainerBattles[kv.Key] = kv.Value;
+            }
+            foreach (string trial in _completedTrials)
+            {
+                c._completedTrials.Add(trial);
+            }
             Array.Copy(_presets, c._presets, MaxPresets); // LoadoutPreset is immutable
 
             return c;
@@ -678,6 +805,19 @@ namespace Cosmimera.Save
                 friend_starter_id = FriendStarterId ?? string.Empty,
                 tutorial_done = TutorialDone,
             };
+            IReadOnlyList<TrainerBattleCount> trainerCounts = TrainerBattlesSnapshot();
+            dto.trainer_battles = new TrainerCountDto[trainerCounts.Count];
+            for (int i = 0; i < trainerCounts.Count; i++)
+            {
+                dto.trainer_battles[i] = new TrainerCountDto { id = trainerCounts[i].ProfessionId, count = trainerCounts[i].Count };
+            }
+
+            IReadOnlyList<string> completedTrials = CompletedTrialsSnapshot();
+            dto.completed_trials = new string[completedTrials.Count];
+            for (int i = 0; i < completedTrials.Count; i++)
+            {
+                dto.completed_trials[i] = completedTrials[i];
+            }
             var presetDtos = new List<PresetDto>();
             for (int slot = 0; slot < MaxPresets; slot++)
             {
@@ -1009,6 +1149,24 @@ namespace Cosmimera.Save
                 save.TutorialDone = save._owned.Count > 0 || !string.IsNullOrEmpty(save.StarterLine);
             }
 
+            if (dto.version >= 15)
+            {
+                var seenProf = new HashSet<string>(StringComparer.Ordinal);
+                foreach (TrainerCountDto t in dto.trainer_battles ?? Array.Empty<TrainerCountDto>())
+                {
+                    Check(t != null && CraftInventory.ValidId(t.id) && t.count >= 1 && seenProf.Add(t.id),
+                        "invalid trainer battle entry");
+                    save.AddTrainerBattles(t.id, t.count);
+                }
+
+                var seenTrials = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string trialId in dto.completed_trials ?? Array.Empty<string>())
+                {
+                    Check(CraftInventory.ValidId(trialId) && seenTrials.Add(trialId), "invalid completed trial entry");
+                    save.RecordTrialCompleted(trialId);
+                }
+            }
+
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
         }
@@ -1147,6 +1305,14 @@ namespace Cosmimera.Save
             public string rival_starter_id;
             public string friend_starter_id;
             public bool tutorial_done;
+            public TrainerCountDto[] trainer_battles;
+            public string[] completed_trials;
+        }
+
+        [Serializable] private sealed class TrainerCountDto
+        {
+            public string id;
+            public int count;
         }
 
         [Serializable] private sealed class PresetDto

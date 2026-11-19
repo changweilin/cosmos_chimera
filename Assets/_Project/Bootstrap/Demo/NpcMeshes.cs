@@ -357,6 +357,38 @@ namespace Cosmimera.Bootstrap.Demo
                 HeritageFor(resident.Race, region, era, resident.Seed));
         }
 
+        /// <summary>
+        /// Deterministically builds an <see cref="NpcSpec"/> for wandering battle trainer <paramref name="trainer"/>
+        /// using the planet's architecture region/era and borrowing the profession's prop <see cref="RunTrainer.PropRole"/>.
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/trainer-battles.md#外觀佔位.
+        /// Pre: trainer non-null; region and era defined.
+        /// Post: valid NpcSpec with Role == trainer.PropRole and deterministic per trainer.Seed and planetSeed.
+        /// Side effects: none.
+        /// </remarks>
+        public static NpcSpec SpecForTrainer(RunTrainer trainer, ArchRegion region, ArchEra era, ulong planetSeed)
+        {
+            Contract.Requires(trainer != null, "trainer must not be null");
+            Contract.Requires(Enum.IsDefined(typeof(ArchRegion), region) && Enum.IsDefined(typeof(ArchEra), era),
+                "region and era must be defined");
+            var rng = new Pcg32(trainer.Seed ^ planetSeed, 'T');
+            var race = (NpcRace)rng.NextUInt((uint)RaceCount);
+            var sex = (NpcSex)rng.NextUInt(2);
+            float age01 = 0.22f + rng.NextFloat() * 0.50f;
+            float health01 = 0.75f + rng.NextFloat() * 0.25f;
+            float statureZ = (rng.NextFloat() * 2f - 1f) * 1.5f;
+            float bulkZ = (rng.NextFloat() * 2f - 1f) * 1.5f;
+            var borrowRegion = (ArchRegion)rng.NextUInt(RegionCount);
+            ArchEra borrowEra = WornEras[rng.NextUInt((uint)WornEras.Length)];
+            float borrowShare = 0.1f + rng.NextFloat() * 0.2f;
+            float textile01 = rng.NextFloat();
+            ulong culture = ((ulong)rng.NextUInt() << 32) | rng.NextUInt();
+            return new NpcSpec(race, trainer.PropRole, sex, age01, health01, statureZ, bulkZ,
+                region, era, borrowRegion, borrowEra, borrowShare, trainer.Seed, textile01, culture,
+                HeritageFor(race, region, era, trainer.Seed));
+        }
+
         /// <summary>Odds a resident carries one or more other blood lines (混血).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float MixedBloodOdds = 0.15f;

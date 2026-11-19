@@ -698,5 +698,63 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(changed, Is.InRange(Count / 5, Count * 4 / 5), "about half the street borrows from the third style");
         }
+
+        [Test]
+        public void SpecForTrainer_builds_deterministic_valid_meshes_across_all_professions()
+        {
+            var (p, pl, ly, pool) = MakeTrainerPlanet(987);
+            RunTrainers trainers = TrainerPlanner.Generate(p, pl, ly, pool, _ => "forest", null, 12, 24);
+            Assert.That(trainers.Trainers.Count, Is.GreaterThan(0));
+            foreach (RunTrainer t in trainers.Trainers)
+            {
+                NpcSpec a = NpcMeshes.SpecForTrainer(t, ArchRegion.Verdant, ArchEra.Agrarian, 987);
+                NpcSpec b = NpcMeshes.SpecForTrainer(t, ArchRegion.Verdant, ArchEra.Agrarian, 987);
+                Assert.That((a.Race, a.Role, a.Sex, a.Seed), Is.EqualTo((b.Race, b.Role, b.Sex, b.Seed)));
+                Assert.That(a.Role, Is.EqualTo(t.PropRole));
+                Mesh mesh = NpcMeshes.Build(a);
+                try
+                {
+                    Assert.That(mesh.vertexCount, Is.GreaterThan(0));
+                    Assert.That(NpcMeshes.HeightM(a), Is.GreaterThan(0.5f));
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(mesh);
+                }
+            }
+
+            Assert.Throws<ContractException>(() =>
+                NpcMeshes.SpecForTrainer(null, ArchRegion.Verdant, ArchEra.Agrarian, 1));
+        }
+
+        private static (PlanetConfig planet, RunPlan plan, RunLayout layout, List<CreatureDef> pool) MakeTrainerPlanet(ulong seed)
+        {
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            Assert.That(db, Is.Not.Null);
+            var pool = new List<CreatureDef>();
+            PlanetTypeDef type = null;
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c && !c.LineId.StartsWith("starter_"))
+                {
+                    pool.Add(c);
+                }
+                else if (d is PlanetTypeDef t && (type == null || t.Id == "verdant_planet"))
+                {
+                    type = t;
+                }
+            }
+
+            Assert.That(pool.Count, Is.GreaterThan(0));
+            Assert.That(type, Is.Not.Null);
+            var planet = new PlanetConfig(640f, float3.zero);
+            var vocab = new RunPlanVocabulary(
+                new[] { "forest", "grassland", "river_valley", "plateau" },
+                new[] { "affix_a", "affix_b", "affix_c", "affix_d" },
+                new[] { "chain_a" });
+            RunPlan plan = RunPlanner.Generate(planet, seed, type, CreatureStage.Adult, pool, vocab, null);
+            RunLayout layout = SettlementPlanner.Generate(planet, plan, null);
+            return (planet, plan, layout, pool);
+        }
     }
 }

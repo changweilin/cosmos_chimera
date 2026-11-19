@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Cosmimera.Bootstrap.Demo;
+using Cosmimera.Codex;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
@@ -363,6 +364,41 @@ namespace Cosmimera.Bootstrap.Tests
                 UnityEngine.Object.DestroyImmediate(defA);
                 UnityEngine.Object.DestroyImmediate(defB);
             }
+        }
+
+        [Test]
+        public void Settle_accumulates_trainer_battles_and_trials_unless_abandoned()
+        {
+            LobbySave live = Ready();
+
+            RunOutcome abandoned = Outcome(live.Get(1).Exp);
+            abandoned.Abandoned = true;
+            abandoned.RecordTrainerBattle("trv_hiker");
+            abandoned.CompletedTrials.Add("verdant_trial");
+            Assert.That(LobbyTransactions.Settle(live, new[] { 1 }, abandoned, P, _path, out LobbySave afterAbandon,
+                out _, out _), Is.EqualTo(CommitStatus.Committed));
+            Assert.That(afterAbandon.TrainerBattleCountOf("trv_hiker"), Is.Zero);
+            Assert.That(afterAbandon.HasTrialBadge("verdant_trial"), Is.False);
+            Assert.That(afterAbandon.Codex.Get(CodexKind.Character, "trv_hiker"), Is.EqualTo(CodexLevel.Unknown));
+
+            RunOutcome completed = Outcome(live.Get(1).Exp);
+            completed.Abandoned = false;
+            completed.Victory = false;
+            completed.RecordTrainerBattle("trv_hiker");
+            for (int i = 0; i < 10; i++)
+            {
+                completed.RecordTrainerBattle("trv_ranger");
+            }
+            completed.CompletedTrials.Add("verdant_trial");
+
+            Assert.That(LobbyTransactions.Settle(afterAbandon, new[] { 1 }, completed, P, _path, out LobbySave afterClear,
+                out _, out _), Is.EqualTo(CommitStatus.Committed));
+            Assert.That(afterClear.TrainerBattleCountOf("trv_hiker"), Is.EqualTo(1));
+            Assert.That(afterClear.TrainerBattleCountOf("trv_ranger"), Is.EqualTo(10));
+            Assert.That(afterClear.Codex.Get(CodexKind.Character, "trv_hiker"), Is.EqualTo(CodexLevel.Basic));
+            Assert.That(afterClear.Codex.Get(CodexKind.Character, "trv_ranger"), Is.EqualTo(CodexLevel.Complete));
+            Assert.That(afterClear.HasTrialBadge("verdant_trial"), Is.True);
+            Assert.That(Reload().ToJson(), Is.EqualTo(afterClear.ToJson()));
         }
     }
 }

@@ -378,6 +378,17 @@ namespace Cosmimera.WorldGen
         public IReadOnlyList<TrainerTeamMember> Team { get; }
     }
 
+    /// <summary>Outcome of stepping wandering trainer sight detection and pursuit.</summary>
+    /// <remarks>Pre: none. Post: enum value. Side effects: none.</remarks>
+    public enum TrainerPursuitResult
+    {
+        None = 0,
+        Spotted = 1,
+        Chasing = 2,
+        Engaged = 3,
+        Evaded = 4,
+    }
+
     /// <summary>
     /// All wandering battle trainers on a planet, including live out-of-settlement movement stepping and active challenge
     /// queries. REQ: docs/design/trainer-battles.md#職務與職能.
@@ -390,7 +401,24 @@ namespace Cosmimera.WorldGen
     /// </remarks>
     public sealed class RunTrainers
     {
+        /// <summary>Arc distance (m) beyond which a pursued player evades a wandering trainer.</summary>
+        /// <remarks>Pre: none. Post: constant 25 m. Side effects: none.</remarks>
+        public const float EvadeRadiusM = 25f;
+
+        /// <summary>Arc distance (m) within which a pursuing trainer catches and engages the player.</summary>
+        /// <remarks>Pre: none. Post: constant 3 m. Side effects: none.</remarks>
+        public const float EngageReachM = 3f;
+
+        /// <summary>Arc distance (m) within which the player can talk to / challenge a trainer via interact input.</summary>
+        /// <remarks>Pre: none. Post: constant 3 m. Side effects: none.</remarks>
+        public const float InteractReachM = 3f;
+
+        /// <summary>Cosine of half-angle of trainer forward sight cone (60 degrees half-angle, 120 degrees FOV).</summary>
+        /// <remarks>Pre: none. Post: constant 0.5f. Side effects: none.</remarks>
+        public const float SightHalfAngleCos = 0.5f;
+
         private const float BaseWalkSpeedMs = 3.2f;
+        private const int PursuitSpeedPermille = 1400;
         private const float ArriveM = 0.25f;
         private const int WaypointRetries = 24;
         private const long Unscheduled = long.MinValue;
@@ -429,6 +457,7 @@ namespace Cosmimera.WorldGen
         private readonly float3[] _currentFacings;
         private readonly bool[] _defeated;
         private readonly TrainerWander[] _wander;
+        private int _pursuingTrainer = -1;
         private long _lastStepMs = long.MinValue;
 
         internal RunTrainers(RunTrainer[] trainers, float radius, LayoutClearance clearance, Func<float3, bool> isLand)
@@ -460,9 +489,13 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: read-only, non-null. Side effects: none.</remarks>
         public IReadOnlyList<RunTrainer> Trainers { get; }
 
-        /// <summary>Monotonic step counter incremented by every <see cref="Step"/> call.</summary>
+        /// <summary>Monotonic step counter incremented by every <see cref="Step"/> call or pursuit move.</summary>
         /// <remarks>Pre: none. Post: 0 before first Step. Side effects: none.</remarks>
         public int StepVersion { get; private set; }
+
+        /// <summary>Index of the trainer currently pursuing the player, or -1 when none is chasing.</summary>
+        /// <remarks>Pre: none. Post: -1 or valid undefeated trainer index. Side effects: none.</remarks>
+        public int PursuingTrainer => _pursuingTrainer;
 
         /// <summary>Live unit direction of trainer <paramref name="index"/> (initially <see cref="RunTrainer.HomeDirection"/>).</summary>
         /// <remarks>Pre: 0 &lt;= index &lt; Trainers.Count. Post: unit vector outside inhabited settlements. Side effects: none.</remarks>
@@ -489,11 +522,207 @@ namespace Cosmimera.WorldGen
         }
 
         /// <summary>Marks trainer <paramref name="index"/> defeated so it no longer initiates battles in this run.</summary>
-        /// <remarks>Pre: 0 &lt;= index &lt; Trainers.Count. Post: IsDefeated(index) is true. Side effects: updates defeated flag.</remarks>
+        /// <remarks>Pre: 0 &lt;= index &lt; Trainers.Count. Post: IsDefeated(index) is true; clears active pursuit if it matches. Side effects: updates defeated flag.</remarks>
         public void MarkDefeated(int index)
         {
             Contract.Requires(index >= 0 && index < _trainers.Length, "trainer index out of range");
             _defeated[index] = true;
+            if (_pursuingTrainer == index)
+            {
+                CancelPursuit();
+            }
+        }
+
+        /// <summary>Cancels any active trainer pursuit so the trainer resumes normal outdoor wandering.</summary>
+        /// <remarks>Pre: none. Post: PursuingTrainer == -1. Side effects: resets active pursuit and pending wander leg.</remarks>
+        public void CancelPursuit()
+        {
+            if (_pursuingTrainer >= 0 && _pursuingTrainer < _wander.Length)
+            {
+                _wander[_pursuingTrainer].HasTarget = false;
+                _wander[_pursuingTrainer].ResumeMs = Unscheduled;
+            }
+
+            _pursuingTrainer = -1;
+        }
+
+        /// <summary>
+        /// True when undefeated trainer <paramref name="index"/> has an active challenge radius (&gt; 0) and sees
+        /// <paramref name="playerDirection"/> within its sight range and forward cone (<see cref="SightHalfAngleCos"/>).
+        /// </summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= index &lt; Trainers.Count; playerDirection finite and non-zero; planetRadius &gt; 0.
+        /// Post: false for defeated or Observant (0 m) trainers; true iff within range and forward cone.
+        /// Side effects: none.
+        /// </remarks>
+        public bool IsInSight(int index, float3 playerDirection, float planetRadius)
+        {
+            Contract.Requires(index >= 0 && index < _trainers.Length, "trainer index out of range");
+            Contract.Requires(math.all(math.isfinite(playerDirection)) && math.lengthsq(playerDirection) > 0f,
+                "playerDirection must be finite and non-zero");
+            Contract.Requires(math.isfinite(planetRadius) && planetRadius > 0f, "planetRadius must be > 0");
+            if (_defeated[index])
+            {
+                return false;
+            }
+
+            int rangeMm = _trainers[index].ChallengeRadiusMm;
+            if (rangeMm <= 0)
+            {
+                return false;
+            }
+
+            float3 p = math.normalize(playerDirection);
+            float3 pos = _currentDirections[index];
+            float dM = ArcM(pos, p, planetRadius);
+            if (dM > rangeMm * 0.001f)
+            {
+                return false;
+            }
+
+            if (dM <= 0.1f)
+            {
+                return true;
+            }
+
+            float3 delta = p - pos;
+            float3 tangent = delta - math.dot(delta, pos) * pos;
+            float lenSq = math.lengthsq(tangent);
+            if (lenSq <= 1e-10f)
+            {
+                return true;
+            }
+
+            float3 toPlayer = tangent / math.sqrt(lenSq);
+            return math.dot(_currentFacings[index], toPlayer) >= SightHalfAngleCos;
+        }
+
+        /// <summary>
+        /// Returns the closest undefeated trainer within <see cref="InteractReachM"/> (typically used to challenge
+        /// <see cref="TrainerFunction.Observant"/> trainers via interact input), or -1 when none is in reach.
+        /// </summary>
+        /// <remarks>
+        /// Pre: playerDirection finite and non-zero; planetRadius &gt; 0.
+        /// Post: -1 or index of an undefeated trainer within InteractReachM.
+        /// Side effects: none.
+        /// </remarks>
+        public int NearestInteractable(float3 playerDirection, float planetRadius)
+        {
+            Contract.Requires(math.all(math.isfinite(playerDirection)) && math.lengthsq(playerDirection) > 0f,
+                "playerDirection must be finite and non-zero");
+            Contract.Requires(math.isfinite(planetRadius) && planetRadius > 0f, "planetRadius must be > 0");
+            float3 p = math.normalize(playerDirection);
+            int best = -1;
+            float bestDist = float.MaxValue;
+            for (int i = 0; i < _trainers.Length; i++)
+            {
+                if (_defeated[i])
+                {
+                    continue;
+                }
+
+                float dM = ArcM(_currentDirections[i], p, planetRadius);
+                if (dM <= InteractReachM && dM < bestDist)
+                {
+                    bestDist = dM;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Advances sight detection and active pursuit of the player over <paramref name="dtMs"/>.
+        /// Spots undefeated non-Observant trainers via <see cref="IsInSight"/>, pursues until within
+        /// <see cref="EngageReachM"/> (<see cref="TrainerPursuitResult.Engaged"/>), or drops pursuit once the player
+        /// escapes beyond <see cref="EvadeRadiusM"/> (<see cref="TrainerPursuitResult.Evaded"/>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/trainer-battles.md#生成與遭遇.
+        /// Pre: playerDirection finite and non-zero; planetRadius &gt; 0; 0 &lt; dtMs &lt;= 1000.
+        /// Post: trainerIndex is -1 on None, otherwise the trainer involved in Spotted/Chasing/Engaged/Evaded;
+        ///       pursued trainer stays outside inhabited settlements and building footprints.
+        /// Side effects: updates PursuingTrainer and the chasing trainer's direction, facing and StepVersion.
+        /// </remarks>
+        public TrainerPursuitResult StepPursuit(float3 playerDirection, float planetRadius, int dtMs, out int trainerIndex)
+        {
+            Contract.Requires(math.all(math.isfinite(playerDirection)) && math.lengthsq(playerDirection) > 0f,
+                "playerDirection must be finite and non-zero");
+            Contract.Requires(math.isfinite(planetRadius) && planetRadius > 0f, "planetRadius must be > 0");
+            Contract.Requires(dtMs > 0 && dtMs <= 1000, "dtMs must be 1..1000");
+
+            float3 p = math.normalize(playerDirection);
+            if (_pursuingTrainer >= 0)
+            {
+                int chasing = _pursuingTrainer;
+                if (_defeated[chasing])
+                {
+                    CancelPursuit();
+                    trainerIndex = -1;
+                    return TrainerPursuitResult.None;
+                }
+
+                float dM = ArcM(_currentDirections[chasing], p, planetRadius);
+                float sightM = _trainers[chasing].ChallengeRadiusMm * 0.001f;
+                float evadeM = sightM >= EvadeRadiusM ? sightM + 1f : EvadeRadiusM;
+                if (dM >= evadeM)
+                {
+                    CancelPursuit();
+                    trainerIndex = chasing;
+                    return TrainerPursuitResult.Evaded;
+                }
+
+                if (dM <= EngageReachM)
+                {
+                    CancelPursuit();
+                    trainerIndex = chasing;
+                    return TrainerPursuitResult.Engaged;
+                }
+
+                int speedPermille = math.max(_trainers[chasing].SpeedPermilleMean, PursuitSpeedPermille);
+                MoveResult move = Steer(chasing, p, speedPermille, dtMs);
+                StepVersion++;
+                float afterM = ArcM(_currentDirections[chasing], p, planetRadius);
+                if (move == MoveResult.Arrived || afterM <= EngageReachM)
+                {
+                    CancelPursuit();
+                    trainerIndex = chasing;
+                    return TrainerPursuitResult.Engaged;
+                }
+
+                trainerIndex = chasing;
+                return TrainerPursuitResult.Chasing;
+            }
+
+            int best = -1;
+            float bestDist = float.MaxValue;
+            for (int i = 0; i < _trainers.Length; i++)
+            {
+                if (!IsInSight(i, p, planetRadius))
+                {
+                    continue;
+                }
+
+                float dM = ArcM(_currentDirections[i], p, planetRadius);
+                if (dM < bestDist)
+                {
+                    bestDist = dM;
+                    best = i;
+                }
+            }
+
+            if (best < 0)
+            {
+                trainerIndex = -1;
+                return TrainerPursuitResult.None;
+            }
+
+            _pursuingTrainer = best;
+            _currentFacings[best] = Tangent(_currentDirections[best], p - _currentDirections[best], _currentFacings[best]);
+            StepVersion++;
+            trainerIndex = best;
+            return TrainerPursuitResult.Spotted;
         }
 
         /// <summary>
@@ -555,6 +784,11 @@ namespace Cosmimera.WorldGen
 
             for (int i = 0; i < _trainers.Length; i++)
             {
+                if (i == _pursuingTrainer)
+                {
+                    continue;
+                }
+
                 StepTrainer(i, nowMs, dtMs);
             }
 
@@ -603,7 +837,9 @@ namespace Cosmimera.WorldGen
             float3 beforeDir = _currentDirections[index];
             float3 beforeFacing = _currentFacings[index];
             MoveResult res = Steer(index, w.Target, w.LegSpeedPermille, dtMs);
-            if (bounded && res != MoveResult.Blocked && ArcM(t.HomeDirection, _currentDirections[index], _radius) > capM + ArriveM)
+            if (bounded && res != MoveResult.Blocked &&
+                ArcM(t.HomeDirection, _currentDirections[index], _radius) > capM + ArriveM &&
+                ArcM(t.HomeDirection, _currentDirections[index], _radius) > ArcM(t.HomeDirection, beforeDir, _radius))
             {
                 _currentDirections[index] = beforeDir;
                 _currentFacings[index] = beforeFacing;

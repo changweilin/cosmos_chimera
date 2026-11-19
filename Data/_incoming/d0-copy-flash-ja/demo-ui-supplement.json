@@ -1270,5 +1270,179 @@
   },
   "ui.skills.return_village": {
     "ja": "村 #{index}"
+  },
+  "ui.trainer.prof.trv_rookie": {
+    "ja": "見習い旅人"
+  },
+  "ui.trainer.prof.trv_hiker": {
+    "ja": "ハイカー"
+  },
+  "ui.trainer.prof.trv_angler": {
+    "ja": "つりびと"
+  },
+  "ui.trainer.prof.trv_ranger": {
+    "ja": "フォレストレンジャー"
+  },
+  "ui.trainer.prof.trv_brawler": {
+    "ja": "格闘家"
+  },
+  "ui.trainer.prof.trv_scholar": {
+    "ja": "学者"
+  },
+  "ui.trainer.prof.trv_bard": {
+    "ja": "吟遊詩人"
+  },
+  "ui.trainer.prof.trv_pilgrim": {
+    "ja": "巡礼司祭"
+  },
+  "ui.trainer.prof.trv_nightwalker": {
+    "ja": "夜行者"
+  },
+  "ui.trainer.prof.trv_bounty": {
+    "ja": "賞金稼ぎ"
+  },
+  "ui.trainer.prof.trv_trial_master": {
+    "ja": "地形試練の主"
+  },
+  "ui.trainer.prof.trv_artisan_mentor": {
+    "ja": "生活技能の師範"
+  },
+  "ui.trainer.prof.era_primitive_totem_hunter": {
+    "ja": "原始トーテム猟師"
+  },
+  "ui.trainer.prof.era_agrarian_field_warden": {
+    "ja": "農耕巡田武者"
+  },
+  "ui.trainer.prof.era_mercantile_caravan_guard": {
+    "ja": "商隊護衛師"
+  },
+  "ui.trainer.prof.era_industrial_rail_inspector": {
+    "ja": "工業鉄道巡察官"
+  },
+  "ui.trainer.prof.era_steampunk_airship_navigator": {
+    "ja": "蒸気飛行船航海士"
+  },
+  "ui.trainer.prof.era_future_orbital_ranger": {
+    "ja": "未来軌道レンジャー"
+  },
+  "ui.trainer.prof.era_wasteland_salvage_hunter": {
+    "ja": "荒廃スカベンジ猟師"
+  },
+  "ui.trainer.prof.era_ancient_relic_keeper": {
+    "ja": "古代遺跡の守護者"
+  },
+  "ui.trainer.prof.cul_east_asia_talisman_swordsman": {
+    "ja": "東亜符剣修者"
+  },
+  "ui.trainer.prof.cul_south_asia_prana_ascetic": {
+    "ja": "南亜気脈苦行者"
+  },
+  "ui.trainer.prof.cul_southeast_asia_monsoon_wayfinder": {
+    "ja": "東南亜モンスーン航海師"
+  },
+  "ui.trainer.prof.cul_middle_east_astrolabe_scholar": {
+    "ja": "西亜アストロラーベ学者"
+  },
+  "ui.trainer.prof.cul_africa_solarpunk_geomancer": {
+    "ja": "アフリカ太陽地脈師"
+  },
+  "ui.trainer.prof.cul_europe_high_fantasy_mage_knight": {
+    "ja": "欧州魔導騎士"
+  },
+  "ui.trainer.prof.cul_americas_canyon_sky_rider": {
+    "ja": "米州渓谷スカイライダー"
+  },
+  "ui.trainer.prof.cul_oceania_star_navigator": {
+    "ja": "大洋州星象航海士"
+  },
+  "ui.trainer.prof.cul_central_asia_steppe_falconer": {
+    "ja": "中亜草原鷹匠"
+  },
+  "ui.trainer.prof.cul_polar_aurora_sled_scout": {
+    "ja": "極地オーロラ橇斥候"
+  },
+  "ui.trainer.prof.cul_cosmopolis_cyber_netrunner": {
+    "ja": "都市電脳ネットランナー"
+  },
+  "ui.trainer.prof.cul_interstellar_warp_pioneer": {
+    "ja": "星間ワープ開拓者"
+  },
+  "ui.trainer.duty.duty_road_courier": {
+    "ja": "古道駅伝"
+  },
+  "ui.trainer.duty.duty_circuit_patrol": {
+    "ja": "山林巡回"
+  },
+  "ui.trainer.duty.duty_waterside_angling": {
+    "ja": "水辺の釣り"
+  },
+  "ui.trainer.duty.duty_prospect_mining": {
+    "ja": "鉱脈探査"
+  },
+  "ui.trainer.duty.duty_botanical_foraging": {
+    "ja": "植生採集"
+  },
+  "ui.trainer.duty.duty_ruin_excavation": {
+    "ja": "遺跡発掘"
+  },
+  "ui.trainer.duty.duty_martial_training": {
+    "ja": "荒野修行"
+  },
+  "ui.trainer.duty.duty_shrine_pilgrimage": {
+    "ja": "聖地巡礼"
+  },
+  "ui.trainer.duty.duty_roving_minstrel": {
+    "ja": "放浪詠唱"
+  },
+  "ui.trainer.duty.duty_night_watch": {
+    "ja": "深夜哨戒"
+  },
+  "ui.trainer.duty.duty_bounty_hunting": {
+    "ja": "賞金追跡"
+  },
+  "ui.trainer.duty.duty_frontier_trailblazing": {
+    "ja": "荒野開拓"
+  },
+  "ui.trainer.duty.duty_leyline_tuning": {
+    "ja": "エーテル調律"
+  },
+  "ui.trainer.duty.duty_trial_wardenship": {
+    "ja": "試練守護"
+  },
+  "ui.trainer.fn.observant": {
+    "ja": "研究専念"
+  },
+  "ui.trainer.fn.escort": {
+    "ja": "護衛警戒"
+  },
+  "ui.trainer.fn.sparring": {
+    "ja": "稽古対戦"
+  },
+  "ui.trainer.fn.warden": {
+    "ja": "領域監視"
+  },
+  "ui.trainer.fn.pursuit": {
+    "ja": "追跡迎撃"
+  },
+  "ui.trainer.fn.champion": {
+    "ja": "覇者挑戦"
+  },
+  "ui.trainer.interact_prompt": {
+    "ja": "[{key}] {trainer} に挑戦"
+  },
+  "ui.trainer.spotted": {
+    "ja": "{trainer} に見つかった！"
+  },
+  "ui.trainer.evaded": {
+    "ja": "{trainer} の追跡を振り切った！"
+  },
+  "ui.trainer.challenge": {
+    "ja": "{trainer} が勝負を仕掛けてきた！"
+  },
+  "ui.trainer.victory": {
+    "ja": "{trainer} に勝利した！"
+  },
+  "ui.trainer.defeat": {
+    "ja": "{trainer} に敗北した……"
   }
 }

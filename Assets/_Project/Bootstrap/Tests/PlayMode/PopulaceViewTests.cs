@@ -382,5 +382,71 @@ namespace Cosmimera.Bootstrap.Tests
                 ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "npc-" + rows[r].name + ".png"));
             }
         }
+
+        [UnityTest]
+        public IEnumerator TrainerView_spawns_skinned_figures_and_syncs_step_and_pursuit_movement()
+        {
+            var (plan, layout, _) = Make(77);
+            var db = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            var wild = new List<CreatureDef>();
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c && !c.LineId.StartsWith("starter_"))
+                {
+                    wild.Add(c);
+                }
+            }
+
+            RunTrainers trainers = TrainerPlanner.Generate(Planet, plan, layout, wild, _ => "forest", null, 10, 20);
+            Assert.That(trainers.Trainers.Count, Is.GreaterThan(0));
+
+            var go = new GameObject("TrainerView");
+            _roots.Add(go);
+            TrainerView view = go.AddComponent<TrainerView>();
+            Shader shader = Shader.Find("Cosmimera/ToonOutlined");
+            Shader props = Shader.Find("Cosmimera/ToonScenery");
+            Assert.That(shader, Is.Not.Null);
+            view.Configure(Planet, trainers, Hills, shader, props, "verdant_planet", 77);
+
+            Assert.That(view.Trainers.Count, Is.EqualTo(trainers.Trainers.Count));
+            for (int i = 0; i < view.Trainers.Count; i++)
+            {
+                GameObject root = view.Trainers[i];
+                var skinned = root.GetComponent<SkinnedMeshRenderer>();
+                Assert.That(skinned, Is.Not.Null);
+                Assert.That(skinned.sharedMesh, Is.Not.Null);
+                Assert.That(skinned.bones.Length, Is.GreaterThan(0));
+                Assert.That(root.GetComponent<CapsuleCollider>(), Is.Not.Null);
+            }
+
+            int idx = -1;
+            for (int i = 0; i < trainers.Trainers.Count; i++)
+            {
+                if (trainers.Trainers[i].Function != TrainerFunction.Observant)
+                {
+                    idx = i;
+                    break;
+                }
+            }
+
+            Assert.That(idx, Is.GreaterThanOrEqualTo(0));
+            Vector3 beforeIdxPos = view.Trainers[idx].transform.position;
+            float3 tDir = trainers.CurrentDirection(idx);
+            float3 tFace = trainers.CurrentFacing(idx);
+            float3 inFront = math.normalize(tDir + tFace * (3.5f / Radius));
+            Assert.That(trainers.StepPursuit(inFront, Radius, 200, out int spotIdx), Is.EqualTo(TrainerPursuitResult.Spotted));
+            Assert.That(spotIdx, Is.EqualTo(idx));
+            trainers.Step(1000, 200);
+            TrainerPursuitResult chasing = trainers.StepPursuit(inFront, Radius, 200, out _);
+            Assert.That(chasing == TrainerPursuitResult.Chasing || chasing == TrainerPursuitResult.Engaged, Is.True);
+            yield return null;
+
+            float3 expectedDir = trainers.CurrentDirection(idx);
+            float3 expectedWorld = Planet.ToWorld(expectedDir, Hills(expectedDir) - 0.03f);
+            Vector3 afterIdxPos = view.Trainers[idx].transform.position;
+            Assert.That(Vector3.Distance(afterIdxPos, new Vector3(expectedWorld.x, expectedWorld.y, expectedWorld.z)),
+                Is.LessThan(0.05f));
+            Assert.That(Vector3.Distance(afterIdxPos, beforeIdxPos), Is.GreaterThan(0.05f));
+        }
     }
 }

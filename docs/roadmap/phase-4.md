@@ -15,7 +15,7 @@
 | P4-07 | 隊伍編成 UI：6 主力、4 輪替、副手配對提示 | SONNET | 人工 | 不合法配對有清楚理由 | 🟨 |
 | P4-08 | UI 文案與本地化（繁中/英/日） | TERRA | HYDROGEN（交叉）+ 人工 | 字串全部外部化 | 🟦 |
 | P4-09 | 角色／宙獸／技能圖鑑內容與分階解鎖 | SOL | 人工 | 與 Forge 共用結構、Drive 來源可追溯，遭遇／對話／目擊與捕獲／任務／取得分階解鎖 | 🟨 |
-| P4-10 | 旅人職業圖鑑與試煉進度存檔（[trainer-battles.md](../design/trainer-battles.md)#旅人圖鑑）：每職業對戰計數（首戰 basic、累積 10 次 complete）、試煉完成／試煉章；結算寫回、舊存檔遷移 | SONNET | SOL（存檔格式必審） | 計數跨 run 累積；放棄 run 不計；遷移測試 | ⬜ |
+| P4-10 | 旅人職業圖鑑與試煉進度存檔（[trainer-battles.md](../design/trainer-battles.md)#旅人圖鑑）：`LobbySave` v15 每職業對戰計數（首戰 basic、累積 10 次 complete）、`completed_trials` 試煉章；結算寫回（放棄 run 不計）、v1–v14 舊存檔遷移與 `Clone()` 修復 | SONNET | SOL（存檔格式必審） | 計數跨 run 累積；放棄 run 不計；遷移測試 | 🟨 |
 
 ## 未收尾紀錄
 [log/phase-4.md](log/phase-4.md)（partial／blocked 才寫；舊紀錄為封存）。

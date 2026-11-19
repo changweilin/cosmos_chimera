@@ -394,6 +394,11 @@ namespace Cosmimera.Bootstrap.Demo
             RenderCameraTo(path);
         }
 
+        internal RunTrainers TrainersForTests => _trainers;
+        internal TrainerView TrainerViewForTests => _trainerView;
+        internal int ActiveWanderingTrainerIndexForTests => _activeWanderingTrainerIndex;
+        internal bool TriggerWanderingTrainerBattleForTests(int trainerIndex) => StartWanderingTrainerBattle(trainerIndex);
+
         private void RenderCameraTo(string path)
         {
             var rt = new RenderTexture(1280, 720, 24);

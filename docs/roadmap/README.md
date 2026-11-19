@@ -63,7 +63,7 @@ D0 已可完整跑一場（EditMode 2114/2114、PlayMode 129/129）；瓶頸是*
 15. **P4-09 圖鑑內容與分階解鎖（🟨）**：審查存檔 v10／解鎖 API、補寫設定與 60 個 cr_* 型態數值；選定同名 GLB 版本。人工驗收未知／基本／完整資料遮蔽、繁中／英／日與實體手把排版；Forge 登入頁點擊持續逾時，尚待完成登入後的瀏覽器驗收。雨森澄羽保留對話／任務接口，這次不新增劇情任務。規格 `../design/encyclopedia.md`。
 
 16. **P7-02 新手任務（規格 `../design/beginner-quest.md`，子項見 `phase-7.md`）**：先做 P7-02b 搖籃星生成、P7-02c 選角、P7-02d 對話系統；P7-02a 存檔／狀態機定好後接 e→f→g→h；P7-02i 文案可平行。
-17. **地形試煉與戰鬥旅人（規格 `../design/trainer-battles.md`）**：P2-18 規則層已完成待審（`Encounter` 新增 `RegisterTrainer`／`AddTrainerCreature`／`StartTrainerBattle`、`XpSource.Trainer`；尚無場景生成訓練家，故未經實玩），接著 P3-32 戰鬥旅人與 P4-10 職業圖鑑；P3-33 地形試煉等 P3-07 地城。試煉 BOSS 全新設計交 P5-10（可與實作平行）；試煉 BOSS 為單一型態，階段待 Q-G10 追問。
+17. **地形試煉與戰鬥旅人（規格 `../design/trainer-battles.md`）**：P2-18 規則層、P3-32 戰鬥旅人（32 職業／14 職務／6 職能、`TrainerPlanner.Generate` 含 `maxStage` 與 `Hash` 鎖版、`RunTrainers` 視線／追擊／25 m 迴避、`NpcMeshes.SpecForTrainer`／`TrainerView`、`RunSession` 接線與三語文案）與 P4-10 職業圖鑑／試煉章存檔 v15 已完成實作（`🟨` 待 SOL＋ARGON 重現性與存檔必審）；接著做 P3-33 地形試煉（依賴 P3-07 地城與 Q-G10）。試煉 BOSS 全新設計交 P5-10（可與實作平行）；試煉 BOSS 為單一型態，階段待 Q-G10 追問。
 
 18. **P3-17／19 實景驗收**（役畜、整路折返、環狀道路與繞行、礦車軌道、枯木轉換與病樹褪色皆未經目視）：沿道路檢查地區間的機械與載具剪影、陸地與橋側動物的動線、角色阻擋與主動技破壞掉落；檢查 Steam Deck 表現與遠距辨識。
 

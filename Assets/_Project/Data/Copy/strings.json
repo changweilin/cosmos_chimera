@@ -2668,5 +2668,295 @@
     "zh-TW": "村落 #{index}",
     "en": "Village #{index}",
     "ja": "村 #{index}"
+  },
+  "ui.trainer.prof.trv_rookie": {
+    "zh-TW": "見習旅人",
+    "en": "Novice Traveler",
+    "ja": "見習い旅人"
+  },
+  "ui.trainer.prof.trv_hiker": {
+    "zh-TW": "登山客",
+    "en": "Hiker",
+    "ja": "ハイカー"
+  },
+  "ui.trainer.prof.trv_angler": {
+    "zh-TW": "釣客",
+    "en": "Angler",
+    "ja": "つりびと"
+  },
+  "ui.trainer.prof.trv_ranger": {
+    "zh-TW": "森林巡守",
+    "en": "Forest Ranger",
+    "ja": "フォレストレンジャー"
+  },
+  "ui.trainer.prof.trv_brawler": {
+    "zh-TW": "拳術家",
+    "en": "Brawler",
+    "ja": "格闘家"
+  },
+  "ui.trainer.prof.trv_scholar": {
+    "zh-TW": "學者",
+    "en": "Scholar",
+    "ja": "学者"
+  },
+  "ui.trainer.prof.trv_bard": {
+    "zh-TW": "吟遊詩人",
+    "en": "Bard",
+    "ja": "吟遊詩人"
+  },
+  "ui.trainer.prof.trv_pilgrim": {
+    "zh-TW": "巡禮祭司",
+    "en": "Pilgrim Cleric",
+    "ja": "巡礼司祭"
+  },
+  "ui.trainer.prof.trv_nightwalker": {
+    "zh-TW": "夜行者",
+    "en": "Nightwalker",
+    "ja": "夜行者"
+  },
+  "ui.trainer.prof.trv_bounty": {
+    "zh-TW": "賞金獵人",
+    "en": "Bounty Hunter",
+    "ja": "賞金稼ぎ"
+  },
+  "ui.trainer.prof.trv_trial_master": {
+    "zh-TW": "地形試煉主",
+    "en": "Terrain Trial Master",
+    "ja": "地形試練の主"
+  },
+  "ui.trainer.prof.trv_artisan_mentor": {
+    "zh-TW": "生活技能導師",
+    "en": "Life-Skill Mentor",
+    "ja": "生活技能の師範"
+  },
+  "ui.trainer.prof.era_primitive_totem_hunter": {
+    "zh-TW": "原始圖騰獵師",
+    "en": "Primitive Totem Hunter",
+    "ja": "原始トーテム猟師"
+  },
+  "ui.trainer.prof.era_agrarian_field_warden": {
+    "zh-TW": "農耕巡田武者",
+    "en": "Agrarian Field Warden",
+    "ja": "農耕巡田武者"
+  },
+  "ui.trainer.prof.era_mercantile_caravan_guard": {
+    "zh-TW": "商貿護隊鏢師",
+    "en": "Mercantile Caravan Guard",
+    "ja": "商隊護衛師"
+  },
+  "ui.trainer.prof.era_industrial_rail_inspector": {
+    "zh-TW": "工業鐵道巡檢",
+    "en": "Industrial Rail Inspector",
+    "ja": "工業鉄道巡察官"
+  },
+  "ui.trainer.prof.era_steampunk_airship_navigator": {
+    "zh-TW": "蒸汽飛艇領航",
+    "en": "Steampunk Airship Navigator",
+    "ja": "蒸気飛行船航海士"
+  },
+  "ui.trainer.prof.era_future_orbital_ranger": {
+    "zh-TW": "未來星軌巡航",
+    "en": "Future Orbital Ranger",
+    "ja": "未来軌道レンジャー"
+  },
+  "ui.trainer.prof.era_wasteland_salvage_hunter": {
+    "zh-TW": "廢土拾荒獵人",
+    "en": "Wasteland Salvage Hunter",
+    "ja": "荒廃スカベンジ猟師"
+  },
+  "ui.trainer.prof.era_ancient_relic_keeper": {
+    "zh-TW": "遠古遺蹟守衛",
+    "en": "Ancient Relic Keeper",
+    "ja": "古代遺跡の守護者"
+  },
+  "ui.trainer.prof.cul_east_asia_talisman_swordsman": {
+    "zh-TW": "東亞符劍修者",
+    "en": "East Asian Talisman Swordsman",
+    "ja": "東亜符剣修者"
+  },
+  "ui.trainer.prof.cul_south_asia_prana_ascetic": {
+    "zh-TW": "南亞氣脈苦行者",
+    "en": "South Asian Prana Ascetic",
+    "ja": "南亜気脈苦行者"
+  },
+  "ui.trainer.prof.cul_southeast_asia_monsoon_wayfinder": {
+    "zh-TW": "東南亞季風領航者",
+    "en": "Southeast Asian Monsoon Wayfinder",
+    "ja": "東南亜モンスーン航海師"
+  },
+  "ui.trainer.prof.cul_middle_east_astrolabe_scholar": {
+    "zh-TW": "西亞星盤學者",
+    "en": "West Asian Astrolabe Scholar",
+    "ja": "西亜アストロラーベ学者"
+  },
+  "ui.trainer.prof.cul_africa_solarpunk_geomancer": {
+    "zh-TW": "非洲太陽能地脈師",
+    "en": "African Solarpunk Geomancer",
+    "ja": "アフリカ太陽地脈師"
+  },
+  "ui.trainer.prof.cul_europe_high_fantasy_mage_knight": {
+    "zh-TW": "歐洲高奇幻魔導騎士",
+    "en": "European High-Fantasy Mage Knight",
+    "ja": "欧州魔導騎士"
+  },
+  "ui.trainer.prof.cul_americas_canyon_sky_rider": {
+    "zh-TW": "美洲峽谷空騎手",
+    "en": "Americas Canyon Sky Rider",
+    "ja": "米州渓谷スカイライダー"
+  },
+  "ui.trainer.prof.cul_oceania_star_navigator": {
+    "zh-TW": "大洋洲星象航海師",
+    "en": "Oceanian Star Navigator",
+    "ja": "大洋州星象航海士"
+  },
+  "ui.trainer.prof.cul_central_asia_steppe_falconer": {
+    "zh-TW": "中亞草原獵鷹師",
+    "en": "Central Asian Steppe Falconer",
+    "ja": "中亜草原鷹匠"
+  },
+  "ui.trainer.prof.cul_polar_aurora_sled_scout": {
+    "zh-TW": "極地極光雪橇斥候",
+    "en": "Polar Aurora Sled Scout",
+    "ja": "極地オーロラ橇斥候"
+  },
+  "ui.trainer.prof.cul_cosmopolis_cyber_netrunner": {
+    "zh-TW": "世界都市賽博駭客",
+    "en": "Cosmopolis Cyber Netrunner",
+    "ja": "都市電脳ネットランナー"
+  },
+  "ui.trainer.prof.cul_interstellar_warp_pioneer": {
+    "zh-TW": "星際曲率開拓者",
+    "en": "Interstellar Warp Pioneer",
+    "ja": "星間ワープ開拓者"
+  },
+  "ui.trainer.duty.duty_road_courier": {
+    "zh-TW": "古道驛傳",
+    "en": "Road Courier",
+    "ja": "古道駅伝"
+  },
+  "ui.trainer.duty.duty_circuit_patrol": {
+    "zh-TW": "山林巡守",
+    "en": "Circuit Patrol",
+    "ja": "山林巡回"
+  },
+  "ui.trainer.duty.duty_waterside_angling": {
+    "zh-TW": "水域垂釣",
+    "en": "Waterside Angling",
+    "ja": "水辺の釣り"
+  },
+  "ui.trainer.duty.duty_prospect_mining": {
+    "zh-TW": "礦脈勘探",
+    "en": "Prospect Mining",
+    "ja": "鉱脈探査"
+  },
+  "ui.trainer.duty.duty_botanical_foraging": {
+    "zh-TW": "植群採集",
+    "en": "Botanical Foraging",
+    "ja": "植生採集"
+  },
+  "ui.trainer.duty.duty_ruin_excavation": {
+    "zh-TW": "遺蹟考據",
+    "en": "Ruin Excavation",
+    "ja": "遺跡発掘"
+  },
+  "ui.trainer.duty.duty_martial_training": {
+    "zh-TW": "荒野苦修",
+    "en": "Martial Training",
+    "ja": "荒野修行"
+  },
+  "ui.trainer.duty.duty_shrine_pilgrimage": {
+    "zh-TW": "聖地巡禮",
+    "en": "Shrine Pilgrimage",
+    "ja": "聖地巡礼"
+  },
+  "ui.trainer.duty.duty_roving_minstrel": {
+    "zh-TW": "雲遊傳唱",
+    "en": "Roving Minstrel",
+    "ja": "放浪詠唱"
+  },
+  "ui.trainer.duty.duty_night_watch": {
+    "zh-TW": "暗夜潛行",
+    "en": "Night Watch",
+    "ja": "深夜哨戒"
+  },
+  "ui.trainer.duty.duty_bounty_hunting": {
+    "zh-TW": "懸賞追獵",
+    "en": "Bounty Hunting",
+    "ja": "賞金追跡"
+  },
+  "ui.trainer.duty.duty_frontier_trailblazing": {
+    "zh-TW": "荒原拓荒",
+    "en": "Frontier Trailblazing",
+    "ja": "荒野開拓"
+  },
+  "ui.trainer.duty.duty_leyline_tuning": {
+    "zh-TW": "以太調律",
+    "en": "Leyline Tuning",
+    "ja": "エーテル調律"
+  },
+  "ui.trainer.duty.duty_trial_wardenship": {
+    "zh-TW": "試煉鎮守",
+    "en": "Trial Wardenship",
+    "ja": "試練守護"
+  },
+  "ui.trainer.fn.observant": {
+    "zh-TW": "考據專注",
+    "en": "Observant",
+    "ja": "研究専念"
+  },
+  "ui.trainer.fn.escort": {
+    "zh-TW": "護衛戒備",
+    "en": "Escort",
+    "ja": "護衛警戒"
+  },
+  "ui.trainer.fn.sparring": {
+    "zh-TW": "歷練切磋",
+    "en": "Sparring",
+    "ja": "稽古対戦"
+  },
+  "ui.trainer.fn.warden": {
+    "zh-TW": "巡守管轄",
+    "en": "Warden",
+    "ja": "領域監視"
+  },
+  "ui.trainer.fn.pursuit": {
+    "zh-TW": "追獵懸賞",
+    "en": "Pursuit",
+    "ja": "追跡迎撃"
+  },
+  "ui.trainer.fn.champion": {
+    "zh-TW": "征討霸主",
+    "en": "Champion",
+    "ja": "覇者挑戦"
+  },
+  "ui.trainer.interact_prompt": {
+    "zh-TW": "[{key}] 挑戰 {trainer}",
+    "en": "[{key}] Challenge {trainer}",
+    "ja": "[{key}] {trainer} に挑戦"
+  },
+  "ui.trainer.spotted": {
+    "zh-TW": "{trainer} 注意到了你！",
+    "en": "{trainer} spotted you!",
+    "ja": "{trainer} に見つかった！"
+  },
+  "ui.trainer.evaded": {
+    "zh-TW": "甩開了 {trainer} 的追擊！",
+    "en": "Escaped pursuit by {trainer}!",
+    "ja": "{trainer} の追跡を振り切った！"
+  },
+  "ui.trainer.challenge": {
+    "zh-TW": "{trainer} 發起了對戰！",
+    "en": "{trainer} challenged you to a battle!",
+    "ja": "{trainer} が勝負を仕掛けてきた！"
+  },
+  "ui.trainer.victory": {
+    "zh-TW": "擊敗了 {trainer}！",
+    "en": "Defeated {trainer}!",
+    "ja": "{trainer} に勝利した！"
+  },
+  "ui.trainer.defeat": {
+    "zh-TW": "敗給了 {trainer}……",
+    "en": "Defeated by {trainer}...",
+    "ja": "{trainer} に敗北した……"
   }
 }

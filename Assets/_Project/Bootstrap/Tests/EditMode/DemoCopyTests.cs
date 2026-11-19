@@ -120,5 +120,44 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(copy.Ui(key), Is.Not.Empty, key);
             }
         }
+
+        [TestCase("zh-TW")]
+        [TestCase("en")]
+        [TestCase("ja")]
+        public void Shipped_trainer_copy_resolves_all_professions_duties_functions_and_hud_keys(string language)
+        {
+            string strings = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Data", "Copy", "strings.json"));
+            var copy = new DemoCopy(language, strings, "{\"entries\":[]}", "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            foreach (TrainerProfessionSpec prof in TrainerPlanner.AllProfessions)
+            {
+                string key = "ui.trainer.prof." + prof.Id;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (TrainerDutySpec duty in TrainerPlanner.AllDuties)
+            {
+                string key = "ui.trainer.duty." + duty.Id;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (TrainerFunction fn in (TrainerFunction[])System.Enum.GetValues(typeof(TrainerFunction)))
+            {
+                string key = "ui.trainer.fn." + fn.ToString().ToLowerInvariant();
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (string key in new[]
+                     {
+                         "ui.trainer.interact_prompt", "ui.trainer.spotted", "ui.trainer.evaded",
+                         "ui.trainer.challenge", "ui.trainer.victory", "ui.trainer.defeat",
+                     })
+            {
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+        }
     }
 }

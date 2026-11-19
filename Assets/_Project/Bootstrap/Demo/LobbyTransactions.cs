@@ -226,6 +226,15 @@ namespace Cosmimera.Bootstrap.Demo
                 Contract.Requires(partner.Value >= live.Get(partner.Key).Exp && partner.Value <= progression.MaxExp,
                     "partner XP must not decrease or exceed MaxExp");
             }
+            foreach (KeyValuePair<string, int> kv in outcome.TrainerBattles)
+            {
+                Contract.Requires(CraftInventory.ValidId(kv.Key) && kv.Value >= 1,
+                    "trainer battle entries must use valid profession ids and count >= 1");
+            }
+            foreach (string trialId in outcome.CompletedTrials)
+            {
+                Contract.Requires(CraftInventory.ValidId(trialId), "completed trial ids must be valid snake_case");
+            }
             if (live.WouldOverflow(outcome.Materials, out overflow))
             {
                 return CommitStatus.StockFull;
@@ -260,6 +269,28 @@ namespace Cosmimera.Bootstrap.Demo
 
             candidate.AddMaterials(outcome.Materials);
             candidate.Codex.Merge(outcome.Codex);
+            if (!outcome.Abandoned)
+            {
+                if (outcome.TrainerBattles.Count > 0)
+                {
+                    var profIds = new List<string>(outcome.TrainerBattles.Keys);
+                    profIds.Sort(StringComparer.Ordinal);
+                    foreach (string profId in profIds)
+                    {
+                        candidate.AddTrainerBattles(profId, outcome.TrainerBattles[profId]);
+                    }
+                }
+
+                if (outcome.CompletedTrials.Count > 0)
+                {
+                    var trialIds = new List<string>(outcome.CompletedTrials);
+                    trialIds.Sort(StringComparer.Ordinal);
+                    foreach (string trialId in trialIds)
+                    {
+                        candidate.RecordTrialCompleted(trialId);
+                    }
+                }
+            }
             // The run already spent from its departure copy: adding its final stock would duplicate old items.
             if (outcome.CraftStock != null && !candidate.CraftStock.TryExchange(candidate.CraftStock.Snapshot(), outcome.CraftStock))
             {

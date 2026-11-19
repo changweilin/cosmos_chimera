@@ -417,22 +417,26 @@ namespace Cosmimera.WorldGen
         /// </summary>
         /// <remarks>
         /// Pre: planet valid; plan, layout, wildPool and habitatAt non-null; wildPool non-empty; wildNormalMaxLevel &gt;= 1;
-        ///      bossLevel &gt;= 1; planet.IsValid.
+        ///      bossLevel &gt;= 1; planet.IsValid; maxStage defined.
         /// Post: Trainers.Count == TargetCountForRadius(planet.Radius); every trainer lies outside all inhabited
-        ///       settlements and buildings, allows habitatAt(HomeDirection) in its Duty, has a valid team in wildPool, and
-        ///       no two trainers with different ProfessionId and the same Duty overlap activity caps.
+        ///       settlements and buildings, allows habitatAt(HomeDirection) in its Duty, has a valid team in wildPool
+        ///       (preferring creatures with Stage &lt;= maxStage when any exist), and no two trainers with different
+        ///       ProfessionId and the same Duty overlap activity caps.
         /// Side effects: allocates RunTrainers and its entries.
         /// </remarks>
         public static RunTrainers Generate(in PlanetConfig planet, RunPlan plan, RunLayout layout,
             IReadOnlyList<CreatureDef> wildPool, Func<float3, string> habitatAt, Func<float3, bool> isLand,
-            int wildNormalMaxLevel, int bossLevel, string eraTag = null)
+            int wildNormalMaxLevel, int bossLevel, string eraTag = null,
+            CreatureStage maxStage = CreatureStage.Adult)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(plan != null && layout != null && wildPool != null && habitatAt != null,
                 "plan, layout, wildPool and habitatAt are required");
             Contract.Requires(wildPool.Count > 0, "wildPool must be non-empty");
             Contract.Requires(wildNormalMaxLevel >= 1 && bossLevel >= 1, "levels must be >= 1");
+            Contract.Requires(Enum.IsDefined(typeof(CreatureStage), maxStage), "maxStage must be defined");
 
+            IReadOnlyList<CreatureDef> teamPool = FilterByStage(wildPool, maxStage);
             var clearance = new LayoutClearance(planet, layout, 0f);
             float3 bossDir = FindBossDirection(plan);
             int targetCount = TargetCountForRadius(planet.Radius);
@@ -488,7 +492,7 @@ namespace Cosmimera.WorldGen
                 PlanetFrame frame = PlanetFrame.FromUp(dir);
                 float turn = rng.NextFloat() * 2f * math.PI;
                 float3 facing = math.normalize(frame.North * math.cos(turn) + frame.East * math.sin(turn));
-                TrainerTeamMember[] team = BuildTeam(planet.Radius, prof, wildPool, wildNormalMaxLevel, bossLevel, ref rng);
+                TrainerTeamMember[] team = BuildTeam(planet.Radius, prof, teamPool, wildNormalMaxLevel, bossLevel, ref rng);
 
                 placed.Add(new RunTrainer(i, region, prof.Id, prof.Origin, dutySpec.Duty, fn, dutySpec.Mode,
                     dutySpec.RadiusMm, dutySpec.ExclusionRadiusMm, speedMean, moveMean, pauseMean,
@@ -798,6 +802,99 @@ namespace Cosmimera.WorldGen
             }
 
             return false;
+        }
+
+        /// <summary>Deterministic 64-bit hash over all generated trainers and <see cref="GeneratorVersion"/>.</summary>
+        /// <remarks>Pre: trainers non-null. Post: stable FNV-1a 64-bit hash across identical runs. Side effects: none.</remarks>
+        public static ulong Hash(RunTrainers trainers)
+        {
+            Contract.Requires(trainers != null, "trainers must not be null");
+            ulong h = 14695981039346656037UL;
+            Mix(ref h, (ulong)GeneratorVersion);
+            Mix(ref h, (ulong)trainers.Trainers.Count);
+            for (int i = 0; i < trainers.Trainers.Count; i++)
+            {
+                RunTrainer t = trainers.Trainers[i];
+                Mix(ref h, (ulong)t.Index);
+                Mix(ref h, (ulong)t.Region);
+                Mix(ref h, t.ProfessionId);
+                Mix(ref h, (ulong)t.Origin);
+                Mix(ref h, (ulong)t.Duty);
+                Mix(ref h, (ulong)t.Function);
+                Mix(ref h, (ulong)t.WanderMode);
+                Mix(ref h, (ulong)(long)t.WanderRadiusMm);
+                Mix(ref h, (ulong)(long)t.ExclusionRadiusMm);
+                Mix(ref h, (ulong)(long)t.SpeedPermilleMean);
+                Mix(ref h, (ulong)(long)t.MoveMsMean);
+                Mix(ref h, (ulong)(long)t.PauseMsMean);
+                Mix(ref h, t.HomeDirection);
+                Mix(ref h, t.HomeFacing);
+                Mix(ref h, t.Seed);
+                Mix(ref h, (ulong)t.PropRole);
+                Mix(ref h, (ulong)t.Team.Count);
+                for (int m = 0; m < t.Team.Count; m++)
+                {
+                    TrainerTeamMember member = t.Team[m];
+                    Mix(ref h, member.CreatureId);
+                    Mix(ref h, (ulong)member.Level);
+                }
+            }
+
+            return h;
+        }
+
+        private static IReadOnlyList<CreatureDef> FilterByStage(IReadOnlyList<CreatureDef> wildPool, CreatureStage maxStage)
+        {
+            List<CreatureDef> filtered = null;
+            for (int i = 0; i < wildPool.Count; i++)
+            {
+                if (wildPool[i].Stage <= maxStage)
+                {
+                    if (filtered != null)
+                    {
+                        filtered.Add(wildPool[i]);
+                    }
+                }
+                else if (filtered == null)
+                {
+                    filtered = new List<CreatureDef>(wildPool.Count);
+                    for (int j = 0; j < i; j++)
+                    {
+                        filtered.Add(wildPool[j]);
+                    }
+                }
+            }
+
+            return filtered != null && filtered.Count > 0 ? filtered : wildPool;
+        }
+
+        private static void Mix(ref ulong h, ulong v)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                h ^= (v >> (i * 8)) & 0xFF;
+                h *= 1099511628211UL;
+            }
+        }
+
+        private static void Mix(ref ulong h, string s)
+        {
+            if (s != null)
+            {
+                foreach (char c in s)
+                {
+                    Mix(ref h, c);
+                }
+            }
+
+            Mix(ref h, 0xFFFFUL);
+        }
+
+        private static void Mix(ref ulong h, float3 v)
+        {
+            Mix(ref h, (ulong)(long)math.round(v.x * 1e4f));
+            Mix(ref h, (ulong)(long)math.round(v.y * 1e4f));
+            Mix(ref h, (ulong)(long)math.round(v.z * 1e4f));
         }
     }
 }
