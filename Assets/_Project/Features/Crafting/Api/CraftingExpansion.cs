@@ -511,7 +511,7 @@ namespace Cosmimera.Crafting
             {
                 return new AccessoryEnchantResult(true, primaryElement, new[]
                 {
-                    new EffectSpec(EffectType.MasteryMod, false, primaryElement, 12, 0, 1),
+                    new EffectSpec(EffectType.MasteryMod, false, primaryElement, AccessoryElementMastery, 0, 1),
                 });
             }
 
@@ -524,10 +524,63 @@ namespace Cosmimera.Crafting
             if (thirdIdx >= b) thirdIdx++;
             return new AccessoryEnchantResult(false, null, new[]
             {
-                new EffectSpec(EffectType.ResistMod, false, primaryElement, 8, 0, 1),
-                new EffectSpec(EffectType.ResistMod, false, (Element)secondIdx, 8, 0, 1),
-                new EffectSpec(EffectType.ResistMod, false, (Element)thirdIdx, 8, 0, 1),
+                new EffectSpec(EffectType.ResistMod, false, primaryElement, AccessoryResist, 0, 1),
+                new EffectSpec(EffectType.ResistMod, false, (Element)secondIdx, AccessoryResist, 0, 1),
+                new EffectSpec(EffectType.ResistMod, false, (Element)thirdIdx, AccessoryResist, 0, 1),
             });
+        }
+
+        /// <summary>Mastery points of one accessory elemental enchant slot (also the magic-cube sub's element grant).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int AccessoryElementMastery = 12;
+
+        /// <summary>Resist points per resistance of one accessory resist enchant slot (also the magic-cube sub's grant).</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const int AccessoryResist = 8;
+
+        /// <summary>
+        /// Effects a magic-cube sub-partner gives its main: the same two slots as an enchanted accessory, derived from the
+        /// sub species instead of rolled — slot 1 = its strongest mastery element (+ 100% floor), slot 2 = its three
+        /// strongest resistances. REQ: docs/design/crafting.md#魔術方塊副手.
+        /// </summary>
+        /// <remarks>
+        /// Pre: masteryElement defined (the sub's highest-mastery element; caller resolves ties); resistByElement has
+        ///      10 entries indexed by Element.
+        /// Post: 4 effects (1 MasteryMod on masteryElement, 3 ResistMod on distinct elements) at full strength (no 25%
+        ///       partner share); resists ranked by value, ties to the lower Element index. The caller also sets the
+        ///       100% mastery floor on masteryElement.
+        /// Side effects: none.
+        /// </remarks>
+        public static IReadOnlyList<EffectSpec> CubePartnerEffects(Element masteryElement, IReadOnlyList<int> resistByElement)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(Element), masteryElement), "invalid element");
+            Contract.Requires(resistByElement != null && resistByElement.Count == 10, "need 10 resist entries");
+            var best = new EffectSpec(EffectType.MasteryMod, false, masteryElement, AccessoryElementMastery, 0, 1);
+            var picked = new List<Element>(3);
+            while (picked.Count < 3)
+            {
+                Element top = default;
+                int topValue = int.MinValue;
+                for (int e = (int)Element.Metal; e <= (int)Element.Shadow; e++)
+                {
+                    if (picked.Contains((Element)e)) continue;
+                    int value = resistByElement[e];
+                    if (value > topValue) { top = (Element)e; topValue = value; }
+                }
+
+                picked.Add(top);
+            }
+
+            var effects = new List<EffectSpec>(4)
+            {
+                best,
+            };
+            foreach (Element e in picked)
+            {
+                effects.Add(new EffectSpec(EffectType.ResistMod, false, e, AccessoryResist, 0, 1));
+            }
+
+            return effects.AsReadOnly();
         }
 
         /// <summary>Checks whether equipment can be repaired at <paramref name="location"/>.</summary>

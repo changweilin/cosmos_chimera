@@ -634,6 +634,7 @@ namespace Cosmimera.Net.Runtime.Model
 
             EffectBook book = BookFor(spec.Def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
+            combatant.Level = spec.Level;
             float bodyRadiusM = Encounter.BodyRadiusFor(spec.Def.SizeClass);
             float collisionRadiusM = _balance.Collision.BodyMm(spec.Def.SizeClass) * 0.001f;
             float3 pos = GroundPoint(direction, bodyRadiusM);

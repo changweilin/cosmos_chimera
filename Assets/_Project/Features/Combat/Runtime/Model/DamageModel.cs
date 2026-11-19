@@ -1,4 +1,5 @@
 using Cosmimera.Core.Contracts;
+using Cosmimera.GameData;
 
 namespace Cosmimera.Combat
 {
@@ -58,8 +59,11 @@ namespace Cosmimera.Combat
         ///       non-decreasing in power, masteryPercent, attack, levelDiff; non-increasing in resistPercent, defence.
         /// Side effects: none (pure).
         /// </remarks>
-        public static int Compute(int power, int masteryPercent, int resistPercent, int attack, int defence, int levelDiff = 0)
+        public static int Compute(int power, int masteryPercent, int resistPercent, int attack, int defence, int levelDiff = 0,
+            int attackerLevelPpm = LevelCurve.PpmOne)
         {
+            Contract.Requires(attackerLevelPpm > 0 && attackerLevelPpm <= LevelCurve.PpmOne,
+                "attackerLevelPpm must be in 1..LevelCurve.PpmOne");
             Contract.Requires(power >= 0 && power <= MaxPower, "power must be in 0..MaxPower");
             Contract.Requires(masteryPercent >= 0 && masteryPercent <= MaxMasteryPercent,
                 "masteryPercent must be in 0..MaxMasteryPercent");
@@ -86,6 +90,13 @@ namespace Cosmimera.Combat
             }
 
             long num = (long)power * Pow2StepTable[r];
+            if (attackerLevelPpm != LevelCurve.PpmOne)
+            {
+                // Why: base damage follows the attacker's level on the same curve as max HP (LevelCurve), so the
+                // damage/HP ratio of a matchup depends on the level difference only. Max num 1e5 × 2^21 × 1e6 fits Int64.
+                num = (num * attackerLevelPpm + LevelCurve.PpmOne / 2) / LevelCurve.PpmOne;
+            }
+
             int shift = 20 - (int)k; // 1..49: fits Int64 without shift overflow.
             long damage = (num + (1L << (shift - 1))) >> shift;
             return damage < 1 ? 1 : damage > int.MaxValue ? int.MaxValue : (int)damage;

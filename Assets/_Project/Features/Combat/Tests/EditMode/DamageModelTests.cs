@@ -1,4 +1,5 @@
 using Cosmimera.Core.Contracts;
+using Cosmimera.GameData;
 using NUnit.Framework;
 
 namespace Cosmimera.Combat.Tests
@@ -83,6 +84,45 @@ namespace Cosmimera.Combat.Tests
         public void Out_of_range_inputs_violate_the_contract(int power, int mastery, int atk, int def)
         {
             Assert.Throws<ContractException>(() => DamageModel.Compute(power, mastery, 100, atk, def));
+        }
+
+        [Test]
+        public void Level_100_attacker_is_unscaled_and_lower_levels_scale_down()
+        {
+            Assert.AreEqual(60, DamageModel.Compute(60, 100, 100, 100, 100, 0, LevelCurve.Ppm(100)));
+            Assert.AreEqual(6, DamageModel.Compute(60, 100, 100, 100, 100, 0, LevelCurve.Ppm(1)));
+        }
+
+        [TestCase(1, 1)]
+        [TestCase(10, 10)]
+        [TestCase(37, 37)]
+        [TestCase(100, 100)]
+        [TestCase(60, 40)]
+        [TestCase(20, 80)]
+        public void Same_level_difference_gives_the_same_damage_to_hp_ratio(int attackerLevel, int targetLevel)
+        {
+            // Large numbers so integer rounding is far below the 0.1% tolerance.
+            const int power = 100_000;
+            const int baseHp = 1_000_000_000;
+            int diff = attackerLevel - targetLevel;
+            double Ratio(int la, int ld) =>
+                DamageModel.Compute(power, 100, 100, 100, 100, 0, LevelCurve.Ppm(la)) / (double)LevelCurve.Scale(baseHp, ld);
+
+            int refTarget = diff >= 0 ? 1 : 1 - diff;
+            int refAttacker = refTarget + diff;
+            Assert.AreEqual(Ratio(refAttacker, refTarget), Ratio(attackerLevel, targetLevel),
+                Ratio(refAttacker, refTarget) * 1e-3, $"diff {diff}");
+        }
+
+        [Test]
+        public void Level_curve_is_strictly_increasing_between_ten_percent_and_one()
+        {
+            Assert.AreEqual(100_000, LevelCurve.Ppm(1));
+            Assert.AreEqual(LevelCurve.PpmOne, LevelCurve.Ppm(100));
+            for (int l = 2; l <= 100; l++)
+            {
+                Assert.Greater(LevelCurve.Ppm(l), LevelCurve.Ppm(l - 1), $"level {l}");
+            }
         }
     }
 }

@@ -20,6 +20,32 @@ namespace Cosmimera.Crafting.Tests
         }
 
         [Test]
+        public void Cube_partner_grants_full_strength_element_and_top_three_resists()
+        {
+            var resist = new[] { 100, 100, 100, 150, 100, 130, 100, 100, 130, 100 };
+            IReadOnlyList<EffectSpec> fx = CraftingExpansionRules.CubePartnerEffects(Element.Light, resist);
+
+            Assert.That(fx.Count, Is.EqualTo(4));
+            Assert.That(fx[0].Type, Is.EqualTo(EffectType.MasteryMod));
+            Assert.That(fx[0].Element, Is.EqualTo(Element.Light));
+            Assert.That(fx[0].Delta, Is.EqualTo(CraftingExpansionRules.AccessoryElementMastery));
+            Assert.That(fx[1].Element, Is.EqualTo(Element.Fire));
+            Assert.That(fx[2].Element, Is.EqualTo(Element.Ice), "tie 130 goes to the lower element index");
+            Assert.That(fx[3].Element, Is.EqualTo(Element.Light));
+            for (int i = 1; i < 4; i++)
+            {
+                Assert.That(fx[i].Type, Is.EqualTo(EffectType.ResistMod));
+                Assert.That(fx[i].Delta, Is.EqualTo(CraftingExpansionRules.AccessoryResist), "no 25% partner share");
+            }
+        }
+
+        [Test]
+        public void Cube_partner_rejects_a_short_resist_table()
+        {
+            Assert.Throws<ContractException>(() => CraftingExpansionRules.CubePartnerEffects(Element.Fire, new int[9]));
+        }
+
+        [Test]
         public void Durability_degrades_to_zero_and_repairs_to_max()
         {
             var d = new DurabilityState(10);

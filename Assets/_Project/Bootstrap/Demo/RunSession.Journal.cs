@@ -69,8 +69,25 @@ namespace Cosmimera.Bootstrap.Demo
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
                 _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(_setup.PartyIds[slot]), _balance.Grips);
             var combinedEffects = new List<EffectSpec>(equipment.CreatureEffects);
+            var cubeFloors = new List<Element>();
             if (_setup.Partners != null)
             {
+                foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
+                {
+                    OwnedCreature cube = OwnedAtDeparture(subId);
+                    if (cube.Vessel != VesselKind.MagicCube) continue;
+                    // REQ: crafting.md#魔術方塊副手 — full-strength accessory-style grant from the sub's own specialties.
+                    CreatureDef cubeDef = RequireCreature(cube.SpeciesId);
+                    Core.Contracts.Contract.Requires(cubeDef.Mastery.Count > 0, "cube sub species has no mastery element");
+                    ElementValue strongest = cubeDef.Mastery[0];
+                    foreach (ElementValue m in cubeDef.Mastery) if (m.Value > strongest.Value) strongest = m;
+                    var resists = new int[10];
+                    for (int e = 0; e < 10; e++) resists[e] = cubeDef.GetResist((Element)e);
+                    IReadOnlyList<EffectSpec> grant = CraftingExpansionRules.CubePartnerEffects(strongest.Element, resists);
+                    if (combinedEffects.Count + grant.Count > 32) continue;
+                    combinedEffects.AddRange(grant);
+                    cubeFloors.Add(strongest.Element);
+                }
                 foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
                 {
                     // REQ: crafting.md#穿戴與數值 — only the sub's effect rows reach the main; its weapons stay with it.
@@ -86,6 +103,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
             unit.Combatant.Book.SetEquipmentEffects(combinedEffects);
+            foreach (Element floorElement in cubeFloors) unit.Combatant.SetElementMasteryFloor(floorElement, true);
             unit.Combatant.SetWeapons(equipment.Weapons);
             if (_setup.PartyIds != null && slot < _setup.PartyIds.Count)
             {

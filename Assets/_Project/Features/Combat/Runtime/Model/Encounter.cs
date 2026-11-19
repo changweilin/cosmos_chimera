@@ -1734,6 +1734,7 @@ namespace Cosmimera.Combat
 
             EffectBook book = BookFor(def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
+            combatant.Level = level;
             float radius = BodyRadiusFor(def.SizeClass);
             int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
             if (boss)
@@ -1806,6 +1807,7 @@ namespace Cosmimera.Combat
 
             CreatureStats s = u.Def.Stats.AtLevel(level);
             u.Combatant.Rescale(s);
+            u.Combatant.Level = level;
             u.Speed = s.Speed;
             u.Level = level;
         }

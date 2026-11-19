@@ -258,9 +258,11 @@ namespace Cosmimera.Combat
     {
         internal CastContext(in CastMove move, int masteryPercent, long rangePercentSum, int cooldownMs, long castAtMs,
             int powerDeltaPercent = 0, int weaponPowerPermille = 1000, int accuracyDelta = 0, int critRatePermille = 0,
-            int critDamagePercent = 100, int attack = 0)
+            int critDamagePercent = 100, int attack = 0, int attackerLevelPpm = LevelCurve.PpmOne)
         {
             Attack = attack;
+            // Offset keeps default(CastContext) at the neutral 1.0 scale.
+            AttackerLevelPpmOffset = attackerLevelPpm - LevelCurve.PpmOne;
             AccuracyDelta = accuracyDelta;
             CritRatePermille = critRatePermille;
             CritDamageOffsetPercent = critDamagePercent - 100;
@@ -299,6 +301,12 @@ namespace Cosmimera.Combat
         public int PowerDeltaPercent { get; }
 
         private int WeaponPowerOffsetPermille { get; }
+
+        private int AttackerLevelPpmOffset { get; }
+
+        /// <summary>Caster's <see cref="LevelCurve"/> damage scale frozen at cast time, ppm.</summary>
+        /// <remarks>Pre: none. Post: 1..LevelCurve.PpmOne (PpmOne on default). Side effects: none.</remarks>
+        public int AttackerLevelPpm => LevelCurve.PpmOne + AttackerLevelPpmOffset;
 
         /// <summary>Caster's attack for the move's polarity (陰攻 or 陽攻) frozen at cast time (combat.md#傷害公式).</summary>
         /// <remarks>Pre: none. Post: >= 0. Side effects: none.</remarks>
@@ -431,6 +439,7 @@ namespace Cosmimera.Combat
         private readonly int[] _resist = new int[ElementCount];
         private readonly ModifierTotals _totals = new ModifierTotals();
         private int _hpMultiplier = 1;
+        private int _level = 100;
         private int _preOverloadMaxHp;
         private CreatureStats _preOverloadCore;
         private int[] _preOverloadMastery;
@@ -479,6 +488,21 @@ namespace Cosmimera.Combat
         /// <summary>Max HP from the HP stat (× the boss multiplier).</summary>
         /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
         public int MaxHp { get; private set; }
+
+        /// <summary>Individual level whose <see cref="LevelCurve"/> scale multiplies this combatant's outgoing base damage.</summary>
+        /// <remarks>
+        /// Pre: set 1..100 by whoever applied AtLevel to the core; default 100 (scale 1.0) keeps level-less callers unchanged.
+        /// Post: read by BeginCast (frozen into the CastContext). Side effects: none.
+        /// </remarks>
+        public int Level
+        {
+            get => _level;
+            internal set
+            {
+                Contract.Requires(value >= 1 && value <= 100, "level must be 1..100");
+                _level = value;
+            }
+        }
 
         /// <summary>Current (level-scaled; overload form while overloaded) six core stats.</summary>
         /// <remarks>Pre: none. Post: every value >= 0. Side effects: none.</remarks>
@@ -778,7 +802,7 @@ namespace Cosmimera.Combat
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
                 weather.PowerDeltaPercent(move.Element), weaponPower,
                 ClampInt(_totals.AccuracyDelta + weaponAcc, -1000, 1000),
-                critRatePermille, critDamagePercent, _core.Attack(move.Polarity));
+                critRatePermille, critDamagePercent, _core.Attack(move.Polarity), LevelCurve.Ppm(Level));
             return CastResult.Accepted;
         }
 
@@ -950,7 +974,7 @@ namespace Cosmimera.Combat
             {
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
-                    cast.Attack, _core.Defence(move.Polarity));
+                    cast.Attack, _core.Defence(move.Polarity), 0, cast.AttackerLevelPpm);
                 critical = HitResolver.RollCrit(cast.CritRatePermille, ref rng);
                 if (critical)
                 {
@@ -1023,7 +1047,7 @@ namespace Cosmimera.Combat
                 Book.Collect(nowMs, Hp, MaxHp, _totals);
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(move.Power, cast.MasteryPercent, resist,
-                    cast.Attack, _core.Defence(move.Polarity));
+                    cast.Attack, _core.Defence(move.Polarity), 0, cast.AttackerLevelPpm);
                 damage = raw > Hp ? Hp : raw;
                 Hp -= damage;
                 if (Hp == 0)
@@ -1077,7 +1101,7 @@ namespace Cosmimera.Combat
             int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
             // combat.md#傷害公式: the reflected move turns back on its caster, so its own defence applies (like its resist).
             int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
-                cast.Attack, _core.Defence(move.Polarity));
+                cast.Attack, _core.Defence(move.Polarity), 0, cast.AttackerLevelPpm);
             long scaled = ((long)raw * percent + 50) / 100;
             int amount = (int)System.Math.Min(int.MaxValue, raw > 0 && scaled == 0 ? 1 : scaled);
             int hpBefore = Hp;

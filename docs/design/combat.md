@@ -13,10 +13,12 @@ R         = target.resist[move.element]
 atk_mult  = 2^((A − D) / 50)
 elem_mult = 2^((E − 100) / 50)            # 100 為 1×；125 ≈ 1.414×；0 = 0.25×
 res_mult  = 2^(−(R − 100) / 50)           # 100 為 1×；150 = 0.5×；50 = 2×；25 ≈ 2.828×；175 ≈ 0.354×
-lvl_mult  = f_level(attacker.level − target.level)   # 等級差倍率（待定係數，放 Data/balance.json）
-damage    = move.power × atk_mult × elem_mult × res_mult × lvl_mult
+lvl_scale = 10^((attacker.level − 100) / 99)          # 等級基礎傷害倍率（LevelCurve；LV1 = 0.1、LV100 = 1），施放被接受時凍結
+lvl_mult  = f_level(attacker.level − target.level)   # 額外等級差倍率（待定係數，放 Data/balance.json；未接線＝×1）
+damage    = move.power × lvl_scale × atk_mult × elem_mult × res_mult × lvl_mult
 crit      → damage × crit_damage          # 見〈暴擊〉
 ```
+- **等級與 HP 同曲線**：宙獸最大 HP 用同一條 `10^((L − 100) / 99)`（見 [level-progression.md](level-progression.md#能力值縮放)），所以任一對戰組合（相同攻方／守方物種、招式）的 `damage / 目標最大HP` ＝ `10^((攻方等級 − 守方等級) / 99)`，**只取決於等級差**，與絕對等級無關（忽略進位）。例：LV10 打 LV10 與 LV80 打 LV80 的傷害佔 HP 比例相同；攻方高 10 級約多 1.26 倍。場景物件與玩家角色目標不套 `lvl_scale`（玩家 HP 不隨等級縮放，暫維持原狀）。
 - **抗性與弱點**：`R < 100` 表示弱點（受到更多傷害）、`R > 100` 表示抗性（減少受傷）；基礎抗性範圍 25–175，不再有 `resist = 100` 免疫（實作時以定點數／查表計算指數確保跨端決定性）。
 - **等級不縮放攻守**：陰陽攻守**不隨等級線性縮放**（直接以物種基礎值＋裝備／被動修正進入 `A − D`），以維持同級對戰「每 50 點差 ＝ 2 倍」的關係不因低等級被壓縮；等級差改由獨立倍率 `lvl_mult` 體現。
 - **沒有六能力值的目標**：**場景物件** `atk_mult` 與 `lvl_mult` 固定 ×1（只看屬性、物質與生活技能加成，見 [destructibles.md#傷害](destructibles.md#傷害)）。
