@@ -79,7 +79,16 @@
         "craft_enchant_light",
         "craft_enchant_fire",
         "craft_enchant_shadow",
-        "swim"
+        "swim",
+        "freeze_prep",
+        "forage_fungi",
+        "ferment_cure",
+        "smoke_dry",
+        "chill_brew",
+        "ice_stride",
+        "sense_treasure",
+        "weather_ward",
+        "camp_beacon"
       ]
     },
     "percent": { "type": "integer", "minimum": 0, "maximum": 100 },

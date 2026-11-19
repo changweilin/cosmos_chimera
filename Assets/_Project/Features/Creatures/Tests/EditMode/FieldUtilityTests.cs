@@ -190,6 +190,7 @@ namespace Cosmimera.Creatures.Tests
             Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.CastNet));
             Assert.AreEqual(FieldUtilityKind.Move, FieldUtilityRules.GetKind(FieldUtility.HarvestCrops));
             Assert.AreEqual(FieldUtilityKind.Trait, FieldUtilityRules.GetKind(FieldUtility.CulinaryPrep));
+            Assert.AreEqual(FieldUtilityKind.Trait, FieldUtilityRules.GetKind(FieldUtility.FreezePrep));
 
             Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HuntGround, Element.Fire));
             Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HuntSky, Element.Wind));
@@ -197,6 +198,8 @@ namespace Cosmimera.Creatures.Tests
             Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.CastNet, Element.Water));
             Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.HarvestCrops, Element.Wood));
             Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.CulinaryPrep, Element.Ice));
+            Assert.IsTrue(FieldUtilityRules.IsElementAligned(FieldUtility.FreezePrep, Element.Ice));
+            Assert.IsFalse(FieldUtilityRules.IsElementAligned(FieldUtility.FreezePrep, Element.Fire));
 
             var active = new HashSet<FieldUtility>
             {
@@ -206,6 +209,7 @@ namespace Cosmimera.Creatures.Tests
                 FieldUtility.CastNet,
                 FieldUtility.HarvestCrops,
                 FieldUtility.CulinaryPrep,
+                FieldUtility.FreezePrep,
             };
             TeamUtilityModifiers mods = FieldUtilityRules.ComputeTeamModifiers(active);
             Assert.IsTrue(mods.CanHuntGround);
@@ -214,6 +218,41 @@ namespace Cosmimera.Creatures.Tests
             Assert.IsTrue(mods.CanCastNet);
             Assert.IsTrue(mods.CanHarvestCrops);
             Assert.IsTrue(mods.CanCulinaryPrep);
+            Assert.IsTrue(mods.CanFreezePrep);
+        }
+
+        [Test]
+        public void FieldUtilityRoster_BalancesMoveTraitHalfAndElementSpread()
+        {
+            int moveCount = 0;
+            int traitCount = 0;
+            var elementCounts = new Dictionary<Element, int>();
+            foreach (Element e in Enum.GetValues(typeof(Element)))
+            {
+                elementCounts[e] = 0;
+            }
+
+            foreach (FieldUtility u in Enum.GetValues(typeof(FieldUtility)))
+            {
+                if (u == FieldUtility.None) continue;
+                FieldUtilityKind kind = FieldUtilityRules.GetKind(u);
+                if (kind == FieldUtilityKind.Move) moveCount++;
+                else if (kind == FieldUtilityKind.Trait) traitCount++;
+
+                foreach (Element e in Enum.GetValues(typeof(Element)))
+                {
+                    if (FieldUtilityRules.IsElementAligned(u, e))
+                    {
+                        elementCounts[e]++;
+                    }
+                }
+            }
+
+            Assert.AreEqual(moveCount, traitCount, "Move and Trait counts should be equal (50/50 split).");
+            foreach (KeyValuePair<Element, int> kv in elementCounts)
+            {
+                Assert.That(kv.Value, Is.InRange(12, 13), $"Element {kv.Key} count {kv.Value} out of balanced range 12..13.");
+            }
         }
 
         [Test]

@@ -1460,9 +1460,179 @@
     "ja": "作物収穫"
   },
   "utility.CulinaryPrep": {
-    "zh-TW": "食材處理",
+    "zh-TW": "精細備料",
     "en": "Culinary preparation",
     "ja": "下ごしらえ"
+  },
+  "utility.FreezePrep": {
+    "zh-TW": "急凍保鮮",
+    "en": "Cryo preservation",
+    "ja": "急速冷凍保存"
+  },
+  "utility.ForageFungi": {
+    "zh-TW": "菌菇採萃",
+    "en": "Fungi foraging",
+    "ja": "茸採取"
+  },
+  "utility.FermentCure": {
+    "zh-TW": "發酵醃漬",
+    "en": "Ferment & cure",
+    "ja": "発酵熟成"
+  },
+  "utility.SmokeDry": {
+    "zh-TW": "風乾燻製",
+    "en": "Smoke-dry",
+    "ja": "燻製乾燥"
+  },
+  "utility.ChillBrew": {
+    "zh-TW": "冰鎮特調",
+    "en": "Chill brew",
+    "ja": "冷製調合"
+  },
+  "utility.IceStride": {
+    "zh-TW": "凝冰踏浪",
+    "en": "Ice stride",
+    "ja": "氷結歩行"
+  },
+  "utility.SenseTreasure": {
+    "zh-TW": "秘寶感應",
+    "en": "Treasure sense",
+    "ja": "秘宝感知"
+  },
+  "utility.WeatherWard": {
+    "zh-TW": "極境適應",
+    "en": "Weather ward",
+    "ja": "悪天候耐性"
+  },
+  "utility.CampBeacon": {
+    "zh-TW": "野營信標",
+    "en": "Camp beacon",
+    "ja": "野営ビーコン"
+  },
+  "utility.GatherEssence": {
+    "zh-TW": "星塵採萃",
+    "en": "Essence gathering",
+    "ja": "星屑採取"
+  },
+  "utility.CraftSmeltFire": {
+    "zh-TW": "熾火熔煉",
+    "en": "Fire smelting",
+    "ja": "熾火精錬"
+  },
+  "utility.CraftSmeltMetal": {
+    "zh-TW": "精金熔煉",
+    "en": "Metal smelting",
+    "ja": "精金精錬"
+  },
+  "utility.CraftSmeltThunder": {
+    "zh-TW": "電弧熔煉",
+    "en": "Thunder smelting",
+    "ja": "電弧精錬"
+  },
+  "utility.CraftWeaveWood": {
+    "zh-TW": "植纖紡織",
+    "en": "Woodland weaving",
+    "ja": "植繊織物"
+  },
+  "utility.CraftWeaveWind": {
+    "zh-TW": "風梭紡織",
+    "en": "Wind weaving",
+    "ja": "風梭織物"
+  },
+  "utility.CraftWeaveShadow": {
+    "zh-TW": "暗影紡織",
+    "en": "Shadow weaving",
+    "ja": "暗影織物"
+  },
+  "utility.CraftTailorWood": {
+    "zh-TW": "森葉裁縫",
+    "en": "Woodland tailoring",
+    "ja": "森葉裁縫"
+  },
+  "utility.CraftTailorShadow": {
+    "zh-TW": "影線裁縫",
+    "en": "Shadow tailoring",
+    "ja": "影糸裁縫"
+  },
+  "utility.CraftTailorLight": {
+    "zh-TW": "光織裁縫",
+    "en": "Light tailoring",
+    "ja": "光織裁縫"
+  },
+  "utility.CraftSmithMetal": {
+    "zh-TW": "百鍊鍛造",
+    "en": "Metal smithing",
+    "ja": "百錬鍛造"
+  },
+  "utility.CraftSmithFire": {
+    "zh-TW": "炎爐鍛造",
+    "en": "Fire smithing",
+    "ja": "炎炉鍛造"
+  },
+  "utility.CraftSmithEarth": {
+    "zh-TW": "岩錘鍛造",
+    "en": "Earth smithing",
+    "ja": "岩鎚鍛造"
+  },
+  "utility.CraftCarpentryWood": {
+    "zh-TW": "原木木工",
+    "en": "Woodland carpentry",
+    "ja": "原木木工"
+  },
+  "utility.CraftCarpentryEarth": {
+    "zh-TW": "堅岩木工",
+    "en": "Earth carpentry",
+    "ja": "堅岩木工"
+  },
+  "utility.CraftCarpentryWind": {
+    "zh-TW": "流風木工",
+    "en": "Wind carpentry",
+    "ja": "流風木工"
+  },
+  "utility.CraftJewelcraftLight": {
+    "zh-TW": "輝光珠寶",
+    "en": "Light jewelcraft",
+    "ja": "輝光宝飾"
+  },
+  "utility.CraftJewelcraftEarth": {
+    "zh-TW": "岩晶珠寶",
+    "en": "Earth jewelcraft",
+    "ja": "岩晶宝飾"
+  },
+  "utility.CraftJewelcraftIce": {
+    "zh-TW": "冰琢珠寶",
+    "en": "Ice jewelcraft",
+    "ja": "氷琢宝飾"
+  },
+  "utility.CraftDyeWood": {
+    "zh-TW": "草木染色",
+    "en": "Botanical dyeing",
+    "ja": "草木染め"
+  },
+  "utility.CraftDyeWater": {
+    "zh-TW": "水洗染色",
+    "en": "Aqua dyeing",
+    "ja": "水洗染色"
+  },
+  "utility.CraftDyeLight": {
+    "zh-TW": "流光染色",
+    "en": "Light dyeing",
+    "ja": "流光染色"
+  },
+  "utility.CraftEnchantLight": {
+    "zh-TW": "聖光附魔",
+    "en": "Light enchanting",
+    "ja": "聖光付与"
+  },
+  "utility.CraftEnchantFire": {
+    "zh-TW": "炎印附魔",
+    "en": "Fire enchanting",
+    "ja": "炎印付与"
+  },
+  "utility.CraftEnchantShadow": {
+    "zh-TW": "幽影附魔",
+    "en": "Shadow enchanting",
+    "ja": "幽影付与"
   },
   "ingredient.category.MeatGround": {
     "zh-TW": "獸肉",
@@ -1905,9 +2075,179 @@
     "ja": "作物収穫"
   },
   "utility.desc.CulinaryPrep": {
-    "zh-TW": "食材處理",
-    "en": "Culinary preparation",
-    "ja": "下ごしらえ"
+    "zh-TW": "研磨穀物與香草並進行冷拌備料，提升料理品質",
+    "en": "Grind grains and cold-mix ingredients to improve dish quality",
+    "ja": "穀物や香草を挽き冷製の下ごしらえを行い料理品質を上げる"
+  },
+  "utility.desc.FreezePrep": {
+    "zh-TW": "將生鮮食材急凍保鮮並作為冷製／精製料理基底",
+    "en": "Cryo-preserve fresh ingredients for chilled or refined recipes",
+    "ja": "生鮮食材を急速冷凍して保存し冷製・精製料理の下地にする"
+  },
+  "utility.desc.ForageFungi": {
+    "zh-TW": "於洞穴、沼澤與林蔭採集菌菇與松露食材",
+    "en": "Forage culinary fungi and truffles in caves, swamps, and shaded woods",
+    "ja": "洞窟や湿地・木陰で食用キノコやトリュフを採取する"
+  },
+  "utility.desc.FermentCure": {
+    "zh-TW": "將肉類、魚類與乳品發酵熟成，延長料理增益時間",
+    "en": "Ferment and cure meats, fish, or dairy to extend dish buff duration",
+    "ja": "肉・魚・乳製品を発酵熟成し料理バフの効果時間を延ばす"
+  },
+  "utility.desc.SmokeDry": {
+    "zh-TW": "以風乾或微火燻製肉果為便攜乾糧，戰鬥間快速回復",
+    "en": "Smoke-dry meats and fruits into portable rations for quick recovery",
+    "ja": "肉や果実を燻製乾燥させ携行食料として素早く回復する"
+  },
+  "utility.desc.ChillBrew": {
+    "zh-TW": "不需生火即可調製冰沙與冷湯特調，提供降溫與異常免疫",
+    "en": "Prepare chilled brews and tonics without fire for cooling and status wards",
+    "ja": "火を使わず冷製ドリンクを調合し冷却と状態異常耐性を得る"
+  },
+  "utility.desc.IceStride": {
+    "zh-TW": "於水面凝結臨時冰道步行並免除冰原雪地打滑減速",
+    "en": "Form temporary ice footing over water and prevent icy terrain slip",
+    "ja": "水面を一時凍らせて渡り氷雪地形の滑り・減速を防ぐ"
+  },
+  "utility.desc.SenseTreasure": {
+    "zh-TW": "擴大寶箱、礦脈、晶簇與遺跡隱藏節點的偵測半徑",
+    "en": "Extend detection range for chests, ore veins, crystals, and ruin nodes",
+    "ja": "宝箱・鉱脈・晶簇・遺跡の隠しノードの感知範囲を広げる"
+  },
+  "utility.desc.WeatherWard": {
+    "zh-TW": "減半暴雪、雷暴、沙塵與濃霧造成的視野與翻滾冷卻懲罰",
+    "en": "Halve harsh weather visibility and roll-cooldown penalties",
+    "ja": "吹雪・雷雨・砂塵・濃霧による視界や回避のペナルティを半減する"
+  },
+  "utility.desc.CampBeacon": {
+    "zh-TW": "紮營料理時驅離低階野生並建立一個野外臨時返回信標",
+    "en": "Ward off low-tier wilds during camp and set one field recall beacon",
+    "ja": "野営中に低位の野生を遠ざけ帰還用ビーコンを1つ設置する"
+  },
+  "utility.desc.GatherEssence": {
+    "zh-TW": "從晶簇、靈苔與異象節點採萃附魔靈質素材",
+    "en": "Gather enchanting essence materials from crystals and anomalies",
+    "ja": "晶簇や霊苔、異象ノードから付与用の霊質素材を採取する"
+  },
+  "utility.desc.CraftSmeltFire": {
+    "zh-TW": "以高熱將原礦熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltMetal": {
+    "zh-TW": "將原礦純化熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltThunder": {
+    "zh-TW": "以高壓電弧將原礦熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "高圧電弧で原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftWeaveWood": {
+    "zh-TW": "將天然纖維紡織成布料",
+    "en": "Weave fibers into cloth",
+    "ja": "繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveWind": {
+    "zh-TW": "以氣流引線將纖維紡織成布料",
+    "en": "Weave fibers into cloth",
+    "ja": "気流で繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveShadow": {
+    "zh-TW": "將纖維紡織成細密布料",
+    "en": "Weave fibers into cloth",
+    "ja": "繊維を緻密な布地へ織り上げる"
+  },
+  "utility.desc.CraftTailorWood": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorShadow": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorLight": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftSmithMetal": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithFire": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithEarth": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftCarpentryWood": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryEarth": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryWind": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftJewelcraftLight": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftEarth": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftIce": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftDyeWood": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeWater": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeLight": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftEnchantLight": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantFire": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantShadow": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
   },
   "ing_boar_flank": {
     "zh-TW": "野豬腹肉",

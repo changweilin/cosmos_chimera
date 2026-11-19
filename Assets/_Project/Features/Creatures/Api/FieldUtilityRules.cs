@@ -42,7 +42,16 @@ namespace Cosmimera.Creatures
             bool canGatherEssence = false,
             bool canSwim = false,
             bool canFly = false,
-            bool canLevitate = false)
+            bool canLevitate = false,
+            bool canFreezePrep = false,
+            bool canForageFungi = false,
+            bool canFermentCure = false,
+            bool canSmokeDry = false,
+            bool canChillBrew = false,
+            bool canIceStride = false,
+            bool canSenseTreasure = false,
+            bool canWeatherWard = false,
+            bool canCampBeacon = false)
         {
             CatchRateBonusPercent = catchRateBonusPercent;
             DropRateBonusPercent = dropRateBonusPercent;
@@ -74,6 +83,15 @@ namespace Cosmimera.Creatures
             CanSwim = canSwim;
             CanFly = canFly;
             CanLevitate = canLevitate;
+            CanFreezePrep = canFreezePrep;
+            CanForageFungi = canForageFungi;
+            CanFermentCure = canFermentCure;
+            CanSmokeDry = canSmokeDry;
+            CanChillBrew = canChillBrew;
+            CanIceStride = canIceStride;
+            CanSenseTreasure = canSenseTreasure;
+            CanWeatherWard = canWeatherWard;
+            CanCampBeacon = canCampBeacon;
         }
 
         /// <summary>Flat bonus (percentage points) added to capture rolls.</summary>
@@ -195,6 +213,42 @@ namespace Cosmimera.Creatures
         /// <summary>True when the team can levitate past the stratosphere cap up to space stations (1.6 R).</summary>
         /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
         public bool CanLevitate { get; }
+
+        /// <summary>True when the team can cryo-preserve raw ingredients into chilled/frozen prep materials.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanFreezePrep { get; }
+
+        /// <summary>True when the team can forage culinary fungi and truffles in caves, swamps, or shaded woods.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanForageFungi { get; }
+
+        /// <summary>True when the team can ferment or cure raw ingredients into aged food supplies.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanFermentCure { get; }
+
+        /// <summary>True when the team can smoke-dry meats and fruits into portable rations.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanSmokeDry { get; }
+
+        /// <summary>True when the team can prepare chilled brews and cold tonics without fire.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanChillBrew { get; }
+
+        /// <summary>True when the team can form temporary ice footing over water and resist icy terrain slip.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanIceStride { get; }
+
+        /// <summary>True when the team has extended detection range for chests, ore veins, and landmarks.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanSenseTreasure { get; }
+
+        /// <summary>True when the team reduces harsh weather visibility and stamina/roll penalties.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanWeatherWard { get; }
+
+        /// <summary>True when the team wards off low-tier wilds during camp and sets a field recall beacon.</summary>
+        /// <remarks>Pre: none. Post: bool. Side effects: none.</remarks>
+        public bool CanCampBeacon { get; }
     }
 
     /// <summary>
@@ -316,6 +370,7 @@ namespace Cosmimera.Creatures
                 case FieldUtility.SetTrap:
                 case FieldUtility.CastNet:
                 case FieldUtility.HarvestCrops:
+                case FieldUtility.ChillBrew:
                 case FieldUtility.CraftSmeltMetal:
                 case FieldUtility.CraftSmeltThunder:
                 case FieldUtility.CraftWeaveWind:
@@ -561,6 +616,15 @@ namespace Cosmimera.Creatures
             bool swim = false;
             bool fly = false;
             bool levitate = false;
+            bool freezePrep = false;
+            bool forageFungi = false;
+            bool fermentCure = false;
+            bool smokeDry = false;
+            bool chillBrew = false;
+            bool iceStride = false;
+            bool senseTreasure = false;
+            bool weatherWard = false;
+            bool campBeacon = false;
 
             foreach (FieldUtility u in activeUtilities)
             {
@@ -605,6 +669,15 @@ namespace Cosmimera.Creatures
                     case FieldUtility.HarvestCrops: harvestCrops = true; break;
                     case FieldUtility.CulinaryPrep: culinaryPrep = true; break;
                     case FieldUtility.GatherEssence: gatherEssence = true; break;
+                    case FieldUtility.FreezePrep: freezePrep = true; break;
+                    case FieldUtility.ForageFungi: forageFungi = true; break;
+                    case FieldUtility.FermentCure: fermentCure = true; break;
+                    case FieldUtility.SmokeDry: smokeDry = true; break;
+                    case FieldUtility.ChillBrew: chillBrew = true; break;
+                    case FieldUtility.IceStride: iceStride = true; break;
+                    case FieldUtility.SenseTreasure: senseTreasure = true; break;
+                    case FieldUtility.WeatherWard: weatherWard = true; break;
+                    case FieldUtility.CampBeacon: campBeacon = true; break;
                 }
             }
 
@@ -638,7 +711,16 @@ namespace Cosmimera.Creatures
                 gatherEssence,
                 swim,
                 fly,
-                levitate);
+                levitate,
+                freezePrep,
+                forageFungi,
+                fermentCure,
+                smokeDry,
+                chillBrew,
+                iceStride,
+                senseTreasure,
+                weatherWard,
+                campBeacon);
         }
 
         /// <summary>Checks whether <paramref name="utility"/> aligns thematically and mechanically with <paramref name="element"/>.</summary>
@@ -670,14 +752,14 @@ namespace Cosmimera.Creatures
                 case FieldUtility.ForageBerries: return element == Element.Wood;
                 case FieldUtility.ProduceMilk: return element == Element.Wood || element == Element.Earth;
                 case FieldUtility.Fishing:
-                case FieldUtility.Swim:
+                case FieldUtility.Swim: return element == Element.Water || element == Element.Ice;
                 case FieldUtility.Dive: return element == Element.Water;
                 case FieldUtility.CookFire: return element == Element.Fire;
                 case FieldUtility.EggHatchBoost:
                 case FieldUtility.CampfireRevive: return element == Element.Fire || element == Element.Light;
                 case FieldUtility.OpenObstacle: return element == Element.Earth || element == Element.Metal || element == Element.Fire;
                 case FieldUtility.DropRateUp: return element == Element.Earth || element == Element.Metal || element == Element.Shadow;
-                case FieldUtility.PreventEscape: return element == Element.Ice || element == Element.Earth || element == Element.Shadow;
+                case FieldUtility.PreventEscape: return element == Element.Ice || element == Element.Shadow;
                 case FieldUtility.WeatherControl: return element == Element.Wind || element == Element.Water || element == Element.Fire;
                 case FieldUtility.Levitate: return element == Element.Wind || element == Element.Light || element == Element.Thunder;
                 case FieldUtility.Fly: return element == Element.Wind || element == Element.Light || element == Element.Fire;
@@ -686,14 +768,23 @@ namespace Cosmimera.Creatures
                 case FieldUtility.ScoutPotential: return element == Element.Light || element == Element.Metal || element == Element.Thunder;
                 case FieldUtility.ReturnVillage: return element == Element.Light || element == Element.Wood || element == Element.Wind;
                 case FieldUtility.PartyStealth: return element == Element.Shadow || element == Element.Wood || element == Element.Wind;
-                case FieldUtility.StealItem: return element == Element.Shadow || element == Element.Thunder || element == Element.Wind;
+                case FieldUtility.StealItem: return element == Element.Shadow || element == Element.Thunder;
                 case FieldUtility.HuntGround: return element == Element.Fire || element == Element.Earth || element == Element.Shadow || element == Element.Thunder;
-                case FieldUtility.HuntSky: return element == Element.Wind || element == Element.Light || element == Element.Thunder;
-                case FieldUtility.SetTrap: return element == Element.Earth || element == Element.Shadow || element == Element.Wood;
-                case FieldUtility.CastNet: return element == Element.Water || element == Element.Wind;
-                case FieldUtility.HarvestCrops: return element == Element.Wood || element == Element.Earth || element == Element.Metal;
+                case FieldUtility.HuntSky: return element == Element.Wind || element == Element.Thunder;
+                case FieldUtility.SetTrap: return element == Element.Earth || element == Element.Shadow;
+                case FieldUtility.CastNet: return element == Element.Water;
+                case FieldUtility.HarvestCrops: return element == Element.Wood || element == Element.Earth || element == Element.Water;
                 case FieldUtility.CulinaryPrep: return element == Element.Ice || element == Element.Wood || element == Element.Metal || element == Element.Water;
-                case FieldUtility.GatherEssence: return element == Element.Earth || element == Element.Light || element == Element.Metal;
+                case FieldUtility.FreezePrep: return element == Element.Ice;
+                case FieldUtility.GatherEssence: return element == Element.Earth || element == Element.Ice || element == Element.Metal;
+                case FieldUtility.ForageFungi: return element == Element.Shadow || element == Element.Earth;
+                case FieldUtility.FermentCure: return element == Element.Water || element == Element.Wood || element == Element.Shadow;
+                case FieldUtility.SmokeDry: return element == Element.Wind || element == Element.Fire;
+                case FieldUtility.ChillBrew:
+                case FieldUtility.IceStride: return element == Element.Ice || element == Element.Water;
+                case FieldUtility.SenseTreasure: return element == Element.Metal || element == Element.Thunder || element == Element.Light;
+                case FieldUtility.WeatherWard: return element == Element.Ice || element == Element.Thunder || element == Element.Water;
+                case FieldUtility.CampBeacon: return element == Element.Thunder || element == Element.Fire || element == Element.Metal;
                 case FieldUtility.CraftSmeltFire:
                 case FieldUtility.CraftSmithFire:
                 case FieldUtility.CraftEnchantFire: return element == Element.Fire;

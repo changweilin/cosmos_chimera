@@ -207,6 +207,15 @@ namespace Cosmimera.GameData
         CraftEnchantFire = 61,
         CraftEnchantShadow = 62,
         Swim = 63,
+        FreezePrep = 64,
+        ForageFungi = 65,
+        FermentCure = 66,
+        SmokeDry = 67,
+        ChillBrew = 68,
+        IceStride = 69,
+        SenseTreasure = 70,
+        WeatherWard = 71,
+        CampBeacon = 72,
     }
 
     /// <summary>Life-skill methods for acquiring raw food ingredients.</summary>
