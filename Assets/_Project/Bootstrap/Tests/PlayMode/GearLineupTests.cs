@@ -131,8 +131,8 @@ namespace Cosmimera.Bootstrap.Tests
                 {
                     CharacterModelEntry entry = models.Entries[0];
                     preview.SetPlayerTarget(entry.prefab, entry.animatorController, entry.id, worn);
-                    // Front three-quarter, then back three-quarter (the preview starts at yaw 180).
-                    foreach (float turn in new[] { 205f, 180f })
+                    // Front three-quarter, then back three-quarter.
+                    foreach (float turn in new[] { 25f, 180f })
                     {
                         preview.Rotate(turn);
                         preview.SyncPose();

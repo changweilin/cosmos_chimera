@@ -61,7 +61,7 @@ namespace Cosmimera.Bootstrap.Demo
         private Transform _gearRoot;
         private string _targetKey = string.Empty;
         private string _gearKey = string.Empty;
-        private float _yaw = 180f;
+        private float _yaw;
         private bool _disposed;
 
         internal Texture Texture => _rt;

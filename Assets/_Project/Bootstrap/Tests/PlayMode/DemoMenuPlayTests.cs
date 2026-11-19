@@ -130,7 +130,7 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(preview.Texture, Is.Not.Null);
                 preview.SetPlayerTarget(null, null, "capsule", worn);
                 preview.Rotate(45f);
-                Assert.That(preview.Yaw, Is.EqualTo(225f).Within(0.01f));
+                Assert.That(preview.Yaw, Is.EqualTo(45f).Within(0.01f));
                 preview.SyncPose();
 
                 preview.SetCreatureTarget(starters[0], 1, worn);
