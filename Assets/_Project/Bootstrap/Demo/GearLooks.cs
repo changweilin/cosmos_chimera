@@ -406,5 +406,90 @@ namespace Cosmimera.Bootstrap.Demo
         // Irwin–Hall(4) scaled to unit variance, same as ArchitectureMeshes: bounded and bit-stable across clients.
         private static float Gauss(ref Pcg32 rng) =>
             (rng.NextFloat() + rng.NextFloat() + rng.NextFloat() + rng.NextFloat() - 2f) * 1.7320508f;
+
+        /// <summary>Derives a creature block shield's visual spec from its upper/lower armour looks and element colour.</summary>
+        /// <remarks>
+        /// REQ: docs/design/gear-looks.md#宙獸格擋護盾.
+        /// Pre: none (upper and lower may be null).
+        /// Post: HasPattern is true iff at least one of upper/lower is non-null; when both are non-null, Palette/Motif come
+        ///       from upper and Border from lower; when only one is given, all three come from it; Damage is the max.
+        /// Side effects: none (pure).
+        /// </remarks>
+        public static BlockShieldSpec BlockShieldFor(GearLookSpec upper, GearLookSpec lower, UnityEngine.Color elementColor)
+        {
+            if (upper == null && lower == null)
+            {
+                return new BlockShieldSpec(false, elementColor, default, default, default, 0f, 0f, 0f, 0f, 0f);
+            }
+
+            GearLookSpec main = upper ?? lower;
+            GearLookSpec border = lower ?? upper;
+            float damage = upper != null && lower != null ? math.max(upper.Damage, lower.Damage) : main.Damage;
+            return new BlockShieldSpec(true, elementColor, main.Palette, main.Motif, border.Motif,
+                main.HueShift, main.ValueShift, main.Age, damage, main.MotifDensity);
+        }
+    }
+
+    /// <summary>Visual specification of a creature's block shield VFX (P1-17d).</summary>
+    /// <remarks>
+    /// REQ: docs/design/gear-looks.md#宙獸格擋護盾.
+    /// Pre: built by <see cref="GearLooks.BlockShieldFor"/>. Post: immutable. Side effects: none.
+    /// </remarks>
+    public readonly struct BlockShieldSpec
+    {
+        internal BlockShieldSpec(bool hasPattern, UnityEngine.Color elementColor, GearStyle palette, GearStyle motif,
+            GearStyle border, float hueShift, float valueShift, float age, float damage, float motifDensity)
+        {
+            HasPattern = hasPattern;
+            ElementColor = elementColor;
+            Palette = palette;
+            Motif = motif;
+            Border = border;
+            HueShift = hueShift;
+            ValueShift = valueShift;
+            Age = age;
+            Damage = damage;
+            MotifDensity = motifDensity;
+        }
+
+        /// <summary>True when at least one armour piece (upper or lower) is equipped; false for an unpatterned element shield.</summary>
+        /// <remarks>Pre: none. Post: boolean. Side effects: none.</remarks>
+        public bool HasPattern { get; }
+
+        /// <summary>Creature main-element colour used when <see cref="HasPattern"/> is false.</summary>
+        /// <remarks>Pre: none. Post: RGBA colour. Side effects: none.</remarks>
+        public UnityEngine.Color ElementColor { get; }
+
+        /// <summary>Shield palette style (from upper armour, or lower when upper is absent).</summary>
+        /// <remarks>Pre: none. Post: defined when <see cref="HasPattern"/> is true. Side effects: none.</remarks>
+        public GearStyle Palette { get; }
+
+        /// <summary>Center era motif style (from upper armour, or lower when upper is absent).</summary>
+        /// <remarks>Pre: none. Post: defined when <see cref="HasPattern"/> is true. Side effects: none.</remarks>
+        public GearStyle Motif { get; }
+
+        /// <summary>Border motif style (from lower armour, or upper when lower is absent).</summary>
+        /// <remarks>Pre: none. Post: defined when <see cref="HasPattern"/> is true. Side effects: none.</remarks>
+        public GearStyle Border { get; }
+
+        /// <summary>Hue offset applied to the palette.</summary>
+        /// <remarks>Pre: none. Post: bounded scalar. Side effects: none.</remarks>
+        public float HueShift { get; }
+
+        /// <summary>Value offset applied to the palette.</summary>
+        /// <remarks>Pre: none. Post: bounded scalar. Side effects: none.</remarks>
+        public float ValueShift { get; }
+
+        /// <summary>Wear age in [0, 1].</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float Age { get; }
+
+        /// <summary>Damage in [0, 1]; high values add crack lines to the shield face.</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float Damage { get; }
+
+        /// <summary>Motif density in [0, 1].</summary>
+        /// <remarks>Pre: none. Post: in [0, 1]. Side effects: none.</remarks>
+        public float MotifDensity { get; }
     }
 }

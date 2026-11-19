@@ -267,5 +267,36 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() => GearLooks.ForCopy(GearKind.Sword, default));
             Assert.Throws<ContractException>(() => GearLooks.KindFor(null));
         }
+
+        [Test]
+        public void Block_shield_derives_pattern_from_upper_and_lower_or_falls_back_to_element()
+        {
+            var elem = new UnityEngine.Color(0.2f, 0.5f, 0.9f);
+            BlockShieldSpec plain = GearLooks.BlockShieldFor(null, null, elem);
+            Assert.That(plain.HasPattern, Is.False);
+            Assert.That(plain.ElementColor, Is.EqualTo(elem));
+
+            var dmg = new ArchMix(ArchRegion.Lava, ArchEra.Industrial, 0f, 0f, 0.8f);
+            GearLookSpec upper = GearLooks.Sample(GearKind.Upper, GearContext.Combat, ArchRegion.Lava, ArchEra.Agrarian,
+                ArchMix.Pure(ArchRegion.Lava, ArchEra.Agrarian), 1);
+            GearLookSpec lower = GearLooks.Sample(GearKind.Lower, GearContext.Combat, ArchRegion.Ice, ArchEra.Future, dmg, 2);
+
+            BlockShieldSpec both = GearLooks.BlockShieldFor(upper, lower, elem);
+            Assert.That(both.HasPattern, Is.True);
+            Assert.That(both.Palette, Is.EqualTo(upper.Palette));
+            Assert.That(both.Motif, Is.EqualTo(upper.Motif));
+            Assert.That(both.Border, Is.EqualTo(lower.Motif));
+            Assert.That(both.Damage, Is.EqualTo(lower.Damage));
+
+            BlockShieldSpec onlyUpper = GearLooks.BlockShieldFor(upper, null, elem);
+            Assert.That(onlyUpper.HasPattern, Is.True);
+            Assert.That(onlyUpper.Border, Is.EqualTo(upper.Motif));
+
+            BlockShieldSpec onlyLower = GearLooks.BlockShieldFor(null, lower, elem);
+            Assert.That(onlyLower.HasPattern, Is.True);
+            Assert.That(onlyLower.Palette, Is.EqualTo(lower.Palette));
+            Assert.That(onlyLower.Motif, Is.EqualTo(lower.Motif));
+            Assert.That(onlyLower.Border, Is.EqualTo(lower.Motif));
+        }
     }
 }

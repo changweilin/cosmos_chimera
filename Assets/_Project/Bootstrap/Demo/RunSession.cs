@@ -405,6 +405,11 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<FleeingView> _fleeing = new List<FleeingView>();
         private readonly Dictionary<int, CreatureDef> _viewDefs = new Dictionary<int, CreatureDef>();
         private readonly Dictionary<int, SpawnRole> _viewRoles = new Dictionary<int, SpawnRole>();
+        private readonly Dictionary<int, int> _unitSaveIds = new Dictionary<int, int>();
+        private readonly Dictionary<int, GameObject> _blockShields = new Dictionary<int, GameObject>();
+        private readonly List<Mesh> _gearMeshes = new List<Mesh>();
+        private Material _gearMaterial;
+        private Material _handMaterial;
         private ICreatureViewFactory _viewFactory;
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
@@ -721,6 +726,8 @@ namespace Cosmimera.Bootstrap.Demo
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
+            _gearMaterial ??= CreatureGearAttachments.CreateGearMaterial(scenery?.Props ?? Shader.Find("Cosmimera/ToonScenery"), toonShader);
+            _handMaterial ??= CreatureGearAttachments.CreateHandMaterial(toonShader);
             float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
             // REQ: planet-world.md#季節 — one season per planet, from the seed, for the whole run.
             Season season = setup.Season ?? Seasons.For(setup.Seed);
@@ -2549,9 +2556,41 @@ namespace Cosmimera.Bootstrap.Demo
             _views[u.Id] = view;
             _viewDefs[u.Id] = u.Def;
             _viewRoles[u.Id] = role;
+            AttachUnitGearAndShield(u, view.Root);
             // Combat can attach the camera before the first render-frame pose update.
             view.Root.position = u.Position;
             view.Root.gameObject.SetActive(u.Fielded);
+        }
+
+        // REQ: gear-looks.md#範圍, #宙獸格擋護盾 — party creatures carry their equipped weapons/shields in virtual big
+        // hands, hang their charm in front, and show their armour-derived pattern on the block shield VFX.
+        private void AttachUnitGearAndShield(EncounterUnit u, Transform root)
+        {
+            GearLookSpec upper = null;
+            GearLookSpec lower = null;
+            if (_unitSaveIds.TryGetValue(u.Id, out int saveId) && _setup.Equipment != null && _craftCatalog != null)
+            {
+                List<PaperdollGear> worn = CreatureGearAttachments.CollectFor(saveId, _setup.Equipment, _craftCatalog);
+                if (worn.Count > 0)
+                {
+                    var gearRoot = new GameObject("CreatureGear").transform;
+                    gearRoot.SetParent(root, false);
+                    Bounds body = CreatureGearAttachments.ComputeBounds(root.gameObject);
+                    for (int i = 0; i < worn.Count; i++)
+                    {
+                        PaperdollGear g = worn[i];
+                        if (g.Slot == Crafting.EquipmentSlots.Upper) upper = g.Spec;
+                        else if (g.Slot == Crafting.EquipmentSlots.Lower) lower = g.Spec;
+                        else CreatureGearAttachments.AttachCreatureGear(root, gearRoot, g, _gearMaterial, _handMaterial, body, _gearMeshes);
+                    }
+                }
+            }
+
+            if (_gearMaterial != null)
+            {
+                BlockShieldSpec shieldSpec = GearLooks.BlockShieldFor(upper, lower, PlaceholderCreatureViewFactory.ColorOf(u.Def));
+                _blockShields[u.Id] = CreatureGearAttachments.AttachBlockShield(root, shieldSpec, _gearMaterial, u.BodyRadiusM, _gearMeshes);
+            }
         }
 
         private void SyncViews()
@@ -2604,6 +2643,15 @@ namespace Cosmimera.Bootstrap.Demo
                 if (u.Combatant.IsFainted)
                 {
                     view.ShowFainted();
+                }
+
+                if (_blockShields.TryGetValue(u.Id, out GameObject shield) && shield != null)
+                {
+                    bool showShield = u.IsBlocking && !u.Combatant.IsFainted;
+                    if (shield.activeSelf != showShield)
+                    {
+                        shield.SetActive(showShield);
+                    }
                 }
             }
         }
@@ -3354,6 +3402,14 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 view.Dispose();
             }
+
+            for (int i = 0; i < _gearMeshes.Count; i++)
+            {
+                if (_gearMeshes[i] != null) Destroy(_gearMeshes[i]);
+            }
+            _gearMeshes.Clear();
+            if (_gearMaterial != null) Destroy(_gearMaterial);
+            if (_handMaterial != null) Destroy(_handMaterial);
         }
     }
 }

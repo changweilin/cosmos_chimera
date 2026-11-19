@@ -91,16 +91,22 @@ namespace Cosmimera.Bootstrap.Demo
         public static GearPalette PaletteFor(GearLookSpec spec)
         {
             Contract.Requires(spec != null, "spec required");
-            (Color main, Color second, _) = RegionColours(spec.Palette.Region);
-            (_, _, Color accent) = RegionColours(spec.Motif.Region);
-            Color metal = EraMetal(spec.Parts.Era);
-            main = Shift(main, spec.HueShift, spec.ValueShift);
-            second = Shift(second, spec.HueShift * 0.5f, spec.ValueShift);
-            if (spec.Parts.Era == ArchEra.Future) accent = new Color(0.45f, 0.92f, 1f);
-            else if (spec.Parts.Era == ArchEra.Ancient) accent = new Color(0.55f, 1f, 0.78f);
-            if (spec.Parts.Era != ArchEra.Future && spec.Parts.Era != ArchEra.Primal)
-                metal = Color.Lerp(metal, Rust, spec.Damage * 0.6f);
-            return new GearPalette(Age(main, spec.Age), Age(second, spec.Age), Age(metal, spec.Age * 0.7f), Age(accent, spec.Age * 0.5f));
+            return PaletteFrom(spec.Palette, spec.Motif, spec.Parts, spec.HueShift, spec.ValueShift, spec.Age, spec.Damage);
+        }
+
+        private static GearPalette PaletteFrom(GearStyle palette, GearStyle motif, GearStyle parts,
+            float hueShift, float valueShift, float age, float damage)
+        {
+            (Color main, Color second, _) = RegionColours(palette.Region);
+            (_, _, Color accent) = RegionColours(motif.Region);
+            Color metal = EraMetal(parts.Era);
+            main = Shift(main, hueShift, valueShift);
+            second = Shift(second, hueShift * 0.5f, valueShift);
+            if (parts.Era == ArchEra.Future) accent = new Color(0.45f, 0.92f, 1f);
+            else if (parts.Era == ArchEra.Ancient) accent = new Color(0.55f, 1f, 0.78f);
+            if (parts.Era != ArchEra.Future && parts.Era != ArchEra.Primal)
+                metal = Color.Lerp(metal, Rust, damage * 0.6f);
+            return new GearPalette(Age(main, age), Age(second, age), Age(metal, age * 0.7f), Age(accent, age * 0.5f));
         }
 
         /// <summary>Builds the placeholder mesh of one item.</summary>
@@ -110,6 +116,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// within 1.7 × NominalLength × Length of the origin. Side effects: allocates a Mesh.
         /// </remarks>
         public static Mesh Build(GearLookSpec spec)
+        {
+            Contract.Requires(spec != null, "spec required");
+            var data = new SceneryMeshes.MeshData();
+            data.EmitFaceted(BuildPart(spec), 0, FacetCos, null);
+            return data.ToMesh("Gear_" + spec.Kind);
+        }
+
+        internal static SceneryMeshes.Part BuildPart(GearLookSpec spec)
         {
             Contract.Requires(spec != null, "spec required");
             var g = new Kit(spec, PaletteFor(spec));
@@ -168,9 +182,127 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
             }
 
+            return g.Part;
+        }
+
+        /// <summary>Builds a creature block shield VFX mesh from <paramref name="spec"/> (P1-17d).</summary>
+        /// <remarks>
+        /// REQ: docs/design/gear-looks.md#宙獸格擋護盾.
+        /// Pre: main thread.
+        /// Post: non-empty mesh named "BlockShield_Patterned" or "BlockShield_Plain"; facing +Z.
+        /// Side effects: allocates a Mesh.
+        /// </remarks>
+        public static Mesh BuildBlockShield(in BlockShieldSpec spec)
+        {
+            var part = new SceneryMeshes.Part();
+            const float w = 0.45f;
+            const float h = 0.55f;
+            const int n = 6;
+            Color faceCol;
+            Color rimCol;
+            Color motifCol;
+            if (spec.HasPattern)
+            {
+                GearPalette pal = PaletteFrom(spec.Palette, spec.Motif, spec.Motif,
+                    spec.HueShift, spec.ValueShift, spec.Age, spec.Damage);
+                (_, _, Color borderAccent) = RegionColours(spec.Border.Region);
+                faceCol = pal.Main;
+                rimCol = Color.Lerp(pal.Metal, borderAccent, 0.45f);
+                motifCol = pal.Accent;
+            }
+            else
+            {
+                faceCol = Color.Lerp(spec.ElementColor, Color.white, 0.25f);
+                rimCol = Color.Lerp(spec.ElementColor, Color.white, 0.55f);
+                motifCol = faceCol;
+            }
+
+            var rim = new float3[n];
+            for (int i = 0; i < n; i++)
+            {
+                float a = i * 2f * math.PI / n;
+                rim[i] = new float3(math.sin(a) * w, math.cos(a) * h, 0f);
+            }
+
+            int cf = part.Add(new float3(0f, 0f, 0.035f), faceCol, float2.zero);
+            int cb = part.Add(new float3(0f, 0f, -0.02f), Color.Lerp(faceCol, Color.black, 0.2f), float2.zero);
+            int first = part.P.Count;
+            for (int i = 0; i < n; i++)
+            {
+                part.Add(rim[i] + new float3(0f, 0f, 0.01f), faceCol, float2.zero);
+                part.Add(rim[i] - new float3(0f, 0f, 0.02f), rimCol, float2.zero);
+            }
+            var inside = new float3(0f, 0f, -0.005f);
+            for (int i = 0; i < n; i++)
+            {
+                int a = first + i * 2, b = first + ((i + 1) % n) * 2;
+                part.Tri(cf, a, b, inside);
+                part.Tri(cb, a + 1, b + 1, inside);
+                part.Tri(a, b, a + 1, inside);
+                part.Tri(b, b + 1, a + 1, inside);
+            }
+
+            if (spec.HasPattern)
+            {
+                // Border trim from Lower's region/era; era emblem on the front; cracks when Damage is high.
+                for (int i = 0; i < n; i++)
+                {
+                    AddSegmentBox(part, rim[i], rim[(i + 1) % n], spec.Border.Era == ArchEra.Primal ? 0.022f : 0.015f, rimCol);
+                }
+
+                int spokes = spec.Motif.Era switch
+                {
+                    ArchEra.Primal => 2,
+                    ArchEra.Agrarian => 4,
+                    ArchEra.Mercantile => 4,
+                    ArchEra.Industrial => 6,
+                    ArchEra.Steampunk => 6,
+                    ArchEra.Future => 3,
+                    ArchEra.Wasteland => 3,
+                    _ => 5,
+                };
+                for (int k = 0; k < spokes; k++)
+                {
+                    float a = k * math.PI / spokes;
+                    float3 dir = new float3(math.cos(a), math.sin(a), 0f) * (w * 0.42f);
+                    AddSegmentBox(part, -dir + new float3(0f, 0f, 0.036f), dir + new float3(0f, 0f, 0.036f), 0.014f, motifCol);
+                }
+
+                if (spec.Damage >= 0.35f)
+                {
+                    Color crackCol = new Color(0.12f, 0.1f, 0.1f);
+                    int cracks = spec.Damage >= 0.7f ? 3 : 2;
+                    for (int c = 0; c < cracks; c++)
+                    {
+                        float ang = 0.5f + c * 2.1f;
+                        float3 p0 = new float3(math.cos(ang) * 0.05f, math.sin(ang) * 0.05f, 0.042f);
+                        float3 p1 = new float3(math.cos(ang + 0.35f) * w * 0.72f, math.sin(ang + 0.35f) * h * 0.72f, 0.028f);
+                        AddSegmentBox(part, p0, p1, 0.01f, crackCol);
+                    }
+                }
+            }
+
             var data = new SceneryMeshes.MeshData();
-            data.EmitFaceted(g.Part, 0, FacetCos, null);
-            return data.ToMesh("Gear_" + spec.Kind);
+            data.EmitFaceted(part, 0, FacetCos, null);
+            return data.ToMesh(spec.HasPattern ? "BlockShield_Patterned" : "BlockShield_Plain");
+        }
+
+        private static void AddSegmentBox(SceneryMeshes.Part part, float3 a, float3 b, float radius, Color col)
+        {
+            float3 axis = math.normalizesafe(b - a, new float3(0f, 1f, 0f));
+            float3 side = math.normalize(math.cross(axis, math.abs(axis.z) < 0.9f ? new float3(0f, 0f, 1f) : new float3(1f, 0f, 0f))) * radius;
+            float3 front = math.cross(axis, side);
+            int p0 = part.Add(a - side - front, col, float2.zero);
+            int p1 = part.Add(a + side - front, col, float2.zero);
+            int p2 = part.Add(a + side + front, col, float2.zero);
+            int p3 = part.Add(a - side + front, col, float2.zero);
+            int q0 = part.Add(b - side - front, col, float2.zero);
+            int q1 = part.Add(b + side - front, col, float2.zero);
+            int q2 = part.Add(b + side + front, col, float2.zero);
+            int q3 = part.Add(b - side + front, col, float2.zero);
+            float3 mid = (a + b) * 0.5f;
+            int[] f = { p0, p1, q1, p0, q1, q0, p1, p2, q2, p1, q2, q1, p2, p3, q3, p2, q3, q2, p3, p0, q0, p3, q0, q3, p0, p3, p2, p0, p2, p1, q0, q1, q2, q0, q2, q3 };
+            for (int i = 0; i < f.Length; i += 3) part.Tri(f[i], f[i + 1], f[i + 2], mid);
         }
 
         // ---------------------------------------------------------------- kinds

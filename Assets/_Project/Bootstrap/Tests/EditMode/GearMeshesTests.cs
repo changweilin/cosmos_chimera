@@ -92,6 +92,34 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.Throws<ContractException>(() => GearMeshes.NominalLength((GearKind)99));
         }
 
+        [Test]
+        public void Block_shield_mesh_adds_pattern_and_cracks_when_damaged()
+        {
+            Mesh BuildShield(in BlockShieldSpec spec)
+            {
+                Mesh mesh = GearMeshes.BuildBlockShield(spec);
+                _meshes.Add(mesh);
+                return mesh;
+            }
+
+            var elem = new Color(0.2f, 0.6f, 0.9f);
+            Mesh plain = BuildShield(GearLooks.BlockShieldFor(null, null, elem));
+            GearLookSpec upperClean = GearLooks.Sample(GearKind.Upper, GearContext.Combat, ArchRegion.Lava, ArchEra.Agrarian,
+                ArchMix.Pure(ArchRegion.Lava, ArchEra.Agrarian), 3);
+            GearLookSpec lowerClean = GearLooks.Sample(GearKind.Lower, GearContext.Combat, ArchRegion.Ice, ArchEra.Industrial,
+                ArchMix.Pure(ArchRegion.Ice, ArchEra.Industrial), 4);
+            Mesh clean = BuildShield(GearLooks.BlockShieldFor(upperClean, lowerClean, elem));
+
+            var dmg = new ArchMix(ArchRegion.Storm, ArchEra.Wasteland, 0f, 0f, 0.9f);
+            GearLookSpec upperDamaged = GearLooks.Sample(GearKind.Upper, GearContext.Combat, ArchRegion.Storm, ArchEra.Wasteland, dmg, 5);
+            Assume.That(upperDamaged.Damage, Is.GreaterThanOrEqualTo(0.35f));
+            Mesh cracked = BuildShield(GearLooks.BlockShieldFor(upperDamaged, null, elem));
+
+            Assert.That(plain.vertexCount, Is.GreaterThan(0));
+            Assert.That(clean.vertexCount, Is.GreaterThan(plain.vertexCount));
+            Assert.That(cracked.vertexCount, Is.GreaterThan(clean.vertexCount));
+        }
+
         private static float Height(Mesh mesh)
         {
             float lo = float.MaxValue, hi = float.MinValue;

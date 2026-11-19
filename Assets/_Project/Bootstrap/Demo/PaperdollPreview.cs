@@ -225,13 +225,21 @@ namespace Cosmimera.Bootstrap.Demo
             // a yawed AABB would put the creature's side sockets on the wrong axis.
             Quaternion turned = _pivot.localRotation;
             _pivot.localRotation = Quaternion.identity;
-            Material gearMat = GearMaterial();
+            Material gearMat = CreatureGearAttachments.CreateGearMaterial(_sceneryShader, _toonShader);
+            _gearMaterials.Add(gearMat);
+            Material handMat = null;
+            if (isCreature)
+            {
+                handMat = CreatureGearAttachments.CreateHandMaterial(_toonShader);
+                _gearMaterials.Add(handMat);
+            }
             // Measured before any gear joins the hierarchy.
-            Bounds body = isCreature ? ComputeBounds(_model) : default;
+            Bounds body = isCreature ? CreatureGearAttachments.ComputeBounds(_model) : default;
             PlayerRig rig = isCreature ? default : MeasurePlayer();
             for (int i = 0; i < count; i++)
             {
-                if (isCreature) AttachCreatureGear(gear[i], gearMat, body);
+                if (isCreature)
+                    CreatureGearAttachments.AttachCreatureGear(_model.transform, _gearRoot, gear[i], gearMat, handMat, body, _gearMeshes);
                 else AttachPlayerGear(gear[i], gearMat, rig);
             }
             // Side-held weapons widen the silhouette; frame the whole outfit.
@@ -361,88 +369,8 @@ namespace Cosmimera.Bootstrap.Demo
             return null;
         }
 
-        // REQ: gear-looks.md#範圍 — creatures hold weapons and shields in the virtual big hand at Socket_Weapon_R/_L,
-        // never draw armour on the body (only on the block shield, P1-17d), and hang the charm at Socket_Head or
-        // Socket_Core_FX scaled by height. Placeholder bodies have no sockets yet, so both come from the body bounds.
-        private void AttachCreatureGear(in PaperdollGear gear, Material mat, Bounds body)
-        {
-            if (gear.Slot == EquipmentSlots.Upper || gear.Slot == EquipmentSlots.Lower) return;
-            float height = Mathf.Max(0.3f, body.size.y);
-            GearLookSpec spec = gear.Spec;
-            if (gear.Slot == EquipmentSlots.Accessory)
-            {
-                // Upright bodies wear it high (Socket_Head), low wide ones mid-body (Socket_Core_FX); hung just proud of the
-                // front surface because the bounds cannot tell where the placeholder's skin is.
-                bool upright = body.size.y >= body.size.z * 0.8f;
-                float y = upright ? body.max.y - height * 0.3f : body.center.y;
-                Vector3 socket = new Vector3(body.center.x, y, body.max.z + 0.02f);
-                Mount(spec, mat, socket, Quaternion.identity, Vector3.one * Mathf.Clamp(height / 0.8f, 0.6f, 4f), null);
-                return;
-            }
-
-            // The hand is sized to the body so a weapon reads at any creature scale.
-            float scale = Mathf.Clamp(height, 0.6f, 2.5f);
-            float side = gear.Slot == EquipmentSlots.MainHand ? 1f : -1f;
-            var hand = new Vector3(body.center.x + side * (body.extents.x + 0.22f * scale), body.center.y, body.center.z + 0.1f * scale);
-            AddVirtualHand(hand, side, scale);
-            Quaternion grip = spec.Kind == GearKind.Shield ? Quaternion.Euler(0f, side * 25f, 0f) : Quaternion.Euler(55f, 0f, -side * 10f);
-            Mount(spec, mat, hand, grip, Vector3.one * scale, null);
-        }
-
-        private void AddVirtualHand(Vector3 at, float side, float scale)
-        {
-            // Pale placeholder glove so the floating weapon reads as held, not dropped.
-            Material skin = CreateMaterial(new Color(0.9f, 0.92f, 0.98f));
-            _materials.Remove(skin);
-            _gearMaterials.Add(skin);
-            GameObject palm = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            palm.name = side > 0f ? "VirtualHand_R" : "VirtualHand_L";
-            palm.transform.SetParent(_gearRoot, true);
-            palm.transform.position = at;
-            palm.transform.localScale = WorldToLocal(new Vector3(0.16f, 0.13f, 0.11f) * scale);
-            StripColliders(palm);
-            palm.GetComponent<Renderer>().sharedMaterial = skin;
-            GameObject thumb = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            thumb.transform.SetParent(palm.transform, false);
-            thumb.transform.localPosition = new Vector3(-side * 0.45f, 0.25f, 0.35f);
-            thumb.transform.localRotation = Quaternion.Euler(40f, 0f, side * 35f);
-            thumb.transform.localScale = new Vector3(0.35f, 0.4f, 0.35f);
-            StripColliders(thumb);
-            thumb.GetComponent<Renderer>().sharedMaterial = skin;
-        }
-
-        private void Mount(GearLookSpec spec, Material mat, Vector3 at, Quaternion rotation, Vector3 scale, Transform follow)
-        {
-            Mesh mesh = GearMeshes.Build(spec);
-            _gearMeshes.Add(mesh);
-            var go = new GameObject(mesh.name);
-            go.transform.SetParent(_gearRoot, false);
-            go.transform.position = at;
-            go.transform.rotation = _model.transform.rotation * rotation;
-            // Scales are world sizes: creature view roots are scaled by body class, which gear must not inherit.
-            go.transform.localScale = WorldToLocal(scale);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            go.AddComponent<MeshRenderer>().sharedMaterial = mat;
-            // Follow the bone so idle animation carries the gear, keeping the upright pose set above.
-            if (follow != null) go.transform.SetParent(follow, true);
-        }
-
-        private Material GearMaterial()
-        {
-            // Gear colours are baked into vertices, which only the scenery toon shader reads.
-            Material mat = _sceneryShader != null
-                ? PlanetLook.SceneryMaterial(_sceneryShader, Color.white, Color.white, 0f, 0f, 0f, 0f)
-                : CreateMaterial(Color.white);
-            _materials.Remove(mat);
-            _gearMaterials.Add(mat);
-            return mat;
-        }
-
-        private Vector3 WorldToLocal(Vector3 worldScale)
-        {
-            Vector3 parent = _gearRoot.lossyScale;
-            return new Vector3(worldScale.x / parent.x, worldScale.y / parent.y, worldScale.z / parent.z);
-        }
+        private void Mount(GearLookSpec spec, Material mat, Vector3 at, Quaternion rotation, Vector3 scale, Transform follow) =>
+            CreatureGearAttachments.Mount(_model.transform, _gearRoot, spec, mat, at, rotation, scale, follow, _gearMeshes);
 
         private void ClearGear()
         {
@@ -474,30 +402,9 @@ namespace Cosmimera.Bootstrap.Demo
             return mat;
         }
 
-        private static Bounds ComputeBounds(GameObject root)
-        {
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                return new Bounds(root.transform.position + Vector3.up, Vector3.one);
-            }
+        private static Bounds ComputeBounds(GameObject root) => CreatureGearAttachments.ComputeBounds(root);
 
-            Bounds bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
-            {
-                bounds.Encapsulate(renderers[i].bounds);
-            }
-            return bounds;
-        }
-
-        private static void StripColliders(GameObject root)
-        {
-            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                DestroyObject(colliders[i]);
-            }
-        }
+        private static void StripColliders(GameObject root) => CreatureGearAttachments.StripColliders(root);
 
         private void ClearModel()
         {
@@ -520,12 +427,7 @@ namespace Cosmimera.Bootstrap.Demo
             _materials.Clear();
         }
 
-        private static void DestroyObject(UnityEngine.Object obj)
-        {
-            if (obj == null) return;
-            if (Application.isPlaying) UnityEngine.Object.Destroy(obj);
-            else UnityEngine.Object.DestroyImmediate(obj);
-        }
+        private static void DestroyObject(UnityEngine.Object obj) => CreatureGearAttachments.DestroyObject(obj);
 
         public void Dispose()
         {

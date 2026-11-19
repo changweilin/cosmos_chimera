@@ -85,6 +85,10 @@ namespace Cosmimera.Bootstrap.Demo
             }
             unit.Combatant.Book.SetEquipmentEffects(combinedEffects);
             unit.Combatant.SetWeapons(equipment.Weapons);
+            if (_setup.PartyIds != null && slot < _setup.PartyIds.Count)
+            {
+                _unitSaveIds[unit.Id] = _setup.PartyIds[slot];
+            }
             if (overload) _overloadUnlocked.Add(unit.Id);
             return unit;
         }

@@ -3230,18 +3230,16 @@ namespace Cosmimera.Bootstrap.Demo
             switch (spec.Role)
             {
                 case NpcRole.Farmer:
-                    Brim(b, crown + new float3(0f, 0.15f * hr, 0f), hr * 1.9f, hr * 0.8f, hr * 0.6f, Hex(0xD8BC6A), Hex(0xB89A4A));
+                    AppendGear(b, GearKind.Headwear, GearContext.Labor, spec, crown + new float3(0f, 0.12f * hr, 0f),
+                        Quaternion.identity, hr * 4.5f);
                     Pole(b, hand, h * 1.02f, wood);
                     b.Slab(new float3(hand.x, h * 1.02f, hand.z), new float3(hand.x, h * 1.02f, hand.z + 0.16f * h), 0.07f * h, 0.012f * h, look.Metal);
                     break;
                 case NpcRole.Forager:
                 {
                     // Bow slung across the back, quiver over the shoulder.
-                    float3 top = backAt + new float3(-0.12f * h, 0.26f * h, 0f), bottom = backAt + new float3(0.14f * h, -0.3f * h, 0f);
-                    float3 belly = (top + bottom) * 0.5f + new float3(0.05f * h, 0.02f * h, -0.08f * h);
-                    b.Tube(top, belly, 0.008f * h, 0.012f * h, wood, wood, 4);
-                    b.Tube(belly, bottom, 0.012f * h, 0.008f * h, wood, wood, 4);
-                    b.Tube(top, bottom, 0.003f * h, 0.003f * h, look.Bone, look.Bone, 3);
+                    AppendGear(b, GearKind.Longbow, GearContext.Travel, spec, backAt + new float3(0f, -0.25f * h, -0.03f * h),
+                        Quaternion.Euler(0f, 180f, 25f), h * 0.45f);
                     b.Tube(backAt + new float3(0.1f * h, 0.2f * h, 0.02f * h), backAt + new float3(-0.04f * h, -0.12f * h, 0.02f * h), 0.03f * h,
                         0.025f * h, look.Leather, Shade(look.Leather, 0.85f), 6);
                     break;
@@ -3261,19 +3259,15 @@ namespace Cosmimera.Bootstrap.Demo
                 case NpcRole.Miner:
                     b.Ball(crown, new float3(1.08f, 0.62f, 1.1f) * hr, look.Metal, 8, 4, -0.15f);
                     glow.Ball(crown + new float3(0f, 0.15f * hr, 1.05f * hr), new float3(0.2f, 0.2f, 0.1f) * hr, look.Glow, 6, 3);
-                    Pole(b, hand, h * 0.62f, wood);
-                    b.Tube(new float3(hand.x - 0.16f * h, h * 0.57f, hand.z), new float3(hand.x, h * 0.63f, hand.z), 0.004f * h, 0.018f * h,
-                        look.Metal, look.Metal, 4);
-                    b.Tube(new float3(hand.x, h * 0.63f, hand.z), new float3(hand.x + 0.16f * h, h * 0.57f, hand.z), 0.018f * h, 0.004f * h,
-                        look.Metal, look.Metal, 4);
+                    AppendGear(b, GearKind.Axe, GearContext.Labor, spec, hand - new float3(0f, 0.15f * h, 0f),
+                        Quaternion.Euler(35f, 0f, -12f), h * 0.65f);
                     break;
                 case NpcRole.Artisan:
                     // Apron, and a hammer held where the work would be.
                     b.Slab(r.Chest + new float3(0f, -0.06f * h, r.TrunkZ * 1.35f), r.Hip + new float3(0f, -0.22f * h, r.TrunkZ * 1.5f),
                         r.TrunkX * 1.35f, 0.008f * h, look.Leather);
-                    b.Tube(hand - new float3(0f, 0.03f * h, 0f), hand + new float3(0f, 0.16f * h, 0.02f * h), 0.009f * h, 0.009f * h, wood, wood, 4);
-                    b.Slab(hand + new float3(-0.045f * h, 0.16f * h, 0.02f * h), hand + new float3(0.045f * h, 0.16f * h, 0.02f * h), 0.035f * h,
-                        0.035f * h, look.Metal);
+                    AppendGear(b, GearKind.Mace, GearContext.Labor, spec, hand - new float3(0f, 0.05f * h, 0f),
+                        Quaternion.Euler(45f, 0f, -10f), h * 0.5f);
                     break;
                 case NpcRole.Merchant:
                     // A pack taller than the shoulders with a bedroll on top: wares travel on the back.
@@ -3289,20 +3283,16 @@ namespace Cosmimera.Bootstrap.Demo
                     b.Tube(crown + new float3(0f, 0.75f * hr, 0f), crown + new float3(0f, 1.25f * hr, -0.1f * hr), 0.1f * hr, 0.02f * hr, look.Accent,
                         look.Accent, 4);
                     float reach = math.min(h * 1.25f, h + 0.9f);
-                    Pole(b, hand, reach, late ? look.Metal : wood);
-                    float3 head = new float3(hand.x, reach, hand.z);
-                    (late ? glow : b).Tube(head, head + new float3(0f, 0.16f * h, 0f), 0.022f * h, 0.002f, late ? look.Glow : look.Metal,
-                        late ? look.Glow : look.Metal, 4);
+                    AppendGear(b, GearKind.Spear, GearContext.Combat, spec, new float3(hand.x, 0.02f, hand.z),
+                        Quaternion.identity, reach * 0.6f);
+                    if (late)
+                    {
+                        float3 head = new float3(hand.x, reach, hand.z);
+                        glow.Tube(head, head + new float3(0f, 0.14f * h, 0f), 0.02f * h, 0.002f, look.Glow, look.Glow, 4);
+                    }
                     // Shield on the forearm, face outward.
                     float3 boss = (r.ElbowL + r.HandL) * 0.5f + new float3(-0.035f * h, 0f, 0.03f * h);
-                    b.Loft(new[]
-                    {
-                        new Ring(boss - new float3(0f, 0.16f * h, 0f), 0.02f * h, 0.07f * h, Shade(look.Cloth, 0.8f)),
-                        new Ring(boss - new float3(0f, 0.04f * h, 0f), 0.028f * h, 0.14f * h, look.Cloth),
-                        new Ring(boss + new float3(0f, 0.12f * h, 0f), 0.028f * h, 0.15f * h, look.Cloth),
-                        new Ring(boss + new float3(0f, 0.17f * h, 0f), 0.02f * h, 0.11f * h, look.Accent),
-                    }, 8, true, true);
-                    b.Ball(boss + new float3(-0.03f * h, 0.03f * h, 0f), new float3(0.03f * h), look.Metal, 6, 4);
+                    AppendGear(b, GearKind.Shield, GearContext.Combat, spec, boss, Quaternion.Euler(0f, -75f, 0f), h * 0.26f);
                     break;
                 }
                 case NpcRole.Scholar:
@@ -3314,9 +3304,9 @@ namespace Cosmimera.Bootstrap.Demo
                 case NpcRole.Cleric:
                 {
                     float reach = math.min(h * 1.1f, h + 0.5f);
-                    Pole(b, hand, reach, late ? look.Metal : wood);
+                    AppendGear(b, GearKind.MagicStaff, GearContext.Ceremony, spec, new float3(hand.x, 0.02f, hand.z),
+                        Quaternion.identity, reach * 0.6f);
                     glow.Ball(new float3(hand.x, reach + 0.05f * h, hand.z), new float3(0.045f * h), look.Glow, 7, 5);
-                    b.Hoop(new float3(hand.x, reach + 0.05f * h, hand.z), 0.07f * h, 0.008f * h, look.Metal);
                     for (int s = -1; s <= 1; s += 2)
                     {
                         b.Slab(r.Chest + new float3(s * r.TrunkX * 0.45f, 0f, r.TrunkZ * 1.3f),
@@ -3340,7 +3330,8 @@ namespace Cosmimera.Bootstrap.Demo
                 }
                 case NpcRole.Performer:
                 {
-                    Brim(b, crown + new float3(0f, 0.2f * hr, 0f), hr * 1.35f, hr * 0.8f, hr * 0.7f, look.Accent, look.Cloth2);
+                    AppendGear(b, GearKind.Headwear, GearContext.Travel, spec, crown + new float3(0f, 0.15f * hr, 0f),
+                        Quaternion.identity, hr * 4.2f);
                     b.Panel(crown + new float3(0.7f * hr, 0.5f * hr, 0f), crown + new float3(0.8f * hr, 0.5f * hr, -0.25f * hr),
                         crown + new float3(1.3f * hr, 1.9f * hr, -0.9f * hr), Hex(0xE8E0D0));
                     // Lute held across the body.
@@ -3353,9 +3344,31 @@ namespace Cosmimera.Bootstrap.Demo
                     Cape(b, r, look.Accent, look.Cloth2, 0.8f, false);
                     b.Hoop(r.Head + new float3(0f, 0.55f * hr, 0f), hr * 0.92f, 0.012f * h, Hex(0xE0B840));
                     glow.Ball(r.Head + new float3(0f, 0.62f * hr, 0.88f * hr), new float3(0.1f, 0.13f, 0.06f) * hr, look.Glow, 5, 3);
-                    Pole(b, hand, math.min(h * 0.95f, h + 0.3f), late ? look.Metal : Hex(0x3A2A20));
-                    b.Ball(new float3(hand.x, math.min(h * 0.95f, h + 0.3f), hand.z), new float3(0.03f * h), Hex(0xE0B840), 6, 4);
+                    AppendGear(b, GearKind.MagicStaff, GearContext.Status, spec, new float3(hand.x, 0.02f, hand.z),
+                        Quaternion.identity, math.min(h * 0.95f, h + 0.3f) * 0.55f);
                     break;
+            }
+        }
+
+        private static void AppendGear(Fig b, GearKind kind, GearContext ctx, in NpcSpec spec, float3 pos, Quaternion rot, float scale)
+        {
+            ArchMix mix = spec.BorrowShare > 0f
+                ? new ArchMix(spec.BorrowRegion, spec.BorrowEra, spec.BorrowShare, 0f, 0f)
+                : ArchMix.Pure(spec.Region, spec.Era);
+            GearLookSpec look = GearLooks.Sample(kind, ctx, spec.Region, spec.Era, mix,
+                spec.Seed ^ ((ulong)kind + 1UL) * 0x9E3779B97F4A7C15UL);
+            SceneryMeshes.Part src = GearMeshes.BuildPart(look);
+            var mat = float4x4.TRS(pos, rot, new float3(scale));
+            int baseIdx = b.Part.P.Count;
+            for (int i = 0; i < src.P.Count; i++)
+            {
+                b.Part.Add(math.transform(mat, src.P[i]), src.C[i], float2.zero);
+            }
+            for (int i = 0; i < src.T.Count; i += 3)
+            {
+                b.Part.T.Add(baseIdx + src.T[i]);
+                b.Part.T.Add(baseIdx + src.T[i + 1]);
+                b.Part.T.Add(baseIdx + src.T[i + 2]);
             }
         }
 
