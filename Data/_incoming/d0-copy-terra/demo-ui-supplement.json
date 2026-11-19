@@ -1926,5 +1926,393 @@
   "ui.trainer.defeat": {
     "zh-TW": "敗給了 {trainer}……",
     "en": "Defeated by {trainer}..."
+  },
+  "ing_sea_bass": {
+    "zh-TW": "生鱸魚",
+    "en": "Raw sea bass"
+  },
+  "ing_sea_salt": {
+    "zh-TW": "海鹽",
+    "en": "Sea salt"
+  },
+  "ing_wild_honey": {
+    "zh-TW": "野蜂蜜",
+    "en": "Wild honey"
+  },
+  "ing_wild_root": {
+    "zh-TW": "野生根菜",
+    "en": "Wild root"
+  },
+  "ing_hard_chestnut": {
+    "zh-TW": "堅殼栗",
+    "en": "Hardshell chestnut"
+  },
+  "ing_fire_pepper": {
+    "zh-TW": "火椒",
+    "en": "Fire pepper"
+  },
+  "ing_ice_mint": {
+    "zh-TW": "冰薄荷",
+    "en": "Ice mint"
+  },
+  "ing_gale_mushroom": {
+    "zh-TW": "疾風菇",
+    "en": "Gale mushroom"
+  },
+  "ing_glowcap": {
+    "zh-TW": "夜光菇",
+    "en": "Glowcap"
+  },
+  "ing_truffle": {
+    "zh-TW": "松露",
+    "en": "Truffle"
+  },
+  "ing_hopper_bug": {
+    "zh-TW": "跳蟲",
+    "en": "Hopper bug"
+  },
+  "ing_chilled_sea_bass": {
+    "zh-TW": "冷凍鱸魚",
+    "en": "Chilled sea bass"
+  },
+  "ing_chilled_trout": {
+    "zh-TW": "冷凍鱒魚",
+    "en": "Chilled trout"
+  },
+  "ing_chilled_salmon": {
+    "zh-TW": "冷凍深淵鮭",
+    "en": "Chilled abyssal salmon"
+  },
+  "ing_chilled_shrimp": {
+    "zh-TW": "冷凍網蝦",
+    "en": "Chilled shrimp"
+  },
+  "ing_chilled_fowl": {
+    "zh-TW": "冷凍禽胸",
+    "en": "Chilled fowl breast"
+  },
+  "ing_chilled_berry": {
+    "zh-TW": "冰鮮野莓",
+    "en": "Chilled berry"
+  },
+  "ing_wheat_flour": {
+    "zh-TW": "麵粉",
+    "en": "Wheat flour"
+  },
+  "ing_fern_powder": {
+    "zh-TW": "活力蕨粉",
+    "en": "Fern powder"
+  },
+  "ing_pepper_powder": {
+    "zh-TW": "火椒粉",
+    "en": "Pepper powder"
+  },
+  "ing_seed_oil": {
+    "zh-TW": "食用油",
+    "en": "Seed oil"
+  },
+  "ing_butter": {
+    "zh-TW": "奶油",
+    "en": "Butter"
+  },
+  "ing_cheese": {
+    "zh-TW": "起司",
+    "en": "Cheese"
+  },
+  "ing_fish_sauce": {
+    "zh-TW": "魚露",
+    "en": "Fish sauce"
+  },
+  "ing_wheat_koji": {
+    "zh-TW": "酒麴",
+    "en": "Wheat koji"
+  },
+  "ing_smoked_boar": {
+    "zh-TW": "燻野豬肉",
+    "en": "Smoked boar"
+  },
+  "ing_smoked_hare": {
+    "zh-TW": "燻兔肉乾",
+    "en": "Smoked hare jerky"
+  },
+  "ing_smoked_trout": {
+    "zh-TW": "燻鱒魚",
+    "en": "Smoked trout"
+  },
+  "ing_dried_berry": {
+    "zh-TW": "莓果乾",
+    "en": "Dried berry"
+  },
+  "ing_smoked_rib": {
+    "zh-TW": "燻肋排",
+    "en": "Smoked rib"
+  },
+  "ing_aged_beast_meat": {
+    "zh-TW": "熟成獸肉",
+    "en": "Aged beast meat"
+  },
+  "food_steamed_sea_bass": {
+    "zh-TW": "清蒸鱸魚",
+    "en": "Steamed sea bass"
+  },
+  "food_sea_bass_crudo": {
+    "zh-TW": "鱸魚冷盤",
+    "en": "Sea bass crudo"
+  },
+  "food_aged_beast_ragout": {
+    "zh-TW": "熟成獸肉濃燉",
+    "en": "Aged beast ragout"
+  },
+  "food_gale_fried_fowl": {
+    "zh-TW": "疾風炸雞",
+    "en": "Gale fried fowl"
+  },
+  "food_meadow_cheese_soup": {
+    "zh-TW": "牧野起司濃湯",
+    "en": "Meadow cheese soup"
+  },
+  "food_frostberry_smoothie": {
+    "zh-TW": "霜莓冰沙",
+    "en": "Frostberry smoothie"
+  },
+  "food_glowcap_tonic": {
+    "zh-TW": "夜光菇藥湯",
+    "en": "Glowcap tonic"
+  },
+  "food_truffle_butter_grill": {
+    "zh-TW": "松露奶油烤菇",
+    "en": "Truffle butter grill"
+  },
+  "food_honey_glazed_nuts": {
+    "zh-TW": "蜜漬堅果",
+    "en": "Honey-glazed nuts"
+  },
+  "food_dubious_mash": {
+    "zh-TW": "失敗料理",
+    "en": "Dubious mash"
+  },
+  "gather.ForageFungi": {
+    "zh-TW": "採菇",
+    "en": "Forage fungi"
+  },
+  "ingredient.category.Fungi": {
+    "zh-TW": "菌菇",
+    "en": "Fungi"
+  },
+  "ingredient.category.Critter": {
+    "zh-TW": "蟲類",
+    "en": "Critter"
+  },
+  "process.kind.Freeze": {
+    "zh-TW": "急凍",
+    "en": "Freeze"
+  },
+  "process.kind.Grind": {
+    "zh-TW": "研磨",
+    "en": "Grind"
+  },
+  "process.kind.Press": {
+    "zh-TW": "榨油",
+    "en": "Press"
+  },
+  "process.kind.Churn": {
+    "zh-TW": "攪乳",
+    "en": "Churn"
+  },
+  "process.kind.Ferment": {
+    "zh-TW": "發酵",
+    "en": "Ferment"
+  },
+  "process.kind.Smoke": {
+    "zh-TW": "燻乾",
+    "en": "Smoke"
+  },
+  "process.reason.None": {
+    "zh-TW": "可加工",
+    "en": "Ready"
+  },
+  "process.reason.MissingSkill": {
+    "zh-TW": "缺少加工生活技（或前往聚落廚房）",
+    "en": "Missing processing skill (or use a settlement kitchen)"
+  },
+  "process.reason.MissingInput": {
+    "zh-TW": "原料不足",
+    "en": "Not enough input"
+  },
+  "ui.skills.processing": {
+    "zh-TW": "加工",
+    "en": "Processing"
+  },
+  "ui.skills.process": {
+    "zh-TW": "加工 ×1",
+    "en": "Process ×1"
+  },
+  "ui.skills.processing_empty": {
+    "zh-TW": "沒有可加工的原料。",
+    "en": "Nothing to process."
+  },
+  "ui.skills.kitchen": {
+    "zh-TW": "聚落廚房：所有料理方式與加工皆可使用。",
+    "en": "Settlement kitchen: every cooking method and process is available."
+  },
+  "ui.skills.pot": {
+    "zh-TW": "鍋（自由料理，最多 5 份）",
+    "en": "Pot (free cooking, up to 5)"
+  },
+  "ui.skills.pot_empty": {
+    "zh-TW": "鍋是空的，點選下方食材加入。",
+    "en": "The pot is empty. Add ingredients below."
+  },
+  "ui.skills.pot_clear": {
+    "zh-TW": "清空鍋子",
+    "en": "Empty the pot"
+  },
+  "ui.skills.pot_signature": {
+    "zh-TW": "招牌料理：{dish}",
+    "en": "Signature dish: {dish}"
+  },
+  "ui.skills.pot_free": {
+    "zh-TW": "自由料理：{dish}",
+    "en": "Free dish: {dish}"
+  },
+  "ui.skills.pot_dubious": {
+    "zh-TW": "會失敗：{dish}（食材照扣）",
+    "en": "Will fail: {dish} (ingredients are still used)"
+  },
+  "dish.free_name": {
+    "zh-TW": "{family}{method}{theme}",
+    "en": "{family} {method} {theme}"
+  },
+  "dish.method.Grill": {
+    "zh-TW": "烤",
+    "en": "Grilled"
+  },
+  "dish.method.Stew": {
+    "zh-TW": "燉",
+    "en": "Stewed"
+  },
+  "dish.method.StirFry": {
+    "zh-TW": "炒",
+    "en": "Stir-fried"
+  },
+  "dish.method.DeepFry": {
+    "zh-TW": "炸",
+    "en": "Fried"
+  },
+  "dish.method.Steam": {
+    "zh-TW": "蒸",
+    "en": "Steamed"
+  },
+  "dish.method.ColdMix": {
+    "zh-TW": "涼拌",
+    "en": "Chilled"
+  },
+  "dish.method.Grind": {
+    "zh-TW": "研磨",
+    "en": "Ground"
+  },
+  "dish.method.ChillBrew": {
+    "zh-TW": "冰飲",
+    "en": "Iced"
+  },
+  "dish.theme.Meat": {
+    "zh-TW": "肉",
+    "en": "Meat"
+  },
+  "dish.theme.Fowl": {
+    "zh-TW": "禽肉",
+    "en": "Fowl"
+  },
+  "dish.theme.Fish": {
+    "zh-TW": "魚",
+    "en": "Fish"
+  },
+  "dish.theme.Seafood": {
+    "zh-TW": "海鮮",
+    "en": "Seafood"
+  },
+  "dish.theme.Mushroom": {
+    "zh-TW": "菇",
+    "en": "Mushrooms"
+  },
+  "dish.theme.Egg": {
+    "zh-TW": "蛋",
+    "en": "Eggs"
+  },
+  "dish.theme.Vegetable": {
+    "zh-TW": "時蔬",
+    "en": "Vegetables"
+  },
+  "dish.theme.Fruit": {
+    "zh-TW": "鮮果",
+    "en": "Fruit"
+  },
+  "dish.theme.Grain": {
+    "zh-TW": "穀物",
+    "en": "Grains"
+  },
+  "dish.theme.Dairy": {
+    "zh-TW": "乳品",
+    "en": "Dairy"
+  },
+  "dish.theme.Nut": {
+    "zh-TW": "堅果",
+    "en": "Nuts"
+  },
+  "dish.theme.Herb": {
+    "zh-TW": "香草",
+    "en": "Herbs"
+  },
+  "dish.theme.Mixed": {
+    "zh-TW": "什錦",
+    "en": "Medley"
+  },
+  "dish.theme.Tonic": {
+    "zh-TW": "藥膳",
+    "en": "Tonic"
+  },
+  "dish.family.Mastery": {
+    "zh-TW": "{element}專精・",
+    "en": "{element}-Mastery"
+  },
+  "dish.family.Resist": {
+    "zh-TW": "抗{element}・",
+    "en": "{element}-Ward"
+  },
+  "dish.family.Swift": {
+    "zh-TW": "迅捷・",
+    "en": "Swift"
+  },
+  "dish.family.Nimble": {
+    "zh-TW": "靈巧・",
+    "en": "Nimble"
+  },
+  "dish.family.Focus": {
+    "zh-TW": "冷卻・",
+    "en": "Focus"
+  },
+  "dish.family.Keen": {
+    "zh-TW": "銳眼・",
+    "en": "Keen"
+  },
+  "dish.family.Fierce": {
+    "zh-TW": "會心・",
+    "en": "Fierce"
+  },
+  "dish.family.Guard": {
+    "zh-TW": "堅守・",
+    "en": "Guarding"
+  },
+  "dish.family.Bounty": {
+    "zh-TW": "豐收・",
+    "en": "Bountiful"
+  },
+  "dish.family.Tame": {
+    "zh-TW": "馴服・",
+    "en": "Taming"
+  },
+  "dish.family.Revive": {
+    "zh-TW": "甦生・",
+    "en": "Reviving"
   }
 }

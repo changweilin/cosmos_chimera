@@ -67,6 +67,24 @@ namespace Cosmimera.Food.Tests
         }
 
         [Test]
+        public void ForageFungi_NeedsSkillAndFoliage()
+        {
+            TeamUtilityModifiers fungi = FieldUtilityRules.ComputeTeamModifiers(new HashSet<FieldUtility> { FieldUtility.ForageFungi });
+            var shade = new GatheringContext(fungi, onGround: true, hasOpenSky: true, nearWater: false, hasFoliage: true, hasFarmland: false);
+            var open = new GatheringContext(fungi, onGround: true, hasOpenSky: true, nearWater: false, hasFoliage: false, hasFarmland: false);
+            var unskilled = new GatheringContext(AllGatheringSkills(), onGround: true, hasOpenSky: true, nearWater: false, hasFoliage: true, hasFarmland: false);
+            var inv = new FoodInventory();
+            var rng = new Pcg32(7UL, 1UL);
+            var yields = new List<GatheredStack>();
+
+            Assert.AreEqual(GatheringRefusalReason.MissingSkill, FoodGatheringRules.CanGather(FoodAcquisitionMethod.ForageFungi, unskilled));
+            Assert.AreEqual(GatheringRefusalReason.InvalidEnvironment, FoodGatheringRules.CanGather(FoodAcquisitionMethod.ForageFungi, open));
+            Assert.AreEqual(GatheringRefusalReason.None, FoodGatheringRules.TryGather(FoodAcquisitionMethod.ForageFungi, shade, _catalog, inv, ref rng, yields));
+            Assert.IsTrue(yields.Count >= 1);
+            foreach (GatheredStack stack in yields) Assert.AreEqual(IngredientCategory.Fungi, stack.Ingredient.Category);
+        }
+
+        [Test]
         public void TryGather_RefusesWhenSkillOrEnvironmentMissing()
         {
             TeamUtilityModifiers emptyMods = FieldUtilityRules.ComputeTeamModifiers(new HashSet<FieldUtility>());

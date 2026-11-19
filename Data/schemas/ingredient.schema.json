@@ -10,14 +10,45 @@
     "properties": {
       "id": { "$ref": "common.schema.json#/$defs/id" },
       "category": {
-        "enum": ["meat_ground", "meat_sky", "seafood", "berry_herb", "grain_crop", "dairy", "spice_oil", "egg"]
+        "enum": ["meat_ground", "meat_sky", "seafood", "berry_herb", "grain_crop", "dairy", "spice_oil", "egg", "fungi", "critter"]
       },
       "source": {
-        "enum": ["hunt_ground", "hunt_sky", "set_trap", "fishing", "cast_net", "forage_berries", "harvest_crops", "produce_milk"]
+        "enum": ["hunt_ground", "hunt_sky", "set_trap", "fishing", "cast_net", "forage_berries", "harvest_crops", "produce_milk", "forage_fungi"]
       },
       "element": { "$ref": "common.schema.json#/$defs/element" },
       "tier": { "type": "integer", "minimum": 1, "maximum": 3 },
-      "raw_heal_percent": { "$ref": "common.schema.json#/$defs/percent" }
-    }
+      "raw_heal_percent": { "$ref": "common.schema.json#/$defs/percent" },
+      "role": {
+        "description": "cuisine.md#2: base / effect (main food carrying an effect) / seasoning / critter.",
+        "enum": ["base", "effect", "seasoning", "critter"],
+        "default": "base"
+      },
+      "tags": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "enum": ["red_meat", "poultry", "fish", "shellfish", "egg", "dairy", "grain", "flour", "vegetable", "fruit", "herb",
+                   "mushroom", "nut", "oil", "salt", "sugar", "spice", "critter", "raw", "chilled", "smoked", "fermented", "powder"]
+        }
+      },
+      "cook_heal_percent": { "$ref": "common.schema.json#/$defs/percent" },
+      "effect": {
+        "type": "object",
+        "required": ["family", "points"],
+        "additionalProperties": false,
+        "properties": {
+          "family": { "enum": ["mastery", "resist", "swift", "nimble", "focus", "keen", "fierce", "guard", "bounty", "tame", "revive"] },
+          "element": { "$ref": "common.schema.json#/$defs/element" },
+          "points": { "type": "integer", "minimum": 1, "maximum": 9 }
+        },
+        "allOf": [
+          { "if": { "properties": { "family": { "enum": ["mastery", "resist"] } } }, "then": { "required": ["element"] } }
+        ]
+      },
+      "duration_add_ms": { "type": "integer", "minimum": 0, "maximum": 600000 },
+      "processed_from": { "$ref": "common.schema.json#/$defs/id" },
+      "process": { "enum": ["freeze", "grind", "press", "churn", "ferment", "smoke"] }
+    },
+    "dependentRequired": { "processed_from": ["process"], "process": ["processed_from"] }
   }
 }

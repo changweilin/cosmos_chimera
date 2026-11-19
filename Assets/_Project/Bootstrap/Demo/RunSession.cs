@@ -2038,20 +2038,22 @@ namespace Cosmimera.Bootstrap.Demo
                 ? settlement.AltitudeM
                 : (_surface != null ? _surface.GroundAltitude(settlement.Center) : settlement.AltitudeM);
 
+        // Shared by settlement discovery and the settlement kitchen (cuisine.md#1) so "inside a settlement" means one thing.
+        private bool IsWithinSettlement(RunSettlement s, float3 player)
+        {
+            if (!LayoutClearance.IsInhabited(s.Kind)) return false;
+            float discoveryRadiusM = math.max(24f, LayoutClearance.MinSettlementRadiusM + 8f);
+            if (math.distance(_rig.Config.ToDirection(player), s.Center) * _rig.Config.Radius > discoveryRadiusM) return false;
+            return math.abs(_rig.Config.Altitude(player) - SettlementAltitudeAt(s)) <= 25f;
+        }
+
         private void UpdateRegion(float3 player)
         {
             if (_layout != null)
             {
-                float3 playerDir = _rig.Config.ToDirection(player);
-                float playerAlt = _rig.Config.Altitude(player);
-                float radiusM = _rig.Config.Radius;
-                float discoveryRadiusM = math.max(24f, LayoutClearance.MinSettlementRadiusM + 8f);
                 for (int i = 0; i < _layout.Settlements.Count; i++)
                 {
-                    RunSettlement s = _layout.Settlements[i];
-                    if (!LayoutClearance.IsInhabited(s.Kind) || _discoveredSettlements.Contains(i)) continue;
-                    if (math.distance(playerDir, s.Center) * radiusM > discoveryRadiusM) continue;
-                    if (math.abs(playerAlt - SettlementAltitudeAt(s)) <= 25f)
+                    if (!_discoveredSettlements.Contains(i) && IsWithinSettlement(_layout.Settlements[i], player))
                     {
                         _discoveredSettlements.Add(i);
                     }

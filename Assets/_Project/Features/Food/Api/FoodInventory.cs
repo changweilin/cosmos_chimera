@@ -143,10 +143,21 @@ namespace Cosmimera.Food
         /// </remarks>
         public bool TryConsumeForRecipe(RecipeSpec recipe, FoodCatalog catalog)
         {
+            return TryConsumeForRecipe(recipe, catalog, new Dictionary<string, int>());
+        }
+
+        /// <summary>Same as <see cref="TryConsumeForRecipe(RecipeSpec, FoodCatalog)"/>, reporting the consumed ids.</summary>
+        /// <remarks>
+        /// Pre: recipe, catalog, plan non-null.
+        /// Post: plan holds exactly the consumed id → quantity map on true; content unspecified on false.
+        /// Side effects: mutates ingredient stock on true; overwrites plan.
+        /// </remarks>
+        internal bool TryConsumeForRecipe(RecipeSpec recipe, FoodCatalog catalog, Dictionary<string, int> plan)
+        {
             Contract.Requires(recipe != null, "recipe must not be null");
             Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(plan != null, "plan must not be null");
 
-            var plan = new Dictionary<string, int>();
             if (!TryPlanConsumption(recipe, catalog, plan))
             {
                 return false;
@@ -192,7 +203,8 @@ namespace Cosmimera.Food
                 reserved[req.IngredientId] = alreadyReserved + req.Quantity;
             }
 
-            // Pass 2: category wildcard requirements, preferring lower tier first then deterministic id order.
+            // Pass 2: category wildcard requirements, preferring raw over processed goods (the player spent a skill on those),
+            // then lower tier, then deterministic catalog order.
             for (int i = 0; i < recipe.Requirements.Count; i++)
             {
                 RecipeIngredientRequirement req = recipe.Requirements[i];
@@ -204,12 +216,14 @@ namespace Cosmimera.Food
                 int needed = req.Quantity;
                 IReadOnlyList<IngredientSpec> all = catalog.Ingredients;
 
-                for (int tier = 1; tier <= 3 && needed > 0; tier++)
+                for (int sweep = 0; sweep < 6 && needed > 0; sweep++)
                 {
+                    bool processed = sweep >= 3;
+                    int tier = sweep % 3 + 1;
                     for (int j = 0; j < all.Count && needed > 0; j++)
                     {
                         IngredientSpec spec = all[j];
-                        if (spec.Category != req.Category || spec.Tier != tier)
+                        if (spec.Category != req.Category || spec.Tier != tier || spec.IsProcessed != processed)
                         {
                             continue;
                         }

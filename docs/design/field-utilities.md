@@ -74,6 +74,7 @@
 | `return_village` | 光／木／風 | 引導隊伍傳送回最近的已探索村落或起始城鎮 | 大星球探索滿載後快速回補／安全撤離至聚落節點 | `wood_canopy_regent` |
 
 ### <a id="食物多路線"></a>食物多路線（參考《曠野之息》）
+> 加工品、料理判定（自由投料、效果疊加／抵銷）、路線組合與招牌料理表見 [cuisine.md](cuisine.md)。
 - **設計原則**：[encyclopedia.md](encyclopedia.md#十屬性生活技能組合角色任務食物武器防具路線飛行) 的「釣魚 → 冷凍 → 清蒸鱸魚」作為主線示範路線；一般探索與 `Food` 系統採**多路線網狀結構**，同一目標食材與料理可由不同生活技組合達成：
   1. **採集端多路線**：水產（`fishing` 高星等單釣 vs `cast_net` 批次撒網）、肉類（`hunt_ground`／`hunt_sky` 主動狩獵 vs `set_trap` 定時收成）、植蔬與菌類（`forage_berries` 野外採果 vs `harvest_crops` 農田收割 vs `forage_fungi` 洞穴／沼澤採菇）。
   2. **備料／加工端四線並存**：

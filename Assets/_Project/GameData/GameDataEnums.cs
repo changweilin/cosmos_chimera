@@ -230,6 +230,8 @@ namespace Cosmimera.GameData
         ForageBerries = 5,
         HarvestCrops = 6,
         ProduceMilk = 7,
+        // REQ: docs/design/cuisine.md#2-食材屬性每份原料加工品皆有 — appended; values are serialized.
+        ForageFungi = 8,
     }
 
     /// <summary>Culinary preparation methods for cooking ingredients into food.</summary>
@@ -243,6 +245,8 @@ namespace Cosmimera.GameData
         Steam = 4,
         ColdMix = 5,
         Grind = 6,
+        /// <summary>No-fire chilled drinks and smoothies (chill_brew).</summary>
+        ChillBrew = 7,
     }
 
     /// <summary>Broad culinary category of a raw food ingredient.</summary>
@@ -257,6 +261,8 @@ namespace Cosmimera.GameData
         Dairy = 5,
         SpiceOil = 6,
         Egg = 7,
+        Fungi = 8,
+        Critter = 9,
     }
 
     /// <summary>Who receives the healing and buff effects when a food item is eaten.</summary>

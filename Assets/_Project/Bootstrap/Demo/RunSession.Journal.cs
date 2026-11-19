@@ -42,6 +42,8 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamUtilityModifiers _utilityModifiers;
         private Pcg32 _foodRng;
         private bool _showLockedGathering;
+        private readonly List<string> _pot = new List<string>(PotCookingRules.MaxPotSize);
+        private CookingMethod _potMethod = CookingMethod.Grill;
 
         private EncounterUnit AddEquippedPartyCreature(int slot)
         {
@@ -280,7 +282,7 @@ namespace Cosmimera.Bootstrap.Demo
                 int count = _foodInventory.CountFood(food.Id);
                 if (count == 0) continue;
                 anyFood = true;
-                ui.Label(_copy.Ui(food.Id) + $" ×{count} · " + FoodDescription(food));
+                ui.Label(FoodName(food) + $" ×{count} · " + FoodDescription(food));
                 if (ui.Button(_copy.Ui("ui.items.eat")))
                 { EatFood(food); GUIUtility.ExitGUI(); }
             }
@@ -519,7 +521,11 @@ namespace Cosmimera.Bootstrap.Demo
                     utility != FieldUtility.ForageBerries && utility != FieldUtility.ProduceMilk &&
                     utility != FieldUtility.CulinaryPrep) ui.Label(_copy.Ui("ui.skills.unavailable"));
             }
-            var cooking = new CookingContext(CookingStationKind.Field, _utilityModifiers, _partyElements);
+            CookingStationKind station = CookingStation();
+            var cooking = new CookingContext(station, _utilityModifiers, _partyElements);
+            if (station == CookingStationKind.Kitchen) ui.Label(_copy.Ui("ui.skills.kitchen"));
+            DrawProcessing(ui, cooking);
+            DrawPot(ui, cooking);
             ui.Heading(_copy.Ui("ui.skills.recipes"));
             foreach (RecipeSpec recipe in _foodCatalog.Recipes)
             {
@@ -533,9 +539,7 @@ namespace Cosmimera.Bootstrap.Demo
                     reason = CookingRules.TryCook(recipe, _foodCatalog, _foodInventory, cooking, out CookOutcome outcome);
                     if (reason == CookRefusalReason.None)
                     {
-                        if (!_foodQualities.TryGetValue(outcome.Food.Id, out Queue<CookingQuality> qualities))
-                        { qualities = new Queue<CookingQuality>(); _foodQualities.Add(outcome.Food.Id, qualities); }
-                        for (int i = 0; i < outcome.QuantityProduced; i++) qualities.Enqueue(outcome.Quality);
+                        EnqueueQuality(outcome.Food.Id, outcome.QuantityProduced, outcome.Quality);
                         ui.Message = _copy.Ui(outcome.Food.Id) + " ×" + outcome.QuantityProduced + " · " + _copy.Ui("quality." + outcome.Quality);
                     }
                     else ui.Message = _copy.Ui("cook." + reason);
@@ -544,9 +548,119 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private void EnqueueQuality(string foodId, int quantity, CookingQuality quality)
+        {
+            if (!_foodQualities.TryGetValue(foodId, out Queue<CookingQuality> qualities))
+            { qualities = new Queue<CookingQuality>(); _foodQualities.Add(foodId, qualities); }
+            for (int i = 0; i < quantity; i++) qualities.Enqueue(quality);
+        }
+
+        // REQ: docs/design/cuisine.md#1 — a discovered inhabited settlement doubles as a kitchen that unlocks every method and process.
+        private CookingStationKind CookingStation()
+        {
+            if (_layout == null) return CookingStationKind.Field;
+            float3 player = PlayerPosition();
+            foreach (int index in _discoveredSettlements)
+                if (IsWithinSettlement(_layout.Settlements[index], player)) return CookingStationKind.Kitchen;
+            return CookingStationKind.Field;
+        }
+
+        private void DrawProcessing(AdventurePanel ui, CookingContext cooking)
+        {
+            ui.Heading(_copy.Ui("ui.skills.processing"));
+            bool any = false;
+            foreach (ProcessSpec process in _foodCatalog.Processes)
+            {
+                int held = _foodInventory.CountIngredient(process.InputIngredientId);
+                ProcessRefusalReason reason = ProcessingRules.CanProcess(process, _foodInventory, cooking);
+                if ((held == 0 || reason == ProcessRefusalReason.MissingSkill) && !_showLockedGathering) continue;
+                any = true;
+                ui.Label(_copy.Ui("process.kind." + process.Kind) + " · " + _copy.Ui(process.InputIngredientId) + $" ×{held} → " +
+                         _copy.Ui(process.OutputIngredientId) + " · " + _copy.Ui("process.reason." + reason));
+                if (!ui.Button(_copy.Ui("ui.skills.process"), reason == ProcessRefusalReason.None)) continue;
+                reason = ProcessingRules.TryProcess(process, _foodInventory, cooking);
+                ui.Message = reason == ProcessRefusalReason.None
+                    ? _copy.Ui(process.OutputIngredientId) + " ×1"
+                    : _copy.Ui("process.reason." + reason);
+                GUIUtility.ExitGUI();
+            }
+            if (!any) ui.Label(_copy.Ui("ui.skills.processing_empty"));
+        }
+
+        private void DrawPot(AdventurePanel ui, CookingContext cooking)
+        {
+            ui.Heading(_copy.Ui("ui.skills.pot"));
+            foreach (CookingMethod method in Enum.GetValues(typeof(CookingMethod)))
+            {
+                bool unlocked = CookingRules.HasSkillForMethod(method, cooking);
+                if (!unlocked && !_showLockedGathering) continue;
+                if (!ui.Button((_potMethod == method ? "● " : "") + _copy.Ui("dish.method." + method), unlocked)) continue;
+                _potMethod = method;
+                GUIUtility.ExitGUI();
+            }
+            // Units can leave the bag elsewhere (eaten raw, processed); the pot only lists what is still held.
+            for (int i = _pot.Count - 1; i >= 0; i--)
+                if (CountInPot(_pot[i]) > _foodInventory.CountIngredient(_pot[i])) _pot.RemoveAt(i);
+            var contents = new List<string>(_pot.Count);
+            foreach (string id in _pot) contents.Add(_copy.Ui(id));
+            ui.Label(_pot.Count == 0 ? _copy.Ui("ui.skills.pot_empty") : string.Join(" + ", contents));
+            foreach (IngredientSpec ingredient in _foodCatalog.Ingredients)
+            {
+                int spare = _foodInventory.CountIngredient(ingredient.Id) - CountInPot(ingredient.Id);
+                if (spare <= 0) continue;
+                if (!ui.Button("+ " + _copy.Ui(ingredient.Id) + $" ×{spare}", _pot.Count < PotCookingRules.MaxPotSize)) continue;
+                _pot.Add(ingredient.Id);
+                GUIUtility.ExitGUI();
+            }
+            if (_pot.Count == 0) return;
+            if (ui.Button(_copy.Ui("ui.skills.pot_clear"))) { _pot.Clear(); GUIUtility.ExitGUI(); }
+            PotResolution preview = PotCookingRules.Resolve(_potMethod, _pot, _foodCatalog, cooking);
+            ui.Label(PotPreviewText(preview));
+            if (!ui.Button(_copy.Ui("ui.skills.cook"), preview.Refusal == CookRefusalReason.None)) return;
+            PotResolution cooked = PotCookingRules.TryCook(_potMethod, _pot, _foodCatalog, _foodInventory, cooking);
+            if (cooked.Refusal == CookRefusalReason.None)
+            {
+                EnqueueQuality(cooked.Food.Id, cooked.Quantity, cooked.Quality);
+                _pot.Clear();
+                ui.Message = FoodName(cooked.Food) + " ×" + cooked.Quantity + " · " + _copy.Ui("quality." + cooked.Quality);
+            }
+            else ui.Message = _copy.Ui("cook." + cooked.Refusal);
+            GUIUtility.ExitGUI();
+        }
+
+        private int CountInPot(string ingredientId)
+        {
+            int count = 0;
+            foreach (string id in _pot) if (id == ingredientId) count++;
+            return count;
+        }
+
+        private string PotPreviewText(PotResolution preview)
+        {
+            if (preview.Refusal != CookRefusalReason.None) return _copy.Ui("cook." + preview.Refusal);
+            string key = preview.Kind == PotDishKind.Signature ? "ui.skills.pot_signature"
+                : preview.Kind == PotDishKind.Free ? "ui.skills.pot_free" : "ui.skills.pot_dubious";
+            return _copy.Ui(key).Replace("{dish}", FoodName(preview.Food)) + " · " + _copy.Ui("quality." + preview.Quality) +
+                   " · " + FoodDescription(preview.Food);
+        }
+
+        private string FoodName(FoodItemSpec food)
+        {
+            if (!food.FreeDish.HasValue) return _copy.Ui(food.Id);
+            FreeDishDescriptor dish = food.FreeDish.Value;
+            string family = dish.Family == FoodEffectFamily.None ? ""
+                : _copy.Ui("dish.family." + dish.Family).Replace("{element}", _copy.Element(dish.FamilyElement.ToString()));
+            string name = _copy.Ui("dish.free_name").Replace("{family}", family)
+                .Replace("{method}", _copy.Ui("dish.method." + dish.Method)).Replace("{theme}", _copy.Ui("dish.theme." + dish.Theme));
+            while (name.Contains("  ")) name = name.Replace("  ", " ");
+            name = name.Trim();
+            return dish.Level > 0 ? name + " Lv" + dish.Level : name;
+        }
+
         private static bool IsGatheringOrCooking(FieldUtility utility) => utility == FieldUtility.Fishing ||
             utility == FieldUtility.CookFire || utility == FieldUtility.HuntGround || utility == FieldUtility.HuntSky ||
-            utility == FieldUtility.SetTrap || utility == FieldUtility.CastNet || utility == FieldUtility.HarvestCrops;
+            utility == FieldUtility.SetTrap || utility == FieldUtility.CastNet || utility == FieldUtility.HarvestCrops ||
+            utility == FieldUtility.ChillBrew;
 
         private bool CanQuickEscape()
         {

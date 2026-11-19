@@ -1444,5 +1444,296 @@
   },
   "ui.trainer.defeat": {
     "ja": "{trainer} に敗北した……"
+  },
+  "ing_sea_bass": {
+    "ja": "生スズキ"
+  },
+  "ing_sea_salt": {
+    "ja": "海塩"
+  },
+  "ing_wild_honey": {
+    "ja": "野生のはちみつ"
+  },
+  "ing_wild_root": {
+    "ja": "野生の根菜"
+  },
+  "ing_hard_chestnut": {
+    "ja": "堅殻グリ"
+  },
+  "ing_fire_pepper": {
+    "ja": "ファイアペッパー"
+  },
+  "ing_ice_mint": {
+    "ja": "アイスミント"
+  },
+  "ing_gale_mushroom": {
+    "ja": "ハヤテダケ"
+  },
+  "ing_glowcap": {
+    "ja": "ヤコウダケ"
+  },
+  "ing_truffle": {
+    "ja": "トリュフ"
+  },
+  "ing_hopper_bug": {
+    "ja": "ハネムシ"
+  },
+  "ing_chilled_sea_bass": {
+    "ja": "冷凍スズキ"
+  },
+  "ing_chilled_trout": {
+    "ja": "冷凍マス"
+  },
+  "ing_chilled_salmon": {
+    "ja": "冷凍シンエンサケ"
+  },
+  "ing_chilled_shrimp": {
+    "ja": "冷凍エビ"
+  },
+  "ing_chilled_fowl": {
+    "ja": "冷凍鳥むね肉"
+  },
+  "ing_chilled_berry": {
+    "ja": "冷凍ベリー"
+  },
+  "ing_wheat_flour": {
+    "ja": "小麦粉"
+  },
+  "ing_fern_powder": {
+    "ja": "シダの粉末"
+  },
+  "ing_pepper_powder": {
+    "ja": "ペッパーパウダー"
+  },
+  "ing_seed_oil": {
+    "ja": "食用油"
+  },
+  "ing_butter": {
+    "ja": "バター"
+  },
+  "ing_cheese": {
+    "ja": "チーズ"
+  },
+  "ing_fish_sauce": {
+    "ja": "魚醤"
+  },
+  "ing_wheat_koji": {
+    "ja": "麦麹"
+  },
+  "ing_smoked_boar": {
+    "ja": "イノシシの燻製"
+  },
+  "ing_smoked_hare": {
+    "ja": "ウサギのジャーキー"
+  },
+  "ing_smoked_trout": {
+    "ja": "マスの燻製"
+  },
+  "ing_dried_berry": {
+    "ja": "ドライベリー"
+  },
+  "ing_smoked_rib": {
+    "ja": "リブの燻製"
+  },
+  "ing_aged_beast_meat": {
+    "ja": "熟成獣肉"
+  },
+  "food_steamed_sea_bass": {
+    "ja": "スズキの清蒸"
+  },
+  "food_sea_bass_crudo": {
+    "ja": "スズキのカルパッチョ"
+  },
+  "food_aged_beast_ragout": {
+    "ja": "熟成獣肉の煮込み"
+  },
+  "food_gale_fried_fowl": {
+    "ja": "疾風フライドチキン"
+  },
+  "food_meadow_cheese_soup": {
+    "ja": "牧野のチーズスープ"
+  },
+  "food_frostberry_smoothie": {
+    "ja": "フロストベリースムージー"
+  },
+  "food_glowcap_tonic": {
+    "ja": "ヤコウダケの薬湯"
+  },
+  "food_truffle_butter_grill": {
+    "ja": "トリュフバターのキノコ焼き"
+  },
+  "food_honey_glazed_nuts": {
+    "ja": "ナッツのはちみつ漬け"
+  },
+  "food_dubious_mash": {
+    "ja": "失敗料理"
+  },
+  "gather.ForageFungi": {
+    "ja": "キノコ採り"
+  },
+  "ingredient.category.Fungi": {
+    "ja": "キノコ"
+  },
+  "ingredient.category.Critter": {
+    "ja": "虫"
+  },
+  "process.kind.Freeze": {
+    "ja": "急速冷凍"
+  },
+  "process.kind.Grind": {
+    "ja": "粉砕"
+  },
+  "process.kind.Press": {
+    "ja": "搾油"
+  },
+  "process.kind.Churn": {
+    "ja": "攪乳"
+  },
+  "process.kind.Ferment": {
+    "ja": "発酵"
+  },
+  "process.kind.Smoke": {
+    "ja": "燻製"
+  },
+  "process.reason.None": {
+    "ja": "加工可能"
+  },
+  "process.reason.MissingSkill": {
+    "ja": "加工スキルがありません（集落の厨房なら可能）"
+  },
+  "process.reason.MissingInput": {
+    "ja": "材料が足りません"
+  },
+  "ui.skills.processing": {
+    "ja": "加工"
+  },
+  "ui.skills.process": {
+    "ja": "加工 ×1"
+  },
+  "ui.skills.processing_empty": {
+    "ja": "加工できる材料がありません。"
+  },
+  "ui.skills.kitchen": {
+    "ja": "集落の厨房：すべての調理法と加工が使えます。"
+  },
+  "ui.skills.pot": {
+    "ja": "鍋（自由調理・最大5個）"
+  },
+  "ui.skills.pot_empty": {
+    "ja": "鍋は空です。下の食材を入れてください。"
+  },
+  "ui.skills.pot_clear": {
+    "ja": "鍋を空にする"
+  },
+  "ui.skills.pot_signature": {
+    "ja": "看板料理：{dish}"
+  },
+  "ui.skills.pot_free": {
+    "ja": "創作料理：{dish}"
+  },
+  "ui.skills.pot_dubious": {
+    "ja": "失敗します：{dish}（食材は消費されます）"
+  },
+  "dish.free_name": {
+    "ja": "{family}{method}{theme}"
+  },
+  "dish.method.Grill": {
+    "ja": "焼き"
+  },
+  "dish.method.Stew": {
+    "ja": "煮込み"
+  },
+  "dish.method.StirFry": {
+    "ja": "炒め"
+  },
+  "dish.method.DeepFry": {
+    "ja": "揚げ"
+  },
+  "dish.method.Steam": {
+    "ja": "蒸し"
+  },
+  "dish.method.ColdMix": {
+    "ja": "和え"
+  },
+  "dish.method.Grind": {
+    "ja": "粉末"
+  },
+  "dish.method.ChillBrew": {
+    "ja": "冷製ドリンク"
+  },
+  "dish.theme.Meat": {
+    "ja": "肉"
+  },
+  "dish.theme.Fowl": {
+    "ja": "鶏肉"
+  },
+  "dish.theme.Fish": {
+    "ja": "魚"
+  },
+  "dish.theme.Seafood": {
+    "ja": "海鮮"
+  },
+  "dish.theme.Mushroom": {
+    "ja": "キノコ"
+  },
+  "dish.theme.Egg": {
+    "ja": "卵"
+  },
+  "dish.theme.Vegetable": {
+    "ja": "野菜"
+  },
+  "dish.theme.Fruit": {
+    "ja": "果物"
+  },
+  "dish.theme.Grain": {
+    "ja": "穀物"
+  },
+  "dish.theme.Dairy": {
+    "ja": "乳製品"
+  },
+  "dish.theme.Nut": {
+    "ja": "ナッツ"
+  },
+  "dish.theme.Herb": {
+    "ja": "ハーブ"
+  },
+  "dish.theme.Mixed": {
+    "ja": "五目"
+  },
+  "dish.theme.Tonic": {
+    "ja": "薬膳"
+  },
+  "dish.family.Mastery": {
+    "ja": "{element}専精・"
+  },
+  "dish.family.Resist": {
+    "ja": "耐{element}・"
+  },
+  "dish.family.Swift": {
+    "ja": "迅速・"
+  },
+  "dish.family.Nimble": {
+    "ja": "軽業・"
+  },
+  "dish.family.Focus": {
+    "ja": "集中・"
+  },
+  "dish.family.Keen": {
+    "ja": "鋭眼・"
+  },
+  "dish.family.Fierce": {
+    "ja": "会心・"
+  },
+  "dish.family.Guard": {
+    "ja": "堅守・"
+  },
+  "dish.family.Bounty": {
+    "ja": "豊穣・"
+  },
+  "dish.family.Tame": {
+    "ja": "馴致・"
+  },
+  "dish.family.Revive": {
+    "ja": "蘇生・"
   }
 }

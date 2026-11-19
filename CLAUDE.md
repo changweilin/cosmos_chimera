@@ -32,6 +32,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 服裝、飾品、武器、防具外觀（程序化五軸、紙娃娃、虛擬大手、格擋護盾） | `docs/design/gear-looks.md` |
 | 宙獸資料、屬性、能力值、進化、副手、關係表 | `docs/design/creatures.md` |
 | 生活主動技／被動技與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
+| 食材加工、料理組合與效果、食譜 | `docs/design/cuisine.md` |
 | 戰鬥、主動技、CD、命中、召喚輪替 | `docs/design/combat.md` |
 | 打擊感、頓幀震屏、格擋、地城氛圍、BOSS 戰回饋 | `docs/design/combat-feel.md` |
 | 天氣、時段（清晨／白天／黃昏／夜晚）、地形限定異象 | `docs/design/weather.md` |
