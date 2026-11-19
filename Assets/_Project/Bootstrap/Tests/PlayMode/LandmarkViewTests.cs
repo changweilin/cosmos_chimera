@@ -70,7 +70,8 @@ namespace Cosmimera.Bootstrap.Tests
         public IEnumerator Every_landmark_is_drawn_upright_facing_its_entrance_with_a_collider_only_when_solid()
         {
             LandmarkLayout layout = Layout(7);
-            Assert.That(layout.Landmarks.Count, Is.GreaterThan(3));
+            // Q-W41: a dwarf-planet fixture (R = 640) plans 2 ground wonders.
+            Assert.That(layout.Landmarks.Count, Is.GreaterThanOrEqualTo(2));
             LandmarkView view = View(layout, Hills, true, "verdant_planet", 7);
             yield return null;
             Assert.That(view.Landmarks.Count, Is.EqualTo(layout.Landmarks.Count));

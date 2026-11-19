@@ -23,7 +23,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 2;
+        public const int GeneratorVersion = 3;
 
         /// <summary>Free ground kept between a solid landmark's footprint and any road or building (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -72,13 +72,14 @@ namespace Cosmimera.WorldGen
 
         /// <summary>Number of ground wonders (everything but the elevator and its station) planned for a planet of <paramref name="radiusM"/>.</summary>
         /// <remarks>
-        /// REQ: planet-world.md#奇觀地標 — 4／6／8／10 for R = 320／640／960／1280 m.
+        /// REQ: planet-world.md#奇觀地標 (Q-W41) — 2／2／3／4 for R = 320／640／960／1280 m (asteroid keeps the
+        /// earlier 2; dwarf planet / planet / supergiant 2／3／4).
         /// Pre: radiusM > 0. Post: ≥ 2. Side effects: none.
         /// </remarks>
         public static int GroundCountFor(float radiusM)
         {
             Contract.Requires(radiusM > 0f, "radiusM must be > 0");
-            return 2 + 2 * (int)math.round(radiusM / 320f);
+            return math.max(2, (int)math.round(radiusM / 320f));
         }
 
         /// <summary>Generates the wonders of <paramref name="plan"/> around the roads and buildings of <paramref name="layout"/>.</summary>

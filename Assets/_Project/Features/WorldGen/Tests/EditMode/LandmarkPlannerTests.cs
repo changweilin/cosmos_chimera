@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class LandmarkPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v2).
-        private const ulong SnapshotSeed12345V2 = 3355366971367836007UL;
+        // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v3: Q-W41 ground counts 2／2／3／4).
+        private const ulong SnapshotSeed12345V3 = 15346270906682451476UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -70,10 +70,10 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Ground_count_follows_the_planet_size()
         {
-            Assert.That(LandmarkPlanner.GroundCountFor(320f), Is.EqualTo(4));
-            Assert.That(LandmarkPlanner.GroundCountFor(640f), Is.EqualTo(6));
-            Assert.That(LandmarkPlanner.GroundCountFor(960f), Is.EqualTo(8));
-            Assert.That(LandmarkPlanner.GroundCountFor(1280f), Is.EqualTo(10));
+            Assert.That(LandmarkPlanner.GroundCountFor(320f), Is.EqualTo(2));
+            Assert.That(LandmarkPlanner.GroundCountFor(640f), Is.EqualTo(2));
+            Assert.That(LandmarkPlanner.GroundCountFor(960f), Is.EqualTo(3));
+            Assert.That(LandmarkPlanner.GroundCountFor(1280f), Is.EqualTo(4));
         }
 
         [Test]
@@ -323,9 +323,9 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(2), "bump the pin with the version");
+            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(3), "bump the pin with the version");
             ulong h = LandmarkPlanner.Hash(Make(12345).marks);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V2), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V3), "actual " + h);
         }
     }
 }
