@@ -196,6 +196,30 @@ namespace Cosmimera.Player
             _verticalInput = math.clamp(vertical, -1f, 1f);
         }
 
+        /// <summary>Teleports the character to <paramref name="worldPosition"/> at rest and resyncs motor orientation state.</summary>
+        /// <remarks>
+        /// Pre: <see cref="Configure"/> called; <paramref name="worldPosition"/> is finite and not at planet center.
+        /// Post: body and transform are at <paramref name="worldPosition"/> with zero linear velocity and a valid tangent facing.
+        /// Side effects: mutates Rigidbody position, velocity, rotation, and transform.
+        /// </remarks>
+        public void Teleport(Vector3 worldPosition)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(_configured, "Configure has not been called");
+            float3 pos = worldPosition;
+            Cosmimera.Core.Contracts.Contract.Requires(
+                math.all(math.isfinite(pos)) && math.lengthsq(pos - _planet.Center) > 1e-4f,
+                "worldPosition must be finite and away from planet center");
+
+            float3 up = PlanetFrame.At(_planet, pos).Up;
+            float3 facing = SphericalMotor.TangentOr(transform.forward, up, PlanetFrame.FromUp(up).North);
+            _body.linearVelocity = Vector3.zero;
+            _body.position = worldPosition;
+            transform.position = worldPosition;
+            _state = SphericalMotor.Initial(up, facing);
+            _hasSafeSurfaceDir = false;
+            ApplyRotation(up, _state.Facing, immediate: true);
+        }
+
         /// <summary>Applies landform movement and friction multipliers (1 = neutral).</summary>
         /// <remarks>
         /// REQ: docs/design/planet-world.md#地貌行動影響.
@@ -385,11 +409,13 @@ namespace Cosmimera.Player
         {
             float altitude = _planet.Altitude(position);
             float baseSpeed = (_input.Sprint ? _sprintSpeed : _walkSpeed) * _traversal.AirSpeedScale;
+            float dt = Time.fixedDeltaTime;
             float climb = _verticalInput * baseSpeed;
 
-            if (altitude >= _traversal.MaxAltitudeM && climb > 0f)
+            if (climb > 0f)
             {
-                climb = 0f;
+                float remaining = _traversal.MaxAltitudeM - altitude;
+                climb = remaining <= 0f ? 0f : math.min(climb, remaining / dt);
             }
 
             if (altitude > _traversal.MaxAltitudeM + 0.02f)
@@ -400,9 +426,10 @@ namespace Cosmimera.Player
             float minFloor = _traversal.EnforceWaterBoundary && !_traversal.CanDive
                 ? _traversal.SeaLevelM - _traversal.MaxShallowDepthM
                 : float.NegativeInfinity;
-            if (altitude <= minFloor && climb < 0f)
+            if (climb < 0f && math.isfinite(minFloor))
             {
-                climb = 0f;
+                float room = altitude - minFloor;
+                climb = room <= 0f ? 0f : math.max(climb, -room / dt);
             }
 
             if (altitude < minFloor)
@@ -416,14 +443,13 @@ namespace Cosmimera.Player
             }
 
             float3 moveDir = TangentMoveDirection(up);
-            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+            float3 facing = math.lengthsq(moveDir) > 1e-6f
                 ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
-                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
-            _state.Grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
-            _state.VerticalSpeed = climb;
-            _state.Velocity = moveDir * baseSpeed + up * climb;
+                : _state.Facing;
+            bool grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
+            SyncMotorState(up, facing, moveDir * baseSpeed, climb, grounded);
             _body.linearVelocity = _state.Velocity;
-            ApplyRotation(up, _state.Facing, immediate: false);
+            ApplyRotation(_state.Up, _state.Facing, immediate: false);
         }
 
         private void StepSurfaceSwim(float3 up, float altitude, float depth)
@@ -438,16 +464,14 @@ namespace Cosmimera.Player
             }
 
             float3 moveDir = TangentMoveDirection(up);
-            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+            float3 facing = math.lengthsq(moveDir) > 1e-6f
                 ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
-                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
-            _state.Grounded = false;
-            _state.VerticalSpeed = radialVel;
-            _state.Velocity = moveDir * speed + up * radialVel;
+                : _state.Facing;
+            SyncMotorState(up, facing, moveDir * speed, radialVel, grounded: false);
             _body.linearVelocity = _state.Velocity;
-            _lastSafeSurfaceDir = up;
+            _lastSafeSurfaceDir = _state.Up;
             _hasSafeSurfaceDir = true;
-            ApplyRotation(up, _state.Facing, immediate: false);
+            ApplyRotation(_state.Up, _state.Facing, immediate: false);
         }
 
         private void StepUnderwaterSwim(float3 up, GroundContact ground, float altitude, float depth)
@@ -465,20 +489,19 @@ namespace Cosmimera.Player
             }
 
             float3 moveDir = TangentMoveDirection(up);
-            _state.Facing = math.lengthsq(moveDir) > 1e-6f
+            float3 facing = math.lengthsq(moveDir) > 1e-6f
                 ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
-                : SphericalMotor.TangentOr(_state.Facing, up, PlanetFrame.FromUp(up).North);
-            _state.Grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
-            _state.VerticalSpeed = climb;
-            _state.Velocity = moveDir * speed + up * climb;
+                : _state.Facing;
+            bool grounded = ground.Hit && ground.Distance <= 0.05f && climb <= 0f;
+            SyncMotorState(up, facing, moveDir * speed, climb, grounded);
             _body.linearVelocity = _state.Velocity;
             if (depth <= _traversal.MaxShallowDepthM)
             {
-                _lastSafeSurfaceDir = up;
+                _lastSafeSurfaceDir = _state.Up;
                 _hasSafeSurfaceDir = true;
             }
 
-            ApplyRotation(up, _state.Facing, immediate: false);
+            ApplyRotation(_state.Up, _state.Facing, immediate: false);
         }
 
         private void ClampDeepWaterEntry(float3 up)
@@ -490,12 +513,23 @@ namespace Cosmimera.Player
             float3 safePos = _planet.ToWorld(up, clampedAlt) + pushTangent * 0.25f;
             _body.position = safePos;
             float3 safeUp = PlanetFrame.At(_planet, safePos).Up;
-            _state.Facing = SphericalMotor.TangentOr(_state.Facing, safeUp, pushTangent);
-            _state.Grounded = false;
-            _state.VerticalSpeed = 0f;
-            _state.Velocity = float3.zero;
+            SyncMotorState(safeUp, _state.Facing, float3.zero, 0f, grounded: false);
             _body.linearVelocity = Vector3.zero;
-            ApplyRotation(safeUp, _state.Facing, immediate: false);
+            ApplyRotation(_state.Up, _state.Facing, immediate: false);
+        }
+
+        private void SyncMotorState(float3 up, float3 facing, float3 planarVelocity, float verticalSpeed, bool grounded)
+        {
+            float3 unitUp = math.normalize(up);
+            float3 tangentFacing = SphericalMotor.TangentOr(facing, unitUp, PlanetFrame.FromUp(unitUp).North);
+            float3 tangentVel = planarVelocity - unitUp * math.dot(planarVelocity, unitUp);
+            _state.Up = unitUp;
+            _state.Facing = tangentFacing;
+            _state.PlanarVelocity = tangentVel;
+            _state.VerticalSpeed = grounded ? 0f : math.clamp(verticalSpeed, -SphericalMotor.MaxStateSpeed, SphericalMotor.MaxStateSpeed);
+            _state.Grounded = grounded;
+            _state.JumpStarted = false;
+            _state.Velocity = tangentVel + unitUp * _state.VerticalSpeed;
         }
 
         private float3 TangentMoveDirection(float3 up)

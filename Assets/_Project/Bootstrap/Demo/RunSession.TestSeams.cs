@@ -4,6 +4,7 @@ using Cosmimera.Combat;
 using Cosmimera.GameData;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.Player;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -273,6 +274,11 @@ namespace Cosmimera.Bootstrap.Demo
         internal void PlaceCharacterForTests(float3 direction)
         {
             Contract.Requires(_started && math.abs(math.lengthsq(direction) - 1f) < 1e-4f, "landed run and unit direction required");
+            if (!enabled)
+            {
+                _rig.Character.SetTraversalEnvelope(TraversalEnvelope.Default);
+            }
+
             var body = _rig.Character.GetComponent<Rigidbody>();
             Vector3 at = SurfacePointForTests(direction, 1f);
             body.linearVelocity = Vector3.zero;

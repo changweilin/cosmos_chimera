@@ -597,11 +597,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _encounter.ForceDisengageAllWild();
             _encounter.RelocateParty(destination);
-            var body = _rig.Character.GetComponent<Rigidbody>();
             Vector3 position = _rig.Config.ToWorld(destination, altitudeM);
-            body.position = position;
-            body.linearVelocity = Vector3.zero;
-            _rig.Character.transform.position = position;
+            _rig.Character.Teleport(position);
             _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
             _lockedTarget = -1;
             _lockedObjectId = -1;

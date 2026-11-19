@@ -169,9 +169,7 @@ namespace Cosmimera.Player.Tests
             float3 dir = math.normalize(new float3(0f, 1f, 0f));
             yield return Spawn(dir, new float3(0f, 0f, 1f));
 
-            var body = _character.GetComponent<Rigidbody>();
-            body.position = _config.ToWorld(dir, _radius - 8f);
-            _character.transform.position = body.position;
+            _character.Teleport(_config.ToWorld(dir, _radius - 8f));
 
             _character.SetTraversalEnvelope(new TraversalEnvelope(
                 aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
@@ -210,11 +208,9 @@ namespace Cosmimera.Player.Tests
             float3 dir = math.normalize(new float3(0f, 1f, 0f));
             yield return Spawn(dir, new float3(0f, 0f, 1f));
             float seaLevel = _height.Sample(dir) + 3.5f;
-            var body = _character.GetComponent<Rigidbody>();
 
             // Without Swim or Dive, entry past 1 m water depth is blocked above SeaLevel - 1 m.
-            body.position = _config.ToWorld(dir, seaLevel - 1.5f);
-            _character.transform.position = body.position;
+            _character.Teleport(_config.ToWorld(dir, seaLevel - 1.5f));
             _character.SetTraversalEnvelope(new TraversalEnvelope(
                 aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
                 canSurfaceSwim: false, canDive: false, seaLevelM: seaLevel,
@@ -230,8 +226,7 @@ namespace Cosmimera.Player.Tests
 
             // Swim moves faster at surface than Dive alone; neither submerges > 1 m with Swim alone.
             float3 swimStart = dir;
-            body.position = _config.ToWorld(swimStart, seaLevel);
-            _character.transform.position = body.position;
+            _character.Teleport(_config.ToWorld(swimStart, seaLevel));
             _character.SetTraversalEnvelope(new TraversalEnvelope(
                 aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
                 canSurfaceSwim: true, canDive: false, seaLevelM: seaLevel,
@@ -247,8 +242,7 @@ namespace Cosmimera.Player.Tests
             Assert.GreaterOrEqual(_character.AltitudeM, seaLevel - 1.05f, "Swim must not submerge below 1 m");
 
             float3 diveSurfStart = _config.ToDirection(_character.transform.position);
-            body.position = _config.ToWorld(diveSurfStart, seaLevel);
-            _character.transform.position = body.position;
+            _character.Teleport(_config.ToWorld(diveSurfStart, seaLevel));
             _character.SetTraversalEnvelope(new TraversalEnvelope(
                 aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
                 canSurfaceSwim: true, canDive: true, seaLevelM: seaLevel,
@@ -264,8 +258,7 @@ namespace Cosmimera.Player.Tests
             Assert.Greater(swimArc, diveSurfArc, "Swim must move faster on water surface than Dive");
 
             // With Dive holding descend, player submerges deeper than 1 m.
-            body.position = _config.ToWorld(dir, seaLevel - 0.5f);
-            _character.transform.position = body.position;
+            _character.Teleport(_config.ToWorld(dir, seaLevel - 0.5f));
             for (int i = 0; i < 30; i++)
             {
                 _character.SetInput(Vector2.zero, _character.Facing, false, false);
