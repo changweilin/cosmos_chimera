@@ -1,0 +1,248 @@
+{
+  "creatures": [
+    {
+      "id": "metal_astrolabe_automaton",
+      "name_zh": "羅盤星儀巨偶",
+      "name_en": "Astrolabion",
+      "naming_note": "取星盤（astrolabe）與自動機偶（automaton）之意象。",
+      "dex_zh": "由黃銅星盤與黑鋼齒輪構築的機房守護巨偶，背後的羅盤花準星能精準校準每一發遠程砲擊。",
+      "dex_en": "A laboratory guardian automaton forged from brass astrolabes and blackened steel gears, calibrating long-range barrages with a thirty-two-point compass halo."
+    },
+    {
+      "id": "wood_jade_tortoise",
+      "name_zh": "翠波石塔龜",
+      "name_en": "Viridichelys",
+      "naming_note": "取翡翠（viridi-）與靈龜（chelys）之意象。",
+      "dex_zh": "背甲承載著苔蘚古塔與碧綠水波紋的雨林巨龜，口銜木劍弩機，在樹冠陰影下穩步守望。",
+      "dex_en": "A rainforest giant tortoise bearing a moss-grown stone pagoda and emerald ripple crests, firing wooden ballista bolts from beneath the canopy."
+    },
+    {
+      "id": "water_coral_serpent",
+      "name_zh": "銀潮珊瑚巨鰻",
+      "name_en": "Corallanguilla",
+      "naming_note": "取珊瑚（coral）與海鰻（anguilla）之意象。",
+      "dex_zh": "盤踞於深海暗礁的銀鱗巨鰻，頭冠嵌有三孔珍珠珊瑚殼，能以高速迴旋的水流長槍貫穿目標。",
+      "dex_en": "A silver-scaled abyssal eel crowned with a three-pored coral shell, piercing deep-sea currents with spinning maelstrom lances."
+    },
+    {
+      "id": "fire_basalt_drake",
+      "name_zh": "熔岩雙輪蚺",
+      "name_en": "Pyrowheelis",
+      "naming_note": "取烈焰（pyro-）與戰車雙輪（wheel）之意象。",
+      "dex_zh": "棲息於火山岩窟的赤銅火蚺，肩側懸浮著燃燒油焰的黑曜石雙輪，衝鋒時宛如流星犁過焦土。",
+      "dex_en": "A volcanic cavern serpent flanked by twin burning obsidian chariot wheels, charging like a meteor across scorched craters."
+    },
+    {
+      "id": "earth_citadel_lion",
+      "name_zh": "岩門石獅獸",
+      "name_en": "Litholeo",
+      "naming_note": "取巨岩（litho-）與雄獅（leo）之意象。",
+      "dex_zh": "由紅褐花崗岩雕琢而成的礦窟巨獅，前爪如山門石柱般厚重，鬃毛間鑲嵌著古老礦脈晶石與壁畫陶片。",
+      "dex_en": "A cave-guarding lion sculpted from red-brown granite with pillar-like forepaws and mineral fresco plates set into its mane."
+    },
+    {
+      "id": "ice_sextant_leviathan",
+      "name_zh": "冰桅六分鯨",
+      "name_en": "Cryonaviga",
+      "naming_note": "取冰霜（cryo-）與航海（naviga）之意象。",
+      "dex_zh": "背脊高聳如冰封三桅帆船的極地巨鯨，額前黃銅六分儀角能折射極光並掃出封凍一切的極地暴雪。",
+      "dex_en": "A polar whale whose frozen three-masted ridge and brass sextant horn refract aurora light into sweeping subzero gales."
+    },
+    {
+      "id": "thunder_obelisk_chimera",
+      "name_zh": "塔紋方尖獸",
+      "name_en": "Obelivolt",
+      "naming_note": "取方尖碑（obelisk）與伏特（volt）之意象。",
+      "dex_zh": "身披多層假窗花崗岩甲的雷電巨獸，額頂懸浮的新月金盤不斷匯聚高塔電漿，化作閃電直線突刺。",
+      "dex_en": "An armored thunder beast clad in carved granite obelisk plates, channeling high-voltage tower plasma through its floating crescent disc."
+    },
+    {
+      "id": "wind_tristar_albatross",
+      "name_zh": "三翼星航鵬",
+      "name_en": "Tristaroc",
+      "naming_note": "取三引擎（tristar）與巨鵬（roc）之意象。",
+      "dex_zh": "具備三具氣流推進渦輪的平流層藍翼巨禽，尾羽牽引著南十字星羅盤軌跡，能無視稀薄大氣高速俯衝。",
+      "dex_en": "A stratospheric blue-winged albatross driven by three airflow turbines, trailing a Southern Cross compass wake through orbital facilities."
+    },
+    {
+      "id": "shadow_lantern_kraken",
+      "name_zh": "千燈墨潮獸",
+      "name_en": "Noctilumina",
+      "naming_note": "取夜影（nocti-）與幻燈微光（lumina）之意象。",
+      "dex_zh": "隱沒於幽暗迷宮的墨霧巨蛸靈獸，面戴珊瑚貝殼面具，觸腕懸掛的千盞幽藍幻燈能喚出重力奇點。",
+      "dex_en": "An ink-mist labyrinth kraken wearing a carved coral-shell mask, summoning gravitational singularities amidst thousands of drifting ghost lanterns."
+    },
+    {
+      "id": "light_seal_unicorn",
+      "name_zh": "印紋聖角獸",
+      "name_en": "Sigilicorn",
+      "naming_note": "取方印（sigil）與獨角獸（unicorn）之意象。",
+      "dex_zh": "身披滑石方印金紋與菩提葉光甲的單角聖牛，額前長角托舉著鏤空聖光香爐，以純淨光槍鎮守神廟。",
+      "dex_en": "A single-horned temple guardian etched with steatite seal patterns and bodhi-leaf armor, firing zenith light lances from its censer horn."
+    }
+  ],
+  "moves": [
+    {
+      "id": "metal_siege_bombard",
+      "name_zh": "星儀重砲轟擊",
+      "name_en": "Siege Bombard",
+      "naming_note": "機房重砲遠程齊射。",
+      "desc_zh": "校準遠距離座標後發射高密度金屬砲彈，在目標點爆開重擊周圍敵人。",
+      "desc_en": "Calibrates distant coordinates and fires a heavy metallic shell that bursts around the target."
+    },
+    {
+      "id": "wood_thorn_ballista",
+      "name_zh": "翠棘弩槍射擊",
+      "name_en": "Thorn Ballista",
+      "naming_note": "林木巨弩直線貫穿。",
+      "desc_zh": "蓄力射出纏繞硬棘的巨型木槍，沿長距離直線貫穿路徑上的敵人。",
+      "desc_en": "Launches a massive thorn-wrapped timber bolt in a long straight line."
+    },
+    {
+      "id": "water_maelstrom_lance",
+      "name_zh": "渦流貫穿槍",
+      "name_en": "Maelstrom Lance",
+      "naming_note": "深海漩渦凝成直線水槍。",
+      "desc_zh": "將深海高壓水流壓縮為螺旋長槍，從遠處高速貫穿直線上的敵人。",
+      "desc_en": "Compresses deep-sea currents into a spiraling lance that pierces enemies along a long line."
+    },
+    {
+      "id": "fire_meteor_rush",
+      "name_zh": "隕炎輪衝",
+      "name_en": "Meteor Rush",
+      "naming_note": "如隕石般拖曳烈焰突進。",
+      "desc_zh": "化作熾熱隕石沿長距離直線高速衝鋒，以猛烈火壓撞碎沿途阻礙。",
+      "desc_en": "Dashes forward along a long line like a blazing meteor, scorching everything in its path."
+    },
+    {
+      "id": "earth_monolith_quarry",
+      "name_zh": "岩柱採掘震爆",
+      "name_en": "Monolith Quarry",
+      "naming_note": "召出巨型礦柱在遠處震裂。",
+      "desc_zh": "從目標腳下喚出巨型花崗岩柱並引爆岩壓，對遠處範圍造成沉重打擊。",
+      "desc_en": "Raises a colossal granite monolith beneath the distant target and detonates it with crushing force."
+    },
+    {
+      "id": "ice_polar_sweep",
+      "name_zh": "極地霜潮橫掃",
+      "name_en": "Polar Sweep",
+      "naming_note": "極地暴雪扇形席捲。",
+      "desc_zh": "朝前方廣大扇形區域噴吐極寒冰晶狂風，凍結並撕裂遠處敵陣。",
+      "desc_en": "Sweeps a wide cone of razor-sharp polar ice crystals across distant foes."
+    },
+    {
+      "id": "thunder_dynamo_charge",
+      "name_zh": "電漿驅動突進",
+      "name_en": "Dynamo Charge",
+      "naming_note": "高壓電樞直線奔襲。",
+      "desc_zh": "讓全身電漿迴路超頻後高速直線衝鋒，以高壓電擊貫穿遠處目標。",
+      "desc_en": "Overclocks internal plasma coils to charge in a long high-voltage line."
+    },
+    {
+      "id": "wind_tailwind_dive",
+      "name_zh": "順風軌道俯衝",
+      "name_en": "Tailwind Dive",
+      "naming_note": "乘順風氣流直線俯衝。",
+      "desc_zh": "乘著平流層順風氣流加速，自遠空沿直線猛烈俯衝撞擊目標。",
+      "desc_en": "Rides stratospheric tailwinds into a high-speed linear dive toward distant foes."
+    },
+    {
+      "id": "shadow_singularity_maw",
+      "name_zh": "暗影奇點吞噬",
+      "name_en": "Singularity Maw",
+      "naming_note": "召喚吞噬光線的暗影奇點。",
+      "desc_zh": "在遠處張開高密度暗影重力奇點，將範圍內的一切捲入猛烈崩塌。",
+      "desc_en": "Opens a dense shadow singularity at long range that collapses violently on enemies."
+    },
+    {
+      "id": "light_zenith_lance",
+      "name_zh": "天頂聖光槍",
+      "name_en": "Zenith Lance",
+      "naming_note": "自天頂校準的純淨光槍。",
+      "desc_zh": "將聖光聚焦為極細長的直線光槍，從遠處瞬間貫穿敵方陣線。",
+      "desc_en": "Focuses temple radiance into a long linear lance that pierces distant targets."
+    }
+  ],
+  "traits": [
+    {
+      "id": "trait_metal_siege_anchoring",
+      "name_zh": "攻城錨定",
+      "name_en": "Siege Anchoring",
+      "naming_note": "登場時釘入地面展開砲台。",
+      "desc_zh": "登場後 6 秒內射程提高百分之二十，但移動速度降低百分之十。",
+      "desc_en": "On summon, increases range by 20% for 6 seconds while reducing movement speed by 10%."
+    },
+    {
+      "id": "trait_wood_overgrowth_surge",
+      "name_zh": "茂盛湧動",
+      "name_en": "Overgrowth Surge",
+      "naming_note": "高血量時林木生機湧現。",
+      "desc_zh": "HP 高於百分之七十五時移動速度提高百分之十五，但火抗性降低十五點。",
+      "desc_en": "Above 75% HP, increases movement speed by 15% while reducing fire resistance by 15."
+    },
+    {
+      "id": "trait_water_torrential_deluge",
+      "name_zh": "洪流延湧",
+      "name_en": "Torrential Deluge",
+      "naming_note": "施放水招後激流延長射程。",
+      "desc_zh": "施放水屬性主動技後 4 秒內射程提高百分之十五，移動速度降低百分之十。",
+      "desc_en": "After using a water move, increases range by 15% for 4 seconds while reducing speed by 10%."
+    },
+    {
+      "id": "trait_fire_smoldering_core",
+      "name_zh": "陰燃火核",
+      "name_en": "Smoldering Core",
+      "naming_note": "體內火核持續預熱縮短冷卻。",
+      "desc_zh": "常駐縮短火屬性主動技冷卻百分之十，但水抗性降低十五點。",
+      "desc_en": "Always reduces fire move cooldown by 10%, while reducing water resistance by 15."
+    },
+    {
+      "id": "trait_earth_monolith_posture",
+      "name_zh": "巨岩磐姿",
+      "name_en": "Monolith Posture",
+      "naming_note": "如山門巨岩般穩固不動。",
+      "desc_zh": "常駐提高土抗性二十五點，但閃避率降低百分之六。",
+      "desc_en": "Always increases earth resistance by 25, while reducing evasion by 6%."
+    },
+    {
+      "id": "trait_ice_permafrost_shell",
+      "name_zh": "永凍甲殼",
+      "name_en": "Permafrost Shell",
+      "naming_note": "萬年凍土凝結的厚重冰甲。",
+      "desc_zh": "常駐提高冰抗性二十點，但移動速度降低百分之十。",
+      "desc_en": "Always increases ice resistance by 20, while reducing movement speed by 10%."
+    },
+    {
+      "id": "trait_thunder_plasma_charge",
+      "name_zh": "電漿蓄能",
+      "name_en": "Plasma Charge",
+      "naming_note": "高壓電漿延伸放電距離。",
+      "desc_zh": "常駐提高射程百分之八，但土抗性降低十五點。",
+      "desc_en": "Always increases range by 8%, while reducing earth resistance by 15."
+    },
+    {
+      "id": "trait_wind_tempest_headway",
+      "name_zh": "暴風前驅",
+      "name_en": "Tempest Headway",
+      "naming_note": "登場時捲起前驅順風。",
+      "desc_zh": "登場後 5 秒內縮短風屬性主動技冷卻百分之二十，但閃避率降低百分之六。",
+      "desc_en": "On summon, reduces wind move cooldown by 20% for 5 seconds while reducing evasion by 6%."
+    },
+    {
+      "id": "trait_shadow_nightfall_creed",
+      "name_zh": "入夜信條",
+      "name_en": "Nightfall Creed",
+      "naming_note": "登場時展開極夜領域。",
+      "desc_zh": "登場後 6 秒內提高影屬性專精二十五點，但射程降低百分之十。",
+      "desc_en": "On summon, increases shadow mastery by 25 for 6 seconds while reducing range by 10%."
+    },
+    {
+      "id": "trait_light_radiant_core",
+      "name_zh": "輝光核心",
+      "name_en": "Radiant Core",
+      "naming_note": "胸口光核常駐照耀。",
+      "desc_zh": "常駐提高光屬性專精十點，但影抗性降低十五點。",
+      "desc_en": "Always increases light mastery by 10, while reducing shadow resistance by 15."
+    }
+  ]
+}

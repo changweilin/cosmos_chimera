@@ -1,0 +1,502 @@
+[
+  {
+    "id": "dex_metal_astrolabe_automaton",
+    "kind": "creature",
+    "subject_id": "metal_astrolabe_automaton",
+    "game_id": "metal_astrolabe_automaton",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "羅盤星儀巨偶",
+      "name_en": "Astrolabion",
+      "appearance": "身軀由多層同心黃銅星盤與黑鋼齒輪拼合而成，背脊懸浮三十二向羅盤花準星環，雙臂為可旋轉的雙桅重砲台；體色以黃銅金、玄鐵黑與鈷藍為主。",
+      "summary": "機房試煉 BOSS · 單一成年型態（持有機房適應 immune_laboratory）"
+    },
+    "details": {
+      "ecology": "以機房與古代天文儀器的磁場迴路維持齒輪運轉，能吸收機房內的電磁脈衝與高熱廢氣保持機身穩定。",
+      "habits": "登場時習慣將底盤錨定於地面並展開三十二向羅盤花校準座標，擅長在遠距離發動高密度金屬重砲齊射。",
+      "habitat": "主要出沒於進階地形「機房／工廠／研究室」深處的試煉競技場，偶見於富含金屬礦脈的古老遺跡。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_wood_jade_tortoise",
+    "kind": "creature",
+    "subject_id": "wood_jade_tortoise",
+    "game_id": "wood_jade_tortoise",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "翠波石塔龜",
+      "name_en": "Viridichelys",
+      "appearance": "背甲如長滿藤蔓與蕨類的古老石塔，甲緣浮現翠綠水波光紋，口銜一柄纏繞樹根的翡翠木劍弩機；體色以翡翠綠、古銅金與青苔灰為主。",
+      "summary": "雨林試煉 BOSS · 單一成年型態（持有雨林適應 immune_rainforest）"
+    },
+    "details": {
+      "ecology": "背甲上的石塔縫隙與雨林潮濕氣流共生，常覆滿蕨類與淨化水苔，能過濾密林毒瘴。",
+      "habits": "性情沉穩而具領地意識，高血線時步履反倒更為迅捷，會保持距離以口中木劍弩機發射長距荊棘弩槍。",
+      "habitat": "進階地形「雨林」深處的試煉競技場，以及濕潤河谷與林間古潭周邊。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_water_coral_serpent",
+    "kind": "creature",
+    "subject_id": "water_coral_serpent",
+    "game_id": "water_coral_serpent",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "銀潮珊瑚巨鰻",
+      "name_en": "Corallanguilla",
+      "appearance": "修長流線的銀鱗深海巨鰻，頭冠嵌有三孔珍珠珊瑚殼，背鰭如半透明水幕隨深海暗流起伏；體色以銀白、深海湛藍與珊瑚粉為主。",
+      "summary": "深海試煉 BOSS · 單一成年型態（持有深海適應 immune_deep_sea）"
+    },
+    "details": {
+      "ecology": "銀鱗能承受極端深海高壓，頭冠珊瑚殼可感測暗流與微弱生物電，並凝聚周邊海水形成保護水膜。",
+      "habits": "游動迅捷、擅長與對手拉開距離，連續施放水屬性招式時激流會進一步延伸其攻擊射程。",
+      "habitat": "進階地形「深海」地城的試煉競技場，偶爾現身於峽灣與群島暗礁帶。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_fire_basalt_drake",
+    "kind": "creature",
+    "subject_id": "fire_basalt_drake",
+    "game_id": "fire_basalt_drake",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "熔岩雙輪蚺",
+      "name_en": "Pyrowheelis",
+      "appearance": "盤繞熔岩裂隙的黑曜石巨蚺，雙肩懸浮兩具燃燒著陶甕火油的雙輪戰車輪輻，鱗縫透出熾白岩漿紋；體色以黑曜岩黑、熔岩赤紅與熾金為主。",
+      "summary": "火山試煉 BOSS · 單一成年型態（持有火山適應 immune_volcano）"
+    },
+    "details": {
+      "ecology": "吞食硫磺與熔岩礦渣維持體內火核陰燃，肩側的黑曜石雙輪能在極端高溫下高速旋轉噴射熱氣流。",
+      "habits": "侵略性極強的突進型守衛，體內火核常駐預熱以縮短火招冷卻，擅長如隕石般沿直線高速衝鋒。",
+      "habitat": "進階地形「火山／火山口」深處的試煉競技場，以及火山裂谷地帶。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_earth_citadel_lion",
+    "kind": "creature",
+    "subject_id": "earth_citadel_lion",
+    "game_id": "earth_citadel_lion",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "岩門石獅獸",
+      "name_en": "Litholeo",
+      "appearance": "由紅褐花崗岩與礦脈晶石構成的雄獅巨獸，雙前足如山門獅爪石柱落地生根，鬃毛間嵌有彩繪壁畫陶板與蓮花石紋；體色以紅褐花崗岩、赭紅與金砂為主。",
+      "summary": "礦坑試煉 BOSS · 單一成年型態（持有礦坑適應 immune_cave）"
+    },
+    "details": {
+      "ecology": "身軀與地底岩層礦脈共鳴，能承受落石與地壓衝擊，鬃毛間的彩繪陶片會隨地脈波動微微發光。",
+      "habits": "守衛礦坑時如山門石雕般巋然不動，常駐極高土抗性，並從遠處喚出巨型花崗岩柱震裂敵陣。",
+      "habitat": "進階地形「礦坑／地底／洞穴」試煉競技場，亦見於峽谷與喀斯特岩域。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_ice_sextant_leviathan",
+    "kind": "creature",
+    "subject_id": "ice_sextant_leviathan",
+    "game_id": "ice_sextant_leviathan",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "冰桅六分鯨",
+      "name_en": "Cryonaviga",
+      "appearance": "背脊隆起如結霜三桅帆船龍骨的巨鯨，額角為透明冰晶鑄成的黃銅六分儀，尾鰭如鋸齒冰山破開凍土；體色以冰川藍白、朽木棕與黃銅金為主。",
+      "summary": "冰棚試煉 BOSS · 單一成年型態（持有冰冠適應 immune_ice_cap）"
+    },
+    "details": {
+      "ecology": "厚實的永凍甲殼能隔絕暴雪與極地嚴寒，額前六分儀冰角能折射極光以辨識冰原方位。",
+      "habits": "沉穩巡弋於永久凍土與冰棚之間，雖移動略慢卻擁有極高耐久與抗性，擅長朝前方大範圍噴吐極地霜潮。",
+      "habitat": "進階地形「冰棚／冰冠／永久凍土」試煉競技場，以及冰河與冰原區域。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_thunder_obelisk_chimera",
+    "kind": "creature",
+    "subject_id": "thunder_obelisk_chimera",
+    "game_id": "thunder_obelisk_chimera",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "塔紋方尖獸",
+      "name_en": "Obelivolt",
+      "appearance": "四足矯健的雷電獅獸，脊背立著多層假窗刻紋的花崗岩方尖碑避雷塔，額頂懸浮新月金盤釋放高壓電弧；體色以灰花崗岩、電光紫與金幣黃為主。",
+      "summary": "高塔試煉 BOSS · 單一成年型態（持有高塔適應 immune_tower）"
+    },
+    "details": {
+      "ecology": "脊背的方尖碑石塔能安全導引高塔摩天樓層的高壓落雷並轉化為體內電漿儲能。",
+      "habits": "反應極為敏捷，擅長以電漿迴路超頻發動長距離直線突刺，並藉常駐蓄能延伸電擊射程。",
+      "habitat": "進階地形「高塔／摩天樓層」試煉競技場，以及高聳高原與雷暴頻仍之處。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_wind_tristar_albatross",
+    "kind": "creature",
+    "subject_id": "wind_tristar_albatross",
+    "game_id": "wind_tristar_albatross",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "三翼星航鵬",
+      "name_en": "Tristaroc",
+      "appearance": "展翼寬闊的深藍金屬羽翼巨鳥，胸前與雙翼嵌有三具旋風推進渦輪，尾羽浮現南十字星光軌羅盤；體色以深航藍、銀鋁白與星輝青為主。",
+      "summary": "太空試煉 BOSS · 單一成年型態（持有太空適應 immune_space）"
+    },
+    "details": {
+      "ecology": "三具氣流推進渦輪可在稀薄高空與太空設施外圍維持穩定升力，並免疫平流層低壓亂流。",
+      "habits": "擁有試煉守護獸中數一數二的高速機動，登場瞬間即捲起順風縮短冷卻，自高空直線俯衝壓制對手。",
+      "habitat": "進階地形「太空設施／浮空島」試煉競技場，以及高空島嶼與強風高原。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_shadow_lantern_kraken",
+    "kind": "creature",
+    "subject_id": "shadow_lantern_kraken",
+    "game_id": "shadow_lantern_kraken",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "千燈墨潮獸",
+      "name_en": "Noctilumina",
+      "appearance": "墨黑霧氣凝成的八腕巨蛸靈體，面戴白色珊瑚雕紋貝殼面具，觸腕末端懸掛數十盞幽紫引魂幻燈；體色以墨夜黑、幽紫與貝殼白為主。",
+      "summary": "迷宮試煉 BOSS · 單一成年型態（持有迷宮適應 immune_labyrinth）"
+    },
+    "details": {
+      "ecology": "在迷宮深處的視覺扭曲與空間霧氣中如魚得水，觸腕上的千盞幻燈能擾亂侵入者的方向感。",
+      "habits": "登場時立即展開極夜領域大幅強化暗影專精，並保持距離在遠處張開暗影重力奇點吞噬目標。",
+      "habitat": "進階地形「迷宮」試煉競技場，僅在超巨星階級的極端暗域現身。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  },
+  {
+    "id": "dex_light_seal_unicorn",
+    "kind": "creature",
+    "subject_id": "light_seal_unicorn",
+    "game_id": "light_seal_unicorn",
+    "status": "review_required",
+    "stage": "adult",
+    "authored_fields": [
+      "basic.name_zh",
+      "basic.name_en",
+      "basic.appearance",
+      "basic.summary",
+      "details.ecology",
+      "details.habits",
+      "details.habitat",
+      "details.growth"
+    ],
+    "basic": {
+      "name_zh": "印紋聖角獸",
+      "name_en": "Sigilicorn",
+      "appearance": "潔白如滑石玉雕的單角神牛，體側浮現方印幾何金紋與菩提葉光甲，額前長角托舉著旋轉的鏤空光能香爐；體色以滑石象牙白、聖金與暖琥珀為主。",
+      "summary": "神廟試煉 BOSS · 單一成年型態（持有神廟適應 immune_temple）"
+    },
+    "details": {
+      "ecology": "與神廟內的高能聖光節點共振，體表方印銘文能將過載輻射轉化為純淨光能儲存於香爐角冠。",
+      "habits": "姿態威嚴肅穆，擅長拉開距離後自天頂校準並射出極具穿透力的直線聖光槍。",
+      "habitat": "進階地形「神廟」試煉競技場，僅在超巨星階級的神聖遺構現身。",
+      "reproduction": null,
+      "growth": "單一成年型態試煉守護種，不經由三段進化成長；隨星球階級調整個體等級與強度。"
+    },
+    "sources": [
+      {
+        "id": "trainer_battles_spec",
+        "storage": "repository",
+        "path": "docs/design/trainer-battles.md",
+        "sha256": "d540bd808be47cccd5eb4316cb9060dcc38f0ddaf7834f1fd1f227298c036f2a"
+      },
+      {
+        "id": "field_utilities_spec",
+        "storage": "repository",
+        "path": "docs/design/field-utilities.md",
+        "sha256": "ba0a7b02b1bbe624ae5956765be94de7c4a5257b5442d32448432a821ac381ba"
+      }
+    ],
+    "assets": {
+      "wiki": null,
+      "portrait": null,
+      "model": null
+    }
+  }
+]

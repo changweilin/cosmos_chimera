@@ -1,0 +1,122 @@
+[
+  {
+    "a": "metal_astrolabe_automaton",
+    "b": "metal_chronos_engine",
+    "kind": "tool_kin",
+    "note": "同為精密齒輪與計時／航海儀器構裝（西亞星盤與象鐘機關）"
+  },
+  {
+    "a": "ice_sextant_leviathan",
+    "b": "metal_astrolabe_automaton",
+    "kind": "tool_kin",
+    "note": "遠洋航海儀器同源（六分儀與三十二向羅盤星盤）"
+  },
+  {
+    "a": "wood_canopy_regent",
+    "b": "wood_jade_tortoise",
+    "kind": "myth_kin",
+    "note": "同為東南亞雨林與水域神話守護靈獸"
+  },
+  {
+    "a": "earth_citadel_lion",
+    "b": "wood_jade_tortoise",
+    "kind": "rival_symbiosis",
+    "note": "木剋土之試煉守衛對峙（古石塔靈龜與山門巨獅）"
+  },
+  {
+    "a": "water_catamaran_serpent",
+    "b": "water_coral_serpent",
+    "kind": "myth_kin",
+    "note": "同為大洋洲海域長蛇／銀鰻傳說系譜"
+  },
+  {
+    "a": "shadow_lantern_kraken",
+    "b": "water_coral_serpent",
+    "kind": "rival_symbiosis",
+    "note": "深海與夜海幻燈巨蛸之海淵領地競爭"
+  },
+  {
+    "a": "fire_basalt_drake",
+    "b": "fire_pyre_monarch",
+    "kind": "mentor",
+    "note": "火山岩窟火蚺與熾焰君王之烈焰傳承"
+  },
+  {
+    "a": "fire_basalt_drake",
+    "b": "water_coral_serpent",
+    "kind": "rival_symbiosis",
+    "note": "水火試煉對極：深海激流與火山雙輪火蚺"
+  },
+  {
+    "a": "earth_auric_sovereign",
+    "b": "earth_citadel_lion",
+    "kind": "myth_kin",
+    "note": "南亞王朝神獸與石窟巨岩獅門同源"
+  },
+  {
+    "a": "ice_sextant_leviathan",
+    "b": "ice_tundra_dreadnought",
+    "kind": "tool_kin",
+    "note": "極地破冰船艦與三桅帆船冰鯨同源"
+  },
+  {
+    "a": "star_skyhoof_steed",
+    "b": "thunder_obelisk_chimera",
+    "kind": "mentor",
+    "note": "高空奔雷神駒與方尖碑避雷巨獸之電弧共鳴"
+  },
+  {
+    "a": "thunder_obelisk_chimera",
+    "b": "wind_tristar_albatross",
+    "kind": "tool_kin",
+    "note": "高塔導雷與跨洋三引擎平流層航標協作"
+  },
+  {
+    "a": "wind_monsoon_galeon",
+    "b": "wind_tristar_albatross",
+    "kind": "tool_kin",
+    "note": "遠洋帆翼與三引擎藍翼航空器之御風共鳴"
+  },
+  {
+    "a": "light_seal_unicorn",
+    "b": "wind_tristar_albatross",
+    "kind": "rival_symbiosis",
+    "note": "神廟風脈與高空航行者之對峙試煉"
+  },
+  {
+    "a": "moon_longnight_wolf",
+    "b": "shadow_lantern_kraken",
+    "kind": "myth_kin",
+    "note": "極夜與月夜海魔之幽暗迷宮守望"
+  },
+  {
+    "a": "light_seal_unicorn",
+    "b": "shadow_lantern_kraken",
+    "kind": "rival_symbiosis",
+    "note": "超巨星光影雙試煉（神廟聖牛與迷宮墨蛸）"
+  },
+  {
+    "a": "light_seal_unicorn",
+    "b": "sun_array_skyheron",
+    "kind": "myth_kin",
+    "note": "日鏡聚光與聖光香爐之神廟光輝同源"
+  },
+  {
+    "a": "fire_basalt_drake",
+    "b": "metal_astrolabe_automaton",
+    "kind": "rival_symbiosis",
+    "note": "火剋金：火山熔岩對抗機房黃銅星儀"
+  },
+  {
+    "a": "ice_sextant_leviathan",
+    "b": "wood_jade_tortoise",
+    "kind": "rival_symbiosis",
+    "note": "冰剋木：極地冰鯨對抗雨林翠龜"
+  },
+  {
+    "a": "earth_citadel_lion",
+    "b": "thunder_obelisk_chimera",
+    "kind": "rival_symbiosis",
+    "note": "土剋雷：礦窟石獅對抗高塔方尖電獸"
+  }
+]

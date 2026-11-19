@@ -1,0 +1,547 @@
+[
+  {
+    "id": "metal_astrolabe_automaton",
+    "line_id": "line_metal_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_ambient_energy_feeder", "weight": 3 },
+      { "niche": "niche_mineral_feeder", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 50,
+      "wood": 0,
+      "water": 0,
+      "fire": -40,
+      "earth": 20,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 15,
+      "shadow": 0
+    },
+    "mastery": {
+      "metal": 40,
+      "earth": 15
+    },
+    "stats": {
+      "hp": 115,
+      "speed": 65,
+      "yin_atk": 60,
+      "yang_atk": 135,
+      "yin_def": 110,
+      "yang_def": 115
+    },
+    "signature_move": "metal_siege_bombard",
+    "trait": "trait_metal_siege_anchoring",
+    "field_utility": "immune_laboratory",
+    "concept": {
+      "base": "黃銅星盤儀器 × 三十二向羅盤花與機房精密齒輪巨偶",
+      "stage_look": "身軀由多層同心黃銅星盤與黑鋼齒輪拼合而成，背脊懸浮三十二向羅盤花準星環，雙臂為可旋轉的雙桅重砲台",
+      "archetype": "arch_piri_reis",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "三十二向羅盤花",
+        "黃銅星盤",
+        "地中海雙桅帆船",
+        "瞪羚皮世界殘圖"
+      ],
+      "role": "機房試煉 BOSS：遠程重砲壓制，進場錨定擴大射程",
+      "palette": "黃銅金、玄鐵黑、海圖羊皮米白、鈷藍"
+    }
+  },
+  {
+    "id": "wood_jade_tortoise",
+    "line_id": "line_wood_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_ground_grazer", "weight": 3 },
+      { "niche": "niche_edge_browser", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 50,
+      "water": 20,
+      "fire": 0,
+      "earth": 15,
+      "ice": -40,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "wood": 40,
+      "water": 15
+    },
+    "stats": {
+      "hp": 140,
+      "speed": 55,
+      "yin_atk": 65,
+      "yang_atk": 120,
+      "yin_def": 105,
+      "yang_def": 115
+    },
+    "signature_move": "wood_thorn_ballista",
+    "trait": "trait_wood_overgrowth_surge",
+    "field_utility": "immune_rainforest",
+    "concept": {
+      "base": "巨型翠玉靈龜 × 湖心古石塔與木質劍脊",
+      "stage_look": "背甲如長滿藤蔓與蕨類的古老石塔，甲緣浮現翠綠水波光紋，口銜一柄纏繞樹根的翡翠木劍弩機",
+      "archetype": "arch_kim_quy_hoan_kiem",
+      "region": "東南亞",
+      "motifs_used": [
+        "浮水巨型金龜",
+        "順天寶劍",
+        "湖心古石塔",
+        "翠綠水波光紋"
+      ],
+      "role": "雨林試煉 BOSS：高血量遠距木弩狙擊，高血線加速壓迫",
+      "palette": "翡翠綠、古銅金、青苔灰、碧波藍"
+    }
+  },
+  {
+    "id": "water_coral_serpent",
+    "line_id": "line_water_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_apex_predator", "weight": 3 },
+      { "niche": "niche_ambush_predator", "weight": 2 },
+      { "niche": "niche_carrion_scavenger", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 15,
+      "water": 50,
+      "fire": 0,
+      "earth": 0,
+      "ice": 20,
+      "wind": 0,
+      "thunder": -40,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "water": 40
+    },
+    "stats": {
+      "hp": 105,
+      "speed": 95,
+      "yin_atk": 70,
+      "yang_atk": 140,
+      "yin_def": 95,
+      "yang_def": 95
+    },
+    "signature_move": "water_maelstrom_lance",
+    "trait": "trait_water_torrential_deluge",
+    "field_utility": "immune_deep_sea",
+    "concept": {
+      "base": "深海銀白巨鰻 × 三孔珊瑚冠與潟湖水膜",
+      "stage_look": "修長流線的銀鱗深海巨鰻，頭冠嵌有三孔珍珠珊瑚殼，背鰭如半透明水幕隨深海暗流起伏",
+      "archetype": "arch_sina_and_eel",
+      "region": "大洋洲",
+      "motifs_used": [
+        "清泉銀鰻",
+        "三孔椰果",
+        "高聳椰林",
+        "珊瑚潟湖"
+      ],
+      "role": "深海試煉 BOSS：高速遠距激流穿刺，連續施放水招延長射程",
+      "palette": "銀白、深海湛藍、珊瑚粉、珍珠光"
+    }
+  },
+  {
+    "id": "fire_basalt_drake",
+    "line_id": "line_fire_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "charge",
+    "niches": [
+      { "niche": "niche_apex_predator", "weight": 3 },
+      { "niche": "niche_mineral_feeder", "weight": 2 },
+      { "niche": "niche_carrion_scavenger", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 15,
+      "wood": 0,
+      "water": -40,
+      "fire": 50,
+      "earth": 20,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "fire": 40,
+      "earth": 15
+    },
+    "stats": {
+      "hp": 110,
+      "speed": 100,
+      "yin_atk": 140,
+      "yang_atk": 70,
+      "yin_def": 90,
+      "yang_def": 90
+    },
+    "signature_move": "fire_meteor_rush",
+    "trait": "trait_fire_smoldering_core",
+    "field_utility": "immune_volcano",
+    "concept": {
+      "base": "岩窟巨蛇 × 雙輪戰車黑曜石火輪",
+      "stage_look": "盤繞熔岩裂隙的黑曜石巨蚺，雙肩懸浮兩具燃燒著陶甕火油的雙輪戰車輪輻，鱗縫透出熾白岩漿紋",
+      "archetype": "arch_illuyanka",
+      "region": "西亞/中東",
+      "motifs_used": [
+        "盤繞岩窟巨蛇",
+        "雷霆雙輪牛車",
+        "陶製葡萄美酒甕",
+        "石灰岩浮雕"
+      ],
+      "role": "火山試煉 BOSS：雙輪突進衝鋒，常駐縮短火招冷卻",
+      "palette": "黑曜岩黑、熔岩赤紅、熾金、古銅棕"
+    }
+  },
+  {
+    "id": "earth_citadel_lion",
+    "line_id": "line_earth_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_mineral_feeder", "weight": 3 },
+      { "niche": "niche_patrol_hunter", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 20,
+      "wood": -40,
+      "water": 0,
+      "fire": 15,
+      "earth": 50,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "earth": 40
+    },
+    "stats": {
+      "hp": 135,
+      "speed": 60,
+      "yin_atk": 125,
+      "yang_atk": 60,
+      "yin_def": 115,
+      "yang_def": 105
+    },
+    "signature_move": "earth_monolith_quarry",
+    "trait": "trait_earth_monolith_posture",
+    "field_utility": "immune_cave",
+    "concept": {
+      "base": "巨岩雕獅 × 絕壁雲宮石柱與彩繪壁畫甲片",
+      "stage_look": "由紅褐花崗岩與礦脈晶石構成的雄獅巨獸，雙前足如山門獅爪石柱落地生根，鬃毛間嵌有彩繪壁畫陶板與蓮花石紋",
+      "archetype": "arch_kashyapa_sigiriya",
+      "region": "南亞",
+      "motifs_used": [
+        "巨岩獅爪山門",
+        "絕壁雲宮",
+        "對稱蓮花水苑",
+        "彩繪壁畫廊"
+      ],
+      "role": "礦坑試煉 BOSS：高防禦遠距岩柱爆破，常駐高額土抗",
+      "palette": "紅褐花崗岩、赭紅、金砂、蒼青"
+    }
+  },
+  {
+    "id": "ice_sextant_leviathan",
+    "line_id": "line_ice_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_patrol_hunter", "weight": 3 },
+      { "niche": "niche_apex_predator", "weight": 2 },
+      { "niche": "niche_carrion_scavenger", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": -40,
+      "wood": 0,
+      "water": 20,
+      "fire": 0,
+      "earth": 0,
+      "ice": 50,
+      "wind": 15,
+      "thunder": 0,
+      "light": 0,
+      "shadow": 0
+    },
+    "mastery": {
+      "ice": 40
+    },
+    "stats": {
+      "hp": 130,
+      "speed": 65,
+      "yin_atk": 65,
+      "yang_atk": 125,
+      "yin_def": 105,
+      "yang_def": 110
+    },
+    "signature_move": "ice_polar_sweep",
+    "trait": "trait_ice_permafrost_shell",
+    "field_utility": "immune_ice_cap",
+    "concept": {
+      "base": "極地巨鯨 × 冰封三桅木帆船與黃銅六分儀",
+      "stage_look": "背脊隆起如結霜三桅帆船龍骨的巨鯨，額角為透明冰晶鑄成的黃銅六分儀，尾鰭如鋸齒冰山破開凍土",
+      "archetype": "arch_ernest_shackleton",
+      "region": "極地",
+      "motifs_used": [
+        "冰封三桅木帆船",
+        "驚濤救生小艇",
+        "六分儀航跡",
+        "南極鋸齒冰山"
+      ],
+      "role": "冰棚試煉 BOSS：重裝遠距極寒扇形掃射，極高冰霜抗性",
+      "palette": "冰川藍白、朽木棕、黃銅金、深海墨藍"
+    }
+  },
+  {
+    "id": "thunder_obelisk_chimera",
+    "line_id": "line_thunder_trial_boss",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "charge",
+    "niches": [
+      { "niche": "niche_ambient_energy_feeder", "weight": 3 },
+      { "niche": "niche_patrol_hunter", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 20,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": -40,
+      "ice": 0,
+      "wind": 0,
+      "thunder": 50,
+      "light": 15,
+      "shadow": 0
+    },
+    "mastery": {
+      "thunder": 40,
+      "metal": 15
+    },
+    "stats": {
+      "hp": 95,
+      "speed": 115,
+      "yin_atk": 145,
+      "yang_atk": 65,
+      "yin_def": 90,
+      "yang_def": 90
+    },
+    "signature_move": "thunder_dynamo_charge",
+    "trait": "trait_thunder_plasma_charge",
+    "field_utility": "immune_tower",
+    "concept": {
+      "base": "花崗岩方尖碑構裝 × 高塔避雷獅獸",
+      "stage_look": "四足矯健的雷電獅獸，脊背立著多層假窗刻紋的花崗岩方尖碑避雷塔，額頂懸浮新月金盤釋放高壓電弧",
+      "archetype": "arch_ezana_aksum",
+      "region": "非洲",
+      "motifs_used": [
+        "多層假窗花崗岩方尖碑",
+        "新月圓盤金幣",
+        "麥穗浮雕",
+        "三語石碑"
+      ],
+      "role": "高塔試煉 BOSS：高速電漿直線突進，常駐延伸技能射程",
+      "palette": "灰花崗岩、電光紫、金幣黃、湛藍電弧"
+    }
+  },
+  {
+    "id": "wind_tristar_albatross",
+    "line_id": "line_wind_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "charge",
+    "niches": [
+      { "niche": "niche_patrol_hunter", "weight": 3 },
+      { "niche": "niche_apex_predator", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 0,
+      "fire": 0,
+      "earth": 0,
+      "ice": 15,
+      "wind": 50,
+      "thunder": 20,
+      "light": 0,
+      "shadow": -40
+    },
+    "mastery": {
+      "wind": 40
+    },
+    "stats": {
+      "hp": 90,
+      "speed": 125,
+      "yin_atk": 140,
+      "yang_atk": 70,
+      "yin_def": 85,
+      "yang_def": 90
+    },
+    "signature_move": "wind_tailwind_dive",
+    "trait": "trait_wind_tempest_headway",
+    "field_utility": "immune_space",
+    "concept": {
+      "base": "藍翼信天翁 × 三引擎軌道飛行器與南十字羅盤",
+      "stage_look": "展翼寬闊的深藍金屬羽翼巨鳥，胸前與雙翼嵌有三具旋風推進渦輪，尾羽浮現南十字星光軌羅盤",
+      "archetype": "arch_kingsford_smith",
+      "region": "大洋洲",
+      "motifs_used": [
+        "三引擎藍翼飛機",
+        "南十字星羅盤",
+        "跨洋無線電",
+        "暴風積雲"
+      ],
+      "role": "太空設施試煉 BOSS：全場最高速俯衝切入，進場大幅縮短風招冷卻",
+      "palette": "深航藍、銀鋁白、雲灰、星輝青"
+    }
+  },
+  {
+    "id": "shadow_lantern_kraken",
+    "line_id": "line_shadow_trial_boss",
+    "stage": "adult",
+    "size_class": "XL",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_ambush_predator", "weight": 3 },
+      { "niche": "niche_ambient_energy_feeder", "weight": 2 },
+      { "niche": "niche_carrion_scavenger", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 0,
+      "wood": 0,
+      "water": 20,
+      "fire": 0,
+      "earth": 0,
+      "ice": 15,
+      "wind": 0,
+      "thunder": 0,
+      "light": -40,
+      "shadow": 50
+    },
+    "mastery": {
+      "shadow": 40
+    },
+    "stats": {
+      "hp": 100,
+      "speed": 90,
+      "yin_atk": 150,
+      "yang_atk": 60,
+      "yin_def": 105,
+      "yang_def": 95
+    },
+    "signature_move": "shadow_singularity_maw",
+    "trait": "trait_shadow_nightfall_creed",
+    "field_utility": "immune_labyrinth",
+    "concept": {
+      "base": "深海墨影巨蛸 × 海神廟珊瑚面具與漂浮幻燈群",
+      "stage_look": "墨黑霧氣凝成的八腕巨蛸靈體，面戴白色珊瑚雕紋貝殼面具，觸腕末端懸掛數十盞幽紫引魂幻燈",
+      "archetype": "arch_rannamaari",
+      "region": "南亞",
+      "motifs_used": [
+        "海上千燈幻影",
+        "珊瑚石海神廟",
+        "月夜黑浪",
+        "寶螺貝幣"
+      ],
+      "role": "迷宮試煉 BOSS：超高陰攻奇點重力爆破，進場爆發暗影專精",
+      "palette": "墨夜黑、幽紫、貝殼白、鬼火青"
+    }
+  },
+  {
+    "id": "light_seal_unicorn",
+    "line_id": "line_light_trial_boss",
+    "stage": "adult",
+    "size_class": "L",
+    "ai_style": "keep_distance",
+    "niches": [
+      { "niche": "niche_ground_grazer", "weight": 3 },
+      { "niche": "niche_ambient_energy_feeder", "weight": 2 },
+      { "niche": "niche_opportunistic_omnivore", "weight": 1 }
+    ],
+    "evolves_to": null,
+    "evolution": null,
+    "resist": {
+      "metal": 20,
+      "wood": 0,
+      "water": 0,
+      "fire": 15,
+      "earth": 0,
+      "ice": 0,
+      "wind": -40,
+      "thunder": 0,
+      "light": 50,
+      "shadow": 0
+    },
+    "mastery": {
+      "light": 40,
+      "fire": 15
+    },
+    "stats": {
+      "hp": 105,
+      "speed": 95,
+      "yin_atk": 65,
+      "yang_atk": 145,
+      "yin_def": 95,
+      "yang_def": 95
+    },
+    "signature_move": "light_zenith_lance",
+    "trait": "trait_light_radiant_core",
+    "field_utility": "immune_temple",
+    "concept": {
+      "base": "單角神牛 × 滑石方印光紋與鏤空聖光香爐",
+      "stage_look": "潔白如滑石玉雕的單角神牛，體側浮現方印幾何金紋與菩提葉光甲，額前長角托舉著旋轉的鏤空光能香爐",
+      "archetype": "arch_harappan_unicorn",
+      "region": "南亞",
+      "motifs_used": [
+        "滑石方印",
+        "單角神牛",
+        "鏤空祭祀香爐",
+        "菩提葉紋"
+      ],
+      "role": "神廟試煉 BOSS：極致直線光槍貫穿，常駐強化光屬性專精",
+      "palette": "滑石象牙白、聖金、暖琥珀、青銅綠"
+    }
+  }
+]
