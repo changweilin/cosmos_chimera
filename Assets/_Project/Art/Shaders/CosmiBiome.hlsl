@@ -139,6 +139,48 @@ float CosmiFoam(float3 positionWS, float height, float3 n)
     return saturate(band + lace * 0.6) * _Foam;
 }
 
+// P1-12 flower meadows (vision.md#美術投資 第 1 項 花海). Globals set by GrassField: x = meadow strength 0..1 for this
+// planet and season (0 = none); four bloom colours. CosmiMeadow mirrors GrassField.MeadowAt, so the flowers it plants
+// stand on the patches this tints.
+float4 _CosmiMeadow;
+float4 _CosmiBloom[4];
+
+float CosmiMeadow(float3 up)
+{
+    if (_CosmiMeadow.x <= 0.0)
+    {
+        return 0.0;
+    }
+
+    float3 plan = _PlanetCenter.xyz + up * _Radius;
+    float n = CosmiNoise(plan * 0.012) * 0.75 + CosmiNoise(plan * 0.07 + 31.0) * 0.25;
+    return smoothstep(0.5, 0.62, n) * _CosmiMeadow.x;
+}
+
+// Drifts of one colour with a few of the next mixed in, as real meadows grow: `jitter` 0..1 per flower.
+half3 CosmiBloomColor(float3 up, float jitter)
+{
+    float3 plan = _PlanetCenter.xyz + up * _Radius;
+    float pick = saturate(CosmiNoise(plan * 0.05 + 57.0) + (jitter - 0.5) * 0.35);
+    return _CosmiBloom[(int)min(floor(pick * 4.0), 3.0)].rgb;
+}
+
+// Terrain only: beyond the 30 m grass ring the flowers are gone and this tint is the meadow; up close it is a faint
+// dappled wash under the drawn blossoms. Not applied to grass blades, which keep the plain turf colour.
+half3 CosmiMeadowTint(half3 c, float3 positionWS, CosmiGround g, float turf)
+{
+    float m = CosmiMeadow(g.up) * turf;
+    if (m <= 0.001)
+    {
+        return c;
+    }
+
+    float far = smoothstep(8.0, 32.0, distance(positionWS, _WorldSpaceCameraPos));
+    float speck = CosmiNoise(positionWS * 1.9);
+    half3 bloom = CosmiBloomColor(g.up, speck);
+    return lerp(c, bloom, m * lerp(0.12, 0.32, far) * smoothstep(0.45, 0.65, speck + 0.2));
+}
+
 // P1-18 cliff faces: the terrain mesh is a smooth ramp at ~1 m spacing, so faces get their planes from the
 // lighting normal. Stepped noise keyed to the map position turns each patch of a face a fixed amount about local up
 // (and tips some toward the sky), so a cliff shades as a few flat, hard-edged planes. Colour still uses the true

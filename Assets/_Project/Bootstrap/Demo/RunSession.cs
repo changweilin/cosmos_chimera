@@ -917,7 +917,8 @@ namespace Cosmimera.Bootstrap.Demo
                     gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isTurf,
                         PlayerPosition,
                         PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM, season),
-                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));
+                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f),
+                        PlanetLook.Meadow(setup.PlanetType.Id, season, out Color[] blooms), blooms);
                 }
             }
             if (starShader != null)

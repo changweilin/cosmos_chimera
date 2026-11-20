@@ -18,7 +18,7 @@ namespace Cosmimera.Bootstrap.Tests
         private readonly List<GameObject> _roots = new List<GameObject>();
 
         private GrassField Grass(System.Func<float3, float> altitude, System.Func<float3, bool> isClear, float density,
-            float3 up, ulong seed = 12345)
+            float3 up, ulong seed = 12345, float meadow = 0f)
         {
             var root = new GameObject("grass-test");
             _roots.Add(root);
@@ -27,7 +27,8 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(shader, Is.Not.Null);
             GrassField field = root.AddComponent<GrassField>();
             field.Configure(config, seed, altitude, isClear, () => config.ToWorld(up, 0f),
-                PlanetLook.GrassMaterial(shader, "verdant_planet", config, 30f, GrassField.RadiusM), density, 20f, 0.9f);
+                PlanetLook.GrassMaterial(shader, "verdant_planet", config, 30f, GrassField.RadiusM), density, 20f, 0.9f,
+                meadow, meadow > 0f ? new[] { Color.yellow, Color.white, Color.magenta, Color.blue } : null);
             return field;
         }
 
@@ -203,6 +204,48 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(b.InstanceCount, Is.EqualTo(a.InstanceCount), "same seed, same place: same grass");
             Assert.That(other.InstanceCount, Is.LessThan(a.InstanceCount), "density thins the field");
             Assert.That(other.InstanceCount, Is.GreaterThan(0));
+        }
+
+        [UnityTest]
+        public IEnumerator Near_ring_is_dense_and_meadows_grow_flowers_only_inside_the_mask()
+        {
+            // REQ: vision.md#美術投資 第 1 項 — grass density ×10 near the player and flower meadows (P1-12).
+            var config = new PlanetConfig(Radius, float3.zero);
+            float3 inMeadow = default, offMeadow = default;
+            bool foundIn = false, foundOff = false;
+            for (int k = 0; k < 4000 && !(foundIn && foundOff); k++)
+            {
+                float3 d = math.normalize(new float3(math.sin(k * 1.7f), math.sin(k * 0.37f) * 0.6f, math.cos(k * 1.7f)));
+                // In: the middle 20 m of the disc is full meadow. Off: nothing anywhere out to the 34 m streaming reach.
+                float lo = 1f, hi = 0f;
+                PlanetFrame f = PlanetFrame.FromUp(d);
+                for (int ring = 0; ring <= 6; ring++)
+                {
+                    for (int b = 0; b < 16; b++)
+                    {
+                        float a = b * math.PI / 8f;
+                        float m = GrassField.MeadowAt(config, d + (f.East * math.cos(a) + f.North * math.sin(a)) * (ring * 6f / Radius), 1f);
+                        if (ring * 6f <= 20f) lo = math.min(lo, m);
+                        hi = math.max(hi, m);
+                    }
+                }
+
+                if (!foundIn && lo > 0.8f) { inMeadow = d; foundIn = true; }
+                if (!foundOff && hi <= 0f) { offMeadow = d; foundOff = true; }
+            }
+
+            Assert.That(foundIn && foundOff, Is.True, "the meadow mask has full patches and gaps");
+            GrassField meadow = Grass(_ => 5f, null, 1f, inMeadow, meadow: 1f);
+            GrassField plain = Grass(_ => 5f, null, 1f, offMeadow, meadow: 1f);
+            GrassField none = Grass(_ => 5f, null, 1f, inMeadow);
+            for (int i = 0; i < 40; i++) yield return null; // near layer builds 4 cells a frame after the base disc
+            yield return Settle();
+            Assert.That(meadow.FlowerCount, Is.GreaterThan(meadow.InstanceCount / 10),
+                "about two thirds of the base clumps in a full meadow are flowers (the near ring is grass only)");
+            Assert.That(plain.FlowerCount, Is.Zero, "no flowers outside the mask");
+            Assert.That(none.FlowerCount, Is.Zero, "meadow strength 0: no flowers");
+            Assert.That(none.NearCount, Is.GreaterThan(none.InstanceCount / 2),
+                "the 14 m near ring holds most of the clumps: that is where the ×10 density goes");
         }
 
         [UnityTest]

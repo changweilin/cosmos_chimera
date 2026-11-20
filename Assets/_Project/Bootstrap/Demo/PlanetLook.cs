@@ -28,6 +28,8 @@ namespace Cosmimera.Bootstrap.Demo
             public float Cloud = 0.42f;      // sky fraction under cloud
             public float Wind = 1f;
             public float Stroke = 1f;        // brush-stroke contrast on the ground (ToonTerrain _StrokeStrength)
+            public float Meadow;             // P1-12 flower meadow strength in spring (0 = no meadows)
+            public Color[] Blooms;           // four meadow flower colours; null when Meadow == 0
         }
 
         private static readonly Dictionary<string, Palette> Palettes = new Dictionary<string, Palette>
@@ -38,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x8A8060), Rock = Hex(0x6E6A62), Snow = Hex(0xF2F6FF), Day = Hex(0x8CC8F0), Dusk = Hex(0xF0A070),
                 Night = Hex(0x0B1430),
                 Grass = 1f,
+                Meadow = 0.9f, Blooms = new[] { Hex(0xF2C230), Hex(0xF4F0E6), Hex(0xE8608A), Hex(0x8A6AE0) },
             },
             ["lava_planet"] = new Palette
             {
@@ -60,6 +63,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x80786E), Rock = Hex(0x5C5A60), Snow = Hex(0xE6E8F0), Day = Hex(0x7E8EA8), Dusk = Hex(0x9A7FA8),
                 Night = Hex(0x0E1020),
                 Grass = 0.8f, GrassHeight = 1.25f, Cloud = 0.72f, Wind = 1.8f,
+                Meadow = 0.5f, Blooms = new[] { Hex(0xE8D040), Hex(0xF0F0F4), Hex(0x9AB8E8), Hex(0x7A60C8) },
             },
             ["mineral_planet"] = new Palette
             {
@@ -67,6 +71,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x8C4E36), Rock = Hex(0x6A4434), Snow = Hex(0xE8D8C0), Day = Hex(0xE8C898), Dusk = Hex(0xE08858),
                 Night = Hex(0x1A1020), SnowLine = 1.1f,
                 Grass = 0.22f, GrassHeight = 0.7f, Patch = new Color(1.12f, 1.02f, 0.86f), Cloud = 0.25f, Wind = 0.8f,
+                Meadow = 0.6f, Blooms = new[] { Hex(0xF09030), Hex(0xF0C840), Hex(0xD04A30), Hex(0xF0E0B0) },
             },
             ["twilight_planet"] = new Palette
             {
@@ -74,6 +79,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x7A6A8A), Rock = Hex(0x4E4658), Snow = Hex(0xF0E8FF), Day = Hex(0xF0C878), Dusk = Hex(0xC870A0),
                 Night = Hex(0x120A28),
                 Grass = 0.7f, Cloud = 0.5f, Wind = 0.7f,
+                Meadow = 0.8f, Blooms = new[] { Hex(0xE050C0), Hex(0xF0A0D8), Hex(0xF4F0FF), Hex(0x70E0E8) },
             },
         };
 
@@ -91,6 +97,22 @@ namespace Cosmimera.Bootstrap.Demo
             Fill(m, PaletteFor(planetTypeId), config, reliefM, season);
             m.SetFloat("_FrozenGround", planetTypeId == "ice_crystal_planet" ? 1f : 0f);
             return m;
+        }
+
+        /// <summary>Flower meadow strength and colours of a planet type in a season (P1-12, vision.md#美術投資 花海).</summary>
+        /// <remarks>
+        /// Pre: none (unknown ids read as verdant).
+        /// Post: strength in [0, 1]: the planet's own in spring, ×0.75 summer, ×0.3 autumn, 0 in winter; blooms has
+        ///       4 colours when strength &gt; 0, otherwise null.
+        /// Side effects: none (blooms is a fresh copy).
+        /// </remarks>
+        public static float Meadow(string planetTypeId, Season season, out Color[] blooms)
+        {
+            Palette p = PaletteFor(planetTypeId);
+            float share = season switch { Season.Spring => 1f, Season.Summer => 0.75f, Season.Autumn => 0.3f, _ => 0f };
+            float strength = p.Meadow * share;
+            blooms = strength > 0f ? (Color[])p.Blooms.Clone() : null;
+            return strength;
         }
 
         /// <summary>What settles on upward faces in winter on a planet type: its own snow (ash on a lava world).</summary>

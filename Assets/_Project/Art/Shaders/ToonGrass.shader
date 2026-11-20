@@ -59,6 +59,7 @@ Shader "Cosmimera/ToonGrass"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0; // x = per-blade random, y = 0 at the root … 1 at the tip
+                float2 bloom : TEXCOORD1; // x = 1 on a blossom (flower clumps only; 0 elsewhere), y = 1 at its heart
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -68,6 +69,7 @@ Shader "Cosmimera/ToonGrass"
                 float3 positionWS : TEXCOORD0;
                 float3 rootWS : TEXCOORD1;
                 float3 tip : TEXCOORD2; // x = height fraction, y = gust 0..1, z = fog factor
+                float3 bloom : TEXCOORD3; // x = blossom, y = heart, z = per-blade random
             };
 
             Varyings Vert(Attributes i)
@@ -109,6 +111,7 @@ Shader "Cosmimera/ToonGrass"
                 o.rootWS = root;
                 o.positionCS = TransformWorldToHClip(ws);
                 o.tip = float3(h, gust * _CosmiWind.x, ComputeFogFactor(o.positionCS.z));
+                o.bloom = float3(i.bloom, i.uv.x);
                 return o;
             }
 
@@ -123,6 +126,11 @@ Shader "Cosmimera/ToonGrass"
                 half3 tipColor = ground * half3(1.16, 1.2, 0.9) + half3(0.012, 0.024, 0.0);
                 half3 albedo = lerp(ground * 0.93, tipColor, i.tip.x); // mean ≈ ground: no edge where grass streams out
                 albedo += i.tip.y * i.tip.x * 0.07; // gust fronts flash the pale underside
+                if (i.bloom.x > 0.5)
+                {
+                    half3 petal = CosmiBloomColor(up, i.bloom.z) * lerp(0.92, 1.08, frac(i.bloom.z * 7.3));
+                    albedo = lerp(petal, half3(1.0, 0.82, 0.25), i.bloom.y * 0.8);
+                }
 
                 // Shadow lookup from blade height, not the buried root (which the ground itself would shadow).
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.rootWS + up * 0.25));
