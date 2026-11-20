@@ -139,6 +139,28 @@ float CosmiFoam(float3 positionWS, float height, float3 n)
     return saturate(band + lace * 0.6) * _Foam;
 }
 
+// P1-18 cliff faces: the terrain mesh is a smooth ramp at ~1 m spacing, so faces get their planes from the
+// lighting normal. Stepped noise keyed to the map position turns each patch of a face a fixed amount about local up
+// (and tips some toward the sky), so a cliff shades as a few flat, hard-edged planes. Colour still uses the true
+// normal; only lighting sees this one. Fades out with distance before the facets alias.
+float3 CosmiCliffNormal(float3 positionWS, float3 n, float3 up)
+{
+    float w = smoothstep(0.22, 0.4, 1.0 - saturate(dot(n, up)));
+    w *= 1.0 - smoothstep(60.0, 140.0, distance(positionWS, _WorldSpaceCameraPos));
+    if (w <= 0.0)
+    {
+        return n;
+    }
+
+    float3 plan = _PlanetCenter.xyz + up * _Radius;
+    float turn = (floor(CosmiNoise(plan * 0.38) * 6.0) / 6.0 - 0.5) * 1.1;
+    float tilt = (floor(CosmiNoise(positionWS * 0.21 + 21.0) * 4.0) / 4.0 - 0.4) * 0.5;
+    float s = sin(turn), c = cos(turn);
+    float3 r = n * c + cross(up, n) * s + up * dot(up, n) * (1.0 - c);
+    r = normalize(r + up * tilt);
+    return normalize(lerp(n, r, w));
+}
+
 // Cellular pebbles: distance to the nearest stone's edge (0 in the gaps between stones) and that stone's id 0..1.
 float CosmiPebbles(float3 p, out float id)
 {
@@ -258,8 +280,43 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
     rockColor *= 1.0 - smoothstep(0.28, 0.4, fine.b) * 0.25;
     // Broken ledges cast narrow bands over their foot; fine strata disappear before they alias at distance.
     float shelfPhase = g.height * 1.1 + n.y * 0.49 + n.x * 2.1;
-    float shelf = smoothstep(0.70, 0.91, frac(shelfPhase)) * (1.0 - smoothstep(0.03, 0.35, fwidth(shelfPhase)));
+    float crisp = 1.0 - smoothstep(0.03, 0.35, fwidth(shelfPhase));
+    float shelf = smoothstep(0.70, 0.91, frac(shelfPhase)) * crisp;
     rockColor *= 1.0 - shelf * 0.13;
+
+    // P1-18 cliff faces (planet-world.md#懸崖): patterns keyed to the distance along the face (its horizontal
+    // tangent), so they run down the face whatever its tilt: broken joints that split it into columns, and rain
+    // stains hanging below each ledge. Ledge lips catch the light and, on living worlds, carry tufts of moss;
+    // lichen crusts in patches.
+    float3 strike = cross(g.up, g.normal);
+    float along = dot(positionWS, strike * rsqrt(max(dot(strike, strike), 1e-6)));
+    float jointPhase = along * 0.33 + CosmiNoise(positionWS * 0.15) * 0.8;
+    float jointGap = abs(frac(jointPhase + 0.5) - 0.5);
+    float joint = (1.0 - smoothstep(0.03, 0.055 + fwidth(jointPhase), jointGap)) * step(0.38, CosmiNoise(positionWS * 0.3 + 5.0)) * crisp;
+    rockColor *= 1.0 - joint * 0.5;
+    float below = smoothstep(0.05, 0.7, frac(shelfPhase));
+    float stain = smoothstep(0.56, 0.76, CosmiNoise(float3(along * 1.1, g.height * 0.06, 7.0))) * below * crisp;
+    rockColor *= 1.0 - stain * 0.3;
+    float f = frac(shelfPhase);
+    float lip = smoothstep(0.88, 0.92, f) * (1.0 - smoothstep(0.96, 0.995, f)) * crisp;
+    lip *= smoothstep(0.42, 0.58, CosmiNoise(positionWS * 0.8 + 13.0));
+    float living = (1.0 - _WaterGlow) * (1.0 - _FrozenGround);
+    rockColor = lerp(rockColor * (1.0 + lip * 0.18), _Low.rgb * 0.9, lip * 0.45 * living);
+    float lichen = smoothstep(0.62, 0.72, CosmiNoise(positionWS * 0.7 + 9.0)) * living;
+    rockColor = lerp(rockColor, rockColor * half3(1.12, 1.1, 0.72) + 0.02, lichen * 0.35);
+
+    // Scree: the band between turf and face is the rubble the cliff has shed, not bare soil.
+    float scree = smoothstep(0.13, 0.22, g.slope + (n.z - 0.5) * 0.1) * (1.0 - rock) * (1.0 - sand);
+    float near = 1.0 - smoothstep(40.0, 90.0, distance(positionWS, _WorldSpaceCameraPos));
+    if (scree * near > 0.01)
+    {
+        float sid;
+        float se = CosmiPebbles(positionWS * 3.5, sid);
+        half3 rubble = bedrock * lerp(0.75, 1.1, sid) * lerp(0.55, 1.0, smoothstep(0.02, 0.15, se));
+        c = lerp(c, rubble, scree * near * 0.8);
+    }
+
+    grass *= 1.0 - scree;
     c = lerp(c, rockColor, rock);
     grass *= 1.0 - rock;
 

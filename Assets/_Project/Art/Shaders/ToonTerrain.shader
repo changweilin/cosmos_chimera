@@ -84,6 +84,7 @@ Shader "Cosmimera/ToonTerrain"
                 half3 albedo = CosmiBiomeColor(i.positionWS, g, grass);
                 albedo = CosmiRiverbed(albedo, i.positionWS, g, i.river);
 
+                n = CosmiCliffNormal(i.positionWS, n, g.up);
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 // Hemisphere ambient: faces turned to the sky take the zenith colour, undersides the ground bounce.
                 half3 ambient = SampleSH(n) * lerp(0.75, 1.25, saturate(dot(n, g.up)));
