@@ -388,6 +388,10 @@ namespace Cosmimera.Bootstrap.Demo
         private LocalWeatherView _weatherView;
         private LightningView _lightning;
         private FireView _fireView;
+        private SeaWaves _sea;
+        private SeaSprayView _spray;
+        private Func<float3, float> _groundAltitudeOrZero;
+        private float _playerGust;
         private readonly List<FireView.Burning> _burning = new List<FireView.Burning>(32);
         private Comparison<FireView.Burning> _byPlayerDistance;
         private float3 _burnFocus;
@@ -886,9 +890,14 @@ namespace Cosmimera.Bootstrap.Demo
                 if (scenery.Water != null)
                 {
                     // Just past where the linear fog turns opaque: the rim of the disc is never visible.
-                    gameObject.AddComponent<WaterSurface>().Configure(config,
-                        PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief),
-                        RenderSettings.fogEndDistance * 1.15f);
+                    Material water = PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief);
+                    gameObject.AddComponent<WaterSurface>().Configure(config, water, RenderSettings.fogEndDistance * 1.15f);
+                    // A molten or dry "sea" (no surf) takes no wind waves or spray.
+                    if (water.GetFloat("_Foam") > 0f)
+                    {
+                        _sea = new SeaWaves();
+                        _spray = new SeaSprayView(transform);
+                    }
                 }
 
                 if (scenery.Grass != null && grassDensity > 0f)
@@ -1104,6 +1113,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (ReadJournalInput()) return;
             ReadInput();
             TickLightning(Time.deltaTime);
+            TickSea(Time.deltaTime);
             _accumulator += Time.deltaTime * 1000f;
             int steps = 0;
             while (_accumulator >= TickMs && steps++ < 5)
@@ -1183,6 +1193,25 @@ namespace Cosmimera.Bootstrap.Demo
             WeatherControlResult result = _weatherControl.TryDispelExotics(region, _nowMs, _utilityModifiers.CanWeatherControl);
             if (result == WeatherControlResult.Applied) UpdateEnvironment(player);
             return result;
+        }
+
+        // REQ: planet-world.md#海浪 — every frame (not per tick): swells move continuously. Follows the eased heading the
+        // grass bends to, so the sea and the meadow never disagree about the wind.
+        private void TickSea(float dt)
+        {
+            if (_sea == null || _atmosphere == null) return;
+            float3 player = PlayerPosition();
+            float3 direction = _rig.Config.ToDirection(player);
+            PlanetFrame frame = PlanetFrame.FromUp(direction);
+            float heading = _atmosphere.WindHeadingRad;
+            float3 downwind = frame.East * math.cos(heading) + frame.North * math.sin(heading);
+            WeatherState s = _playerWeatherState;
+            float wind = TrialInside ? 0f : math.saturate(math.max(0.12f, math.max(s.WindPermille, s.ThunderPermille) / 1000f) + 0.35f * _playerGust);
+            _sea.Step(_rig.Config.ToWorld(direction, PlanetLook.SeaLevelM), direction, downwind, wind, _playerGust, dt);
+            _sea.Publish(_playerGust);
+            if (_surface == null || TrialInside) return;
+            _groundAltitudeOrZero ??= _surface.GroundAltitude;
+            _spray.Tick(dt, _rig.Config, player, downwind, _sea, _groundAltitudeOrZero, PlanetLook.SeaLevelM);
         }
 
         private void TickLightning(float dt)
@@ -1296,6 +1325,7 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: weather.md#風向 — one rule-layer heading and gust drive grass, trees, particles and debris together.
             int heading = _weather.WindHeadingAt(direction, _nowMs);
             float gust = TrialInside ? 0f : _weather.GustAt(direction, _nowMs) / 1000f;
+            _playerGust = gust;
             if (_weatherView != null)
             {
                 bool foliage = _worldObjects != null && _worldObjects.HasFoliage(direction, DebrisFoliageReachM);
@@ -3859,6 +3889,8 @@ namespace Cosmimera.Bootstrap.Demo
             _weatherView?.Dispose();
             _lightning?.Dispose();
             _fireView?.Dispose();
+            _spray?.Dispose();
+            if (_sea != null) SeaWaves.Clear();
             CloseJournal();
             _inputHints?.Dispose();
             _globalInput?.Dispose();

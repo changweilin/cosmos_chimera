@@ -459,6 +459,10 @@ namespace Cosmimera.Bootstrap.Demo
             _wind = wind;
         }
 
+        /// <summary>The eased wind heading the shaders are drawing (radians from local east toward north).</summary>
+        /// <remarks>Pre: none. Post: in [0, 2π). Side effects: none.</remarks>
+        public float WindHeadingRad => _windHeadingRad;
+
         /// <summary>Sets the wind heading the scenery shaders bend toward.</summary>
         /// <remarks>
         /// REQ: weather.md#風向. Pre: headingTenths any integer (tenths of a degree from local east toward north).

@@ -16,6 +16,12 @@ float4 _CosmiCloud;       // x = coverage 0..1, y = shadow strength, z = drift s
 float4 _CosmiWind;        // x = strength, y = gust speed, z = gust wavelength (m), w = heading (rad from local east toward north)
 float4 _CosmiPlayer;      // xyz = player feet, w = push radius (m); grass leans away inside it
 float4 _CosmiFarFocus;    // xyz = centre of the near scatter field (FarScenery): far silhouettes shrink away inside it
+// P1-13 wind sea (Bootstrap/Demo/SeaWaves): four Gerstner swells whose phases the CPU keeps continuous as the wind
+// turns. Unset (all zero) = flat water.
+float4 _CosmiWaveDir[4];  // xyz = travel direction (world, tangent at the anchor), w = wavenumber k (rad/m)
+float4 _CosmiWave[4];     // x = phase at the anchor, y = amplitude (m), z = Gerstner Q
+float4 _CosmiWaveAnchor;  // xyz = point the phases are measured from, w = foam drift along the wind (m)
+float4 _CosmiSea;         // x = effective wind 0..1, y = gust 0..1, z = significant height (m), w = highest crest (m)
 
 float CosmiHash(float3 p)
 {
@@ -40,6 +46,42 @@ float CosmiNoise(float3 p)
 float CosmiFbm2(float3 p)
 {
     return CosmiNoise(p) * 0.65 + CosmiNoise(p * 2.13 + 17.0) * 0.35;
+}
+
+// Gerstner sea at p (GPU Gems 1 ch. 1): returns height above sea level; offset = full displacement (height along up
+// plus the horizontal gather that sharpens crests); swell = sin of the longest swell's phase (1 at its crest).
+float CosmiWaves(float3 p, float3 up, out float3 offset, out float3 normal, out float swell)
+{
+    float3 rel = p - _CosmiWaveAnchor.xyz;
+    float3 slope = 0;
+    float gather = 0;
+    float h = 0;
+    offset = 0;
+    swell = 0;
+    [unroll] for (int i = 0; i < 4; i++)
+    {
+        float3 d = _CosmiWaveDir[i].xyz;
+        float k = _CosmiWaveDir[i].w;
+        float a = _CosmiWave[i].y;
+        float q = _CosmiWave[i].z;
+        float s, c;
+        sincos(k * dot(rel, d) + _CosmiWave[i].x, s, c);
+        h += a * s;
+        offset += d * (q * a * c);
+        slope += d * (k * a * c);
+        gather += q * k * a * s;
+        if (i == 0) swell = s;
+    }
+
+    offset += up * h;
+    normal = normalize(up * (1.0 - gather) - slope);
+    return h;
+}
+
+// Longest swell only (sin of its phase): enough for the terrain's swash, which only needs when a wave arrives.
+float CosmiSwell(float3 p)
+{
+    return sin(_CosmiWaveDir[0].w * dot(p - _CosmiWaveAnchor.xyz, _CosmiWaveDir[0].xyz) + _CosmiWave[0].x);
 }
 
 // Local up at a world position. Never world +Y: "up" is the planet's radial direction (CLAUDE.md#硬性規則).

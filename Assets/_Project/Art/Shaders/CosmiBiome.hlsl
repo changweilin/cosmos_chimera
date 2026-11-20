@@ -130,7 +130,10 @@ float CosmiDab(float v)
 float CosmiFoam(float3 positionWS, float height, float3 n)
 {
     float tide = sin(_Time.y * 0.7 + n.x * 12.0) * 0.07;
-    float d = height - (_SeaLevel + tide);
+    // REQ: planet-world.md#海浪 岸邊碎浪 — each arriving swell runs up the slope and drains back: the waterline
+    // climbs sharply with the crest and sinks slowly through the trough, by up to 70 % of the wave height.
+    float swash = pow(saturate(CosmiSwell(positionWS) * 0.5 + 0.5), 1.6) * _CosmiSea.z * 0.7;
+    float d = height - (_SeaLevel + tide + swash);
     float band = smoothstep(0.16, 0.04, abs(d - 0.03)) * step(0.35, n.z + n.y * 0.5);
     float lace = smoothstep(0.3, 0.0, abs(d + 0.22 + sin(_Time.y * 0.5 + n.y * 9.0) * 0.06)) * step(0.62, n.z);
     return saturate(band + lace * 0.6) * _Foam;
