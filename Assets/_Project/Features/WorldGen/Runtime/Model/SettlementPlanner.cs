@@ -22,7 +22,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 4;
+        public const int GeneratorVersion = 5;
 
         /// <summary>Minimum planet radius (m) where non-mainland settlements and space stations appear (Planet size+).</summary>
         /// <remarks>Pre: none. Post: constant 960 m. Side effects: none.</remarks>
@@ -84,7 +84,25 @@ namespace Cosmimera.WorldGen
         ///       isLand; buildings of one settlement do not overlap. Same inputs → same layout.
         /// Side effects: allocates; calls isLand.
         /// </remarks>
-        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand)
+        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand) =>
+            Generate(planet, plan, isLand, null);
+
+        /// <summary>Generates the layout of <paramref name="plan"/> with roads that follow the terrain.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#道路與建築 (道路依坡度繞行). Pre: as the three-argument overload; groundAltitude null or
+        ///      deterministic (altitude in m of a unit direction).
+        /// Post: as the three-argument overload, which this equals when groundAltitude is null. Otherwise every road
+        ///       first gains a small natural meander and is then relaxed sideways along the contours: interior vertices
+        ///       move along their own sideways axis by at most min(36 m, 18 % of the road's span) to lower the grade
+        ///       and stay out of the sea, while the stretches through settlements (the first and last 40 m of a main
+        ///       road, 24 m of a trail or loop) stay where the three-argument overload puts them, so lots still line
+        ///       the road. The relaxation is a fixed number of gradient steps on a continuous cost, so heights a few
+        ///       millimetres apart (ADR-0007 §2) move vertices millimetres, never to a different valley. Bridge flags
+        ///       are taken after relaxing. Settlements are identical to the three-argument overload's.
+        /// Side effects: allocates; calls isLand and groundAltitude.
+        /// </remarks>
+        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand,
+            Func<float3, float> groundAltitude)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(plan != null, "plan must not be null");
@@ -97,14 +115,16 @@ namespace Cosmimera.WorldGen
             var roads = new List<RunRoad>();
             for (int i = 0; i + 1 < route.Count; i++)
             {
-                roads.Add(Road(RoadClass.Main, route[i], route[i + 1], regions, radius, isLand, ref rng));
+                roads.Add(Road(RoadClass.Main, route[i], route[i + 1], regions, radius, isLand, ref rng,
+                    groundAltitude, plan.Seed, roads.Count));
             }
 
             for (int r = 0; r < regions.Count; r++)
             {
                 if (!onRoute.Contains(r))
                 {
-                    roads.Add(Road(RoadClass.Trail, Parent(regions, r), r, regions, radius, isLand, ref rng));
+                    roads.Add(Road(RoadClass.Trail, Parent(regions, r), r, regions, radius, isLand, ref rng,
+                        groundAltitude, plan.Seed, roads.Count));
                 }
             }
 
@@ -151,7 +171,8 @@ namespace Cosmimera.WorldGen
                     break;
                 }
 
-                roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng));
+                roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng, groundAltitude, plan.Seed,
+                    roads.Count));
             }
 
             if (radius >= PlanetMinRadiusM)
@@ -296,7 +317,7 @@ namespace Cosmimera.WorldGen
         }
 
         private static RunRoad Road(RoadClass roadClass, int from, int to, IReadOnlyList<RunRegion> regions, float radius,
-            Func<float3, bool> isLand, ref Pcg32 rng)
+            Func<float3, bool> isLand, ref Pcg32 rng, Func<float3, float> ground, ulong seed, int roadIndex)
         {
             float3 a = regions[from].Center;
             float3 b = regions[to].Center;
@@ -330,11 +351,131 @@ namespace Cosmimera.WorldGen
                 }
 
                 points[i] = p;
-                bridge[i] = isLand != null && !isLand(p);
+            }
+
+            if (ground != null)
+            {
+                FollowTerrain(points, roadClass, theta * radius, radius, ground, seed, roadIndex);
+            }
+
+            for (int i = 0; i <= segments; i++)
+            {
+                bridge[i] = isLand != null && !isLand(points[i]);
             }
 
             return new RunRoad(roadClass, from, to, roadClass == RoadClass.Main ? MainWidthM : TrailWidthM, points, bridge);
         }
+
+        // REQ: planet-world.md#道路與建築 (道路依坡度繞行; 數值暫定).
+        private const int RelaxSteps = 32;
+        private const float RelaxProbeM = 1.5f;
+        private const float RelaxStepCapM = 1.5f;
+        private const float RelaxRate = 70f;
+        private const float GradeWeight = 1f;
+        private const float BendWeight = 0.004f;
+        private const float AnchorWeight = 0.00012f;
+        private const float SeaWeight = 0.08f;
+        private const float MaxShiftM = 36f;
+        private const float MaxShiftShare = 0.18f;
+        private const float MainPinM = 40f;
+        private const float TrailPinM = 24f;
+
+        // Bends a road round hills instead of over them: lateral offsets x_i (m) along each vertex's own sideways axis
+        // minimise Σ grade² + bend·(Δ²x)² + anchor·x² + sea·depth², by gradient steps with numeric height derivatives.
+        // A separate stream ('MEAN', road index) seeds a small meander first, so tree roads and settlements keep their
+        // v4 draws.
+        private static void FollowTerrain(float3[] points, RoadClass roadClass, float spanM, float radius,
+            Func<float3, float> ground, ulong seed, int roadIndex)
+        {
+            int n = points.Length;
+            if (n < 3)
+            {
+                return;
+            }
+
+            var sideAxis = new float3[n];
+            var weight = new float[n];
+            var x = new float[n];
+            var h = new float[n];
+            var slope = new float[n];
+            var grad = new float[n];
+            float pinM = roadClass == RoadClass.Main ? MainPinM : TrailPinM;
+            float maxShift = math.min(MaxShiftM, MaxShiftShare * spanM);
+            float segM = spanM / (n - 1);
+            for (int i = 0; i < n; i++)
+            {
+                float3 ahead = points[math.min(i + 1, n - 1)] - points[math.max(i - 1, 0)];
+                sideAxis[i] = math.normalize(math.cross(points[i], ahead));
+                float fromEnd = math.min(i, n - 1 - i) * segM;
+                weight[i] = math.smoothstep(pinM, pinM + 20f, fromEnd);
+            }
+
+            // Natural meander: two short wavelengths (40–90 m) on top of the planner's two long lobes.
+            var meander = new Pcg32(seed ^ 0x4D45414EUL, (ulong)roadIndex);
+            float amp = math.min(6f, 0.03f * spanM);
+            float w1 = spanM / (40f + meander.NextFloat() * 50f);
+            float w2 = spanM / (25f + meander.NextFloat() * 30f);
+            float p1 = meander.NextFloat() * math.PI * 2f;
+            float p2 = meander.NextFloat() * math.PI * 2f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)(n - 1);
+                x[i] = amp * (0.7f * math.sin(t * w1 * math.PI * 2f + p1) + 0.3f * math.sin(t * w2 * math.PI * 2f + p2)) * weight[i];
+            }
+
+            for (int step = 0; step < RelaxSteps; step++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    h[i] = ground(At(points[i], sideAxis[i], x[i], radius));
+                    if (weight[i] <= 0f)
+                    {
+                        slope[i] = 0f;
+                        continue;
+                    }
+
+                    float up = ground(At(points[i], sideAxis[i], x[i] + RelaxProbeM, radius));
+                    float down = ground(At(points[i], sideAxis[i], x[i] - RelaxProbeM, radius));
+                    slope[i] = (up - down) / (2f * RelaxProbeM);
+                }
+
+                for (int i = 1; i < n - 1; i++)
+                {
+                    // d/dx_i of the grades of the two segments that share vertex i.
+                    float g = 2f * GradeWeight / (segM * segM) * ((h[i] - h[i - 1]) - (h[i + 1] - h[i])) * slope[i];
+                    g += 2f * BendWeight * (Bend(x, i - 1) - 2f * Bend(x, i) + Bend(x, i + 1));
+                    g += 2f * AnchorWeight * x[i];
+                    g -= 2f * SeaWeight * math.max(0f, -h[i]) * slope[i];
+                    grad[i] = g;
+                }
+
+                // Jacobi update: every vertex moves on the same snapshot, so the result does not depend on scan order.
+                for (int i = 1; i < n - 1; i++)
+                {
+                    float move = math.clamp(-RelaxRate * grad[i], -RelaxStepCapM, RelaxStepCapM) * weight[i];
+                    x[i] = math.clamp(x[i] + move, -maxShift, maxShift);
+                }
+            }
+
+            for (int i = 1; i < n - 1; i++)
+            {
+                points[i] = At(points[i], sideAxis[i], x[i], radius);
+            }
+        }
+
+        // Second difference of the offsets; zero past either end (the ends never move).
+        private static float Bend(float[] x, int i)
+        {
+            if (i <= 0 || i >= x.Length - 1)
+            {
+                return 0f;
+            }
+
+            return x[i - 1] - 2f * x[i] + x[i + 1];
+        }
+
+        private static float3 At(float3 point, float3 side, float offsetM, float radius) =>
+            math.normalize(point + side * (offsetM / radius));
 
         private enum LotSurfaceRule
         {

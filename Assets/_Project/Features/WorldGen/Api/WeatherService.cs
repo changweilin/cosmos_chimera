@@ -38,6 +38,7 @@ namespace Cosmimera.WorldGen
         }
 
         private readonly ulong _seed;
+        private readonly float _radiusM;
         private readonly string _planetTypeId;
         private readonly Season? _season;
         private readonly Func<float3, int> _regionAt;
@@ -46,19 +47,28 @@ namespace Cosmimera.WorldGen
         private readonly WeatherControl _control;
         private readonly Dictionary<(int, string), Site> _sites = new Dictionary<(int, string), Site>();
         private readonly int[] _scratch = new int[WeatherField.AttrCount];
+        // Vortices per 200 m block of the query point, for one simulation time: fire and debris ask many nearby points
+        // per tick, and each list costs a few hundred stream draws.
+        private const float VortexBlockM = 200f;
+        private readonly Dictionary<int3, List<WindVortex>> _vortices = new Dictionary<int3, List<WindVortex>>();
+        private long _vortexMs = -1;
+        private Func<VortexKind, float3, bool> _allowVortex;
 
         /// <summary>Creates the run's weather.</summary>
         /// <remarks>
-        /// Pre: planetTypeId non-empty; regionAt, regionCenter, terrainAt, control non-null and deterministic.
+        /// Pre: radiusM &gt; 0 (PlanetConfig.Radius); planetTypeId non-empty; regionAt, regionCenter, terrainAt, control
+        ///      non-null and deterministic.
         /// Post: no sites cached. Side effects: allocates.
         /// </remarks>
-        public WeatherService(ulong seed, string planetTypeId, Season? season, Func<float3, int> regionAt,
+        public WeatherService(ulong seed, float radiusM, string planetTypeId, Season? season, Func<float3, int> regionAt,
             Func<int, float3> regionCenter, Func<float3, string> terrainAt, WeatherControl control)
         {
+            Contract.Requires(radiusM > 0f, "radiusM must be > 0");
             Contract.Requires(!string.IsNullOrEmpty(planetTypeId), "planetTypeId required");
             Contract.Requires(regionAt != null && regionCenter != null && terrainAt != null && control != null,
                 "lookups and control required");
             _seed = seed;
+            _radiusM = radiusM;
             _planetTypeId = planetTypeId;
             _season = season;
             _regionAt = regionAt;
@@ -116,10 +126,82 @@ namespace Cosmimera.WorldGen
         /// <summary>Wind heading (tenths of a degree from local east toward north) at a surface point.</summary>
         /// <remarks>
         /// REQ: weather.md#風向. Pre: direction a unit vector; timeMs &gt;= 0.
-        /// Post: as <see cref="WindField.HeadingTenths"/> for the point's region. Side effects: none.
+        /// Post: as <see cref="WindAt"/>'s heading. Side effects: as <see cref="WindAt"/>.
         /// </remarks>
-        public int WindHeadingAt(float3 direction, long timeMs) =>
-            WindField.HeadingTenths(_seed, _regionAt(direction), timeMs);
+        public int WindHeadingAt(float3 direction, long timeMs) => WindAt(direction, timeMs).HeadingTenths;
+
+        /// <summary>The wind at a surface point: prevailing flow plus the vortices allowed there.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: direction a unit vector; timeMs &gt;= 0.
+        /// Post: as <see cref="WindField.Sample"/> over <see cref="VorticesNear"/>. Same arguments, same sample.
+        /// Side effects: caches vortex lists for timeMs (dropped when a different time is asked); may fill site caches.
+        /// </remarks>
+        public WindSample WindAt(float3 direction, long timeMs) =>
+            WindField.Sample(_seed, _radiusM, direction, timeMs, VorticesNear(direction, timeMs));
+
+        /// <summary>Live vortices that can reach a surface point, after the local filters.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向 — dust devils only on dry open ground without rain or snow; tornadoes only where the
+        /// tornado exotic is in effect; none of either indoors. Eddies and cyclones go anywhere outdoors.
+        /// Pre: direction a unit vector; timeMs &gt;= 0.
+        /// Post: every vortex that can cover any point within the 200 m block of direction; the list instance is shared
+        ///       until a different time is asked (do not modify it). Side effects: as <see cref="WindAt"/>.
+        /// </remarks>
+        public IReadOnlyList<WindVortex> VorticesNear(float3 direction, long timeMs)
+        {
+            Contract.Requires(timeMs >= 0, "timeMs must be >= 0");
+            if (timeMs != _vortexMs)
+            {
+                _vortices.Clear();
+                _vortexMs = timeMs;
+            }
+
+            int3 block = (int3)math.floor(direction * (_radiusM / VortexBlockM));
+            if (_vortices.TryGetValue(block, out List<WindVortex> list)) return list;
+            list = new List<WindVortex>();
+            float3 blockCentre = math.normalize(((float3)block + 0.5f) * (VortexBlockM / _radiusM));
+            _allowVortex ??= AllowVortex;
+            // Reach: half the block diagonal, so every point of the block is covered.
+            WindField.ActiveVortices(_seed, _radiusM, blockCentre, timeMs, VortexBlockM * 0.87f, _allowVortex, list);
+            _vortices[block] = list;
+            return list;
+        }
+
+        /// <summary>Live, allowed vortices that can reach within <paramref name="reachM"/> of a point (presentation: what is in view).</summary>
+        /// <remarks>
+        /// Pre: direction a unit vector; timeMs &gt;= 0; reachM &gt;= 0; into non-null.
+        /// Post: appends as <see cref="WindField.ActiveVortices"/> with the filters of <see cref="VorticesNear"/>.
+        /// Side effects: appends to into; may fill site caches.
+        /// </remarks>
+        public void VorticesAround(float3 direction, long timeMs, float reachM, List<WindVortex> into)
+        {
+            Contract.Requires(timeMs >= 0, "timeMs must be >= 0");
+            if (timeMs != _vortexMs)
+            {
+                _vortices.Clear();
+                _vortexMs = timeMs;
+            }
+
+            _allowVortex ??= AllowVortex;
+            WindField.ActiveVortices(_seed, _radiusM, direction, timeMs, reachM, _allowVortex, into);
+        }
+
+        /// <summary>Wind heading without vortices at a surface point (what shaders bend toward before adding swirl).</summary>
+        /// <remarks>Pre: direction a unit vector; timeMs &gt;= 0. Post: in [0, 3600). Side effects: none.</remarks>
+        public int PrevailingHeadingAt(float3 direction, long timeMs) =>
+            WindField.PrevailingHeadingTenths(_seed, _radiusM, direction, timeMs);
+
+        private bool AllowVortex(VortexKind kind, float3 center)
+        {
+            if (kind == VortexKind.Cyclone || kind == VortexKind.Eddy) return !IsIndoor(center);
+            if (IsIndoor(center)) return false;
+            WeatherState state = StateAt(center, _vortexMs);
+            if (kind == VortexKind.Tornado) return state.Exotic == WeatherKind.Tornado && state.ExoticStrengthPermille >= 300;
+            return DryOpenGround(_terrainAt(center)) && state.RainPermille < 200 && state.SnowPermille < 200;
+        }
+
+        private static bool DryOpenGround(string terrain) => terrain is "desert" or "plateau" or "canyon" or "grassland"
+            or "rift_valley" or "basalt_terrace" or "granite_domes" or "eternal_day";
 
         /// <summary>Gust strength 0..1000 at a surface point, scaled by the effective wind there.</summary>
         /// <remarks>

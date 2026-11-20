@@ -36,6 +36,12 @@ namespace Cosmimera.Bootstrap.Demo
                 FieldForm.Beetle => new Color(0.12f,0.31f,0.22f),
                 FieldForm.Heron => new Color(0.75f,0.82f,0.77f),
                 FieldForm.Fish => new Color(0.27f,0.53f,0.56f),
+                FieldForm.Deer => new Color(0.62f,0.4f,0.22f),
+                FieldForm.Goat => new Color(0.86f,0.83f,0.76f),
+                FieldForm.Fox => spec.Region == ArchRegion.Ice ? new Color(0.93f,0.94f,0.96f) : new Color(0.82f,0.42f,0.14f),
+                FieldForm.Lizard => new Color(0.55f,0.52f,0.3f),
+                FieldForm.Frog => new Color(0.32f,0.56f,0.24f),
+                FieldForm.Crab => new Color(0.78f,0.3f,0.18f),
                 _ => new Color(0.63f,0.38f,0.17f),
             };
             _body = Color.Lerp(native, _body, 0.26f + spec.Age * 0.00024f);
@@ -429,9 +435,144 @@ namespace Cosmimera.Bootstrap.Demo
                     shoulder + P(side * (span - i * 0.1f),0.15f,-0.22f - i * 0.085f),0.095f,0.02f,_accent,4);
         }
 
+        // REQ: planet-world.md#自然生物 — the landform-bound animals. Same unit as the others: ground at y = 0, facing +z,
+        // about a metre long before FieldSpecimen.Scale.
+        private void Wildlife(FieldForm f)
+        {
+            switch (f)
+            {
+                case FieldForm.Deer:
+                case FieldForm.Goat:
+                {
+                    bool deer = f == FieldForm.Deer;
+                    float hip = deer ? 0.62f : 0.42f;
+                    Oval(P(0,hip + 0.1f,0), deer ? P(0.2f,0.21f,0.46f) : P(0.22f,0.22f,0.4f), _body);
+                    for (int s = -1; s <= 1; s += 2)
+                        for (int e = -1; e <= 1; e += 2)
+                        {
+                            float3 top = P(s * 0.11f,hip,e * 0.3f);
+                            Spar(top,top + P(0,-hip * 0.55f,e * 0.03f),0.06f,0.04f,_body);
+                            Spar(top + P(0,-hip * 0.55f,e * 0.03f),P(s * 0.11f,0.02f,e * 0.3f),0.04f,0.03f,_frame);
+                        }
+                    float3 neck = P(0,hip + (deer ? 0.55f : 0.38f),0.5f);
+                    Spar(P(0,hip + 0.15f,0.32f),neck,0.11f,0.07f,_body);
+                    float3 head = neck + P(0,0.03f,0.1f);
+                    Oval(head, P(0.09f,0.1f,0.17f), _body);
+                    Oval(head + P(0,-0.03f,0.14f), P(0.06f,0.06f,0.06f), _pale);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        Oval(head + P(s * 0.08f,0.03f,0.04f), P(0.022f,0.026f,0.022f), Ink);
+                        Oval(head + P(s * 0.11f,0.09f,-0.06f), P(0.05f,0.025f,0.07f), _body, 0.4f);
+                        if (deer && _spec.Style > 400)
+                        {
+                            // Antlers: a beam with two tines, wider on older stags.
+                            float spread = 0.12f + _spec.Age * 0.0001f;
+                            float3 b0 = head + P(s * 0.05f,0.08f,-0.04f), b1 = b0 + P(s * spread,0.22f,-0.08f);
+                            Spar(b0,b1,0.022f,0.012f,_pale,4);
+                            Spar(math.lerp(b0,b1,0.45f),math.lerp(b0,b1,0.45f) + P(0,0.12f,0.07f),0.015f,0.008f,_pale,4);
+                            Spar(b1,b1 + P(s * 0.03f,0.1f,0.05f),0.012f,0.006f,_pale,4);
+                        }
+                        else if (!deer)
+                        {
+                            // Curved horns swept back over the neck.
+                            float3 h0 = head + P(s * 0.05f,0.09f,-0.04f);
+                            Spar(h0,h0 + P(s * 0.06f,0.1f,-0.12f),0.025f,0.015f,_frame,4);
+                            Spar(h0 + P(s * 0.06f,0.1f,-0.12f),h0 + P(s * 0.08f,0.02f,-0.24f),0.015f,0.006f,_frame,4);
+                        }
+                    }
+                    if (!deer) Spar(head + P(0,-0.07f,0.08f),head + P(0,-0.2f,0.05f),0.03f,0.01f,_pale,4);
+                    Oval(P(0,hip + 0.14f,-0.46f), P(0.05f,0.07f,0.05f), deer ? _pale : _body);
+                    break;
+                }
+                case FieldForm.Fox:
+                {
+                    Oval(P(0,0.3f,0), P(0.14f,0.14f,0.32f), _body);
+                    for (int s = -1; s <= 1; s += 2)
+                        for (int e = -1; e <= 1; e += 2)
+                            Spar(P(s * 0.08f,0.25f,e * 0.2f),P(s * 0.08f,0.01f,e * 0.22f),0.04f,0.025f,e > 0 ? _frame : _body);
+                    float3 head = P(0,0.42f,0.36f);
+                    Oval(head, P(0.11f,0.1f,0.12f), _body);
+                    Spar(head + P(0,-0.02f,0.08f),head + P(0,-0.04f,0.24f),0.06f,0.015f,_pale);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        Spar(head + P(s * 0.06f,0.07f,-0.02f),head + P(s * 0.08f,0.2f,-0.03f),0.045f,0.008f,_body,4);
+                        Oval(head + P(s * 0.065f,0.03f,0.08f), P(0.018f,0.02f,0.018f), Ink);
+                    }
+                    // The brush: thick, pale-tipped.
+                    Oval(P(0,0.28f,-0.48f), P(0.09f,0.09f,0.24f), _body, -0.5f);
+                    Oval(P(0,0.18f,-0.68f), P(0.06f,0.06f,0.07f), _pale);
+                    Oval(P(0,0.24f,0.14f), P(0.09f,0.08f,0.1f), _pale);
+                    break;
+                }
+                case FieldForm.Lizard:
+                {
+                    Oval(P(0,0.08f,0), P(0.1f,0.06f,0.28f), _body);
+                    float3 head = P(0,0.09f,0.33f);
+                    Oval(head, P(0.07f,0.05f,0.1f), _body);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        Oval(head + P(s * 0.05f,0.03f,0.02f), P(0.016f,0.018f,0.016f), Ink);
+                        for (int e = -1; e <= 1; e += 2)
+                        {
+                            float3 hip = P(s * 0.07f,0.07f,e * 0.17f);
+                            Spar(hip,hip + P(s * 0.1f,0.02f,e * 0.04f),0.03f,0.022f,_body,4);
+                            Spar(hip + P(s * 0.1f,0.02f,e * 0.04f),hip + P(s * 0.13f,-0.07f,e * 0.08f),0.022f,0.012f,_frame,4);
+                        }
+                    }
+                    Spar(P(0,0.07f,-0.24f),P(0.08f,0.03f,-0.62f),0.06f,0.008f,_body);
+                    // Banded back: a row of small scutes in the accent colour.
+                    for (int k = 0; k < 4; k++) Oval(P(0,0.13f,0.18f - k * 0.12f), P(0.05f,0.015f,0.04f), _accent);
+                    break;
+                }
+                case FieldForm.Frog:
+                {
+                    Oval(P(0,0.1f,0), P(0.14f,0.09f,0.15f), _body);
+                    Oval(P(0,0.07f,0.04f), P(0.12f,0.06f,0.12f), _pale);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        Oval(P(s * 0.07f,0.18f,0.08f), P(0.04f,0.04f,0.04f), _body);
+                        Oval(P(s * 0.075f,0.2f,0.1f), P(0.022f,0.022f,0.022f), Ink);
+                        // Folded hind legs, the frog's silhouette.
+                        Oval(P(s * 0.15f,0.06f,-0.08f), P(0.06f,0.05f,0.11f), _body);
+                        Spar(P(s * 0.17f,0.02f,-0.02f),P(s * 0.22f,0.01f,0.1f),0.03f,0.02f,_frame,4);
+                        Spar(P(s * 0.08f,0.06f,0.1f),P(s * 0.1f,0.01f,0.17f),0.022f,0.015f,_body,4);
+                    }
+                    for (int k = 0; k < 3; k++) Oval(P(-0.04f + k * 0.04f,0.17f,-0.03f + k * 0.03f), P(0.025f,0.012f,0.025f), _accent);
+                    break;
+                }
+                default:
+                {
+                    // Crab: wide shell, three legs a side, two raised claws.
+                    Oval(P(0,0.11f,0), P(0.2f,0.07f,0.15f), _body);
+                    for (int s = -1; s <= 1; s += 2)
+                    {
+                        for (int k = -1; k <= 1; k++)
+                        {
+                            float3 hip = P(s * 0.16f,0.1f,k * 0.07f - 0.03f);
+                            float3 knee = hip + P(s * 0.12f,0.07f,k * 0.03f);
+                            Spar(hip,knee,0.022f,0.018f,_body,4);
+                            Spar(knee,knee + P(s * 0.07f,-0.16f,k * 0.02f),0.018f,0.008f,_frame,4);
+                        }
+                        float3 arm = P(s * 0.12f,0.14f,0.14f);
+                        Spar(P(s * 0.08f,0.1f,0.1f),arm,0.03f,0.025f,_body,4);
+                        Oval(arm + P(s * 0.02f,0.04f,0.06f), P(0.05f,0.04f,0.07f), _body);
+                        Spar(P(s * 0.04f,0.15f,0.14f),P(s * 0.05f,0.21f,0.15f),0.012f,0.01f,_frame,4);
+                        Oval(P(s * 0.05f,0.22f,0.15f), P(0.018f,0.018f,0.018f), Ink);
+                    }
+                    break;
+                }
+            }
+        }
+
         private void Animal(bool rigged)
         {
             FieldForm f = _spec.Form;
+            if (f >= FieldForm.Deer)
+            {
+                Wildlife(f);
+                return;
+            }
+
             bool bird = f == FieldForm.Heron, fish = f == FieldForm.Fish, bug = f == FieldForm.Beetle;
             float y = bug ? 0.2f : 0.43f;
             Oval(P(0,y,0), bug ? P(0.32f,0.18f,0.48f) : P(0.27f,0.28f,0.53f), _body);

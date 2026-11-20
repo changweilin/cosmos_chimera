@@ -73,16 +73,18 @@ Shader "Cosmimera/ToonScenery"
             float scale = length(axis);
             float3 up = axis / max(scale, 1e-4);
             float3 root = TransformObjectToWorld(float3(0, 0, 0));
-            float3 wind = CosmiWindDir(up);
+            float3 baseWind = CosmiWindDir(up);
+            float vortexBoost;
+            float3 wind = CosmiWindAt(up, vortexBoost);
 
             // The same gust field as ToonGrass: a front that flattens the meadow reaches the tree above it together.
-            float along = dot(root, wind);
-            float across = dot(root, cross(up, wind));
+            float along = dot(root, baseWind);
+            float across = dot(root, cross(up, baseWind));
             float wave = max(_CosmiWind.z, 1.0);
             float gust = CosmiNoise(float3(along / wave - _Time.y * _CosmiWind.y, across / (wave * 1.7), 0.5));
             gust = smoothstep(0.35, 0.8, gust);
             float sway = sin(_Time.y * 1.3 + along * 0.21 + across * 0.13);
-            float lean = (0.25 + sway * 0.35 + gust * 0.9) * weight * scale;
+            float lean = (0.25 + sway * 0.35 + gust * 0.9 + vortexBoost * 1.4 / max(_CosmiWind.x, 0.3)) * weight * scale;
 
             // Leaves shiver faster than the crown leans; the phase varies between blades.
             // Phase 0 marks wood (trunk, limbs): it leans with the crown but must not swell along its normals.

@@ -28,9 +28,15 @@ namespace Cosmimera.Bootstrap.Demo
     {
         // Matches the terrain's finest vertex spacing (PlanetTerrain: 1 m), so the ribbon follows every bump it can see.
         private const float SampleM = 1f;
-        private const int Columns = 5;
-        // Clears the terrain mesh's linear interpolation between its 1 m vertices on rough ground without visibly floating.
-        private const float RoadLiftM = 0.12f;
+        // Seven columns across the paved width plus a worn verge column on each side (|across| > 1), which ToonRoad
+        // thins into ragged tufts.
+        private const int Columns = 9;
+        private static readonly float[] Across = { -1.3f, -1f, -0.66f, -0.33f, 0f, 0.33f, 0.66f, 1f, 1.3f };
+        // Just enough to clear the terrain mesh's chords between its 1 m vertices; ToonRoad's depth offset does the rest,
+        // so the surface reads as part of the ground instead of a strip laid on it.
+        private const float RoadLiftM = 0.07f;
+        // Bridge decks keep the old lift: FieldSpecimen's carts ride the deck at this height.
+        private const float DeckLiftM = 0.12f;
         // Bridge deck height above sea level (altitude 0); the terrain shader paints water below 0.
         private const float BridgeDeckM = 0.6f;
         private const float SinkM = 0.15f;
@@ -43,6 +49,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private Material _mainRoad;
         private Material _trail;
+        private Material _roadSurface;
+        private Func<float3, string> _terrainAt;
         private static readonly Color BridgeStone = C(0x9A958C);
         private static readonly Color BridgeMoss = C(0x5F7F4A);
         private static readonly Color BridgeLamp = C(0xFFD27A);
@@ -76,7 +84,9 @@ namespace Cosmimera.Bootstrap.Demo
         ///      sceneryShader is Cosmimera/ToonScenery, or null to draw the same meshes with shader (flat colours, no
         ///      weathering or glow); planetTypeId picks the regional tradition (null or unknown: verdant) and seed the
         ///      planet's era; plan, when given, is the plan the layout was generated from (its region themes nudge
-        ///      each settlement's style; null: no nudge); called once.
+        ///      each settlement's style; null: no nudge); terrainAt, when given, names the landform at a direction (it
+        ///      turns swamp crossings into boardwalks and drifts sand, snow or leaves over the road; null: none);
+        ///      called once.
         /// Post: Roads.Count == layout.Roads.Count; Buildings.Count == layout.Buildings.Count. Road vertices sit
         ///       RoadLiftM above the ground (bridge rows: at least BridgeDeckM above sea level); a road with a run of
         ///       two or more bridge rows has a "Bridge" child (parapets, arches, piers, lamps); building bases sit below
@@ -86,7 +96,8 @@ namespace Cosmimera.Bootstrap.Demo
         /// Side effects: creates GameObjects, meshes and materials; calls groundAltitude.
         /// </remarks>
         public void Configure(in PlanetConfig config, RunLayout layout, Func<float3, float> groundAltitude, Shader shader,
-            Shader sceneryShader = null, string planetTypeId = null, ulong seed = 0, RunPlan plan = null)
+            Shader sceneryShader = null, string planetTypeId = null, ulong seed = 0, RunPlan plan = null,
+            Func<float3, string> terrainAt = null)
         {
             Contract.Requires(config.IsValid, "config must be valid");
             Contract.Requires(layout != null && groundAltitude != null && shader != null,
@@ -106,8 +117,19 @@ namespace Cosmimera.Bootstrap.Demo
                 _mixes[i] = ArchitectureMeshes.MixFor(_style, s.Kind, theme, seed, i);
             }
 
+            _terrainAt = terrainAt;
             _mainRoad = RoadMaterial(PlanetLook.RoadColor(planetTypeId, true));
             _trail = RoadMaterial(PlanetLook.RoadColor(planetTypeId, false));
+            Shader roadShader = sceneryShader != null ? Resources.Load<Shader>("ToonRoad") : null;
+            if (roadShader != null)
+            {
+                _roadSurface = Own(new Material(roadShader));
+                _roadSurface.SetColor("_Stone", PaveColor(_style, PlanetLook.RoadColor(planetTypeId, true)));
+                _roadSurface.SetColor("_Joint", Color.Lerp(PlanetLook.RoadColor(planetTypeId, false), Color.black, 0.45f));
+                _roadSurface.SetColor("_Verge",
+                    Color.Lerp(PlanetLook.GroundColor(planetTypeId), PlanetLook.RoadColor(planetTypeId, false), 0.3f));
+                _roadSurface.SetColor("_Glow", LaneGlow(_style.Region));
+            }
             foreach (RunRoad road in layout.Roads)
             {
                 _roads.Add(BuildRoad(road));
@@ -127,6 +149,85 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
         }
+
+        /// <summary>Road surface drawn by ToonRoad; values are the shader's style ids.</summary>
+        internal enum RoadStyle
+        {
+            Dirt = 0,
+            Gravel = 1,
+            Cobble = 2,
+            Flagstone = 3,
+            Brick = 4,
+            Paved = 5,
+            Boardwalk = 6,
+            GlowLane = 7,
+        }
+
+        private static float AcrossOf(int column) => Across[column];
+
+        // REQ: settlement-structures.md 地區×時代 (道路造型暫定) — the planet's era paves its main roads; trails are one step
+        // humbler. Region swaps setts for what its builders quarry (basalt flags on the lava world, sandstone slabs on
+        // the crystal world).
+        internal static RoadStyle StyleFor(in ArchPlanetStyle style, RoadClass roadClass)
+        {
+            bool main = roadClass != RoadClass.Trail;
+            RoadStyle paving = style.Era switch
+            {
+                ArchEra.Primal => RoadStyle.Dirt,
+                ArchEra.Agrarian => main ? RoadStyle.Gravel : RoadStyle.Dirt,
+                ArchEra.Mercantile => main ? RoadStyle.Cobble : RoadStyle.Gravel,
+                ArchEra.Industrial => main ? RoadStyle.Brick : RoadStyle.Gravel,
+                ArchEra.Steampunk => main ? RoadStyle.Brick : RoadStyle.Cobble,
+                ArchEra.Future => main ? RoadStyle.GlowLane : RoadStyle.Paved,
+                ArchEra.Wasteland => main ? RoadStyle.Paved : RoadStyle.Dirt,
+                _ => main ? RoadStyle.Flagstone : RoadStyle.Dirt,
+            };
+            if (paving == RoadStyle.Cobble && (style.Region == ArchRegion.Lava || style.Region == ArchRegion.Crystal))
+            {
+                return RoadStyle.Flagstone;
+            }
+
+            return paving;
+        }
+
+        // Swamp crossings become boardwalks wherever builders lay wood; future roads keep their lanes over it.
+        internal static RoadStyle StyleOn(RoadStyle paving, string terrain)
+        {
+            if (terrain == "swamp" && paving != RoadStyle.GlowLane && paving != RoadStyle.Paved) return RoadStyle.Boardwalk;
+            return paving;
+        }
+
+        private static RoadStyle BridgeStyle(RoadStyle paving) =>
+            paving == RoadStyle.Dirt || paving == RoadStyle.Gravel ? RoadStyle.Boardwalk
+            : paving == RoadStyle.Cobble ? RoadStyle.Flagstone : paving;
+
+        // rgb = what drifts over the road there, a = how much; white with a = 0 elsewhere (fallback shaders multiply rgb).
+        internal static Color OverlayOn(string terrain) => terrain switch
+        {
+            "desert" or "canyon" => new Color(0.86f, 0.74f, 0.52f, 0.55f),
+            "glacier" or "ice_field" or "tundra" or "cirque" => new Color(0.93f, 0.95f, 0.98f, 0.5f),
+            "forest" or "river_valley" => new Color(0.46f, 0.34f, 0.2f, 0.28f),
+            "volcano_foothills" or "basalt_terrace" or "rift_valley" => new Color(0.24f, 0.22f, 0.21f, 0.35f),
+            "archipelago" or "fjord" => new Color(0.84f, 0.8f, 0.66f, 0.25f),
+            _ => new Color(1f, 1f, 1f, 0f),
+        };
+
+        // Brick, asphalt and future lanes have their own colours; stone and soil take the planet's road colour.
+        private static Color PaveColor(in ArchPlanetStyle style, Color soil) => StyleFor(style, RoadClass.Main) switch
+        {
+            RoadStyle.Brick => Color.Lerp(soil, new Color(0.62f, 0.32f, 0.24f), 0.6f),
+            RoadStyle.GlowLane => Color.Lerp(soil, new Color(0.86f, 0.88f, 0.9f), 0.7f),
+            RoadStyle.Paved => Color.Lerp(soil, new Color(0.24f, 0.24f, 0.26f), 0.75f),
+            _ => soil,
+        };
+
+        private static Color LaneGlow(ArchRegion region) => region switch
+        {
+            ArchRegion.Lava => new Color(1f, 0.5f, 0.2f),
+            ArchRegion.Twilight => new Color(0.75f, 0.5f, 1f),
+            ArchRegion.Crystal => new Color(0.4f, 1f, 0.85f),
+            _ => new Color(0.45f, 0.85f, 1f),
+        };
 
         private Material RoadMaterial(Color soil) => _sceneryShader == null ? MaterialFor(soil, 0f) :
             Own(PlanetLook.SceneryMaterial(_sceneryShader, soil, soil, 0f, 0f, 0f, 0f));
@@ -155,12 +256,20 @@ namespace Cosmimera.Bootstrap.Demo
             float3 origin = _config.ToWorld(centres[0], _groundAltitude(centres[0]));
             var vertices = new Vector3[rows * Columns];
             var colors = new Color[vertices.Length];
+            var uv = new Vector2[vertices.Length];
+            var surface = new Vector4[vertices.Length];
             var column = new float3[Columns];
             var ground = new float[Columns];
             var sides = new float3[rows];
             var decks = new float[rows];
             var floors = new float[rows];
+            var centreAlt = new float[rows];
             bool anyBridge = false;
+            float halfWidth = road.WidthM * 0.5f;
+            RoadStyle baseStyle = StyleFor(_style, road.Class);
+            float wear = math.saturate(ArchitectureMeshes.EraWear(road.Class == RoadClass.Trail && _style.Era != ArchEra.Future
+                ? ArchEra.Ancient : _style.Era).damage + (road.Class == RoadClass.Main ? 0f : 0.15f));
+            float along = 0f;
             for (int r = 0; r < rows; r++)
             {
                 float3 up = centres[r];
@@ -169,30 +278,44 @@ namespace Cosmimera.Bootstrap.Demo
                 float rowMax = float.MinValue;
                 float rowMin = float.MaxValue;
                 float3 site = up * _config.Radius;
-                float halfWidth = road.WidthM * 0.5f;
                 float left = _groundAltitude(math.normalize(site - side * halfWidth));
                 float right = _groundAltitude(math.normalize(site + side * halfWidth));
                 // On a traverse the uphill bank encroaches on the shoulder; stay inside the scatter clearance.
                 float crossGrade = math.clamp((right - left) / road.WidthM, -1f, 1f);
+                if (r > 0) along += math.distance(centres[r - 1], up) * _config.Radius;
+                centreAlt[r] = _groundAltitude(up);
+
+                // REQ: settlement-structures.md 地區×時代 — the landform the road crosses overrides the era's paving
+                // where people would build differently (boardwalks over swamp) and drifts sand, snow or leaves over it.
+                string terrain = _terrainAt?.Invoke(up);
+                RoadStyle style = bridges[r] ? BridgeStyle(baseStyle) : StyleOn(baseStyle, terrain);
+                Color overlay = OverlayOn(terrain);
                 for (int c = 0; c < Columns; c++)
                 {
-                    float offsetM = (c / (Columns - 1f) - 0.5f) * road.WidthM;
-                    if (!bridges[r])
+                    float across = AcrossOf(c);
+                    float offsetM = across * halfWidth;
+                    if (!bridges[r] && math.abs(across) <= 1f)
                     {
-                        offsetM *= 0.91f + 0.07f * noise.snoise(site * 0.22f + c)
-                            - 0.19f * math.max(0f, math.sign(offsetM) * crossGrade);
+                        offsetM *= 0.95f + 0.05f * noise.snoise(site * 0.22f + c)
+                            - 0.15f * math.max(0f, math.sign(offsetM) * crossGrade);
                     }
-                    float tone = bridges[r] ? 1f : 0.90f + noise.snoise(site * 0.7f + c) * 0.09f
-                        + (c == 1 || c == 3 ? 0.09f : 0f);
-                    colors[r * Columns + c] = new Color(tone, tone, tone, 1f);
+
                     column[c] = math.normalize(up + side * (offsetM / _config.Radius));
                     ground[c] = _groundAltitude(column[c]);
-                    rowMax = math.max(rowMax, ground[c]);
-                    rowMin = math.min(rowMin, ground[c]);
+                    if (math.abs(across) <= 1f)
+                    {
+                        rowMax = math.max(rowMax, ground[c]);
+                        rowMin = math.min(rowMin, ground[c]);
+                    }
+
+                    int v = r * Columns + c;
+                    uv[v] = new Vector2(along, across);
+                    colors[v] = overlay;
+                    surface[v] = new Vector4((float)style, 0f, wear, road.WidthM);
                 }
 
                 sides[r] = side;
-                decks[r] = math.max(BridgeDeckM, rowMax + RoadLiftM);
+                decks[r] = math.max(BridgeDeckM, rowMax + DeckLiftM);
                 floors[r] = rowMin;
                 anyBridge |= bridges[r];
 
@@ -202,6 +325,20 @@ namespace Cosmimera.Bootstrap.Demo
                     float alt = bridges[r] ? decks[r] : ground[c] + RoadLiftM;
                     float3 p = _config.ToWorld(column[c], alt) - origin;
                     vertices[r * Columns + c] = new Vector3(p.x, p.y, p.z);
+                }
+            }
+
+            // Grade per row (rise per metre along the road) for the shader's steps on steep stone paths.
+            for (int r = 0; r < rows; r++)
+            {
+                int a = math.max(r - 2, 0), b = math.min(r + 2, rows - 1);
+                float run = math.max(1e-3f, (uv[b * Columns].x - uv[a * Columns].x));
+                float grade = (centreAlt[b] - centreAlt[a]) / run;
+                for (int c = 0; c < Columns; c++)
+                {
+                    Vector4 s4 = surface[r * Columns + c];
+                    s4.y = grade;
+                    surface[r * Columns + c] = s4;
                 }
             }
 
@@ -231,6 +368,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             mesh.vertices = vertices;
             mesh.colors = colors;
+            mesh.uv = uv;
+            mesh.SetUVs(1, surface);
             mesh.triangles = triangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -241,7 +380,7 @@ namespace Cosmimera.Bootstrap.Demo
             go.transform.SetPositionAndRotation(new Vector3(origin.x, origin.y, origin.z), Quaternion.identity);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = road.Class == RoadClass.Main ? _mainRoad : _trail;
+            renderer.sharedMaterial = _roadSurface != null ? _roadSurface : road.Class == RoadClass.Main ? _mainRoad : _trail;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             if (anyBridge)
             {

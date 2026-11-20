@@ -89,14 +89,18 @@ Shader "Cosmimera/ToonGrass"
 
                 // Wind: a slow sway every blade has, plus gust fronts that travel downwind across the field (the
                 // light bands that roll over a meadow). Bend grows with h² so roots stay planted.
-                float3 wind = CosmiWindDir(up);
-                float along = dot(root, wind);
-                float across = dot(root, cross(up, wind));
+                // Gust fronts travel along the base wind; the blade itself leans along the local wind, which
+                // vortices turn and strengthen (CosmiWindAt).
+                float3 baseWind = CosmiWindDir(up);
+                float vortexBoost;
+                float3 wind = CosmiWindAt(up, vortexBoost);
+                float along = dot(root, baseWind);
+                float across = dot(root, cross(up, baseWind));
                 float wave = max(_CosmiWind.z, 1.0);
                 float gust = CosmiNoise(float3(along / wave - _Time.y * _CosmiWind.y, across / (wave * 1.7), 0.5));
                 gust = smoothstep(0.35, 0.8, gust);
                 float sway = sin(_Time.y * 2.1 + along * 0.9 + i.uv.x * 6.28) * 0.5 + 0.5;
-                float bend = (0.03 + sway * 0.04 + gust * 0.2) * _CosmiWind.x;
+                float bend = (0.03 + sway * 0.04 + gust * 0.2) * _CosmiWind.x + vortexBoost * (0.28 + 0.1 * sway);
 
                 // The player parts the grass: blades inside the push radius lean away and lie lower.
                 float3 away = root - _CosmiPlayer.xyz;

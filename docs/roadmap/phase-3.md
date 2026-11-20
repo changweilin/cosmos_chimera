@@ -44,6 +44,9 @@
 | P3-35 | 風向與陣風（`design/weather.md#風向`）：規則層每區域風向＋陣風；表現層草／樹／雲／粒子吃風向；暴風碎片（樹葉、斷枝、破損人造物）與陣風同步 | Claude Opus | SOL＋ARGON（重現性必審） | 同 (seed, 區域, timeMs) 各客戶端一致；`ReproProbe` 覆蓋（v9）；截圖驗收（未拍） | 🟨 |
 | P3-36 | 規則層落雷（`design/weather.md#落雷`）：雷暴與離子風暴依權重打高處／金屬／孤樹，預警圈、傷害、點燃 | Claude Opus | SOL＋ARGON（重現性必審） | 落點與時間各客戶端一致；預警圈內才受傷；雷抗 ≥ 100 % 免疫；`ReproProbe` 覆蓋 | 🟨 |
 | P3-37 | 延燒與火的類型（`design/destructibles.md#延燒`）：鄰接延燒、風向、雨雪抑制、六種火的外觀、焦土 | Claude Opus | SOL | 1 秒固定步長主機模擬；下風延燒較快；大雨熄火（EditMode）；截圖 `Logs/fire-kinds-{day,night}.png`（`COSMIMERA_CAPTURE=1` 跑 `FireCaptureTests`） | 🟨 |
+| P3-38 | 風場 v2（`design/weather.md#風向`）：盛行風依緯度三圈環流＋空間擺動；塵捲風／龍捲風／渦流／颱風四種尺度渦流；著色器逐頂點旋轉、颱風螺旋雲帶與風眼、`VortexView` 粒子柱 | Claude Opus | SOL＋ARGON（重現性必審） | `WindFieldTests`；`ReproProbe` v11 只雜湊離散的渦流出生與旋向；未經目視 | 🟨 |
+| P3-39 | 道路依坡度繞行與文化鋪面（`design/planet-world.md#道路與建築`）：`SettlementPlanner` v5 側向梯度下降＋蜿蜒（聚落段固定）；`ToonRoad` 程序鋪面依時代／地區，沼澤木棧道、沙雪落葉覆蓋、陡坡台階、不規則路肩 | Claude Opus | SOL＋ARGON（重現性必審） | 無高度時 v4 快照不變；有高度時端點與地塊不變、平均坡度下降；未經目視 | 🟨 |
+| P3-40 | 緯度×海拔動植物（`design/planet-world.md#散佈`、`#自然生物`）：5 種氣候樹＋4 種下層（`ScatterPlanner` v7）；針葉林樹冠改為實心鋸齒針葉層（修正只剩枝條的錯誤）；路邊野生動物依地貌／緯度／海拔（`FieldSpecimen` v4，新增鹿、山羊、狐狸、蜥蜴、青蛙、螃蟹） | Claude Opus | 人工 | `ClimateFloraTests`、`SceneryMeshesTests`；快照依版本重訂；未經目視 | 🟨 |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

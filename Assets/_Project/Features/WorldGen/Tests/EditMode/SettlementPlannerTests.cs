@@ -299,6 +299,66 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(bridges, Is.GreaterThan(0), "half the planet is sea, some road must cross it");
         }
 
+        // A ridge system ~60 m across: steep enough that a straight road climbs hard.
+        private static float Ridges(float3 d) => 12f * math.sin(d.x * 70f) * math.cos(d.z * 55f) + 6f * math.sin(d.y * 90f);
+
+        private static float WorstGrade(RunRoad road, System.Func<float3, float> ground)
+        {
+            float worst = 0f;
+            for (int i = 1; i < road.Points.Count; i++)
+            {
+                float run = math.distance(road.Points[i - 1], road.Points[i]) * Radius;
+                worst += math.abs(ground(road.Points[i]) - ground(road.Points[i - 1])) / math.max(run, 1e-3f);
+            }
+
+            return worst / (road.Points.Count - 1);
+        }
+
+        [Test]
+        public void Null_ground_equals_the_three_argument_layout()
+        {
+            RunPlan plan = Plan(42);
+            Assert.That(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null, null)),
+                Is.EqualTo(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null))));
+        }
+
+        [Test]
+        public void Terrain_following_roads_keep_ends_and_settlements_and_climb_less()
+        {
+            RunPlan plan = Plan(42);
+            RunLayout flat = SettlementPlanner.Generate(_planet, plan, null);
+            RunLayout bent = SettlementPlanner.Generate(_planet, plan, null, Ridges);
+            Assert.That(bent.Roads.Count, Is.EqualTo(flat.Roads.Count));
+            Assert.That(bent.Buildings.Count, Is.EqualTo(flat.Buildings.Count));
+            for (int b = 0; b < flat.Buildings.Count; b++)
+            {
+                Assert.That(bent.Buildings[b].Direction, Is.EqualTo(flat.Buildings[b].Direction));
+            }
+
+            float before = 0f, after = 0f;
+            for (int r = 0; r < flat.Roads.Count; r++)
+            {
+                RunRoad a = flat.Roads[r], b = bent.Roads[r];
+                Assert.That(b.Points.Count, Is.EqualTo(a.Points.Count));
+                Assert.That(b.Points[0], Is.EqualTo(a.Points[0]));
+                Assert.That(b.Points[b.Points.Count - 1], Is.EqualTo(a.Points[a.Points.Count - 1]));
+                float span = math.distance(a.Points[0], a.Points[a.Points.Count - 1]) * Radius;
+                for (int i = 0; i < a.Points.Count; i++)
+                {
+                    Assert.That(math.length(b.Points[i]), Is.EqualTo(1f).Within(1e-4f));
+                    Assert.That(math.distance(a.Points[i], b.Points[i]) * Radius,
+                        Is.LessThanOrEqualTo(math.min(36f, 0.18f * span) + 0.5f), $"road {r} vertex {i}");
+                }
+
+                before += WorstGrade(a, Ridges);
+                after += WorstGrade(b, Ridges);
+            }
+
+            Assert.That(after, Is.LessThan(before), "relaxed roads must climb less on average");
+            Assert.That(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null, Ridges)),
+                Is.EqualTo(SettlementPlanner.Hash(bent)), "same inputs, same roads");
+        }
+
         [Test]
         public void Same_inputs_give_the_same_layout()
         {
@@ -413,7 +473,8 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(4), "bump the pin with the version");
+            // Version 5 only changed the terrain-following overload; without a ground function the v4 digest holds.
+            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(5), "bump the pin with the version");
             ulong h = SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(12345), null));
             Assert.That(h, Is.EqualTo(SnapshotSeed12345V4), "actual " + h);
         }

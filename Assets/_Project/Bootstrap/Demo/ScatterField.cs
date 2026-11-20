@@ -361,6 +361,47 @@ namespace Cosmimera.Bootstrap.Demo
                         P(C(0xF0C830), C(0xC87020), 0f, GrassSway),
                         P(Color.Lerp(theme.Bloom, C(0x7060E0), 0.6f), C(0xFFF0A0), 0f, GrassSway),
                     });
+                // REQ: planet-world.md#散佈 緯度×海拔 (v7) — climate trees and cold / dry understory.
+                case "baobab":
+                    return new Look(SceneryArchetype.Baobab, Role.Bark, P(Mix(theme.Bark, 0xA89078, 0.55f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x6A9A3A, 0.35f), Mix(theme.LeafTop, 0xC8C870, 0.3f)));
+                case "tree_fern":
+                    return new Look(SceneryArchetype.TreeFern, Role.Bark, P(Mix(theme.Bark, 0x3A2A20, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x3F8A3A, 0.35f), Mix(theme.LeafTop, 0xA8D870, 0.35f)));
+                case "krummholz":
+                {
+                    Color needle = Mix(theme.Needle, 0x2A4A38, 0.5f);
+                    return new Look(SceneryArchetype.Krummholz, Role.Bark, P(Mix(theme.Bark, 0x6A5A50, 0.4f), theme.RockTop),
+                        Role.Leaf, P(needle, theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x7A9A70, 0.4f)));
+                }
+                case "cypress":
+                    return new Look(SceneryArchetype.Cypress, Role.Bark, P(theme.Bark, theme.Bark),
+                        Role.Leaf, P(Mix(theme.Needle, 0x284A30, 0.55f), Mix(theme.NeedleTop, 0x5A8A50, 0.45f)));
+                case "mangrove":
+                    return new Look(SceneryArchetype.Mangrove, Role.Bark, P(Mix(theme.Bark, 0x5A4A3A, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x2F6A3A, 0.4f), Mix(theme.LeafTop, 0x8AB060, 0.35f)));
+                case "succulent":
+                    return new Look(SceneryArchetype.Succulent, Role.Still,
+                        P(Mix(theme.Needle, 0x6A9A8A, 0.5f), Mix(theme.NeedleTop, 0xC8B070, 0.4f)),
+                        Role.Bloom, P(C(0xF0A020), C(0xFFE070), 0f, GrassSway));
+                case "cushion_moss":
+                    return new Look(SceneryArchetype.Cushion, Role.Still, P(Mix(theme.Shrub, 0x5A8A3A, 0.4f), theme.ShrubTop),
+                        Role.Bloom, default, new[]
+                        {
+                            P(C(0xF4F0F8), C(0xFFFFFF)),
+                            P(C(0xE070B0), C(0xFFB0D8)),
+                            P(C(0xF0D040), C(0xFFF0A0)),
+                        });
+                case "cotton_grass":
+                    return new Look(SceneryArchetype.PlumeGrass, Role.Blade, P(Mix(theme.Grass, 0x8A9A5A, 0.35f), C(0xF8F8F2)),
+                        Role.Plume, P(C(0xFAFAF4), C(0xFFFFFF)));
+                case "heather":
+                    return new Look(SceneryArchetype.FlowerPatch, Role.Blade, P(Mix(theme.Shrub, 0x5A5A3A, 0.4f), theme.ShrubTop),
+                        Role.Bloom, default, new[]
+                        {
+                            P(C(0xB060C0), C(0xE0A0E8), 0f, GrassSway),
+                            P(C(0xD080B0), C(0xF8C8E0), 0f, GrassSway),
+                        });
                 default:
                     throw new ArgumentOutOfRangeException(nameof(speciesId), speciesId, "scatter species has no look");
             }
@@ -524,9 +565,10 @@ namespace Cosmimera.Bootstrap.Demo
             shape = look.Archetype switch
             {
                 SceneryArchetype.Broadleaf or SceneryArchetype.Birch or SceneryArchetype.Willow => FarShape.Broadleaf,
-                SceneryArchetype.SwampTree => FarShape.Broadleaf,
-                SceneryArchetype.Conifer => FarShape.Conifer,
-                SceneryArchetype.Umbrella or SceneryArchetype.Pine or SceneryArchetype.Palm => FarShape.Umbrella,
+                SceneryArchetype.SwampTree or SceneryArchetype.Mangrove => FarShape.Broadleaf,
+                SceneryArchetype.Conifer or SceneryArchetype.Cypress => FarShape.Conifer,
+                SceneryArchetype.Umbrella or SceneryArchetype.Pine or SceneryArchetype.Palm or SceneryArchetype.Baobab or
+                    SceneryArchetype.TreeFern => FarShape.Umbrella,
                 SceneryArchetype.Snag => FarShape.Snag,
                 SceneryArchetype.Mushroom => FarShape.Mushroom,
                 SceneryArchetype.Cactus => FarShape.Column,

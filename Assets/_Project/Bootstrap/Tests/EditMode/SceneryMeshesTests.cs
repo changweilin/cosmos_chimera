@@ -83,7 +83,7 @@ namespace Cosmimera.Bootstrap.Tests
             SceneryArchetype.Boulder or SceneryArchetype.CrystalCluster or SceneryArchetype.Log or SceneryArchetype.Cactus or
                 SceneryArchetype.Mushroom or SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Outcrop or
                 SceneryArchetype.Tor or SceneryArchetype.Slabs or SceneryArchetype.Ledge or SceneryArchetype.Cobbles or
-                SceneryArchetype.Fluted => false,
+                SceneryArchetype.Fluted or SceneryArchetype.Cushion => false,
             _ => true,
         };
 

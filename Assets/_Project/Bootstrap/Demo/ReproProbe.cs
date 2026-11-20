@@ -72,7 +72,7 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v10\n");
+            sb.Append("# cosmimera repro-probe v11\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
@@ -165,7 +165,7 @@ namespace Cosmimera.Bootstrap.Demo
                     .Append(sea.ToString(CultureInfo.InvariantCulture)).Append(' ')
                     .Append(RunEcology.Hash(plan).ToString("x16")).Append(' ')
                     .Append(DiscreteHash(plan).ToString("x16")).Append(' ')
-                    .Append(WeatherHash(plan, type.Id, seed, TemplatePlanner.SurfaceProfile(planetTemplates, type.Id)).ToString("x16")).Append(' ')
+                    .Append(WeatherHash(plan, type.Id, seed, radius, TemplatePlanner.SurfaceProfile(planetTemplates, type.Id)).ToString("x16")).Append(' ')
                     // ADR-0007: landing is geometry, so preserve bits for same-backend checks and let policy b
                     // measure displacement without contaminating the authoritative discrete digest.
                     .Append(math.asuint(plan.LandingDirection.x).ToString("x8")).Append(',')
@@ -261,9 +261,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         // REQ: weather.md#演化 — clients compute weather locally, so the integer vector must match bit for bit across
         // backends; sampled per region at its centre terrain over two in-game hours.
-        private static ulong WeatherHash(RunPlan plan, string planetTypeId, ulong seed, Func<float3, TerrainProfile> terrainAt)
+        private static ulong WeatherHash(RunPlan plan, string planetTypeId, ulong seed, float radius,
+            Func<float3, TerrainProfile> terrainAt)
         {
             ulong h = Fnv.Offset;
+            var vortices = new List<WindVortex>();
             var vector = new int[WeatherField.AttrCount];
             Season? season = Seasons.ForPlanet(seed, planetTypeId);
             foreach (RunRegion region in plan.Regions)
@@ -274,9 +276,13 @@ namespace Cosmimera.Bootstrap.Demo
                     WeatherField.Evaluate(site, t, null, vector);
                     foreach (int v in vector) Fnv.Mix(ref h, (uint)v);
                     Fnv.Mix(ref h, (uint)SolarClock.SunPhaseAt(region.Center, t));
-                    // REQ: weather.md#風向 — heading and gusts are computed per client too (v9).
-                    Fnv.Mix(ref h, (uint)WindField.HeadingTenths(seed, region.Index, t));
+                    // REQ: weather.md#風向 — gusts and vortex births are integer streams computed per client (v11). Headings
+                    // and vortex positions are float geometry (ADR-0007 §2), so only which cyclones live, and their spin, is hashed.
                     Fnv.Mix(ref h, (uint)WindField.GustPermille(seed, region.Index, t, 1000));
+                    vortices.Clear();
+                    WindField.ActiveVortices(seed, radius, region.Center, t, 0f, (kind, _) => kind == VortexKind.Cyclone, vortices);
+                    Fnv.Mix(ref h, (uint)vortices.Count);
+                    foreach (WindVortex v in vortices) Fnv.Mix(ref h, (uint)(v.Spin + 2));
                     // REQ: weather.md#落雷 — strike slots are decided per client too.
                     bool strike = LightningSchedule.TryStrike(seed, region.Index, t / LightningSchedule.SlotMs, 1000, 0,
                         out int angle, out int reach);

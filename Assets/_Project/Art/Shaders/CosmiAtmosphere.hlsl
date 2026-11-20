@@ -24,6 +24,12 @@ float4 _CosmiWaveAnchor;  // xyz = point the phases are measured from, w = foam 
 float4 _CosmiSea;         // x = effective wind 0..1, y = gust 0..1, z = significant height (m), w = highest crest (m)
 // P3-23 diving visuals (Bootstrap/Demo/UnderwaterView). Unset = no sea: no caustics, surface drawn from above.
 float4 _CosmiUnderwater;  // x = camera submerged 0..1, y = camera depth (m), z = sea surface radius from the planet centre (0 = no water sea)
+// Wind vortices near the camera (WorldGen.WindField: dust devils, tornadoes, eddies, cyclones), set by PlanetLook.
+// Count 0 (undriven) = straight wind everywhere.
+#define COSMI_MAX_VORTICES 8
+float4 _CosmiVortexA[COSMI_MAX_VORTICES]; // xyz = eye direction from the planet centre (unit), w = core radius (m)
+float4 _CosmiVortexB[COSMI_MAX_VORTICES]; // x = outer radius (m), y = spin × peak (−1..1), z = inflow (rad), w = kind (3 = cyclone)
+float _CosmiVortexCount;
 
 float CosmiHash(float3 p)
 {
@@ -104,6 +110,80 @@ float3 CosmiWindDir(float3 up)
     return e * cos(_CosmiWind.w) + n * sin(_CosmiWind.w);
 }
 
+// Swirl of every vortex at `up`, a world tangent in peak units. Mirrors WorldGen.WindField.Swirl (Rankine core,
+// ~1/r^0.55 outside, faded to the rim, spiralling inward), so the grass bends the way the rule layer blows.
+float3 CosmiVortexFlow(float3 up)
+{
+    float3 sum = 0;
+    int n = (int)_CosmiVortexCount;
+    [loop] for (int i = 0; i < COSMI_MAX_VORTICES; i++)
+    {
+        if (i >= n) break;
+        float3 off = up - _CosmiVortexA[i].xyz;
+        float r = length(off) * _CosmiPlanet.w;
+        float outer = _CosmiVortexB[i].x;
+        if (r >= outer || r < 1e-3) continue;
+        float3 radial = off - up * dot(off, up);
+        float3 er = radial / max(length(radial), 1e-6);
+        float core = _CosmiVortexA[i].w;
+        float speed = r < core ? r / core : pow(core / r, 0.55);
+        speed *= 1.0 - smoothstep(0.6 * outer, outer, r);
+        float peak = _CosmiVortexB[i].y;
+        // cross(v, up) turns a tangent from east toward north (cross(North, East) == Up), as in WindField.
+        float3 et = cross(er, up) * (peak >= 0.0 ? 1.0 : -1.0);
+        float inflow = _CosmiVortexB[i].z;
+        sum += (et * cos(inflow) - er * sin(inflow)) * speed * abs(peak);
+    }
+    return sum;
+}
+
+// Local wind direction at `up` and how much the vortices add to its strength (`boost`, peak units ≥ 0).
+float3 CosmiWindAt(float3 up, out float boost)
+{
+    float3 base = CosmiWindDir(up);
+    if (_CosmiVortexCount < 0.5 || _CosmiPlanet.w <= 0.0)
+    {
+        boost = 0.0;
+        return base;
+    }
+
+    float3 v = CosmiVortexFlow(up);
+    boost = length(v);
+    float3 w = base + v * 2.5;
+    float l = length(w);
+    return l > 1e-4 ? w / l : base;
+}
+
+// Spiral cloud bands of the cyclones in view: arms wound logarithmically round a clear eye, densest at the eye wall.
+float CosmiCycloneCloud(float3 up)
+{
+    float best = 0.0;
+    int n = (int)_CosmiVortexCount;
+    [loop] for (int i = 0; i < COSMI_MAX_VORTICES; i++)
+    {
+        if (i >= n) break;
+        if (_CosmiVortexB[i].w < 2.5) continue;
+        float3 c = _CosmiVortexA[i].xyz;
+        float3 off = up - c;
+        float r = length(off) * _CosmiPlanet.w;
+        float outer = _CosmiVortexB[i].x;
+        if (r >= outer) continue;
+        float core = _CosmiVortexA[i].w;
+        float3 e1 = cross(c, _CosmiPoleAxis.xyz);
+        e1 = dot(e1, e1) > 1e-4 ? normalize(e1) : float3(1, 0, 0);
+        float3 e2 = cross(e1, c);
+        float spin = _CosmiVortexB[i].y >= 0.0 ? 1.0 : -1.0;
+        float theta = atan2(dot(off, e2), dot(off, e1));
+        // Arms trail the spin and wind outward; they rotate with time.
+        float arm = cos(2.0 * (theta - spin * (2.2 * log(max(r, core) / core) - _Time.y * 0.05)));
+        float arms = smoothstep(-0.1, 0.7, arm) * (1.0 - smoothstep(0.55 * outer, outer, r));
+        float wall = exp(-pow((r - core * 1.3) / (core * 0.6), 2.0));
+        float eye = smoothstep(core * 0.5, core * 0.95, r);
+        best = max(best, saturate(max(arms * 0.85, wall)) * eye * abs(_CosmiVortexB[i].y));
+    }
+    return best;
+}
+
 // Cloud density 0..1 above the surface point in direction `up`. One field feeds both the sky's clouds and the
 // shadows they drop, so a shadow on the ground always has a cloud above it.
 float CosmiCloudDensity(float3 up)
@@ -112,7 +192,8 @@ float CosmiCloudDensity(float3 up)
     float3 p = up * (_CosmiPlanet.w / cell) + _CosmiPoleAxis.yzx * (_Time.y * _CosmiCloud.z);
     float n = CosmiFbm2(p);
     float edge = 1.0 - _CosmiCloud.x;
-    return smoothstep(edge - 0.08, edge + 0.08, n);
+    float d = smoothstep(edge - 0.08, edge + 0.08, n);
+    return _CosmiVortexCount > 0.5 ? max(d, CosmiCycloneCloud(up) * smoothstep(0.3, 0.6, n + 0.25)) : d;
 }
 
 // Sunlight left after drifting cloud shadow, 1 = clear. 1 everywhere when no planet is driven.

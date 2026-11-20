@@ -413,6 +413,10 @@ namespace Cosmimera.Bootstrap.Demo
         private WeatherProfile _playerWeather = WeatherProfiles.Clear;
         private AtmosphereDriver _atmosphere;
         private LocalWeatherView _weatherView;
+        private VortexView _vortexView;
+        private readonly List<WindVortex> _vortexScratch = new List<WindVortex>();
+        // Grass and trees are drawn out to ~90 m; vortices whose rim reaches that far still bend what is in view.
+        private const float VortexViewReachM = 120f;
         private LightningView _lightning;
         private FireView _fireView;
         private SeaWaves _sea;
@@ -755,7 +759,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
                 setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
-            _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            // REQ: planet-world.md#道路與建築 — roads bend round hills; the walls and mazes added later are not terrain.
+            PlanetTemplates roadTemplates = templates;
+            _layout = SettlementPlanner.Generate(config, _plan, isLand,
+                d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d));
             _discoveredSettlements.Clear();
             if (_layout.Settlements.Count > 0 && LayoutClearance.IsInhabited(_layout.Settlements[0].Kind))
             {
@@ -783,7 +790,7 @@ namespace Cosmimera.Bootstrap.Demo
             Season? weatherSeason = Seasons.ForPlanet(setup.Seed, setup.PlanetType.Id);
             if (weatherSeason.HasValue && setup.Season.HasValue) weatherSeason = setup.Season;
             RunPlan weatherPlan = _plan;
-            _weather = new WeatherService(setup.Seed, setup.PlanetType.Id, weatherSeason,
+            _weather = new WeatherService(setup.Seed, config.Radius, setup.PlanetType.Id, weatherSeason,
                 d => RunPlanner.RegionAt(weatherPlan, d), r => weatherPlan.Regions[r].Center, d => _terrainAt(d).Id,
                 _weatherControl);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
@@ -849,7 +856,8 @@ namespace Cosmimera.Bootstrap.Demo
                     setup.EnvMaterials, objects, _dungeon, _plan);
                 field = FieldSpecimen.Generate(config, _layout, _plan, setup.PlanetType.Id, setup.Seed, surface.GroundAltitude,
                     d => !_worldObjects.IsBlocked(d, 1.6f) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.6f) &&
-                         math.distancesq(d, landingAt) > landingGap * landingGap, surface.IsSea);
+                         math.distancesq(d, landingAt) > landingGap * landingGap, surface.IsSea,
+                    d => _terrainAt(d).Id);
                 _worldObjects.AttachField(field);
                 _worldObjects.StepField(_nowMs);
                 surface.Objects = _worldObjects;
@@ -907,6 +915,7 @@ namespace Cosmimera.Bootstrap.Demo
             _baseCloud = cloudCover;
             _baseWind = wind;
             if (scenery != null) _weatherView = new LocalWeatherView(transform);
+            if (scenery != null) _vortexView = new VortexView(transform);
             if (scenery != null) _lightning = new LightningView(transform, (int)(setup.Seed ^ (setup.Seed >> 32)));
             if (scenery != null) _fireView = new FireView(transform);
             if (scenery != null) _quakeView = new QuakeView(transform);
@@ -966,7 +975,7 @@ namespace Cosmimera.Bootstrap.Demo
                 settlements.transform.SetParent(transform, false);
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
-                    setup.PlanetType.Id, setup.Seed, _plan);
+                    setup.PlanetType.Id, setup.Seed, _plan, d => _terrainAt(d).Id);
                 Shader fieldShader = scenery?.Props ?? Shader.Find("Cosmimera/ToonScenery");
                 if (field != null && fieldShader != null)
                 {
@@ -1400,6 +1409,23 @@ namespace Cosmimera.Bootstrap.Demo
             return _hasOcean ? math.max(ground, PlanetLook.SeaLevelM) : ground;
         }
 
+        // Presentation: how deep under a cyclone's cloud shield a point is (0 outside, 1 near the eye wall).
+        private float CycloneCover(float3 direction)
+        {
+            float cover = 0f;
+            foreach (WindVortex v in _vortexScratch)
+            {
+                if (v.Kind != VortexKind.Cyclone) continue;
+                float r = math.distance(direction, v.Center) * _rig.Config.Radius;
+                float shield = 1f - math.smoothstep(0.35f * v.OuterM, 0.85f * v.OuterM, r);
+                // The eye is clear.
+                shield *= math.smoothstep(0.5f * v.CoreM, v.CoreM, r);
+                cover = math.max(cover, shield * v.PeakPermille / 1000f);
+            }
+
+            return cover;
+        }
+
         private void UpdateEnvironment(float3 player)
         {
             float3 direction = _rig.Config.ToDirection(player);
@@ -1414,9 +1440,16 @@ namespace Cosmimera.Bootstrap.Demo
             WeatherState state = _weather.StateAt(direction, _nowMs);
             _playerWeatherState = state;
             bool volcanic = _setup.PlanetType.Id == "lava_planet" || _playerTerrain.Id is "volcano" or "volcano_foothills";
-            // REQ: weather.md#風向 — one rule-layer heading and gust drive grass, trees, particles and debris together.
-            int heading = _weather.WindHeadingAt(direction, _nowMs);
-            float gust = TrialInside ? 0f : _weather.GustAt(direction, _nowMs) / 1000f;
+            // REQ: weather.md#風向 — one rule-layer wind field drives grass, trees, particles and debris together. The
+            // shaders take the prevailing heading and add each vortex's swirl per vertex; particles take the local wind.
+            WindSample windHere = _weather.WindAt(direction, _nowMs);
+            int heading = windHere.HeadingTenths;
+            float vortex = TrialInside ? 0f : windHere.VortexPermille / 1000f;
+            _vortexScratch.Clear();
+            if (!TrialInside) _weather.VorticesAround(direction, _nowMs, VortexViewReachM, _vortexScratch);
+            _atmosphere.SetVortices(_vortexScratch, direction);
+            _vortexView?.Sync(_vortexScratch, _rig.Config, player, _groundAltitudeAt ??= BoltGround);
+            float gust = TrialInside ? 0f : math.max(_weather.GustAt(direction, _nowMs) / 1000f, vortex * 0.8f);
             _playerGust = gust;
             if (_weatherView != null)
             {
@@ -1428,12 +1461,16 @@ namespace Cosmimera.Bootstrap.Demo
 
             float cloud = math.max(_baseCloud, state.CloudsPermille / 1000f);
             float storm = math.max(math.max(state.RainPermille, state.SnowPermille), math.max(state.SandPermille, state.ThunderPermille)) / 1000f;
-            _atmosphere.SetWindHeading(heading);
+            _atmosphere.SetWindHeading(TrialInside ? heading : _weather.PrevailingHeadingAt(direction, _nowMs));
+            // Under a cyclone's bands the sky closes in even when the local weather vector is fair.
+            float cyclone = TrialInside ? 0f : CycloneCover(direction);
+            cloud = math.max(cloud, cyclone);
             _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm),
                 _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f) + 1.6f * gust);
             // A violent gust is felt as well as seen (weather.md#風向 暴風碎片).
             if (gust > 0.7f && !TrialInside) _hitFeel?.PlayEnvironmentShake(0.03f * (gust - 0.7f) / 0.3f);
-            _stormDarkness = TrialInside ? 0f : math.saturate(math.max(state.RainPermille, state.ThunderPermille) / 1000f);
+            _stormDarkness = TrialInside ? 0f : math.saturate(math.max(math.max(state.RainPermille, state.ThunderPermille) / 1000f,
+                cyclone * 0.7f));
             _atmosphere.SetSimulationTime(_nowMs);
             ApplyPlayerEnvironment();
             _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
@@ -3987,6 +4024,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnDestroy()
         {
             _weatherView?.Dispose();
+            _vortexView?.Dispose();
             _lightning?.Dispose();
             _fireView?.Dispose();
             _quakeView?.Dispose();

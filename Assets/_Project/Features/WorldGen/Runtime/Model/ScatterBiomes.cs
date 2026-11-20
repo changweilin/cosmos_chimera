@@ -86,6 +86,12 @@ namespace Cosmimera.WorldGen
             new ScatterKind("gem_geode", ScatterShape.OreVein, 0.7f, 1.6f, "crystal"),
             // Only bedrock puts it there (ScatterGeology, planet-world.md#地質變體): no landform table lists it.
             new ScatterKind("granite_tor", ScatterShape.Rock, 2.6f, 5f, "stone"),
+            // REQ: planet-world.md#散佈 緯度×海拔 (v7) — climate-bound trees; ForClimate swaps them out of their band.
+            new ScatterKind("baobab", ScatterShape.Tree, 4f, 7.5f, "wood"),
+            new ScatterKind("tree_fern", ScatterShape.Tree, 2.5f, 5f, "wood"),
+            new ScatterKind("krummholz", ScatterShape.Tree, 1.6f, 3.2f, "wood"),
+            new ScatterKind("cypress", ScatterShape.Tree, 4f, 8f, "wood"),
+            new ScatterKind("mangrove", ScatterShape.Tree, 3f, 6f, "wood"),
 
             // ---- understory ----
             new ScatterKind("shrub", ScatterShape.Shrub, 0.8f, 1.8f, "plant"),
@@ -95,9 +101,13 @@ namespace Cosmimera.WorldGen
             new ScatterKind("fern", ScatterShape.Fern, 0.7f, 1.4f, "plant"),
             new ScatterKind("reed", ScatterShape.Reed, 1.2f, 2.2f, "plant", ScatterHabitat.Lowland),
             new ScatterKind("flowers", ScatterShape.Flowers, 0.6f, 1.3f, "plant"),
+            new ScatterKind("succulent", ScatterShape.Shrub, 0.5f, 1.2f, "sap"),
+            new ScatterKind("cushion_moss", ScatterShape.Flowers, 0.4f, 1f, "plant"),
+            new ScatterKind("cotton_grass", ScatterShape.TallGrass, 0.6f, 1.2f, "plant"),
+            new ScatterKind("heather", ScatterShape.Flowers, 0.4f, 0.9f, "plant"),
         };
 
-        private const int CanopyCount = 28;
+        private const int CanopyCount = 33;
 
         private static readonly Dictionary<string, int> SpeciesIndex = BuildSpeciesIndex();
 
@@ -130,44 +140,45 @@ namespace Cosmimera.WorldGen
         private static readonly Biome[] Biomes =
         {
             B("grassland", 0.45f,
-                C(("tree", 2), ("umbrella", 1), ("granite", 2), ("limestone", 1)),
+                C(("tree", 2), ("umbrella", 1), ("granite", 2), ("limestone", 1), ("baobab", 1), ("cypress", 1)),
                 C(("tall_grass", 6), ("flowers", 4), ("shrub", 2))),
             B("ice_field", 0.15f,
                 C(("ice_spire", 5), ("moraine", 3), ("granite", 2), ("crystal", 1)),
                 C(("dwarf_shrub", 3), ("tall_grass", 1))),
             B("desert", 0.12f,
                 C(("cactus", 5), ("sandstone", 4), ("snag", 1), ("granite", 1)),
-                C(("dwarf_shrub", 2), ("tall_grass", 1))),
+                C(("dwarf_shrub", 2), ("tall_grass", 1), ("succulent", 4))),
             B("river_valley", 0.5f,
                 C(("tree", 6), ("granite", 2), ("log", 1), ("limestone", 1), ("ore_gold", 1)),
                 C(("reed", 5), ("fern", 3), ("shrub", 3), ("flowers", 2), ("bamboo", 4))),
             B("plateau", 0.35f,
-                C(("umbrella", 3), ("tree", 1), ("sandstone", 3), ("slate", 2), ("ore_iron", 1), ("ore_copper", 1)),
-                C(("tall_grass", 5), ("shrub", 3), ("flowers", 1), ("bamboo", 3))),
+                C(("umbrella", 3), ("tree", 1), ("sandstone", 3), ("slate", 2), ("ore_iron", 1), ("ore_copper", 1),
+                    ("baobab", 1), ("cypress", 1)),
+                C(("tall_grass", 5), ("shrub", 3), ("flowers", 1), ("bamboo", 3), ("heather", 1))),
             B("swamp", 0.6f,
-                C(("swamp_tree", 6), ("log", 2), ("snag", 2), ("giant_mushroom", 1)),
+                C(("swamp_tree", 6), ("log", 2), ("snag", 2), ("giant_mushroom", 1), ("mangrove", 3)),
                 C(("reed", 6), ("fern", 4), ("shrub", 2))),
             B("archipelago", 0.35f,
-                C(("reef_rock", 4), ("umbrella", 3), ("tree", 2), ("granite", 1)),
+                C(("reef_rock", 4), ("umbrella", 3), ("tree", 2), ("granite", 1), ("mangrove", 2)),
                 C(("tall_grass", 4), ("shrub", 3), ("flowers", 2), ("fern", 1))),
             B("fjord", 0.3f,
                 C(("tree", 4), ("slate", 3), ("moraine", 2), ("reef_rock", 2), ("ore_silver", 1)),
-                C(("fern", 3), ("dwarf_shrub", 3), ("tall_grass", 1))),
+                C(("fern", 3), ("dwarf_shrub", 3), ("tall_grass", 1), ("cotton_grass", 2), ("heather", 2))),
             B("forest", 0.6f,
                 C(("tree", 9), ("granite", 1), ("log", 1), ("giant_mushroom", 1)),
                 C(("fern", 5), ("shrub", 5), ("flowers", 1), ("tall_grass", 1), ("bamboo", 5))),
             B("mountain", 0.3f,
                 C(("tree", 3), ("granite", 4), ("slate", 2), ("moraine", 1), ("ore_iron", 1), ("ore_silver", 1),
-                    ("ore_copper", 1), ("gem_geode", 1)),
-                C(("dwarf_shrub", 3), ("tall_grass", 2), ("bamboo", 5))),
+                    ("ore_copper", 1), ("gem_geode", 1), ("krummholz", 2)),
+                C(("dwarf_shrub", 3), ("tall_grass", 2), ("bamboo", 5), ("cushion_moss", 2), ("heather", 2))),
             B("canyon", 0.2f,
                 C(("sandstone", 4), ("stone_spire", 2), ("cactus", 2), ("snag", 1), ("ore_copper", 2), ("ore_gold", 1),
                     ("coal_seam", 1), ("gem_geode", 1)),
-                C(("shrub", 3), ("tall_grass", 2))),
+                C(("shrub", 3), ("tall_grass", 2), ("succulent", 3))),
             B("rift_valley", 0.3f,
                 C(("basalt", 4), ("basalt_column", 2), ("umbrella", 2), ("ore_iron", 1), ("coal_seam", 1),
                     ("oil_shale", 1), ("gem_geode", 1)),
-                C(("tall_grass", 4), ("shrub", 3))),
+                C(("tall_grass", 4), ("shrub", 3), ("succulent", 1))),
             B("volcano_foothills", 0.2f,
                 C(("basalt", 5), ("basalt_column", 3), ("snag", 2), ("crystal", 1), ("ore_iron", 1), ("coal_seam", 1)),
                 C(("tall_grass", 5), ("shrub", 2), ("fern", 1))),
@@ -177,24 +188,24 @@ namespace Cosmimera.WorldGen
                 C(("fern", 5), ("shrub", 2), ("flowers", 1))),
             B("eternal_day", 0.4f,
                 C(("umbrella", 3), ("tree", 2), ("reef_rock", 2), ("marble", 2), ("crystal", 1)),
-                C(("flowers", 4), ("tall_grass", 3), ("shrub", 3))),
+                C(("flowers", 4), ("tall_grass", 3), ("shrub", 3), ("succulent", 1))),
             B("eternal_night", 0.3f,
                 C(("giant_mushroom", 3), ("tree", 2), ("moraine", 2), ("ice_spire", 2), ("crystal", 2), ("slate", 1)),
                 C(("fern", 3), ("shrub", 3), ("dwarf_shrub", 1))),
             // Cold landforms (planet-world.md#寒帶地形): ice and glacial debris; trees only where a glacier has left.
             B("tundra", 0.25f,
-                C(("moraine", 3), ("granite", 2), ("ice_spire", 1), ("snag", 1), ("crystal", 1)),
-                C(("dwarf_shrub", 5), ("tall_grass", 2), ("flowers", 1))),
+                C(("moraine", 3), ("granite", 2), ("ice_spire", 1), ("snag", 1), ("crystal", 1), ("krummholz", 1)),
+                C(("dwarf_shrub", 5), ("tall_grass", 2), ("flowers", 1), ("cushion_moss", 4), ("cotton_grass", 3))),
             B("glacier", 0.08f,
                 C(("ice_spire", 5), ("moraine", 4), ("granite", 1), ("crystal", 1)),
-                C(("dwarf_shrub", 1))),
+                C(("dwarf_shrub", 1), ("cushion_moss", 2))),
             B("cirque", 0.15f,
                 C(("moraine", 4), ("granite", 3), ("slate", 2), ("tree", 1), ("ice_spire", 1), ("ore_silver", 1),
-                    ("gem_geode", 1)),
-                C(("dwarf_shrub", 3), ("tall_grass", 1), ("bamboo", 2))),
+                    ("gem_geode", 1), ("krummholz", 2)),
+                C(("dwarf_shrub", 3), ("tall_grass", 1), ("bamboo", 2), ("cushion_moss", 3), ("heather", 1))),
             B("moraine", 0.3f,
                 C(("moraine", 6), ("granite", 2), ("tree", 2), ("log", 1), ("ore_gold", 1)),
-                C(("dwarf_shrub", 3), ("tall_grass", 3), ("fern", 1))),
+                C(("dwarf_shrub", 3), ("tall_grass", 3), ("fern", 1), ("heather", 2), ("cotton_grass", 1))),
             // Bedrock landforms (planet-world.md#地質變體 b): ScatterGeology pins their bedrock, so the plain rock
             // listed here is what the pinned bedrock then varies (granite → tors, basalt → columns).
             B("karst", 0.4f,
@@ -205,10 +216,11 @@ namespace Cosmimera.WorldGen
                 C(("basalt_column", 5), ("basalt", 4), ("umbrella", 1), ("snag", 1), ("ore_iron", 1), ("coal_seam", 1)),
                 C(("tall_grass", 4), ("shrub", 2), ("fern", 1))),
             B("granite_domes", 0.35f,
-                C(("granite", 6), ("umbrella", 2), ("tree", 2), ("ore_copper", 1)),
-                C(("tall_grass", 4), ("shrub", 3), ("flowers", 2))),
+                C(("granite", 6), ("umbrella", 2), ("tree", 2), ("ore_copper", 1), ("cypress", 1)),
+                C(("tall_grass", 4), ("shrub", 3), ("flowers", 2), ("heather", 1))),
             B("slate_cliffs", 0.3f,
-                C(("slate", 6), ("tree", 2), ("snag", 1), ("ore_iron", 1), ("coal_seam", 1), ("gem_geode", 1)),
+                C(("slate", 6), ("tree", 2), ("snag", 1), ("ore_iron", 1), ("coal_seam", 1), ("gem_geode", 1),
+                    ("krummholz", 1)),
                 C(("tall_grass", 3), ("dwarf_shrub", 2), ("fern", 2), ("bamboo", 3))),
         };
 
@@ -420,7 +432,70 @@ namespace Cosmimera.WorldGen
         ///       broadleaf stand answers as mixed, so conifers climb the hills. A plantation is one species per stand.
         /// Side effects: none.
         /// </remarks>
-        public static int PickTree(ForestType type, bool highland, uint standHash, uint roll, out float sizeLo, out float sizeHi)
+        public static int PickTree(ForestType type, bool highland, uint standHash, uint roll, out float sizeLo, out float sizeHi) =>
+            PickTree(type, ForestClimate.Temperate, highland, false, standHash, roll, out sizeLo, out sizeHi);
+
+        /// <summary>Resolves a tree slot for a stand in a climate band and altitude band.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#散佈 緯度×海拔. Pre: type and climate defined.
+        /// Post: as the climate-free overload for a temperate, non-alpine stand (same answers). Tropical stands grow tree
+        ///       ferns among their broadleaves and never conifers (a tropical conifer pick becomes a tree fern); above the
+        ///       treeline (alpine) broadleaves give way to krummholz and half the conifers are krummholz too.
+        /// Side effects: none.
+        /// </remarks>
+        public static int PickTree(ForestType type, ForestClimate climate, bool highland, bool alpine, uint standHash,
+            uint roll, out float sizeLo, out float sizeHi)
+        {
+            int tree = PickTreeCore(type, highland, standHash, roll, out sizeLo, out sizeHi);
+            int broadleaf = SpeciesIndex["broadleaf"];
+            int conifer = SpeciesIndex["conifer"];
+            // Bits above the ones PickTreeCore reads (roll % 100, standHash bit 8) so the extra choices are independent.
+            bool coin = ((roll >> 20) & 1u) == 0u;
+            if (climate == ForestClimate.Tropical)
+            {
+                if (tree == conifer) return SpeciesIndex["tree_fern"];
+                if (tree == broadleaf && ((roll >> 12) % 100u) < 22u) return SpeciesIndex["tree_fern"];
+            }
+
+            if (alpine)
+            {
+                if (tree == broadleaf) return SpeciesIndex["krummholz"];
+                if (tree == conifer && coin) return SpeciesIndex["krummholz"];
+            }
+
+            return tree;
+        }
+
+        /// <summary>Swaps a climate-bound canopy species picked outside its band for its local counterpart.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#散佈 緯度×海拔. Pre: species a valid canopy index; climate defined.
+        /// Post: baobab and mangrove only in the tropics (else umbrella / swamp tree; a cold baobab is krummholz), cypress
+        ///       only in temperate lands (tropics: umbrella; cold: conifer), krummholz only where cold or alpine (else
+        ///       conifer); every other species unchanged.
+        /// Side effects: none.
+        /// </remarks>
+        public static int ForClimate(int species, ForestClimate climate, bool alpine)
+        {
+            Contract.Requires(species >= 0 && species < CanopyCount, "species must be a canopy index");
+            string id = Catalog[species].Id;
+            switch (id)
+            {
+                case "baobab":
+                    return climate == ForestClimate.Tropical ? species
+                        : SpeciesIndex[climate == ForestClimate.Cold ? "krummholz" : "umbrella"];
+                case "mangrove":
+                    return climate == ForestClimate.Tropical ? species : SpeciesIndex["swamp_tree"];
+                case "cypress":
+                    return climate == ForestClimate.Temperate ? species
+                        : SpeciesIndex[climate == ForestClimate.Cold ? "conifer" : "umbrella"];
+                case "krummholz":
+                    return alpine || climate == ForestClimate.Cold ? species : SpeciesIndex["conifer"];
+                default:
+                    return species;
+            }
+        }
+
+        private static int PickTreeCore(ForestType type, bool highland, uint standHash, uint roll, out float sizeLo, out float sizeHi)
         {
             Contract.Requires(type >= ForestType.Broadleaf && type <= ForestType.Secondary, "type must be defined");
             sizeLo = 0f;

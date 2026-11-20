@@ -119,6 +119,9 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none (unknown ids read as verdant). Post: the terrain palette's snow colour. Side effects: none.</remarks>
         public static Color SnowColor(string planetTypeId) => PaletteFor(planetTypeId).Snow;
 
+        // The planet's low-ground colour (summer palette): what a road's worn verge blends into.
+        internal static Color GroundColor(string id) => PaletteFor(id).Low;
+
         internal static Color RoadColor(string id, bool main)
         {
             Palette p = PaletteFor(id);
@@ -471,6 +474,15 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly int SunColorId = Shader.PropertyToID("_CosmiSunColor");
         private static readonly int CloudId = Shader.PropertyToID("_CosmiCloud");
         private static readonly int WindId = Shader.PropertyToID("_CosmiWind");
+        private static readonly int VortexAId = Shader.PropertyToID("_CosmiVortexA");
+        private static readonly int VortexBId = Shader.PropertyToID("_CosmiVortexB");
+        private static readonly int VortexCountId = Shader.PropertyToID("_CosmiVortexCount");
+        // Matches COSMI_MAX_VORTICES: a global array's length is fixed by its first upload.
+        private const int ShaderVortices = 8;
+        private readonly Vector4[] _vortexA = new Vector4[ShaderVortices];
+        private readonly Vector4[] _vortexB = new Vector4[ShaderVortices];
+        private int _vortexCount;
+        private readonly bool[] _vortexUsed = new bool[WindField.MaxVortices * 4];
 
         // Cloud cells ~70 m across: several fit inside the R=320 horizon, so their shadows visibly cross the ground.
         private const float CloudCellM = 70f;
@@ -485,6 +497,54 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Sets the vortices the grass, trees and clouds swirl around (CosmiAtmosphere.hlsl).</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: vortices non-null; focus a unit direction (the camera's ground point).
+        /// Post: from the next LateUpdate the shaders see every cyclone first, then the other vortices nearest focus, up
+        ///       to 8. Side effects: none until then.
+        /// </remarks>
+        public void SetVortices(IReadOnlyList<WindVortex> vortices, float3 focus)
+        {
+            Contract.Requires(vortices != null, "vortices required");
+            _vortexCount = 0;
+            for (int i = 0; i < vortices.Count && _vortexCount < ShaderVortices; i++)
+            {
+                if (vortices[i].Kind == VortexKind.Cyclone && vortices[i].PeakPermille > 0) Upload(vortices[i]);
+            }
+
+            // The rest nearest-first, so when more than fit are live the ones around the player win. Selection over a
+            // short list (≤ WindField.MaxVortices per block): no sort, no allocation.
+            System.Array.Clear(_vortexUsed, 0, _vortexUsed.Length);
+            while (_vortexCount < ShaderVortices)
+            {
+                int best = -1;
+                float bestD = float.MaxValue;
+                for (int i = 0; i < vortices.Count && i < _vortexUsed.Length; i++)
+                {
+                    WindVortex v = vortices[i];
+                    if (_vortexUsed[i] || v.Kind == VortexKind.Cyclone || v.PeakPermille <= 0) continue;
+                    float d = math.distancesq(v.Center, focus);
+                    if (d < bestD)
+                    {
+                        bestD = d;
+                        best = i;
+                    }
+                }
+
+                if (best < 0) break;
+                _vortexUsed[best] = true;
+                Upload(vortices[best]);
+            }
+        }
+
+        private void Upload(in WindVortex v)
+        {
+            _vortexA[_vortexCount] = new Vector4(v.Center.x, v.Center.y, v.Center.z, v.CoreM);
+            _vortexB[_vortexCount] = new Vector4(v.OuterM, v.Spin * v.PeakPermille / 1000f,
+                v.InflowTenths * (math.PI / 1800f), (float)v.Kind);
+            _vortexCount++;
         }
 
         /// <summary>The eased wind heading the shaders are drawing (radians from local east toward north).</summary>
@@ -673,6 +733,9 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalColor(SunColorId, new Color(sunTint.r * day, sunTint.g * day, sunTint.b * day, day));
             Shader.SetGlobalVector(CloudId, new Vector4(_cloudCover, 0.38f * day, 0.012f * (0.5f + _wind), CloudCellM));
             Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, _windHeadingRad));
+            Shader.SetGlobalVectorArray(VortexAId, _vortexA);
+            Shader.SetGlobalVectorArray(VortexBId, _vortexB);
+            Shader.SetGlobalFloat(VortexCountId, _vortexCount);
             _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f * dim;
             ApplyUnderwater(day);
         }
@@ -721,6 +784,7 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalColor(SunColorId, Color.clear);
             Shader.SetGlobalVector(CloudId, Vector4.zero);
             Shader.SetGlobalVector(WindId, Vector4.zero);
+            Shader.SetGlobalFloat(VortexCountId, 0f);
         }
     }
 }

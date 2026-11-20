@@ -854,6 +854,51 @@
     "en": "Flower patch",
     "ja": "花むら"
   },
+  "ui.object.baobab": {
+    "zh-TW": "猴麵包樹",
+    "en": "Baobab",
+    "ja": "バオバブ"
+  },
+  "ui.object.tree_fern": {
+    "zh-TW": "筆筒樹",
+    "en": "Tree fern",
+    "ja": "木生シダ"
+  },
+  "ui.object.krummholz": {
+    "zh-TW": "高山矮曲林",
+    "en": "Krummholz",
+    "ja": "ハイマツ"
+  },
+  "ui.object.cypress": {
+    "zh-TW": "柏樹",
+    "en": "Cypress",
+    "ja": "イトスギ"
+  },
+  "ui.object.mangrove": {
+    "zh-TW": "紅樹林",
+    "en": "Mangrove",
+    "ja": "マングローブ"
+  },
+  "ui.object.succulent": {
+    "zh-TW": "多肉植物",
+    "en": "Succulent",
+    "ja": "多肉植物"
+  },
+  "ui.object.cushion_moss": {
+    "zh-TW": "墊狀植物",
+    "en": "Cushion plant",
+    "ja": "クッション植物"
+  },
+  "ui.object.cotton_grass": {
+    "zh-TW": "羊鬍子草",
+    "en": "Cotton grass",
+    "ja": "ワタスゲ"
+  },
+  "ui.object.heather": {
+    "zh-TW": "石南",
+    "en": "Heather",
+    "ja": "ヒース"
+  },
   "ui.object.dungeon_totem": {
     "zh-TW": "骨圖騰",
     "en": "Bone totem",
