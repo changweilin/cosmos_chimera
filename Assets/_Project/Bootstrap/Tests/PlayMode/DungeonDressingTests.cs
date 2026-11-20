@@ -115,6 +115,23 @@ namespace Cosmimera.Bootstrap.Tests
             }
         }
 
+        [Test]
+        public void Every_prop_kind_builds_a_three_part_mesh_within_its_body()
+        {
+            foreach (DungeonPropKind kind in System.Enum.GetValues(typeof(DungeonPropKind)))
+            {
+                Mesh m = DungeonDressing.BuildProp(kind);
+                _owned.Add(m);
+                (float radius, float height, int _, string _) = DungeonProp.Body(kind);
+                Assert.That(m.subMeshCount, Is.EqualTo(DungeonDressing.SubCount), kind.ToString());
+                // SceneryMeshes.ToMesh grows the bounds 0.35 m for wind sway; measure the drawn shape inside it.
+                const float pad = 0.175f;
+                Assert.That(m.bounds.max.y - pad, Is.InRange(height * 0.75f, height * 1.1f), kind.ToString());
+                Assert.That(math.max(m.bounds.extents.x, m.bounds.extents.z) - pad, Is.LessThanOrEqualTo(radius * 1.25f),
+                    kind.ToString());
+            }
+        }
+
         private static DungeonCulture CultureFor(string terrainId, ulong seed) =>
             DungeonCulture.For(ArchitectureMeshes.PlanetStyleFor("twilight_planet", seed), terrainId, seed);
 
@@ -158,6 +175,28 @@ namespace Cosmimera.Bootstrap.Tests
                     go.transform.position = (Vector3)origin;
                     go.AddComponent<MeshFilter>().sharedMesh = m;
                     go.AddComponent<MeshRenderer>().sharedMaterials = mats;
+                }
+
+                var propMeshes = new Dictionary<DungeonPropKind, Mesh>();
+                foreach (DungeonProp p in DungeonDressing.PlanProps(g, spec.Id, culture))
+                {
+                    if (!propMeshes.TryGetValue(p.Kind, out Mesh pm))
+                    {
+                        pm = DungeonDressing.BuildProp(p.Kind);
+                        propMeshes[p.Kind] = pm;
+                        _owned.Add(pm);
+                    }
+
+                    float3 pu = g.LocalToDirection(p.Local);
+                    float3 ahead = g.LocalToDirection(p.Local + p.Facing) - pu;
+                    float3 facing = math.normalize(ahead - pu * math.dot(ahead, pu));
+                    var prop = new GameObject("prop");
+                    prop.transform.SetParent(_stage.transform, false);
+                    prop.transform.SetPositionAndRotation((Vector3)config.ToWorld(pu, 0f),
+                        Quaternion.AngleAxis(math.degrees(p.Yaw), (Vector3)pu) * Quaternion.LookRotation((Vector3)facing, (Vector3)pu));
+                    prop.transform.localScale = Vector3.one * p.Scale;
+                    prop.AddComponent<MeshFilter>().sharedMesh = pm;
+                    prop.AddComponent<MeshRenderer>().sharedMaterials = mats;
                 }
 
                 Mesh ground = GroundCap(g, config, origin);

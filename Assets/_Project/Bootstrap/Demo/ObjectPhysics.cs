@@ -254,6 +254,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: entries whose Root was destroyed elsewhere are pruned on the next physics step. Side effects: none.</remarks>
         public IReadOnlyList<GroundDrop> GroundDrops => _ground;
 
+        /// <summary>Where new debris and drops are parented; null = this object.</summary>
+        /// <remarks>
+        /// REQ: ADR-0011 — while the party is in the indoor dungeon, what breaks there belongs to it: it hides with the
+        /// dungeon root on the way out (and is neither picked up nor re-grounded on the planet surface meanwhile) and is
+        /// back on re-entry. Pre: none. Post: affects pieces spawned after it is set. Side effects: none.
+        /// </remarks>
+        internal Transform SpawnParent { get; set; }
+
         /// <summary>Collects any ground drop within <paramref name="radiusM"/> of <paramref name="playerPosition"/>.</summary>
         /// <remarks>
         /// REQ: docs/design/destructibles.md#地上的素材 (Q-M6, ADR-0010).
@@ -276,6 +284,11 @@ namespace Cosmimera.Bootstrap.Demo
                 if (drop.Root == null)
                 {
                     _ground.RemoveAt(i);
+                    continue;
+                }
+
+                if (!drop.Root.activeInHierarchy)
+                {
                     continue;
                 }
 
@@ -479,7 +492,7 @@ namespace Cosmimera.Bootstrap.Demo
             go.AddComponent<MeshRenderer>();
             // The unit box the placeholder cube had (PropMeshes fits loose pieces to it): mass, rest and roll are unchanged.
             go.AddComponent<BoxCollider>();
-            go.transform.SetParent(transform, false);
+            go.transform.SetParent(SpawnParent != null ? SpawnParent : transform, false);
             go.transform.SetPositionAndRotation((Vector3)(center + offset), UnityEngine.Random.rotationUniform);
             go.transform.localScale = Vector3.one * edge;
             body = go.AddComponent<Rigidbody>();
@@ -509,7 +522,7 @@ namespace Cosmimera.Bootstrap.Demo
             var go = new GameObject(element == Element.Light ? "LightWisp" : "ShadowWisp");
             go.AddComponent<MeshFilter>().sharedMesh = MeshOf(PropShape.Wisp);
             go.AddComponent<MeshRenderer>();
-            go.transform.SetParent(transform, false);
+            go.transform.SetParent(SpawnParent != null ? SpawnParent : transform, false);
             float3 pos = _planet.ToWorld(up, _groundAltitude(up) + WispHoverM);
             go.transform.SetPositionAndRotation((Vector3)pos,
                 Quaternion.FromToRotation(Vector3.up, (Vector3)up));
@@ -671,6 +684,12 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
+                // A woken indoor-dungeon prop hidden with the dungeon: the sampled ground is the planet surface meanwhile.
+                if (!b.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
                 if (FellThrough(b.position))
                 {
                     // No terrain collider there: park it on the sampled ground instead of letting it fall to the core.
@@ -688,6 +707,12 @@ namespace Cosmimera.Bootstrap.Demo
                 if (root == null)
                 {
                     _ground.RemoveAt(i);
+                    continue;
+                }
+
+                // Hidden with the indoor dungeon (SpawnParent): the ground under it now is the planet surface, not its floor.
+                if (!root.activeInHierarchy)
+                {
                     continue;
                 }
 

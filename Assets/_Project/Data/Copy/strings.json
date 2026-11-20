@@ -854,6 +854,56 @@
     "en": "Flower patch",
     "ja": "花むら"
   },
+  "ui.object.dungeon_totem": {
+    "zh-TW": "骨圖騰",
+    "en": "Bone totem",
+    "ja": "骨のトーテム"
+  },
+  "ui.object.dungeon_sacks": {
+    "zh-TW": "麻袋",
+    "en": "Sacks",
+    "ja": "麻袋"
+  },
+  "ui.object.dungeon_crate": {
+    "zh-TW": "木箱",
+    "en": "Crates",
+    "ja": "木箱"
+  },
+  "ui.object.dungeon_barrel": {
+    "zh-TW": "木桶",
+    "en": "Barrel",
+    "ja": "木樽"
+  },
+  "ui.object.dungeon_metal_crate": {
+    "zh-TW": "鐵箱",
+    "en": "Metal crate",
+    "ja": "鉄の箱"
+  },
+  "ui.object.dungeon_boiler": {
+    "zh-TW": "鍋爐",
+    "en": "Boiler",
+    "ja": "ボイラー"
+  },
+  "ui.object.dungeon_console": {
+    "zh-TW": "控制台",
+    "en": "Console",
+    "ja": "コンソール"
+  },
+  "ui.object.dungeon_oil_drum": {
+    "zh-TW": "油桶",
+    "en": "Oil drum",
+    "ja": "ドラム缶"
+  },
+  "ui.object.dungeon_statue": {
+    "zh-TW": "傾倒的石像",
+    "en": "Toppled statue",
+    "ja": "倒れた石像"
+  },
+  "ui.object.dungeon_rubble": {
+    "zh-TW": "碎石堆",
+    "en": "Rubble",
+    "ja": "がれき"
+  },
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",

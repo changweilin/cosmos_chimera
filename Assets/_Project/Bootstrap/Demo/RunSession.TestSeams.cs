@@ -431,6 +431,40 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Wall / ceiling meshes built for the trial's dungeon (0 before an indoor dungeon is first entered).</summary>
         internal int DungeonDressingMeshesForTests => _trial != null ? _trial.DressingMeshes : 0;
         internal bool SurfaceBlockedForTests(float3 direction, float clearanceM) => _surface.IsBlocked(direction, clearanceM);
+
+        /// <summary>Wall-foot props planned for the trial dungeon, and how many are drawn with a collider now.</summary>
+        internal (int planned, int drawn) DungeonPropsForTests
+        {
+            get
+            {
+                if (_trial?.Props == null)
+                {
+                    return (0, 0);
+                }
+
+                int drawn = 0;
+                foreach (GameObject root in _trial.PropRoots)
+                {
+                    drawn += root != null && root.GetComponent<BoxCollider>() != null ? 1 : 0;
+                }
+
+                return (_trial.Props.Count, drawn);
+            }
+        }
+
+        internal float3 DungeonPropDirectionForTests(int index) => _trial.Geometry.LocalToDirection(_trial.Props[index].Local);
+
+        /// <summary>Destroys object <paramref name="id"/> in the rule-layer table, as a knock-out hit would.</summary>
+        /// <remarks>Pre: destructibles attached; id names an object of this run. Post: the table reports it destroyed. Side effects: registers it.</remarks>
+        internal void DestroyObjectForTests(long id)
+        {
+            _worldObjects.TryGet(id, out DestructibleCandidate c);
+            int slot = _objectTable.Register(id, c.Composition, c.VolumeL, c.Center);
+            while (!_objectTable.IsDestroyed(id))
+            {
+                _objectTable.ApplyHit(slot, Element.Earth, DamageModel.MaxPower, 0, _nowMs);
+            }
+        }
         internal bool SurfaceOffWallsForTests(float3 direction) => _surface.IsOffWalls(direction);
 
         /// <summary>Presses interact as OpenInteract does, trial points only.</summary>

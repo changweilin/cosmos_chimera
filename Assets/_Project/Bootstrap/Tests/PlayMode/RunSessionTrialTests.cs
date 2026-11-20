@@ -128,6 +128,10 @@ namespace Cosmimera.Bootstrap.Tests
             yield return WaitUntil(() => s.DungeonMoodWeightForTests >= 1f, 5f, "dungeon mood faded in");
             (int lamps, int lit) = s.DungeonLampsForTests;
             Assert.That(s.DungeonDressingMeshesForTests, Is.GreaterThan(0), "wall panels and ceiling");
+            // REQ: planet-world.md#地城文化 — every planned wall-foot prop is drawn with a collider on first entry.
+            (int indoorProps, int indoorDrawn) = s.DungeonPropsForTests;
+            Assert.That(indoorProps, Is.GreaterThan(0), "wall-foot props planned");
+            Assert.That(indoorDrawn, Is.EqualTo(indoorProps), "every prop drawn with a collider");
             Assert.That(lamps, Is.EqualTo(g.Dungeon.Rooms.Count + 3));
             Assert.That(lit, Is.InRange(1, 4), "only the nearest lamps light up");
 
@@ -227,6 +231,7 @@ namespace Cosmimera.Bootstrap.Tests
                         PartyIds = Enumerable.Range(1, party.Count).ToList(),
                         PartyExp = Enumerable.Repeat(progression.XpThreshold(60), party.Count).ToList(),
                         Progression = progression, Materials = MaterialDrops.FromJson(balanceJson),
+                        EnvMaterials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text),
                     }, wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
                     Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"));
                 if (session.HasTrialForTests && session.TrialIsMazeForTests)
@@ -252,6 +257,14 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(s.DungeonDressingMeshesForTests, Is.GreaterThan(0), "maze wall panels");
             Assert.That(s.DungeonLampsForTests.lamps, Is.EqualTo(0), "no lamps under the open sky");
             Assert.That(s.DungeonMoodWeightForTests, Is.EqualTo(0f), "no maze haze outside the maze");
+            // REQ: planet-world.md#地城文化 (牆腳物件可破壞) — maze props are drawn, block creatures, and stop once destroyed.
+            (int props, int drawn) = s.DungeonPropsForTests;
+            Assert.That(props, Is.GreaterThan(0), "wall-foot props planned");
+            Assert.That(drawn, Is.EqualTo(props), "every prop drawn with a collider");
+            float3 prop = s.DungeonPropDirectionForTests(0);
+            Assert.That(s.SurfaceBlockedForTests(prop, 0.2f), Is.True, "an intact prop blocks creatures");
+            s.DestroyObjectForTests(WorldObjects.DungeonPropIdBase);
+            Assert.That(s.SurfaceBlockedForTests(prop, 0.2f), Is.False, "a destroyed prop no longer blocks");
 
             // --- The outer door opens only once the master has spoken -------------------------------------------
             Assert.That(s.SurfaceBlockedForTests(g.OuterGate, 0.5f), Is.True, "outer door sealed before the talk");

@@ -313,7 +313,8 @@ namespace Cosmimera.Bootstrap.Demo
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
             // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
-                Interior != null ? Interior.View.IsBlocked(math.normalize(direction), clearanceM / _radius, InteriorSealed) :
+                Interior != null ? Interior.View.IsBlocked(math.normalize(direction), clearanceM / _radius, InteriorSealed) ||
+                                   (Objects != null && Objects.IsBlockedByDungeonProps(direction, clearanceM, true)) :
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
                 (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
                 (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM)) ||
@@ -2655,7 +2656,11 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
             }
-            else if (ev.ObjectId >= WorldObjects.FieldIdBase)
+            else if (WorldObjects.IsDungeonProp(ev.ObjectId))
+                {
+                    // ShatterObject already replaced the drawn prop with debris; nothing else stands on it.
+                }
+                else if (ev.ObjectId >= WorldObjects.FieldIdBase)
                 {
                     var root = _fieldView?.Root((int)(ev.ObjectId - WorldObjects.FieldIdBase));
                     if (root) root.SetActive(false);
@@ -2754,6 +2759,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return woken;
             }
 
+            if (WorldObjects.IsDungeonProp(id)) return TrialPropRoot(id);
             if (id >= WorldObjects.FieldIdBase) return _fieldView?.Root((int)(id - WorldObjects.FieldIdBase));
             if (WorldObjects.IsTreasure(id))
             {

@@ -35,10 +35,7 @@ namespace Cosmimera.Bootstrap.Demo
             bool top)
         {
             DungeonCulture k = d.Culture;
-            var rng = new Pcg32(k.Seed ^ (hash * 0x9E3779B97F4A7C15ul), 0x4445434Ful);
-            float eraRoll = rng.NextFloat();
-            float accentRoll = rng.NextFloat();
-            float damageRoll = rng.NextFloat();
+            Pcg32 rng = FaceStream(k, hash, out FaceRoll roll);
             var f = new Face(c, ex, ey, ez, len, FaceOut(d.Style));
             if (d.Open)
             {
@@ -49,16 +46,41 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
-            if (eraRoll < EraPropShare)
+            if (roll.EraProp)
             {
-                ArchEra era = accentRoll < k.AccentShare ? k.AccentEra : k.Era;
-                EraProp(s, era, ref rng, f);
+                EraProp(s, roll.Era, ref rng, f);
             }
 
-            if (damageRoll < k.Damage)
+            if (roll.Damaged)
             {
                 Damaged(s, d.Open && top, ref rng, f);
             }
+        }
+
+        private readonly struct FaceRoll
+        {
+            public readonly bool EraProp;
+            public readonly ArchEra Era;
+            public readonly bool Damaged;
+
+            public FaceRoll(bool eraProp, ArchEra era, bool damaged)
+            {
+                EraProp = eraProp;
+                Era = era;
+                Damaged = damaged;
+            }
+        }
+
+        // The decisions a module face's wall decor and its destructible foot props (PlanProps) share, so a banner on the
+        // wall stands over crates, and a cracked face over rubble.
+        private static Pcg32 FaceStream(in DungeonCulture k, uint hash, out FaceRoll roll)
+        {
+            var rng = new Pcg32(k.Seed ^ (hash * 0x9E3779B97F4A7C15ul), 0x4445434Ful);
+            float eraRoll = rng.NextFloat();
+            float accentRoll = rng.NextFloat();
+            float damageRoll = rng.NextFloat();
+            roll = new FaceRoll(eraRoll < EraPropShare, accentRoll < k.AccentShare ? k.AccentEra : k.Era, damageRoll < k.Damage);
+            return rng;
         }
 
         // Where a module face's surface is, relative to the panel: volcano basalt columns stand ~1 m proud of it.
@@ -506,23 +528,14 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 case ArchEra.Primal:
                 {
-                    // Bone totem at the foot, a hide stretched on the wall.
-                    float3 foot = f.Foot(a, 0.6f);
-                    s.Prism(TrimSub, foot, f.Ey, 0.1f, 0.08f, 2.4f, 6, warm);
-                    s.Box(BodySub, foot + f.Ey * 2.45f, f.Ex, f.Ey, f.Ez, new float3(0.22f, 0.2f, 0.24f), 0.8f, 0.8f, 0.97f);
-                    for (int k = -1; k <= 1; k += 2)
-                    {
-                        s.Prism(TrimSub, foot + f.Ey * 2.5f + f.Ex * (k * 0.18f), math.normalize(f.Ex * k + f.Ey * 0.8f), 0.07f,
-                            0.01f, 0.55f, 4, 0.95f);
-                    }
-
+                    // A hide stretched on the wall (the bone totem below it is a destructible prop).
                     float b = a + (rng.NextFloat() < 0.5f ? -1.3f : 1.3f);
                     s.Box(TrimSub, f.At(b, 3.3f, 0.06f), f.Ex, f.Ey, f.Ez, new float3(0.6f, 0.8f, 0.03f), 1.15f, 1f, Dim(warm, 0.8f));
                     break;
                 }
                 case ArchEra.Agrarian:
                 {
-                    // A plank shelf of pots, sacks slumped below it.
+                    // A plank shelf of pots (the sacks below it are destructible props).
                     s.Box(TrimSub, f.At(a, 2.2f, 0.25f), f.Ex, f.Ey, f.Ez, new float3(0.9f, 0.05f, 0.25f), 1f, 1f, warm);
                     int pots = 2 + (int)rng.NextUInt(2);
                     for (int k = 0; k < pots; k++)
@@ -531,25 +544,13 @@ namespace Cosmimera.Bootstrap.Demo
                             Range(ref rng, 0.3f, 0.45f), 7, Rgb(0.95f, 0.75f, 0.6f));
                     }
 
-                    for (int k = 0; k < 2; k++)
-                    {
-                        Lump(s, f.Foot(a + (k - 0.5f) * 0.7f, 0.45f), f.Ex, f.Ey, f.Ez, 0.35f, rng.NextUInt());
-                    }
-
                     break;
                 }
                 case ArchEra.Mercantile:
                 {
-                    // A trade banner with a lit emblem; crates and a barrel at the foot.
+                    // A trade banner with a lit emblem (crates and barrels at the foot are destructible props).
                     Stick(s, TrimSub, f.At(a, 6.3f, 0.12f), f.At(a, 3.3f, 0.12f), f.Ez, 0.5f, 0.03f, Rgb(0.95f, 0.85f, 0.85f));
                     s.Box(GlowSub, f.At(a, 5.2f, 0.17f), f.Ex, f.Ey, f.Ez, new float3(0.18f, 0.18f, 0.02f), 1f, 1f, 1f);
-                    float b = a + (rng.NextFloat() < 0.5f ? -1.1f : 1.1f);
-                    s.Box(TrimSub, f.Foot(b, 0.55f) + f.Ey * 0.42f, f.Ex, f.Ey, f.Ez, new float3(0.42f, 0.42f, 0.42f), 1f, 1f, warm);
-                    float t = Range(ref rng, -0.5f, 0.5f);
-                    float3 rx = math.normalize(f.Ex * math.cos(t) + f.Ez * math.sin(t));
-                    s.Box(TrimSub, f.Foot(b, 0.55f) + f.Ey * 1.1f, rx, f.Ey, math.cross(rx, f.Ey), new float3(0.3f, 0.26f, 0.3f), 1f,
-                        1f, Dim(warm, 0.9f));
-                    s.Prism(BodySub, f.Foot(b + 0.9f, 0.5f), f.Ey, 0.34f, 0.32f, 0.9f, 8, Rgb(0.85f, 0.68f, 0.5f));
                     break;
                 }
                 case ArchEra.Industrial:
@@ -581,18 +582,15 @@ namespace Cosmimera.Bootstrap.Demo
                 }
                 case ArchEra.Future:
                 {
-                    // Framed holo panel, a console at the foot, a lit cable run.
+                    // Framed holo panel and a lit cable run (the console at the foot is a destructible prop).
                     s.Box(TrimSub, f.At(a, 2.6f, 0.04f), f.Ex, f.Ey, f.Ez, new float3(0.72f, 0.52f, 0.03f), 1f, 1f, 0.9f);
                     s.Box(GlowSub, f.At(a, 2.6f, 0.08f), f.Ex, f.Ey, f.Ez, new float3(0.6f, 0.42f, 0.02f), 1f, 1f, 1f);
-                    float b = a + (rng.NextFloat() < 0.5f ? -1.2f : 1.2f);
-                    s.Box(BodySub, f.Foot(b, 0.42f) + f.Ey * 0.5f, f.Ex, f.Ey, f.Ez, new float3(0.42f, 0.5f, 0.32f), 1f, 0.6f, 0.95f);
-                    s.Box(GlowSub, f.Foot(b, 0.42f) + f.Ey * 1.01f, f.Ex, f.Ey, f.Ez, new float3(0.32f, 0.02f, 0.12f), 1f, 1f, 1f);
                     s.Box(GlowSub, f.At(0f, 0.15f, 0.05f), f.Ex, f.Ey, f.Ez, new float3(0.45f * f.Len, 0.03f, 0.03f), 1f, 1f, 0.8f);
                     break;
                 }
                 case ArchEra.Wasteland:
                 {
-                    // Scrap plates bolted on askew, rebar poking out, oil drums (one tipped).
+                    // Scrap plates bolted on askew, rebar poking out (oil drums at the foot are destructible props).
                     int plates = 2 + (int)rng.NextUInt(2);
                     for (int k = 0; k < plates; k++)
                     {
@@ -610,14 +608,11 @@ namespace Cosmimera.Bootstrap.Demo
                             Range(ref rng, 0.5f, 0.9f), 4, 0.45f);
                     }
 
-                    s.Prism(BodySub, f.Foot(a + 0.8f, 0.45f), f.Ey, 0.32f, 0.32f, 0.9f, 8, rust);
-                    s.Prism(BodySub, f.Foot(a - 0.6f, 0.9f) + f.Ey * 0.32f - f.Ex * 0.45f, f.Ex, 0.32f, 0.32f, 0.9f, 8, Dim(rust, 0.85f),
-                        f.Ey);
                     break;
                 }
                 default:
                 {
-                    // Ancient: a carved relief slab, a toppled statue on its plinth.
+                    // Ancient: a carved relief slab (the toppled statue below it is a destructible prop).
                     s.Box(TrimSub, f.At(a, 3f, 0.08f), f.Ex, f.Ey, f.Ez, new float3(0.8f, 1.1f, 0.08f), 1f, 1f, 0.9f);
                     for (int k = 0; k < 3; k++)
                     {
@@ -625,14 +620,6 @@ namespace Cosmimera.Bootstrap.Demo
                             new float3(0.15f, 0.3f, 0.05f), 1f, 1f, 0.8f);
                     }
 
-                    float b = a + (rng.NextFloat() < 0.5f ? -1.3f : 1.3f);
-                    float3 plinth = f.Foot(b, 0.75f);
-                    s.Box(TrimSub, plinth + f.Ey * 0.3f, f.Ex, f.Ey, f.Ez, new float3(0.5f, 0.3f, 0.5f), 0.9f, 0.9f, 0.85f);
-                    float lean = Range(ref rng, -0.5f, 0.5f);
-                    float3 up = math.normalize(f.Ey + f.Ex * lean);
-                    s.Box(BodySub, plinth + f.Ey * 0.6f + up * 0.6f, math.normalize(math.cross(up, f.Ez)), up, f.Ez,
-                        new float3(0.3f, 0.6f, 0.22f), 0.8f, 0.8f, 0.85f);
-                    Lump(s, plinth + f.Ex * (lean > 0f ? 0.9f : -0.9f) + f.Ez * 0.4f, f.Ex, f.Ey, f.Ez, 0.25f, rng.NextUInt());
                     break;
                 }
             }
@@ -642,13 +629,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private static void Damaged(Sculptor s, bool top, ref Pcg32 rng, in Face f)
         {
-            int rubble = 2 + (int)rng.NextUInt(3);
+            // The rubble at the foot is a destructible prop (PlanProps).
             float a = Along(ref rng, f);
-            for (int k = 0; k < rubble; k++)
-            {
-                Lump(s, f.Foot(a + Range(ref rng, -1f, 1f), Range(ref rng, 0.3f, 1.4f)), f.Ex, f.Ey, f.Ez,
-                    Range(ref rng, 0.25f, 0.65f), rng.NextUInt());
-            }
 
             // A dark crack climbing from the rubble.
             float3 p = f.At(a, Range(ref rng, 1.5f, 3f), 0.01f);

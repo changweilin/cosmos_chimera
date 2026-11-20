@@ -65,6 +65,8 @@ namespace Cosmimera.Bootstrap.Demo
             public Shader SealShader;
             public bool SealShaderIsProps;
             public GameObject SealRoot;
+            public List<DungeonProp> Props;
+            public GameObject[] PropRoots;
             public GameObject ArenaSeal;
             public GameObject OuterSeal;
             public int DressingMeshes;
@@ -187,6 +189,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _trial = trial;
+            AttachTrialProps();
             if (toonShader != null)
             {
                 BuildTrialMaster(toonShader);
@@ -500,6 +503,16 @@ namespace Cosmimera.Bootstrap.Demo
 
             SetSurfaceShown(false);
             _trial.InteriorRoot.SetActive(true);
+            if (_worldObjects != null)
+            {
+                _worldObjects.InsideDungeon = true;
+            }
+
+            if (_objectPhysics != null)
+            {
+                _objectPhysics.SpawnParent = _trial.InteriorRoot.transform;
+            }
+
             _surface.Interior = _trial.Walls;
             _trial.Inside = true;
             EnterDungeonMood();
@@ -585,6 +598,80 @@ namespace Cosmimera.Bootstrap.Demo
                 go.AddComponent<MeshRenderer>().sharedMaterials = mats;
                 _trial.DressingMeshes++;
             }
+
+            BuildTrialPropViews(parent, floor, mats);
+        }
+
+        // REQ: planet-world.md#地城文化 (牆腳物件可破壞) — the wall-foot props are rule-layer destructibles from the start
+        // (ids fixed by the plan), drawn when the dressing is built. Interior props stand on the flat floor (altitude 0);
+        // surface-maze props on the terrain, clear of the wall ridge.
+        private void AttachTrialProps()
+        {
+            _trial.Props = DungeonDressing.PlanProps(_trial.Geometry, _trial.Spec.Id, TrialCulture());
+            _trial.PropRoots = new GameObject[_trial.Props.Count];
+            if (_worldObjects == null)
+            {
+                return;
+            }
+
+            bool interior = !_trial.Maze;
+            var bodies = new List<WorldObjects.PropBody>(_trial.Props.Count);
+            foreach (DungeonProp p in _trial.Props)
+            {
+                float3 dir = _trial.Geometry.LocalToDirection(p.Local);
+                (float radius, float height, int volume, string substance) = DungeonProp.Body(p.Kind);
+                float cube = p.Scale * p.Scale * p.Scale;
+                bodies.Add(new WorldObjects.PropBody(dir, interior ? 0f : _surface.GroundAltitude(dir), radius * p.Scale,
+                    height * p.Scale, substance, math.max(1, (int)math.round(volume * cube)), interior, DungeonProp.NameKey(p.Kind)));
+            }
+
+            _worldObjects.AttachDungeonProps(bodies);
+        }
+
+        private void BuildTrialPropViews(Transform parent, System.Func<float3, float> floor, Material[] mats)
+        {
+            var meshes = new Dictionary<DungeonPropKind, Mesh>();
+            RoomDungeonGeometry g = _trial.Geometry;
+            for (int i = 0; i < _trial.Props.Count; i++)
+            {
+                if (_worldObjects != null && _worldObjects.IsPropDestroyed(i))
+                {
+                    continue;
+                }
+
+                DungeonProp p = _trial.Props[i];
+                if (!meshes.TryGetValue(p.Kind, out Mesh mesh))
+                {
+                    mesh = DungeonDressing.BuildProp(p.Kind);
+                    meshes[p.Kind] = mesh;
+                    _trial.Owned.Add(mesh);
+                }
+
+                float3 up = g.LocalToDirection(p.Local);
+                float3 ahead = g.LocalToDirection(p.Local + p.Facing) - up;
+                float3 facing = math.normalizesafe(ahead - up * math.dot(ahead, up), PlanetFrame.FromUp(up).North);
+                Quaternion turn = Quaternion.AngleAxis(math.degrees(p.Yaw), (Vector3)up);
+                var go = new GameObject("DungeonProp_" + p.Kind);
+                go.transform.SetParent(parent, false);
+                go.transform.SetPositionAndRotation((Vector3)_rig.Config.ToWorld(up, floor(up)),
+                    turn * Quaternion.LookRotation((Vector3)facing, (Vector3)up));
+                go.transform.localScale = Vector3.one * p.Scale;
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterials = mats;
+                // The character is stopped by this box; creatures by the same body in WorldObjects.IsBlockedByDungeonProps.
+                // Sized from the body, not mesh.bounds (SceneryMeshes pads those for wind sway).
+                (float radius, float height, int _, string _) = DungeonProp.Body(p.Kind);
+                var box = go.AddComponent<BoxCollider>();
+                box.center = new Vector3(0f, 0.5f * height, 0f);
+                box.size = new Vector3(1.6f * radius, height, 1.6f * radius);
+                _trial.PropRoots[i] = go;
+            }
+        }
+
+        private GameObject TrialPropRoot(long id)
+        {
+            long i = id - WorldObjects.DungeonPropIdBase;
+            return _trial?.PropRoots != null && i >= 0 && i < _trial.PropRoots.Length ? _trial.PropRoots[(int)i] : null;
         }
 
         // REQ: planet-world.md#進階地形地城 (地城文化) — drawn from the planet's building culture, so every client agrees.
@@ -635,6 +722,16 @@ namespace Cosmimera.Bootstrap.Demo
             _trial.Suspended.Clear();
             _surface.Interior = null;
             _trial.Inside = false;
+            if (_worldObjects != null)
+            {
+                _worldObjects.InsideDungeon = false;
+            }
+
+            if (_objectPhysics != null)
+            {
+                _objectPhysics.SpawnParent = null;
+            }
+
             _dungeonMood?.SetInside(false);
             _trial.InteriorRoot.SetActive(false);
             SetSurfaceShown(true);
