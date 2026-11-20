@@ -53,13 +53,15 @@ Shader "Cosmimera/ToonTerrain"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "CosmiBiome.hlsl"
 
-            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
+            // uv.x = river mask (Planet ChunkVertex.River); meshes without UV0 read 0.
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
                 float fog : TEXCOORD2;
+                float river : TEXCOORD3;
             };
 
             Varyings Vert(Attributes i)
@@ -70,6 +72,7 @@ Shader "Cosmimera/ToonTerrain"
                 o.positionWS = p.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(i.normalOS);
                 o.fog = ComputeFogFactor(p.positionCS.z);
+                o.river = i.uv.x;
                 return o;
             }
 
@@ -79,6 +82,7 @@ Shader "Cosmimera/ToonTerrain"
                 CosmiGround g = CosmiGroundAt(i.positionWS, n);
                 float grass;
                 half3 albedo = CosmiBiomeColor(i.positionWS, g, grass);
+                albedo = CosmiRiverbed(albedo, i.positionWS, g, i.river);
 
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 // Hemisphere ambient: faces turned to the sky take the zenith colour, undersides the ground bounce.

@@ -139,6 +139,81 @@ float CosmiFoam(float3 positionWS, float height, float3 n)
     return saturate(band + lace * 0.6) * _Foam;
 }
 
+// Cellular pebbles: distance to the nearest stone's edge (0 in the gaps between stones) and that stone's id 0..1.
+float CosmiPebbles(float3 p, out float id)
+{
+    float3 cell = floor(p);
+    float3 f = frac(p);
+    float d1 = 8.0, d2 = 8.0;
+    id = 0.0;
+    for (int z = -1; z <= 1; z++)
+    for (int y = -1; y <= 1; y++)
+    for (int x = -1; x <= 1; x++)
+    {
+        float3 o = float3(x, y, z);
+        float3 c = cell + o;
+        float3 h = float3(CosmiHash(c), CosmiHash(c + 17.0), CosmiHash(c + 43.0));
+        float3 r = o + h - f;
+        float d = dot(r, r);
+        if (d < d1)
+        {
+            d2 = d1;
+            d1 = d;
+            id = h.x;
+        }
+        else if (d < d2)
+        {
+            d2 = d;
+        }
+    }
+
+    return sqrt(d2) - sqrt(d1);
+}
+
+// P1-18 riverbed (planet-world.md#河床): paints the channel the landform stamps carve. `river` is the stamp river
+// mask (TemplateView.River): 1 on the centre line, 0 one grid cell out. From the bank inward: damp, darker soil;
+// a bed of rounded pebbles with pale sand bars where the low noise swells; and a thin sheet of moving water along
+// the centre. Painted, not simulated: the channel holds no water volume, so walking it is unchanged.
+half3 CosmiRiverbed(half3 c, float3 positionWS, CosmiGround g, float river)
+{
+    // Where the river meets the sea, the sea's own colouring takes over.
+    river *= smoothstep(_SeaLevel - 0.2, _SeaLevel + 0.3, g.height);
+    if (river <= 0.002)
+    {
+        return c;
+    }
+
+    float3 n = CosmiGroundNoise(positionWS);
+    float3 fine = CosmiStroke(positionWS, g, _StrokeScale);
+    // Jittered so the stream, the sand and the wet line wander instead of following the mask's grid.
+    float r = saturate(river + (n.y - 0.5) * 0.3 + fine.r * 0.15);
+
+    float wet = smoothstep(0.04, 0.3, r);
+    c = lerp(c, c * half3(0.6, 0.62, 0.66), wet);
+
+    // Two stone sizes: large cobbles with gravel between them, so the bed does not read as crazy paving.
+    float id, idSmall;
+    float edge = CosmiPebbles(positionWS * 2.0, id);
+    float edgeSmall = CosmiPebbles(positionWS * 5.3 + 11.0, idSmall);
+    bool gravel = edge < 0.1;
+    float e = gravel ? edgeSmall : edge;
+    float stone = gravel ? idSmall : id;
+    half3 pebble = lerp(_Rock.rgb, _Shore.rgb, stone * 0.7) * lerp(0.78, 1.12, frac(stone * 7.31));
+    // Domed: each stone darkens toward its rim and its crown catches the light.
+    pebble *= lerp(0.45, 1.12, smoothstep(0.0, gravel ? 0.25 : 0.4, e));
+    half3 sand = _Shore.rgb * (1.0 + CosmiDab(fine.g) * 0.08 * _StrokeStrength) * 0.92;
+    float bar = smoothstep(0.52, 0.66, n.x * 0.65 + CosmiNoise(positionWS * 0.11 + 5.0) * 0.35);
+    half3 bed = lerp(pebble, sand, bar);
+    float onBed = smoothstep(0.28, 0.42, r);
+    c = lerp(c, bed * lerp(1.0, 0.72, smoothstep(0.5, 0.75, r)), onBed); // wet stones darken toward the water
+
+    float water = smoothstep(0.7, 0.82, r) * (1.0 - bar * 0.7);
+    float ripple = CosmiNoise(positionWS * 1.7 + float3(_Time.y * 0.9, _Time.y * 0.4, -_Time.y * 0.7));
+    half3 stream = lerp(bed * _ShallowWater.rgb * 1.5, _ShallowWater.rgb, 0.5);
+    stream += smoothstep(0.66, 0.74, ripple) * 0.18 * (1.0 - _WaterGlow);
+    return lerp(c, stream, water);
+}
+
 half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
 {
     float3 n = CosmiGroundNoise(positionWS);

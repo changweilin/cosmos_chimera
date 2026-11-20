@@ -179,6 +179,7 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly Role RoleA, RoleB;
             public readonly Palette A, B;
             public readonly Palette[] VariantsB; // per-item choice for sub-mesh 1 (gem and blossom colours); null = B
+            public readonly Look[] Forms; // per-item choice of the whole look (see Form); null = this look
 
             public Look(SceneryArchetype archetype, Role roleA, Palette a, Role roleB = Role.Leaf, Palette b = default,
                 Palette[] variantsB = null)
@@ -189,8 +190,29 @@ namespace Cosmimera.Bootstrap.Demo
                 RoleB = roleB;
                 B = b;
                 VariantsB = variantsB;
+                Forms = null;
             }
+
+            private Look(Look first, Look[] forms)
+            {
+                Archetype = first.Archetype;
+                RoleA = first.RoleA;
+                A = first.A;
+                RoleB = first.RoleB;
+                B = first.B;
+                VariantsB = first.VariantsB;
+                Forms = forms;
+            }
+
+            // A form listed twice is drawn twice as often.
+            public static Look OneOf(params Look[] forms) => new Look(forms[0], forms);
         }
+
+        // P1-18: presentation-only variety inside one rule-layer species (birch among broadleaves, tors among granite).
+        // The cell hash picks the form, so every client draws the same one, and the collider, size and burn rules
+        // stay the species' own.
+        private static Look Form(Look look, uint hash) =>
+            look.Forms == null ? look : look.Forms[(int)((hash >> 12) % (uint)look.Forms.Length)];
 
         private static Palette P(Color color, Color top, float glow = 0f, float sway = 0f) => new Palette(color, color, top, glow, sway);
 
@@ -199,6 +221,14 @@ namespace Cosmimera.Bootstrap.Demo
         // A named stone keeps most of its own colour on every planet: marble must still read as marble on a lava world.
         private static Look Stone(Theme theme, int rgb, SceneryArchetype archetype = SceneryArchetype.Boulder) =>
             new Look(archetype, Role.Rock, P(Mix(theme.Rock, rgb, PlanetLook.StoneOwnColour), theme.RockTop));
+
+        // One stone colour, several of its weathering shapes.
+        private static Look Stones(Theme theme, int rgb, params SceneryArchetype[] shapes)
+        {
+            var forms = new Look[shapes.Length];
+            for (int i = 0; i < shapes.Length; i++) forms[i] = Stone(theme, rgb, shapes[i]);
+            return Look.OneOf(forms);
+        }
 
         private static Look Ore(Theme theme, int host, int ore, int oreTop, float glow) =>
             new Look(SceneryArchetype.Outcrop, Role.Rock, P(Mix(theme.Rock, host, 0.5f), theme.RockTop),
@@ -221,13 +251,28 @@ namespace Cosmimera.Bootstrap.Demo
                     }
 
                     // The twilight planet keeps its flat-topped silhouette: its trees are part of the planet's look.
-                    return Tree(theme, planetTypeId == "twilight_planet" ? SceneryArchetype.Umbrella : SceneryArchetype.Broadleaf,
-                        theme.Leaf, theme.LeafTop);
+                    if (planetTypeId == "twilight_planet") return Tree(theme, SceneryArchetype.Umbrella, theme.Leaf, theme.LeafTop);
+                    Look broad = Tree(theme, SceneryArchetype.Broadleaf, theme.Leaf, theme.LeafTop);
+                    Look birch = new Look(SceneryArchetype.Birch, Role.Bark, P(Mix(theme.Bark, 0xE8E4DA, 0.8f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x8FBF4A, 0.3f), Mix(theme.LeafTop, 0xD8E070, 0.3f)));
+                    Look willow = Tree(theme, SceneryArchetype.Willow, Mix(theme.Leaf, 0x8AAA50, 0.35f), Mix(theme.LeafTop, 0xC8D890, 0.3f));
+                    return Look.OneOf(broad, broad, broad, birch, birch, willow);
                 case "conifer":
-                    return Tree(theme, SceneryArchetype.Conifer, Mix(theme.Needle, 0x1F4A3A, 0.45f),
-                        theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x6FA07A, 0.4f));
+                {
+                    Color needle = Mix(theme.Needle, 0x1F4A3A, 0.45f);
+                    Color needleTop = theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x6FA07A, 0.4f);
+                    Look pine = new Look(SceneryArchetype.Pine, Role.Bark, P(Mix(theme.Bark, 0x7A4A30, 0.35f), theme.Bark),
+                        Role.Leaf, P(Mix(needle, 0x3A5A3A, 0.2f), needleTop));
+                    Look spruce = Tree(theme, SceneryArchetype.Conifer, needle, needleTop);
+                    return Look.OneOf(spruce, spruce, pine);
+                }
                 case "umbrella":
-                    return Tree(theme, SceneryArchetype.Umbrella, Mix(theme.Leaf, 0x7A9A3A, 0.35f), theme.LeafTop);
+                {
+                    Look umbrella = Tree(theme, SceneryArchetype.Umbrella, Mix(theme.Leaf, 0x7A9A3A, 0.35f), theme.LeafTop);
+                    Look palm = new Look(SceneryArchetype.Palm, Role.Bark, P(Mix(theme.Bark, 0x8A7A60, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x5A9A3A, 0.3f), Mix(theme.LeafTop, 0xC8C070, 0.3f)));
+                    return Look.OneOf(umbrella, umbrella, palm);
+                }
                 case "swamp_tree":
                     return new Look(SceneryArchetype.SwampTree, Role.Bark, P(Tone(theme.Bark, 0.8f), theme.Bark),
                         Role.Leaf, P(Mix(theme.Leaf, 0x4A6A3A, 0.4f), Mix(theme.LeafTop, 0x9AB070, 0.4f)));
@@ -242,22 +287,26 @@ namespace Cosmimera.Bootstrap.Demo
                     return new Look(SceneryArchetype.Mushroom, Role.Still, P(Mix(theme.Bark, 0xE8DCC0, 0.85f), C(0xE8DCC0)),
                         Role.Bloom, P(theme.Cap, C(0xF8F0E0), theme.CrystalGlow * 0.5f));
                 case "granite":
+                    return Stones(theme, PlanetLook.StoneRgb("granite"), SceneryArchetype.Boulder, SceneryArchetype.Boulder,
+                        SceneryArchetype.Tor);
                 case "granite_tor":
-                    return Stone(theme, PlanetLook.StoneRgb("granite"));
+                    return Stone(theme, PlanetLook.StoneRgb("granite"), SceneryArchetype.Tor);
                 case "limestone":
-                    return Stone(theme, PlanetLook.StoneRgb("limestone"));
+                    return Stones(theme, PlanetLook.StoneRgb("limestone"), SceneryArchetype.Fluted, SceneryArchetype.Fluted,
+                        SceneryArchetype.Boulder);
                 case "marble":
                     return Stone(theme, 0xF0EEE8);
                 case "slate":
-                    return Stone(theme, PlanetLook.StoneRgb("slate"));
+                    return Stones(theme, PlanetLook.StoneRgb("slate"), SceneryArchetype.Slabs, SceneryArchetype.Slabs,
+                        SceneryArchetype.Boulder);
                 case "sandstone":
-                    return Stone(theme, 0xC8926A);
+                    return Stones(theme, 0xC8926A, SceneryArchetype.Ledge, SceneryArchetype.Ledge, SceneryArchetype.Boulder);
                 case "basalt":
                     return Stone(theme, PlanetLook.StoneRgb("basalt"));
                 case "reef_rock":
                     return new Look(SceneryArchetype.Boulder, Role.Rock, P(Mix(theme.Rock, 0x6A6258, 0.65f), C(0x5A8A70)));
                 case "moraine":
-                    return Stone(theme, 0x8A8C90);
+                    return Stones(theme, 0x8A8C90, SceneryArchetype.Cobbles, SceneryArchetype.Cobbles, SceneryArchetype.Boulder);
                 case "basalt_column":
                     return Stone(theme, 0x34343A, SceneryArchetype.Columns);
                 case "stone_spire":
@@ -470,20 +519,22 @@ namespace Cosmimera.Bootstrap.Demo
                 return false;
             }
 
-            Look look = _looks[item.KindIndex];
+            uint hash = Hash(item.CellKey);
+            Look look = Form(_looks[item.KindIndex], hash);
             shape = look.Archetype switch
             {
-                SceneryArchetype.Broadleaf => FarShape.Broadleaf,
+                SceneryArchetype.Broadleaf or SceneryArchetype.Birch or SceneryArchetype.Willow => FarShape.Broadleaf,
                 SceneryArchetype.SwampTree => FarShape.Broadleaf,
                 SceneryArchetype.Conifer => FarShape.Conifer,
-                SceneryArchetype.Umbrella => FarShape.Umbrella,
+                SceneryArchetype.Umbrella or SceneryArchetype.Pine or SceneryArchetype.Palm => FarShape.Umbrella,
                 SceneryArchetype.Snag => FarShape.Snag,
                 SceneryArchetype.Mushroom => FarShape.Mushroom,
                 SceneryArchetype.Cactus => FarShape.Column,
                 SceneryArchetype.Columns => FarShape.Column,
                 SceneryArchetype.Spire => FarShape.Spire,
                 SceneryArchetype.CrystalCluster => FarShape.Crystal,
-                SceneryArchetype.Boulder => item.SizeM >= FarMinRockM ? FarShape.Boulder : FarShape.None,
+                SceneryArchetype.Boulder or SceneryArchetype.Tor or SceneryArchetype.Slabs or SceneryArchetype.Ledge or
+                    SceneryArchetype.Cobbles or SceneryArchetype.Fluted => item.SizeM >= FarMinRockM ? FarShape.Boulder : FarShape.None,
                 _ => FarShape.None,
             };
             if (shape == FarShape.None)
@@ -496,7 +547,6 @@ namespace Cosmimera.Bootstrap.Demo
                            shape == FarShape.Mushroom;
             if (twoPart)
             {
-                uint hash = Hash(item.CellKey);
                 Palette second = look.VariantsB != null ? look.VariantsB[(int)((hash >> 4) % (uint)look.VariantsB.Length)] : look.B;
                 body = second.Color;
                 top = second.Top;
@@ -545,6 +595,7 @@ namespace Cosmimera.Bootstrap.Demo
             // Presentation-only variety from the cell key: which mesh, and a little girth. The rule layer's size, yaw
             // and collider are untouched, so the same item blocks the same way whatever it looks like.
             uint hash = Hash(item.CellKey);
+            look = Form(look, hash);
             float girth = 0.9f + ((hash >> 8) & 0xFF) / 255f * 0.24f;
             // Colliders keep the primitive shapes ScatterItem.BlockRadiusM / VolumeL were derived from.
             switch (item.Shape)

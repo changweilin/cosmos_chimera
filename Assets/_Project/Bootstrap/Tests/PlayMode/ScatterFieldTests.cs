@@ -282,8 +282,8 @@ namespace Cosmimera.Bootstrap.Tests
             Shader scenery = Shader.Find("Cosmimera/ToonScenery");
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.transform.SetParent(stage.transform, false);
-            ground.transform.localPosition = new Vector3(0f, 0f, 80f);
-            ground.transform.localScale = Vector3.one * 40f;
+            ground.transform.localPosition = new Vector3(0f, 0f, 540f);
+            ground.transform.localScale = new Vector3(40f, 1f, 120f);
             ground.GetComponent<Renderer>().sharedMaterial =
                 PlanetLook.SceneryMaterial(scenery, new Color(0.43f, 0.69f, 0.29f), Color.white, 0f, 0f, 0f, 0f);
             var sun = new GameObject("sun").AddComponent<Light>();
@@ -317,6 +317,15 @@ namespace Cosmimera.Bootstrap.Tests
                 (SceneryArchetype.Fern, 1.2f, Hex(0x458438), Hex(0x458438), Hex(0x9CBF4A), 0f),
                 (SceneryArchetype.Reed, 2f, Hex(0x6A4A2A), Hex(0x789E4F), Hex(0x9A7A4A), 0f),
                 (SceneryArchetype.FlowerPatch, 1.2f, Hex(0xF06A9A), Hex(0x4C8A3A), Hex(0xFFE070), 0f),
+                (SceneryArchetype.Birch, 6f, Hex(0x5E9A40), Hex(0xD8D4C8), Hex(0xB8D068), 0f),
+                (SceneryArchetype.Willow, 6f, Hex(0x5A8E40), Hex(0x5A4030), Hex(0xB0C878), 0f),
+                (SceneryArchetype.Pine, 6f, Hex(0x2E5A3C), Hex(0x7A4E34), Hex(0x6F9A7A), 0f),
+                (SceneryArchetype.Palm, 6f, Hex(0x4C8A38), Hex(0x8A7A60), Hex(0xB8B060), 0f),
+                (SceneryArchetype.Tor, 2.6f, Hex(0xA8A49C), Hex(0xA8A49C), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Slabs, 1.8f, Hex(0x5A6068), Hex(0x5A6068), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Ledge, 2f, Hex(0xC8926A), Hex(0xC8926A), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Cobbles, 1.8f, Hex(0x8A8C90), Hex(0x8A8C90), Hex(0x5E8A3A), 0f),
+                (SceneryArchetype.Fluted, 2f, Hex(0xC8C4B4), Hex(0xC8C4B4), Hex(0x5E8A3A), 0f),
             };
             for (int r = 0; r < rows.Length; r++)
             {

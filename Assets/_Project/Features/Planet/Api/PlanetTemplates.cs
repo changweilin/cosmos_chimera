@@ -233,6 +233,50 @@ namespace Cosmimera.Planet
             return false;
         }
 
+        /// <summary>How much of a river channel <paramref name="dir"/> lies in (P1-18 riverbed look).</summary>
+        /// <remarks>
+        /// Pre: dir unit length.
+        /// Post: in [0, 1]: the same bilinear river mask that carves the channel in <see cref="Apply"/>, times that stamp's
+        ///       blend weight, strongest stamp wins; 1 on the channel's centre line, falling to 0 one grid cell away;
+        ///       0 outside every stamp and where Count == 0.
+        /// Side effects: none. Burst-compatible.
+        /// </remarks>
+        public float River(float3 dir)
+        {
+            float best = 0f;
+            for (int i = 0; i < _count; i++)
+            {
+                TemplateStamp s = _stamps[i];
+                float c = math.dot(dir, s.Center);
+                if (c <= 0.5f)
+                {
+                    continue;
+                }
+
+                float3 p = dir / c;
+                float u = math.dot(p, s.Right) / s.TanHalf;
+                float v = math.dot(p, s.Up) / s.TanHalf;
+                float m = math.max(math.abs(u), math.abs(v));
+                if (m >= 1f)
+                {
+                    continue;
+                }
+
+                float fx = math.clamp((u * 0.5f + 0.5f) * (s.Size - 1), 0f, s.Size - 1.001f);
+                float fy = math.clamp((0.5f - v * 0.5f) * (s.Size - 1), 0f, s.Size - 1.001f);
+                int x0 = (int)fx;
+                int y0 = (int)fy;
+                float tx = fx - x0;
+                float ty = fy - y0;
+                int i00 = s.Offset + y0 * s.Size + x0;
+                int i10 = i00 + s.Size;
+                float river = math.lerp(math.lerp(Is(i00, 2), Is(i00 + 1, 2), tx), math.lerp(Is(i10, 2), Is(i10 + 1, 2), tx), ty);
+                best = math.max(best, river * (1f - math.smoothstep(BlendStart, 1f, m)));
+            }
+
+            return best;
+        }
+
         /// <summary>Finds the stamp that shapes the ground most at <paramref name="dir"/>.</summary>
         /// <remarks>
         /// Pre: dir unit length.

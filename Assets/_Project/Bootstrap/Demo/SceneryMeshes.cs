@@ -67,6 +67,33 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Cushion of low leaves under small blossoms (花叢).</summary>
         FlowerPatch = 18,
+
+        /// <summary>Slender pale tree with dark bark bands and a narrow, airy crown (樺樹).</summary>
+        Birch = 19,
+
+        /// <summary>Weeping tree: a short stout trunk under a low dome whose leaf strands hang most of the way down (柳).</summary>
+        Willow = 20,
+
+        /// <summary>Pine: a tall bare trunk carrying a few flat needle pads near the top (松).</summary>
+        Pine = 21,
+
+        /// <summary>Palm: a curved, ringed trunk under a crown of long arching fronds (棕櫚).</summary>
+        Palm = 22,
+
+        /// <summary>Granite tor: rounded cushion blocks stacked on each other (花崗岩堆).</summary>
+        Tor = 23,
+
+        /// <summary>Slate: thin plates leaning together at one dip (板岩片).</summary>
+        Slabs = 24,
+
+        /// <summary>Sandstone ledge: a flat-topped block whose soft beds have weathered back between hard ones (砂岩層).</summary>
+        Ledge = 25,
+
+        /// <summary>Pile of rounded cobbles (卵石堆、冰磧).</summary>
+        Cobbles = 26,
+
+        /// <summary>Limestone with vertical solution flutes running down from its crest (溶溝).</summary>
+        Fluted = 27,
     }
 
     /// <summary>
@@ -109,17 +136,28 @@ namespace Cosmimera.Bootstrap.Demo
             SceneryArchetype.Fern => 3,
             SceneryArchetype.Reed => 3,
             SceneryArchetype.FlowerPatch => 4,
+            SceneryArchetype.Birch => 3,
+            SceneryArchetype.Willow => 3,
+            SceneryArchetype.Pine => 3,
+            SceneryArchetype.Palm => 3,
+            SceneryArchetype.Tor => 4,
+            SceneryArchetype.Slabs => 4,
+            SceneryArchetype.Ledge => 3,
+            SceneryArchetype.Cobbles => 4,
+            SceneryArchetype.Fluted => 3,
             _ => throw new ArgumentOutOfRangeException(nameof(archetype)),
         };
 
         /// <summary>Builds variant <paramref name="variant"/> of <paramref name="archetype"/>.</summary>
         /// <remarks>
         /// Pre: 0 ≤ variant &lt; VariantCount(archetype); main thread.
-        /// Post: a new mesh with normals, colours and UV1; two sub-meshes for trees, swamp trees and shrubs (0 = wood,
+        /// Post: a new mesh with normals, colours and UV1; two sub-meshes for trees (broadleaf, umbrella, conifer, birch,
+        ///       willow, pine, palm), swamp trees and shrubs (0 = wood,
         ///       1 = foliage), cane clumps (0 = canes, 1 = leaves), plume grass (0 = blades and stalks, 1 = plumes),
         ///       cacti (0 = body, 1 = flowers), mushrooms (0 = stalk, 1 = cap), outcrops (0 = rock, 1 = mineral), reeds
         ///       (0 = stems and leaves, 1 = seed heads) and flower patches (0 = leaves and stems, 1 = blossoms); one for
-        ///       boulders, crystals, snags, logs, spires, columns and ferns. Rocks, crystals, logs, cacti and mushrooms
+        ///       boulders, the other rock shapes (tor, slabs, ledge, cobbles, fluted), crystals, snags, logs, spires, columns
+        ///       and ferns. Rocks, crystals, logs, cacti and mushrooms
         ///       carry no wind sway. The same arguments always give the same vertices; bounds include the wind sway.
         /// Side effects: allocates a Mesh the caller owns (and must destroy).
         /// </remarks>
@@ -183,6 +221,33 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 case SceneryArchetype.FlowerPatch:
                     BuildFlowerPatch(data, ref rng);
+                    break;
+                case SceneryArchetype.Birch:
+                    BuildBirch(data, ref rng);
+                    break;
+                case SceneryArchetype.Willow:
+                    BuildWillow(data, ref rng);
+                    break;
+                case SceneryArchetype.Pine:
+                    BuildPine(data, ref rng);
+                    break;
+                case SceneryArchetype.Palm:
+                    BuildPalm(data, ref rng);
+                    break;
+                case SceneryArchetype.Tor:
+                    BuildTor(data, ref rng, variant);
+                    break;
+                case SceneryArchetype.Slabs:
+                    BuildSlabs(data, ref rng);
+                    break;
+                case SceneryArchetype.Ledge:
+                    BuildLedge(data, ref rng);
+                    break;
+                case SceneryArchetype.Cobbles:
+                    BuildCobbles(data, ref rng);
+                    break;
+                case SceneryArchetype.Fluted:
+                    BuildFluted(data, ref rng);
                     break;
                 default:
                     BuildCrystals(data, ref rng);
@@ -294,6 +359,194 @@ namespace Cosmimera.Bootstrap.Demo
                 data.EmitSmooth(boughs, 0, null);
                 data.EmitSmooth(needles, 1, null);
             }
+        }
+
+        private static void BuildBirch(MeshData data, ref Pcg32 rng)
+        {
+            float3 lean = new float3(Signed(ref rng) * 0.09f, 0f, Signed(ref rng) * 0.09f);
+            // Finer rings than other trunks: the dark bands are vertex colours and need rows to sit on.
+            float3[] spine = Resample(TrunkSpine(lean, 0.82f, ref rng), 16);
+            float3 top = spine[spine.Length - 1];
+            var lobes = new List<Lobe> { new Lobe(top + new float3(0f, -0.04f, 0f), new float3(0.16f, 0.24f, 0.16f), 2) };
+            float turn = rng.NextFloat() * math.PI * 2f;
+            int tiers = 3 + (int)rng.NextUInt(2);
+            var forks = new float[tiers];
+            for (int i = 0; i < tiers; i++)
+            {
+                float a = turn + i * GoldenAngle;
+                forks[i] = 0.5f + i * 0.1f;
+                float r = 0.11f + rng.NextFloat() * 0.04f;
+                lobes.Add(new Lobe(SpineAt(spine, forks[i] + 0.06f) + new float3(math.cos(a) * 0.11f, 0.02f, math.sin(a) * 0.11f),
+                    new float3(r, r * 0.85f, r), 2));
+            }
+
+            var wood = new Part();
+            Tube(wood, spine, 7, (i, k) => TrunkRadius(0.038f, i / (float)(spine.Length - 1), k), BirchBark);
+            for (int b = 0; b < tiers; b++)
+            {
+                Limb(wood, spine, forks[b], lobes[b + 1].Centre, 0.016f);
+            }
+
+            data.EmitSmooth(wood, 0, null);
+            EmitCrown(data, lobes, 0.38f, 1.06f, 0.2f, ref rng);
+        }
+
+        // Chalk-white bark: the material colour is pale, and these tones lay the dark lenticel dashes and the
+        // blackened, fissured foot over it.
+        private static Color BirchBark(float3 p, int side)
+        {
+            float row = p.y * 19f;
+            float dash = math.frac(row + math.sin(side * 2.3f) * 0.4f);
+            bool mark = dash < 0.22f && ((int)math.floor(row) + side) % 3 != 0;
+            float tone = (mark ? 0.32f : 1f) * math.lerp(0.38f, 1f, math.saturate((p.y - 0.02f) / 0.16f));
+            return Tint(tone, math.saturate(0.35f + p.y / 0.16f));
+        }
+
+        private static float3[] Resample(float3[] spine, int rings)
+        {
+            var fine = new float3[rings];
+            for (int i = 0; i < rings; i++)
+            {
+                fine[i] = SpineAt(spine, i / (float)(rings - 1));
+            }
+
+            return fine;
+        }
+
+        private static void BuildWillow(MeshData data, ref Pcg32 rng)
+        {
+            float3 lean = new float3(Signed(ref rng) * 0.08f, 0f, Signed(ref rng) * 0.08f);
+            float3[] spine = TrunkSpine(lean, 0.5f, ref rng);
+            float3 top = spine[spine.Length - 1];
+            var lobes = new List<Lobe> { new Lobe(top + new float3(0f, 0.2f, 0f), new float3(0.26f, 0.15f, 0.26f), 2) };
+            int ring = 5 + (int)rng.NextUInt(2);
+            float turn = rng.NextFloat() * math.PI * 2f;
+            for (int i = 0; i < ring; i++)
+            {
+                float a = turn + (i + Signed(ref rng) * 0.2f) * math.PI * 2f / ring;
+                float r = 0.14f + rng.NextFloat() * 0.04f;
+                lobes.Add(new Lobe(top + new float3(math.cos(a) * 0.25f, 0.1f + rng.NextFloat() * 0.06f, math.sin(a) * 0.25f),
+                    new float3(r, r * 0.6f, r), 2));
+            }
+
+            var wood = new Part();
+            Tube(wood, spine, 8, (i, k) => TrunkRadius(0.075f, i / (float)(spine.Length - 1), k), BarkColor);
+            for (int b = 1; b < lobes.Count; b++)
+            {
+                Limb(wood, spine, 0.8f, lobes[b].Centre, 0.032f);
+            }
+
+            data.EmitSmooth(wood, 0, null);
+            EmitCrown(data, lobes, 0.5f, 0.86f, 0.1f, ref rng);
+
+            // Strands hang from the rim of the dome; Wind's radial term makes them sway more than the dome itself.
+            var strands = new Part();
+            int count = 30 + (int)rng.NextUInt(8);
+            for (int s = 0; s < count; s++)
+            {
+                float a = turn + s * GoldenAngle;
+                float rim = 0.2f + rng.NextFloat() * 0.17f;
+                float3 root = top + new float3(math.cos(a) * rim, 0.1f + rng.NextFloat() * 0.06f, math.sin(a) * rim);
+                float length = 0.32f + rng.NextFloat() * 0.26f;
+                var outward = new float3(math.cos(a), 0f, math.sin(a));
+                var hang = new float3[5];
+                for (int i = 0; i < hang.Length; i++)
+                {
+                    float t = i / (float)(hang.Length - 1);
+                    hang[i] = root + outward * (0.06f * math.sin(t * math.PI * 0.5f)) - new float3(0f, length * t, 0f);
+                }
+
+                float tone = 0.85f + rng.NextFloat() * 0.2f;
+                Blade(strands, hang, Across(a), 0.022f, rng.NextFloat(), t => Tint(tone * math.lerp(0.9f, 1.08f, t), 0.8f));
+            }
+
+            data.EmitFaceted(strands, 1, FacetCos, null);
+        }
+
+        private static void BuildPine(MeshData data, ref Pcg32 rng)
+        {
+            float3 lean = new float3(Signed(ref rng) * 0.12f, 0f, Signed(ref rng) * 0.12f);
+            float3[] spine = TrunkSpine(lean, 0.9f, ref rng);
+            var wood = new Part();
+            Tube(wood, spine, 7, (i, k) => TrunkRadius(0.042f, i / (float)(spine.Length - 1), k), PineBark);
+            float3 top = spine[spine.Length - 1];
+            var lobes = new List<Lobe> { new Lobe(top + new float3(0f, 0.02f, 0f), new float3(0.15f, 0.07f, 0.15f), 2) };
+            int pads = 4 + (int)rng.NextUInt(3);
+            float turn = rng.NextFloat() * math.PI * 2f;
+            for (int i = 0; i < pads; i++)
+            {
+                float t = 0.62f + rng.NextFloat() * 0.3f;
+                float a = turn + i * GoldenAngle;
+                float reach = 0.14f + rng.NextFloat() * 0.12f;
+                float3 hub = SpineAt(spine, t);
+                float r = 0.15f + rng.NextFloat() * 0.07f;
+                float3 centre = hub + new float3(math.cos(a) * reach, 0.05f + rng.NextFloat() * 0.04f, math.sin(a) * reach);
+                // A bough rises from the trunk and kinks out flat under its pad: the layered, windswept pine look.
+                Tube(wood, new[] { hub, math.lerp(hub, centre, 0.55f) + new float3(0f, 0.03f, 0f), centre - new float3(0f, 0.03f, 0f) },
+                    4, (j, _) => 0.016f * math.lerp(1f, 0.5f, j * 0.5f), (p, _) => Tint(0.85f, 1f));
+                lobes.Add(new Lobe(centre, new float3(r, r * 0.38f, r), 2));
+            }
+
+            data.EmitSmooth(wood, 0, null);
+            EmitCrown(data, lobes, 0.55f, 1.02f, 0.12f, ref rng, 0.12f);
+        }
+
+        // Grey-brown and furrowed low on the trunk, thin orange plates higher up.
+        private static Color PineBark(float3 p, int side)
+        {
+            Color c = BarkColor(p, side);
+            float upper = math.smoothstep(0.35f, 0.7f, p.y);
+            c.r *= 1f + 0.35f * upper;
+            c.g *= 1f + 0.05f * upper;
+            c.b *= 1f - 0.15f * upper;
+            return c;
+        }
+
+        private static void BuildPalm(MeshData data, ref Pcg32 rng)
+        {
+            float bendA = rng.NextFloat() * math.PI * 2f;
+            float bend = 0.16f + rng.NextFloat() * 0.1f;
+            var away = new float3(math.cos(bendA), 0f, math.sin(bendA));
+            const int rings = 15;
+            var spine = new float3[rings];
+            for (int i = 0; i < rings; i++)
+            {
+                float t = i / (float)(rings - 1);
+                spine[i] = away * (bend * t * t) + new float3(0f, -0.05f + t * 0.87f, 0f);
+            }
+
+            var wood = new Part();
+            // Leaf-scar rings: every other ring of the fine spine bulges and darkens a little.
+            Tube(wood, spine, 8,
+                (i, k) => 0.045f * (1f + 0.6f * math.exp(-i / (float)(rings - 1) * 10f)) *
+                          math.lerp(1f, 0.72f, i / (float)(rings - 1)) * ((i & 1) == 0 ? 1.06f : 1f),
+                (p, k) => Tint(math.lerp(0.62f, 1f, math.saturate(p.y / 0.2f)) * ((((int)math.floor(p.y * 14f)) & 1) == 0 ? 1f : 0.82f),
+                    math.saturate(0.35f + p.y / 0.16f)));
+            data.EmitSmooth(wood, 0, null);
+
+            float3 top = spine[rings - 1];
+            var fronds = new Part();
+            int count = 9 + (int)rng.NextUInt(3);
+            float turn = rng.NextFloat() * math.PI * 2f;
+            for (int f = 0; f < count; f++)
+            {
+                float a = turn + (f + Signed(ref rng) * 0.2f) * math.PI * 2f / count;
+                float length = 0.4f + rng.NextFloat() * 0.1f;
+                float3[] rib = Arc(top, a, length, 0.25f + rng.NextFloat() * 0.35f, 0.9f + rng.NextFloat() * 0.3f, 7);
+                float phase = rng.NextFloat();
+                float tone = 0.9f + rng.NextFloat() * 0.15f;
+                Blade(fronds, rib, Across(a), 0.03f, phase, t => Tint(tone * math.lerp(0.85f, 1.05f, t), 1f));
+                // Leaflets comb out to both sides of the rib and droop; the dry tone (accent) creeps in at their tips.
+                for (int j = 1; j < rib.Length - 1; j++)
+                {
+                    float u = j / (float)(rib.Length - 1);
+                    float leaflet = 0.13f * (1f - 0.6f * u);
+                    CrownBlade(fronds, rib[j], a + 1.15f, leaflet, -0.55f, 0.16f, tone, phase);
+                    CrownBlade(fronds, rib[j], a - 1.15f, leaflet, -0.55f, 0.16f, tone, phase);
+                }
+            }
+
+            data.EmitFaceted(fronds, 1, FacetCos, null);
         }
 
         private static float3[] TrunkSpine(float3 lean, float height, ref Pcg32 rng)
@@ -408,7 +661,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // Sample the crown envelope in equal-area bands so no pole gathers a tuft of overlapping blades.
         private static void EmitCrown(MeshData data, List<Lobe> lobes, float bottomY, float topY,
-            float bump, ref Pcg32 rng)
+            float bump, ref Pcg32 rng, float widthRatio = 0.31f)
         {
             var leaves = new Part();
             var twigs = new Part();
@@ -434,7 +687,7 @@ namespace Cosmimera.Bootstrap.Demo
                         float bearing = a + ((j & 1) == 0 ? 1f : -1f) * (0.88f - 0.38f * u);
                         float length = lobe.Radii.x * (0.58f - u * 0.19f + Signed(ref rng) * 0.06f);
                         float tone = math.lerp(0.72f, 1.05f, math.saturate((root.y - bottomY) / (topY - bottomY)));
-                        CrownBlade(leaves, root, bearing, length, y * 0.44f - u * 0.38f, 0.31f, tone, phase);
+                        CrownBlade(leaves, root, bearing, length, y * 0.44f - u * 0.38f, widthRatio, tone, phase);
                     }
                 }
             }
@@ -722,10 +975,98 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private static void BuildTor(MeshData data, ref Pcg32 rng, int variant)
+        {
+            // Joint-bounded granite weathers into cushions: wide, flat-bedded and rounded at every edge, so few and
+            // mostly upward cuts.
+            float3 r = new float3(0.48f, 0.18f, 0.4f) * (0.92f + rng.NextFloat() * 0.12f);
+            float cy = r.y * 0.55f;
+            Rock(data, new float3(0f, cy, 0f), r, quaternion.RotateY(rng.NextFloat() * 6.28f), 2, 3, ref rng, 1.2f, 0f, 0);
+            float y = cy + r.y * 0.8f;
+            int stack = variant % 2 == 0 ? 2 : 1;
+            for (int i = 0; i < stack; i++)
+            {
+                r *= new float3(0.72f, 0.92f, 0.74f);
+                cy = y + r.y * 0.7f;
+                Rock(data, new float3(Signed(ref rng) * 0.08f, cy, Signed(ref rng) * 0.08f), r,
+                    quaternion.RotateY(rng.NextFloat() * 6.28f), 2, 3, ref rng, 1.2f, 0f, 0);
+                y = cy + r.y * 0.75f;
+            }
+
+            // One block has toppled off and lies at the foot.
+            float a = rng.NextFloat() * 6.28f;
+            Rock(data, new float3(math.cos(a) * 0.5f, 0.06f, math.sin(a) * 0.45f), new float3(0.14f, 0.1f, 0.12f),
+                quaternion.RotateY(a), 1, 3, ref rng, 0.6f, 0f, 0);
+        }
+
+        private static void BuildSlabs(MeshData data, ref Pcg32 rng)
+        {
+            // Cleaved plates all share one dip, stacked along the cleavage normal like books fallen against each other.
+            float strike = rng.NextFloat() * math.PI * 2f;
+            float dip = math.radians(28f + rng.NextFloat() * 22f);
+            quaternion q = math.mul(quaternion.RotateY(strike), quaternion.RotateX(-dip));
+            float3 normal = math.mul(q, new float3(0f, 1f, 0f));
+            int plates = 3 + (int)rng.NextUInt(3);
+            for (int i = 0; i < plates; i++)
+            {
+                float f = i - (plates - 1) * 0.5f;
+                float3 r = new float3(0.36f + rng.NextFloat() * 0.1f, 0.05f + rng.NextFloat() * 0.025f, 0.24f + rng.NextFloat() * 0.06f) *
+                           (1f - 0.08f * math.abs(f));
+                float3 c = normal * (f * 0.11f) + new float3(Signed(ref rng) * 0.05f, 0.12f + 0.03f * Signed(ref rng), 0f);
+                Rock(data, c, r, q, 2, 5, ref rng, 0f, 0f, 0);
+            }
+        }
+
+        private static void BuildLedge(MeshData data, ref Pcg32 rng)
+        {
+            float3 radii = new float3(0.5f, 0.36f, 0.42f) *
+                           new float3(0.92f + rng.NextFloat() * 0.12f, 0.9f + rng.NextFloat() * 0.15f, 0.92f + rng.NextFloat() * 0.12f);
+            // Upward cuts leave the flat cap rock; the beds step its sides.
+            Rock(data, new float3(0f, radii.y * 0.5f, 0f), radii, quaternion.RotateY(rng.NextFloat() * 6.28f), 3, 5, ref rng, 1.6f, 0.085f, 0);
+            float a = rng.NextFloat() * 6.28f;
+            Rock(data, new float3(math.cos(a) * 0.5f, 0.05f, math.sin(a) * 0.42f), new float3(0.16f, 0.09f, 0.13f),
+                quaternion.RotateY(a), 2, 4, ref rng, 1.6f, 0.085f, 0);
+        }
+
+        private static void BuildCobbles(MeshData data, ref Pcg32 rng)
+        {
+            // Water- or ice-rounded stones: no flat cut faces, just squashed swollen ellipsoids of mixed sizes.
+            float turn = rng.NextFloat() * math.PI * 2f;
+            Rock(data, new float3(0f, 0.12f, 0f), new float3(0.27f, 0.19f, 0.23f), quaternion.RotateY(turn), 2, 0, ref rng, 0.2f, 0f, 0);
+            int count = 6 + (int)rng.NextUInt(4);
+            for (int i = 0; i < count; i++)
+            {
+                float a = turn + i * GoldenAngle;
+                float reach = 0.24f + 0.2f * math.sqrt((i + 0.5f) / count);
+                float r = 0.09f + rng.NextFloat() * 0.08f;
+                Rock(data, new float3(math.cos(a) * reach, r * 0.35f, math.sin(a) * reach), new float3(r, r * 0.62f, r * 0.82f),
+                    quaternion.RotateY(a), r > 0.13f ? 2 : 1, 0, ref rng, 0.2f, 0f, 0);
+            }
+
+            Rock(data, new float3(0.05f, 0.33f, 0.02f), new float3(0.13f, 0.09f, 0.11f), quaternion.RotateY(turn + 1f), 1, 0, ref rng,
+                0.2f, 0f, 0);
+        }
+
+        private static void BuildFluted(MeshData data, ref Pcg32 rng)
+        {
+            float3 radii = new float3(0.46f, 0.4f, 0.4f) * (0.92f + rng.NextFloat() * 0.12f);
+            Rock(data, new float3(0f, radii.y * 0.55f, 0f), radii, quaternion.RotateY(rng.NextFloat() * 6.28f), 3, 2, ref rng, 0.6f, 0f,
+                9 + (int)rng.NextUInt(4));
+            float a = rng.NextFloat() * 6.28f;
+            Rock(data, new float3(math.cos(a) * 0.46f, 0.08f, math.sin(a) * 0.4f), new float3(0.18f, 0.15f, 0.16f),
+                quaternion.RotateY(a), 2, 1, ref rng, 0.6f, 0f, 7);
+        }
+
+        private static void Rock(MeshData data, float3 centre, float3 radii, int detail, int cuts, ref Pcg32 rng,
+            float upBias = 0.2f) =>
+            Rock(data, centre, radii, quaternion.identity, detail, cuts, ref rng, upBias, 0f, 0);
+
         // A noise-displaced ellipsoid cut by random planes: the cuts are the flat chiselled faces, what is left
         // between them stays rounded, and the angle-limited normals keep the edges between the two crisp.
-        private static void Rock(MeshData data, float3 centre, float3 radii, int detail, int cuts, ref Pcg32 rng,
-            float upBias = 0.2f)
+        // bedM > 0 steps the sides into strata of that thickness; flutes > 0 runs that many grooves down from the crest.
+        // The shape is built in the rock's own axes and turned by `rotation` before it is placed.
+        private static void Rock(MeshData data, float3 centre, float3 radii, quaternion rotation, int detail, int cuts,
+            ref Pcg32 rng, float upBias, float bedM, int flutes)
         {
             Ico ico = Ico.Get(detail);
             var local = new float3[ico.Vertices.Length];
@@ -734,7 +1075,23 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 float3 d = ico.Vertices[i];
                 float swell = 1f + 0.2f * noise.snoise(d * 1.3f + offset) + 0.07f * noise.snoise(d * 3.4f + offset);
+                if (flutes > 0)
+                {
+                    // Rain runs off the crest, so the grooves are deepest high on the rock and die out toward its foot.
+                    float around = math.atan2(d.z, d.x);
+                    float groove = math.pow(0.5f + 0.5f * math.cos(around * flutes + offset.x), 6f);
+                    swell -= 0.26f * groove * math.smoothstep(-0.3f, 0.5f, d.y) * math.saturate(math.length(d.xz) * 3f);
+                }
+
                 local[i] = d * radii * swell;
+                if (bedM > 0f)
+                {
+                    // Soft beds weather back between hard ones: the block reads as stacked strata, not a lump.
+                    float bed = math.frac((local[i].y + radii.y) / bedM + offset.y * 0.01f);
+                    float soft = math.smoothstep(0.5f, 0.7f, bed) * (1f - math.smoothstep(0.88f, 1f, bed));
+                    local[i].x *= 1f - 0.2f * soft;
+                    local[i].z *= 1f - 0.2f * soft;
+                }
             }
 
             for (int c = 0; c < cuts; c++)
@@ -757,11 +1114,12 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            bool turned = !rotation.Equals(quaternion.identity);
             var part = new Part();
             float top = centre.y + radii.y;
             foreach (float3 v in local)
             {
-                float3 p = centre + v;
+                float3 p = centre + (turned ? math.mul(rotation, v) : v);
                 // Contact darkening where the rock meets the ground, and soft strata bands up its side.
                 float tone = math.lerp(0.62f, 1f, math.saturate(p.y / (top * 0.45f)));
                 float bed = math.frac(p.y / top * 3.2f + noise.snoise(p * 2.3f + offset) * 0.25f);

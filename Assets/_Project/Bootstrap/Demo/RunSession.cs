@@ -910,7 +910,11 @@ namespace Cosmimera.Bootstrap.Demo
                 if (scenery.Grass != null && grassDensity > 0f)
                 {
                     // Stop a little short of the shader's snow line and polar cap, whose edges are noise-jittered.
-                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isOpenGround,
+                    // No turf on a riverbed (P1-18): its pebbles and stream (CosmiRiverbed) start at a mask of ~0.3.
+                    System.Func<float3, bool> isTurf = templates == null
+                        ? isOpenGround
+                        : d => isOpenGround(d) && templates.View.River(math.normalize(d)) < 0.2f;
+                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isTurf,
                         PlayerPosition,
                         PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM, season),
                         grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));

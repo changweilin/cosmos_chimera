@@ -9,18 +9,23 @@ using UnityEngine.Rendering;
 
 namespace Cosmimera.Planet.Model
 {
-    /// <summary>Interleaved leaf-mesh vertex: planet-local position (relative to PlanetConfig.Center) and normal.</summary>
+    /// <summary>
+    /// Interleaved leaf-mesh vertex: planet-local position (relative to PlanetConfig.Center), normal, and the river mask
+    /// (TemplateView.River, UV0.x) the terrain shader paints riverbeds with.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     internal struct ChunkVertex
     {
         public float3 Position;
         public float3 Normal;
+        public float River;
 
         /// <summary>Vertex layout matching the field order above.</summary>
         public static readonly VertexAttributeDescriptor[] Layout =
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
             new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 1),
         };
     }
 
@@ -71,7 +76,7 @@ namespace Cosmimera.Planet.Model
         /// <summary>Fills <paramref name="vertices"/> and returns the planet-local AABB.</summary>
         /// <remarks>
         /// Pre: vertices.Length == (QuadsPerEdge + 1)²; this value came from <see cref="Create"/>.
-        /// Post: vertex (i, j) at index j·(QuadsPerEdge + 1) + i; normals unit length and outward-facing.
+        /// Post: vertex (i, j) at index j·(QuadsPerEdge + 1) + i; normals unit length and outward-facing; River 0.
         /// Side effects: writes vertices. Burst-compatible (no managed calls).
         /// </remarks>
         public void Build(NativeArray<ChunkVertex> vertices, out float3 boundsMin, out float3 boundsMax) =>
@@ -90,7 +95,7 @@ namespace Cosmimera.Planet.Model
         /// <remarks>
         /// Pre: as the other overloads; walls default (none) or a live PlanetWalls.View.
         /// Post: positions use templates.Apply(dir, noise) + walls.Height(dir); with default walls identical to the
-        ///       template overload.
+        ///       template overload. River = templates.River(dir) (0 without templates).
         /// Side effects: writes vertices. Burst-compatible.
         /// </remarks>
         public void Build(NativeArray<ChunkVertex> vertices, in TemplateView templates, in WallView walls,
@@ -107,7 +112,11 @@ namespace Cosmimera.Planet.Model
                     float u = Min.x + i * Step;
                     float3 dir = CubeSphere.FaceToDirectionCore(Face, u, v);
                     float3 p = Surface(dir, templates, walls);
-                    vertices[j * row + i] = new ChunkVertex { Position = p, Normal = SurfaceNormal(dir, templates, walls) };
+                    float river = templates.Count > 0 ? templates.River(math.normalize(dir)) : 0f;
+                    vertices[j * row + i] = new ChunkVertex
+                    {
+                        Position = p, Normal = SurfaceNormal(dir, templates, walls), River = river,
+                    };
                     boundsMin = math.min(boundsMin, p);
                     boundsMax = math.max(boundsMax, p);
                 }
