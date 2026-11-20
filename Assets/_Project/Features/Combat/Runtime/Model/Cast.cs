@@ -1117,6 +1117,41 @@ namespace Cosmimera.Combat
             return damage;
         }
 
+        /// <summary>Takes environmental damage (lightning, fire, lava): a share of max HP, reduced by elemental resistance.</summary>
+        /// <remarks>
+        /// Pre: !IsFainted; 0 &lt;= permilleOfMaxHp &lt;= 1000; element defined; nowMs at or after the effect book's clock.
+        /// Post: amount = MaxHp × permille / 1000 × (100 − effective resist) / 100, rounded, at least 1 when both factors
+        ///       are nonzero; 0 when the effective resist is ≥ 100 (immune). Hp decreases by min(amount, Hp); if still
+        ///       alive, on_hp_cross_below may fire and its heal resolves. Returns the HP removed.
+        /// Side effects: mutates Hp and Book. Does not touch any rng.
+        /// </remarks>
+        public int ReceiveEnvironmentDamage(Element element, int permilleOfMaxHp, long nowMs)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant takes no environmental damage");
+            Contract.Requires(permilleOfMaxHp >= 0 && permilleOfMaxHp <= 1000, "permilleOfMaxHp must be 0..1000");
+            Contract.Requires((int)element >= 0 && (int)element < ElementCount, "element out of range");
+            Book.RequireTime(nowMs);
+            Book.Collect(nowMs, Hp, MaxHp, _totals);
+            int resist = EffectMath.EffectiveResist(_resist[(int)element], _totals.ResistDelta(element));
+            if (resist >= 100 || permilleOfMaxHp == 0)
+            {
+                return 0;
+            }
+
+            long scaled = ((long)MaxHp * permilleOfMaxHp * (100 - resist) + 50_000) / 100_000;
+            int amount = (int)System.Math.Min(int.MaxValue, scaled == 0 ? 1 : scaled);
+            int hpBefore = Hp;
+            int damage = amount > Hp ? Hp : amount;
+            Hp -= damage;
+            if (Hp > 0)
+            {
+                Book.NotifyHpChanged(hpBefore, Hp, MaxHp, nowMs, out int crossHeal);
+                HealPercent(crossHeal, nowMs);
+            }
+
+            return damage;
+        }
+
         /// <summary>The creature entered the field: fires on_summon, and on_ally_swap too when it came in by a switch.</summary>
         /// <remarks>
         /// REQ: combat.md#被動技觸發 (every entry is a summon; on_ally_swap = the creature swapped in). Routing the trait heal

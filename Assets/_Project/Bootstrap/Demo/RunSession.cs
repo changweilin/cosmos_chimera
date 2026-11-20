@@ -393,6 +393,8 @@ namespace Cosmimera.Bootstrap.Demo
         private WeatherState _playerWeatherState;
         private float _stormDarkness;
         private Func<float3, bool> _nearSettlement;
+        private readonly List<float3> _warningDirections = new List<float3>(8);
+        private readonly List<float> _warningProgress = new List<float>(8);
         private const float DebrisFoliageReachM = 30f;
         private const float DebrisSettlementMarginM = 40f;
         private Func<float3, float> _groundAltitudeAt;
@@ -981,6 +983,9 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.SetSettlementCheck(clearance.IsInsideSettlement);
             _nearSettlement = d => clearance.IsInsideSettlement(d, DebrisSettlementMarginM);
             _encounter.SetWeatherProvider(WeatherAt);
+            // REQ: weather.md#落雷 — region radius from the region count: a cap holding 1/N of the sphere has arc 2R/√N.
+            _encounter.AttachLightning(setup.Seed, _weather.RegionAt, r => weatherPlan.Regions[r].Center,
+                2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), StormAt);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -1185,6 +1190,32 @@ namespace Cosmimera.Bootstrap.Demo
             _atmosphere.SetStorm(_stormDarkness, _lightning.Flash);
         }
 
+        // REQ: weather.md#落雷 — open sky only: no strikes in indoor dungeons, trials inside, or the cradle planet's tutorial.
+        private int2 StormAt(float3 direction, long timeMs)
+        {
+            if (_setup.IsBeginnerQuest || TrialInside || _weather.IsIndoor(direction)) return int2.zero;
+            WeatherState state = _weather.StateAt(direction, timeMs);
+            int ion = state.Exotic == WeatherKind.IonStorm ? state.ExoticStrengthPermille : 0;
+            return new int2(state.ThunderPermille, ion);
+        }
+
+        private void DrawStrikes(float3 playerDirection)
+        {
+            if (_lightning == null || _encounter == null) return;
+            _groundAltitudeAt ??= BoltGround;
+            foreach (LightningStrike strike in _encounter.LandedStrikes)
+                _lightning.StrikeAt(_rig.Config, strike.Direction, playerDirection, _groundAltitudeAt);
+            _warningDirections.Clear();
+            _warningProgress.Clear();
+            foreach (LightningStrike strike in _encounter.PendingStrikes)
+            {
+                _warningDirections.Add(strike.Direction);
+                _warningProgress.Add(1f - (strike.LandsAtMs - _nowMs) / (float)LightningSchedule.WarningMs);
+            }
+
+            _lightning.ShowWarnings(_rig.Config, _warningDirections, _warningProgress, _groundAltitudeAt);
+        }
+
         // Bolts over the sea end on the water, not on the sea floor.
         private float BoltGround(float3 direction)
         {
@@ -1370,6 +1401,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            DrawStrikes(_rig.Config.ToDirection(player));
             ApplyObjectEvents();
             CollectGroundPickups(player);
             CollectHarvestPiles(player);
@@ -3114,6 +3146,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DispatchCombatFeedback(in EncounterEvent ev, float3 playerPos)
         {
+            if (ev.Kind == EncounterEventKind.Struck)
+            {
+                StruckFeedback(ev, playerPos);
+                return;
+            }
+
             if (_feedback == null || ev.SourceId < 0 || ev.SourceId >= _encounter.Units.Count)
             {
                 return;
@@ -3191,6 +3229,26 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _feedback.ShowSupport(targetPos, targetFwd, targetUp, targetRadius, ev.Amount);
             }
+        }
+
+        // REQ: weather.md#落雷 — a strike has no caster, so it gets its own feedback: a heavy thunder-coloured hit.
+        private void StruckFeedback(in EncounterEvent ev, float3 playerPos)
+        {
+            if (_feedback == null) return;
+            Color thunder = PlaceholderCreatureViewFactory.ColorOf(Element.Thunder);
+            if (ev.TargetId == Encounter.PlayerCharacterId)
+            {
+                float3 fwd = _rig.Character != null ? (float3)_rig.Character.transform.forward : new float3(0f, 0f, 1f);
+                _feedback.ShowHit(playerPos, fwd, _rig.Config.ToDirection(playerPos), _balance.Collision.CharacterMm * 0.001f,
+                    ev.Amount, thunder, HitTier.Heavy, false);
+                _hitFeel?.PlayPlayerHit();
+                return;
+            }
+
+            if (ev.TargetId < 0 || ev.TargetId >= _encounter.Units.Count) return;
+            EncounterUnit dst = _encounter.Units[ev.TargetId];
+            _feedback.ShowHit(dst.Position, dst.Forward, _rig.Config.ToDirection(dst.Position), dst.BodyRadiusM, ev.Amount,
+                thunder, HitTier.Heavy, false);
         }
 
         private static int[][] NewFeelTargets()

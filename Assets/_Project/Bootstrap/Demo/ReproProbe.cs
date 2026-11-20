@@ -80,6 +80,7 @@ namespace Cosmimera.Bootstrap.Demo
                 .Append(" LandformSynth.GeneratorVersion ").Append(LandformSynth.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" WeatherField.GeneratorVersion ").Append(WeatherField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" WindField.GeneratorVersion ").Append(WindField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
+                .Append(" LightningSchedule.GeneratorVersion ").Append(LightningSchedule.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
             sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete weather landingBits\n");
@@ -275,6 +276,10 @@ namespace Cosmimera.Bootstrap.Demo
                     // REQ: weather.md#風向 — heading and gusts are computed per client too (v9).
                     Fnv.Mix(ref h, (uint)WindField.HeadingTenths(seed, region.Index, t));
                     Fnv.Mix(ref h, (uint)WindField.GustPermille(seed, region.Index, t, 1000));
+                    // REQ: weather.md#落雷 — strike slots are decided per client too.
+                    bool strike = LightningSchedule.TryStrike(seed, region.Index, t / LightningSchedule.SlotMs, 1000, 0,
+                        out int angle, out int reach);
+                    Fnv.Mix(ref h, strike ? (uint)(angle * 1000 + reach + 1) : 0u);
                 }
             }
 

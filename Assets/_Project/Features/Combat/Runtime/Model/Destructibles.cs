@@ -253,11 +253,12 @@ namespace Cosmimera.Combat
         ///      0 &lt;= masteryPercent &lt;= DamageModel.MaxMasteryPercent; nowMs &gt;= 0; 1000 &lt;= harvestPermille &lt;= 10000.
         /// Post: damage = DamageModel(power, mastery, resist) × reaction percent × harvestPermille / 1000 (one rounding,
         ///       min 1 unless immune);
-        ///       brittleness is judged before this hit's own freeze; Destroyed iff Hp reached 0.
+        ///       brittleness is judged before this hit's own freeze; Destroyed iff Hp reached 0. A thunder hit with
+        ///       <paramref name="lightning"/> also ignites a flammable object (weather.md#落雷) as a fire hit would.
         /// Side effects: mutates the slot (HP, burning, frozen window); on destruction adds the id to the destroyed set.
         /// </remarks>
         public ObjectHitResult ApplyHit(int index, Element element, int power, int masteryPercent, long nowMs,
-            int harvestPermille = 1000)
+            int harvestPermille = 1000, bool lightning = false)
         {
             Contract.Requires(harvestPermille >= 1000 && harvestPermille <= 10000, "harvestPermille must be 1000..10000");
             Contract.Requires(index >= 0 && index < _slots.Count, "index out of range");
@@ -314,6 +315,11 @@ namespace Cosmimera.Combat
                     {
                         percent = _env.ConductPercent;
                         reactions |= ObjectReaction.Conducted;
+                    }
+
+                    if (lightning && sub.Flammable != Flammability.None && !s.Burning)
+                    {
+                        reactions |= ObjectReaction.Ignited;
                     }
 
                     break;

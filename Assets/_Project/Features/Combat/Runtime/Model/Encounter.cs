@@ -171,6 +171,11 @@ namespace Cosmimera.Combat
         /// 0 when the player's creatures all fainted; trainer-battles.md#共用規則).
         /// </summary>
         TrainerBattleEnded = 13,
+        /// <summary>
+        /// A lightning strike hit TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (weather.md#落雷). A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Struck = 14,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -489,7 +494,7 @@ namespace Cosmimera.Combat
     /// avoidance; movement speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
     /// Pre: one owner, main thread. Side effects: owns its units and RNG stream.
     /// </remarks>
-    public sealed class Encounter
+    public sealed partial class Encounter
     {
         /// <summary>
         /// How far (m) the player may reach to pick a not-yet-engaged wild unit as a Focus target and so start the fight
@@ -2453,6 +2458,7 @@ namespace Cosmimera.Combat
                 }
             }
 
+            StepLightning(previousMs, nowMs, playerPosition);
             BurnObjects(nowMs);
             AdvanceConfrontations();
             AdvanceTrainerBattle(nowMs);
