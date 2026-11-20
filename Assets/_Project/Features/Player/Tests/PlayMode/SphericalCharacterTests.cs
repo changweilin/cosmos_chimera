@@ -267,5 +267,66 @@ namespace Cosmimera.Player.Tests
             }
             Assert.Less(_character.AltitudeM, seaLevel - 1.2f, "Dive should submerge past 1 m");
         }
+
+        [UnityTest]
+        public IEnumerator Ceiling_provider_caps_aerial_and_launch_height_and_blocks_high_altitude_entry()
+        {
+            float3 zoneCenter = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(zoneCenter, new float3(0f, 0f, 1f));
+            float ground = _height.Sample(zoneCenter);
+            float ceiling = ground + 6f;
+            float zoneDot = math.cos(12f / _radius);
+
+            _character.SetCeilingProvider(d => math.dot(d, zoneCenter) >= zoneDot ? ceiling : float.PositiveInfinity);
+
+            // 1. Aerial climb inside the capped zone stops at the ceiling.
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 60; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, ceiling + 0.1f, "Fly inside capped zone must not exceed ceiling");
+            }
+            Assert.Greater(_character.AltitudeM, ceiling - 1f, "Fly should reach near the ceiling");
+
+            // 2. Ground launch inside the capped zone is also capped at the ceiling.
+            _character.SetTraversalEnvelope(TraversalEnvelope.Default);
+            _character.Teleport(_config.ToWorld(zoneCenter, ground));
+            yield return new WaitForFixedUpdate();
+            _character.Launch(Vector3.zero, 20f);
+            for (int i = 0; i < 30; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, false, false);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, ceiling + 0.1f, "Launch must not exceed ceiling");
+            }
+
+            // 3. Flying outside the capped zone above the ceiling cannot cross into it horizontally.
+            float3 outsideDir = math.normalize(zoneCenter + new float3(0f, 0f, 18f / _radius));
+            _character.Teleport(_config.ToWorld(outsideDir, ground + 20f));
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 40; i++)
+            {
+                float3 toCenter = math.normalize(zoneCenter - _config.ToDirection(_character.transform.position));
+                _character.SetInput(new Vector2(0f, 1f), toCenter, true, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            float3 finalDir = _config.ToDirection(_character.transform.position);
+            Assert.Less(math.dot(finalDir, zoneCenter), zoneDot + 1e-4f,
+                "High-altitude flight outside must be blocked from entering the capped zone");
+            Assert.Greater(_character.AltitudeM, ceiling + 5f,
+                "Blocked high-altitude flyer must not be dropped down to the ceiling");
+        }
     }
 }

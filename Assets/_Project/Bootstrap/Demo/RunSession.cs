@@ -299,12 +299,39 @@ namespace Cosmimera.Bootstrap.Demo
 
             public float MazeOuterSealM { get; set; }
 
+            // Capsule height is 1.8 m, so keeping feet 2 m below WallHeightM keeps the character's head below the wall ridge.
+            private const float DungeonCeilingMarginM = 2f;
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 Interior != null ? Interior.View.Height(math.normalize(direction)) :
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
                 (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f) +
                 (Maze != null ? Maze.View.Height(math.normalize(direction)) : 0f);
+
+            /// <summary>Maximum permitted player altitude (m) in dungeons so open-ceiling walls cannot be flown over.</summary>
+            public float CeilingAltitude(float3 direction)
+            {
+                float3 dir = math.normalize(direction);
+                if (Interior != null)
+                {
+                    return RoomDungeonGeometry.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                if (MazeArea != null && Maze != null && MazeArea.Contains(dir))
+                {
+                    float floorAlt = GroundAltitude(dir) - Maze.View.Height(dir);
+                    return floorAlt + RoomDungeonGeometry.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                if (_walls != null)
+                {
+                    float floorAlt = GroundAltitude(dir) - _walls.View.Height(dir);
+                    return floorAlt + DungeonPlanner.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                return float.PositiveInfinity;
+            }
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) =>
@@ -1095,6 +1122,11 @@ namespace Cosmimera.Bootstrap.Demo
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
             ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
+            if (_rig != null && _rig.Character != null)
+            {
+                _rig.Character.SetCeilingProvider(surface.CeilingAltitude);
+            }
+
             UpdateEnvironment(PlayerPosition());
         }
 

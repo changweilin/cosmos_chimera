@@ -181,6 +181,10 @@ namespace Cosmimera.Player
         private float3 _pendingLaunch;
         private float _pendingLaunchUp;
         private bool _hasSafeSurfaceDir;
+        private System.Func<float3, float> _ceilingAtDirection;
+        private bool _wasUnderCeiling;
+        private float3 _lastUnboundedDir;
+        private bool _hasUnboundedDir;
 
         /// <summary>Current radial altitude above <see cref="PlanetConfig.Radius"/> (m).</summary>
         /// <remarks>Pre: none. Post: finite altitude after Configure; 0 before Configure. Side effects: none.</remarks>
@@ -189,6 +193,20 @@ namespace Cosmimera.Player
         /// <summary>Updates active spatial traversal rules (Swim, Dive, Fly, Levitate, water boundaries).</summary>
         /// <remarks>Pre: none. Post: following FixedUpdate steps enforce <paramref name="envelope"/>. Side effects: mutates traversal state.</remarks>
         public void SetTraversalEnvelope(in TraversalEnvelope envelope) => _traversal = envelope;
+
+        /// <summary>Sets an optional per-direction altitude ceiling (m above planet radius), or null for none.</summary>
+        /// <remarks>
+        /// REQ: 無天花板的地城要限高，不可讓玩家越過邊牆。
+        /// Pre: <paramref name="ceilingAtDirection"/> returns a finite altitude (m) when capped or float.PositiveInfinity when uncapped.
+        /// Post: FixedUpdate caps ground and aerial altitude to the returned ceiling and blocks high-altitude entry from uncapped space.
+        /// Side effects: stores provider and resets entry-tracking state.
+        /// </remarks>
+        public void SetCeilingProvider(System.Func<float3, float> ceilingAtDirection)
+        {
+            _ceilingAtDirection = ceilingAtDirection;
+            _wasUnderCeiling = false;
+            _hasUnboundedDir = false;
+        }
 
         /// <summary>Sets vertical intent in [-1, 1] used during Fly, Levitate, or Dive movement.</summary>
         /// <remarks>Pre: <paramref name="vertical"/> is finite. Post: clamped vertical axis stored. Side effects: none.</remarks>
@@ -219,6 +237,8 @@ namespace Cosmimera.Player
             transform.position = worldPosition;
             _state = SphericalMotor.Initial(up, facing);
             _hasSafeSurfaceDir = false;
+            _wasUnderCeiling = false;
+            _hasUnboundedDir = false;
             ApplyRotation(up, _state.Facing, immediate: true);
         }
 
@@ -336,11 +356,55 @@ namespace Cosmimera.Player
 
             float3 position = _body.position;
             float3 up = PlanetFrame.At(_planet, position).Up;
+            float ceiling = _ceilingAtDirection != null ? _ceilingAtDirection(up) : float.PositiveInfinity;
+            float3 blockedInward = float3.zero;
+            if (math.isfinite(ceiling))
+            {
+                float altitude = _planet.Altitude(position);
+                if (!_wasUnderCeiling && altitude > ceiling + 0.05f)
+                {
+                    if (_hasUnboundedDir)
+                    {
+                        // Entered a height-capped zone from uncapped airspace: push back horizontally instead of dropping inside.
+                        float3 enteredDir = up;
+                        up = _lastUnboundedDir;
+                        position = _planet.ToWorld(up, altitude);
+                        _body.position = position;
+                        blockedInward = SphericalMotor.TangentOr(enteredDir - up, up, _state.Facing);
+                        float inwardSpeed = math.dot(_state.PlanarVelocity, blockedInward);
+                        if (inwardSpeed > 0f)
+                        {
+                            _state.PlanarVelocity -= blockedInward * inwardSpeed;
+                            _state.Velocity = _state.PlanarVelocity + up * _state.VerticalSpeed;
+                            _body.linearVelocity = _state.Velocity;
+                        }
+
+                        ceiling = _ceilingAtDirection(up);
+                    }
+                    else
+                    {
+                        position = _planet.ToWorld(up, ceiling);
+                        _body.position = position;
+                        _wasUnderCeiling = true;
+                    }
+                }
+                else
+                {
+                    _wasUnderCeiling = true;
+                }
+            }
+            else
+            {
+                _wasUnderCeiling = false;
+                _lastUnboundedDir = up;
+                _hasUnboundedDir = true;
+            }
+
             GroundContact ground = ProbeGround(position, up);
 
             if (_traversal.AerialActive)
             {
-                StepAerial(position, up, ground);
+                StepAerial(position, up, ground, ceiling, blockedInward);
                 return;
             }
 
@@ -361,7 +425,7 @@ namespace Cosmimera.Player
                     {
                         _lastSafeSurfaceDir = up;
                         _hasSafeSurfaceDir = true;
-                        StepGroundMotor(up, ground);
+                        StepGroundMotor(up, ground, ceiling, blockedInward);
                         return;
                     }
 
@@ -373,7 +437,7 @@ namespace Cosmimera.Player
                 {
                     _lastSafeSurfaceDir = up;
                     _hasSafeSurfaceDir = true;
-                    StepGroundMotor(up, ground);
+                    StepGroundMotor(up, ground, ceiling, blockedInward);
                     return;
                 }
 
@@ -381,10 +445,10 @@ namespace Cosmimera.Player
                 return;
             }
 
-            StepGroundMotor(up, ground);
+            StepGroundMotor(up, ground, ceiling, blockedInward);
         }
 
-        private void StepGroundMotor(float3 up, GroundContact ground)
+        private void StepGroundMotor(float3 up, GroundContact ground, float ceiling, float3 blockedInward)
         {
             if (!_state.Grounded)
             {
@@ -415,6 +479,33 @@ namespace Cosmimera.Player
                 _pendingLaunchUp = 0f;
             }
 
+            if (math.lengthsq(blockedInward) > 0f)
+            {
+                float inward = math.dot(_state.PlanarVelocity, blockedInward);
+                if (inward > 0f)
+                {
+                    _state.PlanarVelocity -= blockedInward * inward;
+                }
+            }
+
+            if (math.isfinite(ceiling))
+            {
+                float altitude = _planet.Altitude(_body.position);
+                if (_state.VerticalSpeed > 0f)
+                {
+                    float remaining = ceiling - altitude;
+                    float maxUp = remaining <= 0f ? 0f : remaining / Time.fixedDeltaTime;
+                    _state.VerticalSpeed = math.min(_state.VerticalSpeed, maxUp);
+                }
+
+                if (altitude > ceiling + 0.02f)
+                {
+                    _body.position = _planet.ToWorld(up, ceiling);
+                }
+
+                _state.Velocity = _state.PlanarVelocity + up * _state.VerticalSpeed;
+            }
+
             _body.linearVelocity = _state.Velocity;
             ApplyRotation(up, _state.Facing, immediate: false);
         }
@@ -433,22 +524,23 @@ namespace Cosmimera.Player
             _pendingLaunchUp = upSpeed;
         }
 
-        private void StepAerial(float3 position, float3 up, GroundContact ground)
+        private void StepAerial(float3 position, float3 up, GroundContact ground, float ceiling, float3 blockedInward)
         {
             float altitude = _planet.Altitude(position);
             float baseSpeed = (_input.Sprint ? _sprintSpeed : _walkSpeed) * _traversal.AirSpeedScale;
             float dt = Time.fixedDeltaTime;
             float climb = _verticalInput * baseSpeed;
+            float maxAlt = math.min(_traversal.MaxAltitudeM, ceiling);
 
             if (climb > 0f)
             {
-                float remaining = _traversal.MaxAltitudeM - altitude;
+                float remaining = maxAlt - altitude;
                 climb = remaining <= 0f ? 0f : math.min(climb, remaining / dt);
             }
 
-            if (altitude > _traversal.MaxAltitudeM + 0.02f)
+            if (altitude > maxAlt + 0.02f)
             {
-                _body.position = _planet.ToWorld(up, _traversal.MaxAltitudeM);
+                _body.position = _planet.ToWorld(up, maxAlt);
             }
 
             float minFloor = _traversal.EnforceWaterBoundary && !_traversal.CanDive
@@ -471,6 +563,15 @@ namespace Cosmimera.Player
             }
 
             float3 moveDir = TangentMoveDirection(up);
+            if (math.lengthsq(blockedInward) > 0f)
+            {
+                float inward = math.dot(moveDir, blockedInward);
+                if (inward > 0f)
+                {
+                    moveDir -= blockedInward * inward;
+                }
+            }
+
             float3 facing = math.lengthsq(moveDir) > 1e-6f
                 ? RotateFacingToward(up, _state.Facing, moveDir, Time.fixedDeltaTime)
                 : _state.Facing;
