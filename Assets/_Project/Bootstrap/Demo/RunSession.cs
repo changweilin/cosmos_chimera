@@ -389,6 +389,7 @@ namespace Cosmimera.Bootstrap.Demo
         private LightningView _lightning;
         private FireView _fireView;
         private SeaWaves _sea;
+        private QuakeView _quakeView;
         private SeaSprayView _spray;
         private UnderwaterView _underwater;
         private Color _shallowWater, _deepWater;
@@ -881,6 +882,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (scenery != null) _weatherView = new LocalWeatherView(transform);
             if (scenery != null) _lightning = new LightningView(transform, (int)(setup.Seed ^ (setup.Seed >> 32)));
             if (scenery != null) _fireView = new FireView(transform);
+            if (scenery != null) _quakeView = new QuakeView(transform);
             atmosphere.SetWeather(cloudCover, wind);
             if (scenery != null)
             {
@@ -1007,6 +1009,9 @@ namespace Cosmimera.Bootstrap.Demo
                 2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), StormAt);
             // REQ: destructibles.md#延燒 — spreading fire follows the rule-layer wind and is held back by rain and snow.
             _encounter.SetFireEnvironment(setup.Seed, FireWindAt, FireWetAt);
+            // REQ: planet-world.md#地震噴發 — same regions as the weather; cracks only open on volcanic ground.
+            _encounter.AttachQuakes(setup.Seed, _weather.RegionAt, r => weatherPlan.Regions[r].Center,
+                2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), setup.PlanetType.Id == "lava_planet", VolcanicAt);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -1259,6 +1264,13 @@ namespace Cosmimera.Bootstrap.Demo
             return new int2(state.ThunderPermille, ion);
         }
 
+        private bool VolcanicAt(float3 direction)
+        {
+            if (_setup.IsBeginnerQuest || TrialInside || _weather.IsIndoor(direction) || _rig.IsSea(direction)) return false;
+            if (_setup.PlanetType.Id == "lava_planet") return true;
+            return _terrainAt(direction).Id is "volcano" or "volcano_foothills" or "rift_valley";
+        }
+
         private int2 FireWindAt(float3 direction, long timeMs)
         {
             if (TrialInside || _weather.IsIndoor(direction)) return int2.zero;
@@ -1295,6 +1307,25 @@ namespace Cosmimera.Bootstrap.Demo
             float3 downwind = WindField.Tangent(direction, _weather.WindHeadingAt(direction, _nowMs));
             float darkness = IsNight(direction) ? 1f : _stormDarkness * 0.6f;
             _fireView.Sync(_burning, _rig.Config, downwind, _playerWeatherState.WindPermille / 1000f, darkness, TickMs / 1000f);
+        }
+
+        private void DrawQuakes(float3 player)
+        {
+            if (_quakeView == null || _encounter == null) return;
+            _groundAltitudeAt ??= BoltGround;
+            float3 direction = _rig.Config.ToDirection(player);
+            float darkness = IsNight(direction) ? 1f : _stormDarkness * 0.6f;
+            float shake = _quakeView.Sync(_encounter.Quakes, _encounter.PendingBombs, _rig.Config, _groundAltitudeAt, _nowMs,
+                player, _weather.RegionAt(direction), darkness, TickMs / 1000f);
+            if (shake > 0f) _hitFeel?.PlayEnvironmentShake(shake);
+            if (_fireView == null) return;
+            foreach (VolcanicBomb bomb in _encounter.LandedBombs)
+            {
+                float ground = _groundAltitudeAt(bomb.Direction);
+                float3 at = _rig.Config.ToWorld(bomb.Direction, ground);
+                _fireView.Blast(at, bomb.Direction);
+                _fireView.Scorch(at, bomb.Direction, QuakeSchedule.BombRadiusM * 0.6f, FireKind.Lava);
+            }
         }
 
         // REQ: destructibles.md#延燒 — a kerosene blast flashes; anything that burnt down leaves scorched ground.
@@ -1513,6 +1544,7 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             DrawStrikes(_rig.Config.ToDirection(player));
             DrawFires(player);
+            DrawQuakes(player);
             ApplyObjectEvents();
             CollectGroundPickups(player);
             CollectHarvestPiles(player);
@@ -3258,9 +3290,15 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DispatchCombatFeedback(in EncounterEvent ev, float3 playerPos)
         {
-            if (ev.Kind == EncounterEventKind.Struck || ev.Kind == EncounterEventKind.Scorched)
+            if (ev.Kind == EncounterEventKind.Struck || ev.Kind == EncounterEventKind.Scorched || ev.Kind == EncounterEventKind.Quaked)
             {
                 StruckFeedback(ev, playerPos);
+                // REQ: planet-world.md#地震噴發 — the ground splitting underfoot throws the player clear of the crack.
+                if (ev.Kind == EncounterEventKind.Quaked && ev.TargetId == Encounter.PlayerCharacterId && _rig.Character != null)
+                {
+                    _rig.Character.Launch((Vector3)(_encounter.PlayerLaunchDirection * 4f), 6f);
+                }
+
                 return;
             }
 
@@ -3349,7 +3387,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (_feedback == null) return;
             // Scorched ticks every second while standing in flames: lighter feedback than a lightning strike.
             bool fire = ev.Kind == EncounterEventKind.Scorched;
-            Color thunder = PlaceholderCreatureViewFactory.ColorOf(fire ? Element.Fire : Element.Thunder);
+            Element element = fire ? Element.Fire : ev.Kind == EncounterEventKind.Quaked ? Element.Earth : Element.Thunder;
+            Color thunder = PlaceholderCreatureViewFactory.ColorOf(element);
             HitTier tier = fire ? HitTier.Light : HitTier.Heavy;
             if (ev.TargetId == Encounter.PlayerCharacterId)
             {
@@ -3913,6 +3952,7 @@ namespace Cosmimera.Bootstrap.Demo
             _weatherView?.Dispose();
             _lightning?.Dispose();
             _fireView?.Dispose();
+            _quakeView?.Dispose();
             _spray?.Dispose();
             _underwater?.Dispose();
             if (_sea != null) SeaWaves.Clear();

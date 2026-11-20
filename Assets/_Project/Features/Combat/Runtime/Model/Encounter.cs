@@ -181,6 +181,12 @@ namespace Cosmimera.Combat
         /// Encounter.NoSource (destructibles.md#延燒). A Faint or PlayerDowned event may follow.
         /// </summary>
         Scorched = 15,
+        /// <summary>
+        /// A quake crack opened under TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (planet-world.md#地震噴發). Units are thrown clear; for the player see
+        /// Encounter.PlayerLaunchDirection. A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Quaked = 16,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -2464,6 +2470,7 @@ namespace Cosmimera.Combat
             }
 
             StepLightning(previousMs, nowMs, playerPosition);
+            StepQuakes(previousMs, nowMs, playerPosition);
             StepFire(previousMs, nowMs);
             BurnObjects(nowMs);
             AdvanceConfrontations();

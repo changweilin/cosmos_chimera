@@ -72,7 +72,7 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v9\n");
+            sb.Append("# cosmimera repro-probe v10\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
@@ -81,6 +81,7 @@ namespace Cosmimera.Bootstrap.Demo
                 .Append(" WeatherField.GeneratorVersion ").Append(WeatherField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" WindField.GeneratorVersion ").Append(WindField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" LightningSchedule.GeneratorVersion ").Append(LightningSchedule.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
+                .Append(" QuakeSchedule.GeneratorVersion ").Append(QuakeSchedule.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
             sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete weather landingBits\n");
@@ -280,6 +281,22 @@ namespace Cosmimera.Bootstrap.Demo
                     bool strike = LightningSchedule.TryStrike(seed, region.Index, t / LightningSchedule.SlotMs, 1000, 0,
                         out int angle, out int reach);
                     Fnv.Mix(ref h, strike ? (uint)(angle * 1000 + reach + 1) : 0u);
+                }
+
+                // REQ: planet-world.md#地震噴發 — quake timing, crack rolls and bombs are decided per client too (v10).
+                for (long window = 0; window < 3; window++)
+                {
+                    QuakeSchedule.Timing(seed, region.Index, window, planetTypeId == "lava_planet", out long startMs, out int eruptMs, out int cracks);
+                    Fnv.Mix(ref h, (uint)startMs);
+                    Fnv.Mix(ref h, (uint)(eruptMs * 8 + cracks));
+                    for (int attempt = 0; attempt < QuakeSchedule.CrackAttempts; attempt++)
+                    {
+                        QuakeSchedule.Crack(seed, region.Index, window, attempt, out int qa, out int qr, out int qh, out int ql);
+                        Fnv.Mix(ref h, (uint)(((qa * 1000 + qr) * 1800 + qh) * 41 + ql));
+                    }
+
+                    bool bomb = QuakeSchedule.TryBomb(seed, region.Index, window, startMs / QuakeSchedule.SlotMs, 0, 0, out int along, out int side);
+                    Fnv.Mix(ref h, bomb ? (uint)(along * 300 + side + 150) : 0u);
                 }
             }
 

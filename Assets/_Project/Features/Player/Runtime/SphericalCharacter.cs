@@ -178,6 +178,8 @@ namespace Cosmimera.Player
         private TraversalEnvelope _traversal;
         private float _verticalInput;
         private float3 _lastSafeSurfaceDir;
+        private float3 _pendingLaunch;
+        private float _pendingLaunchUp;
         private bool _hasSafeSurfaceDir;
 
         /// <summary>Current radial altitude above <see cref="PlanetConfig.Radius"/> (m).</summary>
@@ -401,8 +403,34 @@ namespace Cosmimera.Player
                 _jump.Consume();
             }
 
+            if (_pendingLaunchUp > 0f)
+            {
+                // Thrown like a jump the player did not ask for: airborne at once, the shove decays under air control.
+                float3 shove = _pendingLaunch - up * math.dot(_pendingLaunch, up);
+                _state.PlanarVelocity = _state.PlanarVelocity + shove;
+                _state.VerticalSpeed = math.max(_state.VerticalSpeed, _pendingLaunchUp);
+                _state.Grounded = false;
+                _state.Velocity = _state.PlanarVelocity + up * _state.VerticalSpeed;
+                _pendingLaunch = float3.zero;
+                _pendingLaunchUp = 0f;
+            }
+
             _body.linearVelocity = _state.Velocity;
             ApplyRotation(up, _state.Facing, immediate: false);
+        }
+
+        /// <summary>Throws the character: an upward pop plus a sideways shove, as from ground cracking open beneath it.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#地震噴發. Pre: tangentVelocity finite (its vertical part is dropped); upSpeed in (0, 30].
+        /// Post: applied on the next ground-motor step (held while flying, swimming or diving); a second call before
+        ///       then replaces the first. Side effects: pending motor state.
+        /// </remarks>
+        public void Launch(Vector3 tangentVelocity, float upSpeed)
+        {
+            Cosmimera.Core.Contracts.Contract.Requires(math.all(math.isfinite((float3)tangentVelocity)) && upSpeed > 0f && upSpeed <= 30f,
+                "tangentVelocity finite; upSpeed in (0, 30]");
+            _pendingLaunch = tangentVelocity;
+            _pendingLaunchUp = upSpeed;
         }
 
         private void StepAerial(float3 position, float3 up, GroundContact ground)
