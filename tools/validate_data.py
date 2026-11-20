@@ -45,6 +45,7 @@ KINDS = {
     "craft-grips": "craft-grip",
     "creature-grip-anims": "creature-grip-anim",
     "niches": "niche",
+    "field-utilities": "field-utility",
 }
 ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches", "encyclopedia", "creature-grip-anims")
 # Mirrors LandformSynth.KindIds (Assets/_Project/Features/WorldGen/Runtime/Model/LandformSynth.cs): every spawn point's
@@ -221,6 +222,7 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None,
     check_encyclopedia(records["encyclopedia"], findings, Finding)
     balance = json.loads((balance_path or REPO_ROOT / "Data" / "balance.json").read_text(encoding="utf-8"))
     _check_skill_stars(records, findings, balance["stat_budget"], validators)
+    _check_field_utilities(records, findings, validators, schemas, retired_ids_path)
     _check_niches(records, findings)
     _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
@@ -318,6 +320,81 @@ def _check_skill_stars(records: dict[str, list[Record]], findings: list[Finding]
             r = skills[sid]
             findings.append(Finding("error", "unique_skill_shared", r.file, f"/{r.index}/star",
                                     f"★★★ skill '{sid}' is used by lines {sorted(map(str, lines))}; ★★★ is unique to one line"))
+
+
+def _check_field_utilities(
+    records: dict[str, list[Record]],
+    findings: list[Finding],
+    validators: dict[str, Draft202012Validator],
+    schemas: dict[str, dict],
+    retired_ids_path: Path | None,
+) -> None:
+    """REQ: docs/design/field-utilities-combat.md — 1:1 coverage of all non-none fieldUtility entries,
+    element alignment, unique non-retired combat skill IDs, and valid ★ downgraded versions."""
+    entries = records["field-utilities"]
+    if not entries:
+        return
+
+    all_utilities = [u for u in schemas["common"]["$defs"]["fieldUtility"]["enum"] if u != "none"]
+    seen_utilities: dict[str, Record] = {}
+    seen_ids: dict[str, Record] = {}
+    for kind in ID_KINDS:
+        for r in records[kind]:
+            rid = r.data.get("id")
+            if isinstance(rid, str):
+                seen_ids.setdefault(rid, r)
+    retired = _load_retired_ids(retired_ids_path)
+
+    for r in entries:
+        u = r.data.get("utility")
+        if isinstance(u, str):
+            if u in seen_utilities:
+                other = seen_utilities[u]
+                findings.append(Finding("error", "field_utility_duplicate", r.file, f"/{r.index}/utility",
+                                        f"utility '{u}' already defined in {other.file}/{other.index}"))
+            else:
+                seen_utilities[u] = r
+
+        kind = r.data.get("kind")
+        aligned = r.data.get("aligned_elements")
+        skill_key = "combat_move" if kind == "move" else "combat_trait" if kind == "trait" else None
+        skill = r.data.get(skill_key) if skill_key else None
+        if not isinstance(skill, dict):
+            continue
+
+        sid = skill.get("id")
+        if isinstance(sid, str):
+            if sid in seen_ids:
+                other = seen_ids[sid]
+                findings.append(Finding("error", "duplicate_id", r.file, f"/{r.index}/{skill_key}/id",
+                                        f"id '{sid}' already defined in {other.file}/{other.index}; ids are global"))
+            else:
+                seen_ids[sid] = r
+            if sid in retired:
+                findings.append(Finding("error", "retired_id", r.file, f"/{r.index}/{skill_key}/id",
+                                        f"id '{sid}' is retired (Data/retired-ids.txt); ids are never reused"))
+
+        if kind == "move" and isinstance(aligned, list):
+            el = skill.get("element")
+            if isinstance(el, str) and el not in aligned:
+                findings.append(Finding("error", "field_utility_element_mismatch", r.file, f"/{r.index}/combat_move/element",
+                                        f"move element '{el}' is not in aligned_elements {aligned}"))
+
+        down = skill.get("downgraded")
+        if isinstance(down, dict):
+            merged = {k: v for k, v in skill.items() if k != "downgraded"}
+            merged.update(down)
+            merged["star"] = 1
+            stem = "move" if kind == "move" else "trait"
+            for err in validators[stem].iter_errors([merged]):
+                for leaf in _leaf_errors(err):
+                    findings.append(Finding("error", "downgraded_invalid", r.file, f"/{r.index}/{skill_key}/downgraded",
+                                            f"★ version is not a valid {stem}: {_schema_message(leaf)}"))
+
+    missing = [u for u in all_utilities if u not in seen_utilities]
+    if missing:
+        findings.append(Finding("error", "field_utility_missing", entries[0].file, "",
+                                f"missing field_utility combat definitions: {missing}"))
 
 
 def _check_niches(records: dict[str, list[Record]], findings: list[Finding]) -> None:

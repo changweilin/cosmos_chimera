@@ -2,7 +2,7 @@
 
 每隻宙獸型態最多擁有 **1 個**場外生活能力（`field_utility`，可為 `none`），分為**生活主動技（Move）**與**生活被動技（Trait）**。設計核心為「**生活 × 屬性 × 戰鬥**」三位一體契合：生活能力不獨立於戰鬥之外，而是順應屬性的物理與生態法則，透過**副手器皿配對**與**天氣／地形／物質反應**回饋戰鬥決策。
 
-> 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`。
+> 規則層實作：`Creatures.FieldUtilityRules`（`Assets/_Project/Features/Creatures/Api/FieldUtilityRules.cs`）；資料列舉：`Data/schemas/common.schema.json#/$defs/fieldUtility`；全部 72 項對應戰鬥效果規格見 [field-utilities-combat.md](field-utilities-combat.md)（資料：`Data/field-utilities/field-utilities.json`）。
 
 採礦、纖維採集、原料加工、工具／器皿／裝備製作與穿戴見 [crafting.md](crafting.md)；延伸既有生活能力，不增加每型態可持有的能力數量。製造擴充（D0-U4）改以製造專屬 `field_utility` 提供裁縫／鍛造／木工／珠寶／附魔（含採集＞加工＞附魔循環）等資格，見 [crafting.md#製造擴充](crafting.md#製造擴充)。
 

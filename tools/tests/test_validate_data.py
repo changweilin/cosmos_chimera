@@ -596,6 +596,42 @@ class CrossFileRules(unittest.TestCase):
         findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
         self.assertIn("schema", self.codes(findings))
 
+    def test_field_utilities_combat_data_and_checks(self):
+        fu_path = REPO / "Data/field-utilities/field-utilities.json"
+        entries = json.loads(fu_path.read_text(encoding="utf-8"))
+        self.assertEqual([], [str(f) for f in self._with_valid({"field-utilities/field-utilities.json": json.dumps(entries)})])
+
+        # Verify 36/36 split, 72:24:4 star ratio (52/17/3), and 8/8/8/8 quadrant parity.
+        moves = [e["combat_move"] for e in entries if e["kind"] == "move"]
+        traits = [e["combat_trait"] for e in entries if e["kind"] == "trait"]
+        self.assertEqual((36, 36), (len(moves), len(traits)))
+        stars = [s["star"] for s in moves + traits]
+        self.assertEqual((52, 17, 3), (stars.count(1), stars.count(2), stars.count(3)))
+        quads = {}
+        for m in moves:
+            if "polarity" in m:
+                key = (m["polarity"], "melee" if m["range_class"] == "melee" else "ranged")
+                quads[key] = quads.get(key, 0) + 1
+        self.assertEqual({("yang", "melee"): 8, ("yang", "ranged"): 8, ("yin", "melee"): 8, ("yin", "ranged"): 8}, quads)
+
+        # Missing utility -> field_utility_missing.
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(entries[:-1])})
+        self.assertIn("field_utility_missing", self.codes(findings))
+
+        # Move element outside aligned_elements -> field_utility_element_mismatch.
+        bad_el = json.loads(json.dumps(entries))
+        move_entry = next(e for e in bad_el if e["kind"] == "move" and "metal" not in e["aligned_elements"])
+        move_entry["combat_move"]["element"] = "metal"
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(bad_el)})
+        self.assertIn("field_utility_element_mismatch", self.codes(findings))
+
+        # Invalid downgraded ★ version -> downgraded_invalid.
+        bad_down = json.loads(json.dumps(entries))
+        star2_trait = next(e for e in bad_down if e["kind"] == "trait" and e["combat_trait"]["star"] == 2 and e["combat_trait"]["trigger"]["type"] == "always")
+        star2_trait["combat_trait"]["downgraded"]["effects"] = [{"type": "heal_percent_max_hp", "params": {"percent": 10}}]
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(bad_down)})
+        self.assertIn("downgraded_invalid", self.codes(findings))
+
 
 if __name__ == "__main__":
     unittest.main()
