@@ -998,6 +998,7 @@ namespace Cosmimera.Bootstrap.Demo
                     CraftStock = _save.CraftStock.Snapshot(),
                     CraftLooks = _save.CraftStock.LookSnapshot(),
                     Equipment = _save.Equipment.Snapshot(),
+                    TrialBadges = _save.CompletedTrialsSnapshot(),
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.Hints.Inherit(_menuHints);

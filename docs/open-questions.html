@@ -79,6 +79,13 @@
 <section>
 <h2>地形試煉與進階地城</h2>
 <div class="cards">
+<article id="Q-W45">
+  <p><span class="label">已定</span>雨林／火山／冰棚／迷宮保留地表封閉迷宮，入口奇觀立在迷宮中央當入口標記（Q-W43）。室內 6 種已接進 <code>RunSession</code>：試煉主站在奇觀前，對話後進入同半徑球面的房間地城（ADR-0011）。</p>
+  <p><span class="label">問題</span><b>地表迷宮的範圍與動線怎麼定？</b><b>(1) 範圍</b>：(A) 以入口奇觀為圓心、半徑約 4 格（28 m／格，約 110 m）的房間網格，沿用 <code>RoomDungeonPlanner</code> 的房間樹與 <code>RoomDungeonGeometry</code> 的牆，只是鋪在星球地表、牆疊在地形上；(B) 用奇觀所在的整個區域（<code>DungeonPlanner</code> 的區域牆）。<b>(2) 奇觀在哪一格</b>：(A) 奇觀＝BOSS 競技場（迷宮入口在外圈、試煉主站在迷宮入口，打穿迷宮到中央的奇觀打最終戰）；(B) 奇觀＝迷宮入口（試煉主站在奇觀前，迷宮往外長，最深處是競技場）。<b>(3) 迷宮內的道路、建築、散佈物件</b>：(A) 範圍內清空道路建築與散佈；(B) 保留，牆避開道路（隘口）。</p>
+  <p><span class="label">建議</span>(1) A、(2) A、(3) A（與室內地城共用規則與試煉流程，地表只差「不切換場景」）。</p>
+  <p><span class="label">影響項目</span>P3-13、P3-33（雨林／火山／冰棚／迷宮的試煉目前不生成）</p>
+  <p><span class="label">暫定</span><span class="none">無</span></p>
+</article>
 </div>
 </section>
 
@@ -128,6 +135,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
+ 'Q-W45':[R('area','迷宮範圍',['A 奇觀周圍房間網格','B 整個區域','改（補充）']),R('wonder','奇觀位置',['A 奇觀＝競技場（中央）','B 奇觀＝迷宮入口','改（補充）']),R('clear','範圍內道路建築散佈',['A 清空','B 保留＋隘口','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

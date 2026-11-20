@@ -224,6 +224,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Player character's signature juvenile vessel granted after the initial battle.</summary>
         public VesselKind PlayerStarterVessel;
+
+        /// <summary>Terrain trial badges held at departure (LobbySave.CompletedTrialsSnapshot); decides a trial's first win.</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#地形試煉. Pre: null or canonical terrain ids. Post: never mutated by the run. Side effects: none.</remarks>
+        public IReadOnlyCollection<string> TrialBadges;
     }
 
     /// <summary>
@@ -276,17 +280,27 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: characters.md#路人-npc — residents are rule-layer bodies: creatures walk around them.
             public RunPopulace Populace { get; set; }
 
+            // REQ: ADR-0011 — while the party is in an indoor dungeon the whole surface is the flat indoor sphere with
+            // its room walls; nothing of the planet surface stands there. Null = on the planet surface.
+            public PlanetWalls Interior { get; set; }
+
+            // The indoor boss door: sealed until the guard elite is knocked out (trainer-battles.md#地形試煉 step ①).
+            public bool InteriorSealed { get; set; } = true;
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
+                Interior != null ? Interior.View.Height(math.normalize(direction)) :
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
                 (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
-            public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
+            public bool IsSea(float3 direction) =>
+                Interior == null && _templates != null && _templates.View.IsSea(math.normalize(direction));
 
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
             // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
+                Interior != null ? Interior.View.IsBlocked(math.normalize(direction), clearanceM / _radius, InteriorSealed) :
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
                 (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
                 (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM)) ||
@@ -1011,6 +1025,7 @@ namespace Cosmimera.Bootstrap.Demo
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
+            ConfigureTrial(wildPool, terrainMaterial, toonShader);
             UpdateEnvironment(PlayerPosition());
         }
 
@@ -1035,6 +1050,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             // Unscaled and ahead of the journal-pause return: rumble and slow-mo must still time out while paused.
             _hitFeel?.Update(Time.unscaledDeltaTime);
+            // Combat time stands still while the ground under a dungeon gate swap has no colliders yet.
+            if (StepTrialTransit())
+            {
+                SyncViews();
+                return;
+            }
             if (ReadJournalInput()) return;
             ReadInput();
             _accumulator += Time.deltaTime * 1000f;
@@ -1062,6 +1083,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             SyncViews();
             UpdateFleeingViews(Time.deltaTime);
+            if (TrialInside)
+            {
+                SyncTrialMaster();
+            }
         }
 
         private void SummonOpening()
@@ -1091,7 +1116,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         private WeatherProfile WeatherAt(float3 direction, long nowMs) =>
-            _setup.IsBeginnerQuest ? WeatherProfiles.For(WeatherKind.Clear) : _weather.ProfileAt(direction, nowMs);
+            _setup.IsBeginnerQuest || TrialInside ? WeatherProfiles.For(WeatherKind.Clear) : _weather.ProfileAt(direction, nowMs);
 
         private WeatherControlResult TryControlWeather(WeatherKind kind)
         {
@@ -1120,7 +1145,8 @@ namespace Cosmimera.Bootstrap.Demo
             _playerTerrain = _terrainAt(direction);
             _playerAltitudeM = _rig.Config.Altitude(player);
             float groundAltM = _surface != null ? _surface.GroundAltitude(direction) : _playerAltitudeM;
-            _playerWaterDepthM = _hasOcean && (_rig.IsSea(direction) || groundAltM < PlanetLook.SeaLevelM)
+            // Indoors there is no sea: the flat floor sits at altitude 0, below the planet's sea level.
+            _playerWaterDepthM = _hasOcean && !TrialInside && (_rig.IsSea(direction) || groundAltM < PlanetLook.SeaLevelM)
                 ? math.max(0f, PlanetLook.SeaLevelM - groundAltM)
                 : 0f;
             _playerWeather = WeatherAt(direction, _nowMs);
@@ -1179,6 +1205,7 @@ namespace Cosmimera.Bootstrap.Demo
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
             RecordAppearances();
             UpdateRegion(player);
+            StepTrial(player);
             if (_nowMs >= _nextAffixMs)
             {
                 _nextAffixMs = _nowMs + AffixRefreshMs;
@@ -1248,7 +1275,8 @@ namespace Cosmimera.Bootstrap.Demo
             _populace?.Step(_nowMs, TickMs);
             if (_trainers != null)
             {
-                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && _bqTrainerId < 0 && _activeEncounterTrainerId < 0 &&
+                    !TrialInside)
                 {
                     _trainers.Step(_nowMs, TickMs);
                     TrainerPursuitResult pursuit = _trainers.StepPursuit(playerUp, _rig.Config.Radius, TickMs, out int trainerIdx);
@@ -1470,6 +1498,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CheckEnd()
         {
+            if (CheckTrialEnd())
+            {
+                return;
+            }
+
             if (_bqTrainerId >= 0)
             {
                 TrainerBattleState state = _encounter.TrainerState(_bqTrainerId);
@@ -1799,6 +1832,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OpenInteract()
         {
+            if (TryTrialInteract())
+            {
+                return;
+            }
+
             int id = _encounter.NearestInteractable(PlayerPosition());
             if (id < 0)
             {
@@ -2835,7 +2873,7 @@ namespace Cosmimera.Bootstrap.Demo
 
                 Transform t = view.Root;
                 bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
-                if (_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone)
+                if ((_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone) || IsHiddenByTrial(u))
                 {
                     visible = false;
                 }
@@ -3315,7 +3353,8 @@ namespace Cosmimera.Bootstrap.Demo
             Camera cam = _rig.Camera;
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (!_views[u.Id].Root.gameObject.activeSelf)
+                // Units whose view was disposed (finished trainer and trial battles) stay in the encounter.
+                if (!_views.TryGetValue(u.Id, out ICreatureView barView) || !barView.Root.gameObject.activeSelf)
                 {
                     continue;
                 }
@@ -3631,6 +3670,7 @@ namespace Cosmimera.Bootstrap.Demo
             _menuInput?.Dispose();
             _feedback?.Dispose();
             _hitFeel?.Dispose();
+            DisposeTrial();
             _rig?.Dispose();
             PlanetLook.ClearGeology();
             if (_terrainMaterial != null)

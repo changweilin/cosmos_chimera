@@ -389,6 +389,30 @@ namespace Cosmimera.Bootstrap.Demo
                 HeritageFor(race, region, era, trainer.Seed));
         }
 
+        /// <summary>Placeholder figure of a terrain trial master: the same on every planet.</summary>
+        /// <remarks>
+        /// REQ: docs/design/trainer-battles.md#外觀佔位 — seeded by the character id hash, so region and era come from the
+        /// look seed rather than the planet.
+        /// Pre: none. Post: valid NpcSpec, an adult Guard in good health; depends on lookSeed only. Side effects: none.
+        /// </remarks>
+        public static NpcSpec SpecForTrialMaster(ulong lookSeed)
+        {
+            var rng = new Pcg32(lookSeed, 0x54524Dul);
+            var race = (NpcRace)rng.NextUInt((uint)RaceCount);
+            var sex = (NpcSex)rng.NextUInt(2);
+            var region = (ArchRegion)rng.NextUInt(RegionCount);
+            ArchEra era = WornEras[rng.NextUInt((uint)WornEras.Length)];
+            float age01 = 0.35f + rng.NextFloat() * 0.35f;
+            float statureZ = 0.5f + rng.NextFloat();
+            float bulkZ = (rng.NextFloat() * 2f - 1f) * 1.2f;
+            var borrowRegion = (ArchRegion)rng.NextUInt(RegionCount);
+            ArchEra borrowEra = WornEras[rng.NextUInt((uint)WornEras.Length)];
+            float textile01 = rng.NextFloat();
+            ulong culture = ((ulong)rng.NextUInt() << 32) | rng.NextUInt();
+            return new NpcSpec(race, NpcRole.Guard, sex, age01, 1f, statureZ, bulkZ, region, era, borrowRegion, borrowEra,
+                0.2f, lookSeed, textile01, culture, HeritageFor(race, region, era, lookSeed));
+        }
+
         /// <summary>Odds a resident carries one or more other blood lines (混血).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float MixedBloodOdds = 0.15f;

@@ -1960,6 +1960,21 @@ namespace Cosmimera.Combat
             u.WantsEngage = false;
         }
 
+        /// <summary>Puts a wild unit taken out with <see cref="Remove"/> back into play where it stood (leaving an indoor dungeon).</summary>
+        /// <remarks>
+        /// REQ: docs/decisions/ADR-0011-interior-dungeon-sphere.md — surface wilds sit out while the party is indoors.
+        /// Pre: unitId is a Wild unit that is not trainer-owned and not Fielded.
+        /// Post: Fielded; still !Engaged, !Provoked and not waiting to engage; position, HP and knocked-out state unchanged.
+        /// Side effects: none beyond that.
+        /// </remarks>
+        public void Restore(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Wild && !u.IsTrainerOwned, "only non-trainer wild units are restored");
+            Contract.Requires(!u.Fielded, "unit is already in play");
+            u.Fielded = true;
+        }
+
         /// <summary>
         /// Makes the player character a target of wild units from now on (Q-C33, 2026-11-10). Hits on it go through
         /// <paramref name="vitals"/> (dodge-roll i-frames apply); reaching 0 HP raises one PlayerDowned event.

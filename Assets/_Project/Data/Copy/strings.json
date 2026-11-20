@@ -3493,5 +3493,120 @@
     "zh-TW": "甦生・",
     "en": "Reviving",
     "ja": "蘇生・"
+  },
+  "ui.trial.terrain.laboratory": {
+    "zh-TW": "機房",
+    "en": "Server Lab",
+    "ja": "機関室"
+  },
+  "ui.trial.terrain.rainforest": {
+    "zh-TW": "雨林",
+    "en": "Rainforest",
+    "ja": "熱帯雨林"
+  },
+  "ui.trial.terrain.deep_sea": {
+    "zh-TW": "深海",
+    "en": "Deep Sea",
+    "ja": "深海"
+  },
+  "ui.trial.terrain.volcano": {
+    "zh-TW": "火山",
+    "en": "Volcano",
+    "ja": "火山"
+  },
+  "ui.trial.terrain.cave": {
+    "zh-TW": "礦坑",
+    "en": "Mine",
+    "ja": "坑道"
+  },
+  "ui.trial.terrain.ice_cap": {
+    "zh-TW": "冰棚",
+    "en": "Ice Shelf",
+    "ja": "氷棚"
+  },
+  "ui.trial.terrain.tower": {
+    "zh-TW": "高塔",
+    "en": "Tower",
+    "ja": "高塔"
+  },
+  "ui.trial.terrain.space": {
+    "zh-TW": "太空設施",
+    "en": "Space Facility",
+    "ja": "宇宙施設"
+  },
+  "ui.trial.terrain.labyrinth": {
+    "zh-TW": "迷宮",
+    "en": "Labyrinth",
+    "ja": "迷宮"
+  },
+  "ui.trial.terrain.temple": {
+    "zh-TW": "神廟",
+    "en": "Temple",
+    "ja": "神殿"
+  },
+  "ui.trial.master": {
+    "zh-TW": "{terrain}試煉主",
+    "en": "{terrain} Trial Master",
+    "ja": "{terrain}の試練主"
+  },
+  "ui.trial.hint": {
+    "zh-TW": "{master}：按 {interact} 挑戰{terrain}試煉。",
+    "en": "{master}: press {interact} to take the {terrain} trial.",
+    "ja": "{master}：{interact}で{terrain}の試練に挑む。"
+  },
+  "ui.trial.talk": {
+    "zh-TW": "{master}：跟我來。先擊倒守關菁英，再到最深處的競技場。",
+    "en": "{master}: Follow me. Defeat the guardian elite, then reach the arena at the far end.",
+    "ja": "{master}：ついて来い。番人の精鋭を倒し、最奥の闘技場へ。"
+  },
+  "ui.trial.enter": {
+    "zh-TW": "進入{terrain}地城",
+    "en": "Entered the {terrain} dungeon",
+    "ja": "{terrain}のダンジョンに入った"
+  },
+  "ui.trial.exit_hint": {
+    "zh-TW": "按 {interact} 回到地表",
+    "en": "Press {interact} to return to the surface",
+    "ja": "{interact}で地上に戻る"
+  },
+  "ui.trial.exit": {
+    "zh-TW": "回到地表",
+    "en": "Back on the surface",
+    "ja": "地上に戻った"
+  },
+  "ui.trial.guard_down": {
+    "zh-TW": "{master}：封印解除了！往競技場前進。",
+    "en": "{master}: The seal is broken! On to the arena.",
+    "ja": "{master}：封印が解けた！闘技場へ進め。"
+  },
+  "ui.trial.final": {
+    "zh-TW": "{master}：最後一戰——我和地城之主一起上！",
+    "en": "{master}: The final battle — the dungeon's master and I fight together!",
+    "ja": "{master}：最終戦だ——ダンジョンの主と共に行くぞ！"
+  },
+  "ui.trial.victory_first": {
+    "zh-TW": "{terrain}試煉完成！獲得試煉章",
+    "en": "{terrain} trial cleared! Trial badge earned",
+    "ja": "{terrain}の試練を突破！試練章を獲得"
+  },
+  "ui.trial.victory": {
+    "zh-TW": "{terrain}試煉再戰勝利！",
+    "en": "{terrain} trial cleared again!",
+    "ja": "{terrain}の試練に再び勝利！"
+  },
+  "ui.trial.capture": {
+    "zh-TW": "地城之主加入了：{creature}",
+    "en": "The dungeon's master joins you: {creature}",
+    "ja": "ダンジョンの主が仲間に：{creature}"
+  },
+  "ui.trial.defeat": {
+    "zh-TW": "{master}：再來挑戰吧。（已回到地城入口，隊伍已回復）",
+    "en": "{master}: Come back and try again. (Back at the entrance, party restored)",
+    "ja": "{master}：また挑みに来い。（入口に戻り、チームは回復した）"
+  },
+  "ui.trial.done": {
+    "zh-TW": "{master}：你已經通過這裡的試煉了。",
+    "en": "{master}: You have already passed this trial.",
+    "ja": "{master}：ここの試練はもう突破したな。"
   }
 }

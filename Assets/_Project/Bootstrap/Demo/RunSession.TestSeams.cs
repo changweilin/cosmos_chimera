@@ -399,6 +399,34 @@ namespace Cosmimera.Bootstrap.Demo
         internal int ActiveWanderingTrainerIndexForTests => _activeWanderingTrainerIndex;
         internal bool TriggerWanderingTrainerBattleForTests(int trainerIndex) => StartWanderingTrainerBattle(trainerIndex);
 
+        /// <summary>Whether this run planned a terrain trial at its dungeon entrance.</summary>
+        /// <remarks>Pre: configured. Post: none. Side effects: none.</remarks>
+        internal bool HasTrialForTests => _trial != null;
+
+        internal string TrialTerrainForTests => _trial?.Spec.Id;
+        internal TrialStep TrialStepForTests => _trial.Progress.Step;
+        internal bool TrialInsideForTests => TrialInside;
+        internal bool TrialTransitPendingForTests => _trial.TransitPending;
+        internal float3 TrialMasterDirectionForTests => _trial.MasterDir;
+        internal RoomDungeonGeometry TrialGeometryForTests => _trial.Geometry;
+        internal IReadOnlyList<int> TrialInteriorUnitsForTests => new List<int>(_trial.InteriorUnits).ToArray();
+        internal IReadOnlyList<int> TrialFinalUnitsForTests => new List<int>(_trial.FinalUnits).ToArray();
+        internal int TrialGuardUnitForTests => _trial.GuardUnit;
+        internal bool SurfaceTerrainActiveForTests => _rig.Terrain.gameObject.activeSelf;
+        internal RunOutcome OutcomeForTests => _outcome;
+
+        /// <summary>Presses interact as OpenInteract does, trial points only.</summary>
+        /// <remarks>Pre: the run landed. Post: true iff the master or exit pad handled it. Side effects: as TryTrialInteract.</remarks>
+        internal bool InteractTrialForTests() => TryTrialInteract();
+
+        /// <summary>Teleports the player onto whichever sphere is current (surface or indoor floor), 1 m up.</summary>
+        /// <remarks>Pre: the run landed; direction unit. Post: body at rest there. Side effects: player position.</remarks>
+        internal void PlaceOnCurrentGroundForTests(float3 direction)
+        {
+            Contract.Requires(_started && math.abs(math.lengthsq(direction) - 1f) < 1e-4f, "landed run and unit direction required");
+            _rig.Character.Teleport(_rig.Config.ToWorld(direction, _surface.GroundAltitude(direction) + 1f));
+        }
+
         private void RenderCameraTo(string path)
         {
             var rt = new RenderTexture(1280, 720, 24);

@@ -497,7 +497,8 @@ namespace Cosmimera.Combat
         public int Level
         {
             get => _level;
-            internal set
+            // Public: Net.ArenaMatch builds its own combatants and must apply the same level scale (e74d918).
+            set
             {
                 Contract.Requires(value >= 1 && value <= 100, "level must be 1..100");
                 _level = value;

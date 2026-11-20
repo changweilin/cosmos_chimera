@@ -406,5 +406,34 @@ namespace Cosmimera.Combat.Tests
             Assert.DoesNotThrow(() => e.AddTrainerCreature(Creature("c0"), null, AtMeters(3f), 10, t, 0),
                 "the boss does not claim order 0");
         }
+
+        // REQ: ADR-0011 — surface wilds sit out while the party is indoors and come back unchanged.
+        [Test]
+        public void A_removed_wild_is_restored_where_it_stood_without_engaging()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit w = e.AddWild(Creature("w"), null, AtMeters(30f), 10, Individual());
+            float3 at = w.Position;
+            int hp = w.Combatant.Hp;
+            e.Remove(w.Id);
+            Assert.That(w.Fielded, Is.False);
+            e.Restore(w.Id);
+            Assert.That(w.Fielded && !w.Engaged && !w.Provoked, Is.True);
+            Assert.That(w.Position, Is.EqualTo(at));
+            Assert.That(w.Combatant.Hp, Is.EqualTo(hp));
+        }
+
+        [Test]
+        public void Restore_contract_violations_throw()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit p = Player(e, Creature("p"), 0f);
+            EncounterUnit w = e.AddWild(Creature("w"), null, AtMeters(30f), 10, Individual());
+            int t = e.RegisterTrainer();
+            EncounterUnit c0 = e.AddTrainerCreature(Creature("c0"), null, AtMeters(3f), 10, t, 0);
+            Assert.Throws<ContractException>(() => e.Restore(p.Id), "player units are not restored");
+            Assert.Throws<ContractException>(() => e.Restore(w.Id), "already in play");
+            Assert.Throws<ContractException>(() => e.Restore(c0.Id), "trainer creatures are not restored");
+        }
     }
 }
