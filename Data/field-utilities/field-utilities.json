@@ -105,7 +105,7 @@
           "type": "mastery_mod",
           "params": {
             "element": "fire",
-            "delta": 18
+            "delta": 22
           }
         }
       ]
@@ -396,8 +396,8 @@
       "star": 2,
       "element": "metal",
       "kind": "both",
-      "power": 78,
-      "cooldown_ms": 3600,
+      "power": 77,
+      "cooldown_ms": 2700,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -405,24 +405,22 @@
       "base_range_mm": 2400,
       "polarity": "yin",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "metal",
-          "delta": -18
+          "ailment": "sunder",
+          "buildup": 65
         }
       },
-      "effect_duration_ms": 5000,
       "downgraded": {
-        "power": 60,
-        "cooldown_ms": 3800,
+        "power": 65,
+        "cooldown_ms": 2700,
         "effect": {
-          "type": "resist_mod",
+          "type": "apply_ailment",
           "params": {
-            "element": "metal",
-            "delta": -12
+            "ailment": "sunder",
+            "buildup": 45
           }
-        },
-        "effect_duration_ms": 4000
+        }
       }
     }
   },
@@ -438,7 +436,7 @@
       "element": "water",
       "kind": "both",
       "power": 72,
-      "cooldown_ms": 3800,
+      "cooldown_ms": 3200,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -455,8 +453,8 @@
       "effect_duration_ms": 5000,
       "origin": "caster",
       "downgraded": {
-        "power": 56,
-        "cooldown_ms": 4000,
+        "power": 60,
+        "cooldown_ms": 3200,
         "effect": {
           "type": "resist_mod",
           "params": {
@@ -481,8 +479,8 @@
       "star": 2,
       "element": "light",
       "kind": "damage",
-      "power": 82,
-      "cooldown_ms": 3600,
+      "power": 76,
+      "cooldown_ms": 3500,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "mid",
@@ -492,7 +490,7 @@
       "movement": "dash",
       "downgraded": {
         "power": 64,
-        "cooldown_ms": 3800
+        "cooldown_ms": 3500
       }
     }
   },
@@ -509,8 +507,8 @@
       "star": 3,
       "element": "wind",
       "kind": "both",
-      "power": 16,
-      "cooldown_ms": 11000,
+      "power": 11,
+      "cooldown_ms": 11500,
       "windup_ms": 700,
       "accuracy": 95,
       "range_class": "long",
@@ -518,23 +516,23 @@
       "base_range_mm": 18000,
       "polarity": "yin",
       "effect": {
-        "type": "move_speed_mod_percent",
+        "type": "apply_ailment",
         "params": {
-          "delta": -22
+          "ailment": "turbulent",
+          "buildup": 28
         }
       },
-      "effect_duration_ms": 3000,
       "field_duration_ms": 6000,
       "downgraded": {
-        "power": 11,
-        "cooldown_ms": 12500,
+        "power": 8,
+        "cooldown_ms": 12000,
         "effect": {
-          "type": "move_speed_mod_percent",
+          "type": "apply_ailment",
           "params": {
-            "delta": -14
+            "ailment": "turbulent",
+            "buildup": 20
           }
-        },
-        "effect_duration_ms": 2500
+        }
       }
     }
   },
@@ -577,8 +575,8 @@
       "star": 2,
       "element": "shadow",
       "kind": "both",
-      "power": 52,
-      "cooldown_ms": 2400,
+      "power": 46,
+      "cooldown_ms": 1600,
       "windup_ms": 300,
       "accuracy": 100,
       "range_class": "melee",
@@ -593,8 +591,8 @@
       },
       "effect_duration_ms": 5000,
       "downgraded": {
-        "power": 40,
-        "cooldown_ms": 2600,
+        "power": 38,
+        "cooldown_ms": 1600,
         "effect": {
           "type": "evasion_mod_percent",
           "params": {
@@ -667,8 +665,8 @@
       "star": 1,
       "element": "thunder",
       "kind": "both",
-      "power": 36,
-      "cooldown_ms": 2400,
+      "power": 44,
+      "cooldown_ms": 2700,
       "windup_ms": 300,
       "accuracy": 100,
       "range_class": "melee",
@@ -676,12 +674,12 @@
       "base_range_mm": 2600,
       "polarity": "yin",
       "effect": {
-        "type": "move_speed_mod_percent",
+        "type": "apply_ailment",
         "params": {
-          "delta": -20
+          "ailment": "shock",
+          "buildup": 50
         }
       },
-      "effect_duration_ms": 3500,
       "origin": "caster"
     }
   },
@@ -776,8 +774,8 @@
       "star": 1,
       "element": "thunder",
       "kind": "damage",
-      "power": 56,
-      "cooldown_ms": 2400,
+      "power": 58,
+      "cooldown_ms": 2100,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "melee",
@@ -801,7 +799,7 @@
       "element": "wood",
       "kind": "effect",
       "power": 0,
-      "cooldown_ms": 8000,
+      "cooldown_ms": 8500,
       "windup_ms": 200,
       "accuracy": 100,
       "range_class": "melee",
@@ -810,7 +808,7 @@
       "effect": {
         "type": "move_speed_mod_percent",
         "params": {
-          "delta": 24
+          "delta": 22
         }
       },
       "effect_duration_ms": 5000
@@ -998,7 +996,7 @@
       "star": 1,
       "element": "ice",
       "kind": "both",
-      "power": 46,
+      "power": 44,
       "cooldown_ms": 2800,
       "windup_ms": 450,
       "accuracy": 95,
@@ -1051,8 +1049,8 @@
       "star": 1,
       "element": "fire",
       "kind": "both",
-      "power": 48,
-      "cooldown_ms": 2800,
+      "power": 47,
+      "cooldown_ms": 2600,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1060,13 +1058,12 @@
       "base_range_mm": 2800,
       "polarity": "yang",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "fire",
-          "delta": -12
+          "ailment": "burn",
+          "buildup": 50
         }
       },
-      "effect_duration_ms": 4000,
       "origin": "caster"
     }
   },
@@ -1110,7 +1107,7 @@
       "element": "fire",
       "kind": "effect",
       "power": 0,
-      "cooldown_ms": 11000,
+      "cooldown_ms": 12000,
       "windup_ms": 200,
       "accuracy": 100,
       "range_class": "mid",
@@ -1147,8 +1144,8 @@
       "star": 1,
       "element": "thunder",
       "kind": "both",
-      "power": 42,
-      "cooldown_ms": 2400,
+      "power": 48,
+      "cooldown_ms": 2300,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "melee",
@@ -1178,8 +1175,8 @@
       "star": 2,
       "element": "wind",
       "kind": "both",
-      "power": 72,
-      "cooldown_ms": 3400,
+      "power": 50,
+      "cooldown_ms": 3800,
       "windup_ms": 450,
       "accuracy": 100,
       "range_class": "long",
@@ -1194,8 +1191,8 @@
       },
       "effect_duration_ms": 5000,
       "downgraded": {
-        "power": 56,
-        "cooldown_ms": 3600,
+        "power": 42,
+        "cooldown_ms": 3800,
         "effect": {
           "type": "evasion_mod_percent",
           "params": {
@@ -1218,7 +1215,7 @@
       "star": 1,
       "element": "earth",
       "kind": "both",
-      "power": 11,
+      "power": 8,
       "cooldown_ms": 11500,
       "windup_ms": 700,
       "accuracy": 95,
@@ -1247,7 +1244,7 @@
       "star": 1,
       "element": "water",
       "kind": "both",
-      "power": 48,
+      "power": 44,
       "cooldown_ms": 3400,
       "windup_ms": 600,
       "accuracy": 90,
@@ -1276,15 +1273,22 @@
       "id": "fu_move_harvest_crops",
       "star": 1,
       "element": "wood",
-      "kind": "damage",
+      "kind": "both",
       "power": 48,
-      "cooldown_ms": 2000,
+      "cooldown_ms": 2300,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
       "shape": "sweep",
       "base_range_mm": 2400,
-      "polarity": "yang"
+      "polarity": "yang",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "toxin",
+          "buildup": 45
+        }
+      }
     }
   },
   {
@@ -1385,7 +1389,7 @@
       "element": "metal",
       "kind": "damage",
       "power": 62,
-      "cooldown_ms": 2800,
+      "cooldown_ms": 2500,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1406,8 +1410,8 @@
       "star": 1,
       "element": "thunder",
       "kind": "both",
-      "power": 58,
-      "cooldown_ms": 3400,
+      "power": 40,
+      "cooldown_ms": 3600,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "long",
@@ -1415,13 +1419,12 @@
       "base_range_mm": 20000,
       "polarity": "yin",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "thunder",
-          "delta": -12
+          "ailment": "shock",
+          "buildup": 50
         }
-      },
-      "effect_duration_ms": 4500
+      }
     }
   },
   {
@@ -1464,8 +1467,8 @@
       "star": 1,
       "element": "wind",
       "kind": "damage",
-      "power": 66,
-      "cooldown_ms": 3200,
+      "power": 52,
+      "cooldown_ms": 3400,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "long",
@@ -1485,8 +1488,8 @@
       "star": 1,
       "element": "shadow",
       "kind": "both",
-      "power": 44,
-      "cooldown_ms": 2600,
+      "power": 46,
+      "cooldown_ms": 2300,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1543,8 +1546,8 @@
       "star": 1,
       "element": "shadow",
       "kind": "both",
-      "power": 40,
-      "cooldown_ms": 2200,
+      "power": 36,
+      "cooldown_ms": 1500,
       "windup_ms": 300,
       "accuracy": 100,
       "range_class": "melee",
@@ -1571,8 +1574,8 @@
       "star": 1,
       "element": "light",
       "kind": "damage",
-      "power": 62,
-      "cooldown_ms": 3000,
+      "power": 46,
+      "cooldown_ms": 3200,
       "windup_ms": 450,
       "accuracy": 100,
       "range_class": "long",
@@ -1622,7 +1625,7 @@
       "element": "fire",
       "kind": "both",
       "power": 54,
-      "cooldown_ms": 3000,
+      "cooldown_ms": 2500,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1633,7 +1636,7 @@
         "type": "resist_mod",
         "params": {
           "element": "fire",
-          "delta": -12
+          "delta": -14
         }
       },
       "effect_duration_ms": 4500
@@ -1650,8 +1653,8 @@
       "star": 1,
       "element": "earth",
       "kind": "both",
-      "power": 54,
-      "cooldown_ms": 3000,
+      "power": 64,
+      "cooldown_ms": 2800,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1659,12 +1662,12 @@
       "base_range_mm": 2200,
       "polarity": "yin",
       "effect": {
-        "type": "stagger_capacity_mod_percent",
+        "type": "apply_ailment",
         "params": {
-          "delta": -15
+          "ailment": "weighted",
+          "buildup": 55
         }
-      },
-      "effect_duration_ms": 5000
+      }
     }
   },
   {
@@ -1701,8 +1704,8 @@
       "star": 1,
       "element": "earth",
       "kind": "damage",
-      "power": 58,
-      "cooldown_ms": 2400,
+      "power": 42,
+      "cooldown_ms": 1300,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1722,7 +1725,7 @@
       "star": 1,
       "element": "wind",
       "kind": "damage",
-      "power": 60,
+      "power": 58,
       "cooldown_ms": 3000,
       "windup_ms": 450,
       "accuracy": 95,
@@ -1766,8 +1769,8 @@
       "star": 1,
       "element": "earth",
       "kind": "damage",
-      "power": 70,
-      "cooldown_ms": 3800,
+      "power": 68,
+      "cooldown_ms": 4000,
       "windup_ms": 600,
       "accuracy": 90,
       "range_class": "mid",
@@ -1788,8 +1791,8 @@
       "star": 1,
       "element": "ice",
       "kind": "both",
-      "power": 52,
-      "cooldown_ms": 3400,
+      "power": 34,
+      "cooldown_ms": 3600,
       "windup_ms": 600,
       "accuracy": 95,
       "range_class": "long",
@@ -1797,13 +1800,12 @@
       "base_range_mm": 18000,
       "polarity": "yang",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "ice",
-          "delta": -12
+          "ailment": "frostbite",
+          "buildup": 45
         }
-      },
-      "effect_duration_ms": 4500
+      }
     }
   },
   {
@@ -1843,7 +1845,7 @@
       "star": 1,
       "element": "water",
       "kind": "both",
-      "power": 48,
+      "power": 47,
       "cooldown_ms": 3200,
       "windup_ms": 450,
       "accuracy": 95,
@@ -1852,12 +1854,12 @@
       "base_range_mm": 13000,
       "polarity": "yin",
       "effect": {
-        "type": "accuracy_mod",
+        "type": "apply_ailment",
         "params": {
-          "delta": -14
+          "ailment": "soaked",
+          "buildup": 55
         }
-      },
-      "effect_duration_ms": 4500
+      }
     }
   },
   {
@@ -1871,8 +1873,8 @@
       "star": 1,
       "element": "light",
       "kind": "both",
-      "power": 54,
-      "cooldown_ms": 3800,
+      "power": 36,
+      "cooldown_ms": 4200,
       "windup_ms": 600,
       "accuracy": 95,
       "range_class": "long",
@@ -1880,12 +1882,12 @@
       "base_range_mm": 20000,
       "polarity": "yin",
       "effect": {
-        "type": "accuracy_mod",
+        "type": "apply_ailment",
         "params": {
-          "delta": -16
+          "ailment": "dazzle",
+          "buildup": 55
         }
       },
-      "effect_duration_ms": 4500,
       "origin": "target"
     }
   },
@@ -1927,8 +1929,8 @@
       "star": 1,
       "element": "fire",
       "kind": "both",
-      "power": 52,
-      "cooldown_ms": 3000,
+      "power": 49,
+      "cooldown_ms": 2800,
       "windup_ms": 300,
       "accuracy": 95,
       "range_class": "melee",
@@ -1936,13 +1938,12 @@
       "base_range_mm": 2800,
       "polarity": "yin",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "fire",
-          "delta": -14
+          "ailment": "burn",
+          "buildup": 55
         }
       },
-      "effect_duration_ms": 4500,
       "origin": "caster"
     }
   },
@@ -1957,8 +1958,8 @@
       "star": 1,
       "element": "shadow",
       "kind": "both",
-      "power": 12,
-      "cooldown_ms": 12000,
+      "power": 11,
+      "cooldown_ms": 12500,
       "windup_ms": 700,
       "accuracy": 95,
       "range_class": "long",
@@ -1966,13 +1967,12 @@
       "base_range_mm": 16000,
       "polarity": "yin",
       "effect": {
-        "type": "resist_mod",
+        "type": "apply_ailment",
         "params": {
-          "element": "shadow",
-          "delta": -14
+          "ailment": "eclipse",
+          "buildup": 28
         }
       },
-      "effect_duration_ms": 3000,
       "field_duration_ms": 5000
     }
   },
@@ -1988,8 +1988,8 @@
       "star": 1,
       "element": "water",
       "kind": "both",
-      "power": 42,
-      "cooldown_ms": 2400,
+      "power": 47,
+      "cooldown_ms": 2300,
       "windup_ms": 450,
       "accuracy": 95,
       "range_class": "melee",
@@ -1997,12 +1997,12 @@
       "base_range_mm": 2800,
       "polarity": "yin",
       "effect": {
-        "type": "move_speed_mod_percent",
+        "type": "apply_ailment",
         "params": {
-          "delta": -12
+          "ailment": "soaked",
+          "buildup": 50
         }
       },
-      "effect_duration_ms": 4000,
       "movement": "dash"
     }
   },
@@ -2016,18 +2016,22 @@
       "id": "fu_trait_freeze_prep",
       "star": 1,
       "trigger": {
-        "type": "on_hit_taken",
-        "params": {
-          "element": "any",
-          "duration_ms": 4000
-        }
+        "type": "always",
+        "params": {}
       },
       "effects": [
+        {
+          "type": "ailment_resist_mod",
+          "params": {
+            "ailment": "burn",
+            "delta": 35
+          }
+        },
         {
           "type": "resist_mod",
           "params": {
             "element": "fire",
-            "delta": 18
+            "delta": 10
           }
         }
       ]
@@ -2071,25 +2075,22 @@
       "id": "fu_trait_ferment_cure",
       "star": 1,
       "trigger": {
-        "type": "on_hit_taken",
-        "params": {
-          "element": "any",
-          "duration_ms": 5000
-        }
+        "type": "always",
+        "params": {}
       },
       "effects": [
         {
-          "type": "resist_mod",
+          "type": "ailment_resist_mod",
           "params": {
-            "element": "water",
-            "delta": 10
+            "ailment": "toxin",
+            "delta": 35
           }
         },
         {
           "type": "resist_mod",
           "params": {
-            "element": "wood",
-            "delta": 10
+            "element": "water",
+            "delta": 8
           }
         }
       ]
@@ -2133,8 +2134,8 @@
       "star": 2,
       "element": "ice",
       "kind": "both",
-      "power": 66,
-      "cooldown_ms": 4000,
+      "power": 54,
+      "cooldown_ms": 4200,
       "windup_ms": 600,
       "accuracy": 95,
       "range_class": "mid",
@@ -2142,25 +2143,23 @@
       "base_range_mm": 15000,
       "polarity": "yin",
       "effect": {
-        "type": "cd_mod_percent",
+        "type": "apply_ailment",
         "params": {
-          "element": "any",
-          "delta": 18
+          "ailment": "frostbite",
+          "buildup": 70
         }
       },
-      "effect_duration_ms": 5000,
       "origin": "target",
       "downgraded": {
-        "power": 50,
+        "power": 46,
         "cooldown_ms": 4200,
         "effect": {
-          "type": "cd_mod_percent",
+          "type": "apply_ailment",
           "params": {
-            "element": "any",
-            "delta": 10
+            "ailment": "frostbite",
+            "buildup": 50
           }
-        },
-        "effect_duration_ms": 4000
+        }
       }
     }
   },
@@ -2233,21 +2232,28 @@
           "type": "resist_mod",
           "params": {
             "element": "ice",
-            "delta": 12
+            "delta": 10
           }
         },
         {
           "type": "resist_mod",
           "params": {
             "element": "thunder",
-            "delta": 12
+            "delta": 10
           }
         },
         {
           "type": "resist_mod",
           "params": {
             "element": "water",
-            "delta": 12
+            "delta": 10
+          }
+        },
+        {
+          "type": "ailment_resist_mod",
+          "params": {
+            "ailment": "any",
+            "delta": 20
           }
         }
       ],
@@ -2257,21 +2263,28 @@
             "type": "resist_mod",
             "params": {
               "element": "ice",
-              "delta": 7
+              "delta": 6
             }
           },
           {
             "type": "resist_mod",
             "params": {
               "element": "thunder",
-              "delta": 7
+              "delta": 6
             }
           },
           {
             "type": "resist_mod",
             "params": {
               "element": "water",
-              "delta": 7
+              "delta": 6
+            }
+          },
+          {
+            "type": "ailment_resist_mod",
+            "params": {
+              "ailment": "any",
+              "delta": 12
             }
           }
         ]

@@ -112,6 +112,20 @@
       "description": "An element, or \"any\" to match every element.",
       "anyOf": [{ "$ref": "#/$defs/element" }, { "const": "any" }]
     },
+    "ailment": {
+      "description": "The ten elemental status ailments (status-ailments.md).",
+      "enum": ["sunder", "toxin", "soaked", "burn", "weighted", "frostbite", "turbulent", "shock", "dazzle", "eclipse"]
+    },
+    "ailmentOrAny": {
+      "description": "An ailment, or \"any\" to match every ailment.",
+      "anyOf": [{ "$ref": "#/$defs/ailment" }, { "const": "any" }]
+    },
+    "ailmentBuildup": {
+      "description": "Instant buildup added to a target's ailment gauge (base threshold 100, scaled by target resist).",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
     "rulePercent": { "description": "Percent threshold or amount inside a rule.", "type": "integer", "minimum": 1, "maximum": 100 },
     "durationMs": { "description": "Effect window. 10 min cap is representability, not balance.", "type": "integer", "minimum": 1, "maximum": 600000 },
     "ruleDelta": {
@@ -150,15 +164,15 @@
       "required": ["type"],
       "additionalProperties": false,
       "properties": {
-        "type": { "enum": ["mastery_mod", "resist_mod", "cd_mod_percent", "evasion_mod_percent", "move_speed_mod_percent", "range_mod_percent", "heal_percent_max_hp", "accuracy_mod", "crit_rate_mod", "crit_damage_mod", "stagger_capacity_mod_percent", "block_reduction_mod"] },
+        "type": { "enum": ["mastery_mod", "resist_mod", "cd_mod_percent", "evasion_mod_percent", "move_speed_mod_percent", "range_mod_percent", "heal_percent_max_hp", "accuracy_mod", "crit_rate_mod", "crit_damage_mod", "stagger_capacity_mod_percent", "block_reduction_mod", "apply_ailment", "ailment_resist_mod"] },
         "params": { "type": "object" },
         "max_stacks": {
-          "description": "P2-09: how many times this effect can stack on one target from the same move/trait id. 1 (default) = re-application only refreshes the duration. Not allowed on instant heals.",
+          "description": "P2-09: how many times this effect can stack on one target from the same move/trait id. 1 (default) = re-application only refreshes the duration. Not allowed on instant heals or instant ailment buildup.",
           "type": "integer", "minimum": 1, "maximum": 10, "default": 1
         }
       },
       "allOf": [
-        { "if": { "properties": { "type": { "const": "heal_percent_max_hp" } } }, "then": { "not": { "required": ["max_stacks"] } } },
+        { "if": { "properties": { "type": { "enum": ["heal_percent_max_hp", "apply_ailment"] } } }, "then": { "not": { "required": ["max_stacks"] } } },
         { "if": { "properties": { "type": { "const": "mastery_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "resist_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/element" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "cd_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["element", "delta"], "properties": { "element": { "$ref": "#/$defs/elementOrAny" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
@@ -170,7 +184,9 @@
         { "if": { "properties": { "type": { "const": "crit_rate_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "crit_damage_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
         { "if": { "properties": { "type": { "const": "stagger_capacity_mod_percent" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
-        { "if": { "properties": { "type": { "const": "block_reduction_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } }
+        { "if": { "properties": { "type": { "const": "block_reduction_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["delta"], "properties": { "delta": { "$ref": "#/$defs/ruleDelta" } } } } } },
+        { "if": { "properties": { "type": { "const": "apply_ailment" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["ailment", "buildup"], "properties": { "ailment": { "$ref": "#/$defs/ailment" }, "buildup": { "$ref": "#/$defs/ailmentBuildup" } } } } } },
+        { "if": { "properties": { "type": { "const": "ailment_resist_mod" } } }, "then": { "required": ["params"], "properties": { "params": { "type": "object", "additionalProperties": false, "required": ["ailment", "delta"], "properties": { "ailment": { "$ref": "#/$defs/ailmentOrAny" }, "delta": { "$ref": "#/$defs/ruleDelta" } } } } } }
       ]
     }
   }

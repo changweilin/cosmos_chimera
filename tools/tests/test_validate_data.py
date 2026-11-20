@@ -614,6 +614,30 @@ class CrossFileRules(unittest.TestCase):
                 quads[key] = quads.get(key, 0) + 1
         self.assertEqual({("yang", "melee"): 8, ("yang", "ranged"): 8, ("yin", "melee"): 8, ("yin", "ranged"): 8}, quads)
 
+        # Verify range/geometry/utility eDPS hierarchy on 1★ pure-damage anchors.
+        by_u = {e["utility"]: e["combat_move"] for e in entries if e["kind"] == "move"}
+        def edps(m):
+            ticks = (m["field_duration_ms"] + 999) // 1000 if m["shape"] == "field" else 1
+            return (m["power"] * ticks) / (m["cooldown_ms"] / 1000.0) * (m["accuracy"] / 100.0)
+        self.assertGreater(edps(by_u["craft_carpentry_earth"]), edps(by_u["mount"]))               # melee front > melee dash
+        self.assertGreater(edps(by_u["mount"]), edps(by_u["craft_smelt_metal"]))                   # melee dash > burst(caster)
+        self.assertGreater(edps(by_u["craft_smelt_metal"]), edps(by_u["craft_carpentry_wind"]))    # melee burst > mid cone
+        self.assertGreater(edps(by_u["craft_carpentry_wind"]), edps(by_u["craft_jewelcraft_earth"])) # mid cone > mid burst(target)
+        self.assertGreater(edps(by_u["craft_jewelcraft_earth"]), edps(by_u["craft_weave_wind"]))   # mid burst > long line
+        self.assertGreater(edps(by_u["craft_carpentry_earth"]), edps(by_u["craft_tailor_shadow"])) # pure damage > soft debuff
+        self.assertGreater(edps(by_u["craft_tailor_shadow"]), edps(by_u["craft_smith_earth"]))     # soft debuff > ailment (same shape)
+
+        # Every one of the 10 elemental ailments must be applied by at least one active life skill.
+        ailments_covered = {
+            m["effect"]["params"]["ailment"]
+            for m in moves
+            if m.get("effect", {}).get("type") == "apply_ailment"
+        }
+        self.assertEqual(
+            {"sunder", "toxin", "soaked", "burn", "weighted", "frostbite", "turbulent", "shock", "dazzle", "eclipse"},
+            ailments_covered,
+        )
+
         # Missing utility -> field_utility_missing.
         findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(entries[:-1])})
         self.assertIn("field_utility_missing", self.codes(findings))

@@ -34,6 +34,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 生活主動技／被動技與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
 | 食材加工、料理組合與效果、食譜 | `docs/design/cuisine.md` |
 | 戰鬥、主動技、CD、命中、召喚輪替 | `docs/design/combat.md` |
+| 十元素異常狀態與交互反應 | `docs/design/status-ailments.md` |
 | 打擊感、頓幀震屏、格擋、地城氛圍、BOSS 戰回饋 | `docs/design/combat-feel.md` |
 | 天氣、時段（清晨／白天／黃昏／夜晚）、地形限定異象 | `docs/design/weather.md` |
 | 場景物件受擊、材質、破壞、剛體 | `docs/design/destructibles.md` + `docs/decisions/ADR-0009-destructible-physics.md` |
