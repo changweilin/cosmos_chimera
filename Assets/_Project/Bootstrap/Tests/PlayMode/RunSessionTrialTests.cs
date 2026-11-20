@@ -124,6 +124,11 @@ namespace Cosmimera.Bootstrap.Tests
             RoomDungeonGeometry g = s.TrialGeometryForTests;
             Assert.That(g.RoomAt(s.DirectionForTests(s.PlayerPositionForTests)), Is.EqualTo(g.Dungeon.EntranceRoom));
             Assert.That(s.TrialInteriorUnitsForTests.Count, Is.GreaterThan(0));
+            // REQ: combat-feel.md#地城氛圍 — the indoor look fades in, one lamp per room (four round the arena).
+            yield return WaitUntil(() => s.DungeonMoodWeightForTests >= 1f, 5f, "dungeon mood faded in");
+            (int lamps, int lit) = s.DungeonLampsForTests;
+            Assert.That(lamps, Is.EqualTo(g.Dungeon.Rooms.Count + 3));
+            Assert.That(lit, Is.InRange(1, 4), "only the nearest lamps light up");
 
             // --- Step 1: the guard elite unseals the arena -----------------------------------------------------
             foreach (int id in s.TrialInteriorUnitsForTests)
@@ -138,6 +143,12 @@ namespace Cosmimera.Bootstrap.Tests
             s.PlaceOnCurrentGroundForTests(g.RoomCenter(g.Dungeon.BossRoom));
             yield return WaitUntil(() => s.TrialStepForTests == TrialStep.FinalBattle, 20f, "arena reached");
             Assert.That(s.TrialFinalUnitsForTests.Count, Is.EqualTo(1 + spec.TrialTeamSize), "boss + master team");
+            // REQ: combat-feel.md#BOSS-戰加強 — the trainer-owned dungeon boss gets the top bar, the master's bench below it.
+            int barBoss = s.TrialBarBossForTests(out int bench, out int benchAlive);
+            Assert.That(barBoss, Is.GreaterThanOrEqualTo(0));
+            Assert.That(s.UnitForTests(barBoss).IsTrialBoss, Is.True);
+            Assert.That(bench, Is.EqualTo(spec.TrialTeamSize));
+            Assert.That(benchAlive, Is.EqualTo(spec.TrialTeamSize));
 
             float deadline = Time.realtimeSinceStartup + 90f;
             while (s.TrialStepForTests == TrialStep.FinalBattle && Time.realtimeSinceStartup < deadline)
@@ -168,6 +179,7 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(s.TrialInsideForTests, Is.False);
             Assert.That(s.SurfaceTerrainActiveForTests, Is.True);
             yield return WaitUntil(() => !s.TrialTransitPendingForTests, 30f, "surface colliders");
+            yield return WaitUntil(() => s.DungeonMoodWeightForTests <= 0f, 5f, "dungeon mood faded out");
         }
 
         // REQ: planet-world.md#進階地形地城 (Q-W45) — the same trial on the planet surface: the maze stands around the

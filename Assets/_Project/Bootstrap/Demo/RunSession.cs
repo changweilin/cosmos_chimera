@@ -446,7 +446,8 @@ namespace Cosmimera.Bootstrap.Demo
         private int _feelBatchCount;
         private Vector3[] _heldViewPos = new Vector3[0];
         private bool[] _viewHeld = new bool[0];
-        private int _bossPhaseLinesPassed;
+        // Per unit: the planet boss and each trial-final boss (a fresh unit per attempt) cross their own phase lines.
+        private readonly Dictionary<int, int> _bossPhaseLinesPassed = new Dictionary<int, int>();
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -3222,14 +3223,17 @@ namespace Cosmimera.Bootstrap.Demo
         {
             long hp1000 = (long)boss.Combatant.Hp * 1000;
             int passed = hp1000 <= 333L * boss.Combatant.MaxHp ? 2 : hp1000 <= 666L * boss.Combatant.MaxHp ? 1 : 0;
-            if (passed <= _bossPhaseLinesPassed || boss.Combatant.IsFainted)
+            _bossPhaseLinesPassed.TryGetValue(boss.Id, out int before);
+            if (passed <= before || boss.Combatant.IsFainted)
             {
                 return;
             }
 
-            _bossPhaseLinesPassed = passed;
+            _bossPhaseLinesPassed[boss.Id] = passed;
             _feedback.ShowBossPhase(boss.Position, forward, up, boss.BodyRadiusM, elemColor);
             _hitFeel?.PlayCast(boss.Id, _feelTargets[0], 0, HitTier.Knockout, true, 0f);
+            // Scales with the body so a giant boss and its 9× shockwave ring both fit in frame (暫定).
+            _hitFeel?.PlayPhasePullBack(math.clamp(boss.BodyRadiusM * 1.5f, 2f, 6f));
         }
 
         private void Toast(string text)

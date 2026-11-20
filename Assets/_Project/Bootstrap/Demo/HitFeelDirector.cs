@@ -21,6 +21,13 @@ namespace Cosmimera.Bootstrap.Demo
         private const float RumbleSeconds = 0.12f;
         private const float VignetteSeconds = 0.35f;
 
+        // Phase pull-back envelope (combat-feel.md#BOSS-戰加強 攝影機拉遠; 暫定): ease out, hold, ease back. Long enough to read
+        // the shockwave ring around the boss, short enough not to steal framing from the player mid-fight.
+        private const float PullInSeconds = 0.25f;
+        private const float PullHoldSeconds = 0.55f;
+        private const float PullOutSeconds = 0.8f;
+        private const float PullTotalSeconds = PullInSeconds + PullHoldSeconds + PullOutSeconds;
+
         private readonly Camera _camera;
         private readonly HitFeelTuning _tuning;
         private readonly HitstopLedger _ledger;
@@ -34,6 +41,8 @@ namespace Cosmimera.Bootstrap.Demo
         private float _slowMoLeft;
         private bool _slowMoOwned;
         private float _vignetteLeft;
+        private float _pullElapsed = PullTotalSeconds;
+        private float _pullM;
         private uint _jitterState = 0x2545F491u;
         private Texture2D _vignetteTex;
         private bool _disposed;
@@ -100,6 +109,24 @@ namespace Cosmimera.Bootstrap.Demo
             Rumble(0.6f);
         }
 
+        /// <summary>Boss crossed an HP phase line: briefly pulls the camera back and up so the boss and its shockwave fit.</summary>
+        /// <remarks>
+        /// Pre: meters &gt; 0. Post: a pull-back of <paramref name="meters"/> peaks after PullInSeconds and ends after
+        ///       PullTotalSeconds (unscaled); a new call restarts it.
+        /// Side effects: render-time camera offset only (the camera transform is restored after each render).
+        /// </remarks>
+        public void PlayPhasePullBack(float meters)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Contract.Requires(meters > 0f, "meters must be > 0");
+            _pullM = meters;
+            _pullElapsed = 0f;
+        }
+
         /// <summary>Starts knockout slow motion (single-player only; the demo has no netcode).</summary>
         /// <remarks>
         /// Pre: none. Post: Time.timeScale == SlowMoTimeScale until the slow-mo ends, unless something else (the journal
@@ -147,6 +174,7 @@ namespace Cosmimera.Bootstrap.Demo
             _nowMs += unscaledDt * 1000f;
             _shakeM = Mathf.Max(0f, _shakeM - _shakeM * ShakeDecayPerSecond * unscaledDt - 0.002f * unscaledDt * 60f);
             _vignetteLeft = Mathf.Max(0f, _vignetteLeft - unscaledDt);
+            _pullElapsed = Mathf.Min(PullTotalSeconds, _pullElapsed + unscaledDt);
 
             if (_rumbling)
             {
@@ -223,14 +251,29 @@ namespace Cosmimera.Bootstrap.Demo
         // offset in the transform would accumulate drift and leak into anything reading the camera position.
         private void OnBeginCamera(ScriptableRenderContext ctx, Camera cam)
         {
-            if (cam != _camera || _shakeM <= 1e-4f)
+            float pull = PullBackM();
+            if (cam != _camera || (_shakeM <= 1e-4f && pull <= 1e-4f))
             {
                 return;
             }
 
-            _appliedOffset = Jitter(_shakeM);
+            Transform t = _camera.transform;
+            _appliedOffset = Jitter(_shakeM) + (-t.forward + t.up * 0.35f) * pull;
             _camera.transform.position += _appliedOffset;
             _offsetApplied = true;
+        }
+
+        private float PullBackM()
+        {
+            if (_pullElapsed >= PullTotalSeconds)
+            {
+                return 0f;
+            }
+
+            float k = _pullElapsed < PullInSeconds ? _pullElapsed / PullInSeconds
+                : _pullElapsed < PullInSeconds + PullHoldSeconds ? 1f
+                : 1f - (_pullElapsed - PullInSeconds - PullHoldSeconds) / PullOutSeconds;
+            return _pullM * Mathf.SmoothStep(0f, 1f, k);
         }
 
         private void OnEndCamera(ScriptableRenderContext ctx, Camera cam)

@@ -24,6 +24,7 @@ namespace Cosmimera.Bootstrap.Demo
             internal readonly float3 Position;
             internal readonly bool Fielded;
             internal readonly bool IsFainted;
+            internal readonly bool IsTrialBoss;
             internal readonly int Hp;
             internal readonly int MaxHp;
             // Wild only (Avoidant for player units, which have no individual).
@@ -39,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Position = unit.Position;
                 Fielded = unit.Fielded;
                 IsFainted = unit.Combatant.IsFainted;
+                IsTrialBoss = unit.IsTrialBoss;
                 Hp = unit.Combatant.Hp;
                 MaxHp = unit.Combatant.MaxHp;
                 Habit = unit.Individual != null ? unit.Individual.Habit : Habit.Avoidant;
@@ -415,6 +417,16 @@ namespace Cosmimera.Bootstrap.Demo
         internal bool SurfaceTerrainActiveForTests => _rig.Terrain.gameObject.activeSelf;
         internal RunOutcome OutcomeForTests => _outcome;
         internal bool TrialIsMazeForTests => _trial.Maze;
+        /// <summary>Unit shown on the top boss bar during a trial final (−1 otherwise), with the master's bench counts.</summary>
+        /// <remarks>Pre: configured. Post: none. Side effects: none.</remarks>
+        internal int TrialBarBossForTests(out int bench, out int benchAlive) =>
+            TrialFinalBoss(out bench, out benchAlive)?.Id ?? -1;
+
+        /// <summary>Interior dungeon mood blend (−1 before the first entry).</summary>
+        internal float DungeonMoodWeightForTests => _dungeonMood != null ? _dungeonMood.Weight : -1f;
+
+        /// <summary>Room lamps built for the interior dungeon, and how many of their lights are on now.</summary>
+        internal (int lamps, int lit) DungeonLampsForTests => _dungeonMood != null ? _dungeonMood.LampCounts : (0, 0);
         internal bool SurfaceBlockedForTests(float3 direction, float clearanceM) => _surface.IsBlocked(direction, clearanceM);
         internal bool SurfaceOffWallsForTests(float3 direction) => _surface.IsOffWalls(direction);
 

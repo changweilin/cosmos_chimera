@@ -74,6 +74,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly Color TrialSealGlint = new Color(0.82f, 0.62f, 1f);
 
         private TrialRun _trial;
+        private DungeonAtmosphere _dungeonMood;
         private RoomDungeonGeometry _mazeGeometry;
         private PlanetWalls _mazeWalls;
 
@@ -490,6 +491,7 @@ namespace Cosmimera.Bootstrap.Demo
             _trial.InteriorRoot.SetActive(true);
             _surface.Interior = _trial.Walls;
             _trial.Inside = true;
+            EnterDungeonMood();
             if (_trial.ArenaSeal == null)
             {
                 BuildTrialSeals(_trial.InteriorRoot.transform);
@@ -524,6 +526,22 @@ namespace Cosmimera.Bootstrap.Demo
             MoveThroughTrialGate(_trial.Geometry.Arrival);
         }
 
+        // REQ: combat-feel.md#地城氛圍 — indoor dungeons only. The surface mazes stay under the open sky (their look is
+        // an open question, docs/open-questions.html Q-W46).
+        private void EnterDungeonMood()
+        {
+            if (_dungeonMood == null)
+            {
+                _dungeonMood = gameObject.AddComponent<DungeonAtmosphere>();
+                _dungeonMood.Configure(_rig.Camera, _rig.Sun, _rig.Character.transform, DungeonMood.For(_trial.Spec.Id));
+                // Under the interior root so the lamps hide with it on the way out.
+                _dungeonMood.BuildRoomLights(_trial.Geometry, _surface.GroundAltitude, _rig.Config, _trial.SealShader,
+                    _trial.SealShaderIsProps, _trial.InteriorRoot.transform);
+            }
+
+            _dungeonMood.SetInside(true);
+        }
+
         private void ExitInterior()
         {
             _trial.Parked.Clear();
@@ -547,6 +565,7 @@ namespace Cosmimera.Bootstrap.Demo
             _trial.Suspended.Clear();
             _surface.Interior = null;
             _trial.Inside = false;
+            _dungeonMood?.SetInside(false);
             _trial.InteriorRoot.SetActive(false);
             SetSurfaceShown(true);
             MoveThroughTrialGate(_trial.ReturnDir);

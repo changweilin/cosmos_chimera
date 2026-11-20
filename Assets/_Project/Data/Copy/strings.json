@@ -3608,5 +3608,30 @@
     "zh-TW": "{master}：你已經通過這裡的試煉了。",
     "en": "{master}: You have already passed this trial.",
     "ja": "{master}：ここの試練はもう突破したな。"
+  },
+  "ui.hud.boss_tag": {
+    "zh-TW": "BOSS",
+    "en": "BOSS",
+    "ja": "ボス"
+  },
+  "ui.hud.staggered": {
+    "zh-TW": "失衡！",
+    "en": "Staggered!",
+    "ja": "ブレイク！"
+  },
+  "ui.hud.enraged": {
+    "zh-TW": "狂暴",
+    "en": "Enraged",
+    "ja": "激昂"
+  },
+  "ui.trial.boss_title": {
+    "zh-TW": "{terrain}地城之主",
+    "en": "Master of the {terrain} Dungeon",
+    "ja": "{terrain}ダンジョンの主"
+  },
+  "ui.trial.master_team": {
+    "zh-TW": "{master}的宙獸",
+    "en": "{master}'s creatures",
+    "ja": "{master}の宙獣"
   }
 }
