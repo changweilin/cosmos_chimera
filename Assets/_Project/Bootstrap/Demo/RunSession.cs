@@ -387,6 +387,10 @@ namespace Cosmimera.Bootstrap.Demo
         private AtmosphereDriver _atmosphere;
         private LocalWeatherView _weatherView;
         private LightningView _lightning;
+        private FireView _fireView;
+        private readonly List<FireView.Burning> _burning = new List<FireView.Burning>(32);
+        private Comparison<FireView.Burning> _byPlayerDistance;
+        private float3 _burnFocus;
         private float _baseCloud, _baseWind;
         private WeatherControl _weatherControl;
         private WeatherService _weather;
@@ -870,6 +874,7 @@ namespace Cosmimera.Bootstrap.Demo
             _baseWind = wind;
             if (scenery != null) _weatherView = new LocalWeatherView(transform);
             if (scenery != null) _lightning = new LightningView(transform, (int)(setup.Seed ^ (setup.Seed >> 32)));
+            if (scenery != null) _fireView = new FireView(transform);
             atmosphere.SetWeather(cloudCover, wind);
             if (scenery != null)
             {
@@ -986,6 +991,8 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: weather.md#落雷 — region radius from the region count: a cap holding 1/N of the sphere has arc 2R/√N.
             _encounter.AttachLightning(setup.Seed, _weather.RegionAt, r => weatherPlan.Regions[r].Center,
                 2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), StormAt);
+            // REQ: destructibles.md#延燒 — spreading fire follows the rule-layer wind and is held back by rain and snow.
+            _encounter.SetFireEnvironment(setup.Seed, FireWindAt, FireWetAt);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -1199,6 +1206,55 @@ namespace Cosmimera.Bootstrap.Demo
             return new int2(state.ThunderPermille, ion);
         }
 
+        private int2 FireWindAt(float3 direction, long timeMs)
+        {
+            if (TrialInside || _weather.IsIndoor(direction)) return int2.zero;
+            return new int2(_weather.WindHeadingAt(direction, timeMs), _weather.StateAt(direction, timeMs).WindPermille);
+        }
+
+        private int FireWetAt(float3 direction, long timeMs)
+        {
+            if (TrialInside || _weather.IsIndoor(direction)) return 0;
+            WeatherState state = _weather.StateAt(direction, timeMs);
+            return math.max(state.RainPermille, state.SnowPermille);
+        }
+
+        private void DrawFires(float3 player)
+        {
+            if (_fireView == null || _objectTable == null || _worldObjects == null) return;
+            _burning.Clear();
+            for (int i = 0; i < _objectTable.Count; i++)
+            {
+                if (!_objectTable.IsBurning(i)) continue;
+                long id = _objectTable.IdOf(i);
+                float radius = _worldObjects.TryGet(id, out DestructibleCandidate c) ? c.HitRadiusM : 0.6f;
+                _burning.Add(new FireView.Burning
+                {
+                    Id = id, Center = _objectTable.CenterOf(i), RadiusM = radius,
+                    Kind = FireRules.KindOf(_objectTable.CompositionOf(i)),
+                });
+            }
+
+            _burnFocus = player;
+            _byPlayerDistance ??= (a, b) => math.distancesq(a.Center, _burnFocus).CompareTo(math.distancesq(b.Center, _burnFocus));
+            if (_burning.Count > 1) _burning.Sort(_byPlayerDistance);
+            float3 direction = _rig.Config.ToDirection(player);
+            float3 downwind = WindField.Tangent(direction, _weather.WindHeadingAt(direction, _nowMs));
+            float darkness = IsNight(direction) ? 1f : _stormDarkness * 0.6f;
+            _fireView.Sync(_burning, _rig.Config, downwind, _playerWeatherState.WindPermille / 1000f, darkness, TickMs / 1000f);
+        }
+
+        // REQ: destructibles.md#延燒 — a kerosene blast flashes; anything that burnt down leaves scorched ground.
+        private void FireAftermath(in ObjectEvent ev)
+        {
+            if (_fireView == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c)) return;
+            float3 up = _rig.Config.ToDirection(c.Center);
+            if ((ev.Reactions & ObjectReaction.Blasted) != 0) _fireView.Blast(c.Center, up);
+            if (ev.Kind != ObjectEventKind.Destroyed || ev.Cause != DestroyCause.Burnt) return;
+            float ground = _surface != null ? _surface.GroundAltitude(up) : 0f;
+            _fireView.Scorch(_rig.Config.ToWorld(up, ground), up, math.max(0.4f, c.HitRadiusM), FireRules.KindOf(c.Composition));
+        }
+
         private void DrawStrikes(float3 playerDirection)
         {
             if (_lightning == null || _encounter == null) return;
@@ -1402,6 +1458,7 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
             DrawStrikes(_rig.Config.ToDirection(player));
+            DrawFires(player);
             ApplyObjectEvents();
             CollectGroundPickups(player);
             CollectHarvestPiles(player);
@@ -2708,6 +2765,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (ObjectEvent ev in _encounter.ObjectEvents)
             {
+                FireAftermath(ev);
                 if (ev.Kind != ObjectEventKind.Destroyed)
                 {
                     ShoveObject(ev);
@@ -3146,7 +3204,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DispatchCombatFeedback(in EncounterEvent ev, float3 playerPos)
         {
-            if (ev.Kind == EncounterEventKind.Struck)
+            if (ev.Kind == EncounterEventKind.Struck || ev.Kind == EncounterEventKind.Scorched)
             {
                 StruckFeedback(ev, playerPos);
                 return;
@@ -3235,12 +3293,15 @@ namespace Cosmimera.Bootstrap.Demo
         private void StruckFeedback(in EncounterEvent ev, float3 playerPos)
         {
             if (_feedback == null) return;
-            Color thunder = PlaceholderCreatureViewFactory.ColorOf(Element.Thunder);
+            // Scorched ticks every second while standing in flames: lighter feedback than a lightning strike.
+            bool fire = ev.Kind == EncounterEventKind.Scorched;
+            Color thunder = PlaceholderCreatureViewFactory.ColorOf(fire ? Element.Fire : Element.Thunder);
+            HitTier tier = fire ? HitTier.Light : HitTier.Heavy;
             if (ev.TargetId == Encounter.PlayerCharacterId)
             {
                 float3 fwd = _rig.Character != null ? (float3)_rig.Character.transform.forward : new float3(0f, 0f, 1f);
                 _feedback.ShowHit(playerPos, fwd, _rig.Config.ToDirection(playerPos), _balance.Collision.CharacterMm * 0.001f,
-                    ev.Amount, thunder, HitTier.Heavy, false);
+                    ev.Amount, thunder, tier, false);
                 _hitFeel?.PlayPlayerHit();
                 return;
             }
@@ -3248,7 +3309,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (ev.TargetId < 0 || ev.TargetId >= _encounter.Units.Count) return;
             EncounterUnit dst = _encounter.Units[ev.TargetId];
             _feedback.ShowHit(dst.Position, dst.Forward, _rig.Config.ToDirection(dst.Position), dst.BodyRadiusM, ev.Amount,
-                thunder, HitTier.Heavy, false);
+                thunder, tier, false);
         }
 
         private static int[][] NewFeelTargets()
@@ -3797,6 +3858,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _weatherView?.Dispose();
             _lightning?.Dispose();
+            _fireView?.Dispose();
             CloseJournal();
             _inputHints?.Dispose();
             _globalInput?.Dispose();

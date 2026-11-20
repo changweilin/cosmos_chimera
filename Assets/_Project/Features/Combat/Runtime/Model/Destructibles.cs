@@ -368,6 +368,64 @@ namespace Cosmimera.Combat
             return new ObjectHitResult(damage, reactions, destroyed, cause);
         }
 
+        /// <summary>Composition of slot <paramref name="index"/>.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; Count. Post: non-null. Side effects: none.</remarks>
+        public Composition CompositionOf(int index) => Get(index).Composition;
+
+        /// <summary>Sets a flammable object alight without a hit (spreading fire, blasts). REQ: destructibles.md#延燒.</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= index &lt; Count; the slot is not destroyed; nowMs &gt;= 0.
+        /// Post: not flammable or already burning → no change, Reactions None. Kerosene (Blast) → destroyed with
+        ///       DestroyCause.Burnt, Reactions Ignited | Blasted, Damage = the HP it had. Otherwise burning from now
+        ///       (first burn tick after 1 s), Reactions Ignited, Damage 0.
+        /// Side effects: mutates the slot; a blast adds the id to the destroyed set.
+        /// </remarks>
+        public ObjectHitResult Ignite(int index, long nowMs)
+        {
+            Contract.Requires(index >= 0 && index < _slots.Count, "index out of range");
+            Contract.Requires(!_slots[index].Destroyed, "object already destroyed");
+            Contract.Requires(nowMs >= 0, "nowMs must be >= 0");
+            Slot s = _slots[index];
+            Flammability flammable = s.Composition.Dominant.Flammable;
+            if (flammable == Flammability.None || s.Burning)
+            {
+                return new ObjectHitResult(0, ObjectReaction.None, false, DestroyCause.Damage);
+            }
+
+            if (flammable == Flammability.Blast)
+            {
+                int hp = s.Hp;
+                s.Hp = 0;
+                Destroy(ref s, DestroyCause.Burnt);
+                _slots[index] = s;
+                return new ObjectHitResult(hp, ObjectReaction.Ignited | ObjectReaction.Blasted, true, DestroyCause.Burnt);
+            }
+
+            s.Burning = true;
+            s.NextBurnTickMs = nowMs + 1000;
+            _slots[index] = s;
+            return new ObjectHitResult(0, ObjectReaction.Ignited, false, DestroyCause.Damage);
+        }
+
+        /// <summary>Puts out a burning object (rain, snow).</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= index &lt; Count. Post: returns true iff it was burning and not destroyed; then it no longer burns.
+        /// Side effects: mutates the slot.
+        /// </remarks>
+        public bool Extinguish(int index)
+        {
+            Contract.Requires(index >= 0 && index < _slots.Count, "index out of range");
+            Slot s = _slots[index];
+            if (!s.Burning || s.Destroyed)
+            {
+                return false;
+            }
+
+            s.Burning = false;
+            _slots[index] = s;
+            return true;
+        }
+
         /// <summary>Advances burning to <paramref name="nowMs"/> in whole-second ticks.</summary>
         /// <remarks>
         /// Pre: destroyedOut non-null; nowMs is non-decreasing across calls.

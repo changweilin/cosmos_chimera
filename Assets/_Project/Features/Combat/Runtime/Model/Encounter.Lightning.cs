@@ -232,6 +232,11 @@ namespace Cosmimera.Combat
             {
                 EmitDestroyed(index, NoSource, LightningSchedule.ObjectPower);
             }
+
+            if ((r.Reactions & ObjectReaction.Blasted) != 0)
+            {
+                QueueBlast(c.Center);
+            }
         }
 
         private float SurfaceDistanceM(float3 position, float3 direction) =>

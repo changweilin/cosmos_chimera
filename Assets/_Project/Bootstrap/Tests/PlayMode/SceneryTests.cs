@@ -113,6 +113,53 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Fires_keep_their_slot_while_burning_and_leave_scorched_ground()
+        {
+            var root = new GameObject("fire-test");
+            _roots.Add(root);
+            var view = new FireView(root.transform);
+            try
+            {
+                var planet = new PlanetConfig(Radius, float3.zero);
+                var up = new float3(1f, 0f, 0f);
+                float3 downwind = PlanetFrame.FromUp(up).North;
+                var burning = new List<FireView.Burning>
+                {
+                    new FireView.Burning { Id = 5, Center = up * (Radius + 1f), RadiusM = 1f, Kind = Cosmimera.Combat.FireKind.Crown },
+                    new FireView.Burning { Id = 6, Center = up * (Radius + 0.3f) + new float3(0f, 3f, 0f), RadiusM = 0.6f,
+                        Kind = Cosmimera.Combat.FireKind.Grass },
+                };
+                view.Sync(burning, planet, downwind, 0.5f, 1f, 0.05f);
+                Transform fires = root.transform.Find("Fires");
+                int active = 0;
+                foreach (Transform t in fires)
+                {
+                    if (t.gameObject.activeSelf && t.name.StartsWith("Fire ")) active++;
+                }
+
+                Assert.That(active, Is.EqualTo(2));
+                Transform first = null;
+                foreach (Transform t in fires)
+                {
+                    if (t.gameObject.activeSelf && t.name.StartsWith("Fire ") && Vector3.Distance(t.position, (Vector3)(up * (Radius + 1f))) < 0.01f) first = t;
+                }
+
+                Assert.That(first, Is.Not.Null);
+                burning.RemoveAt(1);
+                view.Sync(burning, planet, downwind, 0.5f, 1f, 0.05f);
+                Assert.That(Vector3.Distance(first.position, (Vector3)(up * (Radius + 1f))), Is.LessThan(0.01f), "same slot kept");
+                Assert.That(first.Find("Flames").GetComponent<ParticleSystem>().isEmitting, Is.True);
+                view.Blast(up * Radius, up);
+                view.Scorch(up * Radius, up, 1f, Cosmimera.Combat.FireKind.Crown);
+                Assert.That(fires.Find("Scorch"), Is.Not.Null);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
         public void Lightning_flashes_only_in_a_thunderstorm()
         {
             var root = new GameObject("lightning-test");

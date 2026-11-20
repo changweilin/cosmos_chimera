@@ -270,10 +270,22 @@ namespace Cosmimera.Combat.Tests
             var index = new ListIndex();
             index.Items.Add(new DestructibleCandidate(1, Ground(1.5f), 0.5f, Composition.Of(Wood()), 100_000));
             withObjects.AttachDestructibles(new DestructibleTable(Env()), index, _ => false);
-            Assert.That(Run(withObjects, player, 4000).Count, Is.GreaterThan(0));
+            int objectEvents = 0, scorched = 0;
+            for (long now = Dt; now <= 4000; now += Dt)
+            {
+                withObjects.Tick(now, Dt, player, Free, CombatAi.NoTarget);
+                objectEvents += withObjects.ObjectEvents.Count;
+                foreach (EncounterEvent ev in withObjects.Events)
+                {
+                    if (ev.Kind == EncounterEventKind.Scorched && ev.TargetId == 0) scorched += ev.Amount;
+                }
+            }
+
+            Assert.That(objectEvents, Is.GreaterThan(0));
             Run(plain, player, 4000);
             Assert.That(withObjects.RngForTests.NextUInt(), Is.EqualTo(plain.RngForTests.NextUInt()));
-            Assert.That(withObjects.Units[0].Combatant.Hp, Is.EqualTo(plain.Units[0].Combatant.Hp));
+            // REQ: destructibles.md#延燒 — the only HP difference is the flames of the tree it set alight, which roll nothing.
+            Assert.That(withObjects.Units[0].Combatant.Hp, Is.EqualTo(plain.Units[0].Combatant.Hp - scorched));
         }
 
         [Test]

@@ -43,7 +43,7 @@
 | P3-34 | 天氣與時段改版（`design/weather.md`）：規則層 `DayPhase`（當地太陽仰角 → 清晨／白天／黃昏／夜晚）、`WeatherField`（整數擬布朗＋均值回歸的 8 基礎＋10 地形異象向量）、`WeatherDynamics`（75 門檻、主導天氣、強度縮放修正）；`WeatherKind` 加 10 異象、時段光／影修正與夜晚視野；地表累積（1 秒固定步長整數積分）影響移速與跳躍；天氣操縱改為 180 秒傾向覆寫並可召喚（限原生地貌）／驅散異象；表現層太陽與 `LocalWeatherView` 改吃向量。**未做**：異象特殊效果（傷害、落雷、漏斗、致盲等）、輻射塵的聚落周邊、晝夜活動性（待 Q-W36） | OPUS | SOL＋ARGON（重現性必審） | 同 (seed, 區域, timeMs) 跨後端逐位元相同；異象不出現在非指定地貌（規則測試）；時段由太陽方向推得且與畫面一致；`ReproProbe` 覆蓋；`GeneratorVersion` 遞增 | 🟨 |
 | P3-35 | 風向與陣風（`design/weather.md#風向`）：規則層每區域風向＋陣風；表現層草／樹／雲／粒子吃風向；暴風碎片（樹葉、斷枝、破損人造物）與陣風同步 | Claude Opus | SOL＋ARGON（重現性必審） | 同 (seed, 區域, timeMs) 各客戶端一致；`ReproProbe` 覆蓋（v9）；截圖驗收（未拍） | 🟨 |
 | P3-36 | 規則層落雷（`design/weather.md#落雷`）：雷暴與離子風暴依權重打高處／金屬／孤樹，預警圈、傷害、點燃 | Claude Opus | SOL＋ARGON（重現性必審） | 落點與時間各客戶端一致；預警圈內才受傷；雷抗 ≥ 100 % 免疫；`ReproProbe` 覆蓋 | 🟨 |
-| P3-37 | 延燒與火的類型（`design/destructibles.md#延燒`）：鄰接延燒、風向、雨雪抑制、六種火的外觀、焦土 | Claude Opus | SOL | 1 秒固定步長整數模擬可重現；下風延燒較快；大雨熄火 | ⬜ |
+| P3-37 | 延燒與火的類型（`design/destructibles.md#延燒`）：鄰接延燒、風向、雨雪抑制、六種火的外觀、焦土 | Claude Opus | SOL | 1 秒固定步長主機模擬；下風延燒較快；大雨熄火（EditMode）；截圖 `Logs/fire-kinds-{day,night}.png`（`COSMIMERA_CAPTURE=1` 跑 `FireCaptureTests`） | 🟨 |
 | P3-10 | 生成可重現性測試（跨機器雜湊一致） | SONNET | OPUS | Windows 兩台機器 `tools/repro/compare.py --policy b` PASS（離散內容相同、高度差 ≤ 3 mm，ADR-0007） | 🟦 |
 
 ## 未收尾紀錄

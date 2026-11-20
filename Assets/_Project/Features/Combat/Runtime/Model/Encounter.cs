@@ -176,6 +176,11 @@ namespace Cosmimera.Combat
         /// Encounter.NoSource (weather.md#落雷). A Faint or PlayerDowned event may follow.
         /// </summary>
         Struck = 14,
+        /// <summary>
+        /// Flames or a blast hurt TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (destructibles.md#延燒). A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Scorched = 15,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -2459,6 +2464,7 @@ namespace Cosmimera.Combat
             }
 
             StepLightning(previousMs, nowMs, playerPosition);
+            StepFire(previousMs, nowMs);
             BurnObjects(nowMs);
             AdvanceConfrontations();
             AdvanceTrainerBattle(nowMs);
@@ -2517,6 +2523,11 @@ namespace Cosmimera.Combat
                 if (r.Destroyed)
                 {
                     EmitDestroyed(index, casterId, ctx.Move.Power, harvest);
+                }
+
+                if ((r.Reactions & ObjectReaction.Blasted) != 0)
+                {
+                    QueueBlast(c.Center);
                 }
             }
         }
