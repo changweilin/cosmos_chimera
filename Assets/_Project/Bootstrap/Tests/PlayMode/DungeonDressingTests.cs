@@ -47,7 +47,7 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 RoomDungeonGeometry g = GeometryFor(spec, 2);
                 var config = new PlanetConfig(g.Radius, float3.zero);
-                List<Mesh> meshes = DungeonDressing.BuildWalls(g, spec.Id, config, _ => 0f, config.ToWorld(g.Anchor, 0f));
+                List<Mesh> meshes = DungeonDressing.BuildWalls(g, spec.Id, CultureFor(spec.Id, 7), config, _ => 0f, config.ToWorld(g.Anchor, 0f));
                 _owned.AddRange(meshes);
                 Assert.That(meshes.Count, Is.GreaterThan(0), spec.Id);
                 foreach (Mesh m in meshes)
@@ -70,8 +70,8 @@ namespace Cosmimera.Bootstrap.Tests
             AdvancedTerrains.TryGet("temple", out AdvancedTerrainSpec spec);
             RoomDungeonGeometry g = GeometryFor(spec, 5);
             var config = new PlanetConfig(g.Radius, float3.zero);
-            List<Mesh> a = DungeonDressing.BuildWalls(g, spec.Id, config, _ => 0f, config.ToWorld(g.Anchor, 0f));
-            List<Mesh> b = DungeonDressing.BuildWalls(g, spec.Id, config, _ => 0f, config.ToWorld(g.Anchor, 0f));
+            List<Mesh> a = DungeonDressing.BuildWalls(g, spec.Id, CultureFor(spec.Id, 7), config, _ => 0f, config.ToWorld(g.Anchor, 0f));
+            List<Mesh> b = DungeonDressing.BuildWalls(g, spec.Id, CultureFor(spec.Id, 7), config, _ => 0f, config.ToWorld(g.Anchor, 0f));
             _owned.AddRange(a);
             _owned.AddRange(b);
             Assert.That(a.Count, Is.EqualTo(b.Count));
@@ -80,6 +80,43 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(a[i].vertices, Is.EqualTo(b[i].vertices));
             }
         }
+
+        [Test]
+        public void Builders_change_the_dressing_of_the_same_dungeon()
+        {
+            foreach (string id in new[] { "rainforest", "laboratory" })
+            {
+                AdvancedTerrains.TryGet(id, out AdvancedTerrainSpec spec);
+                RoomDungeonGeometry g = GeometryFor(spec, 4);
+                var config = new PlanetConfig(g.Radius, float3.zero);
+                DungeonCulture a = CultureFor(id, 1);
+                DungeonCulture b = a;
+                for (ulong seed = 2; b.Era == a.Era || b.Look == a.Look; seed++)
+                {
+                    b = CultureFor(id, seed);
+                }
+
+                int va = 0, vb = 0;
+                foreach (Mesh m in DungeonDressing.BuildWalls(g, id, a, config, _ => 0f, config.ToWorld(g.Anchor, 0f)))
+                {
+                    _owned.Add(m);
+                    va += m.vertexCount;
+                    Assert.That(m.vertexCount, Is.LessThan(65536), id);
+                }
+
+                foreach (Mesh m in DungeonDressing.BuildWalls(g, id, b, config, _ => 0f, config.ToWorld(g.Anchor, 0f)))
+                {
+                    _owned.Add(m);
+                    vb += m.vertexCount;
+                    Assert.That(m.vertexCount, Is.LessThan(65536), id);
+                }
+
+                Assert.That(vb, Is.Not.EqualTo(va), id);
+            }
+        }
+
+        private static DungeonCulture CultureFor(string terrainId, ulong seed) =>
+            DungeonCulture.For(ArchitectureMeshes.PlanetStyleFor("twilight_planet", seed), terrainId, seed);
 
         // Visual proof only: Logs/dungeon-<terrain>.png (indoors from the entrance room with the lamps lit; surface
         // mazes from above the plaza edge).
@@ -94,13 +131,18 @@ namespace Cosmimera.Bootstrap.Tests
             Shader scenery = Shader.Find("Cosmimera/ToonScenery");
             Assert.That(scenery, Is.Not.Null);
             string dir = System.IO.Path.Combine(Application.dataPath, "..", "Logs");
+            ulong cultureSeed = 0;
             foreach (AdvancedTerrainSpec spec in AdvancedTerrains.All)
             {
+                // A different builder culture per terrain so one capture run shows several eras and looks.
+                DungeonCulture culture = CultureFor(spec.Id, 11 + 7 * cultureSeed++);
+                Debug.Log($"dungeon-{spec.Id}: {culture.Region} {culture.Era} look {culture.Look} accent {culture.AccentRegion} " +
+                    $"{culture.AccentEra} age {culture.Age:0.00} damage {culture.Damage:0.00}");
                 _stage = new GameObject("dungeon-" + spec.Id);
                 RoomDungeonGeometry g = GeometryFor(spec, 3);
                 var config = new PlanetConfig(g.Radius, float3.zero);
                 float3 origin = config.ToWorld(g.Anchor, 0f);
-                DungeonDressing.Palette pal = DungeonDressing.PaletteFor(spec.Id);
+                DungeonDressing.Palette pal = DungeonDressing.PaletteFor(spec.Id, culture);
                 Material[] mats =
                 {
                     PlanetLook.SceneryMaterial(scenery, pal.Body, Color.white, 0f, 0f, 0f, 0f),
@@ -108,7 +150,7 @@ namespace Cosmimera.Bootstrap.Tests
                     PlanetLook.SceneryMaterial(scenery, pal.Glow, Color.white, 0f, 0f, 0f, pal.GlowStrength),
                 };
                 _owned.AddRange(mats);
-                foreach (Mesh m in DungeonDressing.BuildWalls(g, spec.Id, config, _ => 0f, origin))
+                foreach (Mesh m in DungeonDressing.BuildWalls(g, spec.Id, culture, config, _ => 0f, origin))
                 {
                     _owned.Add(m);
                     var go = new GameObject("walls");
@@ -191,6 +233,25 @@ namespace Cosmimera.Bootstrap.Tests
                 mood.SetInside(true);
                 yield return new WaitForSecondsRealtime(0.8f);
                 ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "dungeon-" + spec.Id + ".png"));
+                if (!indoor)
+                {
+                    // Open walls up close: the entrance room of the maze, at eye height.
+                    float2 entrance = Local(g, g.RoomCenter(g.Dungeon.EntranceRoom));
+                    int door = FirstDoor(g.Dungeon.Rooms[g.Dungeon.EntranceRoom].Doors);
+                    float2 axis = new float2(door == RoomDungeon.East ? 1 : door == RoomDungeon.West ? -1 : 0,
+                        door == RoomDungeon.North ? 1 : door == RoomDungeon.South ? -1 : 0);
+                    float2 across = new float2(axis.y, -axis.x);
+                    float half = 0.5f * g.Dungeon.CellSizeM;
+                    eye2 = entrance - across * (half * 0.2f) - axis * (half * 0.3f);
+                    look2 = entrance + across * half + axis * (half * 0.5f);
+                    eye = (Vector3)config.ToWorld(g.LocalToDirection(eye2), 2.4f);
+                    target = (Vector3)config.ToWorld(g.LocalToDirection(look2), 5f);
+                    camera.transform.SetPositionAndRotation(eye,
+                        Quaternion.LookRotation(target - eye, (Vector3)g.LocalToDirection(eye2)));
+                    yield return new WaitForSecondsRealtime(0.4f);
+                    ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "dungeon-" + spec.Id + "-close.png"));
+                }
+
                 Object.Destroy(_stage);
                 _stage = null;
                 yield return null;

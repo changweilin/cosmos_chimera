@@ -18,7 +18,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// beams), <see cref="GlowSub"/> (self-lit parts). Pre: main thread (creates Meshes). Post: same inputs → same meshes.
     /// Side effects: allocates Meshes (the caller owns and destroys them).
     /// </remarks>
-    internal static class DungeonDressing
+    internal static partial class DungeonDressing
     {
         /// <summary>Sub-mesh indices.</summary>
         public const int BodySub = 0;
@@ -54,10 +54,15 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly float GlowStrength;
 
             public Palette(int body, int trim, int glow, float glowStrength)
+                : this(Hex(body), Hex(trim), Hex(glow), glowStrength)
             {
-                Body = Hex(body);
-                Trim = Hex(trim);
-                Glow = Hex(glow);
+            }
+
+            public Palette(Color body, Color trim, Color glow, float glowStrength)
+            {
+                Body = body;
+                Trim = trim;
+                Glow = glow;
                 GlowStrength = glowStrength;
             }
         }
@@ -79,20 +84,45 @@ namespace Cosmimera.Bootstrap.Demo
             _ => new Palette(0x7A7570, 0x9A948C, 0xFFFFFF, 1f),
         };
 
+        /// <summary>Palette of a terrain tinted by its builders: the culture's tradition and era show through, age greys it.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#進階地形地城 (地城文化). Pre: none. Post: the terrain's own colours dominate (culture share
+        /// ≤ 0.3); an older dungeon is darker and greyer; glow strength unchanged. Side effects: none.
+        /// </remarks>
+        public static Palette PaletteFor(string terrainId, in DungeonCulture culture)
+        {
+            Palette t = PaletteFor(terrainId);
+            ArchPalette a = ArchitectureMeshes.PaletteFor(culture.Region, culture.Era, BuildingKind.House);
+            float grime = 0.22f * culture.Age;
+            return new Palette(Aged(Color.Lerp(t.Body, a.Wall, 0.22f), grime), Aged(Color.Lerp(t.Trim, a.Trim, 0.3f), grime),
+                Color.Lerp(t.Glow, a.Glow, 0.2f), t.GlowStrength);
+        }
+
+        private static Color Aged(Color c, float grime)
+        {
+            float grey = 0.3f * c.r + 0.59f * c.g + 0.11f * c.b;
+            Color g = Color.Lerp(c, new Color(grey, grey, grey, 1f), grime);
+            return new Color(g.r * (1f - grime), g.g * (1f - grime), g.b * (1f - grime), 1f);
+        }
+
         /// <summary>Whether the terrain's dungeon is indoors (a ceiling over the grid; surface mazes stay open).</summary>
         /// <remarks>Pre: none. Post: false for unknown ids. Side effects: none.</remarks>
         public static bool HasCeiling(string terrainId) =>
             AdvancedTerrains.TryGet(terrainId, out AdvancedTerrainSpec spec) && spec.Form == AdvancedDungeonForm.Rooms;
 
-        /// <summary>Wall panels along every wall run and round the arena ring, plus the ceiling when indoors.</summary>
+        /// <summary>
+        /// Wall panels along every wall run and round the arena ring, plus the ceiling when indoors; the culture's props
+        /// on and along the walls, and on open walls (no ceiling) the terrain's growths on faces and tops.
+        /// </summary>
         /// <remarks>
+        /// REQ: planet-world.md#進階地形地城 (牆與頂的美術, 地城文化).
         /// Pre: geometry non-null; config.Radius == geometry.Radius; floorAltitude(dir) is the ground altitude (m above
         ///      Radius) under a unit direction with the walls left out; origin is the world point the meshes are relative to.
         /// Post: meshes in world space minus origin (place them at origin, identity rotation); at least one mesh.
         /// Side effects: allocates Meshes.
         /// </remarks>
-        public static List<Mesh> BuildWalls(RoomDungeonGeometry geometry, string terrainId, in PlanetConfig config,
-            Func<float3, float> floorAltitude, float3 origin)
+        public static List<Mesh> BuildWalls(RoomDungeonGeometry geometry, string terrainId, in DungeonCulture culture,
+            in PlanetConfig config, Func<float3, float> floorAltitude, float3 origin)
         {
             Contract.Requires(geometry != null && floorAltitude != null, "geometry and floorAltitude required");
             Contract.Requires(math.abs(config.Radius - geometry.Radius) < 1e-3f, "config radius must equal the geometry radius");
@@ -106,14 +136,15 @@ namespace Cosmimera.Bootstrap.Demo
             float cell = geometry.Dungeon.CellSizeM;
             float2 corner0 = -0.5f * new float2(geometry.Dungeon.Width, geometry.Dungeon.Height) * cell;
             var pillars = new HashSet<long>();
+            var dress = new Dress(style, culture, !HasCeiling(terrainId));
             foreach (WallRun run in geometry.WallRuns)
             {
-                WallPiece(sculpt, style, run.From, run.To);
-                Pillar(sculpt, style, run.From, run.To, corner0, cell, pillars);
-                Pillar(sculpt, style, run.To, run.From, corner0, cell, pillars);
+                WallPiece(sculpt, dress, run.From, run.To);
+                Pillar(sculpt, dress, run.From, run.To, corner0, cell, pillars);
+                Pillar(sculpt, dress, run.To, run.From, corner0, cell, pillars);
             }
 
-            Ring(sculpt, style, geometry);
+            Ring(sculpt, dress, geometry);
             if (HasCeiling(terrainId))
             {
                 Ceiling(sculpt, style, geometry);
@@ -241,8 +272,9 @@ namespace Cosmimera.Bootstrap.Demo
         private static float FaceHalf(float h) =>
             PanelFootHalfM + (PanelTopHalfM - PanelFootHalfM) * math.saturate((h + SinkM) / (PanelTopM + SinkM));
 
-        private static void WallPiece(Sculptor s, Style style, float2 from, float2 to)
+        private static void WallPiece(Sculptor s, in Dress dress, float2 from, float2 to)
         {
+            Style style = dress.Style;
             float len = math.distance(from, to);
             float2 u2 = (to - from) / len;
             var ex = new float3(u2.x, 0f, u2.y);
@@ -263,6 +295,7 @@ namespace Cosmimera.Bootstrap.Demo
                 for (int side = -1; side <= 1; side += 2)
                 {
                     Module(s, style, c, ex, ey, ez * side, step, m, hash + (uint)(side + 1));
+                    Decor(s, dress, c, ex, ey, ez * side, step, hash + (uint)(side + 1), side > 0);
                 }
 
                 if (m > 0)
@@ -469,9 +502,10 @@ namespace Cosmimera.Bootstrap.Demo
 
         // Corner pillars fill the square the two panels leave at a grid corner; door jambs frame a doorway without
         // reaching into it.
-        private static void Pillar(Sculptor s, Style style, float2 end, float2 other, float2 corner0, float cell,
+        private static void Pillar(Sculptor s, in Dress dress, float2 end, float2 other, float2 corner0, float cell,
             HashSet<long> done)
         {
+            Style style = dress.Style;
             float2 g = (end - corner0) / cell;
             bool corner = math.all(math.abs(g - math.round(g)) < 1e-3f);
             long key = ((long)math.round(end.x * 10f) << 32) ^ (long)(int)math.round(end.y * 10f);
@@ -494,6 +528,7 @@ namespace Cosmimera.Bootstrap.Demo
                 var c = new float3(end.x, 0.5f * h - SinkM, end.y);
                 s.Box(sub, c, ex, ey, ez, new float3(half, 0.5f * h, half), PanelTopHalfM / PanelFootHalfM,
                     PanelTopHalfM / PanelFootHalfM, 0.92f);
+                PillarCap(s, dress, new float3(end.x, h - SinkM, end.y), ex, ey, ez, half * PanelTopHalfM / PanelFootHalfM);
             }
             else
             {
@@ -503,8 +538,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private static void Ring(Sculptor s, Style style, RoomDungeonGeometry g)
+        private static void Ring(Sculptor s, in Dress dress, RoomDungeonGeometry g)
         {
+            Style style = dress.Style;
             float r = g.ArenaRadiusM;
             float2 c = g.ArenaCenterLocal;
             float2 gate = c + g.ArenaGateAxis * r;
@@ -543,6 +579,7 @@ namespace Cosmimera.Bootstrap.Demo
                     float3 mid = new float3(m.x, 0f, m.y);
                     // Inside face only: the side the fight is seen from.
                     Module(s, style, mid, ex, ey, -outward, math.distance(d0, d1) * r, i / 2, Hash(mid));
+                    Decor(s, dress, mid, ex, ey, -outward, math.distance(d0, d1) * r, Hash(mid), true);
                 }
             }
 
@@ -688,7 +725,13 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             public void Box(int sub, float3 c, float3 ex, float3 ey, float3 ez, float3 half, float topScaleX,
-                float topScaleZ, float tone)
+                float topScaleZ, float tone) =>
+                Box(sub, c, ex, ey, ez, half, topScaleX, topScaleZ, new Color(tone, tone, tone, 1f));
+
+            // Vertex colour multiplies the sub-mesh material (ToonScenery albedo *= color.rgb), so a tint shifts hue
+            // within the palette; alpha stays 1 because lower alpha blends toward the material's accent.
+            public void Box(int sub, float3 c, float3 ex, float3 ey, float3 ez, float3 half, float topScaleX,
+                float topScaleZ, Color color)
             {
                 int pieces = math.max(1, (int)math.ceil(2f * half.x / SegmentM));
                 var corners = new float3[8];
@@ -706,15 +749,16 @@ namespace Cosmimera.Bootstrap.Demo
                         corners[k] = c + ex * (x * (pieces == 1 ? sx : 1f)) + ez * (z * sz) + ey * (top ? half.y : -half.y);
                     }
 
-                    Hexa(sub, corners, tone);
+                    Hexa(sub, corners, color);
                 }
             }
 
             // Eight corners: a ring of four at the bottom, then the ring above it in the same order (a convex solid).
-            public void Hexa(int sub, float3[] local, float tone)
+            public void Hexa(int sub, float3[] local, float tone) => Hexa(sub, local, new Color(tone, tone, tone, 1f));
+
+            public void Hexa(int sub, float3[] local, Color color)
             {
                 SceneryMeshes.Part part = _parts[sub];
-                var color = new Color(tone, tone, tone, 1f);
                 int first = part.P.Count;
                 float3 inside = float3.zero;
                 for (int k = 0; k < 8; k++)
@@ -739,10 +783,13 @@ namespace Cosmimera.Bootstrap.Demo
 
             // Regular n-gon prism (or cone when r1 ≈ 0) along `axis` from `baseAt`; `refPerp` orients the first corner.
             public void Prism(int sub, float3 baseAt, float3 axis, float r0, float r1, float length, int sides, float tone,
+                float3 refPerp = default) =>
+                Prism(sub, baseAt, axis, r0, r1, length, sides, new Color(tone, tone, tone, 1f), refPerp);
+
+            public void Prism(int sub, float3 baseAt, float3 axis, float r0, float r1, float length, int sides, Color color,
                 float3 refPerp = default)
             {
                 SceneryMeshes.Part part = _parts[sub];
-                var color = new Color(tone, tone, tone, 1f);
                 float3 a = math.normalize(axis);
                 float3 p0 = math.lengthsq(refPerp) > 1e-6f ? refPerp : math.abs(a.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
                 float3 u = math.normalize(math.cross(a, p0));

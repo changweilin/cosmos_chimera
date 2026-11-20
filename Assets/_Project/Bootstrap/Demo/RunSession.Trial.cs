@@ -553,7 +553,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     lamp = DungeonDressing.BuildLamp(_trial.Spec.Id, out lightHeight);
                     _trial.Owned.Add(lamp);
-                    mats = DressingMaterials(DungeonDressing.PaletteFor(_trial.Spec.Id));
+                    mats = DressingMaterials(DungeonDressing.PaletteFor(_trial.Spec.Id, TrialCulture()));
                 }
 
                 _dungeonMood.BuildRoomLights(_trial.Geometry, _surface.GroundAltitude, _rig.Config, lamp, mats, lightHeight,
@@ -571,10 +571,11 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             string id = _trial.Spec.Id;
-            Material[] mats = DressingMaterials(DungeonDressing.PaletteFor(id));
+            DungeonCulture culture = TrialCulture();
+            Material[] mats = DressingMaterials(DungeonDressing.PaletteFor(id, culture));
             float3 anchor = _trial.Geometry.Anchor;
             float3 origin = _rig.Config.ToWorld(anchor, floor(anchor));
-            foreach (Mesh mesh in DungeonDressing.BuildWalls(_trial.Geometry, id, _rig.Config, floor, origin))
+            foreach (Mesh mesh in DungeonDressing.BuildWalls(_trial.Geometry, id, culture, _rig.Config, floor, origin))
             {
                 _trial.Owned.Add(mesh);
                 var go = new GameObject("DungeonWalls");
@@ -585,6 +586,10 @@ namespace Cosmimera.Bootstrap.Demo
                 _trial.DressingMeshes++;
             }
         }
+
+        // REQ: planet-world.md#進階地形地城 (地城文化) — drawn from the planet's building culture, so every client agrees.
+        private DungeonCulture TrialCulture() =>
+            DungeonCulture.For(ArchitectureMeshes.PlanetStyleFor(_setup.PlanetType.Id, _setup.Seed), _trial.Spec.Id, _setup.Seed);
 
         // Body, trim and glow, in DungeonDressing sub-mesh order. The toon fallback (no props shader) cannot self-glow.
         private Material[] DressingMaterials(in DungeonDressing.Palette pal)
