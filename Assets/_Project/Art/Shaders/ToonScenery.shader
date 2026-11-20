@@ -105,6 +105,8 @@ Shader "Cosmimera/ToonScenery"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             struct Varyings
             {
@@ -155,6 +157,7 @@ Shader "Cosmimera/ToonScenery"
                 float rim = smoothstep(0.62, 0.78, fresnel) * saturate(dot(n, light.direction) + 0.3);
                 lit += _CosmiSkyHorizon.rgb * (rim * 0.18 * _CosmiSkyHorizon.a);
 
+                lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 // Crystals carry their own light, so they stay readable at night and inside cloud shadow.
                 lit += albedo * (_Glow * (0.3 + fresnel * fresnel * 0.9));
 

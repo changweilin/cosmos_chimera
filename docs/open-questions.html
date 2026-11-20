@@ -79,13 +79,6 @@
 <section>
 <h2>地形試煉與進階地城</h2>
 <div class="cards">
-<article id="Q-W46">
-  <p><span class="label">已定</span>地城氛圍（<code>combat-feel.md#地城氛圍</code>）已接進室內 6 種地城：環境光與太陽壓暗、短距屬性色霧、降飽和＋暗角，每間房一盞發光燈（競技場 4 盞）照亮地面與牆（地形著色器新增點光源色階）。牆目前仍是「地形色山脊、無天花板」，<code>planet-world.md#進階地形地城</code> 寫「未定：牆的美術」。</p>
-  <p><span class="label">問題</span><b>(1) 室內房間模組的牆與頂</b>：(A) 程序化網格牆板：沿現有牆脊鋪每種地形一套造型（機房金屬面板＋線槽、深海珊瑚岩＋舷窗、礦坑木樑支架＋岩壁、高塔磚石＋拱窗、太空艙壁＋管線、神廟石柱＋浮雕），仍無天花板、上方是暗霧；(B) 同 A 再加天花板（封閉室內，攝影機需處理頂部遮擋）；(C) 維持山脊，只換材質顏色與條紋。<b>(2) 燈的造型</b>：(A) 依地形換造型（火把、晶簇、符文柱、吸頂燈）；(B) 全部同一種發光晶球（現狀）。<b>(3) 地表迷宮（雨林／火山／冰棚／迷宮）的氛圍</b>：(A) 不壓暗，只加暗角與降飽和；(B) 與室內相同壓暗（天空仍亮會不協調）；(C) 不套用。</p>
-  <p><span class="label">建議</span>(1) A、(2) A、(3) A：程序化網格與其他建築一致（<code>ArchitectureMeshes</code>），不需處理天花板遮擋；地表迷宮保留天空與時段。</p>
-  <p><span class="label">影響項目</span>P3-07（房間模組美術）、P3-13</p>
-  <p><span class="label">暫定</span>室內套用全套氛圍；地表迷宮不套用（同 C），待定案後依答案改。</p>
-</article>
 </div>
 </section>
 
@@ -135,7 +128,6 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
- 'Q-W46':[R('walls','室內牆與頂',['A 程序化牆板（無天花板）','B 牆板＋天花板','C 維持山脊換材質','改（補充）']),R('lamps','燈的造型',['A 依地形換造型','B 統一發光晶球','改（補充）']),R('maze','地表迷宮氛圍',['A 只加暗角與降飽和','B 與室內相同壓暗','C 不套用','改（補充）'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

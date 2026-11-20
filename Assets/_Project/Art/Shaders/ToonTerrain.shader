@@ -46,8 +46,7 @@ Shader "Cosmimera/ToonTerrain"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
-            // Point lights only matter in interior dungeons (combat-feel.md#地城氛圍); the surface has none, so the
-            // per-pixel loop runs zero times there.
+            // Point lights: interior dungeon lamps (CosmiPointLights).
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -86,19 +85,7 @@ Shader "Cosmimera/ToonTerrain"
                 half3 ambient = SampleSH(n) * lerp(0.75, 1.25, saturate(dot(n, g.up)));
                 half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
                     _Shadow.rgb, _Bands, ambient);
-            #if defined(_ADDITIONAL_LIGHTS)
-                InputData inputData = (InputData)0;
-                inputData.positionWS = i.positionWS;
-                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
-                uint lightCount = GetAdditionalLightsCount();
-                LIGHT_LOOP_BEGIN(lightCount)
-                    Light point = GetAdditionalLight(lightIndex, i.positionWS);
-                    half reach = point.distanceAttenuation * saturate(dot(n, point.direction) * 0.6 + 0.4);
-                    // Two hard steps instead of a smooth falloff: a torch reads as a cel-shaded pool of light.
-                    half band = step(0.04, reach) * 0.45 + step(0.25, reach) * 0.55;
-                    lit += albedo * point.color * band;
-                LIGHT_LOOP_END
-            #endif
+                lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 return half4(CosmiAtmosphere(lit, i.positionWS, i.fog, light.direction), 1);
             }
             ENDHLSL

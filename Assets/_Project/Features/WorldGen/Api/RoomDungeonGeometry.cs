@@ -5,6 +5,26 @@ using Unity.Mathematics;
 
 namespace Cosmimera.WorldGen
 {
+    /// <summary>One straight piece of full-height room wall, on a <see cref="RoomDungeonGeometry"/> tangent plane (m).</summary>
+    /// <remarks>Pre: none. Post: From != To. Side effects: none.</remarks>
+    public readonly struct WallRun
+    {
+        /// <summary>Start of the wall's centre line.</summary>
+        public readonly float2 From;
+
+        /// <summary>End of the wall's centre line.</summary>
+        public readonly float2 To;
+
+        /// <summary>A run from <paramref name="from"/> to <paramref name="to"/>.</summary>
+        /// <remarks>Pre: from != to. Post: as given. Side effects: none.</remarks>
+        public WallRun(float2 from, float2 to)
+        {
+            Contract.Requires(math.distancesq(from, to) > 0f, "a run needs length");
+            From = from;
+            To = to;
+        }
+    }
+
     /// <summary>
     /// A <see cref="RoomDungeon"/> laid on a sphere — the indoor sphere of a room dungeon or the planet surface around a
     /// surface maze's wonder: where each room is, which wall stops a body, where the boss door is sealed, and where
@@ -60,6 +80,7 @@ namespace Cosmimera.WorldGen
         private readonly float3x2[] _corridors;
         private readonly WallRing _arena;
         private readonly float _bossSpawnRingM;
+        private List<WallRun> _wallRuns;
 
         private RoomDungeonGeometry(RoomDungeon dungeon, float radius, float3 anchor, float3 east, float3 north,
             float3[] sites, bool[] openPairs, float3x2[] corridors, WallRing arena, float bossSpawnRingM)
@@ -164,11 +185,7 @@ namespace Cosmimera.WorldGen
             {
                 for (int b = a + 1; b < n; b++)
                 {
-                    bool join = owners[a] == owners[b] ||
-                                (dungeon.Style.OpenPlan && owners[a] >= 0 && owners[b] >= 0 &&
-                                 owners[a] != dungeon.BossRoom && owners[b] != dungeon.BossRoom &&
-                                 math.abs(cells[a].x - cells[b].x) + math.abs(cells[a].y - cells[b].y) == 1 &&
-                                 Joined(dungeon, owners[a], owners[b]));
+                    bool join = NoWallBetween(dungeon, cells[a], owners[a], cells[b], owners[b]);
                     open[a * n + b] = join;
                     open[b * n + a] = join;
                 }
@@ -350,6 +367,45 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: in the boss room, ArenaRadiusM from its centre toward the guard room. Side effects: none.</remarks>
         public float3 ArenaGate => _arena.Gate;
 
+        /// <summary>
+        /// Straight full-height wall pieces on the grid's tangent plane (metres east/north of <see cref="Anchor"/>, as
+        /// <see cref="LocalToDirection"/> takes them): every room border without a door, split around each door at the
+        /// end of its ramp. The arena ring is not included (<see cref="ArenaCenterLocal"/>).
+        /// </summary>
+        /// <remarks>
+        /// Pre: none. Post: every run's centre line is a cell border where BuildWalls stands at WallHeightM; no run
+        ///      comes within DoorInnerM + DoorRampM of a door's midpoint along its border; same geometry → same runs,
+        ///      same order.
+        /// Side effects: computed once and cached.
+        /// </remarks>
+        public IReadOnlyList<WallRun> WallRuns => _wallRuns ??= ComputeWallRuns(Dungeon);
+
+        /// <summary>Unit direction of a point on the grid's tangent plane, metres east/north of <see cref="Anchor"/>.</summary>
+        /// <remarks>Pre: local finite. Post: unit length; LocalToDirection(0) == Anchor. Side effects: none.</remarks>
+        public float3 LocalToDirection(float2 local) => Direction(local);
+
+        /// <summary>Arena ring centre on the tangent plane (the boss room centre).</summary>
+        /// <remarks>Pre: none. Post: LocalToDirection(result) == RoomCenter(BossRoom). Side effects: none.</remarks>
+        public float2 ArenaCenterLocal
+        {
+            get
+            {
+                DungeonRoom r = Dungeon.Rooms[Dungeon.BossRoom];
+                return CellLocal(Dungeon, r.X, r.Y);
+            }
+        }
+
+        /// <summary>Unit vector on the tangent plane from the arena centre toward its gate.</summary>
+        /// <remarks>Pre: none. Post: unit and axis-aligned (the boss room's one door). Side effects: none.</remarks>
+        public float2 ArenaGateAxis
+        {
+            get
+            {
+                int door = Dungeon.Rooms[Dungeon.BossRoom].Doors;
+                return new float2(RoomDungeon.DeltaX(door), RoomDungeon.DeltaY(door));
+            }
+        }
+
         private bool TryGrid(float3 direction, out float2 grid)
         {
             float d = math.dot(direction, Anchor);
@@ -389,6 +445,104 @@ namespace Cosmimera.WorldGen
             float2 border = DoorBorder(dungeon, room, side);
             return new float3x2(ToDirection(up, east, north, radius, border - step * DoorReachM),
                 ToDirection(up, east, north, radius, border + step * DoorReachM));
+        }
+
+        // Void cells are never reachable, so no wall stands between two of them; the plaza's cells share one room; an
+        // open-plan style drops the whole border of two rooms joined by a door.
+        private static bool NoWallBetween(RoomDungeon dungeon, int2 cellA, int ownerA, int2 cellB, int ownerB) =>
+            ownerA == ownerB ||
+            (dungeon.Style.OpenPlan && ownerA >= 0 && ownerB >= 0 &&
+             ownerA != dungeon.BossRoom && ownerB != dungeon.BossRoom &&
+             math.abs(cellA.x - cellB.x) + math.abs(cellA.y - cellB.y) == 1 &&
+             Joined(dungeon, ownerA, ownerB));
+
+        private static bool IsSite(RoomDungeon dungeon, int x, int y) =>
+            dungeon.RoomAt(x, y) >= 0 || TouchesRoom(dungeon, x, y);
+
+        private static List<WallRun> ComputeWallRuns(RoomDungeon dungeon)
+        {
+            float cell = dungeon.CellSizeM;
+            float gap = dungeon.Style.DoorInnerM + DoorRampM;
+            var doors = new List<float2>();
+            for (int r = 0; r < dungeon.Rooms.Count; r++)
+            {
+                if ((dungeon.Rooms[r].Doors & RoomDungeon.North) != 0)
+                {
+                    doors.Add(DoorBorder(dungeon, r, RoomDungeon.North));
+                }
+
+                if ((dungeon.Rooms[r].Doors & RoomDungeon.East) != 0)
+                {
+                    doors.Add(DoorBorder(dungeon, r, RoomDungeon.East));
+                }
+            }
+
+            if (dungeon.EntranceSide != 0)
+            {
+                doors.Add(DoorBorder(dungeon, dungeon.EntranceRoom, dungeon.EntranceSide));
+            }
+
+            var runs = new List<WallRun>();
+            for (int y = -1; y <= dungeon.Height; y++)
+            {
+                for (int x = -1; x <= dungeon.Width; x++)
+                {
+                    if (!IsSite(dungeon, x, y))
+                    {
+                        continue;
+                    }
+
+                    int owner = dungeon.RoomAt(x, y);
+                    float2 c = CellLocal(dungeon, x, y);
+                    // East border (shared with x + 1) and north border (shared with y + 1): every border once.
+                    for (int k = 0; k < 2; k++)
+                    {
+                        var other = new int2(x + (k == 0 ? 1 : 0), y + (k == 0 ? 0 : 1));
+                        if (!IsSite(dungeon, other.x, other.y) ||
+                            NoWallBetween(dungeon, new int2(x, y), owner, other, dungeon.RoomAt(other.x, other.y)))
+                        {
+                            continue;
+                        }
+
+                        float2 from = k == 0 ? c + new float2(0.5f, -0.5f) * cell : c + new float2(-0.5f, 0.5f) * cell;
+                        float2 to = c + new float2(0.5f, 0.5f) * cell;
+                        AddWithGaps(runs, from, to, doors, gap);
+                    }
+                }
+            }
+
+            return runs;
+        }
+
+        // A door on this border (its midpoint on the segment) leaves two pieces, each ending where the door ramp is back
+        // at full height.
+        private static void AddWithGaps(List<WallRun> runs, float2 from, float2 to, List<float2> doors, float gap)
+        {
+            float len = math.distance(from, to);
+            float2 axis = (to - from) / len;
+            foreach (float2 d in doors)
+            {
+                float t = math.dot(d - from, axis);
+                float off = math.length(d - from - axis * t);
+                if (off > 0.01f || t <= 0f || t >= len)
+                {
+                    continue;
+                }
+
+                if (t - gap > 0.5f)
+                {
+                    runs.Add(new WallRun(from, from + axis * (t - gap)));
+                }
+
+                if (len - (t + gap) > 0.5f)
+                {
+                    runs.Add(new WallRun(from + axis * (t + gap), to));
+                }
+
+                return;
+            }
+
+            runs.Add(new WallRun(from, to));
         }
 
         private static bool Joined(RoomDungeon dungeon, int a, int b)

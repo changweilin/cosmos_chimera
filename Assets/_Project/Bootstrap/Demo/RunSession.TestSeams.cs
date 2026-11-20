@@ -427,6 +427,9 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>Room lamps built for the interior dungeon, and how many of their lights are on now.</summary>
         internal (int lamps, int lit) DungeonLampsForTests => _dungeonMood != null ? _dungeonMood.LampCounts : (0, 0);
+
+        /// <summary>Wall / ceiling meshes built for the trial's dungeon (0 before an indoor dungeon is first entered).</summary>
+        internal int DungeonDressingMeshesForTests => _trial != null ? _trial.DressingMeshes : 0;
         internal bool SurfaceBlockedForTests(float3 direction, float clearanceM) => _surface.IsBlocked(direction, clearanceM);
         internal bool SurfaceOffWallsForTests(float3 direction) => _surface.IsOffWalls(direction);
 

@@ -125,6 +125,95 @@ namespace Cosmimera.WorldGen.Tests
             }
         }
 
+        // REQ: planet-world.md#進階地形地城 牆與頂的美術 — wall panels are laid along WallRuns, so every run must sit on a
+        // full-height ridge and leave every doorway clear.
+        [Test]
+        public void Wall_runs_lie_on_full_height_walls_and_keep_off_doors()
+        {
+            for (ulong seed = 0; seed < 8; seed++)
+            {
+                foreach (AdvancedTerrainSpec spec in AdvancedTerrains.All)
+                {
+                    PlanetSize size = SizeFor(spec);
+                    float radius = RadiusFor(size);
+                    bool maze = spec.Form == AdvancedDungeonForm.SurfaceMaze;
+                    RoomDungeon d = maze
+                        ? RoomDungeonPlanner.GenerateSurfaceMaze(seed, spec.Id, size, Affixes, 20f)
+                        : RoomDungeonPlanner.Generate(seed, spec.Id, size, Affixes);
+                    var g = RoomDungeonGeometry.Build(d, radius, Anchors[seed % 3], maze ? 20f : 0f);
+                    using PlanetWalls walls = g.BuildWalls(new PlanetConfig(radius, float3.zero));
+                    WallView view = walls.View;
+                    string at = $"seed {seed} {spec.Id}";
+                    Assert.That(g.WallRuns.Count, Is.GreaterThan(d.Rooms.Count), at);
+                    foreach (WallRun run in g.WallRuns)
+                    {
+                        for (int k = 1; k < 10; k++)
+                        {
+                            float3 p = g.LocalToDirection(math.lerp(run.From, run.To, k / 10f));
+                            Assert.That(view.Height(p), Is.GreaterThan(RoomDungeonGeometry.WallHeightM * 0.97f),
+                                $"{at} run {run.From}→{run.To} at {k}/10");
+                        }
+                    }
+
+                    // A body standing in each doorway touches no run's centre line.
+                    for (int r = 0; r < d.Rooms.Count; r++)
+                    {
+                        foreach (int s in Sides)
+                        {
+                            if ((d.Rooms[r].Doors & s) == 0)
+                            {
+                                continue;
+                            }
+
+                            int n = d.Neighbour(r, s);
+                            // The outer door has no room beyond; the plaza's door is at its block edge, not halfway.
+                            if (n < 0 || r == d.BossRoom || n == d.BossRoom)
+                            {
+                                continue;
+                            }
+
+                            float3 door = math.normalize(math.lerp(g.SpawnPoint(r, 0), g.SpawnPoint(n, 0), 0.5f));
+
+                            foreach (WallRun run in g.WallRuns)
+                            {
+                                float2 local = LocalOf(g, door);
+                                Assert.That(DistanceToSegment(local, run.From, run.To),
+                                    Is.GreaterThan(d.Style.DoorInnerM), $"{at} door room {r} side {s}");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void Local_directions_round_trip_through_the_grid()
+        {
+            RoomDungeon d = RoomDungeonPlanner.Generate(3, "temple", PlanetSize.Supergiant, Affixes);
+            var g = RoomDungeonGeometry.Build(d, 1280f, Anchors[1]);
+            Assert.That(math.distance(g.LocalToDirection(float2.zero), g.Anchor), Is.LessThan(1e-5f));
+            Assert.That(math.distance(g.LocalToDirection(g.ArenaCenterLocal), g.RoomCenter(d.BossRoom)), Is.LessThan(1e-5f));
+            float2 axis = g.ArenaGateAxis;
+            Assert.That(math.abs(axis.x) + math.abs(axis.y), Is.EqualTo(1f));
+            float3 gate = g.LocalToDirection(g.ArenaCenterLocal + axis * g.ArenaRadiusM);
+            Assert.That(math.distance(gate, g.ArenaGate) * g.Radius, Is.LessThan(0.05f));
+            Assert.Throws<ContractException>(() => new WallRun(float2.zero, float2.zero));
+        }
+
+        private static float2 LocalOf(RoomDungeonGeometry g, float3 dir)
+        {
+            PlanetFrame f = PlanetFrame.FromUp(g.Anchor);
+            float3 p = dir * (g.Radius / math.dot(dir, g.Anchor));
+            return new float2(math.dot(p, f.East), math.dot(p, f.North));
+        }
+
+        private static float DistanceToSegment(float2 p, float2 a, float2 b)
+        {
+            float2 ab = b - a;
+            float t = math.saturate(math.dot(p - a, ab) / math.dot(ab, ab));
+            return math.distance(p, a + ab * t);
+        }
+
         [Test]
         public void Preconditions_are_checked()
         {

@@ -37,6 +37,8 @@ Shader "Cosmimera/ToonOutlined"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #include "CosmiAtmosphere.hlsl"
             struct Varyings { float4 positionCS : SV_POSITION; float3 normalWS : TEXCOORD0; float fog : TEXCOORD1; float3 positionWS : TEXCOORD2; };
             Varyings Vert(Attributes i)
@@ -57,6 +59,7 @@ Shader "Cosmimera/ToonOutlined"
                 // creatures sit in the scene instead of on top of it.
                 half3 lit = CosmiToon(_BaseColor.rgb, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
                     _Shadow.rgb, _Bands, SampleSH(n));
+                lit += CosmiPointLights(_BaseColor.rgb, n, i.positionWS, i.positionCS);
                 // Rim: a thin sky-coloured edge on the sunward side separates silhouettes from hazy backgrounds.
                 float3 view = normalize(_WorldSpaceCameraPos - i.positionWS);
                 float rim = smoothstep(0.62, 0.78, 1.0 - saturate(dot(n, view))) * saturate(dot(n, light.direction) + 0.3);

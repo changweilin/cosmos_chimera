@@ -97,6 +97,31 @@ half3 CosmiToon(half3 albedo, float3 normalWS, float3 positionWS, half3 lightCol
     return albedo * lerp(shade, lightColor, ramp) + albedo * ambient * 0.25;
 }
 
+#if defined(UNIVERSAL_LIGHTING_INCLUDED)
+// Point lights (interior dungeon lamps, combat-feel.md#地城氛圍) in two hard bands, so a lamp reads as a cel-shaded pool
+// instead of a smooth gradient. Zero lights on the planet surface, so the loop costs nothing there. The caller's pass
+// must declare `_ADDITIONAL_LIGHTS` and `_CLUSTER_LIGHT_LOOP` (Forward / Forward+); without them this returns 0.
+half3 CosmiPointLights(half3 albedo, float3 normalWS, float3 positionWS, float4 positionCS)
+{
+    half3 sum = 0;
+#if defined(_ADDITIONAL_LIGHTS)
+    // LIGHT_LOOP_BEGIN reads a local named `inputData` in Forward+.
+    InputData inputData = (InputData)0;
+    inputData.positionWS = positionWS;
+    inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(positionCS);
+    uint lightCount = GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(lightCount)
+        Light lamp = GetAdditionalLight(lightIndex, positionWS);
+        // Facing matters: a pool that ignored the normal read as a glowing bubble hanging round the lamp.
+        half reach = lamp.distanceAttenuation * saturate(dot(normalWS, lamp.direction));
+        half band = step(0.03, reach) * 0.35 + step(0.18, reach) * 0.45;
+        sum += albedo * lamp.color * band;
+    LIGHT_LOOP_END
+#endif
+    return sum;
+}
+#endif
+
 // Fog colour seen along `viewDir` (camera → point): the horizon colour, warmed toward the sun. The sky dome uses
 // the same function at the horizon, so distant terrain dissolves into the sky with no seam.
 half3 CosmiFogColor(float3 viewDir, half3 fogColor, float3 sunDir)

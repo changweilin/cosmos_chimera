@@ -127,6 +127,7 @@ namespace Cosmimera.Bootstrap.Tests
             // REQ: combat-feel.md#地城氛圍 — the indoor look fades in, one lamp per room (four round the arena).
             yield return WaitUntil(() => s.DungeonMoodWeightForTests >= 1f, 5f, "dungeon mood faded in");
             (int lamps, int lit) = s.DungeonLampsForTests;
+            Assert.That(s.DungeonDressingMeshesForTests, Is.GreaterThan(0), "wall panels and ceiling");
             Assert.That(lamps, Is.EqualTo(g.Dungeon.Rooms.Count + 3));
             Assert.That(lit, Is.InRange(1, 4), "only the nearest lamps light up");
 
@@ -247,6 +248,10 @@ namespace Cosmimera.Bootstrap.Tests
             float3 wonder = g.RoomCenter(g.Dungeon.BossRoom);
             Assert.That(s.SurfaceOffWallsForTests(wonder), Is.False, "the maze area is cleared of scatter and residents");
             Assert.That(g.Contains(s.DirectionForTests(s.PlayerPositionForTests)), Is.False, "landed outside the maze");
+            // REQ: planet-world.md#進階地形地城 牆與頂的美術 — the maze walls are dressed from the start; no lamps outdoors.
+            Assert.That(s.DungeonDressingMeshesForTests, Is.GreaterThan(0), "maze wall panels");
+            Assert.That(s.DungeonLampsForTests.lamps, Is.EqualTo(0), "no lamps under the open sky");
+            Assert.That(s.DungeonMoodWeightForTests, Is.EqualTo(0f), "no maze haze outside the maze");
 
             // --- The outer door opens only once the master has spoken -------------------------------------------
             Assert.That(s.SurfaceBlockedForTests(g.OuterGate, 0.5f), Is.True, "outer door sealed before the talk");
@@ -271,6 +276,7 @@ namespace Cosmimera.Bootstrap.Tests
             yield return WaitUntil(() => !s.InCombatForTests, 60f, "battle with the maze wilds over");
             s.PlaceOnCurrentGroundForTests(g.SpawnPoint(g.Dungeon.BossRoom, 4));
             yield return WaitUntil(() => s.TrialStepForTests == TrialStep.FinalBattle, 20f, "arena reached");
+            yield return WaitUntil(() => s.DungeonMoodWeightForTests >= 1f, 5f, "maze haze faded in inside the maze");
             foreach (int id in s.TrialFinalUnitsForTests)
             {
                 Assert.That(math.distance(s.DirectionForTests(s.UnitForTests(id).Position), wonder) * radius,

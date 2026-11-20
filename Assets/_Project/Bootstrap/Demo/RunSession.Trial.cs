@@ -67,6 +67,7 @@ namespace Cosmimera.Bootstrap.Demo
             public GameObject SealRoot;
             public GameObject ArenaSeal;
             public GameObject OuterSeal;
+            public int DressingMeshes;
         }
 
         private const float SealSinkM = 4f;
@@ -197,6 +198,11 @@ namespace Cosmimera.Bootstrap.Demo
                 trial.SealRoot = new GameObject("MazeSeals_" + spec.Id);
                 BuildTrialSeals(trial.SealRoot.transform);
                 SyncTrialSeals();
+                // The panels follow the terrain under the maze; its own wall height is left out of the floor.
+                BuildDungeonDressing(trial.SealRoot.transform,
+                    d => _surface.GroundAltitude(d) - _mazeWalls.View.Height(math.normalize(d)));
+                _dungeonMood = gameObject.AddComponent<DungeonAtmosphere>();
+                _dungeonMood.Configure(_rig.Camera, _rig.Sun, _rig.Character.transform, DungeonMood.For(spec.Id));
             }
         }
 
@@ -364,6 +370,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             float3 dir = _rig.Config.ToDirection(player);
             float radius = _rig.Config.Radius;
+            if (_trial.Maze)
+            {
+                _dungeonMood?.SetInside(_trial.Geometry.Contains(dir));
+            }
+
             if (!_trial.Inside)
             {
                 float toMaster = math.distance(dir, _trial.MasterDir) * radius;
@@ -526,20 +537,74 @@ namespace Cosmimera.Bootstrap.Demo
             MoveThroughTrialGate(_trial.Geometry.Arrival);
         }
 
-        // REQ: combat-feel.md#地城氛圍 — indoor dungeons only. The surface mazes stay under the open sky (their look is
-        // an open question, docs/open-questions.html Q-W46).
+        // REQ: combat-feel.md#地城氛圍, planet-world.md#進階地形地城 牆與頂的美術 — built on the first entry, under the
+        // interior root so walls, ceiling and lamps hide with it on the way out. The interior floor is flat (altitude 0).
         private void EnterDungeonMood()
         {
             if (_dungeonMood == null)
             {
+                BuildDungeonDressing(_trial.InteriorRoot.transform, _ => 0f);
                 _dungeonMood = gameObject.AddComponent<DungeonAtmosphere>();
                 _dungeonMood.Configure(_rig.Camera, _rig.Sun, _rig.Character.transform, DungeonMood.For(_trial.Spec.Id));
-                // Under the interior root so the lamps hide with it on the way out.
-                _dungeonMood.BuildRoomLights(_trial.Geometry, _surface.GroundAltitude, _rig.Config, _trial.SealShader,
-                    _trial.SealShaderIsProps, _trial.InteriorRoot.transform);
+                Mesh lamp = null;
+                float lightHeight = 3f;
+                Material[] mats = null;
+                if (_trial.SealShader != null)
+                {
+                    lamp = DungeonDressing.BuildLamp(_trial.Spec.Id, out lightHeight);
+                    _trial.Owned.Add(lamp);
+                    mats = DressingMaterials(DungeonDressing.PaletteFor(_trial.Spec.Id));
+                }
+
+                _dungeonMood.BuildRoomLights(_trial.Geometry, _surface.GroundAltitude, _rig.Config, lamp, mats, lightHeight,
+                    _trial.InteriorRoot.transform);
             }
 
             _dungeonMood.SetInside(true);
+        }
+
+        private void BuildDungeonDressing(Transform parent, System.Func<float3, float> floor)
+        {
+            if (_trial.SealShader == null)
+            {
+                return;
+            }
+
+            string id = _trial.Spec.Id;
+            Material[] mats = DressingMaterials(DungeonDressing.PaletteFor(id));
+            float3 anchor = _trial.Geometry.Anchor;
+            float3 origin = _rig.Config.ToWorld(anchor, floor(anchor));
+            foreach (Mesh mesh in DungeonDressing.BuildWalls(_trial.Geometry, id, _rig.Config, floor, origin))
+            {
+                _trial.Owned.Add(mesh);
+                var go = new GameObject("DungeonWalls");
+                go.transform.SetParent(parent, false);
+                go.transform.SetPositionAndRotation((Vector3)origin, Quaternion.identity);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterials = mats;
+                _trial.DressingMeshes++;
+            }
+        }
+
+        // Body, trim and glow, in DungeonDressing sub-mesh order. The toon fallback (no props shader) cannot self-glow.
+        private Material[] DressingMaterials(in DungeonDressing.Palette pal)
+        {
+            Shader shader = _trial.SealShader;
+            bool props = _trial.SealShaderIsProps;
+            var mats = new Material[DungeonDressing.SubCount];
+            mats[DungeonDressing.BodySub] = props ? PlanetLook.SceneryMaterial(shader, pal.Body, Color.white, 0f, 0f, 0f, 0f)
+                : PlanetLook.CreatureMaterial(shader, pal.Body, 0f);
+            mats[DungeonDressing.TrimSub] = props ? PlanetLook.SceneryMaterial(shader, pal.Trim, Color.white, 0f, 0f, 0f, 0f)
+                : PlanetLook.CreatureMaterial(shader, pal.Trim, 0f);
+            mats[DungeonDressing.GlowSub] = props
+                ? PlanetLook.SceneryMaterial(shader, pal.Glow, Color.white, 0f, 0f, 0f, pal.GlowStrength)
+                : PlanetLook.CreatureMaterial(shader, pal.Glow, 0f);
+            foreach (Material m in mats)
+            {
+                _trial.Owned.Add(m);
+            }
+
+            return mats;
         }
 
         private void ExitInterior()
