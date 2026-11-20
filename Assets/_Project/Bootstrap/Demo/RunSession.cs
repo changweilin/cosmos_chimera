@@ -287,11 +287,24 @@ namespace Cosmimera.Bootstrap.Demo
             // The indoor boss door: sealed until the guard elite is knocked out (trainer-battles.md#地形試煉 step ①).
             public bool InteriorSealed { get; set; } = true;
 
+            // REQ: planet-world.md#進階地形地城 (Q-W45) — a surface maze's room walls stand on the terrain around its wonder.
+            public PlanetWalls Maze { get; set; }
+
+            public RoomDungeonGeometry MazeArea { get; set; }
+
+            // Arena seal of the maze plaza (guard elite) and its outer door (until the master is talked to).
+            public bool MazeSealed { get; set; } = true;
+
+            public bool MazeOuterSealed { get; set; } = true;
+
+            public float MazeOuterSealM { get; set; }
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
                 Interior != null ? Interior.View.Height(math.normalize(direction)) :
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
-                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
+                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f) +
+                (Maze != null ? Maze.View.Height(math.normalize(direction)) : 0f);
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
             public bool IsSea(float3 direction) =>
@@ -304,12 +317,19 @@ namespace Cosmimera.Bootstrap.Demo
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
                 (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
                 (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM)) ||
+                (Maze != null && IsBlockedByMaze(math.normalize(direction), clearanceM)) ||
                 (Populace != null && Populace.IsBlocked(direction, clearanceM));
 
-            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
+            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway; nothing of the
+            // planet stands inside a surface maze (Q-W45: its area is cleared).
             public bool IsOffWalls(float3 direction) =>
-                _walls == null ||
-                _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius;
+                (_walls == null ||
+                 _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius) &&
+                (MazeArea == null || !MazeArea.Contains(math.normalize(direction)));
+
+            private bool IsBlockedByMaze(float3 dir, float clearanceM) =>
+                Maze.View.IsBlocked(dir, clearanceM / _radius, MazeSealed) ||
+                (MazeOuterSealed && math.distance(dir, MazeArea.OuterGate) * _radius <= MazeOuterSealM + clearanceM);
         }
 
         private sealed class WildInfo
@@ -726,6 +746,8 @@ namespace Cosmimera.Bootstrap.Demo
                 d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
+            // Before populace, trainers and scatter: they all keep off the maze through surface.IsOffWalls.
+            PrepareSurfaceMaze(config, surface);
             // REQ: characters.md#路人-npc — the era is a presentation axis, so its pull on age and health is passed in.
             // Nobody stands where the player touches down.
             float3 landingAt = _plan.LandingDirection;
@@ -808,8 +830,9 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // A planet is either an enclosed dungeon (setup.Dungeon) or has a surface maze, never both (PrepareSurfaceMaze).
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
-                setup.CharacterModelPrefab, walls);
+                setup.CharacterModelPrefab, walls ?? _mazeWalls);
             _hitFeel = new HitFeelDirector(_rig.Camera, HitFeelTuning.Default);
             _portraits = setup.Portraits;
             if (setup.VolumeProfile != null)
@@ -1025,7 +1048,7 @@ namespace Cosmimera.Bootstrap.Demo
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
-            ConfigureTrial(wildPool, terrainMaterial, toonShader);
+            ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
             UpdateEnvironment(PlayerPosition());
         }
 
@@ -1083,7 +1106,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             SyncViews();
             UpdateFleeingViews(Time.deltaTime);
-            if (TrialInside)
+            if (_trial != null)
             {
                 SyncTrialMaster();
             }

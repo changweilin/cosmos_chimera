@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Unity.Mathematics;
 
@@ -23,7 +24,7 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 4;
+        public const int GeneratorVersion = 5;
 
         /// <summary>Free ground kept between a solid landmark's footprint and any road or building (m).</summary>
         /// <remarks>Pre: none. Post: constant > 0. Side effects: none.</remarks>
@@ -42,6 +43,8 @@ namespace Cosmimera.WorldGen
         // The entrance must exist (one per planet), so its site search keeps going far longer than an ordinary wonder's.
         private const int EntranceSiteAttempts = 400;
         private const int RimSamples = 8;
+        // A maze reserve is ~10× a wonder's footprint: two rings of samples keep a bay or lake from slipping between them.
+        private const int ReserveRimSamples = 16;
 
         // Dealt in shuffled order and repeated, so a small planet still shows as many different kinds as it has slots.
         private static readonly LandmarkKind[] GroundKinds =
@@ -103,7 +106,10 @@ namespace Cosmimera.WorldGen
         ///       spawn, 25 m from the landing point and LandmarkGapM from every other footprint. Unless the planet is an
         ///       asteroid, DungeonEntrance.TryDraw(plan.Seed, size, plan.Elements) picks the entrance terrain and its
         ///       landmark is placed before every ordinary ground wonder (the elevator itself for space), taking one of the
-        ///       GroundCountFor(R) ground slots; EntranceIndex is −1 only if that site search fails. Same inputs → same layout.
+        ///       GroundCountFor(R) ground slots; EntranceIndex is −1 only if that site search fails. A surface-maze entrance
+        ///       (planet-world.md#進階地形地城, Q-W45) keeps every rule above with its footprint replaced by MazeReserveM — the
+        ///       circle around the whole maze — and its rim checked at half and full reserve: no road, building, spawn,
+        ///       landing point, sea or other wonder inside the maze. Same inputs → same layout.
         /// Side effects: allocates; calls isBuildable.
         /// </remarks>
         public static LandmarkLayout Generate(in PlanetConfig planet, RunPlan plan, RunLayout layout, Func<float3, bool> isBuildable)
@@ -156,6 +162,8 @@ namespace Cosmimera.WorldGen
             }
 
             var placed = new List<RunLandmark>(slots.Count + 1);
+            var reserves = new List<float>(slots.Count + 1);
+            bool entranceIsMaze = hasEntrance && entrance.Form == AdvancedDungeonForm.SurfaceMaze;
             int entranceIndex = -1;
             for (int slot = 0; slot < slots.Count; slot++)
             {
@@ -163,7 +171,10 @@ namespace Cosmimera.WorldGen
                 int variant = (int)rng.NextUInt((uint)VariantCount(kind));
                 Size(kind, radius, ref rng, out float footprint, out float height, out float altitude);
                 bool solid = kind != LandmarkKind.SkyIsland;
-                LayoutClearance clearance = solid ? new LayoutClearance(planet, layout, footprint + LayoutGapM) : null;
+                float reserve = slot == entranceSlot && entranceIsMaze
+                    ? MazeReserveM(entrance, RunPlanner.SizeForRadius(radius), footprint)
+                    : footprint;
+                LayoutClearance clearance = solid ? new LayoutClearance(planet, layout, reserve + LayoutGapM) : null;
                 int attempts = slot == entranceSlot ? EntranceSiteAttempts : SiteAttempts;
                 for (int attempt = 0; attempt < attempts; attempt++)
                 {
@@ -173,12 +184,12 @@ namespace Cosmimera.WorldGen
                     float3 site = regions[region].Center;
                     // Region sites carry the road junction and usually a settlement, so start beyond them; the far end
                     // stays inside the region (under half the gap to its nearest neighbour).
-                    float near = footprint + 18f;
+                    float near = reserve + 18f;
                     float far = math.max(near + 10f, 0.45f * NeighbourGapM(regions, region, radius));
                     PlanetFrame frame = PlanetFrame.FromUp(site);
                     float3 pos = math.normalize(site + (frame.East * math.cos(angle) + frame.North * math.sin(angle)) *
                         (math.lerp(near, far, t) / radius));
-                    if (!Fits(pos, footprint, solid, plan, placed, clearance, isBuildable, radius))
+                    if (!Fits(pos, reserve, reserve > footprint, solid, plan, placed, reserves, clearance, isBuildable, radius))
                     {
                         continue;
                     }
@@ -191,11 +202,13 @@ namespace Cosmimera.WorldGen
                     }
 
                     placed.Add(new RunLandmark(placed.Count, kind, variant, owner, pos, facing, footprint, height, altitude, solid));
+                    reserves.Add(reserve);
                     if (kind == LandmarkKind.SpaceElevator)
                     {
                         int stationVariant = (int)rng.NextUInt((uint)VariantCount(LandmarkKind.SpaceStation));
                         placed.Add(new RunLandmark(placed.Count, LandmarkKind.SpaceStation, stationVariant, owner, pos, facing,
                             0f, StationHeightM, height, false));
+                        reserves.Add(0f);
                     }
 
                     break;
@@ -299,17 +312,28 @@ namespace Cosmimera.WorldGen
             }
         }
 
-        private static bool Fits(float3 pos, float footprint, bool solid, RunPlan plan, List<RunLandmark> placed,
-            LayoutClearance clearance, Func<float3, bool> isBuildable, float radius)
+        /// <summary>Radius (m) of the circle around a surface maze centred on its wonder, walls included.</summary>
+        /// <remarks>
+        /// Pre: spec is a SurfaceMaze terrain appearing on size; footprintM ≥ 0.
+        /// Post: ≥ √2 × (RoomDungeonPlanner.SurfaceMazeHalfExtentM + the wall half width) with 5 % for the gnomonic
+        ///       stretch toward the corners. Side effects: none.
+        /// </remarks>
+        public static float MazeReserveM(in AdvancedTerrainSpec spec, PlanetSize size, float footprintM) =>
+            1.05f * 1.41421356f *
+            (RoomDungeonPlanner.SurfaceMazeHalfExtentM(spec, size, footprintM) + RoomDungeonGeometry.WallHalfWidthM);
+
+        private static bool Fits(float3 pos, float footprint, bool reserveRings, bool solid, RunPlan plan,
+            List<RunLandmark> placed, List<float> reserves, LayoutClearance clearance, Func<float3, bool> isBuildable,
+            float radius)
         {
             if (math.distance(pos, plan.LandingDirection) * radius < footprint + LandingGapM)
             {
                 return false;
             }
 
-            foreach (RunLandmark other in placed)
+            for (int i = 0; i < placed.Count; i++)
             {
-                if (math.distance(pos, other.Direction) * radius < footprint + other.FootprintRadiusM + LandmarkGapM)
+                if (math.distance(pos, placed[i].Direction) * radius < footprint + reserves[i] + LandmarkGapM)
                 {
                     return false;
                 }
@@ -344,13 +368,18 @@ namespace Cosmimera.WorldGen
             }
 
             PlanetFrame frame = PlanetFrame.FromUp(pos);
-            for (int i = 0; i < RimSamples; i++)
+            int samples = reserveRings ? ReserveRimSamples : RimSamples;
+            for (int ring = reserveRings ? 0 : 1; ring < 2; ring++)
             {
-                float a = i * (2f * math.PI / RimSamples);
-                float3 rim = math.normalize(pos + (frame.East * math.cos(a) + frame.North * math.sin(a)) * (footprint / radius));
-                if (!isBuildable(rim))
+                float r = footprint * (ring == 0 ? 0.5f : 1f);
+                for (int i = 0; i < samples; i++)
                 {
-                    return false;
+                    float a = i * (2f * math.PI / samples);
+                    float3 rim = math.normalize(pos + (frame.East * math.cos(a) + frame.North * math.sin(a)) * (r / radius));
+                    if (!isBuildable(rim))
+                    {
+                        return false;
+                    }
                 }
             }
 

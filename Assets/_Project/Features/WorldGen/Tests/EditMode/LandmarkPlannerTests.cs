@@ -11,7 +11,7 @@ namespace Cosmimera.WorldGen.Tests
     public sealed class LandmarkPlannerTests
     {
         // Pinned discrete digest of seed 12345 on the SettlementPlannerTests fixture, isBuildable null (LandmarkPlanner v4: Q-W43 entrance landmark per planet).
-        private const ulong SnapshotSeed12345V4 = 4762683139348853091UL;
+        private const ulong SnapshotSeed12345V5 = 17112283333160205198UL;
 
         private readonly List<Object> _created = new List<Object>();
         private PlanetTypeDef _type;
@@ -367,9 +367,51 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(4), "bump the pin with the version");
+            Assert.That(LandmarkPlanner.GeneratorVersion, Is.EqualTo(5), "bump the pin with the version");
             ulong h = LandmarkPlanner.Hash(Make(12345).marks);
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V4), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V5), "actual " + h);
+        }
+
+        // REQ: planet-world.md#進階地形地城 (Q-W45) — nothing of the planet stands inside a surface maze.
+        [Test]
+        public void A_surface_maze_entrance_keeps_its_whole_maze_clear()
+        {
+            int mazes = 0;
+            foreach (float radius in new[] { 640f, 960f, 1280f })
+            {
+                PlanetSize size = RunPlanner.SizeForRadius(radius);
+                for (ulong seed = 0; seed < 60; seed++)
+                {
+                    var (planet, plan, layout, marks) = Make(seed, radius);
+                    if (marks.EntranceIndex < 0 || !AdvancedTerrains.TryGet(marks.EntranceTerrainId, out AdvancedTerrainSpec spec) ||
+                        spec.Form != AdvancedDungeonForm.SurfaceMaze)
+                    {
+                        continue;
+                    }
+
+                    mazes++;
+                    RunLandmark e = marks.Landmarks[marks.EntranceIndex];
+                    float reserve = LandmarkPlanner.MazeReserveM(spec, size, e.FootprintRadiusM);
+                    string at = $"R={radius} seed={seed} {spec.Id}";
+                    Assert.That(new LayoutClearance(planet, layout, reserve).IsClear(e.Direction), Is.True, at + " roads/buildings");
+                    foreach (RunSpawn sp in plan.Spawns)
+                    {
+                        Assert.That(math.distance(sp.Direction, e.Direction) * radius, Is.GreaterThan(reserve), at + " spawn");
+                    }
+
+                    Assert.That(math.distance(plan.LandingDirection, e.Direction) * radius, Is.GreaterThan(reserve), at + " landing");
+                    foreach (RunLandmark l in marks.Landmarks)
+                    {
+                        if (l.Index != e.Index && l.FootprintRadiusM > 0f)
+                        {
+                            Assert.That(math.distance(l.Direction, e.Direction) * radius,
+                                Is.GreaterThan(reserve + l.FootprintRadiusM), at + " other wonder");
+                        }
+                    }
+                }
+            }
+
+            Assert.That(mazes, Is.GreaterThan(0), "the sample holds surface-maze entrances");
         }
     }
 }

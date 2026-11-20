@@ -33,6 +33,7 @@ namespace Cosmimera.WorldGen
         public const float CellSizeM = 28f;
 
         private const ulong RoomStreamBase = 0x524D0000UL;
+        private const ulong SurfaceStreamBase = 0x534D0000UL;
         private const int EliteChancePercent = 30;
         private const int SecondAffixChancePercent = 50;
         // At openness 100 a candidate loop door opens 40 % of the time: enough shortcuts without dissolving the tree.
@@ -153,7 +154,212 @@ namespace Cosmimera.WorldGen
                     : DungeonRoomRole.Normal;
             }
 
-            int openness = (int)rng.NextUInt(101);
+            // The indoor generator lays every terrain on the indoor grid; the four surface mazes get their own styles
+            // only through GenerateSurfaceMaze (room-dungeon-v1.txt pins all ten terrains on this grid).
+            RoomGridStyle style = spec.Form == AdvancedDungeonForm.Rooms ? AdvancedTerrains.GridStyle(spec) : AdvancedTerrains.IndoorGridStyle;
+            return Finish(spec, style, ref rng, cell, width, height, xs, ys, doors, roles,
+                eliteAffixIds, 0, guard, boss, 0, 0);
+        }
+
+        /// <summary>
+        /// Half size k (in cells) of a surface maze's boss plaza: the smallest k ≥ 1 whose arena ring leaves room to fight
+        /// around a wonder of <paramref name="wonderFootprintM"/> (planet-world.md#進階地形地城, Q-W45).
+        /// </summary>
+        /// <remarks>
+        /// Pre: cellSizeM ≥ 10; wonderFootprintM finite and ≥ 0.
+        /// Post: ≥ 1; RoomDungeonGeometry.ArenaRadiusFor(k, cell) − 6 ≥ wonderFootprintM + 4. Side effects: none.
+        /// </remarks>
+        public static int PlazaHalfCells(float cellSizeM, float wonderFootprintM)
+        {
+            Contract.Requires(cellSizeM >= 10f, "cell must be at least 10 m");
+            Contract.Requires(!float.IsNaN(wonderFootprintM) && !float.IsInfinity(wonderFootprintM) && wonderFootprintM >= 0f,
+                "footprint must be >= 0");
+            // (k + 0.5)·cell − 5.5 (arena ring) − 6 (seal plug + body) ≥ footprint + 4 (body + slack).
+            int k = (int)Math.Ceiling((wonderFootprintM + 15.5f) / cellSizeM - 0.5f);
+            return Math.Max(1, k);
+        }
+
+        /// <summary>Grid side (cells, odd) of a surface maze on a planet of <paramref name="size"/> with plaza half size k.</summary>
+        /// <remarks>
+        /// Pre: size Moon..Supergiant; bossHalfCells ≥ 1.
+        /// Post: odd; at least two rings of cells around the plaza; the ring holds ≥ 2 × the largest room count.
+        /// Side effects: none.
+        /// </remarks>
+        public static int SurfaceMazeSide(PlanetSize size, int bossHalfCells)
+        {
+            Contract.Requires(bossHalfCells >= 1, "plaza half size must be >= 1");
+            int plaza = 2 * bossHalfCells + 1;
+            int maxRooms = BaseRoomCount(size) + 2;
+            int side = plaza + 4;
+            while (side * side - plaza * plaza < 2 * maxRooms)
+            {
+                side += 2;
+            }
+
+            return side;
+        }
+
+        /// <summary>Half the edge length (m) of the surface maze square, known before the room count is drawn.</summary>
+        /// <remarks>
+        /// Pre: spec is a SurfaceMaze terrain appearing on size; wonderFootprintM finite and ≥ 0.
+        /// Post: == 0.5 × cell × SurfaceMazeSide(size, PlazaHalfCells(cell, wonderFootprintM)): the maze square of
+        ///       GenerateSurfaceMaze with that footprint has exactly this half edge. Side effects: none.
+        /// </remarks>
+        public static float SurfaceMazeHalfExtentM(in AdvancedTerrainSpec spec, PlanetSize size, float wonderFootprintM)
+        {
+            Contract.Requires(spec.Form == AdvancedDungeonForm.SurfaceMaze, "terrain is not a surface maze");
+            Contract.Requires(AdvancedTerrains.AppearsOn(spec, size), "terrain does not appear on this planet size");
+            float cell = AdvancedTerrains.GridStyle(spec).CellSizeM;
+            return 0.5f * cell * SurfaceMazeSide(size, PlazaHalfCells(cell, wonderFootprintM));
+        }
+
+        /// <summary>
+        /// Generates the surface maze of advanced terrain <paramref name="terrainId"/>: a plaza around the entrance wonder
+        /// (the boss arena) in the grid centre, a guard room at its one door, and a room tree grown outward until it
+        /// reaches the grid edge, where the deepest edge room is the entrance with a door to the outside.
+        /// REQ: planet-world.md#進階地形地城 (Q-W45), trainer-battles.md#地形試煉.
+        /// </summary>
+        /// <remarks>
+        /// Pre: terrainId names a SurfaceMaze terrain appearing on size; eliteAffixIds as Generate; wonderFootprintM finite
+        ///      and ≥ 0.
+        /// Post: room 0 is the Boss plaza covering the (2k+1)² centre block, k == PlazaHalfCells(cell, footprint); its only
+        ///       door leads to GuardRoom == 1; every room reachable; EntranceRoom sits on the grid edge with EntranceSide
+        ///       pointing off the grid; other dead ends are Treasure; Width == Height == SurfaceMazeSide(size, k); room
+        ///       count ≥ BaseRoomCount(size). Same inputs → same maze.
+        /// Side effects: allocates.
+        /// </remarks>
+        public static RoomDungeon GenerateSurfaceMaze(ulong seed, string terrainId, PlanetSize size,
+            IReadOnlyList<string> eliteAffixIds, float wonderFootprintM)
+        {
+            Contract.Requires(AdvancedTerrains.TryGet(terrainId, out AdvancedTerrainSpec spec), "unknown advanced terrain");
+            Contract.Requires(spec.Form == AdvancedDungeonForm.SurfaceMaze, "terrain is not a surface maze");
+            Contract.Requires(AdvancedTerrains.AppearsOn(spec, size), "terrain does not appear on this planet size");
+            Contract.Requires(eliteAffixIds != null && eliteAffixIds.Count > 0, "need at least one elite affix");
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string a in eliteAffixIds)
+            {
+                Contract.Requires(!string.IsNullOrEmpty(a) && seen.Add(a), "elite affixes must be non-empty and distinct");
+            }
+
+            RoomGridStyle style = AdvancedTerrains.GridStyle(spec);
+            int k = PlazaHalfCells(style.CellSizeM, wonderFootprintM);
+            int side = SurfaceMazeSide(size, k);
+            int c = side / 2;
+            var rng = new Pcg32(seed, SurfaceStreamBase + (ulong)AdvancedTerrains.IndexOf(spec.Id));
+            int count = BaseRoomCount(size) + (int)rng.NextUInt(3);
+
+            var cell = new int[side * side];
+            for (int i = 0; i < cell.Length; i++)
+            {
+                cell[i] = -1;
+            }
+
+            var xs = new List<int>(count);
+            var ys = new List<int>(count);
+            var doors = new List<int>(count);
+            var parent = new List<int>(count);
+            var depth = new List<int>(count);
+            AddRoom(cell, side, xs, ys, doors, parent, depth, c, c, -1, 0);
+            for (int dy = -k; dy <= k; dy++)
+            {
+                for (int dx = -k; dx <= k; dx++)
+                {
+                    cell[(c + dy) * side + c + dx] = 0;
+                }
+            }
+
+            int guardSide = Sides[rng.NextUInt(4)];
+            doors[0] = guardSide;
+            AddRoom(cell, side, xs, ys, doors, parent, depth, c + RoomDungeon.DeltaX(guardSide) * (k + 1),
+                c + RoomDungeon.DeltaY(guardSide) * (k + 1), 0, RoomDungeon.Opposite(guardSide));
+
+            var free = new List<int>(4);
+            while (xs.Count < count || DeepestEdgeRoom(xs, ys, depth, side) < 0)
+            {
+                // Never grow from the plaza: its one door is the guard's.
+                int grown = xs.Count - 1;
+                int from = (int)rng.NextUInt(100) < ExtendNewestPercent ? xs.Count - 1 : 1 + (int)rng.NextUInt((uint)grown);
+                int grownFrom = -1;
+                int grownSide = 0;
+                for (int t = 0; t < grown && grownFrom < 0; t++)
+                {
+                    int r = 1 + (from - 1 + t) % grown;
+                    free.Clear();
+                    foreach (int s in Sides)
+                    {
+                        int nx = xs[r] + RoomDungeon.DeltaX(s);
+                        int ny = ys[r] + RoomDungeon.DeltaY(s);
+                        if (nx >= 0 && ny >= 0 && nx < side && ny < side && cell[ny * side + nx] < 0)
+                        {
+                            free.Add(s);
+                        }
+                    }
+
+                    if (free.Count > 0)
+                    {
+                        grownFrom = r;
+                        grownSide = free[(int)rng.NextUInt((uint)free.Count)];
+                    }
+                }
+
+                Contract.Ensures(grownFrom >= 0, "grid too small for room count");
+                int x = xs[grownFrom] + RoomDungeon.DeltaX(grownSide);
+                int y = ys[grownFrom] + RoomDungeon.DeltaY(grownSide);
+                doors[grownFrom] |= grownSide;
+                AddRoom(cell, side, xs, ys, doors, parent, depth, x, y, grownFrom, RoomDungeon.Opposite(grownSide));
+            }
+
+            int entrance = DeepestEdgeRoom(xs, ys, depth, side);
+            int entranceSide = 0;
+            foreach (int s in Sides)
+            {
+                int nx = xs[entrance] + RoomDungeon.DeltaX(s);
+                int ny = ys[entrance] + RoomDungeon.DeltaY(s);
+                if (nx < 0 || ny < 0 || nx >= side || ny >= side)
+                {
+                    entranceSide = s;
+                    break;
+                }
+            }
+
+            int n = xs.Count;
+            var roles = new DungeonRoomRole[n];
+            for (int r = 0; r < n; r++)
+            {
+                roles[r] = r == 0 ? DungeonRoomRole.Boss
+                    : r == 1 ? DungeonRoomRole.Guard
+                    : r == entrance ? DungeonRoomRole.Entrance
+                    : IsDeadEnd(doors[r]) ? DungeonRoomRole.Treasure
+                    : DungeonRoomRole.Normal;
+            }
+
+            return Finish(spec, style, ref rng, cell, side, side, xs, ys, doors, roles, eliteAffixIds, entrance, 1, 0, k,
+                entranceSide);
+        }
+
+        // Deepest room on the grid edge (ties: lowest index), excluding the plaza and the guard; −1 when none yet.
+        private static int DeepestEdgeRoom(List<int> xs, List<int> ys, List<int> depth, int side)
+        {
+            int best = -1;
+            for (int r = 2; r < xs.Count; r++)
+            {
+                bool edge = xs[r] == 0 || ys[r] == 0 || xs[r] == side - 1 || ys[r] == side - 1;
+                if (edge && (best < 0 || depth[r] > depth[best]))
+                {
+                    best = r;
+                }
+            }
+
+            return best;
+        }
+
+        // Shared tail of both generators: loop doors, elites, affixes, module shapes. The draw order is the original
+        // indoor order, so indoor dungeons are unchanged by the surface-maze generator.
+        private static RoomDungeon Finish(in AdvancedTerrainSpec spec, RoomGridStyle style, ref Pcg32 rng, int[] cell,
+            int width, int height, List<int> xs, List<int> ys, List<int> doors, DungeonRoomRole[] roles,
+            IReadOnlyList<string> eliteAffixIds, int entrance, int guard, int boss, int bossHalfCells, int entranceSide)
+        {
+            int openness = style.OpennessMin + (int)rng.NextUInt((uint)(style.OpennessMax - style.OpennessMin + 1));
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -169,6 +375,7 @@ namespace Cosmimera.WorldGen
                 }
             }
 
+            int n = xs.Count;
             for (int r = 0; r < n; r++)
             {
                 if (roles[r] == DungeonRoomRole.Normal && (int)rng.NextUInt(100) < EliteChancePercent)
@@ -204,7 +411,8 @@ namespace Cosmimera.WorldGen
                     spec.Id + "_" + slot + "_" + variant, affixes[r]);
             }
 
-            return new RoomDungeon(spec.Id, width, height, rooms, cell, 0, guard, boss);
+            return new RoomDungeon(spec.Id, width, height, rooms, cell, entrance, guard, boss, style, bossHalfCells,
+                entranceSide);
         }
 
         /// <summary>Digest of everything a dungeon decides (snapshot tests and cross-host checks).</summary>
@@ -218,6 +426,14 @@ namespace Cosmimera.WorldGen
             Mix(ref h, dungeon.Height);
             Mix(ref h, dungeon.GuardRoom);
             Mix(ref h, dungeon.BossRoom);
+            // Surface mazes only, so indoor hashes (pinned by room-dungeon-v1.txt) are unchanged.
+            if (dungeon.BossHalfCells > 0)
+            {
+                Mix(ref h, dungeon.BossHalfCells);
+                Mix(ref h, dungeon.EntranceRoom);
+                Mix(ref h, dungeon.EntranceSide);
+            }
+
             foreach (DungeonRoom r in dungeon.Rooms)
             {
                 Mix(ref h, r.X);

@@ -170,6 +170,122 @@ namespace Cosmimera.Bootstrap.Tests
             yield return WaitUntil(() => !s.TrialTransitPendingForTests, 30f, "surface colliders");
         }
 
+        // REQ: planet-world.md#進階地形地城 (Q-W45) — the same trial on the planet surface: the maze stands around the
+        // entrance wonder, its outer door opens when the master is talked to, the final battle is fought round the wonder.
+        [UnityTest]
+        public IEnumerator A_surface_maze_trial_runs_round_the_wonder_without_leaving_the_planet()
+        {
+            var db = Load<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            var copy = new DemoCopy("zh-TW", Load<TextAsset>(Copy + "strings.json").text, Load<TextAsset>(Copy + "names.json").text,
+                Load<TextAsset>(Copy + "affixes.json").text, Load<TextAsset>(Copy + "region-themes.json").text,
+                Load<TextAsset>(Copy + "quest-templates.json").text, Load<TextAsset>(Copy + "boss-epithets.json").text);
+            string balanceJson = Load<TextAsset>(Copy + "balance.json").text;
+            CombatBalance balance = CombatBalance.FromJson(balanceJson);
+            Progression progression = Progression.FromJson(balanceJson);
+            var wild = new List<CreatureDef>();
+            var party = new List<CreatureDef>();
+            PlanetTypeDef type = null;
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c)
+                {
+                    (c.LineId.StartsWith("starter_") ? party : wild).Add(c);
+                }
+                else if (d is PlanetTypeDef t && t.Id == "lava_planet")
+                {
+                    type = t;
+                }
+            }
+
+            // Fire / earth moon: its entrance is the volcano (surface maze) or the mine (rooms).
+            party.RemoveAll(c => c.Stage != CreatureStage.Adult);
+            CreatureStage stage = CreatureStage.Adolescent;
+            float radius = DemoGame.RadiusFor(BossDraw.SizeFor(stage));
+            RunSession s = null;
+            for (ulong seed = 11; seed < 41 && s == null; seed++)
+            {
+                var session = new GameObject("RunMaze").AddComponent<RunSession>();
+                _live.Add(session.gameObject);
+                session.Configure(copy, balance, Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions"),
+                    Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
+                    new RunSetup
+                    {
+                        PlanetType = type, Seed = seed, Radius = radius, BossStage = stage, Party = party, Landforms = false,
+                        PartyIds = Enumerable.Range(1, party.Count).ToList(),
+                        PartyExp = Enumerable.Repeat(progression.XpThreshold(60), party.Count).ToList(),
+                        Progression = progression, Materials = MaterialDrops.FromJson(balanceJson),
+                    }, wild, o => { }, Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
+                    Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"));
+                if (session.HasTrialForTests && session.TrialIsMazeForTests)
+                {
+                    s = session;
+                }
+                else
+                {
+                    Object.Destroy(session.gameObject);
+                    yield return null;
+                }
+            }
+
+            Assert.That(s, Is.Not.Null, "a lava moon in seeds 11..40 opens a surface-maze trial");
+            Assert.That(s.TrialTerrainForTests, Is.EqualTo("volcano"));
+            yield return WaitUntil(() => s.StartedForTests, 60f, "landing");
+            s.SuspendCameraForTests();
+            RoomDungeonGeometry g = s.TrialGeometryForTests;
+            float3 wonder = g.RoomCenter(g.Dungeon.BossRoom);
+            Assert.That(s.SurfaceOffWallsForTests(wonder), Is.False, "the maze area is cleared of scatter and residents");
+            Assert.That(g.Contains(s.DirectionForTests(s.PlayerPositionForTests)), Is.False, "landed outside the maze");
+
+            // --- The outer door opens only once the master has spoken -------------------------------------------
+            Assert.That(s.SurfaceBlockedForTests(g.OuterGate, 0.5f), Is.True, "outer door sealed before the talk");
+            s.PlaceOnCurrentGroundForTests(s.TrialMasterDirectionForTests);
+            yield return null;
+            yield return WaitUntil(() => !s.InCombatForTests, 30f, "quiet at the door");
+            Assert.That(s.InteractTrialForTests(), Is.True);
+            Assert.That(s.TrialStepForTests, Is.EqualTo(TrialStep.Guided));
+            Assert.That(s.TrialInsideForTests, Is.False, "no scene swap for a surface maze");
+            Assert.That(s.SurfaceTerrainActiveForTests, Is.True);
+            Assert.That(s.SurfaceBlockedForTests(g.OuterGate, 0.5f), Is.False, "outer door open");
+            Assert.That(s.SurfaceBlockedForTests(g.ArenaGate, 0.5f), Is.True, "arena still sealed");
+
+            // --- Guard elite, then the arena round the wonder ------------------------------------------------
+            foreach (int id in s.TrialInteriorUnitsForTests)
+            {
+                Kill(s, balance, id);
+            }
+
+            yield return WaitUntil(() => s.TrialStepForTests == TrialStep.GuardDefeated, 10f, "guard knock-out noticed");
+            Assert.That(s.SurfaceBlockedForTests(g.ArenaGate, 0.5f), Is.False, "arena unsealed");
+            yield return WaitUntil(() => !s.InCombatForTests, 60f, "battle with the maze wilds over");
+            s.PlaceOnCurrentGroundForTests(g.SpawnPoint(g.Dungeon.BossRoom, 4));
+            yield return WaitUntil(() => s.TrialStepForTests == TrialStep.FinalBattle, 20f, "arena reached");
+            foreach (int id in s.TrialFinalUnitsForTests)
+            {
+                Assert.That(math.distance(s.DirectionForTests(s.UnitForTests(id).Position), wonder) * radius,
+                    Is.GreaterThan(5f), "nobody spawns inside the wonder");
+            }
+
+            float deadline = Time.realtimeSinceStartup + 90f;
+            while (s.TrialStepForTests == TrialStep.FinalBattle && Time.realtimeSinceStartup < deadline)
+            {
+                foreach (int id in s.TrialFinalUnitsForTests)
+                {
+                    if (s.UnitForTests(id).Fielded && !s.UnitForTests(id).IsFainted)
+                    {
+                        Kill(s, balance, id);
+                    }
+                }
+
+                yield return null;
+            }
+
+            Assert.That(s.TrialStepForTests, Is.EqualTo(TrialStep.Won));
+            Assert.That(s.OutcomeForTests.CompletedTrials, Does.Contain("volcano"));
+            Assert.That(s.OutcomeForTests.Captured.Any(c =>
+                    db.All.OfType<CreatureDef>().First(d => d.Id == c.speciesId).FieldUtility == FieldUtility.ImmuneVolcano),
+                Is.True, "the maze boss is captured");
+        }
+
         private static IEnumerator WaitUntil(System.Func<bool> condition, float seconds, string what)
         {
             float deadline = Time.realtimeSinceStartup + seconds;

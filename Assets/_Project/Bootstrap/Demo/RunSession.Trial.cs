@@ -59,16 +59,58 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly List<int> Parked = new List<int>();
             public readonly List<GameObject> HiddenRoots = new List<GameObject>();
             public readonly List<Behaviour> DisabledBehaviours = new List<Behaviour>();
+            // Surface maze (Q-W45): the trial runs on the planet surface, no scene swap; the rig owns the walls.
+            public bool Maze;
+            public bool WallsOwnedByRig;
+            public Shader SealShader;
+            public bool SealShaderIsProps;
+            public GameObject SealRoot;
+            public GameObject ArenaSeal;
+            public GameObject OuterSeal;
         }
 
+        private const float SealSinkM = 4f;
+        private static readonly Color TrialSealColor = new Color(0.36f, 0.22f, 0.52f);
+        private static readonly Color TrialSealGlint = new Color(0.82f, 0.62f, 1f);
+
         private TrialRun _trial;
+        private RoomDungeonGeometry _mazeGeometry;
+        private PlanetWalls _mazeWalls;
+
+        // REQ: planet-world.md#進階地形地城 (Q-W45) — rainforest / volcano / ice cap / labyrinth entrances stand in the
+        // plaza of a surface maze laid around them. Runs right after the landmarks so everything placed later keeps off it.
+        private void PrepareSurfaceMaze(in PlanetConfig config, HeightSurface surface)
+        {
+            if (_setup.IsBeginnerQuest || _setup.Dungeon || _landmarks == null || _landmarks.EntranceIndex < 0 ||
+                !AdvancedTerrains.TryGet(_landmarks.EntranceTerrainId, out AdvancedTerrainSpec spec) ||
+                spec.Form != AdvancedDungeonForm.SurfaceMaze)
+            {
+                return;
+            }
+
+            if (_copy.GenericAffixIds.Count == 0)
+            {
+                Debug.LogError("RunSession: no elite affix vocabulary; the surface maze cannot be generated.");
+                return;
+            }
+
+            RunLandmark gate = _landmarks.Landmarks[_landmarks.EntranceIndex];
+            RoomDungeon maze = RoomDungeonPlanner.GenerateSurfaceMaze(_setup.Seed, spec.Id, BossDraw.SizeFor(_setup.BossStage),
+                _copy.GenericAffixIds, gate.FootprintRadiusM);
+            _mazeGeometry = RoomDungeonGeometry.Build(maze, config.Radius, gate.Direction, gate.FootprintRadiusM);
+            _mazeWalls = _mazeGeometry.BuildWalls(config);
+            surface.Maze = _mazeWalls;
+            surface.MazeArea = _mazeGeometry;
+            surface.MazeOuterSealM = maze.Style.DoorInnerM + 1.5f;
+        }
 
         private bool TrialInside => _trial != null && _trial.Inside;
 
-        private void ConfigureTrial(IReadOnlyList<CreatureDef> pool, Material terrainMaterial, Shader toonShader)
+        private void ConfigureTrial(IReadOnlyList<CreatureDef> pool, Material terrainMaterial, Shader toonShader,
+            Shader propsShader)
         {
             if (_setup.IsBeginnerQuest || _landmarks == null || _landmarks.EntranceIndex < 0 || pool == null ||
-                pool.Count == 0 || terrainMaterial == null)
+                pool.Count == 0)
             {
                 return;
             }
@@ -79,11 +121,9 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            if (spec.Form != AdvancedDungeonForm.Rooms)
+            bool maze = spec.Form == AdvancedDungeonForm.SurfaceMaze;
+            if (maze ? _mazeGeometry == null : terrainMaterial == null)
             {
-                // REQ: planet-world.md#進階地形地城 — the surface maze around the entrance wonder is not specified yet
-                // (docs/open-questions.html Q-W45); its trial waits for that answer.
-                Debug.Log("RunSession: surface-maze trial not wired yet for " + spec.Id);
                 return;
             }
 
@@ -110,26 +150,128 @@ namespace Cosmimera.Bootstrap.Demo
 
             RunLandmark gate = _landmarks.Landmarks[_landmarks.EntranceIndex];
             float radius = _rig.Config.Radius;
-            RoomDungeon dungeon = RoomDungeonPlanner.Generate(_setup.Seed, spec.Id, size, _copy.GenericAffixIds);
             var trial = new TrialRun
             {
                 Spec = spec,
                 Plan = plan,
                 Progress = new TrialProgress(plan),
-                Geometry = RoomDungeonGeometry.Build(dungeon, radius, gate.Direction),
                 TerrainMaterial = terrainMaterial,
                 Region = gate.Region,
                 Tier = maxTier,
-                MasterDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM)),
-                MasterFacing = gate.Facing,
-                ReturnDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM)),
                 BadgeHeld = HasDepartureBadge(spec.Id),
+                Maze = maze,
+                SealShader = propsShader ?? toonShader,
+                SealShaderIsProps = propsShader != null,
             };
-            trial.Walls = trial.Geometry.BuildWalls(_rig.Config);
+            if (maze)
+            {
+                // The master waits outside the maze's outer door, facing out toward the approaching player.
+                RoomDungeonGeometry g = _mazeGeometry;
+                trial.Geometry = g;
+                trial.Walls = _mazeWalls;
+                trial.WallsOwnedByRig = true;
+                trial.MasterDir = g.OuterDoor;
+                trial.MasterFacing = g.OuterFacing;
+                trial.ReturnDir = math.normalize(g.OuterDoor * radius + g.OuterFacing * TrialMasterGapM);
+            }
+            else
+            {
+                RoomDungeon dungeon = RoomDungeonPlanner.Generate(_setup.Seed, spec.Id, size, _copy.GenericAffixIds);
+                trial.Geometry = RoomDungeonGeometry.Build(dungeon, radius, gate.Direction);
+                trial.Walls = trial.Geometry.BuildWalls(_rig.Config);
+                trial.MasterDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM));
+                trial.MasterFacing = gate.Facing;
+                trial.ReturnDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM));
+            }
+
             _trial = trial;
             if (toonShader != null)
             {
                 BuildTrialMaster(toonShader);
+            }
+
+            if (maze)
+            {
+                SpawnInterior();
+                trial.SealRoot = new GameObject("MazeSeals_" + spec.Id);
+                BuildTrialSeals(trial.SealRoot.transform);
+                SyncTrialSeals();
+            }
+        }
+
+        // Physical seals the character bumps into; the rule layer blocks creatures with the same radii (HeightSurface).
+        private void BuildTrialSeals(Transform parent)
+        {
+            if (_trial.SealShader == null)
+            {
+                return;
+            }
+
+            Material mat = _trial.SealShaderIsProps
+                ? PlanetLook.SceneryMaterial(_trial.SealShader, TrialSealColor, TrialSealGlint, 0.9f, 0f, 0f, 0.8f)
+                : PlanetLook.CreatureMaterial(_trial.SealShader, TrialSealColor, 0.05f);
+            _trial.Owned.Add(mat);
+            RoomDungeonGeometry g = _trial.Geometry;
+            _trial.ArenaSeal = BuildSeal("ArenaSeal", g.ArenaGate, RoomDungeonGeometry.ArenaGateOuterM, mat, parent);
+            if (_trial.Maze)
+            {
+                _trial.OuterSeal = BuildSeal("OuterSeal", g.OuterGate, _surface.MazeOuterSealM, mat, parent);
+            }
+        }
+
+        private GameObject BuildSeal(string name, float3 dir, float radiusM, Material mat, Transform parent)
+        {
+            // As DungeonView: a flat cylinder cannot carry a capsule, so a convex mesh collider stands in; only the
+            // spires are drawn.
+            GameObject seal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            seal.name = name;
+            Object.Destroy(seal.GetComponent<Collider>());
+            seal.AddComponent<MeshCollider>().convex = true;
+            Renderer plug = seal.GetComponent<Renderer>();
+            plug.enabled = false;
+            Object.Destroy(plug);
+            seal.transform.SetParent(parent, false);
+            float height = RoomDungeonGeometry.WallHeightM + SealSinkM;
+            float mid = _surface.GroundAltitude(dir) + (RoomDungeonGeometry.WallHeightM - SealSinkM) * 0.5f;
+            float3 at = _rig.Config.ToWorld(dir, mid);
+            seal.transform.SetPositionAndRotation(new Vector3(at.x, at.y, at.z),
+                Quaternion.LookRotation((Vector3)PlanetFrame.FromUp(dir).North, (Vector3)dir));
+            float diameter = radiusM * 2f;
+            seal.transform.localScale = new Vector3(diameter, height * 0.5f, diameter);
+            Mesh spiresMesh = PropMeshes.Build(PropShape.Seal, 0);
+            _trial.Owned.Add(spiresMesh);
+            var spires = new GameObject("Spires");
+            spires.AddComponent<MeshFilter>().sharedMesh = spiresMesh;
+            spires.AddComponent<MeshRenderer>().sharedMaterial = mat;
+            spires.transform.SetParent(seal.transform, false);
+            // The seal mesh fills radius 1, y 0..1; the cylinder's own space is radius 0.5, y -1..1.
+            spires.transform.localPosition = new Vector3(0f, -1f, 0f);
+            spires.transform.localScale = new Vector3(0.5f, 2f, 0.5f);
+            return seal;
+        }
+
+        private void SyncTrialSeals()
+        {
+            bool arena = _trial.Progress.ArenaSealed;
+            if (_trial.Maze)
+            {
+                _surface.MazeSealed = arena;
+                // REQ: planet-world.md#進階地形地城 — the outer door stays sealed until the master leads the player in.
+                _surface.MazeOuterSealed = _trial.Progress.Step == TrialStep.NotStarted;
+            }
+            else
+            {
+                _surface.InteriorSealed = arena;
+            }
+
+            if (_trial.ArenaSeal != null && _trial.ArenaSeal.activeSelf != arena)
+            {
+                _trial.ArenaSeal.SetActive(arena);
+            }
+
+            if (_trial.OuterSeal != null && _trial.OuterSeal.activeSelf != _surface.MazeOuterSealed)
+            {
+                _trial.OuterSeal.SetActive(_surface.MazeOuterSealed);
             }
         }
 
@@ -234,18 +376,23 @@ namespace Cosmimera.Bootstrap.Demo
                     _trial.HintShown = false;
                 }
 
-                return;
+                if (!_trial.Maze)
+                {
+                    return;
+                }
             }
-
-            float toExit = math.distance(dir, _trial.Geometry.Exit) * radius;
-            if (toExit <= TrialHintRadiusM && !_trial.ExitHintShown)
+            else
             {
-                _trial.ExitHintShown = true;
-                Toast(TrialLine("ui.trial.exit_hint"));
-            }
-            else if (toExit > 2f * TrialHintRadiusM)
-            {
-                _trial.ExitHintShown = false;
+                float toExit = math.distance(dir, _trial.Geometry.Exit) * radius;
+                if (toExit <= TrialHintRadiusM && !_trial.ExitHintShown)
+                {
+                    _trial.ExitHintShown = true;
+                    Toast(TrialLine("ui.trial.exit_hint"));
+                }
+                else if (toExit > 2f * TrialHintRadiusM)
+                {
+                    _trial.ExitHintShown = false;
+                }
             }
 
             if (_trial.GuardUnit >= 0 && _encounter.Units[_trial.GuardUnit].Combatant.IsFainted &&
@@ -254,7 +401,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Toast(TrialLine("ui.trial.guard_down"));
             }
 
-            _surface.InteriorSealed = _trial.Progress.ArenaSealed;
+            SyncTrialSeals();
             if (_trial.Progress.Step == TrialStep.GuardDefeated && _trial.TrainerId < 0 && !_team.InCombat &&
                 !_encounter.HasActiveTrainerBattle && _trial.Geometry.RoomAt(dir) == _trial.Geometry.Dungeon.BossRoom)
             {
@@ -273,6 +420,27 @@ namespace Cosmimera.Bootstrap.Demo
 
             float3 dir = _rig.Config.ToDirection(PlayerPosition());
             float radius = _rig.Config.Radius;
+            if (_trial.Maze)
+            {
+                if (math.distance(dir, _trial.MasterDir) * radius > TrialMasterReachM)
+                {
+                    return false;
+                }
+
+                if (_trial.Progress.Step == TrialStep.Won)
+                {
+                    Toast(TrialLine("ui.trial.done"));
+                }
+                else
+                {
+                    _trial.Progress.Talk();
+                    SyncTrialSeals();
+                    Toast(TrialLine("ui.trial.talk"));
+                }
+
+                return true;
+            }
+
             if (_trial.Inside)
             {
                 if (math.distance(dir, _trial.Geometry.Exit) * radius > TrialExitReachM)
@@ -321,8 +489,13 @@ namespace Cosmimera.Bootstrap.Demo
             SetSurfaceShown(false);
             _trial.InteriorRoot.SetActive(true);
             _surface.Interior = _trial.Walls;
-            _surface.InteriorSealed = _trial.Progress.ArenaSealed;
             _trial.Inside = true;
+            if (_trial.ArenaSeal == null)
+            {
+                BuildTrialSeals(_trial.InteriorRoot.transform);
+            }
+
+            SyncTrialSeals();
 
             _trial.Suspended.Clear();
             foreach (EncounterUnit u in _encounter.Units)
@@ -545,15 +718,16 @@ namespace Cosmimera.Bootstrap.Demo
                 CreatureDef bossDef = FindForm(_wildPool, plan.BossCreatureId);
                 WildIndividual bossInd = WildIndividual.Draw(bossDef, _habitatAt(g.Anchor),
                     WildIndividual.KeyFor(_setup.Seed, TrialIndividualKeyBase - 1));
-                EncounterUnit bossUnit = _encounter.AddTrialBoss(bossDef, null, g.SpawnPoint(boss, 0), plan.Level, bossInd,
-                    tid, plan.BossOverloads);
+                int first = _trial.Maze ? 1 : 0;
+                EncounterUnit bossUnit = _encounter.AddTrialBoss(bossDef, null, g.SpawnPoint(boss, first), plan.Level,
+                    bossInd, tid, plan.BossOverloads);
                 _trial.FinalUnits.Add(bossUnit.Id);
                 CreateView(bossUnit, SpawnRole.Boss);
                 for (int m = 0; m < plan.MasterTeam.Count; m++)
                 {
                     TrainerTeamMember member = plan.MasterTeam[m];
                     EncounterUnit u = _encounter.AddTrainerCreature(FindForm(_wildPool, member.CreatureId), null,
-                        g.SpawnPoint(boss, m + 1), member.Level, tid, m);
+                        g.SpawnPoint(boss, first + m + 1), member.Level, tid, m);
                     _trial.FinalUnits.Add(u.Id);
                     CreateView(u, SpawnRole.Normal);
                 }
@@ -637,7 +811,15 @@ namespace Cosmimera.Bootstrap.Demo
                 return true;
             }
 
-            ExitInterior();
+            if (_trial.Maze)
+            {
+                MoveThroughTrialGate(_trial.ReturnDir);
+            }
+            else
+            {
+                ExitInterior();
+            }
+
             Toast(TrialLine("ui.trial.defeat"));
             return true;
         }
@@ -687,7 +869,7 @@ namespace Cosmimera.Bootstrap.Demo
         // Indoors only the dungeon's own creatures are drawn; on the surface the parked dungeon creatures are not.
         private bool IsHiddenByTrial(EncounterUnit u)
         {
-            if (_trial == null || u.Side != EncounterSide.Wild)
+            if (_trial == null || _trial.Maze || u.Side != EncounterSide.Wild)
             {
                 return false;
             }
@@ -705,7 +887,9 @@ namespace Cosmimera.Bootstrap.Demo
 
             float3 dir;
             float3 facing;
-            if (_trial.Inside)
+            bool leading = _trial.Inside || (_trial.Maze && _trial.Progress.WaivesImmunity &&
+                                             _trial.Geometry.Contains(_rig.Config.ToDirection(PlayerPosition()), 0f));
+            if (leading)
             {
                 // REQ: trainer-battles.md#地形試煉 — inside, the master follows the player without fighting.
                 float3 player = PlayerPosition();
@@ -746,7 +930,15 @@ namespace Cosmimera.Bootstrap.Demo
                 DestroyImmediate(_trial.InteriorRoot);
             }
 
-            _trial.Walls?.Dispose();
+            if (!_trial.WallsOwnedByRig)
+            {
+                _trial.Walls?.Dispose();
+            }
+
+            if (_trial.SealRoot != null)
+            {
+                Destroy(_trial.SealRoot);
+            }
             if (_trial.MasterRoot != null)
             {
                 Destroy(_trial.MasterRoot);

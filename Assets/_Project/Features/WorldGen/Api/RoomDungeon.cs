@@ -106,9 +106,12 @@ namespace Cosmimera.WorldGen
         private readonly int[] _cellToRoom;
 
         internal RoomDungeon(string terrainId, int width, int height, DungeonRoom[] rooms, int[] cellToRoom,
-            int entrance, int guard, int boss)
+            int entrance, int guard, int boss, RoomGridStyle style, int bossHalfCells = 0, int entranceSide = 0)
         {
             TerrainId = terrainId;
+            Style = style;
+            BossHalfCells = bossHalfCells;
+            EntranceSide = entranceSide;
             Width = width;
             Height = height;
             Rooms = rooms;
@@ -122,6 +125,28 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: AdvancedTerrains.TryGet(TerrainId) succeeds. Side effects: none.</remarks>
         public string TerrainId { get; }
 
+        /// <summary>Openness of this dungeon's grid (AdvancedTerrains.GridStyle of its terrain).</summary>
+        /// <remarks>Pre: none. Post: as drawn. Side effects: none.</remarks>
+        public RoomGridStyle Style { get; }
+
+        /// <summary>Edge length (m) of one grid cell.</summary>
+        /// <remarks>Pre: none. Post: Style.CellSizeM. Side effects: none.</remarks>
+        public float CellSizeM => Style.CellSizeM;
+
+        /// <summary>
+        /// Half size k of the boss room in cells: it covers the (2k+1)² block centred on its cell. 0 for indoor dungeons;
+        /// ≥ 1 for surface mazes, whose boss room is the plaza around the entrance wonder.
+        /// </summary>
+        /// <remarks>Pre: none. Post: ≥ 0; RoomAt maps every block cell to BossRoom. Side effects: none.</remarks>
+        public int BossHalfCells { get; }
+
+        /// <summary>
+        /// Side of the entrance room that opens to the outside (one door bit) for a surface maze; 0 for indoor dungeons,
+        /// which are entered through the exit pad instead.
+        /// </summary>
+        /// <remarks>Pre: none. Post: 0 or one door bit pointing off the grid. Side effects: none.</remarks>
+        public int EntranceSide { get; }
+
         /// <summary>Grid width in cells.</summary>
         /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
         public int Width { get; }
@@ -130,12 +155,12 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
         public int Height { get; }
 
-        /// <summary>Placed rooms in placement order; index 0 is the entrance.</summary>
+        /// <summary>Placed rooms in placement order; index 0 is the entrance of an indoor dungeon and the boss plaza of a surface maze.</summary>
         /// <remarks>Pre: none. Post: Count &gt;= 4; every room reachable from the entrance. Side effects: none.</remarks>
         public IReadOnlyList<DungeonRoom> Rooms { get; }
 
         /// <summary>Index of the entrance room.</summary>
-        /// <remarks>Pre: none. Post: 0. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: 0 for indoor dungeons; a room on the grid edge for surface mazes. Side effects: none.</remarks>
         public int EntranceRoom { get; }
 
         /// <summary>Index of the guard (antechamber) room.</summary>
@@ -174,7 +199,8 @@ namespace Cosmimera.WorldGen
                 return -1;
             }
 
-            return RoomAt(r.X + DeltaX(side), r.Y + DeltaY(side));
+            int reach = room == BossRoom ? BossHalfCells + 1 : 1;
+            return RoomAt(r.X + DeltaX(side) * reach, r.Y + DeltaY(side) * reach);
         }
 
         internal static int DeltaX(int side) => side == East ? 1 : side == West ? -1 : 0;

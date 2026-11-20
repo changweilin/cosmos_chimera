@@ -414,6 +414,9 @@ namespace Cosmimera.Bootstrap.Demo
         internal int TrialGuardUnitForTests => _trial.GuardUnit;
         internal bool SurfaceTerrainActiveForTests => _rig.Terrain.gameObject.activeSelf;
         internal RunOutcome OutcomeForTests => _outcome;
+        internal bool TrialIsMazeForTests => _trial.Maze;
+        internal bool SurfaceBlockedForTests(float3 direction, float clearanceM) => _surface.IsBlocked(direction, clearanceM);
+        internal bool SurfaceOffWallsForTests(float3 direction) => _surface.IsOffWalls(direction);
 
         /// <summary>Presses interact as OpenInteract does, trial points only.</summary>
         /// <remarks>Pre: the run landed. Post: true iff the master or exit pad handled it. Side effects: as TryTrialInteract.</remarks>
