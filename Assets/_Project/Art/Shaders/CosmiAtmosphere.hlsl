@@ -13,7 +13,7 @@ float4 _CosmiSkyHorizon;  // rgb = sky colour at the horizon (== fog colour), a 
 float4 _CosmiSkyZenith;   // rgb = sky colour overhead
 float4 _CosmiSunColor;    // rgb = sun tint, a = daylight 0..1
 float4 _CosmiCloud;       // x = coverage 0..1, y = shadow strength, z = drift speed, w = cloud cell size (m)
-float4 _CosmiWind;        // x = strength, y = gust speed, z = gust wavelength (m)
+float4 _CosmiWind;        // x = strength, y = gust speed, z = gust wavelength (m), w = heading (rad from local east toward north)
 float4 _CosmiPlayer;      // xyz = player feet, w = push radius (m); grass leans away inside it
 float4 _CosmiFarFocus;    // xyz = centre of the near scatter field (FarScenery): far silhouettes shrink away inside it
 
@@ -48,13 +48,16 @@ float3 CosmiUp(float3 positionWS)
     return normalize(positionWS - _CosmiPlanet.xyz);
 }
 
-// Unit tangent the wind blows along at a point whose up is given: east around the spin axis. Degenerate within a
-// few metres of the poles, where the fallback axis keeps it finite (the blades there just sway another way).
+// Unit tangent the wind blows along at a point whose up is given: the rule-layer heading (weather.md#風向) measured
+// from local east (PlanetFrame.East = up × pole) toward north, so it matches WorldGen.WindField.Tangent. Degenerate
+// within a few metres of the poles, where the fallback axis keeps it finite (the blades there just sway another way).
 float3 CosmiWindDir(float3 up)
 {
-    float3 e = cross(_CosmiPoleAxis.xyz, up);
+    float3 e = cross(up, _CosmiPoleAxis.xyz);
     float l = dot(e, e);
-    return l > 1e-4 ? e * rsqrt(l) : normalize(cross(float3(1, 0, 0), up));
+    e = l > 1e-4 ? e * rsqrt(l) : normalize(cross(up, float3(1, 0, 0)));
+    float3 n = cross(e, up);
+    return e * cos(_CosmiWind.w) + n * sin(_CosmiWind.w);
 }
 
 // Cloud density 0..1 above the surface point in direction `up`. One field feeds both the sky's clouds and the

@@ -62,7 +62,7 @@ namespace Cosmimera.Bootstrap.Tests
                 rainy[(int)WeatherAttr.Clouds] = 1000;
                 WeatherState raining = WeatherDynamics.Resolve(rainy);
                 WeatherState clear = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
-                view.Apply(Vector3.right * Radius, frame, raining, true);
+                view.Apply(Vector3.right * Radius, frame, raining, true, frame.North, 0f, false, false);
                 Transform layers = root.transform.Find("Local weather");
                 var ash = layers.Find("Volcanic ash").GetComponent<ParticleSystem>();
                 var embers = layers.Find("Rising embers").GetComponent<ParticleSystem>();
@@ -70,10 +70,73 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(ash.isEmitting && embers.isEmitting && rain.isEmitting);
                 Assert.That(Vector3.Dot(embers.transform.forward, Vector3.right), Is.Positive);
                 Assert.That(Vector3.Dot(ash.transform.forward, Vector3.right), Is.Negative);
-                view.Apply(Vector3.right * Radius, frame, clear, true);
+                view.Apply(Vector3.right * Radius, frame, clear, true, frame.North, 0f, false, false);
                 Assert.That(ash.isEmitting && embers.isEmitting && !rain.isEmitting);
-                view.Apply(Vector3.right * Radius, frame, clear, false);
+                view.Apply(Vector3.right * Radius, frame, clear, false, frame.North, 0f, false, false);
                 Assert.That(ash.isEmitting || embers.isEmitting, Is.False);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
+        public void Storm_debris_flies_downwind_only_in_a_strong_wind()
+        {
+            var root = new GameObject("debris-test");
+            _roots.Add(root);
+            var view = new LocalWeatherView(root.transform);
+            try
+            {
+                var frame = PlanetFrame.FromUp(new float3(1f, 0f, 0f));
+                var gale = new int[WeatherField.AttrCount];
+                gale[(int)WeatherAttr.Wind] = 1000;
+                WeatherState windy = WeatherDynamics.Resolve(gale);
+                WeatherState calm = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
+                Transform layers = root.transform.Find("Local weather");
+                var leaves = layers.Find("Storm leaves").GetComponent<ParticleSystem>();
+                var wreckage = layers.Find("Storm wreckage").GetComponent<ParticleSystem>();
+                view.Apply(Vector3.right * Radius, frame, windy, false, frame.North, 1f, true, false);
+                Assert.That(leaves.isEmitting && !wreckage.isEmitting);
+                Assert.That(Vector3.Dot(leaves.transform.forward, (Vector3)frame.North), Is.GreaterThan(0.9f));
+                view.Apply(Vector3.right * Radius, frame, windy, false, frame.East, 1f, true, true);
+                Assert.That(wreckage.isEmitting);
+                Assert.That(Vector3.Dot(leaves.transform.forward, (Vector3)frame.East), Is.GreaterThan(0.9f));
+                view.Apply(Vector3.right * Radius, frame, calm, false, frame.East, 0f, true, true);
+                Assert.That(leaves.isEmitting || wreckage.isEmitting, Is.False);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
+        public void Lightning_flashes_only_in_a_thunderstorm()
+        {
+            var root = new GameObject("lightning-test");
+            _roots.Add(root);
+            var view = new LightningView(root.transform, 7);
+            try
+            {
+                var planet = new PlanetConfig(Radius, float3.zero);
+                var up = new float3(1f, 0f, 0f);
+                float peak = 0f;
+                for (int i = 0; i < 600; i++)
+                {
+                    view.Tick(0.05f, planet, up, 0f, _ => 0f);
+                    peak = math.max(peak, view.Flash);
+                }
+
+                Assert.That(peak, Is.Zero);
+                for (int i = 0; i < 1200; i++)
+                {
+                    view.Tick(0.05f, planet, up, 1f, _ => 0f);
+                    peak = math.max(peak, view.Flash);
+                }
+
+                Assert.That(peak, Is.GreaterThan(0.2f));
             }
             finally
             {

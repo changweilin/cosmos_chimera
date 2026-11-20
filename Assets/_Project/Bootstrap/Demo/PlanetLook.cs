@@ -429,6 +429,10 @@ namespace Cosmimera.Bootstrap.Demo
         private float _sinceSimS;
         private float _cloudCover = 0.42f;
         private float _wind = 1f;
+        private float _stormDark;
+        private float _windHeadingRad;
+        private float _windTargetRad;
+        private float _flash;
         private float _baseFogStartM;
         private float _baseFogEndM;
 
@@ -453,6 +457,29 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Sets the wind heading the scenery shaders bend toward.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: headingTenths any integer (tenths of a degree from local east toward north).
+        /// Post: applied from the next LateUpdate. Side effects: none until then.
+        /// </remarks>
+        public void SetWindHeading(int headingTenths)
+        {
+            _windTargetRad = headingTenths * (math.PI / 1800f);
+        }
+
+        /// <summary>Sets how dark the storm sky is and the current lightning flash.</summary>
+        /// <remarks>
+        /// Pre: darkness and flash in [0, 1].
+        /// Post: from the next LateUpdate sky, fog, ambient and sun are dimmed by up to darkness × 55 % and then pulled
+        ///       toward a cold white by flash. Side effects: none until then.
+        /// </remarks>
+        public void SetStorm(float darkness, float flash)
+        {
+            Contract.Requires(darkness >= 0f && darkness <= 1f && flash >= 0f && flash <= 1f, "darkness and flash in [0,1]");
+            _stormDark = darkness;
+            _flash = flash;
         }
 
         /// <summary>Sets the simulation clock the sun position is drawn from.</summary>
@@ -549,6 +576,11 @@ namespace Cosmimera.Bootstrap.Demo
             float angle = (float)((turns - math.floor(turns)) * 2.0 * math.PI_DBL);
             var toSun = new float3(math.cos(angle), 0f, math.sin(angle));
             _sun.transform.rotation = Quaternion.LookRotation(-(Vector3)toSun, (Vector3)_poleAxis);
+            // Crossing into another region can swing the heading by up to 180°; turn the field over a few seconds
+            // instead of snapping every blade at once.
+            float turn = math.fmod(_windTargetRad - _windHeadingRad + 3f * math.PI, 2f * math.PI) - math.PI;
+            _windHeadingRad += turn * math.saturate(Time.deltaTime * 0.6f);
+            _windHeadingRad = math.fmod(_windHeadingRad + 2f * math.PI, 2f * math.PI);
             float3 cam = _camera.transform.position;
             if (math.distance(cam, _planet.Center) < _planet.Radius * 0.5f)
             {
@@ -565,6 +597,17 @@ namespace Cosmimera.Bootstrap.Demo
             Color horizon = Color.Lerp(sky, Color.white, 0.06f * day);
             var zenith = new Color(sky.r * 0.24f, sky.g * 0.48f, sky.b * 0.96f);
             Color sunTint = Color.Lerp(new Color(1f, 0.56f, 0.3f), new Color(1f, 0.96f, 0.88f), math.saturate((e - 0.05f) / 0.4f));
+            // A storm sky is slate, not just cloudy: dimming everything makes the lightning flash read as a flash.
+            float dim = 1f - 0.55f * _stormDark;
+            var slate = new Color(0.36f, 0.4f, 0.47f);
+            horizon = Color.Lerp(horizon, slate * horizon.grayscale * 1.6f, 0.5f * _stormDark) * dim;
+            zenith = Color.Lerp(zenith, slate * zenith.grayscale * 1.6f, 0.5f * _stormDark) * dim;
+            sky *= dim;
+            sunTint *= dim;
+            var flashColor = new Color(0.82f, 0.88f, 1f);
+            horizon = Color.Lerp(horizon, flashColor, 0.85f * _flash);
+            zenith = Color.Lerp(zenith, flashColor * 0.9f, 0.85f * _flash);
+            sky = Color.Lerp(sky, flashColor, 0.7f * _flash);
             _camera.backgroundColor = horizon;
             RenderSettings.fogColor = horizon;
             RenderSettings.ambientLight = sky * 0.6f;
@@ -576,8 +619,8 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalColor(SkyZenithId, zenith);
             Shader.SetGlobalColor(SunColorId, new Color(sunTint.r * day, sunTint.g * day, sunTint.b * day, day));
             Shader.SetGlobalVector(CloudId, new Vector4(_cloudCover, 0.38f * day, 0.012f * (0.5f + _wind), CloudCellM));
-            Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, 0f));
-            _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f;
+            Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, _windHeadingRad));
+            _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f * dim;
         }
 
         private void OnDestroy()

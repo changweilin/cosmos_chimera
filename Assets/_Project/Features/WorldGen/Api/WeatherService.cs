@@ -113,6 +113,22 @@ namespace Cosmimera.WorldGen
         public bool IsIndoor(float3 direction) =>
             TerrainProfiles.For(_terrainAt(direction)).Dungeon == DungeonKind.RoomModule;
 
+        /// <summary>Wind heading (tenths of a degree from local east toward north) at a surface point.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: direction a unit vector; timeMs &gt;= 0.
+        /// Post: as <see cref="WindField.HeadingTenths"/> for the point's region. Side effects: none.
+        /// </remarks>
+        public int WindHeadingAt(float3 direction, long timeMs) =>
+            WindField.HeadingTenths(_seed, _regionAt(direction), timeMs);
+
+        /// <summary>Gust strength 0..1000 at a surface point, scaled by the effective wind there.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: direction a unit vector; timeMs &gt;= 0.
+        /// Post: in [0, StateAt(direction, timeMs).WindPermille]. Side effects: as <see cref="StateAt"/>.
+        /// </remarks>
+        public int GustAt(float3 direction, long timeMs) =>
+            WindField.GustPermille(_seed, _regionAt(direction), timeMs, StateAt(direction, timeMs).WindPermille);
+
         /// <summary>Region index of a surface point (the weather-control scope).</summary>
         /// <remarks>Pre: direction a unit vector. Post: &gt;= 0. Side effects: none.</remarks>
         public int RegionAt(float3 direction) => _regionAt(direction);

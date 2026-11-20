@@ -96,6 +96,26 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        /// <summary>Shakes the camera for an environmental event (thunder, quake) without hitstop.</summary>
+        /// <remarks>
+        /// Pre: meters ≥ 0. Post: shake raised to at least <paramref name="meters"/>; rumble when meters ≥ 0.06.
+        /// Side effects: shake, rumble state.
+        /// </remarks>
+        public void PlayEnvironmentShake(float meters)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Contract.Requires(meters >= 0f, "meters must be >= 0");
+            _shakeM = Mathf.Max(_shakeM, meters);
+            if (meters >= 0.06f)
+            {
+                Rumble(Mathf.Min(0.7f, meters * 4f));
+            }
+        }
+
         /// <summary>Player character took a hit: red edge flash and rumble, no hitstop (keeps roll input responsive).</summary>
         /// <remarks>Pre: none. Post: vignette restarted. Side effects: rumble.</remarks>
         public void PlayPlayerHit()

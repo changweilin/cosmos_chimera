@@ -386,10 +386,16 @@ namespace Cosmimera.Bootstrap.Demo
         private WeatherProfile _playerWeather = WeatherProfiles.Clear;
         private AtmosphereDriver _atmosphere;
         private LocalWeatherView _weatherView;
+        private LightningView _lightning;
         private float _baseCloud, _baseWind;
         private WeatherControl _weatherControl;
         private WeatherService _weather;
         private WeatherState _playerWeatherState;
+        private float _stormDarkness;
+        private Func<float3, bool> _nearSettlement;
+        private const float DebrisFoliageReachM = 30f;
+        private const float DebrisSettlementMarginM = 40f;
+        private Func<float3, float> _groundAltitudeAt;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
@@ -861,6 +867,7 @@ namespace Cosmimera.Bootstrap.Demo
             _baseCloud = cloudCover;
             _baseWind = wind;
             if (scenery != null) _weatherView = new LocalWeatherView(transform);
+            if (scenery != null) _lightning = new LightningView(transform, (int)(setup.Seed ^ (setup.Seed >> 32)));
             atmosphere.SetWeather(cloudCover, wind);
             if (scenery != null)
             {
@@ -972,6 +979,7 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter = new Encounter(config, balance, surface, setup.Seed);
             _encounter.SetTerrainMoveSpeedMultiplier(d => _terrainAt(d).MoveSpeedMultiplier);
             _encounter.SetSettlementCheck(clearance.IsInsideSettlement);
+            _nearSettlement = d => clearance.IsInsideSettlement(d, DebrisSettlementMarginM);
             _encounter.SetWeatherProvider(WeatherAt);
             if (objects != null)
             {
@@ -1083,6 +1091,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
             if (ReadJournalInput()) return;
             ReadInput();
+            TickLightning(Time.deltaTime);
             _accumulator += Time.deltaTime * 1000f;
             int steps = 0;
             while (_accumulator >= TickMs && steps++ < 5)
@@ -1164,6 +1173,25 @@ namespace Cosmimera.Bootstrap.Demo
             return result;
         }
 
+        private void TickLightning(float dt)
+        {
+            if (_lightning == null || _atmosphere == null) return;
+            float3 direction = _rig.Config.ToDirection(PlayerPosition());
+            float thunder = TrialInside ? 0f : _playerWeatherState.ThunderPermille / 1000f;
+            // Cached delegate: a method group here would allocate every frame.
+            _groundAltitudeAt ??= BoltGround;
+            float shake = _lightning.Tick(dt, _rig.Config, direction, thunder, _groundAltitudeAt);
+            if (shake > 0f) _hitFeel?.PlayEnvironmentShake(shake);
+            _atmosphere.SetStorm(_stormDarkness, _lightning.Flash);
+        }
+
+        // Bolts over the sea end on the water, not on the sea floor.
+        private float BoltGround(float3 direction)
+        {
+            float ground = _surface != null ? _surface.GroundAltitude(direction) : 0f;
+            return _hasOcean ? math.max(ground, PlanetLook.SeaLevelM) : ground;
+        }
+
         private void UpdateEnvironment(float3 player)
         {
             float3 direction = _rig.Config.ToDirection(player);
@@ -1178,10 +1206,25 @@ namespace Cosmimera.Bootstrap.Demo
             WeatherState state = _weather.StateAt(direction, _nowMs);
             _playerWeatherState = state;
             bool volcanic = _setup.PlanetType.Id == "lava_planet" || _playerTerrain.Id is "volcano" or "volcano_foothills";
-            _weatherView?.Apply(player, PlanetFrame.FromUp(direction), state, volcanic);
+            // REQ: weather.md#風向 — one rule-layer heading and gust drive grass, trees, particles and debris together.
+            int heading = _weather.WindHeadingAt(direction, _nowMs);
+            float gust = TrialInside ? 0f : _weather.GustAt(direction, _nowMs) / 1000f;
+            if (_weatherView != null)
+            {
+                bool foliage = _worldObjects != null && _worldObjects.HasFoliage(direction, DebrisFoliageReachM);
+                bool settlement = _nearSettlement != null && _nearSettlement(direction);
+                _weatherView.Apply(player, PlanetFrame.FromUp(direction), state, volcanic, WindField.Tangent(direction, heading),
+                    gust, foliage, settlement);
+            }
+
             float cloud = math.max(_baseCloud, state.CloudsPermille / 1000f);
             float storm = math.max(math.max(state.RainPermille, state.SnowPermille), math.max(state.SandPermille, state.ThunderPermille)) / 1000f;
-            _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm), _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f));
+            _atmosphere.SetWindHeading(heading);
+            _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm),
+                _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f) + 1.6f * gust);
+            // A violent gust is felt as well as seen (weather.md#風向 暴風碎片).
+            if (gust > 0.7f && !TrialInside) _hitFeel?.PlayEnvironmentShake(0.03f * (gust - 0.7f) / 0.3f);
+            _stormDarkness = TrialInside ? 0f : math.saturate(math.max(state.RainPermille, state.ThunderPermille) / 1000f);
             _atmosphere.SetSimulationTime(_nowMs);
             ApplyPlayerEnvironment();
             _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
@@ -3695,6 +3738,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnDestroy()
         {
             _weatherView?.Dispose();
+            _lightning?.Dispose();
             CloseJournal();
             _inputHints?.Dispose();
             _globalInput?.Dispose();

@@ -72,13 +72,14 @@ namespace Cosmimera.Bootstrap.Demo
             var sorted = new List<PlanetTypeDef>(types);
             sorted.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
             var sb = new StringBuilder();
-            sb.Append("# cosmimera repro-probe v8\n");
+            sb.Append("# cosmimera repro-probe v9\n");
             sb.Append("# env ").Append(environment ?? "-").Append('\n');
             sb.Append("# PlanetHeight.GeneratorVersion ").Append(PlanetHeight.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunPlanner.GeneratorVersion ").Append(RunPlanner.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" RunEcology.GeneratorVersion ").Append(RunEcology.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" LandformSynth.GeneratorVersion ").Append(LandformSynth.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" WeatherField.GeneratorVersion ").Append(WeatherField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
+                .Append(" WindField.GeneratorVersion ").Append(WindField.GeneratorVersion.ToString(CultureInfo.InvariantCulture))
                 .Append(" wildPool ").Append(wildPool.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
             sb.Append("# landingBits: x,y,z raw float32 hex; policy b compares normalized directions at radius (chord metres), tolerance 0.003 m\n");
             sb.Append("# type stage seed radius baseBits baseMm surfBits surfMm seaCount plan planDiscrete weather landingBits\n");
@@ -271,6 +272,9 @@ namespace Cosmimera.Bootstrap.Demo
                     WeatherField.Evaluate(site, t, null, vector);
                     foreach (int v in vector) Fnv.Mix(ref h, (uint)v);
                     Fnv.Mix(ref h, (uint)SolarClock.SunPhaseAt(region.Center, t));
+                    // REQ: weather.md#風向 — heading and gusts are computed per client too (v9).
+                    Fnv.Mix(ref h, (uint)WindField.HeadingTenths(seed, region.Index, t));
+                    Fnv.Mix(ref h, (uint)WindField.GustPermille(seed, region.Index, t, 1000));
                 }
             }
 
