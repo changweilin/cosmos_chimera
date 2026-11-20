@@ -22,6 +22,8 @@ float4 _CosmiWaveDir[4];  // xyz = travel direction (world, tangent at the ancho
 float4 _CosmiWave[4];     // x = phase at the anchor, y = amplitude (m), z = Gerstner Q
 float4 _CosmiWaveAnchor;  // xyz = point the phases are measured from, w = foam drift along the wind (m)
 float4 _CosmiSea;         // x = effective wind 0..1, y = gust 0..1, z = significant height (m), w = highest crest (m)
+// P3-23 diving visuals (Bootstrap/Demo/UnderwaterView). Unset = no sea: no caustics, surface drawn from above.
+float4 _CosmiUnderwater;  // x = camera submerged 0..1, y = camera depth (m), z = sea surface radius from the planet centre (0 = no water sea)
 
 float CosmiHash(float3 p)
 {
@@ -132,6 +134,33 @@ float CosmiRamp(float light, float bands)
     return saturate((floor(y) + smoothstep(0.86, 1.0, frac(y))) / bands);
 }
 
+// Caustics: sunlight focused by the swells into a crawling net of bright lines on anything under the sea (planet-
+// world.md 潛水視覺). Two drifting noise fields crossing each other: their level set is a thin, cell-like web, and
+// the hard smoothstep keeps it cel-shaded. Fades with depth as the focus spreads, and only on faces open to the sky.
+float CosmiCaustics(float3 positionWS, float3 normalWS)
+{
+    if (_CosmiUnderwater.z <= 0.0)
+    {
+        return 0.0;
+    }
+
+    float3 rel = positionWS - _CosmiPlanet.xyz;
+    float altitude = length(rel) - _CosmiUnderwater.z;
+    if (altitude > 0.05)
+    {
+        return 0.0;
+    }
+
+    float3 up = rel / max(length(rel), 1e-4);
+    float t = _Time.y;
+    float3 q = positionWS * 0.7;
+    float a = CosmiNoise(q + float3(t * 0.35, 0.0, t * 0.27));
+    float b = CosmiNoise(q * 1.31 + float3(5.0, -t * 0.3, t * 0.21));
+    float web = smoothstep(0.88, 0.94, 1.0 - abs(a - b) * 3.0);
+    float reach = exp(min(altitude, 0.0) * 0.09) * smoothstep(0.05, -0.15, altitude);
+    return web * reach * saturate(dot(normalWS, up) + 0.2) * _CosmiSunColor.a;
+}
+
 // Diffuse cel lighting. `shadowTint` is the colour of unlit surfaces; it is pulled toward the zenith colour so
 // shadows pick up the sky (the cool-shadow / warm-light split that makes outdoor toon scenes read as sunlit).
 half3 CosmiToon(half3 albedo, float3 normalWS, float3 positionWS, half3 lightColor, float3 lightDir, float shadow,
@@ -139,7 +168,8 @@ half3 CosmiToon(half3 albedo, float3 normalWS, float3 positionWS, half3 lightCol
 {
     float ramp = CosmiRamp(saturate(dot(normalWS, lightDir)) * shadow * CosmiCloudLight(positionWS), bands);
     half3 shade = lerp(shadowTint * 0.6, shadowTint * 0.8 + _CosmiSkyZenith.rgb * 0.08, _CosmiSkyHorizon.a);
-    return albedo * lerp(shade, lightColor, ramp) + albedo * ambient * 0.25;
+    return albedo * lerp(shade, lightColor, ramp) + albedo * ambient * 0.25
+        + lightColor * (CosmiCaustics(positionWS, normalWS) * 0.55 * shadow);
 }
 
 #if defined(UNIVERSAL_LIGHTING_INCLUDED)

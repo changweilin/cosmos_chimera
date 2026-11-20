@@ -390,6 +390,8 @@ namespace Cosmimera.Bootstrap.Demo
         private FireView _fireView;
         private SeaWaves _sea;
         private SeaSprayView _spray;
+        private UnderwaterView _underwater;
+        private Color _shallowWater, _deepWater;
         private Func<float3, float> _groundAltitudeOrZero;
         private float _playerGust;
         private readonly List<FireView.Burning> _burning = new List<FireView.Burning>(32);
@@ -897,6 +899,9 @@ namespace Cosmimera.Bootstrap.Demo
                     {
                         _sea = new SeaWaves();
                         _spray = new SeaSprayView(transform);
+                        _underwater = new UnderwaterView(transform);
+                        _shallowWater = water.GetColor("_ShallowWater");
+                        _deepWater = water.GetColor("_DeepWater");
                     }
                 }
 
@@ -1114,6 +1119,7 @@ namespace Cosmimera.Bootstrap.Demo
             ReadInput();
             TickLightning(Time.deltaTime);
             TickSea(Time.deltaTime);
+            TickDive(Time.deltaTime);
             _accumulator += Time.deltaTime * 1000f;
             int steps = 0;
             while (_accumulator >= TickMs && steps++ < 5)
@@ -1212,6 +1218,24 @@ namespace Cosmimera.Bootstrap.Demo
             if (_surface == null || TrialInside) return;
             _groundAltitudeOrZero ??= _surface.GroundAltitude;
             _spray.Tick(dt, _rig.Config, player, downwind, _sea, _groundAltitudeOrZero, PlanetLook.SeaLevelM);
+        }
+
+        // REQ: planet-world.md 潛水視覺 — measured at the camera against the swell above it, so a wave washing over a
+        // low camera dunks the view for a moment the way a real one would.
+        private void TickDive(float dt)
+        {
+            if (_underwater == null || _atmosphere == null) return;
+            Transform camera = _rig.Camera.transform;
+            float3 eye = camera.position;
+            float3 direction = _rig.Config.ToDirection(eye);
+            float surface = PlanetLook.SeaLevelM + _sea.HeightAt(_rig.Config.ToWorld(direction, PlanetLook.SeaLevelM));
+            float depth = TrialInside ? 0f : surface - _rig.Config.Altitude(eye);
+            _atmosphere.SetUnderwater(depth, _shallowWater, _deepWater);
+            float3 toSun = -(float3)_rig.Sun.transform.forward;
+            float daylight = math.saturate((math.dot(direction, toSun) + 0.05f) / 0.3f);
+            // Indoors the floor sits below sea level: no sea there, so no caustics on dungeon floors.
+            float seaRadius = TrialInside ? 0f : _rig.Config.Radius + PlanetLook.SeaLevelM;
+            _underwater.Tick(dt, _rig.Config, camera, PlayerPosition(), depth, seaRadius, toSun, daylight);
         }
 
         private void TickLightning(float dt)
@@ -3890,6 +3914,7 @@ namespace Cosmimera.Bootstrap.Demo
             _lightning?.Dispose();
             _fireView?.Dispose();
             _spray?.Dispose();
+            _underwater?.Dispose();
             if (_sea != null) SeaWaves.Clear();
             CloseJournal();
             _inputHints?.Dispose();

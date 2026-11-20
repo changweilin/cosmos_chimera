@@ -435,6 +435,12 @@ namespace Cosmimera.Bootstrap.Demo
         private float _flash;
         private float _baseFogStartM;
         private float _baseFogEndM;
+        private float _weatherFogStartM;
+        private float _weatherFogEndM;
+        private float _underwaterDepthM;
+        private Color _shallowWater;
+        private Color _deepWater;
+        private bool _wasUnderwater;
 
         private static readonly int PlanetId = Shader.PropertyToID("_CosmiPlanet");
         private static readonly int PoleAxisId = Shader.PropertyToID("_CosmiPoleAxis");
@@ -509,8 +515,27 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(_camera != null && _baseFogEndM > 0f, "Configure must run before setting visibility");
             Contract.Requires(math.isfinite(radiusM) && radiusM > 0f, "visibility radius must be finite and > 0");
-            RenderSettings.fogEndDistance = math.min(radiusM, _baseFogEndM);
-            RenderSettings.fogStartDistance = _baseFogStartM * RenderSettings.fogEndDistance / _baseFogEndM;
+            _weatherFogEndM = math.min(radiusM, _baseFogEndM);
+            _weatherFogStartM = _baseFogStartM * _weatherFogEndM / _baseFogEndM;
+            // Underwater the water's own fog wins (LateUpdate); the weather cap waits until the camera surfaces.
+            if (_underwaterDepthM > 0f) return;
+            RenderSettings.fogEndDistance = _weatherFogEndM;
+            RenderSettings.fogStartDistance = _weatherFogStartM;
+        }
+
+        /// <summary>Sets how deep under the sea the camera is, and the sea's colours.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md 潛水視覺. Pre: depthM finite (≤ 0 = above water).
+        /// Post: from the next LateUpdate, while depthM > 0, fog, sky, ambient and sun turn to water that darkens and
+        ///       closes in with depth (visibility ~26 m near the surface → ~11 m at 40 m); at ≤ 0 the weather fog returns.
+        /// Side effects: none until then.
+        /// </remarks>
+        public void SetUnderwater(float depthM, Color shallow, Color deep)
+        {
+            Contract.Requires(math.isfinite(depthM), "depth must be finite");
+            _underwaterDepthM = depthM;
+            _shallowWater = shallow;
+            _deepWater = deep;
         }
 
         /// <summary>Fog start on planets of R ≥ 640 m, where it was tuned.</summary>
@@ -564,6 +589,8 @@ namespace Cosmimera.Bootstrap.Demo
             RenderSettings.fogEndDistance = math.max(250f, planet.Radius * 0.5f);
             _baseFogStartM = RenderSettings.fogStartDistance;
             _baseFogEndM = RenderSettings.fogEndDistance;
+            _weatherFogStartM = _baseFogStartM;
+            _weatherFogEndM = _baseFogEndM;
         }
 
         private void LateUpdate()
@@ -625,6 +652,37 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalVector(CloudId, new Vector4(_cloudCover, 0.38f * day, 0.012f * (0.5f + _wind), CloudCellM));
             Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, _windHeadingRad));
             _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f * dim;
+            ApplyUnderwater(day);
+        }
+
+        private void ApplyUnderwater(float day)
+        {
+            if (_underwaterDepthM <= 0f)
+            {
+                if (_wasUnderwater && _weatherFogEndM > 0f)
+                {
+                    RenderSettings.fogStartDistance = _weatherFogStartM;
+                    RenderSettings.fogEndDistance = _weatherFogEndM;
+                }
+
+                _wasUnderwater = false;
+                return;
+            }
+
+            _wasUnderwater = true;
+            float deep = math.saturate(_underwaterDepthM / 35f);
+            // Red goes first, then green: deeper water is darker and bluer. Night water is near black, lit only by
+            // what the moon and lamps give.
+            float light = math.exp(-_underwaterDepthM / 22f) * (0.18f + 0.82f * day);
+            Color water = Color.Lerp(_shallowWater, _deepWater * 0.7f, deep) * (0.25f + 0.75f * light);
+            water.a = 1f;
+            RenderSettings.fogColor = water;
+            RenderSettings.fogStartDistance = 0.5f;
+            RenderSettings.fogEndDistance = math.lerp(26f, 11f, math.saturate(_underwaterDepthM / 40f));
+            RenderSettings.ambientLight = water * 1.1f;
+            _camera.backgroundColor = water;
+            _sun.intensity *= 0.35f + 0.65f * light;
+            Shader.SetGlobalColor(SkyHorizonId, water);
         }
 
         private void OnDestroy()

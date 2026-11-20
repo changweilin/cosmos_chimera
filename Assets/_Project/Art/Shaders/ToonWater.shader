@@ -154,6 +154,26 @@ Shader "Cosmimera/ToonWater"
                 foam = saturate(foam + (surf + contact) * _Foam);
                 col = lerp(col, lerp(_Shadow.rgb, half3(1, 1, 1), ramp * 0.6 + 0.4) * light.color, foam * 0.9);
 
+                // P3-23 seen from below (planet-world.md 潛水視覺): light from above reaches the eye only through Snell's
+                // window, a cone 48.6° round the normal (water n = 1.33); outside it the surface is a mirror of the dim
+                // water underneath. The swell normals bend the window's edge, which is what makes it shimmer.
+                if (_CosmiUnderwater.x > 0.5 && _WaterGlow < 0.5)
+                {
+                    float3 rayUp = -view;
+                    float c = dot(rayUp, n);
+                    float window = smoothstep(0.62, 0.68, c);
+                    float rim = smoothstep(0.6, 0.65, c) - smoothstep(0.66, 0.75, c);
+                    // The whole sky is squeezed into the window, horizon at its edge: bright, paler toward the rim.
+                    // Not _CosmiSkyHorizon, which underwater holds the water colour (AtmosphereDriver.SetUnderwater).
+                    half3 skyIn = lerp(half3(0.78, 0.9, 0.96), _CosmiSkyZenith.rgb * 1.5 + 0.1, saturate((c - 0.66) / 0.34))
+                        * (0.15 + 0.85 * _CosmiSunColor.a);
+                    float sunSpot = step(0.985, dot(rayUp, light.direction)) * _CosmiSunColor.a;
+                    half3 mirror = unity_FogColor.rgb * 0.75;
+                    half3 under = lerp(mirror, skyIn + light.color * sunSpot * 1.5, window) + rim * 0.35;
+                    under = lerp(under, half3(0.9, 0.95, 1.0), foam * 0.5);
+                    return half4(CosmiAtmosphere(under, i.positionWS, i.fog, light.direction), lerp(1.0, 0.82, window));
+                }
+
                 // Molten surface: lit from within, with slow dark crust plates.
                 float crust = smoothstep(0.42, 0.6, CosmiFbm2(p * 0.18 + float3(0.0, t * 0.03, 0.0)));
                 half3 glow = _WaterTint.rgb * lerp(1.45, 0.42, crust);
