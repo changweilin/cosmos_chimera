@@ -49,6 +49,25 @@ namespace Cosmimera.Bootstrap.Demo
         {
             var moves = new List<MoveDef>();
             var traits = new List<TraitDef>();
+            var partnerFieldMoves = new List<MoveDef>();
+            var partnerFieldTraits = new List<TraitDef>();
+            MoveDef mainFieldMove = null;
+            TraitDef mainFieldTrait = null;
+            CreatureDef mainDef = _setup.Party[slot];
+            if (_setup.Database != null && mainDef.FieldUtility != FieldUtility.None)
+            {
+                if (FieldUtilityRules.GetKind(mainDef.FieldUtility) == FieldUtilityKind.Move
+                    && _setup.Database.TryGetFieldUtilityMove(mainDef.FieldUtility, out MoveDef fuMove))
+                {
+                    mainFieldMove = fuMove;
+                }
+                else if (FieldUtilityRules.GetKind(mainDef.FieldUtility) == FieldUtilityKind.Trait
+                    && _setup.Database.TryGetFieldUtilityTrait(mainDef.FieldUtility, out TraitDef fuTrait))
+                {
+                    mainFieldTrait = fuTrait;
+                }
+            }
+
             bool overload = false;
             if (_setup.Partners != null)
             {
@@ -58,13 +77,31 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     OwnedCreature sub = OwnedAtDeparture(subId);
                     CreatureDef def = RequireCreature(sub.SpeciesId);
-                    if (sub.Vessel == VesselKind.TalismanCard) moves.Add(def.SignatureMove);
-                    else if (sub.Vessel == VesselKind.GlassBead) traits.Add(def.Trait);
+                    if (sub.Vessel == VesselKind.TalismanCard)
+                    {
+                        moves.Add(def.SignatureMove);
+                        if (def.FieldUtility != FieldUtility.None
+                            && FieldUtilityRules.GetKind(def.FieldUtility) == FieldUtilityKind.Move
+                            && _setup.Database.TryGetFieldUtilityMove(def.FieldUtility, out MoveDef subFuMove))
+                        {
+                            partnerFieldMoves.Add(subFuMove);
+                        }
+                    }
+                    else if (sub.Vessel == VesselKind.GlassBead)
+                    {
+                        traits.Add(def.Trait);
+                        if (def.FieldUtility != FieldUtility.None
+                            && FieldUtilityRules.GetKind(def.FieldUtility) == FieldUtilityKind.Trait
+                            && _setup.Database.TryGetFieldUtilityTrait(def.FieldUtility, out TraitDef subFuTrait))
+                        {
+                            partnerFieldTraits.Add(subFuTrait);
+                        }
+                    }
                     else overload = true;
                 }
             }
-            EncounterUnit unit = _encounter.AddEquippedCreature(_setup.Party[slot], moves, traits, _plan.LandingDirection,
-                _progression.LevelOf(_partyExp[slot]));
+            EncounterUnit unit = _encounter.AddEquippedCreature(mainDef, moves, traits, _plan.LandingDirection,
+                _progression.LevelOf(_partyExp[slot]), mainFieldMove, partnerFieldMoves, mainFieldTrait, partnerFieldTraits);
             _encounter.SetHarvestUtilities(unit.Id, HarvestUtilitiesOf(slot));
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
                 _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(_setup.PartyIds[slot]), _balance.Grips);

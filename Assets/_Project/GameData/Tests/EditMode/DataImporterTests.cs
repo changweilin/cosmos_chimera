@@ -807,6 +807,28 @@ namespace Cosmimera.GameData.Tests
             StringAssert.Contains("must be an adult form", ex.Message);
         }
 
+        [Test]
+        public void Field_utilities_and_ailment_effects_import_into_database()
+        {
+            string realFu = Path.Combine(Application.dataPath, "..", "Data", "field-utilities");
+            CopyDir(realFu, Path.Combine(_src, "field-utilities"));
+
+            DataImporter.Import(_src, Output);
+
+            // All 36 moves and 36 traits from field-utilities.json are imported and indexed.
+            Assert.IsTrue(Db.TryGetFieldUtilityMove(FieldUtility.CookFire, out MoveDef cookFire));
+            Assert.IsFalse(cookFire.HasEffectDuration);
+            Assert.AreEqual(EffectType.ApplyAilment, cookFire.Effect.Type);
+            Assert.AreEqual(Ailment.Burn, cookFire.Effect.Ailment);
+            Assert.AreEqual(50, cookFire.Effect.Buildup);
+
+            Assert.IsTrue(Db.TryGetFieldUtilityTrait(FieldUtility.WeatherWard, out TraitDef weatherWard));
+            Assert.IsTrue(weatherWard.Effects.Count >= 4);
+            Assert.IsTrue(Db.TryGetFieldUtilityTrait(FieldUtility.FreezePrep, out TraitDef freezePrep));
+            Assert.AreEqual(EffectType.AilmentResistMod, freezePrep.Effects[0].Type);
+            Assert.AreEqual(Ailment.Burn, freezePrep.Effects[0].Ailment);
+        }
+
         private void ReplaceInFile(string relative, string from, string to)
         {
             string path = Path.Combine(_src, relative);

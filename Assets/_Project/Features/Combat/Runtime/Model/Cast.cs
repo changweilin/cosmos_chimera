@@ -144,9 +144,9 @@ namespace Cosmimera.Combat
     /// </remarks>
     public sealed class MoveCooldowns
     {
-        /// <summary>Most move slots a combatant may have (signature + partner moves, with headroom).</summary>
+        /// <summary>Most move slots a combatant may have (signature + partner moves + field utility moves, with headroom).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int MaxSlots = 8;
+        public const int MaxSlots = 16;
 
         private readonly long[] _readyAt;
         private long _watermarkMs;
@@ -357,7 +357,7 @@ namespace Cosmimera.Combat
         }
 
         internal HitReport(HitOutcome outcome, int damage, int healed, int hpBefore, int hpAfter, bool effectApplied,
-            int preBlockDamage, bool critical = false)
+            int preBlockDamage, bool critical = false, AilmentActionResult ailmentResult = default)
         {
             Critical = critical;
             PreBlockDamage = preBlockDamage;
@@ -367,7 +367,12 @@ namespace Cosmimera.Combat
             HpBefore = hpBefore;
             HpAfter = hpAfter;
             EffectApplied = effectApplied;
+            AilmentResult = ailmentResult;
         }
+
+        /// <summary>Ailment trigger or cross-element reaction produced by this hit, if any.</summary>
+        /// <remarks>Pre: none. Post: default when no ailment/reaction fired. Side effects: none.</remarks>
+        public AilmentActionResult AilmentResult { get; }
 
         /// <summary>Contact / roll result; Miss must get explicit feedback (combat.md#命中與閃避).</summary>
         /// <remarks>
@@ -480,10 +485,15 @@ namespace Cosmimera.Combat
             _rules = rules;
             _core = core;
             Book = book;
+            Ailments = new AilmentBook();
             MaxHp = stats.MaxHpFromPoints(core.Hp);
             Hp = MaxHp;
             Cooldowns = new MoveCooldowns(moveSlots);
         }
+
+        /// <summary>This combatant's elemental status ailment gauges and active windows.</summary>
+        /// <remarks>Pre: none. Post: non-null. Side effects: none.</remarks>
+        public AilmentBook Ailments { get; }
 
         /// <summary>Max HP from the HP stat (× the boss multiplier).</summary>
         /// <remarks>Pre: none. Post: >= 1. Side effects: none.</remarks>
@@ -574,6 +584,7 @@ namespace Cosmimera.Combat
             Contract.Requires((int)element >= 0 && (int)element < ElementCount, "element out of range");
             Contract.Requires(nowMs >= 0, "nowMs must be >= 0");
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             return EffectMath.EffectiveResist(_resist[(int)element], _totals.ResistDelta(element));
         }
 
@@ -751,6 +762,7 @@ namespace Cosmimera.Combat
             HealPercent(healPercent, nowMs);
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             long masteryDelta = _totals.MasteryDelta(move.Element);
             int weaponPower = 1000;
             int speed = 1000;
@@ -800,10 +812,22 @@ namespace Cosmimera.Combat
                 0, DerivedStats.Permille);
             int critDamagePercent = (int)ClampLong(_rules.CritBaseDamagePercent + _totals.CritDamageDelta + weaponCritDmg,
                 100, DamageModel.MaxCritDamagePercent);
+            long accDelta = _totals.AccuracyDelta + weaponAcc;
+            if (move.RangeClass != RangeClass.Melee && Ailments.IsActive(Ailment.Turbulent, nowMs))
+            {
+                accDelta -= 15;
+            }
+
+            int attack = _core.Attack(move.Polarity);
+            if (Ailments.IsActive(Ailment.Burn, nowMs))
+            {
+                attack = System.Math.Max(0, attack - 10);
+            }
+
             context = new CastContext(move, mastery, _totals.RangePercent, cd, nowMs,
                 weather.PowerDeltaPercent(move.Element), weaponPower,
-                ClampInt(_totals.AccuracyDelta + weaponAcc, -1000, 1000),
-                critRatePermille, critDamagePercent, _core.Attack(move.Polarity), LevelCurve.Ppm(Level));
+                ClampInt(accDelta, -1000, 1000),
+                critRatePermille, critDamagePercent, attack, LevelCurve.Ppm(Level));
             return CastResult.Accepted;
         }
 
@@ -860,6 +884,7 @@ namespace Cosmimera.Combat
         public long BlockReductionDelta(long nowMs)
         {
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             return _totals.BlockReductionDelta;
         }
 
@@ -889,6 +914,7 @@ namespace Cosmimera.Combat
         public int MoveSpeedMmS(long nowMs)
         {
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             return EffectMath.MoveSpeedMmS(_stats, _core.Speed, _totals.MoveSpeedPercent, _rules);
         }
 
@@ -905,6 +931,7 @@ namespace Cosmimera.Combat
         public long RangePercent(long nowMs)
         {
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             return _totals.RangePercent;
         }
 
@@ -959,6 +986,7 @@ namespace Cosmimera.Combat
             int hpBefore = Hp;
 
             Book.Collect(nowMs, Hp, MaxHp, _totals);
+            Ailments.CollectModifiers(_totals, nowMs);
             int evasion = EffectMath.EvasionPermille(_stats, _stats.Coefficients.SharedBaseStat, _totals.EvasionPercent,
                 _rules);
             int chance = _stats.HitChancePermille(cast.EffectiveAccuracyPercent, evasion);
@@ -976,10 +1004,18 @@ namespace Cosmimera.Combat
                 int resist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
                 int raw = DamageModel.Compute(cast.EffectivePower, cast.MasteryPercent, resist,
                     cast.Attack, _core.Defence(move.Polarity), 0, cast.AttackerLevelPpm);
-                critical = HitResolver.RollCrit(cast.CritRatePermille, ref rng);
+                int effCritRate = cast.CritRatePermille;
+                int effCritDamage = cast.CritDamagePercent;
+                if (Ailments.IsActive(Ailment.Dazzle, nowMs))
+                {
+                    effCritRate = System.Math.Min(DerivedStats.Permille, effCritRate + 150);
+                    effCritDamage = System.Math.Min(DamageModel.MaxCritDamagePercent, effCritDamage + 20);
+                }
+
+                critical = HitResolver.RollCrit(effCritRate, ref rng);
                 if (critical)
                 {
-                    raw = DamageModel.ApplyCrit(raw, cast.CritDamagePercent);
+                    raw = DamageModel.ApplyCrit(raw, effCritDamage);
                 }
                 if (damageTakenBonusPercent > 0)
                 {
@@ -1008,10 +1044,23 @@ namespace Cosmimera.Combat
 
             bool applied = false;
             int moveHeal = 0;
-            if (move.HasEffect && move.Effect.IsInstant)
+            AilmentActionResult ailmentResult = default;
+            if (move.HasEffect && move.Effect.Type == EffectType.HealPercentMaxHp)
             {
                 // combat.md#主動技效果: the target is whoever the shape hits, so a heal on an enemy shape heals that enemy.
                 moveHeal = move.Effect.Percent;
+            }
+            else if (move.HasEffect && move.Effect.Type == EffectType.ApplyAilment)
+            {
+                Ailment ailment = move.Effect.Ailment;
+                Element aElem = AilmentTuning.ElementOf(ailment);
+                int elemResist = EffectMath.EffectiveResist(_resist[(int)aElem], _totals.ResistDelta(aElem));
+                int ailmentResistDelta = (int)ClampLong(_totals.AilmentResistDelta(ailment), -100, 100);
+                ailmentResult = Ailments.ApplyBuildup(
+                    ailment, move.Effect.Buildup, elemResist, ailmentResistDelta,
+                    blockPermille > 0, false, 1000, 1000,
+                    cast.MasteryPercent, cast.Attack, cast.AttackerLevelPpm, MaxHp, nowMs);
+                applied = ailmentResult.Triggered;
             }
             else if (move.HasEffect)
             {
@@ -1019,8 +1068,42 @@ namespace Cosmimera.Combat
                 applied = true;
             }
 
+            if (move.DealsDamage && Hp > 0)
+            {
+                int hitElemResist = EffectMath.EffectiveResist(_resist[(int)move.Element], _totals.ResistDelta(move.Element));
+                AilmentActionResult hitReaction = Ailments.OnElementalHit(
+                    move.Element, hitElemResist, MaxHp, cast.MasteryPercent, cast.Attack, cast.AttackerLevelPpm, nowMs);
+                if (hitReaction.Reaction != AilmentReactionKind.None)
+                {
+                    if (ailmentResult.Reaction == AilmentReactionKind.None)
+                    {
+                        ailmentResult = hitReaction;
+                    }
+                    if (hitReaction.BonusDamage > 0)
+                    {
+                        int extra = ApplyDirectDamage(hitReaction.BonusDamage, nowMs);
+                        damage += extra;
+                        if (Hp == 0)
+                        {
+                            return new HitReport(outcome, damage, 0, hpBefore, 0, applied, preBlock, critical, ailmentResult);
+                        }
+                    }
+                }
+            }
+
+            if (ailmentResult.BonusDamage > 0 && Hp > 0 && move.HasEffect && move.Effect.Type == EffectType.ApplyAilment)
+            {
+                int extra = ApplyDirectDamage(ailmentResult.BonusDamage, nowMs);
+                damage += extra;
+                if (Hp == 0)
+                {
+                    return new HitReport(outcome, damage, 0, hpBefore, 0, applied, preBlock, critical, ailmentResult);
+                }
+            }
+
+            int hpBeforeHeal = Hp;
             HealPercent(crossHeal + hitHeal + moveHeal, nowMs);
-            return new HitReport(outcome, damage, Hp - hpAfterDamage, hpBefore, Hp, applied, preBlock, critical);
+            return new HitReport(outcome, damage, Hp - hpBeforeHeal, hpBefore, Hp, applied, preBlock, critical, ailmentResult);
         }
 
         /// <summary>Resolves a self/ally move landing on this combatant: no roll (user decision 2026-11-07).</summary>
@@ -1220,6 +1303,30 @@ namespace Cosmimera.Combat
             return Book.RemoveNegativeTimedEffects(nowMs);
         }
 
+        /// <summary>Applies direct non-hit damage (DoT, Sunder, reaction burst) and notifies Book if still alive.</summary>
+        /// <remarks>Pre: !IsFainted; damage &gt;= 0; nowMs &gt;= Book watermark. Post: Hp reduced by min(damage, Hp). Side effects: mutates Hp and Book.</remarks>
+        internal int ApplyDirectDamage(int damage, long nowMs)
+        {
+            Contract.Requires(!IsFainted, "a fainted combatant takes no direct damage");
+            Contract.Requires(damage >= 0, "damage must be >= 0");
+            Book.RequireTime(nowMs);
+            if (damage == 0)
+            {
+                return 0;
+            }
+
+            int hpBefore = Hp;
+            int dealt = damage > Hp ? Hp : damage;
+            Hp -= dealt;
+            if (Hp > 0)
+            {
+                Book.NotifyHpChanged(hpBefore, Hp, MaxHp, nowMs, out int crossHeal);
+                HealPercent(crossHeal, nowMs);
+            }
+
+            return dealt;
+        }
+
         private void HealPercent(int percent, long nowMs)
         {
             if (percent <= 0 || Hp == MaxHp)
@@ -1228,6 +1335,16 @@ namespace Cosmimera.Combat
             }
 
             int amount = EffectMath.HealAmount(MaxHp, percent);
+            if (Ailments.IsActive(Ailment.Toxin, nowMs))
+            {
+                amount /= 2;
+            }
+
+            if (amount <= 0)
+            {
+                return;
+            }
+
             int previous = Hp;
             Hp = amount >= MaxHp - Hp ? MaxHp : Hp + amount;
             // A heal can never cross below, but the book's contract is "notify after every HP change".

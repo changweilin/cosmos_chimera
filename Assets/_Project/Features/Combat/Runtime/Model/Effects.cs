@@ -21,19 +21,41 @@ namespace Cosmimera.Combat
         /// Post: properties equal the arguments. Side effects: none.
         /// </remarks>
         public EffectSpec(EffectType type, bool anyElement, Element element, int delta, int percent, int maxStacks)
+            : this(type, anyElement, element, delta, percent, maxStacks, false, default, 0)
         {
-            Contract.Requires(type >= EffectType.MasteryMod && type <= EffectType.BlockReductionMod, "undefined EffectType");
+        }
+
+        /// <summary>Creates a validated effect, including ailment effects.</summary>
+        /// <remarks>
+        /// Pre: type is a defined EffectType; element and ailment are defined even where meaningless (pass default);
+        ///      for HealPercentMaxHp: 1 &lt;= percent &lt;= 100, delta == 0, buildup == 0, maxStacks == 1;
+        ///      for ApplyAilment: 1 &lt;= buildup &lt;= EffectDef.MaxBuildup, delta == 0, percent == 0, maxStacks == 1;
+        ///      otherwise: -100 &lt;= delta &lt;= 100, percent == 0, buildup == 0, 1 &lt;= maxStacks &lt;= EffectDef.MaxStacksLimit;
+        ///      anyElement only for CdModPercent; anyAilment only for AilmentResistMod.
+        /// Post: properties equal the arguments. Side effects: none.
+        /// </remarks>
+        public EffectSpec(EffectType type, bool anyElement, Element element, int delta, int percent, int maxStacks,
+            bool anyAilment, Ailment ailment, int buildup)
+        {
+            Contract.Requires(type >= EffectType.MasteryMod && type <= EffectType.AilmentResistMod, "undefined EffectType");
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
-            Contract.Requires(!anyElement || type == EffectType.CdModPercent, "only cd_mod_percent accepts 'any'");
+            Contract.Requires(ailment >= Ailment.Sunder && ailment <= Ailment.Eclipse, "undefined Ailment");
+            Contract.Requires(!anyElement || type == EffectType.CdModPercent, "only cd_mod_percent accepts 'any' element");
+            Contract.Requires(!anyAilment || type == EffectType.AilmentResistMod, "only ailment_resist_mod accepts 'any' ailment");
             if (type == EffectType.HealPercentMaxHp)
             {
                 Contract.Requires(percent >= 1 && percent <= 100, "heal percent must be 1..100");
-                Contract.Requires(delta == 0 && maxStacks == 1, "a heal has no delta and never stacks");
+                Contract.Requires(delta == 0 && buildup == 0 && maxStacks == 1, "a heal has no delta/buildup and never stacks");
+            }
+            else if (type == EffectType.ApplyAilment)
+            {
+                Contract.Requires(buildup >= 1 && buildup <= EffectDef.MaxBuildup, "buildup must be 1..MaxBuildup");
+                Contract.Requires(delta == 0 && percent == 0 && maxStacks == 1, "apply_ailment has no delta/percent and never stacks");
             }
             else
             {
                 Contract.Requires(delta >= -100 && delta <= 100, "delta must be -100..100");
-                Contract.Requires(percent == 0, "only a heal has a percent");
+                Contract.Requires(percent == 0 && buildup == 0, "only heal has percent and only apply_ailment has buildup");
                 Contract.Requires(maxStacks >= 1 && maxStacks <= EffectDef.MaxStacksLimit, "maxStacks must be 1..MaxStacksLimit");
             }
 
@@ -43,6 +65,9 @@ namespace Cosmimera.Combat
             Delta = delta;
             Percent = percent;
             MaxStacks = maxStacks;
+            AnyAilment = anyAilment;
+            Ailment = ailment;
+            Buildup = buildup;
         }
 
         /// <summary>Effect type.</summary>
@@ -57,9 +82,21 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: none. Post: defined Element. Side effects: none.</remarks>
         public Element Element { get; }
 
-        /// <summary>Signed modifier: percentage points (mastery, resist, accuracy, crit rate / damage, block reduction) or
-        /// relative percent (cd, evasion, speed, range, stagger capacity).</summary>
-        /// <remarks>Pre: none. Post: -100..100; 0 for a heal. Side effects: none.</remarks>
+        /// <summary>True for an ailment_resist_mod scoped to every ailment.</summary>
+        /// <remarks>Pre: none. Post: implies Type == AilmentResistMod. Side effects: none.</remarks>
+        public bool AnyAilment { get; }
+
+        /// <summary>Ailment scope for ApplyAilment / AilmentResistMod; meaningless otherwise.</summary>
+        /// <remarks>Pre: none. Post: defined Ailment. Side effects: none.</remarks>
+        public Ailment Ailment { get; }
+
+        /// <summary>Instant ailment gauge buildup for ApplyAilment; 0 otherwise.</summary>
+        /// <remarks>Pre: none. Post: 1..EffectDef.MaxBuildup for ApplyAilment, else 0. Side effects: none.</remarks>
+        public int Buildup { get; }
+
+        /// <summary>Signed modifier: percentage points (mastery, resist, accuracy, crit rate / damage, block reduction, ailment resist)
+        /// or relative percent (cd, evasion, speed, range, stagger capacity).</summary>
+        /// <remarks>Pre: none. Post: -100..100; 0 for instant effects. Side effects: none.</remarks>
         public int Delta { get; }
 
         /// <summary>Heal amount as percent of max HP.</summary>
@@ -71,8 +108,8 @@ namespace Cosmimera.Combat
         public int MaxStacks { get; }
 
         /// <summary>True when the effect resolves instantly instead of lasting a window.</summary>
-        /// <remarks>Pre: none. Post: true iff Type == HealPercentMaxHp. Side effects: none.</remarks>
-        public bool IsInstant => Type == EffectType.HealPercentMaxHp;
+        /// <remarks>Pre: none. Post: true iff Type == HealPercentMaxHp || Type == ApplyAilment. Side effects: none.</remarks>
+        public bool IsInstant => Type == EffectType.HealPercentMaxHp || Type == EffectType.ApplyAilment;
 
         /// <summary>Converts an imported definition.</summary>
         /// <remarks>Pre: def != null and importer-validated. Post: same values as def. Side effects: none.</remarks>
@@ -84,9 +121,16 @@ namespace Cosmimera.Combat
                 return new EffectSpec(def.Type, false, default, 0, def.Percent, 1);
             }
 
+            if (def.Type == EffectType.ApplyAilment)
+            {
+                return new EffectSpec(def.Type, false, default, 0, 0, 1, false, def.Ailment, def.Buildup);
+            }
+
             bool any = def.HasElement && def.AnyElement;
             Element element = def.HasElement && !any ? def.Element : default;
-            return new EffectSpec(def.Type, any, element, def.Delta, 0, def.MaxStacks);
+            bool anyAilment = def.HasAilment && def.AnyAilment;
+            Ailment ailment = def.HasAilment && !anyAilment ? def.Ailment : default;
+            return new EffectSpec(def.Type, any, element, def.Delta, 0, def.MaxStacks, anyAilment, ailment, 0);
         }
     }
 
@@ -230,10 +274,13 @@ namespace Cosmimera.Combat
     public sealed class ModifierTotals
     {
         private const int ElementCount = 10;
+        private const int AilmentCount = 10;
         private readonly long[] _mastery = new long[ElementCount];
         private readonly long[] _resist = new long[ElementCount];
         private readonly long[] _cd = new long[ElementCount];
+        private readonly long[] _ailmentResist = new long[AilmentCount];
         private long _cdAny;
+        private long _ailmentResistAny;
 
         /// <summary>Σ evasion_mod_percent deltas.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -279,6 +326,40 @@ namespace Cosmimera.Combat
         /// <remarks>Pre: moveElement defined. Post: none. Side effects: none.</remarks>
         public long CdPercent(Element moveElement) => _cdAny + _cd[Index(moveElement)];
 
+        /// <summary>Σ ailment_resist_mod deltas that apply to <paramref name="ailment"/> (its ailment plus 'any').</summary>
+        /// <remarks>Pre: ailment defined. Post: none. Side effects: none.</remarks>
+        public long AilmentResistDelta(Ailment ailment) => _ailmentResistAny + _ailmentResist[AilmentIndex(ailment)];
+
+        /// <summary>Adds <paramref name="delta"/> to <see cref="MoveSpeedPercent"/> (e.g. from active status ailments).</summary>
+        /// <remarks>Pre: none. Post: MoveSpeedPercent increased by delta. Side effects: mutates this buffer.</remarks>
+        internal void AddMoveSpeedPercent(long delta) => MoveSpeedPercent += delta;
+
+        /// <summary>Adds <paramref name="delta"/> to <see cref="RangePercent"/> (e.g. from active status ailments).</summary>
+        /// <remarks>Pre: none. Post: RangePercent increased by delta. Side effects: mutates this buffer.</remarks>
+        internal void AddRangePercent(long delta) => RangePercent += delta;
+
+        /// <summary>Adds <paramref name="delta"/> to <see cref="AccuracyDelta"/> (e.g. from active status ailments).</summary>
+        /// <remarks>Pre: none. Post: AccuracyDelta increased by delta. Side effects: mutates this buffer.</remarks>
+        internal void AddAccuracyDelta(long delta) => AccuracyDelta += delta;
+
+        /// <summary>Adds <paramref name="delta"/> to <see cref="BlockReductionDelta"/> (e.g. from active status ailments).</summary>
+        /// <remarks>Pre: none. Post: BlockReductionDelta increased by delta. Side effects: mutates this buffer.</remarks>
+        internal void AddBlockReductionDelta(long delta) => BlockReductionDelta += delta;
+
+        /// <summary>Adds <paramref name="delta"/> to <see cref="_cdAny"/> (e.g. from active status ailments).</summary>
+        /// <remarks>Pre: none. Post: CdPercent increases for all elements. Side effects: mutates this buffer.</remarks>
+        internal void AddCdAnyPercent(long delta) => _cdAny += delta;
+
+        /// <summary>Adds <paramref name="delta"/> to all elemental resists (e.g. from Eclipse ailment).</summary>
+        /// <remarks>Pre: none. Post: ResistDelta increases for all 10 elements. Side effects: mutates this buffer.</remarks>
+        internal void AddAllResistDelta(long delta)
+        {
+            for (int i = 0; i < ElementCount; i++)
+            {
+                _resist[i] += delta;
+            }
+        }
+
         /// <summary>Resets every sum to 0.</summary>
         /// <remarks>Pre: none. Post: all sums 0. Side effects: mutates this buffer.</remarks>
         public void Clear()
@@ -288,9 +369,11 @@ namespace Cosmimera.Combat
                 _mastery[i] = 0;
                 _resist[i] = 0;
                 _cd[i] = 0;
+                _ailmentResist[i] = 0;
             }
 
             _cdAny = 0;
+            _ailmentResistAny = 0;
             EvasionPercent = 0;
             MoveSpeedPercent = 0;
             RangePercent = 0;
@@ -347,6 +430,17 @@ namespace Cosmimera.Combat
                 case EffectType.BlockReductionMod:
                     BlockReductionDelta += amount;
                     break;
+                case EffectType.AilmentResistMod:
+                    if (spec.AnyAilment)
+                    {
+                        _ailmentResistAny += amount;
+                    }
+                    else
+                    {
+                        _ailmentResist[AilmentIndex(spec.Ailment)] += amount;
+                    }
+
+                    break;
             }
         }
 
@@ -354,6 +448,12 @@ namespace Cosmimera.Combat
         {
             Contract.Requires(element >= Element.Metal && element <= Element.Shadow, "undefined Element");
             return (int)element;
+        }
+
+        private static int AilmentIndex(Ailment ailment)
+        {
+            Contract.Requires(ailment >= Ailment.Sunder && ailment <= Ailment.Eclipse, "undefined Ailment");
+            return (int)ailment;
         }
     }
 

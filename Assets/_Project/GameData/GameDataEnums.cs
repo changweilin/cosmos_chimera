@@ -110,6 +110,12 @@ namespace Cosmimera.GameData
         Yin = 0, Yang = 1,
     }
 
+    /// <summary>The ten elemental status ailments. REQ: docs/design/status-ailments.md (order = common.schema.json).</summary>
+    public enum Ailment
+    {
+        Sunder = 0, Toxin = 1, Soaked = 2, Burn = 3, Weighted = 4, Frostbite = 5, Turbulent = 6, Shock = 7, Dazzle = 8, Eclipse = 9,
+    }
+
     /// <summary>What a trait effect or move effect does. REQ: common.schema.json#/$defs/effect (closed in P2-01).</summary>
     public enum EffectType
     {
@@ -118,6 +124,8 @@ namespace Cosmimera.GameData
         // Appended (serialized into imported .asset files). REQ: creatures.md#六大能力值, crafting.md#穿戴與數值 —
         // weapon / armor stats that only skills and equipment raise.
         AccuracyMod = 7, CritRateMod = 8, CritDamageMod = 9, StaggerCapacityModPercent = 10, BlockReductionMod = 11,
+        // Appended: elemental status ailments. REQ: docs/design/status-ailments.md.
+        ApplyAilment = 12, AilmentResistMod = 13,
     }
 
     /// <summary>Planet size class: asteroid / moon / planet / supergiant = 320 / 640 / 960 / 1280 m. Numeric radius is not stored here.</summary>
