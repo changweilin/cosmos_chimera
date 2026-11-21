@@ -556,17 +556,48 @@ namespace Cosmimera.Bootstrap.Demo
                     ApplyUtilities();
                     GUIUtility.ExitGUI();
                 }
-                else if (utility == FieldUtility.ReturnVillage && _layout != null)
+                else if (utility == FieldUtility.ReturnVillage)
                 {
-                    for (int sIdx = 0; sIdx < _layout.Settlements.Count; sIdx++)
+                    if (_layout != null)
                     {
-                        if (!_discoveredSettlements.Contains(sIdx)) continue;
-                        RunSettlement target = _layout.Settlements[sIdx];
-                        string targetName = SettlementDisplayName(target);
-                        if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + targetName))
+                        for (int sIdx = 0; sIdx < _layout.Settlements.Count; sIdx++)
                         {
-                            ui.Message = TryReturnToSettlement(sIdx, targetName);
-                            GUIUtility.ExitGUI();
+                            if (!_discoveredSettlements.Contains(sIdx)) continue;
+                            RunSettlement target = _layout.Settlements[sIdx];
+                            string targetName = SettlementDisplayName(target);
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + targetName))
+                            {
+                                ui.Message = TryReturnToSettlement(sIdx, targetName);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                    }
+
+                    bool onCradle = _setup.PlanetType != null &&
+                        string.Equals(_setup.PlanetType.Id, "cradle_planet", StringComparison.Ordinal);
+                    bool canCrossPlanet = SpatialTraversalRules.CanReturnToCradleMoon(
+                        _utilityModifiers, _setup.TutorialDone || _setup.IsLobbyPlanet || onCradle).Allowed;
+                    if (canCrossPlanet)
+                    {
+                        if (!onCradle)
+                        {
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + _copy.Planet("cradle_planet")))
+                            {
+                                CloseJournal();
+                                _outcome.TravelToCradleMoon = true;
+                                End(true, false);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                        else if (!_setup.IsBeginnerQuest)
+                        {
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · 主星球"))
+                            {
+                                CloseJournal();
+                                _outcome.TravelToLobbyPlanet = true;
+                                End(true, false);
+                                GUIUtility.ExitGUI();
+                            }
                         }
                     }
                 }

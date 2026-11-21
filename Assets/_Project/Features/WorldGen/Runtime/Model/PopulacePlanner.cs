@@ -630,6 +630,7 @@ namespace Cosmimera.WorldGen
                 float turn = (rng.NextFloat() - 0.5f) * 3.5f;
                 float3 d = math.normalize(up + (building.Facing * forward + across * lateral) / planet.Radius);
                 if ((checkSurfaceStandable && !isStandable(d)) ||
+                    clearance.IsInsideBuilding(d, BodyRadiusM + 0.2f) ||
                     clearance.IsInsideSettlementBuildings(building.Settlement, d, BodyRadiusM + 0.2f) ||
                     !clearance.IsContainedInSettlement(building.Settlement, d, BodyRadiusM))
                 {

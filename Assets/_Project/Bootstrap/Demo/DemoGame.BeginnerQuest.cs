@@ -268,6 +268,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             (PlanetTypeDef bType, _, CreatureStage bStage, float bRadius, _) = BuildBeginnerOption(types);
+            bType = ResolveCradlePlanetType() ?? bType;
             ulong randomSeed = (ulong)Environment.TickCount ^ ((ulong)_menuRng.NextUInt() << 16);
             if (randomSeed == 0)
             {

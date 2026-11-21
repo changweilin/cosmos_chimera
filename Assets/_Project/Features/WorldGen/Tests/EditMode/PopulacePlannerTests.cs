@@ -483,5 +483,89 @@ namespace Cosmimera.WorldGen.Tests
                 Assert.That(clearance.IsContainedInSettlement(r.Settlement, r.Direction, PopulacePlanner.BodyRadiusM), Is.True);
             }
         }
+
+        [Test]
+        public void Populace_and_trainers_never_spawn_inside_or_walk_through_buildings_even_with_large_steps()
+        {
+            var type = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            _created.Add(type);
+            type.SetId("verdant_planet");
+            type.Set(new List<string> { "forest", "river_valley" }, new List<Element> { Element.Wood, Element.Water });
+            var planet = new PlanetConfig(LobbyPlanet.RadiusM, float3.zero);
+            PlanetHeight height = PlanetHeight.ForPlanet(planet, LobbyPlanet.Seed);
+            using PlanetTemplates templates = LobbyPlanetPlanner.BuildTemplates(planet);
+            TemplateView view = templates.View;
+            System.Func<float3, float> ground = d => templates.Sample(height, d);
+            System.Func<float3, bool> isLand = d => !view.IsSea(d) && view.River(d) <= 0.05f &&
+                                                    ground(d) >= LobbyPlanetPlanner.MinDryAltitudeM;
+
+            RunPlan plan = LobbyPlanetPlanner.BuildPlan(planet, type, _pool, _vocab, isLand);
+            RunLayout layout = LobbyPlanetPlanner.BuildLayout(planet, plan, isLand, ground);
+            RunPopulace people = PopulacePlanner.Generate(planet, plan, layout, default, isLand);
+            RunTrainers trainers = TrainerPlanner.Generate(planet, plan, layout, _pool, _ => "forest", isLand, 12, 20);
+            var clearance = new LayoutClearance(planet, layout, 0f);
+
+            var prevResident = new float3[people.Residents.Count];
+            for (int i = 0; i < prevResident.Length; i++)
+            {
+                prevResident[i] = people.CurrentDirection(i);
+                Assert.That(clearance.IsInsideBuilding(prevResident[i], PopulacePlanner.BodyRadiusM), Is.False,
+                    $"resident {i} spawned inside building");
+                Assert.That(isLand(prevResident[i]), Is.True, $"resident {i} spawned in water");
+            }
+
+            var prevTrainer = new float3[trainers.Trainers.Count];
+            for (int i = 0; i < prevTrainer.Length; i++)
+            {
+                prevTrainer[i] = trainers.CurrentDirection(i);
+                Assert.That(clearance.IsInsideBuilding(prevTrainer[i], PopulacePlanner.BodyRadiusM), Is.False,
+                    $"trainer {i} spawned inside building");
+                Assert.That(clearance.IsInsideSettlement(prevTrainer[i], PopulacePlanner.BodyRadiusM), Is.False,
+                    $"trainer {i} spawned inside settlement");
+                Assert.That(isLand(prevTrainer[i]), Is.True, $"trainer {i} spawned in water");
+            }
+
+            long now = 0;
+            int[] dts = { 100, 250, 500 };
+            for (int step = 0; step < 300; step++)
+            {
+                int dt = dts[step % dts.Length];
+                now += dt;
+                people.Step(now, dt);
+                trainers.Step(now, dt);
+
+                for (int i = 0; i < prevResident.Length; i++)
+                {
+                    float3 curr = people.CurrentDirection(i);
+                    float3 a = prevResident[i];
+                    for (int k = 1; k <= 4; k++)
+                    {
+                        float3 sample = math.normalize(math.lerp(a, curr, k * 0.25f));
+                        Assert.That(clearance.IsInsideBuilding(sample, PopulacePlanner.BodyRadiusM), Is.False,
+                            $"resident {i} crossed building at step {step}");
+                        Assert.That(isLand(sample), Is.True, $"resident {i} stepped in water at step {step}");
+                    }
+
+                    prevResident[i] = curr;
+                }
+
+                for (int i = 0; i < prevTrainer.Length; i++)
+                {
+                    float3 curr = trainers.CurrentDirection(i);
+                    float3 a = prevTrainer[i];
+                    for (int k = 1; k <= 4; k++)
+                    {
+                        float3 sample = math.normalize(math.lerp(a, curr, k * 0.25f));
+                        Assert.That(clearance.IsInsideBuilding(sample, PopulacePlanner.BodyRadiusM), Is.False,
+                            $"trainer {i} crossed building at step {step}");
+                        Assert.That(clearance.IsInsideSettlement(sample, PopulacePlanner.BodyRadiusM), Is.False,
+                            $"trainer {i} entered settlement at step {step}");
+                        Assert.That(isLand(sample), Is.True, $"trainer {i} stepped in water at step {step}");
+                    }
+
+                    prevTrainer[i] = curr;
+                }
+            }
+        }
     }
 }

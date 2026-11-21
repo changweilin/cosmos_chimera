@@ -307,6 +307,66 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void MotherPlanet_and_CradleMoon_have_no_submerged_settlements_or_buildings()
+        {
+            // 1. Mother Planet (R = 2560 m)
+            PlanetHeight lobbyHeight = PlanetHeight.ForPlanet(_lobbyConfig, LobbyPlanet.Seed);
+            using PlanetTemplates lobbyTemplates = LobbyPlanetPlanner.BuildTemplates(_lobbyConfig);
+            TemplateView lobbyView = lobbyTemplates.View;
+            Func<float3, float> lobbyGround = d => lobbyTemplates.Sample(lobbyHeight, d);
+            Func<float3, bool> lobbyDry = d => !lobbyView.IsSea(d) && lobbyView.River(d) <= 0.05f &&
+                                               lobbyGround(d) >= LobbyPlanetPlanner.MinDryAltitudeM;
+
+            RunPlan lobbyPlan = LobbyPlanetPlanner.BuildPlan(_lobbyConfig, _type, _pool, _vocab, lobbyDry);
+            RunLayout lobbyLayout = LobbyPlanetPlanner.BuildLayout(_lobbyConfig, lobbyPlan, lobbyDry, lobbyGround);
+
+            Assert.That(lobbyLayout.Settlements.Count, Is.EqualTo(LobbyPlanet.SettlementRoster.Count));
+            foreach (RunSettlement s in lobbyLayout.Settlements)
+            {
+                Assert.That(lobbyDry(s.Center), Is.True, $"Mother settlement #{s.Index + 1} center in water");
+                Assert.That(s.BuildingCount, Is.GreaterThan(0), $"Mother settlement #{s.Index + 1} lost all buildings");
+            }
+
+            foreach (RunBuilding b in lobbyLayout.Buildings)
+            {
+                Assert.That(LobbyPlanetPlanner.IsDryBuildingFootprint(b.Direction, b.Facing, b.WidthM, b.DepthM,
+                    _lobbyConfig.Radius, lobbyDry, lobbyGround), Is.True,
+                    $"Mother building {b.Kind} in settlement {b.Settlement} has submerged corner");
+            }
+
+            // 2. Cradle Moon (R = 320 m, cradle_planet)
+            var cradleConfig = new PlanetConfig(320f, float3.zero);
+            var cradleType = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            _created.Add(cradleType);
+            cradleType.SetId("cradle_planet");
+            cradleType.Set(new List<string> { "forest", "river_valley", "plateau" },
+                new List<Element> { Element.Wood, Element.Water, Element.Wind });
+            const ulong cradleSeed = 20261117UL;
+            PlanetHeight cradleHeight = PlanetHeight.ForPlanet(cradleConfig, cradleSeed);
+            using PlanetTemplates cradleTemplates = TemplatePlanner.Build(cradleConfig, cradleSeed,
+                cradleType.TerrainTags, PlanetSize.Asteroid);
+            TemplateView cradleView = cradleTemplates.View;
+            Func<float3, float> cradleGround = d => cradleTemplates.Sample(cradleHeight, d);
+            Func<float3, bool> cradleDry = d => !cradleView.IsSea(d) && cradleView.River(d) <= 0.05f &&
+                                                cradleGround(d) >= LobbyPlanetPlanner.MinDryAltitudeM;
+
+            RunPlan cradlePlan = RunPlanner.Generate(cradleConfig, cradleSeed, cradleType, CreatureStage.Juvenile,
+                _pool, _vocab, cradleDry);
+            RunLayout cradleLayout = SettlementPlanner.Generate(cradleConfig, cradlePlan, cradleDry, cradleGround);
+
+            Assert.That(cradleDry(cradlePlan.LandingDirection), Is.True, "Cradle Moon landing spot in water");
+            Assert.That(cradleLayout.Settlements.Count, Is.GreaterThan(0));
+            Assert.That(cradleLayout.Settlements[0].BuildingCount, Is.GreaterThan(0),
+                "Cradle Moon starting town must keep dry buildings");
+            foreach (RunBuilding b in cradleLayout.Buildings)
+            {
+                Assert.That(LobbyPlanetPlanner.IsDryBuildingFootprint(b.Direction, b.Facing, b.WidthM, b.DepthM,
+                    cradleConfig.Radius, cradleDry, cradleGround), Is.True,
+                    $"Cradle building {b.Kind} in settlement {b.Settlement} has submerged corner");
+            }
+        }
+
+        [Test]
         public void Invalid_preconditions_throw_contract_exception()
         {
             Assert.Throws<ContractException>(() => LobbyPlanetPlanner.BuildTemplates(default));

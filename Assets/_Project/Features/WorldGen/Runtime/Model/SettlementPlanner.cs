@@ -177,7 +177,7 @@ namespace Cosmimera.WorldGen
 
             if (radius >= PlanetMinRadiusM)
             {
-                AddNonMainlandSettlements(settlements, buildings, plan, radius, isLand);
+                AddNonMainlandSettlements(settlements, buildings, plan, radius, isLand, groundAltitude);
             }
 
             return new RunLayout(roads.ToArray(), settlements.ToArray(), buildings.ToArray());
@@ -508,14 +508,22 @@ namespace Cosmimera.WorldGen
                 float along = (k / 2 - (rows - 1) * 0.5f) * LotSpacingM;
                 float lateral = side * (roadWidthM * 0.5f + SetbackM + depth * 0.5f);
                 float3 pos = Offset(center, roadAxis * along + normal * lateral, radius);
+                float3 facing = Tangent(pos, -side * normal);
                 if (isLand != null)
                 {
-                    bool land = isLand(pos);
-                    if (surfaceRule == LotSurfaceRule.DryLandOnly && !land) continue;
-                    if (surfaceRule == LotSurfaceRule.DeepSeaOnly && land) continue;
+                    if (surfaceRule == LotSurfaceRule.DryLandOnly &&
+                        !IsDryFootprint(pos, facing, width, depth, radius, isLand))
+                    {
+                        continue;
+                    }
+
+                    if (surfaceRule == LotSurfaceRule.DeepSeaOnly && isLand(pos))
+                    {
+                        continue;
+                    }
                 }
 
-                buildings.Add(new RunBuilding(index, bk, pos, Tangent(pos, -side * normal), width, depth, storeys));
+                buildings.Add(new RunBuilding(index, bk, pos, facing, width, depth, storeys));
             }
 
             int built = buildings.Count - first;
@@ -528,10 +536,40 @@ namespace Cosmimera.WorldGen
             return true;
         }
 
+        internal static bool IsDryFootprint(float3 pos, float3 facing, float widthM, float depthM, float radius,
+            Func<float3, bool> isLand)
+        {
+            if (isLand == null)
+            {
+                return true;
+            }
+
+            if (!isLand(pos))
+            {
+                return false;
+            }
+
+            float3 across = math.normalize(math.cross(pos, facing));
+            float hw = widthM * 0.5f;
+            float hd = depthM * 0.5f;
+            for (int c = 0; c < 4; c++)
+            {
+                float sx = (c & 1) == 0 ? hw : -hw;
+                float sz = (c & 2) == 0 ? hd : -hd;
+                float3 corner = Offset(pos, across * sx + facing * sz, radius);
+                if (!isLand(corner))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         // Places smaller non-mainland settlements (SkyTribe, DeepSeaCity, IslandSettlement) on Planet+ (R >= 960 m)
         // using an independent RNG stream ('O') so mainland roads, towns and ruins stay unaffected.
         private static void AddNonMainlandSettlements(List<RunSettlement> settlements, List<RunBuilding> buildings,
-            RunPlan plan, float radius, Func<float3, bool> isLand)
+            RunPlan plan, float radius, Func<float3, bool> isLand, Func<float3, float> groundAltitude)
         {
             var rng = new Pcg32(plan.Seed, 'O');
             IReadOnlyList<RunRegion> regions = plan.Regions;
@@ -551,7 +589,7 @@ namespace Cosmimera.WorldGen
             }
 
             // 2. DeepSeaCity: anchored on ocean seafloor (> 1 m depth), reachable via Dive.
-            if (TryFindOceanSite(settlements, regions, radius, isLand, ref rng, out float3 seaSite, out int seaRegion))
+            if (TryFindOceanSite(settlements, regions, radius, isLand, groundAltitude, ref rng, out float3 seaSite, out int seaRegion))
             {
                 float seaDepthM = 12f + (int)rng.NextUInt(13);
                 int seaLots = 3 + (int)rng.NextUInt(2);
@@ -586,14 +624,15 @@ namespace Cosmimera.WorldGen
         }
 
         private static bool TryFindOceanSite(List<RunSettlement> settlements, IReadOnlyList<RunRegion> regions, float radius,
-            Func<float3, bool> isLand, ref Pcg32 rng, out float3 site, out int region)
+            Func<float3, bool> isLand, Func<float3, float> groundAltitude, ref Pcg32 rng, out float3 site, out int region)
         {
+            bool IsDeepWater(float3 d) => !isLand(d) && (groundAltitude == null || groundAltitude(d) <= -1f);
             float3 fallback = float3.zero;
             bool hasFallback = false;
             for (int attempt = 0; attempt < 64; attempt++)
             {
                 float3 p = SampleSphere(ref rng);
-                if (isLand(p) || HasSurfaceSettlementNear(settlements, p, radius, 48f))
+                if (!IsDeepWater(p) || HasSurfaceSettlementNear(settlements, p, radius, 48f))
                 {
                     continue;
                 }
@@ -605,10 +644,10 @@ namespace Cosmimera.WorldGen
                 }
 
                 PlanetFrame f = PlanetFrame.FromUp(p);
-                if (!isLand(Offset(p, f.East * 24f, radius)) &&
-                    !isLand(Offset(p, -f.East * 24f, radius)) &&
-                    !isLand(Offset(p, f.North * 24f, radius)) &&
-                    !isLand(Offset(p, -f.North * 24f, radius)))
+                if (IsDeepWater(Offset(p, f.East * 24f, radius)) &&
+                    IsDeepWater(Offset(p, -f.East * 24f, radius)) &&
+                    IsDeepWater(Offset(p, f.North * 24f, radius)) &&
+                    IsDeepWater(Offset(p, -f.North * 24f, radius)))
                 {
                     site = p;
                     region = NearestRegion(regions, p);
@@ -778,7 +817,7 @@ namespace Cosmimera.WorldGen
             }
         }
 
-        private static BuildingKind KindFor(SettlementKind kind, int lot, ref Pcg32 rng)
+        internal static BuildingKind KindFor(SettlementKind kind, int lot, ref Pcg32 rng)
         {
             uint roll = rng.NextUInt(100);
             switch (kind)
@@ -809,7 +848,7 @@ namespace Cosmimera.WorldGen
         }
 
         // Sizes are human scale in metres, independent of planet radius (doors do not grow with the planet).
-        private static void Footprint(BuildingKind kind, ref Pcg32 rng, out float width, out float depth, out int storeys)
+        internal static void Footprint(BuildingKind kind, ref Pcg32 rng, out float width, out float depth, out int storeys)
         {
             uint a = rng.NextUInt(3);
             uint b = rng.NextUInt(3);
@@ -842,7 +881,7 @@ namespace Cosmimera.WorldGen
         internal static float3 Tangent(float3 p, float3 v) => math.normalize(v - p * math.dot(v, p));
 
         // Moves a unit direction by a tangent displacement given in metres (small-angle, then back onto the sphere).
-        private static float3 Offset(float3 p, float3 tangentM, float radius) => math.normalize(p + tangentM / radius);
+        internal static float3 Offset(float3 p, float3 tangentM, float radius) => math.normalize(p + tangentM / radius);
 
         private static void Mix(ref ulong h, ulong v)
         {

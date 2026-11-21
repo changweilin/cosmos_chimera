@@ -3,6 +3,7 @@ using Cosmimera.Codex;
 using Cosmimera.Combat;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Planet;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -475,6 +476,377 @@ namespace Cosmimera.Bootstrap.Demo
                         .Replace("{angle}", math.abs(angle).ToString("0"));
                 GUILayout.Label($"BOSS 巢穴：{bearing} · {meters:0} m", _label);
             }
+        }
+
+        private sealed class LobbyGatekeeperState
+        {
+            public int SettlementIndex;
+            public LobbyGatekeeper Role;
+            public float3 Dir;
+            public float3 Facing;
+            public float BlockRadiusM;
+            public GameObject Root;
+            public readonly List<Object> Owned = new List<Object>();
+        }
+
+        private readonly List<LobbyGatekeeperState> _lobbyGatekeepers = new List<LobbyGatekeeperState>();
+        private int _activeGatekeeperSettlementIndex = -1;
+        private long _gatekeeperCooldownUntilMs;
+
+        internal IReadOnlyCollection<int> DiscoveredSettlementsForTests => _discoveredSettlements;
+        internal int ActiveGatekeeperSettlementForTests => _activeGatekeeperSettlementIndex;
+
+        internal bool TriggerLobbyGatekeeperForTests(int settlementIndex)
+        {
+            for (int i = 0; i < _lobbyGatekeepers.Count; i++)
+            {
+                if (_lobbyGatekeepers[i].SettlementIndex == settlementIndex)
+                {
+                    return StartGatekeeperBattle(_lobbyGatekeepers[i]);
+                }
+            }
+
+            return false;
+        }
+
+        private void ConfigureLobbyGatekeepers(Shader toonShader)
+        {
+            if (!_setup.IsLobbyPlanet || _layout == null)
+            {
+                return;
+            }
+
+            float radius = _rig.Config.Radius;
+            for (int i = 0; i < _layout.Settlements.Count; i++)
+            {
+                LobbyGatekeeper role = i < LobbyPlanet.SettlementRoster.Count
+                    ? LobbyPlanet.GatekeeperForSettlement(i)
+                    : LobbyGatekeeper.None;
+                if (role == LobbyGatekeeper.None || _discoveredSettlements.Contains(i))
+                {
+                    continue;
+                }
+
+                RunSettlement s = _layout.Settlements[i];
+                float blockRadiusM = math.max(24f, LayoutClearance.MinSettlementRadiusM + 8f);
+                float3 towardLanding = SphericalTangent(s.Center,
+                    _layout.Settlements[0].Center - s.Center * math.dot(_layout.Settlements[0].Center, s.Center),
+                    PlanetFrame.FromUp(s.Center).North);
+                float3 preferred = math.normalize(s.Center * radius + towardLanding * (blockRadiusM + 2.5f));
+                float3 gateDir = FindClearTrialGround(preferred, s.Center, blockRadiusM + 1.5f);
+                var gate = new LobbyGatekeeperState
+                {
+                    SettlementIndex = i,
+                    Role = role,
+                    Dir = gateDir,
+                    Facing = SphericalTangent(gateDir, -towardLanding, PlanetFrame.FromUp(gateDir).North),
+                    BlockRadiusM = blockRadiusM,
+                };
+
+                if (toonShader != null)
+                {
+                    BuildGatekeeperView(gate, toonShader);
+                }
+
+                _lobbyGatekeepers.Add(gate);
+            }
+        }
+
+        private void BuildGatekeeperView(LobbyGatekeeperState gate, Shader toonShader)
+        {
+            NpcSpec spec = NpcMeshes.SpecForTrialMaster(_setup.Seed ^ (ulong)(gate.SettlementIndex + 101));
+            var root = new GameObject($"Gatekeeper_{gate.SettlementIndex + 1}_{gate.Role}");
+            Mesh mesh = NpcMeshes.Build(spec, root.transform, out ResidentStride stride);
+            var renderer = root.AddComponent<SkinnedMeshRenderer>();
+            renderer.sharedMesh = mesh;
+            renderer.bones = stride.Bones;
+            renderer.rootBone = root.transform;
+            Color primary = gate.Role == LobbyGatekeeper.Friend
+                ? new Color(0.28f, 0.72f, 0.92f)
+                : new Color(0.86f, 0.25f, 0.32f);
+            Material body = PlanetLook.CreatureMaterial(toonShader, primary, 0.02f);
+            Material accent = PlanetLook.CreatureMaterial(toonShader, new Color(0.95f, 0.92f, 0.8f), 0f);
+            renderer.sharedMaterials = new[] { body, accent };
+
+            GameObject halo = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Object.Destroy(halo.GetComponent<Collider>());
+            halo.transform.SetParent(root.transform, false);
+            halo.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+            halo.transform.localScale = new Vector3(1.5f, 0.01f, 1.5f);
+            Material haloMat = PlanetLook.CreatureMaterial(toonShader, primary, 0f);
+            halo.GetComponent<Renderer>().sharedMaterial = haloMat;
+
+            float3 world = _rig.Config.ToWorld(gate.Dir, _surface.GroundAltitude(gate.Dir) - 0.03f);
+            root.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                Quaternion.LookRotation((Vector3)gate.Facing, (Vector3)gate.Dir));
+
+            gate.Owned.Add(mesh);
+            gate.Owned.Add(body);
+            gate.Owned.Add(accent);
+            gate.Owned.Add(haloMat);
+            gate.Root = root;
+        }
+
+        private void StepLobbyGatekeepers(float3 player)
+        {
+            if (!_setup.IsLobbyPlanet || _layout == null || _lobbyGatekeepers.Count == 0)
+            {
+                return;
+            }
+
+            float3 playerUp = _rig.Config.ToDirection(player);
+            float playerAlt = _rig.Config.Altitude(player);
+            float radius = _rig.Config.Radius;
+            for (int i = 0; i < _lobbyGatekeepers.Count; i++)
+            {
+                LobbyGatekeeperState gate = _lobbyGatekeepers[i];
+                if (_discoveredSettlements.Contains(gate.SettlementIndex))
+                {
+                    continue;
+                }
+
+                RunSettlement s = _layout.Settlements[gate.SettlementIndex];
+                if (math.abs(playerAlt - SettlementAltitudeAt(s)) > 25f)
+                {
+                    continue;
+                }
+
+                float distM = math.distance(playerUp, s.Center) * radius;
+                if (distM > gate.BlockRadiusM)
+                {
+                    continue;
+                }
+
+                // Prevent entering the gated settlement before defeating its Friend/Rival gatekeeper.
+                float3 radialOut = SphericalTangent(s.Center, playerUp - s.Center * math.dot(playerUp, s.Center),
+                    SphericalTangent(s.Center, gate.Dir, PlanetFrame.FromUp(s.Center).North));
+                float3 pushTarget = math.normalize(s.Center * radius + radialOut * (gate.BlockRadiusM + 3f));
+                float3 safeOutside = FindClearTrialGround(pushTarget, s.Center, gate.BlockRadiusM + 2f);
+                if (_rig != null && _rig.Character != null)
+                {
+                    Vector3 worldPos = _rig.Config.ToWorld(safeOutside, _surface.GroundAltitude(safeOutside) + 0.1f);
+                    _rig.Character.Teleport(worldPos);
+                    UpdateEnvironment(worldPos);
+                }
+
+                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && !HasActiveBeginnerTrainerBattle &&
+                    _activeEncounterTrainerId < 0 && _nowMs >= _gatekeeperCooldownUntilMs)
+                {
+                    StartGatekeeperBattle(gate);
+                }
+
+                return;
+            }
+        }
+
+        private bool StartGatekeeperBattle(LobbyGatekeeperState gate)
+        {
+            if (_wildPool == null || _wildPool.Count == 0 || _activeEncounterTrainerId >= 0)
+            {
+                return false;
+            }
+
+            float3 player = PlayerPosition();
+            RefillField(player);
+            if (_team.Active.Count == 0)
+            {
+                return false;
+            }
+
+            if (_interactTarget >= 0)
+            {
+                CloseInteract();
+            }
+
+            RunSettlement s = _layout.Settlements[gate.SettlementIndex];
+            int level = math.max(10, _progression.WildLevel(D0Difficulty, _plan.Regions[s.Region].Tier, SpawnRole.Boss));
+            int teamCount = gate.SettlementIndex >= 4 ? 2 : 1;
+            int trainerId = _encounter.RegisterTrainer();
+            _activeTrainerUnitIds.Clear();
+
+            CreatureDef primaryDef = gate.Role == LobbyGatekeeper.Friend
+                ? (_setup.FriendStarter ?? _wildPool[gate.SettlementIndex % _wildPool.Count])
+                : (_setup.RivalStarter ?? _wildPool[(gate.SettlementIndex + 1) % _wildPool.Count]);
+
+            for (int m = 0; m < teamCount; m++)
+            {
+                CreatureDef def = m == 0 ? primaryDef : _wildPool[(gate.SettlementIndex * 3 + m) % _wildPool.Count];
+                EncounterUnit u = _encounter.AddTrainerCreature(def, null, BesidePlayer(player, m + 1), level, trainerId, m);
+                _activeTrainerUnitIds.Add(u.Id);
+                CreateView(u, SpawnRole.Normal);
+            }
+
+            if (!_encounter.StartTrainerBattle(trainerId))
+            {
+                CleanupActiveTrainerUnits();
+                return false;
+            }
+
+            _activeEncounterTrainerId = trainerId;
+            _activeGatekeeperSettlementIndex = gate.SettlementIndex;
+            if (!_team.InCombat)
+            {
+                BeginCombat();
+            }
+
+            string who = GatekeeperDisplayName(gate.Role);
+            Toast($"第 {gate.SettlementIndex + 1} 號聚落守門戰：{who} 攔住了去路！擊敗他才能進入聚落。");
+            return true;
+        }
+
+        private bool ResolveGatekeeperBattleEnd(bool won)
+        {
+            if (_activeGatekeeperSettlementIndex < 0)
+            {
+                return false;
+            }
+
+            int settlementIndex = _activeGatekeeperSettlementIndex;
+            _activeGatekeeperSettlementIndex = -1;
+            LobbyGatekeeper role = settlementIndex < LobbyPlanet.SettlementRoster.Count
+                ? LobbyPlanet.GatekeeperForSettlement(settlementIndex)
+                : LobbyGatekeeper.None;
+            string who = GatekeeperDisplayName(role);
+
+            RestoreBeginnerParty();
+            if (won)
+            {
+                _discoveredSettlements.Add(settlementIndex);
+                for (int i = 0; i < _lobbyGatekeepers.Count; i++)
+                {
+                    if (_lobbyGatekeepers[i].SettlementIndex == settlementIndex && _lobbyGatekeepers[i].Root != null)
+                    {
+                        _lobbyGatekeepers[i].Root.SetActive(false);
+                    }
+                }
+
+                RefillField(PlayerPosition());
+                Toast($"擊敗第 {settlementIndex + 1} 號聚落的{who}！聚落已開放進入並可用「候鳥歸途」傳送。");
+            }
+            else
+            {
+                _gatekeeperCooldownUntilMs = _nowMs + 3000;
+                for (int i = 0; i < _lobbyGatekeepers.Count; i++)
+                {
+                    if (_lobbyGatekeepers[i].SettlementIndex == settlementIndex)
+                    {
+                        float3 safeDir = _lobbyGatekeepers[i].Dir;
+                        if (_rig != null && _rig.Character != null)
+                        {
+                            Vector3 worldPos = _rig.Config.ToWorld(safeDir, _surface.GroundAltitude(safeDir) + 0.1f);
+                            _rig.Character.Teleport(worldPos);
+                            UpdateEnvironment(worldPos);
+                        }
+                        break;
+                    }
+                }
+
+                RefillField(PlayerPosition());
+                Toast($"未能擊敗第 {settlementIndex + 1} 號聚落的{who}，無法進入該聚落。");
+            }
+
+            return true;
+        }
+
+        private bool TryRecoverLobbyWipeout()
+        {
+            if (!_setup.IsLobbyPlanet)
+            {
+                return false;
+            }
+
+            if (_activeEncounterTrainerId >= 0)
+            {
+                int trainerId = _activeEncounterTrainerId;
+                _activeEncounterTrainerId = -1;
+                _activeWanderingTrainerIndex = -1;
+                _encounter.CancelTrainerBattle(trainerId, _nowMs);
+                CleanupActiveTrainerUnits();
+                if (ResolveGatekeeperBattleEnd(false))
+                {
+                    return true;
+                }
+            }
+
+            RecoverLobbyAtNearestTown();
+            return true;
+        }
+
+        private void RecoverLobbyAtNearestTown()
+        {
+            RestoreBeginnerParty();
+            float3 recoveryDir = _plan.LandingDirection;
+            float recoveryAlt = _surface.GroundAltitude(recoveryDir) + 0.3f;
+            if (_layout != null && _rig != null)
+            {
+                float3 pDir = _rig.Config.ToDirection(PlayerPosition());
+                float bestDot = -2f;
+                foreach (int idx in _discoveredSettlements)
+                {
+                    if (idx < 0 || idx >= _layout.Settlements.Count)
+                    {
+                        continue;
+                    }
+
+                    RunSettlement s = _layout.Settlements[idx];
+                    float d = math.dot(pDir, s.Center);
+                    if (d > bestDot)
+                    {
+                        bestDot = d;
+                        recoveryDir = s.Center;
+                        recoveryAlt = SettlementAltitudeAt(s) + 0.5f;
+                    }
+                }
+            }
+
+            if (_rig != null && _rig.Character != null)
+            {
+                RelocatePlayerAndParty(recoveryDir, recoveryAlt);
+            }
+
+            RefillField(PlayerPosition());
+            Toast("全隊倒下，已返回最近已開放的聚落回復。");
+        }
+
+        private string GatekeeperDisplayName(LobbyGatekeeper role)
+        {
+            if (role == LobbyGatekeeper.Friend)
+            {
+                return string.IsNullOrEmpty(_setup.FriendId)
+                    ? "好友"
+                    : $"好友「{BeginnerQuestRules.CharacterDisplayName(_setup.FriendId)}」";
+            }
+
+            if (role == LobbyGatekeeper.Rival)
+            {
+                return string.IsNullOrEmpty(_setup.RivalId)
+                    ? "宿敵"
+                    : $"宿敵「{BeginnerQuestRules.CharacterDisplayName(_setup.RivalId)}」";
+            }
+
+            return string.Empty;
+        }
+
+        private void DisposeLobbyGatekeepers()
+        {
+            for (int i = 0; i < _lobbyGatekeepers.Count; i++)
+            {
+                LobbyGatekeeperState gate = _lobbyGatekeepers[i];
+                if (gate.Root != null)
+                {
+                    Destroy(gate.Root);
+                }
+
+                for (int o = 0; o < gate.Owned.Count; o++)
+                {
+                    if (gate.Owned[o] != null)
+                    {
+                        Destroy(gate.Owned[o]);
+                    }
+                }
+            }
+
+            _lobbyGatekeepers.Clear();
         }
     }
 }

@@ -85,6 +85,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: valid snake_case terrain trial ids. Side effects: none.</remarks>
         public readonly HashSet<string> CompletedTrials = new HashSet<string>(StringComparer.Ordinal);
 
+        /// <summary>True when the player triggered Migratory Return (候鳥歸途) to travel to Cradle Moon after settling.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TravelToCradleMoon;
+
+        /// <summary>True when the player triggered Migratory Return (候鳥歸途) to return to the Mother Planet after settling.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TravelToLobbyPlanet;
+
         /// <summary>Records one completed battle (victory or defeat) against trainer profession <paramref name="professionId"/>.</summary>
         /// <remarks>Pre: professionId valid snake_case id. Post: TrainerBattles[professionId] incremented by 1. Side effects: mutates TrainerBattles.</remarks>
         public void RecordTrainerBattle(string professionId)
@@ -234,6 +242,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Terrain trial badges held at departure (LobbySave.CompletedTrialsSnapshot); decides a trial's first win.</summary>
         /// <remarks>REQ: docs/design/trainer-battles.md#地形試煉. Pre: null or canonical terrain ids. Post: never mutated by the run. Side effects: none.</remarks>
         public IReadOnlyCollection<string> TrialBadges;
+
+        /// <summary>True when the beginner quest is already completed in the player's save (allows cross-body Migratory Return).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TutorialDone;
 
         /// <summary>True when this session is the fixed single-player lobby planet (R = 2560 m, 8 connected towns, all 24 landforms, all 10 dungeon masters).</summary>
         /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: uses LobbyPlanetPlanner and stays open until the player opens the lobby menu. Side effects: none.</remarks>
@@ -761,10 +773,18 @@ namespace Cosmimera.Bootstrap.Demo
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
             _hasOcean = templates != null;
             System.Func<float3, bool> isLand = null;
+            PlanetTemplates landTemplates = templates;
+            PlanetHeight landHeight = height;
             if (templates != null)
             {
                 TemplateView view = templates.View;
-                isLand = d => !view.IsSea(d);
+                bool strictDryLand = setup.IsLobbyPlanet ||
+                    (setup.PlanetType != null && string.Equals(setup.PlanetType.Id, "cradle_planet", StringComparison.Ordinal));
+                isLand = strictDryLand
+                    ? (System.Func<float3, bool>)(d => !view.IsSea(d) && view.River(d) <= 0.05f &&
+                        landTemplates.Sample(landHeight, d) >= LobbyPlanetPlanner.MinDryAltitudeM)
+                    : d => !view.IsSea(d) && view.River(d) <= 0.15f &&
+                        landTemplates.Sample(landHeight, d) >= LobbyPlanetPlanner.MinDryAltitudeM;
             }
 
             _plan = setup.IsLobbyPlanet
@@ -814,9 +834,11 @@ namespace Cosmimera.Bootstrap.Demo
             // 1.5 m off their footprints as it does off buildings.
             LandmarkLayout landmarks = setup.IsLobbyPlanet
                 ? LobbyPlanetPlanner.BuildLandmarks(config, _plan, _layout,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d))
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) &&
+                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM)
                 : LandmarkPlanner.Generate(config, _plan, _layout,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) &&
+                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM);
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
             // Before populace, trainers and scatter: they all keep off the maze through surface.IsOffWalls.
@@ -828,6 +850,7 @@ namespace Cosmimera.Bootstrap.Demo
             _populace = PopulacePlanner.Generate(config, _plan, _layout,
                 NpcMeshes.TemperFor(ArchitectureMeshes.PlanetStyleFor(setup.PlanetType.Id, setup.Seed).Era),
                 d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
+                     surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM &&
                      math.distancesq(d, landingAt) > landingGap * landingGap);
             surface.Populace = _populace;
             if (wildPool != null && wildPool.Count > 0)
@@ -841,7 +864,8 @@ namespace Cosmimera.Bootstrap.Demo
                 int wildNormalMax = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Normal);
                 int bossLv = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Boss);
                 _trainers = TrainerPlanner.Generate(config, _plan, _layout, wildPool, _habitatAt,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f),
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
+                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM,
                     wildNormalMax, bossLv, maxStage: setup.BossStage);
             }
             System.Func<float3, bool> isOpenGround =
@@ -1157,6 +1181,7 @@ namespace Cosmimera.Bootstrap.Demo
             ConfigureJournal();
             ConfigureBeginnerQuest();
             ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
+            ConfigureLobbyGatekeepers(toonShader);
             if (_rig != null && _rig.Character != null)
             {
                 _rig.Character.SetCeilingProvider(surface.CeilingAltitude);
@@ -1538,6 +1563,7 @@ namespace Cosmimera.Bootstrap.Demo
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
             RecordAppearances();
             UpdateRegion(player);
+            StepLobbyGatekeepers(player);
             StepTrial(player);
             if (_nowMs >= _nextAffixMs)
             {
@@ -1703,7 +1729,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (playerDowned)
             {
-                if (TryRecoverBeginnerWipeout())
+                if (TryRecoverBeginnerWipeout() || TryRecoverLobbyWipeout())
                 {
                     return;
                 }
@@ -1855,11 +1881,6 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            if (_setup.IsLobbyPlanet)
-            {
-                return;
-            }
-
             if (CheckBeginnerQuestEnd())
             {
                 return;
@@ -1882,6 +1903,11 @@ namespace Cosmimera.Bootstrap.Demo
                     _activeWanderingTrainerIndex = -1;
                     CleanupActiveTrainerUnits();
 
+                    if (ResolveGatekeeperBattleEnd(won))
+                    {
+                        return;
+                    }
+
                     if (wIdx >= 0 && _trainers != null && wIdx < _trainers.Trainers.Count)
                     {
                         string profId = _trainers.Trainers[wIdx].ProfessionId;
@@ -1890,16 +1916,33 @@ namespace Cosmimera.Bootstrap.Demo
                         if (won)
                         {
                             _trainers.MarkDefeated(wIdx);
+                            RestoreTrialParty();
                             RefillField(PlayerPosition());
                             Toast(_copy.Ui("ui.trainer.victory").Replace("{trainer}", profName));
                             return;
                         }
 
                         Toast(_copy.Ui("ui.trainer.defeat").Replace("{trainer}", profName));
+                        if (_setup.IsLobbyPlanet)
+                        {
+                            RecoverLobbyAtNearestTown();
+                            return;
+                        }
+
                         End(false, false);
                         return;
                     }
                 }
+            }
+
+            if (_setup.IsLobbyPlanet)
+            {
+                if (!AnyPartyPoolAlive())
+                {
+                    TryRecoverLobbyWipeout();
+                }
+
+                return;
             }
 
             bool anyLeft = false;
@@ -2444,7 +2487,9 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 for (int i = 0; i < _layout.Settlements.Count; i++)
                 {
-                    if (!_discoveredSettlements.Contains(i) && IsWithinSettlement(_layout.Settlements[i], player))
+                    bool gated = _setup.IsLobbyPlanet && i < LobbyPlanet.SettlementRoster.Count &&
+                                 LobbyPlanet.GatekeeperForSettlement(i) != LobbyGatekeeper.None;
+                    if (!gated && !_discoveredSettlements.Contains(i) && IsWithinSettlement(_layout.Settlements[i], player))
                     {
                         _discoveredSettlements.Add(i);
                     }
@@ -4079,6 +4124,7 @@ namespace Cosmimera.Bootstrap.Demo
             _feedback?.Dispose();
             _hitFeel?.Dispose();
             DisposeTrial();
+            DisposeLobbyGatekeepers();
             _rig?.Dispose();
             PlanetLook.ClearGeology();
             if (_terrainMaterial != null)

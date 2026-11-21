@@ -74,6 +74,7 @@ namespace Cosmimera.Bootstrap.Demo
         private int _weatherControlCooldownMs;
         private EnvMaterials _env;
         private LobbySave _save;
+        private PlanetTypeDef _cradlePlanetCache;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
         private readonly List<PlanetOption> _options = new List<PlanetOption>();
@@ -208,6 +209,11 @@ namespace Cosmimera.Bootstrap.Demo
             _paperdollPreview = null;
             _menuHints?.Dispose();
             _menuInput?.Dispose();
+            if (_cradlePlanetCache != null)
+            {
+                Destroy(_cradlePlanetCache);
+                _cradlePlanetCache = null;
+            }
         }
 
         private void Update()
@@ -981,6 +987,63 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private PlanetTypeDef ResolveCradlePlanetType()
+        {
+            if (_database != null)
+            {
+                foreach (GameDef def in _database.All)
+                {
+                    if (def is PlanetTypeDef t && t.Id == "cradle_planet")
+                    {
+                        return t;
+                    }
+                }
+            }
+
+            if (_cradlePlanetCache == null)
+            {
+                _cradlePlanetCache = ScriptableObject.CreateInstance<PlanetTypeDef>();
+                const System.Reflection.BindingFlags flags =
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                typeof(GameDef).GetField("id", flags)?.SetValue(_cradlePlanetCache, "cradle_planet");
+                typeof(PlanetTypeDef).GetField("terrainTags", flags)?.SetValue(
+                    _cradlePlanetCache, new List<string> { "forest", "river_valley", "plateau" });
+                typeof(PlanetTypeDef).GetField("elementBias", flags)?.SetValue(
+                    _cradlePlanetCache, new List<Element> { Element.Wood, Element.Water, Element.Wind });
+            }
+
+            return _cradlePlanetCache;
+        }
+
+        private void LaunchCradleMoon()
+        {
+            PlanetTypeDef cradleType = ResolveCradlePlanetType();
+            if (cradleType == null)
+            {
+                Debug.LogError("DemoGame: no PlanetTypeDef found for the cradle moon.");
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = cradleType,
+                Seed = BeginnerQuestSeed,
+                Radius = RadiusFor(PlanetSize.Asteroid),
+                BossStage = CreatureStage.Juvenile,
+                Elements = WorldGen.PlanetElementDraw.Draw(BeginnerQuestSeed, PlanetSize.Asteroid, cradleType.ElementBias),
+            });
+        }
+
+        private CreatureDef FindCreatureById(string id)
+        {
+            if (string.IsNullOrEmpty(id) || _database == null)
+            {
+                return null;
+            }
+
+            return _database.TryGet(id, out CreatureDef def) ? def : null;
+        }
+
         private void LaunchLobbyPlanet()
         {
             PlanetTypeDef lobbyType = null;
@@ -1112,6 +1175,11 @@ namespace Cosmimera.Bootstrap.Demo
                     Equipment = _save.Equipment.Snapshot(),
                     TrialBadges = _save.CompletedTrialsSnapshot(),
                     IsLobbyPlanet = o.IsLobbyPlanet,
+                    TutorialDone = _save.TutorialDone,
+                    FriendId = _save.FriendId,
+                    FriendStarter = FindCreatureById(_save.FriendStarterId),
+                    RivalId = _save.RivalId,
+                    RivalStarter = FindCreatureById(_save.RivalStarterId),
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.Hints.Inherit(_menuHints);
@@ -1173,6 +1241,16 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             TrySettle();
+            if (_settleError == null && outcome.TravelToCradleMoon)
+            {
+                LaunchCradleMoon();
+                return;
+            }
+
+            if (_settleError == null && outcome.TravelToLobbyPlanet)
+            {
+                LaunchLobbyPlanet();
+            }
         }
 
         private void TrySettle()

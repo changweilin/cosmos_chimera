@@ -417,9 +417,14 @@ namespace Cosmimera.WorldGen
         /// <remarks>Pre: none. Post: constant 0.5f. Side effects: none.</remarks>
         public const float SightHalfAngleCos = 0.5f;
 
+        /// <summary>Clearance kept between outdoor trainers and any building wall or porch mesh (m).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; PopulacePlanner.BodyRadiusM. Side effects: none.</remarks>
+        public const float WallClearanceM = PopulacePlanner.BodyRadiusM + 0.2f;
+
         private const float BaseWalkSpeedMs = 3.2f;
         private const int PursuitSpeedPermille = 1400;
         private const float ArriveM = 0.25f;
+        private const float SegmentSampleStepM = 0.45f;
         private const int WaypointRetries = 24;
         private const long Unscheduled = long.MinValue;
 
@@ -859,6 +864,11 @@ namespace Cosmimera.WorldGen
             }
             else if (res == MoveResult.Blocked || w.LegRemainingMs <= 0)
             {
+                if (res == MoveResult.Blocked && (spec.Mode == WanderMode.Shuttle || spec.Mode == WanderMode.Loop))
+                {
+                    AdvanceRoute(ref w, spec.Mode);
+                }
+
                 w.HasTarget = false;
                 w.ResumeMs = nowMs + DrawPause(ref w.Rng, t, in spec);
             }
@@ -868,11 +878,19 @@ namespace Cosmimera.WorldGen
         {
             ref TrainerWander w = ref _wander[index];
             var points = new List<float3>(3) { t.HomeDirection };
+            float3 prev = t.HomeDirection;
+            TrainerDutySpec spec = TrainerPlanner.DutySpecFor(t.Duty);
             for (int k = 0; k < 2; k++)
             {
-                if (TryPointOutsideSettlement(ref w.Rng, t.HomeDirection, capM, out float3 p))
+                if (TryPointOutsideSettlement(ref w.Rng, t.HomeDirection, prev, capM, out float3 p))
                 {
+                    if (spec.Mode == WanderMode.Loop && k == 1 && !IsSegmentClear(p, t.HomeDirection))
+                    {
+                        continue;
+                    }
+
                     points.Add(p);
+                    prev = p;
                 }
             }
 
@@ -920,7 +938,7 @@ namespace Cosmimera.WorldGen
             }
 
             float3 center = spec.Mode == WanderMode.UnboundedRandom ? _currentDirections[index] : t.HomeDirection;
-            if (TryPointOutsideSettlement(ref w.Rng, center, capM, out float3 target))
+            if (TryPointOutsideSettlement(ref w.Rng, center, _currentDirections[index], capM, out float3 target))
             {
                 w.Target = target;
                 return true;
@@ -929,12 +947,12 @@ namespace Cosmimera.WorldGen
             return false;
         }
 
-        private bool TryPointOutsideSettlement(ref Pcg32 rng, float3 center, float radiusM, out float3 target)
+        private bool TryPointOutsideSettlement(ref Pcg32 rng, float3 center, float3 from, float radiusM, out float3 target)
         {
             for (int i = 0; i < WaypointRetries; i++)
             {
                 target = WanderPoint(ref rng, center, radiusM);
-                if (IsOutdoorValid(target))
+                if (IsSegmentClear(from, target))
                 {
                     return true;
                 }
@@ -942,6 +960,35 @@ namespace Cosmimera.WorldGen
 
             target = default;
             return false;
+        }
+
+        /// <summary>True when every sample along <paramref name="from"/> → <paramref name="to"/> stays outdoors on clear ground.</summary>
+        /// <remarks>
+        /// Pre: from and to finite and non-zero.
+        /// Post: true iff sampled points along from → to (spaced ≤ 0.45 m, endpoints inclusive) stay on land,
+        ///       outside every building footprint by <see cref="WallClearanceM"/>, and outside inhabited settlements.
+        /// Side effects: invokes isLand if configured.
+        /// </remarks>
+        public bool IsSegmentClear(float3 from, float3 to)
+        {
+            Contract.Requires(math.all(math.isfinite(from)) && math.lengthsq(from) > 0f, "from must be finite and non-zero");
+            Contract.Requires(math.all(math.isfinite(to)) && math.lengthsq(to) > 0f, "to must be finite and non-zero");
+            float3 a = math.normalize(from);
+            float3 b = math.normalize(to);
+            float distM = ArcM(a, b, _radius);
+            int samples = math.max(1, (int)math.ceil(distM / SegmentSampleStepM));
+            for (int s = 1; s <= samples; s++)
+            {
+                float t = (float)s / samples;
+                float3 sum = math.lerp(a, b, t);
+                float3 p = math.lengthsq(sum) > 1e-8f ? math.normalize(sum) : b;
+                if (!IsOutdoorValid(p))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private bool IsOutdoorValid(float3 dir)
@@ -956,7 +1003,7 @@ namespace Cosmimera.WorldGen
                 return true;
             }
 
-            return !_clearance.IsInsideBuilding(dir, PopulacePlanner.BodyRadiusM) &&
+            return !_clearance.IsInsideBuilding(dir, WallClearanceM) &&
                 !_clearance.IsInsideSettlement(dir, PopulacePlanner.BodyRadiusM);
         }
 
@@ -1017,30 +1064,25 @@ namespace Cosmimera.WorldGen
 
         private bool CanStepTo(float3 from, float3 to)
         {
-            if (_isLand != null && !_isLand(to))
+            float3 a = math.normalize(from);
+            float3 b = math.normalize(to);
+            if (!IsOutdoorValid(a))
             {
-                return false;
+                if (_isLand != null && !_isLand(b))
+                {
+                    return false;
+                }
+
+                if (_clearance == null)
+                {
+                    return true;
+                }
+
+                return !_clearance.IsInsideBuilding(b, PopulacePlanner.BodyRadiusM) &&
+                       !_clearance.IsInsideSettlement(b, PopulacePlanner.BodyRadiusM);
             }
 
-            if (_clearance == null)
-            {
-                return true;
-            }
-
-            if (_clearance.IsInsideBuilding(to, PopulacePlanner.BodyRadiusM) &&
-                !_clearance.IsInsideBuilding(from, PopulacePlanner.BodyRadiusM))
-            {
-                return false;
-            }
-
-            // REQ: docs/design/trainer-battles.md#職務與職能 — trainers never enter inhabited settlements (城內).
-            if (_clearance.IsInsideSettlement(to, PopulacePlanner.BodyRadiusM) &&
-                !_clearance.IsInsideSettlement(from, PopulacePlanner.BodyRadiusM))
-            {
-                return false;
-            }
-
-            return true;
+            return IsSegmentClear(a, b);
         }
 
         private static int DrawPause(ref Pcg32 rng, RunTrainer t, in TrainerDutySpec spec) =>

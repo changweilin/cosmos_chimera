@@ -365,9 +365,14 @@ namespace Cosmimera.WorldGen
     /// </remarks>
     public sealed class RunPopulace
     {
+        /// <summary>Clearance kept between walking residents and any building wall or porch mesh (m).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; PopulacePlanner.BodyRadiusM. Side effects: none.</remarks>
+        public const float WallClearanceM = PopulacePlanner.BodyRadiusM + 0.2f;
+
         private const float BaseWalkSpeedMs = 3.2f;
         private const float ArriveM = 0.25f;
-        private const int WaypointRetries = 8;
+        private const float SegmentSampleStepM = 0.35f;
+        private const int WaypointRetries = 12;
         private const long Unscheduled = long.MinValue;
 
         private static readonly float2[] SlideTurns =
@@ -584,6 +589,11 @@ namespace Cosmimera.WorldGen
             }
             else if (res == MoveResult.Blocked || w.LegRemainingMs <= 0)
             {
+                if (res == MoveResult.Blocked && (spec.Mode == WanderMode.Shuttle || spec.Mode == WanderMode.Loop))
+                {
+                    AdvanceRoute(ref w, spec.Mode);
+                }
+
                 w.HasTarget = false;
                 w.ResumeMs = nowMs + DrawPause(ref w.Rng, in r, in spec);
             }
@@ -593,11 +603,19 @@ namespace Cosmimera.WorldGen
         {
             ref ResidentWander w = ref _wander[index];
             var points = new List<float3>(3) { r.Direction };
+            float3 prev = r.Direction;
+            NpcDutySpec spec = PopulacePlanner.DutySpecFor(r.Duty);
             for (int k = 0; k < 2; k++)
             {
-                if (TryPointInSettlement(ref w.Rng, r.Settlement, r.Direction, capM, out float3 p))
+                if (TryPointInSettlement(ref w.Rng, r.Settlement, r.Direction, prev, capM, out float3 p))
                 {
+                    if (spec.Mode == WanderMode.Loop && k == 1 && !IsSegmentClear(r.Settlement, p, r.Direction))
+                    {
+                        continue;
+                    }
+
                     points.Add(p);
+                    prev = p;
                 }
             }
 
@@ -644,7 +662,7 @@ namespace Cosmimera.WorldGen
                 return true;
             }
 
-            if (TryPointInSettlement(ref w.Rng, r.Settlement, r.Direction, capM, out float3 target))
+            if (TryPointInSettlement(ref w.Rng, r.Settlement, r.Direction, _currentDirections[index], capM, out float3 target))
             {
                 w.Target = target;
                 return true;
@@ -653,14 +671,13 @@ namespace Cosmimera.WorldGen
             return false;
         }
 
-        private bool TryPointInSettlement(ref Pcg32 rng, int settlement, float3 center, float radiusM, out float3 target)
+        private bool TryPointInSettlement(ref Pcg32 rng, int settlement, float3 center, float3 from, float radiusM,
+            out float3 target)
         {
             for (int i = 0; i < WaypointRetries; i++)
             {
                 target = WanderPoint(ref rng, center, radiusM);
-                if ((_isStandable == null || _isStandable(target)) &&
-                    !_clearance.IsInsideBuilding(target, PopulacePlanner.BodyRadiusM) &&
-                    _clearance.IsContainedInSettlement(settlement, target, PopulacePlanner.BodyRadiusM))
+                if (IsSegmentClear(settlement, from, target))
                 {
                     return true;
                 }
@@ -668,6 +685,52 @@ namespace Cosmimera.WorldGen
 
             target = default;
             return false;
+        }
+
+        /// <summary>True when every sample along the great-circle arc from <paramref name="from"/> to <paramref name="to"/> clears walls and settlement bounds.</summary>
+        /// <remarks>
+        /// Pre: from and to finite and non-zero; settlement in [0, layout.Settlements.Count).
+        /// Post: true iff sampled points along from → to (spaced ≤ 0.35 m, endpoints inclusive) stay on standable ground,
+        ///       outside every building footprint by <see cref="WallClearanceM"/>, and inside <paramref name="settlement"/>.
+        /// Side effects: invokes isStandable if configured.
+        /// </remarks>
+        public bool IsSegmentClear(int settlement, float3 from, float3 to)
+        {
+            Contract.Requires(math.all(math.isfinite(from)) && math.lengthsq(from) > 0f, "from must be finite and non-zero");
+            Contract.Requires(math.all(math.isfinite(to)) && math.lengthsq(to) > 0f, "to must be finite and non-zero");
+            if (_clearance == null || _clearance.SettlementRadiusM(settlement) <= 0f)
+            {
+                return false;
+            }
+
+            float3 a = math.normalize(from);
+            float3 b = math.normalize(to);
+            float distM = ArcM(a, b, _radius);
+            int samples = math.max(1, (int)math.ceil(distM / SegmentSampleStepM));
+            for (int s = 1; s <= samples; s++)
+            {
+                float t = (float)s / samples;
+                float3 sum = math.lerp(a, b, t);
+                float3 p = math.lengthsq(sum) > 1e-8f ? math.normalize(sum) : b;
+                if (!IsPointClear(settlement, p))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool IsPointClear(int settlement, float3 p)
+        {
+            if (_isStandable != null && !_isStandable(p))
+            {
+                return false;
+            }
+
+            return !_clearance.IsInsideBuilding(p, WallClearanceM) &&
+                   !_clearance.IsInsideSettlementBuildings(settlement, p, WallClearanceM) &&
+                   _clearance.IsContainedInSettlement(settlement, p, PopulacePlanner.BodyRadiusM);
         }
 
         private MoveResult Steer(int index, int settlement, float3 dest, int speedPermille, int dtMs)
@@ -727,24 +790,26 @@ namespace Cosmimera.WorldGen
 
         private bool CanStepTo(int settlement, float3 from, float3 to)
         {
-            if (_isStandable != null && !_isStandable(to))
+            float3 a = math.normalize(from);
+            float3 b = math.normalize(to);
+            if (!IsPointClear(settlement, a))
             {
-                return false;
+                // If an edge-case resident spawned inside the extended WallClearanceM band, only block entering deeper.
+                if (_isStandable != null && !_isStandable(b))
+                {
+                    return false;
+                }
+
+                if (_clearance.IsInsideBuilding(b, PopulacePlanner.BodyRadiusM) ||
+                    _clearance.IsInsideSettlementBuildings(settlement, b, PopulacePlanner.BodyRadiusM))
+                {
+                    return false;
+                }
+
+                return _clearance.IsContainedInSettlement(settlement, b, PopulacePlanner.BodyRadiusM);
             }
 
-            if (_clearance.IsInsideBuilding(to, PopulacePlanner.BodyRadiusM) &&
-                !_clearance.IsInsideBuilding(from, PopulacePlanner.BodyRadiusM))
-            {
-                return false;
-            }
-
-            if (!_clearance.IsContainedInSettlement(settlement, to, PopulacePlanner.BodyRadiusM) &&
-                _clearance.IsContainedInSettlement(settlement, from, PopulacePlanner.BodyRadiusM))
-            {
-                return false;
-            }
-
-            return true;
+            return IsSegmentClear(settlement, a, b);
         }
 
         private static int DrawPause(ref Pcg32 rng, in RunResident r, in NpcDutySpec spec) =>

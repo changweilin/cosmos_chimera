@@ -22,11 +22,79 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any lobby planet output changes.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 2;
+        public const int GeneratorVersion = 3;
+
+        /// <summary>Minimum terrain altitude (m) considered dry buildable ground above sea level and wave crests.</summary>
+        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
+        public const float MinDryAltitudeM = 0.45f;
 
         private const int AttemptsPerRegion = 40;
         private const int LobbyLoopRoadCount = 6;
         private const float GoldenAngleRad = 2.39996323f;
+
+        /// <summary>True when <paramref name="dir"/> satisfies both <paramref name="isLand"/> and <see cref="MinDryAltitudeM"/>.</summary>
+        /// <remarks>
+        /// Pre: dir finite and non-zero.
+        /// Post: true iff (isLand == null || isLand(d)) and (groundAltitude == null || groundAltitude(d) &gt;= MinDryAltitudeM).
+        /// Side effects: invokes isLand and groundAltitude if provided.
+        /// </remarks>
+        public static bool IsDryGround(float3 dir, Func<float3, bool> isLand, Func<float3, float> groundAltitude)
+        {
+            Contract.Requires(math.all(math.isfinite(dir)) && math.lengthsq(dir) > 0f, "dir must be finite and non-zero");
+            float3 d = math.normalize(dir);
+            if (isLand != null && !isLand(d))
+            {
+                return false;
+            }
+
+            if (groundAltitude != null && groundAltitude(d) < MinDryAltitudeM)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>True when a building's centre and all four footprint corners sit on dry buildable ground.</summary>
+        /// <remarks>
+        /// Pre: pos and facing finite and non-zero; widthM &gt; 0, depthM &gt; 0, radius &gt; 0.
+        /// Post: true iff pos and all 4 corners (±widthM/2 along across, ±depthM/2 along facing) satisfy <see cref="IsDryGround"/>.
+        /// Side effects: invokes isLand and groundAltitude if provided.
+        /// </remarks>
+        public static bool IsDryBuildingFootprint(float3 pos, float3 facing, float widthM, float depthM, float radius,
+            Func<float3, bool> isLand, Func<float3, float> groundAltitude)
+        {
+            Contract.Requires(math.all(math.isfinite(pos)) && math.lengthsq(pos) > 0f, "pos must be finite and non-zero");
+            Contract.Requires(math.all(math.isfinite(facing)) && math.lengthsq(facing) > 0f, "facing must be finite and non-zero");
+            Contract.Requires(widthM > 0f && depthM > 0f && radius > 0f, "dimensions and radius must be > 0");
+            if (isLand == null && groundAltitude == null)
+            {
+                return true;
+            }
+
+            float3 up = math.normalize(pos);
+            if (!IsDryGround(up, isLand, groundAltitude))
+            {
+                return false;
+            }
+
+            float3 fwd = math.normalize(facing - up * math.dot(facing, up));
+            float3 across = math.normalize(math.cross(up, fwd));
+            float hw = widthM * 0.5f;
+            float hd = depthM * 0.5f;
+            for (int c = 0; c < 4; c++)
+            {
+                float sx = (c & 1) == 0 ? hw : -hw;
+                float sz = (c & 2) == 0 ? hd : -hd;
+                float3 corner = SettlementPlanner.Offset(up, across * sx + fwd * sz, radius);
+                if (!IsDryGround(corner, isLand, groundAltitude))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         private static readonly HashSet<string> PolarKinds = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -144,8 +212,12 @@ namespace Cosmimera.WorldGen
             Contract.Requires(regionCount >= LobbyPlanet.SettlementRoster.Count,
                 "lobby planet requires at least 8 regions");
 
+            Func<float3, bool> dryLand = isLand != null || groundAltitude != null
+                ? (Func<float3, bool>)(d => IsDryGround(d, isLand, groundAltitude))
+                : null;
+
             // 1. Pick 8 well-separated regions for the 8 major settlements (index 0 = LandingRegion = CityState).
-            int[] townRegions = PickTownRegions(regions, plan.LandingRegion, isLand, LobbyPlanet.SettlementRoster.Count);
+            int[] townRegions = PickTownRegions(regions, plan.LandingRegion, dryLand, LobbyPlanet.SettlementRoster.Count);
 
             // 2. Build a spanning tree of all regions rooted at LandingRegion using BFS parent edges, then mark every
             //    edge lying on the tree paths between the 8 towns as RoadClass.Main so all 8 towns connect via Main roads.
@@ -180,7 +252,7 @@ namespace Cosmimera.WorldGen
                 long key = EdgeKey(p, r);
                 roadEdges.Add(key);
                 RoadClass cls = mainEdges.Contains(key) ? RoadClass.Main : RoadClass.Trail;
-                roads.Add(SettlementPlanner.Road(cls, p, r, regions, radius, isLand, ref rng, groundAltitude, plan.Seed,
+                roads.Add(SettlementPlanner.Road(cls, p, r, regions, radius, dryLand, ref rng, groundAltitude, plan.Seed,
                     roads.Count));
             }
 
@@ -196,7 +268,7 @@ namespace Cosmimera.WorldGen
                     }
 
                     roadEdges.Add(EdgeKey(a, b));
-                    roads.Add(SettlementPlanner.Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng,
+                    roads.Add(SettlementPlanner.Road(RoadClass.Loop, a, b, regions, radius, dryLand, ref rng,
                         groundAltitude, plan.Seed, roads.Count));
                     loopsAdded++;
                     if (loopsAdded >= LobbyLoopRoadCount)
@@ -206,21 +278,24 @@ namespace Cosmimera.WorldGen
                 }
             }
 
-            // 4. Place the 8 major settlements along their connected road tangents on land.
+            // 4. Place the 8 major settlements along their connected road tangents on verified dry ground.
             var settlements = new List<RunSettlement>(LobbyPlanet.SettlementRoster.Count);
             var buildings = new List<RunBuilding>();
             for (int i = 0; i < LobbyPlanet.SettlementRoster.Count; i++)
             {
                 int r = townRegions[i];
                 SettlementKind kind = LobbyPlanet.SettlementRoster[i];
-                float3 anchor = i == 0 ? plan.LandingDirection : EnsureLandAnchor(regions[r].Center, isLand);
+                float3 rawAnchor = i == 0 ? plan.LandingDirection : regions[r].Center;
+                float3 anchor = i == 0 && (dryLand == null || dryLand(rawAnchor))
+                    ? rawAnchor
+                    : EnsureLandAnchor(rawAnchor, radius, dryLand);
                 int neighbor = FindConnectedNeighbor(r, roads, regions);
                 float3 tangent = neighbor >= 0
                     ? SettlementPlanner.Tangent(anchor, regions[neighbor].Center)
                     : PlanetFrame.FromUp(anchor).East;
                 int lotCount = SettlementPlanner.TownLotCount(kind, ref rng);
-                SettlementPlanner.AddLots(settlements, buildings, r, kind, anchor, tangent,
-                    SettlementPlanner.MainWidthM, lotCount, radius, isLand, ref rng);
+                AddLobbyLots(settlements, buildings, r, kind, anchor, tangent,
+                    SettlementPlanner.MainWidthM, lotCount, radius, isLand, groundAltitude, ref rng);
             }
 
             return new RunLayout(roads.ToArray(), settlements.ToArray(), buildings.ToArray());
@@ -582,30 +657,147 @@ namespace Cosmimera.WorldGen
             return regions[region].Neighbors.Count > 0 ? regions[region].Neighbors[0] : -1;
         }
 
-        private static float3 EnsureLandAnchor(float3 center, Func<float3, bool> isLand)
+        private static float3 EnsureLandAnchor(float3 center, float radius, Func<float3, bool> dryLand)
         {
-            if (isLand == null || isLand(center))
+            if (dryLand == null || HasDryCross(center, radius, 14f, dryLand))
             {
                 return center;
             }
 
-            PlanetFrame frame = PlanetFrame.FromUp(center);
-            for (int ring = 1; ring <= 40; ring++)
+            float3 fallbackDry = default;
+            bool hasFallback = dryLand(center);
+            if (hasFallback)
             {
-                float rad = ring * 0.01f;
+                fallbackDry = center;
+            }
+
+            PlanetFrame frame = PlanetFrame.FromUp(center);
+            for (int ring = 1; ring <= 60; ring++)
+            {
+                float rad = ring * 0.008f;
                 int samples = math.max(8, ring * 6);
                 for (int i = 0; i < samples; i++)
                 {
                     float a = i * (2f * math.PI / samples);
                     float3 p = math.normalize(center + (frame.East * math.cos(a) + frame.North * math.sin(a)) * rad);
-                    if (isLand(p))
+                    if (HasDryCross(p, radius, 14f, dryLand))
                     {
                         return p;
+                    }
+
+                    if (!hasFallback && dryLand(p))
+                    {
+                        fallbackDry = p;
+                        hasFallback = true;
                     }
                 }
             }
 
-            return center;
+            return hasFallback ? fallbackDry : center;
+        }
+
+        private static bool HasDryCross(float3 center, float radius, float reachM, Func<float3, bool> dryLand)
+        {
+            if (!dryLand(center))
+            {
+                return false;
+            }
+
+            PlanetFrame f = PlanetFrame.FromUp(center);
+            float d = reachM / radius;
+            return dryLand(math.normalize(center + f.East * d)) &&
+                   dryLand(math.normalize(center - f.East * d)) &&
+                   dryLand(math.normalize(center + f.North * d)) &&
+                   dryLand(math.normalize(center - f.North * d));
+        }
+
+        private static void AddLobbyLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
+            SettlementKind kind, float3 center, float3 roadAxis, float roadWidthM, int count, float radius,
+            Func<float3, bool> isLand, Func<float3, float> groundAltitude, ref Pcg32 rng)
+        {
+            const float setbackM = 2f;
+            int index = settlements.Count;
+            int first = buildings.Count;
+            float3 normal = math.normalize(math.cross(center, roadAxis));
+            int rows = (count + 1) / 2;
+            for (int k = 0; k < count; k++)
+            {
+                BuildingKind bk = SettlementPlanner.KindFor(kind, k, ref rng);
+                SettlementPlanner.Footprint(bk, ref rng, out float width, out float depth, out int storeys);
+                float side = (k & 1) == 0 ? 1f : -1f;
+                float along = (k / 2 - (rows - 1) * 0.5f) * SettlementPlanner.LotSpacingM;
+                float lateral = side * (roadWidthM * 0.5f + setbackM + depth * 0.5f);
+                float3 pos = SettlementPlanner.Offset(center, roadAxis * along + normal * lateral, radius);
+                float3 facing = SettlementPlanner.Tangent(pos, -side * normal);
+
+                bool valid = IsDryBuildingFootprint(pos, facing, width, depth, radius, isLand, groundAltitude) &&
+                             !OverlapsBuilding(buildings, first, pos, width, depth, radius);
+                if (!valid && !TryFindDryLotNear(center, roadAxis, normal, roadWidthM, buildings, first,
+                    width, depth, radius, isLand, groundAltitude, out pos, out facing))
+                {
+                    continue;
+                }
+
+                buildings.Add(new RunBuilding(index, bk, pos, facing, width, depth, storeys));
+            }
+
+            settlements.Add(new RunSettlement(index, region, kind, center, first, buildings.Count - first, SettlementDomain.Land, 0f));
+        }
+
+        private static bool TryFindDryLotNear(float3 center, float3 roadAxis, float3 normal, float roadWidthM,
+            List<RunBuilding> buildings, int first, float width, float depth, float radius,
+            Func<float3, bool> isLand, Func<float3, float> groundAltitude, out float3 foundPos, out float3 foundFacing)
+        {
+            for (float distM = 10f; distM <= 80f; distM += 4f)
+            {
+                int samples = math.max(12, (int)math.ceil(distM * 0.8f));
+                for (int s = 0; s < samples; s++)
+                {
+                    float a = s * (2f * math.PI / samples);
+                    float alongM = math.cos(a) * distM;
+                    float lateralM = math.sin(a) * distM;
+                    // Keep buildings clear of the main road ribbon through the centre.
+                    if (math.abs(lateralM) < roadWidthM * 0.5f + depth * 0.5f + 1.5f)
+                    {
+                        continue;
+                    }
+
+                    float3 cand = SettlementPlanner.Offset(center, roadAxis * alongM + normal * lateralM, radius);
+                    float3 facing = SettlementPlanner.Tangent(cand, lateralM >= 0f ? -normal : normal);
+                    if (!IsDryBuildingFootprint(cand, facing, width, depth, radius, isLand, groundAltitude))
+                    {
+                        continue;
+                    }
+
+                    if (!OverlapsBuilding(buildings, first, cand, width, depth, radius))
+                    {
+                        foundPos = cand;
+                        foundFacing = facing;
+                        return true;
+                    }
+                }
+            }
+
+            foundPos = default;
+            foundFacing = default;
+            return false;
+        }
+
+        private static bool OverlapsBuilding(List<RunBuilding> buildings, int first, float3 pos, float width, float depth,
+            float radius)
+        {
+            float rNew = 0.5f * math.sqrt(width * width + depth * depth);
+            for (int i = first; i < buildings.Count; i++)
+            {
+                RunBuilding b = buildings[i];
+                float rOld = 0.5f * math.sqrt(b.WidthM * b.WidthM + b.DepthM * b.DepthM);
+                if (math.distance(pos, b.Direction) * radius < rNew + rOld + 1.5f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

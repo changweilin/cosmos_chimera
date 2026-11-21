@@ -191,9 +191,11 @@ namespace Cosmimera.Bootstrap.Demo
                 RoomDungeon dungeon = RoomDungeonPlanner.Generate(_setup.Seed, spec.Id, size, _copy.GenericAffixIds);
                 trial.Geometry = RoomDungeonGeometry.Build(dungeon, radius, gate.Direction);
                 trial.Walls = trial.Geometry.BuildWalls(_rig.Config);
-                trial.MasterDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM));
+                float3 rawMaster = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM));
+                float3 rawReturn = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM));
+                trial.MasterDir = FindClearTrialGround(rawMaster, gate.Direction, gate.FootprintRadiusM + 1.5f);
                 trial.MasterFacing = gate.Facing;
-                trial.ReturnDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM));
+                trial.ReturnDir = FindClearTrialGround(rawReturn, gate.Direction, gate.FootprintRadiusM + 1.5f);
             }
 
             _trial = trial;
@@ -251,6 +253,8 @@ namespace Cosmimera.Bootstrap.Demo
 
                 RunLandmark gate = _landmarks.Landmarks[entry.LandmarkIndex];
                 RoomDungeon dungeon = RoomDungeonPlanner.Generate(_setup.Seed, spec.Id, PlanetSize.Supergiant, _copy.GenericAffixIds);
+                float3 rawMaster = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM));
+                float3 rawReturn = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM));
                 var trial = new TrialRun
                 {
                     Spec = spec,
@@ -264,9 +268,9 @@ namespace Cosmimera.Bootstrap.Demo
                     SealShader = propsShader ?? toonShader,
                     SealShaderIsProps = propsShader != null,
                     Geometry = RoomDungeonGeometry.Build(dungeon, radius, gate.Direction),
-                    MasterDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM)),
+                    MasterDir = FindClearTrialGround(rawMaster, gate.Direction, gate.FootprintRadiusM + 1.5f),
                     MasterFacing = gate.Facing,
-                    ReturnDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM)),
+                    ReturnDir = FindClearTrialGround(rawReturn, gate.Direction, gate.FootprintRadiusM + 1.5f),
                 };
                 trial.Walls = trial.Geometry.BuildWalls(_rig.Config);
                 _trial = trial;
@@ -1173,7 +1177,23 @@ namespace Cosmimera.Bootstrap.Demo
                 float3 up = _rig.Config.ToDirection(player);
                 PlanetFrame f = PlanetFrame.FromUp(up);
                 float3 back = SphericalTangent(up, -(float3)_rig.Character.transform.forward, f.North);
+                float clearanceM = PopulacePlanner.BodyRadiusM + 0.2f;
                 dir = math.normalize(up * _rig.Config.Radius + back * 2.5f + f.East * 1.2f);
+                if (_surface != null && (_surface.IsBlocked(dir, clearanceM) || _surface.IsSea(dir)))
+                {
+                    for (int a = 0; a < 8; a++)
+                    {
+                        float ang = a * (math.PI * 0.25f);
+                        float3 side = back * math.cos(ang) + f.East * math.sin(ang);
+                        float3 cand = math.normalize(up * _rig.Config.Radius + side * 2.5f);
+                        if (!_surface.IsBlocked(cand, clearanceM) && !_surface.IsSea(cand))
+                        {
+                            dir = cand;
+                            break;
+                        }
+                    }
+                }
+
                 facing = -back;
             }
             else
@@ -1186,6 +1206,43 @@ namespace Cosmimera.Bootstrap.Demo
             float3 tangent = SphericalTangent(dir, facing, PlanetFrame.FromUp(dir).North);
             _trial.MasterRoot.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
                 Quaternion.LookRotation((Vector3)tangent, (Vector3)dir));
+        }
+
+        private float3 FindClearTrialGround(float3 preferredDir, float3 gateDir, float minRadiusM)
+        {
+            if (_surface == null)
+            {
+                return preferredDir;
+            }
+
+            float clearanceM = PopulacePlanner.BodyRadiusM + 0.25f;
+            float radius = _rig.Config.Radius;
+            bool IsClearDry(float3 d) =>
+                !_surface.IsSea(d) && _surface.GroundAltitude(d) >= 0.2f && !_surface.IsBlocked(d, clearanceM) &&
+                math.distance(d, gateDir) * radius >= minRadiusM;
+
+            if (IsClearDry(preferredDir))
+            {
+                return preferredDir;
+            }
+
+            PlanetFrame frame = PlanetFrame.FromUp(preferredDir);
+            for (float distM = 2f; distM <= 18f; distM += 2f)
+            {
+                int samples = 12;
+                for (int i = 0; i < samples; i++)
+                {
+                    float a = i * (2f * math.PI / samples);
+                    float3 cand = math.normalize(preferredDir * radius +
+                        (frame.North * math.cos(a) + frame.East * math.sin(a)) * distM);
+                    if (IsClearDry(cand))
+                    {
+                        return cand;
+                    }
+                }
+            }
+
+            return preferredDir;
         }
 
         private static float3 SphericalTangent(float3 up, float3 v, float3 fallback)
