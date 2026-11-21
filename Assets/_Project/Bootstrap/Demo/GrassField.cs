@@ -39,13 +39,13 @@ namespace Cosmimera.Bootstrap.Demo
         public const float NearM = 14f;
 
         private const float CellM = 4f;
-        private const int ClumpsPerSide = 7;
+        private const int ClumpsPerSide = 5;
         private const int ClumpsPerCell = ClumpsPerSide * ClumpsPerSide;
-        private const int BladesPerClump = 18;
-        // Near layer: 16² clumps of 30 blades per 4 m cell on top of the base 7² × 18 → ~10× the blades per m².
-        private const int NearPerSide = 16;
+        private const int BladesPerClump = 12;
+        // Near layer: 12² clumps of 14 blades per 4 m cell on top of the base 5² × 12; wider blades preserve coverage.
+        private const int NearPerSide = 12;
         private const int NearPerCell = NearPerSide * NearPerSide;
-        private const int NearBlades = 30;
+        private const int NearBlades = 14;
         private const int NearGrid = 5; // ground samples per cell side for the near layer (1 m, the finest terrain spacing)
         private const int NearCellsPerFrame = 4;
         private const int BatchSize = 1023; // Graphics.RenderMeshInstanced's per-call limit
@@ -174,8 +174,8 @@ namespace Cosmimera.Bootstrap.Demo
             _maxLat = maxLat;
             _meadow = meadow;
             _cellsPerFace = math.max(1, (int)math.round(config.Radius * math.PI * 0.5f / CellM));
-            _mesh = BuildClumpMesh(BladesPerClump, 0, 0.42f, 0xC1A5Ful, "GrassClump");
-            _nearMesh = BuildClumpMesh(NearBlades, 0, 0.3f, 0xC1A5Eul, "GrassClumpNear");
+            _mesh = BuildClumpMesh(BladesPerClump, 0, 0.42f, 0xC1A5Ful, "GrassClump", simpleBlades: true, widthScale: 1.25f);
+            _nearMesh = BuildClumpMesh(NearBlades, 0, 0.3f, 0xC1A5Eul, "GrassClumpNear", simpleBlades: false, widthScale: 1.25f);
             _flowerMesh = BuildClumpMesh(10, 7, 0.4f, 0xF10Eul, "FlowerClump");
             // The near layer shrinks to nothing at its own edge, so the ring boundary never shows as a line.
             _nearMaterial = new Material(material);
@@ -545,7 +545,8 @@ namespace Cosmimera.Bootstrap.Demo
         // star-shaped blossom. uv.y is the height fraction the shader bends and tints by; uv.x a per-blade random that
         // de-phases the sway; uv2.x = 1 marks blossom vertices (ToonGrass paints them with the meadow colour).
         // Fixed stream: every clump of a kind shares this mesh.
-        private static Mesh BuildClumpMesh(int blades, int flowers, float spread, ulong state, string name)
+        private static Mesh BuildClumpMesh(int blades, int flowers, float spread, ulong state, string name,
+            bool simpleBlades = false, float widthScale = 1f)
         {
             var rng = new Pcg32(state, Stream);
             var vertices = new List<Vector3>();
@@ -561,9 +562,9 @@ namespace Cosmimera.Bootstrap.Demo
                 var side = new Vector3(math.cos(facing), 0f, math.sin(facing));
                 var lean = new Vector3(-side.z, 0f, side.x) * (0.04f + rng.NextFloat() * 0.1f);
                 float height = 0.18f + rng.NextFloat() * 0.2f;
-                float width = 0.016f + rng.NextFloat() * 0.012f;
+                float width = (0.016f + rng.NextFloat() * 0.012f) * widthScale;
                 float random = rng.NextFloat();
-                Blade(vertices, uvs, marks, indices, root, side, lean, height, width, random);
+                Blade(vertices, uvs, marks, indices, root, side, lean, height, width, random, simpleBlades);
             }
 
             for (int f = 0; f < flowers; f++)
@@ -618,9 +619,24 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         private static void Blade(List<Vector3> vertices, List<Vector2> uvs, List<Vector2> marks, List<int> indices,
-            Vector3 root, Vector3 side, Vector3 lean, float height, float width, float random)
+            Vector3 root, Vector3 side, Vector3 lean, float height, float width, float random, bool simple = false)
         {
             int v = vertices.Count;
+            if (simple)
+            {
+                vertices.Add(root - side * width);
+                vertices.Add(root + side * width);
+                vertices.Add(root + lean + new Vector3(0f, height, 0f));
+                uvs.Add(new Vector2(random, 0f));
+                uvs.Add(new Vector2(random, 0f));
+                uvs.Add(new Vector2(random, 1f));
+                for (int k = 0; k < 3; k++) marks.Add(Vector2.zero);
+                indices.Add(v);
+                indices.Add(v + 2);
+                indices.Add(v + 1);
+                return;
+            }
+
             vertices.Add(root - side * width);
             vertices.Add(root + side * width);
             vertices.Add(root - side * (width * 0.7f) + lean * 0.35f + new Vector3(0f, height * 0.5f, 0f));

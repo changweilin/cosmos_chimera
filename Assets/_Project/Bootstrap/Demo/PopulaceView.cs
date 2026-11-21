@@ -38,6 +38,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<int> _residentIndices = new List<int>();
         private readonly List<bool> _residentIsSky = new List<bool>();
         private readonly List<float> _residentSkyAltM = new List<float>();
+        private readonly List<bool> _needsSync = new List<bool>();
+        private readonly List<float3> _previousFacing = new List<float3>();
         private PlanetConfig _config;
         private RunPopulace _populace;
         private Func<float3, float> _groundAltitude;
@@ -126,6 +128,8 @@ namespace Cosmimera.Bootstrap.Demo
                     _residentIndices.Add(i);
                     _residentIsSky.Add(isSky);
                     _residentSkyAltM.Add(settlement.AltitudeM);
+                    _needsSync.Add(false);
+                    _previousFacing.Add(resident.Facing);
                 }
             }
         }
@@ -137,16 +141,25 @@ namespace Cosmimera.Bootstrap.Demo
                 _syncedStepVersion = _populace.StepVersion;
                 for (int i = 0; i < _roots.Count; i++)
                 {
+                    // Skip terrain sampling for off-range residents until they come within DrawDistanceM.
+                    if (_focus != null && !_renderers[i].enabled)
+                    {
+                        _needsSync[i] = true;
+                        continue;
+                    }
+
                     int idx = _residentIndices[i];
+                    ResidentStride stride = _strides[i];
                     float3 dir = _populace.CurrentDirection(idx);
                     float3 facing = _populace.CurrentFacing(idx);
-                    float alt = _residentIsSky[i] ? _residentSkyAltM[i] : _groundAltitude(dir);
-                    float3 world = _config.ToWorld(dir, alt - SinkM);
-                    ResidentStride stride = _strides[i];
-                    stride.Advance(math.distance(dir, stride.PreviousDirection) * _config.Radius, _renderers[i].enabled);
-                    stride.PreviousDirection = dir;
-                    _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
-                        Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
+                    if (!_needsSync[i] && math.distancesq(dir, stride.PreviousDirection) < 1e-12f &&
+                        math.distancesq(facing, _previousFacing[i]) < 1e-12f)
+                    {
+                        stride.Advance(0f, _renderers[i].enabled);
+                        continue;
+                    }
+
+                    SyncResident(i, true);
                 }
             }
 
@@ -159,12 +172,37 @@ namespace Cosmimera.Bootstrap.Demo
             Vector3 focus = _focus();
             for (int i = 0; i < _roots.Count; i++)
             {
-                bool near = (_roots[i].transform.position - focus).sqrMagnitude < DrawDistanceM * DrawDistanceM;
+                Vector3 pos = _needsSync[i]
+                    ? (Vector3)_config.ToWorld(_populace.CurrentDirection(_residentIndices[i]),
+                        _residentIsSky[i] ? _residentSkyAltM[i] : 0f)
+                    : _roots[i].transform.position;
+                bool near = (pos - focus).sqrMagnitude < DrawDistanceM * DrawDistanceM;
                 if (_renderers[i].enabled != near)
                 {
                     _renderers[i].enabled = near;
+                    if (near && _needsSync[i])
+                    {
+                        SyncResident(i, false);
+                    }
                 }
             }
+        }
+
+        private void SyncResident(int i, bool animate)
+        {
+            int idx = _residentIndices[i];
+            float3 dir = _populace.CurrentDirection(idx);
+            float3 facing = _populace.CurrentFacing(idx);
+            float alt = _residentIsSky[i] ? _residentSkyAltM[i] : _groundAltitude(dir);
+            float3 world = _config.ToWorld(dir, alt - SinkM);
+            ResidentStride stride = _strides[i];
+            float dist = animate ? math.distance(dir, stride.PreviousDirection) * _config.Radius : 0f;
+            stride.Advance(dist, _renderers[i].enabled);
+            stride.PreviousDirection = dir;
+            _previousFacing[i] = facing;
+            _needsSync[i] = false;
+            _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
         }
 
         private Material Own(Material material)

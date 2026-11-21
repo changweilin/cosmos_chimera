@@ -69,6 +69,7 @@ namespace Cosmimera.Bootstrap.Demo
         private const float FarMinRockM = 1.5f;
         private const float RefreshMoveM = 6f;
         private const float RefreshSeconds = 0.5f;
+        private const int BuildCellsPerFrame = 24;
         // Metres of lean per metre of height in a full gust: a 6 m tree's crown travels ~0.4 m.
         private const float TreeSway = 0.06f;
         // Thin stems travel further than a trunk: a 2 m tussock's plumes swing ~0.3 m.
@@ -418,6 +419,7 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly Dictionary<long, List<GameObject>> _live = new Dictionary<long, List<GameObject>>();
         private readonly HashSet<long> _wanted = new HashSet<long>();
         private readonly List<long> _stale = new List<long>();
+        private readonly Queue<long> _pending = new Queue<long>();
         // Items handed to ObjectPhysics (woken rigidbodies): no longer streamed, never rebuilt at their home spot.
         private readonly HashSet<long> _detached = new HashSet<long>();
         private readonly Dictionary<(Color, Color, Role), Material> _materials = new Dictionary<(Color, Color, Role), Material>();
@@ -425,6 +427,7 @@ namespace Cosmimera.Bootstrap.Demo
         private float3 _lastFocus;
         private float _nextRefresh;
         private bool _configured;
+        private bool _initialized;
 
         /// <summary>Number of live scattered objects (roots), for tests and diagnostics.</summary>
         /// <remarks>Pre: none. Post: ≥ 0. Side effects: none.</remarks>
@@ -491,6 +494,8 @@ namespace Cosmimera.Bootstrap.Demo
             _shader = shader;
             _sceneryShader = sceneryShader;
             _configured = true;
+            _initialized = false;
+            _pending.Clear();
             _lastFocus = new float3(float.NaN);
             _nextRefresh = 0f;
         }
@@ -806,18 +811,26 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             float3 focus = _focus();
-            bool moved = !math.all(math.isfinite(_lastFocus)) || math.distance(focus, _lastFocus) > RefreshMoveM;
-            if (!moved && Time.time < _nextRefresh)
+            if (!_initialized)
             {
+                _lastFocus = focus;
+                _nextRefresh = Time.time + RefreshSeconds;
+                Refresh(focus);
                 return;
             }
 
-            _lastFocus = focus;
-            _nextRefresh = Time.time + RefreshSeconds;
-            Refresh(focus);
+            bool moved = !math.all(math.isfinite(_lastFocus)) || math.distance(focus, _lastFocus) > RefreshMoveM;
+            if (moved || Time.time >= _nextRefresh)
+            {
+                _lastFocus = focus;
+                _nextRefresh = Time.time + RefreshSeconds;
+                BeginRefresh(focus);
+            }
+
+            DrainPending();
         }
 
-        private void Refresh(float3 focus)
+        private void BeginRefresh(float3 focus)
         {
             float3 up = _config.ToDirection(focus);
             CollectCells(up);
@@ -841,12 +854,45 @@ namespace Cosmimera.Bootstrap.Demo
                 _live.Remove(key);
             }
 
+            _pending.Clear();
             foreach (long key in _wanted)
             {
                 if (!_live.ContainsKey(key))
                 {
-                    BuildCell(key);
+                    _pending.Enqueue(key);
                 }
+            }
+        }
+
+        private void DrainPending()
+        {
+            int built = 0;
+            while (built < BuildCellsPerFrame && _pending.Count > 0)
+            {
+                long key = _pending.Dequeue();
+                if (!_wanted.Contains(key) || _live.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                BuildCell(key);
+                built++;
+            }
+        }
+
+        private void Refresh(float3 focus)
+        {
+            _initialized = true;
+            BeginRefresh(focus);
+            while (_pending.Count > 0)
+            {
+                long key = _pending.Dequeue();
+                if (!_wanted.Contains(key) || _live.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                BuildCell(key);
             }
         }
 

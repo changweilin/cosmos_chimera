@@ -68,21 +68,28 @@ Shader "Cosmimera/ToonGrass"
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 rootWS : TEXCOORD1;
-                float3 tip : TEXCOORD2; // x = height fraction, y = gust 0..1, z = fog factor
-                float3 bloom : TEXCOORD3; // x = blossom, y = heart, z = per-blade random
+                float4 upAndCloud : TEXCOORD2; // xyz = up, w = cloudLight
+                half3 albedo : TEXCOORD3;
+                half3 sh : TEXCOORD4;
+                float fog : TEXCOORD5;
             };
 
             Varyings Vert(Attributes i)
             {
-                Varyings o;
+                Varyings o = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(i);
                 float3 root = TransformObjectToWorld(float3(0, 0, 0));
-                float3 up = normalize(root - _PlanetCenter.xyz);
-                float h = i.uv.y;
 
-                // Shrink toward the streaming edge so clumps grow in rather than pop.
+                // Shrink toward the streaming edge so clumps grow in rather than pop; early-out past fade edge.
                 float dist = distance(root, _WorldSpaceCameraPos);
                 float size = saturate((_GrassFade - dist) / max(_GrassFade * 0.3, 1.0)) * _GrassHeight;
+                if (size <= 0.001)
+                {
+                    return o;
+                }
+
+                float3 up = normalize(root - _PlanetCenter.xyz);
+                float h = i.uv.y;
                 float3 local = i.positionOS.xyz;
                 local.y *= size;
                 float3 ws = TransformObjectToWorld(local);
@@ -111,36 +118,36 @@ Shader "Cosmimera/ToonGrass"
                 float h2 = h * h * size;
                 ws += lean * h2 - up * (dot(lean, lean) * h2 * 0.45 + push * h2 * 0.25);
 
+                CosmiGround g = CosmiGroundAt(root, up);
+                half3 ground = CosmiBiomeColorVertex(root, g);
+                half3 tipColor = ground * half3(1.16, 1.2, 0.9) + half3(0.012, 0.024, 0.0);
+                half3 albedo = lerp(ground * 0.93, tipColor, h); // mean ≈ ground: no edge where grass streams out
+                albedo += gust * _CosmiWind.x * h * 0.07; // gust fronts flash the pale underside
+                if (i.bloom.x > 0.5)
+                {
+                    half3 petal = CosmiBloomColor(up, i.uv.x) * lerp(0.92, 1.08, frac(i.uv.x * 7.3));
+                    albedo = lerp(petal, half3(1.0, 0.82, 0.25), i.bloom.y * 0.8);
+                }
+
                 o.positionWS = ws;
                 o.rootWS = root;
                 o.positionCS = TransformWorldToHClip(ws);
-                o.tip = float3(h, gust * _CosmiWind.x, ComputeFogFactor(o.positionCS.z));
-                o.bloom = float3(i.bloom, i.uv.x);
+                o.upAndCloud = float4(up, CosmiCloudLight(root));
+                o.albedo = albedo;
+                o.sh = SampleSH(up);
+                o.fog = ComputeFogFactor(o.positionCS.z);
                 return o;
             }
 
             half4 Frag(Varyings i) : SV_Target
             {
-                // The ground's colour and normal at the root: a blade has no meaningful normal of its own, and
-                // shading every blade like the ground under it is what makes the field read as one soft surface.
-                float3 up = normalize(i.rootWS - _PlanetCenter.xyz);
-                CosmiGround g = CosmiGroundAt(i.rootWS, up);
-                float grass;
-                half3 ground = CosmiBiomeColor(i.rootWS, g, grass);
-                half3 tipColor = ground * half3(1.16, 1.2, 0.9) + half3(0.012, 0.024, 0.0);
-                half3 albedo = lerp(ground * 0.93, tipColor, i.tip.x); // mean ≈ ground: no edge where grass streams out
-                albedo += i.tip.y * i.tip.x * 0.07; // gust fronts flash the pale underside
-                if (i.bloom.x > 0.5)
-                {
-                    half3 petal = CosmiBloomColor(up, i.bloom.z) * lerp(0.92, 1.08, frac(i.bloom.z * 7.3));
-                    albedo = lerp(petal, half3(1.0, 0.82, 0.25), i.bloom.y * 0.8);
-                }
-
+                float3 up = i.upAndCloud.xyz;
                 // Shadow lookup from blade height, not the buried root (which the ground itself would shadow).
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.rootWS + up * 0.25));
-                half3 lit = CosmiToon(albedo, up, i.rootWS, light.color, light.direction, light.shadowAttenuation,
-                    _Shadow.rgb, _Bands, SampleSH(up));
-                return half4(CosmiAtmosphere(lit, i.positionWS, i.tip.z, light.direction), 1);
+                float ramp = CosmiRamp(saturate(dot(up, light.direction)) * light.shadowAttenuation * i.upAndCloud.w, _Bands);
+                half3 shade = lerp(_Shadow.rgb * 0.6, _Shadow.rgb * 0.8 + _CosmiSkyZenith.rgb * 0.08, _CosmiSkyHorizon.a);
+                half3 lit = i.albedo * lerp(shade, light.color, ramp) + i.albedo * i.sh * 0.25;
+                return half4(CosmiAtmosphere(lit, i.positionWS, i.fog, light.direction), 1);
             }
             ENDHLSL
         }

@@ -4,7 +4,7 @@
 
 | ID | 項目 | 主責 | 審查 | 驗收條件 | 狀態 |
 |---|---|---|---|---|---|
-| P7-01 | 效能剖析與最佳化（GPU/CPU/記憶體） | OPUS | SONNET | PC 最低規格 60 fps；Steam Deck 800p 穩定 30–40 fps；無 GC 尖峰 | ⬜ |
+| P7-01 | 效能剖析與最佳化（GPU/CPU/記憶體） | OPUS | SONNET | PC 最低規格 60 fps；Steam Deck 800p 穩定 30–40 fps；無 GC 尖峰 | 🟦 |
 | P7-07 | Steam Deck Verified 檢查（手把、字級、預設檔、Proton 相容） | SONNET | 人工（實機） | 通過 Valve Deck 相容性檢查清單 | 🟦 |
 | P7-02 | 新手任務（規格 [beginner-quest.md](../design/beginner-quest.md)；子項 P7-02a～i） | SONNET | 人工 | 新玩家 10 分鐘內理解召喚與輪替 | 🟨 |
 | P7-02a | 新手存檔與流程狀態機：角色／好友／宿敵／三御三家／`tutorial_done`、0～8 階段、大廳鎖定、舊存檔遷移 | SONNET | SOL（存檔格式必審） | 新存檔進新手、舊存檔直入大廳；遷移測試 | 🟨 |
