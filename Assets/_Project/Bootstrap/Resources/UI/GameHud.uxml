@@ -1,0 +1,56 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="CosmimeraTheme.uss" />
+    <ui:Style src="GameHud.uss" />
+    <ui:VisualElement name="hudRoot" picking-mode="Ignore" class="hud-root">
+        <ui:VisualElement name="loadingOverlay" picking-mode="Ignore" class="screen-backdrop hidden">
+            <ui:Label name="loadingLabel" text="載入星球中..." class="hud-loading-pill" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="topRow" picking-mode="Ignore" class="hud-top-row">
+            <ui:VisualElement name="leftCol" picking-mode="Ignore" class="hud-col-left">
+                <ui:VisualElement name="questCard" picking-mode="Ignore" class="hud-card">
+                    <ui:Label name="questTitle" text="" picking-mode="Ignore" class="hud-quest-title" />
+                    <ui:Label name="questBody" text="" picking-mode="Ignore" class="hud-quest-body" />
+                </ui:VisualElement>
+                <ui:VisualElement name="playerCombatCard" picking-mode="Ignore" class="hud-card hidden">
+                    <ui:Label name="playerCombatTitle" text="" picking-mode="Ignore" class="hud-member-name" />
+                    <ui:Label name="playerCombatDetail" text="" picking-mode="Ignore" class="muted-text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="centerCol" picking-mode="Ignore" class="hud-col-center">
+                <ui:VisualElement name="bossCard" picking-mode="Ignore" class="hud-boss-card hidden">
+                    <ui:VisualElement picking-mode="Ignore" class="hud-boss-header">
+                        <ui:Label name="bossNameLabel" text="" picking-mode="Ignore" class="hud-boss-name" />
+                        <ui:Label name="bossHpLabel" text="" picking-mode="Ignore" class="hud-boss-hp-text" />
+                    </ui:VisualElement>
+                    <ui:VisualElement picking-mode="Ignore" class="hud-boss-track">
+                        <ui:VisualElement name="bossHpFill" picking-mode="Ignore" class="bar-fill-boss" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="rightCol" picking-mode="Ignore" class="hud-col-right">
+                <ui:VisualElement class="hud-actions-row">
+                    <ui:Button name="journalBtn" text="背包 / 手冊 [I]" class="btn btn-primary hud-top-btn" />
+                </ui:VisualElement>
+                <ui:VisualElement name="teamList" picking-mode="Ignore" class="hud-team-list" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="centerPrompts" picking-mode="Ignore" class="hud-center-prompts">
+            <ui:Label name="toastLabel" text="" picking-mode="Ignore" class="hud-toast hidden" />
+            <ui:VisualElement name="interactMenu" class="hud-interact-menu hidden">
+                <ui:Label name="interactTitle" text="" class="heading-lg" />
+                <ui:VisualElement name="interactButtons" />
+            </ui:VisualElement>
+            <ui:Label name="interactPrompt" text="" picking-mode="Ignore" class="hud-interact-pill hidden" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="bottomRow" picking-mode="Ignore" class="hud-bottom-row">
+            <ui:VisualElement name="controlsCard" picking-mode="Ignore" class="hud-card hud-controls-card">
+                <ui:Label name="controlsText" text="" picking-mode="Ignore" class="muted-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

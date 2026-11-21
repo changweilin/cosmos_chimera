@@ -3668,7 +3668,6 @@ namespace Cosmimera.Bootstrap.Demo
             _weatherLabel ??= new GUIStyle(_label) { fontSize = 14, wordWrap = true };
             if (!_started)
             {
-                GUI.Label(new Rect(20, 20, 600, 30), _copy.Ui("ui.star_select.loading"), _label);
                 return;
             }
 
@@ -3676,23 +3675,9 @@ namespace Cosmimera.Bootstrap.Demo
             _feedback?.DrawFloatingTexts(_rig.Camera);
             _hitFeel?.DrawOverlay();
             DrawLockMarker();
-            DrawBossTopBar();
-            DrawDirectCombatHud();
-            DrawQuestPanel();
-            DrawTeamPanel();
-            DrawControlsPanel();
             if (_journal != null)
             {
                 _journal.Draw(DrawJournal, CloseJournal);
-                return;
-            }
-            if (GUI.Button(new Rect(Screen.width - 200, 12, 188, 34), _copy.Ui("ui.journal.open") + " [" + BindingLabel(_journalAction) + "]"))
-            { OpenJournal(); GUIUtility.ExitGUI(); }
-            DrawInteraction();
-            if (_nowMs < _toastUntilMs)
-            {
-                GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
-                    "<b>" + _toast + "</b>", new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontSize = 24 });
             }
         }
 
@@ -4116,6 +4101,7 @@ namespace Cosmimera.Bootstrap.Demo
             _underwater?.Dispose();
             if (_sea != null) SeaWaves.Clear();
             CloseJournal();
+            DisposeHud();
             _inputHints?.Dispose();
             _globalInput?.Dispose();
             _runInput?.Dispose();

@@ -49,9 +49,14 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _paperdollPreview?.Dispose();
             _paperdollPreview = null;
+            _journal?.Dispose();
             _journal = null;
             _confirmPending = false;
             _menuFocus.SetCount(0);
+            if (_screen == Screen.Results)
+            {
+                ShowResultsOverlay();
+            }
         }
 
         private bool IsOwnedSpecies(string species)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Cosmimera.Bootstrap.Demo.UI;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
 using Cosmimera.Crafting;
@@ -102,6 +103,7 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _confirmPending;
         private bool _scrollToFocus;
         private bool _insidePartyScroll;
+        private GameOverlayView _overlay;
 
         private void Awake()
         {
@@ -133,10 +135,30 @@ namespace Cosmimera.Bootstrap.Demo
             _bgm.Initialize(_bgmTable);
             _bgm.Play(BgmResolver.Town);
 
-            if (!_save.TutorialDone)
+            StartGameDirectly();
+        }
+
+        private void StartGameDirectly()
+        {
+            if (_save.StarterLine == null && _starters.Count > 0)
             {
-                EnterBeginnerQuest();
+                CreatureDef s = _starters[0];
+                LobbySave candidate = _save.Clone();
+                int exp = _progression.XpThreshold(_progression.StarterLevel);
+                if (s.Niches.Count > 0)
+                {
+                    WildIndividual ind = WildIndividual.Draw(s, null, WildIndividual.KeyFor(0x53545254UL, 1UL));
+                    candidate.ChooseStarter(s.LineId, s.Id, exp, ind.Niche.Id, ind.Habit);
+                }
+                else
+                {
+                    candidate.ChooseStarter(s.LineId, s.Id, exp);
+                }
+
+                CommitLobby(candidate);
             }
+
+            LaunchLobbyPlanet();
         }
 
         private void LoadData()
@@ -205,6 +227,8 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDestroy()
         {
+            _overlay?.Dispose();
+            _overlay = null;
             _paperdollPreview?.Dispose();
             _paperdollPreview = null;
             _menuHints?.Dispose();
@@ -430,8 +454,7 @@ namespace Cosmimera.Bootstrap.Demo
                     DrawStarSelect();
                     break;
                 case Screen.Results:
-                    DrawResults();
-                    break;
+                    return;
                 case Screen.BeginnerQuest:
                     DrawBeginnerQuest();
                     break;
@@ -1153,6 +1176,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             _menuInput.Disable();
             _confirmPending = false;
+            _overlay?.Hide();
             // REQ: gear-looks.md#外觀與數值 — lobby crafting styles gear after the last departed planet; persisted at settlement.
             _save.SetLastPlanet(new GearOrigin(o.Type.Id, o.Seed));
             _lobbyCamera.gameObject.SetActive(false);
@@ -1250,7 +1274,60 @@ namespace Cosmimera.Bootstrap.Demo
             if (_settleError == null && outcome.TravelToLobbyPlanet)
             {
                 LaunchLobbyPlanet();
+                return;
             }
+
+            ShowResultsOverlay();
+        }
+
+        private void ShowResultsOverlay()
+        {
+            _overlay ??= new GameOverlayView(transform);
+            string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
+            _overlay.Show(title, _playerXpLine);
+
+            if (_outcome.Captured.Count > 0)
+            {
+                string capBody = string.Empty;
+                foreach ((string speciesId, VesselKind vessel, int exp, _, _) in _outcome.Captured)
+                {
+                    capBody += $"· {_copy.Name(speciesId)} LV{_progression.LevelOf(exp)} ({_copy.Ui("ui.vessel." + VesselKey(vessel))})\n";
+                }
+                _overlay.AddCard(_copy.Ui("ui.results.captured_list"), capBody.TrimEnd());
+            }
+
+            string matBody = _outcome.Materials.Count == 0 ? _copy.Ui("ui.results.materials_none") : string.Empty;
+            foreach (MaterialStack m in _outcome.Materials)
+            {
+                matBody += $"· {_copy.Material(m.Key)} ×{m.Qty}\n";
+            }
+            _overlay.AddCard(_copy.Ui("ui.results.materials_list"), matBody.TrimEnd());
+
+            if (_xpLines.Count > 0)
+            {
+                _overlay.AddCard(_copy.Ui("ui.lobby.team"), string.Join("\n", _xpLines));
+            }
+
+            if (_settleError != null)
+            {
+                _overlay.AddCard(_copy.Ui("ui.results.retry"), _settleError, _copy.Ui("ui.results.retry"), () =>
+                {
+                    TrySettle();
+                    ShowResultsOverlay();
+                }, primary: false);
+                return;
+            }
+
+            _overlay.AddFooterButton(_copy.Ui("ui.journal.open"), () =>
+            {
+                _overlay.Hide();
+                OpenJournal();
+            });
+            _overlay.AddFooterButton("再次出發", () =>
+            {
+                _overlay.Hide();
+                LaunchLobbyPlanet();
+            }, primary: true);
         }
 
         private void TrySettle()

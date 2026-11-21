@@ -92,7 +92,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal void Draw(AdventurePanel ui)
         {
-            GUILayout.BeginHorizontal();
+            ui.BeginRow();
             int tabs = _foods != null ? RecipeTab + 1 : RecipeTab;
             for (int i = 0; i < tabs; i++)
             {
@@ -100,7 +100,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (!ui.Button(_copy.Ui(label))) continue;
                 _kind = i; Refresh(); GUIUtility.ExitGUI();
             }
-            GUILayout.EndHorizontal();
+            ui.EndRow();
             if (_kind == RecipeTab) { DrawRecipes(ui); return; }
             ui.Label(_copy.Ui("ui.codex.search"));
             string search = ui.TextField("CodexSearch", _search);
@@ -108,11 +108,11 @@ namespace Cosmimera.Bootstrap.Demo
             if ((_kind == 0 || _kind == 3) && ui.Button(_copy.Ui(_ownedOnly ? "ui.codex.owned_only" : "ui.codex.all")))
             { _ownedOnly = !_ownedOnly; Refresh(); GUIUtility.ExitGUI(); }
             int pages = Math.Max(1, (_entries.Count + PageSize - 1) / PageSize);
-            GUILayout.BeginHorizontal();
+            ui.BeginRow();
             if (ui.Button("◀", _page > 0)) { _page--; GUIUtility.ExitGUI(); }
             ui.Label($"{_page + 1}/{pages} · {_entries.Count}");
             if (ui.Button("▶", _page + 1 < pages)) { _page++; GUIUtility.ExitGUI(); }
-            GUILayout.EndHorizontal();
+            ui.EndRow();
             for (int i = _page * PageSize; i < Math.Min(_entries.Count, (_page + 1) * PageSize); i++)
             {
                 JObject entry = _entries[i];
@@ -124,7 +124,7 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Heading(Title(_selected));
             if (level == CodexLevel.Unknown) { ui.Label(_copy.Ui("dex.hint." + (string)_selected["kind"])); return; }
             if (_selected["authored_fields"] is JArray authored && authored.Count > 0) ui.Label(_copy.Ui("dex.authored"));
-            DrawPortrait(_selected);
+            DrawPortrait(ui, _selected);
             foreach (JProperty field in ((JObject)_selected["basic"]).Properties())
                 if (field.Name != "name_zh" && field.Name != "name_en") DrawField(ui, field.Name, field.Value);
             if (level != CodexLevel.Complete) { ui.Label(_copy.Ui("dex.complete_hint." + (string)_selected["kind"])); return; }
@@ -151,7 +151,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ui.Label(resist);
                 Link(ui, CodexKind.Skill, creature.SignatureMove.Id);
                 Link(ui, CodexKind.Skill, creature.Trait.Id);
-                DrawKnownRelations(creature);
+                DrawKnownRelations(ui, creature);
                 foreach (RelationLink link in _database.GetRelations(creature.Id)) Link(ui, CodexKind.Creature, link.Other.Id);
             }
         }
@@ -163,11 +163,11 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (RecipeSpec recipe in _recipes) if (_recipeKnown(recipe.Id)) known++;
             int pages = Math.Max(1, (_recipes.Count + PageSize - 1) / PageSize);
             if (_page >= pages) _page = 0;
-            GUILayout.BeginHorizontal();
+            ui.BeginRow();
             if (ui.Button("◀", _page > 0)) { _page--; GUIUtility.ExitGUI(); }
             ui.Label($"{_page + 1}/{pages} · {known}/{_recipes.Count}");
             if (ui.Button("▶", _page + 1 < pages)) { _page++; GUIUtility.ExitGUI(); }
-            GUILayout.EndHorizontal();
+            ui.EndRow();
             for (int i = _page * PageSize; i < Math.Min(_recipes.Count, (_page + 1) * PageSize); i++)
             {
                 RecipeSpec recipe = _recipes[i];
@@ -197,7 +197,7 @@ namespace Cosmimera.Bootstrap.Demo
             ui.Heading(_copy.Ui("dex.field." + key)); ui.Label(content);
         }
 
-        private void DrawKnownRelations(CreatureDef creature)
+        private void DrawKnownRelations(AdventurePanel ui, CreatureDef creature)
         {
             _knownRelations.Clear();
             foreach (RelationLink link in _database.GetRelations(creature.Id))
@@ -206,19 +206,13 @@ namespace Cosmimera.Bootstrap.Demo
                 if (other != null && Level(other) != CodexLevel.Unknown) _knownRelations.Add(other);
             }
             if (_knownRelations.Count == 0) return;
-            _nodeStyle ??= new GUIStyle(GUI.skin.box) { wordWrap = true, fontSize = 13, alignment = TextAnchor.MiddleCenter };
-            Rect area = GUILayoutUtility.GetRect(200, 240, GUILayout.ExpandWidth(true));
-            Vector2 center = area.center;
+            ui.BeginRow();
             int count = Math.Min(_knownRelations.Count, 8);
             for (int i = 0; i < count; i++)
             {
-                float angle = 2 * Mathf.PI * i / count;
-                Vector2 node = center + new Vector2(Mathf.Cos(angle) * (area.width - 140) / 2, Mathf.Sin(angle) * 90);
-                GUI.DrawTexture(new Rect(Mathf.Min(center.x, node.x), center.y, Mathf.Max(1, Mathf.Abs(node.x - center.x)), 2), Texture2D.whiteTexture);
-                GUI.DrawTexture(new Rect(node.x, Mathf.Min(center.y, node.y), 2, Mathf.Max(1, Mathf.Abs(node.y - center.y))), Texture2D.whiteTexture);
-                GUI.Box(new Rect(node.x - 62, node.y - 22, 124, 44), Title(_knownRelations[i]), _nodeStyle);
+                ui.Label("↔ " + Title(_knownRelations[i]));
             }
-            GUI.Box(new Rect(center.x - 62, center.y - 22, 124, 44), Title(_selected), _nodeStyle);
+            ui.EndRow();
         }
 
         private void Link(AdventurePanel ui, CodexKind kind, string id)
@@ -228,7 +222,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (ui.Button(Title(entry))) { _selected = entry; GUIUtility.ExitGUI(); }
         }
 
-        private void DrawPortrait(JObject entry)
+        private void DrawPortrait(AdventurePanel ui, JObject entry)
         {
             if (_portraits == null) return;
             Texture2D portrait = null;
@@ -236,7 +230,7 @@ namespace Cosmimera.Bootstrap.Demo
             else if ((string)entry["kind"] == "creature" && Enum.TryParse((string)entry["stage"], true, out CreatureStage stage))
                 portrait = _portraits.FindCreature((string)entry["subject_id"], stage);
             if (portrait != null)
-                GUI.DrawTexture(GUILayoutUtility.GetRect(160, 160, GUILayout.ExpandWidth(false)), portrait, ScaleMode.ScaleToFit, true);
+                ui.Image(portrait, 160f, 160f);
         }
     }
 }

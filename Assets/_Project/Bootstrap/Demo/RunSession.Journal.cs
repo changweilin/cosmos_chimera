@@ -264,6 +264,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void CloseJournal()
         {
             if (_journal == null) return;
+            _journal.Dispose();
             _journal = null;
             Time.timeScale = _previousTimeScale;
             Cursor.lockState = _previousCursorLock;
