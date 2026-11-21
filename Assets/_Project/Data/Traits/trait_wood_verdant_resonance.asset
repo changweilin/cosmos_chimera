@@ -26,5 +26,8 @@ MonoBehaviour:
     delta: 20
     percent: 0
     maxStacks: 1
+    anyAilment: 0
+    ailment: 0
+    buildup: 0
   star: 1
   downgradedEffects: []

@@ -471,8 +471,8 @@ namespace Cosmimera.Combat.Tests
         {
             var e = new Encounter(_planet, _balance, new FlatSurface(), 3);
             EncounterUnit wild = e.AddWildT(Creature("w", Habit.Aggressive), null, AtMeters(0f), 50);
-            var vitals = new PlayerVitals(new PlayerVitalsConfig(150, 600, 400, 800));
-            e.AttachPlayer(vitals, 100, 100);
+            var vitals = new PlayerVitals(new PlayerVitalsConfig(60, 600, 400, 800));
+            e.AttachPlayer(vitals, 50, 25);
             int hits = 0;
             int downed = 0;
             long downedAt = -1;

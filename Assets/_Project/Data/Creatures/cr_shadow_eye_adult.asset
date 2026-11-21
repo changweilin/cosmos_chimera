@@ -29,17 +29,23 @@ MonoBehaviour:
   overloadForm: {fileID: 11400000, guid: 4255188b828cfd24d9fa8e2256a5e881, type: 2}
   evolutionLevel: 0
   evolutionMaterials: []
-  resist: 00000000000000000500000000000000000000001e0000000a000000d8fffffff1ffffff32000000
+  resist: 59000000590000005900000036000000590000007100000059000000590000001e0000008b000000
   mastery:
+  - element: 5
+    value: 78
+  - element: 6
+    value: 98
+  - element: 7
+    value: 59
   - element: 9
-    value: 25
+    value: 125
   stats:
-    hp: 72
-    speed: 132
-    yinAtk: 168
-    yangAtk: 72
-    yinDef: 96
-    yangDef: 60
+    hp: 47
+    speed: 158
+    yinAtk: 217
+    yangAtk: 35
+    yinDef: 70
+    yangDef: 59
   signatureMove: {fileID: 11400000, guid: 0a9fdaa0dc0531644bbf16427e77d103, type: 2}
   trait: {fileID: 11400000, guid: 4def9f90fad392141bb29705c8094ecc, type: 2}
   fieldUtility: 9

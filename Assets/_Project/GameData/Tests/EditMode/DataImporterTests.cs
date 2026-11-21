@@ -598,9 +598,14 @@ namespace Cosmimera.GameData.Tests
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(DamageModel.MaxPower, move.Power);
-            Assert.AreEqual(125, cub.Mastery[0].Value);
-            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, 25), 0);
-            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, 175), 0);
+            int fireMastery = 0;
+            foreach (ElementValue entry in cub.Mastery)
+            {
+                if (entry.Element == Element.Fire) fireMastery = entry.Value;
+            }
+            Assert.AreEqual(125, fireMastery);
+            Assert.Greater(DamageModel.Compute(move.Power, fireMastery, 25), 0);
+            Assert.Greater(DamageModel.Compute(move.Power, fireMastery, 175), 0);
         }
 
         [TestCase("front", MoveShape.Front)]

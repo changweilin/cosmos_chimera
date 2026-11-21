@@ -184,7 +184,9 @@ namespace Cosmimera.Combat.Tests
         public void CreatureStats_scale_all_six_and_pick_by_polarity()
         {
             var s = new CreatureStats(100, 100, 100, 100, 100, 100).AtLevel(10);
-            Assert.That(new[] { s.Hp, s.Speed, s.YinAtk, s.YangAtk, s.YinDef, s.YangDef }, Is.All.EqualTo(18));
+            Assert.That(s.Hp, Is.EqualTo(12));
+            Assert.That(s.Speed, Is.EqualTo(18));
+            Assert.That(new[] { s.YinAtk, s.YangAtk, s.YinDef, s.YangDef }, Is.All.EqualTo(100));
             var p = new CreatureStats(1, 2, 3, 4, 5, 6);
             Assert.That(p.Attack(Polarity.Yin), Is.EqualTo(3));
             Assert.That(p.Attack(Polarity.Yang), Is.EqualTo(4));

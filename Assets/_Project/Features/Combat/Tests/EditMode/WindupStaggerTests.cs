@@ -188,8 +188,8 @@ namespace Cosmimera.Combat.Tests
             // The wild winds up long enough that mine's first hit lands mid-windup.
             EncounterUnit wild = e.AddWildT(Creature("w", Move("charge", 1, 100, 2000)), null, AtMeters(1.5f), 30);
             int maxHp = wild.Combatant.MaxHp;
-            // ~40 % of max HP per hit (mastery 15 %, resist 0): above the 30 % gauge and the 15 % knockback line.
-            int power = maxHp * 40 / 115;
+            // ~40 % of max HP per hit (mastery 15 %, resist 0, scaled for level 30): above the 30 % gauge and the 15 % knockback line.
+            int power = (int)((long)maxHp * 40 * LevelCurve.PpmOne / (123 * LevelCurve.Ppm(30)));
             EncounterUnit mine = e.AddCreature(EncounterSide.Player, Creature("m", Move("smash", power, 1000, 300)), null, AtMeters(0f), 30);
             e.Field(mine.Id, AtMeters(0f), false, 0);
             float3 feet = _planet.ToWorld(AtMeters(0f), 0f);

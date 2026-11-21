@@ -24,6 +24,9 @@ MonoBehaviour:
     delta: -20
     percent: 0
     maxStacks: 1
+    anyAilment: 0
+    ailment: 0
+    buildup: 0
   effectDurationMs: 7000
   fieldDurationMs: 0
   cooldownMs: 3400
@@ -48,4 +51,7 @@ MonoBehaviour:
     delta: 0
     percent: 0
     maxStacks: 0
+    anyAilment: 0
+    ailment: 0
+    buildup: 0
   downEffectDurationMs: -1

@@ -32,17 +32,21 @@ MonoBehaviour:
   - element: 1
     tier: 2
     qty: 5
-  resist: e2ffffff230000000f00000000000000000000000000000000000000000000000a00000000000000
+  resist: 68000000680000008f0000002c00000068000000430000006800000068000000830000007d000000
   mastery:
   - element: 1
-    value: 25
+    value: 125
+  - element: 2
+    value: 117
+  - element: 8
+    value: 58
   stats:
-    hp: 93
-    speed: 64
-    yinAtk: 51
-    yangAtk: 86
-    yinDef: 103
-    yangDef: 103
+    hp: 109
+    speed: 49
+    yinAtk: 119
+    yangAtk: 39
+    yinDef: 114
+    yangDef: 64
   signatureMove: {fileID: 11400000, guid: e76f64f62cf7c7c498d431867bbe9a9f, type: 2}
   trait: {fileID: 11400000, guid: d4ebe00692a4ede429094ca87d6a5282, type: 2}
   fieldUtility: 0
