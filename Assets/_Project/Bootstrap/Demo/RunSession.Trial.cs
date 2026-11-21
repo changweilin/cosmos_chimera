@@ -77,6 +77,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly Color TrialSealGlint = new Color(0.82f, 0.62f, 1f);
 
         private TrialRun _trial;
+        private readonly List<TrialRun> _lobbyTrials = new List<TrialRun>();
         private DungeonAtmosphere _dungeonMood;
         private RoomDungeonGeometry _mazeGeometry;
         private PlanetWalls _mazeWalls;
@@ -85,7 +86,8 @@ namespace Cosmimera.Bootstrap.Demo
         // plaza of a surface maze laid around them. Runs right after the landmarks so everything placed later keeps off it.
         private void PrepareSurfaceMaze(in PlanetConfig config, HeightSurface surface)
         {
-            if (_setup.IsBeginnerQuest || _setup.Dungeon || _landmarks == null || _landmarks.EntranceIndex < 0 ||
+            if (_setup.IsBeginnerQuest || _setup.IsLobbyPlanet || _setup.Dungeon || _landmarks == null ||
+                _landmarks.EntranceIndex < 0 ||
                 !AdvancedTerrains.TryGet(_landmarks.EntranceTerrainId, out AdvancedTerrainSpec spec) ||
                 spec.Form != AdvancedDungeonForm.SurfaceMaze)
             {
@@ -113,9 +115,15 @@ namespace Cosmimera.Bootstrap.Demo
         private void ConfigureTrial(IReadOnlyList<CreatureDef> pool, Material terrainMaterial, Shader toonShader,
             Shader propsShader)
         {
-            if (_setup.IsBeginnerQuest || _landmarks == null || _landmarks.EntranceIndex < 0 || pool == null ||
+            if (_setup.IsBeginnerQuest || _landmarks == null || _landmarks.Entrances.Count == 0 || pool == null ||
                 pool.Count == 0)
             {
+                return;
+            }
+
+            if (_setup.IsLobbyPlanet)
+            {
+                ConfigureLobbyTrials(pool, terrainMaterial, toonShader, propsShader);
                 return;
             }
 
@@ -207,6 +215,71 @@ namespace Cosmimera.Bootstrap.Demo
                 _dungeonMood = gameObject.AddComponent<DungeonAtmosphere>();
                 _dungeonMood.Configure(_rig.Camera, _rig.Sun, _rig.Character.transform, DungeonMood.For(spec.Id));
             }
+        }
+
+        // REQ: docs/design/lobby-meta.md#地球大廳 — the fixed lobby planet hosts all 10 advanced terrain wonders and
+        // their 10 trial masters as fixed indoor-sphere dungeons.
+        private void ConfigureLobbyTrials(IReadOnlyList<CreatureDef> pool, Material terrainMaterial, Shader toonShader,
+            Shader propsShader)
+        {
+            if (terrainMaterial == null || _copy.GenericAffixIds.Count == 0)
+            {
+                return;
+            }
+
+            int maxTier = 1;
+            for (int r = 0; r < _plan.Regions.Count; r++)
+            {
+                maxTier = math.max(maxTier, _plan.Regions[r].Tier);
+            }
+
+            int level = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Boss);
+            float radius = _rig.Config.Radius;
+            for (int i = 0; i < _landmarks.Entrances.Count; i++)
+            {
+                DungeonEntranceSite entry = _landmarks.Entrances[i];
+                if (!AdvancedTerrains.TryGet(entry.TerrainId, out AdvancedTerrainSpec spec))
+                {
+                    continue;
+                }
+
+                // Supergiant size allows all 10 advanced terrains to plan their full trial roster.
+                if (!TrialPlanner.TryPlan(_setup.Seed, spec.Id, PlanetSize.Supergiant, pool, level, out TerrainTrialPlan plan))
+                {
+                    continue;
+                }
+
+                RunLandmark gate = _landmarks.Landmarks[entry.LandmarkIndex];
+                RoomDungeon dungeon = RoomDungeonPlanner.Generate(_setup.Seed, spec.Id, PlanetSize.Supergiant, _copy.GenericAffixIds);
+                var trial = new TrialRun
+                {
+                    Spec = spec,
+                    Plan = plan,
+                    Progress = new TrialProgress(plan),
+                    TerrainMaterial = terrainMaterial,
+                    Region = gate.Region,
+                    Tier = maxTier,
+                    BadgeHeld = HasDepartureBadge(spec.Id),
+                    Maze = false,
+                    SealShader = propsShader ?? toonShader,
+                    SealShaderIsProps = propsShader != null,
+                    Geometry = RoomDungeonGeometry.Build(dungeon, radius, gate.Direction),
+                    MasterDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialMasterGapM)),
+                    MasterFacing = gate.Facing,
+                    ReturnDir = math.normalize(gate.Direction * radius + gate.Facing * (gate.FootprintRadiusM + TrialReturnGapM)),
+                };
+                trial.Walls = trial.Geometry.BuildWalls(_rig.Config);
+                _trial = trial;
+                AttachTrialProps();
+                if (toonShader != null)
+                {
+                    BuildTrialMaster(toonShader);
+                }
+
+                _lobbyTrials.Add(trial);
+            }
+
+            _trial = _lobbyTrials.Count > 0 ? _lobbyTrials[0] : null;
         }
 
         // Physical seals the character bumps into; the rule layer blocks creatures with the same radii (HeightSurface).
@@ -366,6 +439,24 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void StepTrial(float3 player)
         {
+            if (_lobbyTrials.Count > 0 && (_trial == null || (!_trial.Inside && !_trial.TransitPending)))
+            {
+                float3 pDir = _rig.Config.ToDirection(player);
+                TrialRun nearest = _lobbyTrials[0];
+                float bestDot = math.dot(pDir, nearest.MasterDir);
+                for (int i = 1; i < _lobbyTrials.Count; i++)
+                {
+                    float d = math.dot(pDir, _lobbyTrials[i].MasterDir);
+                    if (d > bestDot)
+                    {
+                        bestDot = d;
+                        nearest = _lobbyTrials[i];
+                    }
+                }
+
+                _trial = nearest;
+            }
+
             if (_trial == null || _trial.TransitPending)
             {
                 return;
@@ -1105,40 +1196,54 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DisposeTrial()
         {
-            if (_trial == null)
+            if (_lobbyTrials.Count > 0)
             {
+                for (int i = 0; i < _lobbyTrials.Count; i++)
+                {
+                    DisposeOneTrial(_lobbyTrials[i]);
+                }
+
+                _lobbyTrials.Clear();
+                _trial = null;
                 return;
             }
 
-            if (_trial.InteriorRoot != null)
+            if (_trial != null)
+            {
+                DisposeOneTrial(_trial);
+                _trial = null;
+            }
+        }
+
+        private static void DisposeOneTrial(TrialRun trial)
+        {
+            if (trial.InteriorRoot != null)
             {
                 // Immediate so its OnDestroy completes the mesh jobs reading the wall buffers before they are freed.
-                DestroyImmediate(_trial.InteriorRoot);
+                DestroyImmediate(trial.InteriorRoot);
             }
 
-            if (!_trial.WallsOwnedByRig)
+            if (!trial.WallsOwnedByRig)
             {
-                _trial.Walls?.Dispose();
+                trial.Walls?.Dispose();
             }
 
-            if (_trial.SealRoot != null)
+            if (trial.SealRoot != null)
             {
-                Destroy(_trial.SealRoot);
+                Destroy(trial.SealRoot);
             }
-            if (_trial.MasterRoot != null)
+            if (trial.MasterRoot != null)
             {
-                Destroy(_trial.MasterRoot);
+                Destroy(trial.MasterRoot);
             }
 
-            foreach (Object o in _trial.Owned)
+            foreach (Object o in trial.Owned)
             {
                 if (o != null)
                 {
                     Destroy(o);
                 }
             }
-
-            _trial = null;
         }
     }
 }

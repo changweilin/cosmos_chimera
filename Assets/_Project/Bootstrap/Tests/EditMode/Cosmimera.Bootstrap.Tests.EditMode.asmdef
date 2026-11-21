@@ -11,6 +11,7 @@
         "Cosmimera.Crafting",
         "Cosmimera.Food",
         "Cosmimera.GameData",
+        "Cosmimera.Lobby",
         "Cosmimera.Planet",
         "Cosmimera.Player",
         "Cosmimera.WorldGen",

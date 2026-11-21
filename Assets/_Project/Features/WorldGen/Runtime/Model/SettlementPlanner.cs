@@ -316,7 +316,7 @@ namespace Cosmimera.WorldGen
             throw new ContractException("region " + r + " has no neighbor closer to landing");
         }
 
-        private static RunRoad Road(RoadClass roadClass, int from, int to, IReadOnlyList<RunRegion> regions, float radius,
+        internal static RunRoad Road(RoadClass roadClass, int from, int to, IReadOnlyList<RunRegion> regions, float radius,
             Func<float3, bool> isLand, ref Pcg32 rng, Func<float3, float> ground, ulong seed, int roadIndex)
         {
             float3 a = regions[from].Center;
@@ -485,7 +485,7 @@ namespace Cosmimera.WorldGen
         }
 
         // Lots line both sides of a road through the centre: even lots on one side, odd on the other, centred on it.
-        private static void AddLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
+        internal static void AddLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
             SettlementKind kind, float3 center, float3 roadAxis, float roadWidthM, int count, float radius,
             Func<float3, bool> isLand, ref Pcg32 rng) =>
             AddLotsWithDomain(settlements, buildings, region, kind, SettlementDomain.Land, 0f, center, roadAxis,
@@ -761,7 +761,7 @@ namespace Cosmimera.WorldGen
             return allowed[(int)rng.NextUInt((uint)allowed.Length)];
         }
 
-        private static int TownLotCount(SettlementKind kind, ref Pcg32 rng)
+        internal static int TownLotCount(SettlementKind kind, ref Pcg32 rng)
         {
             switch (kind)
             {
@@ -839,7 +839,7 @@ namespace Cosmimera.WorldGen
         }
 
         // Unit tangent at p along v's tangential part (toward v along the great circle when v is a direction).
-        private static float3 Tangent(float3 p, float3 v) => math.normalize(v - p * math.dot(v, p));
+        internal static float3 Tangent(float3 p, float3 v) => math.normalize(v - p * math.dot(v, p));
 
         // Moves a unit direction by a tangent displacement given in metres (small-angle, then back onto the sphere).
         private static float3 Offset(float3 p, float3 tangentM, float radius) => math.normalize(p + tangentM / radius);

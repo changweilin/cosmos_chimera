@@ -99,35 +99,76 @@ namespace Cosmimera.WorldGen
         public bool Solid { get; }
     }
 
+    /// <summary>One landmark bound as an advanced terrain dungeon entrance.</summary>
+    /// <remarks>Pre: produced by LandmarkPlanner or LobbyPlanetPlanner. Post: immutable. Side effects: none.</remarks>
+    public readonly struct DungeonEntranceSite
+    {
+        internal DungeonEntranceSite(int landmarkIndex, string terrainId)
+        {
+            LandmarkIndex = landmarkIndex;
+            TerrainId = terrainId;
+        }
+
+        /// <summary>Index in <see cref="LandmarkLayout.Landmarks"/>.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int LandmarkIndex { get; }
+
+        /// <summary>Canonical advanced terrain id behind this entrance.</summary>
+        /// <remarks>Pre: none. Post: non-empty valid AdvancedTerrains id. Side effects: none.</remarks>
+        public string TerrainId { get; }
+    }
+
     /// <summary>The wonders of one planet run.</summary>
     /// <remarks>
-    /// Pre: produced by <see cref="LandmarkPlanner.Generate"/>. Post: immutable; same inputs → same layout.
+    /// Pre: produced by <see cref="LandmarkPlanner.Generate"/> or <see cref="LobbyPlanetPlanner.BuildLandmarks"/>.
+    /// Post: immutable; same inputs → same layout.
     /// Side effects: none.
     /// </remarks>
     public sealed class LandmarkLayout
     {
         private readonly RunLandmark[] _landmarks;
+        private readonly DungeonEntranceSite[] _entrances;
         private readonly float _radius;
 
         internal LandmarkLayout(RunLandmark[] landmarks, float radius, int entranceIndex, string entranceTerrainId)
+            : this(landmarks, radius,
+                entranceIndex >= 0 && !string.IsNullOrEmpty(entranceTerrainId)
+                    ? new[] { new DungeonEntranceSite(entranceIndex, entranceTerrainId) }
+                    : System.Array.Empty<DungeonEntranceSite>())
+        {
+        }
+
+        internal LandmarkLayout(RunLandmark[] landmarks, float radius, DungeonEntranceSite[] entrances)
         {
             _landmarks = landmarks;
             _radius = radius;
-            EntranceIndex = entranceIndex;
-            EntranceTerrainId = entranceTerrainId;
+            _entrances = entrances ?? System.Array.Empty<DungeonEntranceSite>();
+            if (_entrances.Length > 0)
+            {
+                EntranceIndex = _entrances[0].LandmarkIndex;
+                EntranceTerrainId = _entrances[0].TerrainId;
+            }
+            else
+            {
+                EntranceIndex = -1;
+                EntranceTerrainId = null;
+            }
         }
 
-        /// <summary>Index of the one landmark that is this planet's advanced dungeon entrance, or −1 when there is none.</summary>
+        /// <summary>Index of the primary landmark that is a dungeon entrance, or −1 when there is none.</summary>
         /// <remarks>
-        /// REQ: planet-world.md#進階地形地城 — exactly one entrance per planet, on a landmark.
-        /// Pre: none. Post: −1 iff EntranceTerrainId is null (asteroids, or a site search that failed); otherwise the
-        ///      landmark's Kind == DungeonEntrance.KindFor(EntranceTerrainId). Side effects: none.
+        /// REQ: planet-world.md#進階地形地城 — one entrance per random planet; fixed lobby planet hosts all 10 in <see cref="Entrances"/>.
+        /// Pre: none. Post: −1 iff Entrances is empty; otherwise equals Entrances[0].LandmarkIndex. Side effects: none.
         /// </remarks>
         public int EntranceIndex { get; }
 
-        /// <summary>Canonical advanced terrain id behind the entrance, or null when there is no entrance.</summary>
-        /// <remarks>Pre: none. Post: null or an AdvancedTerrains id that appears on this planet's size. Side effects: none.</remarks>
+        /// <summary>Canonical advanced terrain id behind the primary entrance, or null when there is none.</summary>
+        /// <remarks>Pre: none. Post: null iff Entrances is empty; otherwise equals Entrances[0].TerrainId. Side effects: none.</remarks>
         public string EntranceTerrainId { get; }
+
+        /// <summary>All dungeon entrance bindings on this planet (0–1 on random planets, 10 on the fixed lobby planet).</summary>
+        /// <remarks>Pre: none. Post: non-null; each LandmarkIndex indexes <see cref="Landmarks"/>. Side effects: none.</remarks>
+        public IReadOnlyList<DungeonEntranceSite> Entrances => _entrances;
 
         /// <summary>Landmarks in generation order (space elevator and its station first when they were placed).</summary>
         /// <remarks>Pre: none. Post: Landmarks[i].Index == i. Side effects: none.</remarks>

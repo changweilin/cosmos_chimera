@@ -178,7 +178,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private const int GeologyStamps = 8; // CosmiBiome.hlsl COSMI_GEO_MAX; TemplatePlanner places at most 8
+        private const int GeologyStamps = 24; // CosmiBiome.hlsl COSMI_GEO_MAX; covers all 24 LandformSynth kinds on the lobby planet
         private static readonly int GeoCountId = Shader.PropertyToID("_CosmiGeoCount");
         private static readonly int GeoCenterId = Shader.PropertyToID("_CosmiGeoCenter");
         private static readonly int GeoRightId = Shader.PropertyToID("_CosmiGeoRight");
@@ -210,7 +210,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Tells the ground shaders which bedrock lies where, so rock faces take its colour.</summary>
         /// <remarks>
         /// REQ: planet-world.md#地質變體 (P3-24 a: 地表配色).
-        /// Pre: view.Count ≤ 8; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined;
+        /// Pre: view.Count ≤ 24; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined;
         ///      landforms null, or one landform kind per stamp (LandformSynth.KindOf of each stamp id).
         /// Post: terrain and grass-root rock colour is the bedrock's stone mixed into the planet type's rock colour,
         ///       inside each stamp as far as its height blend reaches; Native bedrock keeps the planet's own. With
@@ -221,7 +221,7 @@ namespace Cosmimera.Bootstrap.Demo
             IReadOnlyList<string> landforms = null)
         {
             Contract.Requires(perStamp != null && perStamp.Count == view.Count && view.Count <= GeologyStamps,
-                "one geology per stamp, at most 8 stamps");
+                "one geology per stamp, at most 24 stamps");
             Contract.Requires(landforms == null || landforms.Count == view.Count, "one landform kind per stamp");
             var snow = new Vector4[GeologyStamps];
             Color rock = PaletteFor(planetTypeId).Rock;

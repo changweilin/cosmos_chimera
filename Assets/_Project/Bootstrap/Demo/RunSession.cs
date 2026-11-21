@@ -234,6 +234,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Terrain trial badges held at departure (LobbySave.CompletedTrialsSnapshot); decides a trial's first win.</summary>
         /// <remarks>REQ: docs/design/trainer-battles.md#地形試煉. Pre: null or canonical terrain ids. Post: never mutated by the run. Side effects: none.</remarks>
         public IReadOnlyCollection<string> TrialBadges;
+
+        /// <summary>True when this session is the fixed single-player lobby planet (R = 2560 m, 8 connected towns, all 24 landforms, all 10 dungeon masters).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: uses LobbyPlanetPlanner and stays open until the player opens the lobby menu. Side effects: none.</remarks>
+        public bool IsLobbyPlanet;
     }
 
     /// <summary>
@@ -748,8 +752,10 @@ namespace Cosmimera.Bootstrap.Demo
             PlanetTemplates templates = null;
             if (setup.Landforms)
             {
-                templates = TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
-                    BossDraw.SizeFor(setup.BossStage));
+                templates = setup.IsLobbyPlanet
+                    ? LobbyPlanetPlanner.BuildTemplates(config, setup.Seed)
+                    : TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
+                        BossDraw.SizeFor(setup.BossStage));
             }
 
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
@@ -761,12 +767,17 @@ namespace Cosmimera.Bootstrap.Demo
                 isLand = d => !view.IsSea(d);
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
-                setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
+            _plan = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildPlan(config, setup.PlanetType, wildPool, vocab, isLand, setup.Seed)
+                : RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
+                    setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
             // REQ: planet-world.md#道路與建築 — roads bend round hills; the walls and mazes added later are not terrain.
             PlanetTemplates roadTemplates = templates;
-            _layout = SettlementPlanner.Generate(config, _plan, isLand,
-                d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d));
+            _layout = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildLayout(config, _plan, isLand,
+                    d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d))
+                : SettlementPlanner.Generate(config, _plan, isLand,
+                    d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d));
             _discoveredSettlements.Clear();
             if (_layout.Settlements.Count > 0 && LayoutClearance.IsInhabited(_layout.Settlements[0].Kind))
             {
@@ -801,8 +812,11 @@ namespace Cosmimera.Bootstrap.Demo
             // whether or not anything is drawn.
             // REQ: planet-world.md#奇觀地標 — wonders go on land that no wall band owns; scatter then keeps the same
             // 1.5 m off their footprints as it does off buildings.
-            LandmarkLayout landmarks = LandmarkPlanner.Generate(config, _plan, _layout,
-                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
+            LandmarkLayout landmarks = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildLandmarks(config, _plan, _layout,
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d))
+                : LandmarkPlanner.Generate(config, _plan, _layout,
+                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
             // Before populace, trainers and scatter: they all keep off the maze through surface.IsOffWalls.
@@ -1837,6 +1851,11 @@ namespace Cosmimera.Bootstrap.Demo
         private void CheckEnd()
         {
             if (CheckTrialEnd())
+            {
+                return;
+            }
+
+            if (_setup.IsLobbyPlanet)
             {
                 return;
             }
@@ -2898,6 +2917,13 @@ namespace Cosmimera.Bootstrap.Demo
         // Two presses within 3 s: the first only arms and explains, so a stray press cannot throw away a run.
         private void RequestAbandon()
         {
+            if (_setup.IsLobbyPlanet)
+            {
+                // Returning from the lobby planet settles gathered items, captures and trial badges cleanly (not abandoned).
+                End(true, false);
+                return;
+            }
+
             if (_nowMs <= _abandonArmedUntilMs)
             {
                 End(false, true);

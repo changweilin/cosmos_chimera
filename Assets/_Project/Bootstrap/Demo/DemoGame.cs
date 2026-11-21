@@ -5,6 +5,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Lobby;
 using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Cosmimera.Bootstrap.Demo
             public CreatureStage BossStage;
             public WorldGen.PlanetElements Elements;
             public bool IsBeginnerQuest;
+            public bool IsLobbyPlanet;
         }
 
         internal const ulong BeginnerQuestSeed = 20261117UL;
@@ -265,7 +267,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_screen == Screen.StarSelect) return _options.Count + 1;
             if (_save.StarterLine == null) return 1 + _starters.Count +
                 (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 5;
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 6;
             if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
             for (int i = 0; i < _save.Owned.Count; i++)
             {
@@ -535,7 +537,13 @@ namespace Cosmimera.Bootstrap.Demo
                 GUIUtility.ExitGUI();
             }
             GUILayout.Space(20);
-            if (MenuButton(_copy.Ui("ui.lobby.start_run") + "（隨機世界）", GUILayout.Height(52)))
+            if (MenuButton("探索固定大廳星球（主世界 R=2560 m · 8 城鎮 · 全地形 · 10 關主）", GUILayout.Height(52)))
+            {
+                LaunchLobbyPlanet();
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton(_copy.Ui("ui.lobby.start_run") + "（隨機世界 · 需元素素材）", GUILayout.Height(48)))
             {
                 RollOptions();
                 _screen = Screen.StarSelect;
@@ -766,11 +774,17 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DrawStarSelect()
         {
-            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            PlanetSize maxUnlocked = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
+            string unlockedLabel = _copy.Ui("ui.star_select.size_" + maxUnlocked.ToString().ToLowerInvariant());
             GUILayout.Label(_copy.Ui("ui.star_select.title"), _title, GUILayout.Height(60));
-            GUILayout.Label(PlayerLevelLabel() + "\n" + _copy.Ui("ui.star_select.boss_unlock_hint")
-                .Replace("{adolescent}", _progression.BossStageUnlockLevel(CreatureStage.Adolescent).ToString(inv))
-                .Replace("{adult}", _progression.BossStageUnlockLevel(CreatureStage.Adult).ToString(inv)), _text);
+            GUILayout.Label(PlayerLevelLabel() +
+                $"\n主線已解鎖最大星球：{unlockedLabel}（完成地形試煉解鎖更大星球：{StarSelectRules.MoonUnlockTrials}/{StarSelectRules.PlanetUnlockTrials}/{StarSelectRules.SupergiantUnlockTrials}）",
+                _text);
+            if (!string.IsNullOrEmpty(_partyMsg))
+            {
+                GUILayout.Label(_partyMsg, _text);
+            }
+
             foreach (PlanetOption o in _options)
             {
                 PlanetSize planetSize = WorldGen.BossDraw.SizeFor(o.BossStage);
@@ -780,10 +794,23 @@ namespace Cosmimera.Bootstrap.Demo
                 string elementsLine = FormatPlanetElements(o.Elements);
                 string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
                 string planetName = _copy.PlanetName(o.Type.Id, o.Seed);
+                Element mainElement = o.Elements.Shares[0].Element;
+                MaterialStack cost = StarSelectRules.LaunchCost(planetSize, mainElement);
+                int held = _save.Materials.Count(cost.Key);
+                string costText = o.IsBeginnerQuest
+                    ? "免素材（新手任務）"
+                    : $"所需素材：{_copy.Material(cost.Key)} ×{cost.Qty}（持有：{held}）";
                 GUILayout.Label($"{tag}{planetName}（{_copy.Planet(o.Type.Id)}）   {boss}   {size} (R={o.Radius:0} m)\n" +
-                                $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
+                                $"{elementsLine}   {costText}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
+                    if (!o.IsBeginnerQuest && !TryPayStarSelectCost(planetSize, mainElement))
+                    {
+                        _partyMsg = $"元素素材不足：需要 {_copy.Material(cost.Key)} ×{cost.Qty}（目前持有 {held}），請先於大廳星球探索或戰鬥收集。";
+                        GUIUtility.ExitGUI();
+                        return;
+                    }
+
                     Launch(o);
                     GUIUtility.ExitGUI();
                     return;
@@ -797,6 +824,22 @@ namespace Cosmimera.Bootstrap.Demo
                 RollOptions();
                 GUIUtility.ExitGUI();
             }
+        }
+
+        private bool TryPayStarSelectCost(PlanetSize size, Element mainElement)
+        {
+            if (!StarSelectRules.CanLaunch(_save.Materials, size, mainElement))
+            {
+                return false;
+            }
+
+            LobbySave candidate = _save.Clone();
+            if (!StarSelectRules.TryPayLaunchCost(candidate.Materials, size, mainElement))
+            {
+                return false;
+            }
+
+            return CommitLobby(candidate);
         }
 
         private string FormatPlanetElements(WorldGen.PlanetElements elements)
@@ -919,8 +962,11 @@ namespace Cosmimera.Bootstrap.Demo
                 selectableTypes.AddRange(types);
             }
 
-            // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
-            CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
+            // REQ: lobby-meta.md#地球大廳 — initial random access is Asteroid only; larger sizes unlock along main-story trials.
+            PlanetSize maxUnlockedSize = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
+            CreatureStage storyCap = StarSelectRules.MaxBossStageForSize(maxUnlockedSize);
+            CreatureStage levelCap = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
+            CreatureStage maxStage = storyCap < levelCap ? storyCap : levelCap;
             for (int i = startIndex; i < 3 && selectableTypes.Count > 0; i++)
             {
                 PlanetTypeDef t = selectableTypes[(int)_menuRng.NextUInt((uint)selectableTypes.Count)];
@@ -933,6 +979,40 @@ namespace Cosmimera.Bootstrap.Demo
                     Elements = WorldGen.PlanetElementDraw.Draw(seed, size, t.ElementBias),
                 });
             }
+        }
+
+        private void LaunchLobbyPlanet()
+        {
+            PlanetTypeDef lobbyType = null;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t)
+                {
+                    if (t.Id == LobbyPlanet.PlanetTypeId)
+                    {
+                        lobbyType = t;
+                        break;
+                    }
+
+                    lobbyType ??= t;
+                }
+            }
+
+            if (lobbyType == null)
+            {
+                Debug.LogError("DemoGame: no PlanetTypeDef found for the lobby planet.");
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = lobbyType,
+                Seed = LobbyPlanet.Seed,
+                Radius = LobbyPlanet.RadiusM,
+                BossStage = CreatureStage.Adult,
+                Elements = WorldGen.PlanetElementDraw.Draw(LobbyPlanet.Seed, PlanetSize.Supergiant, lobbyType.ElementBias),
+                IsLobbyPlanet = true,
+            });
         }
 
         /// <summary>Builds the deterministic beginner-quest planet option (cradle asteroid, juvenile boss).</summary>
@@ -1031,6 +1111,7 @@ namespace Cosmimera.Bootstrap.Demo
                     CraftLooks = _save.CraftStock.LookSnapshot(),
                     Equipment = _save.Equipment.Snapshot(),
                     TrialBadges = _save.CompletedTrialsSnapshot(),
+                    IsLobbyPlanet = o.IsLobbyPlanet,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.Hints.Inherit(_menuHints);

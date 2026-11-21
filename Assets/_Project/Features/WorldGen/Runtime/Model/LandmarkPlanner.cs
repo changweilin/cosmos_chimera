@@ -262,11 +262,11 @@ namespace Cosmimera.WorldGen
             return h;
         }
 
-        private const float StationHeightM = 24f;
+        internal const float StationHeightM = 24f;
 
         // REQ: planet-world.md#奇觀地標 (尺寸表，暫定). Human scale in metres, except the tether, which is a share of
         // the planet's radius so it always clears the same fraction of the sky.
-        private static void Size(LandmarkKind kind, float radius, ref Pcg32 rng, out float footprint, out float height,
+        internal static void Size(LandmarkKind kind, float radius, ref Pcg32 rng, out float footprint, out float height,
             out float altitude)
         {
             altitude = 0f;
@@ -340,7 +340,7 @@ namespace Cosmimera.WorldGen
             1.05f * 1.41421356f *
             (RoomDungeonPlanner.SurfaceMazeHalfExtentM(spec, size, footprintM) + RoomDungeonGeometry.WallHalfWidthM);
 
-        private static bool Fits(float3 pos, float footprint, bool reserveRings, bool solid, RunPlan plan,
+        internal static bool Fits(float3 pos, float footprint, bool reserveRings, bool solid, RunPlan plan,
             List<RunLandmark> placed, List<float> reserves, LayoutClearance clearance, Func<float3, bool> isBuildable,
             float radius)
         {
@@ -404,7 +404,7 @@ namespace Cosmimera.WorldGen
             return true;
         }
 
-        private static float NeighbourGapM(IReadOnlyList<RunRegion> regions, int region, float radius)
+        internal static float NeighbourGapM(IReadOnlyList<RunRegion> regions, int region, float radius)
         {
             float best = math.PI;
             float3 c = regions[region].Center;
@@ -416,7 +416,7 @@ namespace Cosmimera.WorldGen
             return best * radius;
         }
 
-        private static int Nearest(IReadOnlyList<RunRegion> regions, float3 pos)
+        internal static int Nearest(IReadOnlyList<RunRegion> regions, float3 pos)
         {
             int best = 0;
             float bestDot = -2f;

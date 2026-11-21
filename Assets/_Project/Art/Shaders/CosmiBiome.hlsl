@@ -35,7 +35,7 @@ SAMPLER(sampler_StrokeTex);
 // P3-24(a) bedrock: each landform stamp (and the ground between stamps) may override the rock colour. Globals, not
 // material properties: one planet is live at a time and terrain, grass and props must agree (PlanetLook.SetGeology).
 // Unset (count 0, base alpha 0) leaves every material's own _Rock.
-#define COSMI_GEO_MAX 8
+#define COSMI_GEO_MAX 24
 float4 _CosmiGeoCenter[COSMI_GEO_MAX]; // xyz = stamp centre direction, w = 1 / tan(half angle)
 float4 _CosmiGeoRight[COSMI_GEO_MAX];  // stamp +x tangent
 float4 _CosmiGeoUp[COSMI_GEO_MAX];     // stamp +y tangent
@@ -54,13 +54,18 @@ half3 CosmiBedrock(float3 up, float jitter, out float snowLine)
     half4 pick = _CosmiGeoBase;
     float best = 0.0;
     snowLine = _SnowLine;
-    for (int i = 0; i < COSMI_GEO_MAX; i++)
+    int count = min((int)_CosmiGeoCount, COSMI_GEO_MAX);
+    for (int i = 0; i < count; i++)
     {
         float3 centre = _CosmiGeoCenter[i].xyz;
         float c = dot(up, centre);
-        float3 p = up / max(c, 0.5);
+        if (c <= 0.5)
+        {
+            continue;
+        }
+        float3 p = up / c;
         float m = max(abs(dot(p, _CosmiGeoRight[i].xyz)), abs(dot(p, _CosmiGeoUp[i].xyz))) * _CosmiGeoCenter[i].w;
-        float w = (1.0 - smoothstep(0.65, 1.0, m)) * step(0.5, c) * step(i + 0.5, _CosmiGeoCount);
+        float w = 1.0 - smoothstep(0.65, 1.0, m);
         if (w > best)
         {
             best = w;

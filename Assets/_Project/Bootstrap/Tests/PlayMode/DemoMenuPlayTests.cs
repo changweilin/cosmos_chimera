@@ -77,10 +77,11 @@ namespace Cosmimera.Bootstrap.Tests
                 .Invoke(game, null);
             // Batchmode -nographics never calls OnGUI, so the drawn count (_menuButtonCount) cannot be read here; the
             // expected value is the lobby layout: language + 6×(evolve, remove) + 5 enabled move-up (the first is
-            // disabled, not selectable) + 2 reserves×(evolve, add) + equipment-paperdoll + journal + start-run + quit + optional character.
+            // disabled, not selectable) + 2 reserves×(evolve, add) + equipment-paperdoll + journal + lobby-planet +
+            // start-run + main-story + quit + optional character.
             var models = (CharacterModelTable)Field(game, "_characterModels");
             int characterButton = models != null && models.Entries.Count > 0 ? 1 : 0;
-            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 4 + characterButton));
+            Assert.That(budget, Is.EqualTo(1 + 12 + 5 + 4 + 6 + characterButton));
             int drawn = (int)Field(game, "_menuButtonCount");
             if (drawn > 0)
             {
@@ -140,6 +141,36 @@ namespace Cosmimera.Bootstrap.Tests
 
             game.GetType().GetMethod("CloseJournal", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(game, null);
             Assert.That(Field(game, "_journal"), Is.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator Lobby_planet_launches_at_2560m_with_8_settlements_and_10_dungeon_entrances()
+        {
+            SceneManager.LoadScene("Demo");
+            yield return null;
+            var game = Object.FindFirstObjectByType<DemoGame>();
+            Assert.That(game, Is.Not.Null);
+
+            var starters = (List<CreatureDef>)Field(game, "_starters");
+            var save = new LobbySave();
+            save.ChooseStarter(starters[0].LineId, starters[0].Id, 0);
+            game.GetType().GetField("_save", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(game, save);
+
+            game.GetType().GetMethod("LaunchLobbyPlanet", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(game, null);
+            yield return null;
+            yield return null;
+
+            var run = (RunSession)Field(game, "_run");
+            Assert.That(run, Is.Not.Null);
+            var rig = (PlanetRig)Field(run, "_rig");
+            var layout = (Cosmimera.WorldGen.RunLayout)Field(run, "_layout");
+            var landmarks = (Cosmimera.WorldGen.LandmarkLayout)Field(run, "_landmarks");
+            Assert.That(rig.Config.Radius, Is.EqualTo(Cosmimera.WorldGen.LobbyPlanet.RadiusM));
+            Assert.That(layout.Settlements.Count, Is.EqualTo(8));
+            Assert.That(landmarks.Entrances.Count, Is.EqualTo(Cosmimera.WorldGen.AdvancedTerrains.All.Count));
+
+            run.AbandonForTests();
+            yield return null;
         }
     }
 }
