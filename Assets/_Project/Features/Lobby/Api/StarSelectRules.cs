@@ -57,6 +57,44 @@ namespace Cosmimera.Lobby
             return PlanetSize.Supergiant;
         }
 
+        /// <summary>
+        /// Largest random planet size unlocked along the full main-story milestones:
+        /// Town #2 food quest → Moon, City #3 five trials + Town #4 migratory return → Planet,
+        /// Tribe #8 ten trials + rival finale → Supergiant.
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/lobby-meta.md#地球大廳.
+        /// Pre: completedTrials &gt;= 0.
+        /// Post: Asteroid initially; Moon at foodQuestDone; Planet at foodQuestDone &amp;&amp; completedTrials &gt;= 5 &amp;&amp; migratoryReturnDone;
+        ///       Supergiant when all above plus completedTrials &gt;= 10 &amp;&amp; rivalQuestDone hold.
+        /// Side effects: none.
+        /// </remarks>
+        public static PlanetSize MaxUnlockedSize(
+            bool tutorialDone,
+            bool foodQuestDone,
+            int completedTrials,
+            bool migratoryReturnDone,
+            bool rivalQuestDone)
+        {
+            Contract.Requires(completedTrials >= 0, "completedTrials must be >= 0");
+            if (!tutorialDone || !foodQuestDone)
+            {
+                return PlanetSize.Asteroid;
+            }
+
+            if (completedTrials < 5 || !migratoryReturnDone)
+            {
+                return PlanetSize.Moon;
+            }
+
+            if (completedTrials < 10 || !rivalQuestDone)
+            {
+                return PlanetSize.Planet;
+            }
+
+            return PlanetSize.Supergiant;
+        }
+
         /// <summary>Highest boss stage corresponding to <paramref name="maxUnlockedSize"/> for star-card drawing.</summary>
         /// <remarks>
         /// Pre: maxUnlockedSize is a defined PlanetSize.

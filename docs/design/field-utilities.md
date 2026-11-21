@@ -71,7 +71,7 @@
 | `harvest_crops` | 木／土／水 | 於聚落農田或野生作物區收割穀物、塊莖與油料作物（農田收穫） | 搭配 `culinary_prep` 磨粉／榨油，構成聚落與田野補給線 | `wood_betel_sprout`（P5-03 草稿 02，demo 池） |
 | `chill_brew` | 冰／水 | 不需生火即可調製冰沙與冷湯特調（冰鎮特調） | 讓水／冰隊伍擁有獨立料理主動技，提供降溫、火抗與狀態免疫 | `ice_hull_cutter`（P5-03 草稿 02，demo 池） |
 | `quick_escape` | 雷／風／影 | 強制脫離野生戰鬥並拉開安全距離（BOSS 戰不可用） | 遇見屬性嚴重不利或高階菁英時保命止損，保留已獲素材與收服成果 | `star_blaze_foal` |
-| `return_village` | 光／木／風 | 引導隊伍傳送回最近的已探索村落或起始城鎮 | 大星球探索滿載後快速回補／安全撤離至聚落節點 | `wood_canopy_regent` |
+| `return_village`（候鳥歸途） | 風／光／木 | **候鳥歸途**（4 號小鎮風屬性主線技能）：自由傳送至所有已實際抵達過的城鎮／聚落，並可跨天體傳送回**搖籃星**家園營地（深海城市仍須 `dive`） | 大星球探索滿載後快速回補、跨地區串連 1～8 號城鎮動線與返鄉觸發搖籃星劇情 | `wood_canopy_regent` |
 
 ### <a id="食物多路線"></a>食物多路線（參考《曠野之息》）
 > 加工品、料理判定（自由投料、效果疊加／抵銷）、路線組合與招牌料理表見 [cuisine.md](cuisine.md)。
@@ -101,7 +101,7 @@
 
 - **平流層、空島與太空站高度**：平流層高度 = `1.0 R`（`PlanetConfig.Radius`），為空島（含空島部落）存在上限；太空電梯與太空站規格高度定為 **`1.25 R`**（高於平流層 `0.25 R`，探索上限 `1.6 R`）。同時持有 `fly` 與 `levitate` 時，`≤ 1.0 R` 採 `fly` 速度（`1250`），突破 `1.0 R` 無縫轉 `levitate`（`1000`）。
 - **水深 1 m 分界與泳速分工**：水深 `≤ 1 m` 可步行涉水（`800`）；水面過河／登島以 `swim` 最快（`1150`，契合屬性 `水／冰／木`），`dive` 亦可於水面通行但較慢（`850`），同時持有時水面取較高者（`1150`）；**下水超過 `1 m`** 僅能使用 `dive`（水下 `1000`）。以上速度倍率已收斂於 `Data/balance.json#field_utilities` 與 `FieldUtilityRules`／`SpatialTraversalRules`。
-- **起始城鎮與非大陸聚落**：起始城鎮必在陸地（`SettlementDomain.Land`）；空島部落（`SkyTribe`）、深海城市（`DeepSeaCity`）與隔水海島聚落（`IslandSettlement`）僅於**行星以上（`R ≥ 960`）**生成且規模較大陸聚落小（見 [planet-world.md#道路與建築](planet-world.md#道路與建築)）。`return_village` 僅限傳送至**已抵達登錄**的聚落或起始城鎮；傳送至深海城市時仍須隊伍具備 `dive`（防卡死），空島部落不限。
+- **起始城鎮與非大陸聚落**：起始城鎮必在陸地（`SettlementDomain.Land`）；空島部落（`SkyTribe`）、深海城市（`DeepSeaCity`）與隔水海島聚落（`IslandSettlement`）僅於**行星以上（`R ≥ 960`）**生成且規模較大陸聚落小（見 [planet-world.md#道路與建築](planet-world.md#道路與建築)）。`return_village`（候鳥歸途）僅限傳送至**已抵達登錄**的城鎮／聚落或**搖籃星**；傳送至深海城市時仍須隊伍具備 `dive`（防卡死），空島部落與搖籃星不限。
 - **實作現況**：`swim` 已補入 `common.schema.json`、`GameDataEnums.cs`、`FieldUtilityRules.cs`、`SpatialTraversalRules.cs` 與三語文案；`SettlementPlanner` v4 與 `LandmarkPlanner` v2 已實作 `1.25 R` 太空電梯／太空站與行星以上非大陸聚落；`SphericalCharacter`（`TraversalEnvelope`）與 `RunSession` 已接線水深 `1 m` 門檻、`swim`／`dive` 水面與水下移動、`fly` `1.0 R` 平流層上限、`levitate` `1.6 R` 浮空與 `ReturnVillage` 已發現聚落傳送。P5 正式物種分配待後續內容批次補齊。
 
 ## 5. 被動生活被動技（Trait × 8，琉璃珠副手可提供）

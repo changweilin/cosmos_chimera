@@ -940,8 +940,8 @@
     "en": "Mount"
   },
   "utility.ReturnVillage": {
-    "zh-TW": "返回村落",
-    "en": "Return to village"
+    "zh-TW": "候鳥歸途",
+    "en": "Migratory return"
   },
   "utility.PartyStealth": {
     "zh-TW": "隊伍隱身",
@@ -1432,8 +1432,8 @@
     "en": "Faster travel, ignoring terrain slowdown"
   },
   "utility.desc.ReturnVillage": {
-    "zh-TW": "傳送回起始城鎮或已造訪聚落（深海城市需潛水）",
-    "en": "Teleport to the starting town or visited settlements (deep-sea requires Dive)"
+    "zh-TW": "自由傳送至已抵達過的城鎮與搖籃星（深海城市需潛水）",
+    "en": "Freely teleport to visited settlements and the Cradle Moon (deep-sea requires Dive)"
   },
   "utility.desc.PartyStealth": {
     "zh-TW": "縮小野生偵測範圍",

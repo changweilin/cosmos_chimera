@@ -22,9 +22,9 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any lobby planet output changes.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
-        private const int LandmarkSearchAttempts = 600;
+        private const int AttemptsPerRegion = 40;
         private const int LobbyLoopRoadCount = 6;
         private const float GoldenAngleRad = 2.39996323f;
 
@@ -254,29 +254,16 @@ namespace Cosmimera.WorldGen
             var reserves = new List<float>(allTerrains.Count + 1);
             var entrances = new List<DungeonEntranceSite>(allTerrains.Count);
 
-            // Spread the 10 wonders across distinct regions, preferring non-town regions first.
+            // Spread the 10 wonders around their designated hub settlements (#3 City for 5, #7 City for 3, #8 Tribe for 2),
+            // preferring distinct non-town regions closest to each hub before reusing regions or falling back to town regions.
             var townRegionSet = new HashSet<int>();
             for (int i = 0; i < layout.Settlements.Count; i++)
             {
                 townRegionSet.Add(layout.Settlements[i].Region);
             }
 
+            var usedWonderRegions = new HashSet<int>();
             var candidateRegions = new List<int>(regions.Count);
-            for (int r = 0; r < regions.Count; r++)
-            {
-                if (!townRegionSet.Contains(r))
-                {
-                    candidateRegions.Add(r);
-                }
-            }
-
-            for (int r = 0; r < regions.Count; r++)
-            {
-                if (townRegionSet.Contains(r))
-                {
-                    candidateRegions.Add(r);
-                }
-            }
 
             for (int i = 0; i < allTerrains.Count; i++)
             {
@@ -285,17 +272,26 @@ namespace Cosmimera.WorldGen
                 int variant = (int)rng.NextUInt((uint)LandmarkPlanner.VariantCount(kind));
                 LandmarkPlanner.Size(kind, radius, ref rng, out float footprint, out float height, out float altitude);
                 bool solid = kind != LandmarkKind.SkyIsland;
-                int startRegionIdx = i % candidateRegions.Count;
 
-                bool found = TryPlaceWonder(kind, variant, footprint, height, altitude, solid, startRegionIdx,
-                    candidateRegions, regions, plan, placed, reserves, clearance, isBuildable, radius, ref rng,
-                    out RunLandmark lm);
+                int hubSettlementIdx = LobbyPlanet.HubSettlementIndexForTerrain(spec.Id);
+                BuildHubOrderedRegions(regions, layout, townRegionSet, usedWonderRegions, hubSettlementIdx, candidateRegions);
+
+                bool found = TryPlaceWonder(kind, variant, footprint, height, altitude, solid,
+                    candidateRegions, regions, plan, layout, hubSettlementIdx, placed, reserves, clearance,
+                    isBuildable, radius, ref rng, out RunLandmark lm);
                 if (!found)
                 {
-                    // Fallback: relax clearance to any buildable land away from other wonders so no master is lost.
-                    found = TryPlaceWonder(kind, variant, footprint, height, altitude, solid, startRegionIdx,
-                        candidateRegions, regions, plan, placed, reserves, null, isBuildable, radius, ref rng,
-                        out lm);
+                    // Fallback 1: relax building/road clearance within the hub's Voronoi neighborhood.
+                    found = TryPlaceWonder(kind, variant, footprint, height, altitude, solid,
+                        candidateRegions, regions, plan, layout, hubSettlementIdx, placed, reserves, null,
+                        isBuildable, radius, ref rng, out lm);
+                }
+                if (!found)
+                {
+                    // Fallback 2: relax hub Voronoi boundary to any buildable land so no trial master is ever lost.
+                    found = TryPlaceWonder(kind, variant, footprint, height, altitude, solid,
+                        candidateRegions, regions, plan, layout, null, placed, reserves, null,
+                        isBuildable, radius, ref rng, out lm);
                 }
 
                 if (!found)
@@ -303,6 +299,7 @@ namespace Cosmimera.WorldGen
                     continue;
                 }
 
+                usedWonderRegions.Add(lm.Region);
                 int lmIndex = placed.Count;
                 placed.Add(lm);
                 reserves.Add(footprint);
@@ -320,14 +317,79 @@ namespace Cosmimera.WorldGen
             return new LandmarkLayout(placed.ToArray(), radius, entrances.ToArray());
         }
 
-        private static bool TryPlaceWonder(LandmarkKind kind, int variant, float footprint, float height, float altitude,
-            bool solid, int startRegionIdx, List<int> candidateRegions, IReadOnlyList<RunRegion> regions, RunPlan plan,
-            List<RunLandmark> placed, List<float> reserves, LayoutClearance clearance, Func<float3, bool> isBuildable,
-            float radius, ref Pcg32 rng, out RunLandmark result)
+        private static int NearestHubIndex(float3 dir, RunLayout layout, float3 fallback)
         {
-            for (int attempt = 0; attempt < LandmarkSearchAttempts; attempt++)
+            float3 hub3 = layout.Settlements.Count > 2 ? layout.Settlements[2].Center : fallback;
+            float3 hub7 = layout.Settlements.Count > 6 ? layout.Settlements[6].Center : fallback;
+            float3 hub8 = layout.Settlements.Count > 7 ? layout.Settlements[7].Center : fallback;
+            float d3 = math.dot(dir, hub3);
+            float d7 = math.dot(dir, hub7);
+            float d8 = math.dot(dir, hub8);
+            return d3 >= d7 && d3 >= d8 ? 2 : (d7 >= d8 ? 6 : 7);
+        }
+
+        private static void BuildHubOrderedRegions(IReadOnlyList<RunRegion> regions, RunLayout layout,
+            HashSet<int> townRegionSet, HashSet<int> usedWonderRegions, int hubSettlementIdx, List<int> output)
+        {
+            output.Clear();
+            float3 hubCenter = hubSettlementIdx < layout.Settlements.Count
+                ? layout.Settlements[hubSettlementIdx].Center
+                : regions[0].Center;
+
+            var localUnusedNonTown = new List<int>(regions.Count);
+            var localUsedNonTown = new List<int>(regions.Count);
+            var localTown = new List<int>(townRegionSet.Count);
+            var outside = new List<int>(regions.Count);
+
+            for (int r = 0; r < regions.Count; r++)
             {
-                int r = candidateRegions[(startRegionIdx + attempt / 20) % candidateRegions.Count];
+                bool isLocal = NearestHubIndex(regions[r].Center, layout, regions[0].Center) == hubSettlementIdx;
+                if (!isLocal)
+                {
+                    outside.Add(r);
+                    continue;
+                }
+
+                if (townRegionSet.Contains(r))
+                {
+                    localTown.Add(r);
+                }
+                else if (usedWonderRegions.Contains(r))
+                {
+                    localUsedNonTown.Add(r);
+                }
+                else
+                {
+                    localUnusedNonTown.Add(r);
+                }
+            }
+
+            int CompareByProximity(int a, int b)
+            {
+                int cmp = math.dot(regions[b].Center, hubCenter).CompareTo(math.dot(regions[a].Center, hubCenter));
+                return cmp != 0 ? cmp : a.CompareTo(b);
+            }
+
+            localUnusedNonTown.Sort(CompareByProximity);
+            localUsedNonTown.Sort(CompareByProximity);
+            localTown.Sort(CompareByProximity);
+            outside.Sort(CompareByProximity);
+
+            output.AddRange(localUnusedNonTown);
+            output.AddRange(localUsedNonTown);
+            output.AddRange(localTown);
+            output.AddRange(outside);
+        }
+
+        private static bool TryPlaceWonder(LandmarkKind kind, int variant, float footprint, float height, float altitude,
+            bool solid, List<int> candidateRegions, IReadOnlyList<RunRegion> regions, RunPlan plan, RunLayout layout,
+            int? requiredHubIdx, List<RunLandmark> placed, List<float> reserves, LayoutClearance clearance,
+            Func<float3, bool> isBuildable, float radius, ref Pcg32 rng, out RunLandmark result)
+        {
+            int totalAttempts = candidateRegions.Count * AttemptsPerRegion;
+            for (int attempt = 0; attempt < totalAttempts; attempt++)
+            {
+                int r = candidateRegions[attempt / AttemptsPerRegion];
                 float3 site = regions[r].Center;
                 float gap = LandmarkPlanner.NeighbourGapM(regions, r, radius);
                 float minM = footprint + 24f;
@@ -336,6 +398,12 @@ namespace Cosmimera.WorldGen
                 float angle = rng.NextFloat() * 2f * math.PI;
                 PlanetFrame frame = PlanetFrame.FromUp(site);
                 float3 pos = math.normalize(site + (frame.East * math.cos(angle) + frame.North * math.sin(angle)) * (dist / radius));
+                if (requiredHubIdx.HasValue &&
+                    NearestHubIndex(pos, layout, regions[0].Center) != requiredHubIdx.Value)
+                {
+                    continue;
+                }
+
                 if (!LandmarkPlanner.Fits(pos, footprint, false, solid, plan, placed, reserves, clearance, isBuildable, radius))
                 {
                     continue;
@@ -403,7 +471,74 @@ namespace Cosmimera.WorldGen
                 used.Add(pick);
             }
 
-            return chosen.ToArray();
+            int[] picked = chosen.ToArray();
+            if (picked.Length != 8)
+            {
+                return picked;
+            }
+
+            // REQ: docs/design/lobby-meta.md#地球大廳 — map picked land hubs to #1..#8 by latitude and sequence:
+            // #8 Tribe (index 7) takes the highest-|y| polar frontier, #7 City (index 6) the next highest-|y|,
+            // while #3 City (index 2) and #5 CityState (index 4) occupy lower latitudes (never polar).
+            var nonLanding = new List<int>(7);
+            for (int i = 1; i < picked.Length; i++)
+            {
+                nonLanding.Add(picked[i]);
+            }
+
+            nonLanding.Sort((a, b) =>
+            {
+                int cmp = math.abs(regions[b].Center.y).CompareTo(math.abs(regions[a].Center.y));
+                return cmp != 0 ? cmp : a.CompareTo(b);
+            });
+
+            var ordered = new int[8];
+            ordered[0] = landingRegion; // #1 1號小鎮
+            ordered[7] = nonLanding[0]; // #8 8號部落（最高緯度極地邊緣）
+            ordered[6] = nonLanding[1]; // #7 7號城市（次高緯度極境樞紐）
+
+            // Assign the two lowest-latitude hubs to #3 City (closer to #1) and #5 CityState.
+            int lowA = nonLanding[5];
+            int lowB = nonLanding[6];
+            float3 landDir = regions[landingRegion].Center;
+            if (math.dot(regions[lowA].Center, landDir) >= math.dot(regions[lowB].Center, landDir))
+            {
+                ordered[2] = lowA; // #3 3號城市
+                ordered[4] = lowB; // #5 5號城邦
+            }
+            else
+            {
+                ordered[2] = lowB;
+                ordered[4] = lowA;
+            }
+
+            // Remaining 3 mid-latitude regions fill #2 Tribe (closest to #1), #4 Town (closer to #3), #6 Town.
+            var mid = new List<int>(3) { nonLanding[2], nonLanding[3], nonLanding[4] };
+            int bestFor2Idx = 0;
+            for (int k = 1; k < mid.Count; k++)
+            {
+                if (math.dot(regions[mid[k]].Center, landDir) > math.dot(regions[mid[bestFor2Idx]].Center, landDir))
+                {
+                    bestFor2Idx = k;
+                }
+            }
+
+            ordered[1] = mid[bestFor2Idx]; // #2 2號部落
+            mid.RemoveAt(bestFor2Idx);
+
+            float3 city3Dir = regions[ordered[2]].Center;
+            if (math.dot(regions[mid[0]].Center, city3Dir) >= math.dot(regions[mid[1]].Center, city3Dir))
+            {
+                ordered[3] = mid[0]; // #4 4號小鎮
+                ordered[5] = mid[1]; // #6 6號小鎮
+            }
+            else
+            {
+                ordered[3] = mid[1];
+                ordered[5] = mid[0];
+            }
+
+            return ordered;
         }
 
         private static int BfsParent(IReadOnlyList<RunRegion> regions, int r)

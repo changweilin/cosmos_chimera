@@ -323,6 +323,21 @@ namespace Cosmimera.Creatures.Tests
 
             TeamUtilityModifiers retAndDive = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.ReturnVillage, FieldUtility.Dive });
             Assert.IsTrue(SpatialTraversalRules.CanReturnToSettlement(retAndDive, Cosmimera.WorldGen.SettlementDomain.DeepSea, true).Allowed);
+
+            ReturnSettlementResult cradleAllowed = SpatialTraversalRules.CanReturnToCradleMoon(retOnly, true);
+            Assert.IsTrue(cradleAllowed.Allowed);
+            Assert.IsFalse(cradleAllowed.RequiresUtility);
+            Assert.IsFalse(cradleAllowed.RequiresVisit);
+            Assert.IsFalse(cradleAllowed.RequiresDive);
+
+            ReturnSettlementResult cradleNoTutorial = SpatialTraversalRules.CanReturnToCradleMoon(retOnly, false);
+            Assert.IsFalse(cradleNoTutorial.Allowed);
+            Assert.IsTrue(cradleNoTutorial.RequiresVisit);
+
+            TeamUtilityModifiers noRet = FieldUtilityRules.ComputeTeamModifiers(new[] { FieldUtility.Fly });
+            ReturnSettlementResult cradleNoUtility = SpatialTraversalRules.CanReturnToCradleMoon(noRet, true);
+            Assert.IsFalse(cradleNoUtility.Allowed);
+            Assert.IsTrue(cradleNoUtility.RequiresUtility);
         }
     }
 }

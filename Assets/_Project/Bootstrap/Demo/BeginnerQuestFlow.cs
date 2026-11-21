@@ -497,40 +497,47 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public static List<MainStoryTrack> NextMainStoryTracks(CodexProgress codex, IReadOnlyCollection<string> completedTrials)
         {
-            bool hasTrial = completedTrials != null && completedTrials.Count > 0;
-            bool allTenTrials = completedTrials != null && completedTrials.Count >= 10;
+            int trialCount = completedTrials?.Count ?? 0;
+            bool moonFiveDone = trialCount >= 5;
+            bool allTenTrials = trialCount >= 10;
             return new List<MainStoryTrack>
             {
                 new MainStoryTrack(
-                    "story_terrain_trials",
-                    allTenTrials ? "主線：十屬性地形試煉（已完成）" : $"主線：進階地形試煉（{completedTrials?.Count ?? 0}/10）",
-                    "前往星球的進階地形入口與試煉主對話，挑戰「試煉主＋地城 BOSS」並取得地形免疫與進階器皿配方。",
-                    "verdant_planet",
-                    allTenTrials),
-                new MainStoryTrack(
                     "story_food_line",
-                    "主線：食物製作路線（釣魚 → 冷凍 → 烹飪）",
-                    "探索水域星球，體驗採集、加工與清蒸料理，解鎖十屬性生活技能主線。",
+                    "主線 1：1 號小鎮 → 2 號部落「食物製作路線」（解鎖矮行星／1 次進化）",
+                    "沿溫帶河口前往峽灣林緣（入 2 號前迎戰好友），完成釣魚 → 冷凍 → 清蒸鱸魚，累積經驗足御三家 1 次進化並解鎖矮行星。",
                     "verdant_planet",
                     false),
                 new MainStoryTrack(
+                    "story_terrain_trials_lower",
+                    moonFiveDone ? "主線 2：3 號城市周圍「金木水火土五關主」（已完成 5 座）" : $"主線 2：3 號城市周圍「金木水火土五關主」（進度 {Math.Min(trialCount, 5)}/5）",
+                    "入 3 號城市前迎戰宿敵；於五象匯聚盆地周圍依任意順序挑戰機房、雨林、深海、火山、礦坑五關主。",
+                    "verdant_planet",
+                    moonFiveDone),
+                new MainStoryTrack(
+                    "story_migratory_return",
+                    "主線 3：4 號小鎮「候鳥歸途」→ 返鄉搖籃星好友戰（解鎖行星／2 次進化）",
+                    "入 4 號小鎮前迎戰好友；習得「候鳥歸途」後跨星傳送回搖籃星戰勝好友，解鎖好友圖鑑與行星尺寸。",
+                    "storm_planet",
+                    false),
+                new MainStoryTrack(
                     "story_weapon_line",
-                    "主線：武器製作路線（採礦 → 電弧熔煉 → 鍛造）",
-                    "前往礦脈豐富的星球採集原礦與煤，鍛造第一把無屬性武器。",
+                    "主線 4A：5 號城邦「武器製作路線」（順序任意）",
+                    "入 5 號裂谷城邦前迎戰宿敵；完成採礦 → 電弧熔煉 → 鍛造無屬性單／雙手武器。",
                     "mineral_planet",
                     false),
                 new MainStoryTrack(
                     "story_armor_line",
-                    "主線：防具製作路線（採集纖維 → 紡織 → 裁縫）",
-                    "採集麻纖維與棉花加工成布料，製作無屬性上身戰衣或下身護腿。",
+                    "主線 4B：6 號小鎮「防具製作路線」（順序任意）",
+                    "入 6 號草原小鎮前迎戰好友；完成採集麻棉 → 紡織 → 裁縫無屬性上／下身防具。",
                     "verdant_planet",
                     false),
                 new MainStoryTrack(
-                    "story_flight_line",
-                    hasTrial ? "主線：飛行技能任務（風屬性高空機動）" : "主線：飛行技能任務（推薦先完成首座試煉）",
-                    "結識風屬性生活技能導師，解鎖高空滑翔與跨地形飛行能力。",
-                    "storm_planet",
-                    false),
+                    "story_terrain_trials_upper",
+                    allTenTrials ? "主線 4C / 5：7 號城市「風冰雷」＆ 8 號部落「光影」關主（已完成 10/10）" : $"主線 4C / 5：7 號城市「風冰雷」＆ 8 號部落「光影」關主（總試煉 {trialCount}/10）",
+                    "入 7 號極境城市前迎戰宿敵挑戰風冰雷三關主；入 8 號極地部落前迎戰好友挑戰光影二關主並展開宿敵終戰（解鎖宿敵圖鑑與超載）。",
+                    "ice_planet",
+                    allTenTrials),
             };
         }
     }

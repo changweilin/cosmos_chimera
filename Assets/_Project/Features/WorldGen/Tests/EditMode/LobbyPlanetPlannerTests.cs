@@ -139,6 +139,26 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(cityStates, Is.EqualTo(1));
             Assert.That(cities, Is.EqualTo(2));
 
+            // Verify exact #1..#8 progression roster order (Town, Tribe, City, Town, CityState, Town, City, Tribe)
+            // and latitude placement (#8 Tribe at polar frontier, #7 City second highest, #3 City & #5 CityState non-polar).
+            SettlementKind[] expectedRoster =
+            {
+                SettlementKind.Town, SettlementKind.Tribe, SettlementKind.City, SettlementKind.Town,
+                SettlementKind.CityState, SettlementKind.Town, SettlementKind.City, SettlementKind.Tribe,
+            };
+            for (int i = 0; i < expectedRoster.Length; i++)
+            {
+                Assert.That(layout.Settlements[i].Kind, Is.EqualTo(expectedRoster[i]), $"settlement #{i + 1}");
+            }
+
+            float tribe8AbsY = math.abs(layout.Settlements[7].Center.y);
+            float city7AbsY = math.abs(layout.Settlements[6].Center.y);
+            float city3AbsY = math.abs(layout.Settlements[2].Center.y);
+            float cityState5AbsY = math.abs(layout.Settlements[4].Center.y);
+            Assert.That(tribe8AbsY, Is.GreaterThanOrEqualTo(city7AbsY), "#8 Tribe must sit at highest polar latitude");
+            Assert.That(city7AbsY, Is.GreaterThanOrEqualTo(city3AbsY), "#7 City must sit at higher latitude than #3 City");
+            Assert.That(city7AbsY, Is.GreaterThanOrEqualTo(cityState5AbsY), "#7 City must sit at higher latitude than #5 CityState");
+
             // Verify all 8 settlements are mutually reachable along Main roads alone.
             var mainAdj = new Dictionary<int, List<int>>();
             foreach (RunRoad r in layout.Roads)
@@ -223,6 +243,23 @@ namespace Cosmimera.WorldGen.Tests
                 Assert.That(terrains.Contains(spec.Id), Is.True, "missing fixed dungeon entrance for " + spec.Id);
             }
 
+            // Verify each wonder is placed closer to its designated hub settlement (#3 City, #7 City, or #8 Tribe)
+            // than to the other two hubs.
+            float3 hub3 = layout.Settlements[2].Center;
+            float3 hub7 = layout.Settlements[6].Center;
+            float3 hub8 = layout.Settlements[7].Center;
+            foreach (DungeonEntranceSite entry in landmarks.Entrances)
+            {
+                int expectedHub = LobbyPlanet.HubSettlementIndexForTerrain(entry.TerrainId);
+                float3 lmDir = landmarks.Landmarks[entry.LandmarkIndex].Direction;
+                float dot3 = math.dot(lmDir, hub3);
+                float dot7 = math.dot(lmDir, hub7);
+                float dot8 = math.dot(lmDir, hub8);
+                int nearestHub = dot3 >= dot7 && dot3 >= dot8 ? 2 : (dot7 >= dot8 ? 6 : 7);
+                Assert.That(nearestHub, Is.EqualTo(expectedHub),
+                    $"wonder {entry.TerrainId} should cluster around hub settlement index {expectedHub}");
+            }
+
             bool hasStation = false;
             foreach (RunLandmark lm in landmarks.Landmarks)
             {
@@ -234,6 +271,39 @@ namespace Cosmimera.WorldGen.Tests
             }
 
             Assert.That(hasStation, Is.True, "SpaceStation must accompany the SpaceElevator wonder");
+        }
+
+        [Test]
+        public void Gatekeeper_and_terrain_hub_rules_match_main_story_schedule()
+        {
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(0), Is.EqualTo(LobbyGatekeeper.None));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(1), Is.EqualTo(LobbyGatekeeper.Friend));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(2), Is.EqualTo(LobbyGatekeeper.Rival));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(3), Is.EqualTo(LobbyGatekeeper.Friend));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(4), Is.EqualTo(LobbyGatekeeper.Rival));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(5), Is.EqualTo(LobbyGatekeeper.Friend));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(6), Is.EqualTo(LobbyGatekeeper.Rival));
+            Assert.That(LobbyPlanet.GatekeeperForSettlement(7), Is.EqualTo(LobbyGatekeeper.Friend));
+
+            foreach (string id in new[] { "laboratory", "rainforest", "deep_sea", "volcano", "cave" })
+            {
+                Assert.That(LobbyPlanet.HubSettlementIndexForTerrain(id), Is.EqualTo(2));
+            }
+
+            foreach (string id in new[] { "ice_cap", "tower", "space" })
+            {
+                Assert.That(LobbyPlanet.HubSettlementIndexForTerrain(id), Is.EqualTo(6));
+            }
+
+            foreach (string id in new[] { "labyrinth", "temple" })
+            {
+                Assert.That(LobbyPlanet.HubSettlementIndexForTerrain(id), Is.EqualTo(7));
+            }
+
+            Assert.Throws<ContractException>(() => LobbyPlanet.GatekeeperForSettlement(-1));
+            Assert.Throws<ContractException>(() => LobbyPlanet.GatekeeperForSettlement(8));
+            Assert.Throws<ContractException>(() => LobbyPlanet.HubSettlementIndexForTerrain(""));
+            Assert.Throws<ContractException>(() => LobbyPlanet.HubSettlementIndexForTerrain("unknown"));
         }
 
         [Test]

@@ -705,7 +705,7 @@
     "ja": "騎乗"
   },
   "utility.ReturnVillage": {
-    "ja": "村へ帰還"
+    "ja": "渡り鳥の帰路"
   },
   "utility.PartyStealth": {
     "ja": "パーティー隠密"
@@ -1074,7 +1074,7 @@
     "ja": "移動速度を上げ地形の減速を無視"
   },
   "utility.desc.ReturnVillage": {
-    "ja": "始まりの街や訪問済み集落へ帰還する（深海都市は潜水が必要）"
+    "ja": "訪問済みの街や揺籃星へ自由に帰還する（深海都市は潜水が必要）"
   },
   "utility.desc.PartyStealth": {
     "ja": "野生の感知範囲を縮小"

@@ -240,5 +240,22 @@ namespace Cosmimera.Creatures
             bool allowed = !needsUtility && !needsVisit && !needsDive;
             return new ReturnSettlementResult(allowed, needsUtility, needsVisit, needsDive);
         }
+
+        /// <summary>Checks whether Migratory Return (<c>return_village</c>) can teleport the party back to Cradle Moon.</summary>
+        /// <remarks>
+        /// REQ: docs/design/lobby-meta.md#地球大廳, field-utilities.md#4-主動生活主動技.
+        /// Pre: none.
+        /// Post: returns eligibility with RequiresUtility = !modifiers.CanReturnVillage and RequiresVisit = !tutorialDone.
+        /// Side effects: none.
+        /// </remarks>
+        public static ReturnSettlementResult CanReturnToCradleMoon(
+            in TeamUtilityModifiers modifiers,
+            bool tutorialDone)
+        {
+            bool needsUtility = !modifiers.CanReturnVillage;
+            bool needsVisit = !tutorialDone;
+            bool allowed = !needsUtility && !needsVisit;
+            return new ReturnSettlementResult(allowed, needsUtility, needsVisit, false);
+        }
     }
 }
