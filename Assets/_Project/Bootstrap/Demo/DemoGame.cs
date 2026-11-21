@@ -104,6 +104,7 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _scrollToFocus;
         private bool _insidePartyScroll;
         private GameOverlayView _overlay;
+        private RunCheckpointSave _pendingResumeCheckpoint;
 
         private void Awake()
         {
@@ -140,6 +141,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void StartGameDirectly()
         {
+            if (_save.ActiveCheckpoint != null)
+            {
+                LaunchFromCheckpoint(_save.ActiveCheckpoint);
+                return;
+            }
+
             if (_save.StarterLine == null && _starters.Count > 0)
             {
                 CreatureDef s = _starters[0];
@@ -242,6 +249,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void Update()
         {
+            if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
+            {
+                OpenDevTestSavesOverlay();
+                return;
+            }
+
             if (_menuInput == null || !_menuInput.enabled)
             {
                 return;
@@ -583,6 +596,12 @@ namespace Cosmimera.Bootstrap.Demo
             if (MenuButton("下一個主線劇情", GUILayout.Height(48)))
             {
                 OpenMainStorySelect();
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton("開發者測試存檔 (Dev F9)", GUILayout.Height(36)))
+            {
+                OpenDevTestSavesOverlay();
                 GUIUtility.ExitGUI();
             }
 
@@ -1180,6 +1199,8 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: gear-looks.md#外觀與數值 — lobby crafting styles gear after the last departed planet; persisted at settlement.
             _save.SetLastPlanet(new GearOrigin(o.Type.Id, o.Seed));
             _lobbyCamera.gameObject.SetActive(false);
+            RunCheckpointSave resumeCheckpoint = _pendingResumeCheckpoint;
+            _pendingResumeCheckpoint = null;
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
                 new RunSetup
@@ -1204,8 +1225,10 @@ namespace Cosmimera.Bootstrap.Demo
                     FriendStarter = FindCreatureById(_save.FriendStarterId),
                     RivalId = _save.RivalId,
                     RivalStarter = FindCreatureById(_save.RivalStarterId),
+                    ResumeCheckpoint = resumeCheckpoint,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
+            _run.CheckpointTriggered += OnCheckpointTriggered;
             _run.Hints.Inherit(_menuHints);
             _screen = Screen.Running;
         }
@@ -1273,11 +1296,133 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_settleError == null && outcome.TravelToLobbyPlanet)
             {
+                if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+                {
+                    LobbySave cleared = _save.Clone();
+                    cleared.ClearCheckpoint();
+                    CommitLobby(cleared);
+                }
                 LaunchLobbyPlanet();
                 return;
             }
 
             ShowResultsOverlay();
+        }
+
+        private void OnCheckpointTriggered(RunCheckpointSave checkpoint)
+        {
+            if (checkpoint == null || _save == null)
+            {
+                return;
+            }
+
+            LobbySave candidate = _save.Clone();
+            candidate.SetCheckpoint(checkpoint);
+            CommitLobby(candidate);
+        }
+
+        private void LaunchFromCheckpoint(RunCheckpointSave cp)
+        {
+            if (cp == null)
+            {
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            _pendingResumeCheckpoint = cp;
+            if (cp.WorldKind == SaveWorldKind.CradlePlanet)
+            {
+                if (_save.TutorialDone)
+                {
+                    LaunchCradleMoon();
+                }
+                else
+                {
+                    PlanetTypeDef cradleType = ResolveCradlePlanetType();
+                    _activeRunIsBeginnerQuest = true;
+                    _bqCharacterId = _save.CharacterId;
+                    _bqFriendId = _save.FriendId;
+                    _bqRivalId = _save.RivalId;
+                    Launch(new PlanetOption
+                    {
+                        Type = cradleType,
+                        Seed = cp.PlanetSeed,
+                        Radius = RadiusFor(PlanetSize.Asteroid),
+                        BossStage = CreatureStage.Juvenile,
+                        Elements = WorldGen.PlanetElementDraw.Draw(cp.PlanetSeed, PlanetSize.Asteroid, cradleType.ElementBias),
+                        IsBeginnerQuest = true,
+                    });
+                }
+                return;
+            }
+
+            if (cp.WorldKind == SaveWorldKind.LobbyPlanet)
+            {
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            PlanetTypeDef randomType = null;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t && t.Id == cp.PlanetTypeId)
+                {
+                    randomType = t;
+                    break;
+                }
+            }
+
+            if (randomType == null)
+            {
+                _pendingResumeCheckpoint = null;
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = randomType,
+                Seed = cp.PlanetSeed,
+                Radius = RadiusFor(cp.PlanetSize),
+                BossStage = cp.BossStage,
+                Elements = WorldGen.PlanetElementDraw.Draw(cp.PlanetSeed, cp.PlanetSize, randomType.ElementBias),
+            });
+        }
+
+        private void OpenDevTestSavesOverlay()
+        {
+            _overlay ??= new GameOverlayView(transform);
+            _overlay.Show("開發者遊戲測試存檔 (Dev)", "選擇關鍵劇情節點一鍵套用並啟動");
+            foreach (DevTestSavePreset preset in DevTestSaves.All)
+            {
+                DevTestSavePreset captured = preset;
+                _overlay.AddCard(captured.Label, captured.FileName, "載入此測試存檔", () =>
+                {
+                    ApplyDevTestSave(captured);
+                }, primary: false);
+            }
+
+            _overlay.AddFooterButton("關閉", () => _overlay.Hide());
+        }
+
+        private void ApplyDevTestSave(DevTestSavePreset preset)
+        {
+            LobbySave built = preset.Build();
+            if (!LobbyTransactions.TryWrite(built, _savePath, out System.Exception err))
+            {
+                Debug.LogException(err);
+                return;
+            }
+
+            _save = built;
+            _overlay?.Hide();
+            if (_run != null)
+            {
+                Destroy(_run.gameObject);
+                _run = null;
+            }
+
+            LaunchFromCheckpoint(_save.ActiveCheckpoint);
         }
 
         private void ShowResultsOverlay()
@@ -1323,8 +1468,22 @@ namespace Cosmimera.Bootstrap.Demo
                 _overlay.Hide();
                 OpenJournal();
             });
+            if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+            {
+                _overlay.AddFooterButton("從最後存檔點重試", () =>
+                {
+                    _overlay.Hide();
+                    LaunchFromCheckpoint(_save.ActiveCheckpoint);
+                }, primary: false);
+            }
             _overlay.AddFooterButton("再次出發", () =>
             {
+                if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+                {
+                    LobbySave cleared = _save.Clone();
+                    cleared.ClearCheckpoint();
+                    CommitLobby(cleared);
+                }
                 _overlay.Hide();
                 LaunchLobbyPlanet();
             }, primary: true);

@@ -1,0 +1,152 @@
+{
+    "version": 17,
+    "next_instance_id": 5,
+    "starter_line": "starter_sun_line",
+    "party": [
+        1,
+        2,
+        3,
+        4
+    ],
+    "owned": [
+        {
+            "instance_id": 1,
+            "species_id": "sun_array_skyheron",
+            "vessel": 0,
+            "visual_vessel": 0,
+            "exp": 65000,
+            "niche_id": "",
+            "habit": 0
+        },
+        {
+            "instance_id": 2,
+            "species_id": "cr_frostblade_penguin_adult",
+            "vessel": 1,
+            "visual_vessel": 1,
+            "exp": 62000,
+            "niche_id": "",
+            "habit": 0
+        },
+        {
+            "instance_id": 3,
+            "species_id": "cr_chrono_beetle_adult",
+            "vessel": 0,
+            "visual_vessel": 0,
+            "exp": 60000,
+            "niche_id": "",
+            "habit": 0
+        },
+        {
+            "instance_id": 4,
+            "species_id": "cr_fire_wisp_adult",
+            "vessel": 2,
+            "visual_vessel": 2,
+            "exp": 58000,
+            "niche_id": "",
+            "habit": 0
+        }
+    ],
+    "materials": [
+        {
+            "element": "light",
+            "tier": 1,
+            "qty": 20
+        },
+        {
+            "element": "shadow",
+            "tier": 1,
+            "qty": 20
+        }
+    ],
+    "player_exp": 70000,
+    "partners": [],
+    "eggs": [],
+    "craft_stock": [],
+    "equipment": [],
+    "codex": [
+        {
+            "kind": 0,
+            "id": "cr_chrono_beetle_adult",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "cr_fire_wisp_adult",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "cr_frostblade_penguin_adult",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "luo_en",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "sun_array_skyheron",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "ye_chengxi",
+            "level": 2
+        }
+    ],
+    "presets": [],
+    "last_planet": {
+        "planet": "cradle_planet",
+        "seed": 0
+    },
+    "character_id": "ye_chengxi",
+    "friend_id": "luo_en",
+    "rival_id": "yumori_sumiha",
+    "rival_starter_id": "moon_night_pup",
+    "friend_starter_id": "star_blaze_foal",
+    "tutorial_done": true,
+    "trainer_battles": [],
+    "completed_trials": [
+        "cave",
+        "deep_sea",
+        "ice_cap",
+        "laboratory",
+        "labyrinth",
+        "rainforest",
+        "space",
+        "temple",
+        "tower",
+        "volcano"
+    ],
+    "discovered_recipes": [],
+    "food_quest_done": true,
+    "migratory_return_done": true,
+    "rival_quest_done": false,
+    "ng_plus_unlocked": false,
+    "has_checkpoint": true,
+    "active_checkpoint": {
+        "world_kind": 1,
+        "checkpoint_kind": 0,
+        "planet_seed": 5498686522774270001,
+        "planet_type_id": "verdant_planet",
+        "planet_size": 3,
+        "boss_stage": 2,
+        "dir_x": 0.0,
+        "dir_y": 1.0,
+        "dir_z": 0.0,
+        "beginner_quest_phase": 0,
+        "discovered_settlements": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+        ],
+        "surface_boss_defeated": false,
+        "dungeon_boss_defeated": false
+    }
+}

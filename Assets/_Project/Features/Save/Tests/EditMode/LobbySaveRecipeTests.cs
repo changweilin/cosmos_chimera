@@ -19,7 +19,7 @@ namespace Cosmimera.Save.Tests
         [Test]
         public void Format_16_round_trips_discovered_recipes_sorted()
         {
-            Assert.That(LobbySave.FormatVersion, Is.EqualTo(16));
+            Assert.That(LobbySave.FormatVersion, Is.GreaterThanOrEqualTo(16));
             var save = new LobbySave();
             Assert.That(save.IsRecipeDiscovered("recipe_food_steamed_sea_bass"), Is.False);
             Assert.That(save.RecordRecipeDiscovered("recipe_food_steamed_sea_bass"), Is.True);
@@ -27,7 +27,7 @@ namespace Cosmimera.Save.Tests
             Assert.That(save.RecordRecipeDiscovered("recipe_food_steamed_sea_bass"), Is.False);
 
             LobbySave reloaded = Load(save.ToJson());
-            Assert.That(reloaded.LoadedFormatVersion, Is.EqualTo(16));
+            Assert.That(reloaded.LoadedFormatVersion, Is.EqualTo(LobbySave.FormatVersion));
             CollectionAssert.AreEqual(new[] { "recipe_food_aged_beast_ragout", "recipe_food_steamed_sea_bass" },
                 reloaded.DiscoveredRecipesSnapshot());
             Assert.That(reloaded.ToJson(), Is.EqualTo(save.ToJson()));

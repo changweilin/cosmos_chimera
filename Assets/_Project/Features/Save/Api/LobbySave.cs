@@ -66,13 +66,16 @@ namespace Cosmimera.Save
     /// Formats 1–14 load with empty counts and no completed trials.
     /// Version 16 (cuisine.md#6): root <c>discovered_recipes</c> — signature recipe ids the player has cooked at least once;
     /// formats 1–15 load with none.
+    /// Version 17 (lobby-meta.md#進度保存): root story milestone flags (<c>food_quest_done</c>,
+    /// <c>migratory_return_done</c>, <c>rival_quest_done</c>, <c>ng_plus_unlocked</c>) and <c>active_checkpoint</c>
+    /// (overworld auto-save or random-planet checkpoint); formats 1–16 load with false flags and null checkpoint.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 16;
+        public const int FormatVersion = 17;
 
         /// <summary>Cumulative battles against one trainer profession required for <see cref="CodexLevel.Complete"/>.</summary>
         /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: constant 10. Side effects: none.</remarks>
@@ -274,6 +277,58 @@ namespace Cosmimera.Save
         /// <summary>True once the beginner quest is finished (or migrated from an existing v1..v12 save with creatures).</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool TutorialDone { get; private set; }
+
+        /// <summary>True once Town #2 food quest is completed (unlocks Moon size).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool FoodQuestDone { get; private set; }
+
+        /// <summary>True once Town #4 Migratory Return quest is completed (unlocks Planet size).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool MigratoryReturnDone { get; private set; }
+
+        /// <summary>True once Tribe #8 Rival final battle is completed (completes first loop).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool RivalQuestDone { get; private set; }
+
+        /// <summary>True once New Game+ (二周目) is unlocked after completing the first loop.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool NgPlusUnlocked { get; private set; }
+
+        /// <summary>Active overworld auto-save or random-planet checkpoint, or null when none is active.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: checkpoint or null. Side effects: none.</remarks>
+        public RunCheckpointSave ActiveCheckpoint { get; private set; }
+
+        /// <summary>Marks Town #2 food quest as completed.</summary>
+        /// <remarks>Pre: none. Post: FoodQuestDone == true. Side effects: mutates this save.</remarks>
+        public void CompleteFoodQuest() => FoodQuestDone = true;
+
+        /// <summary>Marks Town #4 Migratory Return quest as completed.</summary>
+        /// <remarks>Pre: none. Post: MigratoryReturnDone == true. Side effects: mutates this save.</remarks>
+        public void CompleteMigratoryReturn() => MigratoryReturnDone = true;
+
+        /// <summary>Marks Tribe #8 Rival finale as completed and unlocks New Game+ (二周目).</summary>
+        /// <remarks>Pre: none. Post: RivalQuestDone == true and NgPlusUnlocked == true. Side effects: mutates this save.</remarks>
+        public void CompleteRivalQuest()
+        {
+            RivalQuestDone = true;
+            NgPlusUnlocked = true;
+        }
+
+        /// <summary>Sets or replaces the active overworld/random-planet checkpoint.</summary>
+        /// <remarks>
+        /// Pre: checkpoint != null.
+        /// Post: ActiveCheckpoint is an independent clone of checkpoint.
+        /// Side effects: mutates this save; allocates clone.
+        /// </remarks>
+        public void SetCheckpoint(RunCheckpointSave checkpoint)
+        {
+            Contract.Requires(checkpoint != null, "checkpoint must be non-null");
+            ActiveCheckpoint = checkpoint.Clone();
+        }
+
+        /// <summary>Clears any active run/overworld checkpoint.</summary>
+        /// <remarks>Pre: none. Post: ActiveCheckpoint == null. Side effects: mutates this save.</remarks>
+        public void ClearCheckpoint() => ActiveCheckpoint = null;
 
         /// <summary>Records beginner-quest completion and character/rival/friend assignments (P7-02a).</summary>
         /// <remarks>
@@ -603,6 +658,9 @@ namespace Cosmimera.Save
                 PlayerExp = PlayerExp, LastPlanet = LastPlanet,
                 CharacterId = CharacterId, FriendId = FriendId, RivalId = RivalId,
                 RivalStarterId = RivalStarterId, FriendStarterId = FriendStarterId, TutorialDone = TutorialDone,
+                FoodQuestDone = FoodQuestDone, MigratoryReturnDone = MigratoryReturnDone,
+                RivalQuestDone = RivalQuestDone, NgPlusUnlocked = NgPlusUnlocked,
+                ActiveCheckpoint = ActiveCheckpoint?.Clone(),
             };
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
@@ -841,6 +899,12 @@ namespace Cosmimera.Save
                 rival_starter_id = RivalStarterId ?? string.Empty,
                 friend_starter_id = FriendStarterId ?? string.Empty,
                 tutorial_done = TutorialDone,
+                food_quest_done = FoodQuestDone,
+                migratory_return_done = MigratoryReturnDone,
+                rival_quest_done = RivalQuestDone,
+                ng_plus_unlocked = NgPlusUnlocked,
+                has_checkpoint = ActiveCheckpoint != null,
+                active_checkpoint = ActiveCheckpoint != null ? ToCheckpointDto(ActiveCheckpoint) : null,
             };
             IReadOnlyList<TrainerBattleCount> trainerCounts = TrainerBattlesSnapshot();
             dto.trainer_battles = new TrainerCountDto[trainerCounts.Count];
@@ -1221,8 +1285,88 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 17)
+            {
+                save.FoodQuestDone = dto.food_quest_done;
+                save.MigratoryReturnDone = dto.migratory_return_done;
+                save.RivalQuestDone = dto.rival_quest_done;
+                save.NgPlusUnlocked = dto.ng_plus_unlocked || dto.rival_quest_done;
+                if (dto.has_checkpoint)
+                {
+                    Check(dto.active_checkpoint != null, "missing active_checkpoint payload");
+                    save.ActiveCheckpoint = FromCheckpointDto(dto.active_checkpoint);
+                }
+            }
+
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
+        }
+
+        private static CheckpointDto ToCheckpointDto(RunCheckpointSave cp)
+        {
+            var settled = new int[cp.DiscoveredSettlements.Count];
+            for (int i = 0; i < cp.DiscoveredSettlements.Count; i++)
+            {
+                settled[i] = cp.DiscoveredSettlements[i];
+            }
+
+            return new CheckpointDto
+            {
+                world_kind = (int)cp.WorldKind,
+                checkpoint_kind = (int)cp.CheckpointKind,
+                planet_seed = unchecked((long)cp.PlanetSeed),
+                planet_type_id = cp.PlanetTypeId,
+                planet_size = (int)cp.PlanetSize,
+                boss_stage = (int)cp.BossStage,
+                dir_x = cp.PlayerDirX,
+                dir_y = cp.PlayerDirY,
+                dir_z = cp.PlayerDirZ,
+                beginner_quest_phase = cp.BeginnerQuestPhase,
+                discovered_settlements = settled,
+                surface_boss_defeated = cp.SurfaceBossDefeated,
+                dungeon_boss_defeated = cp.DungeonBossDefeated,
+            };
+        }
+
+        private static RunCheckpointSave FromCheckpointDto(CheckpointDto dto)
+        {
+            Check(Enum.IsDefined(typeof(SaveWorldKind), dto.world_kind), "invalid checkpoint world_kind");
+            Check(Enum.IsDefined(typeof(SaveCheckpointKind), dto.checkpoint_kind), "invalid checkpoint_kind");
+            Check(!string.IsNullOrWhiteSpace(dto.planet_type_id), "invalid checkpoint planet_type_id");
+            Check(Enum.IsDefined(typeof(PlanetSize), dto.planet_size), "invalid checkpoint planet_size");
+            Check(Enum.IsDefined(typeof(CreatureStage), dto.boss_stage), "invalid checkpoint boss_stage");
+            Check(!float.IsNaN(dto.dir_x) && !float.IsInfinity(dto.dir_x) &&
+                  !float.IsNaN(dto.dir_y) && !float.IsInfinity(dto.dir_y) &&
+                  !float.IsNaN(dto.dir_z) && !float.IsInfinity(dto.dir_z), "invalid checkpoint player direction");
+            Check(dto.beginner_quest_phase >= 0, "invalid checkpoint beginner_quest_phase");
+
+            var worldKind = (SaveWorldKind)dto.world_kind;
+            var cpKind = (SaveCheckpointKind)dto.checkpoint_kind;
+            Check(SaveCheckpointPolicy.CanSaveCheckpoint(worldKind, cpKind, insideDungeon: false),
+                "checkpoint_kind not valid for world_kind");
+
+            if (dto.discovered_settlements != null)
+            {
+                foreach (int s in dto.discovered_settlements)
+                {
+                    Check(s >= 0, "invalid checkpoint discovered_settlement index");
+                }
+            }
+
+            return new RunCheckpointSave(
+                worldKind,
+                cpKind,
+                unchecked((ulong)dto.planet_seed),
+                dto.planet_type_id,
+                (PlanetSize)dto.planet_size,
+                (CreatureStage)dto.boss_stage,
+                dto.dir_x,
+                dto.dir_y,
+                dto.dir_z,
+                dto.beginner_quest_phase,
+                dto.discovered_settlements,
+                dto.surface_boss_defeated,
+                dto.dungeon_boss_defeated);
         }
 
         // Lower-case enum name ("light"): readable in the file and stable across enum reordering. Enum.Parse is not used
@@ -1286,6 +1430,12 @@ namespace Cosmimera.Save
         {
             Contract.Requires(progression != null, "progression is required");
             Contract.Requires(exp >= 0 && exp <= progression.PlayerMaxExp, "player exp must be in [0, PlayerMaxExp]");
+            PlayerExp = exp;
+        }
+
+        internal void SetRawPlayerExp(int exp)
+        {
+            Contract.Requires(exp >= 0, "player exp must be >= 0");
             PlayerExp = exp;
         }
 
@@ -1362,6 +1512,29 @@ namespace Cosmimera.Save
             public TrainerCountDto[] trainer_battles;
             public string[] completed_trials;
             public string[] discovered_recipes;
+            public bool food_quest_done;
+            public bool migratory_return_done;
+            public bool rival_quest_done;
+            public bool ng_plus_unlocked;
+            public bool has_checkpoint;
+            public CheckpointDto active_checkpoint;
+        }
+
+        [Serializable] private sealed class CheckpointDto
+        {
+            public int world_kind;
+            public int checkpoint_kind;
+            public long planet_seed;
+            public string planet_type_id;
+            public int planet_size;
+            public int boss_stage;
+            public float dir_x;
+            public float dir_y;
+            public float dir_z;
+            public int beginner_quest_phase;
+            public int[] discovered_settlements;
+            public bool surface_boss_defeated;
+            public bool dungeon_boss_defeated;
         }
 
         [Serializable] private sealed class TrainerCountDto

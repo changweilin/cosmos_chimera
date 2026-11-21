@@ -5,6 +5,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -546,6 +547,9 @@ namespace Cosmimera.Bootstrap.Demo
                     _trial.Progress.Talk();
                     SyncTrialSeals();
                     Toast(TrialLine("ui.trial.talk"));
+                    TryEmitCheckpoint(CurrentWorldKind == SaveWorldKind.RandomPlanet
+                        ? SaveCheckpointKind.RandomWonderPreDungeon
+                        : SaveCheckpointKind.OverworldAuto);
                 }
 
                 return true;
@@ -579,6 +583,10 @@ namespace Cosmimera.Bootstrap.Demo
                 Toast(TrialLine("ui.trial.talk"));
             }
 
+            // Save before entering the dungeon so overworld auto-save / random wonder checkpoint stays outside.
+            TryEmitCheckpoint(CurrentWorldKind == SaveWorldKind.RandomPlanet
+                ? SaveCheckpointKind.RandomWonderPreDungeon
+                : SaveCheckpointKind.OverworldAuto);
             EnterInterior();
             Toast(TrialLine("ui.trial.enter"));
             return true;
@@ -817,6 +825,7 @@ namespace Cosmimera.Bootstrap.Demo
             _trial.Suspended.Clear();
             _surface.Interior = null;
             _trial.Inside = false;
+            TryEmitCheckpoint(SaveCheckpointKind.OverworldAuto);
             if (_worldObjects != null)
             {
                 _worldObjects.InsideDungeon = false;
@@ -987,6 +996,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void StartTrialFinal()
         {
+            TryEmitCheckpoint(SaveCheckpointKind.RandomPreDungeonBoss);
             float3 player = PlayerPosition();
             RefillField(player);
             if (_trial.PendingTrainerId < 0)
@@ -1113,6 +1123,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 return;
             }
+
+            _dungeonBossDefeated = true;
 
             TerrainTrialPlan plan = _trial.Plan;
             CreatureDef bossDef = FindForm(_wildPool, plan.BossCreatureId);

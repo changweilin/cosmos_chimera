@@ -267,6 +267,20 @@ namespace Cosmimera.Bootstrap.Demo
             return true;
         }
 
+        /// <summary>Restores the tracker directly to a field step when resuming from an overworld auto-save.</summary>
+        /// <remarks>
+        /// Pre: step is a defined BeginnerFieldStep.
+        /// Post: Stage == FriendFieldTutorial, SuppliesGranted == true, FieldStep == step.
+        /// Side effects: mutates Stage, SuppliesGranted, and FieldStep.
+        /// </remarks>
+        public void RestoreFieldStepForResume(BeginnerFieldStep step)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(BeginnerFieldStep), step), "step must be defined");
+            Stage = BeginnerQuestStage.FriendFieldTutorial;
+            SuppliesGranted = true;
+            FieldStep = step;
+        }
+
         /// <summary>Records victory in the Stage 6 Boss + Rival 2vs2 battle.</summary>
         /// <remarks>
         /// Pre: none.

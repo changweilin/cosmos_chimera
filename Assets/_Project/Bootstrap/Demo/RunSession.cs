@@ -10,6 +10,7 @@ using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
 using Cosmimera.Player;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -250,6 +251,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>True when this session is the fixed single-player lobby planet (R = 2560 m, 8 connected towns, all 24 landforms, all 10 dungeon masters).</summary>
         /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: uses LobbyPlanetPlanner and stays open until the player opens the lobby menu. Side effects: none.</remarks>
         public bool IsLobbyPlanet;
+
+        /// <summary>Optional checkpoint snapshot to resume from on session start.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: null or valid RunCheckpointSave. Post: none. Side effects: none.</remarks>
+        public RunCheckpointSave ResumeCheckpoint;
     }
 
     /// <summary>
@@ -1202,12 +1207,15 @@ namespace Cosmimera.Bootstrap.Demo
                 if (_rig.TrySpawn(_actions))
                 {
                     _started = true;
+                    ApplyResumeCheckpointIfAny();
                     SummonOpening();
                     UpdateBgm();
                 }
 
                 return;
             }
+
+            TickCheckpoints();
 
             // Unscaled and ahead of the journal-pause return: rumble and slow-mo must still time out while paused.
             _hitFeel?.Update(Time.unscaledDeltaTime);
@@ -1812,6 +1820,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
+                _surfaceBossDefeated = true;
+                TryEmitCheckpoint(SaveCheckpointKind.OverworldAuto);
                 Toast(_copy.Ui("ui.hud.knocked_out"));
                 UpdateBgm();
             }
@@ -2492,6 +2502,9 @@ namespace Cosmimera.Bootstrap.Demo
                     if (!gated && !_discoveredSettlements.Contains(i) && IsWithinSettlement(_layout.Settlements[i], player))
                     {
                         _discoveredSettlements.Add(i);
+                        TryEmitCheckpoint(CurrentWorldKind == SaveWorldKind.RandomPlanet
+                            ? SaveCheckpointKind.RandomVillage
+                            : SaveCheckpointKind.OverworldAuto);
                     }
                 }
             }

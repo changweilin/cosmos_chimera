@@ -34,6 +34,7 @@ namespace Cosmimera.Architecture.Tests
             ["Cosmimera.Codex.Api"] = new[] { "Cosmimera.Core" },
             ["Cosmimera.Net"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Creatures", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Save"] = new[] { "Cosmimera.Core", "Cosmimera.Codex.Api", "Cosmimera.Creatures", "Cosmimera.Capture", "Cosmimera.Crafting", "Cosmimera.GameData" },
+            ["Cosmimera.Save.Editor"] = new[] { "Cosmimera.Core", "Cosmimera.Save" },
             ["Cosmimera.Food"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Combat", "Cosmimera.GameData" },
             ["Cosmimera.Crafting"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.GameData" },
         };
