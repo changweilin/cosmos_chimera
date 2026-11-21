@@ -22,30 +22,30 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 145,
-      "wood": 95,
-      "water": 95,
-      "fire": 56,
-      "earth": 115,
-      "ice": 96,
-      "wind": 96,
-      "thunder": 96,
-      "light": 110,
-      "shadow": 96
+      "metal": 138,
+      "wood": 105,
+      "water": 105,
+      "fire": 82,
+      "earth": 123,
+      "ice": 105,
+      "wind": 104,
+      "thunder": 75,
+      "light": 119,
+      "shadow": 104
     },
     "mastery": {
       "metal": 125,
-      "earth": 80,
-      "light": 55,
-      "ice": 40
+      "earth": 78,
+      "light": 58,
+      "ice": 39
     },
     "stats": {
-      "hp": 115,
-      "speed": 65,
-      "yin_atk": 60,
+      "hp": 141,
+      "speed": 41,
+      "yin_atk": 53,
       "yang_atk": 135,
-      "yin_def": 110,
-      "yang_def": 115
+      "yin_def": 135,
+      "yang_def": 83
     },
     "signature_move": "metal_siege_bombard",
     "trait": "trait_metal_siege_anchoring",
@@ -88,30 +88,29 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 95,
-      "wood": 145,
-      "water": 115,
-      "fire": 95,
-      "earth": 110,
-      "ice": 56,
-      "wind": 96,
-      "thunder": 96,
-      "light": 96,
-      "shadow": 96
+      "metal": 112,
+      "wood": 112,
+      "water": 166,
+      "fire": 54,
+      "earth": 152,
+      "ice": 74,
+      "wind": 112,
+      "thunder": 144,
+      "light": 112,
+      "shadow": 112
     },
     "mastery": {
       "wood": 125,
-      "water": 80,
-      "earth": 55,
-      "wind": 40
+      "water": 104,
+      "earth": 35
     },
     "stats": {
-      "hp": 140,
-      "speed": 55,
-      "yin_atk": 65,
-      "yang_atk": 120,
-      "yin_def": 105,
-      "yang_def": 115
+      "hp": 166,
+      "speed": 30,
+      "yin_atk": 41,
+      "yang_atk": 113,
+      "yin_def": 125,
+      "yang_def": 119
     },
     "signature_move": "wood_thorn_ballista",
     "trait": "trait_wood_overgrowth_surge",
@@ -154,29 +153,29 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 95,
-      "wood": 110,
-      "water": 145,
-      "fire": 95,
-      "earth": 96,
-      "ice": 115,
-      "wind": 96,
-      "thunder": 56,
-      "light": 96,
-      "shadow": 96
+      "metal": 90,
+      "wood": 90,
+      "water": 129,
+      "fire": 99,
+      "earth": 90,
+      "ice": 113,
+      "wind": 90,
+      "thunder": 49,
+      "light": 90,
+      "shadow": 90
     },
     "mastery": {
       "water": 125,
-      "ice": 100,
-      "wood": 75
+      "ice": 107,
+      "wood": 53
     },
     "stats": {
-      "hp": 105,
-      "speed": 95,
-      "yin_atk": 70,
-      "yang_atk": 140,
-      "yin_def": 95,
-      "yang_def": 95
+      "hp": 94,
+      "speed": 150,
+      "yin_atk": 56,
+      "yang_atk": 162,
+      "yin_def": 106,
+      "yang_def": 56
     },
     "signature_move": "water_maelstrom_lance",
     "trait": "trait_water_torrential_deluge",
@@ -219,30 +218,30 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 110,
-      "wood": 95,
-      "water": 56,
-      "fire": 145,
-      "earth": 115,
-      "ice": 95,
-      "wind": 96,
-      "thunder": 96,
-      "light": 96,
-      "shadow": 96
+      "metal": 91,
+      "wood": 91,
+      "water": 43,
+      "fire": 134,
+      "earth": 116,
+      "ice": 61,
+      "wind": 91,
+      "thunder": 91,
+      "light": 91,
+      "shadow": 91
     },
     "mastery": {
       "fire": 125,
-      "earth": 80,
-      "metal": 55,
-      "wind": 40
+      "earth": 94,
+      "metal": 70,
+      "wind": 47
     },
     "stats": {
-      "hp": 110,
-      "speed": 100,
-      "yin_atk": 140,
-      "yang_atk": 70,
-      "yin_def": 90,
-      "yang_def": 90
+      "hp": 95,
+      "speed": 131,
+      "yin_atk": 119,
+      "yang_atk": 119,
+      "yin_def": 60,
+      "yang_def": 72
     },
     "signature_move": "fire_meteor_rush",
     "trait": "trait_fire_smoldering_core",
@@ -285,29 +284,29 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 115,
-      "wood": 56,
-      "water": 95,
-      "fire": 110,
-      "earth": 145,
-      "ice": 95,
-      "wind": 96,
-      "thunder": 96,
-      "light": 96,
-      "shadow": 96
+      "metal": 108,
+      "wood": 67,
+      "water": 60,
+      "fire": 108,
+      "earth": 108,
+      "ice": 108,
+      "wind": 108,
+      "thunder": 133,
+      "light": 144,
+      "shadow": 136
     },
     "mastery": {
       "earth": 125,
-      "metal": 100,
-      "fire": 75
+      "metal": 109,
+      "fire": 36
     },
     "stats": {
-      "hp": 135,
-      "speed": 60,
-      "yin_atk": 125,
-      "yang_atk": 60,
-      "yin_def": 115,
-      "yang_def": 105
+      "hp": 151,
+      "speed": 42,
+      "yin_atk": 127,
+      "yang_atk": 42,
+      "yin_def": 121,
+      "yang_def": 121
     },
     "signature_move": "earth_monolith_quarry",
     "trait": "trait_earth_monolith_posture",
@@ -350,29 +349,29 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 56,
-      "wood": 95,
-      "water": 115,
-      "fire": 95,
-      "earth": 96,
-      "ice": 145,
-      "wind": 110,
-      "thunder": 96,
-      "light": 96,
-      "shadow": 96
+      "metal": 72,
+      "wood": 98,
+      "water": 121,
+      "fire": 53,
+      "earth": 97,
+      "ice": 135,
+      "wind": 113,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
       "ice": 125,
-      "water": 100,
-      "wind": 75
+      "water": 109,
+      "wind": 54
     },
     "stats": {
-      "hp": 130,
-      "speed": 65,
-      "yin_atk": 65,
-      "yang_atk": 125,
-      "yin_def": 105,
-      "yang_def": 110
+      "hp": 147,
+      "speed": 55,
+      "yin_atk": 49,
+      "yang_atk": 141,
+      "yin_def": 104,
+      "yang_def": 116
     },
     "signature_move": "ice_polar_sweep",
     "trait": "trait_ice_permafrost_shell",
@@ -416,29 +415,29 @@
     "evolution": null,
     "resist": {
       "metal": 115,
-      "wood": 95,
-      "water": 95,
-      "fire": 96,
-      "earth": 56,
-      "ice": 96,
-      "wind": 96,
-      "thunder": 145,
-      "light": 110,
-      "shadow": 96
+      "wood": 92,
+      "water": 60,
+      "fire": 92,
+      "earth": 47,
+      "ice": 92,
+      "wind": 92,
+      "thunder": 136,
+      "light": 92,
+      "shadow": 92
     },
     "mastery": {
       "thunder": 125,
-      "metal": 80,
-      "light": 55,
-      "fire": 40
+      "metal": 97,
+      "light": 72,
+      "fire": 48
     },
     "stats": {
-      "hp": 95,
-      "speed": 115,
-      "yin_atk": 145,
-      "yang_atk": 65,
-      "yin_def": 90,
-      "yang_def": 90
+      "hp": 77,
+      "speed": 142,
+      "yin_atk": 165,
+      "yang_atk": 47,
+      "yin_def": 59,
+      "yang_def": 100
     },
     "signature_move": "thunder_dynamo_charge",
     "trait": "trait_thunder_plasma_charge",
@@ -481,29 +480,29 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 95,
-      "wood": 95,
-      "water": 96,
-      "fire": 96,
-      "earth": 96,
-      "ice": 110,
-      "wind": 145,
-      "thunder": 115,
-      "light": 96,
-      "shadow": 56
+      "metal": 88,
+      "wood": 88,
+      "water": 88,
+      "fire": 88,
+      "earth": 60,
+      "ice": 61,
+      "wind": 134,
+      "thunder": 107,
+      "light": 88,
+      "shadow": 88
     },
     "mastery": {
       "wind": 125,
-      "thunder": 100,
-      "ice": 75
+      "thunder": 114,
+      "ice": 85
     },
     "stats": {
-      "hp": 90,
-      "speed": 125,
-      "yin_atk": 140,
-      "yang_atk": 70,
-      "yin_def": 85,
-      "yang_def": 90
+      "hp": 54,
+      "speed": 206,
+      "yin_atk": 170,
+      "yang_atk": 54,
+      "yin_def": 61,
+      "yang_def": 61
     },
     "signature_move": "wind_tailwind_dive",
     "trait": "trait_wind_tempest_headway",
@@ -546,29 +545,30 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 95,
-      "wood": 95,
-      "water": 115,
-      "fire": 96,
-      "earth": 96,
-      "ice": 110,
-      "wind": 96,
-      "thunder": 96,
-      "light": 56,
-      "shadow": 145
+      "metal": 88,
+      "wood": 88,
+      "water": 88,
+      "fire": 49,
+      "earth": 88,
+      "ice": 109,
+      "wind": 88,
+      "thunder": 57,
+      "light": 120,
+      "shadow": 125
     },
     "mastery": {
       "shadow": 125,
-      "water": 100,
-      "ice": 75
+      "water": 99,
+      "ice": 74,
+      "light": 50
     },
     "stats": {
-      "hp": 100,
-      "speed": 90,
-      "yin_atk": 150,
-      "yang_atk": 60,
-      "yin_def": 105,
-      "yang_def": 95
+      "hp": 94,
+      "speed": 53,
+      "yin_atk": 182,
+      "yang_atk": 41,
+      "yin_def": 153,
+      "yang_def": 65
     },
     "signature_move": "shadow_singularity_maw",
     "trait": "trait_shadow_nightfall_creed",
@@ -611,30 +611,30 @@
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 115,
-      "wood": 95,
-      "water": 95,
-      "fire": 110,
-      "earth": 96,
-      "ice": 96,
-      "wind": 56,
-      "thunder": 96,
-      "light": 145,
-      "shadow": 96
+      "metal": 88,
+      "wood": 88,
+      "water": 51,
+      "fire": 109,
+      "earth": 61,
+      "ice": 87,
+      "wind": 87,
+      "thunder": 87,
+      "light": 126,
+      "shadow": 116
     },
     "mastery": {
       "light": 125,
-      "fire": 80,
-      "metal": 55,
-      "earth": 40
+      "fire": 91,
+      "metal": 68,
+      "earth": 46
     },
     "stats": {
-      "hp": 105,
-      "speed": 95,
-      "yin_atk": 65,
-      "yang_atk": 145,
-      "yin_def": 95,
-      "yang_def": 95
+      "hp": 84,
+      "speed": 144,
+      "yin_atk": 54,
+      "yang_atk": 156,
+      "yin_def": 108,
+      "yang_def": 54
     },
     "signature_move": "light_zenith_lance",
     "trait": "trait_light_radiant_core",
