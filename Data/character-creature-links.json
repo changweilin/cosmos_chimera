@@ -1,0 +1,1053 @@
+{
+  "spec": "cosmimera-character-creature-links/1",
+  "trial_wardens": [
+    {
+      "character_id": "chr_warden_lab_metal",
+      "role": "trial_warden",
+      "element": "metal",
+      "terrain": "機房／工廠／研究室",
+      "field_utility": "immune_laboratory",
+      "trial_boss_line_id": "line_metal_trial_boss",
+      "trial_boss_id": "metal_astrolabe_automaton",
+      "signature_move": "metal_siege_bombard",
+      "trait": "trait_metal_siege_anchoring"
+    },
+    {
+      "character_id": "chr_warden_rainforest_wood",
+      "role": "trial_warden",
+      "element": "wood",
+      "terrain": "雨林",
+      "field_utility": "immune_rainforest",
+      "trial_boss_line_id": "line_wood_trial_boss",
+      "trial_boss_id": "wood_jade_tortoise",
+      "signature_move": "wood_thorn_ballista",
+      "trait": "trait_wood_overgrowth_surge"
+    },
+    {
+      "character_id": "chr_warden_deepsea_water",
+      "role": "trial_warden",
+      "element": "water",
+      "terrain": "深海",
+      "field_utility": "immune_deep_sea",
+      "trial_boss_line_id": "line_water_trial_boss",
+      "trial_boss_id": "water_coral_serpent",
+      "signature_move": "water_maelstrom_lance",
+      "trait": "trait_water_torrential_deluge"
+    },
+    {
+      "character_id": "chr_warden_volcano_fire",
+      "role": "trial_warden",
+      "element": "fire",
+      "terrain": "火山／火山口",
+      "field_utility": "immune_volcano",
+      "trial_boss_line_id": "line_fire_trial_boss",
+      "trial_boss_id": "fire_basalt_drake",
+      "signature_move": "fire_meteor_rush",
+      "trait": "trait_fire_smoldering_core"
+    },
+    {
+      "character_id": "chr_warden_cave_earth",
+      "role": "trial_warden",
+      "element": "earth",
+      "terrain": "礦坑／地底／洞穴",
+      "field_utility": "immune_cave",
+      "trial_boss_line_id": "line_earth_trial_boss",
+      "trial_boss_id": "earth_citadel_lion",
+      "signature_move": "earth_monolith_quarry",
+      "trait": "trait_earth_monolith_posture"
+    },
+    {
+      "character_id": "chr_warden_icecap_ice",
+      "role": "trial_warden",
+      "element": "ice",
+      "terrain": "冰棚／冰冠／永久凍土",
+      "field_utility": "immune_ice_cap",
+      "trial_boss_line_id": "line_ice_trial_boss",
+      "trial_boss_id": "ice_sextant_leviathan",
+      "signature_move": "ice_polar_sweep",
+      "trait": "trait_ice_permafrost_shell"
+    },
+    {
+      "character_id": "chr_warden_tower_thunder",
+      "role": "trial_warden",
+      "element": "thunder",
+      "terrain": "高塔／摩天樓層",
+      "field_utility": "immune_tower",
+      "trial_boss_line_id": "line_thunder_trial_boss",
+      "trial_boss_id": "thunder_obelisk_chimera",
+      "signature_move": "thunder_dynamo_charge",
+      "trait": "trait_thunder_plasma_charge"
+    },
+    {
+      "character_id": "chr_warden_space_wind",
+      "role": "trial_warden",
+      "element": "wind",
+      "terrain": "太空設施／浮空島",
+      "field_utility": "immune_space",
+      "trial_boss_line_id": "line_wind_trial_boss",
+      "trial_boss_id": "wind_tristar_albatross",
+      "signature_move": "wind_tailwind_dive",
+      "trait": "trait_wind_tempest_headway"
+    },
+    {
+      "character_id": "chr_warden_labyrinth_shadow",
+      "role": "trial_warden",
+      "element": "shadow",
+      "terrain": "迷宮",
+      "field_utility": "immune_labyrinth",
+      "trial_boss_line_id": "line_shadow_trial_boss",
+      "trial_boss_id": "shadow_lantern_kraken",
+      "signature_move": "shadow_singularity_maw",
+      "trait": "trait_shadow_nightfall_creed"
+    },
+    {
+      "character_id": "chr_warden_temple_light",
+      "role": "trial_warden",
+      "element": "light",
+      "terrain": "神廟",
+      "field_utility": "immune_temple",
+      "trial_boss_line_id": "line_light_trial_boss",
+      "trial_boss_id": "light_seal_unicorn",
+      "signature_move": "light_zenith_lance",
+      "trait": "trait_light_radiant_core"
+    }
+  ],
+  "field_utility_quests": [
+    {
+      "character_id": "chr_quest_fishing_water",
+      "name_zh": "海生",
+      "role": "field_utility_quest",
+      "quest_line": "食物路線",
+      "stage": "採集",
+      "element": "water",
+      "field_utility": "fishing",
+      "creature_line_id": "line_water_tidecraft",
+      "creature_id": "water_wave_elver",
+      "signature_move": "water_wake_jet",
+      "trait": "trait_water_keel_momentum"
+    },
+    {
+      "character_id": "chr_quest_freeze_ice",
+      "name_zh": "雪鈴",
+      "role": "field_utility_quest",
+      "quest_line": "食物路線",
+      "stage": "加工",
+      "element": "ice",
+      "field_utility": "freeze_prep",
+      "creature_line_id": "line_ice_driftvessel",
+      "creature_id": "ice_sled_buoy",
+      "signature_move": "ice_glaze_slide",
+      "trait": "trait_ice_frostbite_edge"
+    },
+    {
+      "character_id": "chr_quest_cook_fire",
+      "name_zh": "阿炎",
+      "role": "field_utility_quest",
+      "quest_line": "食物路線",
+      "stage": "製作成品",
+      "element": "fire",
+      "field_utility": "cook_fire",
+      "creature_line_id": "line_fire_blazelion",
+      "creature_id": "fire_ember_cub",
+      "signature_move": "fire_cinder_claw",
+      "trait": "trait_fire_furnace_escalation"
+    },
+    {
+      "character_id": "chr_quest_mining_earth",
+      "name_zh": "巴頓",
+      "role": "field_utility_quest",
+      "quest_line": "武器路線",
+      "stage": "採集",
+      "element": "earth",
+      "field_utility": "drop_rate_up",
+      "creature_line_id": "line_earth_gildedgolem",
+      "creature_id": "earth_pebble_pawn",
+      "signature_move": "earth_shale_bolt",
+      "trait": "trait_earth_gilded_bulwark"
+    },
+    {
+      "character_id": "chr_quest_smelt_thunder",
+      "name_zh": "雷妮",
+      "role": "field_utility_quest",
+      "quest_line": "武器路線",
+      "stage": "加工",
+      "element": "thunder",
+      "field_utility": "craft_smelt_thunder",
+      "creature_line_id": "line_thunder_arcforge",
+      "creature_id": null,
+      "signature_move": null,
+      "trait": null
+    },
+    {
+      "character_id": "chr_quest_forge_metal",
+      "name_zh": "鐵心",
+      "role": "field_utility_quest",
+      "quest_line": "武器路線",
+      "stage": "製作成品",
+      "element": "metal",
+      "field_utility": "magnet_pickup_double",
+      "creature_line_id": "line_metal_gearclock",
+      "creature_id": "metal_clock_chick",
+      "signature_move": "metal_escapement_jab",
+      "trait": "trait_metal_pendulum_cadence"
+    },
+    {
+      "character_id": "chr_quest_forage_wood",
+      "name_zh": "若葉",
+      "role": "field_utility_quest",
+      "quest_line": "防具路線",
+      "stage": "採集",
+      "element": "wood",
+      "field_utility": "forage_berries",
+      "creature_line_id": "line_wood_vinecrest",
+      "creature_id": "wood_fern_chick",
+      "signature_move": "wood_frond_dart",
+      "trait": "trait_wood_crest_resilience"
+    },
+    {
+      "character_id": "chr_quest_weave_shadow",
+      "name_zh": "夜綾",
+      "role": "field_utility_quest",
+      "quest_line": "防具路線",
+      "stage": "加工",
+      "element": "shadow",
+      "field_utility": "craft_weave_shadow",
+      "creature_line_id": "line_shadow_silkspinner",
+      "creature_id": null,
+      "signature_move": null,
+      "trait": null
+    },
+    {
+      "character_id": "chr_quest_tailor_light",
+      "name_zh": "艾莉雅",
+      "role": "field_utility_quest",
+      "quest_line": "防具路線",
+      "stage": "製作成品",
+      "element": "light",
+      "field_utility": "craft_tailor_light",
+      "creature_line_id": "line_light_prismtailor",
+      "creature_id": null,
+      "signature_move": null,
+      "trait": null
+    },
+    {
+      "character_id": "chr_quest_fly_wind",
+      "name_zh": "風見",
+      "role": "field_utility_quest",
+      "quest_line": "探索機動",
+      "stage": "飛行",
+      "element": "wind",
+      "field_utility": "fly",
+      "creature_line_id": "line_wind_skyswift",
+      "creature_id": "sun_heliostat_heron",
+      "signature_move": "light_heliostat_beam",
+      "trait": "trait_light_heliostat_focus"
+    }
+  ],
+  "non_starter_glb_creatures": {
+    "first_batch_15_lines_60_forms": [
+      {
+        "creature_id": "cr_aqua_slime_juvenile",
+        "line_id": "cr_aqua_slime",
+        "stage": "juvenile",
+        "field_utility": "fishing",
+        "signature_move": "water_wake_jet",
+        "trait": "trait_water_keel_momentum"
+      },
+      {
+        "creature_id": "cr_aqua_slime_adolescent",
+        "line_id": "cr_aqua_slime",
+        "stage": "adolescent",
+        "field_utility": "immune_deep_sea",
+        "signature_move": "water_spray_fan",
+        "trait": "trait_water_keel_momentum"
+      },
+      {
+        "creature_id": "cr_aqua_slime_adult",
+        "line_id": "cr_aqua_slime",
+        "stage": "adult",
+        "field_utility": "dive",
+        "signature_move": "water_monsoon_swell",
+        "trait": "trait_water_keel_momentum"
+      },
+      {
+        "creature_id": "cr_aqua_slime_overload",
+        "line_id": "cr_aqua_slime",
+        "stage": "overload",
+        "field_utility": "dive",
+        "signature_move": "water_monsoon_swell",
+        "trait": "trait_water_keel_momentum"
+      },
+      {
+        "creature_id": "cr_chrono_beetle_juvenile",
+        "line_id": "cr_chrono_beetle",
+        "stage": "juvenile",
+        "field_utility": "magnet_pickup_double",
+        "signature_move": "metal_escapement_jab",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_chrono_beetle_adolescent",
+        "line_id": "cr_chrono_beetle",
+        "stage": "adolescent",
+        "field_utility": "immune_laboratory",
+        "signature_move": "metal_ratchet_sweep",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_chrono_beetle_adult",
+        "line_id": "cr_chrono_beetle",
+        "stage": "adult",
+        "field_utility": "catch_rate_up",
+        "signature_move": "metal_pendulum_ram",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_chrono_beetle_overload",
+        "line_id": "cr_chrono_beetle",
+        "stage": "overload",
+        "field_utility": "catch_rate_up",
+        "signature_move": "metal_pendulum_ram",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_earth_golem_juvenile",
+        "line_id": "cr_earth_golem",
+        "stage": "juvenile",
+        "field_utility": "drop_rate_up",
+        "signature_move": "earth_shale_bolt",
+        "trait": "trait_earth_gilded_bulwark"
+      },
+      {
+        "creature_id": "cr_earth_golem_adolescent",
+        "line_id": "cr_earth_golem",
+        "stage": "adolescent",
+        "field_utility": "immune_cave",
+        "signature_move": "earth_ritual_quake",
+        "trait": "trait_earth_gilded_bulwark"
+      },
+      {
+        "creature_id": "cr_earth_golem_adult",
+        "line_id": "cr_earth_golem",
+        "stage": "adult",
+        "field_utility": "open_obstacle",
+        "signature_move": "earth_monolith_charge",
+        "trait": "trait_earth_gilded_bulwark"
+      },
+      {
+        "creature_id": "cr_earth_golem_overload",
+        "line_id": "cr_earth_golem",
+        "stage": "overload",
+        "field_utility": "open_obstacle",
+        "signature_move": "earth_monolith_charge",
+        "trait": "trait_earth_gilded_bulwark"
+      },
+      {
+        "creature_id": "cr_fire_wisp_juvenile",
+        "line_id": "cr_fire_wisp",
+        "stage": "juvenile",
+        "field_utility": "cook_fire",
+        "signature_move": "fire_cinder_claw",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_fire_wisp_adolescent",
+        "line_id": "cr_fire_wisp",
+        "stage": "adolescent",
+        "field_utility": "immune_volcano",
+        "signature_move": "fire_mane_pounce",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_fire_wisp_adult",
+        "line_id": "cr_fire_wisp",
+        "stage": "adult",
+        "field_utility": "egg_hatch_boost",
+        "signature_move": "fire_solar_crucible",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_fire_wisp_overload",
+        "line_id": "cr_fire_wisp",
+        "stage": "overload",
+        "field_utility": "egg_hatch_boost",
+        "signature_move": "fire_solar_crucible",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_frostblade_penguin_juvenile",
+        "line_id": "cr_frostblade_penguin",
+        "stage": "juvenile",
+        "field_utility": "prevent_escape",
+        "signature_move": "ice_rime_breath",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_frostblade_penguin_adolescent",
+        "line_id": "cr_frostblade_penguin",
+        "stage": "adolescent",
+        "field_utility": "mount",
+        "signature_move": "ice_antler_javelin",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_frostblade_penguin_adult",
+        "line_id": "cr_frostblade_penguin",
+        "stage": "adult",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_permafrost_halo",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_frostblade_penguin_overload",
+        "line_id": "cr_frostblade_penguin",
+        "stage": "overload",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_permafrost_halo",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_ice_snowman_juvenile",
+        "line_id": "cr_ice_snowman",
+        "stage": "juvenile",
+        "field_utility": "prevent_escape",
+        "signature_move": "ice_rime_breath",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_ice_snowman_adolescent",
+        "line_id": "cr_ice_snowman",
+        "stage": "adolescent",
+        "field_utility": "mount",
+        "signature_move": "ice_antler_javelin",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_ice_snowman_adult",
+        "line_id": "cr_ice_snowman",
+        "stage": "adult",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_permafrost_halo",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_ice_snowman_overload",
+        "line_id": "cr_ice_snowman",
+        "stage": "overload",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_permafrost_halo",
+        "trait": "trait_ice_antler_refraction"
+      },
+      {
+        "creature_id": "cr_ink_stele_juvenile",
+        "line_id": "cr_ink_stele",
+        "stage": "juvenile",
+        "field_utility": "party_stealth",
+        "signature_move": "shadow_nightpaw_swipe",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_ink_stele_adolescent",
+        "line_id": "cr_ink_stele",
+        "stage": "adolescent",
+        "field_utility": "steal_item",
+        "signature_move": "shadow_longnight_lunge",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_ink_stele_adult",
+        "line_id": "cr_ink_stele",
+        "stage": "adult",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_lone_hunter_ambush",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_ink_stele_overload",
+        "line_id": "cr_ink_stele",
+        "stage": "overload",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_lone_hunter_ambush",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_light_khepri_juvenile",
+        "line_id": "cr_light_khepri",
+        "stage": "juvenile",
+        "field_utility": "scout_potential",
+        "signature_move": "light_mirror_glint",
+        "trait": "trait_light_heliostat_focus"
+      },
+      {
+        "creature_id": "cr_light_khepri_adolescent",
+        "line_id": "cr_light_khepri",
+        "stage": "adolescent",
+        "field_utility": "fly",
+        "signature_move": "light_heliostat_beam",
+        "trait": "trait_light_heliostat_focus"
+      },
+      {
+        "creature_id": "cr_light_khepri_adult",
+        "line_id": "cr_light_khepri",
+        "stage": "adult",
+        "field_utility": "immune_temple",
+        "signature_move": "light_solar_array_lance",
+        "trait": "trait_light_heliostat_focus"
+      },
+      {
+        "creature_id": "cr_light_khepri_overload",
+        "line_id": "cr_light_khepri",
+        "stage": "overload",
+        "field_utility": "immune_temple",
+        "signature_move": "light_solar_array_lance",
+        "trait": "trait_light_heliostat_focus"
+      },
+      {
+        "creature_id": "cr_metal_vault_juvenile",
+        "line_id": "cr_metal_vault",
+        "stage": "juvenile",
+        "field_utility": "magnet_pickup_double",
+        "signature_move": "metal_escapement_jab",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_metal_vault_adolescent",
+        "line_id": "cr_metal_vault",
+        "stage": "adolescent",
+        "field_utility": "immune_laboratory",
+        "signature_move": "metal_ratchet_sweep",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_metal_vault_adult",
+        "line_id": "cr_metal_vault",
+        "stage": "adult",
+        "field_utility": "catch_rate_up",
+        "signature_move": "metal_pendulum_ram",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_metal_vault_overload",
+        "line_id": "cr_metal_vault",
+        "stage": "overload",
+        "field_utility": "catch_rate_up",
+        "signature_move": "metal_pendulum_ram",
+        "trait": "trait_metal_pendulum_cadence"
+      },
+      {
+        "creature_id": "cr_shadow_eye_juvenile",
+        "line_id": "cr_shadow_eye",
+        "stage": "juvenile",
+        "field_utility": "party_stealth",
+        "signature_move": "shadow_nightpaw_swipe",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_shadow_eye_adolescent",
+        "line_id": "cr_shadow_eye",
+        "stage": "adolescent",
+        "field_utility": "steal_item",
+        "signature_move": "shadow_longnight_lunge",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_shadow_eye_adult",
+        "line_id": "cr_shadow_eye",
+        "stage": "adult",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_lone_hunter_ambush",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_shadow_eye_overload",
+        "line_id": "cr_shadow_eye",
+        "stage": "overload",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_lone_hunter_ambush",
+        "trait": "trait_shadow_longnight_stalker"
+      },
+      {
+        "creature_id": "cr_solmane_lion_juvenile",
+        "line_id": "cr_solmane_lion",
+        "stage": "juvenile",
+        "field_utility": "cook_fire",
+        "signature_move": "fire_cinder_claw",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_solmane_lion_adolescent",
+        "line_id": "cr_solmane_lion",
+        "stage": "adolescent",
+        "field_utility": "immune_volcano",
+        "signature_move": "fire_mane_pounce",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_solmane_lion_adult",
+        "line_id": "cr_solmane_lion",
+        "stage": "adult",
+        "field_utility": "egg_hatch_boost",
+        "signature_move": "fire_solar_crucible",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_solmane_lion_overload",
+        "line_id": "cr_solmane_lion",
+        "stage": "overload",
+        "field_utility": "egg_hatch_boost",
+        "signature_move": "fire_solar_crucible",
+        "trait": "trait_fire_furnace_escalation"
+      },
+      {
+        "creature_id": "cr_thunder_drone_juvenile",
+        "line_id": "cr_thunder_drone",
+        "stage": "juvenile",
+        "field_utility": "quick_escape",
+        "signature_move": "thunder_starblaze_charge",
+        "trait": "trait_thunder_storm_gallop"
+      },
+      {
+        "creature_id": "cr_thunder_drone_adolescent",
+        "line_id": "cr_thunder_drone",
+        "stage": "adolescent",
+        "field_utility": "mount",
+        "signature_move": "thunder_galloping_discharge",
+        "trait": "trait_thunder_storm_gallop"
+      },
+      {
+        "creature_id": "cr_thunder_drone_adult",
+        "line_id": "cr_thunder_drone",
+        "stage": "adult",
+        "field_utility": "immune_tower",
+        "signature_move": "thunder_skyhoof_stampede",
+        "trait": "trait_thunder_storm_gallop"
+      },
+      {
+        "creature_id": "cr_thunder_drone_overload",
+        "line_id": "cr_thunder_drone",
+        "stage": "overload",
+        "field_utility": "immune_tower",
+        "signature_move": "thunder_skyhoof_stampede",
+        "trait": "trait_thunder_storm_gallop"
+      },
+      {
+        "creature_id": "cr_verdant_aquila_juvenile",
+        "line_id": "cr_verdant_aquila",
+        "stage": "juvenile",
+        "field_utility": "forage_berries",
+        "signature_move": "wood_frond_dart",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_verdant_aquila_adolescent",
+        "line_id": "cr_verdant_aquila",
+        "stage": "adolescent",
+        "field_utility": "immune_rainforest",
+        "signature_move": "wood_plumage_volley",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_verdant_aquila_adult",
+        "line_id": "cr_verdant_aquila",
+        "stage": "adult",
+        "field_utility": "return_village",
+        "signature_move": "wood_bloom_detonation",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_verdant_aquila_overload",
+        "line_id": "cr_verdant_aquila",
+        "stage": "overload",
+        "field_utility": "return_village",
+        "signature_move": "wood_bloom_detonation",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_wind_bird_juvenile",
+        "line_id": "cr_wind_bird",
+        "stage": "juvenile",
+        "field_utility": "weather_control",
+        "signature_move": "wind_flute_slash",
+        "trait": "trait_wind_reed_harmonics"
+      },
+      {
+        "creature_id": "cr_wind_bird_adolescent",
+        "line_id": "cr_wind_bird",
+        "stage": "adolescent",
+        "field_utility": "levitate",
+        "signature_move": "wind_reed_crescent",
+        "trait": "trait_wind_reed_harmonics"
+      },
+      {
+        "creature_id": "cr_wind_bird_adult",
+        "line_id": "cr_wind_bird",
+        "stage": "adult",
+        "field_utility": "immune_space",
+        "signature_move": "wind_gale_symphony",
+        "trait": "trait_wind_reed_harmonics"
+      },
+      {
+        "creature_id": "cr_wind_bird_overload",
+        "line_id": "cr_wind_bird",
+        "stage": "overload",
+        "field_utility": "immune_space",
+        "signature_move": "wind_gale_symphony",
+        "trait": "trait_wind_reed_harmonics"
+      },
+      {
+        "creature_id": "cr_wood_puppet_juvenile",
+        "line_id": "cr_wood_puppet",
+        "stage": "juvenile",
+        "field_utility": "forage_berries",
+        "signature_move": "wood_frond_dart",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_wood_puppet_adolescent",
+        "line_id": "cr_wood_puppet",
+        "stage": "adolescent",
+        "field_utility": "immune_rainforest",
+        "signature_move": "wood_plumage_volley",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_wood_puppet_adult",
+        "line_id": "cr_wood_puppet",
+        "stage": "adult",
+        "field_utility": "return_village",
+        "signature_move": "wood_bloom_detonation",
+        "trait": "trait_wood_crest_resilience"
+      },
+      {
+        "creature_id": "cr_wood_puppet_overload",
+        "line_id": "cr_wood_puppet",
+        "stage": "overload",
+        "field_utility": "return_village",
+        "signature_move": "wood_bloom_detonation",
+        "trait": "trait_wood_crest_resilience"
+      }
+    ],
+    "trial_boss_10_lines_40_forms": [
+      {
+        "line_id": "line_metal_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "metal_astrolabe_automaton",
+        "field_utility": "none",
+        "signature_move": "metal_siege_bombard",
+        "trait": "trait_metal_siege_anchoring"
+      },
+      {
+        "line_id": "line_metal_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "metal_astrolabe_automaton",
+        "field_utility": "immune_laboratory",
+        "signature_move": "metal_siege_bombard",
+        "trait": "trait_metal_siege_anchoring"
+      },
+      {
+        "line_id": "line_metal_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "metal_astrolabe_automaton",
+        "field_utility": "immune_laboratory",
+        "signature_move": "metal_siege_bombard",
+        "trait": "trait_metal_siege_anchoring"
+      },
+      {
+        "line_id": "line_metal_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "metal_astrolabe_automaton",
+        "field_utility": "immune_laboratory",
+        "signature_move": "metal_siege_bombard",
+        "trait": "trait_metal_siege_anchoring"
+      },
+      {
+        "line_id": "line_wood_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "wood_jade_tortoise",
+        "field_utility": "none",
+        "signature_move": "wood_thorn_ballista",
+        "trait": "trait_wood_overgrowth_surge"
+      },
+      {
+        "line_id": "line_wood_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "wood_jade_tortoise",
+        "field_utility": "immune_rainforest",
+        "signature_move": "wood_thorn_ballista",
+        "trait": "trait_wood_overgrowth_surge"
+      },
+      {
+        "line_id": "line_wood_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "wood_jade_tortoise",
+        "field_utility": "immune_rainforest",
+        "signature_move": "wood_thorn_ballista",
+        "trait": "trait_wood_overgrowth_surge"
+      },
+      {
+        "line_id": "line_wood_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "wood_jade_tortoise",
+        "field_utility": "immune_rainforest",
+        "signature_move": "wood_thorn_ballista",
+        "trait": "trait_wood_overgrowth_surge"
+      },
+      {
+        "line_id": "line_water_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "water_coral_serpent",
+        "field_utility": "none",
+        "signature_move": "water_maelstrom_lance",
+        "trait": "trait_water_torrential_deluge"
+      },
+      {
+        "line_id": "line_water_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "water_coral_serpent",
+        "field_utility": "immune_deep_sea",
+        "signature_move": "water_maelstrom_lance",
+        "trait": "trait_water_torrential_deluge"
+      },
+      {
+        "line_id": "line_water_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "water_coral_serpent",
+        "field_utility": "immune_deep_sea",
+        "signature_move": "water_maelstrom_lance",
+        "trait": "trait_water_torrential_deluge"
+      },
+      {
+        "line_id": "line_water_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "water_coral_serpent",
+        "field_utility": "immune_deep_sea",
+        "signature_move": "water_maelstrom_lance",
+        "trait": "trait_water_torrential_deluge"
+      },
+      {
+        "line_id": "line_fire_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "fire_basalt_drake",
+        "field_utility": "none",
+        "signature_move": "fire_meteor_rush",
+        "trait": "trait_fire_smoldering_core"
+      },
+      {
+        "line_id": "line_fire_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "fire_basalt_drake",
+        "field_utility": "immune_volcano",
+        "signature_move": "fire_meteor_rush",
+        "trait": "trait_fire_smoldering_core"
+      },
+      {
+        "line_id": "line_fire_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "fire_basalt_drake",
+        "field_utility": "immune_volcano",
+        "signature_move": "fire_meteor_rush",
+        "trait": "trait_fire_smoldering_core"
+      },
+      {
+        "line_id": "line_fire_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "fire_basalt_drake",
+        "field_utility": "immune_volcano",
+        "signature_move": "fire_meteor_rush",
+        "trait": "trait_fire_smoldering_core"
+      },
+      {
+        "line_id": "line_earth_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "earth_citadel_lion",
+        "field_utility": "none",
+        "signature_move": "earth_monolith_quarry",
+        "trait": "trait_earth_monolith_posture"
+      },
+      {
+        "line_id": "line_earth_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "earth_citadel_lion",
+        "field_utility": "immune_cave",
+        "signature_move": "earth_monolith_quarry",
+        "trait": "trait_earth_monolith_posture"
+      },
+      {
+        "line_id": "line_earth_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "earth_citadel_lion",
+        "field_utility": "immune_cave",
+        "signature_move": "earth_monolith_quarry",
+        "trait": "trait_earth_monolith_posture"
+      },
+      {
+        "line_id": "line_earth_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "earth_citadel_lion",
+        "field_utility": "immune_cave",
+        "signature_move": "earth_monolith_quarry",
+        "trait": "trait_earth_monolith_posture"
+      },
+      {
+        "line_id": "line_ice_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "ice_sextant_leviathan",
+        "field_utility": "none",
+        "signature_move": "ice_polar_sweep",
+        "trait": "trait_ice_permafrost_shell"
+      },
+      {
+        "line_id": "line_ice_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "ice_sextant_leviathan",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_polar_sweep",
+        "trait": "trait_ice_permafrost_shell"
+      },
+      {
+        "line_id": "line_ice_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "ice_sextant_leviathan",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_polar_sweep",
+        "trait": "trait_ice_permafrost_shell"
+      },
+      {
+        "line_id": "line_ice_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "ice_sextant_leviathan",
+        "field_utility": "immune_ice_cap",
+        "signature_move": "ice_polar_sweep",
+        "trait": "trait_ice_permafrost_shell"
+      },
+      {
+        "line_id": "line_thunder_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "thunder_obelisk_chimera",
+        "field_utility": "none",
+        "signature_move": "thunder_dynamo_charge",
+        "trait": "trait_thunder_plasma_charge"
+      },
+      {
+        "line_id": "line_thunder_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "thunder_obelisk_chimera",
+        "field_utility": "immune_tower",
+        "signature_move": "thunder_dynamo_charge",
+        "trait": "trait_thunder_plasma_charge"
+      },
+      {
+        "line_id": "line_thunder_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "thunder_obelisk_chimera",
+        "field_utility": "immune_tower",
+        "signature_move": "thunder_dynamo_charge",
+        "trait": "trait_thunder_plasma_charge"
+      },
+      {
+        "line_id": "line_thunder_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "thunder_obelisk_chimera",
+        "field_utility": "immune_tower",
+        "signature_move": "thunder_dynamo_charge",
+        "trait": "trait_thunder_plasma_charge"
+      },
+      {
+        "line_id": "line_wind_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "wind_tristar_albatross",
+        "field_utility": "none",
+        "signature_move": "wind_tailwind_dive",
+        "trait": "trait_wind_tempest_headway"
+      },
+      {
+        "line_id": "line_wind_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "wind_tristar_albatross",
+        "field_utility": "immune_space",
+        "signature_move": "wind_tailwind_dive",
+        "trait": "trait_wind_tempest_headway"
+      },
+      {
+        "line_id": "line_wind_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "wind_tristar_albatross",
+        "field_utility": "immune_space",
+        "signature_move": "wind_tailwind_dive",
+        "trait": "trait_wind_tempest_headway"
+      },
+      {
+        "line_id": "line_wind_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "wind_tristar_albatross",
+        "field_utility": "immune_space",
+        "signature_move": "wind_tailwind_dive",
+        "trait": "trait_wind_tempest_headway"
+      },
+      {
+        "line_id": "line_shadow_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "shadow_lantern_kraken",
+        "field_utility": "none",
+        "signature_move": "shadow_singularity_maw",
+        "trait": "trait_shadow_nightfall_creed"
+      },
+      {
+        "line_id": "line_shadow_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "shadow_lantern_kraken",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_singularity_maw",
+        "trait": "trait_shadow_nightfall_creed"
+      },
+      {
+        "line_id": "line_shadow_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "shadow_lantern_kraken",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_singularity_maw",
+        "trait": "trait_shadow_nightfall_creed"
+      },
+      {
+        "line_id": "line_shadow_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "shadow_lantern_kraken",
+        "field_utility": "immune_labyrinth",
+        "signature_move": "shadow_singularity_maw",
+        "trait": "trait_shadow_nightfall_creed"
+      },
+      {
+        "line_id": "line_light_trial_boss",
+        "stage": "juvenile",
+        "adult_creature_id": "light_seal_unicorn",
+        "field_utility": "none",
+        "signature_move": "light_zenith_lance",
+        "trait": "trait_light_radiant_core"
+      },
+      {
+        "line_id": "line_light_trial_boss",
+        "stage": "adolescent",
+        "adult_creature_id": "light_seal_unicorn",
+        "field_utility": "immune_temple",
+        "signature_move": "light_zenith_lance",
+        "trait": "trait_light_radiant_core"
+      },
+      {
+        "line_id": "line_light_trial_boss",
+        "stage": "adult",
+        "adult_creature_id": "light_seal_unicorn",
+        "field_utility": "immune_temple",
+        "signature_move": "light_zenith_lance",
+        "trait": "trait_light_radiant_core"
+      },
+      {
+        "line_id": "line_light_trial_boss",
+        "stage": "overload",
+        "adult_creature_id": "light_seal_unicorn",
+        "field_utility": "immune_temple",
+        "signature_move": "light_zenith_lance",
+        "trait": "trait_light_radiant_core"
+      }
+    ]
+  }
+}
