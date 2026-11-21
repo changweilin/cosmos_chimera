@@ -355,6 +355,10 @@ namespace Cosmimera.Bootstrap.Demo
             Combatant main = _mainId >= 0 ? _encounter.Units[_mainId].Combatant : null;
             ConsumeRefusalReason reason = FoodConsumptionRules.TryEatRawIngredient(ingredient.Id, _foodCatalog,
                 _foodInventory, _vitals, main, _nowMs, out ConsumeOutcome outcome);
+            if (reason == ConsumeRefusalReason.None)
+            {
+                NotifyBeginnerHealUsed();
+            }
             ConsumptionMessage(reason, outcome);
         }
 
@@ -379,6 +383,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (qualities != null && qualities.Count > 0) qualities.Dequeue();
                 foreach (int id in before)
                     if (!_encounter.Units[id].Combatant.IsFainted) _team.TryClearRetired(id);
+                NotifyBeginnerHealUsed();
             }
             ConsumptionMessage(reason, outcome);
         }

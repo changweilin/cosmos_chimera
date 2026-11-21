@@ -24,7 +24,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// </remarks>
     public sealed partial class DemoGame : MonoBehaviour
     {
-        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest }
+        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest, MainStorySelect }
 
         private sealed class PlanetOption
         {
@@ -236,7 +236,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_menuInput.FindAction("Cancel").WasPressedThisFrame())
             {
-                if (_screen == Screen.StarSelect || (_screen == Screen.Results && _settleError == null))
+                if (_screen == Screen.StarSelect || _screen == Screen.MainStorySelect ||
+                    (_screen == Screen.Results && _settleError == null))
                 {
                     _screen = Screen.Lobby;
                     _menuFocus.SetCount(0);
@@ -259,10 +260,12 @@ namespace Cosmimera.Bootstrap.Demo
         private int MenuButtonCount()
         {
             if (_screen == Screen.Results) return 1;  // return-to-lobby, or retry while unsettled
+            if (_screen == Screen.BeginnerQuest) return BeginnerQuestButtonCount();
+            if (_screen == Screen.MainStorySelect) return _mainStoryTracks.Count + 1;
             if (_screen == Screen.StarSelect) return _options.Count + 1;
             if (_save.StarterLine == null) return 1 + _starters.Count +
                 (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 4;
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 5;
             if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
             for (int i = 0; i < _save.Owned.Count; i++)
             {
@@ -424,6 +427,9 @@ namespace Cosmimera.Bootstrap.Demo
                 case Screen.BeginnerQuest:
                     DrawBeginnerQuest();
                     break;
+                case Screen.MainStorySelect:
+                    DrawMainStorySelect();
+                    break;
             }
 
             GUILayout.EndArea();
@@ -529,11 +535,17 @@ namespace Cosmimera.Bootstrap.Demo
                 GUIUtility.ExitGUI();
             }
             GUILayout.Space(20);
-            if (MenuButton(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
+            if (MenuButton(_copy.Ui("ui.lobby.start_run") + "（隨機世界）", GUILayout.Height(52)))
             {
                 RollOptions();
                 _screen = Screen.StarSelect;
                 _menuFocus.SetCount(0);
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton("下一個主線劇情", GUILayout.Height(48)))
+            {
+                OpenMainStorySelect();
                 GUIUtility.ExitGUI();
             }
 

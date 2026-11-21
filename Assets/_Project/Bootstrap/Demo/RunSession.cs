@@ -213,13 +213,19 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: null or validated saved assignments. Post: unchanged throughout the run. Side effects: none.</remarks>
         public IReadOnlyList<EquippedItem> Equipment;
 
-        /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, initial rival battle).</summary>
+        /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, friend 1vs1 + 2vs2 boss).</summary>
         public bool IsBeginnerQuest;
+
+        /// <summary>Assigned friend character id when <see cref="IsBeginnerQuest"/> is true.</summary>
+        public string FriendId;
+
+        /// <summary>Friend's LV10 starter species for Stage 4 (1vs1 tutorial) and Stage 6 (2vs2 ally).</summary>
+        public CreatureDef FriendStarter;
 
         /// <summary>Assigned rival character id when <see cref="IsBeginnerQuest"/> is true.</summary>
         public string RivalId;
 
-        /// <summary>Rival's LV10 starter species for the initial trainer battle.</summary>
+        /// <summary>Rival's LV10 starter species for the Stage 6 Boss + Rival 2vs2 battle.</summary>
         public CreatureDef RivalStarter;
 
         /// <summary>Player character's signature juvenile vessel granted after the initial battle.</summary>
@@ -564,8 +570,6 @@ namespace Cosmimera.Bootstrap.Demo
         private int _quickWheelIndex;
         private float _mainJumpOffsetM;
         private float _mainJumpVelMs;
-        private int _bqTrainerId = -1;
-        private int _bqRivalUnitId = -1;
         private int _activeWanderingTrainerIndex = -1;
         private int _activeEncounterTrainerId = -1;
         private readonly List<int> _activeTrainerUnitIds = new List<int>();
@@ -1085,6 +1089,13 @@ namespace Cosmimera.Bootstrap.Demo
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
+                if (_setup.IsBeginnerQuest && spawn.Role == SpawnRole.Boss)
+                {
+                    // REQ: beginner-quest.md (Stage 6) — juvenile boss fights alongside the rival in a 2vs2 tutorial battle.
+                    ReserveBeginnerBossSpawn(s, def, level, spawn.Direction, spawn.Individual);
+                    continue;
+                }
+
                 EncounterUnit u = spawn.Role == SpawnRole.Boss
                     ? _encounter.AddBoss(def, null, spawn.Direction, level, spawn.Individual)
                     : spawn.ConfrontationId >= 0
@@ -1130,6 +1141,7 @@ namespace Cosmimera.Bootstrap.Demo
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
+            ConfigureBeginnerQuest();
             ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
             if (_rig != null && _rig.Character != null)
             {
@@ -1215,16 +1227,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
-            if (_setup.IsBeginnerQuest && _setup.RivalStarter != null)
+            if (_setup.IsBeginnerQuest)
             {
-                _bqTrainerId = _encounter.RegisterTrainer();
-                EncounterUnit rival = _encounter.AddTrainerCreature(_setup.RivalStarter, null,
-                    BesidePlayer(player, 2), _progression.StarterLevel, _bqTrainerId, 0);
-                _bqRivalUnitId = rival.Id;
-                CreateView(rival, SpawnRole.Normal);
-                _encounter.StartTrainerBattle(_bqTrainerId);
-                _vessel = _setup.PlayerStarterVessel;
-                Toast($"{BeginnerQuestRules.CharacterDisplayName(_setup.RivalId)}：來一場初戰吧！");
+                StartBeginnerFriendBattle(player);
             }
         }
 
@@ -1551,6 +1556,7 @@ namespace Cosmimera.Bootstrap.Demo
                 else if (_vitals.TryRoll(_nowMs, _playerWeather, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
                 {
                     _lastRollAtMs = _nowMs;
+                    NotifyBeginnerAdventureControl();
                 }
             }
 
@@ -1589,7 +1595,7 @@ namespace Cosmimera.Bootstrap.Demo
             _populace?.Step(_nowMs, TickMs);
             if (_trainers != null)
             {
-                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && _bqTrainerId < 0 && _activeEncounterTrainerId < 0 &&
+                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0 &&
                     !TrialInside)
                 {
                     _trainers.Step(_nowMs, TickMs);
@@ -1683,6 +1689,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (playerDowned)
             {
+                if (TryRecoverBeginnerWipeout())
+                {
+                    return;
+                }
+
                 // Q-C33 (2026-11-10): Downed settles the run as a defeat; captures, XP and materials earned so far
                 // (including knock-outs in this same tick, paid above) still return to the lobby (RunOutcome).
                 End(false, false);
@@ -1693,6 +1704,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             RefillField(player);
             ExpireKnockedOut();
+            StepBeginnerQuest();
             CheckEnd();
         }
 
@@ -1709,6 +1721,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (u.Side == EncounterSide.Player)
             {
+                if (unitId == _bqFriendAllyUnitId)
+                {
+                    _encounter.Unfield(unitId);
+                    return;
+                }
 
                 _team.Faint(unitId);
                 _encounter.Unfield(unitId);
@@ -1739,6 +1756,10 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
                 PayQuest(w.AppearedAtKnockout);
+            }
+            if (role != SpawnRole.Boss)
+            {
+                NotifyBeginnerWildDefeated();
             }
             // REQ: planet-world.md#地表地牢 — the key elite's knock-out opens the boss room for the rest of the run.
             if (_dungeon != null && w.Spawn == _dungeon.KeySpawn && _surface.LocksClosed)
@@ -1820,27 +1841,9 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            if (_bqTrainerId >= 0)
+            if (CheckBeginnerQuestEnd())
             {
-                TrainerBattleState state = _encounter.TrainerState(_bqTrainerId);
-                if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle)
-                {
-                    bool won = state == TrainerBattleState.Defeated;
-                    _bqTrainerId = -1;
-                    if (_bqRivalUnitId >= 0)
-                    {
-                        _encounter.Remove(_bqRivalUnitId);
-                        _bqRivalUnitId = -1;
-                    }
-
-                    RefillField(PlayerPosition());
-                    List<DialogueLine> lines = BeginnerQuestRules.FirstBattleOutcomeDialogue(_setup.RivalId ?? string.Empty, won);
-                    if (lines.Count > 0)
-                    {
-                        Toast(lines[0].Speaker + "：" + lines[0].FallbackText);
-                    }
-                    return;
-                }
+                return;
             }
 
             if (_activeEncounterTrainerId >= 0)
@@ -1888,6 +1891,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (!anyLeft)
             {
+                if (TryRecoverBeginnerWipeout())
+                {
+                    return;
+                }
+
                 End(false, false);
                 return;
             }
@@ -2063,7 +2071,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (_ended || _trainers == null || _wildPool == null || _wildPool.Count == 0 ||
                 trainerIndex < 0 || trainerIndex >= _trainers.Trainers.Count || _trainers.IsDefeated(trainerIndex) ||
-                _team.InCombat || _encounter.HasActiveTrainerBattle || _bqTrainerId >= 0 || _activeEncounterTrainerId >= 0)
+                _team.InCombat || _encounter.HasActiveTrainerBattle || HasActiveBeginnerTrainerBattle || _activeEncounterTrainerId >= 0)
             {
                 return false;
             }
@@ -2158,7 +2166,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (id < 0)
             {
                 if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
-                    _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                    !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
                 {
                     int trainerIdx = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
                         _rig.Config.Radius);
@@ -2337,6 +2345,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
                 PayQuest(battle);
+                NotifyBeginnerWildCaptured();
                 Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(creatureId));
             }
             else
@@ -3665,7 +3674,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (_interactable < 0)
                 {
                     if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
-                        _bqTrainerId < 0 && _activeEncounterTrainerId < 0)
+                        !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
                     {
                         int nearTrainer = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
                             _rig.Config.Radius);
@@ -3765,7 +3774,11 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.Label("<b>" + _copy.ChainTitle(_plan.ChainId) + "</b>", _label);
             GUILayout.Label(WeatherStatusText(), _weatherLabel);
             GUILayout.Label(WeatherMovementText(), _weatherLabel);
-            if (!_quest.IsComplete)
+            if (_setup.IsBeginnerQuest && _bqTracker != null)
+            {
+                DrawBeginnerQuestHud();
+            }
+            else if (!_quest.IsComplete)
             {
                 RunQuestStep s = _quest.Current;
                 string text = _copy.Step(StepType(s.Kind), (int)(_plan.Seed % 3))

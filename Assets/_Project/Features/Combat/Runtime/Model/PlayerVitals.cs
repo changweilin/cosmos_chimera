@@ -238,6 +238,19 @@ namespace Cosmimera.Combat
             return Heal(EffectMath.HealAmount(MaxHp, percent), nowMs);
         }
 
+        /// <summary>Restores the player to full HP, including from the Downed state (e.g. beginner-quest camp recovery).</summary>
+        /// <remarks>
+        /// REQ: docs/design/beginner-quest.md#失敗與中斷.
+        /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs &gt;= the time watermark.
+        /// Post: Hp == MaxHp and !IsDowned.
+        /// Side effects: mutates Hp; advances the watermark to nowMs.
+        /// </remarks>
+        public void Revive(long nowMs)
+        {
+            AdvanceTime(nowMs);
+            Hp = MaxHp;
+        }
+
         private bool InWindow(long nowMs, int lengthMs)
         {
             CombatTime.Require(nowMs, _lastNowMs);

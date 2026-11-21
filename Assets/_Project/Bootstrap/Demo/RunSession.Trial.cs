@@ -428,7 +428,7 @@ namespace Cosmimera.Bootstrap.Demo
         private bool TryTrialInteract()
         {
             if (_trial == null || _trial.TransitPending || _team.InCombat || _encounter.HasActiveTrainerBattle ||
-                _bqTrainerId >= 0 || _activeEncounterTrainerId >= 0)
+                HasActiveBeginnerTrainerBattle || _activeEncounterTrainerId >= 0)
             {
                 return false;
             }
