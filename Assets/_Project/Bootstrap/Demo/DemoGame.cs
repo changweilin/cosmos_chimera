@@ -904,11 +904,26 @@ namespace Cosmimera.Bootstrap.Demo
                 startIndex = 1;
             }
 
+            // REQ: beginner-quest.md#搖籃星 — cradle_planet is dedicated to the beginner quest and never appears in star selection.
+            var selectableTypes = new List<PlanetTypeDef>(types.Count);
+            for (int i = 0; i < types.Count; i++)
+            {
+                if (types[i].Id != "cradle_planet")
+                {
+                    selectableTypes.Add(types[i]);
+                }
+            }
+
+            if (selectableTypes.Count == 0)
+            {
+                selectableTypes.AddRange(types);
+            }
+
             // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
             CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
-            for (int i = startIndex; i < 3 && types.Count > 0; i++)
+            for (int i = startIndex; i < 3 && selectableTypes.Count > 0; i++)
             {
-                PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
+                PlanetTypeDef t = selectableTypes[(int)_menuRng.NextUInt((uint)selectableTypes.Count)];
                 ulong seed = _menuRng.NextUInt();
                 CreatureStage stage = WorldGen.BossDraw.Stage(seed, maxStage);
                 PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
@@ -920,10 +935,10 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        /// <summary>Builds the deterministic beginner-quest planet option (verdant asteroid, juvenile boss).</summary>
+        /// <summary>Builds the deterministic beginner-quest planet option (cradle asteroid, juvenile boss).</summary>
         /// <remarks>
         /// Pre: types is non-null and has at least one entry.
-        /// Post: returns a juvenile-boss 320 m planet option preferring "verdant_planet".
+        /// Post: returns a juvenile-boss 320 m planet option preferring "cradle_planet", then "verdant_planet".
         /// Side effects: none.
         /// </remarks>
         internal static (PlanetTypeDef type, ulong seed, CreatureStage bossStage, float radius, WorldGen.PlanetElements elements)
@@ -933,10 +948,15 @@ namespace Cosmimera.Bootstrap.Demo
             PlanetTypeDef chosen = types[0];
             for (int i = 0; i < types.Count; i++)
             {
-                if (types[i].Id == "verdant_planet")
+                if (types[i].Id == "cradle_planet")
                 {
                     chosen = types[i];
                     break;
+                }
+
+                if (types[i].Id == "verdant_planet")
+                {
+                    chosen = types[i];
                 }
             }
 

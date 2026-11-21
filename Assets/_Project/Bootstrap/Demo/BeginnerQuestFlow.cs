@@ -382,6 +382,9 @@ namespace Cosmimera.Bootstrap.Demo
             "starter_sun" => ("starter_moon", "starter_star"),
             "starter_moon" => ("starter_star", "starter_sun"),
             "starter_star" => ("starter_sun", "starter_moon"),
+            "starter_sun_line" => ("starter_moon_line", "starter_star_line"),
+            "starter_moon_line" => ("starter_star_line", "starter_sun_line"),
+            "starter_star_line" => ("starter_sun_line", "starter_moon_line"),
             _ => throw new ArgumentException("unknown starter line: " + playerStarterLine, nameof(playerStarterLine)),
         };
 

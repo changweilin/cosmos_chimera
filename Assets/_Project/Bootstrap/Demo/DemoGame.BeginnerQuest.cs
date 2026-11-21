@@ -105,7 +105,7 @@ namespace Cosmimera.Bootstrap.Demo
             DialogueLine line = _bqDialogue[_bqDialogueIndex];
             GUILayout.Label($"階段 2/8：好友「{line.Speaker}」介紹世界觀", _title, GUILayout.Height(40));
             GUILayout.Space(8);
-            GUILayout.Label(line.FallbackText, _text);
+            GUILayout.Label(ResolveBqDialogue(line), _text);
             GUILayout.Space(20);
             if (MenuButton("繼續 [Enter / Space / A]", GUILayout.Height(48)))
             {
@@ -185,7 +185,7 @@ namespace Cosmimera.Bootstrap.Demo
             var types = new List<PlanetTypeDef>();
             foreach (GameDef def in _database.All)
             {
-                if (def is PlanetTypeDef t)
+                if (def is PlanetTypeDef t && t.Id != "cradle_planet")
                 {
                     types.Add(t);
                 }
@@ -338,6 +338,20 @@ namespace Cosmimera.Bootstrap.Demo
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.Hints.Inherit(_menuHints);
             _screen = Screen.Running;
+        }
+
+        private string ResolveBqDialogue(DialogueLine line)
+        {
+            if (_copy != null && !string.IsNullOrEmpty(line.TextKey))
+            {
+                string localized = _copy.Ui(line.TextKey);
+                if (localized != line.TextKey)
+                {
+                    return localized;
+                }
+            }
+
+            return line.FallbackText;
         }
 
         private CreatureDef FindStarterByLine(string lineId)

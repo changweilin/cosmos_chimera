@@ -1658,6 +1658,22 @@ namespace Cosmimera.Combat
             return true;
         }
 
+        /// <summary>Aborts an active trainer battle as a loss (e.g. player party wiped out while an AI ally remained on field).</summary>
+        /// <remarks>
+        /// Pre: trainerId registered; 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs &gt;= last tick time.
+        /// Post: if trainerId was active, TrainerState(trainerId) == Idle and !HasActiveTrainerBattle; otherwise no-op.
+        /// Side effects: mutates trainer state and units, and appends TrainerBattleEnded(0).
+        /// </remarks>
+        public void CancelTrainerBattle(int trainerId, long nowMs)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            CombatTime.Require(nowMs, _lastTickMs);
+            if (_activeTrainer == trainerId)
+            {
+                EndTrainerBattle(trainerId, false, nowMs);
+            }
+        }
+
         private int TrainerTeamSize(int trainerId)
         {
             int n = 0;

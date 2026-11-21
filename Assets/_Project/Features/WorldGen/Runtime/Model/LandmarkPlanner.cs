@@ -121,6 +121,7 @@ namespace Cosmimera.WorldGen
             float radius = planet.Radius;
             IReadOnlyList<RunRegion> regions = plan.Regions;
 
+            bool isCradle = plan.PlanetTypeId == "cradle_planet";
             var deck = (LandmarkKind[])GroundKinds.Clone();
             for (int i = deck.Length - 1; i > 0; i--)
             {
@@ -128,9 +129,26 @@ namespace Cosmimera.WorldGen
                 (deck[i], deck[j]) = (deck[j], deck[i]);
             }
 
+            if (isCradle)
+            {
+                // REQ: docs/design/beginner-quest.md#搖籃星 — no dungeon gate / labyrinth / mineshaft wonders on cradle_planet.
+                var filtered = new List<LandmarkKind>(deck.Length);
+                for (int i = 0; i < deck.Length; i++)
+                {
+                    if (deck[i] != LandmarkKind.DungeonGate && deck[i] != LandmarkKind.Labyrinth &&
+                        deck[i] != LandmarkKind.MineShaft)
+                    {
+                        filtered.Add(deck[i]);
+                    }
+                }
+
+                deck = filtered.ToArray();
+            }
+
             int ground = GroundCountFor(radius);
-            bool hasEntrance = DungeonEntrance.TryDraw(plan.Seed, RunPlanner.SizeForRadius(radius), plan.Elements,
-                out AdvancedTerrainSpec entrance);
+            AdvancedTerrainSpec entrance = default;
+            bool hasEntrance = !isCradle && DungeonEntrance.TryDraw(plan.Seed, RunPlanner.SizeForRadius(radius), plan.Elements,
+                out entrance);
             LandmarkKind entranceKind = hasEntrance ? DungeonEntrance.KindFor(entrance.Id) : LandmarkKind.DungeonGate;
             bool entranceIsElevator = hasEntrance && entranceKind == LandmarkKind.SpaceElevator;
             bool elevator = radius >= SettlementPlanner.PlanetMinRadiusM || entranceIsElevator;

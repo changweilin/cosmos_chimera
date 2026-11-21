@@ -2620,9 +2620,9 @@
     "ja": "天候操作は再使用待ちです。地域を移動してもリセットされません。"
   },
   "ui.beginner_quest.banner": {
-    "zh-TW": "新手任務：選取御三家 → 降落新手星球探索戰鬥 → 收服野生宙獸 → 擊敗巢穴 BOSS",
-    "en": "Beginner Quest: Pick a Starter → Explore & Battle → Capture Wild Cosmimera → Defeat Nest Boss",
-    "ja": "初心者クエスト：御三家を選択 → 惑星探索・戦闘 → 野生宙獣を捕獲 → 巣のボスを撃破"
+    "zh-TW": "新手任務：選角色 → 好友介紹世界觀 → 選御三家 → 好友 1vs1 教學 → 冒險／捕捉／治療教學 → Boss＋宿敵 2vs2 → 主世界大廳",
+    "en": "Beginner Quest: Character → World Intro → Starter → Friend 1vs1 Tutorial → Field/Capture/Heal → Boss+Rival 2vs2 → Main World Lobby",
+    "ja": "初心者クエスト：キャラ選択 → 世界観紹介 → 御三家 → 親友1vs1チュートリアル → 冒険・捕獲・回復 → ボス＋宿敵2vs2 → メインロビー"
   },
   "ui.beginner_quest.planet_tag": {
     "zh-TW": "【新手任務星球】",
@@ -3728,5 +3728,95 @@
     "zh-TW": "{master}的宙獸",
     "en": "{master}'s creatures",
     "ja": "{master}の宙獣"
+  },
+  "planet.cradle_planet": {
+    "zh-TW": "搖籃星",
+    "en": "Cradle Planet",
+    "ja": "ゆりかご星"
+  },
+  "ui.bq.friend_intro_1": {
+    "zh-TW": "歡迎來到搖籃星！在星海深處，每顆星球都孕育著不同屬性的宙獸與地貌奇觀。",
+    "en": "Welcome to Cradle Planet! Across the star sea, every world holds unique Cosmimera and landmarks.",
+    "ja": "ゆりかご星へようこそ！星海の彼方では、それぞれの惑星に異なる属性の宙獣と奇観が息づいているよ。"
+  },
+  "ui.bq.friend_intro_2": {
+    "zh-TW": "冒險者會透過收服器皿與宙獸締結羈絆，回到地球觀測站大廳後就能自由探索星海！",
+    "en": "Explorers bond with Cosmimera using capture vessels; once back at the Earth Observatory lobby, you can roam the star sea freely!",
+    "ja": "冒険者は捕獲器皿で宙獣と絆を結び、地球観測ステーションのロビーに戻れば自由に星海を旅できるんだ！"
+  },
+  "ui.bq.friend_intro_3": {
+    "zh-TW": "出發前，先挑選你的第一隻御三家夥伴，我再陪你來場 1vs1 對戰教學吧！",
+    "en": "Before we set off, pick your first starter partner—then let's do a 1vs1 battle tutorial together!",
+    "ja": "出発前に最初の御三家パートナーを選んで。そのあと 1vs1 のバトル練習をしよう！"
+  },
+  "ui.bq.friend_battle_start": {
+    "zh-TW": "來一場 1vs1 對戰教學吧！試著直接操控主控宙獸移動、施放主動技，並用格擋或翻滾躲開攻擊。",
+    "en": "Let's start our 1vs1 battle tutorial! Move your lead Cosmimera, cast active skills, and block or dodge incoming hits.",
+    "ja": "1vs1 バトルチュートリアルを始めよう！メイン宙獣を直接操作して移動・技・ガードや回避を試してみて。"
+  },
+  "ui.bq.friend_battle_win": {
+    "zh-TW": "太棒了！你馬上就抓到對戰節奏了！我先幫你的宙獸回復體力。",
+    "en": "Awesome! You picked up the battle rhythm right away! Let me heal your Cosmimera back to full.",
+    "ja": "すごい！もうバトルのコツを掴んだね！まずは宙獣の体力を全回復しておこう。"
+  },
+  "ui.bq.friend_battle_lose": {
+    "zh-TW": "沒關係，實戰本來就要多練習！我先幫你的宙獸回復體力，我們繼續下一步。",
+    "en": "No worries—real combat takes practice! I'll heal your Cosmimera to full and we'll keep going.",
+    "ja": "気にしないで、実戦は慣れが大事！宙獣を全回復してから次へ進もう。"
+  },
+  "ui.bq.friend_grant_supplies": {
+    "zh-TW": "這 5 個收服器皿和 2 份治療道具給你！接下來我帶你練習冒險操作、野外 1vs1、捕捉與治療。",
+    "en": "Here are 5 capture vessels and 2 healing items! Next I'll guide you through exploration, wild 1vs1, capturing, and healing.",
+    "ja": "捕獲器皿を5個と回復アイテムを2つ渡すね！次は冒険操作、野生1vs1、捕獲、回復の練習だよ。"
+  },
+  "ui.bq.step_adventure": {
+    "zh-TW": "先熟悉冒險操作：試著翻滾閃避，或靠近野外宙獸按互動鍵觀察／挑釁開戰！",
+    "en": "First, practice field controls: try dodge-rolling, or approach a wild Cosmimera to inspect or provoke it!",
+    "ja": "まずは冒険操作に慣れよう。回避ロールをするか、野生の宙獣に近づいて観察・挑発してみて！"
+  },
+  "ui.bq.step_wild_1v1": {
+    "zh-TW": "很好！接著找一隻野外宙獸進行 1vs1 實戰，將牠擊倒吧。",
+    "en": "Nice! Now find a wild Cosmimera for a 1vs1 field battle and knock it out.",
+    "ja": "いい調子！次は野生の宙獣と 1vs1 で戦って倒してみよう。"
+  },
+  "ui.bq.step_capture": {
+    "zh-TW": "野外宙獸倒地了！靠近牠並投擲收服器皿，把牠收為夥伴吧。",
+    "en": "The wild Cosmimera is down! Walk close and throw a capture vessel to recruit it.",
+    "ja": "野生の宙獣が倒れたよ！近づいて捕獲器皿を投げ、仲間にしよう。"
+  },
+  "ui.bq.step_heal": {
+    "zh-TW": "收服成功！現在打開冒險手冊的「道具」分頁，試著使用我給你的治療道具回復宙獸。",
+    "en": "Captured! Now open the Adventure Journal's Items tab and use the healing item I gave you.",
+    "ja": "捕獲成功！次は冒険手帳の「アイテム」タブから、渡した回復アイテムを使ってみよう。"
+  },
+  "ui.bq.step_boss_lair": {
+    "zh-TW": "所有基礎操作都完成了！朝著搖籃星的 BOSS 巢穴前進吧，我會在那裡與你會合！",
+    "en": "All basics done! Head toward Cradle Planet's BOSS lair—I'll meet you there!",
+    "ja": "基本操作はバッチリ！ゆりかご星のボス巣穴へ向かおう、そこで合流するよ！"
+  },
+  "ui.bq.step_done": {
+    "zh-TW": "準備好迎接最終試煉了！",
+    "en": "Ready for the final trial!",
+    "ja": "最終試練の準備完了！"
+  },
+  "ui.bq.rival_boss_intro": {
+    "zh-TW": "慢了一步呢！這顆搖籃星的幼年 BOSS 就由我先聯手考驗你們的實力吧！",
+    "en": "Too slow! Let me team up with Cradle Planet's juvenile BOSS and test what you've got!",
+    "ja": "遅かったな！このゆりかご星の幼年ボスと組んで、お前たちの実力を試してやる！"
+  },
+  "ui.bq.friend_2v2_intro": {
+    "zh-TW": "我來當你的支援！這是首次 2vs2 教學戰——你操作主控宙獸，我的夥伴會自動協同作戰，善用鎖定與支援模式一起擊倒 BOSS 和宿敵吧！",
+    "en": "I've got your back! In this first 2vs2 tutorial, control your lead Cosmimera while my partner supports you—use target lock and support modes to defeat the BOSS and rival!",
+    "ja": "僕がサポートするよ！初めての 2vs2 チュートリアルだ――君がメインを操作して、僕の相棒が自動で援護するよ。ロックオンと支援モードを活かしてボスと宿敵を倒そう！"
+  },
+  "ui.bq.rival_boss_defeated": {
+    "zh-TW": "哼……2vs2 配合得不錯嘛。到了真正的星海，我可不會再手下留情！",
+    "en": "Hmph... not bad for a 2vs2 team-up. Out in the real star sea, I won't hold back!",
+    "ja": "ふん……2vs2 の連携は悪くないな。本番の星海では手加減しないぞ！"
+  },
+  "ui.bq.friend_complete": {
+    "zh-TW": "太好了！我們收服了幼年 BOSS，現在一起前往地球觀測站（主世界大廳）吧！",
+    "en": "We did it! We captured the juvenile BOSS—let's head to the Earth Observatory (Main World Lobby)!",
+    "ja": "やったね！幼年ボスも捕獲できたし、地球観測ステーション（メインロビー）へ行こう！"
   }
 }

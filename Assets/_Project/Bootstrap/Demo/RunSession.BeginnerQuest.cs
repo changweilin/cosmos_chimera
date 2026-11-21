@@ -33,6 +33,24 @@ namespace Cosmimera.Bootstrap.Demo
         private bool HasActiveBeginnerTrainerBattle =>
             _bqFriendBattleTrainerId >= 0 || _bqBossTrainerId >= 0;
 
+        internal BeginnerQuestTracker BeginnerTrackerForTests => _bqTracker;
+        internal int BeginnerFriendBattleTrainerIdForTests => _bqFriendBattleTrainerId;
+        internal int BeginnerFriendOpponentUnitIdForTests => _bqFriendOpponentUnitId;
+        internal int BeginnerBossTrainerIdForTests => _bqBossTrainerId;
+        internal int BeginnerFriendAllyUnitIdForTests => _bqFriendAllyUnitId;
+        internal int BeginnerBossUnitIdForTests => _bqBossUnitId;
+        internal int BeginnerRivalUnitIdForTests => _bqRivalUnitId;
+        internal int BeginnerVesselsRemainingForTests => _bqTutorialVesselsRemaining;
+        internal int BeginnerHealFoodCountForTests => _foodInventory.CountFood(BeginnerQuestRules.TutorialHealItemId);
+        internal void TriggerBeginnerBoss2v2ForTests() => StartBeginnerBossAndRival2v2();
+        internal void CompleteBeginnerFieldStepsForTests()
+        {
+            NotifyBeginnerAdventureControl();
+            NotifyBeginnerWildDefeated();
+            NotifyBeginnerWildCaptured();
+            NotifyBeginnerHealUsed();
+        }
+
         private void ConfigureBeginnerQuest()
         {
             if (!_setup.IsBeginnerQuest)
@@ -243,6 +261,7 @@ namespace Cosmimera.Bootstrap.Demo
             // Stage 4 loss continues to Stage 5 instead of ending the run.
             if (_bqFriendBattleTrainerId >= 0)
             {
+                _encounter.CancelTrainerBattle(_bqFriendBattleTrainerId, _nowMs);
                 _bqFriendBattleTrainerId = -1;
                 RemoveBeginnerUnit(ref _bqFriendOpponentUnitId);
                 RestoreBeginnerParty();
@@ -267,6 +286,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (_bqBossTrainerId >= 0)
             {
+                _encounter.CancelTrainerBattle(_bqBossTrainerId, _nowMs);
                 _bqBossTrainerId = -1;
                 CleanupBeginner2v2Units();
                 _bqTracker?.OnBossAndRivalWipeout();
@@ -358,7 +378,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _lockedTarget = -1;
             }
 
-            _encounter.Remove(id);
+            if (_encounter.Units[id].Side == EncounterSide.Wild)
+            {
+                _encounter.Remove(id);
+            }
+            else if (_encounter.Units[id].Fielded)
+            {
+                _encounter.Unfield(id);
+            }
             if (_views.TryGetValue(id, out ICreatureView view))
             {
                 view.Dispose();
@@ -408,7 +435,21 @@ namespace Cosmimera.Bootstrap.Demo
         private void ShowBeginnerStepToast(BeginnerFieldStep step)
         {
             DialogueLine line = BeginnerQuestRules.FieldStepDialogue(_setup.FriendId ?? string.Empty, step);
-            Toast($"{line.Speaker}：{line.FallbackText}");
+            Toast($"{line.Speaker}：{ResolveBeginnerDialogue(line)}");
+        }
+
+        private string ResolveBeginnerDialogue(DialogueLine line)
+        {
+            if (_copy != null && !string.IsNullOrEmpty(line.TextKey))
+            {
+                string localized = _copy.Ui(line.TextKey);
+                if (localized != line.TextKey)
+                {
+                    return localized;
+                }
+            }
+
+            return line.FallbackText;
         }
 
         private void DrawBeginnerQuestHud()

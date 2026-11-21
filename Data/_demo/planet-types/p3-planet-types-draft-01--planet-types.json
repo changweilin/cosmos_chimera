@@ -28,5 +28,10 @@
     "id": "twilight_planet",
     "terrain_tags": ["eternal_day", "eternal_night"],
     "element_bias": ["light", "shadow"]
+  },
+  {
+    "id": "cradle_planet",
+    "terrain_tags": ["forest", "river_valley", "plateau"],
+    "element_bias": ["wood", "water", "wind"]
   }
 ]

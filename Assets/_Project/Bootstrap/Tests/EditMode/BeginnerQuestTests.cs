@@ -6,8 +6,11 @@ using Cosmimera.Combat;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Planet;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 using NUnit.Framework;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Tests
@@ -155,6 +158,93 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(roundtrip.FriendStarterId, Is.EqualTo("starter_star"));
 
             Assert.Throws<ContractException>(() => fresh.CompleteTutorial("", "a", "b", "c", "d"));
+        }
+
+        [Test]
+        public void Cradle_planet_has_no_advanced_dungeons_and_clear_weather_only()
+        {
+            var config = new PlanetConfig(320f, float3.zero);
+            var cradleType = ScriptableObject.CreateInstance<PlanetTypeDef>();
+            typeof(GameDef).GetField("id", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(cradleType, "cradle_planet");
+            typeof(PlanetTypeDef).GetField("terrainTags", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(cradleType, new List<string> { "forest", "river_valley", "plateau" });
+            typeof(PlanetTypeDef).GetField("elementBias", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(cradleType, new List<Element> { Element.Wood, Element.Water, Element.Wind });
+            try
+            {
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+                var wild = new List<CreatureDef>();
+                foreach (GameDef d in db.All)
+                {
+                    if (d is CreatureDef c && !c.LineId.StartsWith("starter_"))
+                    {
+                        wild.Add(c);
+                    }
+                }
+
+                var vocab = new RunPlanVocabulary(
+                    new[] { "theme_forest", "theme_valley", "theme_highland", "theme_coast" },
+                    new[] { "affix_bounty" },
+                    new[] { "chain_explore" });
+                RunPlan plan = RunPlanner.Generate(config, 20261117UL, cradleType, CreatureStage.Juvenile, wild, vocab, null);
+                RunLayout layout = SettlementPlanner.Generate(config, plan, null);
+                LandmarkLayout landmarks1 = LandmarkPlanner.Generate(config, plan, layout, null);
+                LandmarkLayout landmarks2 = LandmarkPlanner.Generate(config, plan, layout, null);
+
+                Assert.That(LandmarkPlanner.Hash(landmarks1), Is.EqualTo(LandmarkPlanner.Hash(landmarks2)),
+                    "cradle_planet landmarks must be reproducible");
+                Assert.That(landmarks1.EntranceIndex, Is.EqualTo(-1), "cradle_planet must not spawn an advanced terrain entrance");
+                foreach (RunLandmark lm in landmarks1.Landmarks)
+                {
+                    Assert.That(lm.Kind, Is.Not.EqualTo(LandmarkKind.DungeonGate));
+                    Assert.That(lm.Kind, Is.Not.EqualTo(LandmarkKind.Labyrinth));
+                    Assert.That(lm.Kind, Is.Not.EqualTo(LandmarkKind.MineShaft));
+                }
+
+                var site = new WeatherSite(20261117UL, "cradle_planet", null, 0, new float3(0f, 1f, 0f), "forest");
+                Assert.That(site.Fixed, Is.True, "cradle_planet weather site must be fixed Clear");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cradleType);
+            }
+        }
+
+        [Test]
+        public void All_beginner_quest_dialogue_keys_localize_in_three_languages()
+        {
+            const string copyDir = "Assets/_Project/Data/Copy/";
+            string strings = System.IO.File.ReadAllText(copyDir + "strings.json");
+            string names = System.IO.File.ReadAllText(copyDir + "names.json");
+            string affixes = System.IO.File.ReadAllText(copyDir + "affixes.json");
+            string themes = System.IO.File.ReadAllText(copyDir + "region-themes.json");
+            string quests = System.IO.File.ReadAllText(copyDir + "quest-templates.json");
+            string epithets = System.IO.File.ReadAllText(copyDir + "boss-epithets.json");
+
+            var allLines = new List<DialogueLine>();
+            allLines.AddRange(BeginnerQuestRules.FriendIntroDialogue("luo_en"));
+            allLines.AddRange(BeginnerQuestRules.FriendBattleIntroDialogue("luo_en"));
+            allLines.AddRange(BeginnerQuestRules.FriendBattleOutcomeDialogue("luo_en", true));
+            allLines.AddRange(BeginnerQuestRules.FriendBattleOutcomeDialogue("luo_en", false));
+            foreach (BeginnerFieldStep step in Enum.GetValues(typeof(BeginnerFieldStep)))
+            {
+                allLines.Add(BeginnerQuestRules.FieldStepDialogue("luo_en", step));
+            }
+            allLines.AddRange(BeginnerQuestRules.BossAndRivalIntroDialogue("luo_en", "yumori_sumiha"));
+            allLines.AddRange(BeginnerQuestRules.BossAndRivalVictoryDialogue("luo_en", "yumori_sumiha"));
+
+            foreach (string lang in new[] { "zh-TW", "en", "ja" })
+            {
+                var copy = new DemoCopy(lang, strings, names, affixes, themes, quests, epithets);
+                Assert.That(copy.Planet("cradle_planet"), Is.Not.EqualTo("planet.cradle_planet"),
+                    $"planet.cradle_planet missing in {lang}");
+                foreach (DialogueLine line in allLines)
+                {
+                    Assert.That(copy.Ui(line.TextKey), Is.Not.EqualTo(line.TextKey),
+                        $"Missing localization key {line.TextKey} in {lang}");
+                }
+            }
         }
     }
 }
