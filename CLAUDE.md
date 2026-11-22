@@ -14,6 +14,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 - 重新套用專案基準設定：`"$UNITY" -batchmode -nographics -projectPath . -executeMethod Cosmimera.EditorTools.ProjectBaseline.Apply -quit -logFile Logs/baseline.log`
 - 資料驗證：`tools/validate-data`
 - 安裝 UMA（gitignored，新 clone 必跑，Editor 須關閉）：`tools/install-uma`（ADR-0012）
+- 主角日系模型（Blender 5.2＋MPFB）：見 `tools/acg-character/specs/README.md`（ADR-0013）
 
 # 架構邊界（細節：`docs/architecture/overview.md`）
 - **Feature-first**：功能程式碼放在 `Assets/_Project/Features/<Feature>/`，每個 feature 一個 `.asmdef`。

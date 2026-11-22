@@ -1,0 +1,1133 @@
+{
+  "id": "chr_yeh_chengxi",
+  "height_cm": 165,
+  "macro": {
+    "gender": 0.0,
+    "age": 0.3,
+    "muscle": 0.62,
+    "weight": 0.42,
+    "proportions": 0.85,
+    "height": 0.5,
+    "cupsize": 0.4,
+    "firmness": 0.6,
+    "race": {
+      "caucasian": 0.0,
+      "asian": 1.0,
+      "african": 0.0
+    }
+  },
+  "targets": {
+    "r-eye-scale-incr": 1.0,
+    "l-eye-scale-incr": 1.0,
+    "l-ear-scale-decr": 1.0,
+    "r-ear-scale-decr": 1.0,
+    "l-eye-height2-incr": 0.6,
+    "r-eye-height2-incr": 0.6,
+    "nose-scale-horiz-decr": 0.9,
+    "nose-scale-vert-decr": 0.7,
+    "nose-scale-depth-decr": 0.9,
+    "mouth-scale-horiz-decr": 0.3,
+    "head-round": 0.7,
+    "head-scale-horiz-incr": 0.15,
+    "chin-width-decr": 0.4,
+    "chin-height-decr": 0.3,
+    "forehead-scale-vert-decr": 0.25,
+    "measure-shoulder-dist-incr": 0.25,
+    "hip-scale-horiz-incr": 0.1,
+    "buttocks-volume-incr": 0.15,
+    "stomach-tone-incr": 0.6,
+    "l-cheek-volume-incr": 0.5,
+    "r-cheek-volume-incr": 0.5,
+    "l-upperleg-muscle-incr": 0.4,
+    "r-upperleg-muscle-incr": 0.4,
+    "l-upperleg-fat-incr": 0.3,
+    "r-upperleg-fat-incr": 0.3,
+    "l-lowerleg-muscle-incr": 0.4,
+    "r-lowerleg-muscle-incr": 0.4,
+    "chin-prominent-decr": 1.0,
+    "chin-prognathism-decr": 0.6,
+    "mouth-scale-depth-decr": 0.6,
+    "head-angle-in": 0.45
+  },
+  "proportions": {
+    "heads": 6.0,
+    "leg_length": 1.17,
+    "leg_thin": 0.95,
+    "neck_thin": 0.8,
+    "hand_scale": 0.88,
+    "foot_scale": 0.9,
+    "waist_thin": 0.9,
+    "thigh_length": 1.5
+  },
+  "face": {
+    "lash_w": 0.007,
+    "lash_flick": 0.003,
+    "brow_w": 0.003,
+    "brow_lift": 0.014,
+    "mouth_smile": 0.004,
+    "mouth_half": 0.014,
+    "mouth_w": 0.0022,
+    "eye_h": 0.9,
+    "eye_tilt": 0.08,
+    "eye_w": 1.32,
+    "chin_taper": 0.18,
+    "cheek_fill": 0.1,
+    "chin_forward": 0.0,
+    "chin_down": 0.0,
+    "eye_dx": 0.006
+  },
+  "look": {
+    "skin": "#f8e0cc",
+    "skin_shade": "#e4b49c",
+    "iris": "#ff9a40",
+    "iris_dark": "#9a3a10",
+    "brow": "#2c1c14",
+    "lash": "#20140e",
+    "mouth": "#8a3a34",
+    "hair_root": "#24170f",
+    "hair": "#4a3020",
+    "hair_tip": "#6a4630"
+  },
+  "hair": {
+    "seed": 23,
+    "tip_from": 0.55,
+    "hairline": {
+      "front": 40,
+      "side": 6,
+      "back": -40
+    },
+    "groups": [
+      {
+        "name": "bangs",
+        "count": 10,
+        "az": [
+          -74,
+          74
+        ],
+        "el": [
+          48,
+          74
+        ],
+        "flow_vec": [
+          0,
+          -0.35,
+          -0.94
+        ],
+        "lift": 0.2,
+        "gravity": 0.35,
+        "length": [
+          0.12,
+          0.17
+        ],
+        "width": [
+          0.03,
+          0.036
+        ],
+        "end_z": 0.004,
+        "flick": 0.07,
+        "wave": 0.08,
+        "jitter": 0.12,
+        "shell": 1.1
+      },
+      {
+        "name": "side_l",
+        "count": 3,
+        "az": [
+          66,
+          100
+        ],
+        "el": [
+          15,
+          45
+        ],
+        "flow": "down",
+        "lift": 0.15,
+        "gravity": 0.5,
+        "length": [
+          0.11,
+          0.14
+        ],
+        "width": [
+          0.024,
+          0.03
+        ],
+        "flick": 0.04,
+        "wave": 0.04,
+        "spread": 0.0,
+        "jitter": 0.12,
+        "shell": 1.1,
+        "swing": 2
+      },
+      {
+        "name": "side_r",
+        "count": 3,
+        "az": [
+          -100,
+          -66
+        ],
+        "el": [
+          15,
+          45
+        ],
+        "flow": "down",
+        "lift": 0.15,
+        "gravity": 0.5,
+        "length": [
+          0.11,
+          0.14
+        ],
+        "width": [
+          0.024,
+          0.03
+        ],
+        "flick": 0.04,
+        "wave": 0.04,
+        "spread": 0.0,
+        "jitter": 0.12,
+        "shell": 1.1,
+        "swing": 2
+      },
+      {
+        "name": "nape",
+        "count": 10,
+        "az": [
+          135,
+          225
+        ],
+        "el": [
+          -25,
+          35
+        ],
+        "flow_vec": [
+          0,
+          0.3,
+          -0.95
+        ],
+        "lift": 0.2,
+        "gravity": 0.3,
+        "length": [
+          0.09,
+          0.12
+        ],
+        "width": [
+          0.03,
+          0.036
+        ],
+        "flick": 0.04,
+        "wave": 0.04,
+        "spread": 0.05,
+        "jitter": 0.12,
+        "shell": 1.1
+      },
+      {
+        "name": "ponytail",
+        "count": 22,
+        "anchor": [
+          180,
+          70,
+          1.16
+        ],
+        "anchor_r": 0.035,
+        "flow_vec": [
+          0,
+          0.35,
+          -0.94
+        ],
+        "lift": 0.55,
+        "gravity": 0.55,
+        "length": [
+          0.32,
+          0.44
+        ],
+        "width": [
+          0.05,
+          0.068
+        ],
+        "flick": 0.2,
+        "wave": 0.14,
+        "wave_freq": 1.2,
+        "spread": 0.0,
+        "jitter": 0.35,
+        "shell": 1.1,
+        "curl": [
+          0,
+          -0.25,
+          0
+        ],
+        "swing": 3
+      },
+      {
+        "name": "ahoge",
+        "count": 2,
+        "roots": [
+          [
+            10,
+            86
+          ],
+          [
+            -12,
+            84
+          ]
+        ],
+        "flow": "up",
+        "lift": 1.5,
+        "gravity": 0.0,
+        "curl": [
+          0,
+          -0.4,
+          -0.5
+        ],
+        "length": [
+          0.08,
+          0.1
+        ],
+        "width": [
+          0.007,
+          0.008
+        ],
+        "flat": 0.5,
+        "shell": 1.1
+      }
+    ],
+    "ornaments": [
+      {
+        "name": "hairtie",
+        "prim": "torus",
+        "az": 180,
+        "el": 70,
+        "k": 1.17,
+        "radii": [
+          0.5,
+          0.25
+        ],
+        "size": [
+          0.06,
+          0.06,
+          0.06
+        ],
+        "rot": [
+          27,
+          0,
+          0
+        ],
+        "color": "#2e3a80"
+      },
+      {
+        "name": "crystal",
+        "prim": "sphere",
+        "az": 160,
+        "el": 80,
+        "k": 1.22,
+        "size": [
+          0.032,
+          0.032,
+          0.032
+        ],
+        "color": "#9ac8f0",
+        "shade": "#5a88c0"
+      }
+    ],
+    "scale": 1.05
+  },
+  "outfit": [
+    {
+      "name": "innercrop",
+      "parts": [
+        "torso"
+      ],
+      "z": [
+        "chest-0.05",
+        "neck-0.06"
+      ],
+      "offset": 0.005,
+      "color": "#2e3a80"
+    },
+    {
+      "name": "sailortop",
+      "parts": [
+        "torso"
+      ],
+      "z": [
+        "chest-0.04",
+        "neck-0.03"
+      ],
+      "sleeve": [
+        0,
+        0.68
+      ],
+      "offset": 0.026,
+      "color": "#f4f2ee",
+      "shade": "#c6c2be",
+      "smooth": 3,
+      "open_front": 0.05,
+      "open_from": "chest-0.1"
+    },
+    {
+      "name": "sleevecuff",
+      "parts": [],
+      "sleeve": [
+        0.54,
+        0.68
+      ],
+      "offset": 0.036,
+      "color": "#2e3a80",
+      "shade": "#1c2454",
+      "smooth": 2
+    },
+    {
+      "name": "sailorcollar",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0,
+        0.085,
+        0.15
+      ],
+      "size": [
+        0.27,
+        0.02,
+        0.15
+      ],
+      "rot": [
+        -15,
+        0,
+        0
+      ],
+      "bevel": 0.2,
+      "color": "#2e3a80",
+      "soft": true
+    },
+    {
+      "name": "scarf",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0,
+        -0.14,
+        0.12
+      ],
+      "size": [
+        0.1,
+        0.02,
+        0.1
+      ],
+      "rot": [
+        0,
+        45,
+        0
+      ],
+      "bevel": 0.3,
+      "color": "#e8b040",
+      "soft": true
+    },
+    {
+      "name": "shorts",
+      "parts": [
+        "torso",
+        "legs"
+      ],
+      "z": [
+        "hip-0.14",
+        "pelvis+0.03"
+      ],
+      "offset": 0.012,
+      "flare": {
+        "from": "hip-0.05",
+        "to": "hip-0.14",
+        "amount": 0.012
+      },
+      "color": "#2a2a30",
+      "shade": "#18181c",
+      "smooth": 3
+    },
+    {
+      "name": "shortscuff",
+      "parts": [
+        "legs"
+      ],
+      "z": [
+        "hip-0.17",
+        "hip-0.13"
+      ],
+      "offset": 0.017,
+      "color": "#f4f2ee",
+      "shade": "#c6c2be",
+      "smooth": 3
+    },
+    {
+      "name": "belt",
+      "prim": "torus",
+      "bone": "pelvis",
+      "at": [
+        0,
+        -0.005,
+        0.0
+      ],
+      "radii": [
+        0.5,
+        0.06
+      ],
+      "size": [
+        0.32,
+        0.235,
+        0.3
+      ],
+      "color": "#4a3024",
+      "soft": true
+    },
+    {
+      "name": "buckle",
+      "prim": "box",
+      "bone": "pelvis",
+      "at": [
+        0,
+        -0.118,
+        0.0
+      ],
+      "size": [
+        0.04,
+        0.01,
+        0.028
+      ],
+      "bevel": 0.3,
+      "color": "#c8a050"
+    },
+    {
+      "name": "hippouch",
+      "prim": "box",
+      "bone": "pelvis",
+      "at": [
+        0.15,
+        -0.04,
+        -0.06
+      ],
+      "size": [
+        0.04,
+        0.08,
+        0.09
+      ],
+      "bevel": 0.3,
+      "color": "#3a2a24"
+    },
+    {
+      "name": "legwarmer",
+      "prim": "cyl",
+      "bone": "foot_l",
+      "at": [
+        0,
+        0.0,
+        0.17
+      ],
+      "size": [
+        0.13,
+        0.13,
+        0.12
+      ],
+      "taper": 1.1,
+      "mirror": true,
+      "color": "#22222a",
+      "shade": "#141418",
+      "soft": true
+    },
+    {
+      "name": "boot",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.045,
+        0.02
+      ],
+      "size": [
+        0.12,
+        0.28,
+        0.16
+      ],
+      "bevel": 0.7,
+      "mirror": true,
+      "color": "#f4f2ee",
+      "shade": "#c6c2be"
+    },
+    {
+      "name": "bootfront",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        0.03,
+        0.0
+      ],
+      "size": [
+        0.124,
+        0.1,
+        0.14
+      ],
+      "bevel": 0.6,
+      "mirror": true,
+      "color": "#2e3a80",
+      "shade": "#1c2454"
+    },
+    {
+      "name": "laces",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.115,
+        0.05
+      ],
+      "size": [
+        0.05,
+        0.03,
+        0.06
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#e8582c"
+    },
+    {
+      "name": "sole",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.045,
+        -0.07
+      ],
+      "size": [
+        0.13,
+        0.29,
+        0.05
+      ],
+      "bevel": 0.4,
+      "mirror": true,
+      "color": "#3a2a30"
+    },
+    {
+      "name": "gloves",
+      "parts": [
+        "hands"
+      ],
+      "offset": 0.002,
+      "color": "#22222a",
+      "finger_cut": 0.5
+    },
+    {
+      "name": "wristband",
+      "prim": "torus",
+      "bone": "hand_l",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "radii": [
+        0.5,
+        0.2
+      ],
+      "size": [
+        0.055,
+        0.055,
+        0.055
+      ],
+      "rot": [
+        0,
+        90,
+        0
+      ],
+      "mirror": true,
+      "color": "#e8582c"
+    },
+    {
+      "name": "backpack",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0,
+        0.13,
+        -0.03
+      ],
+      "size": [
+        0.29,
+        0.13,
+        0.34
+      ],
+      "bevel": 0.35,
+      "color": "#3a4a80",
+      "shade": "#26305a"
+    },
+    {
+      "name": "packflap",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0,
+        0.195,
+        0.03
+      ],
+      "size": [
+        0.22,
+        0.02,
+        0.14
+      ],
+      "bevel": 0.3,
+      "color": "#2e3a80"
+    },
+    {
+      "name": "packanchor",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0,
+        0.206,
+        0.03
+      ],
+      "size": [
+        0.03,
+        0.004,
+        0.05
+      ],
+      "color": "#e8b040"
+    },
+    {
+      "name": "packside",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.165,
+        0.12,
+        -0.08
+      ],
+      "size": [
+        0.04,
+        0.09,
+        0.15
+      ],
+      "bevel": 0.4,
+      "mirror": true,
+      "color": "#2e3a80"
+    },
+    {
+      "name": "strap",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.07,
+        -0.1,
+        0.0
+      ],
+      "size": [
+        0.035,
+        0.018,
+        0.3
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#4a3024",
+      "soft": true
+    },
+    {
+      "name": "lapel_l",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.055,
+        -0.136,
+        0.14
+      ],
+      "size": [
+        0.05,
+        0.012,
+        0.13
+      ],
+      "rot": [
+        0,
+        -25,
+        0
+      ],
+      "bevel": 0.2,
+      "color": "#2e3a80",
+      "soft": true
+    },
+    {
+      "name": "lapel_r",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        -0.055,
+        -0.136,
+        0.14
+      ],
+      "size": [
+        0.05,
+        0.012,
+        0.13
+      ],
+      "rot": [
+        0,
+        25,
+        0
+      ],
+      "bevel": 0.2,
+      "color": "#2e3a80",
+      "soft": true
+    },
+    {
+      "name": "scarftail_l",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.03,
+        -0.142,
+        0.04
+      ],
+      "size": [
+        0.045,
+        0.012,
+        0.13
+      ],
+      "rot": [
+        0,
+        -18,
+        0
+      ],
+      "bevel": 0.3,
+      "color": "#e8b040",
+      "swing": {
+        "roots": [
+          [
+            0,
+            0,
+            0.065
+          ]
+        ],
+        "length": 0.13,
+        "segments": 2
+      }
+    },
+    {
+      "name": "scarftail_r",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        -0.03,
+        -0.142,
+        0.04
+      ],
+      "size": [
+        0.045,
+        0.012,
+        0.13
+      ],
+      "rot": [
+        0,
+        18,
+        0
+      ],
+      "bevel": 0.3,
+      "color": "#e8b040",
+      "swing": {
+        "roots": [
+          [
+            0,
+            0,
+            0.065
+          ]
+        ],
+        "length": 0.13,
+        "segments": 2
+      }
+    },
+    {
+      "name": "hood",
+      "prim": "box",
+      "bone": "neck_01",
+      "at": [
+        0,
+        0.075,
+        -0.01
+      ],
+      "size": [
+        0.2,
+        0.09,
+        0.11
+      ],
+      "rot": [
+        -20,
+        0,
+        0
+      ],
+      "bevel": 0.9,
+      "color": "#2e3a80",
+      "shade": "#1c2454",
+      "soft": true
+    },
+    {
+      "name": "belt2",
+      "prim": "torus",
+      "bone": "pelvis",
+      "at": [
+        0,
+        -0.0,
+        -0.035
+      ],
+      "radii": [
+        0.5,
+        0.05
+      ],
+      "size": [
+        0.33,
+        0.24,
+        0.28
+      ],
+      "rot": [
+        0,
+        -6,
+        0
+      ],
+      "color": "#5a3a28",
+      "soft": true
+    },
+    {
+      "name": "sash",
+      "prim": "torus",
+      "bone": "pelvis",
+      "at": [
+        0,
+        -0.0,
+        0.03
+      ],
+      "radii": [
+        0.5,
+        0.05
+      ],
+      "size": [
+        0.3,
+        0.22,
+        0.26
+      ],
+      "color": "#4a7ac8",
+      "soft": true
+    },
+    {
+      "name": "sidestrap",
+      "prim": "box",
+      "bone": "pelvis",
+      "at": [
+        0.16,
+        -0.01,
+        -0.12
+      ],
+      "size": [
+        0.02,
+        0.01,
+        0.22
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#2e3a80",
+      "soft": true
+    },
+    {
+      "name": "bandage",
+      "parts": [
+        "legs"
+      ],
+      "z": [
+        "hip-0.33",
+        "hip-0.29"
+      ],
+      "x": [
+        0,
+        0.5
+      ],
+      "x_side": "r",
+      "offset": 0.003,
+      "color": "#eef0f4"
+    },
+    {
+      "name": "sockband",
+      "parts": [
+        "feet"
+      ],
+      "z": [
+        "ankle+0.235",
+        "ankle+0.27"
+      ],
+      "offset": 0.003,
+      "color": "#f4f2ee"
+    },
+    {
+      "name": "boottrim",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.06,
+        -0.03
+      ],
+      "size": [
+        0.128,
+        0.16,
+        0.02
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#e8b040"
+    }
+  ],
+  "idle_pose": {
+    "aim": [
+      [
+        "thigh_l",
+        [
+          0.2,
+          0.0,
+          -0.98
+        ]
+      ],
+      [
+        "calf_l",
+        [
+          0.16,
+          0.02,
+          -0.987
+        ]
+      ],
+      [
+        "thigh_r",
+        [
+          -0.2,
+          0.0,
+          -0.98
+        ]
+      ],
+      [
+        "calf_r",
+        [
+          -0.16,
+          0.02,
+          -0.987
+        ]
+      ],
+      [
+        "upperarm_r",
+        [
+          -0.75,
+          0.15,
+          -0.65
+        ]
+      ],
+      [
+        "lowerarm_r",
+        [
+          0.72,
+          -0.16,
+          -0.68
+        ]
+      ],
+      [
+        "hand_r",
+        [
+          0.35,
+          -0.35,
+          -0.87
+        ]
+      ],
+      [
+        "upperarm_l",
+        [
+          0.81,
+          -0.35,
+          -0.48
+        ]
+      ],
+      [
+        "lowerarm_l",
+        [
+          -0.2,
+          -0.29,
+          0.94
+        ]
+      ],
+      [
+        "hand_l",
+        [
+          0.05,
+          -0.4,
+          0.92
+        ]
+      ]
+    ],
+    "level": [
+      "foot_l",
+      "foot_r"
+    ],
+    "curl": [
+      [
+        "index_01_l",
+        30
+      ],
+      [
+        "index_02_l",
+        35
+      ],
+      [
+        "index_03_l",
+        25
+      ],
+      [
+        "middle_01_l",
+        30
+      ],
+      [
+        "middle_02_l",
+        35
+      ],
+      [
+        "middle_03_l",
+        25
+      ],
+      [
+        "ring_01_l",
+        30
+      ],
+      [
+        "ring_02_l",
+        35
+      ],
+      [
+        "ring_03_l",
+        25
+      ],
+      [
+        "pinky_01_l",
+        30
+      ],
+      [
+        "pinky_02_l",
+        35
+      ],
+      [
+        "pinky_03_l",
+        25
+      ],
+      [
+        "thumb_02_l",
+        15
+      ],
+      [
+        "thumb_03_l",
+        15
+      ]
+    ]
+  },
+  "props": {
+    "hold": "bead"
+  }
+}

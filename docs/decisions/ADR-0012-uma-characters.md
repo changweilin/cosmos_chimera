@@ -1,7 +1,7 @@
 # ADR-0012：主角與捏臉改用 UMA 3
 
 ## 狀態
-已採納（2026-11-22 定案 Q-T6、Q-T7）。規格見 `docs/design/characters.md#捏臉範圍`。
+已採納（2026-11-22 定案 Q-T6、Q-T7）；決定 3 由 ADR-0013 取代（主角模型改由 Blender＋MPFB 製作）；內建寫實種族改為日系自訂種族，見 ADR-0014（Q-T9）。規格見 `docs/design/characters.md#捏臉範圍`。
 
 ## 背景
 - 三位主角（`chr_roen`、`chr_amemori_sumiha`、`chr_yeh_chengxi`）原為外包 GLB/FBX（67 骨 Unity Humanoid，`Model/rig_spec.json`）。
