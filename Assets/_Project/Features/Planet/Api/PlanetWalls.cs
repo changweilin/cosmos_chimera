@@ -89,6 +89,84 @@ namespace Cosmimera.Planet
         /// </remarks>
         public float Height(float3 dir) => _count > 0 ? _heightM * Strength(dir, 0f) : 0f;
 
+        internal bool TryBuildChunkFilter(float3 chunkCenter, float chunkChordBound, out bool checkRing,
+            out FixedList512Bytes<int> corridorIndices)
+        {
+            checkRing = _ringRad > 0f &&
+                        math.abs(math.distance(chunkCenter, _ringCenter) - _ringRad) <= chunkChordBound + _halfRad + 1e-3f;
+            corridorIndices = default;
+            for (int c = 0; c < _corridors.Length; c++)
+            {
+                float3x2 seg = _corridors[c];
+                float3 mid = (seg.c0 + seg.c1) * 0.5f;
+                float halfLen = math.length(seg.c1 - seg.c0) * 0.5f;
+                if (math.distance(chunkCenter, mid) > chunkChordBound + halfLen + _corridorOuterRad + 1e-3f)
+                {
+                    continue;
+                }
+
+                if (corridorIndices.Length >= corridorIndices.Capacity)
+                {
+                    return false;
+                }
+
+                corridorIndices.Add(c);
+            }
+
+            return true;
+        }
+
+        internal float HeightSubset(float3 dir, bool checkRing, in FixedList512Bytes<int> corridorIndices) =>
+            _count > 0 ? _heightM * StrengthSubset(dir, 0f, checkRing, corridorIndices) : 0f;
+
+        private float StrengthSubset(float3 dir, float growRad, bool checkRing, in FixedList512Bytes<int> corridorIndices)
+        {
+            float ring = 0f;
+            if (checkRing)
+            {
+                float d = math.abs(math.distance(dir, _ringCenter) - _ringRad) - growRad;
+                ring = 1f - math.smoothstep(_topRad, _halfRad, d);
+                if (ring > 0f)
+                {
+                    ring *= math.smoothstep(_ringGateInnerRad - growRad, _ringGateOuterRad - growRad,
+                        math.distance(dir, _ringGate));
+                }
+            }
+
+            int a = Nearest(dir);
+            float3 sa = _sites[a];
+            float wall = 0f;
+            for (int k = 0; k < _count; k++)
+            {
+                if (k == a || _open[a * _count + k] != 0)
+                {
+                    continue;
+                }
+
+                float3 diff = sa - _sites[k];
+                float d = math.dot(dir, diff) / math.length(diff) - growRad;
+                wall = math.max(wall, 1f - math.smoothstep(_topRad, _halfRad, d));
+            }
+
+            if (wall <= ring || corridorIndices.Length == 0)
+            {
+                return math.max(wall, ring);
+            }
+
+            float nearest = float.MaxValue;
+            for (int idx = 0; idx < corridorIndices.Length; idx++)
+            {
+                float3x2 seg = _corridors[corridorIndices[idx]];
+                float3 ab = seg.c1 - seg.c0;
+                float len2 = math.lengthsq(ab);
+                float t = len2 > 0f ? math.saturate(math.dot(dir - seg.c0, ab) / len2) : 0f;
+                nearest = math.min(nearest, math.distancesq(dir, seg.c0 + ab * t));
+            }
+
+            wall *= math.smoothstep(_corridorInnerRad - growRad, _corridorOuterRad - growRad, math.sqrt(nearest));
+            return math.max(wall, ring);
+        }
+
         /// <summary>Whether a body of angular radius <paramref name="clearanceRad"/> at <paramref name="dir"/> is stopped by a wall.</summary>
         /// <remarks>
         /// Pre: dir unit length; clearanceRad finite and ≥ 0.

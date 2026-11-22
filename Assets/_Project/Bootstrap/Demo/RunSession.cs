@@ -524,6 +524,10 @@ namespace Cosmimera.Bootstrap.Demo
         private int _feelBatchCount;
         private Vector3[] _heldViewPos = new Vector3[0];
         private bool[] _viewHeld = new bool[0];
+        private bool[] _viewSynced = new bool[0];
+        private float3[] _viewLastPos = new float3[0];
+        private float3[] _viewLastFwd = new float3[0];
+        private bool[] _viewLastOverload = new bool[0];
         // Per unit: the planet boss and each trial-final boss (a fresh unit per attempt) cross their own phase lines.
         private readonly Dictionary<int, int> _bossPhaseLinesPassed = new Dictionary<int, int>();
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
@@ -613,6 +617,7 @@ namespace Cosmimera.Bootstrap.Demo
         private ConceptPortraitTable _portraits;
         private GUIStyle _label;
         private GUIStyle _weatherLabel;
+        private GUIStyle _worldBarLabelStyle;
         private GUIStyle _markerStyle;
         private Material _terrainMaterial;
         private Material _playerMaterial;
@@ -839,11 +844,11 @@ namespace Cosmimera.Bootstrap.Demo
             // 1.5 m off their footprints as it does off buildings.
             LandmarkLayout landmarks = setup.IsLobbyPlanet
                 ? LobbyPlanetPlanner.BuildLandmarks(config, _plan, _layout,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) &&
-                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM)
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d))
                 : LandmarkPlanner.Generate(config, _plan, _layout,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) &&
-                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM);
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d));
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
             // Before populace, trainers and scatter: they all keep off the maze through surface.IsOffWalls.
@@ -854,8 +859,8 @@ namespace Cosmimera.Bootstrap.Demo
             float landingGap = 4f / config.Radius;
             _populace = PopulacePlanner.Generate(config, _plan, _layout,
                 NpcMeshes.TemperFor(ArchitectureMeshes.PlanetStyleFor(setup.PlanetType.Id, setup.Seed).Era),
-                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
-                     surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM &&
+                d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                     surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
                      math.distancesq(d, landingAt) > landingGap * landingGap);
             surface.Populace = _populace;
             if (wildPool != null && wildPool.Count > 0)
@@ -869,8 +874,8 @@ namespace Cosmimera.Bootstrap.Demo
                 int wildNormalMax = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Normal);
                 int bossLv = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Boss);
                 _trainers = TrainerPlanner.Generate(config, _plan, _layout, wildPool, _habitatAt,
-                    d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
-                         surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM,
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f),
                     wildNormalMax, bossLv, maxStage: setup.BossStage);
             }
             System.Func<float3, bool> isOpenGround =
@@ -1564,8 +1569,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             _nowMs += TickMs;
             _worldObjects?.StepField(_nowMs);
-            _fieldView?.Sync(_nowMs);
             float3 player = PlayerPosition();
+            _fieldView?.Sync(_nowMs, player, 180f);
             UpdateEnvironment(player);
             TrackWalk(player);
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
@@ -3234,6 +3239,8 @@ namespace Cosmimera.Bootstrap.Demo
             _views[u.Id] = view;
             _viewDefs[u.Id] = u.Def;
             _viewRoles[u.Id] = role;
+            EnsureViewCacheCapacity(u.Id);
+            _viewSynced[u.Id] = false;
             AttachUnitGearAndShield(u, view.Root);
             // Combat can attach the camera before the first render-frame pose update.
             view.Root.position = u.Position;
@@ -3288,11 +3295,8 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 Transform t = view.Root;
-                bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
-                if ((_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone) || IsHiddenByTrial(u))
-                {
-                    visible = false;
-                }
+                bool wildGone = _wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone;
+                bool visible = (u.Fielded || (_wild.ContainsKey(u.Id) && !wildGone)) && !wildGone && !IsHiddenByTrial(u);
 
                 _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
                 if (IsFleeing(u.Id))
@@ -3303,6 +3307,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (t.gameObject.activeSelf != visible)
                 {
                     t.gameObject.SetActive(visible);
+                    if (u.Id < _viewSynced.Length) _viewSynced[u.Id] = false;
                 }
 
                 if (!visible)
@@ -3310,6 +3315,7 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
+                EnsureViewCacheCapacity(u.Id);
                 float3 up = _rig.Config.ToDirection(u.Position);
                 if (HoldForHitstop(u, t))
                 {
@@ -3319,10 +3325,23 @@ namespace Cosmimera.Bootstrap.Demo
                 float3 viewPos = u.Id == _mainId && _mainJumpOffsetM > 0f
                     ? u.Position + up * _mainJumpOffsetM
                     : u.Position;
-                t.SetPositionAndRotation(viewPos, quaternion.LookRotationSafe(u.Forward, up));
-                t.localScale = u.Combatant.IsOverloaded && u.Def == u.BaseDef
-                    ? new Vector3(1.15f, 1.15f, 1.15f)
-                    : Vector3.one;
+                bool overloaded = u.Combatant.IsOverloaded && u.Def == u.BaseDef;
+                if (!_viewSynced[u.Id] ||
+                    math.distancesq(_viewLastPos[u.Id], viewPos) > 1e-10f ||
+                    math.distancesq(_viewLastFwd[u.Id], u.Forward) > 1e-10f)
+                {
+                    t.SetPositionAndRotation(viewPos, quaternion.LookRotationSafe(u.Forward, up));
+                    _viewLastPos[u.Id] = viewPos;
+                    _viewLastFwd[u.Id] = u.Forward;
+                }
+
+                if (!_viewSynced[u.Id] || _viewLastOverload[u.Id] != overloaded)
+                {
+                    t.localScale = overloaded ? new Vector3(1.15f, 1.15f, 1.15f) : Vector3.one;
+                    _viewLastOverload[u.Id] = overloaded;
+                }
+
+                _viewSynced[u.Id] = true;
                 if (u.Combatant.IsFainted)
                 {
                     view.ShowFainted();
@@ -3339,20 +3358,35 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private void EnsureViewCacheCapacity(int unitId)
+        {
+            if (unitId < _viewSynced.Length)
+            {
+                return;
+            }
+
+            int size = math.max(unitId + 1, math.max(_viewSynced.Length * 2, 16));
+            Array.Resize(ref _viewHeld, size);
+            Array.Resize(ref _heldViewPos, size);
+            Array.Resize(ref _viewSynced, size);
+            Array.Resize(ref _viewLastPos, size);
+            Array.Resize(ref _viewLastFwd, size);
+            Array.Resize(ref _viewLastOverload, size);
+        }
+
         // REQ: combat-feel.md#分層 — hitstop holds only the view (pose + small jitter); u.Position and the tick keep running,
         // so the view snaps to the rule position when the hold ends. Fainted units are never held (ShowFainted must run).
         private bool HoldForHitstop(EncounterUnit u, Transform t)
         {
-            if (u.Id >= _viewHeld.Length)
-            {
-                int size = math.max(u.Id + 1, _viewHeld.Length * 2);
-                Array.Resize(ref _viewHeld, size);
-                Array.Resize(ref _heldViewPos, size);
-            }
-
+            EnsureViewCacheCapacity(u.Id);
             if (_hitFeel == null || u.Combatant.IsFainted || !_hitFeel.IsFrozen(u.Id))
             {
-                _viewHeld[u.Id] = false;
+                if (_viewHeld[u.Id])
+                {
+                    _viewHeld[u.Id] = false;
+                    _viewSynced[u.Id] = false;
+                }
+
                 return false;
             }
 
@@ -3360,6 +3394,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _viewHeld[u.Id] = true;
                 _heldViewPos[u.Id] = t.position;
+                _viewSynced[u.Id] = false;
             }
 
             t.position = _heldViewPos[u.Id] + _hitFeel.Jitter(u.BodyRadiusM * 0.06f);
@@ -3679,15 +3714,20 @@ namespace Cosmimera.Bootstrap.Demo
 
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 18, richText = true };
             _weatherLabel ??= new GUIStyle(_label) { fontSize = 14, wordWrap = true };
+            _worldBarLabelStyle ??= new GUIStyle(_label) { fontSize = 14, alignment = TextAnchor.MiddleCenter };
             if (!_started)
             {
                 return;
             }
 
-            DrawWorldBars();
-            _feedback?.DrawFloatingTexts(_rig.Camera);
-            _hitFeel?.DrawOverlay();
-            DrawLockMarker();
+            if (Event.current.type == EventType.Repaint)
+            {
+                DrawWorldBars();
+                _feedback?.DrawFloatingTexts(_rig.Camera);
+                _hitFeel?.DrawOverlay();
+                DrawLockMarker();
+            }
+
             if (_journal != null)
             {
                 _journal.Draw(DrawJournal, CloseJournal);
@@ -3830,8 +3870,7 @@ namespace Cosmimera.Bootstrap.Demo
                     name += " · " + _copy.Ui("ui.hud.knocked_out");
                 }
 
-                GUI.Label(new Rect(sp.x - 120, Screen.height - sp.y - 24, 240, 22), name,
-                    new GUIStyle(_label) { fontSize = 14, alignment = TextAnchor.MiddleCenter });
+                GUI.Label(new Rect(sp.x - 120, Screen.height - sp.y - 24, 240, 22), name, _worldBarLabelStyle);
             }
         }
 

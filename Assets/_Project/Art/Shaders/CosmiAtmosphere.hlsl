@@ -116,13 +116,15 @@ float3 CosmiVortexFlow(float3 up)
 {
     float3 sum = 0;
     int n = (int)_CosmiVortexCount;
+    float rPlanetSq = _CosmiPlanet.w * _CosmiPlanet.w;
     [loop] for (int i = 0; i < COSMI_MAX_VORTICES; i++)
     {
         if (i >= n) break;
         float3 off = up - _CosmiVortexA[i].xyz;
-        float r = length(off) * _CosmiPlanet.w;
         float outer = _CosmiVortexB[i].x;
-        if (r >= outer || r < 1e-3) continue;
+        float rSq = dot(off, off) * rPlanetSq;
+        if (rSq >= outer * outer || rSq < 1e-6) continue;
+        float r = sqrt(rSq);
         float3 radial = off - up * dot(off, up);
         float3 er = radial / max(length(radial), 1e-6);
         float core = _CosmiVortexA[i].w;
@@ -137,10 +139,9 @@ float3 CosmiVortexFlow(float3 up)
     return sum;
 }
 
-// Local wind direction at `up` and how much the vortices add to its strength (`boost`, peak units ≥ 0).
-float3 CosmiWindAt(float3 up, out float boost)
+// Local wind direction at `up` using a precomputed prevailing direction `base`.
+float3 CosmiWindAt(float3 up, float3 base, out float boost)
 {
-    float3 base = CosmiWindDir(up);
     if (_CosmiVortexCount < 0.5 || _CosmiPlanet.w <= 0.0)
     {
         boost = 0.0;
@@ -154,20 +155,28 @@ float3 CosmiWindAt(float3 up, out float boost)
     return l > 1e-4 ? w / l : base;
 }
 
+// Local wind direction at `up` and how much the vortices add to its strength (`boost`, peak units ≥ 0).
+float3 CosmiWindAt(float3 up, out float boost)
+{
+    return CosmiWindAt(up, CosmiWindDir(up), boost);
+}
+
 // Spiral cloud bands of the cyclones in view: arms wound logarithmically round a clear eye, densest at the eye wall.
+// AtmosphereDriver.SetVortices packs cyclones first, so loop ends at the first non-cyclone.
 float CosmiCycloneCloud(float3 up)
 {
     float best = 0.0;
     int n = (int)_CosmiVortexCount;
+    float rPlanetSq = _CosmiPlanet.w * _CosmiPlanet.w;
     [loop] for (int i = 0; i < COSMI_MAX_VORTICES; i++)
     {
-        if (i >= n) break;
-        if (_CosmiVortexB[i].w < 2.5) continue;
+        if (i >= n || _CosmiVortexB[i].w < 2.5) break;
         float3 c = _CosmiVortexA[i].xyz;
         float3 off = up - c;
-        float r = length(off) * _CosmiPlanet.w;
         float outer = _CosmiVortexB[i].x;
-        if (r >= outer) continue;
+        float rSq = dot(off, off) * rPlanetSq;
+        if (rSq >= outer * outer) continue;
+        float r = sqrt(rSq);
         float core = _CosmiVortexA[i].w;
         float3 e1 = cross(c, _CosmiPoleAxis.xyz);
         e1 = dot(e1, e1) > 1e-4 ? normalize(e1) : float3(1, 0, 0);
@@ -193,7 +202,9 @@ float CosmiCloudDensity(float3 up)
     float n = CosmiFbm2(p);
     float edge = 1.0 - _CosmiCloud.x;
     float d = smoothstep(edge - 0.08, edge + 0.08, n);
-    return _CosmiVortexCount > 0.5 ? max(d, CosmiCycloneCloud(up) * smoothstep(0.3, 0.6, n + 0.25)) : d;
+    return (_CosmiVortexCount > 0.5 && _CosmiVortexB[0].w >= 2.5)
+        ? max(d, CosmiCycloneCloud(up) * smoothstep(0.3, 0.6, n + 0.25))
+        : d;
 }
 
 // Sunlight left after drifting cloud shadow, 1 = clear. 1 everywhere when no planet is driven.
@@ -226,13 +237,14 @@ float CosmiCaustics(float3 positionWS, float3 normalWS)
     }
 
     float3 rel = positionWS - _CosmiPlanet.xyz;
-    float altitude = length(rel) - _CosmiUnderwater.z;
+    float r = length(rel);
+    float altitude = r - _CosmiUnderwater.z;
     if (altitude > 0.05)
     {
         return 0.0;
     }
 
-    float3 up = rel / max(length(rel), 1e-4);
+    float3 up = rel / max(r, 1e-4);
     float t = _Time.y;
     float3 q = positionWS * 0.7;
     float a = CosmiNoise(q + float3(t * 0.35, 0.0, t * 0.27));
@@ -242,15 +254,23 @@ float CosmiCaustics(float3 positionWS, float3 normalWS)
     return web * reach * saturate(dot(normalWS, up) + 0.2) * _CosmiSunColor.a;
 }
 
+// Diffuse cel lighting using a caller-supplied cloudLight factor (avoids recomputing CosmiCloudLight elsewhere).
+half3 CosmiToonLit(half3 albedo, float3 normalWS, float3 positionWS, half3 lightColor, float3 lightDir, float shadow,
+    float cloudLight, half3 shadowTint, float bands, half3 ambient)
+{
+    float ramp = CosmiRamp(saturate(dot(normalWS, lightDir)) * shadow * cloudLight, bands);
+    half3 shade = lerp(shadowTint * 0.6, shadowTint * 0.8 + _CosmiSkyZenith.rgb * 0.08, _CosmiSkyHorizon.a);
+    return albedo * lerp(shade, lightColor, ramp) + albedo * ambient * 0.25
+        + lightColor * (CosmiCaustics(positionWS, normalWS) * 0.55 * shadow);
+}
+
 // Diffuse cel lighting. `shadowTint` is the colour of unlit surfaces; it is pulled toward the zenith colour so
 // shadows pick up the sky (the cool-shadow / warm-light split that makes outdoor toon scenes read as sunlit).
 half3 CosmiToon(half3 albedo, float3 normalWS, float3 positionWS, half3 lightColor, float3 lightDir, float shadow,
     half3 shadowTint, float bands, half3 ambient)
 {
-    float ramp = CosmiRamp(saturate(dot(normalWS, lightDir)) * shadow * CosmiCloudLight(positionWS), bands);
-    half3 shade = lerp(shadowTint * 0.6, shadowTint * 0.8 + _CosmiSkyZenith.rgb * 0.08, _CosmiSkyHorizon.a);
-    return albedo * lerp(shade, lightColor, ramp) + albedo * ambient * 0.25
-        + lightColor * (CosmiCaustics(positionWS, normalWS) * 0.55 * shadow);
+    return CosmiToonLit(albedo, normalWS, positionWS, lightColor, lightDir, shadow,
+        CosmiCloudLight(positionWS), shadowTint, bands, ambient);
 }
 
 #if defined(UNIVERSAL_LIGHTING_INCLUDED)

@@ -40,6 +40,10 @@ namespace Cosmimera.Bootstrap.Demo
         private float _breath;
         private float _moteDebt;
         private float _shaftDebt;
+        private Vector4 _lastUnderwaterVec;
+        private bool _hasUnderwaterVec;
+        private float3 _lastForceUp;
+        private bool _hasForce;
 
         /// <summary>Whether the camera was under the surface at the last tick.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -130,7 +134,35 @@ namespace Cosmimera.Bootstrap.Demo
             if (_started && submerged != _submerged && seaRadiusM > 0f) Cross(planet, camera, up, submerged);
             _started = true;
             _submerged = submerged;
-            Shader.SetGlobalVector(UnderwaterId, new Vector4(submerged ? 1f : 0f, math.max(0f, cameraDepthM), seaRadiusM, 0f));
+            var underwaterVec = new Vector4(submerged ? 1f : 0f, math.max(0f, cameraDepthM), seaRadiusM, 0f);
+            if (!_hasUnderwaterVec || underwaterVec != _lastUnderwaterVec)
+            {
+                _lastUnderwaterVec = underwaterVec;
+                _hasUnderwaterVec = true;
+                Shader.SetGlobalVector(UnderwaterId, underwaterVec);
+            }
+
+            if (!submerged && _weight <= 1e-5f && _pulse <= 0f)
+            {
+                if (_weight != 0f)
+                {
+                    _weight = 0f;
+                    _volume.weight = 0f;
+                }
+
+                if (_lens.intensity.value != 0f)
+                {
+                    _lens.intensity.value = 0f;
+                }
+
+                bool anyParticles = _bubbles.particleCount > 0 || _motes.particleCount > 0 || _splash.particleCount > 0;
+                if (anyParticles && (!_hasForce || math.distancesq(up, _lastForceUp) > 1e-10f))
+                {
+                    SyncForces(up);
+                }
+
+                return;
+            }
 
             _weight = math.lerp(_weight, submerged ? 1f : 0f, math.saturate(dt * 9f));
             _pulse = math.max(0f, _pulse - dt * 2.2f);
@@ -139,9 +171,11 @@ namespace Cosmimera.Bootstrap.Demo
             _lens.intensity.value = -0.45f * _pulse * math.sin(_pulse * 18f);
             float deep = math.saturate(cameraDepthM / 35f);
             _grade.colorFilter.value = Color.Lerp(new Color(0.66f, 0.92f, 1f), new Color(0.42f, 0.66f, 0.95f), deep);
-            SetForce(_bubbles, up * 1.6f);
-            SetForce(_motes, float3.zero);
-            SetForce(_splash, -up * 9.81f);
+            if (!_hasForce || math.distancesq(up, _lastForceUp) > 1e-10f)
+            {
+                SyncForces(up);
+            }
+
             if (!submerged) return;
 
             _breath -= dt;
@@ -181,6 +215,11 @@ namespace Cosmimera.Bootstrap.Demo
         // Splash on the surface above the camera, and a cloud of bubbles across the view on the way in.
         private void Cross(in PlanetConfig planet, Transform camera, float3 up, bool goingDown)
         {
+            if (!_hasForce || math.distancesq(up, _lastForceUp) > 1e-10f)
+            {
+                SyncForces(up);
+            }
+
             _pulse = 1f;
             float3 eye = camera.position;
             float3 surface = eye + up * (goingDown ? 0.4f : -0.2f);
@@ -188,6 +227,15 @@ namespace Cosmimera.Bootstrap.Demo
             if (!goingDown) return;
             float3 ahead = (float3)camera.forward * 1.2f;
             Emit(_bubbles, eye + ahead - up * 0.3f, up * 1.2f, 70, 0.7f, 1.2f);
+        }
+
+        private void SyncForces(float3 up)
+        {
+            SetForce(_bubbles, up * 1.6f);
+            SetForce(_motes, float3.zero);
+            SetForce(_splash, -up * 9.81f);
+            _lastForceUp = up;
+            _hasForce = true;
         }
 
         private static void Emit(ParticleSystem ps, float3 at, float3 velocity, int count, float spread, float jitter)

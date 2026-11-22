@@ -186,6 +186,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly int GeoRockId = Shader.PropertyToID("_CosmiGeoRock");
         private static readonly int GeoBaseId = Shader.PropertyToID("_CosmiGeoBase");
         private static readonly int GeoSnowId = Shader.PropertyToID("_CosmiGeoSnow");
+        private static readonly int GeoMinSnowId = Shader.PropertyToID("_CosmiGeoMinSnow");
 
         /// <summary>Snow line (share of the terrain relief) the ground of landform <paramref name="kind"/> is drawn with.</summary>
         /// <remarks>
@@ -230,6 +231,7 @@ namespace Cosmimera.Bootstrap.Demo
             var right = new Vector4[GeologyStamps];
             var up = new Vector4[GeologyStamps];
             var colour = new Vector4[GeologyStamps];
+            float minSnow = 1f;
             for (int i = 0; i < view.Count; i++)
             {
                 TemplateStamp s = view.Stamp(i);
@@ -237,10 +239,16 @@ namespace Cosmimera.Bootstrap.Demo
                 right[i] = new Vector4(s.Right.x, s.Right.y, s.Right.z, 0f);
                 up[i] = new Vector4(s.Up.x, s.Up.y, s.Up.z, 0f);
                 colour[i] = GeologyRock(rock, perStamp[i]);
-                snow[i] = new Vector4(landforms != null ? LandformSnowLine(landforms[i]) : 0f, 0f, 0f, 0f);
+                float snowLine = landforms != null ? LandformSnowLine(landforms[i]) : 0f;
+                snow[i] = new Vector4(snowLine, 0f, 0f, 0f);
+                if (snowLine > 0f)
+                {
+                    minSnow = math.min(minSnow, snowLine);
+                }
             }
 
             Shader.SetGlobalVectorArray(GeoSnowId, snow);
+            Shader.SetGlobalFloat(GeoMinSnowId, minSnow);
 
             Shader.SetGlobalVectorArray(GeoCenterId, center);
             Shader.SetGlobalVectorArray(GeoRightId, right);
@@ -255,6 +263,7 @@ namespace Cosmimera.Bootstrap.Demo
         public static void ClearGeology()
         {
             Shader.SetGlobalFloat(GeoCountId, 0f);
+            Shader.SetGlobalFloat(GeoMinSnowId, 0f);
             Shader.SetGlobalVector(GeoBaseId, Vector4.zero);
         }
 

@@ -37,6 +37,10 @@ namespace Cosmimera.Bootstrap.Demo
         private float3 _scannedAt;
         private bool _scanned;
         private float _spindriftDebt;
+        private float3 _lastBurstForceUp;
+        private bool _hasBurstForce;
+        private float3 _lastSpindriftForceUp;
+        private bool _hasSpindriftForce;
 
         /// <summary>Shore spots found by the last scan (for tests).</summary>
         /// <remarks>Pre: none. Post: in [0, 12]. Side effects: none.</remarks>
@@ -69,10 +73,6 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(waves != null && groundAltitude != null && dt >= 0f, "waves and groundAltitude required; dt >= 0");
             float3 up = planet.ToDirection(player);
-            // Spray falls toward this planet's centre, not world -Y; over a few dozen metres one local up is exact enough.
-            SetForce(_burst, -up * 9.81f);
-            SetForce(_spindrift, -up * 2.5f);
-
             if (!_scanned || math.distance(player, _scannedAt) > RescanMovedM)
             {
                 Scan(planet, up, groundAltitude, seaLevelM);
@@ -81,6 +81,23 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             float sea = waves.Sea;
+            if ((_spotCount > 0 || _burst.particleCount > 0) &&
+                (!_hasBurstForce || math.distancesq(up, _lastBurstForceUp) > 1e-10f))
+            {
+                // Spray falls toward this planet's centre, not world -Y; over a few dozen metres one local up is exact enough.
+                SetForce(_burst, -up * 9.81f);
+                _lastBurstForceUp = up;
+                _hasBurstForce = true;
+            }
+
+            if ((sea > 0.45f || _spindrift.particleCount > 0) &&
+                (!_hasSpindriftForce || math.distancesq(up, _lastSpindriftForceUp) > 1e-10f))
+            {
+                SetForce(_spindrift, -up * 2.5f);
+                _lastSpindriftForceUp = up;
+                _hasSpindriftForce = true;
+            }
+
             float height = SeaWaves.HeightM(sea);
             for (int i = 0; i < _spotCount; i++)
             {
@@ -96,12 +113,13 @@ namespace Cosmimera.Bootstrap.Demo
         private void Scan(in PlanetConfig planet, float3 up, Func<float3, float> groundAltitude, float seaLevelM)
         {
             _spotCount = 0;
+            float startAlt = groundAltitude(up);
             PlanetFrame frame = PlanetFrame.FromUp(up);
             for (int b = 0; b < Bearings && _spotCount < MaxSpots; b++)
             {
                 float angle = 2f * math.PI * b / Bearings;
                 float3 heading = frame.East * math.cos(angle) + frame.North * math.sin(angle);
-                float previous = groundAltitude(up);
+                float previous = startAlt;
                 for (float r = SampleStepM; r <= SampleReachM; r += SampleStepM)
                 {
                     float3 direction = math.normalize(up * planet.Radius + heading * r);

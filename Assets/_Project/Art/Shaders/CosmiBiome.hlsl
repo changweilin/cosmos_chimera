@@ -44,6 +44,7 @@ half4 _CosmiGeoBase;                   // the same for the ground between stamps
 // P3-28 cold landforms: x = snow line (normalised altitude, like _SnowLine) inside the stamp; 0 = the planet's own.
 float4 _CosmiGeoSnow[COSMI_GEO_MAX];
 float _CosmiGeoCount;
+float _CosmiGeoMinSnow;
 
 // Rock colour at a point. Same gnomonic square and 65 % blend start as Planet.TemplateView.TryGetStamp, so the colour
 // changes where the scatter's rock species do; `jitter` (0..1 noise) breaks the edge into patches the way the
@@ -76,6 +77,34 @@ half3 CosmiBedrock(float3 up, float jitter, out float snowLine)
     }
 
     return lerp(_Rock.rgb, pick.rgb, pick.a);
+}
+
+// Stamp snow-line override only (for points that do not read bedrock colour).
+float CosmiSnowLine(float3 up)
+{
+    float best = 0.0;
+    float snowLine = _SnowLine;
+    int count = min((int)_CosmiGeoCount, COSMI_GEO_MAX);
+    for (int i = 0; i < count; i++)
+    {
+        float3 centre = _CosmiGeoCenter[i].xyz;
+        float c = dot(up, centre);
+        if (c <= 0.5)
+        {
+            continue;
+        }
+        float3 p = up / c;
+        float m = max(abs(dot(p, _CosmiGeoRight[i].xyz)), abs(dot(p, _CosmiGeoUp[i].xyz))) * _CosmiGeoCenter[i].w;
+        float w = 1.0 - smoothstep(0.65, 1.0, m);
+        if (w > best)
+        {
+            best = w;
+            float own = _CosmiGeoSnow[i].x;
+            snowLine = lerp(_SnowLine, own > 0.0 ? own : _SnowLine, w);
+        }
+    }
+
+    return snowLine;
 }
 
 struct CosmiGround
@@ -271,7 +300,7 @@ float CosmiPebbles(float3 p, out float id)
 // mask (TemplateView.River): 1 on the centre line, 0 one grid cell out. From the bank inward: damp, darker soil;
 // a bed of rounded pebbles with pale sand bars where the low noise swells; and a thin sheet of moving water along
 // the centre. Painted, not simulated: the channel holds no water volume, so walking it is unchanged.
-half3 CosmiRiverbed(half3 c, float3 positionWS, CosmiGround g, float river)
+half3 CosmiRiverbed(half3 c, float3 positionWS, CosmiGround g, float river, float3 n, float3 fine)
 {
     // Where the river meets the sea, the sea's own colouring takes over.
     river *= smoothstep(_SeaLevel - 0.2, _SeaLevel + 0.3, g.height);
@@ -280,137 +309,77 @@ half3 CosmiRiverbed(half3 c, float3 positionWS, CosmiGround g, float river)
         return c;
     }
 
-    float3 n = CosmiGroundNoise(positionWS);
-    float3 fine = CosmiStroke(positionWS, g, _StrokeScale);
     // Jittered so the stream, the sand and the wet line wander instead of following the mask's grid.
     float r = saturate(river + (n.y - 0.5) * 0.3 + fine.r * 0.15);
 
     float wet = smoothstep(0.04, 0.3, r);
     c = lerp(c, c * half3(0.6, 0.62, 0.66), wet);
 
-    // Two stone sizes: large cobbles with gravel between them, so the bed does not read as crazy paving.
-    float id, idSmall;
-    float edge = CosmiPebbles(positionWS * 2.0, id);
-    float edgeSmall = CosmiPebbles(positionWS * 5.3 + 11.0, idSmall);
-    bool gravel = edge < 0.1;
-    float e = gravel ? edgeSmall : edge;
-    float stone = gravel ? idSmall : id;
-    half3 pebble = lerp(_Rock.rgb, _Shore.rgb, stone * 0.7) * lerp(0.78, 1.12, frac(stone * 7.31));
-    // Domed: each stone darkens toward its rim and its crown catches the light.
-    pebble *= lerp(0.45, 1.12, smoothstep(0.0, gravel ? 0.25 : 0.4, e));
-    half3 sand = _Shore.rgb * (1.0 + CosmiDab(fine.g) * 0.08 * _StrokeStrength) * 0.92;
-    float bar = smoothstep(0.52, 0.66, n.x * 0.65 + CosmiNoise(positionWS * 0.11 + 5.0) * 0.35);
-    half3 bed = lerp(pebble, sand, bar);
     float onBed = smoothstep(0.28, 0.42, r);
+    if (onBed <= 0.001)
+    {
+        return c;
+    }
+
+    float bar = smoothstep(0.52, 0.66, n.x * 0.65 + CosmiNoise(positionWS * 0.11 + 5.0) * 0.35);
+    half3 pebble = 0;
+    if (bar < 0.999)
+    {
+        // Two stone sizes: large cobbles with gravel between them, so the bed does not read as crazy paving.
+        float id;
+        float edge = CosmiPebbles(positionWS * 2.0, id);
+        bool gravel = edge < 0.1;
+        float e = edge;
+        float stone = id;
+        if (gravel)
+        {
+            float idSmall;
+            e = CosmiPebbles(positionWS * 5.3 + 11.0, idSmall);
+            stone = idSmall;
+        }
+        pebble = lerp(_Rock.rgb, _Shore.rgb, stone * 0.7) * lerp(0.78, 1.12, frac(stone * 7.31));
+        // Domed: each stone darkens toward its rim and its crown catches the light.
+        pebble *= lerp(0.45, 1.12, smoothstep(0.0, gravel ? 0.25 : 0.4, e));
+    }
+    half3 sand = bar > 0.001 ? _Shore.rgb * (1.0 + CosmiDab(fine.g) * 0.08 * _StrokeStrength) * 0.92 : 0;
+    half3 bed = lerp(pebble, sand, bar);
     c = lerp(c, bed * lerp(1.0, 0.72, smoothstep(0.5, 0.75, r)), onBed); // wet stones darken toward the water
 
     float water = smoothstep(0.7, 0.82, r) * (1.0 - bar * 0.7);
-    float ripple = CosmiNoise(positionWS * 1.7 + float3(_Time.y * 0.9, _Time.y * 0.4, -_Time.y * 0.7));
-    half3 stream = lerp(bed * _ShallowWater.rgb * 1.5, _ShallowWater.rgb, 0.5);
-    stream += smoothstep(0.66, 0.74, ripple) * 0.18 * (1.0 - _WaterGlow);
-    return lerp(c, stream, water);
+    if (water > 0.001)
+    {
+        float ripple = CosmiNoise(positionWS * 1.7 + float3(_Time.y * 0.9, _Time.y * 0.4, -_Time.y * 0.7));
+        half3 stream = lerp(bed * _ShallowWater.rgb * 1.5, _ShallowWater.rgb, 0.5);
+        stream += smoothstep(0.66, 0.74, ripple) * 0.18 * (1.0 - _WaterGlow);
+        return lerp(c, stream, water);
+    }
+    return c;
 }
 
-half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
+half3 CosmiRiverbed(half3 c, float3 positionWS, CosmiGround g, float river)
 {
+    river *= smoothstep(_SeaLevel - 0.2, _SeaLevel + 0.3, g.height);
+    if (river <= 0.002)
+    {
+        return c;
+    }
+
     float3 n = CosmiGroundNoise(positionWS);
-    // Fine marks (~0.5 m dabs) carry the close-up; broad ones (~2 m) stay readable at mid distance.
     float3 fine = CosmiStroke(positionWS, g, _StrokeScale);
+    return CosmiRiverbed(c, positionWS, g, river, n, fine);
+}
+
+half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass, out float3 n, out float3 fine)
+{
+    n = CosmiGroundNoise(positionWS);
+    // Fine marks (~0.5 m dabs) carry the close-up; broad ones (~2 m) stay readable at mid distance.
+    fine = CosmiStroke(positionWS, g, _StrokeScale);
     float3 broad = CosmiStroke(positionWS + 37.0, g, _StrokeScale * 0.27);
-    float t = saturate(g.height / max(_Relief, 1e-3) + (n.x - 0.5) * 0.14 + (n.y - 0.5) * 0.05 + broad.r * 0.06);
+    half3 c;
 
-    half3 c = lerp(_Low.rgb, _Mid.rgb, smoothstep(0.03, 0.38, t));
-    c = lerp(c, _High.rgb, smoothstep(0.4, 0.95, t));
-    // Flat patches of a warmer, lighter tone: sunlit meadow against deeper green.
-    float patch = n.x * 0.6 + n.y * 0.3 + n.z * 0.1;
-    float stepped = (floor(patch * 4.0) + smoothstep(0.35, 0.65, frac(patch * 4.0))) * 0.25;
-    c = lerp(c * 0.84, c * _Patch.rgb, stepped);
-    // Meadow: broad light/dark dabs under short fine ones, both two-tone.
-    c *= 1.0 + CosmiDab(broad.r) * 0.12 * _StrokeStrength + CosmiDab(fine.r + broad.r * 0.5) * 0.08 * _StrokeStrength;
-    grass = 1.0;
-
-    float sand = 1.0 - smoothstep(0.45, 1.5, g.height + (n.y - 0.5) * 0.9 + (n.z - 0.5) * 0.3 + fine.r * 0.4);
-    half3 shore = _Shore.rgb * lerp(0.86, 1.04, n.z);
-    // Sand: thin wind streaks and grain, much lower contrast than grass so beaches stay bright and calm.
-    shore *= 1.0 + CosmiDab(fine.g) * 0.07 * _StrokeStrength + fine.b * 0.08;
-    shore *= lerp(0.7, 1.0, smoothstep(_SeaLevel - 0.05, _SeaLevel + 0.45, g.height)); // wet sand by the water
-    c = lerp(c, shore, sand);
-    grass *= 1.0 - sand;
-
-    // Bare earth where the slope is too steep for turf but not yet a rock face: without it grass butts straight
-    // against cliff grey. The stroke offset makes the turf edge ragged, like grass tufts overhanging soil.
-    float snowLine;
-    half3 bedrock = CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3, snowLine);
-    float earth = smoothstep(0.11, 0.19, g.slope + (n.y - 0.5) * 0.08 + fine.r * 0.10) * (1.0 - sand);
-    half3 earthColor = lerp(_High.rgb, bedrock, 0.35) * (1.0 + CosmiDab(fine.g + broad.r) * 0.12 * _StrokeStrength);
-    c = lerp(c, earthColor, earth * 0.85);
-    grass *= 1.0 - earth;
-
-    float rock = smoothstep(0.2, 0.36, g.slope + (n.y - 0.5) * 0.12 + broad.g * 0.10);
-
-    // Scree: the band between turf and face is the rubble the cliff has shed, not bare soil.
-    float scree = smoothstep(0.13, 0.22, g.slope + (n.z - 0.5) * 0.1) * (1.0 - rock) * (1.0 - sand);
-    float near = 1.0 - smoothstep(40.0, 90.0, distance(positionWS, _WorldSpaceCameraPos));
-    if (scree * near > 0.01)
+    if (_FrozenGround > 0.5 && _WaterGlow <= 0.5)
     {
-        float sid;
-        float se = CosmiPebbles(positionWS * 3.5, sid);
-        half3 rubble = bedrock * lerp(0.75, 1.1, sid) * lerp(0.55, 1.0, smoothstep(0.02, 0.15, se));
-        c = lerp(c, rubble, scree * near * 0.8);
-    }
-
-    grass *= 1.0 - scree;
-
-    if (rock > 0.001)
-    {
-        // Strata: thin lighter/darker beds that follow altitude, bent by the large noise so they never look ruled.
-        float bed = frac(g.height * 0.3 + n.x * 3.0);
-        half3 rockColor = bedrock * lerp(0.84, 1.12, smoothstep(0.42, 0.58, bed)) * lerp(0.94, 1.05, n.z);
-        // Rock: hard-edged streaks (chisel marks) over the strata, plus sparse dark cracks from the grain channel.
-        rockColor *= 1.0 + CosmiDab(broad.g) * 0.20 * _StrokeStrength + CosmiDab(fine.g) * 0.10 * _StrokeStrength;
-        rockColor *= 1.0 - smoothstep(0.28, 0.4, fine.b) * 0.25;
-        // Broken ledges cast narrow bands over their foot; fine strata disappear before they alias at distance.
-        float shelfPhase = g.height * 1.1 + n.y * 0.49 + n.x * 2.1;
-        float crisp = 1.0 - smoothstep(0.03, 0.35, fwidth(shelfPhase));
-        float shelf = smoothstep(0.70, 0.91, frac(shelfPhase)) * crisp;
-        rockColor *= 1.0 - shelf * 0.13;
-
-        // P1-18 cliff faces (planet-world.md#懸崖): patterns keyed to the distance along the face (its horizontal
-        // tangent), so they run down the face whatever its tilt: broken joints that split it into columns, and rain
-        // stains hanging below each ledge. Ledge lips catch the light and, on living worlds, carry tufts of moss;
-        // lichen crusts in patches.
-        float3 strike = cross(g.up, g.normal);
-        float along = dot(positionWS, strike * rsqrt(max(dot(strike, strike), 1e-6)));
-        float jointPhase = along * 0.33 + CosmiNoise(positionWS * 0.15) * 0.8;
-        float jointGap = abs(frac(jointPhase + 0.5) - 0.5);
-        float joint = (1.0 - smoothstep(0.03, 0.055 + fwidth(jointPhase), jointGap)) * step(0.38, CosmiNoise(positionWS * 0.3 + 5.0)) * crisp;
-        rockColor *= 1.0 - joint * 0.5;
-        float below = smoothstep(0.05, 0.7, frac(shelfPhase));
-        float stain = smoothstep(0.56, 0.76, CosmiNoise(float3(along * 1.1, g.height * 0.06, 7.0))) * below * crisp;
-        rockColor *= 1.0 - stain * 0.3;
-        float f = frac(shelfPhase);
-        float lip = smoothstep(0.88, 0.92, f) * (1.0 - smoothstep(0.96, 0.995, f)) * crisp;
-        lip *= smoothstep(0.42, 0.58, CosmiNoise(positionWS * 0.8 + 13.0));
-        float living = (1.0 - _WaterGlow) * (1.0 - _FrozenGround);
-        rockColor = lerp(rockColor * (1.0 + lip * 0.18), _Low.rgb * 0.9, lip * 0.45 * living);
-        float lichen = smoothstep(0.62, 0.72, CosmiNoise(positionWS * 0.7 + 9.0)) * living;
-        rockColor = lerp(rockColor, rockColor * half3(1.12, 1.1, 0.72) + 0.02, lichen * 0.35);
-
-        c = lerp(c, rockColor, rock);
-    }
-
-    grass *= 1.0 - rock;
-
-    float snowAlt = smoothstep(snowLine - 0.04, snowLine + 0.04, t + (n.y - 0.5) * 0.08 + fine.r * 0.05);
-    float snowPole = smoothstep(_PolarLat - 0.02, _PolarLat + 0.02, g.lat + (n.x - 0.5) * 0.04);
-    float snow = max(snowAlt, snowPole) * (1.0 - smoothstep(0.32, 0.55, g.slope));
-    // Snow: only broad, faint, cool dabs — drifts, not texture.
-    half3 snowColor = _Snow.rgb * lerp(0.95, 1.0, n.z) * (1.0 + CosmiDab(broad.r) * half3(0.07, 0.05, 0.02) * _StrokeStrength);
-    c = lerp(c, snowColor, snow);
-    grass *= 1.0 - snow;
-
-    if (_FrozenGround > 0.5)
-    {
+        half3 snowColor = _Snow.rgb * lerp(0.95, 1.0, n.z) * (1.0 + CosmiDab(broad.r) * half3(0.07, 0.05, 0.02) * _StrokeStrength);
         float exposure = smoothstep(0.04, 0.31, g.slope + (n.x - 0.48) * 1.1 + broad.g * 0.20);
         float seam = 1.0 - smoothstep(0.015, 0.065, abs(n.y + n.x * 0.22 - 0.56));
         half3 ice = lerp(_ShallowWater.rgb * 0.76, _Mid.rgb, n.x * 0.65 + seam * 0.3);
@@ -419,17 +388,153 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
         c = lerp(snowColor, ice, exposure);
         grass = 0.0;
     }
-
-    if (_WaterGlow > 0.5 && g.height > _SeaLevel)
+    else
     {
-        // Pale deposits pick out the edge of cooling basalt, with a narrow iron-red seam inside it.
-        float crust = n.y * 0.70 + n.x * 0.30 + fine.g * 0.035;
-        float fissure = abs(crust - 0.46);
-        float hotPatch = smoothstep(0.45, 0.64, n.x) * (1.0 - rock);
-        float rim = (1.0 - smoothstep(0.012, 0.043, fissure)) * hotPatch;
-        float core = (1.0 - smoothstep(0.002, 0.014 + fwidth(crust), fissure)) * hotPatch;
-        c = lerp(c, _Snow.rgb * 0.7, rim * 0.45);
-        c = lerp(c, _ShallowWater.rgb, core * 0.68);
+        float t = saturate(g.height / max(_Relief, 1e-3) + (n.x - 0.5) * 0.14 + (n.y - 0.5) * 0.05 + broad.r * 0.06);
+
+        c = lerp(_Low.rgb, _Mid.rgb, smoothstep(0.03, 0.38, t));
+        c = lerp(c, _High.rgb, smoothstep(0.4, 0.95, t));
+        // Flat patches of a warmer, lighter tone: sunlit meadow against deeper green.
+        float patch = n.x * 0.6 + n.y * 0.3 + n.z * 0.1;
+        float stepped = (floor(patch * 4.0) + smoothstep(0.35, 0.65, frac(patch * 4.0))) * 0.25;
+        c = lerp(c * 0.84, c * _Patch.rgb, stepped);
+        // Meadow: broad light/dark dabs under short fine ones, both two-tone.
+        c *= 1.0 + CosmiDab(broad.r) * 0.12 * _StrokeStrength + CosmiDab(fine.r + broad.r * 0.5) * 0.08 * _StrokeStrength;
+        grass = 1.0;
+
+        float sand = 1.0 - smoothstep(0.45, 1.5, g.height + (n.y - 0.5) * 0.9 + (n.z - 0.5) * 0.3 + fine.r * 0.4);
+        if (sand > 0.001)
+        {
+            half3 shore = _Shore.rgb * lerp(0.86, 1.04, n.z);
+            // Sand: thin wind streaks and grain, much lower contrast than grass so beaches stay bright and calm.
+            shore *= 1.0 + CosmiDab(fine.g) * 0.07 * _StrokeStrength + fine.b * 0.08;
+            shore *= lerp(0.7, 1.0, smoothstep(_SeaLevel - 0.05, _SeaLevel + 0.45, g.height)); // wet sand by the water
+            c = lerp(c, shore, sand);
+            grass *= 1.0 - sand;
+        }
+
+        // Bare earth where the slope is too steep for turf but not yet a rock face: without it grass butts straight
+        // against cliff grey. The stroke offset makes the turf edge ragged, like grass tufts overhanging soil.
+        float earth = smoothstep(0.11, 0.19, g.slope + (n.y - 0.5) * 0.08 + fine.r * 0.10) * (1.0 - sand);
+        float rock = smoothstep(0.2, 0.36, g.slope + (n.y - 0.5) * 0.12 + broad.g * 0.10);
+        // Scree: the band between turf and face is the rubble the cliff has shed, not bare soil.
+        float scree = smoothstep(0.13, 0.22, g.slope + (n.z - 0.5) * 0.1) * (1.0 - rock) * (1.0 - sand);
+        float near = 1.0 - smoothstep(40.0, 90.0, distance(positionWS, _WorldSpaceCameraPos));
+
+        float snowLine = _SnowLine;
+        bool hasSnowLine = false;
+        half3 bedrock = _Rock.rgb;
+        if (earth > 0.001 || (scree * near > 0.01) || rock > 0.001)
+        {
+            bedrock = CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3, snowLine);
+            hasSnowLine = true;
+        }
+
+        if (earth > 0.001)
+        {
+            half3 earthColor = lerp(_High.rgb, bedrock, 0.35) * (1.0 + CosmiDab(fine.g + broad.r) * 0.12 * _StrokeStrength);
+            c = lerp(c, earthColor, earth * 0.85);
+            grass *= 1.0 - earth;
+        }
+
+        if (scree * near > 0.01)
+        {
+            float sid;
+            float se = CosmiPebbles(positionWS * 3.5, sid);
+            half3 rubble = bedrock * lerp(0.75, 1.1, sid) * lerp(0.55, 1.0, smoothstep(0.02, 0.15, se));
+            c = lerp(c, rubble, scree * near * 0.8);
+        }
+
+        grass *= 1.0 - scree;
+
+        float shelfPhase = g.height * 1.1 + n.y * 0.49 + n.x * 2.1;
+        float shelfFw = fwidth(shelfPhase);
+        if (rock > 0.001)
+        {
+            // Strata: thin lighter/darker beds that follow altitude, bent by the large noise so they never look ruled.
+            float bed = frac(g.height * 0.3 + n.x * 3.0);
+            half3 rockColor = bedrock * lerp(0.84, 1.12, smoothstep(0.42, 0.58, bed)) * lerp(0.94, 1.05, n.z);
+            // Rock: hard-edged streaks (chisel marks) over the strata, plus sparse dark cracks from the grain channel.
+            rockColor *= 1.0 + CosmiDab(broad.g) * 0.20 * _StrokeStrength + CosmiDab(fine.g) * 0.10 * _StrokeStrength;
+            rockColor *= 1.0 - smoothstep(0.28, 0.4, fine.b) * 0.25;
+            // Broken ledges cast narrow bands over their foot; fine strata disappear before they alias at distance.
+            float crisp = 1.0 - smoothstep(0.03, 0.35, shelfFw);
+            float shelf = smoothstep(0.70, 0.91, frac(shelfPhase)) * crisp;
+            rockColor *= 1.0 - shelf * 0.13;
+
+            float living = (1.0 - _WaterGlow) * (1.0 - _FrozenGround);
+            if (crisp > 0.001)
+            {
+                // P1-18 cliff faces (planet-world.md#懸崖): patterns keyed to the distance along the face (its horizontal
+                // tangent), so they run down the face whatever its tilt: broken joints that split it into columns, and rain
+                // stains hanging below each ledge. Ledge lips catch the light and, on living worlds, carry tufts of moss;
+                // lichen crusts in patches.
+                float3 strike = cross(g.up, g.normal);
+                float along = dot(positionWS, strike * rsqrt(max(dot(strike, strike), 1e-6)));
+                float jointPhase = along * 0.33 + CosmiNoise(positionWS * 0.15) * 0.8;
+                float jointGap = abs(frac(jointPhase + 0.5) - 0.5);
+                float joint = (1.0 - smoothstep(0.03, 0.055 + fwidth(jointPhase), jointGap)) * step(0.38, CosmiNoise(positionWS * 0.3 + 5.0)) * crisp;
+                rockColor *= 1.0 - joint * 0.5;
+                float below = smoothstep(0.05, 0.7, frac(shelfPhase));
+                float stain = smoothstep(0.56, 0.76, CosmiNoise(float3(along * 1.1, g.height * 0.06, 7.0))) * below * crisp;
+                rockColor *= 1.0 - stain * 0.3;
+                float f = frac(shelfPhase);
+                float lip = smoothstep(0.88, 0.92, f) * (1.0 - smoothstep(0.96, 0.995, f)) * crisp;
+                lip *= smoothstep(0.42, 0.58, CosmiNoise(positionWS * 0.8 + 13.0));
+                rockColor = lerp(rockColor * (1.0 + lip * 0.18), _Low.rgb * 0.9, lip * 0.45 * living);
+            }
+            if (living > 0.001)
+            {
+                float lichen = smoothstep(0.62, 0.72, CosmiNoise(positionWS * 0.7 + 9.0)) * living;
+                rockColor = lerp(rockColor, rockColor * half3(1.12, 1.1, 0.72) + 0.02, lichen * 0.35);
+            }
+
+            c = lerp(c, rockColor, rock);
+        }
+
+        grass *= 1.0 - rock;
+
+        float snowPole = smoothstep(_PolarLat - 0.02, _PolarLat + 0.02, g.lat + (n.x - 0.5) * 0.04);
+        float snowAlt = 0.0;
+        if (snowPole < 0.999 && g.slope < 0.55)
+        {
+            float snowSample = t + (n.y - 0.5) * 0.08 + fine.r * 0.05;
+            if (!hasSnowLine && _CosmiGeoCount > 0.5 && (_CosmiGeoMinSnow <= 0.0 || snowSample > min(_SnowLine, _CosmiGeoMinSnow) - 0.04))
+            {
+                snowLine = CosmiSnowLine(g.up);
+            }
+            snowAlt = smoothstep(snowLine - 0.04, snowLine + 0.04, snowSample);
+        }
+        float snow = max(snowAlt, snowPole) * (1.0 - smoothstep(0.32, 0.55, g.slope));
+        if (snow > 0.001 || _FrozenGround > 0.5)
+        {
+            // Snow: only broad, faint, cool dabs — drifts, not texture.
+            half3 snowColor = _Snow.rgb * lerp(0.95, 1.0, n.z) * (1.0 + CosmiDab(broad.r) * half3(0.07, 0.05, 0.02) * _StrokeStrength);
+            c = lerp(c, snowColor, snow);
+            grass *= 1.0 - snow;
+            if (_FrozenGround > 0.5)
+            {
+                float exposure = smoothstep(0.04, 0.31, g.slope + (n.x - 0.48) * 1.1 + broad.g * 0.20);
+                float seam = 1.0 - smoothstep(0.015, 0.065, abs(n.y + n.x * 0.22 - 0.56));
+                half3 ice = lerp(_ShallowWater.rgb * 0.76, _Mid.rgb, n.x * 0.65 + seam * 0.3);
+                float grazing = 1.0 - saturate(dot(g.normal, GetWorldSpaceNormalizeViewDir(positionWS)));
+                ice = lerp(ice, _Snow.rgb, grazing * grazing * 0.25);
+                c = lerp(snowColor, ice, exposure);
+                grass = 0.0;
+            }
+        }
+
+        if (_WaterGlow > 0.5 && g.height > _SeaLevel)
+        {
+            // Pale deposits pick out the edge of cooling basalt, with a narrow iron-red seam inside it.
+            float crust = n.y * 0.70 + n.x * 0.30 + fine.g * 0.035;
+            float fissure = abs(crust - 0.46);
+            float hotPatch = smoothstep(0.45, 0.64, n.x) * (1.0 - rock);
+            float rim = (1.0 - smoothstep(0.012, 0.043, fissure)) * hotPatch;
+            float core = (1.0 - smoothstep(0.002, 0.014 + fwidth(crust), fissure)) * hotPatch;
+            c = lerp(c, _Snow.rgb * 0.7, rim * 0.45);
+            c = lerp(c, _ShallowWater.rgb, core * 0.68);
+        }
     }
 
     if (g.height < _SeaLevel + 0.1)
@@ -445,6 +550,12 @@ half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
 
     c = lerp(c, half3(1, 1, 1), CosmiFoam(positionWS, g.height, n));
     return c;
+}
+
+half3 CosmiBiomeColor(float3 positionWS, CosmiGround g, out float grass)
+{
+    float3 n, fine;
+    return CosmiBiomeColor(positionWS, g, grass, n, fine);
 }
 
 // Vertex-shader variant of CosmiBiomeColor for ToonGrass (g.normal == g.up, g.slope == 0, height >= MinAltitudeM; no fwidth).
@@ -471,10 +582,16 @@ half3 CosmiBiomeColorVertex(float3 positionWS, CosmiGround g)
         c = lerp(c, shore, sand);
     }
 
-    float snowLine;
-    CosmiBedrock(g.up, n.x * 0.7 + n.y * 0.3, snowLine);
-    float snowAlt = smoothstep(snowLine - 0.04, snowLine + 0.04, t + (n.y - 0.5) * 0.08 + fine.r * 0.05);
     float snowPole = smoothstep(_PolarLat - 0.02, _PolarLat + 0.02, g.lat + (n.x - 0.5) * 0.04);
+    float snowAlt = 0.0;
+    if (snowPole < 0.999)
+    {
+        float snowSample = t + (n.y - 0.5) * 0.08 + fine.r * 0.05;
+        float snowLine = (_CosmiGeoCount > 0.5 && (_CosmiGeoMinSnow <= 0.0 || snowSample > min(_SnowLine, _CosmiGeoMinSnow) - 0.04))
+            ? CosmiSnowLine(g.up)
+            : _SnowLine;
+        snowAlt = smoothstep(snowLine - 0.04, snowLine + 0.04, snowSample);
+    }
     float snow = max(snowAlt, snowPole);
     if (snow > 0.001 || _FrozenGround > 0.5)
     {

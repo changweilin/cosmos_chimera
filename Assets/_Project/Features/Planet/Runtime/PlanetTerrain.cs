@@ -75,6 +75,11 @@ namespace Cosmimera.Planet
         private NativeArray<EntityId> _bakeIds;
         private readonly List<Chunk> _bakeChunks = new List<Chunk>();
 
+        private Vector3 _lastTreeViewerPos;
+        private bool _hasTreeViewerPos;
+        private Vector3 _lastColliderViewerPos;
+        private bool _collidersDirty = true;
+
         private readonly Stopwatch _stopwatch = new Stopwatch();
 
         /// <summary>Main-thread milliseconds spent in the last LateUpdate (excludes worker time).</summary>
@@ -174,6 +179,8 @@ namespace Cosmimera.Planet
 
             transform.SetPositionAndRotation(config.Center, Quaternion.identity);
             transform.localScale = Vector3.one;
+            _hasTreeViewerPos = false;
+            _collidersDirty = true;
         }
 
         private void LateUpdate()
@@ -188,19 +195,34 @@ namespace Cosmimera.Planet
             if (_building && _buildHandle.IsCompleted)
             {
                 FinishBuild();
+                _collidersDirty = true;
             }
 
             if (!_building)
             {
-                _tree.Update(_viewer.position, _added, _removed, _maskChanged);
-                changed = _added.Count + _removed.Count + _maskChanged.Count > 0;
-                if (changed)
+                Vector3 viewerPos = _viewer.position;
+                if (!_hasTreeViewerPos || viewerPos != _lastTreeViewerPos)
                 {
-                    StartBuild();
+                    _lastTreeViewerPos = viewerPos;
+                    _hasTreeViewerPos = true;
+                    _tree.Update(viewerPos, _added, _removed, _maskChanged);
+                    changed = _added.Count + _removed.Count + _maskChanged.Count > 0;
+                    if (changed)
+                    {
+                        _collidersDirty = true;
+                        StartBuild();
+                    }
                 }
             }
 
-            UpdateColliders();
+            Vector3 colViewerPos = _viewer.position;
+            if (_collidersDirty || _baking || colViewerPos != _lastColliderViewerPos)
+            {
+                _lastColliderViewerPos = colViewerPos;
+                UpdateColliders();
+                _collidersDirty = _baking;
+            }
+
             IsSettled = !_building && !changed && !_baking;
             _stopwatch.Stop();
             LastFrameMs = _stopwatch.Elapsed.TotalMilliseconds;

@@ -170,9 +170,71 @@ namespace Cosmimera.Planet
         ///      cliff at the seam. |result| &lt;= |noiseHeight| + 1.25 · max Amplitude + 1.2 m.
         /// Side effects: none. Burst-compatible.
         /// </remarks>
-        public float Apply(float3 dir, float noiseHeight)
+        public float Apply(float3 dir, float noiseHeight) => ApplyWithRiver(dir, noiseHeight, out _);
+
+        internal bool CollectIntersecting(float3 chunkCenter, float chunkHalfAngleRad, out FixedList128Bytes<int> indices)
+        {
+            indices = default;
+            for (int i = 0; i < _count; i++)
+            {
+                TemplateStamp s = _stamps[i];
+                float stampMaxAngle = math.atan(s.TanHalf * 1.41421356f);
+                float maxAngle = chunkHalfAngleRad + stampMaxAngle + 1e-3f;
+                if (maxAngle < math.PI && math.dot(chunkCenter, s.Center) < math.cos(maxAngle))
+                {
+                    continue;
+                }
+
+                if (indices.Length >= indices.Capacity)
+                {
+                    return false;
+                }
+
+                indices.Add(i);
+            }
+
+            return true;
+        }
+
+        internal float ApplySubset(float3 dir, float noiseHeight, in FixedList128Bytes<int> indices) =>
+            ApplySubset(dir, noiseHeight, indices, out _);
+
+        internal float ApplySubset(float3 dir, float noiseHeight, in FixedList128Bytes<int> indices, out float river)
         {
             float h = noiseHeight;
+            float bestRiver = 0f;
+            for (int k = 0; k < indices.Length; k++)
+            {
+                TemplateStamp s = _stamps[indices[k]];
+                float c = math.dot(dir, s.Center);
+                if (c <= 0.5f)
+                {
+                    continue;
+                }
+
+                float3 p = dir / c;
+                float u = math.dot(p, s.Right) / s.TanHalf;
+                float v = math.dot(p, s.Up) / s.TanHalf;
+                float m = math.max(math.abs(u), math.abs(v));
+                if (m >= 1f)
+                {
+                    continue;
+                }
+
+                float w = 1f - math.smoothstep(BlendStart, 1f, m);
+                float tpl = SampleStamp(s, u, v, out float stampRiver);
+                h = math.lerp(h, tpl + noiseHeight * NoiseKeep, w);
+                bestRiver = math.max(bestRiver, stampRiver * w);
+            }
+
+            river = bestRiver;
+            return h;
+        }
+
+        internal float ApplyWithRiver(float3 dir, float noiseHeight, out float river)
+        {
+            float h = noiseHeight;
+            float bestRiver = 0f;
             for (int i = 0; i < _count; i++)
             {
                 TemplateStamp s = _stamps[i];
@@ -194,10 +256,12 @@ namespace Cosmimera.Planet
                 }
 
                 float w = 1f - math.smoothstep(BlendStart, 1f, m);
-                float tpl = SampleStamp(s, u, v);
+                float tpl = SampleStamp(s, u, v, out float stampRiver);
                 h = math.lerp(h, tpl + noiseHeight * NoiseKeep, w);
+                bestRiver = math.max(bestRiver, stampRiver * w);
             }
 
+            river = bestRiver;
             return h;
         }
 
@@ -316,7 +380,7 @@ namespace Cosmimera.Planet
             return index >= 0;
         }
 
-        private float SampleStamp(in TemplateStamp s, float u, float v)
+        private float SampleStamp(in TemplateStamp s, float u, float v, out float river)
         {
             float fx = math.clamp((u * 0.5f + 0.5f) * (s.Size - 1), 0f, s.Size - 1.001f);
             float fy = math.clamp((0.5f - v * 0.5f) * (s.Size - 1), 0f, s.Size - 1.001f);
@@ -331,7 +395,7 @@ namespace Cosmimera.Planet
             float n = math.lerp(math.lerp(_heights[i00], _heights[i01], tx), math.lerp(_heights[i10], _heights[i11], tx), ty)
                       * (1f / 65535f);
             float sea = math.lerp(math.lerp(Is(i00, 1), Is(i01, 1), tx), math.lerp(Is(i10, 1), Is(i11, 1), tx), ty);
-            float river = math.lerp(math.lerp(Is(i00, 2), Is(i01, 2), tx), math.lerp(Is(i10, 2), Is(i11, 2), tx), ty);
+            river = math.lerp(math.lerp(Is(i00, 2), Is(i01, 2), tx), math.lerp(Is(i10, 2), Is(i11, 2), tx), ty);
             float land = (n - s.SeaNorm) / (1f - s.SeaNorm) * s.Amplitude;
             // Bilinear masks carve smooth basins/channels instead of 1-sample steps at every coastline.
             return land - sea * s.Amplitude * SeaDepthFraction - river * RiverDepthM;

@@ -88,6 +88,11 @@ Shader "Cosmimera/ToonOutlined"
             #pragma fragment Frag
             float4 Vert(Attributes i) : SV_POSITION
             {
+                if (_OutlineWidth <= 0.0)
+                {
+                    return float4(0, 0, 0, 0);
+                }
+
                 float3 ws = TransformObjectToWorld(i.positionOS.xyz);
                 ws += TransformObjectToWorldNormal(i.normalOS) * _OutlineWidth;
                 // Pushed away from the camera, hull slivers inside concave folds (a bent knee or elbow) fall behind the

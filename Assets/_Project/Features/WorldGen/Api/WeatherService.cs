@@ -51,6 +51,7 @@ namespace Cosmimera.WorldGen
         // per tick, and each list costs a few hundred stream draws.
         private const float VortexBlockM = 200f;
         private readonly Dictionary<int3, List<WindVortex>> _vortices = new Dictionary<int3, List<WindVortex>>();
+        private readonly Stack<List<WindVortex>> _vortexListPool = new Stack<List<WindVortex>>();
         private long _vortexMs = -1;
         private Func<VortexKind, float3, bool> _allowVortex;
 
@@ -152,13 +153,13 @@ namespace Cosmimera.WorldGen
             Contract.Requires(timeMs >= 0, "timeMs must be >= 0");
             if (timeMs != _vortexMs)
             {
-                _vortices.Clear();
+                ClearVortexCache();
                 _vortexMs = timeMs;
             }
 
             int3 block = (int3)math.floor(direction * (_radiusM / VortexBlockM));
             if (_vortices.TryGetValue(block, out List<WindVortex> list)) return list;
-            list = new List<WindVortex>();
+            list = _vortexListPool.Count > 0 ? _vortexListPool.Pop() : new List<WindVortex>();
             float3 blockCentre = math.normalize(((float3)block + 0.5f) * (VortexBlockM / _radiusM));
             _allowVortex ??= AllowVortex;
             // Reach: half the block diagonal, so every point of the block is covered.
@@ -178,12 +179,23 @@ namespace Cosmimera.WorldGen
             Contract.Requires(timeMs >= 0, "timeMs must be >= 0");
             if (timeMs != _vortexMs)
             {
-                _vortices.Clear();
+                ClearVortexCache();
                 _vortexMs = timeMs;
             }
 
             _allowVortex ??= AllowVortex;
             WindField.ActiveVortices(_seed, _radiusM, direction, timeMs, reachM, _allowVortex, into);
+        }
+
+        private void ClearVortexCache()
+        {
+            foreach (List<WindVortex> cached in _vortices.Values)
+            {
+                cached.Clear();
+                _vortexListPool.Push(cached);
+            }
+
+            _vortices.Clear();
         }
 
         /// <summary>Wind heading without vortices at a surface point (what shaders bend toward before adding swirl).</summary>

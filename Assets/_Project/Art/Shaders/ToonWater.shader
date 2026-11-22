@@ -82,10 +82,17 @@ Shader "Cosmimera/ToonWater"
                 // Rings coarsen with distance (WaterSurface.RingGrowth): past ~150 m a vertex is wider than a swell,
                 // so displacing there would alias into jagged spikes. Lava never takes the wind sea.
                 o.waveFade = (1.0 - smoothstep(60.0, 150.0, i.uv.x)) * (1.0 - _WaterGlow);
-                float3 offset, n;
-                float swell;
-                CosmiWaves(o.restWS, dir, offset, n, swell);
-                o.positionWS = o.restWS + offset * o.waveFade;
+                if (o.waveFade > 0.001)
+                {
+                    float3 offset, n;
+                    float swell;
+                    CosmiWaves(o.restWS, dir, offset, n, swell);
+                    o.positionWS = o.restWS + offset * o.waveFade;
+                }
+                else
+                {
+                    o.positionWS = o.restWS;
+                }
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.fog = ComputeFogFactor(o.positionCS.z);
                 return o;
@@ -93,22 +100,36 @@ Shader "Cosmimera/ToonWater"
 
             half4 Frag(Varyings i) : SV_Target
             {
-                float3 up = normalize(i.restWS - _PlanetCenter.xyz);
-                float3 view = normalize(_WorldSpaceCameraPos - i.positionWS);
                 float t = _Time.y;
-                float3 offset, waveN;
-                float swell;
-                float h = CosmiWaves(i.restWS, up, offset, waveN, swell) * i.waveFade;
-                waveN = normalize(lerp(up, waveN, i.waveFade));
-                // Two drifting noise layers stand in for a ripple normal map on top of the swells.
                 float3 p = i.restWS;
+                Light light = GetMainLight();
+                if (_WaterGlow >= 0.999)
+                {
+                    // Molten lava surface is self-lit and opaque; skip waves, ripples and depth sampling.
+                    float crust = smoothstep(0.42, 0.6, CosmiFbm2(p * 0.18 + float3(0.0, t * 0.03, 0.0)));
+                    half3 glow = _WaterTint.rgb * lerp(1.45, 0.42, crust);
+                    return half4(CosmiAtmosphere(glow, i.positionWS, i.fog, light.direction), 1.0);
+                }
+
+                float3 up = normalize(p - _PlanetCenter.xyz);
+                float3 view = normalize(_WorldSpaceCameraPos - i.positionWS);
+                float h = 0.0;
+                float3 waveN = up;
+                float swell = 0.0;
+                if (i.waveFade > 0.001)
+                {
+                    float3 offset, rawN;
+                    h = CosmiWaves(p, up, offset, rawN, swell) * i.waveFade;
+                    waveN = normalize(lerp(up, rawN, i.waveFade));
+                }
+
+                // Two drifting noise layers stand in for a ripple normal map on top of the swells.
                 float3 ripple = float3(CosmiNoise(p * 0.55 + float3(t * 0.31, 0, t * 0.17)),
                                        CosmiNoise(p * 0.55 + float3(11.0, t * 0.23, 5.0)),
                                        CosmiNoise(p * 0.55 + float3(3.0, 7.0, -t * 0.27))) - 0.5;
                 float sea = _CosmiSea.x;
                 float3 n = normalize(waveN + (ripple - waveN * dot(ripple, waveN)) * (0.22 + 0.25 * sea));
 
-                Light light = GetMainLight();
                 float ndv = saturate(dot(n, view));
                 float fresnel = pow(1.0 - ndv, 4.0);
                 float ramp = CosmiRamp(saturate(dot(n, light.direction)) * CosmiCloudLight(i.positionWS) + 0.2, 3.0);
@@ -133,10 +154,17 @@ Shader "Cosmimera/ToonWater"
                 float3 rel = p - _CosmiWaveAnchor.xyz;
                 float along = dot(rel, downwind) - _CosmiWaveAnchor.w;
                 float across = dot(rel, cross(up, downwind));
-                float lace = CosmiNoise(float3(along * 0.18, across * 0.7, 0.3));
+                bool needWhitecaps = i.waveFade > 0.001 && sea > 0.35;
+                float lace = (needWhitecaps || _Foam > 0.001)
+                    ? CosmiNoise(float3(along * 0.18, across * 0.7, 0.3))
+                    : 0.5;
                 float h01 = saturate(h / max(_CosmiSea.w, 0.05) * 0.5 + 0.5);
-                float caps = smoothstep(0.35, 0.6, sea) * smoothstep(0.7, 0.75, h01 + (lace - 0.5) * 0.45 + _CosmiSea.y * 0.08);
-                float lanes = smoothstep(0.55, 0.9, sea) * smoothstep(0.72, 0.76, CosmiNoise(float3(along * 0.05, across * 0.55, 7.0)));
+                float caps = needWhitecaps
+                    ? smoothstep(0.35, 0.6, sea) * smoothstep(0.7, 0.75, h01 + (lace - 0.5) * 0.45 + _CosmiSea.y * 0.08)
+                    : 0.0;
+                float lanes = (i.waveFade > 0.001 && sea > 0.55)
+                    ? smoothstep(0.55, 0.9, sea) * smoothstep(0.72, 0.76, CosmiNoise(float3(along * 0.05, across * 0.55, 7.0)))
+                    : 0.0;
                 float foam = saturate(caps + lanes * 0.55) * i.waveFade;
 
                 // Shore: water thickness from the opaque depth (PC asset only; with no depth texture the guard below
@@ -147,11 +175,14 @@ Shader "Cosmimera/ToonWater"
                 float surfaceEye = -TransformWorldToView(i.positionWS).z;
                 float alongView = sceneEye - surfaceEye;
                 float depth = alongView > 0.0 ? alongView * max(dot(view, up), 0.15) : 1e4;
-                float H = max(_CosmiSea.z, 0.06);
-                float surf = (1.0 - smoothstep(0.4 * H + 0.1, 1.3 * H + 0.3, depth))
-                    * smoothstep(0.35, 0.85, swell * 0.5 + 0.5 + (lace - 0.5) * 0.5);
-                float contact = 1.0 - smoothstep(0.04, 0.14 + 0.1 * H, depth + (lace - 0.5) * 0.05);
-                foam = saturate(foam + (surf + contact) * _Foam);
+                if (_Foam > 0.001)
+                {
+                    float H = max(_CosmiSea.z, 0.06);
+                    float surf = (1.0 - smoothstep(0.4 * H + 0.1, 1.3 * H + 0.3, depth))
+                        * smoothstep(0.35, 0.85, swell * 0.5 + 0.5 + (lace - 0.5) * 0.5);
+                    float contact = 1.0 - smoothstep(0.04, 0.14 + 0.1 * H, depth + (lace - 0.5) * 0.05);
+                    foam = saturate(foam + (surf + contact) * _Foam);
+                }
                 col = lerp(col, lerp(_Shadow.rgb, half3(1, 1, 1), ramp * 0.6 + 0.4) * light.color, foam * 0.9);
 
                 // P3-23 seen from below (planet-world.md 潛水視覺): light from above reaches the eye only through Snell's
@@ -175,9 +206,12 @@ Shader "Cosmimera/ToonWater"
                 }
 
                 // Molten surface: lit from within, with slow dark crust plates.
-                float crust = smoothstep(0.42, 0.6, CosmiFbm2(p * 0.18 + float3(0.0, t * 0.03, 0.0)));
-                half3 glow = _WaterTint.rgb * lerp(1.45, 0.42, crust);
-                col = lerp(col, glow, _WaterGlow);
+                if (_WaterGlow > 0.001)
+                {
+                    float crust = smoothstep(0.42, 0.6, CosmiFbm2(p * 0.18 + float3(0.0, t * 0.03, 0.0)));
+                    half3 glow = _WaterTint.rgb * lerp(1.45, 0.42, crust);
+                    col = lerp(col, glow, _WaterGlow);
+                }
 
                 // Shallows let the bottom show through, so a beach shelves into the sea instead of meeting a sheet.
                 float clear = lerp(0.45, 1.0, saturate(depth / 1.5));

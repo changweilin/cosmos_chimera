@@ -41,6 +41,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<Vector3> _scratch = new List<Vector3>(80);
         private readonly float[] _pulseAt = new float[4];
         private readonly float[] _pulseAmp = new float[4];
+        private readonly float3[] _ringCenters = new float3[MaxRings];
+        private readonly bool[] _ringHasPos = new bool[MaxRings];
         private readonly List<(float at, float meters)> _thunder = new List<(float, float)>();
 
         private float _clock;
@@ -181,17 +183,23 @@ namespace Cosmimera.Bootstrap.Demo
                 if (i >= directions.Count)
                 {
                     ring.enabled = false;
+                    _ringHasPos[i] = false;
                     continue;
                 }
 
                 float3 center = directions[i];
-                PlanetFrame frame = PlanetFrame.FromUp(center);
-                for (int k = 0; k < RingPoints; k++)
+                if (!_ringHasPos[i] || math.distancesq(_ringCenters[i], center) > 1e-12f)
                 {
-                    float a = k * (2f * math.PI / RingPoints);
-                    float3 tangent = frame.East * math.cos(a) + frame.North * math.sin(a);
-                    float3 d = math.normalize(center + tangent * (WarningRadiusM / planet.Radius));
-                    ring.SetPosition(k, planet.Center + d * (planet.Radius + groundAltitude(d) + 0.12f));
+                    _ringCenters[i] = center;
+                    _ringHasPos[i] = true;
+                    PlanetFrame frame = PlanetFrame.FromUp(center);
+                    for (int k = 0; k < RingPoints; k++)
+                    {
+                        float a = k * (2f * math.PI / RingPoints);
+                        float3 tangent = frame.East * math.cos(a) + frame.North * math.sin(a);
+                        float3 d = math.normalize(center + tangent * (WarningRadiusM / planet.Radius));
+                        ring.SetPosition(k, planet.Center + d * (planet.Radius + groundAltitude(d) + 0.12f));
+                    }
                 }
 
                 // Brightens and pulses faster as the strike nears, so the last half second reads as "move now".

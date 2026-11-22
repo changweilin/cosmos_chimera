@@ -50,6 +50,11 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly ParticleSystem _trail;
         private readonly LineRenderer[] _rings = new LineRenderer[MaxBombs];
         private readonly Transform[] _balls = new Transform[MaxBombs];
+        private readonly float3[] _bombRingDir = new float3[MaxBombs];
+        private readonly float3[] _bombFromDir = new float3[MaxBombs];
+        private readonly float3[] _bombFromWorld = new float3[MaxBombs];
+        private readonly float3[] _bombToWorld = new float3[MaxBombs];
+        private readonly bool[] _bombCached = new bool[MaxBombs];
         private readonly Vector3[] _ribbon = new Vector3[RibbonPoints * 2];
         private float _clock;
 
@@ -350,25 +355,38 @@ namespace Cosmimera.Bootstrap.Demo
                 bool on = i < bombs.Count;
                 _rings[i].enabled = on;
                 _balls[i].gameObject.SetActive(on);
-                if (!on) continue;
+                if (!on)
+                {
+                    _bombCached[i] = false;
+                    continue;
+                }
+
                 VolcanicBomb b = bombs[i];
+                if (!_bombCached[i] ||
+                    math.distancesq(_bombRingDir[i], b.Direction) > 1e-12f ||
+                    math.distancesq(_bombFromDir[i], b.From) > 1e-12f)
+                {
+                    _bombCached[i] = true;
+                    _bombRingDir[i] = b.Direction;
+                    _bombFromDir[i] = b.From;
+                    _bombFromWorld[i] = planet.ToWorld(b.From, groundAltitude(b.From) + 0.5f);
+                    _bombToWorld[i] = planet.ToWorld(b.Direction, groundAltitude(b.Direction) + 0.3f);
+                    PlanetFrame frame = PlanetFrame.FromUp(b.Direction);
+                    for (int k = 0; k < RingPoints; k++)
+                    {
+                        float a = k * (2f * math.PI / RingPoints);
+                        float3 d = math.normalize(b.Direction + (frame.East * math.cos(a) + frame.North * math.sin(a)) * (QuakeSchedule.BombRadiusM / planet.Radius));
+                        _rings[i].SetPosition(k, planet.ToWorld(d, groundAltitude(d) + 0.15f));
+                    }
+                }
+
                 float p = math.saturate(1f - (b.LandsAtMs - nowMs) / (float)QuakeSchedule.BombWarningMs);
-                float3 from = planet.ToWorld(b.From, groundAltitude(b.From) + 0.5f);
-                float3 to = planet.ToWorld(b.Direction, groundAltitude(b.Direction) + 0.3f);
                 float3 lift = b.Direction * (4f * p * (1f - p) * BombArcM);
-                float3 at = math.lerp(from, to, p) + lift;
+                float3 at = math.lerp(_bombFromWorld[i], _bombToWorld[i], p) + lift;
                 _balls[i].position = at;
                 emit.position = at;
                 emit.velocity = b.Direction * 0.3f;
                 _trail.Emit(emit, 1);
-
-                PlanetFrame frame = PlanetFrame.FromUp(b.Direction);
-                for (int k = 0; k < RingPoints; k++)
-                {
-                    float a = k * (2f * math.PI / RingPoints);
-                    float3 d = math.normalize(b.Direction + (frame.East * math.cos(a) + frame.North * math.sin(a)) * (QuakeSchedule.BombRadiusM / planet.Radius));
-                    _rings[i].SetPosition(k, planet.ToWorld(d, groundAltitude(d) + 0.15f));
-                }
 
                 // Hotter and faster as the bomb comes down, like the lightning rings, but in fire colours.
                 float pulse = 0.55f + 0.45f * math.sin(_clock * math.lerp(8f, 30f, p));

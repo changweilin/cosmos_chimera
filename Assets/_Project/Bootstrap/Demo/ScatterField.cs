@@ -417,6 +417,7 @@ namespace Cosmimera.Bootstrap.Demo
         private Shader _shader;
         private Shader _sceneryShader;
         private readonly Dictionary<long, List<GameObject>> _live = new Dictionary<long, List<GameObject>>();
+        private static readonly List<GameObject> EmptyCell = new List<GameObject>(0);
         private readonly HashSet<long> _wanted = new HashSet<long>();
         private readonly List<long> _stale = new List<long>();
         private readonly Queue<long> _pending = new Queue<long>();
@@ -508,7 +509,7 @@ namespace Cosmimera.Bootstrap.Demo
         public void Remove(long key)
         {
             ItemGone?.Invoke(key);
-            if (!_live.TryGetValue(key, out List<GameObject> objects))
+            if (!_live.TryGetValue(key, out List<GameObject> objects) || objects.Count == 0)
             {
                 return;
             }
@@ -616,13 +617,16 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         private void BuildCell(long key)
         {
-            var objects = new List<GameObject>();
-            _live[key] = objects;
             if (_detached.Contains(key) || !_planner.TryGetItem(key, out ScatterItem item) ||
                 (_isDestroyed != null && _isDestroyed(key)))
             {
+                // Share an immutable empty list so empty cells avoid heap allocations while preserving _live's test contract.
+                _live[key] = EmptyCell;
                 return;
             }
+
+            var objects = new List<GameObject>(1);
+            _live[key] = objects;
 
             float3 world = _config.ToWorld(item.Direction, item.AltitudeM - 0.1f); // sink slightly so slopes never expose the base
             PlanetFrame frame = PlanetFrame.FromUp(item.Direction);
@@ -820,10 +824,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             bool moved = !math.all(math.isfinite(_lastFocus)) || math.distance(focus, _lastFocus) > RefreshMoveM;
-            if (moved || Time.time >= _nextRefresh)
+            if (moved)
             {
                 _lastFocus = focus;
-                _nextRefresh = Time.time + RefreshSeconds;
                 BeginRefresh(focus);
             }
 

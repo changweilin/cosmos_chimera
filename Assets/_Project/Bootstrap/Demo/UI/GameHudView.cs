@@ -50,8 +50,24 @@ namespace Cosmimera.Bootstrap.Demo.UI
         private readonly VisualElement _interactButtons;
         private readonly Label _controlsText;
 
+        private struct TeamCardState
+        {
+            internal bool Initialized;
+            internal string Name;
+            internal int Hp;
+            internal int MaxHp;
+            internal string Detail;
+            internal bool Active;
+        }
+
         private readonly List<(VisualElement card, Label name, Label hpLabel, VisualElement hpFill, Label detail)> _teamCards
             = new List<(VisualElement, Label, Label, VisualElement, Label)>();
+        private readonly List<TeamCardState> _teamStates = new List<TeamCardState>(6);
+        private bool _bossInitialized;
+        private bool _bossVisible;
+        private string _bossTitle;
+        private int _bossHp = int.MinValue;
+        private int _bossMaxHp = int.MinValue;
 
         internal GameHudView(Action onOpenJournal, Transform parent = null)
         {
@@ -91,14 +107,14 @@ namespace Cosmimera.Bootstrap.Demo.UI
             SetShown(_loadingOverlay, loading);
             if (!string.IsNullOrEmpty(text))
             {
-                _loadingLabel.text = text;
+                SetText(_loadingLabel, text);
             }
         }
 
         internal void SetQuest(string title, string body)
         {
-            _questTitle.text = title ?? string.Empty;
-            _questBody.text = body ?? string.Empty;
+            SetText(_questTitle, title ?? string.Empty);
+            SetText(_questBody, body ?? string.Empty);
         }
 
         internal void SetPlayerStats(string title, string detail)
@@ -107,24 +123,45 @@ namespace Cosmimera.Bootstrap.Demo.UI
             SetShown(_playerCombatCard, show);
             if (show)
             {
-                _playerCombatTitle.text = title;
-                _playerCombatDetail.text = detail ?? string.Empty;
+                SetText(_playerCombatTitle, title);
+                SetText(_playerCombatDetail, detail ?? string.Empty);
             }
         }
 
         internal void SetBossBar(bool visible, string title = null, int hp = 0, int maxHp = 1)
         {
-            SetShown(_bossCard, visible);
+            if (!_bossInitialized || _bossVisible != visible)
+            {
+                SetShown(_bossCard, visible);
+                _bossVisible = visible;
+                _bossInitialized = true;
+            }
+
             if (!visible) return;
-            _bossNameLabel.text = title ?? string.Empty;
-            _bossHpLabel.text = $"{hp} / {maxHp}";
-            float pct = maxHp > 0 ? Mathf.Clamp01((float)hp / maxHp) * 100f : 0f;
-            _bossHpFill.style.width = Length.Percent(pct);
+            string safeTitle = title ?? string.Empty;
+            if (!string.Equals(_bossTitle, safeTitle, StringComparison.Ordinal))
+            {
+                _bossTitle = safeTitle;
+                SetText(_bossNameLabel, safeTitle);
+            }
+
+            if (_bossHp != hp || _bossMaxHp != maxHp)
+            {
+                _bossHp = hp;
+                _bossMaxHp = maxHp;
+                SetText(_bossHpLabel, $"{hp} / {maxHp}");
+                float pct = maxHp > 0 ? Mathf.Clamp01((float)hp / maxHp) * 100f : 0f;
+                _bossHpFill.style.width = Length.Percent(pct);
+            }
         }
 
         internal void SetJournalButtonText(string text)
         {
-            _journalBtn.text = text;
+            string value = text ?? string.Empty;
+            if (!string.Equals(_journalBtn.text, value, StringComparison.Ordinal))
+            {
+                _journalBtn.text = value;
+            }
         }
 
         internal void SetTeam(IReadOnlyList<TeamMemberDisplay> members)
@@ -153,6 +190,7 @@ namespace Cosmimera.Bootstrap.Demo.UI
                 card.Add(detailLbl);
                 _teamList.Add(card);
                 _teamCards.Add((card, nameLbl, hpLbl, fill, detailLbl));
+                _teamStates.Add(default);
             }
 
             for (int i = 0; i < _teamCards.Count; i++)
@@ -161,34 +199,59 @@ namespace Cosmimera.Bootstrap.Demo.UI
                 SetShown(_teamCards[i].card, show);
                 if (!show) continue;
                 TeamMemberDisplay m = members[i];
-                _teamCards[i].name.text = m.Name;
-                _teamCards[i].hpLabel.text = m.MaxHp > 0 ? $"{m.Hp}/{m.MaxHp}" : string.Empty;
-                float pct = m.MaxHp > 0 ? Mathf.Clamp01((float)m.Hp / m.MaxHp) * 100f : 0f;
-                _teamCards[i].hpFill.style.width = Length.Percent(pct);
-                _teamCards[i].detail.text = m.Detail ?? string.Empty;
-                SetShown(_teamCards[i].detail, !string.IsNullOrEmpty(m.Detail));
-                if (m.Active) _teamCards[i].card.AddToClassList("hud-member-active");
-                else _teamCards[i].card.RemoveFromClassList("hud-member-active");
+                TeamCardState prev = _teamStates[i];
+                string detail = m.Detail ?? string.Empty;
+                if (!prev.Initialized || !string.Equals(prev.Name, m.Name, StringComparison.Ordinal))
+                {
+                    SetText(_teamCards[i].name, m.Name);
+                    prev.Name = m.Name;
+                }
+
+                if (!prev.Initialized || prev.Hp != m.Hp || prev.MaxHp != m.MaxHp)
+                {
+                    SetText(_teamCards[i].hpLabel, m.MaxHp > 0 ? $"{m.Hp}/{m.MaxHp}" : string.Empty);
+                    float pct = m.MaxHp > 0 ? Mathf.Clamp01((float)m.Hp / m.MaxHp) * 100f : 0f;
+                    _teamCards[i].hpFill.style.width = Length.Percent(pct);
+                    prev.Hp = m.Hp;
+                    prev.MaxHp = m.MaxHp;
+                }
+
+                if (!prev.Initialized || !string.Equals(prev.Detail, detail, StringComparison.Ordinal))
+                {
+                    SetText(_teamCards[i].detail, detail);
+                    SetShown(_teamCards[i].detail, detail.Length > 0);
+                    prev.Detail = detail;
+                }
+
+                if (!prev.Initialized || prev.Active != m.Active)
+                {
+                    if (m.Active) _teamCards[i].card.AddToClassList("hud-member-active");
+                    else _teamCards[i].card.RemoveFromClassList("hud-member-active");
+                    prev.Active = m.Active;
+                }
+
+                prev.Initialized = true;
+                _teamStates[i] = prev;
             }
         }
 
         internal void SetControlsHint(string text)
         {
-            _controlsText.text = text ?? string.Empty;
+            SetText(_controlsText, text ?? string.Empty);
         }
 
         internal void SetToast(string text)
         {
             bool show = !string.IsNullOrEmpty(text);
             SetShown(_toastLabel, show);
-            if (show) _toastLabel.text = text;
+            if (show) SetText(_toastLabel, text);
         }
 
         internal void SetInteractPrompt(string text)
         {
             bool show = !string.IsNullOrEmpty(text);
             SetShown(_interactPrompt, show);
-            if (show) _interactPrompt.text = text;
+            if (show) SetText(_interactPrompt, text);
         }
 
         internal void SetInteractMenu(bool visible, string title, IReadOnlyList<(string label, Action onClick)> options)
@@ -208,11 +271,28 @@ namespace Cosmimera.Bootstrap.Demo.UI
             }
         }
 
+        private static void SetText(Label el, string text)
+        {
+            if (el == null) return;
+            string value = text ?? string.Empty;
+            if (!string.Equals(el.text, value, StringComparison.Ordinal))
+            {
+                el.text = value;
+            }
+        }
+
         private static void SetShown(VisualElement el, bool shown)
         {
             if (el == null) return;
-            if (shown) el.RemoveFromClassList("hidden");
-            else el.AddToClassList("hidden");
+            bool hidden = el.ClassListContains("hidden");
+            if (shown)
+            {
+                if (hidden) el.RemoveFromClassList("hidden");
+            }
+            else if (!hidden)
+            {
+                el.AddToClassList("hidden");
+            }
         }
 
         public void Dispose()

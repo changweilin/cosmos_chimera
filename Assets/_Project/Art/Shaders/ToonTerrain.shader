@@ -81,9 +81,10 @@ Shader "Cosmimera/ToonTerrain"
                 float3 n = normalize(i.normalWS);
                 CosmiGround g = CosmiGroundAt(i.positionWS, n);
                 float grass;
-                half3 albedo = CosmiBiomeColor(i.positionWS, g, grass);
+                float3 nNoise, fineStroke;
+                half3 albedo = CosmiBiomeColor(i.positionWS, g, grass, nNoise, fineStroke);
                 albedo = CosmiMeadowTint(albedo, i.positionWS, g, grass);
-                albedo = CosmiRiverbed(albedo, i.positionWS, g, i.river);
+                albedo = CosmiRiverbed(albedo, i.positionWS, g, i.river, nNoise, fineStroke);
 
                 n = CosmiCliffNormal(i.positionWS, n, g.up);
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));

@@ -75,7 +75,7 @@ Shader "Cosmimera/ToonScenery"
             float3 root = TransformObjectToWorld(float3(0, 0, 0));
             float3 baseWind = CosmiWindDir(up);
             float vortexBoost;
-            float3 wind = CosmiWindAt(up, vortexBoost);
+            float3 wind = CosmiWindAt(up, baseWind, vortexBoost);
 
             // The same gust field as ToonGrass: a front that flattens the meadow reaches the tree above it together.
             float along = dot(root, baseWind);
@@ -148,12 +148,16 @@ Shader "Cosmimera/ToonScenery"
                 albedo *= lerp(0.93, 1.06, smoothstep(0.42, 0.58, patch));
 
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
-                half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
-                    _Shadow.rgb, _Bands, SampleSH(n));
+                float cloudLight = CosmiCloudLight(i.positionWS);
+                half3 lit = CosmiToonLit(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
+                    cloudLight, _Shadow.rgb, _Bands, SampleSH(n));
 
                 // Sun through the crown: leaves facing away from the light still glow when seen against it.
-                float through = pow(saturate(dot(view, -light.direction)), 3.0) * saturate(0.6 - dot(n, light.direction));
-                lit += albedo * light.color * half3(1.05, 1.1, 0.6) * (through * _Translucency * CosmiCloudLight(i.positionWS));
+                if (_Translucency > 0.001)
+                {
+                    float through = pow(saturate(dot(view, -light.direction)), 3.0) * saturate(0.6 - dot(n, light.direction));
+                    lit += albedo * light.color * half3(1.05, 1.1, 0.6) * (through * _Translucency * cloudLight);
+                }
 
                 float fresnel = 1.0 - saturate(dot(n, view));
                 float rim = smoothstep(0.62, 0.78, fresnel) * saturate(dot(n, light.direction) + 0.3);
@@ -161,7 +165,10 @@ Shader "Cosmimera/ToonScenery"
 
                 lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 // Crystals carry their own light, so they stay readable at night and inside cloud shadow.
-                lit += albedo * (_Glow * (0.3 + fresnel * fresnel * 0.9));
+                if (_Glow > 0.001)
+                {
+                    lit += albedo * (_Glow * (0.3 + fresnel * fresnel * 0.9));
+                }
 
                 return half4(CosmiAtmosphere(lit, i.positionWS, i.paint.w, light.direction), 1);
             }

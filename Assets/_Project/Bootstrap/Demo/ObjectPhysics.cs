@@ -129,14 +129,18 @@ namespace Cosmimera.Bootstrap.Demo
     /// <remarks>Pre: none. Post: immutable value. Side effects: none.</remarks>
     public readonly struct GroundDrop
     {
-        internal GroundDrop(Element element, GroundDropKind kind, GameObject root, float3 rulePosition, bool isSettled)
+        internal GroundDrop(Element element, GroundDropKind kind, GameObject root, float3 rulePosition, bool isSettled,
+            Rigidbody body = null)
         {
             Element = element;
             Kind = kind;
             Root = root;
+            Body = body;
             RulePosition = rulePosition;
             IsSettled = isSettled;
         }
+
+        internal Rigidbody Body { get; }
 
         /// <summary>The material's element (Light or Shadow for a wisp).</summary>
         /// <remarks>Pre: none. Post: defined. Side effects: none.</remarks>
@@ -159,7 +163,7 @@ namespace Cosmimera.Bootstrap.Demo
         public bool IsSettled { get; }
 
         internal GroundDrop WithSettlement(float3 rulePosition, bool isSettled) =>
-            new GroundDrop(Element, Kind, Root, rulePosition, isSettled);
+            new GroundDrop(Element, Kind, Root, rulePosition, isSettled, Body);
     }
 
     /// <summary>
@@ -205,10 +209,19 @@ namespace Cosmimera.Bootstrap.Demo
             internal float RestingSince;
         }
 
+        private sealed class PusherEntry
+        {
+            internal Rigidbody Body;
+            internal SphereCollider Collider;
+            internal float Radius;
+            internal Vector3 LastPos;
+            internal bool HasPos;
+        }
+
         private readonly List<Awake> _awake = new List<Awake>(32);
         private readonly Dictionary<long, Rigidbody> _byId = new Dictionary<long, Rigidbody>();
         private readonly List<Piece> _debris = new List<Piece>(96);
-        private readonly Dictionary<int, Rigidbody> _pushers = new Dictionary<int, Rigidbody>();
+        private readonly Dictionary<int, PusherEntry> _pushers = new Dictionary<int, PusherEntry>();
         private readonly List<GroundDrop> _ground = new List<GroundDrop>(32);
         // Keyed by element * 3 + kind; one shared material per look, released in OnDestroy.
         private readonly Dictionary<int, Material> _dropLooks = new Dictionary<int, Material>();
@@ -513,7 +526,7 @@ namespace Cosmimera.Bootstrap.Demo
                 carried, up, out Rigidbody body);
             body.mass = math.max(0.2f, substance.DensityKgM3 * edge * edge * edge);
             Paint(go, element, kind);
-            _ground.Add(new GroundDrop(element, kind, go, (float3)go.transform.position, false));
+            _ground.Add(new GroundDrop(element, kind, go, (float3)go.transform.position, false, body));
         }
 
         private void SpawnWisp(Element element, float3 up)
@@ -576,7 +589,7 @@ namespace Cosmimera.Bootstrap.Demo
         public void SyncPusher(int unitId, bool active, float3 position, float radiusM)
         {
             Contract.Requires(_configured, "Configure first");
-            if (!_pushers.TryGetValue(unitId, out Rigidbody body))
+            if (!_pushers.TryGetValue(unitId, out PusherEntry entry))
             {
                 if (!active)
                 {
@@ -595,18 +608,27 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
 
-                body = go.AddComponent<Rigidbody>();
+                Rigidbody body = go.AddComponent<Rigidbody>();
                 body.isKinematic = true;
                 body.useGravity = false;
-                _pushers[unitId] = body;
+                entry = new PusherEntry
+                {
+                    Body = body,
+                    Collider = sphere,
+                    Radius = -1f,
+                };
+                _pushers[unitId] = entry;
             }
 
-            if (body.gameObject.activeSelf != active)
+            if (entry.Body.gameObject.activeSelf != active)
             {
-                body.gameObject.SetActive(active);
+                entry.Body.gameObject.SetActive(active);
                 if (active)
                 {
-                    body.position = (Vector3)position; // reappearing (summoned elsewhere) must not sweep the gap
+                    var p = (Vector3)position;
+                    entry.Body.position = p; // reappearing (summoned elsewhere) must not sweep the gap
+                    entry.LastPos = p;
+                    entry.HasPos = true;
                 }
             }
 
@@ -616,8 +638,19 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             Contract.Requires(math.isfinite(radiusM) && radiusM > 0f, "radiusM must be > 0");
-            body.GetComponent<SphereCollider>().radius = radiusM;
-            body.MovePosition((Vector3)position);
+            if (entry.Radius != radiusM)
+            {
+                entry.Radius = radiusM;
+                entry.Collider.radius = radiusM;
+            }
+
+            var target = (Vector3)position;
+            if (!entry.HasPos || (target - entry.LastPos).sqrMagnitude > 1e-8f)
+            {
+                entry.LastPos = target;
+                entry.HasPos = true;
+                entry.Body.MovePosition(target);
+            }
         }
 
         private void Update()
@@ -717,7 +750,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 // Unlike debris, a drop must outlive a missing collider (it stays all run): park it on the sampled ground.
-                Rigidbody b = drop.Kind == GroundDropKind.Wisp ? null : root.GetComponent<Rigidbody>();
+                Rigidbody b = drop.Kind == GroundDropKind.Wisp ? null : drop.Body;
                 if (b != null)
                 {
                     if (!b.isKinematic && FellThrough(b.position))

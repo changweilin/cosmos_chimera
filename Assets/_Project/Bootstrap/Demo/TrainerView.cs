@@ -35,6 +35,8 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<ResidentStride> _strides = new List<ResidentStride>();
         private readonly List<Mesh> _meshes = new List<Mesh>();
         private readonly List<Material> _materials = new List<Material>();
+        private readonly List<bool> _needsSync = new List<bool>();
+        private readonly List<float3> _previousFacing = new List<float3>();
         private PlanetConfig _config;
         private RunTrainers _trainers;
         private Func<float3, float> _groundAltitude;
@@ -105,6 +107,8 @@ namespace Cosmimera.Bootstrap.Demo
                 _meshes.Add(mesh);
                 _renderers.Add(renderer);
                 _strides.Add(stride);
+                _needsSync.Add(false);
+                _previousFacing.Add(facing);
 
                 float height = NpcMeshes.HeightM(spec);
                 var capsule = root.AddComponent<CapsuleCollider>();
@@ -127,16 +131,41 @@ namespace Cosmimera.Bootstrap.Demo
             _syncedStepVersion = _trainers.StepVersion;
             for (int i = 0; i < _roots.Count; i++)
             {
+                // Skip terrain sampling for off-range trainers until they come within DrawDistanceM.
+                if (_focus != null && !_renderers[i].enabled)
+                {
+                    _needsSync[i] = true;
+                    continue;
+                }
+
+                ResidentStride stride = _strides[i];
                 float3 dir = _trainers.CurrentDirection(i);
                 float3 facing = _trainers.CurrentFacing(i);
-                float alt = _groundAltitude(dir);
-                float3 world = _config.ToWorld(dir, alt - SinkM);
-                ResidentStride stride = _strides[i];
-                stride.Advance(math.distance(dir, stride.PreviousDirection) * _config.Radius, _renderers[i].enabled);
-                stride.PreviousDirection = dir;
-                _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
-                    Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
+                if (!_needsSync[i] && math.distancesq(dir, stride.PreviousDirection) < 1e-12f &&
+                    math.distancesq(facing, _previousFacing[i]) < 1e-12f)
+                {
+                    stride.Advance(0f, _renderers[i].enabled);
+                    continue;
+                }
+
+                SyncTrainer(i, true);
             }
+        }
+
+        private void SyncTrainer(int i, bool animate)
+        {
+            float3 dir = _trainers.CurrentDirection(i);
+            float3 facing = _trainers.CurrentFacing(i);
+            float alt = _groundAltitude(dir);
+            float3 world = _config.ToWorld(dir, alt - SinkM);
+            ResidentStride stride = _strides[i];
+            float dist = animate ? math.distance(dir, stride.PreviousDirection) * _config.Radius : 0f;
+            stride.Advance(dist, _renderers[i].enabled);
+            stride.PreviousDirection = dir;
+            _previousFacing[i] = facing;
+            _needsSync[i] = false;
+            _roots[i].transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
         }
 
         private void LateUpdate()
@@ -164,10 +193,17 @@ namespace Cosmimera.Bootstrap.Demo
             float maxDistSq = DrawDistanceM * DrawDistanceM;
             for (int i = 0; i < _roots.Count; i++)
             {
-                bool near = (_roots[i].transform.position - focus).sqrMagnitude < maxDistSq;
+                Vector3 pos = _needsSync[i]
+                    ? (Vector3)_config.ToWorld(_trainers.CurrentDirection(i), 0f)
+                    : _roots[i].transform.position;
+                bool near = (pos - focus).sqrMagnitude < maxDistSq;
                 if (_renderers[i].enabled != near)
                 {
                     _renderers[i].enabled = near;
+                    if (near && _needsSync[i])
+                    {
+                        SyncTrainer(i, false);
+                    }
                 }
             }
         }

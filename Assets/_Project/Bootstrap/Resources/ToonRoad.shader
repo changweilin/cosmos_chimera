@@ -101,18 +101,20 @@ Shader "Cosmimera/ToonRoad"
             float2 Cells(float2 p, out float2 id)
             {
                 float2 g = floor(p);
-                float f1 = 8.0, f2 = 8.0;
+                float f1 = 64.0, f2 = 64.0;
                 id = g;
                 [unroll] for (int y = -1; y <= 1; y++)
                 [unroll] for (int x = -1; x <= 1; x++)
                 {
                     float2 c = g + float2(x, y);
                     float2 q = c + 0.15 + 0.7 * Hash2(c);
-                    float d = distance(p, q);
+                    float2 diff = p - q;
+                    float d = dot(diff, diff);
                     if (d < f1) { f2 = f1; f1 = d; id = c; }
                     else if (d < f2) { f2 = d; }
                 }
-                return float2(f1, f2 - f1);
+                float r1 = sqrt(f1);
+                return float2(r1, sqrt(f2) - r1);
             }
 
             // Running-bond rectangles: flagstones, bricks, boards. Returns edge distance (0 at a joint) and the block id.
@@ -186,8 +188,11 @@ Shader "Cosmimera/ToonRoad"
                     float joints = smoothstep(0.02, 0.07, c.y);
                     albedo = lerp(joint, stone * (0.84 + 0.24 * tone), joints);
                     // Hairline cracks across old slabs.
-                    float crack = 1.0 - smoothstep(0.0, 0.025, abs(CosmiNoise(float3(m * 1.7, tone * 9.0)) - 0.5));
-                    albedo = lerp(albedo, joint, crack * wear * 0.8);
+                    if (wear > 0.001)
+                    {
+                        float crack = 1.0 - smoothstep(0.0, 0.025, abs(CosmiNoise(float3(m * 1.7, tone * 9.0)) - 0.5));
+                        albedo = lerp(albedo, joint, crack * wear * 0.8);
+                    }
                 }
                 else if (style == StyleBrick)
                 {
@@ -207,9 +212,12 @@ Shader "Cosmimera/ToonRoad"
                     float edgeLine = smoothstep(0.84, 0.86, ax) * (1.0 - smoothstep(0.89, 0.91, ax)) * (1.0 - wear * 0.7);
                     albedo = lerp(albedo, half3(0.92, 0.86, 0.6), saturate(dash + edgeLine) * 0.85);
                     // Wasteland asphalt: crazed cracks and potholes.
-                    float crack = 1.0 - smoothstep(0.0, 0.03, abs(CosmiNoise(float3(m * 0.9, 4.0)) - 0.5));
-                    float hole = step(0.88, CosmiNoise(float3(m * 0.9, 8.0)));
-                    albedo = lerp(albedo, joint * 0.8, saturate(crack * wear + hole * wear));
+                    if (wear > 0.001)
+                    {
+                        float crack = 1.0 - smoothstep(0.0, 0.03, abs(CosmiNoise(float3(m * 0.9, 4.0)) - 0.5));
+                        float hole = step(0.88, CosmiNoise(float3(m * 0.9, 8.0)));
+                        albedo = lerp(albedo, joint * 0.8, saturate(crack * wear + hole * wear));
+                    }
                 }
                 else if (style == StyleBoardwalk)
                 {
@@ -240,11 +248,15 @@ Shader "Cosmimera/ToonRoad"
 
                 // Grass and moss in the joints and along the verge: more on older roads.
                 // Tufts are small (high-frequency mask) so a worn road reads as cracked, not camouflaged.
-                float growth = saturate((1.0 - paved) * 0.9 + wear * 0.4 * step(0.78, CosmiNoise(float3(m * 7.0, 6.0))));
+                float tuft = wear > 0.001 ? wear * 0.4 * step(0.78, CosmiNoise(float3(m * 7.0, 6.0))) : 0.0;
+                float growth = saturate((1.0 - paved) * 0.9 + tuft);
                 albedo = lerp(albedo, _Verge.rgb * (0.85 + 0.2 * edgeNoise), growth);
                 // Sand, snow or leaf litter carried over the road by the land it crosses.
-                float drift = i.color.a * smoothstep(0.25, 0.75, CosmiNoise(float3(m * 0.8, 11.0)) + ax * 0.35);
-                albedo = lerp(albedo, i.color.rgb, saturate(drift));
+                if (i.color.a > 0.001)
+                {
+                    float drift = i.color.a * smoothstep(0.25, 0.75, CosmiNoise(float3(m * 0.8, 11.0)) + ax * 0.35);
+                    albedo = lerp(albedo, i.color.rgb, saturate(drift));
+                }
 
                 float3 n = normalize(i.normalWS);
                 Light light = GetMainLight(TransformWorldToShadowCoord(wp));

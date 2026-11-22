@@ -84,6 +84,7 @@ namespace Cosmimera.Player
         private float _gravityAccel;
 
         private readonly List<Chain> _chains = new List<Chain>();
+        private Capsule[] _worldCapsules = System.Array.Empty<Capsule>();
         private bool _built;
 
         /// <summary>World gravity acceleration (m/s²) the cloth falls along; zero until the owner sets it.</summary>
@@ -169,28 +170,37 @@ namespace Cosmimera.Player
             }
 
             float3 g = Gravity;
+            int capsuleCount = _capsuleRadius.Length;
+            if (_worldCapsules.Length < capsuleCount)
+            {
+                _worldCapsules = new Capsule[capsuleCount];
+            }
+
+            for (int j = 0; j < capsuleCount; j++)
+            {
+                _worldCapsules[j] = new Capsule
+                {
+                    A = _capsuleStart[j].position,
+                    B = _capsuleEnd[j].position,
+                    Radius = _capsuleRadius[j] * _capsuleStart[j].lossyScale.x,
+                };
+            }
+
             foreach (var c in _chains)
             {
                 for (int k = 0; k < c.ColliderIndex.Length; k++)
                 {
-                    int j = c.ColliderIndex[k];
-                    c.Colliders[k] = new Capsule
-                    {
-                        A = _capsuleStart[j].position,
-                        B = _capsuleEnd[j].position,
-                        Radius = _capsuleRadius[j] * _capsuleStart[j].lossyScale.x,
-                    };
+                    c.Colliders[k] = _worldCapsules[c.ColliderIndex[k]];
                 }
 
-                // Reset to the modelled pose so the rest directions come from the anchor's current pose.
+                // Compute rest directions mathematically from anchor parent rotation to avoid double Transform writes/rebuilds.
+                Transform parent = c.Bones[0].parent;
+                Quaternion anchorRot = parent != null ? parent.rotation : Quaternion.identity;
+                Quaternion restWorldRot = anchorRot;
                 for (int i = 0; i < c.RestLocal.Length; i++)
                 {
-                    c.Bones[i].localRotation = c.RestLocal[i];
-                }
-
-                for (int i = 0; i < c.RestDir.Length; i++)
-                {
-                    c.RestDir[i] = (c.Bones[i].rotation * c.ChildLocal[i]).normalized;
+                    restWorldRot *= c.RestLocal[i];
+                    c.RestDir[i] = (restWorldRot * c.ChildLocal[i]).normalized;
                 }
 
                 for (int s = 0; s < steps; s++)
@@ -198,12 +208,15 @@ namespace Cosmimera.Player
                     c.Sim.Step(c.Bones[0].position, c.RestDir, g, c.Stiffness, c.Drag, dt, c.Colliders, c.Colliders.Length);
                 }
 
+                Quaternion curParentRot = anchorRot;
                 for (int i = 0; i < c.RestDir.Length; i++)
                 {
-                    Transform b = c.Bones[i];
-                    Vector3 have = b.rotation * c.ChildLocal[i];
+                    Quaternion baseWorld = curParentRot * c.RestLocal[i];
+                    Vector3 have = baseWorld * c.ChildLocal[i];
                     Vector3 want = (Vector3)(c.Sim.Joint(i + 1) - c.Sim.Joint(i));
-                    b.rotation = Quaternion.FromToRotation(have, want) * b.rotation;
+                    Quaternion finalWorld = Quaternion.FromToRotation(have, want) * baseWorld;
+                    c.Bones[i].localRotation = Quaternion.Inverse(curParentRot) * finalWorld;
+                    curParentRot = finalWorld;
                 }
             }
         }

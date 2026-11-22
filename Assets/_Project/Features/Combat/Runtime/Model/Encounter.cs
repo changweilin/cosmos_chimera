@@ -554,6 +554,9 @@ namespace Cosmimera.Combat
         private readonly CombatBalance _balance;
         private readonly IEncounterSurface _surface;
         private readonly List<EncounterUnit> _units = new List<EncounterUnit>(32);
+        private readonly List<EncounterUnit> _sepUnits = new List<EncounterUnit>(32);
+        private readonly List<float3> _sepDirs = new List<float3>(32);
+        private readonly List<EncounterUnit> _engParty = new List<EncounterUnit>(4);
         private readonly List<EncounterEvent> _events = new List<EncounterEvent>(64);
         private readonly List<AiEnemy> _enemyBuffer = new List<AiEnemy>(32);
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
@@ -2831,40 +2834,63 @@ namespace Cosmimera.Combat
         private void Separate(float3 playerPosition)
         {
             float r = _planet.Radius;
+            float invR = 1f / r;
             float3 playerStart = Up(playerPosition);
             float3 playerDir = playerStart;
             float playerRadius = _balance.Collision.CharacterMm * 0.001f;
+
+            _sepUnits.Clear();
+            _sepDirs.Clear();
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.IsActive)
+                {
+                    _sepUnits.Add(u);
+                    _sepDirs.Add(Up(u.Position));
+                }
+            }
+
+            int activeCount = _sepUnits.Count;
             for (int pass = 0; pass < SeparationPasses; pass++)
             {
-                for (int i = 0; i < _units.Count; i++)
+                for (int i = 0; i < activeCount; i++)
                 {
-                    EncounterUnit a = _units[i];
-                    if (!a.IsActive)
-                    {
-                        continue;
-                    }
+                    EncounterUnit a = _sepUnits[i];
+                    float ra = a.CollisionRadiusM;
+                    float3 da = _sepDirs[i];
 
-                    for (int j = i + 1; j < _units.Count; j++)
+                    for (int j = i + 1; j < activeCount; j++)
                     {
-                        EncounterUnit b = _units[j];
-                        if (!b.IsActive)
+                        EncounterUnit b = _sepUnits[j];
+                        float rb = b.CollisionRadiusM;
+                        float3 db = _sepDirs[j];
+                        float maxChord = (ra + rb) * invR + 1e-5f;
+                        if (math.distancesq(da, db) > maxChord * maxChord)
                         {
                             continue;
                         }
 
-                        float3 da = Up(a.Position);
-                        float3 db = Up(b.Position);
-                        if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
+                        if (PushApart(ref da, ra, ref db, rb, r))
                         {
                             PlaceIfAllowed(a, da);
                             PlaceIfAllowed(b, db);
+                            da = Up(a.Position);
+                            _sepDirs[i] = da;
+                            _sepDirs[j] = Up(b.Position);
+                        }
+                        else
+                        {
+                            da = _sepDirs[i];
                         }
                     }
 
-                    float3 d = Up(a.Position);
-                    if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
+                    float playerChord = (ra + playerRadius) * invR + 1e-5f;
+                    if (math.distancesq(da, playerDir) <= playerChord * playerChord &&
+                        PushApart(ref da, ra, ref playerDir, playerRadius, r))
                     {
-                        PlaceIfAllowed(a, d);
+                        PlaceIfAllowed(a, da);
+                        _sepDirs[i] = Up(a.Position);
                     }
                 }
             }
@@ -3338,13 +3364,24 @@ namespace Cosmimera.Combat
             // Cover belongs to the intruder, not the observer. Query each intruder once even when many wilds observe it.
             bool playerInGrass = _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs &&
                 _grassCoverAt != null && _grassCoverAt(Up(playerPosition));
+            _engParty.Clear();
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit p = _units[i];
-                p.HasGrassCover = p.Side == EncounterSide.Player && p.IsActive &&
-                    p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs && _grassCoverAt != null && _grassCoverAt(Up(p.Position));
+                if (p.Side == EncounterSide.Player && p.IsActive)
+                {
+                    p.HasGrassCover = p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs &&
+                        _grassCoverAt != null && _grassCoverAt(Up(p.Position));
+                    _engParty.Add(p);
+                }
+                else
+                {
+                    p.HasGrassCover = false;
+                }
             }
 
+            float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
+            float stealthScale = _partyDetectionPermille * 0.001f;
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
@@ -3363,9 +3400,33 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                WeatherProfile weather = WeatherAt(Up(w.Position), nowMs);
                 float playerDist = math.distance(w.Position, playerPosition);
                 float nearest = playerDist;
+                for (int j = 0; j < _engParty.Count; j++)
+                {
+                    float d = math.distance(w.Position, _engParty[j].Position);
+                    nearest = math.min(nearest, d);
+                }
+
+                // WeatherProfile.TerritoryRadiusPermille <= 1000 everywhere; skip expensive region weather lookup when far.
+                float maxTerritoryM = _balance.Territory.RadiusMm(w.Individual.Habit) * 0.001f * stealthScale;
+                if (nearest > maxTerritoryM + 1e-3f)
+                {
+                    w.EngageDistanceM = nearest;
+                    if (w.Engaged)
+                    {
+                        w.Engaged = nearest <= disengageRadiusM;
+                    }
+                    else
+                    {
+                        w.WantsEngage = (w.WantsEngage && nearest <= disengageRadiusM) || w.Provoked;
+                    }
+
+                    w.Provoked = false;
+                    continue;
+                }
+
+                WeatherProfile weather = WeatherAt(Up(w.Position), nowMs);
 
                 // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
                 // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
@@ -3386,27 +3447,24 @@ namespace Cosmimera.Combat
                     }
                 }
 
-                for (int j = 0; j < _units.Count; j++)
+                for (int j = 0; j < _engParty.Count; j++)
                 {
-                    EncounterUnit p = _units[j];
-                    if (p.Side == EncounterSide.Player && p.IsActive)
+                    if (intruderInRange || territoryMm <= 0)
                     {
-                        float d = math.distance(w.Position, p.Position);
-                        nearest = math.min(nearest, d);
-                        if (!intruderInRange && territoryMm > 0)
-                        {
-                            int petThresholdMm = (weather.StealthEnabled || p.HasGrassCover) && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
-                                ? territoryMm / 2
-                                : territoryMm;
-                            if (d <= petThresholdMm * 0.001f)
-                            {
-                                intruderInRange = true;
-                            }
-                        }
+                        break;
+                    }
+
+                    EncounterUnit p = _engParty[j];
+                    float d = math.distance(w.Position, p.Position);
+                    int petThresholdMm = (weather.StealthEnabled || p.HasGrassCover) && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                        ? territoryMm / 2
+                        : territoryMm;
+                    if (d <= petThresholdMm * 0.001f)
+                    {
+                        intruderInRange = true;
                     }
                 }
 
-                float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
                 w.EngageDistanceM = nearest;
                 if (w.Engaged)
                 {

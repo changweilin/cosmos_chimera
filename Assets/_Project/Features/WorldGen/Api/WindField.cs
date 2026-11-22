@@ -175,18 +175,51 @@ namespace Cosmimera.WorldGen
                 int slot = SlotMs[kind];
                 long lastSlot = timeMs / slot;
                 long firstSlot = math.max(0, (timeMs - LifeMaxMs[kind]) / slot);
-                for (long s = firstSlot; s <= lastSlot; s++)
+                int side = 2 * ring + 1;
+                if (side * side * side <= 512 && firstSlot < lastSlot)
                 {
+                    // Collect on-shell cells once across all time slots (preserves (s, dz, dy, dx) order).
+                    Span<int3> shellCells = stackalloc int3[512];
+                    int shellCount = 0;
                     for (int dz = -ring; dz <= ring; dz++)
                     for (int dy = -ring; dy <= ring; dy++)
                     for (int dx = -ring; dx <= ring; dx++)
                     {
-                        if (into.Count - start >= MaxVortices) return;
                         int3 c = home + new int3(dx, dy, dz);
-                        if (!TrySpawnLocal(seed, radiusM, (VortexKind)kind, c, s, timeMs, out WindVortex v)) continue;
-                        if (math.distance(v.Center, near) * radiusM > v.OuterM + reachM) continue;
-                        if (allow != null && !allow(v.Kind, v.Center)) continue;
-                        into.Add(v);
+                        float3 centre = ((float3)c + 0.5f) * cell;
+                        if (math.abs(math.length(centre) - radiusM) <= cell)
+                        {
+                            shellCells[shellCount++] = c;
+                        }
+                    }
+
+                    for (long s = firstSlot; s <= lastSlot; s++)
+                    {
+                        for (int idx = 0; idx < shellCount; idx++)
+                        {
+                            if (into.Count - start >= MaxVortices) return;
+                            if (!TrySpawnLocal(seed, radiusM, (VortexKind)kind, shellCells[idx], s, timeMs, out WindVortex v)) continue;
+                            if (math.distance(v.Center, near) * radiusM > v.OuterM + reachM) continue;
+                            if (allow != null && !allow(v.Kind, v.Center)) continue;
+                            into.Add(v);
+                        }
+                    }
+                }
+                else
+                {
+                    for (long s = firstSlot; s <= lastSlot; s++)
+                    {
+                        for (int dz = -ring; dz <= ring; dz++)
+                        for (int dy = -ring; dy <= ring; dy++)
+                        for (int dx = -ring; dx <= ring; dx++)
+                        {
+                            if (into.Count - start >= MaxVortices) return;
+                            int3 c = home + new int3(dx, dy, dz);
+                            if (!TrySpawnLocal(seed, radiusM, (VortexKind)kind, c, s, timeMs, out WindVortex v)) continue;
+                            if (math.distance(v.Center, near) * radiusM > v.OuterM + reachM) continue;
+                            if (allow != null && !allow(v.Kind, v.Center)) continue;
+                            into.Add(v);
+                        }
                     }
                 }
             }
@@ -338,19 +371,19 @@ namespace Cosmimera.WorldGen
             ulong key = seed ^ 0x564F5254UL ^ ((ulong)(uint)cell.x * 0x9E3779B97F4A7C15UL)
                         ^ ((ulong)(uint)cell.y * 0xC2B2AE3D27D4EB4FUL) ^ ((ulong)(uint)cell.z * 0x165667B19E3779F9UL);
             var rng = new Pcg32(key, ((ulong)slot << 2) | (uint)k);
-            // Every draw first, so no decision shifts another.
+            // Local per-cell stream: abort before tail draws when chance/lifetime rejects.
             int chance = rng.NextInt(0, 100);
+            if (chance >= ChancePct[k]) return false;
             float fx = rng.NextFloat(), fy = rng.NextFloat(), fz = rng.NextFloat();
             int bornOffset = rng.NextInt(0, SlotMs[k]);
             int life = rng.NextInt(LifeMinMs[k], LifeMaxMs[k] + 1);
+            long born = slot * SlotMs[k] + bornOffset;
+            long age = timeMs - born;
+            if (age < 0 || age >= life) return false;
             float outer = math.lerp(OuterMinM[k], OuterMaxM[k], rng.NextFloat());
             float driftDeg = rng.NextFloat() * 360f;
             float drift = DriftMaxMps[k] * (0.5f + 0.5f * rng.NextFloat());
             int spin = rng.NextInt(0, 2) == 0 ? 1 : -1;
-            if (chance >= ChancePct[k]) return false;
-            long born = slot * SlotMs[k] + bornOffset;
-            long age = timeMs - born;
-            if (age < 0 || age >= life) return false;
             float3 birth = math.normalize((float3)cell * cellM + new float3(fx, fy, fz) * cellM);
             float3 center = Travel(birth, driftDeg, drift * age / 1000f / radiusM);
             int peak = (int)(PeakPermilleOf[k] * Envelope(age, life));
@@ -363,16 +396,16 @@ namespace Cosmimera.WorldGen
             vortex = default;
             var rng = new Pcg32(seed ^ 0x43594300UL, ((ulong)slot << 1) | (uint)birthIndex);
             int chance = rng.NextInt(0, 100);
+            if (chance >= 45) return false;
             int bornOffset = rng.NextInt(0, CycloneSlotMs);
             int life = rng.NextInt(CycloneLifeMinMs, CycloneLifeMaxMs + 1);
+            long born = slot * CycloneSlotMs + bornOffset;
+            long age = timeMs - born;
+            if (age < 0 || age >= life) return false;
             float latDeg = 8f + rng.NextFloat() * 17f;
             bool north = rng.NextInt(0, 2) == 0;
             float lonDeg = rng.NextFloat() * 360f;
             float outerShare = 0.2f + rng.NextFloat() * 0.1f;
-            if (chance >= 45) return false;
-            long born = slot * CycloneSlotMs + bornOffset;
-            long age = timeMs - born;
-            if (age < 0 || age >= life) return false;
             // Steered west by the trades, recurving poleward as it ages (the classic parabolic track).
             float lonNow = math.radians(lonDeg) - CycloneDriftMps * age / 1000f / radiusM;
             float latNow = math.radians(latDeg) + 0.0035f * math.radians(1f) * (age / 1000f) * (age / (float)life);

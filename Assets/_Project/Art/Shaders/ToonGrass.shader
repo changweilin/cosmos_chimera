@@ -88,6 +88,19 @@ Shader "Cosmimera/ToonGrass"
                     return o;
                 }
 
+                // Clip-space frustum reject before wind, noise, triplanar, bedrock and SH evaluation;
+                // generous world-space padding keeps off-screen edges from clipping leaning or wide clumps.
+                float4 rootCS = TransformWorldToHClip(root);
+                float pad = 2.5 * max(_GrassHeight, 1.0);
+                float padX = pad * abs(UNITY_MATRIX_P._m00);
+                float padY = pad * abs(UNITY_MATRIX_P._m11);
+                bool behind = unity_OrthoParams.w < 0.5 && rootCS.w < -pad;
+                float wBound = abs(rootCS.w) + (unity_OrthoParams.w < 0.5 ? pad : 0.0);
+                if (behind || abs(rootCS.x) > wBound + padX || abs(rootCS.y) > wBound + padY)
+                {
+                    return o;
+                }
+
                 float3 up = normalize(root - _PlanetCenter.xyz);
                 float h = i.uv.y;
                 float3 local = i.positionOS.xyz;
@@ -100,7 +113,7 @@ Shader "Cosmimera/ToonGrass"
                 // vortices turn and strengthen (CosmiWindAt).
                 float3 baseWind = CosmiWindDir(up);
                 float vortexBoost;
-                float3 wind = CosmiWindAt(up, vortexBoost);
+                float3 wind = CosmiWindAt(up, baseWind, vortexBoost);
                 float along = dot(root, baseWind);
                 float across = dot(root, cross(up, baseWind));
                 float wave = max(_CosmiWind.z, 1.0);
@@ -118,15 +131,19 @@ Shader "Cosmimera/ToonGrass"
                 float h2 = h * h * size;
                 ws += lean * h2 - up * (dot(lean, lean) * h2 * 0.45 + push * h2 * 0.25);
 
-                CosmiGround g = CosmiGroundAt(root, up);
-                half3 ground = CosmiBiomeColorVertex(root, g);
-                half3 tipColor = ground * half3(1.16, 1.2, 0.9) + half3(0.012, 0.024, 0.0);
-                half3 albedo = lerp(ground * 0.93, tipColor, h); // mean ≈ ground: no edge where grass streams out
-                albedo += gust * _CosmiWind.x * h * 0.07; // gust fronts flash the pale underside
+                half3 albedo;
                 if (i.bloom.x > 0.5)
                 {
                     half3 petal = CosmiBloomColor(up, i.uv.x) * lerp(0.92, 1.08, frac(i.uv.x * 7.3));
                     albedo = lerp(petal, half3(1.0, 0.82, 0.25), i.bloom.y * 0.8);
+                }
+                else
+                {
+                    CosmiGround g = CosmiGroundAt(root, up);
+                    half3 ground = CosmiBiomeColorVertex(root, g);
+                    half3 tipColor = ground * half3(1.16, 1.2, 0.9) + half3(0.012, 0.024, 0.0);
+                    albedo = lerp(ground * 0.93, tipColor, h); // mean ≈ ground: no edge where grass streams out
+                    albedo += gust * _CosmiWind.x * h * 0.07; // gust fronts flash the pale underside
                 }
 
                 o.positionWS = ws;
