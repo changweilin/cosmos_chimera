@@ -105,3 +105,7 @@ ehthumbs.db
 # Unreviewed AI art deliveries (tools/prompt-forge); only promoted assets under Assets/ are committed
 /Art/_incoming/*
 !/Art/_incoming/README.md
+
+# UMA 3 (ADR-0012): installed by tools/install-uma, not versioned
+/Assets/UMA/
+/Assets/UMA.meta

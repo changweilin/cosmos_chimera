@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+# Downloads the pinned UMA release and imports it into Assets/UMA (gitignored, ADR-0012).
+# Usage: tools/install-uma            (Unity Editor must NOT have this project open)
+#        UNITY=/path/to/Unity.exe tools/install-uma
+set -eu
+
+UMA_TAG="V3.1.5"
+UMA_FILE="UMA31_f5.unitypackage"
+UMA_SHA256="132247a2a7e338457d36a2d6470d80254a3f8d1fd6b6dc1bf597fc12f0821163"
+UMA_URL="https://github.com/umasteeringgroup/UMA/releases/download/${UMA_TAG}/${UMA_FILE}"
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CACHE="$ROOT/Library/UMA-cache"
+PKG="$CACHE/$UMA_FILE"
+UNITY="${UNITY:-C:/Program Files/Unity/Hub/Editor/6000.3.28f1/Editor/Unity.exe}"
+
+if [ ! -f "$UNITY" ]; then
+  echo "error: Unity not found at $UNITY (set UNITY=...)" >&2
+  exit 2
+fi
+
+mkdir -p "$CACHE" "$ROOT/Logs"
+
+if [ ! -f "$PKG" ]; then
+  echo "downloading $UMA_URL (~950 MB)"
+  curl -L --fail -o "$PKG.part" "$UMA_URL"
+  mv "$PKG.part" "$PKG"
+fi
+
+ACTUAL="$(sha256sum "$PKG" | cut -d' ' -f1)"
+if [ "$ACTUAL" != "$UMA_SHA256" ]; then
+  echo "error: sha256 mismatch for $PKG (got $ACTUAL); delete it and retry" >&2
+  exit 1
+fi
+
+echo "importing $UMA_FILE into $ROOT (log: Logs/install-uma.log)"
+"$UNITY" -batchmode -nographics -projectPath "$ROOT" \
+  -importPackage "$PKG" -quit -logFile "$ROOT/Logs/install-uma.log"
+
+# Separate run: the import must finish compiling UMA before the library rebuild can execute.
+echo "rebuilding UMA Global Library (log: Logs/install-uma-library.log)"
+"$UNITY" -batchmode -nographics -projectPath "$ROOT" \
+  -executeMethod Cosmimera.EditorTools.UmaLibrary.Rebuild -quit -logFile "$ROOT/Logs/install-uma-library.log"
+echo "done: UMA $UMA_TAG"
