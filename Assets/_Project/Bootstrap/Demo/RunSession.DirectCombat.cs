@@ -229,11 +229,11 @@ namespace Cosmimera.Bootstrap.Demo
             _quickWheelOpen = false;
             for (int i = _team.Active.Count - 1; i >= 0; i--)
             {
-                int id = _team.Active[i];
-                _encounter.Unfield(id);
-                _team.Recall(id, _nowMs);
+                _encounter.Unfield(_team.Active[i]);
             }
 
+            _team.RecallAll(_nowMs);
+            _mainId = CombatAi.NoTarget;
             _returnedToPlayer = true;
             UpdateDirectControlState();
             Toast("已回到角色（可自由行動，投擲收服需等脫戰）");

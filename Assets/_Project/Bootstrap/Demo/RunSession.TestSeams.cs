@@ -479,6 +479,58 @@ namespace Cosmimera.Bootstrap.Demo
             _rig.Character.Teleport(_rig.Config.ToWorld(direction, _surface.GroundAltitude(direction) + 1f));
         }
 
+        /// <summary>Whether direct creature control is currently active (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: matches IsDirectControlling. Side effects: none.</remarks>
+        internal bool IsDirectControllingForTests => IsDirectControlling;
+
+        /// <summary>Whether the player returned to character control during the current combat (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: current flag. Side effects: none.</remarks>
+        internal bool ReturnedToPlayerForTests => _returnedToPlayer;
+
+        /// <summary>Current main creature unit id (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: unit id or NoTarget. Side effects: none.</remarks>
+        internal int MainIdForTests => _mainId;
+
+        /// <summary>Whether wild unit <paramref name="unitId"/> has been marked gone (captured, fled, or unloaded).</summary>
+        /// <remarks>Pre: Configure ran. Post: true iff wild is tracked and Gone. Side effects: none.</remarks>
+        internal bool IsWildGoneForTests(int unitId) => _wild.TryGetValue(unitId, out WildInfo w) && w.Gone;
+
+        /// <summary>Knockout timestamp for wild unit <paramref name="unitId"/>, or -1 if conscious/unknown.</summary>
+        /// <remarks>Pre: Configure ran. Post: >= 0 once knocked out. Side effects: none.</remarks>
+        internal long KnockedOutAtMsForTests(int unitId) => _wild.TryGetValue(unitId, out WildInfo w) ? w.KnockedOutAtMs : -1L;
+
+        /// <summary>Finds the nearest capturable wild within <paramref name="reach"/> metres.</summary>
+        /// <remarks>Pre: the run landed; reach > 0. Post: wild unit id or -1. Side effects: none.</remarks>
+        internal int FindCaptureTargetForTests(float reach = CaptureReachM) => FindCaptureTarget(reach);
+
+        /// <summary>Runs the ReturnToPlayerInCombat action directly (P2-17).</summary>
+        /// <remarks>Pre: the run landed. Post: active creatures recalled and direct control disabled. Side effects: team and encounter state.</remarks>
+        internal void ReturnToPlayerForTests() => ReturnToPlayerInCombat();
+
+        /// <summary>Runs TryCapture directly (P2-17).</summary>
+        /// <remarks>Pre: the run landed. Post: captures if allowed and target exists. Side effects: inventory, outcome, encounter.</remarks>
+        internal void TryCaptureForTests() => TryCapture();
+
+        /// <summary>Advances the session simulation clock by <paramref name="deltaMs"/> (for capture window tests).</summary>
+        /// <remarks>Pre: deltaMs >= 0. Post: NowMsForTests increased by deltaMs. Side effects: advances _nowMs.</remarks>
+        internal void AdvanceNowMsForTests(long deltaMs)
+        {
+            Contract.Requires(deltaMs >= 0, "deltaMs >= 0");
+            _nowMs += deltaMs;
+        }
+
+        /// <summary>Queues a unit faint to be settled on the next Update tick.</summary>
+        /// <remarks>Pre: Configure ran; id indexes _encounter.Units and unit is fainted. Post: queued for OnFaint. Side effects: _injectedFaints.</remarks>
+        internal void QueueFaintForTests(int id)
+        {
+            Contract.Requires(_encounter != null && id >= 0 && id < _encounter.Units.Count, "known unit required");
+            _injectedFaints.Add(id);
+        }
+
+        /// <summary>Boss unit id for the run, or -1.</summary>
+        /// <remarks>Pre: Configure ran. Post: unit id or -1. Side effects: none.</remarks>
+        internal int BossUnitForTests() => BossUnit();
+
         private void RenderCameraTo(string path)
         {
             var rt = new RenderTexture(1280, 720, 24);

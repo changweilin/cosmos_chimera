@@ -446,5 +446,20 @@ namespace Cosmimera.Combat.Tests
             t.BeginCombat();
             CollectionAssert.AreEqual(new[] { 10 }, t.Active);
         }
+
+        [Test]
+        public void RecallAll_clears_both_active_members_and_starts_cooldown()
+        {
+            TeamState t = FullTeamInCombat();
+            t.RecallAll(0);
+            Assert.AreEqual(0, t.SwitchCooldownRemainingMs(0), "empty RecallAll starts no cooldown");
+
+            t.Summon(10, 0);
+            t.Summon(11, 0);
+            t.RecallAll(100);
+            Assert.IsEmpty(t.Active);
+            Assert.AreEqual(Cd, t.SwitchCooldownRemainingMs(100));
+            Assert.Throws<ContractException>(() => t.RecallAll(99));
+        }
     }
 }

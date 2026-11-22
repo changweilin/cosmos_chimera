@@ -1785,6 +1785,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (_mainId == unitId)
                 {
                     _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
+                    UpdateDirectControlState();
                 }
 
                 return;
@@ -1854,7 +1855,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void RefillField(float3 player)
         {
-            if (_team.Active.Count >= 2)
+            if (_returnedToPlayer || _team.Active.Count >= 2)
             {
                 return;
             }
@@ -1880,6 +1881,10 @@ namespace Cosmimera.Bootstrap.Demo
             if (_mainId == CombatAi.NoTarget && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
+                if (_team.InCombat)
+                {
+                    UpdateDirectControlState();
+                }
             }
         }
 
@@ -2387,6 +2392,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TryCapture()
         {
+            if (_team.InCombat)
+            {
+                Toast("戰鬥中無法投擲收服，請先結束戰鬥或脫戰");
+                return;
+            }
+
             int best = FindCaptureTarget(CaptureReachM);
             if (best < 0)
             {
@@ -2440,7 +2451,8 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 bool friendly = _encounter.Units[kv.Key].IsFriendlyAfterConfrontation && _encounter.Units[kv.Key].IsActive;
-                bool knocked = kv.Value.KnockedOutAtMs >= 0 && _nowMs - kv.Value.KnockedOutAtMs <= KnockedOutWindowMs;
+                // REQ: combat.md#收服時機 (Q-C55) — knocked-out wilds remain capturable until captured or region unload.
+                bool knocked = kv.Value.KnockedOutAtMs >= 0;
                 if (kv.Value.Gone || (!knocked && !friendly))
                 {
                     continue;
@@ -2517,7 +2529,21 @@ namespace Cosmimera.Bootstrap.Demo
             int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player));
             if (region != _region)
             {
+                int previousRegion = _region;
                 _region = region;
+                if (previousRegion >= 0)
+                {
+                    // REQ: combat.md#收服時機 (Q-C55) — knocked-out wilds remain until their region is left.
+                    foreach (KeyValuePair<int, WildInfo> kv in _wild)
+                    {
+                        WildInfo w = kv.Value;
+                        if (!w.Gone && w.KnockedOutAtMs >= 0 && RoleOf(w) != SpawnRole.Boss && RegionOf(w) == previousRegion)
+                        {
+                            w.Gone = true;
+                            _encounter.Remove(kv.Key);
+                        }
+                    }
+                }
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
                 PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
@@ -3581,6 +3607,30 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _feedback.ShowSupport(targetPos, targetFwd, targetUp, targetRadius, ev.Amount);
             }
+            else if (ev.Kind == EncounterEventKind.Blocked)
+            {
+                _feedback.ShowBlock(targetPos, targetFwd, targetUp, targetRadius, perfect: false);
+            }
+            else if (ev.Kind == EncounterEventKind.PerfectBlock)
+            {
+                _feedback.ShowBlock(targetPos, targetFwd, targetUp, targetRadius, perfect: true);
+            }
+            else if (ev.Kind == EncounterEventKind.GuardBroken)
+            {
+                _feedback.ShowGuardBreak(targetPos, targetFwd, targetUp, targetRadius);
+            }
+            else if (ev.Kind == EncounterEventKind.PerfectDodge)
+            {
+                _feedback.ShowPerfectDodge(targetPos, targetFwd, targetUp, targetRadius);
+            }
+            else if (ev.Kind == EncounterEventKind.Reflected)
+            {
+                _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor, HitTier.Medium, false);
+            }
+            else if (ev.Kind == EncounterEventKind.Staggered)
+            {
+                _feedback.ShowStagger(targetPos, targetFwd, targetUp, targetRadius);
+            }
         }
 
         // REQ: weather.md#落雷 — a strike has no caster, so it gets its own feedback: a heavy thunder-coloured hit.
@@ -3996,13 +4046,18 @@ namespace Cosmimera.Bootstrap.Demo
                 help,
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
 
+            if (_team.InCombat)
+            {
+                return;
+            }
+
             int capture = FindCaptureTarget(CaptureReachM);
             if (capture < 0)
             {
                 return;
             }
 
-            float seconds = (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f;
+            float seconds = math.max(0f, (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f);
             string prompt = _copy.Ui("ui.hud.capture_available")
                 .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
                 .Replace("{name}", _copy.Name(_encounter.Units[capture].Def.Id))

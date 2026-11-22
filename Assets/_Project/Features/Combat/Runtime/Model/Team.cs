@@ -315,6 +315,24 @@ namespace Cosmimera.Combat
             return TeamResult.Ok;
         }
 
+        /// <summary>Recalls all active field members back to the pool so the player can disengage/retreat (combat.md#收回與逃跑).</summary>
+        /// <remarks>
+        /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark.
+        /// Post: Active is empty; if any member was recalled, the shared switch cooldown starts at nowMs.
+        /// Side effects: clears Active and starts cooldown when non-empty; advances the watermark to nowMs.
+        /// </remarks>
+        public void RecallAll(long nowMs)
+        {
+            AdvanceTime(nowMs);
+            if (_active.Count == 0)
+            {
+                return;
+            }
+
+            _active.Clear();
+            StartCooldown(nowMs);
+        }
+
         /// <summary>Swaps a field member for a pool member in one step, keeping the outgoing slot position.</summary>
         /// <remarks>
         /// Pre: 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs >= the time watermark.
