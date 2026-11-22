@@ -180,8 +180,50 @@ def _children(rig, h):
     return [o for o in bpy.data.objects if o.type == "MESH" and o is not h and (o.parent in (h, rig))]
 
 
+def smooth_joints(h, iterations=40, strength=0.7, spread=16):
+    """Taubin-smooths knees and elbows: MakeHuman's kneecap, inner-knee notch and calf bulge leave
+    a kinked contour that the inverted-hull outline turns into crack lines, so the leg reads as
+    broken. Anime limbs are smooth tubes there. Taubin (shrink then inflate) keeps limb thickness,
+    which plain Laplacian steps would eat; the joint zone is diffused "spread" rings outward so the
+    smoothing fades in along the limb instead of leaving a step.
+
+    Pre: h rigged (bone vertex groups present), rest pose. Side effects: edits h.data vertex positions.
+    """
+    names = {vg.index: vg.name for vg in h.vertex_groups}
+    pairs = [("thigh_%s", "calf_%s"), ("upperarm_%s", "lowerarm_%s")]
+    limb = ("thigh_l", "thigh_r", "calf_l", "calf_r", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r")
+    zone, on_limb = {}, set()
+    for v in h.data.vertices:
+        w = {names[g.group]: g.weight for g in v.groups}
+        if "body" not in w:
+            continue
+        if sum(w.get(b, 0.0) for b in limb) > 0.9:
+            on_limb.add(v.index)
+        zone[v.index] = max(min(1.0, 8.0 * w.get(a % s, 0.0) * w.get(b % s, 0.0)) for a, b in pairs for s in "lr")
+    nbr = {i: [] for i in zone}
+    for e in h.data.edges:
+        a, b = e.vertices
+        if a in nbr and b in nbr:
+            nbr[a].append(b)
+            nbr[b].append(a)
+    for _ in range(spread):
+        zone = {i: max(z, 0.85 * max((zone[j] for j in nbr[i]), default=0.0)) if i in on_limb else z
+                for i, z in zone.items()}
+    region = {i: z * strength for i, z in zone.items() if z > 0.0 and nbr[i]}
+    co = {i: h.data.vertices[i].co.copy() for i in zone}
+    for _ in range(iterations):
+        for k in (1.0, -1.06):
+            new = {i: co[i].lerp(sum((co[j] for j in nbr[i]), Vector()) / len(nbr[i]), w * k)
+                   for i, w in region.items()}
+            co.update(new)
+    for i in region:
+        h.data.vertices[i].co = co[i]
+    h.data.update()
+
+
 def dress(h, rig, spec):
     """Applies colours and outlines; hair and outfit come from acg_hair / acg_outfit."""
+    smooth_joints(h)
     look = spec["look"]
     skin = toon_material("skin_" + spec["id"], look["skin"], look.get("skin_shade"))
     set_material(h, skin)

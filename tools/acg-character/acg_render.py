@@ -25,6 +25,10 @@ def t_pose(rig, spec):
         for name in ("lowerarm_" + side, "hand_" + side):
             rig.pose.bones[name].rotation_mode = "QUATERNION"
     bpy.ops.object.mode_set(mode="OBJECT")
+    # The A-pose forearm also bends ~45 deg forward; straighten forearm and hand along the upper arm,
+    # or sleeve tubes and cuffs authored along X stand off the forearm and the hand leaves the sleeve.
+    for side, sign in (("l", 1), ("r", -1)):
+        art_pose(rig, {"aim": [["lowerarm_" + side, [sign, 0, 0]], ["hand_" + side, [sign, 0, 0]]]})
     bpy.context.view_layer.update()
 
 
@@ -217,6 +221,21 @@ def _fbx_materials():
     return table
 
 
+def _limit_weights(ob, bones, limit):
+    """Keeps each vertex's `limit` strongest bone weights, renormalised to sum 1 (non-bone groups untouched)."""
+    groups = {vg.index: vg for vg in ob.vertex_groups if vg.name in bones}
+    for v in ob.data.vertices:
+        ws = sorted(((g.weight, g.group) for g in v.groups if g.group in groups and g.weight > 0), reverse=True)
+        if not ws:
+            continue
+        keep = ws[:limit]
+        tot = sum(w for w, _ in keep)
+        for w, gi in ws[limit:]:
+            groups[gi].remove([v.index])
+        for w, gi in keep:
+            groups[gi].add([v.index], w / tot, "REPLACE")
+
+
 def export_fbx(rig, path):
     """Exports armature and meshes in bind pose (T-pose) for Unity Humanoid import. When the rig has
     an action (Idle_Art), it goes to a separate armature-only file "<name>@<action>.fbx" (Unity's
@@ -271,6 +290,13 @@ def export_fbx(rig, path):
     for o in rig.children_recursive:
         if o.type == "MESH":
             coll.objects.link(o)
+    # Unity skins at most 4 bones per vertex and drops the rest unnormalised; MakeHuman knees and
+    # elbows carry more, so posed knees kinked in Unity while Blender looked right. Trim here so
+    # both agree.
+    bones = set(rig.data.bones.keys())
+    for o in coll.objects:
+        if o.type == "MESH" and o.vertex_groups:
+            _limit_weights(o, bones, 4)
     model = dict(common, use_selection=False, use_custom_props=True)
     bpy.ops.export_scene.fbx(filepath=os.path.abspath(path), collection=coll.name, object_types={"ARMATURE", "MESH"},
                              mesh_smooth_type="FACE", use_mesh_modifiers=True, bake_anim=False,

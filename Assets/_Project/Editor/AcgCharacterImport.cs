@@ -115,8 +115,12 @@ namespace Cosmimera.EditorTools
                 mat.SetColor("_Shadow", tint);
                 mat.SetFloat("_Bands", Mathf.Max(2, row.bands));
                 var bare = System.Array.Exists(NoOutline, k => row.name.StartsWith(k));
-                mat.SetFloat("_OutlineWidth", bare ? 0f : 0.0018f);
+                // Skin gets a finer line: a bent knee or elbow is concave, and a wide hull shows through there.
+                mat.SetFloat("_OutlineWidth", bare ? 0f : row.name.StartsWith("skin_") ? 0.0012f : 0.0018f);
                 mat.SetColor("_OutlineColor", new Color(0.16f, 0.11f, 0.12f, 1f));
+                // A bent knee or elbow is concave; Humanoid retargeting also leaves a few degrees of knee twist the
+                // rig cannot avoid. Pushing the hull back hides the slivers that would read as cracks there.
+                mat.SetFloat("_OutlineDepthBias", 0.006f);
                 var tex = string.IsNullOrEmpty(row.texture) ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{row.texture}");
                 mat.SetTexture("_BaseMap", tex);
                 EditorUtility.SetDirty(mat);

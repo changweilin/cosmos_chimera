@@ -24,3 +24,5 @@
 收身：完整包覆的切殼服裝（不含 `x`／`face` 拼片與 `prim`）底下的皮膚往內縮 `tuck` 公尺（預設 0.012，0 關閉；邊緣保留兩圈頂點），關節彎曲時身體不會穿出衣服。切殼服裝也可用 `swing: {ring, segments, from}`（同裙子）讓下擺擺動。
 
 材質：`--fbx` 另寫 `<id>_acg_materials.json`（每個材質的亮色、暗色、色階數、貼圖）；Unity `AcgCharacterImport.Configure` 據此在 `ACG/Materials/` 建 `Cosmimera/ToonOutlined` 材質（含描邊，臉部貼片除外）並重新對應，皮膚與衣服才分得開。
+
+綁定姿勢：T-pose 會把前臂與手掌拉直到上臂延長線上（MakeHuman 前臂原本前彎約 45°），袖筒與袖口才會包住前臂、手才會從袖口伸出。膝蓋與手肘以 Taubin 平滑抹掉寫實的膝蓋骨凹凸；匯出時每頂點骨權重限 4 根（Unity 上限）。`idle_pose` 不要把腳掌「放平」：Humanoid 的腳沒有內外翻，Unity 會把它轉嫁成小腿扭轉，膝蓋看起來像斷掉。Unity 材質另設 `_OutlineDepthBias`，把描邊外殼沿視線往後推，關節凹處不會透出裂痕般的線。

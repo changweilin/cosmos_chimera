@@ -9,6 +9,7 @@ Shader "Cosmimera/ToonOutlined"
         _Bands ("Light Bands", Float) = 2
         _OutlineColor ("Outline Color", Color) = (0.08, 0.06, 0.1, 1)
         _OutlineWidth ("Outline Width (m)", Float) = 0.025
+        _OutlineDepthBias ("Outline Depth Bias (m)", Float) = 0
     }
 
     SubShader
@@ -25,6 +26,7 @@ Shader "Cosmimera/ToonOutlined"
             float _Bands;
             half4 _OutlineColor;
             float _OutlineWidth;
+            float _OutlineDepthBias;
         CBUFFER_END
         // Optional albedo texture (ACG character hair strands, irises); the default white leaves untextured users unchanged.
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
@@ -88,6 +90,9 @@ Shader "Cosmimera/ToonOutlined"
             {
                 float3 ws = TransformObjectToWorld(i.positionOS.xyz);
                 ws += TransformObjectToWorldNormal(i.normalOS) * _OutlineWidth;
+                // Pushed away from the camera, hull slivers inside concave folds (a bent knee or elbow) fall behind the
+                // surface and vanish, while the silhouette rim, with nothing in front of it, still draws.
+                ws += GetViewForwardDir() * _OutlineDepthBias;
                 return TransformWorldToHClip(ws);
             }
             half4 Frag() : SV_Target { return _OutlineColor; }

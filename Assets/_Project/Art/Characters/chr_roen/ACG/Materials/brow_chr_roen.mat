@@ -30,6 +30,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _Bands: 2
+    - _OutlineDepthBias: 0.006
     - _OutlineWidth: 0
     m_Colors:
     - _BaseColor: {r: 0.4745098, g: 0.3764706, b: 0.3529412, a: 1}
