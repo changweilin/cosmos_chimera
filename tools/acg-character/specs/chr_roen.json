@@ -59,8 +59,8 @@
     "thigh_length": 1.5
   },
   "look": {
-    "skin": "#f6dcc8",
-    "skin_shade": "#e0b49e",
+    "skin": "#f3cdb5",
+    "skin_shade": "#d9a089",
     "iris": "#8c8193",
     "iris_dark": "#544c61",
     "brow": "#79605a",
@@ -319,7 +319,12 @@
       "open_from": "pelvis",
       "color": "#ece8e6",
       "shade": "#b4adb3",
-      "smooth": 4
+      "smooth": 4,
+      "swing": {
+        "ring": 8,
+        "segments": 1,
+        "from": "waist"
+      }
     },
     {
       "name": "cuffs",
@@ -354,7 +359,23 @@
       "color": "#ece8e6",
       "shade": "#b4adb3",
       "soft": true,
-      "lining": "#e8a055"
+      "lining": "#e8a055",
+      "swing": {
+        "roots": [
+          [
+            0,
+            0.0,
+            0.05
+          ]
+        ],
+        "dir": [
+          0,
+          0.4,
+          -0.92
+        ],
+        "length": 0.12,
+        "segments": 2
+      }
     },
     {
       "name": "shorts",
@@ -982,7 +1003,7 @@
       "at": [
         -0.03,
         -0.125,
-        -0.07
+        -0.12
       ],
       "size": [
         0.025,
@@ -991,11 +1012,22 @@
       ],
       "rot": [
         0,
-        -55,
+        -10,
         0
       ],
       "bevel": 0.3,
-      "color": "#ef8a2c"
+      "color": "#ef8a2c",
+      "swing": {
+        "roots": [
+          [
+            0,
+            0,
+            0.085
+          ]
+        ],
+        "length": 0.17,
+        "segments": 2
+      }
     },
     {
       "name": "bottle",

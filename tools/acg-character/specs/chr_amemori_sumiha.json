@@ -45,7 +45,7 @@
     "head-angle-in": 0.45
   },
   "proportions": {
-    "heads": 6.8,
+    "heads": 7.0,
     "leg_length": 1.17,
     "leg_thin": 0.85,
     "neck_thin": 0.74,
@@ -73,8 +73,8 @@
     "brow_lift": 0.003
   },
   "look": {
-    "skin": "#f8e2d2",
-    "skin_shade": "#e6b8a6",
+    "skin": "#f6d3bf",
+    "skin_shade": "#e0a691",
     "iris": "#b45c51",
     "iris_dark": "#703843",
     "brow": "#2c2038",
@@ -455,7 +455,7 @@
       ],
       "sleeve": [
         0,
-        0.4
+        0.78
       ],
       "offset": 0.012,
       "color": "#f6ece2",
@@ -1238,7 +1238,17 @@
       "bevel": 0.2,
       "color": "#c8343a",
       "shade": "#8c1e24",
-      "swing_with": "skirt"
+      "swing": {
+        "roots": [
+          [
+            0,
+            0,
+            0.13
+          ]
+        ],
+        "length": 0.26,
+        "segments": 3
+      }
     },
     {
       "name": "watch",

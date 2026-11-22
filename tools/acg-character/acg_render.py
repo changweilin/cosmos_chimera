@@ -176,9 +176,19 @@ def render_views(rig, spec, out_dir, views=VIEWS, faces=True, prefix=""):
     return paths
 
 
+def _to_srgb_hex(c):
+    def enc(x):
+        x = max(0.0, min(1.0, x))
+        return 12.92 * x if x <= 0.0031308 else 1.055 * x ** (1 / 2.4) - 0.055
+    return "#%02x%02x%02x" % tuple(round(enc(x) * 255) for x in c[:3])
+
+
 def _fbx_materials():
     """Routes each cel material's lit colour through a Principled BSDF: the FBX exporter reads
-    only that node, and Unity rebuilds toon shading from the base colour anyway."""
+    only that node. Returns {material: {base, shade, bands, texture}} (sRGB hex) for the Unity
+    importer, which rebuilds the cel look on Cosmimera/ToonOutlined: FBX carries no shade colour,
+    and a lone base colour under URP Lit washes light skin out to the white of the clothes."""
+    table = {}
     for m in bpy.data.materials:
         if not m.use_nodes or m.name == "acg_outline":
             continue
@@ -186,6 +196,17 @@ def _fbx_materials():
         out = next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
         if out is None:
             continue
+        ramp = next((n for n in nt.nodes if n.type == "VALTORGB"), None)
+        img = next((n.image for n in nt.nodes if n.type == "TEX_IMAGE" and n.image), None)
+        entry = {"base": _to_srgb_hex(m.diffuse_color), "shade": None, "bands": 2,
+                 "texture": img.name if img else None}
+        if ramp is not None:
+            els = ramp.color_ramp.elements
+            entry["shade"] = _to_srgb_hex(els[0].color)
+            entry["bands"] = 3 if len(els) > 2 else 2
+            if img is None:
+                entry["base"] = _to_srgb_hex(els[-1].color)
+        table[m.name] = entry
         p = nt.nodes.new("ShaderNodeBsdfPrincipled")
         p.inputs["Base Color"].default_value = m.diffuse_color
         p.inputs["Roughness"].default_value = 1.0
@@ -193,6 +214,7 @@ def _fbx_materials():
         if tex is not None:
             nt.links.new(tex.outputs[0], p.inputs["Base Color"])
         nt.links.new(p.outputs[0], out.inputs[0])
+    return table
 
 
 def export_fbx(rig, path):
@@ -204,6 +226,7 @@ def export_fbx(rig, path):
     builds the Humanoid avatar from those transforms, so they must stay in the T-pose.
     Side effects: unassigns the action (kept with a fake user) during the model export, resets the
     pose to rest, disables render-only outline modifiers and rewires materials in this session.
+    Also writes "<name>_materials.json" (cel colours per material, see _fbx_materials).
     Returns the list of written paths.
     """
     act = rig.animation_data.action if rig.animation_data else None
@@ -232,7 +255,13 @@ def export_fbx(rig, path):
             img.filepath_raw = os.path.join(os.path.dirname(os.path.abspath(path)), img.name)
             img.file_format = "PNG"
             img.save()
-    _fbx_materials()
+    import json
+    base = os.path.splitext(os.path.abspath(path))[0]
+    with open(base + "_materials.json", "w", encoding="utf-8", newline="\n") as f:
+        # A list, not a map: Unity's JsonUtility reads arrays of records but not dictionaries.
+        rows = [dict(name=k, **v) for k, v in sorted(_fbx_materials().items())]
+        json.dump({"materials": rows}, f, indent=1, sort_keys=True)
+        f.write("\n")
     common = dict(use_selection=True, add_leaf_bones=False, apply_unit_scale=True,
                   apply_scale_options="FBX_SCALE_UNITS", axis_forward="-Z", axis_up="Y")
     # Export from a collection, not the selection: hidden props (hide_viewport) cannot be selected

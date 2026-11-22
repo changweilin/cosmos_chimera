@@ -1,0 +1,501 @@
+{
+ "materials": [
+  {
+   "bands": 2,
+   "base": "#3a4a80",
+   "name": "backpack_chr_yeh_chengxi",
+   "shade": "#26305a",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#554550",
+   "name": "bandage_chr_yeh_chengxi",
+   "shade": "#43363f",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#5a3a28",
+   "name": "belt2_chr_yeh_chengxi",
+   "shade": "#472d1e",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#4a3024",
+   "name": "belt_chr_yeh_chengxi",
+   "shade": "#3a251b",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f4f2ee",
+   "name": "boot_chr_yeh_chengxi",
+   "shade": "#c6c2be",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2e3a80",
+   "name": "boot_tongue_chr_yeh_chengxi",
+   "shade": "#1c2454",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2e3a80",
+   "name": "bootfront_chr_yeh_chengxi",
+   "shade": "#1c2454",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b040",
+   "name": "boottrim_chr_yeh_chengxi",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2c1c14",
+   "name": "brow_chr_yeh_chengxi",
+   "shade": "#22140e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8a050",
+   "name": "buckle_chr_yeh_chengxi",
+   "shade": "#a1813f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#deb976",
+   "name": "compass_case_chr_yeh_chengxi",
+   "shade": "#b3955e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#616a89",
+   "name": "compass_face_chr_yeh_chengxi",
+   "shade": "#4d546e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c59d62",
+   "name": "compass_link_chr_yeh_chengxi",
+   "shade": "#9f7e4e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f7deb1",
+   "name": "compass_needle_chr_yeh_chengxi",
+   "shade": "#c8b38f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e5b66c",
+   "name": "crystal_chr_yeh_chengxi",
+   "shade": "#5a88c0",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "eye_chr_yeh_chengxi",
+   "shade": null,
+   "texture": "eye_chr_yeh_chengxi.png"
+  },
+  {
+   "bands": 3,
+   "base": "#22222a",
+   "name": "gloves_chr_yeh_chengxi",
+   "shade": "#191920",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_chr_yeh_chengxi",
+   "shade": "#c4bfcb",
+   "texture": "hair_chr_yeh_chengxi.png"
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_streak_chr_yeh_chengxi",
+   "shade": "#c4bfcb",
+   "texture": "hair_streak_chr_yeh_chengxi.png"
+  },
+  {
+   "bands": 2,
+   "base": "#ed7649",
+   "name": "hairtie_chr_yeh_chengxi",
+   "shade": "#c05e39",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a2a24",
+   "name": "hippouch_chr_yeh_chengxi",
+   "shade": "#2d201b",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "hood_chr_yeh_chengxi",
+   "shade": "#1c2454",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26252c",
+   "name": "innercrop_chr_yeh_chengxi",
+   "shade": "#1d1c22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8582c",
+   "name": "laces_chr_yeh_chengxi",
+   "shade": "#bc4622",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8582c",
+   "name": "laces_cross_chr_yeh_chengxi",
+   "shade": "#bc4622",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "lapel_l_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "lapel_r_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#20140e",
+   "name": "lash_chr_yeh_chengxi",
+   "shade": "#180e09",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#eee3df",
+   "name": "legwarmer_chr_yeh_chengxi",
+   "shade": "#bcb1bc",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#8a3a34",
+   "name": "mouth_chr_yeh_chengxi",
+   "shade": "#6f2d28",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#cf967a",
+   "name": "nose_chr_yeh_chengxi",
+   "shade": "#a77861",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b040",
+   "name": "packanchor_chr_yeh_chengxi",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2e3a80",
+   "name": "packflap_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2e3a80",
+   "name": "packside_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#4060c8",
+   "name": "propbead_core_chr_yeh_chengxi",
+   "shade": "#283a90",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#8fd0f4",
+   "name": "propbead_glass_chr_yeh_chengxi",
+   "shade": "#3c7cc0",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "propbead_glint_chr_yeh_chengxi",
+   "shade": "#cecece",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f4f4f0",
+   "name": "propcube_0_chr_yeh_chengxi",
+   "shade": "#c5c5c2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f0c020",
+   "name": "propcube_1_chr_yeh_chengxi",
+   "shade": "#c29b18",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f07820",
+   "name": "propcube_2_chr_yeh_chengxi",
+   "shade": "#c26018",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d83030",
+   "name": "propcube_3_chr_yeh_chengxi",
+   "shade": "#ae2525",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#30a050",
+   "name": "propcube_4_chr_yeh_chengxi",
+   "shade": "#25813f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2a70d0",
+   "name": "propcube_5_chr_yeh_chengxi",
+   "shade": "#2059a8",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#1a1a1e",
+   "name": "propcube_core_chr_yeh_chengxi",
+   "shade": "#131316",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c02020",
+   "name": "proptalisman_ink_chr_yeh_chengxi",
+   "shade": "#9b1818",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f2d878",
+   "name": "proptalisman_paper_chr_yeh_chengxi",
+   "shade": "#c8a848",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ec774c",
+   "name": "ribbonloop_chr_yeh_chengxi",
+   "shade": "#bf5f3c",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#df6947",
+   "name": "ribbontail_chr_yeh_chengxi",
+   "shade": "#b45438",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#45507d",
+   "name": "sailorband_chr_yeh_chengxi",
+   "shade": "#363f64",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "sailorcollar_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#fff1e6",
+   "name": "sailorcrown_chr_yeh_chengxi",
+   "shade": "#cec3ba",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f4dfbd",
+   "name": "sailorpiping_chr_yeh_chengxi",
+   "shade": "#c5b498",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#f4f2ee",
+   "name": "sailortop_chr_yeh_chengxi",
+   "shade": "#c6c2be",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#4a7ac8",
+   "name": "sash_chr_yeh_chengxi",
+   "shade": "#3a61a1",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ec8454",
+   "name": "scarf_chr_yeh_chengxi",
+   "shade": "#bf6a42",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ed7649",
+   "name": "scarftail_l_chr_yeh_chengxi",
+   "shade": "#c05e39",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ed7649",
+   "name": "scarftail_r_chr_yeh_chengxi",
+   "shade": "#c05e39",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6f4f2",
+   "name": "sclera_chr_yeh_chengxi",
+   "shade": "#c7c5c4",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c9c6d6",
+   "name": "sclerashade_chr_yeh_chengxi",
+   "shade": "#a2a0ad",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#48517a",
+   "name": "shorts_chr_yeh_chengxi",
+   "shade": "#333653",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#f4f2ee",
+   "name": "shortscuff_chr_yeh_chengxi",
+   "shade": "#c6c2be",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "sidestrap_chr_yeh_chengxi",
+   "shade": "#232d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#efc4a5",
+   "name": "skin_chr_yeh_chengxi",
+   "shade": "#cf967a",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e3a80",
+   "name": "sleevecuff_chr_yeh_chengxi",
+   "shade": "#1c2454",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#f4f2ee",
+   "name": "sockband_chr_yeh_chengxi",
+   "shade": "#c5c4c0",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a2a30",
+   "name": "sole_chr_yeh_chengxi",
+   "shade": "#2d2025",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c6a375",
+   "name": "strap_adjuster_chr_yeh_chengxi",
+   "shade": "#a0835d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#4a3024",
+   "name": "strap_chr_yeh_chengxi",
+   "shade": "#3a251b",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#4a3024",
+   "name": "strap_webbing_chr_yeh_chengxi",
+   "shade": "#3a251b",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffebe0",
+   "name": "teeth_chr_yeh_chengxi",
+   "shade": "#cebeb5",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8582c",
+   "name": "wristband_chr_yeh_chengxi",
+   "shade": "#bc4622",
+   "texture": null
+  }
+ ]
+}

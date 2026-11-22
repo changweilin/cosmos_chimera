@@ -3,7 +3,362 @@ guid: 88adba87c2562c445b74051e8087dc75
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: backpack_chr_roen
+    second: {fileID: 2100000, guid: 90f6bba3a9ed83246bab815b38908c66, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: belt_chr_roen
+    second: {fileID: 2100000, guid: 037e314268d48f94b8560251f7bb38e9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bottle_chr_roen
+    second: {fileID: 2100000, guid: 244a56390f2cfa34bb4908cf0642a7fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bottlecap_chr_roen
+    second: {fileID: 2100000, guid: 39ceb8b4e13d7274ab2f734a073e4f63, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: brow_chr_roen
+    second: {fileID: 2100000, guid: 40087df053684874daf44ec2591843dd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: buckle_chr_roen
+    second: {fileID: 2100000, guid: fbe9a935ffcd8d54aacab96cdd2a1b82, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: chest_check_l_chr_roen
+    second: {fileID: 2100000, guid: fea65e4946e5a844997e9dce3992a8e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: chest_check_r_chr_roen
+    second: {fileID: 2100000, guid: 066109fe76f2e034ea572add35ef1718, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: collar_chr_roen
+    second: {fileID: 2100000, guid: fb5259249036c9a43aea471c106e947d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: cuffs_chr_roen
+    second: {fileID: 2100000, guid: c0cdb632bc3ff1c4680d2b214e61fb64, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: earcup_chr_roen
+    second: {fileID: 2100000, guid: e9d3835881af3314fb5577a8bc99d01c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: earcupring_chr_roen
+    second: {fileID: 2100000, guid: b70fc27034fa32241b57ad5adc1e1307, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eye_chr_roen
+    second: {fileID: 2100000, guid: 0a107260b1e5c5d46b57dff268431a82, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: gloves_chr_roen
+    second: {fileID: 2100000, guid: 47ffc5ca43dc5a54c87511487a8cff05, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_bangs_chr_roen
+    second: {fileID: 2100000, guid: 04a6baf3981af2743886204f6ff235e5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_chr_roen
+    second: {fileID: 2100000, guid: 230835cd8bf4b614fbee2d5c3fb67860, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: harness_chr_roen
+    second: {fileID: 2100000, guid: 488ea95e25f8f0343bbd91d10015e067, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: headphones_chr_roen
+    second: {fileID: 2100000, guid: 5dd9a0dd9bce0b5419308bdd1345181f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: heeltab_chr_roen
+    second: {fileID: 2100000, guid: e138fb14a6bd55041a63627dbea5ff52, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hippouch_chr_roen
+    second: {fileID: 2100000, guid: c08d074ebb0c5234bb1ed5a3bacebf11, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hippouchflap_chr_roen
+    second: {fileID: 2100000, guid: 1846c0e1f4dbc9c489f887abe92ef241, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hood_chr_roen
+    second: {fileID: 2100000, guid: c101b114358ce99468597d6c959f389f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hoodlining_chr_roen
+    second: {fileID: 2100000, guid: c029411ff8b4508479f20b4e66ead503, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: jacket_chr_roen
+    second: {fileID: 2100000, guid: 94e3a4670de9f4d4d902fe7ed5f19356, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: jacketpatch_chr_roen
+    second: {fileID: 2100000, guid: e7bfee5ebee832146b4c673259eb6094, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: jacketstripe_chr_roen
+    second: {fileID: 2100000, guid: 715613dff529dff418724918ff99d6af, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: jackettrim_chr_roen
+    second: {fileID: 2100000, guid: 1ca9122aaa58b5145bf02b1791744f0b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lash_chr_roen
+    second: {fileID: 2100000, guid: 8d0bf4a7a755f9942900cae116ae280c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: mouth_chr_roen
+    second: {fileID: 2100000, guid: 129eecc6ce6836749b2928dca13a4e29, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: nose_chr_roen
+    second: {fileID: 2100000, guid: 5ff8b0eec771e03478f754b4df119bca, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packpocket_chr_roen
+    second: {fileID: 2100000, guid: 560d97e877c03c8449ad25eebbcbde36, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packscreen_chr_roen
+    second: {fileID: 2100000, guid: 0acccfb0ef3345c4b8f601d0898735ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packside_chr_roen
+    second: {fileID: 2100000, guid: c52d4b7926eafec418cfc9a5be615265, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: pocket_chr_roen
+    second: {fileID: 2100000, guid: 8c8517de24727ed459547e1d697528f2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: pocket_clasp_chr_roen
+    second: {fileID: 2100000, guid: c1576d9d9b7071d49aadca1c37ea3cac, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: pocket_pull_chr_roen
+    second: {fileID: 2100000, guid: b6d1b6443a07c554b8ba380e8ccc0d74, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: pocketflap_chr_roen
+    second: {fileID: 2100000, guid: b9e8c9f19a8e1e94c9d07f8e03dea120, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_core_chr_roen
+    second: {fileID: 2100000, guid: e39d84ebb98e88a4f82e95d93948142f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glass_chr_roen
+    second: {fileID: 2100000, guid: 69155609b92061b4e94229f7381c9526, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glint_chr_roen
+    second: {fileID: 2100000, guid: 7c0c4c9afddc3f44db51309e84d893e4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_0_chr_roen
+    second: {fileID: 2100000, guid: f37446b7d0ce7b5409ef879669c55df9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_1_chr_roen
+    second: {fileID: 2100000, guid: 20d7aadd24fece64393b309bf3f3d1a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_2_chr_roen
+    second: {fileID: 2100000, guid: b9e5bba45a3c15948919f2a369da74da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_3_chr_roen
+    second: {fileID: 2100000, guid: 05d2f350fa8be2143821cb80683dda98, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_4_chr_roen
+    second: {fileID: 2100000, guid: 3c16436a12f3bae489c6f65b60386fc7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_5_chr_roen
+    second: {fileID: 2100000, guid: 1f9567d295c9d8f4397ccf100211c6c1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_core_chr_roen
+    second: {fileID: 2100000, guid: 903c53b88ae6ba54a829daec4b083b2c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_ink_chr_roen
+    second: {fileID: 2100000, guid: 5030b754654427f4ba921c72c1d5bf51, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_paper_chr_roen
+    second: {fileID: 2100000, guid: 932e6aa52c631f3458a138a6fd4930b7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclera_chr_roen
+    second: {fileID: 2100000, guid: 9a5b19f0b5f1aef478eb1d286969e55d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclerashade_chr_roen
+    second: {fileID: 2100000, guid: 66fe60c516c40c143b5c9cb664329f99, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shoe_chr_roen
+    second: {fileID: 2100000, guid: 374c0880723ca65488db76c4d9048f2a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shoe_pull_chr_roen
+    second: {fileID: 2100000, guid: 909dce97673cbb842a422d05327b36d8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shoecollar_chr_roen
+    second: {fileID: 2100000, guid: cfbf75279a79f3b489a37c2d72015ba2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shoestrap_chr_roen
+    second: {fileID: 2100000, guid: 17766798734296945b88202a31b5a08b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shorts_chr_roen
+    second: {fileID: 2100000, guid: 63e60421bf7a74e4a9e1608d9f22afde, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shortscuff_chr_roen
+    second: {fileID: 2100000, guid: e33cb77a2e56d9b448069505bcfd065e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shortspanel_chr_roen
+    second: {fileID: 2100000, guid: 026133c8e7b62674698ad534a929dee5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skin_chr_roen
+    second: {fileID: 2100000, guid: fd51be924adb4aa47a280f5ae00c039d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleeveband_chr_roen
+    second: {fileID: 2100000, guid: acd2fabc199a14f4b94d17654458ef6b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevepatch_chr_roen
+    second: {fileID: 2100000, guid: 28ef920f2e11c104bb49eab8417fc599, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: socks_chr_roen
+    second: {fileID: 2100000, guid: ca6ffa04424391941bb0784950629b01, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sole_chr_roen
+    second: {fileID: 2100000, guid: e4688d88424def946af70e530bce2d18, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: soleglow_chr_roen
+    second: {fileID: 2100000, guid: 1d2ea4fc668c2da4c90cda14c0dc1f49, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_adjuster_chr_roen
+    second: {fileID: 2100000, guid: 00b71016c4d4f7e438f125e278600f51, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_chr_roen
+    second: {fileID: 2100000, guid: e3aa76af87ec79d458ae49f003cac1b2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_webbing_chr_roen
+    second: {fileID: 2100000, guid: 9d4c74ab9481a494484aa1c8547f1394, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tee_chr_roen
+    second: {fileID: 2100000, guid: 68723e853806bb24e833e6ecad9dbd31, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: teediamond_chr_roen
+    second: {fileID: 2100000, guid: 11732de9b69c5fd4492b964da7c4c727, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wrench_chr_roen
+    second: {fileID: 2100000, guid: f00554c74a741994f8093c7f2de68307, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wristband_chr_roen
+    second: {fileID: 2100000, guid: 12591a01fe4cf4e458592475c5589395, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

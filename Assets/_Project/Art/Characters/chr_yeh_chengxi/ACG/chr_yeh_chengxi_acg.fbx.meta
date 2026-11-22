@@ -3,7 +3,362 @@ guid: 4f22f91fe59f7fb438b35cccc1868778
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: backpack_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: ec184b204c08dc5428a3c4b85978f85f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bandage_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: e2fca9bf3fe4c584780f1479a447eec4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: belt2_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c1285a9c295696b41a27edb32a023380, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: belt_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c5c68440fdb9635469ca66f6934c13cf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: boot_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 74cd2038e115ed346b2a049a91fa8856, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: boot_tongue_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: bcb4a2ea1cebf2848be08adafcad3263, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bootfront_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b8295ff102aae7643b7bb675f1a91d65, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: boottrim_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 28931b8b3fbf6254a8f3ad592b2b2537, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: brow_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 736936636ff128e408df7796d547d500, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: buckle_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: aecc47b49e937d44a8bd9992ef14523b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: compass_case_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 1fa7597d9e872194bbe9e41a7f6a2e32, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: compass_face_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 2bb862724fa4643439a319cc06db4efe, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: compass_link_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b3b053f39879ac243b9172269df24702, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: compass_needle_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: fa574254f18e28b4293e90bd41475af8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: crystal_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 484715ae5dd546448bf0c5b88e82e962, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eye_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 1998d86c7ef63bb4e84f6be5fa9750da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: gloves_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: e1357040a6bf6ea4da1ebeed5aaabb66, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 565e345a1e43f6746b7d8d18777bd46c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_streak_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: a71362725fc59524bb6602e9957d7eed, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hairtie_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: ad3ea0ff67b570d4fb2a9f475276e707, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hippouch_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 449d27d6e25ab7b45a1f1222d47d3c42, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hood_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c92060f27e049b642a138b5caa8c39d6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: innercrop_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 631cb918359038e4199acad78c6979b3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: laces_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 5775eec49fccc6949abc173d17bcf9e7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: laces_cross_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b5e97ab4a1a5bb043a148290f6692947, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lapel_l_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c9057f8af95a90147825e82c8c1a08d9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lapel_r_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 1c2abc51fe2758c49be7e1938e22dff1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lash_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 52e3d73c643fc194e90fa782e8a5f4e2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: legwarmer_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: ddaca6991a9cb9046bd6e61f66de1537, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: mouth_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: a33d4c7ecb037b446a5af7e56c957ddc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: nose_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: d96dd2ad6e07e4841bb931dc7a0343f6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packanchor_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 30f78f8ae018e7547bc2913f9d1f15d4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packflap_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 5b408db5a09448643a58353405374404, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packside_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 1eb836b9206e49949a4a9cd5b0228ad1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_core_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 69e91e7944d109645b6e63dd3e686c75, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glass_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 1e181c04d7a085543a786d7a839746a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glint_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c2efa5473e8d7eb41b3afc74967033de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_0_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 57ed06d1213528b438374cfa57012176, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_1_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 0070f47a1952a4b45ae109ce22e97256, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_2_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 04b81af65c7fc024b96c6dc706b9a92c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_3_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 15771aba111d82b4a995d9c1914e40ad, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_4_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 590fcb27869c99f4687840ad0b7d7f69, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_5_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 8695621cea6e42d48a0ac4870494410f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_core_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: bee6e11beee35fe47ad90ef09461a280, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_ink_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 6174396841fb30945a7a42a4f758f149, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_paper_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 352ec73078384e549a8be87f555bddd4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ribbonloop_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: af4f183778320c74c94392347e7074d3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ribbontail_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: d280f5d39184c014fb5d8a92954a00dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sailorband_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: db7cb31caee97fb43a9c8a41067f26f2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sailorcollar_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 26e9224e535e56845ba5c8524b041a29, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sailorcrown_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 3a614529e786fc14db7a8afff08a027a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sailorpiping_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 69b66ea28e74abf4398e9737b8b95e48, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sailortop_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 7a4fcfb0dbd9cb0409336c6e090b218a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sash_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 996394a5a852c044ab74048451bcbb4b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: scarf_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b2a9c71d8fc6f344b8ff99bf35824e72, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: scarftail_l_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 24f49ae708858b44aa22047a3f858183, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: scarftail_r_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 991608e998b96c74aa5035912af10d27, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclera_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c840d8799d1fc8949bd05076f7037805, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclerashade_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 29215df75190e1c4f9e5a46259f3bd1d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shorts_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: c73cfa3e90a15e346bdfb33073e3ae50, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: shortscuff_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b4799a5d66f0b0d49828e1bddc527db8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sidestrap_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 14a0d945c2844574d82ab4c86f1d00dd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skin_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: fd58300fb184110438b2df20764ebda4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevecuff_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 91949f8049694b54bb205e3d6357ddb1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sockband_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: a7759ed179deff94e85bb1360d62b6ec, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sole_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: b3eed27b2e3d97b4a8ca09fc100a81cc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_adjuster_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 77de768fb875ad74e8221ae15ff3efee, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 67aace1685e0fe84d95fcd2ed9488cc6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_webbing_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 61bd5c0e3a02178459d5ada85e9f3ddd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: teeth_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 7f3bdc14a463f3548b0defa83f70f22b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wristband_chr_yeh_chengxi
+    second: {fileID: 2100000, guid: 101fc0bae5ff96e46871a247e7373b3c, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

@@ -42,12 +42,90 @@ namespace Cosmimera.EditorTools
                 mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 mi.importAnimation = false;
                 mi.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
+                RemapToonMaterials(id, mi);
                 mi.SaveAndReimport();
                 var avatar = AssetDatabase.LoadAssetAtPath<Avatar>(path);
                 var idle = avatar != null && avatar.isValid ? ConfigureIdle(id, avatar) : null;
                 Debug.Log($"[AcgCharacterImport] {id} avatar={(avatar != null)} valid={avatar != null && avatar.isValid} human={avatar != null && avatar.isHuman} idle={(idle != null)}");
             }
         }
+
+        const string ToonShaderPath = "Assets/_Project/Art/Shaders/ToonOutlined.shader";
+
+        // Face decals are flat strips on the skin: an inverted hull around them would draw black rims.
+        static readonly string[] NoOutline = { "sclera", "iris", "eye_", "brow", "lash", "mouth", "nose", "teeth" };
+
+        [System.Serializable]
+        sealed class CelRow { public string name; public string @base; public string shade; public int bands; public string texture; }
+
+        [System.Serializable]
+        sealed class CelTable { public CelRow[] materials; }
+
+        /// <summary>Rebuilds each FBX material as a Cosmimera/ToonOutlined asset from the build's cel colour table and
+        /// remaps the model to it.</summary>
+        /// <remarks>
+        /// Why: FBX carries only a base colour; under URP Lit light skin washed out to the same white as the clothes, and
+        /// nothing outlined one against the other. The table (<c>&lt;id&gt;_acg_materials.json</c>, written by
+        /// tools/acg-character export_fbx) keeps the Blender shade colour, band count and strand/iris texture.
+        /// Pre: the table sits beside the FBX. Post: one material per row under ACG/Materials/, mapped onto mi
+        /// (the caller reimports). Side effects: creates or overwrites .mat assets; logs an error and keeps the imported
+        /// materials when the table or shader is missing.
+        /// </remarks>
+        static void RemapToonMaterials(string id, ModelImporter mi)
+        {
+            var dir = Path.GetDirectoryName(FbxPath(id)).Replace('\\', '/');
+            var tablePath = $"{dir}/{id}_acg_materials.json";
+            var json = AssetDatabase.LoadAssetAtPath<TextAsset>(tablePath);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(ToonShaderPath);
+            if (json == null || shader == null)
+            {
+                Debug.LogError($"[AcgCharacterImport] {id}: missing {(json == null ? tablePath : ToonShaderPath)}; keeping imported materials");
+                return;
+            }
+            var table = JsonUtility.FromJson<CelTable>(json.text);
+            if (table?.materials == null || table.materials.Length == 0)
+            {
+                Debug.LogError($"[AcgCharacterImport] {id}: {tablePath} has no materials");
+                return;
+            }
+            var matDir = $"{dir}/Materials";
+            if (!AssetDatabase.IsValidFolder(matDir))
+                AssetDatabase.CreateFolder(dir, "Materials");
+            foreach (var row in table.materials)
+            {
+                if (!ColorUtility.TryParseHtmlString(row.@base, out var baseColor))
+                {
+                    Debug.LogError($"[AcgCharacterImport] {id}/{row.name}: bad colour {row.@base}");
+                    continue;
+                }
+                var path = $"{matDir}/{row.name}.mat";
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (mat == null)
+                {
+                    mat = new Material(shader);
+                    AssetDatabase.CreateAsset(mat, path);
+                }
+                mat.shader = shader;
+                mat.SetColor("_BaseColor", baseColor);
+                // CosmiToon darkens the unlit side to albedo * _Shadow * 0.6, so the tint that reproduces the
+                // authored shade colour is shade / base / 0.6 per channel. No shade (decals) = no darkening.
+                var tint = Color.white / 0.6f;
+                if (!string.IsNullOrEmpty(row.shade) && ColorUtility.TryParseHtmlString(row.shade, out var shade))
+                    tint = new Color(Ratio(shade.r, baseColor.r), Ratio(shade.g, baseColor.g), Ratio(shade.b, baseColor.b), 1f);
+                mat.SetColor("_Shadow", tint);
+                mat.SetFloat("_Bands", Mathf.Max(2, row.bands));
+                var bare = System.Array.Exists(NoOutline, k => row.name.StartsWith(k));
+                mat.SetFloat("_OutlineWidth", bare ? 0f : 0.0018f);
+                mat.SetColor("_OutlineColor", new Color(0.16f, 0.11f, 0.12f, 1f));
+                var tex = string.IsNullOrEmpty(row.texture) ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{row.texture}");
+                mat.SetTexture("_BaseMap", tex);
+                EditorUtility.SetDirty(mat);
+                mi.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material), row.name), mat);
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        static float Ratio(float shade, float lit) => Mathf.Clamp(shade / Mathf.Max(lit, 0.02f) / 0.6f, 0f, 1.7f);
 
         static AnimationClip ConfigureIdle(string id, Avatar avatar)
         {
@@ -96,10 +174,12 @@ namespace Cosmimera.EditorTools
         public static void Capture()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            // The first render of a shader variant otherwise draws the cyan async-compile placeholder.
+            ShaderUtil.allowAsyncCompilation = false;
             var lightGo = new GameObject("key");
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.2f;
+            light.intensity = 1.0f;
             lightGo.transform.rotation = Quaternion.Euler(40f, 150f, 0f);
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.6f);

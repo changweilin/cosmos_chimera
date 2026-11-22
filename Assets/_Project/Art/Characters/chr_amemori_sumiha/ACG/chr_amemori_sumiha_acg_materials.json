@@ -1,0 +1,529 @@
+{
+ "materials": [
+  {
+   "bands": 3,
+   "base": "#2e2a5a",
+   "name": "apron_chr_amemori_sumiha",
+   "shade": "#232047",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#f0a040",
+   "name": "apronpaw_chr_amemori_sumiha",
+   "shade": "#c28132",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a2a30",
+   "name": "backpack_chr_amemori_sumiha",
+   "shade": "#241a20",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d8c8a0",
+   "name": "bedroll_chr_amemori_sumiha",
+   "shade": "#a89870",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f2ece4",
+   "name": "boot_chr_amemori_sumiha",
+   "shade": "#bdb2aa",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ce9d69",
+   "name": "bootbuckle_chr_amemori_sumiha",
+   "shade": "#a67e54",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#85646c",
+   "name": "bootcuff_chr_amemori_sumiha",
+   "shade": "#bdb2aa",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "bootstrap_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#f2e6c8",
+   "name": "bowknot_chr_amemori_sumiha",
+   "shade": "#c4baa1",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e77755",
+   "name": "bowloop_a_chr_amemori_sumiha",
+   "shade": "#9a2026",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e77755",
+   "name": "bowloop_b_chr_amemori_sumiha",
+   "shade": "#9a2026",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#e8b040",
+   "name": "bowloop_l_chr_amemori_sumiha",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#e8b040",
+   "name": "bowloop_r_chr_amemori_sumiha",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e77755",
+   "name": "bowtail_chr_amemori_sumiha",
+   "shade": "#bb5f43",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2c2038",
+   "name": "brow_chr_amemori_sumiha",
+   "shade": "#22182b",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a2a58",
+   "name": "bunknot_chr_amemori_sumiha",
+   "shade": "#1c1430",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b261",
+   "name": "clover_chr_amemori_sumiha",
+   "shade": "#3a5226",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c8343a",
+   "name": "collar_l_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#3a3a80",
+   "name": "collar_r_chr_amemori_sumiha",
+   "shade": "#2d2d66",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d7aa61",
+   "name": "cord_l_chr_amemori_sumiha",
+   "shade": "#ae894d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d7aa61",
+   "name": "cord_r_chr_amemori_sumiha",
+   "shade": "#ae894d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e87962",
+   "name": "drophem_chr_amemori_sumiha",
+   "shade": "#8c1e24",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6ead0",
+   "name": "egg_a_chr_amemori_sumiha",
+   "shade": "#e0a050",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6ead0",
+   "name": "egg_b_chr_amemori_sumiha",
+   "shade": "#e0a050",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "eye_chr_amemori_sumiha",
+   "shade": null,
+   "texture": "eye_chr_amemori_sumiha.png"
+  },
+  {
+   "bands": 2,
+   "base": "#f2f0ea",
+   "name": "gameboy_chr_amemori_sumiha",
+   "shade": "#c4c2bd",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5a6a5a",
+   "name": "gamescreen_chr_amemori_sumiha",
+   "shade": "#475447",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2a2240",
+   "name": "gloves_chr_amemori_sumiha",
+   "shade": "#201932",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_chr_amemori_sumiha",
+   "shade": "#c4bfcb",
+   "texture": "hair_chr_amemori_sumiha.png"
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_streak_chr_amemori_sumiha",
+   "shade": "#c4bfcb",
+   "texture": "hair_streak_chr_amemori_sumiha.png"
+  },
+  {
+   "bands": 3,
+   "base": "#f6ece2",
+   "name": "kimono_chr_amemori_sumiha",
+   "shade": "#d6c2b6",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2e2a5a",
+   "name": "kimonoinner_chr_amemori_sumiha",
+   "shade": "#232047",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#211628",
+   "name": "lash_chr_amemori_sumiha",
+   "shade": "#190f1e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#b0685c",
+   "name": "mouth_chr_amemori_sumiha",
+   "shade": "#8e5349",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e0a691",
+   "name": "nose_chr_amemori_sumiha",
+   "shade": "#b58574",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c8343a",
+   "name": "obi_chr_amemori_sumiha",
+   "shade": "#8c1e24",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#e8b040",
+   "name": "obirope_chr_amemori_sumiha",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f0a040",
+   "name": "packpaw_chr_amemori_sumiha",
+   "shade": "#c28132",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#4060c8",
+   "name": "propbead_core_chr_amemori_sumiha",
+   "shade": "#283a90",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#8fd0f4",
+   "name": "propbead_glass_chr_amemori_sumiha",
+   "shade": "#3c7cc0",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "propbead_glint_chr_amemori_sumiha",
+   "shade": "#cecece",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f4f4f0",
+   "name": "propcube_0_chr_amemori_sumiha",
+   "shade": "#c5c5c2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f0c020",
+   "name": "propcube_1_chr_amemori_sumiha",
+   "shade": "#c29b18",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f07820",
+   "name": "propcube_2_chr_amemori_sumiha",
+   "shade": "#c26018",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d83030",
+   "name": "propcube_3_chr_amemori_sumiha",
+   "shade": "#ae2525",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#30a050",
+   "name": "propcube_4_chr_amemori_sumiha",
+   "shade": "#25813f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2a70d0",
+   "name": "propcube_5_chr_amemori_sumiha",
+   "shade": "#2059a8",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#1a1a1e",
+   "name": "propcube_core_chr_amemori_sumiha",
+   "shade": "#131316",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c02020",
+   "name": "proptalisman_ink_chr_amemori_sumiha",
+   "shade": "#9b1818",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f2d878",
+   "name": "proptalisman_paper_chr_amemori_sumiha",
+   "shade": "#c8a848",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "sashtail_chr_amemori_sumiha",
+   "shade": "#8c1e24",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6f4f2",
+   "name": "sclera_chr_amemori_sumiha",
+   "shade": "#c7c5c4",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c9c6d6",
+   "name": "sclerashade_chr_amemori_sumiha",
+   "shade": "#a2a0ad",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6d3bf",
+   "name": "skin_chr_amemori_sumiha",
+   "shade": "#e0a691",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#45405c",
+   "name": "skirt_chr_amemori_sumiha",
+   "shade": "#1c1a3c",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "skirthem_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6ece2",
+   "name": "sleeve_chr_amemori_sumiha",
+   "shade": "#d6c2b6",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6ece2",
+   "name": "sleevedrop_chr_amemori_sumiha",
+   "shade": "#d6c2b6",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "sleevehem_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "sleevepaw_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "sleevestripe_a_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8343a",
+   "name": "sleevestripe_b_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c8343a",
+   "name": "sockcross_chr_amemori_sumiha",
+   "shade": "#a1282d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2a2240",
+   "name": "socks_chr_amemori_sumiha",
+   "shade": "#201932",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a2622",
+   "name": "sole_chr_amemori_sumiha",
+   "shade": "#2d1d19",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c6a375",
+   "name": "strap_adjuster_chr_amemori_sumiha",
+   "shade": "#a0835d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#3a2a30",
+   "name": "strap_chr_amemori_sumiha",
+   "shade": "#2d2025",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#3a2a30",
+   "name": "strap_webbing_chr_amemori_sumiha",
+   "shade": "#2d2025",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b040",
+   "name": "tassel_a_chr_amemori_sumiha",
+   "shade": "#b07a20",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b040",
+   "name": "tassel_b_chr_amemori_sumiha",
+   "shade": "#b07a20",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2a2230",
+   "name": "thighpouch_chr_amemori_sumiha",
+   "shade": "#201925",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2a2230",
+   "name": "thighstrap_chr_amemori_sumiha",
+   "shade": "#201925",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8b040",
+   "name": "triclip_chr_amemori_sumiha",
+   "shade": "#bc8e32",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5ce8f0",
+   "name": "watch_chr_amemori_sumiha",
+   "shade": "#2a8a96",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ef8a2c",
+   "name": "wristband_chr_amemori_sumiha",
+   "shade": "#c16f22",
+   "texture": null
+  }
+ ]
+}

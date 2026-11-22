@@ -1,0 +1,501 @@
+{
+ "materials": [
+  {
+   "bands": 2,
+   "base": "#2b2b31",
+   "name": "backpack_chr_roen",
+   "shade": "#1b1b20",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26262c",
+   "name": "belt_chr_roen",
+   "shade": "#1d1d22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c8ccd0",
+   "name": "bottle_chr_roen",
+   "shade": "#8a9096",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5ce8f0",
+   "name": "bottlecap_chr_roen",
+   "shade": "#49bcc2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#79605a",
+   "name": "brow_chr_roen",
+   "shade": "#614c47",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#9a9aa4",
+   "name": "buckle_chr_roen",
+   "shade": "#7c7c84",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#d1c5bb",
+   "name": "chest_check_l_chr_roen",
+   "shade": "#a99f97",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#d1c5bb",
+   "name": "chest_check_r_chr_roen",
+   "shade": "#a99f97",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ef8a2c",
+   "name": "collar_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#625b69",
+   "name": "cuffs_chr_roen",
+   "shade": "#4e4854",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2d2d33",
+   "name": "earcup_chr_roen",
+   "shade": "#222227",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#45e0f0",
+   "name": "earcupring_chr_roen",
+   "shade": "#36b5c2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "eye_chr_roen",
+   "shade": null,
+   "texture": "eye_chr_roen.png"
+  },
+  {
+   "bands": 3,
+   "base": "#2a2a2f",
+   "name": "gloves_chr_roen",
+   "shade": "#202024",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_bangs_chr_roen",
+   "shade": "#c4bfcb",
+   "texture": "hair_bangs_chr_roen.png"
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "hair_chr_roen",
+   "shade": "#c4bfcb",
+   "texture": "hair_chr_roen.png"
+  },
+  {
+   "bands": 3,
+   "base": "#8a8a94",
+   "name": "harness_chr_roen",
+   "shade": "#6f6f77",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#25252b",
+   "name": "headphones_chr_roen",
+   "shade": "#1c1c21",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ef8a2c",
+   "name": "heeltab_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5d5d66",
+   "name": "hippouch_chr_roen",
+   "shade": "#4a4a51",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ef8a2c",
+   "name": "hippouchflap_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ece8e6",
+   "name": "hood_chr_roen",
+   "shade": "#b4adb3",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8a055",
+   "name": "hoodlining_chr_roen",
+   "shade": "#bc8143",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ece8e6",
+   "name": "jacket_chr_roen",
+   "shade": "#b4adb3",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ef8a2c",
+   "name": "jacketpatch_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26262c",
+   "name": "jacketstripe_chr_roen",
+   "shade": "#1d1d22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#ef8a2c",
+   "name": "jackettrim_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2a1a18",
+   "name": "lash_chr_roen",
+   "shade": "#201311",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#a0665a",
+   "name": "mouth_chr_roen",
+   "shade": "#815147",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d9a089",
+   "name": "nose_chr_roen",
+   "shade": "#af816e",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a3a42",
+   "name": "packpocket_chr_roen",
+   "shade": "#2d2d34",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5ce8f0",
+   "name": "packscreen_chr_roen",
+   "shade": "#49bcc2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ef8a2c",
+   "name": "packside_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#77717c",
+   "name": "pocket_chr_roen",
+   "shade": "#5f5a63",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8a054",
+   "name": "pocket_clasp_chr_roen",
+   "shade": "#bc8142",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e8a054",
+   "name": "pocket_pull_chr_roen",
+   "shade": "#bc8142",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#958a91",
+   "name": "pocketflap_chr_roen",
+   "shade": "#786f74",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#4060c8",
+   "name": "propbead_core_chr_roen",
+   "shade": "#283a90",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#8fd0f4",
+   "name": "propbead_glass_chr_roen",
+   "shade": "#3c7cc0",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "propbead_glint_chr_roen",
+   "shade": "#cecece",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f4f4f0",
+   "name": "propcube_0_chr_roen",
+   "shade": "#c5c5c2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f0c020",
+   "name": "propcube_1_chr_roen",
+   "shade": "#c29b18",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f07820",
+   "name": "propcube_2_chr_roen",
+   "shade": "#c26018",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d83030",
+   "name": "propcube_3_chr_roen",
+   "shade": "#ae2525",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#30a050",
+   "name": "propcube_4_chr_roen",
+   "shade": "#25813f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#2a70d0",
+   "name": "propcube_5_chr_roen",
+   "shade": "#2059a8",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#1a1a1e",
+   "name": "propcube_core_chr_roen",
+   "shade": "#131316",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c02020",
+   "name": "proptalisman_ink_chr_roen",
+   "shade": "#9b1818",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f2d878",
+   "name": "proptalisman_paper_chr_roen",
+   "shade": "#c8a848",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6f4f2",
+   "name": "sclera_chr_roen",
+   "shade": "#c7c5c4",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c9c6d6",
+   "name": "sclerashade_chr_roen",
+   "shade": "#a2a0ad",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ebe8ee",
+   "name": "shoe_chr_roen",
+   "shade": "#a9a6b2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#e4a15f",
+   "name": "shoe_pull_chr_roen",
+   "shade": "#b8814b",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ebe8ee",
+   "name": "shoecollar_chr_roen",
+   "shade": "#a9a6b2",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a3a42",
+   "name": "shoestrap_chr_roen",
+   "shade": "#2d2d34",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#4d4852",
+   "name": "shorts_chr_roen",
+   "shade": "#3d3841",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#1c1c20",
+   "name": "shortscuff_chr_roen",
+   "shade": "#141418",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#6c6570",
+   "name": "shortspanel_chr_roen",
+   "shade": "#565059",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f3cdb5",
+   "name": "skin_chr_roen",
+   "shade": "#d9a089",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26262c",
+   "name": "sleeveband_chr_roen",
+   "shade": "#1d1d22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#807885",
+   "name": "sleevepatch_chr_roen",
+   "shade": "#66606a",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#1d1d22",
+   "name": "socks_chr_roen",
+   "shade": "#151519",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#3a3a42",
+   "name": "sole_chr_roen",
+   "shade": "#2d2d34",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5ce8f0",
+   "name": "soleglow_chr_roen",
+   "shade": "#49bcc2",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#c6a375",
+   "name": "strap_adjuster_chr_roen",
+   "shade": "#a0835d",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26262c",
+   "name": "strap_chr_roen",
+   "shade": "#1d1d22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#26262c",
+   "name": "strap_webbing_chr_roen",
+   "shade": "#1d1d22",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#2c2c33",
+   "name": "tee_chr_roen",
+   "shade": "#222227",
+   "texture": null
+  },
+  {
+   "bands": 3,
+   "base": "#cec4bb",
+   "name": "teediamond_chr_roen",
+   "shade": "#a69e97",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ef8a2c",
+   "name": "wrench_chr_roen",
+   "shade": "#c16f22",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#5ce8f0",
+   "name": "wristband_chr_roen",
+   "shade": "#49bcc2",
+   "texture": null
+  }
+ ]
+}

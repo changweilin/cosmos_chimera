@@ -3,7 +3,382 @@ guid: ab04eeb98dfdbdf48a376c3f55203a14
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: apron_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e14ad353e42d93b4d8c639e0658e8fd7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: apronpaw_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c41a475acaac0444f854daa55143becc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: backpack_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 42d81c8cbf164be43a305c13cedf7180, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bedroll_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 387c8949863dafe4ab1af6ffca9e8591, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: boot_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: ee290bcebad577840b829917650d90c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bootbuckle_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 6379a63616519d448a40897fee8a31c6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bootcuff_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 729021bdf9174824685e64fd4081c507, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bootstrap_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: a32aefbcf8ab07048b8ef9d8a4f1eb3f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowknot_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e80f18ed0331dff428e5985cd7f96fbd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowloop_a_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: b4438267a8377a746a8ca56195905000, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowloop_b_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 01e83fb5585135b4eb86128da2c6c645, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowloop_l_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: d593a1f012c27d543b419324262fd7a8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowloop_r_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 44a760a01e8e3944180f0553e4aca41b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bowtail_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: db93696aaa126a44496ab4348e01d146, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: brow_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 3abeddc29a309264cac8b88b34154a30, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: bunknot_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 83c5ed1b71596a7438d4440f8bf83d61, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: clover_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 44344e36ac342d440bee46985a414220, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: collar_l_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c2b8d878ce335814791ee8eb4dfdda67, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: collar_r_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 63541c43a3f5b3c468a87f9b95f44c99, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: cord_l_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 90d9d1083a96a7342bb5b1afc659dab6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: cord_r_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: de1b74520da4dc641af36529916a52bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: drophem_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c13bba16eb305fc46a0edb89cd0685d9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: egg_a_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 1dabc5ea4b63be342a481651a5be02b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: egg_b_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e714088818c0e964fae3bf52f9d8e629, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eye_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: a2b07ee5f61a53844a1ce04a956584ff, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: gameboy_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c33be8ad07865ef40b29158de093e996, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: gamescreen_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: ded61631d191e2e40923f4d7f2350d88, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: gloves_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 03789bf5ea2c87f4a9ce30a9ed1ccc54, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 9a35469112a4edb4298553127f48730e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: hair_streak_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 4af1ad58507421b47a40118e67e8a023, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kimono_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 2c311f9f83eb79f498e8f95cd4540cd0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: kimonoinner_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 67394594b12148542bf62aea70209657, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lash_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e57bade05d9d80b409f0e6c235c451ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: mouth_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c466248072e671649bac1cff80d66495, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: nose_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: a2e954469a5a6fd42bf7a9faf9072ea8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: obi_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: fe586470b34c2044bb555c0791483e84, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: obirope_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: b6f698ea98b0e9448ac764debea37879, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: packpaw_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 69fc5881fd066544288161626138b0dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_core_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 813e5459ad411df4c8dfc06b813c8fac, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glass_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 69d5e29a001fad64ea697e277d81f642, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propbead_glint_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 59cfc3c2c8cd31d4db7477330b0e6976, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_0_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 56bbc52e148e48842a2941f1f34fe5be, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_1_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 59a16c9a14a614340838ab6fed0a627b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_2_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: edf0104068c4c1f498ef15541283975f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_3_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: dac428ae3eb6d0847af0c3faa7aba6dd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_4_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 6ca9880696e8e794bb3e830ca1c396f9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_5_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 79b589efd0fb01e4f9cbe5e0b0065b2d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: propcube_core_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 7cd31ff4abc078e42a04bb4dd4dd467f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_ink_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 837d667f2b68f344d965abcc7ae7543b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: proptalisman_paper_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 771fdec217787144ab7f5ec035b982b4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sashtail_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: f90b8812ff02846478cd19f434036eef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclera_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e33debf171c6f3f4b885ca21fb187643, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sclerashade_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: dffa144d956caf7448803fded6f9b8e6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skin_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 13e4116616b2c2d40b19053a7178fee4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skirt_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 3fb10ab6ff170f048b9382829452fc4d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skirthem_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 90cf3ce6e0183414490884cf5373c960, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleeve_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e21444fa7e34ef643ba65388c1c12326, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevedrop_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: ea588b80815236440a49f40314029930, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevehem_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 44f77ed4e7b6d6d4b9a25dcbfba805ce, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevepaw_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 93094b6dc1dfd6f4b8d8aaebaff682fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevestripe_a_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: cade5c28dad01124ebda5c51fd9e269e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sleevestripe_b_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c557bf01e961d9340aa026531a33e1e7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sockcross_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: abe4a9eb972c7034e91a30caa053e413, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: socks_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 4e84da3a0334f3148870afdbe1b5e462, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: sole_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c1f1cab796e321447bb576afada0637c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_adjuster_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: f49b48d1c12ca4b4d89468c1999dfa7c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: ecb3e0811185e8a459c2f8401b6f000f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: strap_webbing_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 95cc779c811042f498b79dcbbe1a8370, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tassel_a_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: d56cc7bb7ae52cb48ba2c45beac6b043, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tassel_b_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: e9a4cdcb9e24bd044a9cbcbab517d475, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: thighpouch_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 82d53d76d6b2ee342ae8587f56cafeb9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: thighstrap_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: 25c516e1dd2649343a5ea34fc4e99826, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: triclip_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: a2979934a02b70d4ca07141722875fa9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: watch_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: c350a0e6b8b88744bbb0badc9990e74c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wristband_chr_amemori_sumiha
+    second: {fileID: 2100000, guid: db9129cc87127044ebfe8e43c48102a2, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0

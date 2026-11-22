@@ -140,8 +140,8 @@ FOLD_JOINTS = [("upperarm_%s", "lowerarm_%s"), ("clavicle_%s", "upperarm_%s"), (
 def _soft_folds(body, g, bm, dl, names):
     """Cloth folds: shallow ripples where two bones share a vertex (the fabric bunches at the joint)
     and a soft wave along flared hems, so shells read as fabric instead of painted skin.
-    g["folds"] = ripple depth in metres (default 0.0025, 0 disables)."""
-    amp = g.get("folds", 0.0025)
+    g["folds"] = ripple depth in metres (default 0.0045, 0 disables)."""
+    amp = g.get("folds", 0.0045)
     if not amp:
         return
     pairs = []
@@ -431,4 +431,40 @@ def build(h, rig, spec):
             items.append((g, ob, None))
     import acg_swing
     acg_swing.build(body, items, spec)
+    tuck_body(body, spec.get("outfit", []), spec.get("tuck", 0.012))
     return out
+
+
+def tuck_body(body, garments, depth):
+    """Pulls skin that a full-coverage shell hides inward, so the body stays inside its clothes
+    when joints bend (the shell is offset only millimetres, and smoothing pulls it back toward
+    the skin). Trims ("x"/"face") and prims cover too little to count; the covered region is
+    eroded two vertex rings so hems never open onto a sunken body.
+
+    Pre: shells built from the same rest-pose body. Side effects: edits h.data vertex positions.
+    """
+    if not depth:
+        return
+    h = body.h
+    vs = h.data.vertices
+    covered = set()
+    for g in garments:
+        if "prim" in g or g.get("x") or g.get("face"):
+            continue
+        pred = _region(body, g)
+        for i, v in enumerate(vs):
+            if i not in covered and pred(body.w[i], v.co):
+                covered.add(i)
+    nbr = {i: set() for i in covered}
+    for e in h.data.edges:
+        a, b = e.vertices
+        if a in nbr:
+            nbr[a].add(b)
+        if b in nbr:
+            nbr[b].add(a)
+    for _ in range(2):
+        covered = {i for i in covered if nbr[i] <= covered}
+    for i in covered:
+        vs[i].co -= vs[i].normal * depth
+    h.data.update()
+    print("ACG_TUCK", len(covered))
