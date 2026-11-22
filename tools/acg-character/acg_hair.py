@@ -12,6 +12,9 @@ from mathutils import Vector
 import acg_parts
 
 
+GRADIENT_WIDTH = 64
+
+
 class Head:
     """Ellipsoid fitted to the rest-pose cranium; clumps root on it and are kept outside it."""
 
@@ -138,8 +141,8 @@ def _tube(pts, widths, head, flat, verts, faces, us, sides=6):
         for j in range(sides):
             a = base + i * sides + j
             b = base + i * sides + (j + 1) % sides
-            faces.append((a, b, b + sides, a + sides))
-    faces.append(tuple(base + j for j in reversed(range(sides))))
+            faces.append((a, a + sides, b + sides, b))
+    faces.append(tuple(base + j for j in range(sides)))
 
 
 def _cap(head, hl, verts, faces, us, res=96, rings=24):
@@ -169,19 +172,28 @@ def _hairline(spec_hl):
 
 
 def _gradient_material(name, root_hex, mid_hex, tip_hex, mid_at=0.5):
+    if not 0 < mid_at < 1:
+        raise ValueError(f"{name}: tip_from must fall between root and tip")
     m = acg_parts.toon_material(name, mid_hex)
     nt = m.node_tree
     ramp_light = next(n for n in nt.nodes if n.type == "VALTORGB")
-    attr = nt.nodes.new("ShaderNodeAttribute")
-    attr.attribute_name = "hair_u"
-    col = nt.nodes.new("ShaderNodeValToRGB")
-    els = col.color_ramp.elements
-    els[0].color = acg_parts._rgb(root_hex)
-    els[1].position = 1.0
-    els[1].color = acg_parts._rgb(tip_hex)
-    e = els.new(mid_at)
-    e.color = acg_parts._rgb(mid_hex)
-    nt.links.new(attr.outputs["Fac"], col.inputs[0])
+    # Use a UV ramp so the same authored strand colours survive both Blender and FBX.
+    root, mid, tip = [acg_parts._srgb(c) for c in (root_hex, mid_hex, tip_hex)]
+    row = []
+    for i in range(GRADIENT_WIDTH):
+        u = i / (GRADIENT_WIDTH - 1)
+        if u <= mid_at:
+            a, b, t = root, mid, u / mid_at
+        else:
+            a, b, t = mid, tip, (u - mid_at) / (1 - mid_at)
+        row.extend(x + (y - x) * t for x, y in zip(a, b))
+    img = bpy.data.images.new(name + ".png", width=GRADIENT_WIDTH, height=4, alpha=False)
+    img.pixels.foreach_set(row * 4)
+    img.update()
+    img.pack()
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = img
+    m.diffuse_color = (1, 1, 1, 1)
     mix = nt.nodes.new("ShaderNodeMix")
     mix.data_type = "RGBA"
     mix.blend_type = "MULTIPLY"
@@ -191,7 +203,7 @@ def _gradient_material(name, root_hex, mid_hex, tip_hex, mid_at=0.5):
     ramp_light.color_ramp.elements[1].color = (1, 1, 1, 1)
     emit = next(n for n in nt.nodes if n.type == "EMISSION")
     nt.links.new(ramp_light.outputs[0], mix.inputs[6])
-    nt.links.new(col.outputs[0], mix.inputs[7])
+    nt.links.new(tex.outputs["Color"], mix.inputs[7])
     nt.links.new(mix.outputs[2], emit.inputs[0])
     return m
 
@@ -261,6 +273,10 @@ def build(h, rig, spec):
     me.validate()
     attr = me.attributes.new("hair_u", "FLOAT", "POINT")
     attr.data.foreach_set("value", us)
+    uv = me.uv_layers.new(name="Strand")
+    for loop in me.loops:
+        u = us[loop.vertex_index]
+        uv.data[loop.index].uv = ((0.5 + u * (GRADIENT_WIDTH - 1)) / GRADIENT_WIDTH, 0.5)
     for p in me.polygons:
         p.use_smooth = True
     ob = bpy.data.objects.new("hair_" + spec["id"], me)

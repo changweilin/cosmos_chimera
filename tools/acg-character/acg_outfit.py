@@ -307,6 +307,10 @@ def prim(body, g, mat, spec):
         if bev:
             bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bev * 0.5, segments=3, affect="EDGES",
                             profile=0.5)
+        if "hem_rise" in g:
+            # Lift only the body-side corner of a hanging sleeve, keeping the arm seam level.
+            for v in bm.verts:
+                v.co.z += (0.5 - v.co.x) * (0.5 - v.co.z) * g["hem_rise"] / size.z
     elif kind == "cyl":
         # "open": no end caps, for tube-like garments (a skirt cone) that get thickness from Solidify below.
         bmesh.ops.create_cone(bm, cap_ends=not g.get("open"), segments=g.get("segments", 24), radius1=0.5,
@@ -327,7 +331,46 @@ def prim(body, g, mat, spec):
                 b = vs[i * rs + (j + 1) % rs]
                 c = vs[((i + 1) % segs) * rs + (j + 1) % rs]
                 d = vs[((i + 1) % segs) * rs + j]
-                bm.faces.new((a, b, c, d))
+                bm.faces.new((a, d, c, b))
+    elif kind == "ribbon":
+        # Folded cloth has a raised spine. The pinched end is at the top, against the knot.
+        rows = []
+        for z, half_width in ((-0.5, 0.04), (-0.33, 0.5), (0.14, 0.39), (0.5, 0.12)):
+            rows.append([bm.verts.new((x * half_width, y, z)) for x, y in
+                         ((-1, 0), (0, -0.5), (1, 0), (0, 0.5))])
+        for lower, upper in zip(rows, rows[1:]):
+            for j in range(4):
+                k = (j + 1) % 4
+                bm.faces.new((lower[j], lower[k], upper[k], upper[j]))
+        bm.faces.new(tuple(reversed(rows[0])))
+        bm.faces.new(rows[-1])
+    elif kind == "hood":
+        # Open horseshoe, high at the nape and rolled out around each clavicle.
+        rows = []
+        for i in range(33):
+            a = math.radians(25 + 310 * i / 32)
+            lift = (1 - math.cos(a)) * 0.5
+            row = []
+            for radius, z in ((0.31, -0.46), (0.53, 0.5), (0.56, 0.43), (0.37, -0.5)):
+                row.append(bm.verts.new((radius * math.sin(a), -radius * math.cos(a),
+                                         z - (1 - lift) * 0.42)))
+            rows.append(row)
+        for left, right in zip(rows, rows[1:]):
+            for j in range(4):
+                k = (j + 1) % 4
+                face = bm.faces.new((left[j], left[k], right[k], right[j]))
+                face.material_index = int(j == 0)
+        bm.faces.new(rows[0])
+        bm.faces.new(tuple(reversed(rows[-1])))
+        bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    elif kind == "paw":
+        # A single weighted applique keeps the pads together when the sleeve swings.
+        for x, y, width, height in ((0, -0.19, 0.66, 0.55), (-0.35, 0.15, 0.23, 0.32),
+                                    (0, 0.32, 0.24, 0.34), (0.35, 0.15, 0.23, 0.32)):
+            pad = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=8, radius=0.5)
+            for v in pad["verts"]:
+                v.co.x = x + v.co.x * width
+                v.co.y = y + v.co.y * height
     elif kind == "sphere":
         bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=16, radius=0.5)
     bm.to_mesh(me)
@@ -341,6 +384,8 @@ def prim(body, g, mat, spec):
     ob.location = at
     _apply(ob)
     ob.data.materials.append(mat)
+    if kind == "hood":
+        ob.data.materials.append(acg_parts.toon_material("hoodlining_" + spec["id"], g["lining"]))
     if g.get("open"):
         sol = ob.modifiers.new("acg_cloth", "SOLIDIFY")
         sol.thickness = g.get("thickness", 0.004)

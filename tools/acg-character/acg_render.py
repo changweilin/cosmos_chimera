@@ -228,7 +228,7 @@ def export_fbx(rig, path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     # Generated images live only in memory; save them beside the FBX so the importer finds them.
     for img in bpy.data.images:
-        if img.source == "GENERATED" or (img.packed_file is None and not img.filepath and img.has_data):
+        if img.source == "GENERATED" or (not img.filepath and img.has_data):
             img.filepath_raw = os.path.join(os.path.dirname(os.path.abspath(path)), img.name)
             img.file_format = "PNG"
             img.save()

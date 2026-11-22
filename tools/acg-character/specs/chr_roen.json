@@ -61,30 +61,32 @@
   "look": {
     "skin": "#f6dcc8",
     "skin_shade": "#e0b49e",
-    "iris": "#a9b6d0",
-    "iris_dark": "#4b5674",
-    "brow": "#5a3e2c",
-    "hair_root": "#4a2e1e",
-    "hair": "#7a5236",
-    "hair_tip": "#a8784e",
+    "iris": "#8c8193",
+    "iris_dark": "#544c61",
+    "brow": "#79605a",
+    "hair_root": "#85675f",
+    "hair": "#c7a795",
+    "hair_tip": "#efcfaf",
     "mouth": "#a0665a"
   },
   "face": {
     "mouth_smile": -0.0004,
     "mouth_half": 0.009,
-    "eye_h": 0.6,
-    "eye_tilt": 0.04,
+    "eye_h": 0.53,
+    "eye_tilt": 0.13,
     "lash_w": 0.005,
     "eye_w": 1.25,
     "iris_w": 0.3,
     "brow_w": 0.0045,
     "brow_lift": 0.012,
     "brow_arch": 0.002,
-    "chin_taper": 0.22,
+    "chin_taper": 0.34,
     "cheek_fill": 0.04,
     "chin_forward": 0.0,
-    "chin_down": 0.0,
-    "eye_dx": 0.005
+    "chin_down": 0.005,
+    "eye_dx": 0.005,
+    "mouth_w": 0.0038,
+    "mouth_dz": -0.006
   },
   "hair": {
     "seed": 7,
@@ -107,9 +109,9 @@
           76
         ],
         "flow_vec": [
-          0,
-          -0.35,
-          -0.94
+          -0.25,
+          -0.25,
+          -0.92
         ],
         "lift": 0.25,
         "gravity": 0.3,
@@ -118,10 +120,10 @@
           0.14
         ],
         "width": [
-          0.0377,
-          0.049300000000000004
+          0.032,
+          0.044
         ],
-        "end_z": 0.018,
+        "end_z": 0.001,
         "flick": 0.14,
         "wave": 0.07,
         "jitter": 0.08,
@@ -149,7 +151,7 @@
           0.0377,
           0.0464
         ],
-        "flick": 0.28,
+        "flick": 0.26,
         "wave": 0.07,
         "spread": 0.35,
         "jitter": 0.08,
@@ -177,7 +179,7 @@
           0.0377,
           0.0464
         ],
-        "flick": 0.28,
+        "flick": 0.26,
         "wave": 0.07,
         "spread": 0.35,
         "jitter": 0.08,
@@ -241,72 +243,40 @@
         "wave": 0.07,
         "jitter": 0.08,
         "shell": 1.18
-      }
-    ],
-    "ornaments": [
-      {
-        "name": "goggleband",
-        "prim": "torus",
-        "az": 0,
-        "el": 90,
-        "k": 0.35,
-        "radii": [
-          0.5,
-          0.04
-        ],
-        "size": [
-          0.2436,
-          0.2562,
-          0.2436
-        ],
-        "rot": [
-          -28,
-          0,
-          0
-        ],
-        "color": "#4a3a30"
       },
       {
-        "name": "goggleframe",
-        "prim": "box",
-        "az": 0,
-        "el": 66,
-        "k": 1.2,
-        "size": [
-          0.1092,
-          0.0252,
-          0.0378
+        "name": "cowlick",
+        "count": 1,
+        "roots": [
+          [
+            24,
+            79
+          ]
         ],
-        "rot": [
-          -40,
+        "flow_vec": [
+          0.35,
           0,
-          0
+          0.94
         ],
-        "bevel": 0.6,
-        "color": "#d6d6d2",
-        "shade": "#9a9a96"
-      },
-      {
-        "name": "gogglelens",
-        "prim": "sphere",
-        "az": 13,
-        "el": 65,
-        "k": 1.25,
-        "size": [
-          0.042,
-          0.0185,
-          0.0319
-        ],
-        "rot": [
-          -40,
+        "lift": 0.2,
+        "gravity": 0,
+        "curl": [
+          -0.36,
           0,
-          0
+          -0.13
         ],
-        "mirror": true,
-        "color": "#f08a24",
-        "shade": "#b85a10"
+        "length": [
+          0.085,
+          0.085
+        ],
+        "width": [
+          0.015,
+          0.015
+        ],
+        "shell": 1.15
       }
     ],
+    "ornaments": [],
     "scale": 1.23
   },
   "outfit": [
@@ -354,32 +324,32 @@
         0.5
       ],
       "offset": 0.037,
-      "color": "#26262c",
+      "color": "#625b69",
       "smooth": 2
     },
     {
       "name": "hood",
-      "prim": "box",
+      "prim": "hood",
       "bone": "neck_01",
       "at": [
         0,
-        0.075,
-        -0.015
+        0.018,
+        0.014
       ],
       "size": [
-        0.24,
-        0.1,
-        0.13
+        0.315,
+        0.245,
+        0.125
       ],
       "rot": [
-        -20,
+        -10,
         0,
         0
       ],
-      "bevel": 0.9,
       "color": "#ece8e6",
       "shade": "#b4adb3",
-      "soft": true
+      "soft": true,
+      "lining": "#e8a055"
     },
     {
       "name": "shorts",
@@ -397,7 +367,7 @@
         "to": "knee-0.02",
         "amount": 0.035
       },
-      "color": "#2a2a30",
+      "color": "#4d4852",
       "smooth": 3
     },
     {
@@ -405,36 +375,36 @@
       "prim": "box",
       "bone": "thigh_l",
       "at": [
-        0.075,
-        -0.01,
+        0.069,
+        -0.06,
         -0.24
       ],
       "size": [
-        0.035,
-        0.12,
-        0.12
+        0.089,
+        0.07,
+        0.123
       ],
       "bevel": 0.3,
       "mirror": true,
-      "color": "#5d5d66"
+      "color": "#77717c"
     },
     {
       "name": "pocketflap",
       "prim": "box",
       "bone": "thigh_l",
       "at": [
-        0.093,
-        -0.01,
-        -0.19
+        0.07,
+        -0.093,
+        -0.196
       ],
       "size": [
-        0.012,
-        0.13,
-        0.025
+        0.091,
+        0.019,
+        0.042
       ],
       "bevel": 0.3,
       "mirror": true,
-      "color": "#ef8a2c"
+      "color": "#958a91"
     },
     {
       "name": "belt",
@@ -508,18 +478,18 @@
       "prim": "cyl",
       "bone": "neck_01",
       "at": [
-        0.062,
-        -0.03,
-        0.005
+        0.065,
+        -0.07,
+        -0.015
       ],
       "size": [
-        0.05,
-        0.05,
-        0.026
+        0.064,
+        0.064,
+        0.032
       ],
       "rot": [
-        0,
-        90,
+        78,
+        22,
         0
       ],
       "mirror": true,
@@ -530,22 +500,22 @@
       "prim": "torus",
       "bone": "neck_01",
       "at": [
-        0.075,
-        -0.03,
-        0.005
+        0.068,
+        -0.09999999999999999,
+        -0.013
       ],
       "radii": [
         0.45,
         0.1
       ],
       "size": [
-        0.05,
-        0.05,
-        0.05
+        0.054,
+        0.054,
+        0.052
       ],
       "rot": [
-        0,
-        90,
+        78,
+        22,
         0
       ],
       "mirror": true,
@@ -608,14 +578,14 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.075,
-        -0.1,
-        0.0
+        0.1,
+        -0.145,
+        0.066
       ],
       "size": [
         0.035,
         0.018,
-        0.3
+        0.26
       ],
       "rot": [
         8,
@@ -670,17 +640,22 @@
       "bone": "foot_l",
       "at": [
         0,
-        -0.06,
-        0.035
+        -0.145,
+        0.044
       ],
       "size": [
-        0.122,
-        0.05,
-        0.03
+        0.114,
+        0.027,
+        0.039
       ],
       "bevel": 0.4,
       "mirror": true,
-      "color": "#3a3a42"
+      "color": "#3a3a42",
+      "rot": [
+        -30,
+        0,
+        0
+      ]
     },
     {
       "name": "sole",
@@ -844,7 +819,7 @@
       ],
       "face": "front",
       "offset": 0.034,
-      "color": "#ef8a2c"
+      "color": "#807885"
     },
     {
       "name": "sleeveband",
@@ -883,20 +858,20 @@
       "bone": "spine_03",
       "at": [
         0,
-        -0.108,
-        0.03
+        -0.149,
+        0.028
       ],
       "size": [
-        0.05,
-        0.004,
-        0.05
+        0.029,
+        0.006,
+        0.029
       ],
       "rot": [
         0,
-        45,
+        0,
         0
       ],
-      "color": "#6e5e5a",
+      "color": "#cec4bb",
       "soft": true
     },
     {
@@ -922,8 +897,8 @@
         "legs"
       ],
       "z": [
-        "hip-0.12",
-        "knee+0.0"
+        "knee+0.01",
+        "hip-0.12"
       ],
       "x": [
         0.115,
@@ -936,7 +911,7 @@
         "amount": 0.035
       },
       "offset": 0.015,
-      "color": "#ef8a2c"
+      "color": "#6c6570"
     },
     {
       "name": "harness",
@@ -1092,6 +1067,157 @@
       "bevel": 0.4,
       "mirror": true,
       "color": "#ef8a2c"
+    },
+    {
+      "name": "strap_adjuster",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.158,
+        0.12
+      ],
+      "size": [
+        0.045,
+        0.013,
+        0.035
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#c6a375",
+      "soft": true
+    },
+    {
+      "name": "strap_webbing",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.167,
+        0.12
+      ],
+      "size": [
+        0.029,
+        0.008,
+        0.017
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#26262c",
+      "soft": true
+    },
+    {
+      "name": "shoe_pull",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.084,
+        0.092
+      ],
+      "size": [
+        0.046,
+        0.021,
+        0.063
+      ],
+      "bevel": 0.4,
+      "mirror": true,
+      "color": "#e4a15f",
+      "rot": [
+        -30,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "chest_check_l",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        -0.019,
+        -0.15,
+        0.061
+      ],
+      "size": [
+        0.028,
+        0.006,
+        0.028
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "color": "#d1c5bb",
+      "soft": true
+    },
+    {
+      "name": "chest_check_r",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.019,
+        -0.15,
+        0.061
+      ],
+      "size": [
+        0.028,
+        0.006,
+        0.028
+      ],
+      "rot": [
+        0,
+        0,
+        0
+      ],
+      "color": "#d1c5bb",
+      "soft": true
+    },
+    {
+      "name": "pocket_clasp",
+      "prim": "box",
+      "bone": "thigh_l",
+      "at": [
+        0.078,
+        -0.106,
+        -0.205
+      ],
+      "size": [
+        0.032,
+        0.009,
+        0.022
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#e8a054"
+    },
+    {
+      "name": "pocket_pull",
+      "prim": "box",
+      "bone": "thigh_l",
+      "at": [
+        0.08,
+        -0.106,
+        -0.315
+      ],
+      "size": [
+        0.023,
+        0.018,
+        0.078
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#e8a054"
     }
   ],
   "idle_pose": {

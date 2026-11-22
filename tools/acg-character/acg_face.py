@@ -118,8 +118,16 @@ def _project_front(h, pts, gap=0.0012):
     return out
 
 
+def nose_accent(h, rig, mat):
+    mouth = _centroid(h, "joint-mouth")
+    z = mouth.z + 0.33 * (_centroid(h, "joint-l-eye").z - mouth.z)
+    points = [Vector((x, 0, z + dz)) for x, dz in
+              ((0.001, 0.006), (-0.004, -0.001), (-0.001, -0.003), (0.002, 0))]
+    return _face_mesh("nose_accent", _project_front(h, points), [(0, 1, 2, 3)], [mat], rig)
+
+
 def mouth_line(h, rig, spec, mat):
-    """Short closed-mouth stroke with a slight upturn at the corners."""
+    """Project the mouth onto the same skin surface as the eyes."""
     f = spec.get("face", {})
     c = _centroid(h, "joint-mouth")
     half = f.get("mouth_half", 0.011)
@@ -127,8 +135,22 @@ def mouth_line(h, rig, spec, mat):
     n = 9
     line = [Vector((c.x + half * (2 * i / (n - 1) - 1), c.y, c.z + f.get("mouth_dz", 0.0) +
                     smile * (2 * i / (n - 1) - 1) ** 2)) for i in range(n)]
-    line = _project_front(h, line)
-    return _ribbon("mouth", line, [f.get("mouth_w", 0.0013)] * n, mat, rig)
+    opening = f.get("mouth_open", 0.0)
+    if opening:
+        from acg_parts import toon_material
+        teeth = toon_material("teeth_" + spec["id"], "#ffebe0")
+        verts, faces, bands = [], [], []
+        for i, top in enumerate(line):
+            depth = opening * (1 - (2 * i / (n - 1) - 1) ** 2)
+            for frac in (0, 0.14, 0.56, 1):
+                verts.append(top - Vector((0, 0, frac * depth)))
+            if i:
+                for j in range(3):
+                    a = (i - 1) * 4 + j
+                    faces.append((a, a + 4, a + 5, a + 1))
+                    bands.append(int(j == 1))
+        return _face_mesh("mouth", _project_front(h, verts), faces, [mat, teeth], rig, mat_index=bands)
+    return _ribbon("mouth", _project_front(h, line), [f.get("mouth_w", 0.0013)] * n, mat, rig)
 
 
 class EyeShape:

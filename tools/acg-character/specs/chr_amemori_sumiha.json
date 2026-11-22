@@ -60,26 +60,28 @@
     "brow_w": 0.0028,
     "mouth_smile": 0.0,
     "mouth_half": 0.008,
-    "eye_h": 0.6,
-    "eye_tilt": 0.24,
+    "eye_h": 0.55,
+    "eye_tilt": 0.16,
     "eye_w": 1.3,
-    "chin_taper": 0.25,
+    "chin_taper": 0.37,
     "cheek_fill": 0.1,
     "chin_forward": 0.0,
-    "chin_down": 0.0,
-    "eye_dx": 0.006
+    "chin_down": 0.005,
+    "eye_dx": 0.006,
+    "mouth_w": 0.0038,
+    "mouth_dz": -0.006
   },
   "look": {
     "skin": "#f8e2d2",
     "skin_shade": "#e6b8a6",
-    "iris": "#e0573e",
-    "iris_dark": "#7a1e20",
+    "iris": "#b45c51",
+    "iris_dark": "#703843",
     "brow": "#2c2038",
     "lash": "#211628",
     "mouth": "#b0685c",
-    "hair_root": "#1c1430",
-    "hair": "#3a2a58",
-    "hair_tip": "#57407a"
+    "hair_root": "#392638",
+    "hair": "#604057",
+    "hair_tip": "#88596e"
   },
   "hair": {
     "seed": 11,
@@ -349,61 +351,61 @@
       {
         "name": "clover",
         "prim": "sphere",
-        "az": 222,
-        "el": 64,
-        "k": 1.27,
+        "az": -65,
+        "el": 41,
+        "k": 1.3,
         "size": [
-          0.04,
-          0.014,
-          0.04
+          0.033,
+          0.02,
+          0.033
         ],
-        "color": "#5a7a3a",
+        "color": "#e8b261",
         "shade": "#3a5226"
       },
       {
         "name": "bowloop_a",
-        "prim": "sphere",
-        "az": 232,
-        "el": 70,
-        "k": 1.22,
+        "prim": "ribbon",
+        "az": -59,
+        "el": 49,
+        "k": 1.24,
         "size": [
-          0.07,
-          0.02,
-          0.04
+          0.059,
+          0.023,
+          0.082
         ],
         "rot": [
           0,
-          0,
-          -35
+          146,
+          0
         ],
-        "color": "#d23a3a",
+        "color": "#e77755",
         "shade": "#9a2026"
       },
       {
         "name": "bowloop_b",
-        "prim": "sphere",
-        "az": 248,
-        "el": 56,
-        "k": 1.2,
+        "prim": "ribbon",
+        "az": -76,
+        "el": 35,
+        "k": 1.24,
         "size": [
-          0.06,
-          0.02,
-          0.04
+          0.059,
+          0.023,
+          0.082
         ],
         "rot": [
           0,
-          0,
-          30
+          58,
+          0
         ],
-        "color": "#d23a3a",
+        "color": "#e77755",
         "shade": "#9a2026"
       },
       {
         "name": "bowtail",
         "prim": "box",
-        "az": 242,
-        "el": 46,
-        "k": 1.12,
+        "az": -68,
+        "el": 21,
+        "k": 1.24,
         "size": [
           0.035,
           0.012,
@@ -411,30 +413,31 @@
         ],
         "rot": [
           0,
-          0,
-          -12
+          -18,
+          0
         ],
         "bevel": 0.5,
-        "color": "#f6ece2"
+        "color": "#f2c397"
       },
       {
         "name": "triclip",
-        "prim": "box",
-        "az": 38,
-        "el": 34,
+        "prim": "cyl",
+        "az": -34,
+        "el": 24,
         "k": 1.2,
         "size": [
-          0.024,
-          0.008,
-          0.024
+          0.039,
+          0.039,
+          0.008
         ],
         "rot": [
+          90,
           0,
-          0,
-          45
+          13
         ],
         "bevel": 0.2,
-        "color": "#e8b040"
+        "color": "#e8b040",
+        "segments": 3
       }
     ],
     "scale": 0.97
@@ -538,51 +541,57 @@
       "shade": "#d6c2b6",
       "at": [
         0.1,
-        0.0,
-        -0.13
+        0,
+        -0.155
       ],
       "size": [
         0.2,
-        0.012,
-        0.2
+        0.024,
+        0.29
       ],
       "bevel": 0.15,
       "swing": {
         "roots": [
           [
             -0.08,
-            0.0,
-            0.095
+            0,
+            0.14
           ],
           [
             0.08,
-            0.0,
-            0.095
+            0,
+            0.14
           ]
         ],
-        "length": 0.2,
+        "length": 0.29,
         "segments": 3
-      }
+      },
+      "hem_rise": 0.115
     },
     {
       "name": "drophem",
       "prim": "box",
       "bone": "lowerarm_l",
       "mirror": true,
-      "color": "#c8343a",
+      "color": "#e87962",
       "shade": "#8c1e24",
       "at": [
         0.1,
-        0.0,
-        -0.222
+        0,
+        -0.239
       ],
       "size": [
-        0.205,
-        0.016,
-        0.02
+        0.228,
+        0.026,
+        0.012
       ],
       "bevel": 0.2,
-      "swing_with": "sleevedrop"
+      "swing_with": "sleevedrop",
+      "rot": [
+        0,
+        30,
+        0
+      ]
     },
     {
       "name": "sleevehem",
@@ -609,17 +618,17 @@
     },
     {
       "name": "sleevepaw",
-      "prim": "cyl",
+      "prim": "paw",
       "bone": "lowerarm_l",
       "at": [
-        0.12,
-        -0.009,
-        -0.15
+        0.13,
+        -0.019,
+        -0.17
       ],
       "size": [
-        0.055,
-        0.055,
-        0.004
+        0.099,
+        0.1,
+        0.005
       ],
       "rot": [
         90,
@@ -691,17 +700,17 @@
     },
     {
       "name": "apronpaw",
-      "prim": "cyl",
+      "prim": "paw",
       "bone": "pelvis",
       "at": [
         0,
-        -0.161,
+        -0.17,
         -0.14
       ],
       "size": [
-        0.08,
-        0.08,
-        0.006
+        0.095,
+        0.095,
+        0.008
       ],
       "rot": [
         104,
@@ -729,7 +738,7 @@
       ],
       "taper": 0.53,
       "segments": 32,
-      "color": "#2e2a5a",
+      "color": "#45405c",
       "shade": "#1c1a3c",
       "swing": {
         "ring": 8,
@@ -852,7 +861,7 @@
         0.1
       ],
       "mirror": true,
-      "color": "#f2ece4",
+      "color": "#85646c",
       "shade": "#bdb2aa"
     },
     {
@@ -861,17 +870,22 @@
       "bone": "foot_l",
       "at": [
         0,
-        -0.08,
-        0.05
+        -0.143,
+        0.055
       ],
       "size": [
-        0.126,
-        0.06,
-        0.025
+        0.11,
+        0.026,
+        0.038
       ],
       "bevel": 0.3,
       "mirror": true,
-      "color": "#c8343a"
+      "color": "#c8343a",
+      "rot": [
+        -25,
+        0,
+        0
+      ]
     },
     {
       "name": "sole",
@@ -946,7 +960,7 @@
     },
     {
       "name": "packpaw",
-      "prim": "cyl",
+      "prim": "paw",
       "bone": "spine_03",
       "at": [
         0,
@@ -992,14 +1006,14 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.07,
-        -0.095,
-        0.0
+        0.1,
+        -0.14,
+        0.066
       ],
       "size": [
         0.035,
         0.018,
-        0.3
+        0.26
       ],
       "rot": [
         8,
@@ -1076,7 +1090,7 @@
     },
     {
       "name": "bowloop_l",
-      "prim": "torus",
+      "prim": "ribbon",
       "bone": "spine_01",
       "at": [
         0.075,
@@ -1088,21 +1102,21 @@
         0.18
       ],
       "size": [
-        0.05,
-        0.05,
-        0.035
+        0.045,
+        0.022,
+        0.07
       ],
       "rot": [
-        90,
         0,
-        20
+        -80,
+        0
       ],
       "color": "#e8b040",
       "soft": true
     },
     {
       "name": "bowloop_r",
-      "prim": "torus",
+      "prim": "ribbon",
       "bone": "spine_01",
       "at": [
         0.025,
@@ -1114,14 +1128,14 @@
         0.18
       ],
       "size": [
-        0.05,
-        0.05,
-        0.035
+        0.045,
+        0.022,
+        0.07
       ],
       "rot": [
-        90,
         0,
-        -20
+        80,
+        0
       ],
       "color": "#e8b040",
       "soft": true
@@ -1327,18 +1341,108 @@
       "prim": "box",
       "bone": "foot_l",
       "at": [
-        0.064,
-        -0.02,
-        0.08
+        0,
+        -0.085,
+        0.104
       ],
       "size": [
-        0.006,
-        0.03,
-        0.025
+        0.053,
+        0.016,
+        0.036
       ],
       "bevel": 0.2,
       "mirror": true,
-      "color": "#e8b040"
+      "color": "#ce9d69"
+    },
+    {
+      "name": "strap_adjuster",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.158,
+        0.12
+      ],
+      "size": [
+        0.045,
+        0.013,
+        0.035
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#c6a375",
+      "soft": true
+    },
+    {
+      "name": "strap_webbing",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.167,
+        0.12
+      ],
+      "size": [
+        0.029,
+        0.008,
+        0.017
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#3a2a30",
+      "soft": true
+    },
+    {
+      "name": "cord_l",
+      "prim": "ribbon",
+      "bone": "spine_01",
+      "size": [
+        0.025,
+        0.015,
+        0.075
+      ],
+      "at": [
+        -0.031,
+        -0.137,
+        0.019
+      ],
+      "rot": [
+        0,
+        -18,
+        0
+      ],
+      "color": "#d7aa61"
+    },
+    {
+      "name": "cord_r",
+      "prim": "ribbon",
+      "bone": "spine_01",
+      "size": [
+        0.025,
+        0.015,
+        0.075
+      ],
+      "at": [
+        0.031,
+        -0.137,
+        0.019
+      ],
+      "rot": [
+        0,
+        18,
+        0
+      ],
+      "color": "#d7aa61"
     }
   ],
   "idle_pose": {

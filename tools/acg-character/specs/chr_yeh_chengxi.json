@@ -65,28 +65,30 @@
     "brow_w": 0.003,
     "brow_lift": 0.014,
     "mouth_smile": 0.004,
-    "mouth_half": 0.014,
-    "mouth_w": 0.0022,
-    "eye_h": 0.9,
-    "eye_tilt": 0.08,
+    "mouth_open": 0.01,
+    "mouth_half": 0.019,
+    "mouth_w": 0.0038,
+    "eye_h": 0.66,
+    "eye_tilt": 0.14,
     "eye_w": 1.32,
-    "chin_taper": 0.18,
+    "chin_taper": 0.3,
     "cheek_fill": 0.1,
     "chin_forward": 0.0,
-    "chin_down": 0.0,
-    "eye_dx": 0.006
+    "chin_down": 0.005,
+    "eye_dx": 0.006,
+    "mouth_dz": -0.006
   },
   "look": {
     "skin": "#f8e0cc",
     "skin_shade": "#e4b49c",
-    "iris": "#ff9a40",
-    "iris_dark": "#9a3a10",
+    "iris": "#b57a4b",
+    "iris_dark": "#56384a",
     "brow": "#2c1c14",
     "lash": "#20140e",
     "mouth": "#8a3a34",
-    "hair_root": "#24170f",
-    "hair": "#4a3020",
-    "hair_tip": "#6a4630"
+    "hair_root": "#302634",
+    "hair": "#514050",
+    "hair_tip": "#765c66"
   },
   "hair": {
     "seed": 23,
@@ -109,9 +111,9 @@
           74
         ],
         "flow_vec": [
-          0,
-          -0.35,
-          -0.94
+          0.3,
+          -0.3,
+          -0.91
         ],
         "lift": 0.2,
         "gravity": 0.35,
@@ -223,38 +225,39 @@
         "name": "ponytail",
         "count": 22,
         "anchor": [
-          180,
-          70,
-          1.16
+          108,
+          28,
+          1.1
         ],
-        "anchor_r": 0.035,
+        "anchor_r": 0.046,
         "flow_vec": [
-          0,
-          0.35,
-          -0.94
+          0.68,
+          0.46,
+          -0.57
         ],
         "lift": 0.55,
         "gravity": 0.55,
         "length": [
-          0.32,
-          0.44
+          0.23,
+          0.31
         ],
         "width": [
           0.05,
           0.068
         ],
         "flick": 0.2,
-        "wave": 0.14,
+        "wave": 0.25,
         "wave_freq": 1.2,
         "spread": 0.0,
         "jitter": 0.35,
         "shell": 1.1,
         "curl": [
-          0,
-          -0.25,
+          -0.22,
+          -0.08,
           0
         ],
-        "swing": 3
+        "swing": 3,
+        "flat": 0.35
       },
       {
         "name": "ahoge",
@@ -293,8 +296,8 @@
       {
         "name": "hairtie",
         "prim": "torus",
-        "az": 180,
-        "el": 70,
+        "az": 108,
+        "el": 28,
         "k": 1.17,
         "radii": [
           0.5,
@@ -310,21 +313,120 @@
           0,
           0
         ],
-        "color": "#2e3a80"
+        "color": "#ed7649"
       },
       {
         "name": "crystal",
         "prim": "sphere",
-        "az": 160,
-        "el": 80,
+        "az": 89,
+        "el": 27,
         "k": 1.22,
         "size": [
           0.032,
           0.032,
           0.032
         ],
-        "color": "#9ac8f0",
+        "color": "#e5b66c",
         "shade": "#5a88c0"
+      },
+      {
+        "name": "sailorband",
+        "prim": "cyl",
+        "az": 0,
+        "el": 90,
+        "k": 0.99,
+        "size": [
+          0.242,
+          0.244,
+          0.044
+        ],
+        "rot": [
+          -7,
+          -10,
+          0
+        ],
+        "color": "#45507d"
+      },
+      {
+        "name": "sailorpiping",
+        "prim": "torus",
+        "az": 0,
+        "el": 90,
+        "k": 1.01,
+        "radii": [
+          0.5,
+          0.012
+        ],
+        "size": [
+          0.244,
+          0.246,
+          0.2
+        ],
+        "rot": [
+          -7,
+          -10,
+          0
+        ],
+        "color": "#f4dfbd"
+      },
+      {
+        "name": "sailorcrown",
+        "prim": "sphere",
+        "az": 0,
+        "el": 90,
+        "k": 1.19,
+        "size": [
+          0.272,
+          0.271,
+          0.105
+        ],
+        "rot": [
+          -7,
+          -10,
+          0
+        ],
+        "color": "#fff1e6"
+      },
+      {
+        "name": "ribbonloop",
+        "prim": "sphere",
+        "az": 88,
+        "el": 37,
+        "k": 1.27,
+        "size": [
+          0.095,
+          0.024,
+          0.038
+        ],
+        "rot": [
+          0,
+          -40,
+          0
+        ],
+        "color": "#ec774c",
+        "offset": [
+          0.017,
+          -0.018,
+          0
+        ]
+      },
+      {
+        "name": "ribbontail",
+        "prim": "box",
+        "az": 95,
+        "el": 15,
+        "k": 1.27,
+        "size": [
+          0.03,
+          0.016,
+          0.081
+        ],
+        "rot": [
+          0,
+          -38,
+          0
+        ],
+        "color": "#df6947"
       }
     ],
     "scale": 1.05
@@ -407,9 +509,9 @@
         0.12
       ],
       "size": [
-        0.1,
-        0.02,
-        0.1
+        0.068,
+        0.018,
+        0.065
       ],
       "rot": [
         0,
@@ -417,7 +519,7 @@
         0
       ],
       "bevel": 0.3,
-      "color": "#e8b040",
+      "color": "#ec8454",
       "soft": true
     },
     {
@@ -436,8 +538,8 @@
         "to": "hip-0.14",
         "amount": 0.012
       },
-      "color": "#2a2a30",
-      "shade": "#18181c",
+      "color": "#48517a",
+      "shade": "#333653",
       "smooth": 3
     },
     {
@@ -516,7 +618,7 @@
       "at": [
         0,
         0.0,
-        0.17
+        0.14
       ],
       "size": [
         0.13,
@@ -525,8 +627,8 @@
       ],
       "taper": 1.1,
       "mirror": true,
-      "color": "#22222a",
-      "shade": "#141418",
+      "color": "#eee3df",
+      "shade": "#bcb1bc",
       "soft": true
     },
     {
@@ -554,18 +656,23 @@
       "bone": "foot_l",
       "at": [
         0,
-        0.03,
-        0.0
+        -0.14,
+        0.05
       ],
       "size": [
-        0.124,
-        0.1,
-        0.14
+        0.097,
+        0.073,
+        0.105
       ],
       "bevel": 0.6,
       "mirror": true,
       "color": "#2e3a80",
-      "shade": "#1c2454"
+      "shade": "#1c2454",
+      "rot": [
+        -28,
+        0,
+        0
+      ]
     },
     {
       "name": "laces",
@@ -573,17 +680,22 @@
       "bone": "foot_l",
       "at": [
         0,
-        -0.115,
-        0.05
+        -0.175,
+        0.058
       ],
       "size": [
-        0.05,
-        0.03,
-        0.06
+        0.07,
+        0.015,
+        0.015
       ],
       "bevel": 0.3,
       "mirror": true,
-      "color": "#e8582c"
+      "color": "#e8582c",
+      "rot": [
+        -28,
+        16,
+        0
+      ]
     },
     {
       "name": "sole",
@@ -712,14 +824,14 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.07,
-        -0.1,
-        0.0
+        0.1,
+        -0.145,
+        0.066
       ],
       "size": [
         0.035,
         0.018,
-        0.3
+        0.26
       ],
       "rot": [
         8,
@@ -779,7 +891,7 @@
     },
     {
       "name": "scarftail_l",
-      "prim": "box",
+      "prim": "ribbon",
       "bone": "spine_03",
       "at": [
         0.03,
@@ -787,17 +899,16 @@
         0.04
       ],
       "size": [
-        0.045,
-        0.012,
-        0.13
+        0.053,
+        0.018,
+        0.15
       ],
       "rot": [
         0,
         -18,
         0
       ],
-      "bevel": 0.3,
-      "color": "#e8b040",
+      "color": "#ed7649",
       "swing": {
         "roots": [
           [
@@ -812,7 +923,7 @@
     },
     {
       "name": "scarftail_r",
-      "prim": "box",
+      "prim": "ribbon",
       "bone": "spine_03",
       "at": [
         -0.03,
@@ -820,17 +931,16 @@
         0.04
       ],
       "size": [
-        0.045,
-        0.012,
-        0.13
+        0.053,
+        0.018,
+        0.15
       ],
       "rot": [
         0,
         18,
         0
       ],
-      "bevel": 0.3,
-      "color": "#e8b040",
+      "color": "#ed7649",
       "swing": {
         "roots": [
           [
@@ -939,8 +1049,8 @@
         "legs"
       ],
       "z": [
-        "hip-0.33",
-        "hip-0.29"
+        "hip-0.24",
+        "hip-0.21"
       ],
       "x": [
         0,
@@ -948,7 +1058,7 @@
       ],
       "x_side": "r",
       "offset": 0.003,
-      "color": "#eef0f4"
+      "color": "#554550"
     },
     {
       "name": "sockband",
@@ -979,6 +1089,189 @@
       "bevel": 0.3,
       "mirror": true,
       "color": "#e8b040"
+    },
+    {
+      "name": "laces_cross",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.175,
+        0.059
+      ],
+      "size": [
+        0.07,
+        0.015,
+        0.015
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#e8582c",
+      "rot": [
+        -28,
+        -16,
+        0
+      ]
+    },
+    {
+      "name": "strap_adjuster",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.158,
+        0.12
+      ],
+      "size": [
+        0.045,
+        0.013,
+        0.035
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#c6a375",
+      "soft": true
+    },
+    {
+      "name": "strap_webbing",
+      "prim": "box",
+      "bone": "spine_03",
+      "at": [
+        0.1,
+        -0.167,
+        0.12
+      ],
+      "size": [
+        0.029,
+        0.008,
+        0.017
+      ],
+      "rot": [
+        8,
+        0,
+        0
+      ],
+      "bevel": 0.3,
+      "mirror": true,
+      "color": "#4a3024",
+      "soft": true
+    },
+    {
+      "name": "boot_tongue",
+      "prim": "box",
+      "bone": "foot_l",
+      "at": [
+        0,
+        -0.069,
+        0.14
+      ],
+      "size": [
+        0.06,
+        0.018,
+        0.106
+      ],
+      "bevel": 0.6,
+      "mirror": true,
+      "color": "#2e3a80",
+      "shade": "#1c2454",
+      "rot": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "compass_link",
+      "prim": "torus",
+      "bone": "pelvis",
+      "at": [
+        -0.061,
+        -0.144,
+        -0.034
+      ],
+      "radii": [
+        0.42,
+        0.09
+      ],
+      "size": [
+        0.031,
+        0.032,
+        0.022
+      ],
+      "rot": [
+        90,
+        0,
+        0
+      ],
+      "color": "#c59d62"
+    },
+    {
+      "name": "compass_case",
+      "prim": "cyl",
+      "bone": "pelvis",
+      "at": [
+        -0.061,
+        -0.145,
+        -0.073
+      ],
+      "size": [
+        0.064,
+        0.064,
+        0.014
+      ],
+      "rot": [
+        90,
+        0,
+        0
+      ],
+      "color": "#deb976"
+    },
+    {
+      "name": "compass_face",
+      "prim": "cyl",
+      "bone": "pelvis",
+      "at": [
+        -0.061,
+        -0.154,
+        -0.073
+      ],
+      "size": [
+        0.049,
+        0.049,
+        0.005
+      ],
+      "rot": [
+        90,
+        0,
+        0
+      ],
+      "color": "#616a89"
+    },
+    {
+      "name": "compass_needle",
+      "prim": "box",
+      "bone": "pelvis",
+      "at": [
+        -0.061,
+        -0.158,
+        -0.073
+      ],
+      "size": [
+        0.01,
+        0.005,
+        0.042
+      ],
+      "rot": [
+        0,
+        31,
+        0
+      ],
+      "color": "#f7deb1"
     }
   ],
   "idle_pose": {

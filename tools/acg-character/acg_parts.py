@@ -161,6 +161,7 @@ def iris_texture_material(name, iris_hex, iris_dark_hex, pupil_hex="#1a0f12", si
     img.colorspace_settings.name = "sRGB"
     img.pixels.foreach_set(col.astype(np.float32).ravel())
     img.update()
+    img.pack()
     m = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     m.use_nodes = True
     nt = m.node_tree
@@ -194,6 +195,7 @@ def dress(h, rig, spec):
         "brow": toon_material("brow_" + spec["id"], look["brow"]),
     })
     acg_face.mouth_line(h, rig, spec, toon_material("mouth_" + spec["id"], look.get("mouth", "#9a5a50")))
+    acg_face.nose_accent(h, rig, toon_material("nose_" + spec["id"], look["skin_shade"]))
     import acg_hair
     import acg_outfit
     acg_hair.build(h, rig, spec)
@@ -203,5 +205,5 @@ def dress(h, rig, spec):
     width = 0.0025 * spec["height_cm"] / 165.0
     add_outline(h, width, _outline_mask(h))
     for o in _children(rig, h):
-        if not any(k in o.name.lower() for k in ("sclera", "iris", "brow", "lash", "mouth")):
+        if not any(k in o.name.lower() for k in ("sclera", "iris", "brow", "lash", "mouth", "nose")):
             add_outline(o, width)
