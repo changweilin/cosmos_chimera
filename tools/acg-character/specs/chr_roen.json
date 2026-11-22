@@ -30,7 +30,7 @@
     "r-ear-flap-decr": 1.0,
     "head-oval": 0.6,
     "head-invertedtriangular": 0.25,
-    "head-scale-horiz-decr": 0.15,
+    "head-scale-horiz-decr": 0.45,
     "chin-height-incr": 0.4,
     "chin-width-decr": 0.4,
     "measure-shoulder-dist-incr": 0.7,
@@ -49,7 +49,7 @@
     "head-angle-in": 0.45
   },
   "proportions": {
-    "heads": 6.0,
+    "heads": 7.0,
     "leg_length": 1.22,
     "neck_thin": 0.88,
     "hand_scale": 0.95,
@@ -64,26 +64,26 @@
     "iris": "#8c8193",
     "iris_dark": "#544c61",
     "brow": "#79605a",
-    "hair_root": "#85675f",
-    "hair": "#c7a795",
-    "hair_tip": "#efcfaf",
+    "hair_root": "#6a4e42",
+    "hair": "#8f6e5e",
+    "hair_tip": "#b8957c",
     "mouth": "#a0665a"
   },
   "face": {
     "mouth_smile": -0.0004,
     "mouth_half": 0.009,
-    "eye_h": 0.53,
-    "eye_tilt": 0.13,
+    "eye_h": 0.58,
+    "eye_tilt": 0.06,
     "lash_w": 0.005,
-    "eye_w": 1.25,
-    "iris_w": 0.3,
-    "brow_w": 0.0045,
-    "brow_lift": 0.012,
-    "brow_arch": 0.002,
-    "chin_taper": 0.34,
-    "cheek_fill": 0.04,
-    "chin_forward": 0.0,
-    "chin_down": 0.005,
+    "eye_w": 1.1,
+    "iris_w": 0.33,
+    "brow_w": 0.0042,
+    "brow_lift": 0.007,
+    "brow_arch": 0.003,
+    "chin_taper": 0.48,
+    "cheek_fill": 0.0,
+    "chin_forward": 0.004,
+    "chin_down": 0.012,
     "eye_dx": 0.005,
     "mouth_w": 0.0038,
     "mouth_dz": -0.006
@@ -99,7 +99,7 @@
     "groups": [
       {
         "name": "bangs",
-        "count": 10,
+        "count": 12,
         "az": [
           -70,
           70
@@ -116,42 +116,47 @@
         "lift": 0.25,
         "gravity": 0.3,
         "length": [
-          0.1,
-          0.14
+          0.12,
+          0.16
         ],
         "width": [
-          0.032,
-          0.044
+          0.034,
+          0.046
         ],
-        "end_z": 0.001,
+        "end_z": -0.004,
         "flick": 0.14,
         "wave": 0.07,
         "jitter": 0.08,
-        "shell": 1.16
+        "shell": 1.16,
+        "colors": [
+          "#8a6a58",
+          "#c9a37c",
+          "#efd8ae"
+        ]
       },
       {
         "name": "side_l",
-        "count": 5,
+        "count": 6,
         "az": [
           70,
           118
         ],
         "el": [
-          12,
-          50
+          15,
+          55
         ],
         "flow": "down",
         "lift": 0.7,
         "gravity": 0.25,
         "length": [
-          0.07,
-          0.1
+          0.05,
+          0.07
         ],
         "width": [
           0.0377,
           0.0464
         ],
-        "flick": 0.26,
+        "flick": 0.35,
         "wave": 0.07,
         "spread": 0.35,
         "jitter": 0.08,
@@ -159,27 +164,27 @@
       },
       {
         "name": "side_r",
-        "count": 5,
+        "count": 6,
         "az": [
           -118,
           -70
         ],
         "el": [
-          12,
-          50
+          15,
+          55
         ],
         "flow": "down",
         "lift": 0.7,
         "gravity": 0.25,
         "length": [
-          0.07,
-          0.1
+          0.05,
+          0.07
         ],
         "width": [
           0.0377,
           0.0464
         ],
-        "flick": 0.26,
+        "flick": 0.35,
         "wave": 0.07,
         "spread": 0.35,
         "jitter": 0.08,
@@ -187,7 +192,7 @@
       },
       {
         "name": "back",
-        "count": 12,
+        "count": 14,
         "az": [
           115,
           245
@@ -201,17 +206,17 @@
           0.4,
           -0.92
         ],
-        "lift": 0.45,
+        "lift": 0.6,
         "gravity": 0.25,
         "length": [
-          0.09,
-          0.12
+          0.07,
+          0.1
         ],
         "width": [
           0.0435,
           0.055099999999999996
         ],
-        "flick": 0.22,
+        "flick": 0.35,
         "wave": 0.07,
         "spread": 0.3,
         "jitter": 0.08,
@@ -219,7 +224,7 @@
       },
       {
         "name": "crown",
-        "count": 10,
+        "count": 16,
         "az": [
           0,
           360
@@ -240,9 +245,9 @@
           0.055099999999999996
         ],
         "flick": 0.22,
-        "wave": 0.07,
+        "wave": 0.08,
         "jitter": 0.08,
-        "shell": 1.18
+        "shell": 1.2
       },
       {
         "name": "cowlick",
@@ -307,10 +312,10 @@
       ],
       "sleeve": [
         0,
-        0.5
+        0.86
       ],
       "offset": 0.03,
-      "open_front": 0.06,
+      "open_front": 0.035,
       "open_from": "pelvis",
       "color": "#ece8e6",
       "shade": "#b4adb3",
@@ -320,8 +325,8 @@
       "name": "cuffs",
       "parts": [],
       "sleeve": [
-        0.43,
-        0.5
+        0.74,
+        0.86
       ],
       "offset": 0.037,
       "color": "#625b69",
@@ -333,16 +338,16 @@
       "bone": "neck_01",
       "at": [
         0,
-        0.018,
-        0.014
+        0.075,
+        -0.01
       ],
       "size": [
-        0.315,
-        0.245,
-        0.125
+        0.28,
+        0.22,
+        0.11
       ],
       "rot": [
-        -10,
+        -20,
         0,
         0
       ],
@@ -358,13 +363,13 @@
         "legs"
       ],
       "z": [
-        "knee-0.02",
+        "knee+0.09",
         "pelvis+0.07"
       ],
       "offset": 0.012,
       "flare": {
-        "from": "hip-0.12",
-        "to": "knee-0.02",
+        "from": "hip-0.1",
+        "to": "knee+0.09",
         "amount": 0.035
       },
       "color": "#4d4852",
@@ -417,14 +422,14 @@
       ],
       "radii": [
         0.5,
-        0.06
+        0.035
       ],
       "size": [
         0.345,
         0.25,
         0.5
       ],
-      "color": "#8a5a32",
+      "color": "#26262c",
       "soft": true
     },
     {
@@ -578,7 +583,7 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.1,
+        0.135,
         -0.145,
         0.066
       ],
@@ -764,8 +769,8 @@
         "neck+0.01"
       ],
       "x": [
-        0.06,
-        0.08
+        0.035,
+        0.055
       ],
       "face": "front",
       "offset": 0.034,
@@ -811,7 +816,7 @@
       "parts": [],
       "sleeve": [
         0,
-        0.5
+        0.86
       ],
       "x": [
         0.27,
@@ -880,13 +885,13 @@
         "legs"
       ],
       "z": [
-        "knee-0.045",
-        "knee-0.015"
+        "knee+0.07",
+        "knee+0.1"
       ],
       "flare": {
-        "from": "hip-0.12",
-        "to": "knee-0.02",
-        "amount": 0.035
+        "from": "hip-0.1",
+        "to": "knee+0.06",
+        "amount": 0.05
       },
       "offset": 0.016,
       "color": "#1c1c20"
@@ -897,7 +902,7 @@
         "legs"
       ],
       "z": [
-        "knee+0.01",
+        "knee+0.11",
         "hip-0.12"
       ],
       "x": [
@@ -906,9 +911,9 @@
       ],
       "x_side": "r",
       "flare": {
-        "from": "hip-0.12",
-        "to": "knee-0.02",
-        "amount": 0.035
+        "from": "hip-0.1",
+        "to": "knee+0.06",
+        "amount": 0.05
       },
       "offset": 0.015,
       "color": "#6c6570"
@@ -975,47 +980,22 @@
       "prim": "box",
       "bone": "pelvis",
       "at": [
-        -0.06,
+        -0.03,
         -0.125,
-        -0.16
+        -0.07
       ],
       "size": [
-        0.018,
+        0.025,
         0.006,
-        0.13
+        0.17
       ],
       "rot": [
         0,
-        -10,
+        -55,
         0
       ],
       "bevel": 0.3,
-      "color": "#c4c6cc"
-    },
-    {
-      "name": "wrenchhead",
-      "prim": "torus",
-      "bone": "pelvis",
-      "at": [
-        -0.07,
-        -0.125,
-        -0.235
-      ],
-      "radii": [
-        0.5,
-        0.18
-      ],
-      "size": [
-        0.04,
-        0.04,
-        0.04
-      ],
-      "rot": [
-        90,
-        0,
-        0
-      ],
-      "color": "#c4c6cc"
+      "color": "#ef8a2c"
     },
     {
       "name": "bottle",
@@ -1073,7 +1053,7 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.1,
+        0.135,
         -0.158,
         0.12
       ],
@@ -1097,7 +1077,7 @@
       "prim": "box",
       "bone": "spine_03",
       "at": [
-        0.1,
+        0.135,
         -0.167,
         0.12
       ],
