@@ -94,6 +94,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool TravelToLobbyPlanet;
 
+        /// <summary>Gold earned during this run from trainer victories and quest milestones.</summary>
+        /// <remarks>REQ: docs/design/crafting.md#製造擴充. Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int GoldEarned;
+
         /// <summary>Records one completed battle (victory or defeat) against trainer profession <paramref name="professionId"/>.</summary>
         /// <remarks>Pre: professionId valid snake_case id. Post: TrainerBattles[professionId] incremented by 1. Side effects: mutates TrainerBattles.</remarks>
         public void RecordTrainerBattle(string professionId)
@@ -1919,6 +1923,7 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     bool won = state == TrainerBattleState.Defeated;
                     int wIdx = _activeWanderingTrainerIndex;
+                    int trainerUnitCount = _activeTrainerUnitIds.Count;
                     _activeEncounterTrainerId = -1;
                     _activeWanderingTrainerIndex = -1;
                     CleanupActiveTrainerUnits();
@@ -1936,6 +1941,7 @@ namespace Cosmimera.Bootstrap.Demo
                         if (won)
                         {
                             _trainers.MarkDefeated(wIdx);
+                            _outcome.GoldEarned += ShopAndRepairRules.TrainerVictoryGoldReward(trainerUnitCount);
                             RestoreTrialParty();
                             RefillField(PlayerPosition());
                             Toast(_copy.Ui("ui.trainer.victory").Replace("{trainer}", profName));

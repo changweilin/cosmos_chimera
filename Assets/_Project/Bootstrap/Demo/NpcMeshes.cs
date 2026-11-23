@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.WorldGen;
@@ -578,7 +579,17 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public static Mesh Build(in NpcSpec spec) => Build(spec, null, out _);
 
-        internal static Mesh Build(in NpcSpec spec, Transform root, out ResidentStride stride)
+        internal static Mesh Build(in NpcSpec spec, Transform root, out ResidentStride stride) => Build(spec, root, out stride, false, out _);
+
+        /// <summary>Builds only what a UMA body does not carry: hair, beard, clothes, race parts, wings, tail, props.</summary>
+        /// <remarks>
+        /// REQ: docs/design/npc-uma-looks.md#多樣性對照 (items 10–13, 15, 17, 20). Beast races keep their whole procedural head.
+        /// Pre: main thread. Post: the triangles of Build(spec) that are not body or (plain-faced) face, at the same
+        /// positions; <paramref name="rig"/> is the pose they were built around. Side effects: allocates a Mesh the caller owns.
+        /// </remarks>
+        internal static Mesh BuildParts(in NpcSpec spec, out Rig rig) => Build(spec, null, out _, true, out rig);
+
+        private static Mesh Build(in NpcSpec spec, Transform root, out ResidentStride stride, bool partsOnly, out Rig posed)
         {
             var rng = new Pcg32(Salt ^ spec.Seed, ((ulong)spec.Race << 16) | ((ulong)spec.Role << 8) | (ulong)spec.Sex);
             var body = new Fig();
@@ -586,23 +597,63 @@ namespace Cosmimera.Bootstrap.Demo
             Traits traits = TraitsOf(spec);
             Look look = Look.Draw(spec, traits, ref rng);
             Rig rig = Rig.Pose(spec, traits, look, ref rng);
+            posed = rig;
+            Mark(body, glow, false);
             Flesh(body, glow, spec, traits, rig, look);
             Head(body, glow, spec, traits, rig, look, ref rng);
+            Mark(body, glow, true);
+            Ride(body, glow, RideBody);
             Dress(body, glow, spec, rig, look, ref rng);
+            Ride(body, glow, RideFree);
             Trade(body, glow, spec, rig, look);
             Ailments(body, spec, rig, look, ref rng);
 
             float top = HeightM(spec) + 1.4f;
             Confine(body, top);
             Confine(glow, top);
+            if (partsOnly)
+            {
+                body.KeepPartsOnly();
+                glow.KeepPartsOnly();
+            }
+
             var data = new SceneryMeshes.MeshData(SubMeshCount);
             data.EmitFaceted(body.Part, BodySubMesh, FacetCos, null);
             data.EmitFaceted(glow.Part, GlowSubMesh, FacetCos, null);
             Mesh mesh = data.ToMesh("Npc_" + spec.Race + "_" + spec.Role);
             stride = root == null ? null : new ResidentStride(root, mesh, rig.HipL, rig.HipR, rig.KneeL, rig.KneeR, rig.AnkleL, rig.AnkleR, spec);
-            // UV1 carries construction tags through facet splitting. It belongs to wind in the scenery shader.
-            mesh.SetUVs(1, Array.Empty<Vector2>());
+            // UV1 carries construction tags through facet splitting. It belongs to wind in the scenery shader; a parts
+            // mesh keeps it as the rider tag its consumer reads.
+            if (!partsOnly)
+            {
+                mesh.SetUVs(1, Array.Empty<Vector2>());
+            }
+
             return mesh;
+        }
+
+        private static void Mark(Fig body, Fig glow, bool part)
+        {
+            body.Mark(part);
+            glow.Mark(part);
+        }
+
+        /// <summary>Rider tag (UV1.x of a BuildParts mesh): the part may ride any bone.</summary>
+        internal const byte RideFree = 0;
+
+        /// <summary>Rider tag: clothing of the trunk and legs, which never rides an arm however close it hangs.</summary>
+        internal const byte RideBody = 1;
+
+        /// <summary>Rider tag: a sleeve, cuff or glove of the left (negative x) arm.</summary>
+        internal const byte RideArmLeft = 2;
+
+        /// <summary>Rider tag: a sleeve, cuff or glove of the right arm.</summary>
+        internal const byte RideArmRight = 3;
+
+        private static void Ride(Fig body, Fig glow, byte rider)
+        {
+            body.Ride(rider);
+            glow.Ride(rider);
         }
 
         // The contract's envelope, enforced rather than hoped for: every pose and prop is authored inside it, and a
@@ -1370,8 +1421,12 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             b.Tube(r.Chest, r.Head, r.NeckR, r.NeckR * 0.9f, dark, skin, 6);
+            Mark(b, glow, true);
+            // Wings and tails grow from the back: they ride the trunk, never the arm hanging beside them.
+            Ride(b, glow, RideBody);
             Tail(b, spec, r, look);
             Wings(b, glow, spec, r, look);
+            Ride(b, glow, RideFree);
         }
 
         private static void Tail(Fig b, in NpcSpec spec, in Rig r, in Look look)
@@ -1517,6 +1572,10 @@ namespace Cosmimera.Bootstrap.Demo
             // Ears, like noses, keep growing for life.
             float ear = math.clamp(1f + 0.15f * Gauss(ref hv), 0.75f, 1.35f) * (ageless ? 1f : 1f + 0.12f * math.smoothstep(0.6f, 0.95f, spec.Age01));
             var hs = new HeadShape(f);
+            // Beasts keep the whole procedural head (UMA head slot stand-in); everyone else wears only the parts that
+            // stand off the UMA face.
+            bool beast = HeadSlotOf(spec.Race) != null;
+            Mark(b, glow, beast);
             if (spec.Race == NpcRace.Skeleton)
             {
                 // Bone is a cranium plus a separate jaw (drawn below), not a fleshed face shape.
@@ -1526,6 +1585,8 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 HeadShell(b, c, hr, hs, skin);
             }
+
+            Mark(b, glow, true);
 
             // Rooted a little inside the outline, as on the old sphere: a plain ear shows its rim, not a triangle on a stalk.
             float earSide = 0.93f * hs.Width(-0.05f);
@@ -1555,6 +1616,8 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     float bulb = math.lerp(0.17f, 0.3f, hv.NextFloat()) * f.NoseW;
                     Color ruddy = Color.Lerp(Shade(skin, 0.94f), Hex(0xC86A5A), 0.3f * hv.NextFloat());
+                    // Nose, brow and round ears are the face's own surface, which a UMA head models itself.
+                    Mark(b, glow, beast);
                     b.Ball(c + new float3(0f, -0.15f, hs.Front(0f, -0.15f) - 0.04f) * hr, new float3(bulb, bulb * 0.9f, bulb) * hr, ruddy, 6, 4);
                     // A shelf of brow: a dwarf's face is framed by hair above and below.
                     float brow = math.lerp(0.08f, 0.15f, hv.NextFloat()) * f.BrowThick, tilt = f.BrowSlant;
@@ -1565,6 +1628,7 @@ namespace Cosmimera.Bootstrap.Demo
                     }
 
                     Ears(b, c, hr, earSide, skin, 0.2f * ear, 0.2f, 0.05f * ear);
+                    Mark(b, glow, true);
                     break;
                 }
                 case NpcRace.Goblin:
@@ -1602,7 +1666,9 @@ namespace Cosmimera.Bootstrap.Demo
 
                     if (hv.NextUInt(5) < 3)
                     {
+                        Mark(b, glow, beast);
                         b.Slab(c + new float3(-0.5f, 0.32f, 0.8f) * hr, c + new float3(0.5f, 0.32f, 0.8f) * hr, 0.12f * hr, 0.1f * hr, Shade(skin, 0.9f));
+                        Mark(b, glow, true);
                     }
 
                     if (hv.NextUInt(10) < 3)
@@ -1789,7 +1855,9 @@ namespace Cosmimera.Bootstrap.Demo
                         b.Ball(c + new float3(0f, -0.48f, hs.Front(0f, -0.48f) - 0.04f) * hr, new float3(0.2f, 0.14f, 0.08f) * hr, Hex(0x2A1E20), 6, 3);
                     }
 
+                    Mark(b, glow, beast);
                     Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f, hv.NextUInt(4) == 0 ? 0f : 1f);
+                    Mark(b, glow, true);
                     break;
                 }
                 case NpcRace.Skeleton:
@@ -1863,11 +1931,15 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
                 }
                 case NpcRace.Angel:
+                    Mark(b, glow, beast);
                     Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f);
+                    Mark(b, glow, true);
                     eye = Pick(AngelIris, ref hv);
                     break;
                 default:
+                    Mark(b, glow, beast);
                     Ears(b, c, hr, earSide, skin, 0.18f * ear, 0.2f, 0.05f * ear);
+                    Mark(b, glow, true);
                     break;
             }
 
@@ -1884,6 +1956,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             Blood(b, spec, c, hr, hs, earSide, skin, ear, ref eye, out Color odd, ref hv);
+            Mark(b, glow, beast);
             if (plainFace)
             {
                 float fl = f.FaceLen;
@@ -2001,6 +2074,7 @@ namespace Cosmimera.Bootstrap.Demo
                 (lit ? glow : b).Ball(iris, new float3(eyeSize, eyeSize * 1.15f * math.min(1f, open), depth) * hr, tone, 6, 4);
             }
 
+            Mark(b, glow, true);
             if (!t.Furred)
             {
                 Hair(b, spec, r, look, ref rng);
@@ -2971,6 +3045,7 @@ namespace Cosmimera.Bootstrap.Demo
             for (int s = -1; s <= 1; s += 2)
             {
                 float3 shoulder = s < 0 ? r.ShoulderL : r.ShoulderR, elbow = s < 0 ? r.ElbowL : r.ElbowR, hand = s < 0 ? r.HandL : r.HandR;
+                Ride(b, glow, s < 0 ? RideArmLeft : RideArmRight);
                 int cover = look.UpperEra == ArchEra.Wasteland && s > 0 ? 2 : sleeve;
                 if (cover >= 1)
                 {
@@ -2990,6 +3065,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            Ride(b, glow, RideBody);
             Overgarment(b, spec, r, look, fit, hem);
             float3 front = r.Chest + new float3(0f, -0.07f * h, r.TrunkZ * 1.1f * fit);
             switch (look.UpperEra)
@@ -3138,8 +3214,11 @@ namespace Cosmimera.Bootstrap.Demo
                     b.Hoop(r.Neck + new float3(0f, -0.008f * h, 0f), r.TrunkX * 0.72f * fit, 0.03f * h, Hex(0xEFEBE2), r.TrunkZ * 1.05f * fit);
                     for (int s = -1; s <= 1; s += 2)
                     {
+                        Ride(b, glow, s < 0 ? RideArmLeft : RideArmRight);
                         b.Ball(s < 0 ? r.HandL : r.HandR, new float3(r.ArmR * 1.6f), Shade(look.Leather, 1.25f), 6, 4);
                     }
+
+                    Ride(b, glow, RideBody);
 
                     break;
                 case ArchRegion.Storm:
@@ -3522,6 +3601,64 @@ namespace Cosmimera.Bootstrap.Demo
 
             internal int Leg;
             internal float ClothHipWidth;
+
+            // Vertex index where each run of geometry starts, with whether it is body or part (NpcMeshes.Uma: the UMA
+            // body replaces the body runs, the part runs ride on its bones) and which bones it may ride (Ride*). Kept as
+            // runs so direct Part.Add calls are tagged too.
+            private readonly List<int> _runStart = new List<int>();
+            private readonly List<bool> _runIsPart = new List<bool>();
+            private readonly List<byte> _runRider = new List<byte>();
+            private bool _part;
+            private byte _rider;
+
+            public void Mark(bool part)
+            {
+                _part = part;
+                Run();
+            }
+
+            public void Ride(byte rider)
+            {
+                _rider = rider;
+                Run();
+            }
+
+            private void Run()
+            {
+                _runStart.Add(Part.P.Count);
+                _runIsPart.Add(_part);
+                _runRider.Add(_rider);
+            }
+
+            // Drops every triangle that touches body geometry (vertices stay, so indices remain valid) and writes each
+            // vertex's rider to its construction tag (UV1.x), which facet splitting carries to the mesh.
+            public void KeepPartsOnly()
+            {
+                var isPart = new bool[Part.P.Count];
+                for (int run = 0; run < _runStart.Count; run++)
+                {
+                    int end = run + 1 < _runStart.Count ? _runStart[run + 1] : isPart.Length;
+                    for (int i = _runStart[run]; i < end; i++)
+                    {
+                        isPart[i] = _runIsPart[run];
+                        Part.W[i] = new float2(_runRider[run], 0f);
+                    }
+                }
+
+                var kept = new List<int>(Part.T.Count);
+                for (int t = 0; t + 2 < Part.T.Count; t += 3)
+                {
+                    if (isPart[Part.T[t]] && isPart[Part.T[t + 1]] && isPart[Part.T[t + 2]])
+                    {
+                        kept.Add(Part.T[t]);
+                        kept.Add(Part.T[t + 1]);
+                        kept.Add(Part.T[t + 2]);
+                    }
+                }
+
+                Part.T.Clear();
+                Part.T.AddRange(kept);
+            }
 
             private int V(float3 p, Color c)
             {

@@ -147,6 +147,13 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            if (!_save.TutorialDone)
+            {
+                // REQ: docs/design/beginner-quest.md#流程 — new save skips lobby/menu and enters Cradle Moon directly.
+                EnterBeginnerQuest();
+                return;
+            }
+
             if (_save.StarterLine == null && _starters.Count > 0)
             {
                 CreatureDef s = _starters[0];
@@ -1275,6 +1282,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (outcome.Victory)
                 {
                     _save.CompleteTutorial(_bqCharacterId, _bqFriendId, _bqRivalId, _bqRivalStarterId, _bqFriendStarterId);
+                    _save.AddGold(ShopAndRepairRules.QuestCompletionGold);
                     _save.Codex.Record(Codex.CodexEvent.Capture, _bqCharacterId);
                     TrySettle();
                     return;

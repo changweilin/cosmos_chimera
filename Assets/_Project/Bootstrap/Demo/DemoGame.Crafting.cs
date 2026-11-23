@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Cosmimera.Codex;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Lobby;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -110,6 +113,156 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
+
+            if (_equipmentOwner == 0)
+            {
+                GUILayout.Space(10f);
+                DrawNgPlusCosmeticsSection(ui);
+                GUILayout.Space(10f);
+                DrawShopAndSellSection(ui);
+            }
+        }
+
+        private void DrawNgPlusCosmeticsSection(AdventurePanel ui)
+        {
+            if (!_save.NgPlusUnlocked)
+            {
+                return;
+            }
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            ui.Heading("二周目純外觀更換與我的最愛");
+            string activeChar = string.IsNullOrEmpty(_save.CosmeticCharacterId) ? _save.CharacterId : _save.CosmeticCharacterId;
+            string activeOutfit = string.IsNullOrEmpty(_save.CosmeticOutfitCharacterId) ? activeChar : _save.CosmeticOutfitCharacterId;
+            string activeAcc = string.IsNullOrEmpty(_save.CosmeticAccessoryCharacterId) ? activeChar : _save.CosmeticAccessoryCharacterId;
+
+            ui.Label($"目前角色外觀：{BeginnerQuestRules.CharacterDisplayName(activeChar)} · 服裝：{BeginnerQuestRules.CharacterDisplayName(activeOutfit)} · 飾品：{BeginnerQuestRules.CharacterDisplayName(activeAcc)}");
+
+            GUILayout.BeginHorizontal();
+            foreach (string cid in BeginnerQuestRules.CharacterRing)
+            {
+                bool obtained = string.Equals(cid, _save.CharacterId, StringComparison.Ordinal) ||
+                    _save.Codex.Get(CodexKind.Character, cid) != CodexLevel.Unknown;
+                if (!obtained) continue;
+
+                string label = (string.Equals(cid, activeChar, StringComparison.Ordinal) ? "● " : "") +
+                    BeginnerQuestRules.CharacterDisplayName(cid);
+                if (ui.Button("角色：" + label))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(cid, activeOutfit, activeAcc);
+                    if (CommitLobby(candidate)) SyncSelectedCharacterModel(cid);
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button("服裝：" + BeginnerQuestRules.CharacterDisplayName(cid)))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(activeChar, cid, activeAcc);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button("飾品：" + BeginnerQuestRules.CharacterDisplayName(cid)))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(activeChar, activeOutfit, cid);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4f);
+            GUILayout.BeginHorizontal();
+            if (ui.Button("儲存至純外觀我的最愛") && _save.CosmeticFavorites.Count < LobbySave.MaxCosmeticFavorites)
+            {
+                LobbySave candidate = _save.Clone();
+                string presetName = $"最愛 {_save.CosmeticFavorites.Count + 1}";
+                candidate.SaveCosmeticFavorite(new LobbySave.CosmeticFavoritePreset(
+                    presetName, activeChar, activeOutfit, activeAcc));
+                CommitLobby(candidate);
+                GUIUtility.ExitGUI();
+            }
+
+            for (int i = 0; i < _save.CosmeticFavorites.Count; i++)
+            {
+                LobbySave.CosmeticFavoritePreset fav = _save.CosmeticFavorites[i];
+                if (ui.Button($"套用：{fav.Name}"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(fav.CharacterId, fav.OutfitCharacterId, fav.AccessoryCharacterId);
+                    if (CommitLobby(candidate) && !string.IsNullOrEmpty(fav.CharacterId))
+                    {
+                        SyncSelectedCharacterModel(fav.CharacterId);
+                    }
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button($"×{i + 1}"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.RemoveCosmeticFavorite(i);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+        }
+
+        private void DrawShopAndSellSection(AdventurePanel ui)
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+            ui.Heading($"商店與金幣（持有金幣：{_save.Gold} G）");
+
+            bool dwarfUnlocked = ShopAndRepairRules.CanAccessTier1EquipmentShop(
+                StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count) >= PlanetSize.Moon ||
+                _save.FoodQuestDone);
+
+            if (!dwarfUnlocked)
+            {
+                ui.Label("1★ 武器裝備商店：解鎖矮行星後開放購買。");
+            }
+            else
+            {
+                ui.Label("1★ 武器裝備商店（無附魔詞綴）：");
+                foreach (CraftItem item in CraftCatalog.Items)
+                {
+                    if (item.Equipment == null) continue;
+                    bool isTwoHanded = item.Equipment.Kind == EquipmentKind.TwoHanded;
+                    int price = ShopAndRepairRules.Tier1EquipmentGoldPrice(isTwoHanded);
+                    if (ui.Button($"購買 {_copy.Ui(item.Id)} ({price} G)", _save.Gold >= price))
+                    {
+                        LobbySave candidate = _save.Clone();
+                        if (ShopAndRepairRules.TryBuyTier1Equipment(candidate.CraftStock, item.Id, _save.LastPlanet, price, candidate.Gold, out int rem) &&
+                            candidate.TrySpendGold(candidate.Gold - rem))
+                        {
+                            CommitLobby(candidate);
+                        }
+                        GUIUtility.ExitGUI();
+                    }
+                }
+            }
+
+            GUILayout.Space(6f);
+            ui.Label("出售素材換取金幣：");
+            bool anySellable = false;
+            foreach (CraftStack stack in _save.CraftStock.Snapshot())
+            {
+                if (!CraftCatalog.TryGetItem(stack.Id, out CraftItem item) || item.Equipment != null) continue;
+                anySellable = true;
+                int unitPrice = ShopAndRepairRules.MaterialSellPrice(CraftMaterialTier.Tier1, item.Category == "processed");
+                if (ui.Button($"出售 {_copy.Ui(stack.Id)} ×1 (+{unitPrice} G)"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    if (ShopAndRepairRules.TrySellMaterial(candidate.CraftStock, stack.Id, 1, unitPrice, candidate.Gold, out int newGold))
+                    {
+                        candidate.AddGold(newGold - candidate.Gold);
+                        CommitLobby(candidate);
+                    }
+                    GUIUtility.ExitGUI();
+                }
+            }
+            if (!anySellable) ui.Label("背包內沒有可出售的素材。");
+            GUILayout.EndVertical();
         }
 
         // REQ: gear-looks.md#外觀與數值 — with several copies of one item, the player flips through them and picks one.

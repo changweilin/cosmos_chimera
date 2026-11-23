@@ -90,7 +90,7 @@ namespace Cosmimera.EditorTools
             UmaLibrary.Rebuild();
             foreach (var (id, race) in built)
             {
-                var unused = AddDna(race, id, (JObject)bases[id], (JObject)keys[id]);
+                var unused = AddDna(race, id, (JObject)bases[id], (JObject)keys[id], $"{BasesDir}/{id}.fbx");
                 Debug.Log($"[NpcUmaRaces] {id} slots={((UMATextRecipe)race.baseRaceRecipe).PackedLoad().slotsV3.Count(s => !string.IsNullOrEmpty(s.id))} " +
                           $"dna={NpcMeshes.UmaChannels.Count} inert={string.Join(",", unused)}");
             }
@@ -99,6 +99,61 @@ namespace Cosmimera.EditorTools
 
         static JObject Load(string file) =>
             (JObject)JObject.Parse(File.ReadAllText(Path.Combine(Root, file)))["bases"];
+
+        // REQ: npc-uma-looks.md#眼睛 — the baked iris texture is one painted brown eye for every base; the eye shader
+        // draws each resident's type, size and colours from parameters instead.
+        static void UseEyeShader(string id)
+        {
+            var shader = Shader.Find("Cosmimera/NpcEye") ?? throw new InvalidOperationException("Cosmimera/NpcEye shader not found");
+            var eyes = AssetDatabase.FindAssets("t:Material", new[] { $"{RacesDir}/{id}" })
+                .Select(AssetDatabase.GUIDToAssetPath).Where(p => Path.GetFileName(p).Contains("_eye_")).ToList();
+            if (eyes.Count != 1)
+                throw new InvalidOperationException($"{id}: expected one eye material, found {eyes.Count}");
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(eyes[0]);
+            mat.shader = shader;
+            EditorUtility.SetDirty(mat);
+        }
+
+        // Face decals are flat strips on the skin: an inverted hull around them would draw black rims.
+        static readonly string[] NoOutline = { "sclera", "brow", "lash", "mouth", "nose" };
+
+        // The wizard's materials are URP Lit, which renders the skin darker and flatter than the cel-shaded scene. The
+        // base's cel table (forge race.py, <id>_materials.json) carries the authored base, shade and band count; the
+        // conversion is the hero importer's (AcgCharacterImport.RemapToonMaterials), which lives in another assembly.
+        static void UseToonMaterials(string id)
+        {
+            var shader = Shader.Find("Cosmimera/ToonOutlined") ?? throw new InvalidOperationException("Cosmimera/ToonOutlined shader not found");
+            var table = (JArray)JObject.Parse(File.ReadAllText($"{BasesDir}/{id}_materials.json"))["materials"];
+            foreach (var path in AssetDatabase.FindAssets("t:Material", new[] { $"{RacesDir}/{id}" }).Select(AssetDatabase.GUIDToAssetPath))
+            {
+                string file = Path.GetFileNameWithoutExtension(path);
+                var row = table.OfType<JObject>().Where(r => file.EndsWith("_" + (string)r["name"], StringComparison.Ordinal))
+                    .OrderByDescending(r => ((string)r["name"]).Length).FirstOrDefault();
+                if (row == null)
+                    throw new InvalidOperationException($"{id}: {file} has no row in {id}_materials.json");
+                string name = (string)row["name"];
+                if (name.StartsWith("eye_", StringComparison.Ordinal))
+                    continue;
+                if (!ColorUtility.TryParseHtmlString((string)row["base"], out var lit))
+                    throw new InvalidOperationException($"{id}/{name}: bad colour {row["base"]}");
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+                mat.shader = shader;
+                mat.SetColor("_BaseColor", lit);
+                // CosmiToon darkens the unlit side to albedo × _Shadow × 0.6.
+                var tint = Color.white / 0.6f;
+                if (row["shade"]?.Type == JTokenType.String && ColorUtility.TryParseHtmlString((string)row["shade"], out var shade))
+                    tint = new Color(ShadeRatio(shade.r, lit.r), ShadeRatio(shade.g, lit.g), ShadeRatio(shade.b, lit.b), 1f);
+                mat.SetColor("_Shadow", tint);
+                mat.SetFloat("_Bands", Mathf.Max(2, (int?)row["bands"] ?? 2));
+                bool bare = NoOutline.Any(k => name.StartsWith(k, StringComparison.Ordinal));
+                mat.SetFloat("_OutlineWidth", bare ? 0f : name.StartsWith("skin_", StringComparison.Ordinal) ? 0.0012f : 0.0018f);
+                mat.SetColor("_OutlineColor", new Color(0.16f, 0.11f, 0.12f, 1f));
+                mat.SetFloat("_OutlineDepthBias", 0.006f);
+                EditorUtility.SetDirty(mat);
+            }
+        }
+
+        static float ShadeRatio(float shade, float lit) => Mathf.Clamp(shade / Mathf.Max(lit, 0.02f) / 0.6f, 0f, 1.7f);
 
         static RaceData BuildRace(string fbxPath, string id)
         {
@@ -123,7 +178,10 @@ namespace Cosmimera.EditorTools
                 plan.blendshapeDNA = false;
                 foreach (var s in plan.shapes)
                     s.include = true;
-                return ModelToRaceBuilder.Build(plan).race;
+                var race = ModelToRaceBuilder.Build(plan).race;
+                UseEyeShader(id);
+                UseToonMaterials(id);
+                return race;
             }
             finally
             {
@@ -131,9 +189,14 @@ namespace Cosmimera.EditorTools
             }
         }
 
-        // Returns the channels that got no effect: bone, slot and shader channels (built later) and keys the bake lacks.
-        static List<string> AddDna(RaceData race, string id, JObject row, JObject baked)
+        // Returns the channels that got no effect: slot and shader channels, bone channels another channel carries, and
+        // keys the bake lacks.
+        static List<string> AddDna(RaceData race, string id, JObject row, JObject baked, string fbxPath)
         {
+            var rig = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath));
+            rig.hideFlags = HideFlags.HideAndDontSave;
+            var bones = rig.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
+            float heightM = (float)((JArray)row["body.height"])[0];
             var group = ScriptableObject.CreateInstance<DNAGroup>();
             group.name = id + "_DNA";
             group.DNAArea = "NPC";
@@ -147,6 +210,15 @@ namespace Cosmimera.EditorTools
                 float mean = (float)((JArray)row[c.Name])[0];
                 dna.defaultValue = Mathf.Clamp01(c.Dna01(mean));
                 dna.description = $"{c.Source}; 0..1 spans {c.Min}..{c.Max}; race mean {mean}";
+                try
+                {
+                    dna.effects.AddRange(NpcUmaDna.BoneEffects(c, mean, heightM, bones));
+                }
+                catch (KeyNotFoundException e)
+                {
+                    throw new InvalidOperationException($"{id}: {c.Name} needs a bone the base lacks", e);
+                }
+
                 var k = (JObject)baked[c.Name];
                 foreach (bool plus in new[] { true, false })
                 {
@@ -163,6 +235,7 @@ namespace Cosmimera.EditorTools
                 AssetDatabase.AddObjectToAsset(dna, group);
                 group.dnaList.Add(dna);
             }
+            Object.DestroyImmediate(rig);
             EditorUtility.SetDirty(group);
             race.DNACollection.DNAGroups.Add(group);
             race.DNACollection.Reset();
@@ -183,6 +256,134 @@ namespace Cosmimera.EditorTools
     /// <summary>How an NPC DNA value maps to the baked keys of one race base (docs/design/npc-uma-looks.md#種族基底).</summary>
     public static class NpcUmaDna
     {
+        static readonly string[] Sides = { "_l", "_r" };
+
+        /// <summary>Bone effects of one bone channel on a race base; empty for every other channel.</summary>
+        /// <remarks>
+        /// REQ: docs/design/npc-uma-looks.md#骨骼通道. Every effect is zero at the race mean (the base already stands
+        /// there) and follows the procedural rig's ratio for any other value: lengths and widths move child joints
+        /// (translation, so the skin between joints stretches instead of shearing), thickness and size scale bones.
+        /// Pre: bones maps the base's bone names to an instance of the base FBX at the origin; heightM is the race mean
+        /// height. Post: each effect maps DNA 0..1 through its curve to the amount. Side effects: allocates.
+        /// Throws KeyNotFoundException when a needed bone is missing.
+        /// </remarks>
+        internal static List<DNAEffect> BoneEffects(NpcMeshes.UmaChannel c, float mean, float heightM, IReadOnlyDictionary<string, Transform> bones)
+        {
+            var effects = new List<DNAEffect>();
+            Func<float, float> ratio = v => v / mean - 1f;
+            switch (c.Name)
+            {
+                // The rig's top bone sits on the ground, so scaling it keeps the feet there.
+                case "body.height":
+                    effects.Add(Scale(NpcUmaRaces.RigRoot, Vector3.one, c, ratio));
+                    break;
+                case "body.headRatio":
+                    effects.Add(Scale(bones["head"].name, Vector3.one, c, ratio));
+                    break;
+                case "body.legShare":
+                    foreach (var s in Sides)
+                    {
+                        effects.Add(Lengthen(bones["calf" + s], c, ratio));
+                        effects.Add(Lengthen(bones["foot" + s], c, ratio));
+                    }
+                    break;
+                case "body.armLength":
+                    foreach (var s in Sides)
+                    {
+                        effects.Add(Lengthen(bones["lowerarm" + s], c, ratio));
+                        effects.Add(Lengthen(bones["hand" + s], c, ratio));
+                    }
+                    break;
+                case "body.hipWidth":
+                    foreach (var s in Sides)
+                    {
+                        var thigh = bones["thigh" + s];
+                        var outward = new Vector3(Mathf.Sign(thigh.position.x) * heightM, 0f, 0f);
+                        effects.Add(Translate(thigh, thigh.parent.InverseTransformVector(outward), c, v => v - mean));
+                    }
+                    break;
+                // Shoulder width rides on the chest: the rig sets the trunk to 0.92 of the shoulder span, so widening the
+                // chest carries the clavicles out with it. The bones above take the inverse back, or the neck, head and
+                // arms would widen too.
+                case "body.trunkWidth":
+                {
+                    var chest = bones["spine_01"];
+                    effects.Add(Scale(chest.name, Axis(chest, Vector3.right), c, ratio));
+                    foreach (var child in Above(chest))
+                        effects.Add(Scale(child.name, Axis(child, Vector3.right), c, v => mean / v - 1f));
+                    break;
+                }
+                // Rig.Bulk is the build left after muscle and fat, which have keys of their own; limb radii scale with it.
+                case "body.bulk":
+                    foreach (var s in Sides)
+                    {
+                        foreach (var limb in new[] { bones["thigh" + s], bones["upperarm" + s] })
+                        {
+                            Vector3 along = Axis(limb, limb.GetChild(0).position - limb.position);
+                            effects.Add(Scale(limb.name, Vector3.one - along, c, ratio));
+                        }
+                    }
+                    break;
+                case "spine.lean":
+                {
+                    var spine = bones["spine_01"];
+                    effects.Add(new DNAEffect_BoneRotate
+                    {
+                        BoneName = spine.name, EffectName = c.Name, RotationAxis = Quaternion.Inverse(spine.rotation) * Vector3.right,
+                        RotationAngle = Mathf.Rad2Deg, curve = Curve(c, v => v - mean), minMapping = 0f, maxMapping = 1f,
+                    });
+                    break;
+                }
+            }
+            return effects;
+        }
+
+        // The bones resting on the top of the spine chain (neck, clavicles).
+        static IEnumerable<Transform> Above(Transform spine)
+        {
+            var t = spine;
+            while (t.Cast<Transform>().Any(x => x.name.StartsWith("spine", StringComparison.Ordinal)))
+                t = t.Cast<Transform>().First(x => x.name.StartsWith("spine", StringComparison.Ordinal));
+            return t.Cast<Transform>().Where(x => x != spine).ToList();
+        }
+
+        // The local axis of `bone` closest to a world direction.
+        static Vector3 Axis(Transform bone, Vector3 world)
+        {
+            Vector3 l = bone.InverseTransformDirection(world);
+            Vector3 a = new Vector3(Mathf.Abs(l.x), Mathf.Abs(l.y), Mathf.Abs(l.z));
+            return a.x >= a.y && a.x >= a.z ? Vector3.right : a.y >= a.z ? Vector3.up : Vector3.forward;
+        }
+
+        static DNAEffect_BoneScale Scale(string bone, Vector3 axes, NpcMeshes.UmaChannel c, Func<float, float> amount) =>
+            new DNAEffect_BoneScale { BoneName = bone, EffectName = c.Name, ScaleFactor = axes, curve = Curve(c, amount), minMapping = 0f, maxMapping = 1f };
+
+        // Moves a joint along its own offset from the parent: offset × (1 + amount).
+        static DNAEffect_BoneTranslate Lengthen(Transform joint, NpcMeshes.UmaChannel c, Func<float, float> amount) =>
+            Translate(joint, joint.localPosition, c, amount);
+
+        static DNAEffect_BoneTranslate Translate(Transform joint, Vector3 perUnit, NpcMeshes.UmaChannel c, Func<float, float> amount) =>
+            new DNAEffect_BoneTranslate { BoneName = joint.name, EffectName = c.Name, Translation = perUnit, curve = Curve(c, amount), minMapping = 0f, maxMapping = 1f };
+
+        // Samples amount(value) over the channel's DNA range; 16 linear segments keep 1/x within 0.2 % of exact.
+        static AnimationCurve Curve(NpcMeshes.UmaChannel c, Func<float, float> amount)
+        {
+            const int N = 16;
+            var keys = new Keyframe[N + 1];
+            for (int i = 0; i <= N; i++)
+            {
+                float x = i / (float)N;
+                keys[i] = new Keyframe(x, amount(c.Min + x * (c.Max - c.Min)));
+            }
+            for (int i = 0; i <= N; i++)
+            {
+                int a = Mathf.Max(0, i - 1), b = Mathf.Min(N, i + 1);
+                float slope = (keys[b].value - keys[a].value) / (keys[b].time - keys[a].time);
+                keys[i].inTangent = keys[i].outTangent = slope;
+            }
+            return new AnimationCurve(keys);
+        }
+
         /// <summary>Effect driving key "&lt;channel&gt;+" (or "-") at weight (value − mean) / per on its side of the mean.</summary>
         /// <remarks>
         /// Why a curve: UMA maps a DNA value through one curve per effect, so a two-segment linear curve with its knee

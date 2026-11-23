@@ -69,13 +69,74 @@ namespace Cosmimera.Save
     /// Version 17 (lobby-meta.md#進度保存): root story milestone flags (<c>food_quest_done</c>,
     /// <c>migratory_return_done</c>, <c>rival_quest_done</c>, <c>ng_plus_unlocked</c>) and <c>active_checkpoint</c>
     /// (overworld auto-save or random-planet checkpoint); formats 1–16 load with false flags and null checkpoint.
+    /// Version 18 (crafting.md#製造擴充, lobby-meta.md#進度保存): root <c>gold</c> (currency), NG+ cosmetic
+    /// overrides (<c>cosmetic_character_id</c>, <c>cosmetic_outfit_character_id</c>, <c>cosmetic_accessory_character_id</c>),
+    /// and <c>cosmetic_favorites</c>; formats 1–17 load with 0 gold and empty cosmetic overrides/favorites.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 17;
+        public const int FormatVersion = 18;
+
+        /// <summary>Maximum number of cosmetic favorite presets.</summary>
+        /// <remarks>Pre: none. Post: constant 8. Side effects: none.</remarks>
+        public const int MaxCosmeticFavorites = 8;
+
+        /// <summary>Immutable cosmetic-only favorite preset (純外觀我的最愛).</summary>
+        /// <remarks>REQ: docs/design/gear-looks.md#外觀與數值. Pre: name non-empty. Post: immutable fields. Side effects: none.</remarks>
+        public sealed class CosmeticFavoritePreset
+        {
+            /// <summary>Display name of the favorite preset.</summary>
+            /// <remarks>Pre: none. Post: non-empty string. Side effects: none.</remarks>
+            public string Name { get; }
+
+            /// <summary>Selected character appearance id (empty = default CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string CharacterId { get; }
+
+            /// <summary>Selected outfit source character id (empty = follow CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string OutfitCharacterId { get; }
+
+            /// <summary>Selected accessory source character id (empty = follow CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string AccessoryCharacterId { get; }
+
+            /// <summary>Optional upper fashion item id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string UpperFashionId { get; }
+
+            /// <summary>Optional upper fashion dye id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string UpperDyeId { get; }
+
+            /// <summary>Optional lower fashion item id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string LowerFashionId { get; }
+
+            /// <summary>Optional lower fashion dye id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string LowerDyeId { get; }
+
+            /// <summary>Creates a cosmetic favorite preset.</summary>
+            /// <remarks>Pre: !string.IsNullOrWhiteSpace(name). Post: fields initialized. Side effects: none.</remarks>
+            public CosmeticFavoritePreset(string name, string characterId, string outfitCharacterId,
+                string accessoryCharacterId, string upperFashionId = "", string upperDyeId = "",
+                string lowerFashionId = "", string lowerDyeId = "")
+            {
+                Contract.Requires(!string.IsNullOrWhiteSpace(name), "favorite name is required");
+                Name = name.Trim();
+                CharacterId = characterId ?? string.Empty;
+                OutfitCharacterId = outfitCharacterId ?? string.Empty;
+                AccessoryCharacterId = accessoryCharacterId ?? string.Empty;
+                UpperFashionId = upperFashionId ?? string.Empty;
+                UpperDyeId = upperDyeId ?? string.Empty;
+                LowerFashionId = lowerFashionId ?? string.Empty;
+                LowerDyeId = lowerDyeId ?? string.Empty;
+            }
+        }
 
         /// <summary>Cumulative battles against one trainer profession required for <see cref="CodexLevel.Complete"/>.</summary>
         /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: constant 10. Side effects: none.</remarks>
@@ -297,6 +358,90 @@ namespace Cosmimera.Save
         /// <summary>Active overworld auto-save or random-planet checkpoint, or null when none is active.</summary>
         /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: checkpoint or null. Side effects: none.</remarks>
         public RunCheckpointSave ActiveCheckpoint { get; private set; }
+
+        /// <summary>Current gold currency held by the player.</summary>
+        /// <remarks>REQ: docs/design/crafting.md#製造擴充. Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int Gold { get; private set; }
+
+        /// <summary>NG+ pure-cosmetic character appearance override (empty = default CharacterId).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticCharacterId { get; private set; } = string.Empty;
+
+        /// <summary>NG+ pure-cosmetic outfit source character id (empty = follow active cosmetic character).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticOutfitCharacterId { get; private set; } = string.Empty;
+
+        /// <summary>NG+ pure-cosmetic accessory source character id (empty = follow active cosmetic character).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticAccessoryCharacterId { get; private set; } = string.Empty;
+
+        private readonly List<CosmeticFavoritePreset> _cosmeticFavorites = new List<CosmeticFavoritePreset>();
+
+        /// <summary>Saved pure-cosmetic favorite presets (純外觀我的最愛).</summary>
+        /// <remarks>REQ: docs/design/gear-looks.md#外觀與數值. Pre: none. Post: read-only list. Side effects: none.</remarks>
+        public IReadOnlyList<CosmeticFavoritePreset> CosmeticFavorites => _cosmeticFavorites;
+
+        /// <summary>Adds <paramref name="amount"/> gold to the player's wallet.</summary>
+        /// <remarks>Pre: amount &gt;= 0. Post: Gold increased by amount. Side effects: mutates this save.</remarks>
+        public void AddGold(int amount)
+        {
+            Contract.Requires(amount >= 0, "gold amount must be non-negative");
+            Gold += amount;
+        }
+
+        /// <summary>Attempts to spend <paramref name="amount"/> gold.</summary>
+        /// <remarks>Pre: amount &gt;= 0. Post: returns true and deducts if Gold &gt;= amount; otherwise false. Side effects: mutates this save on success.</remarks>
+        public bool TrySpendGold(int amount)
+        {
+            Contract.Requires(amount >= 0, "gold amount must be non-negative");
+            if (Gold < amount) return false;
+            Gold -= amount;
+            return true;
+        }
+
+        /// <summary>Sets NG+ pure-cosmetic character, outfit, and accessory overrides.</summary>
+        /// <remarks>
+        /// Pre: NgPlusUnlocked is true when setting any non-empty override.
+        /// Post: CosmeticCharacterId, CosmeticOutfitCharacterId, CosmeticAccessoryCharacterId updated.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetCosmeticAppearance(string characterId, string outfitCharacterId, string accessoryCharacterId)
+        {
+            bool anyOverride = !string.IsNullOrEmpty(characterId) ||
+                !string.IsNullOrEmpty(outfitCharacterId) ||
+                !string.IsNullOrEmpty(accessoryCharacterId);
+            Contract.Requires(!anyOverride || NgPlusUnlocked, "NG+ must be unlocked before setting cosmetic overrides");
+            CosmeticCharacterId = characterId ?? string.Empty;
+            CosmeticOutfitCharacterId = outfitCharacterId ?? string.Empty;
+            CosmeticAccessoryCharacterId = accessoryCharacterId ?? string.Empty;
+        }
+
+        /// <summary>Adds or replaces a cosmetic favorite preset (up to MaxCosmeticFavorites).</summary>
+        /// <remarks>Pre: preset != null. Post: preset stored; returns false if full and name not found. Side effects: mutates this save.</remarks>
+        public bool SaveCosmeticFavorite(CosmeticFavoritePreset preset)
+        {
+            Contract.Requires(preset != null, "preset must be non-null");
+            for (int i = 0; i < _cosmeticFavorites.Count; i++)
+            {
+                if (string.Equals(_cosmeticFavorites[i].Name, preset.Name, StringComparison.Ordinal))
+                {
+                    _cosmeticFavorites[i] = preset;
+                    return true;
+                }
+            }
+
+            if (_cosmeticFavorites.Count >= MaxCosmeticFavorites) return false;
+            _cosmeticFavorites.Add(preset);
+            return true;
+        }
+
+        /// <summary>Removes the cosmetic favorite preset at <paramref name="index"/>.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; CosmeticFavorites.Count. Post: count decreased by 1. Side effects: mutates this save.</remarks>
+        public void RemoveCosmeticFavorite(int index)
+        {
+            Contract.Requires(index >= 0 && index < _cosmeticFavorites.Count, "favorite index out of range");
+            _cosmeticFavorites.RemoveAt(index);
+        }
 
         /// <summary>Marks Town #2 food quest as completed.</summary>
         /// <remarks>Pre: none. Post: FoodQuestDone == true. Side effects: mutates this save.</remarks>
@@ -661,7 +806,12 @@ namespace Cosmimera.Save
                 FoodQuestDone = FoodQuestDone, MigratoryReturnDone = MigratoryReturnDone,
                 RivalQuestDone = RivalQuestDone, NgPlusUnlocked = NgPlusUnlocked,
                 ActiveCheckpoint = ActiveCheckpoint?.Clone(),
+                Gold = Gold,
+                CosmeticCharacterId = CosmeticCharacterId,
+                CosmeticOutfitCharacterId = CosmeticOutfitCharacterId,
+                CosmeticAccessoryCharacterId = CosmeticAccessoryCharacterId,
             };
+            c._cosmeticFavorites.AddRange(_cosmeticFavorites);
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
             c._partners.AddRange(_partners);
@@ -905,6 +1055,11 @@ namespace Cosmimera.Save
                 ng_plus_unlocked = NgPlusUnlocked,
                 has_checkpoint = ActiveCheckpoint != null,
                 active_checkpoint = ActiveCheckpoint != null ? ToCheckpointDto(ActiveCheckpoint) : null,
+                gold = Gold,
+                cosmetic_character_id = CosmeticCharacterId ?? string.Empty,
+                cosmetic_outfit_character_id = CosmeticOutfitCharacterId ?? string.Empty,
+                cosmetic_accessory_character_id = CosmeticAccessoryCharacterId ?? string.Empty,
+                cosmetic_favorites = ToCosmeticFavoriteDtos(_cosmeticFavorites),
             };
             IReadOnlyList<TrainerBattleCount> trainerCounts = TrainerBattlesSnapshot();
             dto.trainer_battles = new TrainerCountDto[trainerCounts.Count];
@@ -1298,6 +1453,22 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 18)
+            {
+                Check(dto.gold >= 0, "gold cannot be negative");
+                save.Gold = dto.gold;
+                save.CosmeticCharacterId = dto.cosmetic_character_id ?? string.Empty;
+                save.CosmeticOutfitCharacterId = dto.cosmetic_outfit_character_id ?? string.Empty;
+                save.CosmeticAccessoryCharacterId = dto.cosmetic_accessory_character_id ?? string.Empty;
+                foreach (CosmeticFavoriteDto cf in dto.cosmetic_favorites ?? Array.Empty<CosmeticFavoriteDto>())
+                {
+                    Check(cf != null && !string.IsNullOrWhiteSpace(cf.name), "invalid cosmetic favorite entry");
+                    save._cosmeticFavorites.Add(new CosmeticFavoritePreset(
+                        cf.name, cf.character_id, cf.outfit_character_id, cf.accessory_character_id,
+                        cf.upper_fashion_id, cf.upper_dye_id, cf.lower_fashion_id, cf.lower_dye_id));
+                }
+            }
+
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
         }
@@ -1518,6 +1689,44 @@ namespace Cosmimera.Save
             public bool ng_plus_unlocked;
             public bool has_checkpoint;
             public CheckpointDto active_checkpoint;
+            public int gold;
+            public string cosmetic_character_id;
+            public string cosmetic_outfit_character_id;
+            public string cosmetic_accessory_character_id;
+            public CosmeticFavoriteDto[] cosmetic_favorites;
+        }
+
+        [Serializable] private sealed class CosmeticFavoriteDto
+        {
+            public string name;
+            public string character_id;
+            public string outfit_character_id;
+            public string accessory_character_id;
+            public string upper_fashion_id;
+            public string upper_dye_id;
+            public string lower_fashion_id;
+            public string lower_dye_id;
+        }
+
+        private static CosmeticFavoriteDto[] ToCosmeticFavoriteDtos(List<CosmeticFavoritePreset> list)
+        {
+            var result = new CosmeticFavoriteDto[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                CosmeticFavoritePreset p = list[i];
+                result[i] = new CosmeticFavoriteDto
+                {
+                    name = p.Name,
+                    character_id = p.CharacterId,
+                    outfit_character_id = p.OutfitCharacterId,
+                    accessory_character_id = p.AccessoryCharacterId,
+                    upper_fashion_id = p.UpperFashionId,
+                    upper_dye_id = p.UpperDyeId,
+                    lower_fashion_id = p.LowerFashionId,
+                    lower_dye_id = p.LowerDyeId,
+                };
+            }
+            return result;
         }
 
         [Serializable] private sealed class CheckpointDto

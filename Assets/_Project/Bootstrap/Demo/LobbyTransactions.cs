@@ -239,6 +239,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Contract.Requires(CraftInventory.ValidId(recipeId), "discovered recipe ids must be valid snake_case");
             }
+            Contract.Requires(outcome.GoldEarned >= 0, "GoldEarned must be non-negative");
             if (live.WouldOverflow(outcome.Materials, out overflow))
             {
                 return CommitStatus.StockFull;
@@ -272,6 +273,10 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.AddMaterials(outcome.Materials);
+            if (outcome.GoldEarned > 0)
+            {
+                candidate.AddGold(outcome.GoldEarned);
+            }
             candidate.Codex.Merge(outcome.Codex);
             // Recipe discovery is knowledge, like the codex: kept on abandon (cuisine.md#6).
             var recipeIds = new List<string>(outcome.DiscoveredRecipes);

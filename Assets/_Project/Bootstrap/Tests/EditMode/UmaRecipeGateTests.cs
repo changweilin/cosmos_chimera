@@ -234,6 +234,60 @@ namespace Cosmimera.Bootstrap.Tests
             }
         }
 
+        // REQ: npc-uma-looks.md#眼睛 — eye type, size and colour differ between races and between residents of one race.
+        [Test]
+        public void EyesVaryWithinAndAcrossRaces()
+        {
+            var byRace = new Dictionary<NpcRace, List<NpcEyes>>();
+            int oddPure = 0, oddMixed = 0;
+            for (ulong planet = 1; planet <= Planets; planet++)
+            {
+                foreach (NpcSpec spec in Residents(planet, PerPlanet))
+                {
+                    NpcEyes e = NpcMeshes.UmaRecipeOf(spec).Eyes;
+                    Assert.That(e.IrisScale, Is.InRange(0.6f, 1f));
+                    Assert.That(e.PupilScale, Is.InRange(0.7f, 1.3f));
+                    Assert.That(e.Glow, Is.InRange(0f, 1f));
+                    bool odd = (Color32)e.Left is var l && (Color32)e.Right is var r && (l.r != r.r || l.g != r.g || l.b != r.b);
+                    if (odd)
+                    {
+                        if (spec.Heritage.BloodLines == 0) oddPure++;
+                        else oddMixed++;
+                    }
+
+                    if (!byRace.TryGetValue(spec.Race, out var list))
+                    {
+                        byRace[spec.Race] = list = new List<NpcEyes>();
+                    }
+
+                    list.Add(e);
+                }
+            }
+
+            Assert.That(oddPure, Is.Zero, "odd eyes come only from a blood line");
+            Assert.That(oddMixed, Is.Positive, "some mixed residents have odd eyes");
+            var commonest = new HashSet<NpcEyeType>();
+            var meanIris = new List<float>();
+            foreach (var (race, eyes) in byRace.Select(kv => (kv.Key, kv.Value)))
+            {
+                int colours = eyes.Select(e => ((Color32)e.Left).GetHashCode()).Distinct().Count();
+                Assert.That(colours, Is.GreaterThanOrEqualTo(10), $"{race}: iris colours");
+                float mean = eyes.Average(e => e.IrisScale);
+                float sd = Mathf.Sqrt(eyes.Average(e => (e.IrisScale - mean) * (e.IrisScale - mean)));
+                Assert.That(sd, Is.GreaterThan(0.02f), $"{race}: iris size varies");
+                meanIris.Add(mean);
+                var types = eyes.GroupBy(e => e.Type).OrderByDescending(g => g.Count()).ToList();
+                commonest.Add(types[0].Key);
+                if (race != NpcRace.Human && race != NpcRace.Dwarf && race != NpcRace.Skeleton)
+                {
+                    Assert.That(types.Count, Is.GreaterThanOrEqualTo(2), $"{race}: eye types");
+                }
+            }
+
+            Assert.That(commonest.Count, Is.GreaterThanOrEqualTo(4), "races lean to different eye types");
+            Assert.That(meanIris.Max() - meanIris.Min(), Is.GreaterThan(0.15f), "races differ in iris size");
+        }
+
         // Diagnostic for re-deriving the declared ranges after the sampling changes: prints the observed span per channel.
         [Test, Explicit("diagnostic")]
         public void ProbeChannelSpans()

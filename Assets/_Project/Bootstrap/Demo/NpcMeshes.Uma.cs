@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
@@ -17,6 +18,59 @@ namespace Cosmimera.Bootstrap.Demo
         Skeleton,
     }
 
+    /// <summary>How a painted iris is drawn (Cosmimera/NpcEye _PupilType).</summary>
+    /// <remarks>REQ: docs/design/npc-uma-looks.md#眼睛. Pre: none. Post: closed set; values match the shader. Side effects: none.</remarks>
+    internal enum NpcEyeType
+    {
+        Round,
+        Slit,
+
+        /// <summary>No pupil: the whole iris is a light.</summary>
+        Glow,
+
+        /// <summary>Nearly all pupil, the iris a thin rim (birds, fish).</summary>
+        Bead,
+
+        /// <summary>A dark ring around a bright core.</summary>
+        Ring,
+    }
+
+    /// <summary>One resident's eyes: type, per-eye iris colour, sclera, sizes and glow.</summary>
+    /// <remarks>
+    /// REQ: docs/design/npc-uma-looks.md#眼睛. Pre: built by NpcMeshes.EyesOf. Post: immutable; IrisScale in [0.6, 1],
+    /// PupilScale in [0.7, 1.3], Glow in [0, 1]. Side effects: none.
+    /// </remarks>
+    internal readonly struct NpcEyes
+    {
+        public NpcEyes(NpcEyeType type, Color left, Color right, Color sclera, float irisScale, float pupilScale, float glow)
+        {
+            Type = type;
+            Left = left;
+            Right = right;
+            Sclera = sclera;
+            IrisScale = irisScale;
+            PupilScale = pupilScale;
+            Glow = glow;
+        }
+
+        public NpcEyeType Type { get; }
+
+        /// <summary>Iris colour of the left eye.</summary>
+        public Color Left { get; }
+
+        /// <summary>Iris colour of the right eye; differs from Left only for odd eyes.</summary>
+        public Color Right { get; }
+
+        public Color Sclera { get; }
+
+        /// <summary>Iris radius as a share of the painted iris disc.</summary>
+        public float IrisScale { get; }
+
+        public float PupilScale { get; }
+
+        public float Glow { get; }
+    }
+
     /// <summary>One resident's look as UMA would need it: DNA values, wardrobe slots and colours.</summary>
     /// <remarks>
     /// REQ: docs/design/npc-uma-looks.md, ADR-0015 decision 1 — the description is plain data so the gates can run in
@@ -32,7 +86,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// Post: the properties return the arguments unchanged. Side effects: keeps the arrays (callers must not edit them).
         /// </remarks>
         public NpcUmaRecipe(NpcUmaBase umaBase, NpcSex sex, string headSlot, float[] dna, string hair, string beard,
-            string upper, string lower, string headwear, string piece, bool cane, bool bandaged, Color[] colours)
+            string upper, string lower, string headwear, string piece, bool cane, bool bandaged, Color[] colours, NpcEyes eyes)
         {
             Contract.Requires(dna != null && dna.Length == NpcMeshes.UmaChannels.Count, "dna must cover every channel");
             Contract.Requires(colours != null && colours.Length == ColourNames.Length, "colours must cover every slot colour");
@@ -49,7 +103,12 @@ namespace Cosmimera.Bootstrap.Demo
             Cane = cane;
             Bandaged = bandaged;
             _colours = colours;
+            Eyes = eyes;
         }
+
+        /// <summary>Eye type, colours and sizes, passed to the eye shader.</summary>
+        /// <remarks>Pre: none. Post: as constructed. Side effects: none.</remarks>
+        public NpcEyes Eyes { get; }
 
         /// <summary>Names of <see cref="Colour"/> indices, in order.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -135,11 +194,14 @@ namespace Cosmimera.Bootstrap.Demo
                 sb.Append(',').Append(NpcMeshes.UmaChannels[i].Permille(_dna[i]));
             }
 
-            foreach (Color c in _colours)
+            foreach (Color c in new[] { Eyes.Left, Eyes.Right, Eyes.Sclera }.Concat(_colours))
             {
                 Color32 c32 = c;
                 sb.Append('#').Append(c32.r).Append('.').Append(c32.g).Append('.').Append(c32.b);
             }
+
+            sb.Append('|').Append(Eyes.Type).Append(',').Append((int)math.round(1000f * Eyes.IrisScale)).Append(',')
+                .Append((int)math.round(1000f * Eyes.PupilScale)).Append(',').Append((int)math.round(1000f * Eyes.Glow));
 
             return sb.ToString();
         }
@@ -354,8 +416,111 @@ namespace Cosmimera.Bootstrap.Demo
             string piece = l.Piece ? "piece_" + l.PieceRegion : null;
             var colours = new[] { l.Skin, l.Hair, l.Cloth, l.Cloth2, l.Accent, l.Leather, l.Metal, l.Glow, l.Bone };
             return new NpcUmaRecipe(race == NpcRace.Skeleton ? NpcUmaBase.Skeleton : NpcUmaBase.Humanoid, s.Spec.Sex,
-                HeadSlotOf(race), dna, hair, beard, upper, lower, headwear, piece, l.Cane, l.Bandaged, colours);
+                HeadSlotOf(race), dna, hair, beard, upper, lower, headwear, piece, l.Cane, l.Bandaged, colours, EyesOf(s.Spec, l));
         }
+
+        // REQ: npc-uma-looks.md#眼睛 — each race leans to its own pupil types; who gets which is drawn per resident.
+        // Weights per type in NpcEyeType order (Round, Slit, Glow, Bead, Ring).
+        private static int[] EyeTypeOdds(NpcRace race) => race switch
+        {
+            NpcRace.Elf => new[] { 85, 0, 0, 0, 15 },
+            NpcRace.Orc => new[] { 70, 30, 0, 0, 0 },
+            NpcRace.Goblin => new[] { 30, 50, 20, 0, 0 },
+            NpcRace.Vampire => new[] { 30, 40, 30, 0, 0 },
+            NpcRace.Demon => new[] { 20, 45, 35, 0, 0 },
+            NpcRace.Angel => new[] { 40, 0, 0, 0, 60 },
+            NpcRace.Zombie => new[] { 40, 0, 60, 0, 0 },
+            NpcRace.Skeleton => new[] { 0, 0, 100, 0, 0 },
+            NpcRace.Werewolf => new[] { 60, 0, 40, 0, 0 },
+            NpcRace.Lizardfolk => new[] { 0, 85, 15, 0, 0 },
+            NpcRace.Dragonkin => new[] { 0, 85, 15, 0, 0 },
+            NpcRace.Avian => new[] { 20, 0, 0, 80, 0 },
+            NpcRace.Merfolk => new[] { 40, 0, 0, 60, 0 },
+            _ => new[] { 100, 0, 0, 0, 0 },
+        };
+
+        // Race mean of the iris share of the painted disc: goblins and birds are all eye, orcs and the dead squint.
+        private static float IrisMean(NpcRace race) => race switch
+        {
+            NpcRace.Elf => 0.9f,
+            NpcRace.Dwarf => 0.84f,
+            NpcRace.Orc => 0.78f,
+            NpcRace.Goblin => 0.98f,
+            NpcRace.Angel => 0.94f,
+            NpcRace.Demon => 0.9f,
+            NpcRace.Zombie => 0.74f,
+            NpcRace.Skeleton => 0.8f,
+            NpcRace.Lizardfolk => 0.95f,
+            NpcRace.Dragonkin => 0.95f,
+            NpcRace.Avian => 1f,
+            NpcRace.Merfolk => 0.96f,
+            _ => 0.86f,
+        };
+
+        // Races whose eyes the procedural head draws self-lit keep a glow on every pupil type.
+        private static bool LitEyes(NpcRace race) => race == NpcRace.Goblin || race == NpcRace.Werewolf || race == NpcRace.Vampire ||
+                                                    race == NpcRace.Demon || race == NpcRace.Lizardfolk || race == NpcRace.Dragonkin ||
+                                                    race == NpcRace.Zombie || race == NpcRace.Skeleton;
+
+        private static readonly int[] ZombieEyes = { 0xD8E890, 0xC8C8B0, 0xA8B8C8 };
+        // The procedural bird head draws one dark eye; birds' own irises run from black through amber to raptor yellow.
+        private static readonly int[] AvianEyes = { 0x20181A, 0x3A2A1A, 0x8A5A1A, 0xE8B03A, 0xC04020 };
+        private static readonly int[] EyeSclera = { 0xEEE2CF, 0x1A1418, 0xF0E0A0, 0xC8C8A8, 0xF4D8D8 };
+
+        /// <summary>The eyes of <paramref name="spec"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/npc-uma-looks.md#眼睛. Own stream, so adding eyes reshuffled no earlier draw.
+        /// Pre: look drawn for spec. Post: deterministic; type from EyeTypeOdds(race); iris from the race palette (a blood
+        /// line's palette with probability equal to its share), shifted ±0.03 hue and ±12 % value; odd eyes for one mixed
+        /// resident in ten; sizes and glow within the NpcEyes ranges. Side effects: none.
+        /// </remarks>
+        internal static NpcEyes EyesOf(in NpcSpec spec, in Look look)
+        {
+            var rng = new Pcg32(Salt ^ spec.Seed, 0x455945ul);
+            NpcRace race = spec.Race;
+            int[] odds = EyeTypeOdds(race);
+            int roll = (int)rng.NextUInt(100u), type = 0;
+            while (roll >= odds[type])
+            {
+                roll -= odds[type];
+                type++;
+            }
+
+            int[] palette = race == NpcRace.Zombie ? ZombieEyes : race == NpcRace.Skeleton ? BoneGlow : race == NpcRace.Avian ? AvianEyes : EyePalette(race);
+            NpcHeritage h = spec.Heritage;
+            for (int i = 0; i < h.BloodLines; i++)
+            {
+                int[] blood = EyePalette(h.BloodRace(i));
+                if (blood != null && rng.NextFloat() < h.BloodShare(i))
+                {
+                    palette = blood;
+                }
+            }
+
+            Color left = Jitter(Pick(palette, ref rng), ref rng);
+            Color right = left;
+            if (h.BloodLines > 0 && rng.NextUInt(10) == 0)
+            {
+                int[] odd = EyePalette(h.BloodRace((int)rng.NextUInt((uint)h.BloodLines)));
+                right = odd != null ? Jitter(Pick(odd, ref rng), ref rng) : right;
+            }
+
+            int sclera = race switch
+            {
+                NpcRace.Demon => rng.NextUInt(2) == 0 ? 1 : 0,
+                NpcRace.Goblin => 2,
+                NpcRace.Zombie => 3,
+                NpcRace.Vampire => 4,
+                _ => 0,
+            };
+            float iris = math.clamp(IrisMean(race) * (1f + 0.05f * Gauss(ref rng)) + (look.Child ? 0.05f : 0f), 0.6f, 1f);
+            float pupil = math.clamp(1f + 0.1f * Gauss(ref rng), 0.7f, 1.3f);
+            float glow = (NpcEyeType)type == NpcEyeType.Glow ? math.lerp(0.6f, 1f, rng.NextFloat()) : LitEyes(race) ? 0.3f : 0f;
+            return new NpcEyes((NpcEyeType)type, left, right, Hex(EyeSclera[sclera]), iris, pupil, glow);
+        }
+
+        private static Color Jitter(Color c, ref Pcg32 rng) =>
+            Retint(c, 0.03f * (2f * rng.NextFloat() - 1f), 1f, 0.12f * (2f * rng.NextFloat() - 1f));
 
         // REQ: npc-uma-looks.md#種族覆蓋 — beasts whose whole face is reshaped get a head of their own.
         private static string HeadSlotOf(NpcRace race) => race switch
