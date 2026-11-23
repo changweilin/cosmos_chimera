@@ -51,8 +51,15 @@ def ornaments(name,collection,rig):
     shadow=material('Ribbon lining',(.41,.075,.033))
     sumi=name=='amemori_sumiha'
     sign=-1 if sumi else 1
-    knot=Vector((-39,14,41) if sumi else (63,13,52))
     lateral=Vector((sign,0,0))
+    knot=Vector((0,20,43) if sumi else (0,23,52))
+    bpy.context.view_layer.update()
+    ponytail=bpy.data.objects['TiedHair']
+    ray=point((sign*100,knot.y,knot.z))
+    hit,surface,_,_=ponytail.ray_cast(ray,-lateral)
+    if not hit:
+        raise ValueError(f'{name}: no ponytail surface at the tie')
+    knot.x=surface.x/scale-sign*1.5
     def ribbon(label,end,width,loop):
         delta=Vector(end)
         across=Vector((0,-delta.z,delta.y)).normalized()
@@ -111,7 +118,7 @@ def ornaments(name,collection,rig):
         for i in range(4):
             a=pi/4+i*pi/2
             bead('Bow flower petal '+str(i+1),knot+lateral*3+Vector((0,3.2*cos(a),3.2*sin(a))),(2.4,3.4,3.4),gold)
-    bead('Bow knot',knot+lateral*4,(3,3.2,3.2),gold if not sumi else shadow)
+    bead('Bow knot',knot+lateral*1.6,(3,3.2,3.2),gold if not sumi else shadow)
     if name=='amemori_sumiha':
         # Hollow triangular hair clip, with independent inner and outer walls.
         outlines=[(-21,46),(-10,50),(-18,57)]

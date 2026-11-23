@@ -2,6 +2,10 @@ from pathlib import Path
 import bpy,bmesh
 from mathutils import Vector
 p=Path(__file__).resolve().parent
+import sys
+sys.path.insert(0,str(p.parent/'skills'/'blender-anime-character'/'scripts'))
+from mesh_contacts import Assembly
+
 ratios={}
 for f in sorted(p.glob('*.blend')):
     bpy.ops.wm.open_mainfile(filepath=str(f))
@@ -28,6 +32,24 @@ for f in sorted(p.glob('*.blend')):
         ctl['outfit']=i;ctl.update_tag();bpy.context.view_layer.update()
         assert {o for o in objects if not o.hide_render}==sets[i]
         assert {o for o in objects if not o.hide_viewport}==sets[i]
+    assembly=Assembly(objects)
+    for i,visible in enumerate(sets):
+        missing=assembly.disconnected({o.name for o in visible},'Body surface')
+        assert not missing,(f.stem,i,missing)
+    mounts=[('Bow knot','TiedHair'),('Bow upper loop','Bow knot'),('Bow lower loop','Bow knot'),
+            ('Bow tail','Bow knot'),('FieldCup','CupHanger'),('CupHanger','Backpack'),
+            ('PuzzleCharm','CubeLanyard'),('CubeLanyard','Backpack'),('PackTassel','Backpack'),
+            ('Bedroll','Backpack'),('CapPin','SailorCap'),('Topknot','Hair')]
+    for child,host in mounts:
+        if child in bpy.data.objects:
+            assert assembly.touches(child,host),(f.stem,child,host)
+    if 'TiedHair' in bpy.data.objects:
+        def root_band(points):
+            top=max(p.z for p in points)
+            return [p for p in points if top-p.z<.003]
+        depths=assembly.root_depths('TiedHair','Hair',root_band)
+        print('Shallowest ponytail root inset (mm)',round(1000*min(depths),2))
+        assert min(depths)>.001,(f.stem,'ponytail root',min(depths))
     def limits(objs):
         zs=[p[2] for o in objs for p in o.bound_box]
         return min(zs),max(zs)

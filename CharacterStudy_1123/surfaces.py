@@ -226,7 +226,7 @@ class Figure:
             else:
                 loft('SailorCap',[(1,3,2,5,6),(5,4,3,16,17),(12,3,3,27,24),(20,3,1,34,27),(26,3,0,34,27),(31,4,0,28,24)])
             off=-31 if s else 47
-            loft('TiedHair',[(38,off,18,4,5),(48,off,23,12,13),(60,off+(0 if s else 7),27,15,17),(74,off+(0 if s else 5),26,13,13),(87,off,21,8,8),(94,off-4,18,2,2)],style='hair')
+            loft('TiedHair',[(32,-14 if s else 20,12,4,5),(38,off if s else 36,18,6,6),(48,off,23,12,13),(60,off+(0 if s else 7),27,15,17),(74,off+(0 if s else 5),26,13,13),(87,off,21,8,8),(94,off-4,18,2,2)],style='hair')
         # Model the pinna and inset concha on both sides; the helix protrudes past the hairline.
         for sign,tag in ((-1,'R'),(1,'L')):
             def ear(label,rows,style):
