@@ -18,9 +18,10 @@
 
 ## <a id="種族基底"></a>種族基底
 - **每族每性別一個基底**（骷髏另立 UMA 種族，共 28 個人形基底），基底身體就放在該族該性別的典型位置：純血成年（壽命 25–60 %）的 DNA 平均。DNA 只承載個人與族平均的差距，shape key 的可調範圍以族平均為中心，不會先被種族特徵用掉。
-- 基底不取自任何主角。起點是 `tools/acg-character/npc/template.json`：MPFB 巨觀取成年中間值、人種三等分、不帶個人 target、`acg_face` 預設值，日系比例只取共通項（細頸、手腳略小、畫上去的眼）。人類基底就是這個起點，放在人類平均的身高與頭身比。
+- 基底不取自任何主角。起點是 forge 的 `tools/acg-character/npc/template.json`：MPFB 巨觀取成年中間值、人種三等分、不帶個人 target、`acg_face` 預設值，日系比例只取共通項（細頸、手腳略小、畫上去的眼）。人類基底就是這個起點，放在人類平均的身高與頭身比。
 - 其他種族的基底是起點加上「該族平均減人類平均」，換算成 MakeHuman target 權重與 spec 值。換算用的係數由人類男性基底實測。頭身比依程序化頭部換算：頭頂到下巴約 1.98 個頭半徑，人類約 5.9 頭身。
-- 單一真實來源：`npc/race_bases.json` 由 EditMode `UmaRaceBaseTests.ExportRaceBases` 自抽樣規則產生（各族各性別：典型平均，以及全年齡、含混血的最小、最大與標準差）。`RaceBaseTableIsCurrent` 擋住過期的表。`npc_bases.py` 由此寫出 `npc/bases/<id>.json`，`race.py` 在每個基底上烘 DNA key。
+- 單一真實來源：`Assets/_Project/Art/Characters/_UMA/Npc/race_bases.json` 由 EditMode `UmaRaceBaseTests.ExportRaceBases` 自抽樣規則產生（各族各性別：典型平均，以及全年齡、含混血的最小、最大與標準差）。`RaceBaseTableIsCurrent` 擋住過期的表。`npc_bases.py` 由此寫出 `npc/bases/<id>.json`，`race.py` 在每個基底上烘 DNA key。
+- **檔案歸屬**：種族表（`race_bases.json`、`race_keys.json`、`race_channels.json`）與烘好的基底 FBX（`Bases/<id>.fbx`）都放遊戲 repo 的 `Assets/_Project/Art/Characters/_UMA/Npc/`，門檻測試不依賴 forge；烘焙腳本（`npc_bases.py`、`race.py`、`template.json`）在 `cosmos_chimera_forge` 的 `tools/acg-character/`，讀寫遊戲 repo 這個資料夾。
 - **校正**：每個 key 以 `acg_measure.py` 量它實際改變的尺寸（頭顱寬、臉長、下顎寬、鼻寬、四肢圍度…），單位與程序化頭部相同（倍率或頭半徑），得到 `per`＝整個 key 代表的通道變化量。key 的權重＝(個人值－基底值)／`per`。骨骼通道的零點是基底實測值（報告的 `bones`）。
 - **烘焙時固定**：頭部放大倍率、下顎平面、全身縮放到身高的倍率都固定為基底的解。若每個 key 各自重解，臉形改變時放大區域會跳動，key 也會夾帶全身縮放。
 - **來源分工**：MakeHuman target 在日系化之後只對頭顱寬與高、鼻長與鼻樑、下顎方正度與耳形夠力。頭顱深（後腦）、下顎寬、下巴寬高與前突、顴骨、頰脂、雙下巴、臉長、唇厚、鼻寬與鼻尖、頸圍、胸深、腹圍與四肢十個節點，改用不設上限的 `acg_shape.py` 形變或 `acg_face` 參數（腳踝、手肘、手腕、眉尾傾斜、眉距原本缺來源，也一併補上）。

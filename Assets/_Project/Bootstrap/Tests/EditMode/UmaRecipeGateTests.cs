@@ -76,12 +76,12 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(names.Distinct().Count(), Is.EqualTo(names.Count));
         }
 
-        // REQ: ADR-0014 / ADR-0015 — the Blender race baker (tools/acg-character/race_channels.json) and the mapper must
+        // REQ: ADR-0014 / ADR-0015 — the Blender race baker (_UMA/Npc/race_channels.json) and the mapper must
         // agree on every channel, or a DNA value would have nothing to drive.
         [Test]
         public void RaceChannelTableMatchesTheMapper()
         {
-            string path = System.IO.Path.Combine(Application.dataPath, "..", "tools", "acg-character", "race_channels.json");
+            string path = System.IO.Path.Combine(Application.dataPath, "_Project", "Art", "Characters", "_UMA", "Npc", "race_channels.json");
             var table = Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText(path));
             var inTable = new HashSet<string>(((Newtonsoft.Json.Linq.JObject)table["channels"]).Properties().Select(p => p.Name));
             var inMapper = new HashSet<string>(NpcMeshes.UmaChannels.Select(c => c.Name));

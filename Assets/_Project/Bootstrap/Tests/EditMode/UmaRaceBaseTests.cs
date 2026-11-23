@@ -24,7 +24,8 @@ namespace Cosmimera.Bootstrap.Tests
         // Key weights past ±1 extrapolate a baked shape; a little is tolerated before the channel needs a wider source.
         private const float MaxKeyWeight = 1.05f;
 
-        private static string NpcDir => Path.Combine(Application.dataPath, "..", "tools", "acg-character", "npc");
+        // Shared with cosmos_chimera_forge tools/acg-character, which reads and writes these tables here (Q-A12: game repo).
+        private static string NpcDir => Path.Combine(Application.dataPath, "_Project", "Art", "Characters", "_UMA", "Npc");
 
         private static IEnumerable<NpcRace> Races() =>
             Enum.GetValues(typeof(NpcRace)).Cast<NpcRace>().Where(r => r != NpcRace.Skeleton);
@@ -99,7 +100,7 @@ namespace Cosmimera.Bootstrap.Tests
             name.StartsWith("face.") || name.StartsWith("nose.") || name.StartsWith("mouth.") || name.StartsWith("eye.") ||
             name.StartsWith("brow.") || name.StartsWith("ear.");
 
-        // Writes tools/acg-character/npc/race_bases.json, the table npc_bases.py and race.py build the bases from. Run after
+        // Writes _UMA/Npc/race_bases.json, the table npc_bases.py and race.py build the bases from. Run after
         // the sampling changes, then rebuild the bases (specs/README.md).
         [Test, Explicit("writes the race base table")]
         public void ExportRaceBases()
@@ -157,7 +158,7 @@ namespace Cosmimera.Bootstrap.Tests
         public void BakedKeysReachAndShowEveryResident()
         {
             string keysPath = Path.Combine(NpcDir, "race_keys.json");
-            Assert.That(File.Exists(keysPath), "race_keys.json missing; bake the bases (specs/README.md)");
+            Assert.That(File.Exists(keysPath), "race_keys.json missing; bake the bases (forge tools/acg-character/specs/README.md)");
             JObject keys = (JObject)JObject.Parse(File.ReadAllText(keysPath))["bases"];
             JObject table = (JObject)JObject.Parse(File.ReadAllText(Path.Combine(NpcDir, "race_bases.json")))["bases"];
             var problems = new List<string>();
