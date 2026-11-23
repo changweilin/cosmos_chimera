@@ -14,7 +14,7 @@ for f in sorted(p.glob('*.blend')):
         assert bm.calc_volume(signed=True)>0,o.name
         euler=len(bm.verts)-len(bm.edges)+len(bm.faces)
         if o.name!='Body surface':
-            assert euler==(0 if o.name=='Triangle hair clip' else 2),(o.name,euler)
+            assert euler==(0 if o.name in ('Triangle hair clip','Bow upper loop','Bow lower loop') else 2),(o.name,euler)
         bm.free()
     print('CHECK',f.name,len(objects),'nonmanifold',bad,'degenerate',flat)
     assert bad==flat==0
@@ -31,9 +31,12 @@ for f in sorted(p.glob('*.blend')):
     def limits(objs):
         zs=[p[2] for o in objs for p in o.bound_box]
         return min(zs),max(zs)
-    sole,crown=limits(sets[1])
-    chin=limits([bpy.data.objects['Head']])[0]
-    ratios[f.stem]=(crown-sole)/(crown-chin)
+    # The landmarks must be anatomical. The hat, bun and tuft have unrelated heights.
+    head=bpy.data.objects['Head']
+    sole,_=limits([bpy.data.objects['Body surface']])
+    chin,crown=limits([head])
+    ratios[f.stem]=((crown-sole)/(crown-chin),head.dimensions.x/(crown-sole))
+    print('Bare head (cm):',round((crown-chin)*100,2),round(head.dimensions.x*100,2))
     if f.stem=='yeh_chengxi':
         surface=bpy.data.objects['Body surface']
         for side in (-1,1):
@@ -56,5 +59,7 @@ for f in sorted(p.glob('*.blend')):
                         rays+=1
         print('ROEN opposite-side fabric hits:',rays)
 
-print('Dressed crown-to-chin ratios',ratios)
-assert abs(ratios['roen']-(ratios['amemori_sumiha']+ratios['yeh_chengxi'])/2)<.30
+print('Anatomical heads and head-width/stature:',ratios)
+for index,tolerance in enumerate((.12,.007)):
+    peers=[ratios[name][index] for name in ('amemori_sumiha','yeh_chengxi')]
+    assert min(peers)-tolerance<=ratios['roen'][index]<=max(peers)+tolerance

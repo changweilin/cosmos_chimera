@@ -135,8 +135,8 @@ for name in names:
         saved=Path(staging)/(name+'.blend')
         bpy.ops.wm.save_as_mainfile(filepath=str(saved),compress=True)
         copyfile(saved,ROOT/saved.name)
-    for k,angle in [('front',0),('quarter',32),('rear',158),('side',90),('opposite',-62),('matched',62),('sideReverse',-90),('reverse',-132)]:
-        camera(angle);scene.render.filepath=str(ROOT/'work'/(name+'_'+k+'.png'));bpy.ops.render.render(write_still=True)
+    for k,angle in [('front',0),('quarter',32),('rear',158),('side',90),('opposite',-62),('matched',62),('sideReverse',-90),('reverse',-132),('sideRear',-118 if name=='amemori_sumiha' else 118)]:
+        camera(angle,0 if abs(angle) in (62,90,118) else 2.4);scene.render.filepath=str(ROOT/'work'/(name+'_'+k+'.png'));bpy.ops.render.render(write_still=True)
 
 
     camera(-48,17)

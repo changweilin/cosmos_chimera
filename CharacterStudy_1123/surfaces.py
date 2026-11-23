@@ -2,6 +2,7 @@
 from pathlib import Path
 import cv2
 from wardrobe_paint import paint
+from profile_paint import PROFILES, sample_profile, panels
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
@@ -18,6 +19,11 @@ class Figure:
         self.name=name
         self.parts=[]
         self.images=[cv2.imread(str(CACHE/(name+s+'.png'))) for s in ('front','back','profile')]
+        # The reference's side-facing fist occludes the center of the sleeve opening.
+        # Paint lining behind the real modeled hand instead of duplicating the fist.
+        self.cuff_plate=self.images[2].copy()
+        center={'roen':(54,109),'yeh_chengxi':(53,110),'amemori_sumiha':(42,119)}[name]
+        cv2.ellipse(self.cuff_plate,(center[0]*3,center[1]*3),(31,15),0,0,360,(55,49,54),-1,cv2.LINE_AA)
         # The reference's forehead ornament is rebuilt as metal geometry. Inpaint its
         # exact footprint so taking it off reveals uninterrupted bangs.
         if name!='roen':
@@ -60,9 +66,9 @@ class Figure:
         x,y,z=surface(vs[:,None],angles[None,:])
         # Scale the full head assembly about the chin, including ears and ornaments.
         if self.name=='roen' and (label in ('Head','Hair') or label.startswith('HairLock') or 'Ear' in label):
-            x=3+(x-3)*1.23
-            y=y*1.23
-            z=70+(z-70)*1.34
+            z=70+(z-70)*1.045
+        if label=='SailorCap':
+            z=z+.33*y
         pos=np.stack((x,y,440-z),axis=-1).reshape(-1,3)
         # Seam vertices are shared in geometry. Only UVs wrap at the back meridian.
         faces=[];uv=[]
@@ -93,6 +99,60 @@ class Figure:
         front=sample(self.clean_bangs if style in ('face','hair') else self.images[0],art_x)
         back=sample(self.images[1],art_x)
         color=paint(self.name,label,style,angle,v,tz,front,back,axis)
+        part_name=label.split('_')[-1]
+        profile=PROFILES[self.name].get(part_name)
+        if profile:
+            # The profile bounds are calibrated independently for each layer, excluding
+            # the sleeve, arm or backpack that occludes its neighbors in the drawing.
+            ranges=np.asarray(profile)
+            if label=='SashTail':
+                profile_z=np.broadcast_to(ranges[0,0]+v*(ranges[-1,0]-ranges[0,0]),tz.shape)
+            else:
+                profile_z=tz+.33*ty if label=='SailorCap' else tz
+            depth=.5-.5*np.sign(np.cos(angle))*np.abs(np.cos(angle))**exponent
+            plate=self.cuff_plate if part_name.endswith('Sleeve') else self.images[2]
+            side=sample_profile(plate,profile,profile_z,depth)
+            back_art=color if style=='underpack' else back
+            front_art=color if style=='bag' else front
+            if label=='FieldCup':
+                # Spun metal has continuous circumferential highlights and rolled rims.
+                shade=.87+.12*np.cos(angle*2+.3)
+                metal=np.array([147,135,135])*shade[...,None]
+                front_art=np.broadcast_to(metal,front.shape).copy()
+                front_art*=np.where((v<.15)|(v>.86),1.17,1.0)[...,None]
+                back_art=front_art
+            if label=='Bedroll':
+                bands=(np.abs(tx)>20)&(np.abs(tx)<26)
+                front_art=np.where(bands[...,None],np.array([66,54,71]),np.array([165,190,213]))
+                back_art=front_art
+            if label=='PuzzleCharm':
+                front_art=side;back_art=side
+            if label=='Hood':
+                valley=np.exp(-((v-.68-.14*np.cos(angle))/.04)**2)
+                hood=np.array([205,212,225])*(1-.16*valley[...,None])
+                front_art=hood;back_art=hood
+            if self.name=='roen' and part_name=='ShortLeg':
+                # The separately modeled cargo pocket covers this patch. A second
+                # drawing on the underlying leg would appear beside it at oblique angles.
+                outside=tx-3 if label.startswith('L_') else 3-tx
+                patch=smooth((outside-29)/5)*smooth((tz-228)/6)*smooth((278-tz)/6)
+                twill=np.array([76,69,74])
+                front_art=front_art+(twill-front_art)*patch[...,None]
+                back_art=back_art+(twill-back_art)*patch[...,None]
+                side=side+(twill-side)*(smooth((tz-228)/6)*smooth((278-tz)/6))[...,None]
+            if self.name=='amemori_sumiha' and part_name=='Backpack':
+                side=np.where((tz<114)[...,None],np.array([66,54,72]),side)
+            color=panels(front_art,side,back_art,angle)
+        if label=='SailorCap':
+            # The band follows the actual sloping rim; it remains one continuous navy
+            # strip even where the orthographic crown and brim overlap in the artwork.
+            base=np.array([224,225,234])
+            navy=np.array([91,63,54])
+            piping=np.array([155,165,212])
+            fabric=np.broadcast_to(base,color.shape).copy()
+            fabric=np.where((v>.64)[...,None],navy,fabric)
+            fabric=np.where(((v>.67)&(v<.705))[...,None],piping,fabric)
+            color=fabric*(.97+.028*np.cos(angle)[...,None])
         # Give each end its own planar UV island. Its perimeter matches the tube texels
         # and the radial interior converges to a single color without a polar smear.
         cap=min(w//2-4,max(14,int(np.mean(s[:,3:5])*2)))
@@ -112,6 +172,12 @@ class Figure:
             image=edge[np.minimum(w-1,(az*w).astype(int))]
             mix=smooth((radius-.18)/.79)[...,None]
             patch=image*mix+np.median(edge,axis=0)*(1-mix)
+            if profile and axis=='horizontal':
+                # A sleeve points straight at the profile camera. Its end disk has a
+                # 2D side drawing; radial extension of the cuff would erase the folds.
+                cz,cy,rz,ry=s[0 if end==0 else -1,1:]
+                cap_side=sample_profile(plate,profile,cz+rz*dy,.5-.47*dx)
+                patch=np.where((radius<.94)[...,None],cap_side,patch)
             at=0 if end==0 else margin+h
             atlas[at:at+margin]=patch.astype(np.uint8)
             atlas[margin-pad:margin] = atlas[margin]
@@ -157,7 +223,6 @@ class Figure:
         if not r:
             if s:
                 loft('Topknot',[(1,-6,13,2,2),(8,-6,15,12,10),(18,-8,15,15,13),(30,-7,16,7,7)],style='hair')
-                loft('SideRibbon',[(19,-30,1,3,4),(32,-34,0,9,8),(46,-39,0,12,8),(52,-42,1,7,5),(63,-43,2,3,3)],style='ribbon')
             else:
                 loft('SailorCap',[(1,3,2,5,6),(5,4,3,16,17),(12,3,3,27,24),(20,3,1,34,27),(26,3,0,34,27),(31,4,0,28,24)])
             off=-31 if s else 47
@@ -170,16 +235,8 @@ class Figure:
             ear('Concha',[(-29,31,-8,1.5,2),(-24,33,-8,2,3.8),(-19,31,-8,1.3,2)],'lining')
             ear('Ridge',[(-30,31,-9,.8,1.2),(-27,33,-11,1.4,1.7),(-22,33,-11,1.2,1.6),(-19,32,-10,.8,1)],'ear')
         if not r:
-            bow_x=-37 if s else 44
-            bow_z=37 if s else 45
-            bow_y=-9 if s else 4
-            for sign,tag in ((-1,'Upper'),(1,'Lower')):
-                keys=[(bow_z+sign*h,bow_x+dx,bow_y+dy,w,d) for h,dx,dy,w,d in
-                      [(1,0,0,3,3),(6,3,-1,6,4),(12,7,1,6,4),(16,9,3,2,2)]]
-                loft('Bow'+tag,sorted(keys),style='ribbon')
-            loft('BowClasp',[(bow_z-4,bow_x,bow_y-3,2,2),(bow_z,bow_x,bow_y-4,5,4),(bow_z+4,bow_x,bow_y-3,2,2)],style='metal')
             if not s:
-                loft('CapPin',[(18,31,-14,1.5,2),(22,32,-15,4,3),(26,31,-14,2,2)],style='metal')
+                loft('CapPin',[(22,30,-8,1.5,2),(26,32,-8,4,3),(30,30,-8,2,2)],style='metal')
         else:
             for sign,tag in ((-1,'R'),(1,'L')):
                 x=c+sign*16
@@ -197,12 +254,28 @@ class Figure:
         shape('TrainingWaist',[(waist+3,29,19,1),(waist+15,33,21,2),
                                (waist+25,32,21,2),(waist+35,27,20,2),(waist+43,14,15,2)],style='sport')
         shape('Jacket' if r else 'Bodice',[(chin+6,14,13,0),(shoulder-14,28,17,0),(shoulder-5,39,20,0),(shoulder+8,36,21,-1),(shoulder+22,32,23,-2),(waist-15,30 if not r else 35,18,-1),(waist,34 if not r else 42,21,0),(waist+8,36 if not r else 45,22,0)],style='underpack')
+        if r:
+            shape('Hood',[(72,7,6,21),(76,17,9,23),(84,24,12,25),
+                          (95,24,13,26),(102,15,9,27),(106,6,5,29)])
         if s:
             shape('PleatedSkirt',[(168,31,19,1),(182,36,22,1),(210,44,25,2),(234,50,28,3),(240,49,27,3)],style='skirt')
         else:
             shape('ShortsWaist',[(waist-3,31,19,0),(waist+5,35,21,1),(waist+19,39,23,2),(waist+30,36,20,2)],style='cloth')
         packtop=102 if r else 94 if s else 106
         shape('Backpack',[(packtop,22,7,20),(packtop+7,32,13,24),(packtop+17,37,16,25),(waist-6,36,17,25),(waist+5,30,13,24),(waist+8,20,7,21)],style='bag',exponent=.57)
+        if s:
+            loft('Bedroll',[(-42,104,32,9,9),(-39,104,32,11,11),
+                            (39,104,32,11,11),(42,104,32,9,9)],axis='horizontal')
+            loft('PackTassel',[(169,26,33,1.5,1.5),(179,32,38,1.4,1.4),(185,34,40,2,2),
+                               (191,34,40,3,3),(205,35,41,5,5)],style='metal')
+        elif r:
+            loft('CubeLanyard',[(167,-21,33,1.5,1.5),(172,-32,37,1.4,1.4),(178,-39,39,1.3,1.3),(182,-44,40,1.3,1.3)],style='headset')
+            loft('PuzzleCharm',[(179,-43,40,2,2),(182,-45,41,5,5),
+                                 (187,-45,41,5,5),(190,-44,40,2.5,2.5)],exponent=.45)
+        else:
+            loft('CupHanger',[(144,-22,31,2,2),(150,-28,36,2,2),(156,-33,40,2,2),(160,-34,40,2,2)],style='metal')
+            loft('FieldCup',[(154,-33,39,6,6),(157,-34,40,10,11),
+                             (171,-34,41,10,11),(176,-34,41,9,10),(178,-34,41,6,8)])
         if s:
             loft('SashTail',[(189,37,1,5,4),(215,43,2,8,3),(247,49,2,9,3),(267,47,4,6,2),(278,41,5,1,1)])
         for sign in (-1,1):
@@ -238,7 +311,8 @@ class Figure:
             boot=387 if r else 375 if s else 352
             limb('Boot',[(boot,ankle,2,12,13),(boot+6,ankle,2,15,15),(400,ankle,1,12,14),(411,ankle,-3,13,20),(423,ankle,-7,16,28),(433,ankle,-8,17,30),(438,ankle,-8,16,29)],exponent=.84)
             if r:
-                limb('CargoPocket',[(231,35,-10,8,4),(237,37,-12,10,4),(254,39,-13,11,5),(271,40,-11,11,4),(275,41,-10,8,3)],exponent=.52)
+                limb('CargoPocket',[(232,40,-1,4,12),(237,42,-1,5,17),(253,44,-1,5,18),
+                                    (269,44,-1,5,17),(274,42,-1,4,13)],exponent=.50)
             def arm(label,rows,**kw):
                 stations=[(sign*along,z,y,rz,ry) for along,z,y,rz,ry in rows]
                 loft(tag+'_'+label,sorted(stations),axis='horizontal',**kw)
