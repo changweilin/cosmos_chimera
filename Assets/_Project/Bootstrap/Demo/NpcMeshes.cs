@@ -295,7 +295,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// vertices, so every resident shares one white Cosmimera/ToonScenery material (and one glowing one).
     /// Pre: main thread (creates Unity objects). Post: results depend only on the spec. Side effects: allocates.
     /// </remarks>
-    public static class NpcMeshes
+    public static partial class NpcMeshes
     {
         /// <summary>Sub-mesh of everything that is not self-lit.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -625,7 +625,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // ---- races ---------------------------------------------------------------------------------------------
 
-        private struct Traits
+        internal struct Traits
         {
             public float HeightM;   // adult male, crown of the skull
             public float Head;      // head size relative to a human's
@@ -735,7 +735,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // ---- one resident's draw -------------------------------------------------------------------------------
 
-        private struct Look
+        internal struct Look
         {
             public Color Skin, Hair, Cloth, Cloth2, Accent, Leather, Metal, Glow, Bone;
             public ArchEra UpperEra, LowerEra, HeadEra;
@@ -949,7 +949,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         // ---- culture: what one settlement shares ---------------------------------------------------------------
 
-        private enum Cut
+        internal enum Cut
         {
             Tunic, Robe, Dress, Coat, Mantle, Vest, Wrap,
         }
@@ -1169,12 +1169,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private static ArchEra Worn(ArchEra era) => era == ArchEra.Ancient ? ArchEra.Primal : era;
 
-        private enum ArmPose
+        internal enum ArmPose
         {
             Hang, Hold, Reach, Raise, Lean,
         }
 
-        private struct Rig
+        internal struct Rig
         {
             public float H, HeadR, ArmR, LegR, TrunkX, TrunkZ, Bulk, Belly, NeckR;
             // Limb radii at the root, the belly of the upper segment, the joint, the belly of the lower segment and the
@@ -2312,7 +2312,7 @@ namespace Cosmimera.Bootstrap.Demo
         // One face: every field is a bounded normal around the race's mean (set by FaceMean), shifted by sex and age.
         // Multipliers sit near 1, offsets near 0 (head radii).
         // REQ: characters.md#路人-npc (臉).
-        private struct Face
+        internal struct Face
         {
             public float SkullW, SkullH, SkullD, CheekW, Cheek, FaceLen, JawW, ChinW, ChinJut, ChinH, Jowl;
             public float LipW, LipUp, LipLow, MouthY, Curve;
