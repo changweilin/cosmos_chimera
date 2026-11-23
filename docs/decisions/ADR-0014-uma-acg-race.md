@@ -1,7 +1,7 @@
 # ADR-0014：日系 ACG 基底轉成 UMA 自訂種族
 
 ## 狀態
-已採納（2026-11-22 定案 Q-T9）。補充 ADR-0012（沿用 UMA 執行期）與 ADR-0013（模型來源）；取代 ADR-0012 中「使用內建 HumanMale／HumanFemale 種族」的部分。
+已採納（2026-11-22 定案 Q-T9）。補充 ADR-0012（沿用 UMA 執行期）與 ADR-0013（模型來源）；取代 ADR-0012 中「使用內建 HumanMale／HumanFemale 種族」的部分。路人 NPC 也使用本種族，見 ADR-0015。
 
 ## 背景
 - ADR-0013 改由 Blender＋MPFB 產出日系主角模型；捏臉規格以 UMA DNA 滑桿＋貼花層描述，內建寫實種族畫風不符。
