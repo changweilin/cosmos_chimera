@@ -187,6 +187,23 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(flat, Is.Empty, "channels that never vary");
         }
 
+        // REQ: characters.md#路人-npc (眉毛粗細、唇厚 σ 20 %) — a negative thickness turns the brow or lip inside out on the
+        // procedural head and is meaningless as a blendshape weight.
+        [Test]
+        public void BrowAndLipThicknessStayPositive()
+        {
+            for (ulong planet = 300; planet < 300 + Planets; planet++)
+            {
+                foreach (NpcSpec spec in Residents(planet, PerPlanet))
+                {
+                    NpcMeshes.Face f = NpcMeshes.UmaSampleOf(spec).Face;
+                    Assert.That(f.BrowThick, Is.GreaterThan(0f), spec.Race + " brow");
+                    Assert.That(f.LipUp, Is.GreaterThan(0f), spec.Race + " upper lip");
+                    Assert.That(f.LipLow, Is.GreaterThan(0f), spec.Race + " lower lip");
+                }
+            }
+        }
+
         // Gate 2, repeats: residents of one town are told apart at save precision.
         [Test]
         public void TownsRarelyRepeatARecipe()

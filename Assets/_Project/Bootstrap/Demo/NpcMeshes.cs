@@ -2347,8 +2347,8 @@ namespace Cosmimera.Bootstrap.Demo
                 f.ChinH = N(1f + m.ChinH, 0.12f, ref rng);
                 f.Jowl = math.saturate((fat - 0.3f) * 5f + 0.4f * elder - 0.2f);
                 f.LipW = N(1f + m.LipW, 0.1f, ref rng);
-                f.LipUp = N(1f + m.LipUp - 0.1f * sex - 0.25f * elder, 0.2f, ref rng);
-                f.LipLow = N(1f + m.LipLow - 0.05f * sex - 0.2f * elder, 0.2f, ref rng);
+                f.LipUp = Rel(1f + m.LipUp - 0.1f * sex - 0.25f * elder, 0.2f, ref rng);
+                f.LipLow = Rel(1f + m.LipLow - 0.05f * sex - 0.2f * elder, 0.2f, ref rng);
                 f.MouthY = N(m.MouthY, 0.03f, ref rng);
                 f.Curve = N(m.Curve - 0.03f * elder, 0.035f, ref rng);
                 f.NoseLen = N(1f + m.NoseLen + 0.18f * elder - (child ? 0.25f : 0f), 0.12f, ref rng);
@@ -2359,7 +2359,7 @@ namespace Cosmimera.Bootstrap.Demo
                 f.EyeSpread = N(1f + m.EyeSpread, 0.06f, ref rng);
                 f.EyeTilt = math.clamp(N(m.EyeTilt, 0.03f, ref rng), -0.07f, 0.09f);
                 f.EyeOpen = math.clamp(N(1f + m.EyeOpen - 0.12f * elder, 0.12f, ref rng), 0.55f, 1.4f);
-                f.BrowThick = N(1f + m.BrowThick + 0.25f * sex, 0.2f, ref rng);
+                f.BrowThick = Rel(1f + m.BrowThick + 0.25f * sex, 0.2f, ref rng);
                 f.BrowArch = N(m.BrowArch, 0.04f, ref rng);
                 f.BrowSlant = N(m.BrowSlant, 0.045f, ref rng);
                 f.BrowLen = N(1f + m.BrowLen, 0.1f, ref rng);
@@ -2370,6 +2370,12 @@ namespace Cosmimera.Bootstrap.Demo
             // Bounded normal (|z| ≤ 3.46) never reaches zero or flips a multiplier for these σ, so no clamp is needed
             // beyond the few fields that can collide with a neighbour (tip, lids).
             private static float N(float mean, float sigma, ref Pcg32 rng) => mean + sigma * Gauss(ref rng);
+
+            // Thickness means fall well below 1 (an elf woman's brow 0.45, an old zombie's lip 0.35), where an absolute
+            // σ 0.2 at |z| 3.46 turns them negative and the mesh inside out. Read as a share of the person's own mean,
+            // σ 20 % keeps them above 0.3 × the mean with the same single draw, so no later field shifts.
+            // REQ: characters.md#路人-npc (上唇與下唇厚度各 σ 20 %、眉毛粗細 σ 20 %).
+            private static float Rel(float mean, float share, ref Pcg32 rng) => mean * (1f + share * Gauss(ref rng));
 
             // A mixed face averages the race means by blood share: a half-orc has half an orc's jaw, not a coin-flip one.
             private static Face MeanOf(in NpcSpec spec)

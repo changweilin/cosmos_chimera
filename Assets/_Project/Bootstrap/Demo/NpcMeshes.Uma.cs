@@ -208,7 +208,8 @@ namespace Cosmimera.Bootstrap.Demo
         // channels independent of overall scale.
         // Ranges: where the sampling clamps (shares, fat, muscle, eye opening, limb-node factors, lean, height) the
         // clamp bounds themselves; elsewhere the span of 20 000 random residents (UmaRecipeGateTests.ProbeChannelSpans)
-        // widened by a quarter on each side, floored at 0 for sizes. The gate test re-checks them on fresh seeds.
+        // widened by a quarter on each side, floored at 0 for sizes and thicknesses. The gate test re-checks them on
+        // fresh seeds.
         private static readonly UmaChannel[] Channels =
         {
             new UmaChannel("body.height", "Rig.H,Traits.HeightM", 0.5f, 2.7f, s => s.Rig.H),
@@ -252,8 +253,8 @@ namespace Cosmimera.Bootstrap.Demo
             new UmaChannel("face.chinHeight", "Face.ChinH", 0.2023f, 1.851f, s => s.Face.ChinH),
             new UmaChannel("face.jowl", "Face.Jowl", 0f, 1f, s => s.Face.Jowl),
             new UmaChannel("mouth.width", "Face.LipW", 0.5144f, 1.481f, s => s.Face.LipW),
-            new UmaChannel("mouth.upperLip", "Face.LipUp", -0.5372f, 2.277f, s => s.Face.LipUp),
-            new UmaChannel("mouth.lowerLip", "Face.LipLow", -0.5197f, 2.426f, s => s.Face.LipLow),
+            new UmaChannel("mouth.upperLip", "Face.LipUp", 0f, 2.398f, s => s.Face.LipUp),
+            new UmaChannel("mouth.lowerLip", "Face.LipLow", 0f, 2.616f, s => s.Face.LipLow),
             new UmaChannel("mouth.height", "Face.MouthY", -0.1439f, 0.1447f, s => s.Face.MouthY),
             new UmaChannel("mouth.corners", "Face.Curve", -0.1981f, 0.168f, s => s.Face.Curve),
             new UmaChannel("nose.length", "Face.NoseLen", 0.01289f, 1.867f, s => s.Face.NoseLen),
@@ -264,7 +265,7 @@ namespace Cosmimera.Bootstrap.Demo
             new UmaChannel("eye.spread", "Face.EyeSpread", 0.721f, 1.295f, s => s.Face.EyeSpread),
             new UmaChannel("eye.tilt", "Face.EyeTilt", -0.07f, 0.09f, s => s.Face.EyeTilt),
             new UmaChannel("eye.open", "Face.EyeOpen", 0.55f, 1.4f, s => s.Face.EyeOpen),
-            new UmaChannel("brow.thickness", "Face.BrowThick", -0.6989f, 2.849f, s => s.Face.BrowThick),
+            new UmaChannel("brow.thickness", "Face.BrowThick", 0f, 3.266f, s => s.Face.BrowThick),
             new UmaChannel("brow.arch", "Face.BrowArch", -0.2036f, 0.2373f, s => s.Face.BrowArch),
             new UmaChannel("brow.slant", "Face.BrowSlant", -0.2308f, 0.264f, s => s.Face.BrowSlant),
             new UmaChannel("brow.length", "Face.BrowLen", 0.5208f, 1.473f, s => s.Face.BrowLen),
