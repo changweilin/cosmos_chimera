@@ -12,7 +12,10 @@ scale, face smoothing, chin shaping, drawn eyes projected onto the face) inside 
 
 Pre: spec follows specs/README.md. Post: <out.blend> holds the bare base with the shape keys; the report
 lists, per key, the largest vertex move per mesh (keys under 0.1 mm are flagged "vanished": the ACG
-build erases that target and the channel needs another source). Side effects: overwrites the outputs.
+build erases that target and the channel needs another source), the step that fitted, and "per": the
+channel change the whole baked key stands for (key weight 1), measured by acg_measure.py under the channel's "cal"
+rule; it also gives the base's head radius, landmark measures and bone-channel values (the zero point of
+the bone DNA). Side effects: overwrites the outputs.
 """
 import argparse
 import copy
@@ -24,10 +27,12 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import acg_measure  # noqa: E402
 import build  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VANISHED_M = 1e-4
+TARGET_CAP = 3.0
 
 
 def _args():
@@ -50,25 +55,37 @@ def _bare(spec):
 
 
 def _freeze_head(spec):
-    """The head scale that the base build solves for. Each variant reuses it: re-solving per variant
-    would undo every head target that changes the head-to-body ratio."""
+    """The head scale, jaw plane and height factor that the base build derives. Each variant reuses them: re-solving
+    the scale would undo every head target that changes the head-to-body ratio, re-deriving the plane lets it jump,
+    and re-fitting the height would fold a shrink of the whole figure into every key that grows it."""
     solved = {}
-    original = build._solve_head_scale
+    solve, shape, fit = build._solve_head_scale, build._acg_proportions, build._scale_to_height
 
-    def capture(h, p):
-        solved["s"] = original(h, p)
+    def capture_scale(h, p):
+        solved["s"] = solve(h, p)
         return solved["s"]
 
-    build._solve_head_scale = capture
+    def capture_plane(h, p):
+        out = shape(h, p)
+        solved["plane"] = out["jaw_plane"]  # the last call is the real one; the solver's trials come first
+        return out
+
+    def capture_height(objs, target_m):
+        solved["k"] = fit(objs, target_m)
+        return solved["k"]
+
+    build._solve_head_scale, build._acg_proportions, build._scale_to_height = capture_scale, capture_plane, capture_height
     try:
         build.build(spec)
     finally:
-        build._solve_head_scale = original
+        build._solve_head_scale, build._acg_proportions, build._scale_to_height = solve, shape, fit
     s = copy.deepcopy(spec)
     prop = s.setdefault("proportions", {})
     if "s" in solved:
         prop.pop("heads", None)
         prop["head_scale"] = solved["s"]
+    prop["jaw_plane"] = solved["plane"]
+    s["height_scale"] = solved["k"]
     return s
 
 
@@ -82,10 +99,17 @@ def _coords(spec):
     return {n: [v.co.copy() for v in o.data.vertices] for n, o in _meshes().items()}
 
 
-def _variant(spec, channel, sign):
-    """(nudged spec, step actually applied). A target pair is one axis: incr minus decr is its net weight, which
-    MakeHuman caps at ±1. A base spec that already leans on the pair (Roen's ear-scale-decr 1.0) leaves less room,
-    so the key is baked for the step that fits and the report records it for the converter to divide by."""
+def _param_value(spec, channel):
+    section, key = channel["key"].split(".", 1)
+    return spec.get(section, {}).get(key, channel.get("default"))
+
+
+def _variant(spec, channel, amount):
+    """(nudged spec, units actually applied). amount is signed, in units: target net weight or channel steps.
+
+    A target pair is one axis: incr minus decr is its net weight. MakeHuman designs targets for [-1, 1]; being linear
+    offsets they extrapolate, and up to TARGET_CAP is accepted (暫定). A base that already leans on the pair leaves
+    less room, so the key is baked for what fits and the report records it."""
     s = copy.deepcopy(spec)
     if channel["kind"] == "target":
         targets = s.setdefault("targets", {})
@@ -94,8 +118,8 @@ def _variant(spec, channel, sign):
         for i, name in enumerate(channel["pos"]):
             opp = neg[i] if i < len(neg) else None
             net = targets.get(name, 0.0) - (targets.get(opp, 0.0) if opp else 0.0)
-            lo = -1.0 if opp else 0.0
-            new = min(1.0, max(lo, net + sign))
+            lo = -TARGET_CAP if opp else 0.0
+            new = min(TARGET_CAP, max(lo, net + amount))
             targets[name] = max(new, 0.0)
             if opp:
                 targets[opp] = max(-new, 0.0)
@@ -110,8 +134,20 @@ def _variant(spec, channel, sign):
         if "default" not in channel:
             raise KeyError("spec has no %s and race_channels.json gives no default" % channel["key"])
         block[key] = channel["default"]
-    block[key] = block[key] + sign * channel["step"]
-    return s, sign * channel["step"]
+    old = block[key]
+    block[key] = old + amount * channel["step"]
+    lo, hi = channel.get("range", (0.0, 1.0) if section == "macro" else (-1e9, 1e9))
+    block[key] = min(hi, max(lo, block[key]))
+    return s, (block[key] - old) / channel["step"]
+
+
+def _far(spec, name, sign):
+    """How far the race's farthest resident sits from the base on this side, or None without a race table."""
+    npc = spec.get("npc", {})
+    if name not in npc.get("reach", {}) or name not in npc.get("dna", {}):
+        return None
+    lo, hi = npc["reach"][name]
+    return (hi - npc["dna"][name]) if sign > 0 else (npc["dna"][name] - lo)
 
 
 def _sides(channel):
@@ -128,14 +164,38 @@ def main():
     bakes = [(n, c) for n, c in table.items() if c["kind"] in ("target", "param") and (wanted is None or n in wanted)]
 
     base = _coords(spec)
-    deltas, report = {}, {"spec": spec["id"], "head_scale": spec["proportions"].get("head_scale"), "keys": {}}
+    body = spec["id"]
+    probe = acg_measure.Probe(bpy.data.objects[body])
+    # The race base's own DNA means (npc_bases.py); a spec without them is calibrated around the human unit values.
+    means = spec.get("npc", {}).get("dna", {})
+    deltas = {}
+    report = {"spec": spec["id"], "head_scale": spec["proportions"].get("head_scale"), "hr_m": round(probe.hr, 5),
+              "bones": {k: round(v, 5) for k, v in probe.bones().items()},
+              "measures": {k: round(v, 5) for k, v in probe.base.items()}, "keys": {}}
     for name, ch in bakes:
+        value = _param_value(spec, ch) if ch["kind"] == "param" else None
         for sign in _sides(ch):
             key = name + ("+" if sign > 0 else "-")
-            nudged, step = _variant(spec, ch, sign)
-            got = _coords(nudged) if step != 0 else base
-            if set(got) != set(base) or any(len(got[m]) != len(base[m]) for m in base):
-                raise RuntimeError("topology changed for %s: shape keys need the same vertices" % key)
+
+            def bake(amount):
+                nudged, units = _variant(spec, ch, amount)
+                got = _coords(nudged) if units != 0 else base
+                if set(got) != set(base) or any(len(got[m]) != len(base[m]) for m in base):
+                    raise RuntimeError("topology changed for %s: shape keys need the same vertices" % key)
+                # units is a target's net weight or a param's channel steps; per_key wants the spec-side step.
+                step = units if ch["kind"] == "target" else units * ch["step"]
+                var_m = probe.measure(got[body]) if units != 0 else probe.base
+                return got, step, units, acg_measure.per_key(ch, probe, probe.base, var_m, step, means.get(name, 1.0), value)
+
+            got, step, units, per = bake(float(sign))
+            # Bake the key at the race's farthest resident on this side: inside a baked range the converter only
+            # interpolates. Targets stop at TARGET_CAP; the gate test reports a key that still falls short.
+            far = _far(spec, name, sign)
+            if far is not None and far > 0 and per and per > 0:
+                want = sign * far / (per / abs(units))
+                # Short of the farthest resident by any margin is a re-bake; past it by up to 10 % is kept.
+                if abs(want) > abs(units) * 1.001 or abs(want) < 0.9 * abs(units):
+                    got, step, units, per = bake(want)
             moved, entry = {}, {}
             for m, pts in got.items():
                 d = [p - q for p, q in zip(pts, base[m])]
@@ -145,6 +205,7 @@ def main():
                 entry[m] = round(peak * 1000.0, 3)
             deltas[key] = moved
             report["keys"][key] = {"max_mm": {m: v for m, v in entry.items() if v > 0}, "step": round(step, 6),
+                                   "units": round(units, 6), "per": None if per is None else round(per, 6),
                                    "vanished": max(entry.values(), default=0.0) < VANISHED_M * 1000.0}
             print("RACE_KEY %s %s" % (key, json.dumps(report["keys"][key])))
 

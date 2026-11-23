@@ -1,0 +1,375 @@
+{
+ "face": {
+  "chin_anchor": "lips"
+ },
+ "hair": null,
+ "height_cm": 164.4,
+ "id": "npc_human_female",
+ "look": {
+  "brow": "#5a463a",
+  "hair": "#5a463a",
+  "hair_root": "#5a463a",
+  "iris": "#6a5a4a",
+  "iris_dark": "#3a3028",
+  "mouth": "#9a5a50",
+  "skin": "#d8b49a",
+  "skin_shade": "#b88a72"
+ },
+ "macro": {
+  "age": 0.5,
+  "gender": 0.0,
+  "height": 0.5,
+  "muscle": 0.5,
+  "proportions": 0.5,
+  "race": {
+   "african": 0.33,
+   "asian": 0.33,
+   "caucasian": 0.34
+  },
+  "weight": 0.5
+ },
+ "npc": {
+  "dna": {
+   "beard.length": 0,
+   "body.armLength": 0.99999,
+   "body.armRadius": 0.02886,
+   "body.belly": 1.01534,
+   "body.bulk": 1.00317,
+   "body.fat": 0.29243,
+   "body.grown": 0.99999,
+   "body.headRatio": 0.08589,
+   "body.height": 1.64358,
+   "body.hipWidth": 0.08798,
+   "body.legRadius": 0.04226,
+   "body.legShare": 0.47914,
+   "body.muscle": 0.24912,
+   "body.neck": 0.43089,
+   "body.shoulder": 0.11433,
+   "body.trunkDepth": 0.08145,
+   "body.trunkWidth": 0.10518,
+   "brow.arch": -0.00219,
+   "brow.gap": 0.00101,
+   "brow.length": 1.00474,
+   "brow.slant": -0.0014,
+   "brow.thickness": 0.75368,
+   "cloth.fall": 0.73258,
+   "cloth.textile": 0.517,
+   "ear.elfShare": 0,
+   "ear.finShare": 0,
+   "ear.goblinShare": 0,
+   "ear.scale": 1.01145,
+   "ear.wolfShare": 0,
+   "eye.open": 0.99902,
+   "eye.size": 1.02828,
+   "eye.spread": 0.99952,
+   "eye.tilt": 0.00039,
+   "face.cheekFat": 0.15412,
+   "face.cheekboneWidth": 1.02253,
+   "face.chinHeight": 0.98426,
+   "face.chinJut": 0.00376,
+   "face.chinWidth": 0.95258,
+   "face.jawAngle": 0.19393,
+   "face.jawWidth": 0.96032,
+   "face.jowl": 0.01816,
+   "face.length": 0.98198,
+   "face.skullDepth": 1.00168,
+   "face.skullHeight": 1.00695,
+   "face.skullWidth": 1.01312,
+   "limb.ankle": 0.59413,
+   "limb.calf": 0.93003,
+   "limb.elbow": 0.85243,
+   "limb.forearm": 0.96302,
+   "limb.knee": 0.85243,
+   "limb.thigh": 1.16903,
+   "limb.thighMid": 1.1182,
+   "limb.upperArm": 1.16638,
+   "limb.upperArmMid": 1.11567,
+   "limb.wrist": 0.67334,
+   "mouth.corners": -0.00087,
+   "mouth.height": 0.0002,
+   "mouth.lowerLip": 1.0469,
+   "mouth.upperLip": 1.088,
+   "mouth.width": 1.00505,
+   "nose.bridge": -0.01164,
+   "nose.length": 1.00549,
+   "nose.tip": 0.00015,
+   "nose.width": 0.95395,
+   "spine.lean": 0.00691
+  },
+  "race": "Human",
+  "reach": {
+   "beard.length": [
+    0,
+    0
+   ],
+   "body.armLength": [
+    1,
+    1.0886
+   ],
+   "body.armRadius": [
+    0.00992,
+    0.05208
+   ],
+   "body.belly": [
+    0.68,
+    1.4315
+   ],
+   "body.bulk": [
+    0.62044,
+    1.47828
+   ],
+   "body.fat": [
+    0.03,
+    0.52341
+   ],
+   "body.grown": [
+    0.52,
+    1
+   ],
+   "body.headRatio": [
+    0.07869,
+    0.13709
+   ],
+   "body.height": [
+    0.69088,
+    2.03535
+   ],
+   "body.hipWidth": [
+    0.06125,
+    0.12757
+   ],
+   "body.legRadius": [
+    0.01568,
+    0.07335
+   ],
+   "body.legShare": [
+    0.39596,
+    0.51062
+   ],
+   "body.muscle": [
+    -3,
+    3
+   ],
+   "body.neck": [
+    0.30697,
+    0.55179
+   ],
+   "body.shoulder": [
+    0.08035,
+    0.16349
+   ],
+   "body.trunkDepth": [
+    0.04723,
+    0.14768
+   ],
+   "body.trunkWidth": [
+    0.07392,
+    0.15041
+   ],
+   "brow.arch": [
+    -0.12133,
+    0.11745
+   ],
+   "brow.gap": [
+    -0.12105,
+    0.11593
+   ],
+   "brow.length": [
+    0.693,
+    1.29485
+   ],
+   "brow.slant": [
+    -0.13723,
+    0.13448
+   ],
+   "brow.thickness": [
+    0.30544,
+    1.2833
+   ],
+   "cloth.fall": [
+    0.30026,
+    0.93
+   ],
+   "cloth.textile": [
+    0.00021,
+    0.9992
+   ],
+   "ear.elfShare": [
+    0,
+    0.47952
+   ],
+   "ear.finShare": [
+    0,
+    0.48606
+   ],
+   "ear.goblinShare": [
+    0,
+    0.48934
+   ],
+   "ear.scale": [
+    0.75,
+    1.512
+   ],
+   "ear.wolfShare": [
+    0,
+    0.4922
+   ],
+   "eye.open": [
+    0.55,
+    1.33687
+   ],
+   "eye.size": [
+    0.78135,
+    1.26525
+   ],
+   "eye.spread": [
+    0.8237,
+    1.1757
+   ],
+   "eye.tilt": [
+    -0.07,
+    0.09
+   ],
+   "face.cheekFat": [
+    0,
+    0.45
+   ],
+   "face.cheekboneWidth": [
+    0.71203,
+    1.31591
+   ],
+   "face.chinHeight": [
+    0.49595,
+    1.49624
+   ],
+   "face.chinJut": [
+    -0.20543,
+    0.19068
+   ],
+   "face.chinWidth": [
+    0.24425,
+    1.56453
+   ],
+   "face.jawAngle": [
+    0,
+    1
+   ],
+   "face.jawWidth": [
+    0.44378,
+    1.36442
+   ],
+   "face.jowl": [
+    0,
+    0.86799
+   ],
+   "face.length": [
+    0.59704,
+    1.32439
+   ],
+   "face.skullDepth": [
+    0.88677,
+    1.11456
+   ],
+   "face.skullHeight": [
+    0.88228,
+    1.17834
+   ],
+   "face.skullWidth": [
+    0.79443,
+    1.19878
+   ],
+   "limb.ankle": [
+    0.528,
+    0.648
+   ],
+   "limb.calf": [
+    0.8096,
+    1.058
+   ],
+   "limb.elbow": [
+    0.774,
+    0.9288
+   ],
+   "limb.forearm": [
+    0.836,
+    1.0925
+   ],
+   "limb.knee": [
+    0.774,
+    0.9288
+   ],
+   "limb.thigh": [
+    1.012,
+    1.42046
+   ],
+   "limb.thighMid": [
+    0.968,
+    1.3587
+   ],
+   "limb.upperArm": [
+    1.012,
+    1.38152
+   ],
+   "limb.upperArmMid": [
+    0.968,
+    1.32146
+   ],
+   "limb.wrist": [
+    0.5984,
+    0.7344
+   ],
+   "mouth.corners": [
+    -0.12871,
+    0.11335
+   ],
+   "mouth.height": [
+    -0.08668,
+    0.0977
+   ],
+   "mouth.lowerLip": [
+    0.34758,
+    1.71016
+   ],
+   "mouth.upperLip": [
+    0.40463,
+    1.72982
+   ],
+   "mouth.width": [
+    0.67776,
+    1.30981
+   ],
+   "nose.bridge": [
+    -0.53014,
+    0.47648
+   ],
+   "nose.length": [
+    0.42326,
+    1.51085
+   ],
+   "nose.tip": [
+    -0.08,
+    0.1
+   ],
+   "nose.width": [
+    0.51545,
+    1.35245
+   ],
+   "spine.lean": [
+    0,
+    0.4787
+   ]
+  },
+  "sex": "Female"
+ },
+ "outfit": [],
+ "proportions": {
+  "foot_scale": 0.95,
+  "hand_scale": 0.92,
+  "heads": 5.88,
+  "leg_length": 1.06,
+  "leg_thin": 1.0,
+  "neck_thin": 0.9,
+  "waist_thin": 0.97
+ },
+ "targets": {}
+}

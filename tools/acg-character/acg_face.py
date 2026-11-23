@@ -52,10 +52,11 @@ def flatten_eye_sockets(h, radius_k=1.5):
         for v in skin:
             dx, dz = v.co.x - c.x, v.co.z - c.z
             d = math.hypot(dx, dz)
-            # Front half only: the back of the head shares x/z with the eye.
-            if d >= r or v.co.y > c.y + 0.03:
+            # Front half only: the back of the head shares x/z with the eye. The depth cut fades out rather than
+            # stopping dead, so socket vertices near it follow a reshaped head smoothly (race.py shape keys).
+            if d >= r or v.co.y > c.y + 0.045:
                 continue
-            w = 1 - _smooth(r * 0.7, r, d)
+            w = (1 - _smooth(r * 0.7, r, d)) * (1 - _smooth(c.y + 0.03, c.y + 0.045, v.co.y))
             target = float(coef @ np.array([1, dx, dz, dx * dx, dx * dz, dz * dz]))
             v.co.y = v.co.y + (target - v.co.y) * w
     h.data.update()
@@ -261,8 +262,11 @@ def drawn_eyes(h, rig, spec, mats):
         lift = f.get("brow_lift", 0.016)
         arch = f.get("brow_arch", 0.004)
         k = 14
-        line = [(e.u(i / (k - 1)) * f.get("brow_spread", 1.08),
-                 e.h * 0.5 + lift + arch * 4 * (i / (k - 1)) * (1 - i / (k - 1))) for i in range(k)]
+        # brow_slant raises the inner end and lowers the outer (metres each); brow_gap moves the inner end outward.
+        slant, gap_in = f.get("brow_slant", 0.0), f.get("brow_gap", 0.0)
+        line = [(e.u(i / (k - 1)) * f.get("brow_spread", 1.08) + gap_in * (1 - i / (k - 1)),
+                 e.h * 0.5 + lift + arch * 4 * (i / (k - 1)) * (1 - i / (k - 1)) + slant * (1 - 2 * i / (k - 1)))
+                for i in range(k)]
         bw = [f.get("brow_w", 0.0035) * (1.0 - 0.6 * i / (k - 1)) for i in range(k)]
         out.append(_ribbon("brow_" + side, _plane_to_face(h, c, sign, line, gap), bw, mats["brow"], rig))
     return out
@@ -288,21 +292,38 @@ def shrink_ears(h, scale=0.75):
     h.data.update()
 
 
-def shape_chin(h, forward=0.011, down=0.012, taper=0.3, radius=0.045, cheek=0.0):
+def shape_chin(h, forward=0.011, down=0.012, taper=0.3, radius=0.045, cheek=0.0, anchor="joint"):
     """Pulls the chin forward and down into a small V: anime faces keep a pointed chin even
     though nose and mouth are flattened.
 
+    anchor "lips" takes the mouth from the lips' own centre. joint-mouth is the jaw hinge: on a 7-head figure it
+    is close enough, but on the NPC heads (scaled 1.6x) it sits by the nose and the chin edit lands there.
     Pre: un-rigged basemesh in metres. Side effects: edits h.data vertex positions below the mouth.
     """
-    # joint-mouth sits inside the head; take the chin point on the skin in front of it.
-    mouth = _centroid(h, "joint-mouth")
     body = h.vertex_groups["body"].index
-    chin_z = mouth.z - radius * 0.7
-    front = [v.co for v in h.data.vertices if abs(v.co.x) < 0.004 and abs(v.co.z - chin_z) < 0.004 and
-             any(g.group == body for g in v.groups)]
-    if not front:
-        raise ValueError("shape_chin: no midline skin vertices at chin height")
-    tip = Vector((0.0, min(p.y for p in front), chin_z))
+    if anchor == "lips":
+        lips = h.vertex_groups["lips"].index
+        pts = [v.co for v in h.data.vertices if any(g.group == lips for g in v.groups) and any(g.group == body for g in v.groups)]
+        mouth = sum(pts, Vector()) / len(pts)
+    else:
+        # joint-mouth sits inside the head; take the chin point on the skin in front of it.
+        mouth = _centroid(h, "joint-mouth")
+    if anchor == "lips":
+        # The chin itself: the most forward midline point under the lower lip. A fixed drop below the mouth missed a
+        # short anime chin and landed on the throat.
+        under = [v.co for v in h.data.vertices if abs(v.co.x) < 0.004 and mouth.z - 0.09 < v.co.z < mouth.z - 0.012 and
+                 any(g.group == body for g in v.groups)]
+        if not under:
+            raise ValueError("shape_chin: no midline skin vertices under the lips")
+        tip = min(under, key=lambda p: p.y).copy()
+        tip.x = 0.0
+    else:
+        chin_z = mouth.z - radius * 0.7
+        front = [v.co for v in h.data.vertices if abs(v.co.x) < 0.004 and abs(v.co.z - chin_z) < 0.004 and
+                 any(g.group == body for g in v.groups)]
+        if not front:
+            raise ValueError("shape_chin: no midline skin vertices at chin height")
+        tip = Vector((0.0, min(p.y for p in front), chin_z))
     for v in h.data.vertices:
         c = v.co
         if c.y > tip.y + radius or c.z > mouth.z + 0.01:

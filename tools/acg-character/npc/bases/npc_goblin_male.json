@@ -1,0 +1,424 @@
+{
+ "face": {
+  "brow_arch": 0.00394,
+  "brow_gap": 0.00013,
+  "brow_slant": 0.00026,
+  "brow_spread": 1.06898,
+  "brow_w": 0.00348,
+  "cheek_fill": -0.04226,
+  "chin_anchor": "lips",
+  "chin_down": 0.01242,
+  "chin_forward": 0.01134,
+  "ear_scale": 0.75629,
+  "eye_dx": -0.00026,
+  "eye_h": 0.80332,
+  "eye_tilt": 0.11883,
+  "eye_w": 1.26726,
+  "mouth_dz": -5e-05,
+  "mouth_half": 0.01093,
+  "mouth_smile": 0.00073
+ },
+ "hair": null,
+ "height_cm": 111.8,
+ "id": "npc_goblin_male",
+ "look": {
+  "brow": "#5a463a",
+  "hair": "#5a463a",
+  "hair_root": "#5a463a",
+  "iris": "#6a5a4a",
+  "iris_dark": "#3a3028",
+  "mouth": "#9a5a50",
+  "skin": "#d8b49a",
+  "skin_shade": "#b88a72"
+ },
+ "macro": {
+  "age": 0.5,
+  "gender": 1.0,
+  "height": 0.5,
+  "muscle": 0.48626,
+  "proportions": 0.5,
+  "race": {
+   "african": 0.33,
+   "asian": 0.33,
+   "caucasian": 0.34
+  },
+  "weight": 0.394
+ },
+ "npc": {
+  "dna": {
+   "beard.length": 0,
+   "body.armLength": 1.15001,
+   "body.armRadius": 0.02575,
+   "body.belly": 1.03633,
+   "body.bulk": 0.89835,
+   "body.fat": 0.17352,
+   "body.grown": 0.99999,
+   "body.headRatio": 0.12035,
+   "body.height": 1.11803,
+   "body.hipWidth": 0.07622,
+   "body.legRadius": 0.03775,
+   "body.legShare": 0.37951,
+   "body.muscle": 0.20389,
+   "body.neck": 0.40831,
+   "body.shoulder": 0.13155,
+   "body.trunkDepth": 0.07689,
+   "body.trunkWidth": 0.12102,
+   "brow.arch": -0.00066,
+   "brow.gap": 0.00147,
+   "brow.length": 0.99232,
+   "brow.slant": 0.00101,
+   "brow.thickness": 1.24593,
+   "cloth.fall": 0.73125,
+   "cloth.textile": 0.48427,
+   "ear.elfShare": 0,
+   "ear.finShare": 0,
+   "ear.goblinShare": 0.99999,
+   "ear.scale": 1.00571,
+   "ear.wolfShare": 0,
+   "eye.open": 0.99691,
+   "eye.size": 1.06649,
+   "eye.spread": 0.99719,
+   "eye.tilt": 0.00128,
+   "face.cheekFat": 0.08245,
+   "face.cheekboneWidth": 1.04034,
+   "face.chinHeight": 0.99566,
+   "face.chinJut": 0.00654,
+   "face.chinWidth": 1.06825,
+   "face.jawAngle": 0.21249,
+   "face.jawWidth": 1.064,
+   "face.jowl": 0.00203,
+   "face.length": 0.97149,
+   "face.skullDepth": 0.99974,
+   "face.skullHeight": 1.00441,
+   "face.skullWidth": 1.06761,
+   "limb.ankle": 0.59437,
+   "limb.calf": 0.92769,
+   "limb.elbow": 0.85279,
+   "limb.forearm": 0.96014,
+   "limb.knee": 0.85279,
+   "limb.thigh": 1.16336,
+   "limb.thighMid": 1.11278,
+   "limb.upperArm": 1.16752,
+   "limb.upperArmMid": 1.11676,
+   "limb.wrist": 0.67362,
+   "mouth.corners": -0.00362,
+   "mouth.height": 0.00038,
+   "mouth.lowerLip": 0.95648,
+   "mouth.upperLip": 0.90131,
+   "mouth.width": 0.99944,
+   "nose.bridge": 0.01314,
+   "nose.length": 0.99785,
+   "nose.tip": -0.0019,
+   "nose.width": 1.04753,
+   "spine.lean": 0.11709
+  },
+  "race": "Goblin",
+  "reach": {
+   "beard.length": [
+    0,
+    0.9974
+   ],
+   "body.armLength": [
+    1.07504,
+    1.16497
+   ],
+   "body.armRadius": [
+    0.00893,
+    0.04549
+   ],
+   "body.belly": [
+    0.68,
+    1.64772
+   ],
+   "body.bulk": [
+    0.55699,
+    1.47344
+   ],
+   "body.fat": [
+    0.03,
+    0.4395
+   ],
+   "body.grown": [
+    0.52,
+    1
+   ],
+   "body.headRatio": [
+    0.09694,
+    0.16818
+   ],
+   "body.height": [
+    0.5,
+    1.82213
+   ],
+   "body.hipWidth": [
+    0.05542,
+    0.10118
+   ],
+   "body.legRadius": [
+    0.01411,
+    0.06388
+   ],
+   "body.legShare": [
+    0.31432,
+    0.4508
+   ],
+   "body.muscle": [
+    -3,
+    3
+   ],
+   "body.neck": [
+    0.29804,
+    0.52224
+   ],
+   "body.shoulder": [
+    0.09525,
+    0.18804
+   ],
+   "body.trunkDepth": [
+    0.0448,
+    0.14135
+   ],
+   "body.trunkWidth": [
+    0.08763,
+    0.173
+   ],
+   "brow.arch": [
+    -0.11534,
+    0.12059
+   ],
+   "brow.gap": [
+    -0.1118,
+    0.1182
+   ],
+   "brow.length": [
+    0.70904,
+    1.31962
+   ],
+   "brow.slant": [
+    -0.12558,
+    0.15725
+   ],
+   "brow.thickness": [
+    0.52655,
+    2.07033
+   ],
+   "cloth.fall": [
+    0.30042,
+    0.93
+   ],
+   "cloth.textile": [
+    0.00051,
+    0.99951
+   ],
+   "ear.elfShare": [
+    0,
+    0.498
+   ],
+   "ear.finShare": [
+    0,
+    0.49046
+   ],
+   "ear.goblinShare": [
+    0.50019,
+    1
+   ],
+   "ear.scale": [
+    0.75,
+    1.50782
+   ],
+   "ear.wolfShare": [
+    0,
+    0.49897
+   ],
+   "eye.open": [
+    0.55,
+    1.3368
+   ],
+   "eye.size": [
+    0.81431,
+    1.30844
+   ],
+   "eye.spread": [
+    0.81909,
+    1.18395
+   ],
+   "eye.tilt": [
+    -0.07,
+    0.08881
+   ],
+   "face.cheekFat": [
+    0,
+    0.45
+   ],
+   "face.cheekboneWidth": [
+    0.75459,
+    1.30646
+   ],
+   "face.chinHeight": [
+    0.53352,
+    1.54239
+   ],
+   "face.chinJut": [
+    -0.20226,
+    0.19281
+   ],
+   "face.chinWidth": [
+    0.34318,
+    1.77397
+   ],
+   "face.jawAngle": [
+    0,
+    1
+   ],
+   "face.jawWidth": [
+    0.58022,
+    1.46004
+   ],
+   "face.jowl": [
+    0,
+    0.57273
+   ],
+   "face.length": [
+    0.61439,
+    1.32234
+   ],
+   "face.skullDepth": [
+    0.87929,
+    1.11816
+   ],
+   "face.skullHeight": [
+    0.87051,
+    1.15287
+   ],
+   "face.skullWidth": [
+    0.87639,
+    1.22392
+   ],
+   "limb.ankle": [
+    0.528,
+    0.648
+   ],
+   "limb.calf": [
+    0.8096,
+    1.05727
+   ],
+   "limb.elbow": [
+    0.774,
+    0.9288
+   ],
+   "limb.forearm": [
+    0.836,
+    1.0925
+   ],
+   "limb.knee": [
+    0.774,
+    0.9288
+   ],
+   "limb.thigh": [
+    1.012,
+    1.38811
+   ],
+   "limb.thighMid": [
+    0.968,
+    1.32775
+   ],
+   "limb.upperArm": [
+    1.012,
+    1.403
+   ],
+   "limb.upperArmMid": [
+    0.968,
+    1.342
+   ],
+   "limb.wrist": [
+    0.5984,
+    0.7344
+   ],
+   "mouth.corners": [
+    -0.14142,
+    0.10967
+   ],
+   "mouth.height": [
+    -0.08155,
+    0.09485
+   ],
+   "mouth.lowerLip": [
+    0.37858,
+    1.5086
+   ],
+   "mouth.upperLip": [
+    0.30564,
+    1.48837
+   ],
+   "mouth.width": [
+    0.70635,
+    1.28041
+   ],
+   "nose.bridge": [
+    -0.49787,
+    0.45326
+   ],
+   "nose.length": [
+    0.42957,
+    1.46741
+   ],
+   "nose.tip": [
+    -0.08,
+    0.1
+   ],
+   "nose.width": [
+    0.61767,
+    1.57279
+   ],
+   "spine.lean": [
+    0.0222,
+    0.57
+   ]
+  },
+  "sex": "Male"
+ },
+ "outfit": [],
+ "proportions": {
+  "foot_scale": 0.95,
+  "hand_scale": 0.92,
+  "heads": 4.197,
+  "leg_length": 0.8415,
+  "leg_thin": 1.0,
+  "neck_thin": 0.9,
+  "waist_thin": 0.97
+ },
+ "shape": {
+  "ankle": 1.00372,
+  "belly": 0.98766,
+  "calf": 0.9947,
+  "cheekbone_w": 1.02897,
+  "chin_w": 0.90053,
+  "elbow": 1.00638,
+  "face_len": 0.99217,
+  "forearm": 0.99177,
+  "jaw_w": 0.95159,
+  "jowl": -0.01883,
+  "knee": 1.0058,
+  "lip_low": 1.01242,
+  "lip_up": 1.00213,
+  "neck": 0.90113,
+  "nose_up": -0.00042,
+  "nose_w": 0.99333,
+  "skull_d": 0.99628,
+  "thigh": 0.99378,
+  "thigh_mid": 0.99581,
+  "trunk_d": 0.93175,
+  "upper_arm": 0.99323,
+  "upper_arm_mid": 0.99357,
+  "wrist": 1.0043
+ },
+ "targets": {
+  "head-round": 0.1682,
+  "head-scale-horiz-incr": 0.2847,
+  "head-scale-vert-decr": 0.0139,
+  "l-ear-wing-incr": 1.0,
+  "nose-scale-depth-incr": 0.0115,
+  "nose-scale-vert-decr": 0.0009,
+  "r-ear-wing-incr": 1.0
+ }
+}

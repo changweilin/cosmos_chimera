@@ -33,3 +33,10 @@
 - 通道與來源的唯一對照：`tools/acg-character/race_channels.json`（與 `NpcMeshes.UmaChannels` 一一對應，EditMode `UmaRecipeGateTests.RaceChannelTableMatchesTheMapper` 檢查）。`bone` 在 Unity 端以骨骼 DNA 做、不烘；`target`／`param` 由本腳本烘；`slot`、`shader`、`sculpt` 另做。
 - 每個 key 都把整個裸身建置重跑一次再與基底相減，眼、眉、嘴貼片與頭部平滑、下巴塑形都算進去；頭身比的頭部縮放固定為基底解出的值，避免頭部 target 被重新求解抵消。
 - 一組 incr／decr target 視為一個淨權重軸（上限 ±1）；基底 spec 已用掉的部分會讓該方向的步幅變小，實際步幅寫在報告 `step`，轉換器要除以它。報告也列出每個 key 在各網格的最大位移（mm），< 0.1 mm 標 `vanished`。
+
+## 路人種族基底（npc-uma-looks.md#種族基底）
+不取自任何主角；28 個人形基底（14 族 × 男女）全由抽樣規則推導，重跑即重建：
+1. `unity test` 跑 `UmaRaceBaseTests.ExportRaceBases`（Explicit）→ `npc/race_bases.json`。
+2. `python tools/acg-character/npc_bases.py specs` → 人類男女基底；`npc_bases.py bake --blender <blender.exe> --only npc_human_male`（人類男性的報告即校正）。
+3. `python tools/acg-character/npc_bases.py specs --calibration Logs/npc/npc_human_male.json` → 其餘基底；`CLIPPED` 列出族平均超出 MakeHuman ±1 的通道。
+4. `npc_bases.py bake --blender <blender.exe> --jobs 4` → `Logs/npc/<id>.blend|.fbx|.json` 與 `npc/race_keys.json`；EditMode `UmaRaceBaseTests.BakedKeysReachAndShowEveryResident` 檢查涵蓋與可見門檻。

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import acg_face  # noqa: E402
 import acg_parts  # noqa: E402
 import acg_render  # noqa: E402
+import acg_shape  # noqa: E402
 
 from bl_ext.user_default.mpfb.services.humanservice import HumanService  # noqa: E402
 from bl_ext.user_default.mpfb.services.locationservice import LocationService  # noqa: E402
@@ -82,10 +83,15 @@ def _acg_proportions(h, p):
     # Jaw plane from under the chin to the nape. The head scales rigidly above it and the neck
     # blends below it. A height-only falloff scaled the eyes more than the mouth and chin and
     # thinned the lower face with the neck, which tilted the profile back from brow to chin.
-    mid = [v.co for v in h.data.vertices if abs(v.co.x) < 0.004 and neck.z < v.co.z < head.z - 0.01]
-    tip = min(mid, key=lambda c: c.y)
-    jaw_f = Vector((0, tip.y, tip.z - 0.025))
-    jaw_b = Vector((0, head.y + 0.05, head.z - 0.015))
+    # "jaw_plane" pins the plane (race.py): the most forward point can jump from nose to chin between two face shapes,
+    # and the 1.25-1.7x head scale then moves whole regions across the plane instead of following the shape.
+    if "jaw_plane" in p:
+        jaw_f, jaw_b = Vector(p["jaw_plane"][0]), Vector(p["jaw_plane"][1])
+    else:
+        mid = [v.co for v in h.data.vertices if abs(v.co.x) < 0.004 and neck.z < v.co.z < head.z - 0.01]
+        tip = min(mid, key=lambda c: c.y)
+        jaw_f = Vector((0, tip.y, tip.z - 0.025))
+        jaw_b = Vector((0, head.y + 0.05, head.z - 0.015))
 
     def above_jaw(c):
         t = min(1.0, max(0.0, (c.y - jaw_f.y) / (jaw_b.y - jaw_f.y)))
@@ -134,7 +140,7 @@ def _acg_proportions(h, p):
         c.z += dz_thigh * s_leg
         v.co = c
     h.data.update()
-    return {"neck": neck, "head": head, "knee": knee}
+    return {"neck": neck, "head": head, "knee": knee, "jaw_plane": [list(jaw_f), list(jaw_b)]}
 
 
 def _head_height(h):
@@ -245,6 +251,11 @@ def build(spec):
         if path is None:
             raise IOError("target not found: " + name)
         TargetService.load_target(h, path, weight=w)
+        if not 0.0 <= w <= 1.0:
+            # A target is a linear vertex offset; Blender clamps the key to its slider range, so widen it first.
+            sk = h.data.shape_keys.key_blocks[-1]
+            sk.slider_min, sk.slider_max = min(0.0, w), max(1.0, w)
+            sk.value = w
     TargetService.bake_targets(h)
 
     prop = dict(spec.get("proportions", {}))
@@ -253,14 +264,21 @@ def build(spec):
     if "heads" in prop:
         prop["head_scale"] = _solve_head_scale(h, prop)
     _acg_proportions(h, prop)
-    _scale_to_height([h], spec["height_cm"] / 100.0 * spec.get("height_body_fraction", 1.0))
+    if "height_scale" in spec:
+        # race.py pins the base's factor: a DNA key must not shrink the whole figure to hold its height (height has
+        # its own bone DNA).
+        for v in h.data.vertices:
+            v.co *= spec["height_scale"]
+        h.data.update()
+    else:
+        _scale_to_height([h], spec["height_cm"] / 100.0 * spec.get("height_body_fraction", 1.0))
 
     ef = spec.get("face", {})
     acg_face.flatten_eye_sockets(h, ef.get("socket_radius", 1.5))
     acg_face.shrink_ears(h, ef.get("ear_scale", 0.75))
     acg_face.simplify_face(h, ef.get("smooth_iter", 20), ef.get("smooth_strength", 0.8))
     acg_face.shape_chin(h, ef.get("chin_forward", 0.011), ef.get("chin_down", 0.012), ef.get("chin_taper", 0.3),
-                        cheek=ef.get("cheek_fill", 0.0))
+                        cheek=ef.get("cheek_fill", 0.0), anchor=ef.get("chin_anchor", "joint"))
 
     rig = HumanService.add_builtin_rig(h, spec.get("rig", "game_engine"))
     for part in ("eyebrows", "eyelashes"):
@@ -269,6 +287,7 @@ def build(spec):
                                          asset_type=part.capitalize(), subdiv_levels=0)
     acg_render.t_pose(rig, spec)
     _pose_to_rest(rig)
+    acg_shape.reshape(h, rig, spec)
     acg_parts.dress(h, rig, spec)
     return h, rig
 
