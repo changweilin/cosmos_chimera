@@ -1,6 +1,7 @@
 """Build individually closed lofts in the turnaround's 440-unit drawing space."""
 from pathlib import Path
 import cv2
+from wardrobe_paint import paint
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
@@ -17,12 +18,18 @@ class Figure:
         self.name=name
         self.parts=[]
         self.images=[cv2.imread(str(CACHE/(name+s+'.png'))) for s in ('front','back','profile')]
-        mask=np.load(CACHE/(name+'-masks.npz'))['side'].astype(bool)
-        width=mask.shape[1]
-        self.side_bounds=np.stack((mask.argmax(1),width-1-mask[:,::-1].argmax(1)))
-        self.side_origin={'roen':48,'amemori_sumiha':43,'yeh_chengxi':47}[name]
+        # The reference's forehead ornament is rebuilt as metal geometry. Inpaint its
+        # exact footprint so taking it off reveals uninterrupted bangs.
+        if name!='roen':
+            source=self.images[0]
+            x,z,rx,rz=(-15,50,7.5,7.5) if name=='amemori_sumiha' else (21.5,40,5.4,6)
+            mask=np.zeros(source.shape[:2],dtype='uint8')
+            cv2.ellipse(mask,(round(source.shape[1]/2+3*x),round(3*z)),(round(rx*3),round(rz*3)),0,0,360,255,-1)
+            self.clean_bangs=cv2.inpaint(source,mask,5,cv2.INPAINT_TELEA)
+        else:
+            self.clean_bangs=self.images[0]
 
-    def part(self,label,stations,axis='vertical',style='cloth',exponent=1,side_art=False):
+    def part(self,label,stations,axis='vertical',style='cloth',exponent=1):
         # Each station specifies longitudinal position, two center coordinates and two radii.
         s=np.array(stations,float)
         interp=PchipInterpolator(s[:,0],s[:,1:],axis=0)
@@ -51,6 +58,11 @@ class Figure:
         vs=np.unique(np.round(np.r_[np.linspace(0,1,rows),(s[:,0]-s[0,0])/(s[-1,0]-s[0,0])],8))
         angles=np.arange(n)*TAU/n-np.pi
         x,y,z=surface(vs[:,None],angles[None,:])
+        # Scale the full head assembly about the chin, including ears and ornaments.
+        if self.name=='roen' and (label in ('Head','Hair') or label.startswith('HairLock') or 'Ear' in label):
+            x=3+(x-3)*1.23
+            y=y*1.23
+            z=70+(z-70)*1.34
         pos=np.stack((x,y,440-z),axis=-1).reshape(-1,3)
         # Seam vertices are shared in geometry. Only UVs wrap at the back meridian.
         faces=[];uv=[]
@@ -78,50 +90,9 @@ class Figure:
         inward=(1-.10*smooth((np.abs(np.sin(angle))-.68)/.32))
         center=interp(s[0,0]+(s[-1,0]-s[0,0])*v)[:,:,0]
         art_x=center+(tx-center)*inward if axis=='vertical' else tx
-        front=sample(self.images[0],art_x)
+        front=sample(self.clean_bangs if style in ('face','hair') else self.images[0],art_x)
         back=sample(self.images[1],art_x)
-        # A backpack conceals the back of the jacket in the reference. Continue
-        # nearby cloth underneath it instead of printing a second backpack on the body.
-        if style=='underpack':
-            back=front*.70
-        if style=='bag':
-            front=back*.74
-        if style=='skin':
-            front[:]=[170,198,239];back=front.copy()
-        if label.startswith('HairLock'):
-            rgb={'roen':[101,129,158],'amemori_sumiha':[64,42,63],'yeh_chengxi':[64,52,60]}[self.name]
-            shade=.91+.13*np.cos(angle)+.045*np.cos(angle*5+.8*v)
-            front=shade[...,None]*np.array(rgb);back=front.copy()
-        if label.endswith('_Leg'):
-            # The opposite calf is partially hidden in the reverse drawing. Its outline
-            # must not become a longitudinal black stripe on the exposed skin.
-            top={'roen':295,'amemori_sumiha':244,'yeh_chengxi':241}[self.name]
-            bottom={'roen':356,'amemori_sumiha':342,'yeh_chengxi':351}[self.name]
-            exposed=smooth((tz-top)/4)*smooth((bottom-tz)/4)
-            skin=np.array([173,201,242])
-            front=front*(1-exposed[...,None]*.72)+skin*exposed[...,None]*.72
-            back=back*(1-exposed[...,None])+skin*exposed[...,None]
-        if label=='SailorCap':
-            band=smooth((19-tz)/4)[...,None]
-            back=back*(1-band)+np.array([213,217,230])*band
-        if style=='hair' and not label.startswith('HairLock'):
-            base={'roen':[104,127,152],'amemori_sumiha':[64,43,64],'yeh_chengxi':[65,52,63]}[self.name]
-            back=.4*back+.6*np.array(base)
-        az=np.abs(angle)
-        blend=smooth((az-np.deg2rad(57))/np.deg2rad(67))[...,None]
-        color=front*(1-blend)+back*blend
-        if side_art:
-            if side_art=='outline':
-                row=np.clip((tz*3).astype(int),0,self.side_bounds.shape[1]-1)
-                left,right=self.side_bounds[:,row]
-                # The model's longitudinal section is matched to the visible side silhouette.
-                t=.5-.46*np.sign(np.cos(angle))*abs(np.cos(angle))**exponent
-                coord=(left+(right-left)*t)/3
-            else:
-                coord=ty+self.side_origin
-            profile=sample(self.images[2],coord-self.images[2].shape[1]/6)
-            side=smooth((az-np.deg2rad(52))/np.deg2rad(30))*(1-smooth((az-np.deg2rad(100))/np.deg2rad(30)))
-            color=color*(1-side[...,None])+profile*side[...,None]
+        color=paint(self.name,label,style,angle,v,tz,front,back,axis)
         # Give each end its own planar UV island. Its perimeter matches the tube texels
         # and the radial interior converges to a single color without a polar smear.
         cap=min(w//2-4,max(14,int(np.mean(s[:,3:5])*2)))
@@ -163,11 +134,11 @@ class Figure:
         def shape(label,rows,offset=c,**kw):
             loft(label,[(z,offset,y,w,d) for z,w,d,y in rows],**kw)
         chin=70 if r else 89 if s else 83
-        shape('Head',[(chin-59,10,13,0),(chin-52,22,24,0),(chin-40,28,28,-1),(chin-27,26,26,-2),(chin-17,23,22,-4),(chin-9,17,17,-5),(chin-3,9,12,-6),(chin,3,6,-6)],style='face',side_art='outline')
+        shape('Head',[(chin-59,10,13,0),(chin-52,22,24,0),(chin-40,28,28,-1),(chin-27,26,26,-2),(chin-17,23,22,-4),(chin-9,17,17,-5),(chin-3,9,12,-6),(chin,3,6,-6)],style='face')
         shape('Neck',[(chin-10,11,11,1),(chin+3,10,10,1),(chin+15,14,13,1)],style='skin')
         # Hair mass occupies the rear cranium and tapers into the nape.
         crown=4 if r else 12 if s else 17
-        shape('Hair',[(crown,4,5,3),(crown+6,17,17,4),(crown+15,27,24,4),(crown+26,32,27,5),(chin-17,30,23,9),(chin-6,23,17,13),(chin+1,12,10,13)],style='hair',side_art='outline')
+        shape('Hair',[(crown,4,5,3),(crown+6,17,17,4),(crown+15,27,24,4),(crown+26,32,27,5),(chin-17,30,23,9),(chin-6,23,17,13),(chin+1,12,10,13)],style='hair')
         # Separate tapered locks break up the back of the cranium at oblique angles.
         for k,angle in enumerate(np.linspace(.8,2*np.pi-.8,11)):
             lateral,behind=np.sin(angle),-np.cos(angle)
@@ -179,34 +150,84 @@ class Figure:
                 (end-12,c+28*lateral,6+24*behind,6,5),
                 (end-5,c+27*lateral,8+24*behind,4,3.5),
                 (end,c+(35 if r else 25)*lateral+2,10+(29 if r else 25)*behind,.7,.8)],style='hair')
+        for sign,tag in ((-1,'R'),(1,'L')):
+            loft('HairLockTemple'+tag,[(chin-48,c+sign*19,-12,3,3),
+                 (chin-39,c+sign*23,-15,5,4),(chin-29,c+sign*24,-15,4,4),
+                 (chin-20,c+sign*24,-14,3,3),(chin-13,c+sign*20,-13,.8,1)],style='hair')
         if not r:
             if s:
                 loft('Topknot',[(1,-6,13,2,2),(8,-6,15,12,10),(18,-8,15,15,13),(30,-7,16,7,7)],style='hair')
-                loft('SideRibbon',[(19,-30,1,3,4),(32,-34,0,9,8),(46,-39,0,12,8),(52,-42,1,7,5),(63,-43,2,3,3)])
+                loft('SideRibbon',[(19,-30,1,3,4),(32,-34,0,9,8),(46,-39,0,12,8),(52,-42,1,7,5),(63,-43,2,3,3)],style='ribbon')
             else:
-                loft('SailorCap',[(1,3,2,5,6),(5,4,3,16,17),(12,3,3,27,24),(20,3,1,34,27),(26,3,0,34,27),(31,4,0,28,24)],side_art='outline')
+                loft('SailorCap',[(1,3,2,5,6),(5,4,3,16,17),(12,3,3,27,24),(20,3,1,34,27),(26,3,0,34,27),(31,4,0,28,24)])
             off=-31 if s else 47
             loft('TiedHair',[(38,off,18,4,5),(48,off,23,12,13),(60,off+(0 if s else 7),27,15,17),(74,off+(0 if s else 5),26,13,13),(87,off,21,8,8),(94,off-4,18,2,2)],style='hair')
+        # Model the pinna and inset concha on both sides; the helix protrudes past the hairline.
+        for sign,tag in ((-1,'R'),(1,'L')):
+            def ear(label,rows,style):
+                loft(tag+'_Ear'+label,[(chin+z,c+sign*(24+.65*(x-24)),y+1,w*.73,d*.8) for z,x,y,w,d in rows],style=style)
+            ear('Shell',[(-33,25,-6,2,3),(-30,28,-7,4,5),(-23,29,-8,5,6),(-16,27,-7,4,4),(-13,26,-7,2,3)],'ear')
+            ear('Concha',[(-29,31,-8,1.5,2),(-24,33,-8,2,3.8),(-19,31,-8,1.3,2)],'lining')
+            ear('Ridge',[(-30,31,-9,.8,1.2),(-27,33,-11,1.4,1.7),(-22,33,-11,1.2,1.6),(-19,32,-10,.8,1)],'ear')
+        if not r:
+            bow_x=-37 if s else 44
+            bow_z=37 if s else 45
+            bow_y=-9 if s else 4
+            for sign,tag in ((-1,'Upper'),(1,'Lower')):
+                keys=[(bow_z+sign*h,bow_x+dx,bow_y+dy,w,d) for h,dx,dy,w,d in
+                      [(1,0,0,3,3),(6,3,-1,6,4),(12,7,1,6,4),(16,9,3,2,2)]]
+                loft('Bow'+tag,sorted(keys),style='ribbon')
+            loft('BowClasp',[(bow_z-4,bow_x,bow_y-3,2,2),(bow_z,bow_x,bow_y-4,5,4),(bow_z+4,bow_x,bow_y-3,2,2)],style='metal')
+            if not s:
+                loft('CapPin',[(18,31,-14,1.5,2),(22,32,-15,4,3),(26,31,-14,2,2)],style='metal')
+        else:
+            for sign,tag in ((-1,'R'),(1,'L')):
+                x=c+sign*16
+                loft(tag+'_NeckPhone',[(81,x,-15,4,4),(84,x,-17,7,6),(92,x,-18,7,6),(96,x,-17,4,4)],style='headset')
+                loft(tag+'_PhoneTrim',[(84,x,-21,3,2),(87,x,-22,5,2),(92,x,-21,3,2)],style='teal')
         shoulder=103 if r else 115 if s else 107
         waist=184 if r else 177 if s else 172
+        # Anatomical core extends through the covered areas and shares one skin palette.
+        shape('Torso',[(chin+8,10,10,1),(shoulder-9,24,13,1),(shoulder,33,16,1),
+                       (shoulder+14,30,18,0),(waist-20,25,16,1),(waist,26,16,1),
+                       (waist+15,30,18,2),(waist+24,30,18,2),(waist+34,23,14,2),
+                       (waist+41,9,9,2)],style='skin')
+        shape('TrainingTop',[(chin+10,13,12,1),(shoulder-8,27,16,1),(shoulder,36,19,1),
+                             (shoulder+17,32,21,0),(waist-15,28,19,1),(waist+8,31,20,1)],style='sport')
+        shape('TrainingWaist',[(waist+3,29,19,1),(waist+15,33,21,2),
+                               (waist+25,32,21,2),(waist+35,27,20,2),(waist+43,14,15,2)],style='sport')
         shape('Jacket' if r else 'Bodice',[(chin+6,14,13,0),(shoulder-14,28,17,0),(shoulder-5,39,20,0),(shoulder+8,36,21,-1),(shoulder+22,32,23,-2),(waist-15,30 if not r else 35,18,-1),(waist,34 if not r else 42,21,0),(waist+8,36 if not r else 45,22,0)],style='underpack')
         if s:
             shape('PleatedSkirt',[(168,31,19,1),(182,36,22,1),(210,44,25,2),(234,50,28,3),(240,49,27,3)],style='skirt')
         else:
             shape('ShortsWaist',[(waist-3,31,19,0),(waist+5,35,21,1),(waist+19,39,23,2),(waist+30,36,20,2)],style='cloth')
         packtop=102 if r else 94 if s else 106
-        shape('Backpack',[(packtop,22,7,20),(packtop+7,32,13,24),(packtop+17,37,16,25),(waist-6,36,17,25),(waist+5,30,13,24),(waist+8,20,7,21)],style='bag',exponent=.57,side_art=True)
+        shape('Backpack',[(packtop,22,7,20),(packtop+7,32,13,24),(packtop+17,37,16,25),(waist-6,36,17,25),(waist+5,30,13,24),(waist+8,20,7,21)],style='bag',exponent=.57)
         if s:
             loft('SashTail',[(189,37,1,5,4),(215,43,2,8,3),(247,49,2,9,3),(267,47,4,6,2),(278,41,5,1,1)])
         for sign in (-1,1):
             tag='L' if sign>0 else 'R'
             def limb(label,rows,**kw):
                 loft(tag+'_'+label,[(z,c+sign*cx,y,rx,ry) for z,cx,y,rx,ry in rows],**kw)
-            upper=221 if s else 207
+            upper=waist+20
             knee=294 if s else 298 if r else 284
             calf=22 if s or r else 32
             ankle=25 if s else 22 if r else 37
-            limb('Leg',[(upper,19,1,15,16),(upper+19,20,1,17,17),(knee-17,20,0,13,13),(knee,19,-2,10,12),(knee+12,calf,1,11,12),(knee+30,calf+2,3,12,14),(352,ankle,3,10,11),(377,ankle,2,8,8),(398,ankle,2,8,9)],side_art='outline')
+            def leg_axis(z):
+                if n=='yeh_chengxi':
+                    return 18+19*np.clip((z-upper)/(360-upper),0,1)
+                return np.interp(z,[upper,knee,377],[18,20,ankle])
+            leg_rows=[(upper,1,12,13),(upper+10,1,15,15),(upper+22,1,16,16),
+                      (knee-17,0,13,13),(knee,-1,10,11),(knee+12,0,11,12),
+                      (knee+30,1,12,13),(352,1,9,10),(377,1,7,8),(410,1,7,8)]
+            limb('Leg',[(z,leg_axis(z),y,rx,ry) for z,y,rx,ry in leg_rows],style='skin')
+            limb('Foot',[(399,ankle,1,7,8),(411,ankle,-2,8,12),(422,ankle,-7,10,20),
+                         (431,ankle,-8,12,22),(436,ankle,-8,11,20)],style='skin')
+            sock=341 if s else 356 if r else 353
+            limb('Sock',[(sock,leg_axis(sock),1,11,12),(sock+3,leg_axis(sock+3),1,11.2,12.2),
+                         (377,ankle,1,8.5,9.5),(400,ankle,1,8,9)],style='sock')
+            limb('TrainingShort',[(waist+20,17,2,17,20),(waist+30,18,2,19,21),
+                                  (waist+47,leg_axis(waist+47),1,20,19),(waist+57,leg_axis(waist+57),1,19,18)],style='sport')
             if sign<0 and not r:
                 pouch_z=250 if s else 226
                 limb('ThighBand',[(pouch_z,20,1,16,16),(pouch_z+3,20,1,17,17),(pouch_z+7,20,1,16,16)])
@@ -215,7 +236,7 @@ class Figure:
                 hem=293 if r else 236
                 limb('ShortLeg',[(waist+19,18,1,17,19),(waist+30,19,1,19,21),(hem-10,22,2,22 if r else 23,22),(hem,22,2,21 if r else 23,21)],exponent=.82)
             boot=387 if r else 375 if s else 352
-            limb('Boot',[(boot,ankle,2,12,13),(boot+6,ankle,2,15,15),(400,ankle,1,12,14),(411,ankle,-3,13,20),(423,ankle,-7,16,28),(433,ankle,-8,17,30),(438,ankle,-8,16,29)],exponent=.84,side_art='outline')
+            limb('Boot',[(boot,ankle,2,12,13),(boot+6,ankle,2,15,15),(400,ankle,1,12,14),(411,ankle,-3,13,20),(423,ankle,-7,16,28),(433,ankle,-8,17,30),(438,ankle,-8,16,29)],exponent=.84)
             if r:
                 limb('CargoPocket',[(231,35,-10,8,4),(237,37,-12,10,4),(254,39,-13,11,5),(271,40,-11,11,4),(275,41,-10,8,3)],exponent=.52)
             def arm(label,rows,**kw):
@@ -223,13 +244,14 @@ class Figure:
                 loft(tag+'_'+label,sorted(stations),axis='horizontal',**kw)
             elbow=82 if r else 88 if s else 78
             hand=126 if s else 118 if r else 114
-            arm('Arm',[(29,shoulder,0,12,13),(46,shoulder,0,12,12),(elbow-10,shoulder,0,8,9),(elbow,shoulder,0,7,8),(elbow+7,shoulder,0,8,8),(hand,shoulder,-1,4,5)])
+            arm('Arm',[(23,shoulder,0,10,10),(46,shoulder,0,12,12),(elbow-10,shoulder,0,8,9),(elbow,shoulder,0,7,8),(elbow+7,shoulder,0,8,8),(hand+1,shoulder,-1,3.8,4.8)],style='skin')
+            arm('Palm',[(hand-1,shoulder,-1,3.6,4.5),(hand+7,shoulder,0,4,6),(hand+15,shoulder+1,0,2.8,5.3)],style='skin')
             arm('Cuff',[(hand-9,shoulder,0,6,7),(hand-5,shoulder,0,7,7),(hand,shoulder,0,6,6)])
             arm('Glove',[(hand-1,shoulder,0,4,5),(hand+6,shoulder,0,5,7),(hand+13,shoulder+1,0,4,7),(hand+16,shoulder+1,0,3,5)])
             for k,extra in enumerate((8,13,11,7)):
                 y=-4.8+k*3.2
-                arm('Finger'+str(k+1),[(hand+12,shoulder+1,y,2.1,1.9),(hand+18,shoulder+1.5,y,1.8,1.6),(hand+18+extra,shoulder+2,y+.6,1,1)])
-            arm('Thumb',[(hand+2,shoulder+1,-4,2.8,3),(hand+7,shoulder+3,-7,2.1,2.4),(hand+13,shoulder+4,-10,1,1.4)])
+                arm('Finger'+str(k+1),[(hand+12,shoulder+1,y,2.1,1.9),(hand+18,shoulder+1.5,y,1.8,1.6),(hand+18+extra,shoulder+2,y+.6,1,1)],style='skin')
+            arm('Thumb',[(hand+2,shoulder+1,-4,2.8,3),(hand+7,shoulder+3,-7,2.1,2.4),(hand+13,shoulder+4,-10,1,1.4)],style='skin')
             if s:
                 limb('KimonoSleeve',[(105,72,0,23,10),(113,73,0,24,13),(125,74,0,24,12),(156,75,0,21,10),(184,77,1,17,8),(205,82,2,11,5),(218,87,2,4,3)],exponent=.76)
                 arm('ShoulderSleeve',[(27,116,0,12,15),(39,117,0,14,16),(56,117,0,14,16),(65,117,0,13,14)])

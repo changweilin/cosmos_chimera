@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image,ImageDraw,ImageFont
 root=Path(__file__).resolve().parent
 names=('amemori_sumiha','roen','yeh_chengxi')
-views=[('front','正面'),('opposite','左斜側'),('side','側面'),('high','俯視'),('low','仰視背面'),('clay','無貼圖')]
+views=[('front','正面'),('matched','角色左側 62°'),('opposite','角色右側 62°'),('side','角色左側 90°'),('sideReverse','角色右側 90°'),('training','替換服裝'),('body','基礎人體')]
 font=ImageFont.truetype('C:/Windows/Fonts/msjh.ttc',19)
 sheet=Image.new('RGB',(len(views)*244,1014),'#424753')
 draw=ImageDraw.Draw(sheet)
