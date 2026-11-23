@@ -9,6 +9,9 @@ from mesh_contacts import Assembly
 ratios={}
 for f in sorted(p.glob('*.blend')):
     bpy.ops.wm.open_mainfile(filepath=str(f))
+    if 'Humanoid' in bpy.data.objects:
+        bpy.data.objects['Humanoid'].data.pose_position='REST'
+        bpy.context.view_layer.update()
     objects=[o for o in bpy.data.objects if o.type=='MESH']
     bad=flat=0
     for o in objects:
