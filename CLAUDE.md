@@ -20,6 +20,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 - **Feature-first**：功能程式碼放在 `Assets/_Project/Features/<Feature>/`，每個 feature 一個 `.asmdef`。
 - **封裝**：跨 feature 只能引用對方 `Api/` 資料夾內的型別；不准引用 `Internal/`。
 - **規則與表現分離**：戰鬥、屬性計算、生成演算法寫成純 C#（不繼承 `MonoBehaviour`），以便 EditMode 測試與伺服器權威模擬。
+- **repo 分工**：遊戲執行所需的一切（程式、資料、匯入資產與其門檻用表）放本專案；角色／宙獸／招式的外觀設計、prompt、建模與烘焙腳本、SKILL、定案前草稿放 `../cosmos_chimera_forge`，產物交付到本專案。
 - **資料真實來源**：`Data/**/*.json`（含 AI 批次產出）→ importer → ScriptableObject。不手改產生的 `.asset`。
 
 # 文件索引（需要時才讀）
