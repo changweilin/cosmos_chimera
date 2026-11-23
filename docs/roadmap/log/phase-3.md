@@ -45,3 +45,4 @@
 - 2026-11-18 · Claude Opus · partial · P3-18 路人外觀：混血／跨文化（要素越多越罕見）、6 種臉型、眼睛改嵌入頭顱、體重體脂分段影響四肢；EditMode 3804/3804、PopulaceViewTests 4/4，測試台截圖 `Logs/npc-faces-shapes-*`、`npc-heads-mixed`、`npc-builds` · 下一步：曠野之息級美術仍需卡通渲染（柔和色階、邊緣光、描邊）與手作基底模型（P1-16），程序化幾何已到瓶頸
 - 2026-11-23 · Claude Opus · partial · P3-18／ADR-0015 UMA 對照器 `NpcMeshes.Uma.cs`（65 個 DNA 通道＋slot／色）與門檻 ①② EditMode 測試 `UmaRecipeGateTests` 7/7 · 下一步：ADR-0014 日系 UMA 種族、slot 與 DNA converter（照通道表與範圍實作），之後才做門檻 ③ 並排截圖；探測發現程序化抽樣的眉粗、上下唇厚度可到負值（最低 −0.11），與 `Face.N` 註解「不會翻號」不符，待決定是否修
 - 2026-11-23 · Claude Opus · partial · P3-18 眉粗、上下唇厚度負值已修（σ 改為相對個人平均），前一行該項結案；ADR-0014 種族與門檻 ③ 仍待做 · 下一步：同上一行
+- 2026-11-23 · Claude Opus · partial · ADR-0014 種族形變：`tools/acg-character/race.py` 以整個裸身建置的差分烘 shape key（`race_channels.json` 對照 65 通道：45 個 target／param 烘成 86 個 key，12 個骨骼、5 個 sculpt、3 個 slot／shader 另做），Roen 基底全數成功、FBX 保留 shape key · 下一步：NPC 用中性男女基底 spec（Roen 的個人 target 吃掉部分步幅）、5 個 sculpt 通道、Unity 端 race／slot／DNA converter、per 校正

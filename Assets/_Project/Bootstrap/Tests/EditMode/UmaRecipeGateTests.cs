@@ -76,6 +76,19 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(names.Distinct().Count(), Is.EqualTo(names.Count));
         }
 
+        // REQ: ADR-0014 / ADR-0015 — the Blender race baker (tools/acg-character/race_channels.json) and the mapper must
+        // agree on every channel, or a DNA value would have nothing to drive.
+        [Test]
+        public void RaceChannelTableMatchesTheMapper()
+        {
+            string path = System.IO.Path.Combine(Application.dataPath, "..", "tools", "acg-character", "race_channels.json");
+            var table = Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText(path));
+            var inTable = new HashSet<string>(((Newtonsoft.Json.Linq.JObject)table["channels"]).Properties().Select(p => p.Name));
+            var inMapper = new HashSet<string>(NpcMeshes.UmaChannels.Select(c => c.Name));
+            Assert.That(inMapper.Except(inTable), Is.Empty, "mapper channels missing from race_channels.json");
+            Assert.That(inTable.Except(inMapper), Is.Empty, "race_channels.json channels the mapper never sets");
+        }
+
         // Gate 1, completeness: every field Build draws is named by a channel or by the recipe's slots and colours.
         [Test]
         public void EverySampledFieldIsCarried()
