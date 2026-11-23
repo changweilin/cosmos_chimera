@@ -16,6 +16,7 @@
         "Cosmimera.Player",
         "Cosmimera.WorldGen",
         "Cosmimera.Save",
+        "UMA_Core",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
         "Unity.Mathematics",

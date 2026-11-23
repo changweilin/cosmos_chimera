@@ -104,6 +104,19 @@
 <section>
 <h2>路人 NPC / 自然生物</h2>
 <div class="cards">
+<article id="Q-A15">
+  <header><a class="id" href="#Q-A15">Q-A15</a><span class="tag">P3-18</span><span class="tag">ADR-0015</span></header>
+  <p><span class="label">問題</span>並排截圖（<code>Logs/npc-uma/sheet-*.png</code>）裡，UMA 版各族幾乎分不出來。這還不是極限，只做了 ADR-0015 的第一段：裸身基底加臉與身形的 shape key。舊版能一眼分辨種族，靠的是下面這些，UMA 版都還沒接上：<br>
+  ① 每人膚色、眼色、髮色（舊版：綠皮哥布林、灰膚殭屍、紫皮惡魔），走 shader 參數；<br>
+  ② 種族招牌剛性部件：尖耳、角、喙、鰭、獠牙、冠羽、光環。ADR-0015 第 3 點本來就沿用 <code>NpcMeshes</code> 的程序化網格，掛到 UMA 骨骼上；<br>
+  ③ 翼、尾、披風的骨鏈 slot；④ 5 個獸頭 slot（狼、鳥、蜥蜴、龍、魚），要在 forge 建模；⑤ 12 個骨骼通道（身高、頭身比、腿長、肩寬…）；⑥ 髮型 9、鬍鬚 6、服裝剪裁與時代 slot，美術量最大。<br>
+  ①②⑤ 用現有程式就能做；③④⑥ 需要新的美術 slot。<br>
+  A：<b>先做 ①②⑤ 當試探</b>，每族男女再截一次圖，到時再決定是否繼續；③④⑥ 期間獸人類仍缺頭部與服裝。<br>
+  B：<b>採用原先版本</b>：路人維持 <code>NpcMeshes</code> 程序化網格；ADR-0015 改為「暫緩」；已建好的 UMA 種族工具與門檻測試保留不用（或移除），等基底模型（P1-16）時再議。<br>
+  C：<b>原先版本＋只換臉</b>：保留程序化身體、服裝與部件，頭部改用 UMA 日系臉。牽涉兩套網格的接縫，另需評估。</p>
+  <p><span class="label">影響項目</span>P3-18 路人外觀、ADR-0015 去留；forge NPC 烘焙流程是否繼續維護。</p>
+  <p><span class="label">暫定</span><span class="none">無</span>（建議 A：①② 補上後，多數種族的辨識度應接近舊版，不必再做新美術就能判斷 UMA 路線值不值得）</p>
+</article>
 
 </div>
 </section>
@@ -127,6 +140,7 @@ const C=(k,label,opts)=>({t:'c',k,label,opts});
 const G=(k,label,min,max,step,def,unit)=>({t:'g',k,label,min,max,step,def,unit});
 const T=(k,label,ph)=>({t:'t',k,label,ph});
 const SPEC={
+  'Q-A15':[R('way','UMA 路人下一步',['A 先補膚色＋種族部件＋骨骼通道再截圖','B 採用原先程序化版本','C 原先版本＋只換 UMA 臉'])],
 };
 const KEY='cosmimera-open-questions-v1';
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}

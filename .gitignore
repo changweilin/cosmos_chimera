@@ -109,3 +109,6 @@ ehthumbs.db
 # UMA 3 (ADR-0012): installed by tools/install-uma, not versioned
 /Assets/UMA/
 /Assets/UMA.meta
+# NPC UMA races (Q-A14): ~1.6 GB built from _UMA/Npc/Bases by tools/build-npc-races, not versioned
+/Assets/_Project/Art/Characters/_UMA/Npc/Races/
+/Assets/_Project/Art/Characters/_UMA/Npc/Races.meta

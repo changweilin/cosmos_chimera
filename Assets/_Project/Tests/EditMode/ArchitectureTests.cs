@@ -37,6 +37,8 @@ namespace Cosmimera.Architecture.Tests
             ["Cosmimera.Save.Editor"] = new[] { "Cosmimera.Core", "Cosmimera.Save" },
             ["Cosmimera.Food"] = new[] { "Cosmimera.Core", "Cosmimera.Creatures", "Cosmimera.Combat", "Cosmimera.GameData" },
             ["Cosmimera.Crafting"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.GameData" },
+            // ADR-0015: editor-only build tool above the composition root; nothing references it.
+            ["Cosmimera.Uma.Editor"] = new[] { "Cosmimera.Bootstrap", "Cosmimera.Core", "Cosmimera.WorldGen" },
         };
 
         [Serializable]

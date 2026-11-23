@@ -27,13 +27,13 @@ namespace Cosmimera.Bootstrap.Tests
         // Shared with cosmos_chimera_forge tools/acg-character, which reads and writes these tables here (Q-A12: game repo).
         private static string NpcDir => Path.Combine(Application.dataPath, "_Project", "Art", "Characters", "_UMA", "Npc");
 
-        private static IEnumerable<NpcRace> Races() =>
+        internal static IEnumerable<NpcRace> Races() =>
             Enum.GetValues(typeof(NpcRace)).Cast<NpcRace>().Where(r => r != NpcRace.Skeleton);
 
         internal static string BaseId(NpcRace race, NpcSex sex) =>
             "npc_" + race.ToString().ToLowerInvariant() + "_" + sex.ToString().ToLowerInvariant();
 
-        private static NpcSpec SpecOf(ref Pcg32 rng, NpcRace race, NpcSex sex, bool typical)
+        internal static NpcSpec SpecOf(ref Pcg32 rng, NpcRace race, NpcSex sex, bool typical)
         {
             var role = (NpcRole)rng.NextUInt((uint)Enum.GetValues(typeof(NpcRole)).Length);
             var region = (ArchRegion)rng.NextUInt(6);

@@ -199,6 +199,10 @@ namespace Cosmimera.Bootstrap.Demo
             /// <summary>The value as integer permille of the channel's range, as a slider would store it.</summary>
             /// <remarks>Pre: finite value. Post: in [0, 1000] when the value lies in [Min, Max]. Side effects: none.</remarks>
             public int Permille(float value) => (int)math.round(1000f * (value - Min) / (Max - Min));
+
+            /// <summary>The value as a UMA DNA value: 0 at Min, 1 at Max.</summary>
+            /// <remarks>Pre: finite value. Post: in [0, 1] when the value lies in [Min, Max]. Side effects: none.</remarks>
+            public float Dna01(float value) => (value - Min) / (Max - Min);
         }
 
         private static float Over(float a, float b) => b > 0f ? a / b : 0f;

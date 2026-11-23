@@ -14,6 +14,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 - 重新套用專案基準設定：`"$UNITY" -batchmode -nographics -projectPath . -executeMethod Cosmimera.EditorTools.ProjectBaseline.Apply -quit -logFile Logs/baseline.log`
 - 資料驗證：`tools/validate-data`
 - 安裝 UMA（gitignored，新 clone 必跑，Editor 須關閉）：`tools/install-uma`（ADR-0012）
+- 建 NPC UMA 種族（gitignored，裝 UMA 後與重烘基底後必跑，Editor 須關閉）：`tools/build-npc-races`
 - 主角日系模型（Blender 5.2＋MPFB）：見 `../cosmos_chimera_forge/tools/acg-character/specs/README.md`（ADR-0013；NPC 種族表與基底放 `Assets/_Project/Art/Characters/_UMA/Npc/`）
 
 # 架構邊界（細節：`docs/architecture/overview.md`）

@@ -1,0 +1,21 @@
+{
+    "name": "Cosmimera.Uma.Editor",
+    "rootNamespace": "Cosmimera.EditorTools",
+    "references": [
+        "Cosmimera.Bootstrap",
+        "Cosmimera.Core",
+        "Cosmimera.WorldGen",
+        "UMA_Core",
+        "UMA_Core_Editor",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": ["Newtonsoft.Json.dll"],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
