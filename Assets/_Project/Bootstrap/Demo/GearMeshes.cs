@@ -7,16 +7,18 @@ using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
 {
-    /// <summary>Main, secondary, metal and accent colours of one gear item, already shifted, aged and rusted.</summary>
+    /// <summary>Colours of one gear item, already shifted, aged and rusted.</summary>
     /// <remarks>Pre: built by <see cref="GearMeshes.PaletteFor"/>. Post: immutable; every channel in [0, 1]. Side effects: none.</remarks>
     public readonly struct GearPalette
     {
-        internal GearPalette(Color main, Color second, Color metal, Color accent)
+        internal GearPalette(Color main, Color second, Color metal, Color accent, Color edge, Color wrap)
         {
             Main = main;
             Second = second;
             Metal = metal;
             Accent = accent;
+            Edge = edge;
+            Wrap = wrap;
         }
 
         /// <summary>Cloth, lacquer or main wood.</summary>
@@ -34,6 +36,14 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Motif bands, gems, cores.</summary>
         /// <remarks>Pre: none. Post: opaque colour. Side effects: none.</remarks>
         public Color Accent { get; }
+
+        /// <summary>Honed edges and worn high points of <see cref="Metal"/>: brighter, or duller once rusted.</summary>
+        /// <remarks>Pre: none. Post: opaque colour, never darker than Metal for undamaged gear. Side effects: none.</remarks>
+        public Color Edge { get; }
+
+        /// <summary>Grip leather, cord and lashing of the parts era.</summary>
+        /// <remarks>Pre: none. Post: opaque colour. Side effects: none.</remarks>
+        public Color Wrap { get; }
     }
 
     /// <summary>
@@ -43,14 +53,25 @@ namespace Cosmimera.Bootstrap.Demo
     /// </summary>
     /// <remarks>
     /// REQ: docs/design/gear-looks.md#美術路線分段 (step 2). Vertex-coloured, faceted, for the ToonScenery shader.
+    /// Every part slot of <see cref="GearLooks.SlotCount"/> picks one of <see cref="GearLooks.VariantsPerSlot"/> shapes, and
+    /// motif slots engrave the region's signature motif (gear-looks.md#地區與時代的器物語彙), so two seeds of one kind
+    /// differ in silhouette, not only in tint. Split by item family: GearMeshes.Arms.cs, GearMeshes.Wear.cs, and the
+    /// shared parts in GearMeshes.Parts.cs.
     /// Pre: main thread (creates Meshes). Post: same spec → identical mesh. Side effects: allocates Meshes.
     /// </remarks>
-    public static class GearMeshes
+    public static partial class GearMeshes
     {
         private const float FacetCos = 0.8f; // same crease angle as SceneryMeshes and PropMeshes
         private const ulong Salt = 0x6765_6172_6D65_7368ul; // "gearmesh"
+        private const ulong MotifSalt = 0x6765_6172_6D6F_7466ul; // "gearmotf"
+
+        /// <summary>Colourways per region in the placeholder palette (地區色票).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
+        public const int ColourwaysPerRegion = 3;
+
         private static readonly Color Rust = new Color(0.46f, 0.25f, 0.14f);
         private static readonly Color Grime = new Color(0.33f, 0.30f, 0.26f);
+        private static readonly Color Soot = new Color(0.1f, 0.09f, 0.09f);
 
         /// <summary>Nominal length (m) of each kind before the spec's Length multiplier.</summary>
         /// <remarks>Pre: kind defined. Post: &gt; 0. Side effects: none.</remarks>
@@ -83,30 +104,50 @@ namespace Cosmimera.Bootstrap.Demo
             };
         }
 
-        /// <summary>Colours of <paramref name="spec"/>: palette region for cloth, parts era for metal, motif region for accents.</summary>
+        /// <summary>Which of the <see cref="ColourwaysPerRegion"/> colourways <paramref name="spec"/> is drawn in.</summary>
+        /// <remarks>
+        /// Derived from the part variants so it adds no draw to the sampled stream (GearLooks' snapshot stays the only
+        /// sampling contract). Pre: spec non-null. Post: in [0, ColourwaysPerRegion). Side effects: none.
+        /// </remarks>
+        public static int ColourwayOf(GearLookSpec spec)
+        {
+            Contract.Requires(spec != null, "spec required");
+            ulong h = 1469598103934665603ul ^ (ulong)spec.Kind;
+            foreach (int v in spec.PartVariants) h = (h ^ (ulong)v) * 1099511628211ul;
+            h ^= math.asuint(spec.Width);
+            h *= 1099511628211ul;
+            return (int)((h >> 33) % ColourwaysPerRegion);
+        }
+
+        /// <summary>Colours of <paramref name="spec"/>: palette region for cloth, parts era for metal and wrap, motif region for accents.</summary>
         /// <remarks>
         /// REQ: gear-looks.md#地區與時代的器物語彙. Pre: spec non-null.
-        /// Post: deterministic; Age darkens toward grime, Damage rusts metal (except composite). Side effects: none.
+        /// Post: deterministic; Age darkens toward grime, Damage rusts metal (except composite and bone). Side effects: none.
         /// </remarks>
         public static GearPalette PaletteFor(GearLookSpec spec)
         {
             Contract.Requires(spec != null, "spec required");
-            return PaletteFrom(spec.Palette, spec.Motif, spec.Parts, spec.HueShift, spec.ValueShift, spec.Age, spec.Damage);
+            return PaletteFrom(spec.Palette, spec.Motif, spec.Parts, spec.HueShift, spec.ValueShift, spec.Age, spec.Damage, ColourwayOf(spec));
         }
 
         private static GearPalette PaletteFrom(GearStyle palette, GearStyle motif, GearStyle parts,
-            float hueShift, float valueShift, float age, float damage)
+            float hueShift, float valueShift, float age, float damage, int colourway)
         {
-            (Color main, Color second, _) = RegionColours(palette.Region);
-            (_, _, Color accent) = RegionColours(motif.Region);
+            (Color main, Color second, _) = RegionColours(palette.Region, colourway);
+            (_, _, Color accent) = RegionColours(motif.Region, colourway);
             Color metal = EraMetal(parts.Era);
+            Color wrap = EraWrap(parts.Era);
             main = Shift(main, hueShift, valueShift);
             second = Shift(second, hueShift * 0.5f, valueShift);
             if (parts.Era == ArchEra.Future) accent = new Color(0.45f, 0.92f, 1f);
             else if (parts.Era == ArchEra.Ancient) accent = new Color(0.55f, 1f, 0.78f);
-            if (parts.Era != ArchEra.Future && parts.Era != ArchEra.Primal)
-                metal = Color.Lerp(metal, Rust, damage * 0.6f);
-            return new GearPalette(Age(main, age), Age(second, age), Age(metal, age * 0.7f), Age(accent, age * 0.5f));
+            bool corrodes = parts.Era != ArchEra.Future && parts.Era != ArchEra.Primal;
+            if (corrodes) metal = Color.Lerp(metal, Rust, damage * 0.6f);
+            // Honed edges catch the light; bone, stone and rust do not, so their edge only lifts a little.
+            float hone = parts.Era == ArchEra.Primal || parts.Era == ArchEra.Ancient ? 0.15f : 0.5f * (1f - damage);
+            Color edge = Color.Lerp(metal, Color.white, hone);
+            return new GearPalette(Age(main, age), Age(second, age), Age(metal, age * 0.7f), Age(accent, age * 0.5f),
+                Age(edge, age * 0.7f), Age(wrap, age * 0.5f));
         }
 
         /// <summary>Builds the placeholder mesh of one item.</summary>
@@ -135,20 +176,20 @@ namespace Cosmimera.Bootstrap.Demo
                     BuildSword(g);
                     break;
                 case GearKind.Axe:
-                    BuildHafted(g, axe: true, twoHanded: false);
+                    BuildAxe(g);
                     break;
                 case GearKind.Mace:
-                    BuildHafted(g, axe: false, twoHanded: false);
-                    break;
                 case GearKind.GreataxeHammer:
-                    BuildHafted(g, axe: spec.PartVariants[0] < 2, twoHanded: true);
+                    BuildBlunt(g);
                     break;
                 case GearKind.Twinblade:
                     BuildTwinblade(g);
                     break;
                 case GearKind.Spear:
+                    BuildSpear(g);
+                    break;
                 case GearKind.Javelin:
-                    BuildPolearm(g);
+                    BuildJavelin(g);
                     break;
                 case GearKind.ThrowingBlade:
                     BuildThrowingBlade(g);
@@ -182,8 +223,39 @@ namespace Cosmimera.Bootstrap.Demo
                     break;
             }
 
+            Shade(g);
             return g.Part;
         }
+
+        // Baked light: a soft top-to-bottom gradient gives the toon shader a second tone inside each lit band, and aged
+        // gear collects grime toward the end that touches the ground (hems, butts, lower limbs).
+        private static void Shade(Kit g)
+        {
+            List<float3> p = g.Part.P;
+            if (p.Count == 0) return;
+            float lo = float.MaxValue, hi = float.MinValue;
+            foreach (float3 v in p)
+            {
+                lo = math.min(lo, v.y);
+                hi = math.max(hi, v.y);
+            }
+
+            float span = math.max(hi - lo, 1e-4f);
+            float grime = g.Spec.Age * 0.45f;
+            for (int i = 0; i < p.Count; i++)
+            {
+                float t = (p[i].y - lo) / span;
+                Color c = g.Part.C[i] * math.lerp(0.86f, 1.04f, t);
+                if (grime > 0f && t < 0.3f) c = Color.Lerp(c, Grime, grime * (1f - t / 0.3f));
+                c.r = math.saturate(c.r);
+                c.g = math.saturate(c.g);
+                c.b = math.saturate(c.b);
+                c.a = 1f;
+                g.Part.C[i] = c;
+            }
+        }
+
+        // ---------------------------------------------------------------- block shield (P1-17d)
 
         /// <summary>Builds a creature block shield VFX mesh from <paramref name="spec"/> (P1-17d).</summary>
         /// <remarks>
@@ -204,8 +276,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (spec.HasPattern)
             {
                 GearPalette pal = PaletteFrom(spec.Palette, spec.Motif, spec.Motif,
-                    spec.HueShift, spec.ValueShift, spec.Age, spec.Damage);
-                (_, _, Color borderAccent) = RegionColours(spec.Border.Region);
+                    spec.HueShift, spec.ValueShift, spec.Age, spec.Damage, 0);
+                (_, _, Color borderAccent) = RegionColours(spec.Border.Region, 0);
                 faceCol = pal.Main;
                 rimCol = Color.Lerp(pal.Metal, borderAccent, 0.45f);
                 motifCol = pal.Accent;
@@ -305,573 +377,82 @@ namespace Cosmimera.Bootstrap.Demo
             for (int i = 0; i < f.Length; i += 3) part.Tri(f[i], f[i + 1], f[i + 2], mid);
         }
 
-        // ---------------------------------------------------------------- kinds
-
-        private static void BuildSword(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float len = g.Len;
-            float grip = s.Kind == GearKind.Greatsword ? 0.3f : s.Kind == GearKind.Dagger ? 0.1f : 0.16f;
-            float bladeW = (s.Kind == GearKind.Greatsword ? 0.065f : s.Kind == GearKind.Dagger ? 0.028f : 0.04f) * s.Width;
-            Grip(g, 0f, grip, 0.016f);
-            Pommel(g, s.PartVariants[3], new float3(0f, -0.025f, 0f), 0.028f);
-            Guard(g, s.PartVariants[1], grip + 0.012f, bladeW * 2.6f + 0.04f);
-            Blade(g, grip + 0.03f, len - grip - 0.03f, bladeW, s.PartVariants[0], s.Curvature);
-            EraFlourish(g, new float3(0f, grip * 0.5f, 0f), 0.02f, grip);
-        }
-
-        private static void BuildHafted(Kit g, bool axe, bool twoHanded)
-        {
-            GearLookSpec s = g.Spec;
-            float len = Broken(g, g.Len);
-            float r = twoHanded ? 0.022f : 0.017f;
-            g.Tube(new float3(0f, -0.04f, 0f), new float3(0f, len, 0f), r * 1.1f, r * 0.9f, g.Sides, g.Pal.Second);
-            Pommel(g, s.PartVariants[3], new float3(0f, -0.05f, 0f), r * 1.5f);
-            Wraps(g, 0f, twoHanded ? 0.45f : 0.22f, r);
-            if (len < g.Len * 0.9f) return; // the head broke off with the haft
-            float headY = len - (twoHanded ? 0.16f : 0.11f) * s.Width;
-            float size = (twoHanded ? 1.5f : 1f) * s.Width;
-            if (axe)
-            {
-                float reach = 0.16f * size;
-                float bite = 0.13f * size * (1f + s.Curvature * 0.6f);
-                // Wedge: thick at the haft, sharp at the bit; the bit flares by curvature.
-                g.Loft(new[]
-                {
-                    Sec(new float3(0f, headY, 0f), new float3(0f, 0.06f * size, 0f), new float3(0f, 0f, 0.02f * size * s.Thickness)),
-                    Sec(new float3(reach * 0.55f, headY, 0f), new float3(0f, 0.045f * size, 0f), new float3(0f, 0f, 0.012f * size)),
-                    Sec(new float3(reach, headY, 0f), new float3(0f, bite, 0f), new float3(0f, 0f, 0.002f)),
-                }, g.Pal.Metal, notch: true);
-                if (s.PartVariants[1] % 2 == 1) // bearded double head
-                    g.Loft(new[]
-                    {
-                        Sec(new float3(0f, headY, 0f), new float3(0f, 0.05f * size, 0f), new float3(0f, 0f, 0.018f * size)),
-                        Sec(new float3(-reach * 0.7f, headY, 0f), new float3(0f, bite * 0.7f, 0f), new float3(0f, 0f, 0.002f)),
-                    }, g.Pal.Metal, notch: true);
-            }
-            else
-            {
-                float hr = 0.06f * size;
-                switch (s.PartVariants[0] % 4)
-                {
-                    case 0:
-                        g.Ball(new float3(0f, headY + hr * 0.4f, 0f), hr, g.Pal.Metal);
-                        break;
-                    case 1:
-                        g.Box(new float3(0f, headY + hr * 0.3f, 0f), new float3(hr * 1.9f, hr, hr), g.Pal.Metal);
-                        break;
-                    case 2:
-                        for (int k = 0; k < 6; k++) // flanged mace
-                        {
-                            float a = k * math.PI / 3f;
-                            g.Box(new float3(math.cos(a) * hr * 0.6f, headY + hr * 0.4f, math.sin(a) * hr * 0.6f),
-                                new float3(hr * 0.5f, hr * 1.1f, 0.006f), g.Pal.Metal, a);
-                        }
-                        break;
-                    default:
-                        g.Tube(new float3(0f, headY - hr * 0.6f, 0f), new float3(0f, headY + hr * 1.2f, 0f), hr, hr * 0.8f, 8, g.Pal.Metal);
-                        break;
-                }
-            }
-            EraFlourish(g, new float3(0f, headY - 0.05f, 0f), r * 1.4f, 0.04f);
-        }
-
-        private static void BuildTwinblade(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float half = g.Len * 0.5f;
-            float haft = half * 0.45f;
-            g.Tube(new float3(0f, -haft, 0f), new float3(0f, haft, 0f), 0.018f, 0.018f, g.Sides, g.Pal.Second);
-            Wraps(g, -0.12f, 0.24f, 0.018f);
-            float w = 0.035f * s.Width;
-            for (int end = -1; end <= 1; end += 2)
-            {
-                float y = end * haft;
-                Guard(g, s.PartVariants[1], y, w * 2.4f);
-                BladeAlong(g, new float3(0f, y, 0f), new float3(0f, end, 0f), half - haft, w, s.PartVariants[0], s.Curvature * end);
-            }
-            EraFlourish(g, float3.zero, 0.024f, 0.1f);
-        }
-
-        private static void BuildPolearm(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            bool javelin = s.Kind == GearKind.Javelin;
-            float len = Broken(g, g.Len);
-            float r = javelin ? 0.011f : 0.016f;
-            float headLen = (javelin ? 0.16f : 0.3f) * s.Width;
-            float shaftTop = javelin ? g.Len - headLen : len;
-            // Polearms are gripped near the middle: the origin is the hand, so the butt hangs below it.
-            float butt = -g.Len * (javelin ? 0.45f : 0.35f);
-            g.Tube(new float3(0f, butt, 0f), new float3(0f, Math.Min(shaftTop, len + butt), 0f), r, r * 0.9f, g.Sides, g.Pal.Second);
-            Wraps(g, -0.1f, 0.2f, r);
-            if (len < g.Len * 0.9f) return;
-            float top = g.Len + butt;
-            float socket = top - headLen;
-            g.Tube(new float3(0f, socket - 0.06f, 0f), new float3(0f, socket + 0.01f, 0f), r * 1.2f, r * 1.05f, g.Sides, g.Pal.Metal);
-            BladeAlong(g, new float3(0f, socket, 0f), new float3(0f, 1f, 0f), headLen, (javelin ? 0.022f : 0.035f) * s.Width,
-                s.PartVariants[0], 0f);
-            if (!javelin && s.PartVariants[1] % 2 == 1) // halberd: an axe blade under the point
-                g.Loft(new[]
-                {
-                    Sec(new float3(0f, socket + 0.04f, 0f), new float3(0f, 0.05f, 0f), new float3(0f, 0f, 0.012f)),
-                    Sec(new float3(0.16f * s.Width, socket + 0.06f, 0f), new float3(0f, 0.09f * (1f + s.Curvature), 0f), new float3(0f, 0f, 0.002f)),
-                }, g.Pal.Metal, notch: true);
-            if (javelin) // fletching at the butt
-                for (int k = 0; k < 3; k++)
-                    g.Box(new float3(0f, butt + 0.06f, 0f) + Dir(k * 2f * math.PI / 3f) * 0.02f,
-                        new float3(0.02f, 0.06f, 0.002f), g.Pal.Accent, k * 2f * math.PI / 3f);
-            EraFlourish(g, new float3(0f, socket - 0.1f, 0f), r * 1.3f, 0.05f);
-        }
-
-        private static void BuildThrowingBlade(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            int points = 3 + s.PartVariants[0] % 3;
-            float r = g.Len * 0.5f;
-            g.Tube(new float3(0f, 0f, -0.006f), new float3(0f, 0f, 0.006f), r * 0.22f, r * 0.22f, 8, g.Pal.Second);
-            for (int k = 0; k < points; k++)
-            {
-                float a = k * 2f * math.PI / points;
-                float3 dir = new float3(math.cos(a), math.sin(a), 0f);
-                float3 side = new float3(-dir.y, dir.x, 0f);
-                g.Loft(new[]
-                {
-                    Sec(dir * r * 0.15f, side * r * 0.22f, new float3(0f, 0f, 0.005f)),
-                    Sec(dir * r * 0.6f + side * r * s.Curvature * 0.2f, side * r * 0.12f, new float3(0f, 0f, 0.003f)),
-                    Sec(dir * r + side * r * s.Curvature * 0.35f, float3.zero, float3.zero),
-                }, g.Pal.Metal, notch: true);
-            }
-        }
-
-        private static void BuildBow(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float half = g.Len * 0.5f;
-            float recurve = 0.05f + s.Curvature * 0.12f;
-            Grip(g, -0.06f, 0.12f, 0.018f);
-            const int segs = 6;
-            var tips = new float3[2];
-            for (int end = -1; end <= 1; end += 2)
-            {
-                var sections = new List<(float3, float3, float3)>();
-                for (int i = 0; i <= segs; i++)
-                {
-                    float t = (float)i / segs;
-                    float y = end * (0.06f + t * (half - 0.06f));
-                    // Limbs bow away from the string; a recurve flips back at the tips.
-                    float z = -math.sin(t * math.PI * 0.9f) * half * 0.18f + math.max(0f, t - 0.75f) * recurve * 4f * half * 0.2f;
-                    float w = math.lerp(0.022f, 0.008f, t) * s.Width;
-                    sections.Add(Sec(new float3(0f, y, z), new float3(w, 0f, 0f), new float3(0f, 0f, w * 0.6f * s.Thickness)));
-                }
-                g.Loft(sections.ToArray(), (end > 0) == (s.PartVariants[0] % 2 == 0) ? g.Pal.Main : g.Pal.Second, notch: false);
-                tips[(end + 1) / 2] = sections[segs].Item1;
-            }
-            g.Tube(tips[0], tips[1], 0.002f, 0.002f, 3, new Color(0.9f, 0.88f, 0.8f));
-            if (s.Kind == GearKind.RepeaterBow) // magazine on the riser
-                g.Box(new float3(0f, 0.1f, 0.05f), new float3(0.02f, 0.06f, 0.03f), g.Pal.Metal);
-            EraFlourish(g, float3.zero, 0.022f, 0.06f);
-        }
-
-        private static void BuildCrossbow(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            bool heavy = s.Kind == GearKind.HeavyCrossbow;
-            float len = g.Len;
-            float w = (heavy ? 0.035f : 0.022f) * s.Width;
-            // Stock lies along +Y from the trigger hand, prod across the front.
-            g.Box(new float3(0f, len * 0.35f, 0f), new float3(w, len * 0.5f, w * 1.3f * s.Thickness), g.Pal.Second);
-            g.Box(new float3(0f, -0.05f, -w * 1.6f), new float3(w * 0.8f, 0.05f, w * 1.2f), g.Pal.Second);
-            float span = len * (heavy ? 0.45f : 0.55f) * (0.9f + s.Curvature * 0.3f);
-            float frontY = len * 0.82f;
-            var tips = new float3[2];
-            for (int side = -1; side <= 1; side += 2)
-            {
-                float3 tip = new float3(side * span, frontY - span * 0.25f * (0.5f + s.Curvature), 0f);
-                g.Loft(new[]
-                {
-                    Sec(new float3(0f, frontY, 0f), new float3(0f, 0.018f, 0f), new float3(0f, 0f, 0.012f)),
-                    Sec(tip, new float3(0f, 0.008f, 0f), new float3(0f, 0f, 0.006f)),
-                }, g.Pal.Metal, notch: false);
-                tips[(side + 1) / 2] = tip;
-            }
-            g.Tube(tips[0], tips[1], 0.002f, 0.002f, 3, new Color(0.9f, 0.88f, 0.8f));
-            if (heavy)
-                g.Tube(new float3(0f, frontY, 0f), new float3(0f, frontY + 0.12f, 0f), w * 0.9f, w * 1.2f, g.Sides, g.Pal.Metal);
-            EraFlourish(g, new float3(0f, len * 0.2f, 0f), w * 1.4f, 0.05f);
-        }
-
-        private static void BuildStaff(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            bool staff = s.Kind == GearKind.MagicStaff;
-            float len = Broken(g, g.Len);
-            float r = staff ? 0.017f : 0.012f;
-            float butt = staff ? -g.Len * 0.4f : -0.04f;
-            float top = len + butt;
-            g.Tube(new float3(0f, butt, 0f), new float3(0f, top, 0f), r, r * 1.15f, g.Sides, g.Pal.Second);
-            Wraps(g, -0.08f, 0.16f, r);
-            if (len < g.Len * 0.9f) return;
-            float core = (staff ? 0.05f : 0.028f) * s.Width;
-            switch (s.PartVariants[0] % 4)
-            {
-                case 0: // orb in prongs
-                    g.Ball(new float3(0f, top + core * 1.3f, 0f), core, g.Pal.Accent);
-                    for (int k = 0; k < 3; k++)
-                    {
-                        float3 d = Dir(k * 2f * math.PI / 3f);
-                        g.Tube(new float3(0f, top, 0f), new float3(0f, top + core * 2.4f, 0f) + d * core * (1.2f + s.Curvature),
-                            r * 0.5f, r * 0.25f, 4, g.Pal.Metal);
-                    }
-                    break;
-                case 1: // crook
-                    var crook = new List<(float3, float3, float3)>();
-                    for (int i = 0; i <= 6; i++)
-                    {
-                        float a = i / 6f * math.PI * (1f + s.Curvature * 0.6f);
-                        float3 c = new float3(core * 1.6f * (1f - math.cos(a)), top + core * 1.6f * math.sin(a), 0f);
-                        crook.Add(Sec(c, new float3(0f, 0f, r), new float3(r, 0f, 0f)));
-                    }
-                    g.Loft(crook.ToArray(), g.Pal.Second, notch: false);
-                    g.Ball(new float3(core * 1.6f, top + core * 0.8f, 0f), core * 0.5f, g.Pal.Accent);
-                    break;
-                case 2: // crystal
-                    g.Tube(new float3(0f, top, 0f), new float3(0f, top + core * 3f, 0f), core * 0.9f, 0.001f, 5, g.Pal.Accent);
-                    break;
-                default: // ring
-                    for (int i = 0; i < 8; i++)
-                    {
-                        float a0 = i * math.PI / 4f, a1 = (i + 1) * math.PI / 4f;
-                        g.Tube(new float3(math.cos(a0) * core * 1.5f, top + core * 1.5f + math.sin(a0) * core * 1.5f, 0f),
-                            new float3(math.cos(a1) * core * 1.5f, top + core * 1.5f + math.sin(a1) * core * 1.5f, 0f),
-                            r * 0.6f, r * 0.6f, 4, g.Pal.Metal);
-                    }
-                    g.Ball(new float3(0f, top + core * 1.5f, 0f), core * 0.6f, g.Pal.Accent);
-                    break;
-            }
-            EraFlourish(g, new float3(0f, top - 0.06f, 0f), r * 1.5f, 0.05f);
-        }
-
-        private static void BuildShield(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float h = g.Len * 0.5f;
-            float w = h * (0.75f + 0.25f * s.Width);
-            float bulge = 0.02f + s.Curvature * 0.06f;
-            int shape = s.PartVariants[0] % 4; // round, kite, heater, tower
-            int n = 16;
-            var rim = new float3[n];
-            for (int i = 0; i < n; i++)
-            {
-                float a = i * 2f * math.PI / n;
-                float x = math.sin(a) * w, y = math.cos(a) * h;
-                if (shape == 1 && y < 0f) x *= 1f + y / h * 0.85f;            // kite: tapers to a point
-                if (shape == 2) y = y > 0f ? h * 0.75f : y;                  // heater: flat top
-                if (shape == 3) { x = math.sign(x) * w * 0.85f; y = math.clamp(y * 1.3f, -h * 1.15f, h * 1.15f); } // tower
-                rim[i] = new float3(x, y, 0f);
-            }
-            // Front face as a fan to a raised centre; back is flat. Damage dents the rim inward.
-            float3 centreFront = new float3(0f, 0f, bulge);
-            int cf = g.Part.Add(centreFront, g.Pal.Main, float2.zero);
-            int cb = g.Part.Add(new float3(0f, 0f, -0.012f), g.Pal.Second, float2.zero);
-            int first = g.Part.P.Count;
-            for (int i = 0; i < n; i++)
-            {
-                float dent = g.Nick(0.12f);
-                float3 p = rim[i] * (1f - dent);
-                g.Part.Add(p + new float3(0f, 0f, 0.006f), g.Pal.Main, float2.zero);
-                g.Part.Add(p - new float3(0f, 0f, 0.012f), g.Pal.Second, float2.zero);
-            }
-            var inside = new float3(0f, 0f, -0.003f);
-            for (int i = 0; i < n; i++)
-            {
-                int a = first + i * 2, b = first + ((i + 1) % n) * 2;
-                g.Part.Tri(cf, a, b, inside);
-                g.Part.Tri(cb, a + 1, b + 1, inside);
-                g.Part.Tri(a, b, a + 1, inside);
-                g.Part.Tri(b, b + 1, a + 1, inside);
-            }
-            // Rim band, boss, emblem bands.
-            if (s.PartVariants[2] % 2 == 0)
-                for (int i = 0; i < n; i++)
-                    g.Tube(rim[i] + new float3(0f, 0f, 0.008f), rim[(i + 1) % n] + new float3(0f, 0f, 0.008f), 0.012f, 0.012f, 4, g.Pal.Metal);
-            float boss = 0.05f + 0.02f * s.PartVariants[1];
-            g.Tube(new float3(0f, 0f, bulge * 0.6f), new float3(0f, 0f, bulge + 0.03f), boss, boss * (s.PartVariants[1] == 3 ? 0.2f : 0.7f),
-                g.Sides, g.Pal.Metal);
-            int bands = (int)math.round(s.MotifDensity * 4f);
-            for (int k = 0; k < bands; k++)
-            {
-                float a = k * math.PI / math.max(1, bands);
-                g.Box(new float3(0f, 0f, bulge * 0.7f), new float3(w * 0.9f, 0.012f, 0.004f), g.Pal.Accent, 0f, a);
-            }
-            // Arm strap on the back so the mesh reads as held.
-            g.Box(new float3(0f, 0f, -0.04f), new float3(0.015f, h * 0.35f, 0.012f), g.Pal.Second);
-        }
-
-        private static void BuildUpper(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float h = g.Len;
-            float sw = 0.2f * s.Width, waist = sw * (0.8f + s.Curvature * 0.2f);
-            int cut = s.PartVariants[0] % 3; // tunic, coat (long hem), vest (no sleeves)
-            float hem = cut == 1 ? -h * 0.45f : 0f;
-            g.Loft(new[]
-            {
-                Sec(new float3(0f, hem, 0f), new float3(waist * (cut == 1 ? 1.35f : 1.05f), 0f, 0f), new float3(0f, 0f, waist * 0.7f)),
-                Sec(new float3(0f, h * 0.45f, 0f), new float3(waist, 0f, 0f), new float3(0f, 0f, waist * 0.62f)),
-                Sec(new float3(0f, h * 0.9f, 0f), new float3(sw, 0f, 0f), new float3(0f, 0f, sw * 0.55f)),
-                Sec(new float3(0f, h, 0f), new float3(sw * 0.45f, 0f, 0f), new float3(0f, 0f, sw * 0.4f)),
-            }, g.Pal.Main, notch: false, square: true);
-            if (cut != 2)
-                for (int side = -1; side <= 1; side += 2)
-                    g.Tube(new float3(side * sw * 0.95f, h * 0.88f, 0f), new float3(side * (sw + 0.07f), h * 0.3f, 0f), 0.06f, 0.05f * (1f + s.Curvature * 0.5f),
-                        6, g.Pal.Main);
-            // Collar by variant, trim bands by motif density, patches by damage.
-            g.Tube(new float3(0f, h * 0.97f, 0f), new float3(0f, h * 1.03f + 0.03f * s.PartVariants[1], 0f), sw * 0.5f, sw * 0.42f, 8, g.Pal.Second);
-            Trim(g, hem, h, waist);
-            Patches(g, h, waist);
-        }
-
-        private static void BuildLower(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float h = g.Len;
-            float hip = 0.17f * s.Width;
-            bool skirt = s.PartVariants[0] % 2 == 1;
-            g.Tube(new float3(0f, h - 0.08f, 0f), new float3(0f, h, 0f), hip * 1.02f, hip, 8, g.Pal.Second); // belt
-            if (skirt)
-            {
-                float flare = 1.2f + s.Curvature * 0.5f;
-                g.Loft(new[]
-                {
-                    Sec(new float3(0f, h * 0.15f, 0f), new float3(hip * flare, 0f, 0f), new float3(0f, 0f, hip * flare * 0.8f)),
-                    Sec(new float3(0f, h - 0.08f, 0f), new float3(hip, 0f, 0f), new float3(0f, 0f, hip * 0.7f)),
-                }, g.Pal.Main, notch: false, square: true);
-            }
-            else
-            {
-                for (int side = -1; side <= 1; side += 2)
-                    g.Tube(new float3(side * hip * 0.48f, h - 0.08f, 0f), new float3(side * hip * (0.5f + s.Curvature * 0.2f), 0f, 0f),
-                        hip * 0.55f, hip * 0.38f, 6, g.Pal.Main);
-            }
-            Trim(g, 0f, h - 0.08f, hip);
-            Patches(g, h * 0.8f, hip);
-        }
-
-        private static void BuildHeadwear(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            float r = 0.11f * s.Width;
-            switch (s.PartVariants[0] % 4)
-            {
-                case 0: // brimmed hat
-                    g.Tube(new float3(0f, 0f, 0f), new float3(0f, 0.012f, 0f), r * (1.5f + s.Curvature * 0.8f), r * (1.5f + s.Curvature * 0.8f), 12, g.Pal.Main);
-                    g.Tube(new float3(0f, 0.01f, 0f), new float3(0f, g.Len * 0.5f, 0f), r, r * 0.85f, 10, g.Pal.Main);
-                    break;
-                case 1: // helm
-                    g.Ball(new float3(0f, r * 0.4f, 0f), r * 1.05f, g.Pal.Metal);
-                    g.Box(new float3(0f, r * 0.2f, r * 0.95f), new float3(0.012f, r * 0.5f, 0.01f), g.Pal.Metal);
-                    break;
-                case 2: // hood or cap
-                    g.Tube(new float3(0f, 0f, -0.02f), new float3(0f, g.Len * 0.8f, -r * s.Curvature), r * 1.05f, 0.01f, 8, g.Pal.Main);
-                    break;
-                default: // circlet
-                    for (int i = 0; i < 10; i++)
-                    {
-                        float a0 = i * math.PI / 5f, a1 = (i + 1) * math.PI / 5f;
-                        g.Tube(new float3(math.cos(a0) * r, 0.03f, math.sin(a0) * r), new float3(math.cos(a1) * r, 0.03f, math.sin(a1) * r),
-                            0.008f, 0.008f, 4, g.Pal.Metal);
-                    }
-                    g.Ball(new float3(0f, 0.04f, r), 0.018f, g.Pal.Accent);
-                    break;
-            }
-            int bands = (int)math.round(s.MotifDensity * 2f);
-            for (int k = 0; k < bands; k++)
-                g.Tube(new float3(0f, 0.02f + k * 0.03f, 0f), new float3(0f, 0.035f + k * 0.03f, 0f), r * 1.02f, r * 1.02f, 10, g.Pal.Accent);
-        }
-
-        private static void BuildCharm(Kit g)
-        {
-            GearLookSpec s = g.Spec;
-            // REQ: gear-looks.md#宙獸飾品 — a small charm: a loop to hang from a socket and a pendant below it.
-            float size = g.Len * 0.5f;
-            for (int i = 0; i < 8; i++)
-            {
-                float a0 = i * math.PI / 4f, a1 = (i + 1) * math.PI / 4f;
-                g.Tube(new float3(math.cos(a0) * size * 0.25f, size * 0.25f + math.sin(a0) * size * 0.25f, 0f),
-                    new float3(math.cos(a1) * size * 0.25f, size * 0.25f + math.sin(a1) * size * 0.25f, 0f), 0.003f, 0.003f, 4, g.Pal.Metal);
-            }
-            float3 c = new float3(0f, -size * 0.45f, 0f);
-            switch (s.PartVariants[0] % 4)
-            {
-                case 0: g.Ball(c, size * 0.42f, g.Pal.Accent); break;
-                case 1: g.Tube(c + new float3(0f, size * 0.4f, 0f), c - new float3(0f, size * 0.6f, 0f), size * 0.35f, 0.001f, 6, g.Pal.Accent); break;
-                case 2: g.Box(c, new float3(size * 0.32f, size * 0.42f, 0.004f), g.Pal.Main, 0f, math.PI / 4f); break;
-                default: g.Tube(c + new float3(0f, 0f, -0.004f), c + new float3(0f, 0f, 0.004f), size * 0.4f, size * 0.4f, 6, g.Pal.Metal); break;
-            }
-            if (s.MotifDensity > 0.5f) g.Ball(c + new float3(0f, 0f, 0.006f), size * 0.14f, g.Pal.Main);
-        }
-
-        // ---------------------------------------------------------------- parts
-
-        private static void Grip(Kit g, float y0, float y1, float r)
-        {
-            g.Tube(new float3(0f, y0, 0f), new float3(0f, y1, 0f), r, r * 1.08f, g.Sides, g.Pal.Second);
-            Wraps(g, y0, y1 - y0, r);
-        }
-
-        // Binding rings on grips: primal lashing, later eras leather wrap; denser with ornament.
-        private static void Wraps(Kit g, float y0, float length, float r)
-        {
-            int rings = 1 + (int)math.round(g.Spec.MotifDensity * 3f) + (g.Spec.Parts.Era == ArchEra.Primal ? 2 : 0);
-            for (int k = 0; k < rings; k++)
-            {
-                float y = y0 + length * (k + 0.5f) / rings;
-                g.Tube(new float3(0f, y - 0.006f, 0f), new float3(0f, y + 0.006f, 0f), r * 1.18f, r * 1.18f, g.Sides, g.Pal.Accent);
-            }
-        }
-
-        private static void Pommel(Kit g, int variant, float3 at, float r)
-        {
-            switch (variant % 4)
-            {
-                case 0: g.Ball(at, r, g.Pal.Metal); break;
-                case 1: g.Box(at, new float3(r, r * 0.8f, r), g.Pal.Metal); break;
-                case 2: g.Tube(at + new float3(0f, r * 0.6f, 0f), at - new float3(0f, r * 1.4f, 0f), r, 0.002f, 6, g.Pal.Metal); break;
-                default: g.Tube(at + new float3(0f, 0f, -r * 0.4f), at + new float3(0f, 0f, r * 0.4f), r * 1.1f, r * 1.1f, 8, g.Pal.Metal); break;
-            }
-        }
-
-        private static void Guard(Kit g, int variant, float y, float width)
-        {
-            switch (variant % 4)
-            {
-                case 0: // straight cross
-                    g.Box(new float3(0f, y, 0f), new float3(width * 0.5f, 0.012f, 0.018f), g.Pal.Metal);
-                    break;
-                case 1: // crescent, tips toward the blade
-                    g.Loft(new[]
-                    {
-                        Sec(new float3(-width * 0.55f, y + 0.035f, 0f), new float3(0.008f, 0f, 0f), new float3(0f, 0f, 0.012f)),
-                        Sec(new float3(0f, y, 0f), new float3(0f, 0.014f, 0f), new float3(0f, 0f, 0.018f)),
-                        Sec(new float3(width * 0.55f, y + 0.035f, 0f), new float3(0.008f, 0f, 0f), new float3(0f, 0f, 0.012f)),
-                    }, g.Pal.Metal, notch: false);
-                    break;
-                case 2: // disc
-                    g.Tube(new float3(0f, y - 0.006f, 0f), new float3(0f, y + 0.006f, 0f), width * 0.32f, width * 0.32f, 10, g.Pal.Metal);
-                    break;
-                default: // stub
-                    g.Box(new float3(0f, y, 0f), new float3(width * 0.25f, 0.016f, 0.02f), g.Pal.Metal);
-                    break;
-            }
-        }
-
-        private static void Blade(Kit g, float y0, float length, float width, int tip, float curve) =>
-            BladeAlong(g, new float3(0f, y0, 0f), new float3(0f, 1f, 0f), length, width, tip, curve);
-
-        // A lozenge-section blade lofted along `dir`, bending sideways by `curve`; the tip shape comes from the variant.
-        private static void BladeAlong(Kit g, float3 root, float3 dir, float length, float width, int tip, float curve)
-        {
-            const int segs = 7;
-            float3 side = new float3(1f, 0f, 0f);
-            float thick = width * 0.22f * g.Spec.Thickness;
-            var sections = new List<(float3, float3, float3)>();
-            for (int i = 0; i <= segs; i++)
-            {
-                float t = (float)i / segs;
-                float taper = tip switch
-                {
-                    0 => 1f - t * t * 0.95f,                     // leaf point
-                    1 => t < 0.8f ? 1f : (1f - t) * 5f,          // clipped point
-                    2 => math.sqrt(math.max(0f, 1f - t * t)),    // round
-                    _ => 1f - t * 0.6f,                          // chisel
-                };
-                if (i == segs && tip != 3) taper = 0f;
-                float3 c = root + dir * (t * length) + side * (curve * length * 0.25f * t * t);
-                sections.Add(Sec(c, side * width * taper, new float3(0f, 0f, thick * math.max(taper, 0.15f))));
-            }
-            g.Loft(sections.ToArray(), g.Pal.Metal, notch: true);
-            // A fuller or motif inlay down the middle of each face.
-            if (g.Spec.MotifDensity > 0.35f)
-                for (int face = -1; face <= 1; face += 2)
-                    g.Box(root + dir * (length * 0.35f) + side * (curve * length * 0.03f) + new float3(0f, 0f, face * thick * 0.9f),
-                        new float3(width * 0.12f, length * 0.25f, 0.002f), g.Pal.Accent);
-        }
-
-        // Era-specific detail at `at`: steampunk cog, future light band, industrial rivets, wasteland patch plate,
-        // ancient rune ring. Other eras add nothing here (their look is in proportions and palette).
-        private static void EraFlourish(Kit g, float3 at, float r, float span)
-        {
-            switch (g.Spec.Parts.Era)
-            {
-                case ArchEra.Steampunk:
-                    g.Tube(at - new float3(0f, 0.008f, 0f), at + new float3(0f, 0.008f, 0f), r * 2.2f, r * 2.2f, 12, g.Pal.Metal);
-                    for (int k = 0; k < 8; k++)
-                        g.Box(at + Dir(k * math.PI / 4f) * r * 2.4f, new float3(r * 0.3f, 0.007f, r * 0.3f), g.Pal.Metal, k * math.PI / 4f);
-                    break;
-                case ArchEra.Future:
-                    g.Tube(at - new float3(0f, 0.004f, 0f), at + new float3(0f, 0.004f, 0f), r * 1.25f, r * 1.25f, 12, g.Pal.Accent);
-                    break;
-                case ArchEra.Industrial:
-                    for (int k = 0; k < 4; k++)
-                        g.Ball(at + Dir(k * math.PI / 2f) * r * 1.1f + new float3(0f, span * 0.5f, 0f), r * 0.25f, g.Pal.Metal);
-                    break;
-                case ArchEra.Wasteland:
-                    g.Box(at + new float3(r * 0.6f, span * 0.3f, 0f), new float3(r * 0.5f, span * 0.4f + 0.01f, r * 1.25f), g.Pal.Metal, 0f, 0.2f);
-                    break;
-                case ArchEra.Ancient:
-                    g.Tube(at - new float3(0f, 0.01f, 0f), at + new float3(0f, 0.01f, 0f), r * 1.5f, r * 1.4f, 6, g.Pal.Accent);
-                    break;
-            }
-        }
-
-        private static void Trim(Kit g, float hem, float top, float r)
-        {
-            int bands = (int)math.round(g.Spec.MotifDensity * 3f);
-            for (int k = 0; k < bands; k++)
-            {
-                float y = hem + 0.02f + k * 0.035f;
-                g.Tube(new float3(0f, y, 0f), new float3(0f, y + 0.018f, 0f), r * 1.08f, r * 1.08f, 8, g.Pal.Accent);
-            }
-        }
-
-        // Damaged cloth gets patches in the secondary colour.
-        private static void Patches(Kit g, float h, float r)
-        {
-            int patches = (int)math.floor(g.Spec.Damage * 4f);
-            for (int k = 0; k < patches; k++)
-            {
-                float a = g.Rng.NextFloat() * math.PI * 2f;
-                float y = h * (0.2f + 0.6f * g.Rng.NextFloat());
-                g.Box(new float3(math.sin(a) * r * 1.02f, y, math.cos(a) * r * 0.7f), new float3(0.035f, 0.035f, 0.004f), g.Pal.Second, a);
-            }
-        }
-
-        // Badly damaged hafted gear loses its head: the haft ends short.
-        private static float Broken(Kit g, float len) => g.Spec.Damage > 0.85f ? len * 0.62f : len;
-
         // ---------------------------------------------------------------- palette
 
-        private static (Color main, Color second, Color accent) RegionColours(ArchRegion region) => region switch
+        // REQ: gear-looks.md#地區與時代的器物語彙 — each tradition's swatch book; colourway 0 is the table's headline palette.
+        // Every Ice main stays far brighter than every Lava main so the regions never swap identities across colourways.
+        private static (Color main, Color second, Color accent) RegionColours(ArchRegion region, int colourway)
         {
-            ArchRegion.Verdant => (new Color(0.36f, 0.52f, 0.28f), new Color(0.52f, 0.36f, 0.22f), new Color(0.86f, 0.82f, 0.68f)),
-            ArchRegion.Lava => (new Color(0.2f, 0.17f, 0.16f), new Color(0.66f, 0.24f, 0.14f), new Color(0.8f, 0.62f, 0.28f)),
-            ArchRegion.Ice => (new Color(0.88f, 0.92f, 0.96f), new Color(0.3f, 0.22f, 0.17f), new Color(0.55f, 0.75f, 0.9f)),
-            ArchRegion.Storm => (new Color(0.38f, 0.46f, 0.58f), new Color(0.42f, 0.43f, 0.46f), new Color(0.78f, 0.84f, 0.9f)),
-            ArchRegion.Crystal => (new Color(0.8f, 0.66f, 0.46f), new Color(0.5f, 0.38f, 0.28f), new Color(0.6f, 0.4f, 0.76f)),
-            _ => (new Color(0.36f, 0.24f, 0.46f), new Color(0.26f, 0.18f, 0.24f), new Color(0.88f, 0.7f, 0.3f)),
-        };
+            int k = ((colourway % ColourwaysPerRegion) + ColourwaysPerRegion) % ColourwaysPerRegion;
+            switch (region)
+            {
+                case ArchRegion.Verdant:
+                    return k switch
+                    {
+                        0 => (new Color(0.36f, 0.52f, 0.28f), new Color(0.52f, 0.36f, 0.22f), new Color(0.86f, 0.82f, 0.68f)), // moss, oak, linen
+                        1 => (new Color(0.22f, 0.46f, 0.4f), new Color(0.42f, 0.28f, 0.18f), new Color(0.86f, 0.74f, 0.36f)),  // fern, walnut, leaf gold
+                        _ => (new Color(0.55f, 0.62f, 0.4f), new Color(0.7f, 0.58f, 0.4f), new Color(0.74f, 0.26f, 0.24f)),    // sage, birch, berry
+                    };
+                case ArchRegion.Lava:
+                    return k switch
+                    {
+                        0 => (new Color(0.2f, 0.17f, 0.16f), new Color(0.66f, 0.24f, 0.14f), new Color(0.8f, 0.62f, 0.28f)),   // charcoal, ochre red, brass
+                        1 => (new Color(0.36f, 0.12f, 0.1f), new Color(0.25f, 0.24f, 0.24f), new Color(0.96f, 0.5f, 0.16f)),   // oxblood, basalt, ember
+                        _ => (new Color(0.28f, 0.2f, 0.16f), new Color(0.58f, 0.3f, 0.16f), new Color(0.92f, 0.8f, 0.3f)),     // soot, rust, sulphur
+                    };
+                case ArchRegion.Ice:
+                    return k switch
+                    {
+                        0 => (new Color(0.88f, 0.92f, 0.96f), new Color(0.3f, 0.22f, 0.17f), new Color(0.55f, 0.75f, 0.9f)),   // snow, dark wood, ice blue
+                        1 => (new Color(0.74f, 0.85f, 0.94f), new Color(0.36f, 0.38f, 0.42f), new Color(0.25f, 0.42f, 0.74f)), // glacier, seal, deep blue
+                        _ => (new Color(0.92f, 0.88f, 0.8f), new Color(0.46f, 0.32f, 0.22f), new Color(0.38f, 0.7f, 0.66f)),   // fur, reindeer, lichen
+                    };
+                case ArchRegion.Storm:
+                    return k switch
+                    {
+                        0 => (new Color(0.38f, 0.46f, 0.58f), new Color(0.42f, 0.43f, 0.46f), new Color(0.78f, 0.84f, 0.9f)),  // slate, iron, pale
+                        1 => (new Color(0.26f, 0.42f, 0.5f), new Color(0.22f, 0.24f, 0.27f), new Color(0.96f, 0.86f, 0.36f)),  // storm teal, tar, volt
+                        _ => (new Color(0.3f, 0.32f, 0.5f), new Color(0.6f, 0.58f, 0.54f), new Color(0.6f, 0.8f, 0.96f)),      // indigo, ash, sky
+                    };
+                case ArchRegion.Crystal:
+                    return k switch
+                    {
+                        0 => (new Color(0.8f, 0.66f, 0.46f), new Color(0.5f, 0.38f, 0.28f), new Color(0.6f, 0.4f, 0.76f)),     // sandstone, umber, amethyst
+                        1 => (new Color(0.76f, 0.46f, 0.32f), new Color(0.7f, 0.6f, 0.44f), new Color(0.3f, 0.72f, 0.7f)),     // terracotta, tan, turquoise
+                        _ => (new Color(0.88f, 0.82f, 0.7f), new Color(0.42f, 0.26f, 0.36f), new Color(0.92f, 0.56f, 0.68f)),  // bone, plum, rose quartz
+                    };
+                default:
+                    return k switch
+                    {
+                        0 => (new Color(0.36f, 0.24f, 0.46f), new Color(0.26f, 0.18f, 0.24f), new Color(0.88f, 0.7f, 0.3f)),   // dusk, wine, gold
+                        1 => (new Color(0.18f, 0.2f, 0.38f), new Color(0.6f, 0.16f, 0.18f), new Color(0.92f, 0.76f, 0.36f)),   // midnight, lacquer, gold
+                        _ => (new Color(0.56f, 0.42f, 0.62f), new Color(0.16f, 0.14f, 0.2f), new Color(0.92f, 0.9f, 0.96f)),   // mauve, ink, pearl
+                    };
+            }
+        }
 
         private static Color EraMetal(ArchEra era) => era switch
         {
             ArchEra.Primal => new Color(0.84f, 0.8f, 0.68f),     // bone and knapped stone
             ArchEra.Agrarian => new Color(0.45f, 0.46f, 0.48f),  // dark forged iron
-            ArchEra.Mercantile => new Color(0.74f, 0.76f, 0.8f), // polished steel
+            ArchEra.Mercantile => new Color(0.72f, 0.75f, 0.8f), // polished steel
             ArchEra.Industrial => new Color(0.56f, 0.58f, 0.6f),
-            ArchEra.Steampunk => new Color(0.78f, 0.58f, 0.26f), // brass
+            ArchEra.Steampunk => new Color(0.8f, 0.6f, 0.26f),   // brass
             ArchEra.Future => new Color(0.88f, 0.9f, 0.94f),     // pale composite
             ArchEra.Wasteland => new Color(0.5f, 0.38f, 0.28f),  // scrap
             _ => new Color(0.58f, 0.56f, 0.5f),                  // weathered stone
+        };
+
+        private static Color EraWrap(ArchEra era) => era switch
+        {
+            ArchEra.Primal => new Color(0.66f, 0.54f, 0.38f),    // rawhide
+            ArchEra.Agrarian => new Color(0.42f, 0.3f, 0.2f),    // tanned leather
+            ArchEra.Mercantile => new Color(0.44f, 0.18f, 0.16f), // dyed oxblood leather
+            ArchEra.Industrial => new Color(0.18f, 0.18f, 0.2f), // rubberised
+            ArchEra.Steampunk => new Color(0.34f, 0.21f, 0.14f), // oiled strap leather
+            ArchEra.Future => new Color(0.22f, 0.25f, 0.3f),     // polymer grip
+            ArchEra.Wasteland => new Color(0.58f, 0.52f, 0.4f),  // rag wrap
+            _ => new Color(0.4f, 0.43f, 0.38f),                  // lichened cord
         };
 
         private static Color Shift(Color c, float hue, float value)
@@ -887,6 +468,12 @@ namespace Cosmimera.Bootstrap.Demo
             return aged;
         }
 
+        private static Color Mul(Color c, float k)
+        {
+            var o = new Color(math.saturate(c.r * k), math.saturate(c.g * k), math.saturate(c.b * k), 1f);
+            return o;
+        }
+
         // ---------------------------------------------------------------- geometry kit
 
         private static (float3, float3, float3) Sec(float3 centre, float3 side, float3 face) => (centre, side, face);
@@ -900,23 +487,33 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly GearPalette Pal;
             public readonly float Len;
             public readonly int Sides;
+            public readonly ArchEra Era;
             public Pcg32 Rng;
+            public Pcg32 MotifRng;
 
             public Kit(GearLookSpec spec, GearPalette palette)
             {
                 Spec = spec;
                 Pal = palette;
+                Era = spec.Parts.Era;
                 Len = NominalLength(spec.Kind) * spec.Length;
                 // Primal gear is crude (few facets); future gear is turned smooth.
-                Sides = spec.Parts.Era == ArchEra.Primal ? 5 : spec.Parts.Era == ArchEra.Future ? 10 : 7;
-                // Damage notches are drawn from their own stream so they never perturb the look's other choices.
+                Sides = Era == ArchEra.Primal ? 5 : Era == ArchEra.Future ? 10 : 7;
+                // Damage notches and motif layout draw from their own streams so neither perturbs the other.
                 ulong seed = Salt;
                 foreach (int v in spec.PartVariants) seed = seed * 31ul + (ulong)v;
                 Rng = new Pcg32(seed ^ (ulong)math.asuint(spec.Length) ^ ((ulong)math.asuint(spec.Damage) << 32), (ulong)spec.Kind);
+                MotifRng = new Pcg32(seed ^ ((ulong)math.asuint(spec.MotifDensity) << 16) ^ math.asuint(spec.Curvature), MotifSalt);
             }
+
+            /// <summary>Part variant of slot <paramref name="slot"/>, in [0, VariantsPerSlot).</summary>
+            public int V(int slot) => Spec.PartVariants[slot] % GearLooks.VariantsPerSlot;
 
             // Fraction of a dimension lost to a nick here; 0 for undamaged gear.
             public float Nick(float max) => Spec.Damage > 0f && Rng.NextFloat() < Spec.Damage * 0.6f ? max * (0.3f + 0.7f * Rng.NextFloat()) : 0f;
+
+            // Knapped stone and bone are never symmetric: primal lofts wobble by a few percent.
+            public float Wobble() => Era == ArchEra.Primal ? 1f + (Rng.NextFloat() - 0.5f) * 0.16f : 1f;
 
             public void Tube(float3 a, float3 b, float ra, float rb, int sides, Color c)
             {
@@ -943,6 +540,46 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // A pointed cone: tips, spikes, crystals.
+            public void Spike(float3 a, float3 tip, float r, int sides, Color c) => Tube(a, tip, r, r * 0.04f, sides, c);
+
+            // Two cones back to back along `axis`: a cut gem.
+            public void Gem(float3 centre, float3 axis, float r, float height, Color c)
+            {
+                float3 n = math.normalizesafe(axis, new float3(0f, 0f, 1f));
+                Spike(centre, centre + n * height, r, 6, c);
+                Spike(centre, centre - n * height * 0.45f, r, 6, Mul(c, 0.8f));
+            }
+
+            // Closed loop of `segs` straight tubes around `axis`.
+            public void Ring(float3 centre, float3 axis, float radius, float thick, int segs, Color c, float arcFrom = 0f, float arcTo = 2f * math.PI)
+            {
+                float3 n = math.normalizesafe(axis, new float3(0f, 1f, 0f));
+                float3 u = math.normalize(math.cross(n, math.abs(n.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f)));
+                float3 v = math.cross(n, u);
+                for (int i = 0; i < segs; i++)
+                {
+                    float a0 = math.lerp(arcFrom, arcTo, (float)i / segs), a1 = math.lerp(arcFrom, arcTo, (float)(i + 1) / segs);
+                    Tube(centre + (u * math.cos(a0) + v * math.sin(a0)) * radius, centre + (u * math.cos(a1) + v * math.sin(a1)) * radius,
+                        thick, thick, 4, c);
+                }
+            }
+
+            // Flat strip from a to b lying on a surface whose outward normal is `normal`: engraved lines and inlays.
+            public void Bar(float3 a, float3 b, float halfWidth, float halfDepth, float3 normal, Color c)
+            {
+                float3 axis = math.normalizesafe(b - a, new float3(0f, 1f, 0f));
+                float3 n = math.normalizesafe(normal - axis * math.dot(normal, axis), new float3(0f, 0f, 1f));
+                float3 w = math.cross(n, axis) * halfWidth;
+                float3 d = n * halfDepth;
+                int first = Part.P.Count;
+                float3[] corners = { a - w - d, a + w - d, a + w + d, a - w + d, b - w - d, b + w - d, b + w + d, b - w + d };
+                foreach (float3 p in corners) Part.Add(p, c, float2.zero);
+                float3 mid = (a + b) * 0.5f;
+                int[] f = { 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7, 0, 3, 2, 0, 2, 1, 4, 5, 6, 4, 6, 7 };
+                for (int i = 0; i < f.Length; i += 3) Part.Tri(first + f[i], first + f[i + 1], first + f[i + 2], mid);
+            }
+
             // Oriented box: `yaw` turns about +Y, `roll` about +Z.
             public void Box(float3 centre, float3 half, Color c, float yaw = 0f, float roll = 0f)
             {
@@ -961,18 +598,21 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
-            public void Ball(float3 centre, float r, Color c)
+            public void Ball(float3 centre, float r, Color c) => Ellipsoid(centre, new float3(r), c);
+
+            public void Ellipsoid(float3 centre, float3 radii, Color c)
             {
                 SceneryMeshes.Ico ico = SceneryMeshes.Ico.Get(1);
                 int first = Part.P.Count;
-                foreach (float3 v in ico.Vertices) Part.Add(centre + v * r, c, float2.zero);
+                foreach (float3 v in ico.Vertices) Part.Add(centre + v * radii, c, float2.zero);
                 for (int t = 0; t < ico.Triangles.Length; t += 3)
                     Part.Tri(first + ico.Triangles[t], first + ico.Triangles[t + 1], first + ico.Triangles[t + 2], centre);
             }
 
             // Lozenge sections (centre ± side, centre ± face) joined into a closed solid. `notch` nicks the side edges by
-            // damage; `square` uses a rounded-square section instead (cloth shells).
-            public void Loft((float3 c, float3 side, float3 face)[] sections, Color col, bool notch, bool square = false)
+            // damage; `square` uses a rounded-square section instead (cloth shells); `edge` recolours the two side
+            // corners so a honed edge reads bright against the blade's flat (the faceted emit blends the two).
+            public void Loft((float3 c, float3 side, float3 face)[] sections, Color col, bool notch, bool square = false, Color? edge = null)
             {
                 int ring = square ? 8 : 4;
                 int first = Part.P.Count;
@@ -985,8 +625,10 @@ namespace Cosmimera.Bootstrap.Demo
                         float ang = k * 2f * math.PI / ring;
                         float cs = math.cos(ang), sn = math.sin(ang);
                         if (square) { cs = math.sign(cs) * math.pow(math.abs(cs), 0.5f); sn = math.sign(sn) * math.pow(math.abs(sn), 0.5f); }
-                        float bite = notch && !end && (k == 0 || k == 2) ? Nick(0.45f) : 0f;
-                        Part.Add(c + side * cs * (1f - bite) + face * sn, col, float2.zero);
+                        bool sideCorner = !square && (k == 0 || k == 2);
+                        float bite = notch && !end && sideCorner ? Nick(0.45f) : 0f;
+                        Color vc = sideCorner && edge.HasValue ? edge.Value : col;
+                        Part.Add(c + side * cs * (1f - bite) + face * sn, vc, float2.zero);
                     }
                 }
                 for (int s = 0; s + 1 < sections.Length; s++)
@@ -999,15 +641,15 @@ namespace Cosmimera.Bootstrap.Demo
                         Part.Tri(b, b + ring, a + ring, mid);
                     }
                 }
-                CapRing(first, ring, sections[0].c, sections.Length > 1 ? sections[1].c : sections[0].c + new float3(0f, 0.01f, 0f));
+                CapRing(first, ring, sections[0].c, sections.Length > 1 ? sections[1].c : sections[0].c + new float3(0f, 0.01f, 0f), col);
                 int last = first + (sections.Length - 1) * ring;
                 CapRing(last, ring, sections[sections.Length - 1].c,
-                    sections.Length > 1 ? sections[sections.Length - 2].c : sections[0].c - new float3(0f, 0.01f, 0f));
+                    sections.Length > 1 ? sections[sections.Length - 2].c : sections[0].c - new float3(0f, 0.01f, 0f), col);
             }
 
-            private void CapRing(int first, int ring, float3 centre, float3 inward)
+            private void CapRing(int first, int ring, float3 centre, float3 inward, Color col)
             {
-                int c = Part.Add(centre, Part.C[first], float2.zero);
+                int c = Part.Add(centre, col, float2.zero);
                 float3 inside = math.lerp(centre, inward, 0.5f);
                 for (int k = 0; k < ring; k++) Part.Tri(c, first + k, first + (k + 1) % ring, inside);
             }

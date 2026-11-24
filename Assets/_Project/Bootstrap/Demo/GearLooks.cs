@@ -196,11 +196,14 @@ namespace Cosmimera.Bootstrap.Demo
     {
         /// <summary>Bumped whenever the same inputs would sample a different look (invalidates the snapshot).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
 
         /// <summary>Base shapes per part slot; the part library may ship 3–6, placeholders use this many.</summary>
-        /// <remarks>Pre: none. Post: constant &gt; 0. Side effects: none.</remarks>
-        public const int VariantsPerSlot = 4;
+        /// <remarks>
+        /// Pre: none. Post: constant &gt; 0; every placeholder slot catalogue in GearMeshes has exactly this many entries.
+        /// Side effects: none.
+        /// </remarks>
+        public const int VariantsPerSlot = 6;
 
         private const ulong Stream = 0x6765_6172_6C6F_6F6Bul; // "gearlook"
 

@@ -14,7 +14,7 @@ namespace Cosmimera.Bootstrap.Tests
     // REQ: docs/design/gear-looks.md — gear looks are sampled from the settlement style axes, identically on every client.
     public sealed class GearLooksTests
     {
-        private const string SnapshotPath = "_Project/Bootstrap/Tests/Snapshots/gear-looks-v1.txt";
+        private const string SnapshotPath = "_Project/Bootstrap/Tests/Snapshots/gear-looks-v2.txt";
 
         private static ArchMix Mixed() =>
             new ArchMix(ArchRegion.Storm, ArchEra.Industrial, 0.5f, 0.6f, 0.4f).WithTertiary(ArchRegion.Twilight, ArchEra.Future, 0.3f);
@@ -153,7 +153,7 @@ namespace Cosmimera.Bootstrap.Tests
         [Test]
         public void Snapshot_matches_generator_version()
         {
-            Assert.That(GearLooks.GeneratorVersion, Is.EqualTo(1), "bump the snapshot file name with GeneratorVersion");
+            Assert.That(GearLooks.GeneratorVersion, Is.EqualTo(2), "bump the snapshot file name with GeneratorVersion");
             ArchMix mix = Mixed();
             var actual = new List<string>();
             foreach (GearKind kind in Enum.GetValues(typeof(GearKind)))
@@ -165,7 +165,7 @@ namespace Cosmimera.Bootstrap.Tests
             string path = Path.Combine(Application.dataPath, SnapshotPath);
             if (!File.Exists(path))
             {
-                string dump = Path.Combine(Application.dataPath, "../Logs/gear-looks-v1.actual.txt");
+                string dump = Path.Combine(Application.dataPath, "../Logs/gear-looks-v2.actual.txt");
                 File.WriteAllLines(dump, actual);
                 Assert.Fail($"snapshot missing; actual written to {dump}");
             }
