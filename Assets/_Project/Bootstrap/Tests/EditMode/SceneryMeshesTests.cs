@@ -81,14 +81,17 @@ namespace Cosmimera.Bootstrap.Tests
         private static bool Sways(SceneryArchetype archetype) => archetype switch
         {
             SceneryArchetype.Boulder or SceneryArchetype.CrystalCluster or SceneryArchetype.Log or SceneryArchetype.Cactus or
-                SceneryArchetype.Mushroom or SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Outcrop => false,
+                SceneryArchetype.Mushroom or SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Outcrop or
+                SceneryArchetype.Tor or SceneryArchetype.Slabs or SceneryArchetype.Ledge or SceneryArchetype.Cobbles or
+                SceneryArchetype.Fluted or SceneryArchetype.Cushion => false,
             _ => true,
         };
 
         private static int SubMeshes(SceneryArchetype archetype) => archetype switch
         {
             SceneryArchetype.Boulder or SceneryArchetype.CrystalCluster or SceneryArchetype.Snag or SceneryArchetype.Log or
-                SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Fern => 1,
+                SceneryArchetype.Spire or SceneryArchetype.Columns or SceneryArchetype.Fern or SceneryArchetype.Tor or
+                SceneryArchetype.Slabs or SceneryArchetype.Ledge or SceneryArchetype.Cobbles or SceneryArchetype.Fluted => 1,
             _ => 2,
         };
 

@@ -61,6 +61,7 @@ namespace Cosmimera.GameData.Editor
         private const string CreaturesSrc = "creatures";
         private const string RelationsSrc = "relations";
         private const string NichesSrc = "niches";
+        private const string FieldUtilitiesSrc = "field-utilities";
         private const string NichesOut = "Niches";
         private const string MovesOut = "Moves";
         private const string TraitsOut = "Traits";
@@ -146,6 +147,13 @@ namespace Cosmimera.GameData.Editor
             List<Sourced<CreatureDto>> creatures = ReadKind<CreatureDto>(sourceRoot, CreaturesSrc, errors);
             List<Sourced<EdgeDto>> edges = ReadKind<EdgeDto>(sourceRoot, RelationsSrc, errors);
             List<Sourced<NicheDto>> niches = ReadKind<NicheDto>(sourceRoot, NichesSrc, errors);
+            List<Sourced<FieldUtilityEntryDto>> fieldUtilities = ReadKind<FieldUtilityEntryDto>(sourceRoot, FieldUtilitiesSrc, errors);
+            var fieldUtilityBindings = new List<(FieldUtility Utility, string MoveId, string TraitId)>();
+            if (errors.Count == 0)
+            {
+                CollectFieldUtilityCombatEntries(fieldUtilities, moves, traits, fieldUtilityBindings, errors);
+            }
+
             if (errors.Count == 0)
             {
                 Resolve(moves, traits, planets, creatures, edges, niches, errors);
@@ -156,7 +164,7 @@ namespace Cosmimera.GameData.Editor
                 throw new DataImportException(errors);
             }
 
-            return Write(outputFolder, moves, traits, planets, creatures, edges, niches);
+            return Write(outputFolder, moves, traits, planets, creatures, edges, niches, fieldUtilityBindings);
         }
 
         /// <summary>Refreshes only explicit field utilities on existing creature assets.</summary>
@@ -343,11 +351,11 @@ namespace Cosmimera.GameData.Editor
                     CheckRule(m.Where, "effect", m.Dto.Effect, EffectParams, errors);
                 }
 
-                // REQ: docs/design/combat.md#主動技效果 — heal is instant, every other effect is a timed window.
-                bool needsDuration = m.Dto.Effect != null && m.Dto.Effect.Type != "heal_percent_max_hp";
+                // REQ: docs/design/combat.md#主動技效果 — heal and apply_ailment are instant, every other effect is a timed window.
+                bool needsDuration = m.Dto.Effect != null && !IsInstantEffect(m.Dto.Effect);
                 if (needsDuration != m.Dto.EffectDurationMs.HasValue)
                 {
-                    errors.Add($"{m.Where}: effect_duration_ms is required iff the move has a non-heal effect");
+                    errors.Add($"{m.Where}: effect_duration_ms is required iff the move has a timed effect");
                 }
                 else if (needsDuration && (m.Dto.EffectDurationMs < 1 || m.Dto.EffectDurationMs > MaxDurationMs))
                 {
@@ -405,7 +413,7 @@ namespace Cosmimera.GameData.Editor
                         else
                         {
                             CheckRule(m.Where, "downgraded.effect", dg.Effect, EffectParams, errors);
-                            if ((dg.Effect.Type == "heal_percent_max_hp") != (m.Dto.Effect.Type == "heal_percent_max_hp"))
+                            if (IsInstantEffect(dg.Effect) != IsInstantEffect(m.Dto.Effect))
                             {
                                 errors.Add($"{m.Where}: downgraded.effect must keep the move's instant / timed kind");
                             }
@@ -453,9 +461,9 @@ namespace Cosmimera.GameData.Editor
                 for (int i = 0; i < t.Dto.Effects.Count; i++)
                 {
                     CheckRule(t.Where, $"effects[{i}]", t.Dto.Effects[i], EffectParams, errors);
-                    if (continuous && t.Dto.Effects[i]?.Type == "heal_percent_max_hp")
+                    if (continuous && IsInstantEffect(t.Dto.Effects[i]))
                     {
-                        errors.Add($"{t.Where}: effects[{i}] heal_percent_max_hp needs an event trigger, not '{t.Dto.Trigger.Type}'");
+                        errors.Add($"{t.Where}: effects[{i}] {t.Dto.Effects[i].Type} needs an event trigger, not '{t.Dto.Trigger.Type}'");
                     }
                 }
             }
@@ -645,9 +653,65 @@ namespace Cosmimera.GameData.Editor
             }
         }
 
+        private static bool IsInstantEffect(RuleDto dto)
+            => dto != null && (dto.Type == "heal_percent_max_hp" || dto.Type == "apply_ailment");
+
+        private static void CollectFieldUtilityCombatEntries(
+            List<Sourced<FieldUtilityEntryDto>> entries,
+            List<Sourced<MoveDto>> moves,
+            List<Sourced<TraitDto>> traits,
+            List<(FieldUtility Utility, string MoveId, string TraitId)> bindings,
+            List<string> errors)
+        {
+            var seen = new HashSet<FieldUtility>();
+            foreach (Sourced<FieldUtilityEntryDto> entry in entries)
+            {
+                FieldUtilityEntryDto d = entry.Dto;
+                if (!TryParseEnum(d.Utility, out FieldUtility utility) || utility == FieldUtility.None)
+                {
+                    errors.Add($"{entry.Where}: utility '{d.Utility}' is not a valid non-none FieldUtility");
+                    continue;
+                }
+
+                if (!seen.Add(utility))
+                {
+                    errors.Add($"{entry.Where}: duplicate utility '{d.Utility}'");
+                    continue;
+                }
+
+                if (d.Kind == "move")
+                {
+                    if (d.CombatMove == null || d.CombatTrait != null)
+                    {
+                        errors.Add($"{entry.Where}: kind 'move' requires combat_move and forbids combat_trait");
+                        continue;
+                    }
+
+                    moves.Add(new Sourced<MoveDto>(entry.Where, d.CombatMove));
+                    bindings.Add((utility, d.CombatMove.Id, null));
+                }
+                else if (d.Kind == "trait")
+                {
+                    if (d.CombatTrait == null || d.CombatMove != null)
+                    {
+                        errors.Add($"{entry.Where}: kind 'trait' requires combat_trait and forbids combat_move");
+                        continue;
+                    }
+
+                    traits.Add(new Sourced<TraitDto>(entry.Where, d.CombatTrait));
+                    bindings.Add((utility, null, d.CombatTrait.Id));
+                }
+                else
+                {
+                    errors.Add($"{entry.Where}: kind must be 'move' or 'trait', got '{d.Kind}'");
+                }
+            }
+        }
+
         private static DataImportReport Write(string outputFolder, List<Sourced<MoveDto>> moves,
             List<Sourced<TraitDto>> traits, List<Sourced<PlanetTypeDto>> planets, List<Sourced<CreatureDto>> creatures,
-            List<Sourced<EdgeDto>> edges, List<Sourced<NicheDto>> niches)
+            List<Sourced<EdgeDto>> edges, List<Sourced<NicheDto>> niches,
+            List<(FieldUtility Utility, string MoveId, string TraitId)> fieldUtilityBindings)
         {
             int created = 0;
             int updated = 0;
@@ -800,7 +864,15 @@ namespace Cosmimera.GameData.Editor
                 AssetDatabase.CreateAsset(db, dbPath);
             }
 
-            db.SetContents(allDefs, relations);
+            var fuEntries = new List<FieldUtilityCombatEntry>(fieldUtilityBindings.Count);
+            foreach ((FieldUtility utility, string moveId, string traitId) in fieldUtilityBindings)
+            {
+                fuEntries.Add(new FieldUtilityCombatEntry(utility,
+                    moveId != null ? moveDefs[moveId] : null,
+                    traitId != null ? traitDefs[traitId] : null));
+            }
+
+            db.SetContents(allDefs, relations, fuEntries);
             EditorUtility.SetDirty(db);
             AssetDatabase.SaveAssets();
             return new DataImportReport(created, updated, deleted);
@@ -860,7 +932,7 @@ namespace Cosmimera.GameData.Editor
 
         private enum ParamKind
         {
-            Percent, DurationMs, Delta, Element, ElementOrAny,
+            Percent, DurationMs, Delta, Element, ElementOrAny, Ailment, AilmentOrAny, Buildup,
         }
 
         // Mirrors common.schema.json#/$defs/trigger and #/$defs/effect. Re-checked here because a wrong param
@@ -906,6 +978,8 @@ namespace Cosmimera.GameData.Editor
                 ["crit_damage_mod"] = new[] { ("delta", ParamKind.Delta) },
                 ["stagger_capacity_mod_percent"] = new[] { ("delta", ParamKind.Delta) },
                 ["block_reduction_mod"] = new[] { ("delta", ParamKind.Delta) },
+                ["apply_ailment"] = new[] { ("ailment", ParamKind.Ailment), ("buildup", ParamKind.Buildup) },
+                ["ailment_resist_mod"] = new[] { ("ailment", ParamKind.AilmentOrAny), ("delta", ParamKind.Delta) },
             };
 
         private static void CheckRule(string where, string field, RuleDto dto,
@@ -917,10 +991,10 @@ namespace Cosmimera.GameData.Editor
                 return;
             }
 
-            // REQ: docs/design/combat.md#效果疊加 — stacking is an effect property; a heal is instant and never stacks.
+            // REQ: docs/design/combat.md#效果疊加 — stacking is an effect property; instant effects never stack.
             if (dto.MaxStacks.HasValue)
             {
-                if (vocabulary != EffectParams || dto.Type == "heal_percent_max_hp")
+                if (vocabulary != EffectParams || IsInstantEffect(dto))
                 {
                     errors.Add($"{where}: {field} '{dto.Type}' does not accept max_stacks");
                 }
@@ -968,6 +1042,13 @@ namespace Cosmimera.GameData.Editor
                 case ParamKind.ElementOrAny:
                     return token.Type == JTokenType.String
                         && ((string)token == "any" || TryParseEnum((string)token, out Element _));
+                case ParamKind.Ailment:
+                    return token.Type == JTokenType.String && TryParseEnum((string)token, out Ailment _);
+                case ParamKind.AilmentOrAny:
+                    return token.Type == JTokenType.String
+                        && ((string)token == "any" || TryParseEnum((string)token, out Ailment _));
+                case ParamKind.Buildup:
+                    return IsIntegerInRange(token, 1, EffectDef.MaxBuildup);
                 default:
                     return false;
             }
@@ -988,6 +1069,13 @@ namespace Cosmimera.GameData.Editor
             element = raw == null || any ? default : ParseEnum<Element>(raw);
         }
 
+        private static void ReadAilment(JObject ps, out bool any, out Ailment ailment)
+        {
+            string raw = (string)ps["ailment"];
+            any = raw == "any";
+            ailment = raw == null || any ? default : ParseEnum<Ailment>(raw);
+        }
+
         private static TriggerDef ToTrigger(RuleDto dto)
         {
             JObject ps = dto.Params ?? new JObject();
@@ -1005,8 +1093,10 @@ namespace Cosmimera.GameData.Editor
 
             JObject ps = dto.Params ?? new JObject();
             ReadElement(ps, out bool any, out Element element);
+            ReadAilment(ps, out bool anyAilment, out Ailment ailment);
             return new EffectDef(ParseEnum<EffectType>(dto.Type), any, element,
-                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0, dto.MaxStacks ?? 1);
+                (int?)ps["delta"] ?? 0, (int?)ps["percent"] ?? 0, dto.MaxStacks ?? 1,
+                anyAilment, ailment, (int?)ps["buildup"] ?? 0);
         }
 
         private static void CheckDistribution(string where, string key, DistributionDto d, List<string> errors)

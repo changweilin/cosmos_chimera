@@ -18,7 +18,7 @@ namespace Cosmimera.Bootstrap.Tests
         private readonly List<GameObject> _roots = new List<GameObject>();
 
         private GrassField Grass(System.Func<float3, float> altitude, System.Func<float3, bool> isClear, float density,
-            float3 up, ulong seed = 12345)
+            float3 up, ulong seed = 12345, float meadow = 0f)
         {
             var root = new GameObject("grass-test");
             _roots.Add(root);
@@ -27,7 +27,8 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(shader, Is.Not.Null);
             GrassField field = root.AddComponent<GrassField>();
             field.Configure(config, seed, altitude, isClear, () => config.ToWorld(up, 0f),
-                PlanetLook.GrassMaterial(shader, "verdant_planet", config, 30f, GrassField.RadiusM), density, 20f, 0.9f);
+                PlanetLook.GrassMaterial(shader, "verdant_planet", config, 30f, GrassField.RadiusM), density, 20f, 0.9f,
+                meadow, meadow > 0f ? new[] { Color.yellow, Color.white, Color.magenta, Color.blue } : null);
             return field;
         }
 
@@ -62,7 +63,7 @@ namespace Cosmimera.Bootstrap.Tests
                 rainy[(int)WeatherAttr.Clouds] = 1000;
                 WeatherState raining = WeatherDynamics.Resolve(rainy);
                 WeatherState clear = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
-                view.Apply(Vector3.right * Radius, frame, raining, true);
+                view.Apply(Vector3.right * Radius, frame, raining, true, frame.North, 0f, false, false);
                 Transform layers = root.transform.Find("Local weather");
                 var ash = layers.Find("Volcanic ash").GetComponent<ParticleSystem>();
                 var embers = layers.Find("Rising embers").GetComponent<ParticleSystem>();
@@ -70,10 +71,120 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(ash.isEmitting && embers.isEmitting && rain.isEmitting);
                 Assert.That(Vector3.Dot(embers.transform.forward, Vector3.right), Is.Positive);
                 Assert.That(Vector3.Dot(ash.transform.forward, Vector3.right), Is.Negative);
-                view.Apply(Vector3.right * Radius, frame, clear, true);
+                view.Apply(Vector3.right * Radius, frame, clear, true, frame.North, 0f, false, false);
                 Assert.That(ash.isEmitting && embers.isEmitting && !rain.isEmitting);
-                view.Apply(Vector3.right * Radius, frame, clear, false);
+                view.Apply(Vector3.right * Radius, frame, clear, false, frame.North, 0f, false, false);
                 Assert.That(ash.isEmitting || embers.isEmitting, Is.False);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
+        public void Storm_debris_flies_downwind_only_in_a_strong_wind()
+        {
+            var root = new GameObject("debris-test");
+            _roots.Add(root);
+            var view = new LocalWeatherView(root.transform);
+            try
+            {
+                var frame = PlanetFrame.FromUp(new float3(1f, 0f, 0f));
+                var gale = new int[WeatherField.AttrCount];
+                gale[(int)WeatherAttr.Wind] = 1000;
+                WeatherState windy = WeatherDynamics.Resolve(gale);
+                WeatherState calm = WeatherDynamics.Resolve(new int[WeatherField.AttrCount]);
+                Transform layers = root.transform.Find("Local weather");
+                var leaves = layers.Find("Storm leaves").GetComponent<ParticleSystem>();
+                var wreckage = layers.Find("Storm wreckage").GetComponent<ParticleSystem>();
+                view.Apply(Vector3.right * Radius, frame, windy, false, frame.North, 1f, true, false);
+                Assert.That(leaves.isEmitting && !wreckage.isEmitting);
+                Assert.That(Vector3.Dot(leaves.transform.forward, (Vector3)frame.North), Is.GreaterThan(0.9f));
+                view.Apply(Vector3.right * Radius, frame, windy, false, frame.East, 1f, true, true);
+                Assert.That(wreckage.isEmitting);
+                Assert.That(Vector3.Dot(leaves.transform.forward, (Vector3)frame.East), Is.GreaterThan(0.9f));
+                view.Apply(Vector3.right * Radius, frame, calm, false, frame.East, 0f, true, true);
+                Assert.That(leaves.isEmitting || wreckage.isEmitting, Is.False);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
+        public void Fires_keep_their_slot_while_burning_and_leave_scorched_ground()
+        {
+            var root = new GameObject("fire-test");
+            _roots.Add(root);
+            var view = new FireView(root.transform);
+            try
+            {
+                var planet = new PlanetConfig(Radius, float3.zero);
+                var up = new float3(1f, 0f, 0f);
+                float3 downwind = PlanetFrame.FromUp(up).North;
+                var burning = new List<FireView.Burning>
+                {
+                    new FireView.Burning { Id = 5, Center = up * (Radius + 1f), RadiusM = 1f, Kind = Cosmimera.Combat.FireKind.Crown },
+                    new FireView.Burning { Id = 6, Center = up * (Radius + 0.3f) + new float3(0f, 3f, 0f), RadiusM = 0.6f,
+                        Kind = Cosmimera.Combat.FireKind.Grass },
+                };
+                view.Sync(burning, planet, downwind, 0.5f, 1f, 0.05f);
+                Transform fires = root.transform.Find("Fires");
+                int active = 0;
+                foreach (Transform t in fires)
+                {
+                    if (t.gameObject.activeSelf && t.name.StartsWith("Fire ")) active++;
+                }
+
+                Assert.That(active, Is.EqualTo(2));
+                Transform first = null;
+                foreach (Transform t in fires)
+                {
+                    if (t.gameObject.activeSelf && t.name.StartsWith("Fire ") && Vector3.Distance(t.position, (Vector3)(up * (Radius + 1f))) < 0.01f) first = t;
+                }
+
+                Assert.That(first, Is.Not.Null);
+                burning.RemoveAt(1);
+                view.Sync(burning, planet, downwind, 0.5f, 1f, 0.05f);
+                Assert.That(Vector3.Distance(first.position, (Vector3)(up * (Radius + 1f))), Is.LessThan(0.01f), "same slot kept");
+                Assert.That(first.Find("Flames").GetComponent<ParticleSystem>().isEmitting, Is.True);
+                view.Blast(up * Radius, up);
+                view.Scorch(up * Radius, up, 1f, Cosmimera.Combat.FireKind.Crown);
+                Assert.That(fires.Find("Scorch"), Is.Not.Null);
+            }
+            finally
+            {
+                view.Dispose();
+            }
+        }
+
+        [Test]
+        public void Lightning_flashes_only_in_a_thunderstorm()
+        {
+            var root = new GameObject("lightning-test");
+            _roots.Add(root);
+            var view = new LightningView(root.transform, 7);
+            try
+            {
+                var planet = new PlanetConfig(Radius, float3.zero);
+                var up = new float3(1f, 0f, 0f);
+                float peak = 0f;
+                for (int i = 0; i < 600; i++)
+                {
+                    view.Tick(0.05f, planet, up, 0f, _ => 0f);
+                    peak = math.max(peak, view.Flash);
+                }
+
+                Assert.That(peak, Is.Zero);
+                for (int i = 0; i < 1200; i++)
+                {
+                    view.Tick(0.05f, planet, up, 1f, _ => 0f);
+                    peak = math.max(peak, view.Flash);
+                }
+
+                Assert.That(peak, Is.GreaterThan(0.2f));
             }
             finally
             {
@@ -93,6 +204,48 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(b.InstanceCount, Is.EqualTo(a.InstanceCount), "same seed, same place: same grass");
             Assert.That(other.InstanceCount, Is.LessThan(a.InstanceCount), "density thins the field");
             Assert.That(other.InstanceCount, Is.GreaterThan(0));
+        }
+
+        [UnityTest]
+        public IEnumerator Near_ring_is_dense_and_meadows_grow_flowers_only_inside_the_mask()
+        {
+            // REQ: vision.md#美術投資 第 1 項 — grass density ×10 near the player and flower meadows (P1-12).
+            var config = new PlanetConfig(Radius, float3.zero);
+            float3 inMeadow = default, offMeadow = default;
+            bool foundIn = false, foundOff = false;
+            for (int k = 0; k < 4000 && !(foundIn && foundOff); k++)
+            {
+                float3 d = math.normalize(new float3(math.sin(k * 1.7f), math.sin(k * 0.37f) * 0.6f, math.cos(k * 1.7f)));
+                // In: the middle 20 m of the disc is full meadow. Off: nothing anywhere out to the 34 m streaming reach.
+                float lo = 1f, hi = 0f;
+                PlanetFrame f = PlanetFrame.FromUp(d);
+                for (int ring = 0; ring <= 6; ring++)
+                {
+                    for (int b = 0; b < 16; b++)
+                    {
+                        float a = b * math.PI / 8f;
+                        float m = GrassField.MeadowAt(config, d + (f.East * math.cos(a) + f.North * math.sin(a)) * (ring * 6f / Radius), 1f);
+                        if (ring * 6f <= 20f) lo = math.min(lo, m);
+                        hi = math.max(hi, m);
+                    }
+                }
+
+                if (!foundIn && lo > 0.8f) { inMeadow = d; foundIn = true; }
+                if (!foundOff && hi <= 0f) { offMeadow = d; foundOff = true; }
+            }
+
+            Assert.That(foundIn && foundOff, Is.True, "the meadow mask has full patches and gaps");
+            GrassField meadow = Grass(_ => 5f, null, 1f, inMeadow, meadow: 1f);
+            GrassField plain = Grass(_ => 5f, null, 1f, offMeadow, meadow: 1f);
+            GrassField none = Grass(_ => 5f, null, 1f, inMeadow);
+            for (int i = 0; i < 40; i++) yield return null; // near layer builds 4 cells a frame after the base disc
+            yield return Settle();
+            Assert.That(meadow.FlowerCount, Is.GreaterThan(meadow.InstanceCount / 10),
+                "about two thirds of the base clumps in a full meadow are flowers (the near ring is grass only)");
+            Assert.That(plain.FlowerCount, Is.Zero, "no flowers outside the mask");
+            Assert.That(none.FlowerCount, Is.Zero, "meadow strength 0: no flowers");
+            Assert.That(none.NearCount, Is.GreaterThan(none.InstanceCount / 2),
+                "the 14 m near ring holds most of the clumps: that is where the ×10 density goes");
         }
 
         [UnityTest]

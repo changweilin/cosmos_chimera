@@ -166,8 +166,8 @@ namespace Cosmimera.Combat.Tests
             Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, null, book, 1));
             Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), Table(Element.Fire, -1), ok, book, 1));
             Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), Table(Element.Fire, DamageModel.MaxMasteryPercent + 1), ok, book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, 101), book, 1));
-            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, -101), book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, DamageModel.ResistClamp + 1), book, 1));
+            Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, Table(Element.Fire, -DamageModel.ResistClamp - 1), book, 1));
             Assert.Throws<ContractException>(() => new Combatant(_stats, _cfg, BalanceFixture.Core(1, 1), ok, ok, book, 0));
         }
 

@@ -13,11 +13,15 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 - PlayMode 測試：同上，`PlayMode`
 - 重新套用專案基準設定：`"$UNITY" -batchmode -nographics -projectPath . -executeMethod Cosmimera.EditorTools.ProjectBaseline.Apply -quit -logFile Logs/baseline.log`
 - 資料驗證：`tools/validate-data`
+- 安裝 UMA（gitignored，新 clone 必跑，Editor 須關閉）：`tools/install-uma`（ADR-0012）
+- 建 NPC UMA 種族（gitignored，裝 UMA 後與重烘基底後必跑，Editor 須關閉）：`tools/build-npc-races`
+- 主角日系模型（Blender 5.2＋MPFB）：見 `../cosmos_chimera_forge/tools/acg-character/specs/README.md`（ADR-0013；NPC 種族表與基底放 `Assets/_Project/Art/Characters/_UMA/Npc/`）
 
 # 架構邊界（細節：`docs/architecture/overview.md`）
 - **Feature-first**：功能程式碼放在 `Assets/_Project/Features/<Feature>/`，每個 feature 一個 `.asmdef`。
 - **封裝**：跨 feature 只能引用對方 `Api/` 資料夾內的型別；不准引用 `Internal/`。
 - **規則與表現分離**：戰鬥、屬性計算、生成演算法寫成純 C#（不繼承 `MonoBehaviour`），以便 EditMode 測試與伺服器權威模擬。
+- **repo 分工**：遊戲執行所需的一切（程式、資料、匯入資產與其門檻用表）放本專案；角色／宙獸／招式的外觀設計、prompt、建模與烘焙腳本、SKILL、定案前草稿放 `../cosmos_chimera_forge`，產物交付到本專案。
 - **資料真實來源**：`Data/**/*.json`（含 AI 批次產出）→ importer → ScriptableObject。不手改產生的 `.asset`。
 
 # 文件索引（需要時才讀）
@@ -29,9 +33,12 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 動到球形星球、重力、地形、區塊 LOD、地平線 | `docs/architecture/planet-tech.md` + `docs/decisions/ADR-0001-cube-sphere.md` |
 | 動到星球內容生成（地貌、道路建築、程序化、BOSS、任務） | `docs/design/planet-world.md` |
 | 建築造型（地區×時代、主副風格、新舊毀損）、城牆、工廠、隧道、交通工具 | `docs/design/settlement-structures.md` |
+| 服裝、飾品、武器、防具外觀（程序化五軸、紙娃娃、虛擬大手、格擋護盾） | `docs/design/gear-looks.md` |
 | 宙獸資料、屬性、能力值、進化、副手、關係表 | `docs/design/creatures.md` |
 | 生活主動技／被動技與生活—屬性—戰鬥契合設計 | `docs/design/field-utilities.md` |
+| 食材加工、料理組合與效果、食譜 | `docs/design/cuisine.md` |
 | 戰鬥、主動技、CD、命中、召喚輪替 | `docs/design/combat.md` |
+| 十元素異常狀態與交互反應 | `docs/design/status-ailments.md` |
 | 打擊感、頓幀震屏、格擋、地城氛圍、BOSS 戰回饋 | `docs/design/combat-feel.md` |
 | 天氣、時段（清晨／白天／黃昏／夜晚）、地形限定異象 | `docs/design/weather.md` |
 | 場景物件受擊、材質、破壞、剛體 | `docs/design/destructibles.md` + `docs/decisions/ADR-0009-destructible-physics.md` |

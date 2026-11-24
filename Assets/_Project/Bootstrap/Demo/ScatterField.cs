@@ -69,6 +69,7 @@ namespace Cosmimera.Bootstrap.Demo
         private const float FarMinRockM = 1.5f;
         private const float RefreshMoveM = 6f;
         private const float RefreshSeconds = 0.5f;
+        private const int BuildCellsPerFrame = 24;
         // Metres of lean per metre of height in a full gust: a 6 m tree's crown travels ~0.4 m.
         private const float TreeSway = 0.06f;
         // Thin stems travel further than a trunk: a 2 m tussock's plumes swing ~0.3 m.
@@ -179,6 +180,7 @@ namespace Cosmimera.Bootstrap.Demo
             public readonly Role RoleA, RoleB;
             public readonly Palette A, B;
             public readonly Palette[] VariantsB; // per-item choice for sub-mesh 1 (gem and blossom colours); null = B
+            public readonly Look[] Forms; // per-item choice of the whole look (see Form); null = this look
 
             public Look(SceneryArchetype archetype, Role roleA, Palette a, Role roleB = Role.Leaf, Palette b = default,
                 Palette[] variantsB = null)
@@ -189,8 +191,29 @@ namespace Cosmimera.Bootstrap.Demo
                 RoleB = roleB;
                 B = b;
                 VariantsB = variantsB;
+                Forms = null;
             }
+
+            private Look(Look first, Look[] forms)
+            {
+                Archetype = first.Archetype;
+                RoleA = first.RoleA;
+                A = first.A;
+                RoleB = first.RoleB;
+                B = first.B;
+                VariantsB = first.VariantsB;
+                Forms = forms;
+            }
+
+            // A form listed twice is drawn twice as often.
+            public static Look OneOf(params Look[] forms) => new Look(forms[0], forms);
         }
+
+        // P1-18: presentation-only variety inside one rule-layer species (birch among broadleaves, tors among granite).
+        // The cell hash picks the form, so every client draws the same one, and the collider, size and burn rules
+        // stay the species' own.
+        private static Look Form(Look look, uint hash) =>
+            look.Forms == null ? look : look.Forms[(int)((hash >> 12) % (uint)look.Forms.Length)];
 
         private static Palette P(Color color, Color top, float glow = 0f, float sway = 0f) => new Palette(color, color, top, glow, sway);
 
@@ -199,6 +222,14 @@ namespace Cosmimera.Bootstrap.Demo
         // A named stone keeps most of its own colour on every planet: marble must still read as marble on a lava world.
         private static Look Stone(Theme theme, int rgb, SceneryArchetype archetype = SceneryArchetype.Boulder) =>
             new Look(archetype, Role.Rock, P(Mix(theme.Rock, rgb, PlanetLook.StoneOwnColour), theme.RockTop));
+
+        // One stone colour, several of its weathering shapes.
+        private static Look Stones(Theme theme, int rgb, params SceneryArchetype[] shapes)
+        {
+            var forms = new Look[shapes.Length];
+            for (int i = 0; i < shapes.Length; i++) forms[i] = Stone(theme, rgb, shapes[i]);
+            return Look.OneOf(forms);
+        }
 
         private static Look Ore(Theme theme, int host, int ore, int oreTop, float glow) =>
             new Look(SceneryArchetype.Outcrop, Role.Rock, P(Mix(theme.Rock, host, 0.5f), theme.RockTop),
@@ -221,13 +252,28 @@ namespace Cosmimera.Bootstrap.Demo
                     }
 
                     // The twilight planet keeps its flat-topped silhouette: its trees are part of the planet's look.
-                    return Tree(theme, planetTypeId == "twilight_planet" ? SceneryArchetype.Umbrella : SceneryArchetype.Broadleaf,
-                        theme.Leaf, theme.LeafTop);
+                    if (planetTypeId == "twilight_planet") return Tree(theme, SceneryArchetype.Umbrella, theme.Leaf, theme.LeafTop);
+                    Look broad = Tree(theme, SceneryArchetype.Broadleaf, theme.Leaf, theme.LeafTop);
+                    Look birch = new Look(SceneryArchetype.Birch, Role.Bark, P(Mix(theme.Bark, 0xE8E4DA, 0.8f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x8FBF4A, 0.3f), Mix(theme.LeafTop, 0xD8E070, 0.3f)));
+                    Look willow = Tree(theme, SceneryArchetype.Willow, Mix(theme.Leaf, 0x8AAA50, 0.35f), Mix(theme.LeafTop, 0xC8D890, 0.3f));
+                    return Look.OneOf(broad, broad, broad, birch, birch, willow);
                 case "conifer":
-                    return Tree(theme, SceneryArchetype.Conifer, Mix(theme.Needle, 0x1F4A3A, 0.45f),
-                        theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x6FA07A, 0.4f));
+                {
+                    Color needle = Mix(theme.Needle, 0x1F4A3A, 0.45f);
+                    Color needleTop = theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x6FA07A, 0.4f);
+                    Look pine = new Look(SceneryArchetype.Pine, Role.Bark, P(Mix(theme.Bark, 0x7A4A30, 0.35f), theme.Bark),
+                        Role.Leaf, P(Mix(needle, 0x3A5A3A, 0.2f), needleTop));
+                    Look spruce = Tree(theme, SceneryArchetype.Conifer, needle, needleTop);
+                    return Look.OneOf(spruce, spruce, pine);
+                }
                 case "umbrella":
-                    return Tree(theme, SceneryArchetype.Umbrella, Mix(theme.Leaf, 0x7A9A3A, 0.35f), theme.LeafTop);
+                {
+                    Look umbrella = Tree(theme, SceneryArchetype.Umbrella, Mix(theme.Leaf, 0x7A9A3A, 0.35f), theme.LeafTop);
+                    Look palm = new Look(SceneryArchetype.Palm, Role.Bark, P(Mix(theme.Bark, 0x8A7A60, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x5A9A3A, 0.3f), Mix(theme.LeafTop, 0xC8C070, 0.3f)));
+                    return Look.OneOf(umbrella, umbrella, palm);
+                }
                 case "swamp_tree":
                     return new Look(SceneryArchetype.SwampTree, Role.Bark, P(Tone(theme.Bark, 0.8f), theme.Bark),
                         Role.Leaf, P(Mix(theme.Leaf, 0x4A6A3A, 0.4f), Mix(theme.LeafTop, 0x9AB070, 0.4f)));
@@ -242,22 +288,26 @@ namespace Cosmimera.Bootstrap.Demo
                     return new Look(SceneryArchetype.Mushroom, Role.Still, P(Mix(theme.Bark, 0xE8DCC0, 0.85f), C(0xE8DCC0)),
                         Role.Bloom, P(theme.Cap, C(0xF8F0E0), theme.CrystalGlow * 0.5f));
                 case "granite":
+                    return Stones(theme, PlanetLook.StoneRgb("granite"), SceneryArchetype.Boulder, SceneryArchetype.Boulder,
+                        SceneryArchetype.Tor);
                 case "granite_tor":
-                    return Stone(theme, PlanetLook.StoneRgb("granite"));
+                    return Stone(theme, PlanetLook.StoneRgb("granite"), SceneryArchetype.Tor);
                 case "limestone":
-                    return Stone(theme, PlanetLook.StoneRgb("limestone"));
+                    return Stones(theme, PlanetLook.StoneRgb("limestone"), SceneryArchetype.Fluted, SceneryArchetype.Fluted,
+                        SceneryArchetype.Boulder);
                 case "marble":
                     return Stone(theme, 0xF0EEE8);
                 case "slate":
-                    return Stone(theme, PlanetLook.StoneRgb("slate"));
+                    return Stones(theme, PlanetLook.StoneRgb("slate"), SceneryArchetype.Slabs, SceneryArchetype.Slabs,
+                        SceneryArchetype.Boulder);
                 case "sandstone":
-                    return Stone(theme, 0xC8926A);
+                    return Stones(theme, 0xC8926A, SceneryArchetype.Ledge, SceneryArchetype.Ledge, SceneryArchetype.Boulder);
                 case "basalt":
                     return Stone(theme, PlanetLook.StoneRgb("basalt"));
                 case "reef_rock":
                     return new Look(SceneryArchetype.Boulder, Role.Rock, P(Mix(theme.Rock, 0x6A6258, 0.65f), C(0x5A8A70)));
                 case "moraine":
-                    return Stone(theme, 0x8A8C90);
+                    return Stones(theme, 0x8A8C90, SceneryArchetype.Cobbles, SceneryArchetype.Cobbles, SceneryArchetype.Boulder);
                 case "basalt_column":
                     return Stone(theme, 0x34343A, SceneryArchetype.Columns);
                 case "stone_spire":
@@ -312,6 +362,47 @@ namespace Cosmimera.Bootstrap.Demo
                         P(C(0xF0C830), C(0xC87020), 0f, GrassSway),
                         P(Color.Lerp(theme.Bloom, C(0x7060E0), 0.6f), C(0xFFF0A0), 0f, GrassSway),
                     });
+                // REQ: planet-world.md#散佈 緯度×海拔 (v7) — climate trees and cold / dry understory.
+                case "baobab":
+                    return new Look(SceneryArchetype.Baobab, Role.Bark, P(Mix(theme.Bark, 0xA89078, 0.55f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x6A9A3A, 0.35f), Mix(theme.LeafTop, 0xC8C870, 0.3f)));
+                case "tree_fern":
+                    return new Look(SceneryArchetype.TreeFern, Role.Bark, P(Mix(theme.Bark, 0x3A2A20, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x3F8A3A, 0.35f), Mix(theme.LeafTop, 0xA8D870, 0.35f)));
+                case "krummholz":
+                {
+                    Color needle = Mix(theme.Needle, 0x2A4A38, 0.5f);
+                    return new Look(SceneryArchetype.Krummholz, Role.Bark, P(Mix(theme.Bark, 0x6A5A50, 0.4f), theme.RockTop),
+                        Role.Leaf, P(needle, theme.Bare ? theme.NeedleTop : Mix(theme.NeedleTop, 0x7A9A70, 0.4f)));
+                }
+                case "cypress":
+                    return new Look(SceneryArchetype.Cypress, Role.Bark, P(theme.Bark, theme.Bark),
+                        Role.Leaf, P(Mix(theme.Needle, 0x284A30, 0.55f), Mix(theme.NeedleTop, 0x5A8A50, 0.45f)));
+                case "mangrove":
+                    return new Look(SceneryArchetype.Mangrove, Role.Bark, P(Mix(theme.Bark, 0x5A4A3A, 0.4f), theme.Bark),
+                        Role.Leaf, P(Mix(theme.Leaf, 0x2F6A3A, 0.4f), Mix(theme.LeafTop, 0x8AB060, 0.35f)));
+                case "succulent":
+                    return new Look(SceneryArchetype.Succulent, Role.Still,
+                        P(Mix(theme.Needle, 0x6A9A8A, 0.5f), Mix(theme.NeedleTop, 0xC8B070, 0.4f)),
+                        Role.Bloom, P(C(0xF0A020), C(0xFFE070), 0f, GrassSway));
+                case "cushion_moss":
+                    return new Look(SceneryArchetype.Cushion, Role.Still, P(Mix(theme.Shrub, 0x5A8A3A, 0.4f), theme.ShrubTop),
+                        Role.Bloom, default, new[]
+                        {
+                            P(C(0xF4F0F8), C(0xFFFFFF)),
+                            P(C(0xE070B0), C(0xFFB0D8)),
+                            P(C(0xF0D040), C(0xFFF0A0)),
+                        });
+                case "cotton_grass":
+                    return new Look(SceneryArchetype.PlumeGrass, Role.Blade, P(Mix(theme.Grass, 0x8A9A5A, 0.35f), C(0xF8F8F2)),
+                        Role.Plume, P(C(0xFAFAF4), C(0xFFFFFF)));
+                case "heather":
+                    return new Look(SceneryArchetype.FlowerPatch, Role.Blade, P(Mix(theme.Shrub, 0x5A5A3A, 0.4f), theme.ShrubTop),
+                        Role.Bloom, default, new[]
+                        {
+                            P(C(0xB060C0), C(0xE0A0E8), 0f, GrassSway),
+                            P(C(0xD080B0), C(0xF8C8E0), 0f, GrassSway),
+                        });
                 default:
                     throw new ArgumentOutOfRangeException(nameof(speciesId), speciesId, "scatter species has no look");
             }
@@ -326,8 +417,10 @@ namespace Cosmimera.Bootstrap.Demo
         private Shader _shader;
         private Shader _sceneryShader;
         private readonly Dictionary<long, List<GameObject>> _live = new Dictionary<long, List<GameObject>>();
+        private static readonly List<GameObject> EmptyCell = new List<GameObject>(0);
         private readonly HashSet<long> _wanted = new HashSet<long>();
         private readonly List<long> _stale = new List<long>();
+        private readonly Queue<long> _pending = new Queue<long>();
         // Items handed to ObjectPhysics (woken rigidbodies): no longer streamed, never rebuilt at their home spot.
         private readonly HashSet<long> _detached = new HashSet<long>();
         private readonly Dictionary<(Color, Color, Role), Material> _materials = new Dictionary<(Color, Color, Role), Material>();
@@ -335,6 +428,7 @@ namespace Cosmimera.Bootstrap.Demo
         private float3 _lastFocus;
         private float _nextRefresh;
         private bool _configured;
+        private bool _initialized;
 
         /// <summary>Number of live scattered objects (roots), for tests and diagnostics.</summary>
         /// <remarks>Pre: none. Post: ≥ 0. Side effects: none.</remarks>
@@ -401,6 +495,8 @@ namespace Cosmimera.Bootstrap.Demo
             _shader = shader;
             _sceneryShader = sceneryShader;
             _configured = true;
+            _initialized = false;
+            _pending.Clear();
             _lastFocus = new float3(float.NaN);
             _nextRefresh = 0f;
         }
@@ -413,7 +509,7 @@ namespace Cosmimera.Bootstrap.Demo
         public void Remove(long key)
         {
             ItemGone?.Invoke(key);
-            if (!_live.TryGetValue(key, out List<GameObject> objects))
+            if (!_live.TryGetValue(key, out List<GameObject> objects) || objects.Count == 0)
             {
                 return;
             }
@@ -470,20 +566,23 @@ namespace Cosmimera.Bootstrap.Demo
                 return false;
             }
 
-            Look look = _looks[item.KindIndex];
+            uint hash = Hash(item.CellKey);
+            Look look = Form(_looks[item.KindIndex], hash);
             shape = look.Archetype switch
             {
-                SceneryArchetype.Broadleaf => FarShape.Broadleaf,
-                SceneryArchetype.SwampTree => FarShape.Broadleaf,
-                SceneryArchetype.Conifer => FarShape.Conifer,
-                SceneryArchetype.Umbrella => FarShape.Umbrella,
+                SceneryArchetype.Broadleaf or SceneryArchetype.Birch or SceneryArchetype.Willow => FarShape.Broadleaf,
+                SceneryArchetype.SwampTree or SceneryArchetype.Mangrove => FarShape.Broadleaf,
+                SceneryArchetype.Conifer or SceneryArchetype.Cypress => FarShape.Conifer,
+                SceneryArchetype.Umbrella or SceneryArchetype.Pine or SceneryArchetype.Palm or SceneryArchetype.Baobab or
+                    SceneryArchetype.TreeFern => FarShape.Umbrella,
                 SceneryArchetype.Snag => FarShape.Snag,
                 SceneryArchetype.Mushroom => FarShape.Mushroom,
                 SceneryArchetype.Cactus => FarShape.Column,
                 SceneryArchetype.Columns => FarShape.Column,
                 SceneryArchetype.Spire => FarShape.Spire,
                 SceneryArchetype.CrystalCluster => FarShape.Crystal,
-                SceneryArchetype.Boulder => item.SizeM >= FarMinRockM ? FarShape.Boulder : FarShape.None,
+                SceneryArchetype.Boulder or SceneryArchetype.Tor or SceneryArchetype.Slabs or SceneryArchetype.Ledge or
+                    SceneryArchetype.Cobbles or SceneryArchetype.Fluted => item.SizeM >= FarMinRockM ? FarShape.Boulder : FarShape.None,
                 _ => FarShape.None,
             };
             if (shape == FarShape.None)
@@ -496,7 +595,6 @@ namespace Cosmimera.Bootstrap.Demo
                            shape == FarShape.Mushroom;
             if (twoPart)
             {
-                uint hash = Hash(item.CellKey);
                 Palette second = look.VariantsB != null ? look.VariantsB[(int)((hash >> 4) % (uint)look.VariantsB.Length)] : look.B;
                 body = second.Color;
                 top = second.Top;
@@ -519,13 +617,16 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         private void BuildCell(long key)
         {
-            var objects = new List<GameObject>();
-            _live[key] = objects;
             if (_detached.Contains(key) || !_planner.TryGetItem(key, out ScatterItem item) ||
                 (_isDestroyed != null && _isDestroyed(key)))
             {
+                // Share an immutable empty list so empty cells avoid heap allocations while preserving _live's test contract.
+                _live[key] = EmptyCell;
                 return;
             }
+
+            var objects = new List<GameObject>(1);
+            _live[key] = objects;
 
             float3 world = _config.ToWorld(item.Direction, item.AltitudeM - 0.1f); // sink slightly so slopes never expose the base
             PlanetFrame frame = PlanetFrame.FromUp(item.Direction);
@@ -545,6 +646,7 @@ namespace Cosmimera.Bootstrap.Demo
             // Presentation-only variety from the cell key: which mesh, and a little girth. The rule layer's size, yaw
             // and collider are untouched, so the same item blocks the same way whatever it looks like.
             uint hash = Hash(item.CellKey);
+            look = Form(look, hash);
             float girth = 0.9f + ((hash >> 8) & 0xFF) / 255f * 0.24f;
             // Colliders keep the primitive shapes ScatterItem.BlockRadiusM / VolumeL were derived from.
             switch (item.Shape)
@@ -713,18 +815,25 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             float3 focus = _focus();
-            bool moved = !math.all(math.isfinite(_lastFocus)) || math.distance(focus, _lastFocus) > RefreshMoveM;
-            if (!moved && Time.time < _nextRefresh)
+            if (!_initialized)
             {
+                _lastFocus = focus;
+                _nextRefresh = Time.time + RefreshSeconds;
+                Refresh(focus);
                 return;
             }
 
-            _lastFocus = focus;
-            _nextRefresh = Time.time + RefreshSeconds;
-            Refresh(focus);
+            bool moved = !math.all(math.isfinite(_lastFocus)) || math.distance(focus, _lastFocus) > RefreshMoveM;
+            if (moved)
+            {
+                _lastFocus = focus;
+                BeginRefresh(focus);
+            }
+
+            DrainPending();
         }
 
-        private void Refresh(float3 focus)
+        private void BeginRefresh(float3 focus)
         {
             float3 up = _config.ToDirection(focus);
             CollectCells(up);
@@ -748,12 +857,45 @@ namespace Cosmimera.Bootstrap.Demo
                 _live.Remove(key);
             }
 
+            _pending.Clear();
             foreach (long key in _wanted)
             {
                 if (!_live.ContainsKey(key))
                 {
-                    BuildCell(key);
+                    _pending.Enqueue(key);
                 }
+            }
+        }
+
+        private void DrainPending()
+        {
+            int built = 0;
+            while (built < BuildCellsPerFrame && _pending.Count > 0)
+            {
+                long key = _pending.Dequeue();
+                if (!_wanted.Contains(key) || _live.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                BuildCell(key);
+                built++;
+            }
+        }
+
+        private void Refresh(float3 focus)
+        {
+            _initialized = true;
+            BeginRefresh(focus);
+            while (_pending.Count > 0)
+            {
+                long key = _pending.Dequeue();
+                if (!_wanted.Contains(key) || _live.ContainsKey(key))
+                {
+                    continue;
+                }
+
+                BuildCell(key);
             }
         }
 

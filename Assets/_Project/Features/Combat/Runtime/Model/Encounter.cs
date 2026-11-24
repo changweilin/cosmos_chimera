@@ -171,6 +171,22 @@ namespace Cosmimera.Combat
         /// 0 when the player's creatures all fainted; trainer-battles.md#共用規則).
         /// </summary>
         TrainerBattleEnded = 13,
+        /// <summary>
+        /// A lightning strike hit TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (weather.md#落雷). A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Struck = 14,
+        /// <summary>
+        /// Flames or a blast hurt TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (destructibles.md#延燒). A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Scorched = 15,
+        /// <summary>
+        /// A quake crack opened under TargetId (a unit or Encounter.PlayerCharacterId) for Amount; SourceId is
+        /// Encounter.NoSource (planet-world.md#地震噴發). Units are thrown clear; for the player see
+        /// Encounter.PlayerLaunchDirection. A Faint or PlayerDowned event may follow.
+        /// </summary>
+        Quaked = 16,
     }
 
     /// <summary>How the player's support creature fights (combat.md#支援模式, Q-C60).</summary>
@@ -273,8 +289,15 @@ namespace Cosmimera.Combat
         public int Level { get; internal set; }
 
         /// <summary>Whether this unit is a planet boss (HP ×3, body and melee volumes ×1.5 — D0-R2).</summary>
-        /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss. Side effects: none.</remarks>
+        /// <remarks>Pre: none. Post: fixed at creation; true only for wild units built by Encounter.AddBoss or AddTrialBoss. Side effects: none.</remarks>
         public bool IsBoss { get; internal set; }
+
+        /// <summary>True for a terrain trial's dungeon boss fighting for the trial master (trainer-battles.md#地形試煉).</summary>
+        /// <remarks>Pre: none. Post: implies IsBoss and IsTrainerOwned; fixed at creation. Side effects: none.</remarks>
+        public bool IsTrialBoss { get; internal set; }
+
+        // Set for a supergiant trial boss: it enters the field already overloaded.
+        internal bool OverloadOnField { get; set; }
 
         /// <summary>Boss enrage stage reached so far (combat.md#BOSS-階段, Q-C48); 0 = opening stage.</summary>
         /// <remarks>
@@ -296,6 +319,7 @@ namespace Cosmimera.Combat
         public long WindupEndsAtMs { get; internal set; }
 
         internal int WindupTargetId { get; set; }
+        internal int WindupDurationMs { get; set; }
         internal CastContext WindupContext { get; set; }
 
         /// <summary>End of the current stagger (combat.md#失衡與擊退); at or before now means not staggered.</summary>
@@ -482,7 +506,7 @@ namespace Cosmimera.Combat
     /// avoidance; movement speed ignores move_speed effects. All of these are presentation-visible but never break a rule-layer contract.
     /// Pre: one owner, main thread. Side effects: owns its units and RNG stream.
     /// </remarks>
-    public sealed class Encounter
+    public sealed partial class Encounter
     {
         /// <summary>
         /// How far (m) the player may reach to pick a not-yet-engaged wild unit as a Focus target and so start the fight
@@ -530,6 +554,9 @@ namespace Cosmimera.Combat
         private readonly CombatBalance _balance;
         private readonly IEncounterSurface _surface;
         private readonly List<EncounterUnit> _units = new List<EncounterUnit>(32);
+        private readonly List<EncounterUnit> _sepUnits = new List<EncounterUnit>(32);
+        private readonly List<float3> _sepDirs = new List<float3>(32);
+        private readonly List<EncounterUnit> _engParty = new List<EncounterUnit>(4);
         private readonly List<EncounterEvent> _events = new List<EncounterEvent>(64);
         private readonly List<AiEnemy> _enemyBuffer = new List<AiEnemy>(32);
         private readonly List<AiMoveOption> _optionBuffer = new List<AiMoveOption>(MaxSlots);
@@ -661,7 +688,7 @@ namespace Cosmimera.Combat
             }
 
             if (u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) || u.IsBlocking || IsRolling(u, nowMs) ||
-                u.WindupSlot != EncounterUnit.NoWindup)
+                u.Combatant.Ailments.IsFrozen(nowMs) || u.WindupSlot != EncounterUnit.NoWindup)
             {
                 return false;
             }
@@ -818,6 +845,11 @@ namespace Cosmimera.Combat
                 return;
             }
 
+            if (t.Combatant.Ailments.IsActive(Ailment.Weighted, nowMs))
+            {
+                damage = (int)((long)damage * 135 / 100);
+            }
+
             long capacityMilli = (long)StaggerCapacityHp(t, nowMs) * 1000;
             t.StaggerGaugeMilli = math.min(capacityMilli, t.StaggerGaugeMilli + (long)damage * 1000);
             if (t.StaggerGaugeMilli < capacityMilli)
@@ -955,6 +987,11 @@ namespace Cosmimera.Combat
 
         private void AddStance(EncounterUnit t, int sourceId, int preBlockDamage, long nowMs)
         {
+            if (t.Combatant.Ailments.IsActive(Ailment.Sunder, nowMs))
+            {
+                preBlockDamage = (int)((long)preBlockDamage * 135 / 100);
+            }
+
             BlockTuning b = _balance.Block;
             long capacityMilli = (long)b.CapacityHp(t.Combatant.MaxHp) * 1000;
             t.StanceGaugeMilli = math.min(capacityMilli, t.StanceGaugeMilli + (long)preBlockDamage * 1000);
@@ -1000,7 +1037,7 @@ namespace Cosmimera.Combat
 
         // REQ: combat.md#失衡與擊退. Pushed away from the volume's anchor (the caster for caster-anchored moves, the
         // impact point for aimed ones); sea and building rules are the same as for any other displacement.
-        private void Knockback(EncounterUnit t, float3 anchor, float3 forward, int damage)
+        private void Knockback(EncounterUnit t, float3 anchor, float3 forward, int damage, long nowMs = 0)
         {
             StaggerTuning s = _balance.Stagger;
             if (t.IsBoss || s.KnockbackMm == 0 ||
@@ -1012,6 +1049,11 @@ namespace Cosmimera.Combat
             float3 up = Up(t.Position);
             float3 away = Tangent(up, t.Position - anchor, forward);
             float step = s.KnockbackMm * 0.001f / _planet.Radius;
+            if (nowMs >= 0 && t.Combatant.Ailments.IsActive(Ailment.Turbulent, nowMs))
+            {
+                step *= 1.8f;
+            }
+
             PlaceIfAllowed(t, math.normalize(up * math.cos(step) + away * math.sin(step)));
         }
 
@@ -1031,6 +1073,108 @@ namespace Cosmimera.Combat
 
             u.BossStage = stage;
             u.Combatant.Book.SetPhaseEffects(_enrageEffects[stage]);
+        }
+
+        private void UpdateUnitAilments(EncounterUnit u, long nowMs)
+        {
+            AilmentStepResult step = u.Combatant.Ailments.Step(
+                nowMs,
+                u.Combatant.MaxHp,
+                u.Combatant.EffectiveResistPercent(Element.Wood, nowMs),
+                u.Combatant.EffectiveResistPercent(Element.Fire, nowMs),
+                u.Combatant.EffectiveResistPercent(Element.Thunder, nowMs),
+                u.Combatant.Core.YangDef,
+                u.Combatant.Core.YinDef);
+
+            if (step.TotalDamage > 0)
+            {
+                int dealt = u.Combatant.ApplyDirectDamage(step.TotalDamage, nowMs);
+                UpdateBossStage(u);
+                _events.Add(new EncounterEvent(EncounterEventKind.Hit, u.Id, u.Id, 0, dealt));
+                if (u.Combatant.IsFainted)
+                {
+                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, u.Id, u.Id, 0, 0));
+                    return;
+                }
+            }
+
+            if (step.ShockPulse)
+            {
+                if (u.WindupSlot != EncounterUnit.NoWindup && u.WindupDurationMs >= AilmentTuning.ShockInterruptWindupMs)
+                {
+                    CancelWindup(u, nowMs);
+                }
+
+                // Chain lightning to nearby same-side units that are Soaked or Shocked.
+                float chainRadius = step.ShockChainExpanded
+                    ? AilmentTuning.ExpandedShockChainRadiusM
+                    : AilmentTuning.DefaultAilmentRadiusM;
+                float3 uDir = Up(u.Position);
+                for (int i = 0; i < _units.Count; i++)
+                {
+                    EncounterUnit other = _units[i];
+                    if (other.Id == u.Id || !other.IsActive || other.Side != u.Side)
+                    {
+                        continue;
+                    }
+
+                    if (!other.Combatant.Ailments.IsActive(Ailment.Soaked, nowMs)
+                        && !other.Combatant.Ailments.IsActive(Ailment.Shock, nowMs))
+                    {
+                        continue;
+                    }
+
+                    if (ArcM(uDir, Up(other.Position), _planet.Radius) <= chainRadius)
+                    {
+                        int chainDmg = other.Combatant.ApplyDirectDamage(Math.Max(1, step.ShockDamage), nowMs);
+                        UpdateBossStage(other);
+                        _events.Add(new EncounterEvent(EncounterEventKind.Hit, u.Id, other.Id, 0, chainDmg));
+                        if (other.Combatant.IsFainted)
+                        {
+                            _events.Add(new EncounterEvent(EncounterEventKind.Faint, u.Id, other.Id, 0, 0));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void SpreadAilments(EncounterUnit source, int casterId, in CastContext ctx, long nowMs)
+        {
+            float3 srcDir = Up(source.Position);
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit other = _units[i];
+                if (other.Id == source.Id || !other.IsActive || other.Side != source.Side)
+                {
+                    continue;
+                }
+
+                if (ArcM(srcDir, Up(other.Position), _planet.Radius) > AilmentTuning.DefaultAilmentRadiusM)
+                {
+                    continue;
+                }
+
+                SpreadSingleAilment(source, other, Ailment.Burn, ctx, nowMs);
+                SpreadSingleAilment(source, other, Ailment.Soaked, ctx, nowMs);
+                SpreadSingleAilment(source, other, Ailment.Frostbite, ctx, nowMs);
+                SpreadSingleAilment(source, other, Ailment.Toxin, ctx, nowMs);
+                SpreadSingleAilment(source, other, Ailment.Shock, ctx, nowMs);
+            }
+        }
+
+        private static void SpreadSingleAilment(EncounterUnit source, EncounterUnit target, Ailment ailment,
+            in CastContext ctx, long nowMs)
+        {
+            if (!source.Combatant.Ailments.IsActive(ailment, nowMs))
+            {
+                return;
+            }
+
+            Element elem = AilmentTuning.ElementOf(ailment);
+            int resist = target.Combatant.EffectiveResistPercent(elem, nowMs);
+            target.Combatant.Ailments.ApplyBuildup(
+                ailment, 50, resist, 0, false, false, 1000, 1000,
+                ctx.MasteryPercent, ctx.Attack, ctx.AttackerLevelPpm, target.Combatant.MaxHp, nowMs);
         }
 
         /// <summary><see cref="ObjectEvent.SourceId"/> of an object that burnt out on its own.</summary>
@@ -1436,13 +1580,45 @@ namespace Cosmimera.Combat
             Contract.Requires(order >= 0, "order must be >= 0");
             for (int i = 0; i < _units.Count; i++)
             {
-                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].TrainerOrder != order,
-                    "order already used by this trainer");
+                Contract.Requires(_units[i].TrainerId != trainerId || _units[i].IsTrialBoss ||
+                                  _units[i].TrainerOrder != order, "order already used by this trainer");
             }
 
             EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, false);
             u.TrainerId = trainerId;
             u.TrainerOrder = order;
+            u.Fielded = false;
+            return u;
+        }
+
+        /// <summary>
+        /// Adds a terrain trial's dungeon boss to the trial master's team: it takes the field first, beside the master's
+        /// lowest-order creature, and its slot is not refilled after it faints. REQ: trainer-battles.md#地形試煉.
+        /// </summary>
+        /// <remarks>
+        /// Pre: as AddBoss; trainerId registered and Idle; the trainer has no trial boss yet; overloaded only for an Adult def.
+        /// Post: as AddBoss (HP and size multipliers), plus TrainerId == trainerId, TrainerOrder == 0 ordered ahead of
+        ///       every other creature, IsTrialBoss, Fielded == false. When overloaded it is overloaded each time it is
+        ///       fielded, until the trainer battle ends.
+        /// Side effects: allocates the unit.
+        /// </remarks>
+        public EncounterUnit AddTrialBoss(CreatureDef def, MoveDef partnerMove, float3 direction, int level,
+            WildIndividual individual, int trainerId, bool overloaded)
+        {
+            Contract.Requires(individual != null, "wild units need an individual");
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            Contract.Requires(_trainers[trainerId] == TrainerBattleState.Idle, "add creatures before the battle starts");
+            Contract.Requires(!overloaded || (def != null && def.Stage == CreatureStage.Adult), "only an adult can overload");
+            for (int i = 0; i < _units.Count; i++)
+            {
+                Contract.Requires(_units[i].TrainerId != trainerId || !_units[i].IsTrialBoss, "trainer already has a trial boss");
+            }
+
+            EncounterUnit u = AddUnit(EncounterSide.Wild, def, partnerMove, direction, level, true, null, individual);
+            u.TrainerId = trainerId;
+            u.TrainerOrder = 0;
+            u.IsTrialBoss = true;
+            u.OverloadOnField = overloaded;
             u.Fielded = false;
             return u;
         }
@@ -1485,6 +1661,22 @@ namespace Cosmimera.Combat
             return true;
         }
 
+        /// <summary>Aborts an active trainer battle as a loss (e.g. player party wiped out while an AI ally remained on field).</summary>
+        /// <remarks>
+        /// Pre: trainerId registered; 0 &lt;= nowMs &lt;= CombatTime.MaxMs; nowMs &gt;= last tick time.
+        /// Post: if trainerId was active, TrainerState(trainerId) == Idle and !HasActiveTrainerBattle; otherwise no-op.
+        /// Side effects: mutates trainer state and units, and appends TrainerBattleEnded(0).
+        /// </remarks>
+        public void CancelTrainerBattle(int trainerId, long nowMs)
+        {
+            Contract.Requires(trainerId >= 0 && trainerId < _trainers.Count, "invalid trainerId");
+            CombatTime.Require(nowMs, _lastTickMs);
+            if (_activeTrainer == trainerId)
+            {
+                EndTrainerBattle(trainerId, false, nowMs);
+            }
+        }
+
         private int TrainerTeamSize(int trainerId)
         {
             int n = 0;
@@ -1506,7 +1698,7 @@ namespace Cosmimera.Combat
             {
                 EncounterUnit u = _units[i];
                 if (u.TrainerId == trainerId && !u.Fielded && !u.Combatant.IsFainted &&
-                    (best == null || u.TrainerOrder < best.TrainerOrder))
+                    (best == null || u.IsTrialBoss || (!best.IsTrialBoss && u.TrainerOrder < best.TrainerOrder)))
                 {
                     best = u;
                 }
@@ -1519,6 +1711,11 @@ namespace Cosmimera.Combat
 
             best.Fielded = true;
             Engage(best);
+            if (best.OverloadOnField && !best.Combatant.IsOverloaded)
+            {
+                BeginUnitOverload(best);
+            }
+
             return true;
         }
 
@@ -1548,6 +1745,11 @@ namespace Cosmimera.Combat
                             fielded++;
                         }
                     }
+                    else if (u.IsTrialBoss && u.Fielded)
+                    {
+                        // REQ: trainer-battles.md#地形試煉 — once the boss falls its slot stays empty.
+                        fielded++;
+                    }
                 }
                 else if (u.Side == EncounterSide.Player && !u.Combatant.IsFainted)
                 {
@@ -1576,6 +1778,15 @@ namespace Cosmimera.Combat
                 EncounterUnit u = _units[i];
                 if (u.TrainerId == trainerId)
                 {
+                    if (u.Combatant.IsOverloaded)
+                    {
+                        u.Combatant.EndOverload();
+                        if (u.Def != u.BaseDef)
+                        {
+                            ApplyUnitForm(u, u.BaseDef, out _);
+                        }
+                    }
+
                     u.Fielded = false;
                     u.Engaged = false;
                     u.WantsEngage = false;
@@ -1614,20 +1825,79 @@ namespace Cosmimera.Combat
         public EncounterUnit AddEquippedCreature(CreatureDef def, IReadOnlyList<MoveDef> moves,
             IReadOnlyList<TraitDef> traits, float3 direction, int level)
         {
+            return AddEquippedCreature(def, moves, traits, direction, level, null, null, null, null);
+        }
+
+        /// <summary>Adds a player creature with equipped card moves, bead traits, and field-utility combat skills.</summary>
+        /// <remarks>
+        /// Pre: same as AddEquippedCreature(5 args); optional fieldMoves/fieldTraits entries non-null when lists are provided.
+        /// Post: signature, partner cards, main field move (full star), partner field moves (★); traits include main/partner field traits.
+        /// Side effects: allocates a player unit; does not fire on_summon.
+        /// </remarks>
+        public EncounterUnit AddEquippedCreature(CreatureDef def, IReadOnlyList<MoveDef> moves,
+            IReadOnlyList<TraitDef> traits, float3 direction, int level,
+            MoveDef mainFieldMove, IReadOnlyList<MoveDef> partnerFieldMoves,
+            TraitDef mainFieldTrait, IReadOnlyList<TraitDef> partnerFieldTraits)
+        {
             Contract.Requires(moves != null && traits != null && moves.Count <= 4 && traits.Count <= 4,
                 "equipped moves and traits must contain at most four definitions");
             foreach (MoveDef move in moves) Contract.Requires(move != null, "move must not be null");
             foreach (TraitDef trait in traits) Contract.Requires(trait != null, "trait must not be null");
-            EncounterUnit unit = AddUnit(EncounterSide.Player, def, null, direction, level, false, moves);
+
+            var allMoves = new List<MoveDef>(moves.Count + 1 + (partnerFieldMoves?.Count ?? 0));
+            var downgradeFlags = new List<bool>(moves.Count + 1 + (partnerFieldMoves?.Count ?? 0));
+            foreach (MoveDef move in moves)
+            {
+                allMoves.Add(move);
+                downgradeFlags.Add(true);
+            }
+
+            if (mainFieldMove != null)
+            {
+                allMoves.Add(mainFieldMove);
+                downgradeFlags.Add(false);
+            }
+
+            if (partnerFieldMoves != null)
+            {
+                foreach (MoveDef move in partnerFieldMoves)
+                {
+                    Contract.Requires(move != null, "partner field move must not be null");
+                    allMoves.Add(move);
+                    downgradeFlags.Add(true);
+                }
+            }
+
+            EncounterUnit unit = AddUnit(EncounterSide.Player, def, null, direction, level, false, allMoves, null, downgradeFlags);
             foreach (TraitDef trait in traits)
             {
                 // REQ: creatures.md#技能星級 — a partner-provided trait always works at ★.
-                IReadOnlyList<EffectDef> source = trait.EffectsFor(true);
-                var effects = new EffectSpec[source.Count];
-                for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(source[i]);
-                unit.Combatant.Book.AddPartnerTrait(trait.Id, TriggerSpec.FromDef(trait.Trigger), effects);
+                AddTraitToBook(unit.Combatant.Book, trait, true);
             }
+
+            if (mainFieldTrait != null)
+            {
+                AddTraitToBook(unit.Combatant.Book, mainFieldTrait, false);
+            }
+
+            if (partnerFieldTraits != null)
+            {
+                foreach (TraitDef trait in partnerFieldTraits)
+                {
+                    Contract.Requires(trait != null, "partner field trait must not be null");
+                    AddTraitToBook(unit.Combatant.Book, trait, true);
+                }
+            }
+
             return unit;
+        }
+
+        private static void AddTraitToBook(EffectBook book, TraitDef trait, bool downgraded)
+        {
+            IReadOnlyList<EffectDef> source = trait.EffectsFor(downgraded);
+            var effects = new EffectSpec[source.Count];
+            for (int i = 0; i < effects.Length; i++) effects[i] = EffectSpec.FromDef(source[i]);
+            book.AddPartnerTrait(trait.Id, TriggerSpec.FromDef(trait.Trigger), effects);
         }
 
         /// <summary>
@@ -1649,7 +1919,8 @@ namespace Cosmimera.Combat
         }
 
         private EncounterUnit AddUnit(EncounterSide side, CreatureDef def, MoveDef partnerMove, float3 direction, int level,
-            bool boss, IReadOnlyList<MoveDef> partnerMoves = null, WildIndividual individual = null)
+            bool boss, IReadOnlyList<MoveDef> partnerMoves = null, WildIndividual individual = null,
+            IReadOnlyList<bool> partnerDowngradeFlags = null)
         {
             Contract.Requires(def != null && def.SignatureMove != null, "creature needs a signature move");
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
@@ -1664,8 +1935,8 @@ namespace Cosmimera.Combat
             {
                 MoveDef m = i == 0 ? def.SignatureMove : partnerMoves != null ? partnerMoves[i - 1] : partnerMove;
                 defs[i] = m;
-                // REQ: creatures.md#技能星級 — slot 0 is the creature's own signature; every other slot is partner-provided.
-                moves[i] = CastMove.FromDef(m, i > 0);
+                bool downgraded = i > 0 && (partnerDowngradeFlags == null || partnerDowngradeFlags[i - 1]);
+                moves[i] = CastMove.FromDef(m, downgraded);
                 volumes[i] = BuildVolume(m, boss);
                 ranges[i] = m.RangeClass;
             }
@@ -1676,11 +1947,13 @@ namespace Cosmimera.Combat
 
             EffectBook book = BookFor(def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
+            combatant.Level = level;
             float radius = BodyRadiusFor(def.SizeClass);
             int collisionMm = _balance.Collision.BodyMm(def.SizeClass);
             if (boss)
             {
                 combatant.MultiplyMaxHp(BossHpMultiplier);
+                combatant.Ailments.IsBoss = true;
                 radius = radius * BossSizePermille / 1000f;
                 // REQ: combat.md#實體碰撞 — a boss's body grows with its hit volume.
                 collisionMm = ScaleBoss(collisionMm);
@@ -1748,6 +2021,7 @@ namespace Cosmimera.Combat
 
             CreatureStats s = u.Def.Stats.AtLevel(level);
             u.Combatant.Rescale(s);
+            u.Combatant.Level = level;
             u.Speed = s.Speed;
             u.Level = level;
         }
@@ -1851,8 +2125,11 @@ namespace Cosmimera.Combat
             EncounterUnit u = Get(unitId);
             Contract.Requires(u.Side == EncounterSide.Player, "only player-side creatures roll");
             Contract.Requires(math.all(math.isfinite(direction)), "direction must be finite");
+            int cooldownMs = u.Combatant.Ailments.IsActive(Ailment.Soaked, nowMs)
+                ? _balance.CreatureRoll.CooldownMs * 125 / 100
+                : _balance.CreatureRoll.CooldownMs;
             if (!u.IsActive || u.IsStaggered(nowMs) || u.IsGuardBroken(nowMs) ||
-                nowMs - u.RollStartedAtMs < _balance.CreatureRoll.CooldownMs)
+                u.Combatant.Ailments.IsFrozen(nowMs) || nowMs - u.RollStartedAtMs < cooldownMs)
             {
                 return false;
             }
@@ -1861,9 +2138,29 @@ namespace Cosmimera.Combat
             float3 flat = direction - up * math.dot(direction, up);
             u.RollHeading = math.lengthsq(flat) > 1e-8f ? math.normalize(flat) : -u.Forward;
             // Q-C58: roll distance follows body height; the size-class collision radius is the height proxy.
-            u.RollDistanceM = 2f * u.CollisionRadiusM * _balance.CreatureRoll.DistanceHeightPermille / 1000f;
-            u.RollRemainingM = u.RollDistanceM;
+            float dist = 2f * u.CollisionRadiusM * _balance.CreatureRoll.DistanceHeightPermille / 1000f;
+            if (u.Combatant.Ailments.IsActive(Ailment.Weighted, nowMs))
+            {
+                dist *= 0.5f;
+            }
+
+            u.RollDistanceM = dist;
+            u.RollRemainingM = dist;
             u.RollStartedAtMs = nowMs;
+
+            if (u.Combatant.Ailments.OnRoll(nowMs))
+            {
+                int sunderDmg = u.Combatant.Ailments.ComputeSunderDamage(
+                    u.Combatant.EffectiveResistPercent(Element.Metal, nowMs),
+                    u.Combatant.Core.YangDef);
+                int dealt = u.Combatant.ApplyDirectDamage(sunderDmg, nowMs);
+                _events.Add(new EncounterEvent(EncounterEventKind.Hit, u.Id, u.Id, 0, dealt));
+                if (u.Combatant.IsFainted)
+                {
+                    _events.Add(new EncounterEvent(EncounterEventKind.Faint, u.Id, u.Id, 0, 0));
+                }
+            }
+
             return true;
         }
 
@@ -1898,6 +2195,21 @@ namespace Cosmimera.Combat
             u.Engaged = false;
             u.Provoked = false;
             u.WantsEngage = false;
+        }
+
+        /// <summary>Puts a wild unit taken out with <see cref="Remove"/> back into play where it stood (leaving an indoor dungeon).</summary>
+        /// <remarks>
+        /// REQ: docs/decisions/ADR-0011-interior-dungeon-sphere.md — surface wilds sit out while the party is indoors.
+        /// Pre: unitId is a Wild unit that is not trainer-owned and not Fielded.
+        /// Post: Fielded; still !Engaged, !Provoked and not waiting to engage; position, HP and knocked-out state unchanged.
+        /// Side effects: none beyond that.
+        /// </remarks>
+        public void Restore(int unitId)
+        {
+            EncounterUnit u = Get(unitId);
+            Contract.Requires(u.Side == EncounterSide.Wild && !u.IsTrainerOwned, "only non-trainer wild units are restored");
+            Contract.Requires(!u.Fielded, "unit is already in play");
+            u.Fielded = true;
         }
 
         /// <summary>
@@ -2029,6 +2341,13 @@ namespace Cosmimera.Combat
                 return OverloadResult.AlreadyUsedThisCombat;
             }
 
+            BeginUnitOverload(u);
+            _overloadedThisCombat.Add(unitId);
+            return OverloadResult.Ok;
+        }
+
+        private void BeginUnitOverload(EncounterUnit u)
+        {
             CreatureDef overloadForm = u.BaseDef.OverloadForm;
             if (overloadForm != null)
             {
@@ -2040,9 +2359,6 @@ namespace Cosmimera.Combat
             {
                 u.Combatant.BeginOverload();
             }
-
-            _overloadedThisCombat.Add(unitId);
-            return OverloadResult.Ok;
         }
 
         /// <summary>Reverts all overloaded units and resets per-combat overload usage when combat ends (Q-C12).</summary>
@@ -2249,6 +2565,22 @@ namespace Cosmimera.Combat
 
                 u.LastMoveSpeedMs = 0f;
                 DrainStagger(u, nowMs, dtMs);
+                UpdateUnitAilments(u, nowMs);
+                if (!u.IsActive)
+                {
+                    continue;
+                }
+
+                if (u.Combatant.Ailments.IsFrozen(nowMs))
+                {
+                    if (u.WindupSlot != EncounterUnit.NoWindup)
+                    {
+                        CancelWindup(u, nowMs);
+                    }
+
+                    u.IsBlocking = false;
+                    continue;
+                }
 
                 bool player = u.Side == EncounterSide.Player;
                 if (player && u.IsGuardBroken(nowMs))
@@ -2374,6 +2706,9 @@ namespace Cosmimera.Combat
                 }
             }
 
+            StepLightning(previousMs, nowMs, playerPosition);
+            StepQuakes(previousMs, nowMs, playerPosition);
+            StepFire(previousMs, nowMs);
             BurnObjects(nowMs);
             AdvanceConfrontations();
             AdvanceTrainerBattle(nowMs);
@@ -2432,6 +2767,11 @@ namespace Cosmimera.Combat
                 if (r.Destroyed)
                 {
                     EmitDestroyed(index, casterId, ctx.Move.Power, harvest);
+                }
+
+                if ((r.Reactions & ObjectReaction.Blasted) != 0)
+                {
+                    QueueBlast(c.Center);
                 }
             }
         }
@@ -2494,40 +2834,63 @@ namespace Cosmimera.Combat
         private void Separate(float3 playerPosition)
         {
             float r = _planet.Radius;
+            float invR = 1f / r;
             float3 playerStart = Up(playerPosition);
             float3 playerDir = playerStart;
             float playerRadius = _balance.Collision.CharacterMm * 0.001f;
+
+            _sepUnits.Clear();
+            _sepDirs.Clear();
+            for (int i = 0; i < _units.Count; i++)
+            {
+                EncounterUnit u = _units[i];
+                if (u.IsActive)
+                {
+                    _sepUnits.Add(u);
+                    _sepDirs.Add(Up(u.Position));
+                }
+            }
+
+            int activeCount = _sepUnits.Count;
             for (int pass = 0; pass < SeparationPasses; pass++)
             {
-                for (int i = 0; i < _units.Count; i++)
+                for (int i = 0; i < activeCount; i++)
                 {
-                    EncounterUnit a = _units[i];
-                    if (!a.IsActive)
-                    {
-                        continue;
-                    }
+                    EncounterUnit a = _sepUnits[i];
+                    float ra = a.CollisionRadiusM;
+                    float3 da = _sepDirs[i];
 
-                    for (int j = i + 1; j < _units.Count; j++)
+                    for (int j = i + 1; j < activeCount; j++)
                     {
-                        EncounterUnit b = _units[j];
-                        if (!b.IsActive)
+                        EncounterUnit b = _sepUnits[j];
+                        float rb = b.CollisionRadiusM;
+                        float3 db = _sepDirs[j];
+                        float maxChord = (ra + rb) * invR + 1e-5f;
+                        if (math.distancesq(da, db) > maxChord * maxChord)
                         {
                             continue;
                         }
 
-                        float3 da = Up(a.Position);
-                        float3 db = Up(b.Position);
-                        if (PushApart(ref da, a.CollisionRadiusM, ref db, b.CollisionRadiusM, r))
+                        if (PushApart(ref da, ra, ref db, rb, r))
                         {
                             PlaceIfAllowed(a, da);
                             PlaceIfAllowed(b, db);
+                            da = Up(a.Position);
+                            _sepDirs[i] = da;
+                            _sepDirs[j] = Up(b.Position);
+                        }
+                        else
+                        {
+                            da = _sepDirs[i];
                         }
                     }
 
-                    float3 d = Up(a.Position);
-                    if (PushApart(ref d, a.CollisionRadiusM, ref playerDir, playerRadius, r))
+                    float playerChord = (ra + playerRadius) * invR + 1e-5f;
+                    if (math.distancesq(da, playerDir) <= playerChord * playerChord &&
+                        PushApart(ref da, ra, ref playerDir, playerRadius, r))
                     {
-                        PlaceIfAllowed(a, d);
+                        PlaceIfAllowed(a, da);
+                        _sepDirs[i] = Up(a.Position);
                     }
                 }
             }
@@ -2638,11 +3001,12 @@ namespace Cosmimera.Combat
             }
 
             _events.Add(new EncounterEvent(EncounterEventKind.Cast, u.Id, targetId, slot, 0));
-            int windupMs = WindupMsFor(u, slot);
+            int windupMs = WindupMsFor(u, slot, nowMs);
             if (windupMs > 0)
             {
                 u.WindupSlot = slot;
                 u.WindupTargetId = targetId;
+                u.WindupDurationMs = windupMs;
                 u.WindupContext = ctx;
                 u.WindupEndsAtMs = nowMs + windupMs;
                 return;
@@ -2651,10 +3015,20 @@ namespace Cosmimera.Combat
             ResolveCast(u, partner, slot, targetId, ctx, weather, nowMs);
         }
 
-        private int WindupMsFor(EncounterUnit u, int slot)
+        private int WindupMsFor(EncounterUnit u, int slot, long nowMs = 0)
         {
             int ms = u.MoveDefs[slot].WindupMs;
-            return u.IsBoss ? (int)((long)ms * _balance.BossWindupPermille / 1000) : ms;
+            if (u.IsBoss)
+            {
+                ms = (int)((long)ms * _balance.BossWindupPermille / 1000);
+            }
+
+            if (nowMs >= 0 && u.Combatant.Ailments.IsActive(Ailment.Shock, nowMs))
+            {
+                ms = (int)((long)ms * 125 / 100);
+            }
+
+            return ms;
         }
 
         // REQ: combat.md#前搖 — the hit tracks the target chosen at cast time; a target that is gone falls back to the
@@ -2785,6 +3159,16 @@ namespace Cosmimera.Combat
                 }
 
                 int bonus = t.IsStaggered(nowMs) ? _balance.Stagger.DamageTakenBonusPercent : 0;
+                if (t.Combatant.Ailments.IsActive(Ailment.Eclipse, nowMs))
+                {
+                    // Flank / back hit (+15% damage) when the attack arrives from beside or behind the target's facing.
+                    float3 toAttacker = anchor - t.Position;
+                    if (math.lengthsq(toAttacker) > 1e-6f && math.dot(math.normalize(toAttacker), t.Forward) <= 0.35f)
+                    {
+                        bonus += 15;
+                    }
+                }
+
                 bool perfectBlock = IsPerfectBlock(t, nowMs);
                 bool blocked = t.IsBlocking || perfectBlock;
                 long sinceRoll = nowMs - t.RollStartedAtMs;
@@ -2851,7 +3235,16 @@ namespace Cosmimera.Combat
                 if (hit && r.Damage > 0 && !r.Fainted)
                 {
                     AddStagger(t, casterId, r.Damage, nowMs);
-                    Knockback(t, anchor, forward, r.Damage);
+                    if (r.AilmentResult.StaggerDamage > 0)
+                    {
+                        AddStagger(t, casterId, r.AilmentResult.StaggerDamage, nowMs);
+                    }
+
+                    Knockback(t, anchor, forward, r.Damage, nowMs);
+                    if (r.AilmentResult.SpreadTriggered)
+                    {
+                        SpreadAilments(t, casterId, ctx, nowMs);
+                    }
                 }
             }
 
@@ -2876,8 +3269,8 @@ namespace Cosmimera.Combat
             if (outcome == HitOutcome.Hit && move.DealsDamage)
             {
                 int defence = move.Polarity == Polarity.Yang ? _playerYangDefence : _playerYinDefence;
-                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, 0,
-                    _balance.Stats.AttackRatioPermille(ctx.Attack, defence));
+                int raw = DamageModel.Compute(ctx.EffectivePower, ctx.MasteryPercent, DamageModel.NeutralStat,
+                    ctx.Attack, defence);
                 if (HitResolver.RollCrit(ctx.CritRatePermille, ref _rng))
                 {
                     raw = DamageModel.ApplyCrit(raw, ctx.CritDamagePercent);
@@ -2971,13 +3364,24 @@ namespace Cosmimera.Combat
             // Cover belongs to the intruder, not the observer. Query each intruder once even when many wilds observe it.
             bool playerInGrass = _playerMoveSpeedMs <= SlowStealthSpeedThresholdMs &&
                 _grassCoverAt != null && _grassCoverAt(Up(playerPosition));
+            _engParty.Clear();
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit p = _units[i];
-                p.HasGrassCover = p.Side == EncounterSide.Player && p.IsActive &&
-                    p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs && _grassCoverAt != null && _grassCoverAt(Up(p.Position));
+                if (p.Side == EncounterSide.Player && p.IsActive)
+                {
+                    p.HasGrassCover = p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs &&
+                        _grassCoverAt != null && _grassCoverAt(Up(p.Position));
+                    _engParty.Add(p);
+                }
+                else
+                {
+                    p.HasGrassCover = false;
+                }
             }
 
+            float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
+            float stealthScale = _partyDetectionPermille * 0.001f;
             for (int i = 0; i < _units.Count; i++)
             {
                 EncounterUnit w = _units[i];
@@ -2996,9 +3400,33 @@ namespace Cosmimera.Combat
                     continue;
                 }
 
-                WeatherProfile weather = WeatherAt(Up(w.Position), nowMs);
                 float playerDist = math.distance(w.Position, playerPosition);
                 float nearest = playerDist;
+                for (int j = 0; j < _engParty.Count; j++)
+                {
+                    float d = math.distance(w.Position, _engParty[j].Position);
+                    nearest = math.min(nearest, d);
+                }
+
+                // WeatherProfile.TerritoryRadiusPermille <= 1000 everywhere; skip expensive region weather lookup when far.
+                float maxTerritoryM = _balance.Territory.RadiusMm(w.Individual.Habit) * 0.001f * stealthScale;
+                if (nearest > maxTerritoryM + 1e-3f)
+                {
+                    w.EngageDistanceM = nearest;
+                    if (w.Engaged)
+                    {
+                        w.Engaged = nearest <= disengageRadiusM;
+                    }
+                    else
+                    {
+                        w.WantsEngage = (w.WantsEngage && nearest <= disengageRadiusM) || w.Provoked;
+                    }
+
+                    w.Provoked = false;
+                    continue;
+                }
+
+                WeatherProfile weather = WeatherAt(Up(w.Position), nowMs);
 
                 // Chord distance is fine at these ranges: chord/arc ≈ 1 − θ²/24, so ≤ 40 m on R ≥ 320 is short by < 0.07 % (26 mm;
                 // SOL Q-D1 B). A threshold crossing that close is not a gameplay distinction.
@@ -3019,27 +3447,24 @@ namespace Cosmimera.Combat
                     }
                 }
 
-                for (int j = 0; j < _units.Count; j++)
+                for (int j = 0; j < _engParty.Count; j++)
                 {
-                    EncounterUnit p = _units[j];
-                    if (p.Side == EncounterSide.Player && p.IsActive)
+                    if (intruderInRange || territoryMm <= 0)
                     {
-                        float d = math.distance(w.Position, p.Position);
-                        nearest = math.min(nearest, d);
-                        if (!intruderInRange && territoryMm > 0)
-                        {
-                            int petThresholdMm = (weather.StealthEnabled || p.HasGrassCover) && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
-                                ? territoryMm / 2
-                                : territoryMm;
-                            if (d <= petThresholdMm * 0.001f)
-                            {
-                                intruderInRange = true;
-                            }
-                        }
+                        break;
+                    }
+
+                    EncounterUnit p = _engParty[j];
+                    float d = math.distance(w.Position, p.Position);
+                    int petThresholdMm = (weather.StealthEnabled || p.HasGrassCover) && p.LastMoveSpeedMs <= SlowStealthSpeedThresholdMs
+                        ? territoryMm / 2
+                        : territoryMm;
+                    if (d <= petThresholdMm * 0.001f)
+                    {
+                        intruderInRange = true;
                     }
                 }
 
-                float disengageRadiusM = _preventWildEscape ? DisengageRadiusM * 1.5f : DisengageRadiusM;
                 w.EngageDistanceM = nearest;
                 if (w.Engaged)
                 {

@@ -157,4 +157,13 @@ namespace Cosmimera.GameData.Editor
         [JsonProperty("kind", Required = Required.Always)] public string Kind;
         [JsonProperty("note")] public string Note;
     }
+
+    internal sealed class FieldUtilityEntryDto
+    {
+        [JsonProperty("utility", Required = Required.Always)] public string Utility;
+        [JsonProperty("kind", Required = Required.Always)] public string Kind;
+        [JsonProperty("aligned_elements", Required = Required.Always)] public List<string> AlignedElements;
+        [JsonProperty("combat_move", Required = Required.DisallowNull)] public MoveDto CombatMove;
+        [JsonProperty("combat_trait", Required = Required.DisallowNull)] public TraitDto CombatTrait;
+    }
 }

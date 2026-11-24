@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: shadow_tundra_foal
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: shadow_tundra_foal
+  lineId: line_shadow_ironsteed
+  stage: 0
+  sizeClass: 0
+  aiStyle: 1
+  niches:
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 4
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: e8401fbbbd1e0e44eb87f20201fffb70, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 27
+  evolutionMaterials:
+  - element: 9
+    tier: 1
+    qty: 3
+  resist: 70000000600000006000000042000000600000007600000060000000600000002900000085000000
+  mastery:
+  - element: 0
+    value: 70
+  - element: 5
+    value: 105
+  - element: 9
+    value: 125
+  stats:
+    hp: 57
+    speed: 98
+    yinAtk: 70
+    yangAtk: 78
+    yinDef: 41
+    yangDef: 66
+  signatureMove: {fileID: 11400000, guid: d106409299e3e0e4f8e5b67be72e3d19, type: 2}
+  trait: {fileID: 11400000, guid: 4d0466e10426b2c41bc11fb43e1a3f64, type: 2}
+  fieldUtility: 66
+  conceptJson: "{\"base\":\"\u7384\u9435\u8272\u5E7C\u99D2 \xD7 \u9838\u7E6B\u8FF7\u4F60\u9280\u88FD\u53E3\u7C27\u7434\u8B77\u7B26\",\"stage_look\":\"\u58A8\u9ED1\u77ED\u6BDB\u8986\u8457\u51B7\u786C\u9752\u7070\u9435\u6591\u7684\u5C0F\u99AC\u99D2\uFF0C\u5954\u8DD1\u6642\u9838\u5074\u767C\u51FA\u4F4E\u6C89\u5171\u9CF4\u9707\u97F3\",\"archetype\":\"arch_nyurgun_bootur\",\"region\":\"\u4E2D\u4E9E/\u5317\u4E9E\",\"motifs_used\":[\"\u7384\u9435\u91CD\u93A7\u9ED1\u99D2\",\"\u53E3\u7C27\u7434\u97F3\u6CE2\"],\"role\":\"\u8FD1\u6230\u7E5E\u5074\uFF1A\u8FD1\u8DDD\u524D\u65B9\u6697\u7259\u54AC\u64CA\uFF08\u65BD\u653E\u5F71\u62DB\u77ED\u66AB\u63D0\u9AD8\u79FB\u52D5\u901F\u5EA6\uFF09\",\"palette\":\"\u6697\u5F71\u5E7D\u9ED1\u3001\u7384\u9435\u9752\u9ED1\u3001\u66AE\u96F2\u7070\u85CD\"}"
+  needsSensitivityReview: 0

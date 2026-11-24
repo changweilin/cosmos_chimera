@@ -300,5 +300,140 @@ namespace Cosmimera.Combat.Tests
 
             Assert.That(wild.Engaged || wild.WantsEngage, Is.False, "territory and provoke are ignored during the battle");
         }
+
+        // REQ: trainer-battles.md#地形試煉 — final battle: master + dungeon boss vs the player.
+        private CreatureDef AdultCreature(string id)
+        {
+            CreatureDef c = Creature(id);
+            c.Set(c.LineId, CreatureStage.Adult, CreatureSizeClass.L, AiStyle.Charge, null, null, 0,
+                new List<EvolutionMaterial>(), new int[10], new List<ElementValue> { new ElementValue(Element.Fire, 15) },
+                new CreatureStats(78, 25, 25, 25, 25, 25), c.SignatureMove, null, "{}", false);
+            return c;
+        }
+
+        private WildIndividual Individual() => new WildIndividual(_niche, Habit.Aggressive, 300, 500, 500, 7);
+
+        private static void Faint(in CastContext ctx, EncounterUnit target, long nowMs)
+        {
+            for (int i = 0; i < 20 && !target.Combatant.IsFainted; i++)
+            {
+                target.Combatant.ReceiveReflect(in ctx, 1000, nowMs);
+            }
+
+            Assert.That(target.Combatant.IsFainted, Is.True, "test knock-out must faint the target");
+        }
+
+        [Test]
+        public void Trial_boss_takes_the_field_first_beside_the_lowest_order_creature()
+        {
+            Encounter e = NewEncounter();
+            int t = e.RegisterTrainer();
+            EncounterUnit c1 = e.AddTrainerCreature(Creature("c1"), null, AtMeters(2f), 10, t, 1);
+            EncounterUnit c0 = e.AddTrainerCreature(Creature("c0"), null, AtMeters(1f), 10, t, 0);
+            EncounterUnit boss = e.AddTrialBoss(Creature("boss"), null, AtMeters(3f), 10, Individual(), t, false);
+
+            Assert.That(boss.IsTrialBoss && boss.IsBoss && boss.IsTrainerOwned, Is.True);
+            Assert.That(boss.Fielded, Is.False);
+            Assert.That(e.StartTrainerBattle(t), Is.True);
+
+            Assert.That(boss.Fielded && boss.Engaged, Is.True);
+            Assert.That(c0.Fielded && c0.Engaged, Is.True);
+            Assert.That(c1.Fielded, Is.False, "field cap 2: boss + one master creature");
+        }
+
+        [Test]
+        public void Fallen_trial_boss_slot_is_not_refilled_and_all_down_wins()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit p = Player(e, Creature("p", 5000), 0f);
+            int t = e.RegisterTrainer();
+            EncounterUnit c0 = e.AddTrainerCreature(Creature("c0"), null, AtMeters(1f), 10, t, 0);
+            EncounterUnit c1 = e.AddTrainerCreature(Creature("c1"), null, AtMeters(2f), 10, t, 1);
+            EncounterUnit boss = e.AddTrialBoss(Creature("boss"), null, AtMeters(3f), 10, Individual(), t, false);
+            Assert.That(e.StartTrainerBattle(t), Is.True);
+
+            CastContext strike = Cast(p, 10);
+            Faint(strike, boss, 10);
+            e.Tick(50, 50, Feet(0f), Free, p.Id);
+            Assert.That(c1.Fielded, Is.False, "the boss's slot stays empty");
+            Assert.That(e.HasActiveTrainerBattle, Is.True);
+
+            Faint(strike, c0, 60);
+            e.Tick(100, 50, Feet(0f), Free, p.Id);
+            Assert.That(c1.Fielded && c1.Engaged, Is.True, "the master's own slot still relays");
+
+            Faint(strike, c1, 110);
+            e.Tick(150, 50, Feet(0f), Free, p.Id);
+            Assert.That(e.TrainerState(t), Is.EqualTo(TrainerBattleState.Defeated));
+            Assert.That(EndedWith(e, t, 1), Is.True);
+        }
+
+        [Test]
+        public void Overloaded_trial_boss_enters_overloaded_and_reverts_when_the_battle_ends()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit p = Player(e, Creature("p", 5000), 0f);
+            int t = e.RegisterTrainer();
+            EncounterUnit c0 = e.AddTrainerCreature(AdultCreature("c0"), null, AtMeters(1f), 10, t, 0);
+            EncounterUnit boss = e.AddTrialBoss(AdultCreature("boss"), null, AtMeters(3f), 10, Individual(), t, true);
+            Assert.That(boss.Combatant.IsOverloaded, Is.False);
+            Assert.That(e.StartTrainerBattle(t), Is.True);
+            Assert.That(boss.Combatant.IsOverloaded, Is.True);
+            Assert.That(c0.Combatant.IsOverloaded, Is.False);
+
+            CastContext strike = Cast(p, 10);
+            Faint(strike, boss, 10);
+            Faint(strike, c0, 20);
+            e.Tick(50, 50, Feet(0f), Free, p.Id);
+            Assert.That(e.TrainerState(t), Is.EqualTo(TrainerBattleState.Defeated));
+            Assert.That(boss.Combatant.IsOverloaded, Is.False);
+            Assert.That(boss.Def, Is.SameAs(boss.BaseDef));
+        }
+
+        [Test]
+        public void Trial_boss_contract_violations_throw()
+        {
+            Encounter e = NewEncounter();
+            int t = e.RegisterTrainer();
+            CreatureDef juvenile = Creature("j");
+            Assert.Throws<ContractException>(() => e.AddTrialBoss(juvenile, null, AtMeters(1f), 10, null, t, false));
+            Assert.Throws<ContractException>(() => e.AddTrialBoss(juvenile, null, AtMeters(1f), 10, Individual(), 9, false));
+            Assert.Throws<ContractException>(() => e.AddTrialBoss(juvenile, null, AtMeters(1f), 10, Individual(), t, true),
+                "only an adult overloads");
+            e.AddTrialBoss(juvenile, null, AtMeters(1f), 10, Individual(), t, false);
+            Assert.Throws<ContractException>(() => e.AddTrialBoss(Creature("b2"), null, AtMeters(2f), 10, Individual(), t, false),
+                "one trial boss per trainer");
+            Assert.DoesNotThrow(() => e.AddTrainerCreature(Creature("c0"), null, AtMeters(3f), 10, t, 0),
+                "the boss does not claim order 0");
+        }
+
+        // REQ: ADR-0011 — surface wilds sit out while the party is indoors and come back unchanged.
+        [Test]
+        public void A_removed_wild_is_restored_where_it_stood_without_engaging()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit w = e.AddWild(Creature("w"), null, AtMeters(30f), 10, Individual());
+            float3 at = w.Position;
+            int hp = w.Combatant.Hp;
+            e.Remove(w.Id);
+            Assert.That(w.Fielded, Is.False);
+            e.Restore(w.Id);
+            Assert.That(w.Fielded && !w.Engaged && !w.Provoked, Is.True);
+            Assert.That(w.Position, Is.EqualTo(at));
+            Assert.That(w.Combatant.Hp, Is.EqualTo(hp));
+        }
+
+        [Test]
+        public void Restore_contract_violations_throw()
+        {
+            Encounter e = NewEncounter();
+            EncounterUnit p = Player(e, Creature("p"), 0f);
+            EncounterUnit w = e.AddWild(Creature("w"), null, AtMeters(30f), 10, Individual());
+            int t = e.RegisterTrainer();
+            EncounterUnit c0 = e.AddTrainerCreature(Creature("c0"), null, AtMeters(3f), 10, t, 0);
+            Assert.Throws<ContractException>(() => e.Restore(p.Id), "player units are not restored");
+            Assert.Throws<ContractException>(() => e.Restore(w.Id), "already in play");
+            Assert.Throws<ContractException>(() => e.Restore(c0.Id), "trainer creatures are not restored");
+        }
     }
 }

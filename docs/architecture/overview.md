@@ -45,6 +45,7 @@ Bootstrap → Lobby/Codex → Combat/Capture/Creatures → WorldGen → Planet �
 `Core` 不引用任何 feature；`Planet` 不知道宙獸存在。
 `Codex.Api` 是只依賴 Core 的純 C# 解鎖狀態與事件組件；Save 引用此葉節點，不引用圖鑑 UI，避免存檔反向依賴表現層。
 `GameData` 只引用 Core；除了 Planet、Player 以外的 feature 都可以引用它（ADR-0004）。
+`Uma.Editor`（`Assets/_Project/Editor/Uma/`，僅 Editor）是 Bootstrap 之上的建置工具：讀 Bootstrap 的 NPC DNA 通道範圍建 UMA 種族（ADR-0015），沒有任何組件引用它。
 
 ## 資料流
 ```

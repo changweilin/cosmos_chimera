@@ -680,6 +680,9 @@
   "utility.Levitate": {
     "ja": "浮遊"
   },
+  "utility.Swim": {
+    "ja": "泳ぐ"
+  },
   "utility.CatchRateUp": {
     "ja": "捕獲強化"
   },
@@ -702,7 +705,7 @@
     "ja": "騎乗"
   },
   "utility.ReturnVillage": {
-    "ja": "村へ帰還"
+    "ja": "渡り鳥の帰路"
   },
   "utility.PartyStealth": {
     "ja": "パーティー隠密"
@@ -748,6 +751,108 @@
   },
   "utility.CulinaryPrep": {
     "ja": "下ごしらえ"
+  },
+  "utility.FreezePrep": {
+    "ja": "急速冷凍保存"
+  },
+  "utility.ForageFungi": {
+    "ja": "茸採取"
+  },
+  "utility.FermentCure": {
+    "ja": "発酵熟成"
+  },
+  "utility.SmokeDry": {
+    "ja": "燻製乾燥"
+  },
+  "utility.ChillBrew": {
+    "ja": "冷製調合"
+  },
+  "utility.IceStride": {
+    "ja": "氷結歩行"
+  },
+  "utility.SenseTreasure": {
+    "ja": "秘宝感知"
+  },
+  "utility.WeatherWard": {
+    "ja": "悪天候耐性"
+  },
+  "utility.CampBeacon": {
+    "ja": "野営ビーコン"
+  },
+  "utility.GatherEssence": {
+    "ja": "星屑採取"
+  },
+  "utility.CraftSmeltFire": {
+    "ja": "熾火精錬"
+  },
+  "utility.CraftSmeltMetal": {
+    "ja": "精金精錬"
+  },
+  "utility.CraftSmeltThunder": {
+    "ja": "電弧精錬"
+  },
+  "utility.CraftWeaveWood": {
+    "ja": "植繊織物"
+  },
+  "utility.CraftWeaveWind": {
+    "ja": "風梭織物"
+  },
+  "utility.CraftWeaveShadow": {
+    "ja": "暗影織物"
+  },
+  "utility.CraftTailorWood": {
+    "ja": "森葉裁縫"
+  },
+  "utility.CraftTailorShadow": {
+    "ja": "影糸裁縫"
+  },
+  "utility.CraftTailorLight": {
+    "ja": "光織裁縫"
+  },
+  "utility.CraftSmithMetal": {
+    "ja": "百錬鍛造"
+  },
+  "utility.CraftSmithFire": {
+    "ja": "炎炉鍛造"
+  },
+  "utility.CraftSmithEarth": {
+    "ja": "岩鎚鍛造"
+  },
+  "utility.CraftCarpentryWood": {
+    "ja": "原木木工"
+  },
+  "utility.CraftCarpentryEarth": {
+    "ja": "堅岩木工"
+  },
+  "utility.CraftCarpentryWind": {
+    "ja": "流風木工"
+  },
+  "utility.CraftJewelcraftLight": {
+    "ja": "輝光宝飾"
+  },
+  "utility.CraftJewelcraftEarth": {
+    "ja": "岩晶宝飾"
+  },
+  "utility.CraftJewelcraftIce": {
+    "ja": "氷琢宝飾"
+  },
+  "utility.CraftDyeWood": {
+    "ja": "草木染め"
+  },
+  "utility.CraftDyeWater": {
+    "ja": "水洗染色"
+  },
+  "utility.CraftDyeLight": {
+    "ja": "流光染色"
+  },
+  "utility.CraftEnchantLight": {
+    "ja": "聖光付与"
+  },
+  "utility.CraftEnchantFire": {
+    "ja": "炎印付与"
+  },
+  "utility.CraftEnchantShadow": {
+    "ja": "幽影付与"
   },
   "ingredient.category.MeatGround": {
     "ja": "獣肉"
@@ -936,13 +1041,16 @@
     "ja": "障害物除去"
   },
   "utility.desc.Dive": {
-    "ja": "潜水"
+    "ja": "水面を低速で進み、水深 1 m 超の深海や海底都市へ潜る"
   },
   "utility.desc.Fly": {
-    "ja": "飛行"
+    "ja": "成層圏（惑星半径高度）まで高速飛行し、空島集落へ到達する"
   },
   "utility.desc.Levitate": {
-    "ja": "地形の減速を無視"
+    "ja": "成層圏の上限を超えて浮遊し、宇宙ステーションへ到達する（上限 1.6 R）"
+  },
+  "utility.desc.Swim": {
+    "ja": "水面を素早く泳ぎ、川や浅瀬（水深 1 m まで）を渡る"
   },
   "utility.desc.CatchRateUp": {
     "ja": "捕獲率を上昇"
@@ -966,7 +1074,7 @@
     "ja": "移動速度を上げ地形の減速を無視"
   },
   "utility.desc.ReturnVillage": {
-    "ja": "村へ帰還"
+    "ja": "訪問済みの街や揺籃星へ自由に帰還する（深海都市は潜水が必要）"
   },
   "utility.desc.PartyStealth": {
     "ja": "野生の感知範囲を縮小"
@@ -1011,7 +1119,109 @@
     "ja": "作物収穫"
   },
   "utility.desc.CulinaryPrep": {
-    "ja": "下ごしらえ"
+    "ja": "穀物や香草を挽き冷製の下ごしらえを行い料理品質を上げる"
+  },
+  "utility.desc.FreezePrep": {
+    "ja": "生鮮食材を急速冷凍して保存し冷製・精製料理の下地にする"
+  },
+  "utility.desc.ForageFungi": {
+    "ja": "洞窟や湿地・木陰で食用キノコやトリュフを採取する"
+  },
+  "utility.desc.FermentCure": {
+    "ja": "肉・魚・乳製品を発酵熟成し料理バフの効果時間を延ばす"
+  },
+  "utility.desc.SmokeDry": {
+    "ja": "肉や果実を燻製乾燥させ携行食料として素早く回復する"
+  },
+  "utility.desc.ChillBrew": {
+    "ja": "火を使わず冷製ドリンクを調合し冷却と状態異常耐性を得る"
+  },
+  "utility.desc.IceStride": {
+    "ja": "水面を一時凍らせて渡り氷雪地形の滑り・減速を防ぐ"
+  },
+  "utility.desc.SenseTreasure": {
+    "ja": "宝箱・鉱脈・晶簇・遺跡の隠しノードの感知範囲を広げる"
+  },
+  "utility.desc.WeatherWard": {
+    "ja": "吹雪・雷雨・砂塵・濃霧による視界や回避のペナルティを半減する"
+  },
+  "utility.desc.CampBeacon": {
+    "ja": "野営中に低位の野生を遠ざけ帰還用ビーコンを1つ設置する"
+  },
+  "utility.desc.GatherEssence": {
+    "ja": "晶簇や霊苔、異象ノードから付与用の霊質素材を採取する"
+  },
+  "utility.desc.CraftSmeltFire": {
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltMetal": {
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltThunder": {
+    "ja": "高圧電弧で原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftWeaveWood": {
+    "ja": "繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveWind": {
+    "ja": "気流で繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveShadow": {
+    "ja": "繊維を緻密な布地へ織り上げる"
+  },
+  "utility.desc.CraftTailorWood": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorShadow": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorLight": {
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftSmithMetal": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithFire": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithEarth": {
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftCarpentryWood": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryEarth": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryWind": {
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftJewelcraftLight": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftEarth": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftIce": {
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftDyeWood": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeWater": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeLight": {
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftEnchantLight": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantFire": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantShadow": {
+    "ja": "対応する媒介を消費して装備に特性を付与する"
   },
   "ing_boar_flank": {
     "ja": "イノシシのバラ肉"
@@ -1243,5 +1453,521 @@
   },
   "ui.weather.ground": {
     "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
+  },
+  "ui.skills.returned": {
+    "ja": "{target} へ帰還しました"
+  },
+  "ui.skills.return_needs_dive": {
+    "ja": "{target}は深海にあるため「潜水」が必要です"
+  },
+  "ui.skills.return_start": {
+    "ja": "始まりの街"
+  },
+  "ui.skills.return_sky": {
+    "ja": "空島集落"
+  },
+  "ui.skills.return_deep_sea": {
+    "ja": "深海都市"
+  },
+  "ui.skills.return_island": {
+    "ja": "島嶼集落"
+  },
+  "ui.skills.return_village": {
+    "ja": "村 #{index}"
+  },
+  "ui.trainer.prof.trv_rookie": {
+    "ja": "見習い旅人"
+  },
+  "ui.trainer.prof.trv_hiker": {
+    "ja": "ハイカー"
+  },
+  "ui.trainer.prof.trv_angler": {
+    "ja": "つりびと"
+  },
+  "ui.trainer.prof.trv_ranger": {
+    "ja": "フォレストレンジャー"
+  },
+  "ui.trainer.prof.trv_brawler": {
+    "ja": "格闘家"
+  },
+  "ui.trainer.prof.trv_scholar": {
+    "ja": "学者"
+  },
+  "ui.trainer.prof.trv_bard": {
+    "ja": "吟遊詩人"
+  },
+  "ui.trainer.prof.trv_pilgrim": {
+    "ja": "巡礼司祭"
+  },
+  "ui.trainer.prof.trv_nightwalker": {
+    "ja": "夜行者"
+  },
+  "ui.trainer.prof.trv_bounty": {
+    "ja": "賞金稼ぎ"
+  },
+  "ui.trainer.prof.trv_trial_master": {
+    "ja": "地形試練の主"
+  },
+  "ui.trainer.prof.trv_artisan_mentor": {
+    "ja": "生活技能の師範"
+  },
+  "ui.trainer.prof.era_primitive_totem_hunter": {
+    "ja": "原始トーテム猟師"
+  },
+  "ui.trainer.prof.era_agrarian_field_warden": {
+    "ja": "農耕巡田武者"
+  },
+  "ui.trainer.prof.era_mercantile_caravan_guard": {
+    "ja": "商隊護衛師"
+  },
+  "ui.trainer.prof.era_industrial_rail_inspector": {
+    "ja": "工業鉄道巡察官"
+  },
+  "ui.trainer.prof.era_steampunk_airship_navigator": {
+    "ja": "蒸気飛行船航海士"
+  },
+  "ui.trainer.prof.era_future_orbital_ranger": {
+    "ja": "未来軌道レンジャー"
+  },
+  "ui.trainer.prof.era_wasteland_salvage_hunter": {
+    "ja": "荒廃スカベンジ猟師"
+  },
+  "ui.trainer.prof.era_ancient_relic_keeper": {
+    "ja": "古代遺跡の守護者"
+  },
+  "ui.trainer.prof.cul_east_asia_talisman_swordsman": {
+    "ja": "東亜符剣修者"
+  },
+  "ui.trainer.prof.cul_south_asia_prana_ascetic": {
+    "ja": "南亜気脈苦行者"
+  },
+  "ui.trainer.prof.cul_southeast_asia_monsoon_wayfinder": {
+    "ja": "東南亜モンスーン航海師"
+  },
+  "ui.trainer.prof.cul_middle_east_astrolabe_scholar": {
+    "ja": "西亜アストロラーベ学者"
+  },
+  "ui.trainer.prof.cul_africa_solarpunk_geomancer": {
+    "ja": "アフリカ太陽地脈師"
+  },
+  "ui.trainer.prof.cul_europe_high_fantasy_mage_knight": {
+    "ja": "欧州魔導騎士"
+  },
+  "ui.trainer.prof.cul_americas_canyon_sky_rider": {
+    "ja": "米州渓谷スカイライダー"
+  },
+  "ui.trainer.prof.cul_oceania_star_navigator": {
+    "ja": "大洋州星象航海士"
+  },
+  "ui.trainer.prof.cul_central_asia_steppe_falconer": {
+    "ja": "中亜草原鷹匠"
+  },
+  "ui.trainer.prof.cul_polar_aurora_sled_scout": {
+    "ja": "極地オーロラ橇斥候"
+  },
+  "ui.trainer.prof.cul_cosmopolis_cyber_netrunner": {
+    "ja": "都市電脳ネットランナー"
+  },
+  "ui.trainer.prof.cul_interstellar_warp_pioneer": {
+    "ja": "星間ワープ開拓者"
+  },
+  "ui.trainer.duty.duty_road_courier": {
+    "ja": "古道駅伝"
+  },
+  "ui.trainer.duty.duty_circuit_patrol": {
+    "ja": "山林巡回"
+  },
+  "ui.trainer.duty.duty_waterside_angling": {
+    "ja": "水辺の釣り"
+  },
+  "ui.trainer.duty.duty_prospect_mining": {
+    "ja": "鉱脈探査"
+  },
+  "ui.trainer.duty.duty_botanical_foraging": {
+    "ja": "植生採集"
+  },
+  "ui.trainer.duty.duty_ruin_excavation": {
+    "ja": "遺跡発掘"
+  },
+  "ui.trainer.duty.duty_martial_training": {
+    "ja": "荒野修行"
+  },
+  "ui.trainer.duty.duty_shrine_pilgrimage": {
+    "ja": "聖地巡礼"
+  },
+  "ui.trainer.duty.duty_roving_minstrel": {
+    "ja": "放浪詠唱"
+  },
+  "ui.trainer.duty.duty_night_watch": {
+    "ja": "深夜哨戒"
+  },
+  "ui.trainer.duty.duty_bounty_hunting": {
+    "ja": "賞金追跡"
+  },
+  "ui.trainer.duty.duty_frontier_trailblazing": {
+    "ja": "荒野開拓"
+  },
+  "ui.trainer.duty.duty_leyline_tuning": {
+    "ja": "エーテル調律"
+  },
+  "ui.trainer.duty.duty_trial_wardenship": {
+    "ja": "試練守護"
+  },
+  "ui.trainer.fn.observant": {
+    "ja": "研究専念"
+  },
+  "ui.trainer.fn.escort": {
+    "ja": "護衛警戒"
+  },
+  "ui.trainer.fn.sparring": {
+    "ja": "稽古対戦"
+  },
+  "ui.trainer.fn.warden": {
+    "ja": "領域監視"
+  },
+  "ui.trainer.fn.pursuit": {
+    "ja": "追跡迎撃"
+  },
+  "ui.trainer.fn.champion": {
+    "ja": "覇者挑戦"
+  },
+  "ui.trainer.interact_prompt": {
+    "ja": "[{key}] {trainer} に挑戦"
+  },
+  "ui.trainer.spotted": {
+    "ja": "{trainer} に見つかった！"
+  },
+  "ui.trainer.evaded": {
+    "ja": "{trainer} の追跡を振り切った！"
+  },
+  "ui.trainer.challenge": {
+    "ja": "{trainer} が勝負を仕掛けてきた！"
+  },
+  "ui.trainer.victory": {
+    "ja": "{trainer} に勝利した！"
+  },
+  "ui.trainer.defeat": {
+    "ja": "{trainer} に敗北した……"
+  },
+  "ing_sea_bass": {
+    "ja": "生スズキ"
+  },
+  "ing_sea_salt": {
+    "ja": "海塩"
+  },
+  "ing_wild_honey": {
+    "ja": "野生のはちみつ"
+  },
+  "ing_wild_root": {
+    "ja": "野生の根菜"
+  },
+  "ing_hard_chestnut": {
+    "ja": "堅殻グリ"
+  },
+  "ing_fire_pepper": {
+    "ja": "ファイアペッパー"
+  },
+  "ing_ice_mint": {
+    "ja": "アイスミント"
+  },
+  "ing_gale_mushroom": {
+    "ja": "ハヤテダケ"
+  },
+  "ing_glowcap": {
+    "ja": "ヤコウダケ"
+  },
+  "ing_truffle": {
+    "ja": "トリュフ"
+  },
+  "ing_hopper_bug": {
+    "ja": "ハネムシ"
+  },
+  "ing_chilled_sea_bass": {
+    "ja": "冷凍スズキ"
+  },
+  "ing_chilled_trout": {
+    "ja": "冷凍マス"
+  },
+  "ing_chilled_salmon": {
+    "ja": "冷凍シンエンサケ"
+  },
+  "ing_chilled_shrimp": {
+    "ja": "冷凍エビ"
+  },
+  "ing_chilled_fowl": {
+    "ja": "冷凍鳥むね肉"
+  },
+  "ing_chilled_berry": {
+    "ja": "冷凍ベリー"
+  },
+  "ing_wheat_flour": {
+    "ja": "小麦粉"
+  },
+  "ing_fern_powder": {
+    "ja": "シダの粉末"
+  },
+  "ing_pepper_powder": {
+    "ja": "ペッパーパウダー"
+  },
+  "ing_seed_oil": {
+    "ja": "食用油"
+  },
+  "ing_butter": {
+    "ja": "バター"
+  },
+  "ing_cheese": {
+    "ja": "チーズ"
+  },
+  "ing_fish_sauce": {
+    "ja": "魚醤"
+  },
+  "ing_wheat_koji": {
+    "ja": "麦麹"
+  },
+  "ing_smoked_boar": {
+    "ja": "イノシシの燻製"
+  },
+  "ing_smoked_hare": {
+    "ja": "ウサギのジャーキー"
+  },
+  "ing_smoked_trout": {
+    "ja": "マスの燻製"
+  },
+  "ing_dried_berry": {
+    "ja": "ドライベリー"
+  },
+  "ing_smoked_rib": {
+    "ja": "リブの燻製"
+  },
+  "ing_aged_beast_meat": {
+    "ja": "熟成獣肉"
+  },
+  "food_steamed_sea_bass": {
+    "ja": "スズキの清蒸"
+  },
+  "food_sea_bass_crudo": {
+    "ja": "スズキのカルパッチョ"
+  },
+  "food_aged_beast_ragout": {
+    "ja": "熟成獣肉の煮込み"
+  },
+  "food_gale_fried_fowl": {
+    "ja": "疾風フライドチキン"
+  },
+  "food_meadow_cheese_soup": {
+    "ja": "牧野のチーズスープ"
+  },
+  "food_frostberry_smoothie": {
+    "ja": "フロストベリースムージー"
+  },
+  "food_glowcap_tonic": {
+    "ja": "ヤコウダケの薬湯"
+  },
+  "food_truffle_butter_grill": {
+    "ja": "トリュフバターのキノコ焼き"
+  },
+  "food_honey_glazed_nuts": {
+    "ja": "ナッツのはちみつ漬け"
+  },
+  "food_dubious_mash": {
+    "ja": "失敗料理"
+  },
+  "ing_pickled_berry": {
+    "ja": "ベリーの漬物"
+  },
+  "ing_pickled_root": {
+    "ja": "根菜の漬物"
+  },
+  "food_chilled_seafood_salad": {
+    "ja": "冷やし海鮮サラダ"
+  },
+  "food_golden_wheat_tempura": {
+    "ja": "金穂の天ぷら"
+  },
+  "food_pickled_root_hare_stew": {
+    "ja": "根菜漬けと兎肉の煮込み"
+  },
+  "food_pickled_berry_cooler": {
+    "ja": "ベリー漬けの冷たい飲み物"
+  },
+  "ui.skills.recipe_unknown": {
+    "ja": "？？？ · {method} · {category}が必要"
+  },
+  "ui.skills.recipe_fill": {
+    "ja": "鍋に入れる"
+  },
+  "ui.skills.recipe_new": {
+    "ja": "新しいレシピ！"
+  },
+  "dex.recipes": {
+    "ja": "レシピ"
+  },
+  "gather.ForageFungi": {
+    "ja": "キノコ採り"
+  },
+  "ingredient.category.Fungi": {
+    "ja": "キノコ"
+  },
+  "ingredient.category.Critter": {
+    "ja": "虫"
+  },
+  "process.kind.Freeze": {
+    "ja": "急速冷凍"
+  },
+  "process.kind.Grind": {
+    "ja": "粉砕"
+  },
+  "process.kind.Press": {
+    "ja": "搾油"
+  },
+  "process.kind.Churn": {
+    "ja": "攪乳"
+  },
+  "process.kind.Ferment": {
+    "ja": "発酵"
+  },
+  "process.kind.Smoke": {
+    "ja": "燻製"
+  },
+  "process.reason.None": {
+    "ja": "加工可能"
+  },
+  "process.reason.MissingSkill": {
+    "ja": "加工スキルがありません（集落の厨房なら可能）"
+  },
+  "process.reason.MissingInput": {
+    "ja": "材料が足りません"
+  },
+  "ui.skills.processing": {
+    "ja": "加工"
+  },
+  "ui.skills.process": {
+    "ja": "加工 ×1"
+  },
+  "ui.skills.processing_empty": {
+    "ja": "加工できる材料がありません。"
+  },
+  "ui.skills.kitchen": {
+    "ja": "集落の厨房：すべての調理法と加工が使えます。"
+  },
+  "ui.skills.pot": {
+    "ja": "鍋（自由調理・最大5個）"
+  },
+  "ui.skills.pot_empty": {
+    "ja": "鍋は空です。下の食材を入れてください。"
+  },
+  "ui.skills.pot_clear": {
+    "ja": "鍋を空にする"
+  },
+  "ui.skills.pot_signature": {
+    "ja": "看板料理：{dish}"
+  },
+  "ui.skills.pot_free": {
+    "ja": "創作料理：{dish}"
+  },
+  "ui.skills.pot_dubious": {
+    "ja": "失敗します：{dish}（食材は消費されます）"
+  },
+  "dish.free_name": {
+    "ja": "{family}{method}{theme}"
+  },
+  "dish.method.Grill": {
+    "ja": "焼き"
+  },
+  "dish.method.Stew": {
+    "ja": "煮込み"
+  },
+  "dish.method.StirFry": {
+    "ja": "炒め"
+  },
+  "dish.method.DeepFry": {
+    "ja": "揚げ"
+  },
+  "dish.method.Steam": {
+    "ja": "蒸し"
+  },
+  "dish.method.ColdMix": {
+    "ja": "和え"
+  },
+  "dish.method.Grind": {
+    "ja": "粉末"
+  },
+  "dish.method.ChillBrew": {
+    "ja": "冷製ドリンク"
+  },
+  "dish.theme.Meat": {
+    "ja": "肉"
+  },
+  "dish.theme.Fowl": {
+    "ja": "鶏肉"
+  },
+  "dish.theme.Fish": {
+    "ja": "魚"
+  },
+  "dish.theme.Seafood": {
+    "ja": "海鮮"
+  },
+  "dish.theme.Mushroom": {
+    "ja": "キノコ"
+  },
+  "dish.theme.Egg": {
+    "ja": "卵"
+  },
+  "dish.theme.Vegetable": {
+    "ja": "野菜"
+  },
+  "dish.theme.Fruit": {
+    "ja": "果物"
+  },
+  "dish.theme.Grain": {
+    "ja": "穀物"
+  },
+  "dish.theme.Dairy": {
+    "ja": "乳製品"
+  },
+  "dish.theme.Nut": {
+    "ja": "ナッツ"
+  },
+  "dish.theme.Herb": {
+    "ja": "ハーブ"
+  },
+  "dish.theme.Mixed": {
+    "ja": "五目"
+  },
+  "dish.theme.Tonic": {
+    "ja": "薬膳"
+  },
+  "dish.family.Mastery": {
+    "ja": "{element}専精・"
+  },
+  "dish.family.Resist": {
+    "ja": "耐{element}・"
+  },
+  "dish.family.Swift": {
+    "ja": "迅速・"
+  },
+  "dish.family.Nimble": {
+    "ja": "軽業・"
+  },
+  "dish.family.Focus": {
+    "ja": "集中・"
+  },
+  "dish.family.Keen": {
+    "ja": "鋭眼・"
+  },
+  "dish.family.Fierce": {
+    "ja": "会心・"
+  },
+  "dish.family.Guard": {
+    "ja": "堅守・"
+  },
+  "dish.family.Bounty": {
+    "ja": "豊穣・"
+  },
+  "dish.family.Tame": {
+    "ja": "馴致・"
+  },
+  "dish.family.Revive": {
+    "ja": "蘇生・"
   }
 }

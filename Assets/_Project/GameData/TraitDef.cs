@@ -31,8 +31,8 @@ namespace Cosmimera.GameData
 
         /// <summary>What the trait does, in authoring order.</summary>
         /// <remarks>
-        /// Pre: none. Post: 1 &lt;= Count &lt;= MaxEffects; no heal_percent_max_hp when Trigger is continuous
-        ///       (always, on_hp_below, on_hp_above), since a heal is instant and needs an event to fire on.
+        /// Pre: none. Post: 1 &lt;= Count &lt;= MaxEffects; no heal_percent_max_hp or apply_ailment when Trigger is continuous
+        ///       (always, on_hp_below, on_hp_above), since instant effects need an event to fire on.
         /// Side effects: none.
         /// </remarks>
         public IReadOnlyList<EffectDef> Effects => effects;

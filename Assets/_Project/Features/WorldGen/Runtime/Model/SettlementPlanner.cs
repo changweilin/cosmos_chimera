@@ -22,7 +22,11 @@ namespace Cosmimera.WorldGen
     {
         /// <summary>Bump when any output for the same inputs changes (snapshot tests pin it).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int GeneratorVersion = 3;
+        public const int GeneratorVersion = 5;
+
+        /// <summary>Minimum planet radius (m) where non-mainland settlements and space stations appear (Planet size+).</summary>
+        /// <remarks>Pre: none. Post: constant 960 m. Side effects: none.</remarks>
+        public const float PlanetMinRadiusM = 960f;
 
         /// <summary>Paved width of a main road (m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -80,7 +84,25 @@ namespace Cosmimera.WorldGen
         ///       isLand; buildings of one settlement do not overlap. Same inputs → same layout.
         /// Side effects: allocates; calls isLand.
         /// </remarks>
-        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand)
+        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand) =>
+            Generate(planet, plan, isLand, null);
+
+        /// <summary>Generates the layout of <paramref name="plan"/> with roads that follow the terrain.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#道路與建築 (道路依坡度繞行). Pre: as the three-argument overload; groundAltitude null or
+        ///      deterministic (altitude in m of a unit direction).
+        /// Post: as the three-argument overload, which this equals when groundAltitude is null. Otherwise every road
+        ///       first gains a small natural meander and is then relaxed sideways along the contours: interior vertices
+        ///       move along their own sideways axis by at most min(36 m, 18 % of the road's span) to lower the grade
+        ///       and stay out of the sea, while the stretches through settlements (the first and last 40 m of a main
+        ///       road, 24 m of a trail or loop) stay where the three-argument overload puts them, so lots still line
+        ///       the road. The relaxation is a fixed number of gradient steps on a continuous cost, so heights a few
+        ///       millimetres apart (ADR-0007 §2) move vertices millimetres, never to a different valley. Bridge flags
+        ///       are taken after relaxing. Settlements are identical to the three-argument overload's.
+        /// Side effects: allocates; calls isLand and groundAltitude.
+        /// </remarks>
+        public static RunLayout Generate(in PlanetConfig planet, RunPlan plan, Func<float3, bool> isLand,
+            Func<float3, float> groundAltitude)
         {
             Contract.Requires(planet.IsValid, "planet must be valid");
             Contract.Requires(plan != null, "plan must not be null");
@@ -93,14 +115,16 @@ namespace Cosmimera.WorldGen
             var roads = new List<RunRoad>();
             for (int i = 0; i + 1 < route.Count; i++)
             {
-                roads.Add(Road(RoadClass.Main, route[i], route[i + 1], regions, radius, isLand, ref rng));
+                roads.Add(Road(RoadClass.Main, route[i], route[i + 1], regions, radius, isLand, ref rng,
+                    groundAltitude, plan.Seed, roads.Count));
             }
 
             for (int r = 0; r < regions.Count; r++)
             {
                 if (!onRoute.Contains(r))
                 {
-                    roads.Add(Road(RoadClass.Trail, Parent(regions, r), r, regions, radius, isLand, ref rng));
+                    roads.Add(Road(RoadClass.Trail, Parent(regions, r), r, regions, radius, isLand, ref rng,
+                        groundAltitude, plan.Seed, roads.Count));
                 }
             }
 
@@ -147,7 +171,13 @@ namespace Cosmimera.WorldGen
                     break;
                 }
 
-                roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng));
+                roads.Add(Road(RoadClass.Loop, a, b, regions, radius, isLand, ref rng, groundAltitude, plan.Seed,
+                    roads.Count));
+            }
+
+            if (radius >= PlanetMinRadiusM)
+            {
+                AddNonMainlandSettlements(settlements, buildings, plan, radius, isLand, groundAltitude);
             }
 
             return new RunLayout(roads.ToArray(), settlements.ToArray(), buildings.ToArray());
@@ -254,8 +284,10 @@ namespace Cosmimera.WorldGen
             foreach (RunSettlement s in layout.Settlements)
             {
                 Mix(ref h, (ulong)s.Kind);
+                Mix(ref h, (ulong)s.Domain);
                 Mix(ref h, (ulong)s.Region);
                 Mix(ref h, (ulong)s.BuildingCount);
+                Mix(ref h, (ulong)math.round(s.AltitudeM * 100f));
             }
 
             foreach (RunBuilding b in layout.Buildings)
@@ -284,8 +316,8 @@ namespace Cosmimera.WorldGen
             throw new ContractException("region " + r + " has no neighbor closer to landing");
         }
 
-        private static RunRoad Road(RoadClass roadClass, int from, int to, IReadOnlyList<RunRegion> regions, float radius,
-            Func<float3, bool> isLand, ref Pcg32 rng)
+        internal static RunRoad Road(RoadClass roadClass, int from, int to, IReadOnlyList<RunRegion> regions, float radius,
+            Func<float3, bool> isLand, ref Pcg32 rng, Func<float3, float> ground, ulong seed, int roadIndex)
         {
             float3 a = regions[from].Center;
             float3 b = regions[to].Center;
@@ -319,16 +351,150 @@ namespace Cosmimera.WorldGen
                 }
 
                 points[i] = p;
-                bridge[i] = isLand != null && !isLand(p);
+            }
+
+            if (ground != null)
+            {
+                FollowTerrain(points, roadClass, theta * radius, radius, ground, seed, roadIndex);
+            }
+
+            for (int i = 0; i <= segments; i++)
+            {
+                bridge[i] = isLand != null && !isLand(points[i]);
             }
 
             return new RunRoad(roadClass, from, to, roadClass == RoadClass.Main ? MainWidthM : TrailWidthM, points, bridge);
         }
 
+        // REQ: planet-world.md#道路與建築 (道路依坡度繞行; 數值暫定).
+        private const int RelaxSteps = 32;
+        private const float RelaxProbeM = 1.5f;
+        private const float RelaxStepCapM = 1.5f;
+        private const float RelaxRate = 70f;
+        private const float GradeWeight = 1f;
+        private const float BendWeight = 0.004f;
+        private const float AnchorWeight = 0.00012f;
+        private const float SeaWeight = 0.08f;
+        private const float MaxShiftM = 36f;
+        private const float MaxShiftShare = 0.18f;
+        private const float MainPinM = 40f;
+        private const float TrailPinM = 24f;
+
+        // Bends a road round hills instead of over them: lateral offsets x_i (m) along each vertex's own sideways axis
+        // minimise Σ grade² + bend·(Δ²x)² + anchor·x² + sea·depth², by gradient steps with numeric height derivatives.
+        // A separate stream ('MEAN', road index) seeds a small meander first, so tree roads and settlements keep their
+        // v4 draws.
+        private static void FollowTerrain(float3[] points, RoadClass roadClass, float spanM, float radius,
+            Func<float3, float> ground, ulong seed, int roadIndex)
+        {
+            int n = points.Length;
+            if (n < 3)
+            {
+                return;
+            }
+
+            var sideAxis = new float3[n];
+            var weight = new float[n];
+            var x = new float[n];
+            var h = new float[n];
+            var slope = new float[n];
+            var grad = new float[n];
+            float pinM = roadClass == RoadClass.Main ? MainPinM : TrailPinM;
+            float maxShift = math.min(MaxShiftM, MaxShiftShare * spanM);
+            float segM = spanM / (n - 1);
+            for (int i = 0; i < n; i++)
+            {
+                float3 ahead = points[math.min(i + 1, n - 1)] - points[math.max(i - 1, 0)];
+                sideAxis[i] = math.normalize(math.cross(points[i], ahead));
+                float fromEnd = math.min(i, n - 1 - i) * segM;
+                weight[i] = math.smoothstep(pinM, pinM + 20f, fromEnd);
+            }
+
+            // Natural meander: two short wavelengths (40–90 m) on top of the planner's two long lobes.
+            var meander = new Pcg32(seed ^ 0x4D45414EUL, (ulong)roadIndex);
+            float amp = math.min(6f, 0.03f * spanM);
+            float w1 = spanM / (40f + meander.NextFloat() * 50f);
+            float w2 = spanM / (25f + meander.NextFloat() * 30f);
+            float p1 = meander.NextFloat() * math.PI * 2f;
+            float p2 = meander.NextFloat() * math.PI * 2f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)(n - 1);
+                x[i] = amp * (0.7f * math.sin(t * w1 * math.PI * 2f + p1) + 0.3f * math.sin(t * w2 * math.PI * 2f + p2)) * weight[i];
+            }
+
+            for (int step = 0; step < RelaxSteps; step++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    h[i] = ground(At(points[i], sideAxis[i], x[i], radius));
+                    if (weight[i] <= 0f)
+                    {
+                        slope[i] = 0f;
+                        continue;
+                    }
+
+                    float up = ground(At(points[i], sideAxis[i], x[i] + RelaxProbeM, radius));
+                    float down = ground(At(points[i], sideAxis[i], x[i] - RelaxProbeM, radius));
+                    slope[i] = (up - down) / (2f * RelaxProbeM);
+                }
+
+                for (int i = 1; i < n - 1; i++)
+                {
+                    // d/dx_i of the grades of the two segments that share vertex i.
+                    float g = 2f * GradeWeight / (segM * segM) * ((h[i] - h[i - 1]) - (h[i + 1] - h[i])) * slope[i];
+                    g += 2f * BendWeight * (Bend(x, i - 1) - 2f * Bend(x, i) + Bend(x, i + 1));
+                    g += 2f * AnchorWeight * x[i];
+                    g -= 2f * SeaWeight * math.max(0f, -h[i]) * slope[i];
+                    grad[i] = g;
+                }
+
+                // Jacobi update: every vertex moves on the same snapshot, so the result does not depend on scan order.
+                for (int i = 1; i < n - 1; i++)
+                {
+                    float move = math.clamp(-RelaxRate * grad[i], -RelaxStepCapM, RelaxStepCapM) * weight[i];
+                    x[i] = math.clamp(x[i] + move, -maxShift, maxShift);
+                }
+            }
+
+            for (int i = 1; i < n - 1; i++)
+            {
+                points[i] = At(points[i], sideAxis[i], x[i], radius);
+            }
+        }
+
+        // Second difference of the offsets; zero past either end (the ends never move).
+        private static float Bend(float[] x, int i)
+        {
+            if (i <= 0 || i >= x.Length - 1)
+            {
+                return 0f;
+            }
+
+            return x[i - 1] - 2f * x[i] + x[i + 1];
+        }
+
+        private static float3 At(float3 point, float3 side, float offsetM, float radius) =>
+            math.normalize(point + side * (offsetM / radius));
+
+        private enum LotSurfaceRule
+        {
+            DryLandOnly,
+            DeepSeaOnly,
+            AirborneAny,
+        }
+
         // Lots line both sides of a road through the centre: even lots on one side, odd on the other, centred on it.
-        private static void AddLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
+        internal static void AddLots(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
             SettlementKind kind, float3 center, float3 roadAxis, float roadWidthM, int count, float radius,
-            Func<float3, bool> isLand, ref Pcg32 rng)
+            Func<float3, bool> isLand, ref Pcg32 rng) =>
+            AddLotsWithDomain(settlements, buildings, region, kind, SettlementDomain.Land, 0f, center, roadAxis,
+                roadWidthM, count, radius, isLand, LotSurfaceRule.DryLandOnly, allowEmpty: true, ref rng);
+
+        private static bool AddLotsWithDomain(List<RunSettlement> settlements, List<RunBuilding> buildings, int region,
+            SettlementKind kind, SettlementDomain domain, float altitudeM, float3 center, float3 roadAxis,
+            float roadWidthM, int count, float radius, Func<float3, bool> isLand, LotSurfaceRule surfaceRule,
+            bool allowEmpty, ref Pcg32 rng)
         {
             int index = settlements.Count;
             int first = buildings.Count;
@@ -342,15 +508,249 @@ namespace Cosmimera.WorldGen
                 float along = (k / 2 - (rows - 1) * 0.5f) * LotSpacingM;
                 float lateral = side * (roadWidthM * 0.5f + SetbackM + depth * 0.5f);
                 float3 pos = Offset(center, roadAxis * along + normal * lateral, radius);
-                if (isLand != null && !isLand(pos))
+                float3 facing = Tangent(pos, -side * normal);
+                if (isLand != null)
+                {
+                    if (surfaceRule == LotSurfaceRule.DryLandOnly &&
+                        !IsDryFootprint(pos, facing, width, depth, radius, isLand))
+                    {
+                        continue;
+                    }
+
+                    if (surfaceRule == LotSurfaceRule.DeepSeaOnly && isLand(pos))
+                    {
+                        continue;
+                    }
+                }
+
+                buildings.Add(new RunBuilding(index, bk, pos, facing, width, depth, storeys));
+            }
+
+            int built = buildings.Count - first;
+            if (!allowEmpty && built == 0)
+            {
+                return false;
+            }
+
+            settlements.Add(new RunSettlement(index, region, kind, center, first, built, domain, altitudeM));
+            return true;
+        }
+
+        internal static bool IsDryFootprint(float3 pos, float3 facing, float widthM, float depthM, float radius,
+            Func<float3, bool> isLand)
+        {
+            if (isLand == null)
+            {
+                return true;
+            }
+
+            if (!isLand(pos))
+            {
+                return false;
+            }
+
+            float3 across = math.normalize(math.cross(pos, facing));
+            float hw = widthM * 0.5f;
+            float hd = depthM * 0.5f;
+            for (int c = 0; c < 4; c++)
+            {
+                float sx = (c & 1) == 0 ? hw : -hw;
+                float sz = (c & 2) == 0 ? hd : -hd;
+                float3 corner = Offset(pos, across * sx + facing * sz, radius);
+                if (!isLand(corner))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Places smaller non-mainland settlements (SkyTribe, DeepSeaCity, IslandSettlement) on Planet+ (R >= 960 m)
+        // using an independent RNG stream ('O') so mainland roads, towns and ruins stay unaffected.
+        private static void AddNonMainlandSettlements(List<RunSettlement> settlements, List<RunBuilding> buildings,
+            RunPlan plan, float radius, Func<float3, bool> isLand, Func<float3, float> groundAltitude)
+        {
+            var rng = new Pcg32(plan.Seed, 'O');
+            IReadOnlyList<RunRegion> regions = plan.Regions;
+
+            // 1. SkyTribe: floats inside [0.25 R, 0.85 R], strictly <= 1.0 R stratosphere ceiling.
+            int skyRegion = PickNonLandingRegion(regions, plan.LandingRegion, plan.BossRegion, ref rng);
+            float3 skySite = regions[skyRegion].Center;
+            float skyAltM = math.round(math.lerp(radius * 0.25f, radius * 0.85f, rng.NextFloat()));
+            int skyLots = 2 + (int)rng.NextUInt(2);
+            AddLotsWithDomain(settlements, buildings, skyRegion, SettlementKind.SkyTribe, SettlementDomain.SkyIsland,
+                skyAltM, skySite, RandomAxis(skySite, ref rng), TrailWidthM, skyLots, radius, isLand,
+                LotSurfaceRule.AirborneAny, allowEmpty: false, ref rng);
+
+            if (isLand == null)
+            {
+                return;
+            }
+
+            // 2. DeepSeaCity: anchored on ocean seafloor (> 1 m depth), reachable via Dive.
+            if (TryFindOceanSite(settlements, regions, radius, isLand, groundAltitude, ref rng, out float3 seaSite, out int seaRegion))
+            {
+                float seaDepthM = 12f + (int)rng.NextUInt(13);
+                int seaLots = 3 + (int)rng.NextUInt(2);
+                AddLotsWithDomain(settlements, buildings, seaRegion, SettlementKind.DeepSeaCity, SettlementDomain.DeepSea,
+                    -seaDepthM, seaSite, RandomAxis(seaSite, ref rng), TrailWidthM, seaLots, radius, isLand,
+                    LotSurfaceRule.DeepSeaOnly, allowEmpty: false, ref rng);
+            }
+
+            // 3. IslandSettlement: land site separated from starting town by sea, reachable via Swim or Dive.
+            if (TryFindIslandSite(settlements, regions, plan.LandingDirection, radius, isLand, ref rng,
+                out float3 islandSite, out int islandRegion))
+            {
+                int islandLots = 2 + (int)rng.NextUInt(2);
+                AddLotsWithDomain(settlements, buildings, islandRegion, SettlementKind.IslandSettlement,
+                    SettlementDomain.Island, 0f, islandSite, RandomAxis(islandSite, ref rng), TrailWidthM, islandLots,
+                    radius, isLand, LotSurfaceRule.DryLandOnly, allowEmpty: false, ref rng);
+            }
+        }
+
+        private static int PickNonLandingRegion(IReadOnlyList<RunRegion> regions, int landingRegion, int bossRegion,
+            ref Pcg32 rng)
+        {
+            if (regions.Count <= 1) return landingRegion;
+            int start = (int)rng.NextUInt((uint)regions.Count);
+            for (int offset = 0; offset < regions.Count; offset++)
+            {
+                int r = (start + offset) % regions.Count;
+                if (r != landingRegion && r != bossRegion) return r;
+            }
+
+            return (landingRegion + 1) % regions.Count;
+        }
+
+        private static bool TryFindOceanSite(List<RunSettlement> settlements, IReadOnlyList<RunRegion> regions, float radius,
+            Func<float3, bool> isLand, Func<float3, float> groundAltitude, ref Pcg32 rng, out float3 site, out int region)
+        {
+            bool IsDeepWater(float3 d) => !isLand(d) && (groundAltitude == null || groundAltitude(d) <= -1f);
+            float3 fallback = float3.zero;
+            bool hasFallback = false;
+            for (int attempt = 0; attempt < 64; attempt++)
+            {
+                float3 p = SampleSphere(ref rng);
+                if (!IsDeepWater(p) || HasSurfaceSettlementNear(settlements, p, radius, 48f))
                 {
                     continue;
                 }
 
-                buildings.Add(new RunBuilding(index, bk, pos, Tangent(pos, -side * normal), width, depth, storeys));
+                if (!hasFallback)
+                {
+                    fallback = p;
+                    hasFallback = true;
+                }
+
+                PlanetFrame f = PlanetFrame.FromUp(p);
+                if (IsDeepWater(Offset(p, f.East * 24f, radius)) &&
+                    IsDeepWater(Offset(p, -f.East * 24f, radius)) &&
+                    IsDeepWater(Offset(p, f.North * 24f, radius)) &&
+                    IsDeepWater(Offset(p, -f.North * 24f, radius)))
+                {
+                    site = p;
+                    region = NearestRegion(regions, p);
+                    return true;
+                }
             }
 
-            settlements.Add(new RunSettlement(index, region, kind, center, first, buildings.Count - first));
+            if (hasFallback)
+            {
+                site = fallback;
+                region = NearestRegion(regions, fallback);
+                return true;
+            }
+
+            site = float3.zero;
+            region = 0;
+            return false;
+        }
+
+        private static bool TryFindIslandSite(List<RunSettlement> settlements, IReadOnlyList<RunRegion> regions,
+            float3 landingDir, float radius, Func<float3, bool> isLand, ref Pcg32 rng, out float3 site, out int region)
+        {
+            for (int attempt = 0; attempt < 64; attempt++)
+            {
+                float3 p = SampleSphere(ref rng);
+                if (!isLand(p) || HasSurfaceSettlementNear(settlements, p, radius, 45f))
+                {
+                    continue;
+                }
+
+                bool separatedByWater = false;
+                for (int step = 1; step <= 3 && !separatedByWater; step++)
+                {
+                    float t = step * 0.25f;
+                    float3 blended = math.lerp(landingDir, p, t);
+                    if (math.lengthsq(blended) <= 1e-6f)
+                    {
+                        continue;
+                    }
+
+                    float3 arc = math.normalize(blended);
+                    if (!isLand(arc))
+                    {
+                        separatedByWater = true;
+                    }
+                }
+
+                if (separatedByWater)
+                {
+                    site = p;
+                    region = NearestRegion(regions, p);
+                    return true;
+                }
+            }
+
+            site = float3.zero;
+            region = 0;
+            return false;
+        }
+
+        private static bool HasSurfaceSettlementNear(List<RunSettlement> settlements, float3 p, float radius, float minGapM)
+        {
+            float maxDist2 = (minGapM / radius) * (minGapM / radius);
+            for (int i = 0; i < settlements.Count; i++)
+            {
+                RunSettlement s = settlements[i];
+                if (s.Domain == SettlementDomain.SkyIsland) continue;
+                if (math.distancesq(s.Center, p) < maxDist2) return true;
+            }
+
+            return false;
+        }
+
+        private static int NearestRegion(IReadOnlyList<RunRegion> regions, float3 dir)
+        {
+            int best = 0;
+            float bestDot = float.MinValue;
+            for (int i = 0; i < regions.Count; i++)
+            {
+                float d = math.dot(regions[i].Center, dir);
+                if (d > bestDot)
+                {
+                    bestDot = d;
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        private static float3 SampleSphere(ref Pcg32 rng)
+        {
+            float z = rng.NextFloat() * 2f - 1f;
+            float phi = rng.NextFloat() * 2f * math.PI;
+            float r = math.sqrt(math.max(0f, 1f - z * z));
+            return math.normalize(new float3(r * math.cos(phi), z, r * math.sin(phi)));
+        }
+
+        private static float3 RandomAxis(float3 up, ref Pcg32 rng)
+        {
+            PlanetFrame f = PlanetFrame.FromUp(up);
+            float ang = rng.NextFloat() * 2f * math.PI;
+            return math.normalize(f.East * math.cos(ang) + f.North * math.sin(ang));
         }
 
         private static void AddLair(List<RunSettlement> settlements, List<RunBuilding> buildings, RunPlan plan, float radius,
@@ -400,7 +800,7 @@ namespace Cosmimera.WorldGen
             return allowed[(int)rng.NextUInt((uint)allowed.Length)];
         }
 
-        private static int TownLotCount(SettlementKind kind, ref Pcg32 rng)
+        internal static int TownLotCount(SettlementKind kind, ref Pcg32 rng)
         {
             switch (kind)
             {
@@ -417,7 +817,7 @@ namespace Cosmimera.WorldGen
             }
         }
 
-        private static BuildingKind KindFor(SettlementKind kind, int lot, ref Pcg32 rng)
+        internal static BuildingKind KindFor(SettlementKind kind, int lot, ref Pcg32 rng)
         {
             uint roll = rng.NextUInt(100);
             switch (kind)
@@ -436,13 +836,19 @@ namespace Cosmimera.WorldGen
                     return roll < 50 ? BuildingKind.Tower : BuildingKind.House;
                 case SettlementKind.Village:
                     return lot == 0 ? BuildingKind.Hall : roll < 20 ? BuildingKind.Tower : BuildingKind.House;
+                case SettlementKind.IslandSettlement:
+                    return lot == 0 ? BuildingKind.Hall : BuildingKind.House;
+                case SettlementKind.SkyTribe:
+                    return lot == 0 ? BuildingKind.Hall : roll < 50 ? BuildingKind.Tent : BuildingKind.Tower;
+                case SettlementKind.DeepSeaCity:
+                    return lot == 0 ? BuildingKind.Hall : roll < 45 ? BuildingKind.Tower : BuildingKind.House;
                 default:
                     return roll < 50 ? BuildingKind.Tower : BuildingKind.House;
             }
         }
 
         // Sizes are human scale in metres, independent of planet radius (doors do not grow with the planet).
-        private static void Footprint(BuildingKind kind, ref Pcg32 rng, out float width, out float depth, out int storeys)
+        internal static void Footprint(BuildingKind kind, ref Pcg32 rng, out float width, out float depth, out int storeys)
         {
             uint a = rng.NextUInt(3);
             uint b = rng.NextUInt(3);
@@ -472,10 +878,10 @@ namespace Cosmimera.WorldGen
         }
 
         // Unit tangent at p along v's tangential part (toward v along the great circle when v is a direction).
-        private static float3 Tangent(float3 p, float3 v) => math.normalize(v - p * math.dot(v, p));
+        internal static float3 Tangent(float3 p, float3 v) => math.normalize(v - p * math.dot(v, p));
 
         // Moves a unit direction by a tangent displacement given in metres (small-angle, then back onto the sphere).
-        private static float3 Offset(float3 p, float3 tangentM, float radius) => math.normalize(p + tangentM / radius);
+        internal static float3 Offset(float3 p, float3 tangentM, float radius) => math.normalize(p + tangentM / radius);
 
         private static void Mix(ref ulong h, ulong v)
         {

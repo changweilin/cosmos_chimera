@@ -100,5 +100,64 @@ namespace Cosmimera.Bootstrap.Tests
 
             Assert.That(copy.PlanetName("unknown_planet", 1), Is.EqualTo(copy.Planet("unknown_planet")));
         }
+
+        [TestCase("zh-TW")]
+        [TestCase("en")]
+        [TestCase("ja")]
+        public void Shipped_traversal_and_return_copy_resolves(string language)
+        {
+            string strings = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Data", "Copy", "strings.json"));
+            var copy = new DemoCopy(language, strings, "{\"entries\":[]}", "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            foreach (string key in new[]
+                     {
+                         "utility.Swim", "utility.Dive", "utility.Fly", "utility.Levitate", "utility.ReturnVillage",
+                         "utility.desc.Swim", "utility.desc.Dive", "utility.desc.Fly", "utility.desc.Levitate", "utility.desc.ReturnVillage",
+                         "ui.skills.returned", "ui.skills.return_needs_dive", "ui.skills.return_start",
+                         "ui.skills.return_sky", "ui.skills.return_deep_sea", "ui.skills.return_island", "ui.skills.return_village",
+                     })
+            {
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+        }
+
+        [TestCase("zh-TW")]
+        [TestCase("en")]
+        [TestCase("ja")]
+        public void Shipped_trainer_copy_resolves_all_professions_duties_functions_and_hud_keys(string language)
+        {
+            string strings = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Data", "Copy", "strings.json"));
+            var copy = new DemoCopy(language, strings, "{\"entries\":[]}", "[]", "[]", "{\"steps\":[],\"chains\":[]}", "[]");
+            foreach (TrainerProfessionSpec prof in TrainerPlanner.AllProfessions)
+            {
+                string key = "ui.trainer.prof." + prof.Id;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (TrainerDutySpec duty in TrainerPlanner.AllDuties)
+            {
+                string key = "ui.trainer.duty." + duty.Id;
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (TrainerFunction fn in (TrainerFunction[])System.Enum.GetValues(typeof(TrainerFunction)))
+            {
+                string key = "ui.trainer.fn." + fn.ToString().ToLowerInvariant();
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+
+            foreach (string key in new[]
+                     {
+                         "ui.trainer.interact_prompt", "ui.trainer.spotted", "ui.trainer.evaded",
+                         "ui.trainer.challenge", "ui.trainer.victory", "ui.trainer.defeat",
+                     })
+            {
+                Assert.That(copy.Ui(key), Is.Not.EqualTo(key), key);
+                Assert.That(copy.Ui(key), Is.Not.Empty, key);
+            }
+        }
     }
 }

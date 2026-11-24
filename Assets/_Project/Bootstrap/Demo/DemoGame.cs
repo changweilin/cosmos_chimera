@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.IO;
+using Cosmimera.Bootstrap.Demo.UI;
 using Cosmimera.Combat;
 using Cosmimera.Core.Random;
+using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Lobby;
 using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using UnityEngine;
@@ -23,7 +26,7 @@ namespace Cosmimera.Bootstrap.Demo
     /// </remarks>
     public sealed partial class DemoGame : MonoBehaviour
     {
-        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest }
+        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest, MainStorySelect }
 
         private sealed class PlanetOption
         {
@@ -33,6 +36,7 @@ namespace Cosmimera.Bootstrap.Demo
             public CreatureStage BossStage;
             public WorldGen.PlanetElements Elements;
             public bool IsBeginnerQuest;
+            public bool IsLobbyPlanet;
         }
 
         internal const ulong BeginnerQuestSeed = 20261117UL;
@@ -71,6 +75,7 @@ namespace Cosmimera.Bootstrap.Demo
         private int _weatherControlCooldownMs;
         private EnvMaterials _env;
         private LobbySave _save;
+        private PlanetTypeDef _cradlePlanetCache;
         private string _savePath;
         private Screen _screen = Screen.Lobby;
         private readonly List<PlanetOption> _options = new List<PlanetOption>();
@@ -98,6 +103,8 @@ namespace Cosmimera.Bootstrap.Demo
         private bool _confirmPending;
         private bool _scrollToFocus;
         private bool _insidePartyScroll;
+        private GameOverlayView _overlay;
+        private RunCheckpointSave _pendingResumeCheckpoint;
 
         private void Awake()
         {
@@ -129,10 +136,43 @@ namespace Cosmimera.Bootstrap.Demo
             _bgm.Initialize(_bgmTable);
             _bgm.Play(BgmResolver.Town);
 
+            StartGameDirectly();
+        }
+
+        private void StartGameDirectly()
+        {
+            if (_save.ActiveCheckpoint != null)
+            {
+                LaunchFromCheckpoint(_save.ActiveCheckpoint);
+                return;
+            }
+
             if (!_save.TutorialDone)
             {
+                // REQ: docs/design/beginner-quest.md#流程 — new save skips lobby/menu and enters Cradle Moon directly.
                 EnterBeginnerQuest();
+                return;
             }
+
+            if (_save.StarterLine == null && _starters.Count > 0)
+            {
+                CreatureDef s = _starters[0];
+                LobbySave candidate = _save.Clone();
+                int exp = _progression.XpThreshold(_progression.StarterLevel);
+                if (s.Niches.Count > 0)
+                {
+                    WildIndividual ind = WildIndividual.Draw(s, null, WildIndividual.KeyFor(0x53545254UL, 1UL));
+                    candidate.ChooseStarter(s.LineId, s.Id, exp, ind.Niche.Id, ind.Habit);
+                }
+                else
+                {
+                    candidate.ChooseStarter(s.LineId, s.Id, exp);
+                }
+
+                CommitLobby(candidate);
+            }
+
+            LaunchLobbyPlanet();
         }
 
         private void LoadData()
@@ -201,14 +241,27 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDestroy()
         {
+            _overlay?.Dispose();
+            _overlay = null;
             _paperdollPreview?.Dispose();
             _paperdollPreview = null;
             _menuHints?.Dispose();
             _menuInput?.Dispose();
+            if (_cradlePlanetCache != null)
+            {
+                Destroy(_cradlePlanetCache);
+                _cradlePlanetCache = null;
+            }
         }
 
         private void Update()
         {
+            if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
+            {
+                OpenDevTestSavesOverlay();
+                return;
+            }
+
             if (_menuInput == null || !_menuInput.enabled)
             {
                 return;
@@ -235,7 +288,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (_menuInput.FindAction("Cancel").WasPressedThisFrame())
             {
-                if (_screen == Screen.StarSelect || (_screen == Screen.Results && _settleError == null))
+                if (_screen == Screen.StarSelect || _screen == Screen.MainStorySelect ||
+                    (_screen == Screen.Results && _settleError == null))
                 {
                     _screen = Screen.Lobby;
                     _menuFocus.SetCount(0);
@@ -258,10 +312,12 @@ namespace Cosmimera.Bootstrap.Demo
         private int MenuButtonCount()
         {
             if (_screen == Screen.Results) return 1;  // return-to-lobby, or retry while unsettled
+            if (_screen == Screen.BeginnerQuest) return BeginnerQuestButtonCount();
+            if (_screen == Screen.MainStorySelect) return _mainStoryTracks.Count + 1;
             if (_screen == Screen.StarSelect) return _options.Count + 1;
             if (_save.StarterLine == null) return 1 + _starters.Count +
                 (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 4;
+            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 6;
             if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
             for (int i = 0; i < _save.Owned.Count; i++)
             {
@@ -418,10 +474,12 @@ namespace Cosmimera.Bootstrap.Demo
                     DrawStarSelect();
                     break;
                 case Screen.Results:
-                    DrawResults();
-                    break;
+                    return;
                 case Screen.BeginnerQuest:
                     DrawBeginnerQuest();
+                    break;
+                case Screen.MainStorySelect:
+                    DrawMainStorySelect();
                     break;
             }
 
@@ -528,11 +586,29 @@ namespace Cosmimera.Bootstrap.Demo
                 GUIUtility.ExitGUI();
             }
             GUILayout.Space(20);
-            if (MenuButton(_copy.Ui("ui.lobby.start_run"), GUILayout.Height(56)))
+            if (MenuButton("探索固定大廳星球（主世界 R=2560 m · 8 城鎮 · 全地形 · 10 關主）", GUILayout.Height(52)))
+            {
+                LaunchLobbyPlanet();
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton(_copy.Ui("ui.lobby.start_run") + "（隨機世界 · 需元素素材）", GUILayout.Height(48)))
             {
                 RollOptions();
                 _screen = Screen.StarSelect;
                 _menuFocus.SetCount(0);
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton("下一個主線劇情", GUILayout.Height(48)))
+            {
+                OpenMainStorySelect();
+                GUIUtility.ExitGUI();
+            }
+
+            if (MenuButton("開發者測試存檔 (Dev F9)", GUILayout.Height(36)))
+            {
+                OpenDevTestSavesOverlay();
                 GUIUtility.ExitGUI();
             }
 
@@ -753,11 +829,17 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DrawStarSelect()
         {
-            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            PlanetSize maxUnlocked = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
+            string unlockedLabel = _copy.Ui("ui.star_select.size_" + maxUnlocked.ToString().ToLowerInvariant());
             GUILayout.Label(_copy.Ui("ui.star_select.title"), _title, GUILayout.Height(60));
-            GUILayout.Label(PlayerLevelLabel() + "\n" + _copy.Ui("ui.star_select.boss_unlock_hint")
-                .Replace("{adolescent}", _progression.BossStageUnlockLevel(CreatureStage.Adolescent).ToString(inv))
-                .Replace("{adult}", _progression.BossStageUnlockLevel(CreatureStage.Adult).ToString(inv)), _text);
+            GUILayout.Label(PlayerLevelLabel() +
+                $"\n主線已解鎖最大星球：{unlockedLabel}（完成地形試煉解鎖更大星球：{StarSelectRules.MoonUnlockTrials}/{StarSelectRules.PlanetUnlockTrials}/{StarSelectRules.SupergiantUnlockTrials}）",
+                _text);
+            if (!string.IsNullOrEmpty(_partyMsg))
+            {
+                GUILayout.Label(_partyMsg, _text);
+            }
+
             foreach (PlanetOption o in _options)
             {
                 PlanetSize planetSize = WorldGen.BossDraw.SizeFor(o.BossStage);
@@ -767,10 +849,23 @@ namespace Cosmimera.Bootstrap.Demo
                 string elementsLine = FormatPlanetElements(o.Elements);
                 string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
                 string planetName = _copy.PlanetName(o.Type.Id, o.Seed);
+                Element mainElement = o.Elements.Shares[0].Element;
+                MaterialStack cost = StarSelectRules.LaunchCost(planetSize, mainElement);
+                int held = _save.Materials.Count(cost.Key);
+                string costText = o.IsBeginnerQuest
+                    ? "免素材（新手任務）"
+                    : $"所需素材：{_copy.Material(cost.Key)} ×{cost.Qty}（持有：{held}）";
                 GUILayout.Label($"{tag}{planetName}（{_copy.Planet(o.Type.Id)}）   {boss}   {size} (R={o.Radius:0} m)\n" +
-                                $"{elementsLine}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
+                                $"{elementsLine}   {costText}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
                 if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
                 {
+                    if (!o.IsBeginnerQuest && !TryPayStarSelectCost(planetSize, mainElement))
+                    {
+                        _partyMsg = $"元素素材不足：需要 {_copy.Material(cost.Key)} ×{cost.Qty}（目前持有 {held}），請先於大廳星球探索或戰鬥收集。";
+                        GUIUtility.ExitGUI();
+                        return;
+                    }
+
                     Launch(o);
                     GUIUtility.ExitGUI();
                     return;
@@ -784,6 +879,22 @@ namespace Cosmimera.Bootstrap.Demo
                 RollOptions();
                 GUIUtility.ExitGUI();
             }
+        }
+
+        private bool TryPayStarSelectCost(PlanetSize size, Element mainElement)
+        {
+            if (!StarSelectRules.CanLaunch(_save.Materials, size, mainElement))
+            {
+                return false;
+            }
+
+            LobbySave candidate = _save.Clone();
+            if (!StarSelectRules.TryPayLaunchCost(candidate.Materials, size, mainElement))
+            {
+                return false;
+            }
+
+            return CommitLobby(candidate);
         }
 
         private string FormatPlanetElements(WorldGen.PlanetElements elements)
@@ -891,11 +1002,29 @@ namespace Cosmimera.Bootstrap.Demo
                 startIndex = 1;
             }
 
-            // REQ: planet-world.md#boss-尺寸 — the boss stage is drawn first (capped by player level) and fixes the size.
-            CreatureStage maxStage = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
-            for (int i = startIndex; i < 3 && types.Count > 0; i++)
+            // REQ: beginner-quest.md#搖籃星 — cradle_planet is dedicated to the beginner quest and never appears in star selection.
+            var selectableTypes = new List<PlanetTypeDef>(types.Count);
+            for (int i = 0; i < types.Count; i++)
             {
-                PlanetTypeDef t = types[(int)_menuRng.NextUInt((uint)types.Count)];
+                if (types[i].Id != "cradle_planet")
+                {
+                    selectableTypes.Add(types[i]);
+                }
+            }
+
+            if (selectableTypes.Count == 0)
+            {
+                selectableTypes.AddRange(types);
+            }
+
+            // REQ: lobby-meta.md#地球大廳 — initial random access is Asteroid only; larger sizes unlock along main-story trials.
+            PlanetSize maxUnlockedSize = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
+            CreatureStage storyCap = StarSelectRules.MaxBossStageForSize(maxUnlockedSize);
+            CreatureStage levelCap = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
+            CreatureStage maxStage = storyCap < levelCap ? storyCap : levelCap;
+            for (int i = startIndex; i < 3 && selectableTypes.Count > 0; i++)
+            {
+                PlanetTypeDef t = selectableTypes[(int)_menuRng.NextUInt((uint)selectableTypes.Count)];
                 ulong seed = _menuRng.NextUInt();
                 CreatureStage stage = WorldGen.BossDraw.Stage(seed, maxStage);
                 PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
@@ -907,10 +1036,101 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        /// <summary>Builds the deterministic beginner-quest planet option (verdant asteroid, juvenile boss).</summary>
+        private PlanetTypeDef ResolveCradlePlanetType()
+        {
+            if (_database != null)
+            {
+                foreach (GameDef def in _database.All)
+                {
+                    if (def is PlanetTypeDef t && t.Id == "cradle_planet")
+                    {
+                        return t;
+                    }
+                }
+            }
+
+            if (_cradlePlanetCache == null)
+            {
+                _cradlePlanetCache = ScriptableObject.CreateInstance<PlanetTypeDef>();
+                const System.Reflection.BindingFlags flags =
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                typeof(GameDef).GetField("id", flags)?.SetValue(_cradlePlanetCache, "cradle_planet");
+                typeof(PlanetTypeDef).GetField("terrainTags", flags)?.SetValue(
+                    _cradlePlanetCache, new List<string> { "forest", "river_valley", "plateau" });
+                typeof(PlanetTypeDef).GetField("elementBias", flags)?.SetValue(
+                    _cradlePlanetCache, new List<Element> { Element.Wood, Element.Water, Element.Wind });
+            }
+
+            return _cradlePlanetCache;
+        }
+
+        private void LaunchCradleMoon()
+        {
+            PlanetTypeDef cradleType = ResolveCradlePlanetType();
+            if (cradleType == null)
+            {
+                Debug.LogError("DemoGame: no PlanetTypeDef found for the cradle moon.");
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = cradleType,
+                Seed = BeginnerQuestSeed,
+                Radius = RadiusFor(PlanetSize.Asteroid),
+                BossStage = CreatureStage.Juvenile,
+                Elements = WorldGen.PlanetElementDraw.Draw(BeginnerQuestSeed, PlanetSize.Asteroid, cradleType.ElementBias),
+            });
+        }
+
+        private CreatureDef FindCreatureById(string id)
+        {
+            if (string.IsNullOrEmpty(id) || _database == null)
+            {
+                return null;
+            }
+
+            return _database.TryGet(id, out CreatureDef def) ? def : null;
+        }
+
+        private void LaunchLobbyPlanet()
+        {
+            PlanetTypeDef lobbyType = null;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t)
+                {
+                    if (t.Id == LobbyPlanet.PlanetTypeId)
+                    {
+                        lobbyType = t;
+                        break;
+                    }
+
+                    lobbyType ??= t;
+                }
+            }
+
+            if (lobbyType == null)
+            {
+                Debug.LogError("DemoGame: no PlanetTypeDef found for the lobby planet.");
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = lobbyType,
+                Seed = LobbyPlanet.Seed,
+                Radius = LobbyPlanet.RadiusM,
+                BossStage = CreatureStage.Adult,
+                Elements = WorldGen.PlanetElementDraw.Draw(LobbyPlanet.Seed, PlanetSize.Supergiant, lobbyType.ElementBias),
+                IsLobbyPlanet = true,
+            });
+        }
+
+        /// <summary>Builds the deterministic beginner-quest planet option (cradle asteroid, juvenile boss).</summary>
         /// <remarks>
         /// Pre: types is non-null and has at least one entry.
-        /// Post: returns a juvenile-boss 320 m planet option preferring "verdant_planet".
+        /// Post: returns a juvenile-boss 320 m planet option preferring "cradle_planet", then "verdant_planet".
         /// Side effects: none.
         /// </remarks>
         internal static (PlanetTypeDef type, ulong seed, CreatureStage bossStage, float radius, WorldGen.PlanetElements elements)
@@ -920,10 +1140,15 @@ namespace Cosmimera.Bootstrap.Demo
             PlanetTypeDef chosen = types[0];
             for (int i = 0; i < types.Count; i++)
             {
-                if (types[i].Id == "verdant_planet")
+                if (types[i].Id == "cradle_planet")
                 {
                     chosen = types[i];
                     break;
+                }
+
+                if (types[i].Id == "verdant_planet")
+                {
+                    chosen = types[i];
                 }
             }
 
@@ -977,7 +1202,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             _menuInput.Disable();
             _confirmPending = false;
+            _overlay?.Hide();
+            // REQ: gear-looks.md#外觀與數值 — lobby crafting styles gear after the last departed planet; persisted at settlement.
+            _save.SetLastPlanet(new GearOrigin(o.Type.Id, o.Seed));
             _lobbyCamera.gameObject.SetActive(false);
+            RunCheckpointSave resumeCheckpoint = _pendingResumeCheckpoint;
+            _pendingResumeCheckpoint = null;
             _run = new GameObject("Run").AddComponent<RunSession>();
             _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
                 new RunSetup
@@ -985,6 +1215,7 @@ namespace Cosmimera.Bootstrap.Demo
                     PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
                     PlayerExp = _save.PlayerExp,
                     Codex = _save.Codex,
+                    DiscoveredRecipes = _save.DiscoveredRecipesSnapshot(),
                     PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
                     Materials = _materialDrops, EnvMaterials = _env,
                     WeatherControlCooldownMs = _weatherControlCooldownMs,
@@ -992,9 +1223,19 @@ namespace Cosmimera.Bootstrap.Demo
                     Portraits = _portraits, VolumeProfile = _volumeProfile,
                     Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
                     CraftStock = _save.CraftStock.Snapshot(),
+                    CraftLooks = _save.CraftStock.LookSnapshot(),
                     Equipment = _save.Equipment.Snapshot(),
+                    TrialBadges = _save.CompletedTrialsSnapshot(),
+                    IsLobbyPlanet = o.IsLobbyPlanet,
+                    TutorialDone = _save.TutorialDone,
+                    FriendId = _save.FriendId,
+                    FriendStarter = FindCreatureById(_save.FriendStarterId),
+                    RivalId = _save.RivalId,
+                    RivalStarter = FindCreatureById(_save.RivalStarterId),
+                    ResumeCheckpoint = resumeCheckpoint,
                 }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
+            _run.CheckpointTriggered += OnCheckpointTriggered;
             _run.Hints.Inherit(_menuHints);
             _screen = Screen.Running;
         }
@@ -1041,6 +1282,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (outcome.Victory)
                 {
                     _save.CompleteTutorial(_bqCharacterId, _bqFriendId, _bqRivalId, _bqRivalStarterId, _bqFriendStarterId);
+                    _save.AddGold(ShopAndRepairRules.QuestCompletionGold);
                     _save.Codex.Record(Codex.CodexEvent.Capture, _bqCharacterId);
                     TrySettle();
                     return;
@@ -1054,6 +1296,205 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             TrySettle();
+            if (_settleError == null && outcome.TravelToCradleMoon)
+            {
+                LaunchCradleMoon();
+                return;
+            }
+
+            if (_settleError == null && outcome.TravelToLobbyPlanet)
+            {
+                if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+                {
+                    LobbySave cleared = _save.Clone();
+                    cleared.ClearCheckpoint();
+                    CommitLobby(cleared);
+                }
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            ShowResultsOverlay();
+        }
+
+        private void OnCheckpointTriggered(RunCheckpointSave checkpoint)
+        {
+            if (checkpoint == null || _save == null)
+            {
+                return;
+            }
+
+            LobbySave candidate = _save.Clone();
+            candidate.SetCheckpoint(checkpoint);
+            CommitLobby(candidate);
+        }
+
+        private void LaunchFromCheckpoint(RunCheckpointSave cp)
+        {
+            if (cp == null)
+            {
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            _pendingResumeCheckpoint = cp;
+            if (cp.WorldKind == SaveWorldKind.CradlePlanet)
+            {
+                if (_save.TutorialDone)
+                {
+                    LaunchCradleMoon();
+                }
+                else
+                {
+                    PlanetTypeDef cradleType = ResolveCradlePlanetType();
+                    _activeRunIsBeginnerQuest = true;
+                    _bqCharacterId = _save.CharacterId;
+                    _bqFriendId = _save.FriendId;
+                    _bqRivalId = _save.RivalId;
+                    Launch(new PlanetOption
+                    {
+                        Type = cradleType,
+                        Seed = cp.PlanetSeed,
+                        Radius = RadiusFor(PlanetSize.Asteroid),
+                        BossStage = CreatureStage.Juvenile,
+                        Elements = WorldGen.PlanetElementDraw.Draw(cp.PlanetSeed, PlanetSize.Asteroid, cradleType.ElementBias),
+                        IsBeginnerQuest = true,
+                    });
+                }
+                return;
+            }
+
+            if (cp.WorldKind == SaveWorldKind.LobbyPlanet)
+            {
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            PlanetTypeDef randomType = null;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t && t.Id == cp.PlanetTypeId)
+                {
+                    randomType = t;
+                    break;
+                }
+            }
+
+            if (randomType == null)
+            {
+                _pendingResumeCheckpoint = null;
+                LaunchLobbyPlanet();
+                return;
+            }
+
+            Launch(new PlanetOption
+            {
+                Type = randomType,
+                Seed = cp.PlanetSeed,
+                Radius = RadiusFor(cp.PlanetSize),
+                BossStage = cp.BossStage,
+                Elements = WorldGen.PlanetElementDraw.Draw(cp.PlanetSeed, cp.PlanetSize, randomType.ElementBias),
+            });
+        }
+
+        private void OpenDevTestSavesOverlay()
+        {
+            _overlay ??= new GameOverlayView(transform);
+            _overlay.Show("開發者遊戲測試存檔 (Dev)", "選擇關鍵劇情節點一鍵套用並啟動");
+            foreach (DevTestSavePreset preset in DevTestSaves.All)
+            {
+                DevTestSavePreset captured = preset;
+                _overlay.AddCard(captured.Label, captured.FileName, "載入此測試存檔", () =>
+                {
+                    ApplyDevTestSave(captured);
+                }, primary: false);
+            }
+
+            _overlay.AddFooterButton("關閉", () => _overlay.Hide());
+        }
+
+        private void ApplyDevTestSave(DevTestSavePreset preset)
+        {
+            LobbySave built = preset.Build();
+            if (!LobbyTransactions.TryWrite(built, _savePath, out System.Exception err))
+            {
+                Debug.LogException(err);
+                return;
+            }
+
+            _save = built;
+            _overlay?.Hide();
+            if (_run != null)
+            {
+                Destroy(_run.gameObject);
+                _run = null;
+            }
+
+            LaunchFromCheckpoint(_save.ActiveCheckpoint);
+        }
+
+        private void ShowResultsOverlay()
+        {
+            _overlay ??= new GameOverlayView(transform);
+            string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
+            _overlay.Show(title, _playerXpLine);
+
+            if (_outcome.Captured.Count > 0)
+            {
+                string capBody = string.Empty;
+                foreach ((string speciesId, VesselKind vessel, int exp, _, _) in _outcome.Captured)
+                {
+                    capBody += $"· {_copy.Name(speciesId)} LV{_progression.LevelOf(exp)} ({_copy.Ui("ui.vessel." + VesselKey(vessel))})\n";
+                }
+                _overlay.AddCard(_copy.Ui("ui.results.captured_list"), capBody.TrimEnd());
+            }
+
+            string matBody = _outcome.Materials.Count == 0 ? _copy.Ui("ui.results.materials_none") : string.Empty;
+            foreach (MaterialStack m in _outcome.Materials)
+            {
+                matBody += $"· {_copy.Material(m.Key)} ×{m.Qty}\n";
+            }
+            _overlay.AddCard(_copy.Ui("ui.results.materials_list"), matBody.TrimEnd());
+
+            if (_xpLines.Count > 0)
+            {
+                _overlay.AddCard(_copy.Ui("ui.lobby.team"), string.Join("\n", _xpLines));
+            }
+
+            if (_settleError != null)
+            {
+                _overlay.AddCard(_copy.Ui("ui.results.retry"), _settleError, _copy.Ui("ui.results.retry"), () =>
+                {
+                    TrySettle();
+                    ShowResultsOverlay();
+                }, primary: false);
+                return;
+            }
+
+            _overlay.AddFooterButton(_copy.Ui("ui.journal.open"), () =>
+            {
+                _overlay.Hide();
+                OpenJournal();
+            });
+            if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+            {
+                _overlay.AddFooterButton("從最後存檔點重試", () =>
+                {
+                    _overlay.Hide();
+                    LaunchFromCheckpoint(_save.ActiveCheckpoint);
+                }, primary: false);
+            }
+            _overlay.AddFooterButton("再次出發", () =>
+            {
+                if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
+                {
+                    LobbySave cleared = _save.Clone();
+                    cleared.ClearCheckpoint();
+                    CommitLobby(cleared);
+                }
+                _overlay.Hide();
+                LaunchLobbyPlanet();
+            }, primary: true);
         }
 
         private void TrySettle()

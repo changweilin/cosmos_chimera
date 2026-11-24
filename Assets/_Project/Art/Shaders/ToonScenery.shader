@@ -73,16 +73,18 @@ Shader "Cosmimera/ToonScenery"
             float scale = length(axis);
             float3 up = axis / max(scale, 1e-4);
             float3 root = TransformObjectToWorld(float3(0, 0, 0));
-            float3 wind = CosmiWindDir(up);
+            float3 baseWind = CosmiWindDir(up);
+            float vortexBoost;
+            float3 wind = CosmiWindAt(up, baseWind, vortexBoost);
 
             // The same gust field as ToonGrass: a front that flattens the meadow reaches the tree above it together.
-            float along = dot(root, wind);
-            float across = dot(root, cross(up, wind));
+            float along = dot(root, baseWind);
+            float across = dot(root, cross(up, baseWind));
             float wave = max(_CosmiWind.z, 1.0);
             float gust = CosmiNoise(float3(along / wave - _Time.y * _CosmiWind.y, across / (wave * 1.7), 0.5));
             gust = smoothstep(0.35, 0.8, gust);
             float sway = sin(_Time.y * 1.3 + along * 0.21 + across * 0.13);
-            float lean = (0.25 + sway * 0.35 + gust * 0.9) * weight * scale;
+            float lean = (0.25 + sway * 0.35 + gust * 0.9 + vortexBoost * 1.4 / max(_CosmiWind.x, 0.3)) * weight * scale;
 
             // Leaves shiver faster than the crown leans; the phase varies between blades.
             // Phase 0 marks wood (trunk, limbs): it leans with the crown but must not swell along its normals.
@@ -105,6 +107,8 @@ Shader "Cosmimera/ToonScenery"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
 
             struct Varyings
             {
@@ -144,19 +148,27 @@ Shader "Cosmimera/ToonScenery"
                 albedo *= lerp(0.93, 1.06, smoothstep(0.42, 0.58, patch));
 
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
-                half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
-                    _Shadow.rgb, _Bands, SampleSH(n));
+                float cloudLight = CosmiCloudLight(i.positionWS);
+                half3 lit = CosmiToonLit(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
+                    cloudLight, _Shadow.rgb, _Bands, SampleSH(n));
 
                 // Sun through the crown: leaves facing away from the light still glow when seen against it.
-                float through = pow(saturate(dot(view, -light.direction)), 3.0) * saturate(0.6 - dot(n, light.direction));
-                lit += albedo * light.color * half3(1.05, 1.1, 0.6) * (through * _Translucency * CosmiCloudLight(i.positionWS));
+                if (_Translucency > 0.001)
+                {
+                    float through = pow(saturate(dot(view, -light.direction)), 3.0) * saturate(0.6 - dot(n, light.direction));
+                    lit += albedo * light.color * half3(1.05, 1.1, 0.6) * (through * _Translucency * cloudLight);
+                }
 
                 float fresnel = 1.0 - saturate(dot(n, view));
                 float rim = smoothstep(0.62, 0.78, fresnel) * saturate(dot(n, light.direction) + 0.3);
                 lit += _CosmiSkyHorizon.rgb * (rim * 0.18 * _CosmiSkyHorizon.a);
 
+                lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 // Crystals carry their own light, so they stay readable at night and inside cloud shadow.
-                lit += albedo * (_Glow * (0.3 + fresnel * fresnel * 0.9));
+                if (_Glow > 0.001)
+                {
+                    lit += albedo * (_Glow * (0.3 + fresnel * fresnel * 0.9));
+                }
 
                 return half4(CosmiAtmosphere(lit, i.positionWS, i.paint.w, light.direction), 1);
             }

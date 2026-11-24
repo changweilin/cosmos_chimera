@@ -423,5 +423,125 @@
       }
     ],
     "tools": []
+  },
+  {
+    "id": "recipe_sigil_stone_t1",
+    "utility": "craft_jewelcraft_light",
+    "costs": [
+      {
+        "item": "raw_stardust",
+        "quantity": 2
+      },
+      {
+        "item": "raw_crystal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_sigil_stone_t1",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "recipe_sigil_stone_t2",
+    "utility": "craft_jewelcraft_light",
+    "costs": [
+      {
+        "item": "raw_aether_core",
+        "quantity": 2
+      },
+      {
+        "item": "raw_crystal",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_sigil_stone_t2",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "recipe_sigil_stone_t3",
+    "utility": "craft_jewelcraft_light",
+    "costs": [
+      {
+        "item": "raw_astral_marrow",
+        "quantity": 2
+      },
+      {
+        "item": "raw_crystal",
+        "quantity": 4
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_sigil_stone_t3",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "recipe_magic_stone",
+    "utility": "craft_jewelcraft_light",
+    "costs": [
+      {
+        "item": "raw_gem",
+        "quantity": 2
+      },
+      {
+        "item": "raw_crystal",
+        "quantity": 2
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_magic_stone",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "recipe_mithril_ingot",
+    "utility": "craft_smelt_fire",
+    "costs": [
+      {
+        "item": "raw_silver_ore",
+        "quantity": 10
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_mithril_ingot",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "id": "recipe_adamant_ingot",
+    "utility": "craft_smelt_fire",
+    "costs": [
+      {
+        "item": "raw_gold_ore",
+        "quantity": 10
+      },
+      {
+        "item": "raw_coal",
+        "quantity": 1
+      }
+    ],
+    "gains": [
+      {
+        "item": "craft_adamant_ingot",
+        "quantity": 1
+      }
+    ]
   }
 ]

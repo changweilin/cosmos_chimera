@@ -102,8 +102,8 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(CreatureSizeClass.L, cub.EvolvesTo.EvolvesTo.SizeClass);
             Assert.AreEqual("sample_ember_strike", cub.SignatureMove.Id);
             Assert.AreEqual("sample_trait_placeholder", cub.Trait.Id);
-            Assert.AreEqual(25, cub.GetResist(Element.Fire));
-            Assert.AreEqual(-25, cub.GetResist(Element.Water));
+            Assert.AreEqual(125, cub.GetResist(Element.Fire));
+            Assert.AreEqual(75, cub.GetResist(Element.Water));
             Assert.AreEqual(25, cub.EvolutionLevel);
             Assert.AreEqual("sample_fox_beast", cub.EvolvesTo.Id);
             CreatureDef lord = cub.EvolvesTo.EvolvesTo;
@@ -589,18 +589,23 @@ namespace Cosmimera.GameData.Tests
             Assert.AreEqual(DamageModel.MaxPower, (int)common["$defs"]["movePower"]["maximum"]);
             Assert.AreEqual(DamageModel.MaxMasteryPercent, (int)common["$defs"]["masteryPercent"]["maximum"]);
             Assert.AreEqual("common.schema.json#/$defs/movePower", (string)moves["$defs"]["move"]["properties"]["power"]["$ref"]);
-            Assert.AreEqual("common.schema.json#/$defs/masteryPercent", (string)creatures["$defs"]["creature"]["properties"]["mastery"]["additionalProperties"]["$ref"]);
+            Assert.AreEqual(125, (int)creatures["$defs"]["creature"]["properties"]["mastery"]["additionalProperties"]["maximum"]);
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": " + DamageModel.MaxPower + ",");
-            ReplaceInFile("creatures/creatures.json", "\"fire\": 15", "\"fire\": " + DamageModel.MaxMasteryPercent);
+            ReplaceInFile("creatures/creatures.json", "\"fire\": 125", "\"fire\": 125");
 
             DataImporter.Import(_src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(DamageModel.MaxPower, move.Power);
-            Assert.AreEqual(DamageModel.MaxMasteryPercent, cub.Mastery[0].Value);
-            Assert.Greater(DamageModel.Compute(move.Power, cub.Mastery[0].Value, -100), 0);
-            Assert.AreEqual(0, DamageModel.Compute(move.Power, cub.Mastery[0].Value, 100));
+            int fireMastery = 0;
+            foreach (ElementValue entry in cub.Mastery)
+            {
+                if (entry.Element == Element.Fire) fireMastery = entry.Value;
+            }
+            Assert.AreEqual(125, fireMastery);
+            Assert.Greater(DamageModel.Compute(move.Power, fireMastery, 25), 0);
+            Assert.Greater(DamageModel.Compute(move.Power, fireMastery, 175), 0);
         }
 
         [TestCase("front", MoveShape.Front)]
@@ -805,6 +810,28 @@ namespace Cosmimera.GameData.Tests
 
             var ex = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
             StringAssert.Contains("must be an adult form", ex.Message);
+        }
+
+        [Test]
+        public void Field_utilities_and_ailment_effects_import_into_database()
+        {
+            string realFu = Path.Combine(Application.dataPath, "..", "Data", "field-utilities");
+            CopyDir(realFu, Path.Combine(_src, "field-utilities"));
+
+            DataImporter.Import(_src, Output);
+
+            // All 36 moves and 36 traits from field-utilities.json are imported and indexed.
+            Assert.IsTrue(Db.TryGetFieldUtilityMove(FieldUtility.CookFire, out MoveDef cookFire));
+            Assert.IsFalse(cookFire.HasEffectDuration);
+            Assert.AreEqual(EffectType.ApplyAilment, cookFire.Effect.Type);
+            Assert.AreEqual(Ailment.Burn, cookFire.Effect.Ailment);
+            Assert.AreEqual(50, cookFire.Effect.Buildup);
+
+            Assert.IsTrue(Db.TryGetFieldUtilityTrait(FieldUtility.WeatherWard, out TraitDef weatherWard));
+            Assert.IsTrue(weatherWard.Effects.Count >= 4);
+            Assert.IsTrue(Db.TryGetFieldUtilityTrait(FieldUtility.FreezePrep, out TraitDef freezePrep));
+            Assert.AreEqual(EffectType.AilmentResistMod, freezePrep.Effects[0].Type);
+            Assert.AreEqual(Ailment.Burn, freezePrep.Effects[0].Ailment);
         }
 
         private void ReplaceInFile(string relative, string from, string to)

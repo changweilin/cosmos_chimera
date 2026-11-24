@@ -854,9 +854,101 @@
     "en": "Flower patch",
     "ja": "花むら"
   },
-  "ui.object.fauna": {"zh-TW": "野生動物", "en": "Wild animal", "ja": "野生動物"},
-  "ui.object.machine": {"zh-TW": "機械", "en": "Machine", "ja": "機械"},
-  "ui.object.vehicle": {"zh-TW": "載具", "en": "Vehicle", "ja": "乗り物"},
+  "ui.object.baobab": {
+    "zh-TW": "猴麵包樹",
+    "en": "Baobab",
+    "ja": "バオバブ"
+  },
+  "ui.object.tree_fern": {
+    "zh-TW": "筆筒樹",
+    "en": "Tree fern",
+    "ja": "木生シダ"
+  },
+  "ui.object.krummholz": {
+    "zh-TW": "高山矮曲林",
+    "en": "Krummholz",
+    "ja": "ハイマツ"
+  },
+  "ui.object.cypress": {
+    "zh-TW": "柏樹",
+    "en": "Cypress",
+    "ja": "イトスギ"
+  },
+  "ui.object.mangrove": {
+    "zh-TW": "紅樹林",
+    "en": "Mangrove",
+    "ja": "マングローブ"
+  },
+  "ui.object.succulent": {
+    "zh-TW": "多肉植物",
+    "en": "Succulent",
+    "ja": "多肉植物"
+  },
+  "ui.object.cushion_moss": {
+    "zh-TW": "墊狀植物",
+    "en": "Cushion plant",
+    "ja": "クッション植物"
+  },
+  "ui.object.cotton_grass": {
+    "zh-TW": "羊鬍子草",
+    "en": "Cotton grass",
+    "ja": "ワタスゲ"
+  },
+  "ui.object.heather": {
+    "zh-TW": "石南",
+    "en": "Heather",
+    "ja": "ヒース"
+  },
+  "ui.object.dungeon_totem": {
+    "zh-TW": "骨圖騰",
+    "en": "Bone totem",
+    "ja": "骨のトーテム"
+  },
+  "ui.object.dungeon_sacks": {
+    "zh-TW": "麻袋",
+    "en": "Sacks",
+    "ja": "麻袋"
+  },
+  "ui.object.dungeon_crate": {
+    "zh-TW": "木箱",
+    "en": "Crates",
+    "ja": "木箱"
+  },
+  "ui.object.dungeon_barrel": {
+    "zh-TW": "木桶",
+    "en": "Barrel",
+    "ja": "木樽"
+  },
+  "ui.object.dungeon_metal_crate": {
+    "zh-TW": "鐵箱",
+    "en": "Metal crate",
+    "ja": "鉄の箱"
+  },
+  "ui.object.dungeon_boiler": {
+    "zh-TW": "鍋爐",
+    "en": "Boiler",
+    "ja": "ボイラー"
+  },
+  "ui.object.dungeon_console": {
+    "zh-TW": "控制台",
+    "en": "Console",
+    "ja": "コンソール"
+  },
+  "ui.object.dungeon_oil_drum": {
+    "zh-TW": "油桶",
+    "en": "Oil drum",
+    "ja": "ドラム缶"
+  },
+  "ui.object.dungeon_statue": {
+    "zh-TW": "傾倒的石像",
+    "en": "Toppled statue",
+    "ja": "倒れた石像"
+  },
+  "ui.object.dungeon_rubble": {
+    "zh-TW": "碎石堆",
+    "en": "Rubble",
+    "ja": "がれき"
+  },
   "ui.object.building": {
     "zh-TW": "建築",
     "en": "Building",
@@ -1343,9 +1435,14 @@
     "ja": "飛行"
   },
   "utility.Levitate": {
-    "zh-TW": "懸浮",
+    "zh-TW": "浮空",
     "en": "Levitate",
     "ja": "浮遊"
+  },
+  "utility.Swim": {
+    "zh-TW": "游泳",
+    "en": "Swim",
+    "ja": "泳ぐ"
   },
   "utility.CatchRateUp": {
     "zh-TW": "收服強化",
@@ -1383,9 +1480,9 @@
     "ja": "騎乗"
   },
   "utility.ReturnVillage": {
-    "zh-TW": "返回村落",
-    "en": "Return to village",
-    "ja": "村へ帰還"
+    "zh-TW": "候鳥歸途",
+    "en": "Migratory return",
+    "ja": "渡り鳥の帰路"
   },
   "utility.PartyStealth": {
     "zh-TW": "隊伍隱身",
@@ -1458,9 +1555,179 @@
     "ja": "作物収穫"
   },
   "utility.CulinaryPrep": {
-    "zh-TW": "食材處理",
+    "zh-TW": "精細備料",
     "en": "Culinary preparation",
     "ja": "下ごしらえ"
+  },
+  "utility.FreezePrep": {
+    "zh-TW": "急凍保鮮",
+    "en": "Cryo preservation",
+    "ja": "急速冷凍保存"
+  },
+  "utility.ForageFungi": {
+    "zh-TW": "菌菇採萃",
+    "en": "Fungi foraging",
+    "ja": "茸採取"
+  },
+  "utility.FermentCure": {
+    "zh-TW": "發酵醃漬",
+    "en": "Ferment & cure",
+    "ja": "発酵熟成"
+  },
+  "utility.SmokeDry": {
+    "zh-TW": "風乾燻製",
+    "en": "Smoke-dry",
+    "ja": "燻製乾燥"
+  },
+  "utility.ChillBrew": {
+    "zh-TW": "冰鎮特調",
+    "en": "Chill brew",
+    "ja": "冷製調合"
+  },
+  "utility.IceStride": {
+    "zh-TW": "凝冰踏浪",
+    "en": "Ice stride",
+    "ja": "氷結歩行"
+  },
+  "utility.SenseTreasure": {
+    "zh-TW": "秘寶感應",
+    "en": "Treasure sense",
+    "ja": "秘宝感知"
+  },
+  "utility.WeatherWard": {
+    "zh-TW": "極境適應",
+    "en": "Weather ward",
+    "ja": "悪天候耐性"
+  },
+  "utility.CampBeacon": {
+    "zh-TW": "野營信標",
+    "en": "Camp beacon",
+    "ja": "野営ビーコン"
+  },
+  "utility.GatherEssence": {
+    "zh-TW": "星塵採萃",
+    "en": "Essence gathering",
+    "ja": "星屑採取"
+  },
+  "utility.CraftSmeltFire": {
+    "zh-TW": "熾火熔煉",
+    "en": "Fire smelting",
+    "ja": "熾火精錬"
+  },
+  "utility.CraftSmeltMetal": {
+    "zh-TW": "精金熔煉",
+    "en": "Metal smelting",
+    "ja": "精金精錬"
+  },
+  "utility.CraftSmeltThunder": {
+    "zh-TW": "電弧熔煉",
+    "en": "Thunder smelting",
+    "ja": "電弧精錬"
+  },
+  "utility.CraftWeaveWood": {
+    "zh-TW": "植纖紡織",
+    "en": "Woodland weaving",
+    "ja": "植繊織物"
+  },
+  "utility.CraftWeaveWind": {
+    "zh-TW": "風梭紡織",
+    "en": "Wind weaving",
+    "ja": "風梭織物"
+  },
+  "utility.CraftWeaveShadow": {
+    "zh-TW": "暗影紡織",
+    "en": "Shadow weaving",
+    "ja": "暗影織物"
+  },
+  "utility.CraftTailorWood": {
+    "zh-TW": "森葉裁縫",
+    "en": "Woodland tailoring",
+    "ja": "森葉裁縫"
+  },
+  "utility.CraftTailorShadow": {
+    "zh-TW": "影線裁縫",
+    "en": "Shadow tailoring",
+    "ja": "影糸裁縫"
+  },
+  "utility.CraftTailorLight": {
+    "zh-TW": "光織裁縫",
+    "en": "Light tailoring",
+    "ja": "光織裁縫"
+  },
+  "utility.CraftSmithMetal": {
+    "zh-TW": "百鍊鍛造",
+    "en": "Metal smithing",
+    "ja": "百錬鍛造"
+  },
+  "utility.CraftSmithFire": {
+    "zh-TW": "炎爐鍛造",
+    "en": "Fire smithing",
+    "ja": "炎炉鍛造"
+  },
+  "utility.CraftSmithEarth": {
+    "zh-TW": "岩錘鍛造",
+    "en": "Earth smithing",
+    "ja": "岩鎚鍛造"
+  },
+  "utility.CraftCarpentryWood": {
+    "zh-TW": "原木木工",
+    "en": "Woodland carpentry",
+    "ja": "原木木工"
+  },
+  "utility.CraftCarpentryEarth": {
+    "zh-TW": "堅岩木工",
+    "en": "Earth carpentry",
+    "ja": "堅岩木工"
+  },
+  "utility.CraftCarpentryWind": {
+    "zh-TW": "流風木工",
+    "en": "Wind carpentry",
+    "ja": "流風木工"
+  },
+  "utility.CraftJewelcraftLight": {
+    "zh-TW": "輝光珠寶",
+    "en": "Light jewelcraft",
+    "ja": "輝光宝飾"
+  },
+  "utility.CraftJewelcraftEarth": {
+    "zh-TW": "岩晶珠寶",
+    "en": "Earth jewelcraft",
+    "ja": "岩晶宝飾"
+  },
+  "utility.CraftJewelcraftIce": {
+    "zh-TW": "冰琢珠寶",
+    "en": "Ice jewelcraft",
+    "ja": "氷琢宝飾"
+  },
+  "utility.CraftDyeWood": {
+    "zh-TW": "草木染色",
+    "en": "Botanical dyeing",
+    "ja": "草木染め"
+  },
+  "utility.CraftDyeWater": {
+    "zh-TW": "水洗染色",
+    "en": "Aqua dyeing",
+    "ja": "水洗染色"
+  },
+  "utility.CraftDyeLight": {
+    "zh-TW": "流光染色",
+    "en": "Light dyeing",
+    "ja": "流光染色"
+  },
+  "utility.CraftEnchantLight": {
+    "zh-TW": "聖光附魔",
+    "en": "Light enchanting",
+    "ja": "聖光付与"
+  },
+  "utility.CraftEnchantFire": {
+    "zh-TW": "炎印附魔",
+    "en": "Fire enchanting",
+    "ja": "炎印付与"
+  },
+  "utility.CraftEnchantShadow": {
+    "zh-TW": "幽影附魔",
+    "en": "Shadow enchanting",
+    "ja": "幽影付与"
   },
   "ingredient.category.MeatGround": {
     "zh-TW": "獸肉",
@@ -1773,19 +2040,24 @@
     "ja": "障害物除去"
   },
   "utility.desc.Dive": {
-    "zh-TW": "潛水",
-    "en": "Dive",
-    "ja": "潜水"
+    "zh-TW": "於水面低速泳渡並潛入超過 1 公尺深的深海與海底遺跡",
+    "en": "Swim slowly at the surface and dive below 1 m depth to reach deep-sea cities",
+    "ja": "水面を低速で進み、水深 1 m 超の深海や海底都市へ潜る"
   },
   "utility.desc.Fly": {
-    "zh-TW": "飛翔",
-    "en": "Fly",
-    "ja": "飛行"
+    "zh-TW": "於平流層（星球半徑高度）內高速飛行並前往空島部落",
+    "en": "Fly swiftly up to the stratosphere (planet radius) to reach sky tribes",
+    "ja": "成層圏（惑星半径高度）まで高速飛行し、空島集落へ到達する"
   },
   "utility.desc.Levitate": {
-    "zh-TW": "忽略地形減速",
-    "en": "Ignore terrain slowdown",
-    "ja": "地形の減速を無視"
+    "zh-TW": "懸浮並突破平流層上限前往太空站（直達 1.6 R）",
+    "en": "Levitate above the stratosphere to reach space stations (up to 1.6 R)",
+    "ja": "成層圏の上限を超えて浮遊し、宇宙ステーションへ到達する（上限 1.6 R）"
+  },
+  "utility.desc.Swim": {
+    "zh-TW": "於水面快速泳渡並涉水過河或登島（水深上限 1 公尺）",
+    "en": "Swim rapidly across rivers and coastal waters up to 1 m depth",
+    "ja": "水面を素早く泳ぎ、川や浅瀬（水深 1 m まで）を渡る"
   },
   "utility.desc.CatchRateUp": {
     "zh-TW": "提高收服成功率",
@@ -1823,9 +2095,9 @@
     "ja": "移動速度を上げ地形の減速を無視"
   },
   "utility.desc.ReturnVillage": {
-    "zh-TW": "返回村落",
-    "en": "Return to village",
-    "ja": "村へ帰還"
+    "zh-TW": "自由傳送至已抵達過的城鎮與搖籃星（深海城市需潛水）",
+    "en": "Freely teleport to visited settlements and the Cradle Moon (deep-sea requires Dive)",
+    "ja": "訪問済みの街や揺籃星へ自由に帰還する（深海都市は潜水が必要）"
   },
   "utility.desc.PartyStealth": {
     "zh-TW": "縮小野生偵測範圍",
@@ -1898,9 +2170,179 @@
     "ja": "作物収穫"
   },
   "utility.desc.CulinaryPrep": {
-    "zh-TW": "食材處理",
-    "en": "Culinary preparation",
-    "ja": "下ごしらえ"
+    "zh-TW": "研磨穀物與香草並進行冷拌備料，提升料理品質",
+    "en": "Grind grains and cold-mix ingredients to improve dish quality",
+    "ja": "穀物や香草を挽き冷製の下ごしらえを行い料理品質を上げる"
+  },
+  "utility.desc.FreezePrep": {
+    "zh-TW": "將生鮮食材急凍保鮮並作為冷製／精製料理基底",
+    "en": "Cryo-preserve fresh ingredients for chilled or refined recipes",
+    "ja": "生鮮食材を急速冷凍して保存し冷製・精製料理の下地にする"
+  },
+  "utility.desc.ForageFungi": {
+    "zh-TW": "於洞穴、沼澤與林蔭採集菌菇與松露食材",
+    "en": "Forage culinary fungi and truffles in caves, swamps, and shaded woods",
+    "ja": "洞窟や湿地・木陰で食用キノコやトリュフを採取する"
+  },
+  "utility.desc.FermentCure": {
+    "zh-TW": "將肉類、魚類與乳品發酵熟成，延長料理增益時間",
+    "en": "Ferment and cure meats, fish, or dairy to extend dish buff duration",
+    "ja": "肉・魚・乳製品を発酵熟成し料理バフの効果時間を延ばす"
+  },
+  "utility.desc.SmokeDry": {
+    "zh-TW": "以風乾或微火燻製肉果為便攜乾糧，戰鬥間快速回復",
+    "en": "Smoke-dry meats and fruits into portable rations for quick recovery",
+    "ja": "肉や果実を燻製乾燥させ携行食料として素早く回復する"
+  },
+  "utility.desc.ChillBrew": {
+    "zh-TW": "不需生火即可調製冰沙與冷湯特調，提供降溫與異常免疫",
+    "en": "Prepare chilled brews and tonics without fire for cooling and status wards",
+    "ja": "火を使わず冷製ドリンクを調合し冷却と状態異常耐性を得る"
+  },
+  "utility.desc.IceStride": {
+    "zh-TW": "於水面凝結臨時冰道步行並免除冰原雪地打滑減速",
+    "en": "Form temporary ice footing over water and prevent icy terrain slip",
+    "ja": "水面を一時凍らせて渡り氷雪地形の滑り・減速を防ぐ"
+  },
+  "utility.desc.SenseTreasure": {
+    "zh-TW": "擴大寶箱、礦脈、晶簇與遺跡隱藏節點的偵測半徑",
+    "en": "Extend detection range for chests, ore veins, crystals, and ruin nodes",
+    "ja": "宝箱・鉱脈・晶簇・遺跡の隠しノードの感知範囲を広げる"
+  },
+  "utility.desc.WeatherWard": {
+    "zh-TW": "減半暴雪、雷暴、沙塵與濃霧造成的視野與翻滾冷卻懲罰",
+    "en": "Halve harsh weather visibility and roll-cooldown penalties",
+    "ja": "吹雪・雷雨・砂塵・濃霧による視界や回避のペナルティを半減する"
+  },
+  "utility.desc.CampBeacon": {
+    "zh-TW": "紮營料理時驅離低階野生並建立一個野外臨時返回信標",
+    "en": "Ward off low-tier wilds during camp and set one field recall beacon",
+    "ja": "野営中に低位の野生を遠ざけ帰還用ビーコンを1つ設置する"
+  },
+  "utility.desc.GatherEssence": {
+    "zh-TW": "從晶簇、靈苔與異象節點採萃附魔靈質素材",
+    "en": "Gather enchanting essence materials from crystals and anomalies",
+    "ja": "晶簇や霊苔、異象ノードから付与用の霊質素材を採取する"
+  },
+  "utility.desc.CraftSmeltFire": {
+    "zh-TW": "以高熱將原礦熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltMetal": {
+    "zh-TW": "將原礦純化熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftSmeltThunder": {
+    "zh-TW": "以高壓電弧將原礦熔煉成金屬錠",
+    "en": "Smelt raw ore into metal ingots",
+    "ja": "高圧電弧で原鉱を金属インゴットへ精錬する"
+  },
+  "utility.desc.CraftWeaveWood": {
+    "zh-TW": "將天然纖維紡織成布料",
+    "en": "Weave fibers into cloth",
+    "ja": "繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveWind": {
+    "zh-TW": "以氣流引線將纖維紡織成布料",
+    "en": "Weave fibers into cloth",
+    "ja": "気流で繊維を布地へ織り上げる"
+  },
+  "utility.desc.CraftWeaveShadow": {
+    "zh-TW": "將纖維紡織成細密布料",
+    "en": "Weave fibers into cloth",
+    "ja": "繊維を緻密な布地へ織り上げる"
+  },
+  "utility.desc.CraftTailorWood": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorShadow": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftTailorLight": {
+    "zh-TW": "以布料縫製防具與時裝",
+    "en": "Tailor cloth armor and outfits",
+    "ja": "布地から防具や衣装を仕立てる"
+  },
+  "utility.desc.CraftSmithMetal": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithFire": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftSmithEarth": {
+    "zh-TW": "鍛造金屬武器、盾牌與板甲",
+    "en": "Forge metal weapons, shields, and armor",
+    "ja": "金属製の武器・盾・鎧を鍛造する"
+  },
+  "utility.desc.CraftCarpentryWood": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryEarth": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftCarpentryWind": {
+    "zh-TW": "製作木質遠攻武器與木盾",
+    "en": "Craft wooden ranged weapons and shields",
+    "ja": "木製の遠距離武器と木盾を製作する"
+  },
+  "utility.desc.CraftJewelcraftLight": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftEarth": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftJewelcraftIce": {
+    "zh-TW": "切磨珠寶飾品與附魔媒介印石",
+    "en": "Cut jewels and refine enchanting media",
+    "ja": "宝飾品と付与用の印石・魔法石を加工する"
+  },
+  "utility.desc.CraftDyeWood": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeWater": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftDyeLight": {
+    "zh-TW": "為時裝調配並染上色彩",
+    "en": "Dye cosmetic outfits",
+    "ja": "衣装を染色する"
+  },
+  "utility.desc.CraftEnchantLight": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantFire": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
+  },
+  "utility.desc.CraftEnchantShadow": {
+    "zh-TW": "消耗對應媒介為武器、防具或飾品賦予詞綴",
+    "en": "Enchant weapons, armor, or accessories with affixes",
+    "ja": "対応する媒介を消費して装備に特性を付与する"
   },
   "ing_boar_flank": {
     "zh-TW": "野豬腹肉",
@@ -2178,9 +2620,9 @@
     "ja": "天候操作は再使用待ちです。地域を移動してもリセットされません。"
   },
   "ui.beginner_quest.banner": {
-    "zh-TW": "新手任務：選取御三家 → 降落新手星球探索戰鬥 → 收服野生宙獸 → 擊敗巢穴 BOSS",
-    "en": "Beginner Quest: Pick a Starter → Explore & Battle → Capture Wild Cosmimera → Defeat Nest Boss",
-    "ja": "初心者クエスト：御三家を選択 → 惑星探索・戦闘 → 野生宙獣を捕獲 → 巣のボスを撃破"
+    "zh-TW": "新手任務：選角色 → 好友介紹世界觀 → 選御三家 → 好友 1vs1 教學 → 冒險／捕捉／治療教學 → Boss＋宿敵 2vs2 → 主世界大廳",
+    "en": "Beginner Quest: Character → World Intro → Starter → Friend 1vs1 Tutorial → Field/Capture/Heal → Boss+Rival 2vs2 → Main World Lobby",
+    "ja": "初心者クエスト：キャラ選択 → 世界観紹介 → 御三家 → 親友1vs1チュートリアル → 冒険・捕獲・回復 → ボス＋宿敵2vs2 → メインロビー"
   },
   "ui.beginner_quest.planet_tag": {
     "zh-TW": "【新手任務星球】",
@@ -2286,5 +2728,1095 @@
     "zh-TW": "地表覆蓋 {percent}% · 移速與跳躍 ×{mult}",
     "en": "Ground cover {percent}% · move and jump ×{mult}",
     "ja": "地表の堆積 {percent}% · 移動とジャンプ ×{mult}"
+  },
+  "ui.skills.returned": {
+    "zh-TW": "已傳送至 {target}",
+    "en": "Teleported to {target}",
+    "ja": "{target} へ帰還しました"
+  },
+  "ui.skills.return_needs_dive": {
+    "zh-TW": "{target}位於深海，需要生活技「潛水」才能傳送",
+    "en": "{target} lies in the deep sea and requires Dive to return",
+    "ja": "{target}は深海にあるため「潜水」が必要です"
+  },
+  "ui.skills.return_start": {
+    "zh-TW": "起始城鎮",
+    "en": "Starting Town",
+    "ja": "始まりの街"
+  },
+  "ui.skills.return_sky": {
+    "zh-TW": "空島部落",
+    "en": "Sky Tribe",
+    "ja": "空島集落"
+  },
+  "ui.skills.return_deep_sea": {
+    "zh-TW": "深海城市",
+    "en": "Deep-Sea City",
+    "ja": "深海都市"
+  },
+  "ui.skills.return_island": {
+    "zh-TW": "島嶼聚落",
+    "en": "Island Settlement",
+    "ja": "島嶼集落"
+  },
+  "ui.skills.return_village": {
+    "zh-TW": "村落 #{index}",
+    "en": "Village #{index}",
+    "ja": "村 #{index}"
+  },
+  "ui.trainer.prof.trv_rookie": {
+    "zh-TW": "見習旅人",
+    "en": "Novice Traveler",
+    "ja": "見習い旅人"
+  },
+  "ui.trainer.prof.trv_hiker": {
+    "zh-TW": "登山客",
+    "en": "Hiker",
+    "ja": "ハイカー"
+  },
+  "ui.trainer.prof.trv_angler": {
+    "zh-TW": "釣客",
+    "en": "Angler",
+    "ja": "つりびと"
+  },
+  "ui.trainer.prof.trv_ranger": {
+    "zh-TW": "森林巡守",
+    "en": "Forest Ranger",
+    "ja": "フォレストレンジャー"
+  },
+  "ui.trainer.prof.trv_brawler": {
+    "zh-TW": "拳術家",
+    "en": "Brawler",
+    "ja": "格闘家"
+  },
+  "ui.trainer.prof.trv_scholar": {
+    "zh-TW": "學者",
+    "en": "Scholar",
+    "ja": "学者"
+  },
+  "ui.trainer.prof.trv_bard": {
+    "zh-TW": "吟遊詩人",
+    "en": "Bard",
+    "ja": "吟遊詩人"
+  },
+  "ui.trainer.prof.trv_pilgrim": {
+    "zh-TW": "巡禮祭司",
+    "en": "Pilgrim Cleric",
+    "ja": "巡礼司祭"
+  },
+  "ui.trainer.prof.trv_nightwalker": {
+    "zh-TW": "夜行者",
+    "en": "Nightwalker",
+    "ja": "夜行者"
+  },
+  "ui.trainer.prof.trv_bounty": {
+    "zh-TW": "賞金獵人",
+    "en": "Bounty Hunter",
+    "ja": "賞金稼ぎ"
+  },
+  "ui.trainer.prof.trv_trial_master": {
+    "zh-TW": "地形試煉主",
+    "en": "Terrain Trial Master",
+    "ja": "地形試練の主"
+  },
+  "ui.trainer.prof.trv_artisan_mentor": {
+    "zh-TW": "生活技能導師",
+    "en": "Life-Skill Mentor",
+    "ja": "生活技能の師範"
+  },
+  "ui.trainer.prof.era_primitive_totem_hunter": {
+    "zh-TW": "原始圖騰獵師",
+    "en": "Primitive Totem Hunter",
+    "ja": "原始トーテム猟師"
+  },
+  "ui.trainer.prof.era_agrarian_field_warden": {
+    "zh-TW": "農耕巡田武者",
+    "en": "Agrarian Field Warden",
+    "ja": "農耕巡田武者"
+  },
+  "ui.trainer.prof.era_mercantile_caravan_guard": {
+    "zh-TW": "商貿護隊鏢師",
+    "en": "Mercantile Caravan Guard",
+    "ja": "商隊護衛師"
+  },
+  "ui.trainer.prof.era_industrial_rail_inspector": {
+    "zh-TW": "工業鐵道巡檢",
+    "en": "Industrial Rail Inspector",
+    "ja": "工業鉄道巡察官"
+  },
+  "ui.trainer.prof.era_steampunk_airship_navigator": {
+    "zh-TW": "蒸汽飛艇領航",
+    "en": "Steampunk Airship Navigator",
+    "ja": "蒸気飛行船航海士"
+  },
+  "ui.trainer.prof.era_future_orbital_ranger": {
+    "zh-TW": "未來星軌巡航",
+    "en": "Future Orbital Ranger",
+    "ja": "未来軌道レンジャー"
+  },
+  "ui.trainer.prof.era_wasteland_salvage_hunter": {
+    "zh-TW": "廢土拾荒獵人",
+    "en": "Wasteland Salvage Hunter",
+    "ja": "荒廃スカベンジ猟師"
+  },
+  "ui.trainer.prof.era_ancient_relic_keeper": {
+    "zh-TW": "遠古遺蹟守衛",
+    "en": "Ancient Relic Keeper",
+    "ja": "古代遺跡の守護者"
+  },
+  "ui.trainer.prof.cul_east_asia_talisman_swordsman": {
+    "zh-TW": "東亞符劍修者",
+    "en": "East Asian Talisman Swordsman",
+    "ja": "東亜符剣修者"
+  },
+  "ui.trainer.prof.cul_south_asia_prana_ascetic": {
+    "zh-TW": "南亞氣脈苦行者",
+    "en": "South Asian Prana Ascetic",
+    "ja": "南亜気脈苦行者"
+  },
+  "ui.trainer.prof.cul_southeast_asia_monsoon_wayfinder": {
+    "zh-TW": "東南亞季風領航者",
+    "en": "Southeast Asian Monsoon Wayfinder",
+    "ja": "東南亜モンスーン航海師"
+  },
+  "ui.trainer.prof.cul_middle_east_astrolabe_scholar": {
+    "zh-TW": "西亞星盤學者",
+    "en": "West Asian Astrolabe Scholar",
+    "ja": "西亜アストロラーベ学者"
+  },
+  "ui.trainer.prof.cul_africa_solarpunk_geomancer": {
+    "zh-TW": "非洲太陽能地脈師",
+    "en": "African Solarpunk Geomancer",
+    "ja": "アフリカ太陽地脈師"
+  },
+  "ui.trainer.prof.cul_europe_high_fantasy_mage_knight": {
+    "zh-TW": "歐洲高奇幻魔導騎士",
+    "en": "European High-Fantasy Mage Knight",
+    "ja": "欧州魔導騎士"
+  },
+  "ui.trainer.prof.cul_americas_canyon_sky_rider": {
+    "zh-TW": "美洲峽谷空騎手",
+    "en": "Americas Canyon Sky Rider",
+    "ja": "米州渓谷スカイライダー"
+  },
+  "ui.trainer.prof.cul_oceania_star_navigator": {
+    "zh-TW": "大洋洲星象航海師",
+    "en": "Oceanian Star Navigator",
+    "ja": "大洋州星象航海士"
+  },
+  "ui.trainer.prof.cul_central_asia_steppe_falconer": {
+    "zh-TW": "中亞草原獵鷹師",
+    "en": "Central Asian Steppe Falconer",
+    "ja": "中亜草原鷹匠"
+  },
+  "ui.trainer.prof.cul_polar_aurora_sled_scout": {
+    "zh-TW": "極地極光雪橇斥候",
+    "en": "Polar Aurora Sled Scout",
+    "ja": "極地オーロラ橇斥候"
+  },
+  "ui.trainer.prof.cul_cosmopolis_cyber_netrunner": {
+    "zh-TW": "世界都市賽博駭客",
+    "en": "Cosmopolis Cyber Netrunner",
+    "ja": "都市電脳ネットランナー"
+  },
+  "ui.trainer.prof.cul_interstellar_warp_pioneer": {
+    "zh-TW": "星際曲率開拓者",
+    "en": "Interstellar Warp Pioneer",
+    "ja": "星間ワープ開拓者"
+  },
+  "ui.trainer.duty.duty_road_courier": {
+    "zh-TW": "古道驛傳",
+    "en": "Road Courier",
+    "ja": "古道駅伝"
+  },
+  "ui.trainer.duty.duty_circuit_patrol": {
+    "zh-TW": "山林巡守",
+    "en": "Circuit Patrol",
+    "ja": "山林巡回"
+  },
+  "ui.trainer.duty.duty_waterside_angling": {
+    "zh-TW": "水域垂釣",
+    "en": "Waterside Angling",
+    "ja": "水辺の釣り"
+  },
+  "ui.trainer.duty.duty_prospect_mining": {
+    "zh-TW": "礦脈勘探",
+    "en": "Prospect Mining",
+    "ja": "鉱脈探査"
+  },
+  "ui.trainer.duty.duty_botanical_foraging": {
+    "zh-TW": "植群採集",
+    "en": "Botanical Foraging",
+    "ja": "植生採集"
+  },
+  "ui.trainer.duty.duty_ruin_excavation": {
+    "zh-TW": "遺蹟考據",
+    "en": "Ruin Excavation",
+    "ja": "遺跡発掘"
+  },
+  "ui.trainer.duty.duty_martial_training": {
+    "zh-TW": "荒野苦修",
+    "en": "Martial Training",
+    "ja": "荒野修行"
+  },
+  "ui.trainer.duty.duty_shrine_pilgrimage": {
+    "zh-TW": "聖地巡禮",
+    "en": "Shrine Pilgrimage",
+    "ja": "聖地巡礼"
+  },
+  "ui.trainer.duty.duty_roving_minstrel": {
+    "zh-TW": "雲遊傳唱",
+    "en": "Roving Minstrel",
+    "ja": "放浪詠唱"
+  },
+  "ui.trainer.duty.duty_night_watch": {
+    "zh-TW": "暗夜潛行",
+    "en": "Night Watch",
+    "ja": "深夜哨戒"
+  },
+  "ui.trainer.duty.duty_bounty_hunting": {
+    "zh-TW": "懸賞追獵",
+    "en": "Bounty Hunting",
+    "ja": "賞金追跡"
+  },
+  "ui.trainer.duty.duty_frontier_trailblazing": {
+    "zh-TW": "荒原拓荒",
+    "en": "Frontier Trailblazing",
+    "ja": "荒野開拓"
+  },
+  "ui.trainer.duty.duty_leyline_tuning": {
+    "zh-TW": "以太調律",
+    "en": "Leyline Tuning",
+    "ja": "エーテル調律"
+  },
+  "ui.trainer.duty.duty_trial_wardenship": {
+    "zh-TW": "試煉鎮守",
+    "en": "Trial Wardenship",
+    "ja": "試練守護"
+  },
+  "ui.trainer.fn.observant": {
+    "zh-TW": "考據專注",
+    "en": "Observant",
+    "ja": "研究専念"
+  },
+  "ui.trainer.fn.escort": {
+    "zh-TW": "護衛戒備",
+    "en": "Escort",
+    "ja": "護衛警戒"
+  },
+  "ui.trainer.fn.sparring": {
+    "zh-TW": "歷練切磋",
+    "en": "Sparring",
+    "ja": "稽古対戦"
+  },
+  "ui.trainer.fn.warden": {
+    "zh-TW": "巡守管轄",
+    "en": "Warden",
+    "ja": "領域監視"
+  },
+  "ui.trainer.fn.pursuit": {
+    "zh-TW": "追獵懸賞",
+    "en": "Pursuit",
+    "ja": "追跡迎撃"
+  },
+  "ui.trainer.fn.champion": {
+    "zh-TW": "征討霸主",
+    "en": "Champion",
+    "ja": "覇者挑戦"
+  },
+  "ui.trainer.interact_prompt": {
+    "zh-TW": "[{key}] 挑戰 {trainer}",
+    "en": "[{key}] Challenge {trainer}",
+    "ja": "[{key}] {trainer} に挑戦"
+  },
+  "ui.trainer.spotted": {
+    "zh-TW": "{trainer} 注意到了你！",
+    "en": "{trainer} spotted you!",
+    "ja": "{trainer} に見つかった！"
+  },
+  "ui.trainer.evaded": {
+    "zh-TW": "甩開了 {trainer} 的追擊！",
+    "en": "Escaped pursuit by {trainer}!",
+    "ja": "{trainer} の追跡を振り切った！"
+  },
+  "ui.trainer.challenge": {
+    "zh-TW": "{trainer} 發起了對戰！",
+    "en": "{trainer} challenged you to a battle!",
+    "ja": "{trainer} が勝負を仕掛けてきた！"
+  },
+  "ui.trainer.victory": {
+    "zh-TW": "擊敗了 {trainer}！",
+    "en": "Defeated {trainer}!",
+    "ja": "{trainer} に勝利した！"
+  },
+  "ui.trainer.defeat": {
+    "zh-TW": "敗給了 {trainer}……",
+    "en": "Defeated by {trainer}...",
+    "ja": "{trainer} に敗北した……"
+  },
+  "ing_sea_bass": {
+    "zh-TW": "生鱸魚",
+    "en": "Raw sea bass",
+    "ja": "生スズキ"
+  },
+  "ing_sea_salt": {
+    "zh-TW": "海鹽",
+    "en": "Sea salt",
+    "ja": "海塩"
+  },
+  "ing_wild_honey": {
+    "zh-TW": "野蜂蜜",
+    "en": "Wild honey",
+    "ja": "野生のはちみつ"
+  },
+  "ing_wild_root": {
+    "zh-TW": "野生根菜",
+    "en": "Wild root",
+    "ja": "野生の根菜"
+  },
+  "ing_hard_chestnut": {
+    "zh-TW": "堅殼栗",
+    "en": "Hardshell chestnut",
+    "ja": "堅殻グリ"
+  },
+  "ing_fire_pepper": {
+    "zh-TW": "火椒",
+    "en": "Fire pepper",
+    "ja": "ファイアペッパー"
+  },
+  "ing_ice_mint": {
+    "zh-TW": "冰薄荷",
+    "en": "Ice mint",
+    "ja": "アイスミント"
+  },
+  "ing_gale_mushroom": {
+    "zh-TW": "疾風菇",
+    "en": "Gale mushroom",
+    "ja": "ハヤテダケ"
+  },
+  "ing_glowcap": {
+    "zh-TW": "夜光菇",
+    "en": "Glowcap",
+    "ja": "ヤコウダケ"
+  },
+  "ing_truffle": {
+    "zh-TW": "松露",
+    "en": "Truffle",
+    "ja": "トリュフ"
+  },
+  "ing_hopper_bug": {
+    "zh-TW": "跳蟲",
+    "en": "Hopper bug",
+    "ja": "ハネムシ"
+  },
+  "ing_chilled_sea_bass": {
+    "zh-TW": "冷凍鱸魚",
+    "en": "Chilled sea bass",
+    "ja": "冷凍スズキ"
+  },
+  "ing_chilled_trout": {
+    "zh-TW": "冷凍鱒魚",
+    "en": "Chilled trout",
+    "ja": "冷凍マス"
+  },
+  "ing_chilled_salmon": {
+    "zh-TW": "冷凍深淵鮭",
+    "en": "Chilled abyssal salmon",
+    "ja": "冷凍シンエンサケ"
+  },
+  "ing_chilled_shrimp": {
+    "zh-TW": "冷凍網蝦",
+    "en": "Chilled shrimp",
+    "ja": "冷凍エビ"
+  },
+  "ing_chilled_fowl": {
+    "zh-TW": "冷凍禽胸",
+    "en": "Chilled fowl breast",
+    "ja": "冷凍鳥むね肉"
+  },
+  "ing_chilled_berry": {
+    "zh-TW": "冰鮮野莓",
+    "en": "Chilled berry",
+    "ja": "冷凍ベリー"
+  },
+  "ing_wheat_flour": {
+    "zh-TW": "麵粉",
+    "en": "Wheat flour",
+    "ja": "小麦粉"
+  },
+  "ing_fern_powder": {
+    "zh-TW": "活力蕨粉",
+    "en": "Fern powder",
+    "ja": "シダの粉末"
+  },
+  "ing_pepper_powder": {
+    "zh-TW": "火椒粉",
+    "en": "Pepper powder",
+    "ja": "ペッパーパウダー"
+  },
+  "ing_seed_oil": {
+    "zh-TW": "食用油",
+    "en": "Seed oil",
+    "ja": "食用油"
+  },
+  "ing_butter": {
+    "zh-TW": "奶油",
+    "en": "Butter",
+    "ja": "バター"
+  },
+  "ing_cheese": {
+    "zh-TW": "起司",
+    "en": "Cheese",
+    "ja": "チーズ"
+  },
+  "ing_fish_sauce": {
+    "zh-TW": "魚露",
+    "en": "Fish sauce",
+    "ja": "魚醤"
+  },
+  "ing_wheat_koji": {
+    "zh-TW": "酒麴",
+    "en": "Wheat koji",
+    "ja": "麦麹"
+  },
+  "ing_smoked_boar": {
+    "zh-TW": "燻野豬肉",
+    "en": "Smoked boar",
+    "ja": "イノシシの燻製"
+  },
+  "ing_smoked_hare": {
+    "zh-TW": "燻兔肉乾",
+    "en": "Smoked hare jerky",
+    "ja": "ウサギのジャーキー"
+  },
+  "ing_smoked_trout": {
+    "zh-TW": "燻鱒魚",
+    "en": "Smoked trout",
+    "ja": "マスの燻製"
+  },
+  "ing_dried_berry": {
+    "zh-TW": "莓果乾",
+    "en": "Dried berry",
+    "ja": "ドライベリー"
+  },
+  "ing_smoked_rib": {
+    "zh-TW": "燻肋排",
+    "en": "Smoked rib",
+    "ja": "リブの燻製"
+  },
+  "ing_aged_beast_meat": {
+    "zh-TW": "熟成獸肉",
+    "en": "Aged beast meat",
+    "ja": "熟成獣肉"
+  },
+  "food_steamed_sea_bass": {
+    "zh-TW": "清蒸鱸魚",
+    "en": "Steamed sea bass",
+    "ja": "スズキの清蒸"
+  },
+  "food_sea_bass_crudo": {
+    "zh-TW": "鱸魚冷盤",
+    "en": "Sea bass crudo",
+    "ja": "スズキのカルパッチョ"
+  },
+  "food_aged_beast_ragout": {
+    "zh-TW": "熟成獸肉濃燉",
+    "en": "Aged beast ragout",
+    "ja": "熟成獣肉の煮込み"
+  },
+  "food_gale_fried_fowl": {
+    "zh-TW": "疾風炸雞",
+    "en": "Gale fried fowl",
+    "ja": "疾風フライドチキン"
+  },
+  "food_meadow_cheese_soup": {
+    "zh-TW": "牧野起司濃湯",
+    "en": "Meadow cheese soup",
+    "ja": "牧野のチーズスープ"
+  },
+  "food_frostberry_smoothie": {
+    "zh-TW": "霜莓冰沙",
+    "en": "Frostberry smoothie",
+    "ja": "フロストベリースムージー"
+  },
+  "food_glowcap_tonic": {
+    "zh-TW": "夜光菇藥湯",
+    "en": "Glowcap tonic",
+    "ja": "ヤコウダケの薬湯"
+  },
+  "food_truffle_butter_grill": {
+    "zh-TW": "松露奶油烤菇",
+    "en": "Truffle butter grill",
+    "ja": "トリュフバターのキノコ焼き"
+  },
+  "food_honey_glazed_nuts": {
+    "zh-TW": "蜜漬堅果",
+    "en": "Honey-glazed nuts",
+    "ja": "ナッツのはちみつ漬け"
+  },
+  "food_dubious_mash": {
+    "zh-TW": "失敗料理",
+    "en": "Dubious mash",
+    "ja": "失敗料理"
+  },
+  "ing_pickled_berry": {
+    "zh-TW": "醃漬野莓",
+    "en": "Pickled berries",
+    "ja": "ベリーの漬物"
+  },
+  "ing_pickled_root": {
+    "zh-TW": "醃漬根菜",
+    "en": "Pickled roots",
+    "ja": "根菜の漬物"
+  },
+  "food_chilled_seafood_salad": {
+    "zh-TW": "冰鎮海鮮沙拉",
+    "en": "Chilled seafood salad",
+    "ja": "冷やし海鮮サラダ"
+  },
+  "food_golden_wheat_tempura": {
+    "zh-TW": "金穗天婦羅",
+    "en": "Golden wheat tempura",
+    "ja": "金穂の天ぷら"
+  },
+  "food_pickled_root_hare_stew": {
+    "zh-TW": "醃根菜燉兔肉",
+    "en": "Pickled root and hare stew",
+    "ja": "根菜漬けと兎肉の煮込み"
+  },
+  "food_pickled_berry_cooler": {
+    "zh-TW": "醃莓冰飲",
+    "en": "Pickled berry cooler",
+    "ja": "ベリー漬けの冷たい飲み物"
+  },
+  "ui.skills.recipe_unknown": {
+    "zh-TW": "？？？ · {method} · 需要{category}",
+    "en": "??? · {method} · needs {category}",
+    "ja": "？？？ · {method} · {category}が必要"
+  },
+  "ui.skills.recipe_fill": {
+    "zh-TW": "帶入投料",
+    "en": "Fill pot",
+    "ja": "鍋に入れる"
+  },
+  "ui.skills.recipe_new": {
+    "zh-TW": "新食譜！",
+    "en": "New recipe!",
+    "ja": "新しいレシピ！"
+  },
+  "dex.recipes": {
+    "zh-TW": "食譜",
+    "en": "Recipes",
+    "ja": "レシピ"
+  },
+  "gather.ForageFungi": {
+    "zh-TW": "採菇",
+    "en": "Forage fungi",
+    "ja": "キノコ採り"
+  },
+  "ingredient.category.Fungi": {
+    "zh-TW": "菌菇",
+    "en": "Fungi",
+    "ja": "キノコ"
+  },
+  "ingredient.category.Critter": {
+    "zh-TW": "蟲類",
+    "en": "Critter",
+    "ja": "虫"
+  },
+  "process.kind.Freeze": {
+    "zh-TW": "急凍",
+    "en": "Freeze",
+    "ja": "急速冷凍"
+  },
+  "process.kind.Grind": {
+    "zh-TW": "研磨",
+    "en": "Grind",
+    "ja": "粉砕"
+  },
+  "process.kind.Press": {
+    "zh-TW": "榨油",
+    "en": "Press",
+    "ja": "搾油"
+  },
+  "process.kind.Churn": {
+    "zh-TW": "攪乳",
+    "en": "Churn",
+    "ja": "攪乳"
+  },
+  "process.kind.Ferment": {
+    "zh-TW": "發酵",
+    "en": "Ferment",
+    "ja": "発酵"
+  },
+  "process.kind.Smoke": {
+    "zh-TW": "燻乾",
+    "en": "Smoke",
+    "ja": "燻製"
+  },
+  "process.reason.None": {
+    "zh-TW": "可加工",
+    "en": "Ready",
+    "ja": "加工可能"
+  },
+  "process.reason.MissingSkill": {
+    "zh-TW": "缺少加工生活技（或前往聚落廚房）",
+    "en": "Missing processing skill (or use a settlement kitchen)",
+    "ja": "加工スキルがありません（集落の厨房なら可能）"
+  },
+  "process.reason.MissingInput": {
+    "zh-TW": "原料不足",
+    "en": "Not enough input",
+    "ja": "材料が足りません"
+  },
+  "ui.skills.processing": {
+    "zh-TW": "加工",
+    "en": "Processing",
+    "ja": "加工"
+  },
+  "ui.skills.process": {
+    "zh-TW": "加工 ×1",
+    "en": "Process ×1",
+    "ja": "加工 ×1"
+  },
+  "ui.skills.processing_empty": {
+    "zh-TW": "沒有可加工的原料。",
+    "en": "Nothing to process.",
+    "ja": "加工できる材料がありません。"
+  },
+  "ui.skills.kitchen": {
+    "zh-TW": "聚落廚房：所有料理方式與加工皆可使用。",
+    "en": "Settlement kitchen: every cooking method and process is available.",
+    "ja": "集落の厨房：すべての調理法と加工が使えます。"
+  },
+  "ui.skills.pot": {
+    "zh-TW": "鍋（自由料理，最多 5 份）",
+    "en": "Pot (free cooking, up to 5)",
+    "ja": "鍋（自由調理・最大5個）"
+  },
+  "ui.skills.pot_empty": {
+    "zh-TW": "鍋是空的，點選下方食材加入。",
+    "en": "The pot is empty. Add ingredients below.",
+    "ja": "鍋は空です。下の食材を入れてください。"
+  },
+  "ui.skills.pot_clear": {
+    "zh-TW": "清空鍋子",
+    "en": "Empty the pot",
+    "ja": "鍋を空にする"
+  },
+  "ui.skills.pot_signature": {
+    "zh-TW": "招牌料理：{dish}",
+    "en": "Signature dish: {dish}",
+    "ja": "看板料理：{dish}"
+  },
+  "ui.skills.pot_free": {
+    "zh-TW": "自由料理：{dish}",
+    "en": "Free dish: {dish}",
+    "ja": "創作料理：{dish}"
+  },
+  "ui.skills.pot_dubious": {
+    "zh-TW": "會失敗：{dish}（食材照扣）",
+    "en": "Will fail: {dish} (ingredients are still used)",
+    "ja": "失敗します：{dish}（食材は消費されます）"
+  },
+  "dish.free_name": {
+    "zh-TW": "{family}{method}{theme}",
+    "en": "{family} {method} {theme}",
+    "ja": "{family}{method}{theme}"
+  },
+  "dish.method.Grill": {
+    "zh-TW": "烤",
+    "en": "Grilled",
+    "ja": "焼き"
+  },
+  "dish.method.Stew": {
+    "zh-TW": "燉",
+    "en": "Stewed",
+    "ja": "煮込み"
+  },
+  "dish.method.StirFry": {
+    "zh-TW": "炒",
+    "en": "Stir-fried",
+    "ja": "炒め"
+  },
+  "dish.method.DeepFry": {
+    "zh-TW": "炸",
+    "en": "Fried",
+    "ja": "揚げ"
+  },
+  "dish.method.Steam": {
+    "zh-TW": "蒸",
+    "en": "Steamed",
+    "ja": "蒸し"
+  },
+  "dish.method.ColdMix": {
+    "zh-TW": "涼拌",
+    "en": "Chilled",
+    "ja": "和え"
+  },
+  "dish.method.Grind": {
+    "zh-TW": "研磨",
+    "en": "Ground",
+    "ja": "粉末"
+  },
+  "dish.method.ChillBrew": {
+    "zh-TW": "冰飲",
+    "en": "Iced",
+    "ja": "冷製ドリンク"
+  },
+  "dish.theme.Meat": {
+    "zh-TW": "肉",
+    "en": "Meat",
+    "ja": "肉"
+  },
+  "dish.theme.Fowl": {
+    "zh-TW": "禽肉",
+    "en": "Fowl",
+    "ja": "鶏肉"
+  },
+  "dish.theme.Fish": {
+    "zh-TW": "魚",
+    "en": "Fish",
+    "ja": "魚"
+  },
+  "dish.theme.Seafood": {
+    "zh-TW": "海鮮",
+    "en": "Seafood",
+    "ja": "海鮮"
+  },
+  "dish.theme.Mushroom": {
+    "zh-TW": "菇",
+    "en": "Mushrooms",
+    "ja": "キノコ"
+  },
+  "dish.theme.Egg": {
+    "zh-TW": "蛋",
+    "en": "Eggs",
+    "ja": "卵"
+  },
+  "dish.theme.Vegetable": {
+    "zh-TW": "時蔬",
+    "en": "Vegetables",
+    "ja": "野菜"
+  },
+  "dish.theme.Fruit": {
+    "zh-TW": "鮮果",
+    "en": "Fruit",
+    "ja": "果物"
+  },
+  "dish.theme.Grain": {
+    "zh-TW": "穀物",
+    "en": "Grains",
+    "ja": "穀物"
+  },
+  "dish.theme.Dairy": {
+    "zh-TW": "乳品",
+    "en": "Dairy",
+    "ja": "乳製品"
+  },
+  "dish.theme.Nut": {
+    "zh-TW": "堅果",
+    "en": "Nuts",
+    "ja": "ナッツ"
+  },
+  "dish.theme.Herb": {
+    "zh-TW": "香草",
+    "en": "Herbs",
+    "ja": "ハーブ"
+  },
+  "dish.theme.Mixed": {
+    "zh-TW": "什錦",
+    "en": "Medley",
+    "ja": "五目"
+  },
+  "dish.theme.Tonic": {
+    "zh-TW": "藥膳",
+    "en": "Tonic",
+    "ja": "薬膳"
+  },
+  "dish.family.Mastery": {
+    "zh-TW": "{element}專精・",
+    "en": "{element}-Mastery",
+    "ja": "{element}専精・"
+  },
+  "dish.family.Resist": {
+    "zh-TW": "抗{element}・",
+    "en": "{element}-Ward",
+    "ja": "耐{element}・"
+  },
+  "dish.family.Swift": {
+    "zh-TW": "迅捷・",
+    "en": "Swift",
+    "ja": "迅速・"
+  },
+  "dish.family.Nimble": {
+    "zh-TW": "靈巧・",
+    "en": "Nimble",
+    "ja": "軽業・"
+  },
+  "dish.family.Focus": {
+    "zh-TW": "冷卻・",
+    "en": "Focus",
+    "ja": "集中・"
+  },
+  "dish.family.Keen": {
+    "zh-TW": "銳眼・",
+    "en": "Keen",
+    "ja": "鋭眼・"
+  },
+  "dish.family.Fierce": {
+    "zh-TW": "會心・",
+    "en": "Fierce",
+    "ja": "会心・"
+  },
+  "dish.family.Guard": {
+    "zh-TW": "堅守・",
+    "en": "Guarding",
+    "ja": "堅守・"
+  },
+  "dish.family.Bounty": {
+    "zh-TW": "豐收・",
+    "en": "Bountiful",
+    "ja": "豊穣・"
+  },
+  "dish.family.Tame": {
+    "zh-TW": "馴服・",
+    "en": "Taming",
+    "ja": "馴致・"
+  },
+  "dish.family.Revive": {
+    "zh-TW": "甦生・",
+    "en": "Reviving",
+    "ja": "蘇生・"
+  },
+  "ui.trial.terrain.laboratory": {
+    "zh-TW": "機房",
+    "en": "Server Lab",
+    "ja": "機関室"
+  },
+  "ui.trial.terrain.rainforest": {
+    "zh-TW": "雨林",
+    "en": "Rainforest",
+    "ja": "熱帯雨林"
+  },
+  "ui.trial.terrain.deep_sea": {
+    "zh-TW": "深海",
+    "en": "Deep Sea",
+    "ja": "深海"
+  },
+  "ui.trial.terrain.volcano": {
+    "zh-TW": "火山",
+    "en": "Volcano",
+    "ja": "火山"
+  },
+  "ui.trial.terrain.cave": {
+    "zh-TW": "礦坑",
+    "en": "Mine",
+    "ja": "坑道"
+  },
+  "ui.trial.terrain.ice_cap": {
+    "zh-TW": "冰棚",
+    "en": "Ice Shelf",
+    "ja": "氷棚"
+  },
+  "ui.trial.terrain.tower": {
+    "zh-TW": "高塔",
+    "en": "Tower",
+    "ja": "高塔"
+  },
+  "ui.trial.terrain.space": {
+    "zh-TW": "太空設施",
+    "en": "Space Facility",
+    "ja": "宇宙施設"
+  },
+  "ui.trial.terrain.labyrinth": {
+    "zh-TW": "迷宮",
+    "en": "Labyrinth",
+    "ja": "迷宮"
+  },
+  "ui.trial.terrain.temple": {
+    "zh-TW": "神廟",
+    "en": "Temple",
+    "ja": "神殿"
+  },
+  "ui.trial.master": {
+    "zh-TW": "{terrain}試煉主",
+    "en": "{terrain} Trial Master",
+    "ja": "{terrain}の試練主"
+  },
+  "ui.trial.hint": {
+    "zh-TW": "{master}：按 {interact} 挑戰{terrain}試煉。",
+    "en": "{master}: press {interact} to take the {terrain} trial.",
+    "ja": "{master}：{interact}で{terrain}の試練に挑む。"
+  },
+  "ui.trial.talk": {
+    "zh-TW": "{master}：跟我來。先擊倒守關菁英，再到最深處的競技場。",
+    "en": "{master}: Follow me. Defeat the guardian elite, then reach the arena at the far end.",
+    "ja": "{master}：ついて来い。番人の精鋭を倒し、最奥の闘技場へ。"
+  },
+  "ui.trial.enter": {
+    "zh-TW": "進入{terrain}地城",
+    "en": "Entered the {terrain} dungeon",
+    "ja": "{terrain}のダンジョンに入った"
+  },
+  "ui.trial.exit_hint": {
+    "zh-TW": "按 {interact} 回到地表",
+    "en": "Press {interact} to return to the surface",
+    "ja": "{interact}で地上に戻る"
+  },
+  "ui.trial.exit": {
+    "zh-TW": "回到地表",
+    "en": "Back on the surface",
+    "ja": "地上に戻った"
+  },
+  "ui.trial.guard_down": {
+    "zh-TW": "{master}：封印解除了！往競技場前進。",
+    "en": "{master}: The seal is broken! On to the arena.",
+    "ja": "{master}：封印が解けた！闘技場へ進め。"
+  },
+  "ui.trial.final": {
+    "zh-TW": "{master}：最後一戰——我和地城之主一起上！",
+    "en": "{master}: The final battle — the dungeon's master and I fight together!",
+    "ja": "{master}：最終戦だ——ダンジョンの主と共に行くぞ！"
+  },
+  "ui.trial.victory_first": {
+    "zh-TW": "{terrain}試煉完成！獲得試煉章",
+    "en": "{terrain} trial cleared! Trial badge earned",
+    "ja": "{terrain}の試練を突破！試練章を獲得"
+  },
+  "ui.trial.victory": {
+    "zh-TW": "{terrain}試煉再戰勝利！",
+    "en": "{terrain} trial cleared again!",
+    "ja": "{terrain}の試練に再び勝利！"
+  },
+  "ui.trial.capture": {
+    "zh-TW": "地城之主加入了：{creature}",
+    "en": "The dungeon's master joins you: {creature}",
+    "ja": "ダンジョンの主が仲間に：{creature}"
+  },
+  "ui.trial.defeat": {
+    "zh-TW": "{master}：再來挑戰吧。（已回到地城入口，隊伍已回復）",
+    "en": "{master}: Come back and try again. (Back at the entrance, party restored)",
+    "ja": "{master}：また挑みに来い。（入口に戻り、チームは回復した）"
+  },
+  "ui.trial.done": {
+    "zh-TW": "{master}：你已經通過這裡的試煉了。",
+    "en": "{master}: You have already passed this trial.",
+    "ja": "{master}：ここの試練はもう突破したな。"
+  },
+  "ui.hud.boss_tag": {
+    "zh-TW": "BOSS",
+    "en": "BOSS",
+    "ja": "ボス"
+  },
+  "ui.hud.staggered": {
+    "zh-TW": "失衡！",
+    "en": "Staggered!",
+    "ja": "ブレイク！"
+  },
+  "ui.hud.enraged": {
+    "zh-TW": "狂暴",
+    "en": "Enraged",
+    "ja": "激昂"
+  },
+  "ui.trial.boss_title": {
+    "zh-TW": "{terrain}地城之主",
+    "en": "Master of the {terrain} Dungeon",
+    "ja": "{terrain}ダンジョンの主"
+  },
+  "ui.trial.master_team": {
+    "zh-TW": "{master}的宙獸",
+    "en": "{master}'s creatures",
+    "ja": "{master}の宙獣"
+  },
+  "planet.cradle_planet": {
+    "zh-TW": "搖籃星",
+    "en": "Cradle Planet",
+    "ja": "ゆりかご星"
+  },
+  "ui.bq.friend_intro_1": {
+    "zh-TW": "歡迎來到搖籃星！在星海深處，每顆星球都孕育著不同屬性的宙獸與地貌奇觀。",
+    "en": "Welcome to Cradle Planet! Across the star sea, every world holds unique Cosmimera and landmarks.",
+    "ja": "ゆりかご星へようこそ！星海の彼方では、それぞれの惑星に異なる属性の宙獣と奇観が息づいているよ。"
+  },
+  "ui.bq.friend_intro_2": {
+    "zh-TW": "冒險者會透過收服器皿與宙獸締結羈絆，回到地球觀測站大廳後就能自由探索星海！",
+    "en": "Explorers bond with Cosmimera using capture vessels; once back at the Earth Observatory lobby, you can roam the star sea freely!",
+    "ja": "冒険者は捕獲器皿で宙獣と絆を結び、地球観測ステーションのロビーに戻れば自由に星海を旅できるんだ！"
+  },
+  "ui.bq.friend_intro_3": {
+    "zh-TW": "出發前，先挑選你的第一隻御三家夥伴，我再陪你來場 1vs1 對戰教學吧！",
+    "en": "Before we set off, pick your first starter partner—then let's do a 1vs1 battle tutorial together!",
+    "ja": "出発前に最初の御三家パートナーを選んで。そのあと 1vs1 のバトル練習をしよう！"
+  },
+  "ui.bq.friend_battle_start": {
+    "zh-TW": "來一場 1vs1 對戰教學吧！試著直接操控主控宙獸移動、施放主動技，並用格擋或翻滾躲開攻擊。",
+    "en": "Let's start our 1vs1 battle tutorial! Move your lead Cosmimera, cast active skills, and block or dodge incoming hits.",
+    "ja": "1vs1 バトルチュートリアルを始めよう！メイン宙獣を直接操作して移動・技・ガードや回避を試してみて。"
+  },
+  "ui.bq.friend_battle_win": {
+    "zh-TW": "太棒了！你馬上就抓到對戰節奏了！我先幫你的宙獸回復體力。",
+    "en": "Awesome! You picked up the battle rhythm right away! Let me heal your Cosmimera back to full.",
+    "ja": "すごい！もうバトルのコツを掴んだね！まずは宙獣の体力を全回復しておこう。"
+  },
+  "ui.bq.friend_battle_lose": {
+    "zh-TW": "沒關係，實戰本來就要多練習！我先幫你的宙獸回復體力，我們繼續下一步。",
+    "en": "No worries—real combat takes practice! I'll heal your Cosmimera to full and we'll keep going.",
+    "ja": "気にしないで、実戦は慣れが大事！宙獣を全回復してから次へ進もう。"
+  },
+  "ui.bq.friend_grant_supplies": {
+    "zh-TW": "這 5 個收服器皿和 2 份治療道具給你！接下來我帶你練習冒險操作、野外 1vs1、捕捉與治療。",
+    "en": "Here are 5 capture vessels and 2 healing items! Next I'll guide you through exploration, wild 1vs1, capturing, and healing.",
+    "ja": "捕獲器皿を5個と回復アイテムを2つ渡すね！次は冒険操作、野生1vs1、捕獲、回復の練習だよ。"
+  },
+  "ui.bq.step_adventure": {
+    "zh-TW": "先熟悉冒險操作：試著翻滾閃避，或靠近野外宙獸按互動鍵觀察／挑釁開戰！",
+    "en": "First, practice field controls: try dodge-rolling, or approach a wild Cosmimera to inspect or provoke it!",
+    "ja": "まずは冒険操作に慣れよう。回避ロールをするか、野生の宙獣に近づいて観察・挑発してみて！"
+  },
+  "ui.bq.step_wild_1v1": {
+    "zh-TW": "很好！接著找一隻野外宙獸進行 1vs1 實戰，將牠擊倒吧。",
+    "en": "Nice! Now find a wild Cosmimera for a 1vs1 field battle and knock it out.",
+    "ja": "いい調子！次は野生の宙獣と 1vs1 で戦って倒してみよう。"
+  },
+  "ui.bq.step_capture": {
+    "zh-TW": "野外宙獸倒地了！靠近牠並投擲收服器皿，把牠收為夥伴吧。",
+    "en": "The wild Cosmimera is down! Walk close and throw a capture vessel to recruit it.",
+    "ja": "野生の宙獣が倒れたよ！近づいて捕獲器皿を投げ、仲間にしよう。"
+  },
+  "ui.bq.step_heal": {
+    "zh-TW": "收服成功！現在打開冒險手冊的「道具」分頁，試著使用我給你的治療道具回復宙獸。",
+    "en": "Captured! Now open the Adventure Journal's Items tab and use the healing item I gave you.",
+    "ja": "捕獲成功！次は冒険手帳の「アイテム」タブから、渡した回復アイテムを使ってみよう。"
+  },
+  "ui.bq.step_boss_lair": {
+    "zh-TW": "所有基礎操作都完成了！朝著搖籃星的 BOSS 巢穴前進吧，我會在那裡與你會合！",
+    "en": "All basics done! Head toward Cradle Planet's BOSS lair—I'll meet you there!",
+    "ja": "基本操作はバッチリ！ゆりかご星のボス巣穴へ向かおう、そこで合流するよ！"
+  },
+  "ui.bq.step_done": {
+    "zh-TW": "準備好迎接最終試煉了！",
+    "en": "Ready for the final trial!",
+    "ja": "最終試練の準備完了！"
+  },
+  "ui.bq.rival_boss_intro": {
+    "zh-TW": "慢了一步呢！這顆搖籃星的幼年 BOSS 就由我先聯手考驗你們的實力吧！",
+    "en": "Too slow! Let me team up with Cradle Planet's juvenile BOSS and test what you've got!",
+    "ja": "遅かったな！このゆりかご星の幼年ボスと組んで、お前たちの実力を試してやる！"
+  },
+  "ui.bq.friend_2v2_intro": {
+    "zh-TW": "我來當你的支援！這是首次 2vs2 教學戰——你操作主控宙獸，我的夥伴會自動協同作戰，善用鎖定與支援模式一起擊倒 BOSS 和宿敵吧！",
+    "en": "I've got your back! In this first 2vs2 tutorial, control your lead Cosmimera while my partner supports you—use target lock and support modes to defeat the BOSS and rival!",
+    "ja": "僕がサポートするよ！初めての 2vs2 チュートリアルだ――君がメインを操作して、僕の相棒が自動で援護するよ。ロックオンと支援モードを活かしてボスと宿敵を倒そう！"
+  },
+  "ui.bq.rival_boss_defeated": {
+    "zh-TW": "哼……2vs2 配合得不錯嘛。到了真正的星海，我可不會再手下留情！",
+    "en": "Hmph... not bad for a 2vs2 team-up. Out in the real star sea, I won't hold back!",
+    "ja": "ふん……2vs2 の連携は悪くないな。本番の星海では手加減しないぞ！"
+  },
+  "ui.bq.friend_complete": {
+    "zh-TW": "太好了！我們收服了幼年 BOSS，現在一起前往地球觀測站（主世界大廳）吧！",
+    "en": "We did it! We captured the juvenile BOSS—let's head to the Earth Observatory (Main World Lobby)!",
+    "ja": "やったね！幼年ボスも捕獲できたし、地球観測ステーション（メインロビー）へ行こう！"
   }
 }

@@ -59,11 +59,14 @@ Shader "Cosmimera/ToonSky"
                     float3 hit = _WorldSpaceCameraPos + dir * (deck / (e + 0.06));
                     float3 hitUp = CosmiUp(hit);
                     float d = CosmiCloudDensity(hitUp);
-                    // Two flat tones: sunlit tops where the field thins toward the sun, shaded bases elsewhere.
-                    float lit = smoothstep(0.0, 0.5, d - CosmiCloudDensity(normalize(hitUp + sun * 0.025)) + 0.12);
-                    half3 cloud = lerp(_CosmiSkyHorizon.rgb * 0.7 + _CosmiSkyZenith.rgb * 0.22,
-                        _CosmiSunColor.rgb * 0.9 + _CosmiSkyHorizon.rgb * 0.4, lit);
-                    col = lerp(col, cloud, d * smoothstep(0.015, 0.12, e) * 0.95);
+                    if (d > 0.001)
+                    {
+                        // Two flat tones: sunlit tops where the field thins toward the sun, shaded bases elsewhere.
+                        float lit = smoothstep(0.0, 0.5, d - CosmiCloudDensity(normalize(hitUp + sun * 0.025)) + 0.12);
+                        half3 cloud = lerp(_CosmiSkyHorizon.rgb * 0.7 + _CosmiSkyZenith.rgb * 0.22,
+                            _CosmiSunColor.rgb * 0.9 + _CosmiSkyHorizon.rgb * 0.4, lit);
+                        col = lerp(col, cloud, d * smoothstep(0.015, 0.12, e) * 0.95);
+                    }
                 }
 
                 return half4(col, 1);

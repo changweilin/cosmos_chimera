@@ -284,7 +284,7 @@ namespace Cosmimera.WorldGen.Tests
     public sealed class WeatherServiceTests
     {
         private static WeatherService Service(WeatherControl control, string terrain = "grassland") =>
-            new WeatherService(99, "verdant_planet", Season.Winter, _ => 0, _ => new float3(1f, 0f, 0f), _ => terrain, control);
+            new WeatherService(99, 640f, "verdant_planet", Season.Winter, _ => 0, _ => new float3(1f, 0f, 0f), _ => terrain, control);
 
         [Test]
         public void Pinned_snow_builds_ground_cover_that_slows_and_then_clears()
@@ -344,8 +344,8 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(Service(control, "grassland").IsNativeExotic(new float3(1f, 0f, 0f), WeatherKind.VolcanicAsh), Is.False);
             Assert.Throws<ContractException>(() => Service(control).IsNativeExotic(new float3(1f, 0f, 0f), WeatherKind.Rain));
             Assert.Throws<ContractException>(() => Service(control).ProfileAt(new float3(1f, 0f, 0f), -1));
-            Assert.Throws<ContractException>(() => new WeatherService(1, "", null, _ => 0, _ => float3.zero, _ => "x", control));
-            Assert.Throws<ContractException>(() => new WeatherService(1, "verdant_planet", null, null, _ => float3.zero, _ => "x", control));
+            Assert.Throws<ContractException>(() => new WeatherService(1, 640f, "", null, _ => 0, _ => float3.zero, _ => "x", control));
+            Assert.Throws<ContractException>(() => new WeatherService(1, 640f, "verdant_planet", null, null, _ => float3.zero, _ => "x", control));
         }
     }
 

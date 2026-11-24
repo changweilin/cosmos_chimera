@@ -80,3 +80,5 @@ Claude Opus 依階段機械式暫填（非設計定稿）：幼年 `timid`、少
 
 ## ai_style（2026-11-07，P2-10 / Q-C21，待人工）
 Claude Opus 依精通主動技機械式指定（非設計定稿）：dash → `charge`；long → `keep_distance`；melee 非 dash → AGI ≥ STR 為 `flank`、否則 `hold`；mid 非 dash → `hold`。結果：金 hold/hold/charge、木 charge/keep_distance/hold、水 hold/hold/keep_distance、火 hold/charge/keep_distance、土 hold/hold/charge、冰 hold/keep_distance/keep_distance、風 flank/keep_distance/keep_distance。同一線跨階換風格是因為精通主動技射程本身逐階改變；若希望每線一致，需人工選定並換招。
+
+2026-11-19：`moves/`（21 主動技）與 `traits/`（7 被動技）及 `creatures/` 中 21 型態的 `signature_move`／`trait`／`stats`，取自 1a48253 直接寫入 `Data/_demo` 的版本（327b8716 重新 staging 時遺失；`GameDatabase.asset` 一直使用此版本）。這 28 個技能尚無三語名稱。

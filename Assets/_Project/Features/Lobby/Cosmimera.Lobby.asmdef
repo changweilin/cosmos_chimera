@@ -5,7 +5,8 @@
         "Cosmimera.Core",
         "Cosmimera.Combat",
         "Cosmimera.Capture",
-        "Cosmimera.Creatures"
+        "Cosmimera.Creatures",
+        "Cosmimera.GameData"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

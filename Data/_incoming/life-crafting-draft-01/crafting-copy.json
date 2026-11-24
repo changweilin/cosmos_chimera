@@ -409,6 +409,16 @@
     "en": "Equip to {slot}",
     "ja": "{slot}に装備"
   },
+  "ui.paperdoll.copy_pick": {
+    "zh-TW": "第 {n}/{total} 件",
+    "en": "Copy {n}/{total}",
+    "ja": "{total}個中{n}個目"
+  },
+  "ui.paperdoll.copy_origin": {
+    "zh-TW": "製作於{planet}",
+    "en": "Made on {planet}",
+    "ja": "{planet}で製作"
+  },
   "ui.craft.grips": {
     "zh-TW": "持握方式：{grips}",
     "en": "Grips: {grips}",
@@ -448,5 +458,50 @@
     "zh-TW": "背包已滿，收成留在地上：{items}",
     "en": "Bag full; harvest left on the ground: {items}",
     "ja": "所持数の上限のため、収穫物は地面に残りました：{items}"
+  },
+  "raw_stardust": {
+    "zh-TW": "星塵碎屑",
+    "en": "Stardust Shards",
+    "ja": "星屑のかけら"
+  },
+  "raw_aether_core": {
+    "zh-TW": "乙太晶核",
+    "en": "Aether Core",
+    "ja": "エーテル核"
+  },
+  "raw_astral_marrow": {
+    "zh-TW": "星髓結晶",
+    "en": "Astral Marrow Crystal",
+    "ja": "星髄結晶"
+  },
+  "craft_sigil_stone_t1": {
+    "zh-TW": "初階附魔印石",
+    "en": "Apprentice Sigil Stone",
+    "ja": "初級エンチャント印石"
+  },
+  "craft_sigil_stone_t2": {
+    "zh-TW": "中階附魔印石",
+    "en": "Adept Sigil Stone",
+    "ja": "中級エンチャント印石"
+  },
+  "craft_sigil_stone_t3": {
+    "zh-TW": "高階附魔印石",
+    "en": "Master Sigil Stone",
+    "ja": "上級エンチャント印石"
+  },
+  "craft_magic_stone": {
+    "zh-TW": "魔法石",
+    "en": "Magic Stone",
+    "ja": "魔法石"
+  },
+  "craft_mithril_ingot": {
+    "zh-TW": "秘銀錠",
+    "en": "Mithril Ingot",
+    "ja": "ミスリルインゴット"
+  },
+  "craft_adamant_ingot": {
+    "zh-TW": "精金錠",
+    "en": "Adamant Ingot",
+    "ja": "アダマントインゴット"
   }
 }

@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wood_garland_serpent
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wood_garland_serpent
+  lineId: line_wood_crownvine
+  stage: 1
+  sizeClass: 1
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: ef7eeb9258091344fa4e98200f1821aa, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: c05047244f17a2a4d8a5dd02b5dd51f3, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 40
+  evolutionMaterials:
+  - element: 1
+    tier: 2
+    qty: 5
+  resist: 68000000680000008f0000002c00000068000000430000006800000068000000830000007d000000
+  mastery:
+  - element: 1
+    value: 125
+  - element: 2
+    value: 117
+  - element: 8
+    value: 58
+  stats:
+    hp: 109
+    speed: 49
+    yinAtk: 119
+    yangAtk: 39
+    yinDef: 114
+    yangDef: 64
+  signatureMove: {fileID: 11400000, guid: e76f64f62cf7c7c498d431867bbe9a9f, type: 2}
+  trait: {fileID: 11400000, guid: d4ebe00692a4ede429094ca87d6a5282, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u4FEE\u9577\u85E4\u8513\u9748\u86C7 \xD7 \u4E09\u74E3\u82B1\u679D\u51A0\u5195\u8207\u67D4\u97CC\u8449\u8108\u62AB\u80A9\",\"stage_look\":\"\u9C57\u7247\u5982\u9752\u7FE0\u68D5\u6ADA\u8449\u4EA4\u758A\uFF0C\u9838\u5074\u5C55\u958B\u82B1\u679D\u8207\u7DA2\u7DDE\u822C\u534A\u900F\u660E\u6728\u8449\u9818\u5DFE\",\"archetype\":\"arch_neang_neak\",\"region\":\"\u6771\u5357\u4E9E\",\"motifs_used\":[\"\u4E03\u982D\u90A3\u4F3D\u51A0\u5195\",\"\u6AB3\u6994\u82B1\u679D\",\"\u7D72\u7DA2\u62AB\u80A9\"],\"role\":\"\u4E2D\u6392\u727D\u5236\u3001\u7E8C\u6230\uFF1A\u4E2D\u8DDD\u76F4\u7DDA\u834A\u68D8\u6E1B\u901F\u6575\u65B9\u79FB\u901F\uFF08\u65BD\u653E\u6728\u62DB\u56DE\u5FA9\u81EA\u8EAB\u751F\u547D\uFF09\",\"palette\":\"\u7FE0\u7DA0\u3001\u6E56\u6C34\u7DA0\u3001\u6AFB\u82B1\u7C89\"}"
+  needsSensitivityReview: 0

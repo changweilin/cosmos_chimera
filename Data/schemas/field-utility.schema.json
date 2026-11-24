@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cosmimera.local/schemas/field-utility.schema.json",
+  "title": "Field utility combat effect table (array of field utility entries)",
+  "description": "REQ: docs/design/field-utilities.md, docs/design/field-utilities-combat.md — maps every non-none FieldUtility to its aligned elements and corresponding combat move or trait.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/entry" },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["utility", "kind", "aligned_elements"],
+      "properties": {
+        "utility": {
+          "allOf": [
+            { "$ref": "common.schema.json#/$defs/fieldUtility" },
+            { "not": { "const": "none" } }
+          ]
+        },
+        "kind": {
+          "description": "Matches FieldUtilityRules.GetKind (talisman_card -> move, glass_bead -> trait).",
+          "enum": ["move", "trait"]
+        },
+        "aligned_elements": {
+          "description": "Matches FieldUtilityRules.IsElementAligned.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/element" }
+        },
+        "combat_move": { "$ref": "move.schema.json#/$defs/move" },
+        "combat_trait": { "$ref": "trait.schema.json#/$defs/trait" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "move" } } },
+          "then": {
+            "required": ["combat_move"],
+            "not": { "required": ["combat_trait"] }
+          },
+          "else": {
+            "required": ["combat_trait"],
+            "not": { "required": ["combat_move"] }
+          }
+        }
+      ]
+    }
+  }
+}

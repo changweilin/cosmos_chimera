@@ -106,10 +106,12 @@ clip ID、幀數、迴圈與事件的唯一來源是 `tools/prompt-forge/catalog
 - 事件名：`ev_hit`（傷害判定幀）、`ev_spawn_fx`、`ev_release`（投擲離手）、`ev_footstep`、`ev_end_lock`（可接下一動作）。
 - 撫摸：角色依宙獸 `size_class` 播 `chr_pet_xs|s|m|l|xl`（XS：托在掌心輕撫）；宙獸播對應的 `cr_<stage>_petted`，兩者以 `Socket_PetTouch` 對位。
 - 攻擊動作依 `combat.md#主動技形狀` 分類命名。
-- <a id="武器持有動作格式"></a>**武器持有動作格式（宙獸 GLB 生成動作動畫用）**：每隻宙獸固定一種持有模式（`two_handed`／`dual_wield`／`one_hand_shield`，見 `crafting.md#穿戴與數值`），三種模式各自的掛點角色、姿態規範與動作 clip 格式定義於 `Data/creature-grip-anims/creature-grip-anims.json`（schema：`Data/schemas/creature-grip-anim.schema.json`、`cosmimera-creature-grip-anim/1`）：
-  - `two_handed`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（雙手輔助）共同承托；重型前搖與橫掃。
-  - `dual_wield`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（副手）各自獨立；近戰與突進依左右輪流規則拆為 `_r`／`_l`（`atk_melee_front_r`/`_l`、`atk_melee_sweep_r`/`_l`、`atk_dash_r`/`_l`）。
-  - `one_hand_shield`：`Socket_Weapon_R`（主手單手武器）與 `Socket_Weapon_L`（副手盾牌）；舉盾格擋與盾反為主。
+- <a id="武器持有動作格式"></a>**武器持有動作格式（宙獸 GLB 生成動作動畫用）**：每隻宙獸固定一種持有模式（`two_handed`／`dual_wield`／`one_hand_shield`，見 `crafting.md#穿戴與數值`），三種模式各自的掛點角色、允許武器類型（`weapon_types`、對應 `crafting.md#武器數值模型`）、姿態規範與動作 clip 格式定義於 `Data/creature-grip-anims/creature-grip-anims.json`（schema：`Data/schemas/creature-grip-anim.schema.json`、`cosmimera-creature-grip-anim/1`）：
+  - **虛擬大手與獨立武器動畫規範（`virtual_hand_rule`）**：武器與盾牌由虛擬大手持握並執行**另外設計的獨立對應動畫**，**技能仍由宙獸本體發出**（`Socket_Front`／`Socket_Mouth`／`Socket_Core_FX`）。因此**宙獸本體模型與骨架動畫不繪製、不包含任何武器、盾牌或虛擬大手**；`Socket_Weapon_R`／`Socket_Weapon_L` 僅作為空掛點預留於身體兩側適當間距，宙獸本體仍依持有模式節奏做出相應的軀幹、頭頸與四肢／羽翼動作，與獨立武器動畫協調。
+  - **組合追蹤**：生成單一宙獸動作時依其 `grip_mode`（及可用武器距離 `weapon_distance`）過濾 clip，只產出該宙獸允許組合的動作，避免設計無用動作。
+  - `two_handed`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（雙手輔助）共同承托；支援雙手近攻（重型前搖／橫掃／突進）與雙手遠攻（`atk_ranged_line`／`cone`／`arc`／`atk_burst_target`）。
+  - `dual_wield`：`Socket_Weapon_R`（主手）與 `Socket_Weapon_L`（副手）各自獨立；近戰、突進與遠程射擊／擲射依左右輪流規則拆為 `_r`／`_l`（`atk_melee_front_r`/`_l`、`atk_melee_sweep_r`/`_l`、`atk_dash_r`/`_l`、`atk_ranged_line_r`/`_l`、`atk_ranged_cone_r`/`_l`、`atk_ranged_arc_r`/`_l`）。
+  - `one_hand_shield`：`Socket_Weapon_R`（主手單手近攻／遠攻武器）與 `Socket_Weapon_L`（副手盾牌）；舉盾格擋與盾反為主，遠攻自盾側探出擊發。
 
 ## 版本
 - prompt 第一行為任務標頭：`[COSMIMERA-TASK spec=… tool=… catalog=… template=<id>@<ver> task_id=… seed=…]`，manifest 必須原樣抄回，日後可追溯是哪一版規格產出的。

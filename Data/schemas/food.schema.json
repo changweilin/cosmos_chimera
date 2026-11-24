@@ -10,7 +10,7 @@
     "properties": {
       "id": { "$ref": "common.schema.json#/$defs/id" },
       "cooking_method": {
-        "enum": ["grill", "stew", "stir_fry", "deep_fry", "steam", "cold_mix", "grind"]
+        "enum": ["grill", "stew", "stir_fry", "deep_fry", "steam", "cold_mix", "grind", "chill_brew"]
       },
       "target": {
         "enum": ["player", "active_creatures", "party", "player_and_party"]
@@ -29,7 +29,7 @@
           "properties": {
             "ingredient_id": { "$ref": "common.schema.json#/$defs/id" },
             "category": {
-              "enum": ["meat_ground", "meat_sky", "seafood", "berry_herb", "grain_crop", "dairy", "spice_oil", "egg"]
+              "enum": ["meat_ground", "meat_sky", "seafood", "berry_herb", "grain_crop", "dairy", "spice_oil", "egg", "fungi", "critter"]
             },
             "qty": { "type": "integer", "minimum": 1, "maximum": 20 }
           },

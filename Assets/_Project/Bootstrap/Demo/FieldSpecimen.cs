@@ -7,11 +7,13 @@ using Unity.Mathematics;
 
 namespace Cosmimera.Bootstrap.Demo
 {
-    internal enum FieldForm { WindPump, Hoist, Wagon, Sled, MineCart, SteamCar, Skiff, Balloon, Hare, Heron, Beetle, Fish }
+    // Animals from Hare on (FieldSpecimen.Animal); the six after Fish follow the land they live on (planet-world.md#自然生物).
+    internal enum FieldForm { WindPump, Hoist, Wagon, Sled, MineCart, SteamCar, Skiff, Balloon, Hare, Heron, Beetle, Fish,
+        Deer, Goat, Fox, Lizard, Frog, Crab }
 
     internal sealed class FieldSpecimen
     {
-        internal const int GeneratorVersion = 3;
+        internal const int GeneratorVersion = 4;
         internal const int LoopPercent = 30;
         internal readonly FieldForm Form;
         internal readonly int Style, Age, Damage, Duty;
@@ -76,8 +78,11 @@ namespace Cosmimera.Bootstrap.Demo
         private static int Nearby(ref Pcg32 rng, int mean, int spread) =>
             BoundedNormal.Sample(ref rng, mean, spread, math.max(0, mean - 2 * spread), math.min(1000, mean + 2 * spread));
 
+        // terrainAt (landform id of a direction) picks wildlife that belongs where it stands; null keeps the v3 roadside
+        // trio (hare, heron, beetle) everywhere.
         internal static List<FieldSpecimen> Generate(PlanetConfig planet, RunLayout layout, RunPlan plan, string type,
-            ulong seed, Func<float3, float> ground, Func<float3, bool> clear, Func<float3, bool> sea)
+            ulong seed, Func<float3, float> ground, Func<float3, bool> clear, Func<float3, bool> sea,
+            Func<float3, string> terrainAt = null)
         {
             var result = new List<FieldSpecimen>();
             var culture = ArchitectureMeshes.PlanetStyleFor(type, seed);
@@ -115,6 +120,11 @@ namespace Cosmimera.Bootstrap.Demo
                         if (water) offset += road.WidthM + 5f;
                         offset *= rng.NextInt(0, 2) == 0 ? -1f : 1f;
                         FieldForm form = Choose(family, culture, duty, water);
+                        if (family == 2 && !water && terrainAt != null)
+                        {
+                            float3 at = math.normalize(midpoint + side * (offset / planet.Radius));
+                            form = Native(terrainAt(at), math.abs(at.y), ground(at) / planet.Radius, duty);
+                        }
                         bool aquatic = form == FieldForm.Fish || form == FieldForm.Skiff;
                         if (family == 1 && !aquatic && cycleOf[r] != null)
                         {
@@ -291,6 +301,33 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
             return points.Count >= 4 && math.distance(points[0], points[points.Count - 1]) < 1e-4f;
+        }
+
+        // REQ: planet-world.md#自然生物 緯度×海拔 — wildlife follows landform first, then cold latitudes and high ground.
+        // absLat is |up.y|; altShare is ground altitude over the radius (highland ≥ 0.012, as ScatterPlanner).
+        internal static FieldForm Native(string terrain, float absLat, float altShare, int duty)
+        {
+            bool cold = absLat > 0.7f || terrain is "tundra" or "glacier" or "ice_field" or "cirque" or "moraine";
+            bool high = altShare >= 0.012f || terrain is "mountain" or "slate_cliffs" or "granite_domes";
+            switch (terrain)
+            {
+                case "swamp":
+                case "river_valley":
+                    return duty < 400 ? FieldForm.Frog : duty < 750 ? FieldForm.Heron : FieldForm.Beetle;
+                case "desert":
+                case "canyon":
+                case "rift_valley":
+                case "basalt_terrace":
+                case "volcano_foothills":
+                    return duty < 620 ? FieldForm.Lizard : FieldForm.Beetle;
+                case "archipelago":
+                case "fjord":
+                    return duty < 500 ? FieldForm.Crab : FieldForm.Heron;
+            }
+
+            if (cold) return duty < 550 ? FieldForm.Fox : FieldForm.Hare;
+            if (high) return duty < 600 ? FieldForm.Goat : FieldForm.Hare;
+            return duty < 380 ? FieldForm.Deer : duty < 620 ? FieldForm.Hare : duty < 820 ? FieldForm.Beetle : FieldForm.Heron;
         }
 
         private static FieldForm Choose(int family, ArchPlanetStyle culture, int duty, bool water)

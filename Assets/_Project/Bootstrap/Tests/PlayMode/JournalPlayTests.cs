@@ -59,6 +59,12 @@ namespace Cosmimera.Bootstrap.Tests
             SceneManager.LoadScene("Demo");
             yield return null;
             var game = Object.FindFirstObjectByType<DemoGame>();
+            if (Field(game, "_run") is RunSession autoRun && autoRun != null)
+            {
+                Object.DestroyImmediate(autoRun.gameObject);
+                Set(game, "_run", null);
+                ((Camera)Field(game, "_lobbyCamera")).gameObject.SetActive(true);
+            }
             var save = new LobbySave();
             save.ChooseStarter("starter_sun", "sun_heliostat_heron", 0);
             save.Add("sun_mirror_chick", VesselKind.TalismanCard, 0);
@@ -93,6 +99,12 @@ namespace Cosmimera.Bootstrap.Tests
             SceneManager.LoadScene("Demo");
             yield return null;
             var game = Object.FindFirstObjectByType<DemoGame>();
+            if (Field(game, "_run") is RunSession autoRun && autoRun != null)
+            {
+                Object.DestroyImmediate(autoRun.gameObject);
+                Set(game, "_run", null);
+                ((Camera)Field(game, "_lobbyCamera")).gameObject.SetActive(true);
+            }
             game.enabled = false;
             ((Camera)Field(game, "_lobbyCamera")).gameObject.SetActive(false);
             var db = (GameDatabase)Field(game, "_database");

@@ -229,11 +229,11 @@ namespace Cosmimera.Bootstrap.Demo
             _quickWheelOpen = false;
             for (int i = _team.Active.Count - 1; i >= 0; i--)
             {
-                int id = _team.Active[i];
-                _encounter.Unfield(id);
-                _team.Recall(id, _nowMs);
+                _encounter.Unfield(_team.Active[i]);
             }
 
+            _team.RecallAll(_nowMs);
+            _mainId = CombatAi.NoTarget;
             _returnedToPlayer = true;
             UpdateDirectControlState();
             Toast("已回到角色（可自由行動，投擲收服需等脫戰）");
@@ -305,8 +305,15 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        // REQ: combat-feel.md#BOSS-戰加強 名牌與頂部大血條. The trial final (trainer-battles.md#地形試煉) takes precedence: its
+        // boss is trainer-owned, so it never appears in _wild, and the trial master's bench is shown under the bar.
         private void DrawBossTopBar()
         {
+            if (DrawTrialBossTopBar())
+            {
+                return;
+            }
+
             int bossId = BossUnit();
             if (bossId < 0 || !_wild.TryGetValue(bossId, out WildInfo info) || info.Gone)
             {
@@ -319,28 +326,91 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            float w = 480f;
-            float h = 54f;
+            string title = _copy.Epithet(_plan.PlanetTypeId, (int)(_plan.Seed % 3)) + _copy.Name(boss.Def.Id);
+            DrawBossBar(boss, title, info.Level, null, 0, 0);
+        }
+
+        private bool DrawTrialBossTopBar()
+        {
+            EncounterUnit boss = TrialFinalBoss(out int bench, out int benchAlive);
+            if (boss == null)
+            {
+                return false;
+            }
+
+            string title = _copy.Ui("ui.trial.boss_title").Replace("{terrain}", TrialTerrainName) + " · " + _copy.Name(boss.Def.Id);
+            string footer = _copy.Ui("ui.trial.master_team").Replace("{master}", TrialMasterName);
+            DrawBossBar(boss, title, boss.Level, footer, bench, benchAlive);
+            return true;
+        }
+
+        // The trial boss of an active final battle, with the master's bench size and how many of it still stand.
+        private EncounterUnit TrialFinalBoss(out int bench, out int benchAlive)
+        {
+            bench = 0;
+            benchAlive = 0;
+            if (_trial == null || _trial.TrainerId < 0)
+            {
+                return null;
+            }
+
+            EncounterUnit boss = null;
+            foreach (int id in _trial.FinalUnits)
+            {
+                EncounterUnit u = _encounter.Units[id];
+                if (u.IsTrialBoss)
+                {
+                    boss = u;
+                    continue;
+                }
+
+                bench++;
+                benchAlive += u.Combatant.IsFainted ? 0 : 1;
+            }
+
+            return boss;
+        }
+
+        private void DrawBossBar(EncounterUnit boss, string title, int level, string footer, int bench, int benchAlive)
+        {
+            float w = 520f;
+            float h = footer == null ? 58f : 82f;
             var box = new Rect((Screen.width - w) * 0.5f, 12f, w, h);
             GUI.Box(box, GUIContent.none);
             GUILayout.BeginArea(new Rect(box.x + 12f, box.y + 4f, box.width - 24f, box.height - 8f));
-            string status = boss.Combatant.IsFainted ? " [倒地]"
-                : boss.IsStaggered(_nowMs) ? " [失衡!]"
-                : _balance.Enrage.StageFor(boss.Combatant.Hp, boss.Combatant.MaxHp) > 0 ? " [狂暴]"
+            string status = boss.Combatant.IsFainted ? " · " + _copy.Ui("ui.hud.knocked_out")
+                : boss.IsStaggered(_nowMs) ? " · " + _copy.Ui("ui.hud.staggered")
+                : _balance.Enrage.StageFor(boss.Combatant.Hp, boss.Combatant.MaxHp) > 0 ? " · " + _copy.Ui("ui.hud.enraged")
                 : string.Empty;
+            string overload = boss.Combatant.IsOverloaded ? "  " + _copy.Ui("ui.hud.overload_active") : string.Empty;
             string windup = boss.WindupSlot != EncounterUnit.NoWindup && boss.WindupSlot < boss.Moves.Count
                 ? $"  ⚡ {_copy.Name(boss.Moves[boss.WindupSlot].Id)}"
                 : string.Empty;
-            GUILayout.Label($"<b>BOSS · {_copy.Name(boss.Def.Id)}</b> Lv.{info.Level}{status}{windup}",
+            GUILayout.Label($"<b>{_copy.Ui("ui.hud.boss_tag")} · {title}</b> Lv.{level}{status}{overload}{windup}",
                 new GUIStyle(_label) { fontSize = 15, richText = true });
 
             float hpFrac = boss.Combatant.MaxHp > 0 ? math.clamp((float)boss.Combatant.Hp / boss.Combatant.MaxHp, 0f, 1f) : 0f;
-            Rect bar = GUILayoutUtility.GetRect(box.width - 24f, 12f);
+            Rect bar = GUILayoutUtility.GetRect(box.width - 24f, 14f);
             GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.9f);
             GUI.DrawTexture(bar, Texture2D.whiteTexture);
             GUI.color = new Color(0.85f, 0.2f, 0.2f, 1f);
             GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * hpFrac, bar.height), Texture2D.whiteTexture);
+            // Phase ticks at 66 % / 33 %: the enrage lines (combat.md#BOSS-階段) so the player can see the next one coming.
+            GUI.color = new Color(1f, 0.9f, 0.6f, 0.9f);
+            GUI.DrawTexture(new Rect(bar.x + bar.width * 0.666f - 1f, bar.y, 2f, bar.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(bar.x + bar.width * 0.333f - 1f, bar.y, 2f, bar.height), Texture2D.whiteTexture);
             GUI.color = Color.white;
+            if (footer != null)
+            {
+                string pips = string.Empty;
+                for (int i = 0; i < bench; i++)
+                {
+                    pips += i < benchAlive ? "●" : "○";
+                }
+
+                GUILayout.Label($"{footer}  {pips}  {benchAlive}/{bench}", new GUIStyle(_label) { fontSize = 13, richText = true });
+            }
+
             GUILayout.EndArea();
         }
 

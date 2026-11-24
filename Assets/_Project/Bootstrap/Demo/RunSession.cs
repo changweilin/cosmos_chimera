@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using Cosmimera.Capture;
 using Cosmimera.Codex;
 using Cosmimera.Combat;
+using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
 using Cosmimera.GameData;
 using Cosmimera.Planet;
+using Cosmimera.Player;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -24,6 +27,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Encyclopedia facts retained on victory, defeat or abandon.</summary>
         /// <remarks>Pre: none. Post: non-null. Side effects: mutations change the outcome.</remarks>
         public CodexProgress Codex { get; } = new CodexProgress();
+
+        /// <summary>Signature recipe ids known by the end of the run, departure knowledge included; kept on abandon like Codex.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: none. Post: non-null; valid snake_case ids. Side effects: mutations change the outcome.</remarks>
+        public readonly HashSet<string> DiscoveredRecipes = new HashSet<string>(StringComparer.Ordinal);
         /// <summary>Boss knocked out.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool Victory;
@@ -66,6 +73,39 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Final crafting stock including departure items; null for legacy outcomes.</summary>
         /// <remarks>Pre: non-null entries valid. Post: replaces departure stock at settlement. Side effects: none.</remarks>
         public IReadOnlyList<CraftStack> CraftStock;
+
+        /// <summary>Final tagged copy looks matching <see cref="CraftStock"/>; null for legacy outcomes.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: consistent with CraftStock. Post: replaces lobby looks at settlement. Side effects: none.</remarks>
+        public IReadOnlyList<ItemLookList> CraftLooks;
+
+        /// <summary>Per-profession trainer battles completed during this run (dropped on abandon at settlement).</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: valid snake_case keys and counts &gt;= 1. Side effects: none.</remarks>
+        public readonly Dictionary<string, int> TrainerBattles = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>Terrain trial badges earned during this run (dropped on abandon at settlement).</summary>
+        /// <remarks>Pre: none. Post: valid snake_case terrain trial ids. Side effects: none.</remarks>
+        public readonly HashSet<string> CompletedTrials = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>True when the player triggered Migratory Return (候鳥歸途) to travel to Cradle Moon after settling.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TravelToCradleMoon;
+
+        /// <summary>True when the player triggered Migratory Return (候鳥歸途) to return to the Mother Planet after settling.</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TravelToLobbyPlanet;
+
+        /// <summary>Gold earned during this run from trainer victories and quest milestones.</summary>
+        /// <remarks>REQ: docs/design/crafting.md#製造擴充. Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int GoldEarned;
+
+        /// <summary>Records one completed battle (victory or defeat) against trainer profession <paramref name="professionId"/>.</summary>
+        /// <remarks>Pre: professionId valid snake_case id. Post: TrainerBattles[professionId] incremented by 1. Side effects: mutates TrainerBattles.</remarks>
+        public void RecordTrainerBattle(string professionId)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            TrainerBattles.TryGetValue(professionId, out int count);
+            TrainerBattles[professionId] = count + 1;
+        }
     }
 
     /// <summary>Everything a run needs from the lobby.</summary>
@@ -75,6 +115,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Departure knowledge; copied into the outcome, never mutated by the run.</summary>
         /// <remarks>Pre: null or a valid progress. Post: departure remains unchanged. Side effects: none.</remarks>
         public CodexProgress Codex;
+
+        /// <summary>Departure signature recipe discoveries; copied into the outcome, never mutated by the run.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: null or valid snake_case ids. Post: departure remains unchanged. Side effects: none.</remarks>
+        public IReadOnlyList<string> DiscoveredRecipes;
         /// <summary>Planet type.</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public PlanetTypeDef PlanetType;
@@ -174,21 +218,47 @@ namespace Cosmimera.Bootstrap.Demo
         /// <remarks>Pre: null or valid stacks. Post: never mutated by the run. Side effects: none.</remarks>
         public IReadOnlyList<CraftStack> CraftStock;
 
+        /// <summary>Tagged copy looks of <see cref="CraftStock"/>, or null when nothing is tagged.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: no more looks per id than CraftStock holds. Post: never mutated by the run. Side effects: none.</remarks>
+        public IReadOnlyList<ItemLookList> CraftLooks;
+
         /// <summary>Fixed departure equipment for the player and owned party members.</summary>
         /// <remarks>Pre: null or validated saved assignments. Post: unchanged throughout the run. Side effects: none.</remarks>
         public IReadOnlyList<EquippedItem> Equipment;
 
-        /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, initial rival battle).</summary>
+        /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, friend 1vs1 + 2vs2 boss).</summary>
         public bool IsBeginnerQuest;
+
+        /// <summary>Assigned friend character id when <see cref="IsBeginnerQuest"/> is true.</summary>
+        public string FriendId;
+
+        /// <summary>Friend's LV10 starter species for Stage 4 (1vs1 tutorial) and Stage 6 (2vs2 ally).</summary>
+        public CreatureDef FriendStarter;
 
         /// <summary>Assigned rival character id when <see cref="IsBeginnerQuest"/> is true.</summary>
         public string RivalId;
 
-        /// <summary>Rival's LV10 starter species for the initial trainer battle.</summary>
+        /// <summary>Rival's LV10 starter species for the Stage 6 Boss + Rival 2vs2 battle.</summary>
         public CreatureDef RivalStarter;
 
         /// <summary>Player character's signature juvenile vessel granted after the initial battle.</summary>
         public VesselKind PlayerStarterVessel;
+
+        /// <summary>Terrain trial badges held at departure (LobbySave.CompletedTrialsSnapshot); decides a trial's first win.</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#地形試煉. Pre: null or canonical terrain ids. Post: never mutated by the run. Side effects: none.</remarks>
+        public IReadOnlyCollection<string> TrialBadges;
+
+        /// <summary>True when the beginner quest is already completed in the player's save (allows cross-body Migratory Return).</summary>
+        /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
+        public bool TutorialDone;
+
+        /// <summary>True when this session is the fixed single-player lobby planet (R = 2560 m, 8 connected towns, all 24 landforms, all 10 dungeon masters).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: uses LobbyPlanetPlanner and stays open until the player opens the lobby menu. Side effects: none.</remarks>
+        public bool IsLobbyPlanet;
+
+        /// <summary>Optional checkpoint snapshot to resume from on session start.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: null or valid RunCheckpointSave. Post: none. Side effects: none.</remarks>
+        public RunCheckpointSave ResumeCheckpoint;
     }
 
     /// <summary>
@@ -241,26 +311,84 @@ namespace Cosmimera.Bootstrap.Demo
             // REQ: characters.md#路人-npc — residents are rule-layer bodies: creatures walk around them.
             public RunPopulace Populace { get; set; }
 
+            // REQ: ADR-0011 — while the party is in an indoor dungeon the whole surface is the flat indoor sphere with
+            // its room walls; nothing of the planet surface stands there. Null = on the planet surface.
+            public PlanetWalls Interior { get; set; }
+
+            // The indoor boss door: sealed until the guard elite is knocked out (trainer-battles.md#地形試煉 step ①).
+            public bool InteriorSealed { get; set; } = true;
+
+            // REQ: planet-world.md#進階地形地城 (Q-W45) — a surface maze's room walls stand on the terrain around its wonder.
+            public PlanetWalls Maze { get; set; }
+
+            public RoomDungeonGeometry MazeArea { get; set; }
+
+            // Arena seal of the maze plaza (guard elite) and its outer door (until the master is talked to).
+            public bool MazeSealed { get; set; } = true;
+
+            public bool MazeOuterSealed { get; set; } = true;
+
+            public float MazeOuterSealM { get; set; }
+
+            // Capsule height is 1.8 m, so keeping feet 2 m below WallHeightM keeps the character's head below the wall ridge.
+            private const float DungeonCeilingMarginM = 2f;
+
             // Same function the terrain mesh evaluates, so creatures stand on the rendered ground.
             public float GroundAltitude(float3 direction) =>
+                Interior != null ? Interior.View.Height(math.normalize(direction)) :
                 (_templates != null ? _templates.Sample(_height, direction) : _height.Sample(direction)) +
-                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f);
+                (_walls != null ? _walls.View.Height(math.normalize(direction)) : 0f) +
+                (Maze != null ? Maze.View.Height(math.normalize(direction)) : 0f);
+
+            /// <summary>Maximum permitted player altitude (m) in dungeons so open-ceiling walls cannot be flown over.</summary>
+            public float CeilingAltitude(float3 direction)
+            {
+                float3 dir = math.normalize(direction);
+                if (Interior != null)
+                {
+                    return RoomDungeonGeometry.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                if (MazeArea != null && Maze != null && MazeArea.Contains(dir))
+                {
+                    float floorAlt = GroundAltitude(dir) - Maze.View.Height(dir);
+                    return floorAlt + RoomDungeonGeometry.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                if (_walls != null)
+                {
+                    float floorAlt = GroundAltitude(dir) - _walls.View.Height(dir);
+                    return floorAlt + DungeonPlanner.WallHeightM - DungeonCeilingMarginM;
+                }
+
+                return float.PositiveInfinity;
+            }
 
             // Same predicate the planner uses to put spawns on land, so a wild never leaves the land it spawned on.
-            public bool IsSea(float3 direction) => _templates != null && _templates.View.IsSea(math.normalize(direction));
+            public bool IsSea(float3 direction) =>
+                Interior == null && _templates != null && _templates.View.IsSea(math.normalize(direction));
 
             // Same footprints SettlementView gives colliders, so creatures stop at the walls the character bumps into.
             // Room walls (and locked gates) block the same way: the terrain stops the character, this stops creatures.
             public bool IsBlocked(float3 direction, float clearanceM) =>
+                Interior != null ? Interior.View.IsBlocked(math.normalize(direction), clearanceM / _radius, InteriorSealed) ||
+                                   (Objects != null && Objects.IsBlockedByDungeonProps(direction, clearanceM, true)) :
                 (Objects != null ? Objects.IsBlocked(direction, clearanceM) : _layout.IsInsideBuilding(direction, clearanceM)) ||
                 (_walls != null && _walls.View.IsBlocked(math.normalize(direction), clearanceM / _radius, LocksClosed)) ||
                 (Landmarks != null && Landmarks.IsBlocked(direction, clearanceM)) ||
+                (Maze != null && IsBlockedByMaze(math.normalize(direction), clearanceM)) ||
                 (Populace != null && Populace.IsBlocked(direction, clearanceM));
 
-            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway.
+            // Scatter keeps off the whole wall band, gates included, so no tree or rock stands in a doorway; nothing of the
+            // planet stands inside a surface maze (Q-W45: its area is cleared).
             public bool IsOffWalls(float3 direction) =>
-                _walls == null ||
-                _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius;
+                (_walls == null ||
+                 _walls.View.BorderDistance(math.normalize(direction)) > DungeonPlanner.WallHalfWidthM / _radius) &&
+                (MazeArea == null || !MazeArea.Contains(math.normalize(direction)));
+
+            private bool IsBlockedByMaze(float3 dir, float clearanceM) =>
+                Maze.View.IsBlocked(dir, clearanceM / _radius, MazeSealed) ||
+                (MazeOuterSealed && math.distance(dir, MazeArea.OuterGate) * _radius <= MazeOuterSealM + clearanceM);
         }
 
         private sealed class WildInfo
@@ -316,16 +444,43 @@ namespace Cosmimera.Bootstrap.Demo
         private WeatherProfile _playerWeather = WeatherProfiles.Clear;
         private AtmosphereDriver _atmosphere;
         private LocalWeatherView _weatherView;
+        private VortexView _vortexView;
+        private readonly List<WindVortex> _vortexScratch = new List<WindVortex>();
+        // Grass and trees are drawn out to ~90 m; vortices whose rim reaches that far still bend what is in view.
+        private const float VortexViewReachM = 120f;
+        private LightningView _lightning;
+        private FireView _fireView;
+        private SeaWaves _sea;
+        private QuakeView _quakeView;
+        private SeaSprayView _spray;
+        private UnderwaterView _underwater;
+        private Color _shallowWater, _deepWater;
+        private Func<float3, float> _groundAltitudeOrZero;
+        private float _playerGust;
+        private readonly List<FireView.Burning> _burning = new List<FireView.Burning>(32);
+        private Comparison<FireView.Burning> _byPlayerDistance;
+        private float3 _burnFocus;
         private float _baseCloud, _baseWind;
         private WeatherControl _weatherControl;
         private WeatherService _weather;
         private WeatherState _playerWeatherState;
+        private float _stormDarkness;
+        private Func<float3, bool> _nearSettlement;
+        private readonly List<float3> _warningDirections = new List<float3>(8);
+        private readonly List<float> _warningProgress = new List<float>(8);
+        private const float DebrisFoliageReachM = 30f;
+        private const float DebrisSettlementMarginM = 40f;
+        private Func<float3, float> _groundAltitudeAt;
         private Action<RunOutcome> _onEnd;
 
         private PlanetRig _rig;
         private RunPlan _plan;
         private System.Func<float3, string> _habitatAt;
         private RunLayout _layout;
+        private bool _hasOcean;
+        private float _playerWaterDepthM;
+        private float _playerAltitudeM;
+        private readonly HashSet<int> _discoveredSettlements = new HashSet<int>();
         private DungeonLayout _dungeon;
         private HeightSurface _surface;
         private DungeonView _dungeonView;
@@ -339,6 +494,9 @@ namespace Cosmimera.Bootstrap.Demo
         private LandmarkView _landmarkView;
         private RunPopulace _populace;
         private PopulaceView _populaceView;
+        private RunTrainers _trainers;
+        private TrainerView _trainerView;
+        private IReadOnlyList<CreatureDef> _wildPool;
         private ScatterField _scatterField;
         private ObjectPhysics _objectPhysics;
         private EnvMaterials _envMaterials;
@@ -370,7 +528,12 @@ namespace Cosmimera.Bootstrap.Demo
         private int _feelBatchCount;
         private Vector3[] _heldViewPos = new Vector3[0];
         private bool[] _viewHeld = new bool[0];
-        private int _bossPhaseLinesPassed;
+        private bool[] _viewSynced = new bool[0];
+        private float3[] _viewLastPos = new float3[0];
+        private float3[] _viewLastFwd = new float3[0];
+        private bool[] _viewLastOverload = new bool[0];
+        // Per unit: the planet boss and each trial-final boss (a fresh unit per attempt) cross their own phase lines.
+        private readonly Dictionary<int, int> _bossPhaseLinesPassed = new Dictionary<int, int>();
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         private readonly List<int> _injectedFaints = new List<int>();
         /// <summary>Observes the boundary immediately before the real Encounter.Tick.</summary>
@@ -392,6 +555,11 @@ namespace Cosmimera.Bootstrap.Demo
         private readonly List<FleeingView> _fleeing = new List<FleeingView>();
         private readonly Dictionary<int, CreatureDef> _viewDefs = new Dictionary<int, CreatureDef>();
         private readonly Dictionary<int, SpawnRole> _viewRoles = new Dictionary<int, SpawnRole>();
+        private readonly Dictionary<int, int> _unitSaveIds = new Dictionary<int, int>();
+        private readonly Dictionary<int, GameObject> _blockShields = new Dictionary<int, GameObject>();
+        private readonly List<Mesh> _gearMeshes = new List<Mesh>();
+        private Material _gearMaterial;
+        private Material _handMaterial;
         private ICreatureViewFactory _viewFactory;
         private readonly RunOutcome _outcome = new RunOutcome();
         private Pcg32 _captureRng;
@@ -431,8 +599,9 @@ namespace Cosmimera.Bootstrap.Demo
         private int _quickWheelIndex;
         private float _mainJumpOffsetM;
         private float _mainJumpVelMs;
-        private int _bqTrainerId = -1;
-        private int _bqRivalUnitId = -1;
+        private int _activeWanderingTrainerIndex = -1;
+        private int _activeEncounterTrainerId = -1;
+        private readonly List<int> _activeTrainerUnitIds = new List<int>();
 
         private enum InteractChoice
         {
@@ -452,6 +621,7 @@ namespace Cosmimera.Bootstrap.Demo
         private ConceptPortraitTable _portraits;
         private GUIStyle _label;
         private GUIStyle _weatherLabel;
+        private GUIStyle _worldBarLabelStyle;
         private GUIStyle _markerStyle;
         private Material _terrainMaterial;
         private Material _playerMaterial;
@@ -556,6 +726,7 @@ namespace Cosmimera.Bootstrap.Demo
             _copy = copy;
             _progression = setup.Progression;
             _drops = setup.Materials;
+            _wildPool = wildPool;
             _partyExp = setup.PartyExp.ToArray();
             _playerExp = setup.PlayerExp;
             _balance = balance;
@@ -607,21 +778,45 @@ namespace Cosmimera.Bootstrap.Demo
             PlanetTemplates templates = null;
             if (setup.Landforms)
             {
-                templates = TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
-                    BossDraw.SizeFor(setup.BossStage));
+                templates = setup.IsLobbyPlanet
+                    ? LobbyPlanetPlanner.BuildTemplates(config, setup.Seed)
+                    : TemplatePlanner.Build(config, setup.Seed, setup.PlanetType.TerrainTags,
+                        BossDraw.SizeFor(setup.BossStage));
             }
 
             var vocab = new RunPlanVocabulary(copy.ThemeIds, copy.GenericAffixIds, copy.ChainIds);
+            _hasOcean = templates != null;
             System.Func<float3, bool> isLand = null;
+            PlanetTemplates landTemplates = templates;
+            PlanetHeight landHeight = height;
             if (templates != null)
             {
                 TemplateView view = templates.View;
-                isLand = d => !view.IsSea(d);
+                bool strictDryLand = setup.IsLobbyPlanet ||
+                    (setup.PlanetType != null && string.Equals(setup.PlanetType.Id, "cradle_planet", StringComparison.Ordinal));
+                isLand = strictDryLand
+                    ? (System.Func<float3, bool>)(d => !view.IsSea(d) && view.River(d) <= 0.05f &&
+                        landTemplates.Sample(landHeight, d) >= LobbyPlanetPlanner.MinDryAltitudeM)
+                    : d => !view.IsSea(d) && view.River(d) <= 0.15f &&
+                        landTemplates.Sample(landHeight, d) >= LobbyPlanetPlanner.MinDryAltitudeM;
             }
 
-            _plan = RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
-                setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
-            _layout = SettlementPlanner.Generate(config, _plan, isLand);
+            _plan = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildPlan(config, setup.PlanetType, wildPool, vocab, isLand, setup.Seed)
+                : RunPlanner.Generate(config, setup.Seed, setup.PlanetType, setup.BossStage, wildPool, vocab, isLand,
+                    setup.Dungeon ? DungeonPlanner.SpawnBorderClearanceRad(config) : 0f);
+            // REQ: planet-world.md#道路與建築 — roads bend round hills; the walls and mazes added later are not terrain.
+            PlanetTemplates roadTemplates = templates;
+            _layout = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildLayout(config, _plan, isLand,
+                    d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d))
+                : SettlementPlanner.Generate(config, _plan, isLand,
+                    d => roadTemplates != null ? roadTemplates.Sample(height, d) : height.Sample(d));
+            _discoveredSettlements.Clear();
+            if (_layout.Settlements.Count > 0 && LayoutClearance.IsInhabited(_layout.Settlements[0].Kind))
+            {
+                _discoveredSettlements.Add(0);
+            }
             // 1.5 m keeps tree crowns and rocks off the road edge and out of doorways (scatter only; creature collision
             // passes its own body radius to IsInsideBuilding).
             var clearance = new LayoutClearance(config, _layout, 1.5f);
@@ -644,26 +839,49 @@ namespace Cosmimera.Bootstrap.Demo
             Season? weatherSeason = Seasons.ForPlanet(setup.Seed, setup.PlanetType.Id);
             if (weatherSeason.HasValue && setup.Season.HasValue) weatherSeason = setup.Season;
             RunPlan weatherPlan = _plan;
-            _weather = new WeatherService(setup.Seed, setup.PlanetType.Id, weatherSeason,
+            _weather = new WeatherService(setup.Seed, config.Radius, setup.PlanetType.Id, weatherSeason,
                 d => RunPlanner.RegionAt(weatherPlan, d), r => weatherPlan.Regions[r].Center, d => _terrainAt(d).Id,
                 _weatherControl);
             // Rule layer (destructibles.md#實作分層): creatures are blocked by and moves hit the same items ScatterField draws,
             // whether or not anything is drawn.
             // REQ: planet-world.md#奇觀地標 — wonders go on land that no wall band owns; scatter then keeps the same
             // 1.5 m off their footprints as it does off buildings.
-            LandmarkLayout landmarks = LandmarkPlanner.Generate(config, _plan, _layout,
-                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d));
+            LandmarkLayout landmarks = setup.IsLobbyPlanet
+                ? LobbyPlanetPlanner.BuildLandmarks(config, _plan, _layout,
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d))
+                : LandmarkPlanner.Generate(config, _plan, _layout,
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d));
             _landmarks = landmarks;
             surface.Landmarks = landmarks;
+            // Before populace, trainers and scatter: they all keep off the maze through surface.IsOffWalls.
+            PrepareSurfaceMaze(config, surface);
             // REQ: characters.md#路人-npc — the era is a presentation axis, so its pull on age and health is passed in.
             // Nobody stands where the player touches down.
             float3 landingAt = _plan.LandingDirection;
             float landingGap = 4f / config.Radius;
             _populace = PopulacePlanner.Generate(config, _plan, _layout,
                 NpcMeshes.TemperFor(ArchitectureMeshes.PlanetStyleFor(setup.PlanetType.Id, setup.Seed).Era),
-                d => (isLand == null || isLand(d)) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
+                d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                     surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f) &&
                      math.distancesq(d, landingAt) > landingGap * landingGap);
             surface.Populace = _populace;
+            if (wildPool != null && wildPool.Count > 0)
+            {
+                int maxTier = 1;
+                for (int r = 0; r < _plan.Regions.Count; r++)
+                {
+                    maxTier = math.max(maxTier, _plan.Regions[r].Tier);
+                }
+
+                int wildNormalMax = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Normal);
+                int bossLv = _progression.WildLevel(D0Difficulty, maxTier, SpawnRole.Boss);
+                _trainers = TrainerPlanner.Generate(config, _plan, _layout, wildPool, _habitatAt,
+                    d => (isLand != null ? isLand(d) : surface.GroundAltitude(d) >= LobbyPlanetPlanner.MinDryAltitudeM) &&
+                         surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 0.5f),
+                    wildNormalMax, bossLv, maxStage: setup.BossStage);
+            }
             System.Func<float3, bool> isOpenGround =
                 d => clearance.IsClear(d) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.5f);
             // REQ: planet-world.md#散佈 — canopy density and species follow the landform stamp under each point; between
@@ -694,7 +912,8 @@ namespace Cosmimera.Bootstrap.Demo
                     setup.EnvMaterials, objects, _dungeon, _plan);
                 field = FieldSpecimen.Generate(config, _layout, _plan, setup.PlanetType.Id, setup.Seed, surface.GroundAltitude,
                     d => !_worldObjects.IsBlocked(d, 1.6f) && surface.IsOffWalls(d) && !landmarks.IsBlocked(d, 1.6f) &&
-                         math.distancesq(d, landingAt) > landingGap * landingGap, surface.IsSea);
+                         math.distancesq(d, landingAt) > landingGap * landingGap, surface.IsSea,
+                    d => _terrainAt(d).Id);
                 _worldObjects.AttachField(field);
                 _worldObjects.StepField(_nowMs);
                 surface.Objects = _worldObjects;
@@ -702,6 +921,8 @@ namespace Cosmimera.Bootstrap.Demo
             _quest = new QuestTracker(_plan);
             _questPaid = new bool[_plan.Quest.Count];
             _viewFactory ??= new ProceduralCreatureViewFactory(toonShader);
+            _gearMaterial ??= CreatureGearAttachments.CreateGearMaterial(scenery?.Props ?? Shader.Find("Cosmimera/ToonScenery"), toonShader);
+            _handMaterial ??= CreatureGearAttachments.CreateHandMaterial(toonShader);
             float relief = height.MaxAbsHeight + config.Radius * PlanetTemplates.AmplitudeFractionOfRadius * 0.5f;
             // REQ: planet-world.md#季節 — one season per planet, from the seed, for the whole run.
             Season season = setup.Season ?? Seasons.For(setup.Seed);
@@ -721,8 +942,9 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
 
+            // A planet is either an enclosed dungeon (setup.Dungeon) or has a surface maze, never both (PrepareSurfaceMaze).
             _rig = PlanetRig.Build(config, height, _plan.LandingDirection, terrainMaterial, templates,
-                setup.CharacterModelPrefab, walls);
+                setup.CharacterModelPrefab, walls ?? _mazeWalls);
             _hitFeel = new HitFeelDirector(_rig.Camera, HitFeelTuning.Default);
             _portraits = setup.Portraits;
             if (setup.VolumeProfile != null)
@@ -749,6 +971,10 @@ namespace Cosmimera.Bootstrap.Demo
             _baseCloud = cloudCover;
             _baseWind = wind;
             if (scenery != null) _weatherView = new LocalWeatherView(transform);
+            if (scenery != null) _vortexView = new VortexView(transform);
+            if (scenery != null) _lightning = new LightningView(transform, (int)(setup.Seed ^ (setup.Seed >> 32)));
+            if (scenery != null) _fireView = new FireView(transform);
+            if (scenery != null) _quakeView = new QuakeView(transform);
             atmosphere.SetWeather(cloudCover, wind);
             if (scenery != null)
             {
@@ -760,18 +986,31 @@ namespace Cosmimera.Bootstrap.Demo
                 if (scenery.Water != null)
                 {
                     // Just past where the linear fog turns opaque: the rim of the disc is never visible.
-                    gameObject.AddComponent<WaterSurface>().Configure(config,
-                        PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief),
-                        RenderSettings.fogEndDistance * 1.15f);
+                    Material water = PlanetLook.WaterMaterial(scenery.Water, setup.PlanetType.Id, config, relief);
+                    gameObject.AddComponent<WaterSurface>().Configure(config, water, RenderSettings.fogEndDistance * 1.15f);
+                    // A molten or dry "sea" (no surf) takes no wind waves or spray.
+                    if (water.GetFloat("_Foam") > 0f)
+                    {
+                        _sea = new SeaWaves();
+                        _spray = new SeaSprayView(transform);
+                        _underwater = new UnderwaterView(transform);
+                        _shallowWater = water.GetColor("_ShallowWater");
+                        _deepWater = water.GetColor("_DeepWater");
+                    }
                 }
 
                 if (scenery.Grass != null && grassDensity > 0f)
                 {
                     // Stop a little short of the shader's snow line and polar cap, whose edges are noise-jittered.
-                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isOpenGround,
+                    // No turf on a riverbed (P1-18): its pebbles and stream (CosmiRiverbed) start at a mask of ~0.3.
+                    System.Func<float3, bool> isTurf = templates == null
+                        ? isOpenGround
+                        : d => isOpenGround(d) && templates.View.River(math.normalize(d)) < 0.2f;
+                    gameObject.AddComponent<GrassField>().Configure(config, setup.Seed, surface.GroundAltitude, isTurf,
                         PlayerPosition,
                         PlanetLook.GrassMaterial(scenery.Grass, setup.PlanetType.Id, config, relief, GrassField.RadiusM, season),
-                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f));
+                        grassDensity, relief * math.max(0.05f, snowLine - 0.08f), math.clamp(polarLat - 0.03f, 0.05f, 1f),
+                        PlanetLook.Meadow(setup.PlanetType.Id, season, out Color[] blooms), blooms);
                 }
             }
             if (starShader != null)
@@ -792,7 +1031,7 @@ namespace Cosmimera.Bootstrap.Demo
                 settlements.transform.SetParent(transform, false);
                 _settlementView = settlements.AddComponent<SettlementView>();
                 _settlementView.Configure(config, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
-                    setup.PlanetType.Id, setup.Seed, _plan);
+                    setup.PlanetType.Id, setup.Seed, _plan, d => _terrainAt(d).Id);
                 Shader fieldShader = scenery?.Props ?? Shader.Find("Cosmimera/ToonScenery");
                 if (field != null && fieldShader != null)
                 {
@@ -811,6 +1050,14 @@ namespace Cosmimera.Bootstrap.Demo
                 _populaceView = populaceRoot.AddComponent<PopulaceView>();
                 _populaceView.Configure(config, _populace, _layout, surface.GroundAltitude, toonShader, scenery?.Props,
                     setup.PlanetType.Id, setup.Seed, _plan, PlayerPosition);
+                if (_trainers != null)
+                {
+                    var trainersRoot = new GameObject("Trainers");
+                    trainersRoot.transform.SetParent(transform, false);
+                    _trainerView = trainersRoot.AddComponent<TrainerView>();
+                    _trainerView.Configure(config, _trainers, surface.GroundAltitude, toonShader, scenery?.Props,
+                        setup.PlanetType.Id, setup.Seed, PlayerPosition);
+                }
                 if (_dungeon != null)
                 {
                     var dungeonRoot = new GameObject("Dungeon");
@@ -852,7 +1099,16 @@ namespace Cosmimera.Bootstrap.Demo
             _encounter = new Encounter(config, balance, surface, setup.Seed);
             _encounter.SetTerrainMoveSpeedMultiplier(d => _terrainAt(d).MoveSpeedMultiplier);
             _encounter.SetSettlementCheck(clearance.IsInsideSettlement);
+            _nearSettlement = d => clearance.IsInsideSettlement(d, DebrisSettlementMarginM);
             _encounter.SetWeatherProvider(WeatherAt);
+            // REQ: weather.md#落雷 — region radius from the region count: a cap holding 1/N of the sphere has arc 2R/√N.
+            _encounter.AttachLightning(setup.Seed, _weather.RegionAt, r => weatherPlan.Regions[r].Center,
+                2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), StormAt);
+            // REQ: destructibles.md#延燒 — spreading fire follows the rule-layer wind and is held back by rain and snow.
+            _encounter.SetFireEnvironment(setup.Seed, FireWindAt, FireWetAt);
+            // REQ: planet-world.md#地震噴發 — same regions as the weather; cracks only open on volcanic ground.
+            _encounter.AttachQuakes(setup.Seed, _weather.RegionAt, r => weatherPlan.Regions[r].Center,
+                2f * config.Radius / math.sqrt(math.max(1, weatherPlan.Regions.Count)), setup.PlanetType.Id == "lava_planet", VolcanicAt);
             if (objects != null)
             {
                 // REQ: destructibles.md#影素材 — night where the object stands: the sun is below its local horizon.
@@ -885,6 +1141,13 @@ namespace Cosmimera.Bootstrap.Demo
                 RunSpawn spawn = _plan.Spawns[s];
                 CreatureDef def = FindForm(wildPool, spawn.CreatureId);
                 int level = _progression.WildLevel(D0Difficulty, _plan.Regions[spawn.Region].Tier, spawn.Role);
+                if (_setup.IsBeginnerQuest && spawn.Role == SpawnRole.Boss)
+                {
+                    // REQ: beginner-quest.md (Stage 6) — juvenile boss fights alongside the rival in a 2vs2 tutorial battle.
+                    ReserveBeginnerBossSpawn(s, def, level, spawn.Direction, spawn.Individual);
+                    continue;
+                }
+
                 EncounterUnit u = spawn.Role == SpawnRole.Boss
                     ? _encounter.AddBoss(def, null, spawn.Direction, level, spawn.Individual)
                     : spawn.ConfrontationId >= 0
@@ -930,6 +1193,14 @@ namespace Cosmimera.Bootstrap.Demo
             _team = new TeamState(roster, balance.SwitchCooldownMs);
             _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
             ConfigureJournal();
+            ConfigureBeginnerQuest();
+            ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
+            ConfigureLobbyGatekeepers(toonShader);
+            if (_rig != null && _rig.Character != null)
+            {
+                _rig.Character.SetCeilingProvider(surface.CeilingAltitude);
+            }
+
             UpdateEnvironment(PlayerPosition());
         }
 
@@ -945,6 +1216,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (_rig.TrySpawn(_actions))
                 {
                     _started = true;
+                    ApplyResumeCheckpointIfAny();
                     SummonOpening();
                     UpdateBgm();
                 }
@@ -952,10 +1224,21 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            TickCheckpoints();
+
             // Unscaled and ahead of the journal-pause return: rumble and slow-mo must still time out while paused.
             _hitFeel?.Update(Time.unscaledDeltaTime);
+            // Combat time stands still while the ground under a dungeon gate swap has no colliders yet.
+            if (StepTrialTransit())
+            {
+                SyncViews();
+                return;
+            }
             if (ReadJournalInput()) return;
             ReadInput();
+            TickLightning(Time.deltaTime);
+            TickSea(Time.deltaTime);
+            TickDive(Time.deltaTime);
             _accumulator += Time.deltaTime * 1000f;
             int steps = 0;
             while (_accumulator >= TickMs && steps++ < 5)
@@ -981,6 +1264,10 @@ namespace Cosmimera.Bootstrap.Demo
 
             SyncViews();
             UpdateFleeingViews(Time.deltaTime);
+            if (_trial != null)
+            {
+                SyncTrialMaster();
+            }
         }
 
         private void SummonOpening()
@@ -996,21 +1283,14 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
-            if (_setup.IsBeginnerQuest && _setup.RivalStarter != null)
+            if (_setup.IsBeginnerQuest)
             {
-                _bqTrainerId = _encounter.RegisterTrainer();
-                EncounterUnit rival = _encounter.AddTrainerCreature(_setup.RivalStarter, null,
-                    BesidePlayer(player, 2), _progression.StarterLevel, _bqTrainerId, 0);
-                _bqRivalUnitId = rival.Id;
-                CreateView(rival, SpawnRole.Normal);
-                _encounter.StartTrainerBattle(_bqTrainerId);
-                _vessel = _setup.PlayerStarterVessel;
-                Toast($"{BeginnerQuestRules.CharacterDisplayName(_setup.RivalId)}：來一場初戰吧！");
+                StartBeginnerFriendBattle(player);
             }
         }
 
         private WeatherProfile WeatherAt(float3 direction, long nowMs) =>
-            _setup.IsBeginnerQuest ? WeatherProfiles.For(WeatherKind.Clear) : _weather.ProfileAt(direction, nowMs);
+            _setup.IsBeginnerQuest || TrialInside ? WeatherProfiles.For(WeatherKind.Clear) : _weather.ProfileAt(direction, nowMs);
 
         private WeatherControlResult TryControlWeather(WeatherKind kind)
         {
@@ -1033,18 +1313,225 @@ namespace Cosmimera.Bootstrap.Demo
             return result;
         }
 
+        // REQ: planet-world.md#海浪 — every frame (not per tick): swells move continuously. Follows the eased heading the
+        // grass bends to, so the sea and the meadow never disagree about the wind.
+        private void TickSea(float dt)
+        {
+            if (_sea == null || _atmosphere == null) return;
+            float3 player = PlayerPosition();
+            float3 direction = _rig.Config.ToDirection(player);
+            PlanetFrame frame = PlanetFrame.FromUp(direction);
+            float heading = _atmosphere.WindHeadingRad;
+            float3 downwind = frame.East * math.cos(heading) + frame.North * math.sin(heading);
+            WeatherState s = _playerWeatherState;
+            float wind = TrialInside ? 0f : math.saturate(math.max(0.12f, math.max(s.WindPermille, s.ThunderPermille) / 1000f) + 0.35f * _playerGust);
+            _sea.Step(_rig.Config.ToWorld(direction, PlanetLook.SeaLevelM), direction, downwind, wind, _playerGust, dt);
+            _sea.Publish(_playerGust);
+            if (_surface == null || TrialInside) return;
+            _groundAltitudeOrZero ??= _surface.GroundAltitude;
+            _spray.Tick(dt, _rig.Config, player, downwind, _sea, _groundAltitudeOrZero, PlanetLook.SeaLevelM);
+        }
+
+        // REQ: planet-world.md 潛水視覺 — measured at the camera against the swell above it, so a wave washing over a
+        // low camera dunks the view for a moment the way a real one would.
+        private void TickDive(float dt)
+        {
+            if (_underwater == null || _atmosphere == null) return;
+            Transform camera = _rig.Camera.transform;
+            float3 eye = camera.position;
+            float3 direction = _rig.Config.ToDirection(eye);
+            float surface = PlanetLook.SeaLevelM + _sea.HeightAt(_rig.Config.ToWorld(direction, PlanetLook.SeaLevelM));
+            float depth = TrialInside ? 0f : surface - _rig.Config.Altitude(eye);
+            _atmosphere.SetUnderwater(depth, _shallowWater, _deepWater);
+            float3 toSun = -(float3)_rig.Sun.transform.forward;
+            float daylight = math.saturate((math.dot(direction, toSun) + 0.05f) / 0.3f);
+            // Indoors the floor sits below sea level: no sea there, so no caustics on dungeon floors.
+            float seaRadius = TrialInside ? 0f : _rig.Config.Radius + PlanetLook.SeaLevelM;
+            _underwater.Tick(dt, _rig.Config, camera, PlayerPosition(), depth, seaRadius, toSun, daylight);
+        }
+
+        private void TickLightning(float dt)
+        {
+            if (_lightning == null || _atmosphere == null) return;
+            float3 direction = _rig.Config.ToDirection(PlayerPosition());
+            float thunder = TrialInside ? 0f : _playerWeatherState.ThunderPermille / 1000f;
+            // Cached delegate: a method group here would allocate every frame.
+            _groundAltitudeAt ??= BoltGround;
+            float shake = _lightning.Tick(dt, _rig.Config, direction, thunder, _groundAltitudeAt);
+            if (shake > 0f) _hitFeel?.PlayEnvironmentShake(shake);
+            _atmosphere.SetStorm(_stormDarkness, _lightning.Flash);
+        }
+
+        // REQ: weather.md#落雷 — open sky only: no strikes in indoor dungeons, trials inside, or the cradle planet's tutorial.
+        private int2 StormAt(float3 direction, long timeMs)
+        {
+            if (_setup.IsBeginnerQuest || TrialInside || _weather.IsIndoor(direction)) return int2.zero;
+            WeatherState state = _weather.StateAt(direction, timeMs);
+            int ion = state.Exotic == WeatherKind.IonStorm ? state.ExoticStrengthPermille : 0;
+            return new int2(state.ThunderPermille, ion);
+        }
+
+        private bool VolcanicAt(float3 direction)
+        {
+            if (_setup.IsBeginnerQuest || TrialInside || _weather.IsIndoor(direction) || _rig.IsSea(direction)) return false;
+            if (_setup.PlanetType.Id == "lava_planet") return true;
+            return _terrainAt(direction).Id is "volcano" or "volcano_foothills" or "rift_valley";
+        }
+
+        private int2 FireWindAt(float3 direction, long timeMs)
+        {
+            if (TrialInside || _weather.IsIndoor(direction)) return int2.zero;
+            return new int2(_weather.WindHeadingAt(direction, timeMs), _weather.StateAt(direction, timeMs).WindPermille);
+        }
+
+        private int FireWetAt(float3 direction, long timeMs)
+        {
+            if (TrialInside || _weather.IsIndoor(direction)) return 0;
+            WeatherState state = _weather.StateAt(direction, timeMs);
+            return math.max(state.RainPermille, state.SnowPermille);
+        }
+
+        private void DrawFires(float3 player)
+        {
+            if (_fireView == null || _objectTable == null || _worldObjects == null) return;
+            _burning.Clear();
+            for (int i = 0; i < _objectTable.Count; i++)
+            {
+                if (!_objectTable.IsBurning(i)) continue;
+                long id = _objectTable.IdOf(i);
+                float radius = _worldObjects.TryGet(id, out DestructibleCandidate c) ? c.HitRadiusM : 0.6f;
+                _burning.Add(new FireView.Burning
+                {
+                    Id = id, Center = _objectTable.CenterOf(i), RadiusM = radius,
+                    Kind = FireRules.KindOf(_objectTable.CompositionOf(i)),
+                });
+            }
+
+            _burnFocus = player;
+            _byPlayerDistance ??= (a, b) => math.distancesq(a.Center, _burnFocus).CompareTo(math.distancesq(b.Center, _burnFocus));
+            if (_burning.Count > 1) _burning.Sort(_byPlayerDistance);
+            float3 direction = _rig.Config.ToDirection(player);
+            float3 downwind = WindField.Tangent(direction, _weather.WindHeadingAt(direction, _nowMs));
+            float darkness = IsNight(direction) ? 1f : _stormDarkness * 0.6f;
+            _fireView.Sync(_burning, _rig.Config, downwind, _playerWeatherState.WindPermille / 1000f, darkness, TickMs / 1000f);
+        }
+
+        private void DrawQuakes(float3 player)
+        {
+            if (_quakeView == null || _encounter == null) return;
+            _groundAltitudeAt ??= BoltGround;
+            float3 direction = _rig.Config.ToDirection(player);
+            float darkness = IsNight(direction) ? 1f : _stormDarkness * 0.6f;
+            float shake = _quakeView.Sync(_encounter.Quakes, _encounter.PendingBombs, _rig.Config, _groundAltitudeAt, _nowMs,
+                player, _weather.RegionAt(direction), darkness, TickMs / 1000f);
+            if (shake > 0f) _hitFeel?.PlayEnvironmentShake(shake);
+            if (_fireView == null) return;
+            foreach (VolcanicBomb bomb in _encounter.LandedBombs)
+            {
+                float ground = _groundAltitudeAt(bomb.Direction);
+                float3 at = _rig.Config.ToWorld(bomb.Direction, ground);
+                _fireView.Blast(at, bomb.Direction);
+                _fireView.Scorch(at, bomb.Direction, QuakeSchedule.BombRadiusM * 0.6f, FireKind.Lava);
+            }
+        }
+
+        // REQ: destructibles.md#延燒 — a kerosene blast flashes; anything that burnt down leaves scorched ground.
+        private void FireAftermath(in ObjectEvent ev)
+        {
+            if (_fireView == null || !_worldObjects.TryGet(ev.ObjectId, out DestructibleCandidate c)) return;
+            float3 up = _rig.Config.ToDirection(c.Center);
+            if ((ev.Reactions & ObjectReaction.Blasted) != 0) _fireView.Blast(c.Center, up);
+            if (ev.Kind != ObjectEventKind.Destroyed || ev.Cause != DestroyCause.Burnt) return;
+            float ground = _surface != null ? _surface.GroundAltitude(up) : 0f;
+            _fireView.Scorch(_rig.Config.ToWorld(up, ground), up, math.max(0.4f, c.HitRadiusM), FireRules.KindOf(c.Composition));
+        }
+
+        private void DrawStrikes(float3 playerDirection)
+        {
+            if (_lightning == null || _encounter == null) return;
+            _groundAltitudeAt ??= BoltGround;
+            foreach (LightningStrike strike in _encounter.LandedStrikes)
+                _lightning.StrikeAt(_rig.Config, strike.Direction, playerDirection, _groundAltitudeAt);
+            _warningDirections.Clear();
+            _warningProgress.Clear();
+            foreach (LightningStrike strike in _encounter.PendingStrikes)
+            {
+                _warningDirections.Add(strike.Direction);
+                _warningProgress.Add(1f - (strike.LandsAtMs - _nowMs) / (float)LightningSchedule.WarningMs);
+            }
+
+            _lightning.ShowWarnings(_rig.Config, _warningDirections, _warningProgress, _groundAltitudeAt);
+        }
+
+        // Bolts over the sea end on the water, not on the sea floor.
+        private float BoltGround(float3 direction)
+        {
+            float ground = _surface != null ? _surface.GroundAltitude(direction) : 0f;
+            return _hasOcean ? math.max(ground, PlanetLook.SeaLevelM) : ground;
+        }
+
+        // Presentation: how deep under a cyclone's cloud shield a point is (0 outside, 1 near the eye wall).
+        private float CycloneCover(float3 direction)
+        {
+            float cover = 0f;
+            foreach (WindVortex v in _vortexScratch)
+            {
+                if (v.Kind != VortexKind.Cyclone) continue;
+                float r = math.distance(direction, v.Center) * _rig.Config.Radius;
+                float shield = 1f - math.smoothstep(0.35f * v.OuterM, 0.85f * v.OuterM, r);
+                // The eye is clear.
+                shield *= math.smoothstep(0.5f * v.CoreM, v.CoreM, r);
+                cover = math.max(cover, shield * v.PeakPermille / 1000f);
+            }
+
+            return cover;
+        }
+
         private void UpdateEnvironment(float3 player)
         {
             float3 direction = _rig.Config.ToDirection(player);
             _playerTerrain = _terrainAt(direction);
+            _playerAltitudeM = _rig.Config.Altitude(player);
+            float groundAltM = _surface != null ? _surface.GroundAltitude(direction) : _playerAltitudeM;
+            // Indoors there is no sea: the flat floor sits at altitude 0, below the planet's sea level.
+            _playerWaterDepthM = _hasOcean && !TrialInside && (_rig.IsSea(direction) || groundAltM < PlanetLook.SeaLevelM)
+                ? math.max(0f, PlanetLook.SeaLevelM - groundAltM)
+                : 0f;
             _playerWeather = WeatherAt(direction, _nowMs);
             WeatherState state = _weather.StateAt(direction, _nowMs);
             _playerWeatherState = state;
             bool volcanic = _setup.PlanetType.Id == "lava_planet" || _playerTerrain.Id is "volcano" or "volcano_foothills";
-            _weatherView?.Apply(player, PlanetFrame.FromUp(direction), state, volcanic);
+            // REQ: weather.md#風向 — one rule-layer wind field drives grass, trees, particles and debris together. The
+            // shaders take the prevailing heading and add each vortex's swirl per vertex; particles take the local wind.
+            WindSample windHere = _weather.WindAt(direction, _nowMs);
+            int heading = windHere.HeadingTenths;
+            float vortex = TrialInside ? 0f : windHere.VortexPermille / 1000f;
+            _vortexScratch.Clear();
+            if (!TrialInside) _weather.VorticesAround(direction, _nowMs, VortexViewReachM, _vortexScratch);
+            _atmosphere.SetVortices(_vortexScratch, direction);
+            _vortexView?.Sync(_vortexScratch, _rig.Config, player, _groundAltitudeAt ??= BoltGround);
+            float gust = TrialInside ? 0f : math.max(_weather.GustAt(direction, _nowMs) / 1000f, vortex * 0.8f);
+            _playerGust = gust;
+            if (_weatherView != null)
+            {
+                bool foliage = _worldObjects != null && _worldObjects.HasFoliage(direction, DebrisFoliageReachM);
+                bool settlement = _nearSettlement != null && _nearSettlement(direction);
+                _weatherView.Apply(player, PlanetFrame.FromUp(direction), state, volcanic, WindField.Tangent(direction, heading),
+                    gust, foliage, settlement);
+            }
+
             float cloud = math.max(_baseCloud, state.CloudsPermille / 1000f);
             float storm = math.max(math.max(state.RainPermille, state.SnowPermille), math.max(state.SandPermille, state.ThunderPermille)) / 1000f;
-            _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm), _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f));
+            _atmosphere.SetWindHeading(TrialInside ? heading : _weather.PrevailingHeadingAt(direction, _nowMs));
+            // Under a cyclone's bands the sky closes in even when the local weather vector is fair.
+            float cyclone = TrialInside ? 0f : CycloneCover(direction);
+            cloud = math.max(cloud, cyclone);
+            _atmosphere.SetWeather(math.lerp(cloud, 0.96f, storm),
+                _baseWind + 1.4f * math.max(storm, state.WindPermille / 1000f) + 1.6f * gust);
+            // A violent gust is felt as well as seen (weather.md#風向 暴風碎片).
+            if (gust > 0.7f && !TrialInside) _hitFeel?.PlayEnvironmentShake(0.03f * (gust - 0.7f) / 0.3f);
+            _stormDarkness = TrialInside ? 0f : math.saturate(math.max(math.max(state.RainPermille, state.ThunderPermille) / 1000f,
+                cyclone * 0.7f));
             _atmosphere.SetSimulationTime(_nowMs);
             ApplyPlayerEnvironment();
             _atmosphere.SetVisibilityRadius(_playerWeather.PlayerVisibilityRadiusM);
@@ -1052,28 +1539,49 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void ApplyPlayerEnvironment()
         {
+            if (_rig == null || _rig.Character == null) return;
             float terrain = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.MoveSpeedMultiplier) : _playerTerrain.MoveSpeedMultiplier;
             float sprint = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.SprintSpeedMultiplier) : _playerTerrain.SprintSpeedMultiplier;
             float acceleration = _utilityModifiers.IgnoresTerrainSlow ? math.max(1f, _playerTerrain.GroundAccelerationMultiplier) : _playerTerrain.GroundAccelerationMultiplier;
             // REQ: weather.md#地表累積 — water, snow, sand or ash on the ground slows walking, sprinting and jumping alike.
             float ground = _playerWeather.PlayerGroundMultiplier;
+            WaterAccessResult water = SpatialTraversalRules.EvaluateWaterAccess(_utilityModifiers, math.max(0f, _playerWaterDepthM));
+            AltitudeAccessResult altitude = SpatialTraversalRules.EvaluateAltitudeAccess(_utilityModifiers, _rig.Config.Radius, math.max(0f, _playerAltitudeM));
+            float wadeScale = _hasOcean && _playerWaterDepthM > 0.05f && _playerWaterDepthM <= FieldUtilityRules.DiveDepthThresholdM &&
+                              !_utilityModifiers.CanSwim && !_utilityModifiers.CanDive
+                ? water.SurfaceSpeedPermille / 1000f
+                : 1f;
             _rig.Character.SetTerrainModifiers(
-                terrain * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
-                sprint * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
+                terrain * wadeScale * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerMoveSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f),
+                sprint * wadeScale * _utilityModifiers.MoveSpeedPermille / 1000f * _playerWeather.PlayerSprintSpeedMultiplier * ground * (1f + _playerEquipment.PlayerSpeedPercent * 0.01f), acceleration);
             _rig.Character.SetJumpHeightMultiplier(ground);
+            bool enforceWater = _hasOcean && (_playerWaterDepthM > 0f || _playerAltitudeM <= PlanetLook.SeaLevelM + 0.5f);
+            _rig.Character.SetTraversalEnvelope(new TraversalEnvelope(
+                altitude.CanLiftOff,
+                altitude.MaxAltitudeM,
+                altitude.AirSpeedPermille / 1000f,
+                water.CanCrossSurface && (_utilityModifiers.CanSwim || _utilityModifiers.CanDive),
+                water.CanSubmerge,
+                PlanetLook.SeaLevelM,
+                FieldUtilityRules.DiveDepthThresholdM,
+                water.SurfaceSpeedPermille / 1000f,
+                water.UnderwaterSpeedPermille / 1000f,
+                enforceWater));
         }
 
         private void StepCombat()
         {
             _nowMs += TickMs;
             _worldObjects?.StepField(_nowMs);
-            _fieldView?.Sync(_nowMs);
             float3 player = PlayerPosition();
+            _fieldView?.Sync(_nowMs, player, 180f);
             UpdateEnvironment(player);
             TrackWalk(player);
             // SOL P2-12 R3-02: a switch made by input since the last tick must count before this tick's region payout.
             RecordAppearances();
             UpdateRegion(player);
+            StepLobbyGatekeepers(player);
+            StepTrial(player);
             if (_nowMs >= _nextAffixMs)
             {
                 _nextAffixMs = _nowMs + AffixRefreshMs;
@@ -1105,6 +1613,7 @@ namespace Cosmimera.Bootstrap.Demo
                 else if (_vitals.TryRoll(_nowMs, _playerWeather, _foodBuffs.GetRollCooldownModPercent(_nowMs)) == RollResult.Ok)
                 {
                     _lastRollAtMs = _nowMs;
+                    NotifyBeginnerAdventureControl();
                 }
             }
 
@@ -1141,8 +1650,38 @@ namespace Cosmimera.Bootstrap.Demo
             float3 playerUp = _rig.Config.ToDirection(player);
             float3 velocity = _rig.Character.Velocity;
             _populace?.Step(_nowMs, TickMs);
+            if (_trainers != null)
+            {
+                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0 &&
+                    !TrialInside)
+                {
+                    _trainers.Step(_nowMs, TickMs);
+                    TrainerPursuitResult pursuit = _trainers.StepPursuit(playerUp, _rig.Config.Radius, TickMs, out int trainerIdx);
+                    if (pursuit == TrainerPursuitResult.Spotted && trainerIdx >= 0)
+                    {
+                        string profName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[trainerIdx].ProfessionId);
+                        Toast(_copy.Ui("ui.trainer.spotted").Replace("{trainer}", profName));
+                    }
+                    else if (pursuit == TrainerPursuitResult.Evaded && trainerIdx >= 0)
+                    {
+                        string profName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[trainerIdx].ProfessionId);
+                        Toast(_copy.Ui("ui.trainer.evaded").Replace("{trainer}", profName));
+                    }
+                    else if (pursuit == TrainerPursuitResult.Engaged && trainerIdx >= 0)
+                    {
+                        StartWanderingTrainerBattle(trainerIdx);
+                    }
+                }
+                else if (_trainers.PursuingTrainer >= 0)
+                {
+                    _trainers.CancelPursuit();
+                }
+            }
             _encounter.SetPlayerMoveSpeedMs(math.length(velocity - playerUp * math.dot(velocity, playerUp)));
             _encounter.Tick(_nowMs, TickMs, player, _command, _mainId);
+            DrawStrikes(_rig.Config.ToDirection(player));
+            DrawFires(player);
+            DrawQuakes(player);
             ApplyObjectEvents();
             CollectGroundPickups(player);
             CollectHarvestPiles(player);
@@ -1207,6 +1746,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (playerDowned)
             {
+                if (TryRecoverBeginnerWipeout() || TryRecoverLobbyWipeout())
+                {
+                    return;
+                }
+
                 // Q-C33 (2026-11-10): Downed settles the run as a defeat; captures, XP and materials earned so far
                 // (including knock-outs in this same tick, paid above) still return to the lobby (RunOutcome).
                 End(false, false);
@@ -1217,6 +1761,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             RefillField(player);
             ExpireKnockedOut();
+            StepBeginnerQuest();
             CheckEnd();
         }
 
@@ -1233,12 +1778,18 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (u.Side == EncounterSide.Player)
             {
+                if (unitId == _bqFriendAllyUnitId)
+                {
+                    _encounter.Unfield(unitId);
+                    return;
+                }
 
                 _team.Faint(unitId);
                 _encounter.Unfield(unitId);
                 if (_mainId == unitId)
                 {
                     _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
+                    UpdateDirectControlState();
                 }
 
                 return;
@@ -1264,6 +1815,10 @@ namespace Cosmimera.Bootstrap.Demo
                 _quest.OnKnockedOut(w.Spawn, RunPlanner.MainElement(u.Def));
                 PayQuest(w.AppearedAtKnockout);
             }
+            if (role != SpawnRole.Boss)
+            {
+                NotifyBeginnerWildDefeated();
+            }
             // REQ: planet-world.md#地表地牢 — the key elite's knock-out opens the boss room for the rest of the run.
             if (_dungeon != null && w.Spawn == _dungeon.KeySpawn && _surface.LocksClosed)
             {
@@ -1275,6 +1830,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (role == SpawnRole.Boss)
             {
                 _bossDownAtMs = _nowMs;
+                _surfaceBossDefeated = true;
+                TryEmitCheckpoint(SaveCheckpointKind.OverworldAuto);
                 Toast(_copy.Ui("ui.hud.knocked_out"));
                 UpdateBgm();
             }
@@ -1302,7 +1859,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void RefillField(float3 player)
         {
-            if (_team.Active.Count >= 2)
+            if (_returnedToPlayer || _team.Active.Count >= 2)
             {
                 return;
             }
@@ -1328,6 +1885,10 @@ namespace Cosmimera.Bootstrap.Demo
             if (_mainId == CombatAi.NoTarget && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
+                if (_team.InCombat)
+                {
+                    UpdateDirectControlState();
+                }
             }
         }
 
@@ -1339,27 +1900,75 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void CheckEnd()
         {
-            if (_bqTrainerId >= 0)
+            if (CheckTrialEnd())
             {
-                TrainerBattleState state = _encounter.TrainerState(_bqTrainerId);
-                if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle)
+                return;
+            }
+
+            if (CheckBeginnerQuestEnd())
+            {
+                return;
+            }
+
+            if (_activeEncounterTrainerId >= 0)
+            {
+                TrainerBattleState state = _encounter.TrainerState(_activeEncounterTrainerId);
+                bool poolAlive = false;
+                foreach (int id in _team.Pool)
+                {
+                    poolAlive |= !_encounter.Units[id].Combatant.IsFainted;
+                }
+
+                if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle || !poolAlive)
                 {
                     bool won = state == TrainerBattleState.Defeated;
-                    _bqTrainerId = -1;
-                    if (_bqRivalUnitId >= 0)
+                    int wIdx = _activeWanderingTrainerIndex;
+                    int trainerUnitCount = _activeTrainerUnitIds.Count;
+                    _activeEncounterTrainerId = -1;
+                    _activeWanderingTrainerIndex = -1;
+                    CleanupActiveTrainerUnits();
+
+                    if (ResolveGatekeeperBattleEnd(won))
                     {
-                        _encounter.Remove(_bqRivalUnitId);
-                        _bqRivalUnitId = -1;
+                        return;
                     }
 
-                    RefillField(PlayerPosition());
-                    List<DialogueLine> lines = BeginnerQuestRules.FirstBattleOutcomeDialogue(_setup.RivalId ?? string.Empty, won);
-                    if (lines.Count > 0)
+                    if (wIdx >= 0 && _trainers != null && wIdx < _trainers.Trainers.Count)
                     {
-                        Toast(lines[0].Speaker + "：" + lines[0].FallbackText);
+                        string profId = _trainers.Trainers[wIdx].ProfessionId;
+                        _outcome.RecordTrainerBattle(profId);
+                        string profName = _copy.Ui("ui.trainer.prof." + profId);
+                        if (won)
+                        {
+                            _trainers.MarkDefeated(wIdx);
+                            _outcome.GoldEarned += ShopAndRepairRules.TrainerVictoryGoldReward(trainerUnitCount);
+                            RestoreTrialParty();
+                            RefillField(PlayerPosition());
+                            Toast(_copy.Ui("ui.trainer.victory").Replace("{trainer}", profName));
+                            return;
+                        }
+
+                        Toast(_copy.Ui("ui.trainer.defeat").Replace("{trainer}", profName));
+                        if (_setup.IsLobbyPlanet)
+                        {
+                            RecoverLobbyAtNearestTown();
+                            return;
+                        }
+
+                        End(false, false);
+                        return;
                     }
-                    return;
                 }
+            }
+
+            if (_setup.IsLobbyPlanet)
+            {
+                if (!AnyPartyPoolAlive())
+                {
+                    TryRecoverLobbyWipeout();
+                }
+
+                return;
             }
 
             bool anyLeft = false;
@@ -1370,6 +1979,11 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (!anyLeft)
             {
+                if (TryRecoverBeginnerWipeout())
+                {
+                    return;
+                }
+
                 End(false, false);
                 return;
             }
@@ -1541,11 +2155,115 @@ namespace Cosmimera.Bootstrap.Demo
             _interactable = _interactTarget < 0 ? _encounter.NearestInteractable(player) : -1;
         }
 
+        private bool StartWanderingTrainerBattle(int trainerIndex)
+        {
+            if (_ended || _trainers == null || _wildPool == null || _wildPool.Count == 0 ||
+                trainerIndex < 0 || trainerIndex >= _trainers.Trainers.Count || _trainers.IsDefeated(trainerIndex) ||
+                _team.InCombat || _encounter.HasActiveTrainerBattle || HasActiveBeginnerTrainerBattle || _activeEncounterTrainerId >= 0)
+            {
+                return false;
+            }
+
+            float3 player = PlayerPosition();
+            RefillField(player);
+            if (_team.Active.Count == 0)
+            {
+                return false;
+            }
+
+            if (_interactTarget >= 0)
+            {
+                CloseInteract();
+            }
+
+            _trainers.CancelPursuit();
+            RunTrainer trainer = _trainers.Trainers[trainerIndex];
+            float3 tDir = _trainers.CurrentDirection(trainerIndex);
+            int encTrainerId = _encounter.RegisterTrainer();
+            _activeTrainerUnitIds.Clear();
+            for (int m = 0; m < trainer.Team.Count; m++)
+            {
+                TrainerTeamMember member = trainer.Team[m];
+                CreatureDef def = FindForm(_wildPool, member.CreatureId);
+                float3 spawnDir = BesidePlayer(tDir, m + 1);
+                EncounterUnit u = _encounter.AddTrainerCreature(def, null, spawnDir, member.Level, encTrainerId, m);
+                _activeTrainerUnitIds.Add(u.Id);
+                CreateView(u, SpawnRole.Normal);
+            }
+
+            if (!_encounter.StartTrainerBattle(encTrainerId))
+            {
+                CleanupActiveTrainerUnits();
+                return false;
+            }
+
+            _activeWanderingTrainerIndex = trainerIndex;
+            _activeEncounterTrainerId = encTrainerId;
+            if (!_team.InCombat)
+            {
+                BeginCombat();
+            }
+
+            RecordAppearances();
+            string profName = _copy.Ui("ui.trainer.prof." + trainer.ProfessionId);
+            Toast(_copy.Ui("ui.trainer.challenge").Replace("{trainer}", profName));
+            return true;
+        }
+
+        private void CleanupActiveTrainerUnits()
+        {
+            for (int i = 0; i < _activeTrainerUnitIds.Count; i++)
+            {
+                int uid = _activeTrainerUnitIds[i];
+                if (_lockedTarget == uid)
+                {
+                    _lockedTarget = -1;
+                }
+
+                _encounter.Remove(uid);
+                if (_views.TryGetValue(uid, out ICreatureView view))
+                {
+                    view.Dispose();
+                    _views.Remove(uid);
+                    _viewDefs.Remove(uid);
+                    _viewRoles.Remove(uid);
+                }
+
+                if (_blockShields.TryGetValue(uid, out GameObject shield))
+                {
+                    if (shield != null)
+                    {
+                        Destroy(shield);
+                    }
+
+                    _blockShields.Remove(uid);
+                }
+            }
+
+            _activeTrainerUnitIds.Clear();
+        }
+
         private void OpenInteract()
         {
+            if (TryTrialInteract())
+            {
+                return;
+            }
+
             int id = _encounter.NearestInteractable(PlayerPosition());
             if (id < 0)
             {
+                if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                    !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
+                {
+                    int trainerIdx = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
+                        _rig.Config.Radius);
+                    if (trainerIdx >= 0)
+                    {
+                        StartWanderingTrainerBattle(trainerIdx);
+                    }
+                }
+
                 return;
             }
 
@@ -1680,6 +2398,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TryCapture()
         {
+            if (_team.InCombat)
+            {
+                Toast("戰鬥中無法投擲收服，請先結束戰鬥或脫戰");
+                return;
+            }
+
             int best = FindCaptureTarget(CaptureReachM);
             if (best < 0)
             {
@@ -1715,6 +2439,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Reward(XpSource.Capture, w.Level, false, battle);
                 _quest.OnCaptured();
                 PayQuest(battle);
+                NotifyBeginnerWildCaptured();
                 Toast(_copy.Ui("ui.hud.capture_success") + " " + _copy.Name(creatureId));
             }
             else
@@ -1732,7 +2457,8 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 bool friendly = _encounter.Units[kv.Key].IsFriendlyAfterConfrontation && _encounter.Units[kv.Key].IsActive;
-                bool knocked = kv.Value.KnockedOutAtMs >= 0 && _nowMs - kv.Value.KnockedOutAtMs <= KnockedOutWindowMs;
+                // REQ: combat.md#收服時機 (Q-C55) — knocked-out wilds remain capturable until captured or region unload.
+                bool knocked = kv.Value.KnockedOutAtMs >= 0;
                 if (kv.Value.Gone || (!knocked && !friendly))
                 {
                     continue;
@@ -1759,7 +2485,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
 
                 int region = u.Side == EncounterSide.Player ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player))
-                    : RegionOf(_wild[u.Id]);
+                    : (u.IsTrainerOwned ? RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(u.Position)) : RegionOf(_wild[u.Id]));
                 string affix = _plan.Regions[region].AffixId;
                 if (affix == null || !affix.EndsWith("_surge"))
                 {
@@ -1774,12 +2500,56 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private float SettlementAltitudeAt(RunSettlement settlement) =>
+            settlement.Domain == SettlementDomain.SkyIsland
+                ? settlement.AltitudeM
+                : (_surface != null ? _surface.GroundAltitude(settlement.Center) : settlement.AltitudeM);
+
+        // Shared by settlement discovery and the settlement kitchen (cuisine.md#1) so "inside a settlement" means one thing.
+        private bool IsWithinSettlement(RunSettlement s, float3 player)
+        {
+            if (!LayoutClearance.IsInhabited(s.Kind)) return false;
+            float discoveryRadiusM = math.max(24f, LayoutClearance.MinSettlementRadiusM + 8f);
+            if (math.distance(_rig.Config.ToDirection(player), s.Center) * _rig.Config.Radius > discoveryRadiusM) return false;
+            return math.abs(_rig.Config.Altitude(player) - SettlementAltitudeAt(s)) <= 25f;
+        }
+
         private void UpdateRegion(float3 player)
         {
+            if (_layout != null)
+            {
+                for (int i = 0; i < _layout.Settlements.Count; i++)
+                {
+                    bool gated = _setup.IsLobbyPlanet && i < LobbyPlanet.SettlementRoster.Count &&
+                                 LobbyPlanet.GatekeeperForSettlement(i) != LobbyGatekeeper.None;
+                    if (!gated && !_discoveredSettlements.Contains(i) && IsWithinSettlement(_layout.Settlements[i], player))
+                    {
+                        _discoveredSettlements.Add(i);
+                        TryEmitCheckpoint(CurrentWorldKind == SaveWorldKind.RandomPlanet
+                            ? SaveCheckpointKind.RandomVillage
+                            : SaveCheckpointKind.OverworldAuto);
+                    }
+                }
+            }
+
             int region = RunPlanner.RegionAt(_plan, _rig.Config.ToDirection(player));
             if (region != _region)
             {
+                int previousRegion = _region;
                 _region = region;
+                if (previousRegion >= 0)
+                {
+                    // REQ: combat.md#收服時機 (Q-C55) — knocked-out wilds remain until their region is left.
+                    foreach (KeyValuePair<int, WildInfo> kv in _wild)
+                    {
+                        WildInfo w = kv.Value;
+                        if (!w.Gone && w.KnockedOutAtMs >= 0 && RoleOf(w) != SpawnRole.Boss && RegionOf(w) == previousRegion)
+                        {
+                            w.Gone = true;
+                            _encounter.Remove(kv.Key);
+                        }
+                    }
+                }
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
                 PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
@@ -1989,6 +2759,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private bool AnyEngaged()
         {
+            if (_encounter.HasActiveTrainerBattle)
+            {
+                return true;
+            }
+
             foreach (KeyValuePair<int, WildInfo> kv in _wild)
             {
                 if (_encounter.Units[kv.Key].Engaged && _encounter.Units[kv.Key].IsActive)
@@ -2237,6 +3012,13 @@ namespace Cosmimera.Bootstrap.Demo
         // Two presses within 3 s: the first only arms and explains, so a stray press cannot throw away a run.
         private void RequestAbandon()
         {
+            if (_setup.IsLobbyPlanet)
+            {
+                // Returning from the lobby planet settles gathered items, captures and trial badges cleanly (not abandoned).
+                End(true, false);
+                return;
+            }
+
             if (_nowMs <= _abandonArmedUntilMs)
             {
                 End(false, true);
@@ -2261,6 +3043,7 @@ namespace Cosmimera.Bootstrap.Demo
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
             _outcome.CraftStock = _craftInventory.Snapshot();
+            _outcome.CraftLooks = _craftInventory.LookSnapshot();
             _onEnd(_outcome);
         }
 
@@ -2272,6 +3055,7 @@ namespace Cosmimera.Bootstrap.Demo
         {
             foreach (ObjectEvent ev in _encounter.ObjectEvents)
             {
+                FireAftermath(ev);
                 if (ev.Kind != ObjectEventKind.Destroyed)
                 {
                     ShoveObject(ev);
@@ -2295,7 +3079,11 @@ namespace Cosmimera.Bootstrap.Demo
                     }
                 }
             }
-            else if (ev.ObjectId >= WorldObjects.FieldIdBase)
+            else if (WorldObjects.IsDungeonProp(ev.ObjectId))
+                {
+                    // ShatterObject already replaced the drawn prop with debris; nothing else stands on it.
+                }
+                else if (ev.ObjectId >= WorldObjects.FieldIdBase)
                 {
                     var root = _fieldView?.Root((int)(ev.ObjectId - WorldObjects.FieldIdBase));
                     if (root) root.SetActive(false);
@@ -2394,6 +3182,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return woken;
             }
 
+            if (WorldObjects.IsDungeonProp(id)) return TrialPropRoot(id);
             if (id >= WorldObjects.FieldIdBase) return _fieldView?.Root((int)(id - WorldObjects.FieldIdBase));
             if (WorldObjects.IsTreasure(id))
             {
@@ -2482,28 +3271,64 @@ namespace Cosmimera.Bootstrap.Demo
             _views[u.Id] = view;
             _viewDefs[u.Id] = u.Def;
             _viewRoles[u.Id] = role;
+            EnsureViewCacheCapacity(u.Id);
+            _viewSynced[u.Id] = false;
+            AttachUnitGearAndShield(u, view.Root);
             // Combat can attach the camera before the first render-frame pose update.
             view.Root.position = u.Position;
             view.Root.gameObject.SetActive(u.Fielded);
+        }
+
+        // REQ: gear-looks.md#範圍, #宙獸格擋護盾 — party creatures carry their equipped weapons/shields in virtual big
+        // hands, hang their charm in front, and show their armour-derived pattern on the block shield VFX.
+        private void AttachUnitGearAndShield(EncounterUnit u, Transform root)
+        {
+            GearLookSpec upper = null;
+            GearLookSpec lower = null;
+            if (_unitSaveIds.TryGetValue(u.Id, out int saveId) && _setup.Equipment != null && _craftCatalog != null)
+            {
+                List<PaperdollGear> worn = CreatureGearAttachments.CollectFor(saveId, _setup.Equipment, _craftCatalog);
+                if (worn.Count > 0)
+                {
+                    var gearRoot = new GameObject("CreatureGear").transform;
+                    gearRoot.SetParent(root, false);
+                    Bounds body = CreatureGearAttachments.ComputeBounds(root.gameObject);
+                    for (int i = 0; i < worn.Count; i++)
+                    {
+                        PaperdollGear g = worn[i];
+                        if (g.Slot == Crafting.EquipmentSlots.Upper) upper = g.Spec;
+                        else if (g.Slot == Crafting.EquipmentSlots.Lower) lower = g.Spec;
+                        else CreatureGearAttachments.AttachCreatureGear(root, gearRoot, g, _gearMaterial, _handMaterial, body, _gearMeshes);
+                    }
+                }
+            }
+
+            if (_gearMaterial != null)
+            {
+                BlockShieldSpec shieldSpec = GearLooks.BlockShieldFor(upper, lower, PlaceholderCreatureViewFactory.ColorOf(u.Def));
+                _blockShields[u.Id] = CreatureGearAttachments.AttachBlockShield(root, shieldSpec, _gearMaterial, u.BodyRadiusM, _gearMeshes);
+            }
         }
 
         private void SyncViews()
         {
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (_viewDefs.TryGetValue(u.Id, out CreatureDef shownDef) && shownDef != u.Def)
+                if (!_views.TryGetValue(u.Id, out ICreatureView view))
                 {
-                    _views[u.Id].Dispose();
-                    CreateView(u, _viewRoles[u.Id]);
+                    continue;
                 }
 
-                ICreatureView view = _views[u.Id];
-                Transform t = view.Root;
-                bool visible = u.Fielded || (_wild.TryGetValue(u.Id, out WildInfo w) && !w.Gone);
-                if (_wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone)
+                if (_viewDefs.TryGetValue(u.Id, out CreatureDef shownDef) && shownDef != u.Def)
                 {
-                    visible = false;
+                    view.Dispose();
+                    CreateView(u, _viewRoles[u.Id]);
+                    view = _views[u.Id];
                 }
+
+                Transform t = view.Root;
+                bool wildGone = _wild.TryGetValue(u.Id, out WildInfo wi) && wi.Gone;
+                bool visible = (u.Fielded || (_wild.ContainsKey(u.Id) && !wildGone)) && !wildGone && !IsHiddenByTrial(u);
 
                 _objectPhysics?.SyncPusher(u.Id, visible && !u.Combatant.IsFainted, u.Position, u.CollisionRadiusM);
                 if (IsFleeing(u.Id))
@@ -2514,6 +3339,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (t.gameObject.activeSelf != visible)
                 {
                     t.gameObject.SetActive(visible);
+                    if (u.Id < _viewSynced.Length) _viewSynced[u.Id] = false;
                 }
 
                 if (!visible)
@@ -2521,6 +3347,7 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
+                EnsureViewCacheCapacity(u.Id);
                 float3 up = _rig.Config.ToDirection(u.Position);
                 if (HoldForHitstop(u, t))
                 {
@@ -2530,31 +3357,68 @@ namespace Cosmimera.Bootstrap.Demo
                 float3 viewPos = u.Id == _mainId && _mainJumpOffsetM > 0f
                     ? u.Position + up * _mainJumpOffsetM
                     : u.Position;
-                t.SetPositionAndRotation(viewPos, quaternion.LookRotationSafe(u.Forward, up));
-                t.localScale = u.Combatant.IsOverloaded && u.Def == u.BaseDef
-                    ? new Vector3(1.15f, 1.15f, 1.15f)
-                    : Vector3.one;
+                bool overloaded = u.Combatant.IsOverloaded && u.Def == u.BaseDef;
+                if (!_viewSynced[u.Id] ||
+                    math.distancesq(_viewLastPos[u.Id], viewPos) > 1e-10f ||
+                    math.distancesq(_viewLastFwd[u.Id], u.Forward) > 1e-10f)
+                {
+                    t.SetPositionAndRotation(viewPos, quaternion.LookRotationSafe(u.Forward, up));
+                    _viewLastPos[u.Id] = viewPos;
+                    _viewLastFwd[u.Id] = u.Forward;
+                }
+
+                if (!_viewSynced[u.Id] || _viewLastOverload[u.Id] != overloaded)
+                {
+                    t.localScale = overloaded ? new Vector3(1.15f, 1.15f, 1.15f) : Vector3.one;
+                    _viewLastOverload[u.Id] = overloaded;
+                }
+
+                _viewSynced[u.Id] = true;
                 if (u.Combatant.IsFainted)
                 {
                     view.ShowFainted();
                 }
+
+                if (_blockShields.TryGetValue(u.Id, out GameObject shield) && shield != null)
+                {
+                    bool showShield = u.IsBlocking && !u.Combatant.IsFainted;
+                    if (shield.activeSelf != showShield)
+                    {
+                        shield.SetActive(showShield);
+                    }
+                }
             }
+        }
+
+        private void EnsureViewCacheCapacity(int unitId)
+        {
+            if (unitId < _viewSynced.Length)
+            {
+                return;
+            }
+
+            int size = math.max(unitId + 1, math.max(_viewSynced.Length * 2, 16));
+            Array.Resize(ref _viewHeld, size);
+            Array.Resize(ref _heldViewPos, size);
+            Array.Resize(ref _viewSynced, size);
+            Array.Resize(ref _viewLastPos, size);
+            Array.Resize(ref _viewLastFwd, size);
+            Array.Resize(ref _viewLastOverload, size);
         }
 
         // REQ: combat-feel.md#分層 — hitstop holds only the view (pose + small jitter); u.Position and the tick keep running,
         // so the view snaps to the rule position when the hold ends. Fainted units are never held (ShowFainted must run).
         private bool HoldForHitstop(EncounterUnit u, Transform t)
         {
-            if (u.Id >= _viewHeld.Length)
-            {
-                int size = math.max(u.Id + 1, _viewHeld.Length * 2);
-                Array.Resize(ref _viewHeld, size);
-                Array.Resize(ref _heldViewPos, size);
-            }
-
+            EnsureViewCacheCapacity(u.Id);
             if (_hitFeel == null || u.Combatant.IsFainted || !_hitFeel.IsFrozen(u.Id))
             {
-                _viewHeld[u.Id] = false;
+                if (_viewHeld[u.Id])
+                {
+                    _viewHeld[u.Id] = false;
+                    _viewSynced[u.Id] = false;
+                }
+
                 return false;
             }
 
@@ -2562,6 +3426,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _viewHeld[u.Id] = true;
                 _heldViewPos[u.Id] = t.position;
+                _viewSynced[u.Id] = false;
             }
 
             t.position = _heldViewPos[u.Id] + _hitFeel.Jitter(u.BodyRadiusM * 0.06f);
@@ -2659,6 +3524,18 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void DispatchCombatFeedback(in EncounterEvent ev, float3 playerPos)
         {
+            if (ev.Kind == EncounterEventKind.Struck || ev.Kind == EncounterEventKind.Scorched || ev.Kind == EncounterEventKind.Quaked)
+            {
+                StruckFeedback(ev, playerPos);
+                // REQ: planet-world.md#地震噴發 — the ground splitting underfoot throws the player clear of the crack.
+                if (ev.Kind == EncounterEventKind.Quaked && ev.TargetId == Encounter.PlayerCharacterId && _rig.Character != null)
+                {
+                    _rig.Character.Launch((Vector3)(_encounter.PlayerLaunchDirection * 4f), 6f);
+                }
+
+                return;
+            }
+
             if (_feedback == null || ev.SourceId < 0 || ev.SourceId >= _encounter.Units.Count)
             {
                 return;
@@ -2736,6 +3613,54 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 _feedback.ShowSupport(targetPos, targetFwd, targetUp, targetRadius, ev.Amount);
             }
+            else if (ev.Kind == EncounterEventKind.Blocked)
+            {
+                _feedback.ShowBlock(targetPos, targetFwd, targetUp, targetRadius, perfect: false);
+            }
+            else if (ev.Kind == EncounterEventKind.PerfectBlock)
+            {
+                _feedback.ShowBlock(targetPos, targetFwd, targetUp, targetRadius, perfect: true);
+            }
+            else if (ev.Kind == EncounterEventKind.GuardBroken)
+            {
+                _feedback.ShowGuardBreak(targetPos, targetFwd, targetUp, targetRadius);
+            }
+            else if (ev.Kind == EncounterEventKind.PerfectDodge)
+            {
+                _feedback.ShowPerfectDodge(targetPos, targetFwd, targetUp, targetRadius);
+            }
+            else if (ev.Kind == EncounterEventKind.Reflected)
+            {
+                _feedback.ShowHit(targetPos, targetFwd, targetUp, targetRadius, ev.Amount, elemColor, HitTier.Medium, false);
+            }
+            else if (ev.Kind == EncounterEventKind.Staggered)
+            {
+                _feedback.ShowStagger(targetPos, targetFwd, targetUp, targetRadius);
+            }
+        }
+
+        // REQ: weather.md#落雷 — a strike has no caster, so it gets its own feedback: a heavy thunder-coloured hit.
+        private void StruckFeedback(in EncounterEvent ev, float3 playerPos)
+        {
+            if (_feedback == null) return;
+            // Scorched ticks every second while standing in flames: lighter feedback than a lightning strike.
+            bool fire = ev.Kind == EncounterEventKind.Scorched;
+            Element element = fire ? Element.Fire : ev.Kind == EncounterEventKind.Quaked ? Element.Earth : Element.Thunder;
+            Color thunder = PlaceholderCreatureViewFactory.ColorOf(element);
+            HitTier tier = fire ? HitTier.Light : HitTier.Heavy;
+            if (ev.TargetId == Encounter.PlayerCharacterId)
+            {
+                float3 fwd = _rig.Character != null ? (float3)_rig.Character.transform.forward : new float3(0f, 0f, 1f);
+                _feedback.ShowHit(playerPos, fwd, _rig.Config.ToDirection(playerPos), _balance.Collision.CharacterMm * 0.001f,
+                    ev.Amount, thunder, tier, false);
+                _hitFeel?.PlayPlayerHit();
+                return;
+            }
+
+            if (ev.TargetId < 0 || ev.TargetId >= _encounter.Units.Count) return;
+            EncounterUnit dst = _encounter.Units[ev.TargetId];
+            _feedback.ShowHit(dst.Position, dst.Forward, _rig.Config.ToDirection(dst.Position), dst.BodyRadiusM, ev.Amount,
+                thunder, tier, false);
         }
 
         private static int[][] NewFeelTargets()
@@ -2817,14 +3742,17 @@ namespace Cosmimera.Bootstrap.Demo
         {
             long hp1000 = (long)boss.Combatant.Hp * 1000;
             int passed = hp1000 <= 333L * boss.Combatant.MaxHp ? 2 : hp1000 <= 666L * boss.Combatant.MaxHp ? 1 : 0;
-            if (passed <= _bossPhaseLinesPassed || boss.Combatant.IsFainted)
+            _bossPhaseLinesPassed.TryGetValue(boss.Id, out int before);
+            if (passed <= before || boss.Combatant.IsFainted)
             {
                 return;
             }
 
-            _bossPhaseLinesPassed = passed;
+            _bossPhaseLinesPassed[boss.Id] = passed;
             _feedback.ShowBossPhase(boss.Position, forward, up, boss.BodyRadiusM, elemColor);
             _hitFeel?.PlayCast(boss.Id, _feelTargets[0], 0, HitTier.Knockout, true, 0f);
+            // Scales with the body so a giant boss and its 9× shockwave ring both fit in frame (暫定).
+            _hitFeel?.PlayPhasePullBack(math.clamp(boss.BodyRadiusM * 1.5f, 2f, 6f));
         }
 
         private void Toast(string text)
@@ -2842,33 +3770,23 @@ namespace Cosmimera.Bootstrap.Demo
 
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 18, richText = true };
             _weatherLabel ??= new GUIStyle(_label) { fontSize = 14, wordWrap = true };
+            _worldBarLabelStyle ??= new GUIStyle(_label) { fontSize = 14, alignment = TextAnchor.MiddleCenter };
             if (!_started)
             {
-                GUI.Label(new Rect(20, 20, 600, 30), _copy.Ui("ui.star_select.loading"), _label);
                 return;
             }
 
-            DrawWorldBars();
-            _feedback?.DrawFloatingTexts(_rig.Camera);
-            _hitFeel?.DrawOverlay();
-            DrawLockMarker();
-            DrawBossTopBar();
-            DrawDirectCombatHud();
-            DrawQuestPanel();
-            DrawTeamPanel();
-            DrawControlsPanel();
+            if (Event.current.type == EventType.Repaint)
+            {
+                DrawWorldBars();
+                _feedback?.DrawFloatingTexts(_rig.Camera);
+                _hitFeel?.DrawOverlay();
+                DrawLockMarker();
+            }
+
             if (_journal != null)
             {
                 _journal.Draw(DrawJournal, CloseJournal);
-                return;
-            }
-            if (GUI.Button(new Rect(Screen.width - 200, 12, 188, 34), _copy.Ui("ui.journal.open") + " [" + BindingLabel(_journalAction) + "]"))
-            { OpenJournal(); GUIUtility.ExitGUI(); }
-            DrawInteraction();
-            if (_nowMs < _toastUntilMs)
-            {
-                GUI.Label(new Rect(Screen.width / 2f - 300, Screen.height * 0.3f, 600, 40),
-                    "<b>" + _toast + "</b>", new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontSize = 24 });
             }
         }
 
@@ -2920,6 +3838,22 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 if (_interactable < 0)
                 {
+                    if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                        !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
+                    {
+                        int nearTrainer = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
+                            _rig.Config.Radius);
+                        if (nearTrainer >= 0)
+                        {
+                            string tName = _copy.Ui("ui.trainer.prof." + _trainers.Trainers[nearTrainer].ProfessionId);
+                            string tPrompt = _copy.Ui("ui.trainer.interact_prompt")
+                                .Replace("{key}", BindingLabel(_interactAction))
+                                .Replace("{trainer}", tName);
+                            GUI.Box(new Rect(Screen.width / 2f - 180, Screen.height - 330, 360, 40), GUIContent.none);
+                            GUI.Label(new Rect(Screen.width / 2f - 175, Screen.height - 328, 350, 36), tPrompt, style);
+                        }
+                    }
+
                     return;
                 }
 
@@ -2955,7 +3889,8 @@ namespace Cosmimera.Bootstrap.Demo
             Camera cam = _rig.Camera;
             foreach (EncounterUnit u in _encounter.Units)
             {
-                if (!_views[u.Id].Root.gameObject.activeSelf)
+                // Units whose view was disposed (finished trainer and trial battles) stay in the encounter.
+                if (!_views.TryGetValue(u.Id, out ICreatureView barView) || !barView.Root.gameObject.activeSelf)
                 {
                     continue;
                 }
@@ -2991,8 +3926,7 @@ namespace Cosmimera.Bootstrap.Demo
                     name += " · " + _copy.Ui("ui.hud.knocked_out");
                 }
 
-                GUI.Label(new Rect(sp.x - 120, Screen.height - sp.y - 24, 240, 22), name,
-                    new GUIStyle(_label) { fontSize = 14, alignment = TextAnchor.MiddleCenter });
+                GUI.Label(new Rect(sp.x - 120, Screen.height - sp.y - 24, 240, 22), name, _worldBarLabelStyle);
             }
         }
 
@@ -3004,7 +3938,11 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.Label("<b>" + _copy.ChainTitle(_plan.ChainId) + "</b>", _label);
             GUILayout.Label(WeatherStatusText(), _weatherLabel);
             GUILayout.Label(WeatherMovementText(), _weatherLabel);
-            if (!_quest.IsComplete)
+            if (_setup.IsBeginnerQuest && _bqTracker != null)
+            {
+                DrawBeginnerQuestHud();
+            }
+            else if (!_quest.IsComplete)
             {
                 RunQuestStep s = _quest.Current;
                 string text = _copy.Step(StepType(s.Kind), (int)(_plan.Seed % 3))
@@ -3114,13 +4052,18 @@ namespace Cosmimera.Bootstrap.Demo
                 help,
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
 
+            if (_team.InCombat)
+            {
+                return;
+            }
+
             int capture = FindCaptureTarget(CaptureReachM);
             if (capture < 0)
             {
                 return;
             }
 
-            float seconds = (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f;
+            float seconds = math.max(0f, (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f);
             string prompt = _copy.Ui("ui.hud.capture_available")
                 .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
                 .Replace("{name}", _copy.Name(_encounter.Units[capture].Def.Id))
@@ -3263,7 +4206,15 @@ namespace Cosmimera.Bootstrap.Demo
         private void OnDestroy()
         {
             _weatherView?.Dispose();
+            _vortexView?.Dispose();
+            _lightning?.Dispose();
+            _fireView?.Dispose();
+            _quakeView?.Dispose();
+            _spray?.Dispose();
+            _underwater?.Dispose();
+            if (_sea != null) SeaWaves.Clear();
             CloseJournal();
+            DisposeHud();
             _inputHints?.Dispose();
             _globalInput?.Dispose();
             _runInput?.Dispose();
@@ -3271,6 +4222,8 @@ namespace Cosmimera.Bootstrap.Demo
             _menuInput?.Dispose();
             _feedback?.Dispose();
             _hitFeel?.Dispose();
+            DisposeTrial();
+            DisposeLobbyGatekeepers();
             _rig?.Dispose();
             PlanetLook.ClearGeology();
             if (_terrainMaterial != null)
@@ -3287,6 +4240,14 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 view.Dispose();
             }
+
+            for (int i = 0; i < _gearMeshes.Count; i++)
+            {
+                if (_gearMeshes[i] != null) Destroy(_gearMeshes[i]);
+            }
+            _gearMeshes.Clear();
+            if (_gearMaterial != null) Destroy(_gearMaterial);
+            if (_handMaterial != null) Destroy(_handMaterial);
         }
     }
 }

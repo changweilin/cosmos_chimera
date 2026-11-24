@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# Builds the 28 NPC UMA races (gitignored, ~1.6 GB) from the base FBX in Assets/_Project/Art/Characters/_UMA/Npc/Bases
+# (Q-A14, ADR-0015). Run after a fresh clone (after tools/install-uma) and after every re-bake of the bases.
+# Usage: tools/build-npc-races        (Unity Editor must NOT have this project open)
+#        UNITY=/path/to/Unity.exe tools/build-npc-races
+set -eu
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+UNITY="${UNITY:-C:/Program Files/Unity/Hub/Editor/6000.3.28f1/Editor/Unity.exe}"
+
+if [ ! -f "$UNITY" ]; then
+  echo "error: Unity not found at $UNITY (set UNITY=...)" >&2
+  exit 2
+fi
+if [ ! -d "$ROOT/Assets/UMA" ]; then
+  echo "error: UMA is not installed; run tools/install-uma first" >&2
+  exit 2
+fi
+
+mkdir -p "$ROOT/Logs"
+
+# Separate runs: the reimport must finish before the races read the Humanoid avatars and shape keys.
+echo "configuring base FBX imports (log: Logs/build-npc-races-configure.log)"
+"$UNITY" -batchmode -nographics -projectPath "$ROOT" \
+  -executeMethod Cosmimera.EditorTools.NpcUmaRaces.Configure -quit -logFile "$ROOT/Logs/build-npc-races-configure.log"
+
+echo "building races (~5 min; log: Logs/build-npc-races.log)"
+"$UNITY" -batchmode -nographics -projectPath "$ROOT" \
+  -executeMethod Cosmimera.EditorTools.NpcUmaRaces.Build -quit -logFile "$ROOT/Logs/build-npc-races.log"
+
+BUILT="$(grep -c '^\[NpcUmaRaces\] npc_' "$ROOT/Logs/build-npc-races.log" || true)"
+echo "done: $BUILT races"

@@ -240,6 +240,31 @@ namespace Cosmimera.Crafting.Tests
             Assert.Throws<InvalidDataException>(() => Collect(new EquippedItem(0, "upper", "craft_iron_blade")));
         }
 
+        // REQ: docs/design/crafting.md#武器數值模型 — weapon_type names one of the sixteen types; its hands and range must agree.
+        [Test]
+        public void Weapon_type_is_read_and_must_match_hands_and_range()
+        {
+            Assert.That(_catalog.TryGetItem("craft_iron_blade", out CraftItem tagged), Is.True);
+            Assert.That(tagged.Equipment.HasWeaponType, Is.True);
+            Assert.That(tagged.Equipment.WeaponType, Is.EqualTo(WeaponType.SwordScimitar));
+
+            JArray items = JArray.Parse(Data("craft-items"));
+            JToken blade = null; foreach (JToken i in items) if ((string)i["id"] == "craft_iron_blade") blade = i;
+            JObject weapon = (JObject)blade["equipment"]["weapon"];
+            weapon.Remove("weapon_type");
+            Assert.That(new CraftCatalog(items.ToString(), Data("craft-recipes")).TryGetItem("craft_iron_blade", out CraftItem plain) &&
+                !plain.Equipment.HasWeaponType, Is.True, "weapon_type is optional");
+            foreach (string bad in new[] { "greatsword", "longbow", "sword", "Sword_1h" })
+            {
+                weapon["weapon_type"] = bad;
+                Assert.Throws<InvalidDataException>(() => new CraftCatalog(items.ToString(), Data("craft-recipes")), bad);
+            }
+            weapon["weapon_type"] = "javelin";
+            weapon["range"] = "ranged";
+            Assert.That(new CraftCatalog(items.ToString(), Data("craft-recipes")).TryGetItem("craft_iron_blade", out CraftItem thrown) &&
+                thrown.Equipment.WeaponType == WeaponType.Javelin, Is.True);
+        }
+
         [Test]
         public void Catalog_rejects_weapon_data_on_the_wrong_kind_and_player_bonuses_on_weapons()
         {

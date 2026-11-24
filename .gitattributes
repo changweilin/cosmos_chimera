@@ -43,3 +43,4 @@ tools/validate-data text eol=lf
 # AI art deliveries (docs/design/art-asset-pipeline.md)
 *.glb filter=lfs diff=lfs merge=lfs -text
 *.webp filter=lfs diff=lfs merge=lfs -text
+tools/install-uma   text eol=lf

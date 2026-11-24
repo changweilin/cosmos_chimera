@@ -20,6 +20,7 @@ namespace Cosmimera.Player
         private InputAction _sprint;
         private InputAction _toggleView;
         private InputAction _commandModifier;
+        private InputAction _crouch;
 
         /// <summary>When true, Move/Jump/Sprint are not forwarded to SphericalCharacter (e.g. direct creature control).</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
@@ -50,6 +51,7 @@ namespace Cosmimera.Player
             _sprint = actions.FindAction("Player/Sprint");
             _toggleView = actions.FindAction("Player/ToggleView");
             _commandModifier = actions.FindAction("Player/CommandModifier");
+            _crouch = actions.FindAction("Player/Crouch", throwIfNotFound: false);
             Contract.Requires(_move != null && _look != null && _jump != null && _sprint != null &&
                 _toggleView != null && _commandModifier != null,
                 "actions must contain Player/Move, Player/Look, Player/Jump, Player/Sprint, Player/ToggleView and Player/CommandModifier");
@@ -68,8 +70,13 @@ namespace Cosmimera.Player
                 return;
             }
 
-            foreach (InputAction action in new[] { _move, _look, _jump, _sprint, _toggleView, _commandModifier })
+            foreach (InputAction action in new[] { _move, _look, _jump, _sprint, _toggleView, _commandModifier, _crouch })
             {
+                if (action == null)
+                {
+                    continue;
+                }
+
                 if (enabled)
                 {
                     action.Enable();
@@ -102,6 +109,8 @@ namespace Cosmimera.Player
             if (!SuppressCharacterInput)
             {
                 _character.SetInput(_move.ReadValue<Vector2>(), _rig.Heading, _sprint.IsPressed(), _jump.WasPressedThisFrame());
+                float vertical = (_jump.IsPressed() ? 1f : 0f) - (_crouch != null && _crouch.IsPressed() ? 1f : 0f);
+                _character.SetVerticalInput(vertical);
             }
         }
     }

@@ -4,6 +4,7 @@ using Cosmimera.Combat;
 using Cosmimera.GameData;
 using Cosmimera.Core.Contracts;
 using Cosmimera.Core.Random;
+using Cosmimera.Player;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace Cosmimera.Bootstrap.Demo
             internal readonly float3 Position;
             internal readonly bool Fielded;
             internal readonly bool IsFainted;
+            internal readonly bool IsTrialBoss;
             internal readonly int Hp;
             internal readonly int MaxHp;
             // Wild only (Avoidant for player units, which have no individual).
@@ -38,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
                 Position = unit.Position;
                 Fielded = unit.Fielded;
                 IsFainted = unit.Combatant.IsFainted;
+                IsTrialBoss = unit.IsTrialBoss;
                 Hp = unit.Combatant.Hp;
                 MaxHp = unit.Combatant.MaxHp;
                 Habit = unit.Individual != null ? unit.Individual.Habit : Habit.Avoidant;
@@ -273,6 +276,11 @@ namespace Cosmimera.Bootstrap.Demo
         internal void PlaceCharacterForTests(float3 direction)
         {
             Contract.Requires(_started && math.abs(math.lengthsq(direction) - 1f) < 1e-4f, "landed run and unit direction required");
+            if (!enabled)
+            {
+                _rig.Character.SetTraversalEnvelope(TraversalEnvelope.Default);
+            }
+
             var body = _rig.Character.GetComponent<Rigidbody>();
             Vector3 at = SurfacePointForTests(direction, 1f);
             body.linearVelocity = Vector3.zero;
@@ -387,6 +395,141 @@ namespace Cosmimera.Bootstrap.Demo
             _rig.Camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(focus - eye, specimen.up));
             RenderCameraTo(path);
         }
+
+        internal RunTrainers TrainersForTests => _trainers;
+        internal TrainerView TrainerViewForTests => _trainerView;
+        internal int ActiveWanderingTrainerIndexForTests => _activeWanderingTrainerIndex;
+        internal bool TriggerWanderingTrainerBattleForTests(int trainerIndex) => StartWanderingTrainerBattle(trainerIndex);
+
+        /// <summary>Whether this run planned a terrain trial at its dungeon entrance.</summary>
+        /// <remarks>Pre: configured. Post: none. Side effects: none.</remarks>
+        internal bool HasTrialForTests => _trial != null;
+
+        internal string TrialTerrainForTests => _trial?.Spec.Id;
+        internal TrialStep TrialStepForTests => _trial.Progress.Step;
+        internal bool TrialInsideForTests => TrialInside;
+        internal bool TrialTransitPendingForTests => _trial.TransitPending;
+        internal float3 TrialMasterDirectionForTests => _trial.MasterDir;
+        internal RoomDungeonGeometry TrialGeometryForTests => _trial.Geometry;
+        internal IReadOnlyList<int> TrialInteriorUnitsForTests => new List<int>(_trial.InteriorUnits).ToArray();
+        internal IReadOnlyList<int> TrialFinalUnitsForTests => new List<int>(_trial.FinalUnits).ToArray();
+        internal int TrialGuardUnitForTests => _trial.GuardUnit;
+        internal bool SurfaceTerrainActiveForTests => _rig.Terrain.gameObject.activeSelf;
+        internal RunOutcome OutcomeForTests => _outcome;
+        internal bool TrialIsMazeForTests => _trial.Maze;
+        /// <summary>Unit shown on the top boss bar during a trial final (−1 otherwise), with the master's bench counts.</summary>
+        /// <remarks>Pre: configured. Post: none. Side effects: none.</remarks>
+        internal int TrialBarBossForTests(out int bench, out int benchAlive) =>
+            TrialFinalBoss(out bench, out benchAlive)?.Id ?? -1;
+
+        /// <summary>Interior dungeon mood blend (−1 before the first entry).</summary>
+        internal float DungeonMoodWeightForTests => _dungeonMood != null ? _dungeonMood.Weight : -1f;
+
+        /// <summary>Room lamps built for the interior dungeon, and how many of their lights are on now.</summary>
+        internal (int lamps, int lit) DungeonLampsForTests => _dungeonMood != null ? _dungeonMood.LampCounts : (0, 0);
+
+        /// <summary>Wall / ceiling meshes built for the trial's dungeon (0 before an indoor dungeon is first entered).</summary>
+        internal int DungeonDressingMeshesForTests => _trial != null ? _trial.DressingMeshes : 0;
+        internal bool SurfaceBlockedForTests(float3 direction, float clearanceM) => _surface.IsBlocked(direction, clearanceM);
+
+        /// <summary>Wall-foot props planned for the trial dungeon, and how many are drawn with a collider now.</summary>
+        internal (int planned, int drawn) DungeonPropsForTests
+        {
+            get
+            {
+                if (_trial?.Props == null)
+                {
+                    return (0, 0);
+                }
+
+                int drawn = 0;
+                foreach (GameObject root in _trial.PropRoots)
+                {
+                    drawn += root != null && root.GetComponent<BoxCollider>() != null ? 1 : 0;
+                }
+
+                return (_trial.Props.Count, drawn);
+            }
+        }
+
+        internal float3 DungeonPropDirectionForTests(int index) => _trial.Geometry.LocalToDirection(_trial.Props[index].Local);
+
+        /// <summary>Destroys object <paramref name="id"/> in the rule-layer table, as a knock-out hit would.</summary>
+        /// <remarks>Pre: destructibles attached; id names an object of this run. Post: the table reports it destroyed. Side effects: registers it.</remarks>
+        internal void DestroyObjectForTests(long id)
+        {
+            _worldObjects.TryGet(id, out DestructibleCandidate c);
+            int slot = _objectTable.Register(id, c.Composition, c.VolumeL, c.Center);
+            while (!_objectTable.IsDestroyed(id))
+            {
+                _objectTable.ApplyHit(slot, Element.Earth, DamageModel.MaxPower, 0, _nowMs);
+            }
+        }
+        internal bool SurfaceOffWallsForTests(float3 direction) => _surface.IsOffWalls(direction);
+
+        /// <summary>Presses interact as OpenInteract does, trial points only.</summary>
+        /// <remarks>Pre: the run landed. Post: true iff the master or exit pad handled it. Side effects: as TryTrialInteract.</remarks>
+        internal bool InteractTrialForTests() => TryTrialInteract();
+
+        /// <summary>Teleports the player onto whichever sphere is current (surface or indoor floor), 1 m up.</summary>
+        /// <remarks>Pre: the run landed; direction unit. Post: body at rest there. Side effects: player position.</remarks>
+        internal void PlaceOnCurrentGroundForTests(float3 direction)
+        {
+            Contract.Requires(_started && math.abs(math.lengthsq(direction) - 1f) < 1e-4f, "landed run and unit direction required");
+            _rig.Character.Teleport(_rig.Config.ToWorld(direction, _surface.GroundAltitude(direction) + 1f));
+        }
+
+        /// <summary>Whether direct creature control is currently active (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: matches IsDirectControlling. Side effects: none.</remarks>
+        internal bool IsDirectControllingForTests => IsDirectControlling;
+
+        /// <summary>Whether the player returned to character control during the current combat (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: current flag. Side effects: none.</remarks>
+        internal bool ReturnedToPlayerForTests => _returnedToPlayer;
+
+        /// <summary>Current main creature unit id (P2-17).</summary>
+        /// <remarks>Pre: Configure ran. Post: unit id or NoTarget. Side effects: none.</remarks>
+        internal int MainIdForTests => _mainId;
+
+        /// <summary>Whether wild unit <paramref name="unitId"/> has been marked gone (captured, fled, or unloaded).</summary>
+        /// <remarks>Pre: Configure ran. Post: true iff wild is tracked and Gone. Side effects: none.</remarks>
+        internal bool IsWildGoneForTests(int unitId) => _wild.TryGetValue(unitId, out WildInfo w) && w.Gone;
+
+        /// <summary>Knockout timestamp for wild unit <paramref name="unitId"/>, or -1 if conscious/unknown.</summary>
+        /// <remarks>Pre: Configure ran. Post: >= 0 once knocked out. Side effects: none.</remarks>
+        internal long KnockedOutAtMsForTests(int unitId) => _wild.TryGetValue(unitId, out WildInfo w) ? w.KnockedOutAtMs : -1L;
+
+        /// <summary>Finds the nearest capturable wild within <paramref name="reach"/> metres.</summary>
+        /// <remarks>Pre: the run landed; reach > 0. Post: wild unit id or -1. Side effects: none.</remarks>
+        internal int FindCaptureTargetForTests(float reach = CaptureReachM) => FindCaptureTarget(reach);
+
+        /// <summary>Runs the ReturnToPlayerInCombat action directly (P2-17).</summary>
+        /// <remarks>Pre: the run landed. Post: active creatures recalled and direct control disabled. Side effects: team and encounter state.</remarks>
+        internal void ReturnToPlayerForTests() => ReturnToPlayerInCombat();
+
+        /// <summary>Runs TryCapture directly (P2-17).</summary>
+        /// <remarks>Pre: the run landed. Post: captures if allowed and target exists. Side effects: inventory, outcome, encounter.</remarks>
+        internal void TryCaptureForTests() => TryCapture();
+
+        /// <summary>Advances the session simulation clock by <paramref name="deltaMs"/> (for capture window tests).</summary>
+        /// <remarks>Pre: deltaMs >= 0. Post: NowMsForTests increased by deltaMs. Side effects: advances _nowMs.</remarks>
+        internal void AdvanceNowMsForTests(long deltaMs)
+        {
+            Contract.Requires(deltaMs >= 0, "deltaMs >= 0");
+            _nowMs += deltaMs;
+        }
+
+        /// <summary>Queues a unit faint to be settled on the next Update tick.</summary>
+        /// <remarks>Pre: Configure ran; id indexes _encounter.Units and unit is fainted. Post: queued for OnFaint. Side effects: _injectedFaints.</remarks>
+        internal void QueueFaintForTests(int id)
+        {
+            Contract.Requires(_encounter != null && id >= 0 && id < _encounter.Units.Count, "known unit required");
+            _injectedFaints.Add(id);
+        }
+
+        /// <summary>Boss unit id for the run, or -1.</summary>
+        /// <remarks>Pre: Configure ran. Post: unit id or -1. Side effects: none.</remarks>
+        internal int BossUnitForTests() => BossUnit();
 
         private void RenderCameraTo(string path)
         {

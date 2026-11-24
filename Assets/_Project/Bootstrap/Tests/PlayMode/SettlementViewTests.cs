@@ -15,7 +15,7 @@ namespace Cosmimera.Bootstrap.Tests
     public sealed class SettlementViewTests
     {
         private const float Radius = 320f;
-        private const float RoadLiftM = 0.12f;
+        private const float RoadLiftM = 0.07f; // land rows; bridge decks keep 0.12 m
         private const float BridgeDeckM = 0.6f;
         private static readonly PlanetConfig Planet = new PlanetConfig(Radius, float3.zero);
         private readonly List<GameObject> _roots = new List<GameObject>();
@@ -238,6 +238,61 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             return true;
+        }
+
+        // REQ: planet-world.md#道路與建築 — era paving, swamp boardwalk and desert sand, seen along one main road.
+        [UnityTest]
+        public IEnumerator Capture_road_surfaces_when_requested()
+        {
+            if (System.Environment.GetEnvironmentVariable("COSMIMERA_CAPTURE") != "1")
+            {
+                Assert.Ignore("visual proof only: set COSMIMERA_CAPTURE=1 and run without -nographics");
+            }
+
+            RunLayout layout = SettlementPlanner.Generate(Planet, Plan(7), null);
+            RunRoad road = null;
+            foreach (RunRoad r in layout.Roads)
+            {
+                if (r.Class == RoadClass.Main && (road == null || r.Points.Count > road.Points.Count)) road = r;
+            }
+
+            var sun = new GameObject("sun").AddComponent<Light>();
+            _roots.Add(sun.gameObject);
+            sun.type = LightType.Directional;
+            sun.shadows = LightShadows.Soft;
+            sun.intensity = 1.2f;
+            sun.color = new Color(1f, 0.96f, 0.88f);
+            var camera = new GameObject("camera").AddComponent<Camera>();
+            _roots.Add(camera.gameObject);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.36f, 0.56f, 0.28f);
+            camera.fieldOfView = 50f;
+            string dir = System.IO.Path.Combine(Application.dataPath, "..", "Logs");
+            int mid = road.Points.Count / 2;
+            float3 at = road.Points[mid];
+            float3 ahead = math.normalize(road.Points[mid + 1] - road.Points[mid - 1]);
+            System.Func<float3, string> terrain = d =>
+                math.dot(d - at, ahead) * Radius > 6f ? "swamp" : math.dot(d - at, ahead) * Radius < -6f ? "desert" : "grassland";
+            var done = new HashSet<ArchEra>();
+            for (ulong seed = 0; seed < 400 && done.Count < 8; seed++)
+            {
+                ArchEra era = ArchitectureMeshes.PlanetStyleFor("verdant_planet", seed).Era;
+                if (!done.Add(era)) continue;
+                var root = new GameObject("road-" + era);
+                _roots.Add(root);
+                SettlementView view = root.AddComponent<SettlementView>();
+                view.Configure(Planet, layout, d => 0f, Shader.Find("Cosmimera/ToonOutlined"), Shader.Find("Cosmimera/ToonScenery"),
+                    "verdant_planet", seed, null, terrain);
+                float3 up = at;
+                float3 eye = Planet.ToWorld(up, 3.2f) - ahead * 9f;
+                camera.transform.position = eye;
+                camera.transform.LookAt(Planet.ToWorld(up, 0f) + ahead * 6f, up);
+                sun.transform.rotation = Quaternion.LookRotation(-(Vector3)(up * 0.8f + ahead * 0.4f + math.cross(up, ahead) * 0.4f), up);
+                yield return null;
+                ScatterFieldTests.Shoot(camera, System.IO.Path.Combine(dir, "road-" + era + ".png"));
+                Object.Destroy(root);
+                yield return null;
+            }
         }
 
         [UnityTest]

@@ -126,6 +126,10 @@ def build_vectors():
         "scaled_stat": [{"base": base, "level": level, "value": curve.scaled_stat(base, level)}
                         for base in (0, 1, 54, 55, 109, 110, 200, INT32_MAX // 110, INT32_MAX)
                         for level in (1, 10, 50, 99, 100)],
+        "level_scale_ppm": [0] + [curve.level_scale_ppm(l) for l in range(1, 101)],
+        "scaled_hp": [{"base": base, "level": level, "value": curve.scaled_hp(base, level)}
+                      for base in (0, 1, 54, 55, 109, 110, 200, INT32_MAX // 110, INT32_MAX)
+                      for level in (1, 10, 50, 99, 100)],
         "wild_level": [{"difficulty": difficulty, "tier": tier, "stage": 0, "role": role,
                         "level": model.initial_level(difficulty, tier, 0, role)}
                        for difficulty in range(1, 11) for tier in range(3)

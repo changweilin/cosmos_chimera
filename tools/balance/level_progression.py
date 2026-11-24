@@ -67,6 +67,27 @@ class LevelProgression:
         _integer(level, "level", 1, self.level_max)
         return (base_stat * (level + 10) + 55) // 110
 
+    def level_scale_ppm(self, level):
+        """Return the shared exponential HP/base-damage scale of a level in ppm.
+
+        Pre: level is an integer in 1..100.
+        Post: round(10**((level-100)/99) * 1e6); 100000 at level 1, 1000000 at 100;
+              strictly increasing. Mirrors GameData/LevelCurve.cs.
+        Side effects: none.
+        """
+        _integer(level, "level", 1, self.level_max)
+        return round(10 ** ((level - 100) / 99) * 1_000_000)
+
+    def scaled_hp(self, base_stat, level):
+        """Return one scaled current-form HP value on the exponential curve.
+
+        Pre: base_stat is an integer in 0..Int32.MaxValue; level is 1..100.
+        Post: half-up rounding of base_stat*level_scale_ppm/1e6; 0..base_stat; monotone.
+        Side effects: none.
+        """
+        _integer(base_stat, "base_stat", 0)
+        return (base_stat * self.level_scale_ppm(level) + 500_000) // 1_000_000
+
     def xp_threshold(self, level):
         """Return the minimum accumulated XP needed for a level.
 

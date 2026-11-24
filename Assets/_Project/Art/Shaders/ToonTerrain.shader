@@ -46,17 +46,22 @@ Shader "Cosmimera/ToonTerrain"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            // Point lights: interior dungeon lamps (CosmiPointLights).
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "CosmiBiome.hlsl"
 
-            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
+            // uv.x = river mask (Planet ChunkVertex.River); meshes without UV0 read 0.
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
                 float fog : TEXCOORD2;
+                float river : TEXCOORD3;
             };
 
             Varyings Vert(Attributes i)
@@ -67,6 +72,7 @@ Shader "Cosmimera/ToonTerrain"
                 o.positionWS = p.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(i.normalOS);
                 o.fog = ComputeFogFactor(p.positionCS.z);
+                o.river = i.uv.x;
                 return o;
             }
 
@@ -75,13 +81,18 @@ Shader "Cosmimera/ToonTerrain"
                 float3 n = normalize(i.normalWS);
                 CosmiGround g = CosmiGroundAt(i.positionWS, n);
                 float grass;
-                half3 albedo = CosmiBiomeColor(i.positionWS, g, grass);
+                float3 nNoise, fineStroke;
+                half3 albedo = CosmiBiomeColor(i.positionWS, g, grass, nNoise, fineStroke);
+                albedo = CosmiMeadowTint(albedo, i.positionWS, g, grass);
+                albedo = CosmiRiverbed(albedo, i.positionWS, g, i.river, nNoise, fineStroke);
 
+                n = CosmiCliffNormal(i.positionWS, n, g.up);
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 // Hemisphere ambient: faces turned to the sky take the zenith colour, undersides the ground bounce.
                 half3 ambient = SampleSH(n) * lerp(0.75, 1.25, saturate(dot(n, g.up)));
                 half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
                     _Shadow.rgb, _Bands, ambient);
+                lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 return half4(CosmiAtmosphere(lit, i.positionWS, i.fog, light.direction), 1);
             }
             ENDHLSL

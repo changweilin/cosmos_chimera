@@ -35,9 +35,9 @@
           "else": { "required": ["downgraded"] }
         },
         {
-          "description": "A heal is instant: continuous triggers have no moment to fire it (combat.md#被動技觸發).",
+          "description": "Instant effects (heal_percent_max_hp, apply_ailment) need an event trigger; continuous triggers have no moment to fire them (combat.md#被動技觸發).",
           "if": { "properties": { "trigger": { "properties": { "type": { "enum": ["always", "on_hp_below", "on_hp_above"] } } } } },
-          "then": { "properties": { "effects": { "items": { "properties": { "type": { "not": { "const": "heal_percent_max_hp" } } } } } } }
+          "then": { "properties": { "effects": { "items": { "properties": { "type": { "not": { "enum": ["heal_percent_max_hp", "apply_ailment"] } } } } } } }
         }
       ]
     }

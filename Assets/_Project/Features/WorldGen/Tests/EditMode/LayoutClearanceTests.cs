@@ -147,8 +147,22 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(LayoutClearance.IsInhabited(SettlementKind.City), Is.True);
             Assert.That(LayoutClearance.IsInhabited(SettlementKind.CityState), Is.True);
             Assert.That(LayoutClearance.IsInhabited(SettlementKind.Village), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.IslandSettlement), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.SkyTribe), Is.True);
+            Assert.That(LayoutClearance.IsInhabited(SettlementKind.DeepSeaCity), Is.True);
             Assert.That(LayoutClearance.IsInhabited(SettlementKind.Ruins), Is.False);
             Assert.That(LayoutClearance.IsInhabited(SettlementKind.Lair), Is.False);
+
+            float3 up = new float3(0, 1, 0);
+            var skyBldg = new RunBuilding(0, BuildingKind.Hall, up, new float3(1, 0, 0), 6f, 4f, 1);
+            var skySettlement = new RunSettlement(0, 0, SettlementKind.SkyTribe, up, 0, 1, SettlementDomain.SkyIsland, 240f);
+            var skyClearance = new LayoutClearance(Planet,
+                new RunLayout(new RunRoad[0], new[] { skySettlement }, new[] { skyBldg }), 0f);
+            Assert.That(skyClearance.IsClear(up), Is.True, "sky tribe buildings must not block surface scatter below");
+            Assert.That(skyClearance.IsInsideBuilding(up, 0f), Is.False);
+            Assert.That(skyClearance.IsInsideSettlement(up, 0f), Is.False);
+            Assert.That(skyClearance.IsInsideSettlementBuildings(0, up, 0f), Is.True);
+            Assert.That(skyClearance.IsContainedInSettlement(0, up, 0.5f), Is.True);
 
             var c = new LayoutClearance(Planet, Layout(), 0f);
             float radiusM = c.SettlementRadiusM(0);

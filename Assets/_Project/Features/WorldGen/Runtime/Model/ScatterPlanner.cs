@@ -305,7 +305,7 @@ namespace Cosmimera.WorldGen
         ///       become snags; every item gains Age/Health; positions and other picks as in 5.
         /// Side effects: none.
         /// </remarks>
-        public const int GeneratorVersion = 6;
+        public const int GeneratorVersion = 7;
 
         /// <summary>Mean tree health (0–1000) outside secondary stands.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -336,6 +336,10 @@ namespace Cosmimera.WorldGen
         /// <summary>Ground at or above this fraction of the radius is highland (R = 640 m → 7.7 m).</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
         public const float HighlandFractionOfRadius = 0.012f;
+
+        /// <summary>Ground at or above this fraction of the radius is above the treeline (R = 640 m → 16.6 m).</summary>
+        /// <remarks>Pre: none. Post: constant &gt; HighlandFractionOfRadius. Side effects: none.</remarks>
+        public const float AlpineFractionOfRadius = 0.026f;
 
         private const float DefaultPlaceChance = 0.55f;
         private const float MaxSlope = 0.6f; // rise/run over the 3 m probe, ~31°
@@ -653,11 +657,15 @@ namespace Cosmimera.WorldGen
             standHash = Mix(_seed ^ StandSalt ^ ((ulong)face << 40) ^ ((ulong)sj << 20) ^ (ulong)si);
             int n = CellsPerFace;
             float3 centre = CubeSphere.FaceToDirection((CubeFace)face, -1f + 2f * (i + 0.5f) / n, -1f + 2f * (j + 0.5f) / n);
+            return ScatterBiomes.ForestTypeFor(standHash, ClimateOf(centre));
+        }
+
+        private static ForestClimate ClimateOf(float3 centre)
+        {
             float absY = math.abs(centre.y);
-            ForestClimate climate = absY < TropicalMaxAbsY ? ForestClimate.Tropical
+            return absY < TropicalMaxAbsY ? ForestClimate.Tropical
                 : absY > ColdMinAbsY ? ForestClimate.Cold
                 : ForestClimate.Temperate;
-            return ScatterBiomes.ForestTypeFor(standHash, climate);
         }
 
         // SplitMix64 finaliser.
@@ -751,18 +759,25 @@ namespace Cosmimera.WorldGen
             }
 
             int kindIndex = ScatterBiomes.PickCanopy(biome, kindRoll);
+            // REQ: planet-world.md#散佈 緯度×海拔 — read at the cell centre like the stand, so a stand shares its climate.
+            ForestClimate climate = ClimateOf(centre);
+            bool alpine = alt >= AlpineFractionOfRadius * _config.Radius;
             if (kindIndex == ScatterBiomes.TreeSlot)
             {
-                kindIndex = ScatterBiomes.PickTree(forest, alt >= HighlandFractionOfRadius * _config.Radius, standHash,
-                    treeRoll, out float lo, out float hi);
+                kindIndex = ScatterBiomes.PickTree(forest, climate, alt >= HighlandFractionOfRadius * _config.Radius, alpine,
+                    standHash, treeRoll, out float lo, out float hi);
                 sizeT = math.lerp(lo, hi, sizeT);
             }
-            else if (_geologyAt != null)
+            else
             {
-                // Same point and roll as the biome: on a stamp's dithered edge both come from the same side.
-                Geology geology = _geologyAt(centre, biomeRoll);
-                Contract.Requires(geology >= Geology.Native && geology <= Geology.Slate, "geologyAt must return a defined Geology");
-                kindIndex = ScatterGeology.Substitute(kindIndex, geology, rockRoll);
+                kindIndex = ScatterBiomes.ForClimate(kindIndex, climate, alpine);
+                if (_geologyAt != null)
+                {
+                    // Same point and roll as the biome: on a stamp's dithered edge both come from the same side.
+                    Geology geology = _geologyAt(centre, biomeRoll);
+                    Contract.Requires(geology >= Geology.Native && geology <= Geology.Slate, "geologyAt must return a defined Geology");
+                    kindIndex = ScatterGeology.Substitute(kindIndex, geology, rockRoll);
+                }
             }
 
             // REQ: docs/design/planet-world.md#自然生物 — the unhealthiest tail of living trees stands dead; plantations are

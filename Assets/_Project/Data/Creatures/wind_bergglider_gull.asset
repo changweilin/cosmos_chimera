@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wind_bergglider_gull
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wind_bergglider_gull
+  lineId: line_wind_mistwing
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 2
+  evolvesTo: {fileID: 11400000, guid: ccaf6d2db7c3b3a459c90166e5e5fe17, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 37
+  evolutionMaterials:
+  - element: 6
+    tier: 2
+    qty: 5
+  resist: 5b0000005b0000006f0000005b0000005b0000003e00000081000000340000005b0000005b000000
+  mastery:
+  - element: 1
+    value: 85
+  - element: 2
+    value: 114
+  - element: 6
+    value: 125
+  stats:
+    hp: 55
+    speed: 146
+    yinAtk: 86
+    yangAtk: 101
+    yinDef: 55
+    yangDef: 61
+  signatureMove: {fileID: 11400000, guid: d00e97a457f494646bb3f88fc5e430c9, type: 2}
+  trait: {fileID: 11400000, guid: e8dc960e5384e804092600e2c3d3f587, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u5DE8\u7FFC\u5BD2\u9727\u6D77\u79BD \xD7 \u7FE0\u7DA0\u51B0\u5C71\u98A8\u5E06\u7FFC\u819C\",\"stage_look\":\"\u4FEE\u9577\u96D9\u7FFC\u5982\u53E4\u8239\u6A6B\u5E06\u5C55\u958B\uFF0C\u7FBD\u5C16\u6298\u5C04\u7FE0\u7DA0\u51B0\u5C71\u9727\u5149\uFF0C\u4FEF\u885D\u5982\u6C23\u65CB\u5229\u7BAD\",\"archetype\":\"arch_ancient_mariner_albatross\",\"region\":\"\u6975\u5730\",\"motifs_used\":[\"\u7A7F\u9727\u5DE8\u7FFC\u4FE1\u5929\u7FC1\",\"\u7FE0\u7DA0\u9AD8\u8073\u51B0\u5C71\",\"\u51B0\u5C01\u53E4\u5E06\u8239\"],\"role\":\"\u4E2D\u8DDD\u7A81\u9032\uFF1A\u6C23\u65CB\u76F4\u7DDA\u4FEF\u885D\uFF08\u9AD8\u8840\u91CF\u6642\u63D0\u9AD8\u9583\u907F\u7387\uFF09\",\"palette\":\"\u8584\u8377\u6DFA\u9752\u3001\u9752\u74F7\u7070\u7DA0\u3001\u971C\u96EA\u900F\u767D\"}"
+  needsSensitivityReview: 0

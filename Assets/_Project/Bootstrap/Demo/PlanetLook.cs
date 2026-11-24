@@ -28,6 +28,8 @@ namespace Cosmimera.Bootstrap.Demo
             public float Cloud = 0.42f;      // sky fraction under cloud
             public float Wind = 1f;
             public float Stroke = 1f;        // brush-stroke contrast on the ground (ToonTerrain _StrokeStrength)
+            public float Meadow;             // P1-12 flower meadow strength in spring (0 = no meadows)
+            public Color[] Blooms;           // four meadow flower colours; null when Meadow == 0
         }
 
         private static readonly Dictionary<string, Palette> Palettes = new Dictionary<string, Palette>
@@ -38,6 +40,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x8A8060), Rock = Hex(0x6E6A62), Snow = Hex(0xF2F6FF), Day = Hex(0x8CC8F0), Dusk = Hex(0xF0A070),
                 Night = Hex(0x0B1430),
                 Grass = 1f,
+                Meadow = 0.9f, Blooms = new[] { Hex(0xF2C230), Hex(0xF4F0E6), Hex(0xE8608A), Hex(0x8A6AE0) },
             },
             ["lava_planet"] = new Palette
             {
@@ -60,6 +63,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x80786E), Rock = Hex(0x5C5A60), Snow = Hex(0xE6E8F0), Day = Hex(0x7E8EA8), Dusk = Hex(0x9A7FA8),
                 Night = Hex(0x0E1020),
                 Grass = 0.8f, GrassHeight = 1.25f, Cloud = 0.72f, Wind = 1.8f,
+                Meadow = 0.5f, Blooms = new[] { Hex(0xE8D040), Hex(0xF0F0F4), Hex(0x9AB8E8), Hex(0x7A60C8) },
             },
             ["mineral_planet"] = new Palette
             {
@@ -67,6 +71,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x8C4E36), Rock = Hex(0x6A4434), Snow = Hex(0xE8D8C0), Day = Hex(0xE8C898), Dusk = Hex(0xE08858),
                 Night = Hex(0x1A1020), SnowLine = 1.1f,
                 Grass = 0.22f, GrassHeight = 0.7f, Patch = new Color(1.12f, 1.02f, 0.86f), Cloud = 0.25f, Wind = 0.8f,
+                Meadow = 0.6f, Blooms = new[] { Hex(0xF09030), Hex(0xF0C840), Hex(0xD04A30), Hex(0xF0E0B0) },
             },
             ["twilight_planet"] = new Palette
             {
@@ -74,6 +79,7 @@ namespace Cosmimera.Bootstrap.Demo
                 High = Hex(0x7A6A8A), Rock = Hex(0x4E4658), Snow = Hex(0xF0E8FF), Day = Hex(0xF0C878), Dusk = Hex(0xC870A0),
                 Night = Hex(0x120A28),
                 Grass = 0.7f, Cloud = 0.5f, Wind = 0.7f,
+                Meadow = 0.8f, Blooms = new[] { Hex(0xE050C0), Hex(0xF0A0D8), Hex(0xF4F0FF), Hex(0x70E0E8) },
             },
         };
 
@@ -93,9 +99,28 @@ namespace Cosmimera.Bootstrap.Demo
             return m;
         }
 
+        /// <summary>Flower meadow strength and colours of a planet type in a season (P1-12, vision.md#美術投資 花海).</summary>
+        /// <remarks>
+        /// Pre: none (unknown ids read as verdant).
+        /// Post: strength in [0, 1]: the planet's own in spring, ×0.75 summer, ×0.3 autumn, 0 in winter; blooms has
+        ///       4 colours when strength &gt; 0, otherwise null.
+        /// Side effects: none (blooms is a fresh copy).
+        /// </remarks>
+        public static float Meadow(string planetTypeId, Season season, out Color[] blooms)
+        {
+            Palette p = PaletteFor(planetTypeId);
+            float share = season switch { Season.Spring => 1f, Season.Summer => 0.75f, Season.Autumn => 0.3f, _ => 0f };
+            float strength = p.Meadow * share;
+            blooms = strength > 0f ? (Color[])p.Blooms.Clone() : null;
+            return strength;
+        }
+
         /// <summary>What settles on upward faces in winter on a planet type: its own snow (ash on a lava world).</summary>
         /// <remarks>Pre: none (unknown ids read as verdant). Post: the terrain palette's snow colour. Side effects: none.</remarks>
         public static Color SnowColor(string planetTypeId) => PaletteFor(planetTypeId).Snow;
+
+        // The planet's low-ground colour (summer palette): what a road's worn verge blends into.
+        internal static Color GroundColor(string id) => PaletteFor(id).Low;
 
         internal static Color RoadColor(string id, bool main)
         {
@@ -153,7 +178,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
-        private const int GeologyStamps = 8; // CosmiBiome.hlsl COSMI_GEO_MAX; TemplatePlanner places at most 8
+        private const int GeologyStamps = 24; // CosmiBiome.hlsl COSMI_GEO_MAX; covers all 24 LandformSynth kinds on the lobby planet
         private static readonly int GeoCountId = Shader.PropertyToID("_CosmiGeoCount");
         private static readonly int GeoCenterId = Shader.PropertyToID("_CosmiGeoCenter");
         private static readonly int GeoRightId = Shader.PropertyToID("_CosmiGeoRight");
@@ -161,6 +186,7 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly int GeoRockId = Shader.PropertyToID("_CosmiGeoRock");
         private static readonly int GeoBaseId = Shader.PropertyToID("_CosmiGeoBase");
         private static readonly int GeoSnowId = Shader.PropertyToID("_CosmiGeoSnow");
+        private static readonly int GeoMinSnowId = Shader.PropertyToID("_CosmiGeoMinSnow");
 
         /// <summary>Snow line (share of the terrain relief) the ground of landform <paramref name="kind"/> is drawn with.</summary>
         /// <remarks>
@@ -185,7 +211,7 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Tells the ground shaders which bedrock lies where, so rock faces take its colour.</summary>
         /// <remarks>
         /// REQ: planet-world.md#地質變體 (P3-24 a: 地表配色).
-        /// Pre: view.Count ≤ 8; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined;
+        /// Pre: view.Count ≤ 24; perStamp has one defined entry per stamp (TemplatePlanner.Geologies); baseGeology defined;
         ///      landforms null, or one landform kind per stamp (LandformSynth.KindOf of each stamp id).
         /// Post: terrain and grass-root rock colour is the bedrock's stone mixed into the planet type's rock colour,
         ///       inside each stamp as far as its height blend reaches; Native bedrock keeps the planet's own. With
@@ -196,7 +222,7 @@ namespace Cosmimera.Bootstrap.Demo
             IReadOnlyList<string> landforms = null)
         {
             Contract.Requires(perStamp != null && perStamp.Count == view.Count && view.Count <= GeologyStamps,
-                "one geology per stamp, at most 8 stamps");
+                "one geology per stamp, at most 24 stamps");
             Contract.Requires(landforms == null || landforms.Count == view.Count, "one landform kind per stamp");
             var snow = new Vector4[GeologyStamps];
             Color rock = PaletteFor(planetTypeId).Rock;
@@ -205,6 +231,7 @@ namespace Cosmimera.Bootstrap.Demo
             var right = new Vector4[GeologyStamps];
             var up = new Vector4[GeologyStamps];
             var colour = new Vector4[GeologyStamps];
+            float minSnow = 1f;
             for (int i = 0; i < view.Count; i++)
             {
                 TemplateStamp s = view.Stamp(i);
@@ -212,10 +239,16 @@ namespace Cosmimera.Bootstrap.Demo
                 right[i] = new Vector4(s.Right.x, s.Right.y, s.Right.z, 0f);
                 up[i] = new Vector4(s.Up.x, s.Up.y, s.Up.z, 0f);
                 colour[i] = GeologyRock(rock, perStamp[i]);
-                snow[i] = new Vector4(landforms != null ? LandformSnowLine(landforms[i]) : 0f, 0f, 0f, 0f);
+                float snowLine = landforms != null ? LandformSnowLine(landforms[i]) : 0f;
+                snow[i] = new Vector4(snowLine, 0f, 0f, 0f);
+                if (snowLine > 0f)
+                {
+                    minSnow = math.min(minSnow, snowLine);
+                }
             }
 
             Shader.SetGlobalVectorArray(GeoSnowId, snow);
+            Shader.SetGlobalFloat(GeoMinSnowId, minSnow);
 
             Shader.SetGlobalVectorArray(GeoCenterId, center);
             Shader.SetGlobalVectorArray(GeoRightId, right);
@@ -230,6 +263,7 @@ namespace Cosmimera.Bootstrap.Demo
         public static void ClearGeology()
         {
             Shader.SetGlobalFloat(GeoCountId, 0f);
+            Shader.SetGlobalFloat(GeoMinSnowId, 0f);
             Shader.SetGlobalVector(GeoBaseId, Vector4.zero);
         }
 
@@ -429,8 +463,18 @@ namespace Cosmimera.Bootstrap.Demo
         private float _sinceSimS;
         private float _cloudCover = 0.42f;
         private float _wind = 1f;
+        private float _stormDark;
+        private float _windHeadingRad;
+        private float _windTargetRad;
+        private float _flash;
         private float _baseFogStartM;
         private float _baseFogEndM;
+        private float _weatherFogStartM;
+        private float _weatherFogEndM;
+        private float _underwaterDepthM;
+        private Color _shallowWater;
+        private Color _deepWater;
+        private bool _wasUnderwater;
 
         private static readonly int PlanetId = Shader.PropertyToID("_CosmiPlanet");
         private static readonly int PoleAxisId = Shader.PropertyToID("_CosmiPoleAxis");
@@ -439,6 +483,15 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly int SunColorId = Shader.PropertyToID("_CosmiSunColor");
         private static readonly int CloudId = Shader.PropertyToID("_CosmiCloud");
         private static readonly int WindId = Shader.PropertyToID("_CosmiWind");
+        private static readonly int VortexAId = Shader.PropertyToID("_CosmiVortexA");
+        private static readonly int VortexBId = Shader.PropertyToID("_CosmiVortexB");
+        private static readonly int VortexCountId = Shader.PropertyToID("_CosmiVortexCount");
+        // Matches COSMI_MAX_VORTICES: a global array's length is fixed by its first upload.
+        private const int ShaderVortices = 8;
+        private readonly Vector4[] _vortexA = new Vector4[ShaderVortices];
+        private readonly Vector4[] _vortexB = new Vector4[ShaderVortices];
+        private int _vortexCount;
+        private readonly bool[] _vortexUsed = new bool[WindField.MaxVortices * 4];
 
         // Cloud cells ~70 m across: several fit inside the R=320 horizon, so their shadows visibly cross the ground.
         private const float CloudCellM = 70f;
@@ -453,6 +506,81 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(cloudCover >= 0f && cloudCover <= 1f && wind >= 0f, "cloudCover in [0,1]; wind >= 0");
             _cloudCover = cloudCover;
             _wind = wind;
+        }
+
+        /// <summary>Sets the vortices the grass, trees and clouds swirl around (CosmiAtmosphere.hlsl).</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: vortices non-null; focus a unit direction (the camera's ground point).
+        /// Post: from the next LateUpdate the shaders see every cyclone first, then the other vortices nearest focus, up
+        ///       to 8. Side effects: none until then.
+        /// </remarks>
+        public void SetVortices(IReadOnlyList<WindVortex> vortices, float3 focus)
+        {
+            Contract.Requires(vortices != null, "vortices required");
+            _vortexCount = 0;
+            for (int i = 0; i < vortices.Count && _vortexCount < ShaderVortices; i++)
+            {
+                if (vortices[i].Kind == VortexKind.Cyclone && vortices[i].PeakPermille > 0) Upload(vortices[i]);
+            }
+
+            // The rest nearest-first, so when more than fit are live the ones around the player win. Selection over a
+            // short list (≤ WindField.MaxVortices per block): no sort, no allocation.
+            System.Array.Clear(_vortexUsed, 0, _vortexUsed.Length);
+            while (_vortexCount < ShaderVortices)
+            {
+                int best = -1;
+                float bestD = float.MaxValue;
+                for (int i = 0; i < vortices.Count && i < _vortexUsed.Length; i++)
+                {
+                    WindVortex v = vortices[i];
+                    if (_vortexUsed[i] || v.Kind == VortexKind.Cyclone || v.PeakPermille <= 0) continue;
+                    float d = math.distancesq(v.Center, focus);
+                    if (d < bestD)
+                    {
+                        bestD = d;
+                        best = i;
+                    }
+                }
+
+                if (best < 0) break;
+                _vortexUsed[best] = true;
+                Upload(vortices[best]);
+            }
+        }
+
+        private void Upload(in WindVortex v)
+        {
+            _vortexA[_vortexCount] = new Vector4(v.Center.x, v.Center.y, v.Center.z, v.CoreM);
+            _vortexB[_vortexCount] = new Vector4(v.OuterM, v.Spin * v.PeakPermille / 1000f,
+                v.InflowTenths * (math.PI / 1800f), (float)v.Kind);
+            _vortexCount++;
+        }
+
+        /// <summary>The eased wind heading the shaders are drawing (radians from local east toward north).</summary>
+        /// <remarks>Pre: none. Post: in [0, 2π). Side effects: none.</remarks>
+        public float WindHeadingRad => _windHeadingRad;
+
+        /// <summary>Sets the wind heading the scenery shaders bend toward.</summary>
+        /// <remarks>
+        /// REQ: weather.md#風向. Pre: headingTenths any integer (tenths of a degree from local east toward north).
+        /// Post: applied from the next LateUpdate. Side effects: none until then.
+        /// </remarks>
+        public void SetWindHeading(int headingTenths)
+        {
+            _windTargetRad = headingTenths * (math.PI / 1800f);
+        }
+
+        /// <summary>Sets how dark the storm sky is and the current lightning flash.</summary>
+        /// <remarks>
+        /// Pre: darkness and flash in [0, 1].
+        /// Post: from the next LateUpdate sky, fog, ambient and sun are dimmed by up to darkness × 55 % and then pulled
+        ///       toward a cold white by flash. Side effects: none until then.
+        /// </remarks>
+        public void SetStorm(float darkness, float flash)
+        {
+            Contract.Requires(darkness >= 0f && darkness <= 1f && flash >= 0f && flash <= 1f, "darkness and flash in [0,1]");
+            _stormDark = darkness;
+            _flash = flash;
         }
 
         /// <summary>Sets the simulation clock the sun position is drawn from.</summary>
@@ -478,8 +606,27 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(_camera != null && _baseFogEndM > 0f, "Configure must run before setting visibility");
             Contract.Requires(math.isfinite(radiusM) && radiusM > 0f, "visibility radius must be finite and > 0");
-            RenderSettings.fogEndDistance = math.min(radiusM, _baseFogEndM);
-            RenderSettings.fogStartDistance = _baseFogStartM * RenderSettings.fogEndDistance / _baseFogEndM;
+            _weatherFogEndM = math.min(radiusM, _baseFogEndM);
+            _weatherFogStartM = _baseFogStartM * _weatherFogEndM / _baseFogEndM;
+            // Underwater the water's own fog wins (LateUpdate); the weather cap waits until the camera surfaces.
+            if (_underwaterDepthM > 0f) return;
+            RenderSettings.fogEndDistance = _weatherFogEndM;
+            RenderSettings.fogStartDistance = _weatherFogStartM;
+        }
+
+        /// <summary>Sets how deep under the sea the camera is, and the sea's colours.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md 潛水視覺. Pre: depthM finite (≤ 0 = above water).
+        /// Post: from the next LateUpdate, while depthM > 0, fog, sky, ambient and sun turn to water that darkens and
+        ///       closes in with depth (visibility ~26 m near the surface → ~11 m at 40 m); at ≤ 0 the weather fog returns.
+        /// Side effects: none until then.
+        /// </remarks>
+        public void SetUnderwater(float depthM, Color shallow, Color deep)
+        {
+            Contract.Requires(math.isfinite(depthM), "depth must be finite");
+            _underwaterDepthM = depthM;
+            _shallowWater = shallow;
+            _deepWater = deep;
         }
 
         /// <summary>Fog start on planets of R ≥ 640 m, where it was tuned.</summary>
@@ -533,6 +680,8 @@ namespace Cosmimera.Bootstrap.Demo
             RenderSettings.fogEndDistance = math.max(250f, planet.Radius * 0.5f);
             _baseFogStartM = RenderSettings.fogStartDistance;
             _baseFogEndM = RenderSettings.fogEndDistance;
+            _weatherFogStartM = _baseFogStartM;
+            _weatherFogEndM = _baseFogEndM;
         }
 
         private void LateUpdate()
@@ -549,6 +698,11 @@ namespace Cosmimera.Bootstrap.Demo
             float angle = (float)((turns - math.floor(turns)) * 2.0 * math.PI_DBL);
             var toSun = new float3(math.cos(angle), 0f, math.sin(angle));
             _sun.transform.rotation = Quaternion.LookRotation(-(Vector3)toSun, (Vector3)_poleAxis);
+            // Crossing into another region can swing the heading by up to 180°; turn the field over a few seconds
+            // instead of snapping every blade at once.
+            float turn = math.fmod(_windTargetRad - _windHeadingRad + 3f * math.PI, 2f * math.PI) - math.PI;
+            _windHeadingRad += turn * math.saturate(Time.deltaTime * 0.6f);
+            _windHeadingRad = math.fmod(_windHeadingRad + 2f * math.PI, 2f * math.PI);
             float3 cam = _camera.transform.position;
             if (math.distance(cam, _planet.Center) < _planet.Radius * 0.5f)
             {
@@ -565,6 +719,17 @@ namespace Cosmimera.Bootstrap.Demo
             Color horizon = Color.Lerp(sky, Color.white, 0.06f * day);
             var zenith = new Color(sky.r * 0.24f, sky.g * 0.48f, sky.b * 0.96f);
             Color sunTint = Color.Lerp(new Color(1f, 0.56f, 0.3f), new Color(1f, 0.96f, 0.88f), math.saturate((e - 0.05f) / 0.4f));
+            // A storm sky is slate, not just cloudy: dimming everything makes the lightning flash read as a flash.
+            float dim = 1f - 0.55f * _stormDark;
+            var slate = new Color(0.36f, 0.4f, 0.47f);
+            horizon = Color.Lerp(horizon, slate * horizon.grayscale * 1.6f, 0.5f * _stormDark) * dim;
+            zenith = Color.Lerp(zenith, slate * zenith.grayscale * 1.6f, 0.5f * _stormDark) * dim;
+            sky *= dim;
+            sunTint *= dim;
+            var flashColor = new Color(0.82f, 0.88f, 1f);
+            horizon = Color.Lerp(horizon, flashColor, 0.85f * _flash);
+            zenith = Color.Lerp(zenith, flashColor * 0.9f, 0.85f * _flash);
+            sky = Color.Lerp(sky, flashColor, 0.7f * _flash);
             _camera.backgroundColor = horizon;
             RenderSettings.fogColor = horizon;
             RenderSettings.ambientLight = sky * 0.6f;
@@ -576,8 +741,42 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalColor(SkyZenithId, zenith);
             Shader.SetGlobalColor(SunColorId, new Color(sunTint.r * day, sunTint.g * day, sunTint.b * day, day));
             Shader.SetGlobalVector(CloudId, new Vector4(_cloudCover, 0.38f * day, 0.012f * (0.5f + _wind), CloudCellM));
-            Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, 0f));
-            _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f;
+            Shader.SetGlobalVector(WindId, new Vector4(_wind, 0.22f * (0.5f + _wind), 9f, _windHeadingRad));
+            Shader.SetGlobalVectorArray(VortexAId, _vortexA);
+            Shader.SetGlobalVectorArray(VortexBId, _vortexB);
+            Shader.SetGlobalFloat(VortexCountId, _vortexCount);
+            _sun.intensity = math.saturate(e * 4f + 0.3f) * 1.2f * dim;
+            ApplyUnderwater(day);
+        }
+
+        private void ApplyUnderwater(float day)
+        {
+            if (_underwaterDepthM <= 0f)
+            {
+                if (_wasUnderwater && _weatherFogEndM > 0f)
+                {
+                    RenderSettings.fogStartDistance = _weatherFogStartM;
+                    RenderSettings.fogEndDistance = _weatherFogEndM;
+                }
+
+                _wasUnderwater = false;
+                return;
+            }
+
+            _wasUnderwater = true;
+            float deep = math.saturate(_underwaterDepthM / 35f);
+            // Red goes first, then green: deeper water is darker and bluer. Night water is near black, lit only by
+            // what the moon and lamps give.
+            float light = math.exp(-_underwaterDepthM / 22f) * (0.18f + 0.82f * day);
+            Color water = Color.Lerp(_shallowWater, _deepWater * 0.7f, deep) * (0.25f + 0.75f * light);
+            water.a = 1f;
+            RenderSettings.fogColor = water;
+            RenderSettings.fogStartDistance = 0.5f;
+            RenderSettings.fogEndDistance = math.lerp(26f, 11f, math.saturate(_underwaterDepthM / 40f));
+            RenderSettings.ambientLight = water * 1.1f;
+            _camera.backgroundColor = water;
+            _sun.intensity *= 0.35f + 0.65f * light;
+            Shader.SetGlobalColor(SkyHorizonId, water);
         }
 
         private void OnDestroy()
@@ -594,6 +793,7 @@ namespace Cosmimera.Bootstrap.Demo
             Shader.SetGlobalColor(SunColorId, Color.clear);
             Shader.SetGlobalVector(CloudId, Vector4.zero);
             Shader.SetGlobalVector(WindId, Vector4.zero);
+            Shader.SetGlobalFloat(VortexCountId, 0f);
         }
     }
 }

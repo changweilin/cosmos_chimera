@@ -634,6 +634,7 @@ namespace Cosmimera.Net.Runtime.Model
 
             EffectBook book = BookFor(spec.Def.Trait);
             var combatant = new Combatant(_balance.Stats, _balance.Effects, s, mastery, resist, book, slots);
+            combatant.Level = spec.Level;
             float bodyRadiusM = Encounter.BodyRadiusFor(spec.Def.SizeClass);
             float collisionRadiusM = _balance.Collision.BodyMm(spec.Def.SizeClass) * 0.001f;
             float3 pos = GroundPoint(direction, bodyRadiusM);
@@ -902,7 +903,7 @@ namespace Cosmimera.Net.Runtime.Model
                 else if (outcome == HitOutcome.Hit && ctx.Move.DealsDamage)
                 {
                     int power = DamageModel.ScalePower(ctx.Move.Power, ctx.PowerDeltaPercent);
-                    int dmg = DamageModel.Compute(power, ctx.MasteryPercent, 0);
+                    int dmg = DamageModel.Compute(power, ctx.MasteryPercent, DamageModel.NeutralStat);
                     int dealt = p.Vitals.ApplyDamage(dmg, nowMs);
                     _events.Add(new ArenaEvent(ArenaEventKind.Hit, caster.ParticipantId, casterUnitId,
                         PlayerTargetBaseId + i, slot, dealt));

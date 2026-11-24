@@ -10,8 +10,8 @@ namespace Cosmimera.WorldGen.Tests
 {
     public sealed class SettlementPlannerTests
     {
-        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v2).
-        private const ulong SnapshotSeed12345V3 = 12227026268872262454UL;
+        // Pinned discrete digest of seed 12345 on the RunPlannerTests fixture, isLand null (SettlementPlanner v4).
+        private const ulong SnapshotSeed12345V4 = 11360243014706446998UL;
 
         private const float Radius = 640f;
         private readonly List<Object> _created = new List<Object>();
@@ -299,6 +299,66 @@ namespace Cosmimera.WorldGen.Tests
             Assert.That(bridges, Is.GreaterThan(0), "half the planet is sea, some road must cross it");
         }
 
+        // A ridge system ~60 m across: steep enough that a straight road climbs hard.
+        private static float Ridges(float3 d) => 12f * math.sin(d.x * 70f) * math.cos(d.z * 55f) + 6f * math.sin(d.y * 90f);
+
+        private static float WorstGrade(RunRoad road, System.Func<float3, float> ground)
+        {
+            float worst = 0f;
+            for (int i = 1; i < road.Points.Count; i++)
+            {
+                float run = math.distance(road.Points[i - 1], road.Points[i]) * Radius;
+                worst += math.abs(ground(road.Points[i]) - ground(road.Points[i - 1])) / math.max(run, 1e-3f);
+            }
+
+            return worst / (road.Points.Count - 1);
+        }
+
+        [Test]
+        public void Null_ground_equals_the_three_argument_layout()
+        {
+            RunPlan plan = Plan(42);
+            Assert.That(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null, null)),
+                Is.EqualTo(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null))));
+        }
+
+        [Test]
+        public void Terrain_following_roads_keep_ends_and_settlements_and_climb_less()
+        {
+            RunPlan plan = Plan(42);
+            RunLayout flat = SettlementPlanner.Generate(_planet, plan, null);
+            RunLayout bent = SettlementPlanner.Generate(_planet, plan, null, Ridges);
+            Assert.That(bent.Roads.Count, Is.EqualTo(flat.Roads.Count));
+            Assert.That(bent.Buildings.Count, Is.EqualTo(flat.Buildings.Count));
+            for (int b = 0; b < flat.Buildings.Count; b++)
+            {
+                Assert.That(bent.Buildings[b].Direction, Is.EqualTo(flat.Buildings[b].Direction));
+            }
+
+            float before = 0f, after = 0f;
+            for (int r = 0; r < flat.Roads.Count; r++)
+            {
+                RunRoad a = flat.Roads[r], b = bent.Roads[r];
+                Assert.That(b.Points.Count, Is.EqualTo(a.Points.Count));
+                Assert.That(b.Points[0], Is.EqualTo(a.Points[0]));
+                Assert.That(b.Points[b.Points.Count - 1], Is.EqualTo(a.Points[a.Points.Count - 1]));
+                float span = math.distance(a.Points[0], a.Points[a.Points.Count - 1]) * Radius;
+                for (int i = 0; i < a.Points.Count; i++)
+                {
+                    Assert.That(math.length(b.Points[i]), Is.EqualTo(1f).Within(1e-4f));
+                    Assert.That(math.distance(a.Points[i], b.Points[i]) * Radius,
+                        Is.LessThanOrEqualTo(math.min(36f, 0.18f * span) + 0.5f), $"road {r} vertex {i}");
+                }
+
+                before += WorstGrade(a, Ridges);
+                after += WorstGrade(b, Ridges);
+            }
+
+            Assert.That(after, Is.LessThan(before), "relaxed roads must climb less on average");
+            Assert.That(SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, plan, null, Ridges)),
+                Is.EqualTo(SettlementPlanner.Hash(bent)), "same inputs, same roads");
+        }
+
         [Test]
         public void Same_inputs_give_the_same_layout()
         {
@@ -343,11 +403,80 @@ namespace Cosmimera.WorldGen.Tests
         }
 
         [Test]
+        public void Non_mainland_settlements_only_spawn_on_planet_plus_and_start_stays_on_land()
+        {
+            // Continent around (0,1,0), ocean midband, and an island cap near (0,-1,0).
+            System.Func<float3, bool> archipelagic = d => d.y > 0.35f || d.y < -0.75f;
+            foreach (float smallRadius in new[] { 320f, 640f })
+            {
+                var p = new PlanetConfig(smallRadius, float3.zero);
+                RunPlan plan = RunPlanner.Generate(p, 7, _type, CreatureStage.Adult, _pool, _vocab, archipelagic);
+                RunLayout layout = SettlementPlanner.Generate(p, plan, archipelagic);
+                Assert.That(layout.Settlements[0].Domain, Is.EqualTo(SettlementDomain.Land));
+                foreach (RunSettlement s in layout.Settlements)
+                {
+                    Assert.That(s.Domain, Is.EqualTo(SettlementDomain.Land), $"radius {smallRadius}");
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.SkyTribe));
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.DeepSeaCity));
+                    Assert.That(s.Kind, Is.Not.EqualTo(SettlementKind.IslandSettlement));
+                }
+            }
+
+            foreach (float bigRadius in new[] { 960f, 1280f })
+            {
+                var p = new PlanetConfig(bigRadius, float3.zero);
+                bool sawSky = false, sawDeep = false, sawIsland = false;
+                for (ulong seed = 0; seed < 12 && (!sawSky || !sawDeep || !sawIsland); seed++)
+                {
+                    RunPlan plan = RunPlanner.Generate(p, seed, _type, CreatureStage.Adult, _pool, _vocab, archipelagic);
+                    RunLayout layout = SettlementPlanner.Generate(p, plan, archipelagic);
+                    Assert.That(layout.Settlements[0].Domain, Is.EqualTo(SettlementDomain.Land));
+                    foreach (RunSettlement s in layout.Settlements)
+                    {
+                        if (s.Kind == SettlementKind.SkyTribe)
+                        {
+                            sawSky = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.SkyIsland));
+                            Assert.That(s.AltitudeM, Is.InRange(1f, bigRadius));
+                            Assert.That(s.BuildingCount, Is.InRange(2, 3));
+                        }
+                        else if (s.Kind == SettlementKind.DeepSeaCity)
+                        {
+                            sawDeep = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.DeepSea));
+                            Assert.That(s.AltitudeM, Is.LessThan(-1f));
+                            Assert.That(s.BuildingCount, Is.InRange(1, 4));
+                            for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
+                            {
+                                Assert.That(archipelagic(layout.Buildings[b].Direction), Is.False);
+                            }
+                        }
+                        else if (s.Kind == SettlementKind.IslandSettlement)
+                        {
+                            sawIsland = true;
+                            Assert.That(s.Domain, Is.EqualTo(SettlementDomain.Island));
+                            Assert.That(s.BuildingCount, Is.InRange(1, 3));
+                            for (int b = s.FirstBuilding; b < s.FirstBuilding + s.BuildingCount; b++)
+                            {
+                                Assert.That(archipelagic(layout.Buildings[b].Direction), Is.True);
+                            }
+                        }
+                    }
+                }
+
+                Assert.That(sawSky, Is.True, $"radius {bigRadius} should place a SkyTribe");
+                Assert.That(sawDeep, Is.True, $"radius {bigRadius} should place a DeepSeaCity");
+                Assert.That(sawIsland, Is.True, $"radius {bigRadius} should place an IslandSettlement");
+            }
+        }
+
+        [Test]
         public void Snapshot_seed_12345_is_pinned()
         {
-            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(3), "bump the pin with the version");
+            // Version 5 only changed the terrain-following overload; without a ground function the v4 digest holds.
+            Assert.That(SettlementPlanner.GeneratorVersion, Is.EqualTo(5), "bump the pin with the version");
             ulong h = SettlementPlanner.Hash(SettlementPlanner.Generate(_planet, Plan(12345), null));
-            Assert.That(h, Is.EqualTo(SnapshotSeed12345V3), "actual " + h);
+            Assert.That(h, Is.EqualTo(SnapshotSeed12345V4), "actual " + h);
         }
     }
 }

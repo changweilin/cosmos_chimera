@@ -107,7 +107,8 @@ namespace Cosmimera.Food
         /// <summary>Checks whether <paramref name="method"/> is unlocked in <paramref name="context"/>.</summary>
         /// <remarks>
         /// Pre: method is a defined CookingMethod.
-        /// Post: true at Kitchen; in Field, heat methods require CookFire, ColdMix/Grind require CulinaryPrep, Steam accepts either.
+        /// Post: true at Kitchen; in Field, heat methods require CookFire, ColdMix/Grind require CulinaryPrep, Steam accepts either,
+        ///       ChillBrew requires ChillBrew.
         /// Side effects: none.
         /// </remarks>
         public static bool HasSkillForMethod(CookingMethod method, in CookingContext context)
@@ -132,6 +133,9 @@ namespace Cosmimera.Food
                 case CookingMethod.ColdMix:
                 case CookingMethod.Grind:
                     return context.TeamModifiers.CanCulinaryPrep;
+
+                case CookingMethod.ChillBrew:
+                    return context.TeamModifiers.CanChillBrew;
 
                 default:
                     return false;
@@ -182,16 +186,33 @@ namespace Cosmimera.Food
         public static CookingQuality EvaluateQuality(RecipeSpec recipe, in CookingContext context)
         {
             Contract.Requires(recipe != null, "recipe must not be null");
+            return EvaluateQuality(recipe.ElementAffinity, recipe.Method, false, context);
+        }
+
+        /// <summary>Computes the quality tier for a dish of <paramref name="affinity"/> cooked by <paramref name="method"/>.</summary>
+        /// <remarks>
+        /// Pre: affinity and method defined.
+        /// Post: score = Kitchen(+1) + CookFire&amp;CulinaryPrep(+2) or either(+1) + party has affinity(+1)
+        ///       + chilled ingredient used in Steam/ColdMix(+1); ≥3 Masterwork, 2 Tasty, else Normal. Deterministic (no crit roll).
+        /// Side effects: none.
+        /// </remarks>
+        public static CookingQuality EvaluateQuality(Element affinity, CookingMethod method, bool usedChilled, in CookingContext context)
+        {
+            Contract.Requires(Enum.IsDefined(typeof(Element), affinity), "affinity must be defined");
+            Contract.Requires(Enum.IsDefined(typeof(CookingMethod), method), "method must be defined");
 
             bool hasFire = context.TeamModifiers.CanCookFire;
             bool hasPrep = context.TeamModifiers.CanCulinaryPrep;
-            bool hasElement = HasElement(context.PartyElements, recipe.ElementAffinity);
+            bool hasElement = HasElement(context.PartyElements, affinity);
+            // REQ: docs/design/cuisine.md#4 品質 — chilled goods keep texture only for gentle methods.
+            bool chilledBonus = usedChilled && (method == CookingMethod.Steam || method == CookingMethod.ColdMix);
 
             int score = 0;
             if (context.Station == CookingStationKind.Kitchen) score++;
             if (hasFire && hasPrep) score += 2;
             else if (hasFire || hasPrep) score++;
             if (hasElement) score++;
+            if (chilledBonus) score++;
 
             if (score >= 3) return CookingQuality.Masterwork;
             if (score >= 2) return CookingQuality.Tasty;
@@ -228,15 +249,40 @@ namespace Cosmimera.Food
                 return CookRefusalReason.UnknownOutputFood;
             }
 
-            bool consumed = inventory.TryConsumeForRecipe(recipe, catalog);
+            var consumedIds = new Dictionary<string, int>();
+            bool consumed = inventory.TryConsumeForRecipe(recipe, catalog, consumedIds);
             Contract.Requires(consumed, "CanCook passed so TryConsumeForRecipe must succeed");
 
-            CookingQuality quality = EvaluateQuality(recipe, context);
+            bool usedChilled = false;
+            foreach (KeyValuePair<string, int> kv in consumedIds)
+            {
+                usedChilled |= catalog.TryGetIngredient(kv.Key, out IngredientSpec used) && (used.Traits.Tags & IngredientTags.Chilled) != 0;
+            }
+
+            CookingQuality quality = EvaluateQuality(recipe.ElementAffinity, recipe.Method, usedChilled, context);
             int qty = recipe.OutputQuantity + (quality == CookingQuality.Masterwork ? 1 : 0);
             inventory.AddFood(food.Id, qty);
 
             outcome = new CookOutcome(food, qty, quality);
             return CookRefusalReason.None;
+        }
+
+        /// <summary>The ingredient category an undiscovered recipe reveals as its hint ("？" entry, cuisine.md#6).</summary>
+        /// <remarks>
+        /// Pre: recipe and catalog non-null; recipe has at least one requirement whose id (if any) is registered.
+        /// Post: the first requirement's category (an id requirement reports its ingredient's category). Deterministic.
+        /// Side effects: none.
+        /// </remarks>
+        public static IngredientCategory RecipeHintCategory(RecipeSpec recipe, FoodCatalog catalog)
+        {
+            Contract.Requires(recipe != null, "recipe must not be null");
+            Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(recipe.Requirements.Count > 0, "recipe must have requirements");
+            RecipeIngredientRequirement first = recipe.Requirements[0];
+            if (first.IsCategoryMatch) return first.Category;
+            bool known = catalog.TryGetIngredient(first.IngredientId, out IngredientSpec ingredient);
+            Contract.Requires(known, "recipe ingredient must be registered: " + first.IngredientId);
+            return ingredient.Category;
         }
 
         /// <summary>Returns the scaled buff duration in milliseconds for <paramref name="quality"/>, clamped to EffectBook.MaxDurationMs.</summary>

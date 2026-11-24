@@ -74,20 +74,21 @@ namespace Cosmimera.GameData
         public long Total => (long)hp + speed + yinAtk + yangAtk + yinDef + yangDef;
 
         /// <summary>
-        /// These stats (the LV100 basis) scaled to <paramref name="level"/>: each of the six becomes
-        /// round_half_up(B × (L + 10) / 110). REQ: docs/design/level-progression.md#能力值縮放 (Q-C28, Q-C67).
+        /// These stats (the LV100 basis) scaled to <paramref name="level"/>: HP via <see cref="LevelCurve.Scale"/> (exponential),
+        /// speed via round_half_up(B x (L + 10) / 110); yin/yang attack and defence stay at their base values so the exponential
+        /// 50-point doubling step is preserved at every level. REQ: docs/design/level-progression.md
         /// </summary>
         /// <remarks>
         /// Pre: 1 &lt;= level &lt;= 100; stats &gt;= 0.
-        /// Post: each value in 0..base, monotone in level, equal to base at 100. Side effects: none.
+        /// Post: hp and speed in 0..base (monotone in level, equal to base at 100); atk/def unchanged. Side effects: none.
         /// </remarks>
         public CreatureStats AtLevel(int level)
         {
             Contract.Requires(level >= 1 && level <= 100, "level must be 1..100");
             Contract.Requires(hp >= 0 && speed >= 0 && yinAtk >= 0 && yangAtk >= 0 && yinDef >= 0 && yangDef >= 0,
                 "stats must be >= 0");
-            return new CreatureStats(ScaleToLevel(hp, level), ScaleToLevel(speed, level), ScaleToLevel(yinAtk, level),
-                ScaleToLevel(yangAtk, level), ScaleToLevel(yinDef, level), ScaleToLevel(yangDef, level));
+            return new CreatureStats(LevelCurve.Scale(hp, level), ScaleToLevel(speed, level), yinAtk,
+                yangAtk, yinDef, yangDef);
         }
 
         /// <summary>One LV100 basis value scaled to <paramref name="level"/>: round_half_up(B × (L + 10) / 110).</summary>

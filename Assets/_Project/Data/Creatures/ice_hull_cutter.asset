@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: ice_hull_cutter
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: ice_hull_cutter
+  lineId: line_ice_driftvessel
+  stage: 1
+  sizeClass: 1
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 780053cd9b8481249834b679b3714527, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 39
+  evolutionMaterials:
+  - element: 5
+    tier: 2
+    qty: 5
+  resist: 46000000610000007600000032000000600000008700000060000000600000006000000060000000
+  mastery:
+  - element: 1
+    value: 64
+  - element: 2
+    value: 96
+  - element: 5
+    value: 125
+  stats:
+    hp: 104
+    speed: 125
+    yinAtk: 114
+    yangAtk: 47
+    yinDef: 47
+    yangDef: 83
+  signatureMove: {fileID: 11400000, guid: 592f36a318b9bd74f8a9ee3ef4fd0106, type: 2}
+  trait: {fileID: 11400000, guid: 644ab8ffe29ab0347a7b9b6a9ce55a10, type: 2}
+  fieldUtility: 68
+  conceptJson: "{\"base\":\"\u6297\u51B0\u5713\u5E95\u63A2\u96AA\u5FEB\u8247 \xD7
+    \u6D6E\u51B0\u89C0\u6E2C\u5100\u8207\u96D9\u677F\u6ED1\u51B0\u9F8D\u9AA8\",\"stage_look\":\"\u5F27\u5F62\u6728\u7532\u8239\u8EAB\u8986\u6EFF\u51B0\u6676\u88DD\u7532\uFF0C\u6845\u9802\u67B6\u8A2D\u65CB\u8F49\u89C0\u6E2C\u9285\u5100\uFF0C\u80FD\u4E58\u6D6E\u51B0\u885D\u649E\u6575\u9663\",\"archetype\":\"arch_fridtjof_nansen\",\"region\":\"\u6975\u5730\",\"motifs_used\":[\"\u5713\u5E95\u6297\u51B0\u6728\u5E06\u8239\",\"\u6D6E\u51B0\u89C0\u6E2C\u5100\",\"\u6975\u5730\u96D9\u677F\u96EA\u6A47\"],\"role\":\"\u4E2D\u8DDD\u7A81\u9032\uFF1A\u6D6E\u51B0\u76F4\u7DDA\u885D\u649E\uFF08\u65BD\u653E\u51B0\u62DB\u66AB\u6642\u63D0\u9AD8\u51B0\u5C08\u7CBE\uFF09\",\"palette\":\"\u7D14\u6DE8\u51B0\u85CD\u3001\u971C\u96EA\u900F\u767D\u3001\u5361\u5176\u68D5\u3001\u9EC3\u9285\u91D1\"}"
+  needsSensitivityReview: 0

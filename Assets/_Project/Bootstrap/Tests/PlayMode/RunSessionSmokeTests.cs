@@ -258,6 +258,12 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(settlementView.Roads.Count, Is.GreaterThan(0), "roads are drawn");
             Assert.That(settlementView.transform, Is.Not.EqualTo(scatter.transform), "settlements are not scatter roots");
 
+            // P3-32: wandering trainers generated and spawned with placeholder visuals.
+            Assert.That(session.TrainersForTests, Is.Not.Null, "trainers generated");
+            Assert.That(session.TrainersForTests.Trainers.Count, Is.GreaterThan(0));
+            Assert.That(session.TrainerViewForTests, Is.Not.Null, "trainer view is attached");
+            Assert.That(session.TrainerViewForTests.Trainers.Count, Is.EqualTo(session.TrainersForTests.Trainers.Count));
+
             // P1-08 star shell: attached, centred on the camera, opacity in range.
             var stars = session.GetComponent<StarField>();
             Assert.That(stars, Is.Not.Null, "star field is attached");

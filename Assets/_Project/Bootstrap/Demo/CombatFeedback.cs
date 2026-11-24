@@ -249,6 +249,68 @@ namespace Cosmimera.Bootstrap.Demo
             Play(_overloadClip, 0.6f);
         }
 
+        /// <summary>Records a normal or perfect block shield pulse, floating label and SFX (P2-14/P2-17).</summary>
+        /// <remarks>Pre: not disposed. Post: block feedback queued. Side effects: plays SFX and spawns pooled VFX.</remarks>
+        public void ShowBlock(float3 worldPos, float3 forward, float3 localUp, float radiusM, bool perfect)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Color col = perfect ? new Color(1f, 0.86f, 0.22f, 1f) : new Color(0.42f, 0.78f, 1f, 1f);
+            AddText(worldPos + localUp * (radiusM + 0.7f), localUp, perfect ? "PARRY!" : "BLOCK", col,
+                perfect ? 0.95f : 0.75f, perfect);
+            SpawnPulse(PrimitiveType.Sphere, worldPos + localUp * (radiusM * 0.5f), forward, localUp,
+                Vector3.one * math.max(0.8f, radiusM * (perfect ? 2.2f : 1.6f)),
+                new Color(col.r, col.g, col.b, perfect ? 0.65f : 0.45f), perfect ? 0.28f : 0.18f, expand: perfect);
+            Play(perfect ? _healClip : _castClip, perfect ? 0.65f : 0.4f);
+        }
+
+        /// <summary>Records a guard-break shockwave and label when the stance gauge fills (combat.md#格擋).</summary>
+        /// <remarks>Pre: not disposed. Post: guard-break feedback queued. Side effects: plays SFX and spawns pooled VFX.</remarks>
+        public void ShowGuardBreak(float3 worldPos, float3 forward, float3 localUp, float radiusM)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            AddText(worldPos + localUp * (radiusM + 0.8f), localUp, "BREAK!", new Color(1f, 0.3f, 0.25f, 1f), 1.0f, true);
+            SpawnPulse(PrimitiveType.Cylinder, worldPos + localUp * 0.15f, forward, localUp,
+                new Vector3(radiusM * 3.2f, 0.1f, radiusM * 3.2f), new Color(1f, 0.3f, 0.25f, 0.6f), 0.35f, expand: true);
+            Play(_hitClip, 0.8f);
+        }
+
+        /// <summary>Records a perfect-dodge afterimage and label (combat.md#完美閃避).</summary>
+        /// <remarks>Pre: not disposed. Post: dodge feedback queued. Side effects: plays SFX and spawns pooled VFX.</remarks>
+        public void ShowPerfectDodge(float3 worldPos, float3 forward, float3 localUp, float radiusM)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            AddText(worldPos + localUp * (radiusM + 0.7f), localUp, "DODGE!", new Color(0.45f, 1f, 0.88f, 1f), 0.95f, true);
+            SpawnPulse(PrimitiveType.Capsule, worldPos + localUp * (radiusM * 0.5f), forward, localUp,
+                new Vector3(radiusM * 1.4f, radiusM * 0.9f, radiusM * 1.4f), new Color(0.45f, 1f, 0.88f, 0.65f), 0.34f, expand: true);
+            Play(_missClip, 0.7f);
+        }
+
+        /// <summary>Records a stagger burst and label when a unit's stagger gauge fills (combat.md#失衡與擊退).</summary>
+        /// <remarks>Pre: not disposed. Post: stagger feedback queued. Side effects: plays SFX and spawns pooled VFX.</remarks>
+        public void ShowStagger(float3 worldPos, float3 forward, float3 localUp, float radiusM)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            AddText(worldPos + localUp * (radiusM + 0.8f), localUp, "STAGGER!", new Color(1f, 0.68f, 0.2f, 1f), 0.95f, true);
+            SpawnPulse(PrimitiveType.Cylinder, worldPos + localUp * 0.15f, forward, localUp,
+                new Vector3(radiusM * 2.8f, 0.08f, radiusM * 2.8f), new Color(1f, 0.68f, 0.2f, 0.55f), 0.3f, expand: true);
+        }
+
         /// <summary>Advances floating text and pulse VFX timers, and updates active ground field rings.</summary>
         /// <remarks>
         /// Pre: not disposed; dt >= 0; activeFields non-null.

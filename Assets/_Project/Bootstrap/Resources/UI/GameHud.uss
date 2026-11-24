@@ -1,0 +1,220 @@
+/* In-Game HUD */
+
+.hud-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px;
+    justify-content: space-between;
+}
+
+.hud-top-row {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.hud-col-left {
+    width: 300px;
+    flex-direction: column;
+}
+
+.hud-col-center {
+    flex-grow: 1;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.hud-col-right {
+    width: 300px;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.hud-card {
+    background-color: rgba(15, 23, 42, 0.84);
+    border-width: 1px;
+    border-color: rgba(71, 85, 105, 0.85);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.hud-quest-title {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(251, 191, 36);
+    margin-bottom: 4px;
+    white-space: normal;
+}
+
+.hud-quest-body {
+    font-size: 13px;
+    color: rgb(226, 232, 240);
+    white-space: normal;
+}
+
+.hud-boss-card {
+    width: 100%;
+    max-width: 520px;
+    background-color: rgba(15, 23, 42, 0.90);
+    border-width: 1px;
+    border-color: rgb(220, 38, 38);
+    border-radius: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.hud-boss-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.hud-boss-name {
+    font-size: 15px;
+    -unity-font-style: bold;
+    color: rgb(254, 226, 226);
+}
+
+.hud-boss-hp-text {
+    font-size: 12px;
+    color: rgb(252, 165, 165);
+}
+
+.hud-boss-track {
+    height: 12px;
+    background-color: rgb(30, 10, 15);
+    border-width: 1px;
+    border-color: rgb(127, 29, 29);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.hud-actions-row {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.hud-top-btn {
+    margin-left: 8px;
+    margin-bottom: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 13px;
+}
+
+.hud-team-list {
+    width: 100%;
+}
+
+.hud-member-card {
+    background-color: rgba(15, 23, 42, 0.84);
+    border-width: 1px;
+    border-color: rgb(51, 65, 85);
+    border-radius: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    margin-bottom: 5px;
+}
+
+.hud-member-active {
+    border-color: rgb(56, 189, 248);
+    background-color: rgba(12, 74, 110, 0.65);
+}
+
+.hud-member-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.hud-member-name {
+    font-size: 13px;
+    -unity-font-style: bold;
+    color: rgb(241, 245, 249);
+}
+
+.hud-member-hp-label {
+    font-size: 11px;
+    color: rgb(148, 163, 184);
+}
+
+.hud-bottom-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.hud-controls-card {
+    max-width: 380px;
+}
+
+.hud-center-prompts {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 110px;
+    align-items: center;
+}
+
+.hud-toast {
+    background-color: rgba(12, 74, 110, 0.92);
+    border-width: 1px;
+    border-color: rgb(56, 189, 248);
+    border-radius: 999px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(240, 249, 255);
+}
+
+.hud-interact-pill {
+    background-color: rgba(15, 23, 42, 0.90);
+    border-width: 1px;
+    border-color: rgb(251, 191, 36);
+    border-radius: 999px;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(254, 243, 199);
+}
+
+.hud-interact-menu {
+    width: 360px;
+    background-color: rgba(15, 23, 42, 0.96);
+    border-width: 1px;
+    border-color: rgb(56, 189, 248);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.hud-loading-pill {
+    background-color: rgba(15, 23, 42, 0.92);
+    border-width: 1px;
+    border-color: rgb(56, 189, 248);
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    color: rgb(224, 242, 254);
+}

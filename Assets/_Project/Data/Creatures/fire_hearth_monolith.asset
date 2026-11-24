@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: fire_hearth_monolith
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: fire_hearth_monolith
+  lineId: line_fire_baobabhearth
+  stage: 2
+  sizeClass: 2
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 5e0000005e0000002a0000008e000000790000003d0000005e0000005e0000005e0000005e000000
+  mastery:
+  - element: 1
+    value: 100
+  - element: 3
+    value: 125
+  - element: 4
+    value: 75
+  stats:
+    hp: 141
+    speed: 49
+    yinAtk: 111
+    yangAtk: 135
+    yinDef: 68
+    yangDef: 110
+  signatureMove: {fileID: 11400000, guid: a647f104561dc9841af875d97788f213, type: 2}
+  trait: {fileID: 11400000, guid: 3d7fc95750843114a9347ed1a8c77035, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u5DE8\u9C77\u77F3\u6797\u7194\u7210\u7378 \xD7 \u9AD8\u5730\u7ACB\u77F3\u706B\u53E3\u8207\u5DE8\u5927\u7334\u9EB5\u5305\u6A39\u51A0\u7532\u6BBC\",\"stage_look\":\"\u80CC\u8CA0\u5982\u9AD8\u5730\u7ACB\u77F3\u8207\u7334\u9EB5\u5305\u5DE8\u6A39\u5171\u751F\u7684\u706B\u5C71\u53E3\u7532\u76FE\uFF0C\u6DF1\u6DF5\u5927\u984E\u542B\u8457\u8D64\u7D05\u706B\u7403\",\"archetype\":\"arch_ibonia\",\"region\":\"\u975E\u6D32\",\"motifs_used\":[\"\u70C8\u706B\u8A95\u751F\u7D05\u5149\",\"\u5DE8\u578B\u7334\u9EB5\u5305\u6A39\",\"\u6DF1\u6F6D\u5DE8\u9C77\",\"\u9AD8\u5730\u7ACB\u77F3\"],\"role\":\"\u5F8C\u6392\u7832\u64CA\u3001\u63A7\u8DDD\uFF1A\u9060\u8DDD\u5B9A\u9EDE\u706B\u5C71\u7206\u767C\uFF08\u65BD\u653E\u706B\u62DB\u77ED\u66AB\u63D0\u9AD8\u9583\u907F\u7387\uFF09\",\"palette\":\"\u7194\u5CA9\u8D64\u7D05\u3001\u9676\u571F\u78DA\u7D05\u3001\u7384\u9435\u9752\u9ED1\u3001\u6668\u66E6\u91D1\"}"
+  needsSensitivityReview: 0

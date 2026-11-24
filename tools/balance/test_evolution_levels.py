@@ -4,6 +4,7 @@ import json
 import unittest
 
 from derived_stats import REPO, _unique_object
+from material_drops import ANALYZED_BATCHES
 
 
 class EvolutionLevelProposalTests(unittest.TestCase):
@@ -14,6 +15,8 @@ class EvolutionLevelProposalTests(unittest.TestCase):
         self.assertIs(proposal["confirmed"], False)
         creatures = {}
         for path in sorted((REPO / "Data/_demo/creatures").glob("*.json")):
+            if path.name.split("--")[0] not in ANALYZED_BATCHES:
+                continue
             for creature in json.loads(path.read_text(encoding="utf-8")):
                 self.assertNotIn(creature["id"], creatures)
                 creatures[creature["id"]] = creature

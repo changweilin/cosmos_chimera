@@ -249,8 +249,8 @@ namespace Cosmimera.Food
     }
 
     /// <summary>
-    /// Pure deterministic rules for acquiring food ingredients across all 8 life-skill methods:
-    /// HuntGround, HuntSky, SetTrap, Fishing, CastNet, ForageBerries, HarvestCrops, ProduceMilk.
+    /// Pure deterministic rules for acquiring food ingredients across all 9 life-skill methods:
+    /// HuntGround, HuntSky, SetTrap, Fishing, CastNet, ForageBerries, HarvestCrops, ProduceMilk, ForageFungi.
     /// </summary>
     /// <remarks>Pre: valid catalog, context, inventory, and Pcg32. Post: deterministic yields. Side effects: mutates inventory and rng on success.</remarks>
     public static class FoodGatheringRules
@@ -297,6 +297,11 @@ namespace Cosmimera.Food
 
                 case FoodAcquisitionMethod.ProduceMilk:
                     return context.TeamModifiers.CanProduceMilk ? GatheringRefusalReason.None : GatheringRefusalReason.MissingSkill;
+
+                case FoodAcquisitionMethod.ForageFungi:
+                    // REQ: docs/design/cuisine.md#2 — fungi grow in shade, so the same foliage proximity gate as berries applies.
+                    if (!context.TeamModifiers.CanForageFungi) return GatheringRefusalReason.MissingSkill;
+                    return context.HasFoliage ? GatheringRefusalReason.None : GatheringRefusalReason.InvalidEnvironment;
 
                 default:
                     return GatheringRefusalReason.InvalidEnvironment;
@@ -405,6 +410,7 @@ namespace Cosmimera.Food
                 case FoodAcquisitionMethod.HarvestCrops:
                     return rng.NextInt(1, 3);
                 case FoodAcquisitionMethod.ForageBerries:
+                case FoodAcquisitionMethod.ForageFungi:
                     return rng.NextInt(1, 3);
                 default:
                     return 1;

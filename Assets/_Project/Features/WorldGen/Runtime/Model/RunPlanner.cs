@@ -581,7 +581,7 @@ namespace Cosmimera.WorldGen
             return 10u + (uint)elements.PercentOf(MainElement(c)) * 2u;
         }
 
-        private static PlanetSize SizeForRadius(float radius)
+        internal static PlanetSize SizeForRadius(float radius)
         {
             if (radius <= 480f) return PlanetSize.Asteroid;
             if (radius <= 800f) return PlanetSize.Moon;

@@ -28,6 +28,153 @@ namespace Cosmimera.Bootstrap.Demo
         public const long TreasureIdBase = 1L << 41;
 
         internal const long FieldIdBase = 1L << 42;
+
+        /// <summary>First dungeon-prop id (planet-world.md#地城文化); above every field object id.</summary>
+        /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
+        public const long DungeonPropIdBase = 1L << 43;
+
+        /// <summary>Whether <paramref name="id"/> names a dungeon wall-foot prop.</summary>
+        /// <remarks>Pre: none. Post: true iff id ≥ DungeonPropIdBase. Side effects: none.</remarks>
+        public static bool IsDungeonProp(long id) => id >= DungeonPropIdBase;
+
+        /// <summary>Rule-layer body of one dungeon prop.</summary>
+        /// <remarks>Pre: none. Post: immutable. Side effects: none.</remarks>
+        internal readonly struct PropBody
+        {
+            public PropBody(float3 direction, float baseAltitudeM, float radiusM, float heightM, string substanceId,
+                int volumeL, bool interior, string nameKey)
+            {
+                Direction = direction;
+                BaseAltitudeM = baseAltitudeM;
+                RadiusM = radiusM;
+                HeightM = heightM;
+                SubstanceId = substanceId;
+                VolumeL = volumeL;
+                Interior = interior;
+                NameKey = nameKey;
+            }
+
+            public float3 Direction { get; }
+            public float BaseAltitudeM { get; }
+            public float RadiusM { get; }
+            public float HeightM { get; }
+            public string SubstanceId { get; }
+            public int VolumeL { get; }
+
+            /// <summary>Stands in the indoor dungeon (there only while the party is inside), not on the planet surface.</summary>
+            public bool Interior { get; }
+
+            public string NameKey { get; }
+        }
+
+        private IReadOnlyList<PropBody> _props = Array.Empty<PropBody>();
+        private Composition[] _propComposition = Array.Empty<Composition>();
+        private float3 _propAnchor;
+        private float _propReachM = -1f;
+
+        /// <summary>
+        /// While true the party is in the indoor dungeon (ADR-0011): only interior props exist; the planet surface
+        /// objects at the same world points are not there.
+        /// </summary>
+        /// <remarks>Pre: none. Post: Query, IsBlocked and the grass/foliage/gathering tests follow it. Side effects: none.</remarks>
+        internal bool InsideDungeon { get; set; }
+
+        /// <summary>Registers the trial dungeon's wall-foot props as destructibles with ids DungeonPropIdBase + index.</summary>
+        /// <remarks>
+        /// REQ: planet-world.md#地城文化 (牆腳物件可破壞).
+        /// Pre: props non-null, every substance id in env-materials, radius and height &gt; 0; called at most once per run.
+        /// Post: Query/TryGet/IsBlocked/NameKey answer for them. Side effects: allocates.
+        /// </remarks>
+        internal void AttachDungeonProps(IReadOnlyList<PropBody> props)
+        {
+            Contract.Requires(props != null, "props required");
+            _props = props;
+            _propComposition = new Composition[props.Count];
+            float3 sum = float3.zero;
+            for (int i = 0; i < props.Count; i++)
+            {
+                PropBody p = props[i];
+                Contract.Requires(p.RadiusM > 0f && p.HeightM > 0f, "prop radius and height must be > 0");
+                Contract.Requires(_env.TryGetSubstance(p.SubstanceId, out Substance sub),
+                    "dungeon prop substance " + p.SubstanceId + " missing from env-materials");
+                _propComposition[i] = Composition.Of(sub);
+                MaxHitRadiusM = math.max(MaxHitRadiusM, p.RadiusM);
+                sum += p.Direction;
+            }
+
+            // One bounding cap round all props: every query far from the dungeon skips the list in one test.
+            _propReachM = -1f;
+            if (props.Count > 0)
+            {
+                _propAnchor = math.normalize(sum);
+                for (int i = 0; i < props.Count; i++)
+                {
+                    _propReachM = math.max(_propReachM,
+                        math.distance(_propAnchor, props[i].Direction) * _planet.Radius + props[i].RadiusM);
+                }
+            }
+        }
+
+        internal bool IsPropDestroyed(int index) => _table.IsDestroyed(DungeonPropIdBase + index);
+
+        private bool PropsNear(float3 up, float reachM) =>
+            _propReachM >= 0f && math.distance(up, _propAnchor) * _planet.Radius <= _propReachM + reachM;
+
+        private DestructibleCandidate PropCandidate(int i)
+        {
+            PropBody p = _props[i];
+            return new DestructibleCandidate(DungeonPropIdBase + i,
+                _planet.ToWorld(p.Direction, p.BaseAltitudeM + 0.5f * p.HeightM), p.RadiusM, _propComposition[i], p.VolumeL);
+        }
+
+        private void QueryProps(float3 worldPoint, float3 up, float radiusM, List<DestructibleCandidate> into)
+        {
+            if (!PropsNear(up, radiusM))
+            {
+                return;
+            }
+
+            for (int i = 0; i < _props.Count; i++)
+            {
+                if (_props[i].Interior != InsideDungeon || _table.IsDestroyed(DungeonPropIdBase + i))
+                {
+                    continue;
+                }
+
+                DestructibleCandidate c = PropCandidate(i);
+                if (math.distance(worldPoint, c.Center) <= radiusM + c.HitRadiusM)
+                {
+                    into.Add(c);
+                }
+            }
+        }
+
+        /// <summary>Whether a body of radius <paramref name="clearanceM"/> overlaps an intact dungeon prop on the given side.</summary>
+        /// <remarks>
+        /// REQ: destructibles.md#碰撞 — a whole prop blocks creatures as its collider blocks the character.
+        /// Pre: direction finite and non-zero; clearanceM finite and ≥ 0. Post: deterministic for a given destroyed set.
+        /// Side effects: none.
+        /// </remarks>
+        internal bool IsBlockedByDungeonProps(float3 direction, float clearanceM, bool interior)
+        {
+            float3 up = math.normalize(direction);
+            if (!PropsNear(up, clearanceM))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _props.Count; i++)
+            {
+                PropBody p = _props[i];
+                if (p.Interior == interior && math.distance(up, p.Direction) * _planet.Radius <= p.RadiusM + clearanceM &&
+                    !_table.IsDestroyed(DungeonPropIdBase + i))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         private IReadOnlyList<FieldSpecimen> _field = Array.Empty<FieldSpecimen>();
         private Composition[] _fieldComposition = Array.Empty<Composition>();
 
@@ -153,6 +300,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         internal bool HasFoliage(float3 direction, float reachM)
         {
+            if (InsideDungeon) return false;
             _items.Clear();
             _scatter.Query(direction, reachM, _items);
             foreach (ScatterItem item in _items)
@@ -176,6 +324,7 @@ namespace Cosmimera.Bootstrap.Demo
         internal void QueryGathering(float3 direction, float reachM, List<GatheringNode> nodes)
         {
             nodes.Clear();
+            if (InsideDungeon) return;
             _items.Clear();
             _scatter.Query(direction, reachM, _items);
             foreach (ScatterItem item in _items)
@@ -198,6 +347,11 @@ namespace Cosmimera.Bootstrap.Demo
         {
             Contract.Requires(math.all(math.isfinite(direction)) && math.abs(math.lengthsq(direction) - 1f) <= 2e-3f,
                 "direction must be finite and unit length");
+            if (InsideDungeon)
+            {
+                return false;
+            }
+
             _items.Clear();
             _scatter.Query(direction, _maxGrassCoverM, _items);
             foreach (ScatterItem item in _items)
@@ -218,6 +372,13 @@ namespace Cosmimera.Bootstrap.Demo
             Contract.Requires(into != null && math.all(math.isfinite(worldPoint)), "into non-null, worldPoint finite");
             Contract.Requires(math.isfinite(radiusM) && radiusM >= 0f, "radiusM must be finite and >= 0");
             float3 up = _planet.ToDirection(worldPoint);
+            QueryProps(worldPoint, up, radiusM, into);
+            // REQ: ADR-0011 — inside the indoor dungeon nothing of the planet surface stands at these world points.
+            if (InsideDungeon)
+            {
+                return;
+            }
+
             _items.Clear();
             _scatter.Query(up, radiusM, _items);
             foreach (ScatterItem it in _items)
@@ -233,7 +394,11 @@ namespace Cosmimera.Bootstrap.Demo
                     continue;
                 }
 
-                into.Add(BuildingCandidate(i));
+                DestructibleCandidate candidate = BuildingCandidate(i);
+                if (math.distance(worldPoint, candidate.Center) <= radiusM + candidate.HitRadiusM)
+                {
+                    into.Add(candidate);
+                }
             }
 
             for (int i = 0; i < _treasureRegions.Count; i++)
@@ -256,11 +421,18 @@ namespace Cosmimera.Bootstrap.Demo
 
         /// <summary>The candidate Query would report for <paramref name="id"/>, if that object exists in this run.</summary>
         /// <remarks>
-        /// Pre: none. Post: true iff id belongs to a generated building, scatter item, chest or field object (destroyed ones included);
+        /// Pre: none. Post: true iff id belongs to a generated building, scatter item, chest, field object or dungeon prop (destroyed ones included);
         ///      the candidate equals Query's for that id. Side effects: may cache the scatter cell.
         /// </remarks>
         public bool TryGet(long id, out DestructibleCandidate candidate)
         {
+            if (IsDungeonProp(id))
+            {
+                long i = id - DungeonPropIdBase;
+                candidate = i < _props.Count ? PropCandidate((int)i) : default;
+                return i < _props.Count;
+            }
+
             if (id >= FieldIdBase)
             {
                 long i = id - FieldIdBase;
@@ -309,10 +481,12 @@ namespace Cosmimera.Bootstrap.Demo
         private DestructibleCandidate BuildingCandidate(int i)
         {
             RunBuilding b = _layout.Buildings[i];
+            RunSettlement s = _layout.Settlements[b.Settlement];
+            float baseAlt = s.Domain == SettlementDomain.SkyIsland ? s.AltitudeM : _groundAltitude(b.Direction);
             float storeyH = b.Storeys * StoreyM;
             long volumeL = (long)math.round(b.WidthM * b.DepthM * storeyH * 1000f);
             return new DestructibleCandidate(BuildingIdBase + i,
-                _planet.ToWorld(b.Direction, _groundAltitude(b.Direction) + storeyH * 0.5f),
+                _planet.ToWorld(b.Direction, baseAlt + storeyH * 0.5f),
                 BuildingHitRadius(b), _env.Building(MaterialOf(i)), (int)math.min(volumeL, int.MaxValue));
         }
 
@@ -331,6 +505,11 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             float3 up = math.normalize(direction);
+            if (IsBlockedByDungeonProps(up, clearanceM, false))
+            {
+                return true;
+            }
+
             for (int i = 0; i < _field.Count; i++)
             {
                 var item = _field[i];
@@ -369,6 +548,11 @@ namespace Cosmimera.Bootstrap.Demo
         /// </remarks>
         public string NameKey(in DestructibleCandidate candidate)
         {
+            if (IsDungeonProp(candidate.Id))
+            {
+                return _props[(int)(candidate.Id - DungeonPropIdBase)].NameKey;
+            }
+
             if (candidate.Id >= FieldIdBase)
             {
                 var item = _field[(int)(candidate.Id - FieldIdBase)];
@@ -396,10 +580,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Whether a hit can knock object <paramref name="id"/> loose before it is destroyed.</summary>
         /// <remarks>
         /// Grass is rooted and has no body to roll: it only bends until it is destroyed (and has no collider to wake).
-        /// Pre: none. Post: field objects and non-blocking scatter cannot be shoved. Side effects: may cache the scatter cell.
+        /// Pre: none. Post: field objects and non-blocking scatter cannot be shoved; dungeon props can. Side effects: may cache the scatter cell.
         /// </remarks>
         public bool CanBeShoved(long id) =>
-            id < FieldIdBase && (id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem it) || it.Blocks);
+            IsDungeonProp(id) || id < FieldIdBase && (id < 0 || id >= _scatter.KeyCount || !_scatter.TryGetItem(id, out ScatterItem it) || it.Blocks);
 
         /// <summary>Applies a destruction to generation-side state: a destroyed building stops blocking.</summary>
         /// <remarks>

@@ -226,6 +226,20 @@ namespace Cosmimera.Bootstrap.Demo
                 Contract.Requires(partner.Value >= live.Get(partner.Key).Exp && partner.Value <= progression.MaxExp,
                     "partner XP must not decrease or exceed MaxExp");
             }
+            foreach (KeyValuePair<string, int> kv in outcome.TrainerBattles)
+            {
+                Contract.Requires(CraftInventory.ValidId(kv.Key) && kv.Value >= 1,
+                    "trainer battle entries must use valid profession ids and count >= 1");
+            }
+            foreach (string trialId in outcome.CompletedTrials)
+            {
+                Contract.Requires(CraftInventory.ValidId(trialId), "completed trial ids must be valid snake_case");
+            }
+            foreach (string recipeId in outcome.DiscoveredRecipes)
+            {
+                Contract.Requires(CraftInventory.ValidId(recipeId), "discovered recipe ids must be valid snake_case");
+            }
+            Contract.Requires(outcome.GoldEarned >= 0, "GoldEarned must be non-negative");
             if (live.WouldOverflow(outcome.Materials, out overflow))
             {
                 return CommitStatus.StockFull;
@@ -259,13 +273,44 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             candidate.AddMaterials(outcome.Materials);
+            if (outcome.GoldEarned > 0)
+            {
+                candidate.AddGold(outcome.GoldEarned);
+            }
             candidate.Codex.Merge(outcome.Codex);
+            // Recipe discovery is knowledge, like the codex: kept on abandon (cuisine.md#6).
+            var recipeIds = new List<string>(outcome.DiscoveredRecipes);
+            recipeIds.Sort(StringComparer.Ordinal);
+            foreach (string recipeId in recipeIds) candidate.RecordRecipeDiscovered(recipeId);
+            if (!outcome.Abandoned)
+            {
+                if (outcome.TrainerBattles.Count > 0)
+                {
+                    var profIds = new List<string>(outcome.TrainerBattles.Keys);
+                    profIds.Sort(StringComparer.Ordinal);
+                    foreach (string profId in profIds)
+                    {
+                        candidate.AddTrainerBattles(profId, outcome.TrainerBattles[profId]);
+                    }
+                }
+
+                if (outcome.CompletedTrials.Count > 0)
+                {
+                    var trialIds = new List<string>(outcome.CompletedTrials);
+                    trialIds.Sort(StringComparer.Ordinal);
+                    foreach (string trialId in trialIds)
+                    {
+                        candidate.RecordTrialCompleted(trialId);
+                    }
+                }
+            }
             // The run already spent from its departure copy: adding its final stock would duplicate old items.
             if (outcome.CraftStock != null && !candidate.CraftStock.TryExchange(candidate.CraftStock.Snapshot(), outcome.CraftStock))
             {
                 error = new InvalidOperationException("Final crafting stock exceeds capacity");
                 return CommitStatus.WriteFailed;
             }
+            if (outcome.CraftStock != null && outcome.CraftLooks != null) candidate.CraftStock.RestoreLooks(outcome.CraftLooks);
             if (!TryWrite(candidate, path, out error))
             {
                 return CommitStatus.WriteFailed;

@@ -11,6 +11,29 @@ using UnityEngine;
 
 namespace Cosmimera.Save
 {
+    /// <summary>Cumulative battle count recorded against one wandering trainer profession ID.</summary>
+    /// <remarks>Pre: professionId valid snake_case id; count &gt;= 1. Post: immutable. Side effects: none.</remarks>
+    public readonly struct TrainerBattleCount
+    {
+        /// <summary>Creates a battle count entry for one profession.</summary>
+        /// <remarks>Pre: professionId valid snake_case id; count &gt;= 1. Post: fields equal arguments. Side effects: none.</remarks>
+        public TrainerBattleCount(string professionId, int count)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            Contract.Requires(count >= 1, "count must be >= 1");
+            ProfessionId = professionId;
+            Count = count;
+        }
+
+        /// <summary>Trainer profession identifier (<c>trv_*</c>, <c>era_*</c> or <c>cul_*</c>).</summary>
+        /// <remarks>Pre: none. Post: valid snake_case id. Side effects: none.</remarks>
+        public string ProfessionId { get; }
+
+        /// <summary>Cumulative recorded battles across non-abandoned runs.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 1. Side effects: none.</remarks>
+        public int Count { get; }
+    }
+
     /// <summary>
     /// Lobby save: owned creatures and party. REQ: lobby-meta.md#進度保存 — Q-M4 roguelite: no mid-planet state is
     /// ever saved; a run only adds creatures here when it ends (victory, defeat or abandon).
@@ -35,13 +58,89 @@ namespace Cosmimera.Save
     /// until migrated once per individual via <c>SetEcology</c>.
     /// Version 12: root <c>presets</c> — up to MaxPresets favourite loadouts (party, subs, equipment, appearance);
     /// formats 1–11 load with none.
+    /// Version 14 (P1-17b, gear-looks.md#外觀與數值): craft stacks add <c>looks</c> (tagged copies, oldest first), equipment
+    /// entries add <c>look</c>, root <c>last_planet</c> names the planet lobby crafting takes its style from. Formats 1–13
+    /// load untagged (each copy reads ItemLook.Default) with the cradle planet as last planet.
+    /// Version 15 (P4-10, trainer-battles.md#職業圖鑑): root <c>trainer_battles</c> (per-profession battle counts
+    /// unlocking character codex entries at 1 and 10 battles) and <c>completed_trials</c> (terrain trial badges).
+    /// Formats 1–14 load with empty counts and no completed trials.
+    /// Version 16 (cuisine.md#6): root <c>discovered_recipes</c> — signature recipe ids the player has cooked at least once;
+    /// formats 1–15 load with none.
+    /// Version 17 (lobby-meta.md#進度保存): root story milestone flags (<c>food_quest_done</c>,
+    /// <c>migratory_return_done</c>, <c>rival_quest_done</c>, <c>ng_plus_unlocked</c>) and <c>active_checkpoint</c>
+    /// (overworld auto-save or random-planet checkpoint); formats 1–16 load with false flags and null checkpoint.
+    /// Version 18 (crafting.md#製造擴充, lobby-meta.md#進度保存): root <c>gold</c> (currency), NG+ cosmetic
+    /// overrides (<c>cosmetic_character_id</c>, <c>cosmetic_outfit_character_id</c>, <c>cosmetic_accessory_character_id</c>),
+    /// and <c>cosmetic_favorites</c>; formats 1–17 load with 0 gold and empty cosmetic overrides/favorites.
     /// Pre: main thread. Side effects: instance methods mutate this object only; Load/Write do file I/O.
     /// </remarks>
     public sealed class LobbySave
     {
         /// <summary>Current save format version.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
-        public const int FormatVersion = 13;
+        public const int FormatVersion = 18;
+
+        /// <summary>Maximum number of cosmetic favorite presets.</summary>
+        /// <remarks>Pre: none. Post: constant 8. Side effects: none.</remarks>
+        public const int MaxCosmeticFavorites = 8;
+
+        /// <summary>Immutable cosmetic-only favorite preset (純外觀我的最愛).</summary>
+        /// <remarks>REQ: docs/design/gear-looks.md#外觀與數值. Pre: name non-empty. Post: immutable fields. Side effects: none.</remarks>
+        public sealed class CosmeticFavoritePreset
+        {
+            /// <summary>Display name of the favorite preset.</summary>
+            /// <remarks>Pre: none. Post: non-empty string. Side effects: none.</remarks>
+            public string Name { get; }
+
+            /// <summary>Selected character appearance id (empty = default CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string CharacterId { get; }
+
+            /// <summary>Selected outfit source character id (empty = follow CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string OutfitCharacterId { get; }
+
+            /// <summary>Selected accessory source character id (empty = follow CharacterId).</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string AccessoryCharacterId { get; }
+
+            /// <summary>Optional upper fashion item id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string UpperFashionId { get; }
+
+            /// <summary>Optional upper fashion dye id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string UpperDyeId { get; }
+
+            /// <summary>Optional lower fashion item id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string LowerFashionId { get; }
+
+            /// <summary>Optional lower fashion dye id.</summary>
+            /// <remarks>Pre: none. Post: non-null string. Side effects: none.</remarks>
+            public string LowerDyeId { get; }
+
+            /// <summary>Creates a cosmetic favorite preset.</summary>
+            /// <remarks>Pre: !string.IsNullOrWhiteSpace(name). Post: fields initialized. Side effects: none.</remarks>
+            public CosmeticFavoritePreset(string name, string characterId, string outfitCharacterId,
+                string accessoryCharacterId, string upperFashionId = "", string upperDyeId = "",
+                string lowerFashionId = "", string lowerDyeId = "")
+            {
+                Contract.Requires(!string.IsNullOrWhiteSpace(name), "favorite name is required");
+                Name = name.Trim();
+                CharacterId = characterId ?? string.Empty;
+                OutfitCharacterId = outfitCharacterId ?? string.Empty;
+                AccessoryCharacterId = accessoryCharacterId ?? string.Empty;
+                UpperFashionId = upperFashionId ?? string.Empty;
+                UpperDyeId = upperDyeId ?? string.Empty;
+                LowerFashionId = lowerFashionId ?? string.Empty;
+                LowerDyeId = lowerDyeId ?? string.Empty;
+            }
+        }
+
+        /// <summary>Cumulative battles against one trainer profession required for <see cref="CodexLevel.Complete"/>.</summary>
+        /// <remarks>REQ: docs/design/trainer-battles.md#職業圖鑑. Pre: none. Post: constant 10. Side effects: none.</remarks>
+        public const int ProfessionCompleteBattles = 10;
 
         /// <summary>Number of favourite-loadout slots.</summary>
         /// <remarks>Pre: none. Post: constant. Side effects: none.</remarks>
@@ -65,6 +164,124 @@ namespace Cosmimera.Save
         private readonly MaterialInventory _materials = new MaterialInventory();
         private readonly CraftInventory _craftStock = new CraftInventory();
         private readonly EquipmentLoadout _equipment = new EquipmentLoadout();
+        private readonly Dictionary<string, int> _trainerBattles = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly HashSet<string> _completedTrials = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _discoveredRecipes = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>True when signature recipe <paramref name="recipeId"/> has been cooked in some run.</summary>
+        /// <remarks>REQ: docs/design/cuisine.md#6. Pre: recipeId non-empty. Post: discovery state. Side effects: none.</remarks>
+        public bool IsRecipeDiscovered(string recipeId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(recipeId), "recipeId must be non-empty");
+            return _discoveredRecipes.Contains(recipeId);
+        }
+
+        /// <summary>Sorted snapshot of discovered signature recipe ids.</summary>
+        /// <remarks>Pre: none. Post: sorted ordinal list. Side effects: allocates.</remarks>
+        public IReadOnlyList<string> DiscoveredRecipesSnapshot()
+        {
+            if (_discoveredRecipes.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var list = new List<string>(_discoveredRecipes);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>Records that signature recipe <paramref name="recipeId"/> has been cooked.</summary>
+        /// <remarks>Pre: recipeId valid snake_case id. Post: IsRecipeDiscovered(recipeId); returns true iff newly discovered. Side effects: mutates the discovered set.</remarks>
+        public bool RecordRecipeDiscovered(string recipeId)
+        {
+            Contract.Requires(CraftInventory.ValidId(recipeId), "recipeId must be valid snake_case id");
+            return _discoveredRecipes.Add(recipeId);
+        }
+
+        /// <summary>Cumulative battle count recorded for <paramref name="professionId"/> (0 if never battled).</summary>
+        /// <remarks>Pre: professionId non-empty. Post: &gt;= 0. Side effects: none.</remarks>
+        public int TrainerBattleCountOf(string professionId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(professionId), "professionId must be non-empty");
+            return _trainerBattles.TryGetValue(professionId, out int count) ? count : 0;
+        }
+
+        /// <summary>Sorted snapshot of all trainer professions with at least one recorded battle.</summary>
+        /// <remarks>Pre: none. Post: sorted by ProfessionId ordinal. Side effects: allocates.</remarks>
+        public IReadOnlyList<TrainerBattleCount> TrainerBattlesSnapshot()
+        {
+            if (_trainerBattles.Count == 0)
+            {
+                return Array.Empty<TrainerBattleCount>();
+            }
+
+            var keys = new List<string>(_trainerBattles.Keys);
+            keys.Sort(StringComparer.Ordinal);
+            var list = new List<TrainerBattleCount>(keys.Count);
+            foreach (string key in keys)
+            {
+                list.Add(new TrainerBattleCount(key, _trainerBattles[key]));
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Adds <paramref name="delta"/> completed battles against <paramref name="professionId"/> and advances the
+        /// corresponding <see cref="CodexKind.Character"/> entry (Basic at 1, Complete at <see cref="ProfessionCompleteBattles"/>).
+        /// </summary>
+        /// <remarks>
+        /// REQ: docs/design/trainer-battles.md#職業圖鑑.
+        /// Pre: professionId valid snake_case id; delta &gt;= 1.
+        /// Post: TrainerBattleCountOf(professionId) increased by delta (saturating at int.MaxValue); Codex updated.
+        /// Side effects: mutates trainer battle counts and Codex.
+        /// </remarks>
+        public void AddTrainerBattles(string professionId, int delta)
+        {
+            Contract.Requires(CraftInventory.ValidId(professionId), "professionId must be valid snake_case id");
+            Contract.Requires(delta >= 1, "delta must be >= 1");
+
+            _trainerBattles.TryGetValue(professionId, out int existing);
+            long sum = (long)existing + delta;
+            int total = sum >= int.MaxValue ? int.MaxValue : (int)sum;
+            _trainerBattles[professionId] = total;
+
+            Codex.Record(CodexEvent.Dialogue, professionId);
+            if (total >= ProfessionCompleteBattles)
+            {
+                Codex.Record(CodexEvent.CharacterQuest, professionId);
+            }
+        }
+
+        /// <summary>True when the terrain trial badge for <paramref name="terrainId"/> has been earned.</summary>
+        /// <remarks>Pre: terrainId non-empty. Post: boolean badge state. Side effects: none.</remarks>
+        public bool HasTrialBadge(string terrainId)
+        {
+            Contract.Requires(!string.IsNullOrEmpty(terrainId), "terrainId must be non-empty");
+            return _completedTrials.Contains(terrainId);
+        }
+
+        /// <summary>Sorted snapshot of completed terrain trial identifiers.</summary>
+        /// <remarks>Pre: none. Post: sorted ordinal list. Side effects: allocates.</remarks>
+        public IReadOnlyList<string> CompletedTrialsSnapshot()
+        {
+            if (_completedTrials.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var list = new List<string>(_completedTrials);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>Records completion of the terrain trial for <paramref name="terrainId"/>.</summary>
+        /// <remarks>Pre: terrainId valid snake_case id. Post: HasTrialBadge(terrainId) is true; returns true iff newly earned. Side effects: mutates completed trial set.</remarks>
+        public bool RecordTrialCompleted(string terrainId)
+        {
+            Contract.Requires(CraftInventory.ValidId(terrainId), "terrainId must be valid snake_case id");
+            return _completedTrials.Add(terrainId);
+        }
 
         /// <summary>Persistent gathering and crafting inventory, separate from evolution materials and run-only food.</summary>
         /// <remarks>Pre: main thread. Post: same inventory for this save's lifetime. Side effects: mutating it changes this save.</remarks>
@@ -73,6 +290,18 @@ namespace Cosmimera.Save
         /// <summary>Player and owned-creature equipment; item copies are reserved outside CraftStock.</summary>
         /// <remarks>Pre: main thread; callers validate owner ids against Owned. Post: same instance. Side effects: mutations change this save.</remarks>
         public EquipmentLoadout Equipment => _equipment;
+
+        /// <summary>Planet lobby crafting takes its gear style from: the most recently departed planet, else the cradle planet.</summary>
+        /// <remarks>REQ: gear-looks.md#外觀與數值. Pre: none. Post: constructed origin. Side effects: none.</remarks>
+        public GearOrigin LastPlanet { get; private set; } = GearOrigin.Cradle;
+
+        /// <summary>Records the planet just departed for.</summary>
+        /// <remarks>Pre: origin constructed. Post: LastPlanet == origin. Side effects: mutates this save.</remarks>
+        public void SetLastPlanet(GearOrigin origin)
+        {
+            Contract.Requires(CraftInventory.ValidId(origin.PlanetTypeId), "origin must be constructed");
+            LastPlanet = origin;
+        }
 
         /// <summary>Cumulative player XP (level-progression.md#玩家等級).</summary>
         /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
@@ -109,6 +338,142 @@ namespace Cosmimera.Save
         /// <summary>True once the beginner quest is finished (or migrated from an existing v1..v12 save with creatures).</summary>
         /// <remarks>Pre: none. Post: none. Side effects: none.</remarks>
         public bool TutorialDone { get; private set; }
+
+        /// <summary>True once Town #2 food quest is completed (unlocks Moon size).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool FoodQuestDone { get; private set; }
+
+        /// <summary>True once Town #4 Migratory Return quest is completed (unlocks Planet size).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool MigratoryReturnDone { get; private set; }
+
+        /// <summary>True once Tribe #8 Rival final battle is completed (completes first loop).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#地球大廳. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool RivalQuestDone { get; private set; }
+
+        /// <summary>True once New Game+ (二周目) is unlocked after completing the first loop.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: boolean state. Side effects: none.</remarks>
+        public bool NgPlusUnlocked { get; private set; }
+
+        /// <summary>Active overworld auto-save or random-planet checkpoint, or null when none is active.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: checkpoint or null. Side effects: none.</remarks>
+        public RunCheckpointSave ActiveCheckpoint { get; private set; }
+
+        /// <summary>Current gold currency held by the player.</summary>
+        /// <remarks>REQ: docs/design/crafting.md#製造擴充. Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int Gold { get; private set; }
+
+        /// <summary>NG+ pure-cosmetic character appearance override (empty = default CharacterId).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticCharacterId { get; private set; } = string.Empty;
+
+        /// <summary>NG+ pure-cosmetic outfit source character id (empty = follow active cosmetic character).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticOutfitCharacterId { get; private set; } = string.Empty;
+
+        /// <summary>NG+ pure-cosmetic accessory source character id (empty = follow active cosmetic character).</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: none. Post: non-null string. Side effects: none.</remarks>
+        public string CosmeticAccessoryCharacterId { get; private set; } = string.Empty;
+
+        private readonly List<CosmeticFavoritePreset> _cosmeticFavorites = new List<CosmeticFavoritePreset>();
+
+        /// <summary>Saved pure-cosmetic favorite presets (純外觀我的最愛).</summary>
+        /// <remarks>REQ: docs/design/gear-looks.md#外觀與數值. Pre: none. Post: read-only list. Side effects: none.</remarks>
+        public IReadOnlyList<CosmeticFavoritePreset> CosmeticFavorites => _cosmeticFavorites;
+
+        /// <summary>Adds <paramref name="amount"/> gold to the player's wallet.</summary>
+        /// <remarks>Pre: amount &gt;= 0. Post: Gold increased by amount. Side effects: mutates this save.</remarks>
+        public void AddGold(int amount)
+        {
+            Contract.Requires(amount >= 0, "gold amount must be non-negative");
+            Gold += amount;
+        }
+
+        /// <summary>Attempts to spend <paramref name="amount"/> gold.</summary>
+        /// <remarks>Pre: amount &gt;= 0. Post: returns true and deducts if Gold &gt;= amount; otherwise false. Side effects: mutates this save on success.</remarks>
+        public bool TrySpendGold(int amount)
+        {
+            Contract.Requires(amount >= 0, "gold amount must be non-negative");
+            if (Gold < amount) return false;
+            Gold -= amount;
+            return true;
+        }
+
+        /// <summary>Sets NG+ pure-cosmetic character, outfit, and accessory overrides.</summary>
+        /// <remarks>
+        /// Pre: NgPlusUnlocked is true when setting any non-empty override.
+        /// Post: CosmeticCharacterId, CosmeticOutfitCharacterId, CosmeticAccessoryCharacterId updated.
+        /// Side effects: mutates this save.
+        /// </remarks>
+        public void SetCosmeticAppearance(string characterId, string outfitCharacterId, string accessoryCharacterId)
+        {
+            bool anyOverride = !string.IsNullOrEmpty(characterId) ||
+                !string.IsNullOrEmpty(outfitCharacterId) ||
+                !string.IsNullOrEmpty(accessoryCharacterId);
+            Contract.Requires(!anyOverride || NgPlusUnlocked, "NG+ must be unlocked before setting cosmetic overrides");
+            CosmeticCharacterId = characterId ?? string.Empty;
+            CosmeticOutfitCharacterId = outfitCharacterId ?? string.Empty;
+            CosmeticAccessoryCharacterId = accessoryCharacterId ?? string.Empty;
+        }
+
+        /// <summary>Adds or replaces a cosmetic favorite preset (up to MaxCosmeticFavorites).</summary>
+        /// <remarks>Pre: preset != null. Post: preset stored; returns false if full and name not found. Side effects: mutates this save.</remarks>
+        public bool SaveCosmeticFavorite(CosmeticFavoritePreset preset)
+        {
+            Contract.Requires(preset != null, "preset must be non-null");
+            for (int i = 0; i < _cosmeticFavorites.Count; i++)
+            {
+                if (string.Equals(_cosmeticFavorites[i].Name, preset.Name, StringComparison.Ordinal))
+                {
+                    _cosmeticFavorites[i] = preset;
+                    return true;
+                }
+            }
+
+            if (_cosmeticFavorites.Count >= MaxCosmeticFavorites) return false;
+            _cosmeticFavorites.Add(preset);
+            return true;
+        }
+
+        /// <summary>Removes the cosmetic favorite preset at <paramref name="index"/>.</summary>
+        /// <remarks>Pre: 0 &lt;= index &lt; CosmeticFavorites.Count. Post: count decreased by 1. Side effects: mutates this save.</remarks>
+        public void RemoveCosmeticFavorite(int index)
+        {
+            Contract.Requires(index >= 0 && index < _cosmeticFavorites.Count, "favorite index out of range");
+            _cosmeticFavorites.RemoveAt(index);
+        }
+
+        /// <summary>Marks Town #2 food quest as completed.</summary>
+        /// <remarks>Pre: none. Post: FoodQuestDone == true. Side effects: mutates this save.</remarks>
+        public void CompleteFoodQuest() => FoodQuestDone = true;
+
+        /// <summary>Marks Town #4 Migratory Return quest as completed.</summary>
+        /// <remarks>Pre: none. Post: MigratoryReturnDone == true. Side effects: mutates this save.</remarks>
+        public void CompleteMigratoryReturn() => MigratoryReturnDone = true;
+
+        /// <summary>Marks Tribe #8 Rival finale as completed and unlocks New Game+ (二周目).</summary>
+        /// <remarks>Pre: none. Post: RivalQuestDone == true and NgPlusUnlocked == true. Side effects: mutates this save.</remarks>
+        public void CompleteRivalQuest()
+        {
+            RivalQuestDone = true;
+            NgPlusUnlocked = true;
+        }
+
+        /// <summary>Sets or replaces the active overworld/random-planet checkpoint.</summary>
+        /// <remarks>
+        /// Pre: checkpoint != null.
+        /// Post: ActiveCheckpoint is an independent clone of checkpoint.
+        /// Side effects: mutates this save; allocates clone.
+        /// </remarks>
+        public void SetCheckpoint(RunCheckpointSave checkpoint)
+        {
+            Contract.Requires(checkpoint != null, "checkpoint must be non-null");
+            ActiveCheckpoint = checkpoint.Clone();
+        }
+
+        /// <summary>Clears any active run/overworld checkpoint.</summary>
+        /// <remarks>Pre: none. Post: ActiveCheckpoint == null. Side effects: mutates this save.</remarks>
+        public void ClearCheckpoint() => ActiveCheckpoint = null;
 
         /// <summary>Records beginner-quest completion and character/rival/friend assignments (P7-02a).</summary>
         /// <remarks>
@@ -302,12 +667,12 @@ namespace Cosmimera.Save
                 if (e.Owner != 0 && !covered.Contains(e.Owner)) continue; // creature already counted as missing
                 IReadOnlyCollection<GripMode> grips = e.Owner == 0
                     ? EquipmentRules.PlayerGrips : catalog.GripsOf(c.Get(e.Owner).SpeciesId);
-                if (!c._equipment.TryEquip(e.Owner, e.Item, e.Slot, grips, catalog, c._craftStock)) missingItems++;
+                // The preset remembers which copy was worn; fall back to the newest copy if that one is gone.
+                int copy = c._craftStock.Count(e.Item) > 0 ? c._craftStock.FindCopy(e.Item, e.Look) : -1;
+                if (!c._equipment.TryEquip(e.Owner, e.Item, e.Slot, grips, catalog, c._craftStock, copy)) missingItems++;
             }
 
-            // Exchange first: it is the only step that can still refuse, and nothing here has been mutated yet.
-            if (!_craftStock.TryExchange(_craftStock.Snapshot(), c._craftStock.Snapshot()))
-                throw new InvalidOperationException("lobby save: preset bag swap overflowed");
+            _craftStock.CopyFrom(c._craftStock);
             _owned.Clear(); _owned.AddRange(c._owned);
             _party.Clear(); _party.AddRange(c._party);
             _partners.Clear(); _partners.AddRange(c._partners);
@@ -435,8 +800,18 @@ namespace Cosmimera.Save
             var c = new LobbySave
             {
                 StarterLine = StarterLine, _nextInstanceId = _nextInstanceId, LoadedFormatVersion = LoadedFormatVersion,
-                PlayerExp = PlayerExp,
+                PlayerExp = PlayerExp, LastPlanet = LastPlanet,
+                CharacterId = CharacterId, FriendId = FriendId, RivalId = RivalId,
+                RivalStarterId = RivalStarterId, FriendStarterId = FriendStarterId, TutorialDone = TutorialDone,
+                FoodQuestDone = FoodQuestDone, MigratoryReturnDone = MigratoryReturnDone,
+                RivalQuestDone = RivalQuestDone, NgPlusUnlocked = NgPlusUnlocked,
+                ActiveCheckpoint = ActiveCheckpoint?.Clone(),
+                Gold = Gold,
+                CosmeticCharacterId = CosmeticCharacterId,
+                CosmeticOutfitCharacterId = CosmeticOutfitCharacterId,
+                CosmeticAccessoryCharacterId = CosmeticAccessoryCharacterId,
             };
+            c._cosmeticFavorites.AddRange(_cosmeticFavorites);
             c._owned.AddRange(_owned);
             c._party.AddRange(_party);
             c._partners.AddRange(_partners);
@@ -445,9 +820,21 @@ namespace Cosmimera.Save
             {
                 c._materials.Add(m.Key, m.Qty);
             }
-            c._craftStock.TryExchange(Array.Empty<CraftStack>(), _craftStock.Snapshot());
+            c._craftStock.CopyFrom(_craftStock);
             c._equipment.Restore(_equipment.Snapshot());
             c.Codex.Restore(Codex.Snapshot());
+            foreach (KeyValuePair<string, int> kv in _trainerBattles)
+            {
+                c._trainerBattles[kv.Key] = kv.Value;
+            }
+            foreach (string trial in _completedTrials)
+            {
+                c._completedTrials.Add(trial);
+            }
+            foreach (string recipe in _discoveredRecipes)
+            {
+                c._discoveredRecipes.Add(recipe);
+            }
             Array.Copy(_presets, c._presets, MaxPresets); // LoadoutPreset is immutable
 
             return c;
@@ -662,7 +1049,38 @@ namespace Cosmimera.Save
                 rival_starter_id = RivalStarterId ?? string.Empty,
                 friend_starter_id = FriendStarterId ?? string.Empty,
                 tutorial_done = TutorialDone,
+                food_quest_done = FoodQuestDone,
+                migratory_return_done = MigratoryReturnDone,
+                rival_quest_done = RivalQuestDone,
+                ng_plus_unlocked = NgPlusUnlocked,
+                has_checkpoint = ActiveCheckpoint != null,
+                active_checkpoint = ActiveCheckpoint != null ? ToCheckpointDto(ActiveCheckpoint) : null,
+                gold = Gold,
+                cosmetic_character_id = CosmeticCharacterId ?? string.Empty,
+                cosmetic_outfit_character_id = CosmeticOutfitCharacterId ?? string.Empty,
+                cosmetic_accessory_character_id = CosmeticAccessoryCharacterId ?? string.Empty,
+                cosmetic_favorites = ToCosmeticFavoriteDtos(_cosmeticFavorites),
             };
+            IReadOnlyList<TrainerBattleCount> trainerCounts = TrainerBattlesSnapshot();
+            dto.trainer_battles = new TrainerCountDto[trainerCounts.Count];
+            for (int i = 0; i < trainerCounts.Count; i++)
+            {
+                dto.trainer_battles[i] = new TrainerCountDto { id = trainerCounts[i].ProfessionId, count = trainerCounts[i].Count };
+            }
+
+            IReadOnlyList<string> completedTrials = CompletedTrialsSnapshot();
+            dto.completed_trials = new string[completedTrials.Count];
+            for (int i = 0; i < completedTrials.Count; i++)
+            {
+                dto.completed_trials[i] = completedTrials[i];
+            }
+
+            IReadOnlyList<string> recipes = DiscoveredRecipesSnapshot();
+            dto.discovered_recipes = new string[recipes.Count];
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                dto.discovered_recipes[i] = recipes[i];
+            }
             var presetDtos = new List<PresetDto>();
             for (int slot = 0; slot < MaxPresets; slot++)
             {
@@ -677,7 +1095,7 @@ namespace Cosmimera.Save
                 for (int i = 0; i < pd.partners.Length; i++)
                     pd.partners[i] = new PartnerDto { main = p.Partners[i].MainInstanceId, sub = p.Partners[i].SubInstanceId };
                 for (int i = 0; i < pd.equipment.Length; i++)
-                    pd.equipment[i] = new EquipmentDto { owner = p.Equipment[i].Owner, slot = p.Equipment[i].Slot, item = p.Equipment[i].Item };
+                    pd.equipment[i] = new EquipmentDto { owner = p.Equipment[i].Owner, slot = p.Equipment[i].Slot, item = p.Equipment[i].Item, look = ToDto(p.Equipment[i].Look) };
                 for (int i = 0; i < pd.visuals.Length; i++)
                     pd.visuals[i] = new VisualDto { instance_id = p.Visuals[i].InstanceId, vessel = (int)p.Visuals[i].Vessel };
                 presetDtos.Add(pd);
@@ -689,9 +1107,20 @@ namespace Cosmimera.Save
             for (int i = 0; i < knowledge.Count; i++)
                 dto.codex[i] = new CodexDto { kind = (int)knowledge[i].Kind, id = knowledge[i].Id, level = (int)knowledge[i].Level };
             IReadOnlyList<CraftStack> craftStock = _craftStock.Snapshot();
+            var tagged = new Dictionary<string, IReadOnlyList<ItemLook>>(StringComparer.Ordinal);
+            foreach (ItemLookList list in _craftStock.LookSnapshot()) tagged[list.Id] = list.Looks;
             dto.craft_stock = new CraftDto[craftStock.Count];
             for (int i = 0; i < craftStock.Count; i++)
-                dto.craft_stock[i] = new CraftDto { id = craftStock[i].Id, qty = craftStock[i].Quantity };
+            {
+                var cd = new CraftDto { id = craftStock[i].Id, qty = craftStock[i].Quantity, looks = Array.Empty<LookDto>() };
+                if (tagged.TryGetValue(cd.id, out IReadOnlyList<ItemLook> looks))
+                {
+                    cd.looks = new LookDto[looks.Count];
+                    for (int k = 0; k < looks.Count; k++) cd.looks[k] = ToDto(looks[k]);
+                }
+                dto.craft_stock[i] = cd;
+            }
+            dto.last_planet = new OriginDto { planet = LastPlanet.PlanetTypeId, seed = unchecked((long)LastPlanet.PlanetSeed) };
             IReadOnlyList<EquippedItem> equipment = _equipment.Snapshot();
             dto.equipment = new EquipmentDto[equipment.Count];
             for (int i = 0; i < equipment.Count; i++)
@@ -699,7 +1128,7 @@ namespace Cosmimera.Save
                 EquippedItem item = equipment[i];
                 if (item.Owner != 0 && !_owned.Exists(o => o.InstanceId == item.Owner))
                     throw new InvalidOperationException("Equipment owner is not owned");
-                dto.equipment[i] = new EquipmentDto { owner = item.Owner, slot = item.Slot, item = item.Item };
+                dto.equipment[i] = new EquipmentDto { owner = item.Owner, slot = item.Slot, item = item.Item, look = ToDto(item.Look) };
             }
             for (int i = 0; i < _eggs.Count; i++)
             {
@@ -869,17 +1298,34 @@ namespace Cosmimera.Save
                 }
             }
 
+            if (dto.version >= 14 && dto.last_planet != null && !string.IsNullOrEmpty(dto.last_planet.planet))
+            {
+                Check(CraftInventory.ValidId(dto.last_planet.planet), "invalid last planet");
+                save.LastPlanet = new GearOrigin(dto.last_planet.planet, unchecked((ulong)dto.last_planet.seed));
+            }
+
             if (dto.version >= 7)
             {
                 var craftIds = new HashSet<string>(StringComparer.Ordinal);
                 var stacks = new List<CraftStack>();
+                var lookLists = new List<ItemLookList>();
                 foreach (CraftDto item in dto.craft_stock ?? Array.Empty<CraftDto>())
                 {
                     Check(item != null && CraftInventory.ValidId(item.id), "invalid crafting item id");
                     Check(item.qty > 0 && craftIds.Add(item.id), "invalid or duplicate crafting stack");
                     stacks.Add(new CraftStack(item.id, item.qty));
+                    if (dto.version < 14 || item.looks == null || item.looks.Length == 0) continue;
+                    Check(item.looks.Length <= item.qty, "crafting stack has more looks than copies");
+                    var looks = new List<ItemLook>(item.looks.Length);
+                    foreach (LookDto l in item.looks)
+                    {
+                        Check(TryFromDto(l, out ItemLook look), "invalid item look");
+                        looks.Add(look);
+                    }
+                    lookLists.Add(new ItemLookList(item.id, looks));
                 }
                 Check(save._craftStock.TryExchange(Array.Empty<CraftStack>(), stacks), "crafting inventory overflow");
+                save._craftStock.RestoreLooks(lookLists);
                 var entries = new List<EquippedItem>();
                 var slots = new HashSet<string>(StringComparer.Ordinal);
                 foreach (EquipmentDto item in dto.equipment ?? Array.Empty<EquipmentDto>())
@@ -889,7 +1335,7 @@ namespace Cosmimera.Save
                     string slot = dto.version >= 9 ? item.slot : EquipmentSlots.MigrateLegacy(item.slot);
                     Check(EquipmentSlots.IsValid(slot), "invalid equipment slot");
                     Check(CraftInventory.ValidId(item.item) && slots.Add(item.owner + ":" + slot), "invalid or duplicate equipment entry");
-                    entries.Add(new EquippedItem(item.owner, slot, item.item));
+                    entries.Add(EntryFromDto(dto.version, item.owner, slot, item.item, item.look));
                 }
                 save._equipment.Restore(entries);
             }
@@ -937,7 +1383,7 @@ namespace Cosmimera.Save
                         Check(e != null && (e.owner == 0 || mains.Contains(e.owner) || psubs.Contains(e.owner)), "preset equipment owner outside preset");
                         Check(EquipmentSlots.IsValid(e.slot) && CraftInventory.ValidId(e.item) && gearKeys.Add(e.owner + ":" + e.slot),
                             "invalid or duplicate preset equipment");
-                        gear.Add(new EquippedItem(e.owner, e.slot, e.item));
+                        gear.Add(EntryFromDto(dto.version, e.owner, e.slot, e.item, e.look));
                     }
 
                     var looks = new List<VisualChoice>();
@@ -966,8 +1412,132 @@ namespace Cosmimera.Save
                 save.TutorialDone = save._owned.Count > 0 || !string.IsNullOrEmpty(save.StarterLine);
             }
 
+            if (dto.version >= 15)
+            {
+                var seenProf = new HashSet<string>(StringComparer.Ordinal);
+                foreach (TrainerCountDto t in dto.trainer_battles ?? Array.Empty<TrainerCountDto>())
+                {
+                    Check(t != null && CraftInventory.ValidId(t.id) && t.count >= 1 && seenProf.Add(t.id),
+                        "invalid trainer battle entry");
+                    save.AddTrainerBattles(t.id, t.count);
+                }
+
+                var seenTrials = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string trialId in dto.completed_trials ?? Array.Empty<string>())
+                {
+                    Check(CraftInventory.ValidId(trialId) && seenTrials.Add(trialId), "invalid completed trial entry");
+                    save.RecordTrialCompleted(trialId);
+                }
+            }
+
+            if (dto.version >= 16)
+            {
+                var seenRecipes = new HashSet<string>(StringComparer.Ordinal);
+                foreach (string recipeId in dto.discovered_recipes ?? Array.Empty<string>())
+                {
+                    Check(CraftInventory.ValidId(recipeId) && seenRecipes.Add(recipeId), "invalid discovered recipe entry");
+                    save.RecordRecipeDiscovered(recipeId);
+                }
+            }
+
+            if (dto.version >= 17)
+            {
+                save.FoodQuestDone = dto.food_quest_done;
+                save.MigratoryReturnDone = dto.migratory_return_done;
+                save.RivalQuestDone = dto.rival_quest_done;
+                save.NgPlusUnlocked = dto.ng_plus_unlocked || dto.rival_quest_done;
+                if (dto.has_checkpoint)
+                {
+                    Check(dto.active_checkpoint != null, "missing active_checkpoint payload");
+                    save.ActiveCheckpoint = FromCheckpointDto(dto.active_checkpoint);
+                }
+            }
+
+            if (dto.version >= 18)
+            {
+                Check(dto.gold >= 0, "gold cannot be negative");
+                save.Gold = dto.gold;
+                save.CosmeticCharacterId = dto.cosmetic_character_id ?? string.Empty;
+                save.CosmeticOutfitCharacterId = dto.cosmetic_outfit_character_id ?? string.Empty;
+                save.CosmeticAccessoryCharacterId = dto.cosmetic_accessory_character_id ?? string.Empty;
+                foreach (CosmeticFavoriteDto cf in dto.cosmetic_favorites ?? Array.Empty<CosmeticFavoriteDto>())
+                {
+                    Check(cf != null && !string.IsNullOrWhiteSpace(cf.name), "invalid cosmetic favorite entry");
+                    save._cosmeticFavorites.Add(new CosmeticFavoritePreset(
+                        cf.name, cf.character_id, cf.outfit_character_id, cf.accessory_character_id,
+                        cf.upper_fashion_id, cf.upper_dye_id, cf.lower_fashion_id, cf.lower_dye_id));
+                }
+            }
+
             foreach (OwnedCreature creature in save.Owned) save.Codex.Record(CodexEvent.Capture, creature.SpeciesId);
             return save;
+        }
+
+        private static CheckpointDto ToCheckpointDto(RunCheckpointSave cp)
+        {
+            var settled = new int[cp.DiscoveredSettlements.Count];
+            for (int i = 0; i < cp.DiscoveredSettlements.Count; i++)
+            {
+                settled[i] = cp.DiscoveredSettlements[i];
+            }
+
+            return new CheckpointDto
+            {
+                world_kind = (int)cp.WorldKind,
+                checkpoint_kind = (int)cp.CheckpointKind,
+                planet_seed = unchecked((long)cp.PlanetSeed),
+                planet_type_id = cp.PlanetTypeId,
+                planet_size = (int)cp.PlanetSize,
+                boss_stage = (int)cp.BossStage,
+                dir_x = cp.PlayerDirX,
+                dir_y = cp.PlayerDirY,
+                dir_z = cp.PlayerDirZ,
+                beginner_quest_phase = cp.BeginnerQuestPhase,
+                discovered_settlements = settled,
+                surface_boss_defeated = cp.SurfaceBossDefeated,
+                dungeon_boss_defeated = cp.DungeonBossDefeated,
+            };
+        }
+
+        private static RunCheckpointSave FromCheckpointDto(CheckpointDto dto)
+        {
+            Check(Enum.IsDefined(typeof(SaveWorldKind), dto.world_kind), "invalid checkpoint world_kind");
+            Check(Enum.IsDefined(typeof(SaveCheckpointKind), dto.checkpoint_kind), "invalid checkpoint_kind");
+            Check(!string.IsNullOrWhiteSpace(dto.planet_type_id), "invalid checkpoint planet_type_id");
+            Check(Enum.IsDefined(typeof(PlanetSize), dto.planet_size), "invalid checkpoint planet_size");
+            Check(Enum.IsDefined(typeof(CreatureStage), dto.boss_stage), "invalid checkpoint boss_stage");
+            Check(!float.IsNaN(dto.dir_x) && !float.IsInfinity(dto.dir_x) &&
+                  !float.IsNaN(dto.dir_y) && !float.IsInfinity(dto.dir_y) &&
+                  !float.IsNaN(dto.dir_z) && !float.IsInfinity(dto.dir_z), "invalid checkpoint player direction");
+            Check(dto.beginner_quest_phase >= 0, "invalid checkpoint beginner_quest_phase");
+
+            var worldKind = (SaveWorldKind)dto.world_kind;
+            var cpKind = (SaveCheckpointKind)dto.checkpoint_kind;
+            Check(SaveCheckpointPolicy.CanSaveCheckpoint(worldKind, cpKind, insideDungeon: false),
+                "checkpoint_kind not valid for world_kind");
+
+            if (dto.discovered_settlements != null)
+            {
+                foreach (int s in dto.discovered_settlements)
+                {
+                    Check(s >= 0, "invalid checkpoint discovered_settlement index");
+                }
+            }
+
+            return new RunCheckpointSave(
+                worldKind,
+                cpKind,
+                unchecked((ulong)dto.planet_seed),
+                dto.planet_type_id,
+                (PlanetSize)dto.planet_size,
+                (CreatureStage)dto.boss_stage,
+                dto.dir_x,
+                dto.dir_y,
+                dto.dir_z,
+                dto.beginner_quest_phase,
+                dto.discovered_settlements,
+                dto.surface_boss_defeated,
+                dto.dungeon_boss_defeated);
         }
 
         // Lower-case enum name ("light"): readable in the file and stable across enum reordering. Enum.Parse is not used
@@ -1034,6 +1604,12 @@ namespace Cosmimera.Save
             PlayerExp = exp;
         }
 
+        internal void SetRawPlayerExp(int exp)
+        {
+            Contract.Requires(exp >= 0, "player exp must be >= 0");
+            PlayerExp = exp;
+        }
+
         /// <summary>Writes atomically to <paramref name="path"/> (temp file + replace, so a crash never leaves half a save).</summary>
         /// <remarks>Pre: path non-empty; directory writable. Post: Load(path) equals this. Side effects: writes files.</remarks>
         public void Write(string path)
@@ -1057,6 +1633,30 @@ namespace Cosmimera.Save
             }
         }
 
+        private static LookDto ToDto(ItemLook look) => new LookDto
+        {
+            planet = look.Origin.PlanetTypeId, planet_seed = unchecked((long)look.Origin.PlanetSeed), seed = unchecked((long)look.Seed),
+        };
+
+        // JsonUtility fills a missing nested object with an empty instance, so "no look" is an empty planet id.
+        private static bool TryFromDto(LookDto dto, out ItemLook look)
+        {
+            look = default;
+            if (dto == null || !CraftInventory.ValidId(dto.planet)) return false;
+            look = new ItemLook(new GearOrigin(dto.planet, unchecked((ulong)dto.planet_seed)), unchecked((ulong)dto.seed));
+            return true;
+        }
+
+        private static EquippedItem EntryFromDto(int version, int owner, string slot, string item, LookDto look)
+        {
+            if (version >= 14 && look != null && !string.IsNullOrEmpty(look.planet))
+            {
+                Check(TryFromDto(look, out ItemLook parsed), "invalid equipment look");
+                return new EquippedItem(owner, slot, item, parsed);
+            }
+            return new EquippedItem(owner, slot, item);
+        }
+
 #pragma warning disable 0649, IDE1006
         [Serializable] private sealed class Dto
         {
@@ -1073,12 +1673,83 @@ namespace Cosmimera.Save
             public EquipmentDto[] equipment;
             public CodexDto[] codex;
             public PresetDto[] presets;
+            public OriginDto last_planet;
             public string character_id;
             public string friend_id;
             public string rival_id;
             public string rival_starter_id;
             public string friend_starter_id;
             public bool tutorial_done;
+            public TrainerCountDto[] trainer_battles;
+            public string[] completed_trials;
+            public string[] discovered_recipes;
+            public bool food_quest_done;
+            public bool migratory_return_done;
+            public bool rival_quest_done;
+            public bool ng_plus_unlocked;
+            public bool has_checkpoint;
+            public CheckpointDto active_checkpoint;
+            public int gold;
+            public string cosmetic_character_id;
+            public string cosmetic_outfit_character_id;
+            public string cosmetic_accessory_character_id;
+            public CosmeticFavoriteDto[] cosmetic_favorites;
+        }
+
+        [Serializable] private sealed class CosmeticFavoriteDto
+        {
+            public string name;
+            public string character_id;
+            public string outfit_character_id;
+            public string accessory_character_id;
+            public string upper_fashion_id;
+            public string upper_dye_id;
+            public string lower_fashion_id;
+            public string lower_dye_id;
+        }
+
+        private static CosmeticFavoriteDto[] ToCosmeticFavoriteDtos(List<CosmeticFavoritePreset> list)
+        {
+            var result = new CosmeticFavoriteDto[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                CosmeticFavoritePreset p = list[i];
+                result[i] = new CosmeticFavoriteDto
+                {
+                    name = p.Name,
+                    character_id = p.CharacterId,
+                    outfit_character_id = p.OutfitCharacterId,
+                    accessory_character_id = p.AccessoryCharacterId,
+                    upper_fashion_id = p.UpperFashionId,
+                    upper_dye_id = p.UpperDyeId,
+                    lower_fashion_id = p.LowerFashionId,
+                    lower_dye_id = p.LowerDyeId,
+                };
+            }
+            return result;
+        }
+
+        [Serializable] private sealed class CheckpointDto
+        {
+            public int world_kind;
+            public int checkpoint_kind;
+            public long planet_seed;
+            public string planet_type_id;
+            public int planet_size;
+            public int boss_stage;
+            public float dir_x;
+            public float dir_y;
+            public float dir_z;
+            public int beginner_quest_phase;
+            public int[] discovered_settlements;
+            public bool surface_boss_defeated;
+            public bool dungeon_boss_defeated;
+        }
+
+        [Serializable] private sealed class TrainerCountDto
+        {
+            public string id;
+            public int count;
         }
 
         [Serializable] private sealed class PresetDto
@@ -1109,12 +1780,28 @@ namespace Cosmimera.Save
             public int owner;
             public string slot;
             public string item;
+            public LookDto look;
         }
 
         [Serializable] private sealed class CraftDto
         {
             public string id;
             public int qty;
+            public LookDto[] looks;
+        }
+
+        // Seeds are stored as their 64-bit pattern in a long: JsonUtility round-trips long exactly.
+        [Serializable] private sealed class LookDto
+        {
+            public string planet;
+            public long planet_seed;
+            public long seed;
+        }
+
+        [Serializable] private sealed class OriginDto
+        {
+            public string planet;
+            public long seed;
         }
 
         [Serializable] private sealed class EggDto

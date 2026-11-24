@@ -1,18 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
+using Cosmimera.Crafting;
+using Cosmimera.Core.Contracts;
 using Cosmimera.GameData;
 using Cosmimera.WorldGen;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Cosmimera.Bootstrap.Demo
 {
+    /// <summary>One equipped copy as the paperdoll preview draws it.</summary>
+    /// <remarks>
+    /// Pre: EquipmentSlots.IsValid(slot); key non-empty and unique per (slot, item, look); spec non-null.
+    /// Post: immutable. Side effects: none.
+    /// </remarks>
+    internal readonly struct PaperdollGear
+    {
+        internal PaperdollGear(string slot, string key, GearLookSpec spec)
+        {
+            Contract.Requires(EquipmentSlots.IsValid(slot) && !string.IsNullOrEmpty(key) && spec != null, "invalid paperdoll gear");
+            Slot = slot;
+            Key = key;
+            Spec = spec;
+        }
+
+        internal string Slot { get; }
+        internal string Key { get; }
+        internal GearLookSpec Spec { get; }
+    }
+
     /// <summary>
     /// Isolated 3D RenderTexture stage for the lobby paperdoll preview.
     /// Displays the selected player character or creature with procedural gear attachments.
     /// </summary>
     /// <remarks>
-    /// Pre: created on the main thread; toonShader may be null (falls back to URP Lit).
+    /// Pre: created on the main thread; toonShader may be null (falls back to URP Lit); sceneryShader
+    /// (Cosmimera/ToonScenery) may be null (gear then draws without its baked vertex colours).
     /// Post: Dispose releases the RenderTexture, stage GameObjects and transient Materials.
     /// Side effects: allocates offscreen RenderTexture, Camera, Light and preview GameObjects.
     /// </remarks>
@@ -23,6 +46,10 @@ namespace Cosmimera.Bootstrap.Demo
         private static readonly Vector3 StageOrigin = new Vector3(0f, -500f, 0f);
 
         private readonly Shader _toonShader;
+        private readonly Shader _sceneryShader;
+        private readonly List<Mesh> _gearMeshes = new List<Mesh>();
+        private readonly List<Material> _gearMaterials = new List<Material>();
+        private readonly StringBuilder _keyBuilder = new StringBuilder();
         private readonly List<Material> _materials = new List<Material>();
         private readonly GameObject _stageRoot;
         private readonly Transform _pivot;
@@ -34,15 +61,16 @@ namespace Cosmimera.Bootstrap.Demo
         private Transform _gearRoot;
         private string _targetKey = string.Empty;
         private string _gearKey = string.Empty;
-        private float _yaw = 180f;
+        private float _yaw;
         private bool _disposed;
 
         internal Texture Texture => _rt;
         internal float Yaw => _yaw;
 
-        internal PaperdollPreview(Shader toonShader)
+        internal PaperdollPreview(Shader toonShader, Shader sceneryShader)
         {
             _toonShader = toonShader;
+            _sceneryShader = sceneryShader;
             _stageRoot = new GameObject("PaperdollStage");
             _stageRoot.hideFlags = HideFlags.DontSave;
             _stageRoot.transform.position = StageOrigin;
@@ -63,7 +91,11 @@ namespace Cosmimera.Bootstrap.Demo
             _rt.Create();
 
             _camera = camGo.AddComponent<Camera>();
-            _camera.enabled = false;
+            // URP renders this camera itself each frame (targetTexture set, drawn before the main camera
+            // via lower depth). A manual Camera.Render() from OnGUI runs nested inside
+            // UniversalRenderPipeline.Render and corrupts its frame data (UniversalCameraData "already created").
+            _camera.enabled = true;
+            _camera.depth = -100f;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = new Color(0.05f, 0.07f, 0.12f, 1f);
             _camera.fieldOfView = 32f;
@@ -86,7 +118,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         internal void SetPlayerTarget(GameObject prefab, RuntimeAnimatorController controller, string characterKey,
-            string weaponId, string armorId, string accessoryId)
+            IReadOnlyList<PaperdollGear> gear)
         {
             string nextKey = "player:" + (characterKey ?? "capsule");
             if (_targetKey != nextKey)
@@ -117,11 +149,10 @@ namespace Cosmimera.Bootstrap.Demo
                 FrameModel(isCreature: false);
             }
 
-            SyncGear(weaponId, armorId, accessoryId, isCreature: false);
+            SyncGear(gear, isCreature: false);
         }
 
-        internal void SetCreatureTarget(CreatureDef def, int instanceId,
-            string weaponId, string armorId, string accessoryId)
+        internal void SetCreatureTarget(CreatureDef def, int instanceId, IReadOnlyList<PaperdollGear> gear)
         {
             string speciesId = def != null ? def.Id : "unknown";
             string nextKey = "creature:" + instanceId + ":" + speciesId;
@@ -149,152 +180,217 @@ namespace Cosmimera.Bootstrap.Demo
                 FrameModel(isCreature: true);
             }
 
-            SyncGear(weaponId, armorId, accessoryId, isCreature: true);
+            SyncGear(gear, isCreature: true);
         }
 
-        internal void Render()
+        /// <summary>Applies the current yaw to the stage so the next pipeline frame shows it.</summary>
+        /// <remarks>
+        /// Pre: main thread; safe to call from OnGUI (it never triggers a render).
+        /// Post: the preview pivot faces <see cref="Yaw"/>; <see cref="Texture"/> updates on the next URP frame.
+        /// Side effects: modifies the pivot transform; no-op after Dispose.
+        /// </remarks>
+        internal void SyncPose()
         {
-            if (_disposed || _camera == null || _rt == null) return;
-            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
+            if (_disposed || _pivot == null) return;
             _pivot.localRotation = Quaternion.Euler(0f, _yaw, 0f);
-            _camera.Render();
         }
 
         private void FrameModel(bool isCreature)
         {
             if (_model == null || _camera == null) return;
             Bounds bounds = ComputeBounds(_model);
-            float height = Mathf.Max(0.8f, bounds.size.y);
+            float height = Mathf.Max(0.8f, Mathf.Max(bounds.size.y, Mathf.Max(bounds.size.x, bounds.size.z) * 0.75f));
             float centerY = bounds.center.y - _stageRoot.transform.position.y;
             float dist = isCreature ? Mathf.Max(2.2f, height * 2.5f) : Mathf.Max(2.6f, height * 2.0f);
             _camera.transform.localPosition = new Vector3(0f, centerY + height * 0.1f, dist);
             _camera.transform.LookAt(_stageRoot.transform.position + new Vector3(0f, centerY, 0f));
         }
 
-        private void SyncGear(string weaponId, string armorId, string accessoryId, bool isCreature)
+        private void SyncGear(IReadOnlyList<PaperdollGear> gear, bool isCreature)
         {
-            string nextGear = (weaponId ?? "") + "|" + (armorId ?? "") + "|" + (accessoryId ?? "") + "|" + (isCreature ? "c" : "p");
+            _keyBuilder.Clear().Append(isCreature ? 'c' : 'p');
+            int count = gear?.Count ?? 0;
+            for (int i = 0; i < count; i++) _keyBuilder.Append('|').Append(gear[i].Key);
+            string nextGear = _keyBuilder.ToString();
             if (_gearKey == nextGear || _model == null) return;
             _gearKey = nextGear;
 
+            ClearGear();
+            var rootGo = new GameObject("PaperdollGear");
+            rootGo.transform.SetParent(_model.transform, false);
+            _gearRoot = rootGo.transform;
+            if (count == 0) return;
+
+            // Mount points are measured with the turntable at rest so they sit in the model's own frame (+Z front);
+            // a yawed AABB would put the creature's side sockets on the wrong axis.
+            Quaternion turned = _pivot.localRotation;
+            _pivot.localRotation = Quaternion.identity;
+            Material gearMat = CreatureGearAttachments.CreateGearMaterial(_sceneryShader, _toonShader);
+            _gearMaterials.Add(gearMat);
+            Material handMat = null;
+            if (isCreature)
+            {
+                handMat = CreatureGearAttachments.CreateHandMaterial(_toonShader);
+                _gearMaterials.Add(handMat);
+            }
+            // Measured before any gear joins the hierarchy.
+            Bounds body = isCreature ? CreatureGearAttachments.ComputeBounds(_model) : default;
+            PlayerRig rig = isCreature ? default : MeasurePlayer();
+            for (int i = 0; i < count; i++)
+            {
+                if (isCreature)
+                    CreatureGearAttachments.AttachCreatureGear(_model.transform, _gearRoot, gear[i], gearMat, handMat, body, _gearMeshes);
+                else AttachPlayerGear(gear[i], gearMat, rig);
+            }
+            // Side-held weapons widen the silhouette; frame the whole outfit.
+            FrameModel(isCreature);
+            _pivot.localRotation = turned;
+        }
+
+        // Where player gear goes, measured once per gear change in the model's rest frame.
+        private struct PlayerRig
+        {
+            internal Vector3 Ground, Hips, Neck, HandR, HandL;
+            internal float ShoulderHalf, HipHalf, HandScale;
+            internal Transform HipsBone, NeckBone, HandRBone, HandLBone;
+        }
+
+        // REQ: art-asset-pipeline.md (角色掛點 Socket_HandR_Prop／Socket_HandL_Prop) — the provisional characters are Generic
+        // rigs with humanoid bone names, so bones and sockets are found by name; a Humanoid avatar is the second source,
+        // and the capsule stand-in (2 m tall, centred one metre up, facing +Z) the last.
+        private PlayerRig MeasurePlayer()
+        {
+            Transform root = _model.transform;
+            Animator anim = _model.GetComponentInChildren<Animator>();
+            bool human = anim != null && anim.isHuman;
+            // Pose the rig at idle frame zero before measuring, so bone-followed gear only inherits the idle sway
+            // rather than the bind-pose-to-idle swing of the hands.
+            if (anim != null && anim.runtimeAnimatorController != null) anim.Update(0f);
+            Transform Find(string name, HumanBodyBones bone)
+            {
+                Transform t = FindDeep(root, name);
+                return t != null ? t : human ? anim.GetBoneTransform(bone) : null;
+            }
+
+            Vector3 c = root.position;
+            var rig = new PlayerRig
+            {
+                HipsBone = Find("Hips", HumanBodyBones.Hips),
+                NeckBone = Find("Neck", HumanBodyBones.Neck),
+                HandRBone = FindDeep(root, "Socket_HandR_Prop") ?? Find("RightHand", HumanBodyBones.RightHand),
+                HandLBone = FindDeep(root, "Socket_HandL_Prop") ?? Find("LeftHand", HumanBodyBones.LeftHand),
+            };
+            Transform footL = Find("LeftFoot", HumanBodyBones.LeftFoot), footR = Find("RightFoot", HumanBodyBones.RightFoot);
+            Transform armL = Find("LeftUpperArm", HumanBodyBones.LeftUpperArm), armR = Find("RightUpperArm", HumanBodyBones.RightUpperArm);
+            Transform legL = Find("LeftUpperLeg", HumanBodyBones.LeftUpperLeg), legR = Find("RightUpperLeg", HumanBodyBones.RightUpperLeg);
+
+            if (rig.HipsBone == null || rig.NeckBone == null)
+            {
+                rig.Ground = c - Vector3.up;
+                rig.Hips = c;
+                rig.Neck = c + Vector3.up * 0.75f;
+                rig.HandR = c + new Vector3(0.45f, -0.05f, 0.1f);
+                rig.HandL = c + new Vector3(-0.45f, -0.05f, 0.1f);
+                rig.ShoulderHalf = 0.4f;
+                rig.HipHalf = 0.35f;
+                rig.HandScale = 1f;
+                rig.HipsBone = rig.NeckBone = rig.HandRBone = rig.HandLBone = null;
+                return rig;
+            }
+
+            rig.Hips = rig.HipsBone.position;
+            rig.Neck = rig.NeckBone.position;
+            rig.Ground = new Vector3(rig.Hips.x, footL != null && footR != null ? Mathf.Min(footL.position.y, footR.position.y) : c.y, rig.Hips.z);
+            rig.HandR = rig.HandRBone != null ? rig.HandRBone.position : rig.Hips + new Vector3(0.3f, 0f, 0f);
+            rig.HandL = rig.HandLBone != null ? rig.HandLBone.position : rig.Hips - new Vector3(0.3f, 0f, 0f);
+            // Joint spacing understates the flesh around it; the factors put cloth just outside a slim build.
+            rig.ShoulderHalf = armL != null && armR != null ? Vector3.Distance(armL.position, armR.position) * 0.5f * 1.2f : 0.2f;
+            rig.HipHalf = legL != null && legR != null ? Vector3.Distance(legL.position, legR.position) * 0.5f * 1.9f : 0.17f;
+            // Gear is modelled at adult size (neck ~1.45 m above the soles); the provisional cast is shorter.
+            rig.HandScale = Mathf.Clamp((rig.Neck.y - rig.Ground.y) / 1.45f, 0.5f, 1.5f);
+            return rig;
+        }
+
+        // REQ: gear-looks.md#範圍 — player gear is a paperdoll on the rig: weapons in the hand sockets, garments from hips and feet.
+        // Placeholder: garments are layered over the body; the part library swaps body parts instead (P1-17e).
+        private void AttachPlayerGear(in PaperdollGear gear, Material mat, in PlayerRig rig)
+        {
+            GearLookSpec spec = gear.Spec;
+            float len = GearMeshes.NominalLength(spec.Kind) * spec.Length;
+            switch (gear.Slot)
+            {
+                case EquipmentSlots.MainHand:
+                {
+                    // Held forward and up from the fist, rolled outward so the blade clears the torso.
+                    float outward = rig.HandR.x >= rig.Hips.x ? 1f : -1f;
+                    Mount(spec, mat, rig.HandR, Quaternion.Euler(55f, 0f, -outward * 25f), Vector3.one * rig.HandScale, rig.HandRBone);
+                    break;
+                }
+                case EquipmentSlots.OffHand:
+                {
+                    // Outward is wherever this hand actually is: imported rigs may mirror left and right across X.
+                    float outward = rig.HandL.x >= rig.Hips.x ? 1f : -1f;
+                    if (spec.Kind == GearKind.Shield)
+                        Mount(spec, mat, rig.HandL + new Vector3(outward * 0.06f, 0f, 0.04f) * rig.HandScale, Quaternion.Euler(0f, outward * 35f, 0f),
+                            Vector3.one * rig.HandScale, rig.HandLBone);
+                    else
+                        Mount(spec, mat, rig.HandL, Quaternion.Euler(55f, 0f, -outward * 25f), Vector3.one * rig.HandScale, rig.HandLBone);
+                    break;
+                }
+                case EquipmentSlots.Upper:
+                {
+                    // Built from the waist (y 0) to the collar (y len) with 0.2·Width half-shoulders: stretched to this body.
+                    float across = Mathf.Clamp(rig.ShoulderHalf / (0.2f * spec.Width), 0.3f, 3f);
+                    Mount(spec, mat, rig.Hips, Quaternion.identity,
+                        new Vector3(across, Mathf.Max(0.2f, rig.Neck.y - rig.Hips.y) / len, across), rig.HipsBone);
+                    break;
+                }
+                case EquipmentSlots.Lower:
+                {
+                    float across = Mathf.Clamp(rig.HipHalf / (0.17f * spec.Width), 0.3f, 3f);
+                    Mount(spec, mat, rig.Ground, Quaternion.identity,
+                        new Vector3(across, Mathf.Max(0.2f, rig.Hips.y - rig.Ground.y) / len, across), rig.HipsBone);
+                    break;
+                }
+                default:
+                    Mount(spec, mat, rig.Neck + new Vector3(0f, -0.06f, 0.1f), Quaternion.identity, Vector3.one, rig.NeckBone);
+                    break;
+            }
+        }
+
+        private static Transform FindDeep(Transform root, string name)
+        {
+            if (root.name == name) return root;
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform hit = FindDeep(root.GetChild(i), name);
+                if (hit != null) return hit;
+            }
+            return null;
+        }
+
+        private void Mount(GearLookSpec spec, Material mat, Vector3 at, Quaternion rotation, Vector3 scale, Transform follow) =>
+            CreatureGearAttachments.Mount(_model.transform, _gearRoot, spec, mat, at, rotation, scale, follow, _gearMeshes);
+
+        private void ClearGear()
+        {
             if (_gearRoot != null)
             {
                 DestroyObject(_gearRoot.gameObject);
                 _gearRoot = null;
             }
-
-            var rootGo = new GameObject("PaperdollGear");
-            rootGo.transform.SetParent(_model.transform, false);
-            _gearRoot = rootGo.transform;
-
-            Animator anim = isCreature ? null : _model.GetComponentInChildren<Animator>();
-
-            if (!string.IsNullOrEmpty(weaponId))
+            // Bone-followed gear lives under the rig, not the gear root.
+            if (_model != null)
             {
-                Transform hand = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.RightHand) : null;
-                AttachWeapon(hand, weaponId, isCreature);
+                foreach (MeshFilter filter in _model.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (_gearMeshes.Contains(filter.sharedMesh)) DestroyObject(filter.gameObject);
+                }
             }
-
-            if (!string.IsNullOrEmpty(armorId))
-            {
-                Transform chest = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.Chest) : null;
-                AttachArmor(chest, armorId, isCreature);
-            }
-
-            if (!string.IsNullOrEmpty(accessoryId))
-            {
-                Transform neck = anim != null && anim.isHuman
-                    ? (anim.GetBoneTransform(HumanBodyBones.Neck) ?? anim.GetBoneTransform(HumanBodyBones.Head))
-                    : null;
-                AttachAccessory(neck, accessoryId, isCreature);
-            }
-        }
-
-        private void AttachWeapon(Transform bone, string itemId, bool isCreature)
-        {
-            var holder = new GameObject("WeaponVisual");
-            if (bone != null)
-            {
-                holder.transform.SetParent(bone, false);
-                holder.transform.localPosition = new Vector3(0f, 0.04f, 0.04f);
-                holder.transform.localRotation = Quaternion.Euler(75f, 0f, 0f);
-            }
-            else
-            {
-                holder.transform.SetParent(_gearRoot, false);
-                holder.transform.localPosition = isCreature ? new Vector3(0.42f, 0.55f, 0.25f) : new Vector3(0.42f, 0.92f, 0.16f);
-                holder.transform.localRotation = Quaternion.Euler(20f, 0f, -12f);
-            }
-
-            Color bladeColor = itemId.Contains("copper") ? new Color(0.88f, 0.54f, 0.26f)
-                : itemId.Contains("iron") ? new Color(0.76f, 0.84f, 0.94f)
-                : new Color(0.62f, 0.72f, 0.85f);
-
-            GameObject blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            blade.transform.SetParent(holder.transform, false);
-            blade.transform.localPosition = new Vector3(0f, 0.28f, 0f);
-            blade.transform.localScale = new Vector3(0.06f, 0.58f, 0.03f);
-            StripColliders(blade);
-            blade.GetComponent<Renderer>().sharedMaterial = CreateMaterial(bladeColor);
-
-            GameObject guard = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            guard.transform.SetParent(holder.transform, false);
-            guard.transform.localPosition = new Vector3(0f, 0.02f, 0f);
-            guard.transform.localScale = new Vector3(0.16f, 0.04f, 0.06f);
-            StripColliders(guard);
-            guard.GetComponent<Renderer>().sharedMaterial = CreateMaterial(new Color(0.32f, 0.28f, 0.24f));
-        }
-
-        private void AttachArmor(Transform bone, string itemId, bool isCreature)
-        {
-            var holder = new GameObject("ArmorVisual");
-            if (bone != null)
-            {
-                holder.transform.SetParent(bone, false);
-                holder.transform.localPosition = new Vector3(0f, 0.06f, 0f);
-            }
-            else
-            {
-                holder.transform.SetParent(_gearRoot, false);
-                holder.transform.localPosition = isCreature ? new Vector3(0f, 0.52f, 0f) : new Vector3(0f, 1.08f, 0f);
-            }
-
-            Color armorColor = itemId.Contains("linen") ? new Color(0.88f, 0.84f, 0.72f)
-                : itemId.Contains("iron") ? new Color(0.46f, 0.58f, 0.72f)
-                : new Color(0.55f, 0.52f, 0.48f);
-
-            Material mat = CreateMaterial(armorColor);
-            for (int side = -1; side <= 1; side += 2)
-            {
-                GameObject pauldron = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                pauldron.transform.SetParent(holder.transform, false);
-                pauldron.transform.localPosition = new Vector3(side * 0.22f, 0.08f, 0f);
-                pauldron.transform.localScale = new Vector3(0.16f, 0.12f, 0.16f);
-                StripColliders(pauldron);
-                pauldron.GetComponent<Renderer>().sharedMaterial = mat;
-            }
-        }
-
-        private void AttachAccessory(Transform bone, string itemId, bool isCreature)
-        {
-            var holder = new GameObject("AccessoryVisual");
-            if (bone != null)
-            {
-                holder.transform.SetParent(bone, false);
-                holder.transform.localPosition = new Vector3(0f, 0.02f, 0.12f);
-            }
-            else
-            {
-                holder.transform.SetParent(_gearRoot, false);
-                holder.transform.localPosition = isCreature ? new Vector3(0f, 0.78f, 0.32f) : new Vector3(0f, 1.32f, 0.16f);
-            }
-
-            Color gemColor = itemId.Contains("gem") ? new Color(0.25f, 0.92f, 0.78f) : new Color(0.95f, 0.82f, 0.32f);
-            GameObject gem = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            gem.transform.SetParent(holder.transform, false);
-            gem.transform.localScale = new Vector3(0.1f, 0.12f, 0.06f);
-            StripColliders(gem);
-            gem.GetComponent<Renderer>().sharedMaterial = CreateMaterial(gemColor);
+            for (int i = 0; i < _gearMeshes.Count; i++) DestroyObject(_gearMeshes[i]);
+            _gearMeshes.Clear();
+            for (int i = 0; i < _gearMaterials.Count; i++) DestroyObject(_gearMaterials[i]);
+            _gearMaterials.Clear();
         }
 
         private Material CreateMaterial(Color color)
@@ -306,38 +402,13 @@ namespace Cosmimera.Bootstrap.Demo
             return mat;
         }
 
-        private static Bounds ComputeBounds(GameObject root)
-        {
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                return new Bounds(root.transform.position + Vector3.up, Vector3.one);
-            }
+        private static Bounds ComputeBounds(GameObject root) => CreatureGearAttachments.ComputeBounds(root);
 
-            Bounds bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
-            {
-                bounds.Encapsulate(renderers[i].bounds);
-            }
-            return bounds;
-        }
-
-        private static void StripColliders(GameObject root)
-        {
-            Collider[] colliders = root.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                DestroyObject(colliders[i]);
-            }
-        }
+        private static void StripColliders(GameObject root) => CreatureGearAttachments.StripColliders(root);
 
         private void ClearModel()
         {
-            if (_gearRoot != null)
-            {
-                DestroyObject(_gearRoot.gameObject);
-                _gearRoot = null;
-            }
+            ClearGear();
             if (_creatureView != null)
             {
                 _creatureView.Dispose();
@@ -356,12 +427,7 @@ namespace Cosmimera.Bootstrap.Demo
             _materials.Clear();
         }
 
-        private static void DestroyObject(UnityEngine.Object obj)
-        {
-            if (obj == null) return;
-            if (Application.isPlaying) UnityEngine.Object.Destroy(obj);
-            else UnityEngine.Object.DestroyImmediate(obj);
-        }
+        private static void DestroyObject(UnityEngine.Object obj) => CreatureGearAttachments.DestroyObject(obj);
 
         public void Dispose()
         {

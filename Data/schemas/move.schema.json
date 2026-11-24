@@ -35,7 +35,7 @@
         "power": { "$ref": "common.schema.json#/$defs/movePower" },
         "effect": { "$ref": "common.schema.json#/$defs/effect" },
         "effect_duration_ms": {
-          "description": "How long a non-instant move effect lasts on its target. Omitted for damage moves and heal_percent_max_hp (instant).",
+          "description": "How long a non-instant move effect lasts on its target. Omitted for damage moves and instant effects (heal_percent_max_hp, apply_ailment).",
           "$ref": "common.schema.json#/$defs/durationMs"
         },
         "field_duration_ms": {
@@ -78,7 +78,7 @@
           "else": { "required": ["effect"] }
         },
         {
-          "if": { "required": ["effect"], "properties": { "effect": { "properties": { "type": { "const": "heal_percent_max_hp" } } } } },
+          "if": { "required": ["effect"], "properties": { "effect": { "properties": { "type": { "enum": ["heal_percent_max_hp", "apply_ailment"] } } } } },
           "then": { "not": { "required": ["effect_duration_ms"] } },
           "else": {
             "if": { "required": ["effect"] },

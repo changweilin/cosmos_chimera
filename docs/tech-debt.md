@@ -15,7 +15,6 @@ D0 demo 前 Sol 審查只修 high 與阻礙遊玩的問題；其餘 med/low 記�
 | `docs/reviews/capture-elements-opus.md` | CE-O5 | med | `creatures.md` 掉落規則仍寫依 `element_bias` 等機率，與主副屬性加權掉落矛盾；需使用者同意後改為連結 `planet-world.md#星球屬性` |
 | `docs/reviews/capture-elements-opus.md` | CE-O4／O6／O7／O8 | low | 收服率加總可溢位；`RunPlanner`／`SettlementPlanner` 以半徑反推尺寸（應用 `BossDraw.SizeFor`，下次升版時改）；`RunPlan.Elements` 預設 null 違反 Post；`PlanetElements` 回傳可變內部陣列 |
 | `docs/reviews/D0-U1-opus.md`、`capture-elements-opus.md` | D0-U1-O1～O3／CE-O1～O2 | low | `LobbySave.FromJson` 契約未列 v6–v8 拒絕條件；翻滾冷卻用浮點倍率（P6 改 permille）；同名副手被動技靜默不生效；逃跑動畫不隨手冊暫停；`VisualVessel` 尚無讀取端、轉換後孵化承襲哪個類別未定 |
-| `tools/demo-data/merge.py` | DATA-1 | med | 1a48253 直接改 `Data/_demo`（21 招、7 被動技、21 隻換招）而無 `_incoming` 來源；`merge.py` 重新 staging 會刪掉它們。該批資料 2026-11-17 才首次匯入成 .asset。需把來源補進 `_incoming`（或讓 merge 保留），否則下次 staging 會回退 |
 | `docs/reviews/P1-review-r17-sol.md` 之後 | r18 | — | P1 第 18 輪複審因 Codex 額度中斷未執行；p1/r5-fixes 已於 2026-11-08 合併（EditMode 825/825） |
 | `Combat/Runtime/Model/Encounter.cs` | D0-E3 | low | steering 為直線大圓移動，無障礙迴避：野生遇海只停在岸邊，不繞行海灣（2026-11-11 已接 move_speed 效果、野生只在陸地） |
 | `Combat/Runtime/Model/Encounter.cs` | D0-W2 | low | 推開在每 tick 全部移動與施招之後執行：本 tick 主動技用的是推開前位置（偏差 ≤ 一個身體寬）；推開不看地形起伏（海面已擋野生，玩家宙獸仍可被推入水面）；人群每 tick 只掃 2 輪，重疊靠後續 tick 收斂 |

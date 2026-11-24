@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: water_harpoon_cetacean
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: water_harpoon_cetacean
+  lineId: line_water_whalemaelstrom
+  stage: 1
+  sizeClass: 2
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: e4b26d309e2f0914390659fd5bd0bbe3, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: 73f0ceb4e84f0314f9d9357232bb8ef1, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 44
+  evolutionMaterials:
+  - element: 2
+    tier: 2
+    qty: 5
+  resist: 62000000440000008b00000062000000620000007900000062000000360000006200000062000000
+  mastery:
+  - element: 0
+    value: 58
+  - element: 2
+    value: 125
+  - element: 5
+    value: 87
+  stats:
+    hp: 137
+    speed: 84
+    yinAtk: 42
+    yangAtk: 132
+    yinDef: 47
+    yangDef: 84
+  signatureMove: {fileID: 11400000, guid: 9bb38132a66b5b647b53be1bace3248f, type: 2}
+  trait: {fileID: 11400000, guid: fd5eda0f74eb90240ba41bdb08c57cfd, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u6591\u99C1\u75A4\u75D5\u767D\u9BE8 \xD7 \u5D4C\u5728\u80CC\u7532\u4E0A\u7684\u65B7\u88C2\u6355\u9BE8\u6728\u6845\u8207\u7E69\u7D22\",\"stage_look\":\"\u9AD4\u5074\u5E03\u6EFF\u4EA4\u932F\u6697\u85CD\u6D77\u8755\u75A4\u75D5\uFF0C\u80CC\u4E0A\u62D6\u66F3\u534A\u622A\u6728\u6845\u8207\u5E7E\u679A\u65B7\u88C2\u9435\u53C9\uFF0C\u6E38\u52D5\u6372\u8D77\u6697\u6D41\",\"archetype\":\"arch_moby_dick\",\"region\":\"\u7F8E\u6D32\",\"motifs_used\":[\"\u50B7\u75D5\u767D\u62B9\u9999\u9BE8\",\"\u65B7\u88C2\u9B5A\u53C9\",\"\u6355\u9BE8\u6728\u6845\"],\"role\":\"\u4E2D\u8DDD\u7A81\u9032\uFF1A\u6697\u6D41\u76F4\u7DDA\u885D\u92D2\uFF08\u751F\u547D\u9996\u6B21\u8DCC\u7834\u9580\u6ABB\u6642\u56DE\u5FA9
+    12%\uFF09\",\"palette\":\"\u8C61\u7259\u767D\u3001\u6DF1\u6D77\u6E5B\u85CD\u3001\u5361\u5176\u68D5\"}"
+  needsSensitivityReview: 0

@@ -1,0 +1,2321 @@
+[
+  {
+    "utility": "immune_laboratory",
+    "kind": "trait",
+    "aligned_elements": [
+      "metal"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_laboratory",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "metal",
+            "delta": 14
+          }
+        },
+        {
+          "type": "accuracy_mod",
+          "params": {
+            "delta": 8
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "immune_rainforest",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_rainforest",
+      "star": 1,
+      "trigger": {
+        "type": "on_summon",
+        "params": {
+          "duration_ms": 1000
+        }
+      },
+      "effects": [
+        {
+          "type": "heal_percent_max_hp",
+          "params": {
+            "percent": 9
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "immune_deep_sea",
+    "kind": "trait",
+    "aligned_elements": [
+      "water"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_deep_sea",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "water",
+            "delta": 14
+          }
+        },
+        {
+          "type": "stagger_capacity_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "immune_volcano",
+    "kind": "trait",
+    "aligned_elements": [
+      "fire"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_volcano",
+      "star": 1,
+      "trigger": {
+        "type": "on_hit_taken",
+        "params": {
+          "element": "fire",
+          "duration_ms": 5000
+        }
+      },
+      "effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "element": "fire",
+            "delta": 22
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "immune_cave",
+    "kind": "trait",
+    "aligned_elements": [
+      "earth"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_cave",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "earth",
+            "delta": 14
+          }
+        },
+        {
+          "type": "block_reduction_mod",
+          "params": {
+            "delta": 8
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "immune_ice_cap",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_ice_cap",
+      "star": 2,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "ice",
+            "delta": 20
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "water",
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "resist_mod",
+            "params": {
+              "element": "ice",
+              "delta": 14
+            }
+          },
+          {
+            "type": "resist_mod",
+            "params": {
+              "element": "water",
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "immune_tower",
+    "kind": "trait",
+    "aligned_elements": [
+      "thunder"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_tower",
+      "star": 2,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "thunder",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "cd_mod_percent",
+          "params": {
+            "element": "thunder",
+            "delta": -14
+          }
+        },
+        {
+          "type": "move_speed_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "cd_mod_percent",
+            "params": {
+              "element": "thunder",
+              "delta": -8
+            }
+          },
+          {
+            "type": "move_speed_mod_percent",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "immune_space",
+    "kind": "trait",
+    "aligned_elements": [
+      "wind"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_space",
+      "star": 2,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "range_mod_percent",
+          "params": {
+            "delta": 15
+          }
+        },
+        {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "range_mod_percent",
+            "params": {
+              "delta": 9
+            }
+          },
+          {
+            "type": "evasion_mod_percent",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "immune_labyrinth",
+    "kind": "trait",
+    "aligned_elements": [
+      "shadow"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_labyrinth",
+      "star": 2,
+      "trigger": {
+        "type": "on_ally_swap",
+        "params": {
+          "duration_ms": 6000
+        }
+      },
+      "effects": [
+        {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 20
+          }
+        },
+        {
+          "type": "crit_rate_mod",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "evasion_mod_percent",
+            "params": {
+              "delta": 12
+            }
+          },
+          {
+            "type": "crit_rate_mod",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "immune_temple",
+    "kind": "trait",
+    "aligned_elements": [
+      "light"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_immune_temple",
+      "star": 3,
+      "trigger": {
+        "type": "on_hp_above",
+        "params": {
+          "percent": 65
+        }
+      },
+      "effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "element": "light",
+            "delta": 24
+          }
+        },
+        {
+          "type": "cd_mod_percent",
+          "params": {
+            "element": "any",
+            "delta": -14
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "mastery_mod",
+            "params": {
+              "element": "light",
+              "delta": 14
+            }
+          },
+          {
+            "type": "cd_mod_percent",
+            "params": {
+              "element": "any",
+              "delta": -6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "open_obstacle",
+    "kind": "move",
+    "aligned_elements": [
+      "earth",
+      "metal",
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_open_obstacle",
+      "star": 2,
+      "element": "metal",
+      "kind": "both",
+      "power": 77,
+      "cooldown_ms": 2700,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "front",
+      "base_range_mm": 2400,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "sunder",
+          "buildup": 65
+        }
+      },
+      "downgraded": {
+        "power": 65,
+        "cooldown_ms": 2700,
+        "effect": {
+          "type": "apply_ailment",
+          "params": {
+            "ailment": "sunder",
+            "buildup": 45
+          }
+        }
+      }
+    }
+  },
+  {
+    "utility": "dive",
+    "kind": "move",
+    "aligned_elements": [
+      "water"
+    ],
+    "combat_move": {
+      "id": "fu_move_dive",
+      "star": 2,
+      "element": "water",
+      "kind": "both",
+      "power": 72,
+      "cooldown_ms": 3200,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "burst",
+      "base_range_mm": 3200,
+      "polarity": "yin",
+      "effect": {
+        "type": "resist_mod",
+        "params": {
+          "element": "water",
+          "delta": -16
+        }
+      },
+      "effect_duration_ms": 5000,
+      "origin": "caster",
+      "downgraded": {
+        "power": 60,
+        "cooldown_ms": 3200,
+        "effect": {
+          "type": "resist_mod",
+          "params": {
+            "element": "water",
+            "delta": -10
+          }
+        },
+        "effect_duration_ms": 4000
+      }
+    }
+  },
+  {
+    "utility": "fly",
+    "kind": "move",
+    "aligned_elements": [
+      "wind",
+      "light",
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_fly",
+      "star": 2,
+      "element": "light",
+      "kind": "damage",
+      "power": 76,
+      "cooldown_ms": 3500,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "line",
+      "base_range_mm": 16000,
+      "polarity": "yang",
+      "movement": "dash",
+      "downgraded": {
+        "power": 64,
+        "cooldown_ms": 3500
+      }
+    }
+  },
+  {
+    "utility": "levitate",
+    "kind": "move",
+    "aligned_elements": [
+      "wind",
+      "light",
+      "thunder"
+    ],
+    "combat_move": {
+      "id": "fu_move_levitate",
+      "star": 3,
+      "element": "wind",
+      "kind": "both",
+      "power": 11,
+      "cooldown_ms": 11500,
+      "windup_ms": 700,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "field",
+      "base_range_mm": 18000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "turbulent",
+          "buildup": 28
+        }
+      },
+      "field_duration_ms": 6000,
+      "downgraded": {
+        "power": 8,
+        "cooldown_ms": 12000,
+        "effect": {
+          "type": "apply_ailment",
+          "params": {
+            "ailment": "turbulent",
+            "buildup": 20
+          }
+        }
+      }
+    }
+  },
+  {
+    "utility": "catch_rate_up",
+    "kind": "trait",
+    "aligned_elements": [
+      "metal",
+      "light",
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_catch_rate_up",
+      "star": 1,
+      "trigger": {
+        "type": "on_hp_below",
+        "params": {
+          "percent": 50
+        }
+      },
+      "effects": [
+        {
+          "type": "accuracy_mod",
+          "params": {
+            "delta": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "steal_item",
+    "kind": "move",
+    "aligned_elements": [
+      "shadow",
+      "thunder"
+    ],
+    "combat_move": {
+      "id": "fu_move_steal_item",
+      "star": 2,
+      "element": "shadow",
+      "kind": "both",
+      "power": 46,
+      "cooldown_ms": 1600,
+      "windup_ms": 300,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "front",
+      "base_range_mm": 2200,
+      "polarity": "yang",
+      "effect": {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -18
+        }
+      },
+      "effect_duration_ms": 5000,
+      "downgraded": {
+        "power": 38,
+        "cooldown_ms": 1600,
+        "effect": {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": -12
+          }
+        },
+        "effect_duration_ms": 4000
+      }
+    }
+  },
+  {
+    "utility": "prevent_escape",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice",
+      "shadow"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_prevent_escape",
+      "star": 2,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "ice",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "range_mod_percent",
+          "params": {
+            "delta": 14
+          }
+        },
+        {
+          "type": "accuracy_mod",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "range_mod_percent",
+            "params": {
+              "delta": 8
+            }
+          },
+          {
+            "type": "accuracy_mod",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "quick_escape",
+    "kind": "move",
+    "aligned_elements": [
+      "thunder",
+      "wind",
+      "shadow"
+    ],
+    "combat_move": {
+      "id": "fu_move_quick_escape",
+      "star": 1,
+      "element": "thunder",
+      "kind": "both",
+      "power": 44,
+      "cooldown_ms": 2700,
+      "windup_ms": 300,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "burst",
+      "base_range_mm": 2600,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "shock",
+          "buildup": 50
+        }
+      },
+      "origin": "caster"
+    }
+  },
+  {
+    "utility": "drop_rate_up",
+    "kind": "trait",
+    "aligned_elements": [
+      "earth",
+      "metal",
+      "shadow"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_drop_rate_up",
+      "star": 1,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "earth",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "crit_damage_mod",
+          "params": {
+            "delta": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "scout_potential",
+    "kind": "trait",
+    "aligned_elements": [
+      "light",
+      "metal",
+      "thunder"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_scout_potential",
+      "star": 2,
+      "trigger": {
+        "type": "on_summon",
+        "params": {
+          "duration_ms": 6000
+        }
+      },
+      "effects": [
+        {
+          "type": "accuracy_mod",
+          "params": {
+            "delta": 16
+          }
+        },
+        {
+          "type": "crit_rate_mod",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "accuracy_mod",
+            "params": {
+              "delta": 10
+            }
+          },
+          {
+            "type": "crit_rate_mod",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "mount",
+    "kind": "move",
+    "aligned_elements": [
+      "thunder",
+      "ice",
+      "earth",
+      "wind"
+    ],
+    "combat_move": {
+      "id": "fu_move_mount",
+      "star": 1,
+      "element": "thunder",
+      "kind": "damage",
+      "power": 58,
+      "cooldown_ms": 2100,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "line",
+      "base_range_mm": 3200,
+      "polarity": "yin",
+      "movement": "dash"
+    }
+  },
+  {
+    "utility": "return_village",
+    "kind": "move",
+    "aligned_elements": [
+      "light",
+      "wood",
+      "wind"
+    ],
+    "combat_move": {
+      "id": "fu_move_return_village",
+      "star": 1,
+      "element": "wood",
+      "kind": "effect",
+      "power": 0,
+      "cooldown_ms": 8500,
+      "windup_ms": 200,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "self",
+      "base_range_mm": 0,
+      "effect": {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": 22
+        }
+      },
+      "effect_duration_ms": 5000
+    }
+  },
+  {
+    "utility": "party_stealth",
+    "kind": "move",
+    "aligned_elements": [
+      "shadow",
+      "wood",
+      "wind"
+    ],
+    "combat_move": {
+      "id": "fu_move_party_stealth",
+      "star": 2,
+      "element": "shadow",
+      "kind": "effect",
+      "power": 0,
+      "cooldown_ms": 9000,
+      "windup_ms": 200,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "self",
+      "base_range_mm": 0,
+      "effect": {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": 28
+        }
+      },
+      "effect_duration_ms": 5000,
+      "downgraded": {
+        "cooldown_ms": 9500,
+        "effect": {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 18
+          }
+        },
+        "effect_duration_ms": 4000
+      }
+    }
+  },
+  {
+    "utility": "egg_hatch_boost",
+    "kind": "trait",
+    "aligned_elements": [
+      "fire",
+      "light"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_egg_hatch_boost",
+      "star": 2,
+      "trigger": {
+        "type": "on_hp_cross_below",
+        "params": {
+          "percent": 40,
+          "duration_ms": 1000
+        }
+      },
+      "effects": [
+        {
+          "type": "heal_percent_max_hp",
+          "params": {
+            "percent": 20
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "heal_percent_max_hp",
+            "params": {
+              "percent": 12
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "magnet_pickup_double",
+    "kind": "trait",
+    "aligned_elements": [
+      "metal",
+      "thunder"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_magnet_pickup_double",
+      "star": 2,
+      "trigger": {
+        "type": "on_hit_taken",
+        "params": {
+          "element": "any",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "element": "metal",
+            "delta": 10
+          },
+          "max_stacks": 3
+        },
+        {
+          "type": "stagger_capacity_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "mastery_mod",
+            "params": {
+              "element": "metal",
+              "delta": 7
+            },
+            "max_stacks": 2
+          },
+          {
+            "type": "stagger_capacity_mod_percent",
+            "params": {
+              "delta": 6
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "weather_control",
+    "kind": "move",
+    "aligned_elements": [
+      "wind",
+      "water",
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_weather_control",
+      "star": 3,
+      "element": "wind",
+      "kind": "effect",
+      "power": 0,
+      "cooldown_ms": 12000,
+      "windup_ms": 200,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "self",
+      "base_range_mm": 0,
+      "effect": {
+        "type": "cd_mod_percent",
+        "params": {
+          "element": "any",
+          "delta": -24
+        }
+      },
+      "effect_duration_ms": 8000,
+      "downgraded": {
+        "cooldown_ms": 13000,
+        "effect": {
+          "type": "cd_mod_percent",
+          "params": {
+            "element": "any",
+            "delta": -14
+          }
+        },
+        "effect_duration_ms": 6000
+      }
+    }
+  },
+  {
+    "utility": "fishing",
+    "kind": "move",
+    "aligned_elements": [
+      "water",
+      "ice"
+    ],
+    "combat_move": {
+      "id": "fu_move_fishing",
+      "star": 1,
+      "element": "ice",
+      "kind": "both",
+      "power": 44,
+      "cooldown_ms": 2800,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "line",
+      "base_range_mm": 16000,
+      "polarity": "yang",
+      "effect": {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -15
+        }
+      },
+      "effect_duration_ms": 4000
+    }
+  },
+  {
+    "utility": "forage_berries",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_forage_berries",
+      "star": 1,
+      "trigger": {
+        "type": "on_ally_swap",
+        "params": {
+          "duration_ms": 1000
+        }
+      },
+      "effects": [
+        {
+          "type": "heal_percent_max_hp",
+          "params": {
+            "percent": 8
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "cook_fire",
+    "kind": "move",
+    "aligned_elements": [
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_cook_fire",
+      "star": 1,
+      "element": "fire",
+      "kind": "both",
+      "power": 47,
+      "cooldown_ms": 2600,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "burst",
+      "base_range_mm": 2800,
+      "polarity": "yang",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "burn",
+          "buildup": 50
+        }
+      },
+      "origin": "caster"
+    }
+  },
+  {
+    "utility": "produce_milk",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood",
+      "earth"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_produce_milk",
+      "star": 1,
+      "trigger": {
+        "type": "on_hp_cross_below",
+        "params": {
+          "percent": 50,
+          "duration_ms": 1000
+        }
+      },
+      "effects": [
+        {
+          "type": "heal_percent_max_hp",
+          "params": {
+            "percent": 12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "campfire_revive",
+    "kind": "move",
+    "aligned_elements": [
+      "fire",
+      "light"
+    ],
+    "combat_move": {
+      "id": "fu_move_campfire_revive",
+      "star": 2,
+      "element": "fire",
+      "kind": "effect",
+      "power": 0,
+      "cooldown_ms": 12000,
+      "windup_ms": 200,
+      "accuracy": 100,
+      "range_class": "mid",
+      "shape": "ally",
+      "base_range_mm": 12000,
+      "effect": {
+        "type": "heal_percent_max_hp",
+        "params": {
+          "percent": 28
+        }
+      },
+      "downgraded": {
+        "cooldown_ms": 12000,
+        "effect": {
+          "type": "heal_percent_max_hp",
+          "params": {
+            "percent": 18
+          }
+        }
+      }
+    }
+  },
+  {
+    "utility": "hunt_ground",
+    "kind": "move",
+    "aligned_elements": [
+      "fire",
+      "earth",
+      "shadow",
+      "thunder"
+    ],
+    "combat_move": {
+      "id": "fu_move_hunt_ground",
+      "star": 1,
+      "element": "thunder",
+      "kind": "both",
+      "power": 48,
+      "cooldown_ms": 2300,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "line",
+      "base_range_mm": 3000,
+      "polarity": "yang",
+      "effect": {
+        "type": "resist_mod",
+        "params": {
+          "element": "thunder",
+          "delta": -12
+        }
+      },
+      "effect_duration_ms": 4000,
+      "movement": "dash"
+    }
+  },
+  {
+    "utility": "hunt_sky",
+    "kind": "move",
+    "aligned_elements": [
+      "wind",
+      "thunder"
+    ],
+    "combat_move": {
+      "id": "fu_move_hunt_sky",
+      "star": 2,
+      "element": "wind",
+      "kind": "both",
+      "power": 50,
+      "cooldown_ms": 3800,
+      "windup_ms": 450,
+      "accuracy": 100,
+      "range_class": "long",
+      "shape": "line",
+      "base_range_mm": 22000,
+      "polarity": "yang",
+      "effect": {
+        "type": "evasion_mod_percent",
+        "params": {
+          "delta": -16
+        }
+      },
+      "effect_duration_ms": 5000,
+      "downgraded": {
+        "power": 42,
+        "cooldown_ms": 3800,
+        "effect": {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": -10
+          }
+        },
+        "effect_duration_ms": 4000
+      }
+    }
+  },
+  {
+    "utility": "set_trap",
+    "kind": "move",
+    "aligned_elements": [
+      "earth",
+      "shadow"
+    ],
+    "combat_move": {
+      "id": "fu_move_set_trap",
+      "star": 1,
+      "element": "earth",
+      "kind": "both",
+      "power": 8,
+      "cooldown_ms": 11500,
+      "windup_ms": 700,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "field",
+      "base_range_mm": 12000,
+      "polarity": "yin",
+      "effect": {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -15
+        }
+      },
+      "effect_duration_ms": 3000,
+      "field_duration_ms": 6000
+    }
+  },
+  {
+    "utility": "cast_net",
+    "kind": "move",
+    "aligned_elements": [
+      "water"
+    ],
+    "combat_move": {
+      "id": "fu_move_cast_net",
+      "star": 1,
+      "element": "water",
+      "kind": "both",
+      "power": 44,
+      "cooldown_ms": 3400,
+      "windup_ms": 600,
+      "accuracy": 90,
+      "range_class": "mid",
+      "shape": "arc",
+      "base_range_mm": 14000,
+      "polarity": "yang",
+      "effect": {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -18
+        }
+      },
+      "effect_duration_ms": 4500
+    }
+  },
+  {
+    "utility": "harvest_crops",
+    "kind": "move",
+    "aligned_elements": [
+      "wood",
+      "earth",
+      "water"
+    ],
+    "combat_move": {
+      "id": "fu_move_harvest_crops",
+      "star": 1,
+      "element": "wood",
+      "kind": "both",
+      "power": 48,
+      "cooldown_ms": 2300,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "sweep",
+      "base_range_mm": 2400,
+      "polarity": "yang",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "toxin",
+          "buildup": 45
+        }
+      }
+    }
+  },
+  {
+    "utility": "culinary_prep",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice",
+      "wood",
+      "metal",
+      "water"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_culinary_prep",
+      "star": 1,
+      "trigger": {
+        "type": "on_summon",
+        "params": {
+          "duration_ms": 5000
+        }
+      },
+      "effects": [
+        {
+          "type": "cd_mod_percent",
+          "params": {
+            "element": "any",
+            "delta": -12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "gather_essence",
+    "kind": "trait",
+    "aligned_elements": [
+      "earth",
+      "ice",
+      "metal"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_gather_essence",
+      "star": 1,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "earth",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "element": "earth",
+            "delta": 10
+          },
+          "max_stacks": 2
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_smelt_fire",
+    "kind": "trait",
+    "aligned_elements": [
+      "fire"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_smelt_fire",
+      "star": 1,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "fire",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "mastery_mod",
+          "params": {
+            "element": "fire",
+            "delta": 16
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_smelt_metal",
+    "kind": "move",
+    "aligned_elements": [
+      "metal"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_smelt_metal",
+      "star": 1,
+      "element": "metal",
+      "kind": "damage",
+      "power": 62,
+      "cooldown_ms": 2500,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "burst",
+      "base_range_mm": 2600,
+      "polarity": "yin",
+      "origin": "caster"
+    }
+  },
+  {
+    "utility": "craft_smelt_thunder",
+    "kind": "move",
+    "aligned_elements": [
+      "thunder"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_smelt_thunder",
+      "star": 1,
+      "element": "thunder",
+      "kind": "both",
+      "power": 40,
+      "cooldown_ms": 3600,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "line",
+      "base_range_mm": 20000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "shock",
+          "buildup": 50
+        }
+      }
+    }
+  },
+  {
+    "utility": "craft_weave_wood",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_weave_wood",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 10
+          }
+        },
+        {
+          "type": "move_speed_mod_percent",
+          "params": {
+            "delta": 6
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_weave_wind",
+    "kind": "move",
+    "aligned_elements": [
+      "wind"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_weave_wind",
+      "star": 1,
+      "element": "wind",
+      "kind": "damage",
+      "power": 52,
+      "cooldown_ms": 3400,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "line",
+      "base_range_mm": 20000,
+      "polarity": "yang"
+    }
+  },
+  {
+    "utility": "craft_weave_shadow",
+    "kind": "move",
+    "aligned_elements": [
+      "shadow"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_weave_shadow",
+      "star": 1,
+      "element": "shadow",
+      "kind": "both",
+      "power": 46,
+      "cooldown_ms": 2300,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "sweep",
+      "base_range_mm": 2400,
+      "polarity": "yang",
+      "effect": {
+        "type": "move_speed_mod_percent",
+        "params": {
+          "delta": -15
+        }
+      },
+      "effect_duration_ms": 4000
+    }
+  },
+  {
+    "utility": "craft_tailor_wood",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_tailor_wood",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "wood",
+            "delta": 12
+          }
+        },
+        {
+          "type": "block_reduction_mod",
+          "params": {
+            "delta": 6
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_tailor_shadow",
+    "kind": "move",
+    "aligned_elements": [
+      "shadow"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_tailor_shadow",
+      "star": 1,
+      "element": "shadow",
+      "kind": "both",
+      "power": 36,
+      "cooldown_ms": 1500,
+      "windup_ms": 300,
+      "accuracy": 100,
+      "range_class": "melee",
+      "shape": "front",
+      "base_range_mm": 2000,
+      "polarity": "yang",
+      "effect": {
+        "type": "accuracy_mod",
+        "params": {
+          "delta": -12
+        }
+      },
+      "effect_duration_ms": 4000
+    }
+  },
+  {
+    "utility": "craft_tailor_light",
+    "kind": "move",
+    "aligned_elements": [
+      "light"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_tailor_light",
+      "star": 1,
+      "element": "light",
+      "kind": "damage",
+      "power": 46,
+      "cooldown_ms": 3200,
+      "windup_ms": 450,
+      "accuracy": 100,
+      "range_class": "long",
+      "shape": "line",
+      "base_range_mm": 22000,
+      "polarity": "yang"
+    }
+  },
+  {
+    "utility": "craft_smith_metal",
+    "kind": "trait",
+    "aligned_elements": [
+      "metal"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_smith_metal",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "block_reduction_mod",
+          "params": {
+            "delta": 12
+          }
+        },
+        {
+          "type": "stagger_capacity_mod_percent",
+          "params": {
+            "delta": 8
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_smith_fire",
+    "kind": "move",
+    "aligned_elements": [
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_smith_fire",
+      "star": 1,
+      "element": "fire",
+      "kind": "both",
+      "power": 54,
+      "cooldown_ms": 2500,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "sweep",
+      "base_range_mm": 2300,
+      "polarity": "yang",
+      "effect": {
+        "type": "resist_mod",
+        "params": {
+          "element": "fire",
+          "delta": -14
+        }
+      },
+      "effect_duration_ms": 4500
+    }
+  },
+  {
+    "utility": "craft_smith_earth",
+    "kind": "move",
+    "aligned_elements": [
+      "earth"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_smith_earth",
+      "star": 1,
+      "element": "earth",
+      "kind": "both",
+      "power": 64,
+      "cooldown_ms": 2800,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "front",
+      "base_range_mm": 2200,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "weighted",
+          "buildup": 55
+        }
+      }
+    }
+  },
+  {
+    "utility": "craft_carpentry_wood",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_carpentry_wood",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "range_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_carpentry_earth",
+    "kind": "move",
+    "aligned_elements": [
+      "earth"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_carpentry_earth",
+      "star": 1,
+      "element": "earth",
+      "kind": "damage",
+      "power": 42,
+      "cooldown_ms": 1300,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "front",
+      "base_range_mm": 2200,
+      "polarity": "yang"
+    }
+  },
+  {
+    "utility": "craft_carpentry_wind",
+    "kind": "move",
+    "aligned_elements": [
+      "wind"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_carpentry_wind",
+      "star": 1,
+      "element": "wind",
+      "kind": "damage",
+      "power": 58,
+      "cooldown_ms": 3000,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "cone",
+      "base_range_mm": 14000,
+      "polarity": "yang"
+    }
+  },
+  {
+    "utility": "craft_jewelcraft_light",
+    "kind": "trait",
+    "aligned_elements": [
+      "light"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_jewelcraft_light",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "crit_damage_mod",
+          "params": {
+            "delta": 16
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_jewelcraft_earth",
+    "kind": "move",
+    "aligned_elements": [
+      "earth"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_jewelcraft_earth",
+      "star": 1,
+      "element": "earth",
+      "kind": "damage",
+      "power": 68,
+      "cooldown_ms": 4000,
+      "windup_ms": 600,
+      "accuracy": 90,
+      "range_class": "mid",
+      "shape": "burst",
+      "base_range_mm": 14000,
+      "polarity": "yin",
+      "origin": "target"
+    }
+  },
+  {
+    "utility": "craft_jewelcraft_ice",
+    "kind": "move",
+    "aligned_elements": [
+      "ice"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_jewelcraft_ice",
+      "star": 1,
+      "element": "ice",
+      "kind": "both",
+      "power": 34,
+      "cooldown_ms": 3600,
+      "windup_ms": 600,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "arc",
+      "base_range_mm": 18000,
+      "polarity": "yang",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "frostbite",
+          "buildup": 45
+        }
+      }
+    }
+  },
+  {
+    "utility": "craft_dye_wood",
+    "kind": "trait",
+    "aligned_elements": [
+      "wood"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_dye_wood",
+      "star": 1,
+      "trigger": {
+        "type": "on_hit_taken",
+        "params": {
+          "element": "any",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 16
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_dye_water",
+    "kind": "move",
+    "aligned_elements": [
+      "water"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_dye_water",
+      "star": 1,
+      "element": "water",
+      "kind": "both",
+      "power": 47,
+      "cooldown_ms": 3200,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "cone",
+      "base_range_mm": 13000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "soaked",
+          "buildup": 55
+        }
+      }
+    }
+  },
+  {
+    "utility": "craft_dye_light",
+    "kind": "move",
+    "aligned_elements": [
+      "light"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_dye_light",
+      "star": 1,
+      "element": "light",
+      "kind": "both",
+      "power": 36,
+      "cooldown_ms": 4200,
+      "windup_ms": 600,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "burst",
+      "base_range_mm": 20000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "dazzle",
+          "buildup": 55
+        }
+      },
+      "origin": "target"
+    }
+  },
+  {
+    "utility": "craft_enchant_light",
+    "kind": "trait",
+    "aligned_elements": [
+      "light"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_craft_enchant_light",
+      "star": 1,
+      "trigger": {
+        "type": "on_move_used",
+        "params": {
+          "element": "light",
+          "duration_ms": 4000
+        }
+      },
+      "effects": [
+        {
+          "type": "cd_mod_percent",
+          "params": {
+            "element": "light",
+            "delta": -12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "craft_enchant_fire",
+    "kind": "move",
+    "aligned_elements": [
+      "fire"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_enchant_fire",
+      "star": 1,
+      "element": "fire",
+      "kind": "both",
+      "power": 49,
+      "cooldown_ms": 2800,
+      "windup_ms": 300,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "burst",
+      "base_range_mm": 2800,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "burn",
+          "buildup": 55
+        }
+      },
+      "origin": "caster"
+    }
+  },
+  {
+    "utility": "craft_enchant_shadow",
+    "kind": "move",
+    "aligned_elements": [
+      "shadow"
+    ],
+    "combat_move": {
+      "id": "fu_move_craft_enchant_shadow",
+      "star": 1,
+      "element": "shadow",
+      "kind": "both",
+      "power": 11,
+      "cooldown_ms": 12500,
+      "windup_ms": 700,
+      "accuracy": 95,
+      "range_class": "long",
+      "shape": "field",
+      "base_range_mm": 16000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "eclipse",
+          "buildup": 28
+        }
+      },
+      "field_duration_ms": 5000
+    }
+  },
+  {
+    "utility": "swim",
+    "kind": "move",
+    "aligned_elements": [
+      "water",
+      "ice"
+    ],
+    "combat_move": {
+      "id": "fu_move_swim",
+      "star": 1,
+      "element": "water",
+      "kind": "both",
+      "power": 47,
+      "cooldown_ms": 2300,
+      "windup_ms": 450,
+      "accuracy": 95,
+      "range_class": "melee",
+      "shape": "line",
+      "base_range_mm": 2800,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "soaked",
+          "buildup": 50
+        }
+      },
+      "movement": "dash"
+    }
+  },
+  {
+    "utility": "freeze_prep",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_freeze_prep",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "ailment_resist_mod",
+          "params": {
+            "ailment": "burn",
+            "delta": 35
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "fire",
+            "delta": 10
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "forage_fungi",
+    "kind": "trait",
+    "aligned_elements": [
+      "shadow",
+      "earth"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_forage_fungi",
+      "star": 1,
+      "trigger": {
+        "type": "on_hp_below",
+        "params": {
+          "percent": 45
+        }
+      },
+      "effects": [
+        {
+          "type": "evasion_mod_percent",
+          "params": {
+            "delta": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "ferment_cure",
+    "kind": "trait",
+    "aligned_elements": [
+      "water",
+      "wood",
+      "shadow"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_ferment_cure",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "ailment_resist_mod",
+          "params": {
+            "ailment": "toxin",
+            "delta": 35
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "water",
+            "delta": 8
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "smoke_dry",
+    "kind": "trait",
+    "aligned_elements": [
+      "wind",
+      "fire"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_smoke_dry",
+      "star": 1,
+      "trigger": {
+        "type": "on_hp_above",
+        "params": {
+          "percent": 70
+        }
+      },
+      "effects": [
+        {
+          "type": "move_speed_mod_percent",
+          "params": {
+            "delta": 14
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "chill_brew",
+    "kind": "move",
+    "aligned_elements": [
+      "ice",
+      "water"
+    ],
+    "combat_move": {
+      "id": "fu_move_chill_brew",
+      "star": 2,
+      "element": "ice",
+      "kind": "both",
+      "power": 54,
+      "cooldown_ms": 4200,
+      "windup_ms": 600,
+      "accuracy": 95,
+      "range_class": "mid",
+      "shape": "burst",
+      "base_range_mm": 15000,
+      "polarity": "yin",
+      "effect": {
+        "type": "apply_ailment",
+        "params": {
+          "ailment": "frostbite",
+          "buildup": 70
+        }
+      },
+      "origin": "target",
+      "downgraded": {
+        "power": 46,
+        "cooldown_ms": 4200,
+        "effect": {
+          "type": "apply_ailment",
+          "params": {
+            "ailment": "frostbite",
+            "buildup": 50
+          }
+        }
+      }
+    }
+  },
+  {
+    "utility": "ice_stride",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice",
+      "water"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_ice_stride",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "move_speed_mod_percent",
+          "params": {
+            "delta": 12
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "sense_treasure",
+    "kind": "trait",
+    "aligned_elements": [
+      "metal",
+      "thunder",
+      "light"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_sense_treasure",
+      "star": 1,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "crit_rate_mod",
+          "params": {
+            "delta": 9
+          }
+        }
+      ]
+    }
+  },
+  {
+    "utility": "weather_ward",
+    "kind": "trait",
+    "aligned_elements": [
+      "ice",
+      "thunder",
+      "water"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_weather_ward",
+      "star": 2,
+      "trigger": {
+        "type": "always",
+        "params": {}
+      },
+      "effects": [
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "ice",
+            "delta": 10
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "thunder",
+            "delta": 10
+          }
+        },
+        {
+          "type": "resist_mod",
+          "params": {
+            "element": "water",
+            "delta": 10
+          }
+        },
+        {
+          "type": "ailment_resist_mod",
+          "params": {
+            "ailment": "any",
+            "delta": 20
+          }
+        }
+      ],
+      "downgraded": {
+        "effects": [
+          {
+            "type": "resist_mod",
+            "params": {
+              "element": "ice",
+              "delta": 6
+            }
+          },
+          {
+            "type": "resist_mod",
+            "params": {
+              "element": "thunder",
+              "delta": 6
+            }
+          },
+          {
+            "type": "resist_mod",
+            "params": {
+              "element": "water",
+              "delta": 6
+            }
+          },
+          {
+            "type": "ailment_resist_mod",
+            "params": {
+              "ailment": "any",
+              "delta": 12
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "utility": "camp_beacon",
+    "kind": "trait",
+    "aligned_elements": [
+      "thunder",
+      "fire",
+      "metal"
+    ],
+    "combat_trait": {
+      "id": "fu_trait_camp_beacon",
+      "star": 1,
+      "trigger": {
+        "type": "on_ally_swap",
+        "params": {
+          "duration_ms": 5000
+        }
+      },
+      "effects": [
+        {
+          "type": "block_reduction_mod",
+          "params": {
+            "delta": 14
+          }
+        }
+      ]
+    }
+  }
+]

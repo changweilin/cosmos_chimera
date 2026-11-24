@@ -1,8 +1,13 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
+using Cosmimera.Codex;
 using Cosmimera.Crafting;
 using Cosmimera.Creatures;
 using Cosmimera.GameData;
+using Cosmimera.Lobby;
 using Cosmimera.Save;
+using Cosmimera.WorldGen;
 using UnityEngine;
 
 namespace Cosmimera.Bootstrap.Demo
@@ -39,9 +44,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ui.Label(_copy.Ui("ui.craft.grips").Replace("{grips}", string.Join(" / ", names)));
             }
 
-            // Appearance assets are unchanged by D0-U3, so the preview keeps its three-piece inputs.
-            UpdatePaperdollPreview(FindEquippedItem(_equipmentOwner, EquipmentSlots.MainHand),
-                FindEquippedItem(_equipmentOwner, EquipmentSlots.Upper), FindEquippedItem(_equipmentOwner, EquipmentSlots.Accessory));
+            UpdatePaperdollPreview(EquippedGear(_equipmentOwner));
 
             GUILayout.BeginHorizontal();
 
@@ -87,6 +90,7 @@ namespace Cosmimera.Bootstrap.Demo
                 ui.Label("[" + _copy.Ui("ui.craft.kind." + item.Equipment.Kind) + "] " + _copy.Ui(item.Id)
                     + " ×" + _save.CraftStock.Count(item.Id));
                 CraftJournal.DrawGearStats(ui, _copy, item);
+                int copy = DrawCopyPicker(ui, item.Id);
                 foreach (string slot in EquipmentSlots.All)
                 {
                     if (!item.Equipment.Fits(slot) || !ui.Button(_copy.Ui("ui.craft.equip_to").Replace("{slot}", _copy.Ui("ui.craft.slot." + slot))))
@@ -95,7 +99,7 @@ namespace Cosmimera.Bootstrap.Demo
                     }
 
                     var candidate = _save.Clone();
-                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, slot, grips, CraftCatalog, candidate.CraftStock)
+                    ui.Message = candidate.Equipment.TryEquip(_equipmentOwner, item.Id, slot, grips, CraftCatalog, candidate.CraftStock, copy)
                         ? (CommitLobby(candidate) ? string.Empty : _partyMsg) : _copy.Ui("ui.craft.equip_failed");
                     GUIUtility.ExitGUI();
                 }
@@ -109,6 +113,185 @@ namespace Cosmimera.Bootstrap.Demo
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
+
+            if (_equipmentOwner == 0)
+            {
+                GUILayout.Space(10f);
+                DrawNgPlusCosmeticsSection(ui);
+                GUILayout.Space(10f);
+                DrawShopAndSellSection(ui);
+            }
+        }
+
+        private void DrawNgPlusCosmeticsSection(AdventurePanel ui)
+        {
+            if (!_save.NgPlusUnlocked)
+            {
+                return;
+            }
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            ui.Heading("二周目純外觀更換與我的最愛");
+            string activeChar = string.IsNullOrEmpty(_save.CosmeticCharacterId) ? _save.CharacterId : _save.CosmeticCharacterId;
+            string activeOutfit = string.IsNullOrEmpty(_save.CosmeticOutfitCharacterId) ? activeChar : _save.CosmeticOutfitCharacterId;
+            string activeAcc = string.IsNullOrEmpty(_save.CosmeticAccessoryCharacterId) ? activeChar : _save.CosmeticAccessoryCharacterId;
+
+            ui.Label($"目前角色外觀：{BeginnerQuestRules.CharacterDisplayName(activeChar)} · 服裝：{BeginnerQuestRules.CharacterDisplayName(activeOutfit)} · 飾品：{BeginnerQuestRules.CharacterDisplayName(activeAcc)}");
+
+            GUILayout.BeginHorizontal();
+            foreach (string cid in BeginnerQuestRules.CharacterRing)
+            {
+                bool obtained = string.Equals(cid, _save.CharacterId, StringComparison.Ordinal) ||
+                    _save.Codex.Get(CodexKind.Character, cid) != CodexLevel.Unknown;
+                if (!obtained) continue;
+
+                string label = (string.Equals(cid, activeChar, StringComparison.Ordinal) ? "● " : "") +
+                    BeginnerQuestRules.CharacterDisplayName(cid);
+                if (ui.Button("角色：" + label))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(cid, activeOutfit, activeAcc);
+                    if (CommitLobby(candidate)) SyncSelectedCharacterModel(cid);
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button("服裝：" + BeginnerQuestRules.CharacterDisplayName(cid)))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(activeChar, cid, activeAcc);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button("飾品：" + BeginnerQuestRules.CharacterDisplayName(cid)))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(activeChar, activeOutfit, cid);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4f);
+            GUILayout.BeginHorizontal();
+            if (ui.Button("儲存至純外觀我的最愛") && _save.CosmeticFavorites.Count < LobbySave.MaxCosmeticFavorites)
+            {
+                LobbySave candidate = _save.Clone();
+                string presetName = $"最愛 {_save.CosmeticFavorites.Count + 1}";
+                candidate.SaveCosmeticFavorite(new LobbySave.CosmeticFavoritePreset(
+                    presetName, activeChar, activeOutfit, activeAcc));
+                CommitLobby(candidate);
+                GUIUtility.ExitGUI();
+            }
+
+            for (int i = 0; i < _save.CosmeticFavorites.Count; i++)
+            {
+                LobbySave.CosmeticFavoritePreset fav = _save.CosmeticFavorites[i];
+                if (ui.Button($"套用：{fav.Name}"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.SetCosmeticAppearance(fav.CharacterId, fav.OutfitCharacterId, fav.AccessoryCharacterId);
+                    if (CommitLobby(candidate) && !string.IsNullOrEmpty(fav.CharacterId))
+                    {
+                        SyncSelectedCharacterModel(fav.CharacterId);
+                    }
+                    GUIUtility.ExitGUI();
+                }
+                if (ui.Button($"×{i + 1}"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    candidate.RemoveCosmeticFavorite(i);
+                    CommitLobby(candidate);
+                    GUIUtility.ExitGUI();
+                }
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+        }
+
+        private void DrawShopAndSellSection(AdventurePanel ui)
+        {
+            GUILayout.BeginVertical(GUI.skin.box);
+            ui.Heading($"商店與金幣（持有金幣：{_save.Gold} G）");
+
+            bool dwarfUnlocked = ShopAndRepairRules.CanAccessTier1EquipmentShop(
+                StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count) >= PlanetSize.Moon ||
+                _save.FoodQuestDone);
+
+            if (!dwarfUnlocked)
+            {
+                ui.Label("1★ 武器裝備商店：解鎖矮行星後開放購買。");
+            }
+            else
+            {
+                ui.Label("1★ 武器裝備商店（無附魔詞綴）：");
+                foreach (CraftItem item in CraftCatalog.Items)
+                {
+                    if (item.Equipment == null) continue;
+                    bool isTwoHanded = item.Equipment.Kind == EquipmentKind.TwoHanded;
+                    int price = ShopAndRepairRules.Tier1EquipmentGoldPrice(isTwoHanded);
+                    if (ui.Button($"購買 {_copy.Ui(item.Id)} ({price} G)", _save.Gold >= price))
+                    {
+                        LobbySave candidate = _save.Clone();
+                        if (ShopAndRepairRules.TryBuyTier1Equipment(candidate.CraftStock, item.Id, _save.LastPlanet, price, candidate.Gold, out int rem) &&
+                            candidate.TrySpendGold(candidate.Gold - rem))
+                        {
+                            CommitLobby(candidate);
+                        }
+                        GUIUtility.ExitGUI();
+                    }
+                }
+            }
+
+            GUILayout.Space(6f);
+            ui.Label("出售素材換取金幣：");
+            bool anySellable = false;
+            foreach (CraftStack stack in _save.CraftStock.Snapshot())
+            {
+                if (!CraftCatalog.TryGetItem(stack.Id, out CraftItem item) || item.Equipment != null) continue;
+                anySellable = true;
+                int unitPrice = ShopAndRepairRules.MaterialSellPrice(CraftMaterialTier.Tier1, item.Category == "processed");
+                if (ui.Button($"出售 {_copy.Ui(stack.Id)} ×1 (+{unitPrice} G)"))
+                {
+                    LobbySave candidate = _save.Clone();
+                    if (ShopAndRepairRules.TrySellMaterial(candidate.CraftStock, stack.Id, 1, unitPrice, candidate.Gold, out int newGold))
+                    {
+                        candidate.AddGold(newGold - candidate.Gold);
+                        CommitLobby(candidate);
+                    }
+                    GUIUtility.ExitGUI();
+                }
+            }
+            if (!anySellable) ui.Label("背包內沒有可出售的素材。");
+            GUILayout.EndVertical();
+        }
+
+        // REQ: gear-looks.md#外觀與數值 — with several copies of one item, the player flips through them and picks one.
+        private readonly Dictionary<string, int> _copyPick = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        private int DrawCopyPicker(AdventurePanel ui, string id)
+        {
+            int total = _save.CraftStock.Count(id);
+            _copyPick.TryGetValue(id, out int pick);
+            pick = Mathf.Clamp(pick, 0, total - 1);
+            ItemLook look = _save.CraftStock.LookOf(id, pick);
+            string origin = look.Origin.PlanetTypeId == GearOrigin.CradlePlanetTypeId
+                ? string.Empty : " · " + _copy.Ui("ui.paperdoll.copy_origin").Replace("{planet}", _copy.Planet(look.Origin.PlanetTypeId));
+            string label = _copy.Ui("ui.paperdoll.copy_pick").Replace("{n}", (pick + 1).ToString())
+                .Replace("{total}", total.ToString()) + origin;
+            if (total <= 1)
+            {
+                ui.Label(label);
+            }
+            else
+            {
+                GUILayout.BeginHorizontal();
+                if (ui.Button("◀")) pick = (pick + total - 1) % total;
+                ui.Label(label);
+                if (ui.Button("▶")) pick = (pick + 1) % total;
+                GUILayout.EndHorizontal();
+            }
+            _copyPick[id] = pick;
+            return pick;
         }
 
         private int _presetEditSlot = -1;
@@ -341,9 +524,46 @@ namespace Cosmimera.Bootstrap.Demo
             return string.Empty;
         }
 
-        private void UpdatePaperdollPreview(string weaponId, string armorId, string accessoryId)
+        private static readonly string[] PaperdollSlots =
         {
-            _paperdollPreview ??= new PaperdollPreview(_toonShader);
+            EquipmentSlots.MainHand, EquipmentSlots.OffHand, EquipmentSlots.Upper, EquipmentSlots.Lower, EquipmentSlots.Accessory,
+        };
+
+        private readonly StringBuilder _gearKeyBuilder = new StringBuilder();
+        private string _previewGearKey;
+        private List<PaperdollGear> _previewGear = new List<PaperdollGear>();
+
+        // REQ: gear-looks.md#外觀與數值 — each worn copy is drawn from its own look tag. Sampling runs only when the
+        // worn set changes, not on every OnGUI pass.
+        private IReadOnlyList<PaperdollGear> EquippedGear(int owner)
+        {
+            _gearKeyBuilder.Clear().Append(owner);
+            foreach (string slot in PaperdollSlots)
+            {
+                if (!_save.Equipment.TryGetEntry(owner, slot, out EquippedItem entry)) continue;
+                _gearKeyBuilder.Append('|').Append(slot).Append(':').Append(entry.Item).Append(':').Append(entry.Look.Origin.PlanetTypeId)
+                    .Append(':').Append(entry.Look.Origin.PlanetSeed).Append(':').Append(entry.Look.Seed);
+            }
+            string key = _gearKeyBuilder.ToString();
+            if (key == _previewGearKey) return _previewGear;
+
+            _previewGearKey = key;
+            _previewGear = new List<PaperdollGear>();
+            foreach (string slot in PaperdollSlots)
+            {
+                if (!_save.Equipment.TryGetEntry(owner, slot, out EquippedItem entry)) continue;
+                // An item dropped from the catalog has no kind to draw; the slot UI still lists it by id.
+                if (!CraftCatalog.TryGetItem(entry.Item, out CraftItem item) || item.Equipment == null) continue;
+                GearLookSpec spec = GearLooks.ForCopy(GearLooks.KindFor(item.Equipment), entry.Look);
+                _previewGear.Add(new PaperdollGear(slot, slot + ":" + entry.Item + ":" + entry.Look.Origin.PlanetTypeId + ":" +
+                    entry.Look.Origin.PlanetSeed + ":" + entry.Look.Seed, spec));
+            }
+            return _previewGear;
+        }
+
+        private void UpdatePaperdollPreview(IReadOnlyList<PaperdollGear> gear)
+        {
+            _paperdollPreview ??= new PaperdollPreview(_toonShader, _sceneryShader);
             if (_equipmentOwner == 0)
             {
                 CharacterModelEntry? entry = _characterModels != null && _selectedCharacterIndex >= 0
@@ -354,19 +574,16 @@ namespace Cosmimera.Bootstrap.Demo
                     entry?.prefab,
                     entry?.animatorController,
                     entry?.id ?? "capsule",
-                    weaponId, armorId, accessoryId);
+                    gear);
             }
             else
             {
                 OwnedCreature owned = _save.Get(_equipmentOwner);
                 _database.TryGet(owned.SpeciesId, out CreatureDef def);
-                _paperdollPreview.SetCreatureTarget(def, _equipmentOwner, weaponId, armorId, accessoryId);
+                _paperdollPreview.SetCreatureTarget(def, _equipmentOwner, gear);
             }
 
-            if (Event.current.type == EventType.Repaint)
-            {
-                _paperdollPreview.Render();
-            }
+            _paperdollPreview.SyncPose();
         }
 
         private void DrawLobbyCrafting(AdventurePanel ui, HashSet<GameData.FieldUtility> utilities)
@@ -376,7 +593,8 @@ namespace Cosmimera.Bootstrap.Demo
             CraftRecipe recipe = CraftJournal.DrawRecipes(ui, _copy, CraftCatalog, _save.CraftStock, utilities, _showLockedCrafts);
             if (recipe == null) return;
             var candidate = _save.Clone();
-            CraftResult result = CraftRules.TryCraft(recipe, utilities, candidate.CraftStock);
+            // REQ: gear-looks.md#外觀與數值 — lobby crafting takes its style from the most recently departed planet.
+            CraftResult result = CraftRules.TryCraft(recipe, utilities, candidate.CraftStock, CraftCatalog, _save.LastPlanet);
             ui.Message = result == CraftResult.Success
                 ? (CommitLobby(candidate) ? _copy.Ui("craft.result.Success") : _partyMsg) : _copy.Ui("craft.result." + result);
             GUIUtility.ExitGUI();

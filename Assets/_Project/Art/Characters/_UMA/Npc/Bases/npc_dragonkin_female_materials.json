@@ -1,0 +1,60 @@
+{
+ "materials": [
+  {
+   "bands": 2,
+   "base": "#5a463a",
+   "name": "brow_npc_dragonkin_female",
+   "shade": "#47372d",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#ffffff",
+   "name": "eye_npc_dragonkin_female",
+   "shade": null,
+   "texture": "eye_npc_dragonkin_female.png"
+  },
+  {
+   "bands": 2,
+   "base": "#2a1a18",
+   "name": "lash_npc_dragonkin_female",
+   "shade": "#201311",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#9a5a50",
+   "name": "mouth_npc_dragonkin_female",
+   "shade": "#7c473f",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#b88a72",
+   "name": "nose_npc_dragonkin_female",
+   "shade": "#946f5b",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#f6f4f2",
+   "name": "sclera_npc_dragonkin_female",
+   "shade": "#c7c5c4",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#c9c6d6",
+   "name": "sclerashade_npc_dragonkin_female",
+   "shade": "#a2a0ad",
+   "texture": null
+  },
+  {
+   "bands": 2,
+   "base": "#d8b49a",
+   "name": "skin_npc_dragonkin_female",
+   "shade": "#b88a72",
+   "texture": null
+  }
+ ]
+}

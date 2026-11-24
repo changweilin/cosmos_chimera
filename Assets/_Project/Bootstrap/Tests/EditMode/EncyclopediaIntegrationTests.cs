@@ -41,6 +41,14 @@ namespace Cosmimera.Bootstrap.Tests
         {
             var database = AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
             var path = Path.Combine(Application.dataPath, "../Data/_incoming/p4-09-encyclopedia-01/creatures/drive-creatures.json");
+            if (!File.Exists(path))
+            {
+                path = Path.Combine(Application.dataPath, "../Data/_demo/creatures/p4-09-encyclopedia-01--drive-creatures.json");
+            }
+            if (!File.Exists(path))
+            {
+                Assert.Ignore("drive-creatures.json not present (gitignored _demo/_incoming)");
+            }
             JArray forms = JArray.Parse(File.ReadAllText(path));
             Assert.That(forms.Count, Is.EqualTo(60));
             foreach (JObject form in forms)

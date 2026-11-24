@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="CosmimeraTheme.uss" />
+    <ui:Style src="AdventureHandbook.uss" />
+    <ui:VisualElement name="backdrop" class="screen-backdrop">
+        <ui:VisualElement name="shell" class="panel-shell handbook-shell">
+            <ui:VisualElement name="header" class="handbook-header">
+                <ui:VisualElement name="tabsContainer" class="handbook-tabs">
+                    <ui:Button name="tabPartners" text="夥伴" class="tab-btn" />
+                    <ui:Button name="tabItems" text="背包與道具" class="tab-btn" />
+                    <ui:Button name="tabSkills" text="生活技能" class="tab-btn" />
+                    <ui:Button name="tabCodex" text="圖鑑" class="tab-btn" />
+                </ui:VisualElement>
+                <ui:Button name="closeButton" text="關閉 [Esc]" class="btn btn-danger handbook-close-btn" />
+            </ui:VisualElement>
+            <ui:Label name="navHintLabel" text="" class="muted-text handbook-nav-hint" />
+            <ui:Label name="messageBanner" text="" class="handbook-status hidden" />
+            <ui:ScrollView name="contentScroll" class="handbook-scroll" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: metal_citadel_colossus
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: metal_citadel_colossus
+  lineId: line_metal_citadelbull
+  stage: 2
+  sizeClass: 3
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 9fd3058dca385024dbecd2ddf984508e, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 910000006d0000006d0000004c000000890000006d0000006c00000043000000840000006c000000
+  mastery:
+  - element: 0
+    value: 125
+  - element: 4
+    value: 74
+  - element: 5
+    value: 25
+  - element: 8
+    value: 25
+  stats:
+    hp: 166
+    speed: 31
+    yinAtk: 43
+    yangAtk: 129
+    yinDef: 104
+    yangDef: 141
+  signatureMove: {fileID: 11400000, guid: 45a18807d1d7e434d89331b6bf79e7f4, type: 2}
+  trait: {fileID: 11400000, guid: af25daff5998d2747a0f72d5808c0a28, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u5DE8\u578B\u9285\u5CA9\u738B\u57CE\u7FFC\u7378 \xD7
+    \u96D9\u91CD\u96C4\u9DF9\u92FC\u7FFC\u8207\u4E94\u8DB3\u627F\u91CD\u67F1\u69CB\u88DD\",\"stage_look\":\"\u9AD4\u578B\u5982\u57CE\u9580\u5DE8\u50CF\uFF0C\u984D\u6234\u89D2\u51A0\u8207\u9752\u9285\u9AED\u7D0B\u5047\u9762\uFF0C\u96D9\u91CD\u92FC\u7FFC\u53EF\u9AD8\u62CB\u91CD\u9435\u7827\u8F5F\u64CA\u9060\u8DDD\u76EE\u6A19\",\"archetype\":\"arch_lamassu\",\"region\":\"\u897F\u4E9E/\u4E2D\u6771\",\"motifs_used\":[\"\u84C4\u9B1A\u4EBA\u9996\u89D2\u51A0\",\"\u4E94\u8DB3\u77F3\u96D5\u516C\u725B\",\"\u96D9\u91CD\u96C4\u9DF9\u5DE8\u7FFC\",\"\u4E9E\u8FF0\u738B\u57CE\u62F1\u9580\"],\"role\":\"\u5F8C\u6392\u7832\u64CA\u3001\u63A7\u8DDD\uFF1A\u9060\u8DDD\u5B9A\u9EDE\u7BC4\u570D\u589C\u64CA\uFF08\u9AD8\u8840\u91CF\u6642\u7E2E\u77ED\u91D1\u62DB
+    CD\uFF09\",\"palette\":\"\u9EC3\u9285\u91D1\u3001\u53E4\u9285\u7DA0\u3001\u7384\u9435\u9752\u9ED1\u3001\u934D\u9280\u92FC\u767D\"}"
+  needsSensitivityReview: 0

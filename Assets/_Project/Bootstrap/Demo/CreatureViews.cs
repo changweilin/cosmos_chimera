@@ -152,6 +152,7 @@ namespace Cosmimera.Bootstrap.Demo
             private GameObject _root;
             private readonly Material _material;
             private readonly bool _toon;
+            private bool _fainted;
 
             public PlaceholderView(GameObject root, Renderer renderer, Material material, bool toon)
             {
@@ -175,6 +176,12 @@ namespace Cosmimera.Bootstrap.Demo
 
             public void ShowFainted()
             {
+                if (_fainted)
+                {
+                    return;
+                }
+
+                _fainted = true;
                 if (_toon)
                 {
                     _material.SetColor("_BaseColor", Color.gray);

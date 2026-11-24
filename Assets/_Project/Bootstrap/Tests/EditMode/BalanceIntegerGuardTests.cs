@@ -47,9 +47,16 @@ namespace Cosmimera.Bootstrap.Tests
         public void Shipped_balance_json_passes()
         {
             string path = Path.Combine(Path.GetFullPath(Path.Combine(Application.dataPath, "..")), "Data", "balance.json");
-            Assert.DoesNotThrow(() => BalanceIntegerGuard.RequireIntegers(File.ReadAllText(path), "materials", "progression"));
-            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(File.ReadAllText(path), "field_utilities", "weather_control_cooldown_ms"),
+            string json = File.ReadAllText(path);
+            Assert.DoesNotThrow(() => BalanceIntegerGuard.RequireIntegers(json, "materials", "progression", "field_utilities"));
+            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(json, "field_utilities", "weather_control_cooldown_ms"),
                 Is.EqualTo(180_000));
+            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(json, "field_utilities", "swim_speed_permille"),
+                Is.EqualTo(1150));
+            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(json, "field_utilities", "dive_surface_speed_permille"),
+                Is.EqualTo(850));
+            Assert.That(BalanceIntegerGuard.ReadPositiveInteger(json, "field_utilities", "space_station_radius_permille"),
+                Is.EqualTo(1250));
         }
 
         [TestCase("0")]

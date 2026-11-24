@@ -9,18 +9,23 @@ using UnityEngine.Rendering;
 
 namespace Cosmimera.Planet.Model
 {
-    /// <summary>Interleaved leaf-mesh vertex: planet-local position (relative to PlanetConfig.Center) and normal.</summary>
+    /// <summary>
+    /// Interleaved leaf-mesh vertex: planet-local position (relative to PlanetConfig.Center), normal, and the river mask
+    /// (TemplateView.River, UV0.x) the terrain shader paints riverbeds with.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     internal struct ChunkVertex
     {
         public float3 Position;
         public float3 Normal;
+        public float River;
 
         /// <summary>Vertex layout matching the field order above.</summary>
         public static readonly VertexAttributeDescriptor[] Layout =
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
             new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 1),
         };
     }
 
@@ -71,7 +76,7 @@ namespace Cosmimera.Planet.Model
         /// <summary>Fills <paramref name="vertices"/> and returns the planet-local AABB.</summary>
         /// <remarks>
         /// Pre: vertices.Length == (QuadsPerEdge + 1)²; this value came from <see cref="Create"/>.
-        /// Post: vertex (i, j) at index j·(QuadsPerEdge + 1) + i; normals unit length and outward-facing.
+        /// Post: vertex (i, j) at index j·(QuadsPerEdge + 1) + i; normals unit length and outward-facing; River 0.
         /// Side effects: writes vertices. Burst-compatible (no managed calls).
         /// </remarks>
         public void Build(NativeArray<ChunkVertex> vertices, out float3 boundsMin, out float3 boundsMax) =>
@@ -90,7 +95,7 @@ namespace Cosmimera.Planet.Model
         /// <remarks>
         /// Pre: as the other overloads; walls default (none) or a live PlanetWalls.View.
         /// Post: positions use templates.Apply(dir, noise) + walls.Height(dir); with default walls identical to the
-        ///       template overload.
+        ///       template overload. River = templates.River(dir) (0 without templates).
         /// Side effects: writes vertices. Burst-compatible.
         /// </remarks>
         public void Build(NativeArray<ChunkVertex> vertices, in TemplateView templates, in WallView walls,
@@ -99,6 +104,24 @@ namespace Cosmimera.Planet.Model
             int row = QuadsPerEdge + 1;
             boundsMin = new float3(float.MaxValue);
             boundsMax = new float3(float.MinValue);
+
+            float extent = QuadsPerEdge * Step;
+            float3 chunkCenter = CubeSphere.FaceToDirectionCore(Face, Min.x + extent * 0.5f, Min.y + extent * 0.5f);
+            float minDot = math.min(
+                math.min(math.dot(chunkCenter, CubeSphere.FaceToDirectionCore(Face, Min.x, Min.y)),
+                         math.dot(chunkCenter, CubeSphere.FaceToDirectionCore(Face, Min.x + extent, Min.y))),
+                math.min(math.dot(chunkCenter, CubeSphere.FaceToDirectionCore(Face, Min.x, Min.y + extent)),
+                         math.dot(chunkCenter, CubeSphere.FaceToDirectionCore(Face, Min.x + extent, Min.y + extent))));
+            float chunkHalfAngle = math.acos(math.clamp(minDot, -1f, 1f)) + NormalEpsilon + 2e-3f;
+            float chunkChordBound = 2f * math.sin(math.min(chunkHalfAngle, math.PI) * 0.5f) + 1e-3f;
+
+            FixedList128Bytes<int> tplIndices = default;
+            bool useTplFilter = templates.Count > 0 && templates.CollectIntersecting(chunkCenter, chunkHalfAngle, out tplIndices);
+            bool checkRing = false;
+            FixedList512Bytes<int> corridorIndices = default;
+            bool useWallFilter = walls.Count > 0 &&
+                                 walls.TryBuildChunkFilter(chunkCenter, chunkChordBound, out checkRing, out corridorIndices);
+
             for (int j = 0; j < row; j++)
             {
                 float v = Min.y + j * Step;
@@ -106,25 +129,38 @@ namespace Cosmimera.Planet.Model
                 {
                     float u = Min.x + i * Step;
                     float3 dir = CubeSphere.FaceToDirectionCore(Face, u, v);
-                    float3 p = Surface(dir, templates, walls);
-                    vertices[j * row + i] = new ChunkVertex { Position = p, Normal = SurfaceNormal(dir, templates, walls) };
+                    float3 p = Surface(dir, templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices, out float river);
+                    float3 normal = SurfaceNormal(dir, templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices);
+                    vertices[j * row + i] = new ChunkVertex
+                    {
+                        Position = p, Normal = normal, River = river,
+                    };
                     boundsMin = math.min(boundsMin, p);
                     boundsMax = math.max(boundsMax, p);
                 }
             }
         }
 
-        private float3 Surface(float3 dir, in TemplateView templates, in WallView walls)
+        private float3 Surface(float3 dir, in TemplateView templates, in WallView walls, bool useTplFilter,
+            in FixedList128Bytes<int> tplIndices, bool useWallFilter, bool checkRing,
+            in FixedList512Bytes<int> corridorIndices, out float river)
         {
             float h = Height.SampleCore(dir);
+            river = 0f;
             if (templates.Count > 0)
             {
-                h = templates.Apply(math.normalize(dir), h);
+                float3 ndir = math.normalize(dir);
+                h = useTplFilter
+                    ? templates.ApplySubset(ndir, h, tplIndices, out river)
+                    : templates.ApplyWithRiver(ndir, h, out river);
             }
 
             if (walls.Count > 0)
             {
-                h += walls.Height(math.normalize(dir));
+                float3 ndir = math.normalize(dir);
+                h += useWallFilter
+                    ? walls.HeightSubset(ndir, checkRing, corridorIndices)
+                    : walls.Height(ndir);
             }
 
             return dir * (Radius + h);
@@ -132,17 +168,19 @@ namespace Cosmimera.Planet.Model
 
         // Central differences of the displaced surface in an arbitrary tangent basis. The result is
         // basis-independent (up to rounding), so it agrees across cube faces without using PlanetFrame.
-        private float3 SurfaceNormal(float3 dir, in TemplateView templates, in WallView walls)
+        private float3 SurfaceNormal(float3 dir, in TemplateView templates, in WallView walls, bool useTplFilter,
+            in FixedList128Bytes<int> tplIndices, bool useWallFilter, bool checkRing,
+            in FixedList512Bytes<int> corridorIndices)
         {
             // Reference axis only for building *a* tangent; it is not treated as "up" (CLAUDE.md#硬性規則).
             float3 reference = math.abs(dir.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
             float3 t1 = math.normalize(math.cross(reference, dir));
             float3 t2 = math.cross(dir, t1);
             float e = NormalEpsilon;
-            float3 du = Surface(math.normalize(dir + t1 * e), templates, walls) -
-                        Surface(math.normalize(dir - t1 * e), templates, walls);
-            float3 dv = Surface(math.normalize(dir + t2 * e), templates, walls) -
-                        Surface(math.normalize(dir - t2 * e), templates, walls);
+            float3 du = Surface(math.normalize(dir + t1 * e), templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices, out _) -
+                        Surface(math.normalize(dir - t1 * e), templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices, out _);
+            float3 dv = Surface(math.normalize(dir + t2 * e), templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices, out _) -
+                        Surface(math.normalize(dir - t2 * e), templates, walls, useTplFilter, tplIndices, useWallFilter, checkRing, corridorIndices, out _);
             // cross(t1, t2) == dir, so this orientation points away from the planet.
             return math.normalize(math.cross(du, dv));
         }

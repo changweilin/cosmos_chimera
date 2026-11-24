@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: earth_temple_tuskbeast
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: earth_temple_tuskbeast
+  lineId: line_earth_pillarbeast
+  stage: 2
+  sizeClass: 2
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: 874d11c0092756d438b15f4af69cc211, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 13c0a69aeebcda348bb767dacc987105, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 5f0000003b000000350000005f0000007c0000005f0000005f0000005f0000007f0000007a000000
+  mastery:
+  - element: 0
+    value: 100
+  - element: 3
+    value: 75
+  - element: 4
+    value: 125
+  stats:
+    hp: 97
+    speed: 140
+    yinAtk: 152
+    yangAtk: 55
+    yinDef: 61
+    yangDef: 103
+  signatureMove: {fileID: 11400000, guid: d7831b05e2ade894ab9cdc1dbcf38bdc, type: 2}
+  trait: {fileID: 11400000, guid: d5cc1a9f80fb56049a84fb97dab31874, type: 2}
+  fieldUtility: 30
+  conceptJson: "{\"base\":\"\u795E\u5EDF\u5B88\u8B77\u5DE8\u96D5\u7345\u8C61 \xD7
+    \u84EE\u5EA7\u6D6E\u96D5\u80A9\u76FE\u8207\u5CA9\u67F1\u91CD\u7832\u8C61\u9F3B\",\"stage_look\":\"\u8EAB\u62AB\u84EE\u5EA7\u8207\u795E\u5EDF\u77F3\u67F1\u96D5\u523B\u7684\u5B8F\u5049\u77F3\u7378\uFF0C\u8C61\u7259\u5982\u96D9\u91CD\u5CA9\u69CD\u5411\u524D\u5EF6\u4F38\uFF0C\u80FD\u9060\u8DDD\u8CAB\u7A7F\u5CA9\u8108\",\"archetype\":\"arch_yali\",\"region\":\"\u5357\u4E9E\",\"motifs_used\":[\"\u7345\u8EAB\u8C61\u9F3B\u9577\u7259\",\"\u795E\u5EDF\u77F3\u96D5\u5ECA\u67F1\",\"\u9A30\u8E8D\u5229\u722A\",\"\u84EE\u5EA7\u6D6E\u96D5\"],\"role\":\"\u5F8C\u6392\u8CAB\u7A7F\u3001\u63A7\u8DDD\uFF1A\u9060\u8DDD\u76F4\u7DDA\u5730\u8108\u5CA9\u69CD\uFF08\u65BD\u653E\u571F\u62DB\u63D0\u9AD8\u79FB\u52D5\u901F\u5EA6\uFF09\",\"palette\":\"\u5927\u5730\u8D6D\u77F3\u3001\u9676\u571F\u78DA\u7D05\u3001\u7802\u5CA9\u9EC3\u3001\u7425\u73C0\u91D1\"}"
+  needsSensitivityReview: 0

@@ -143,10 +143,21 @@ namespace Cosmimera.Food
         /// </remarks>
         public bool TryConsumeForRecipe(RecipeSpec recipe, FoodCatalog catalog)
         {
+            return TryConsumeForRecipe(recipe, catalog, new Dictionary<string, int>());
+        }
+
+        /// <summary>Same as <see cref="TryConsumeForRecipe(RecipeSpec, FoodCatalog)"/>, reporting the consumed ids.</summary>
+        /// <remarks>
+        /// Pre: recipe, catalog, plan non-null.
+        /// Post: plan holds exactly the consumed id → quantity map on true; content unspecified on false.
+        /// Side effects: mutates ingredient stock on true; overwrites plan.
+        /// </remarks>
+        internal bool TryConsumeForRecipe(RecipeSpec recipe, FoodCatalog catalog, Dictionary<string, int> plan)
+        {
             Contract.Requires(recipe != null, "recipe must not be null");
             Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(plan != null, "plan must not be null");
 
-            var plan = new Dictionary<string, int>();
             if (!TryPlanConsumption(recipe, catalog, plan))
             {
                 return false;
@@ -156,6 +167,36 @@ namespace Cosmimera.Food
             {
                 bool ok = TryConsumeIngredient(kv.Key, kv.Value);
                 Contract.Requires(ok, "planned consumption must succeed");
+            }
+
+            return true;
+        }
+
+        /// <summary>Lists the ingredient units <paramref name="recipe"/> would take, without consuming them (journal "帶入食譜").</summary>
+        /// <remarks>
+        /// REQ: docs/design/cuisine.md#6 — category requirements take raw goods before processed goods, as cooking does.
+        /// Pre: recipe, catalog, pot non-null.
+        /// Post: true → pot holds one id per unit (ids grouped, ordinal order) and PotCookingRules resolves it to this
+        ///       recipe whenever no more specific recipe matches; false → pot is empty (stock short).
+        /// Side effects: overwrites pot; allocates.
+        /// </remarks>
+        public bool TryPlanRecipePot(RecipeSpec recipe, FoodCatalog catalog, List<string> pot)
+        {
+            Contract.Requires(recipe != null, "recipe must not be null");
+            Contract.Requires(catalog != null, "catalog must not be null");
+            Contract.Requires(pot != null, "pot must not be null");
+            pot.Clear();
+            var plan = new Dictionary<string, int>();
+            if (!TryPlanConsumption(recipe, catalog, plan))
+            {
+                return false;
+            }
+
+            var ids = new List<string>(plan.Keys);
+            ids.Sort(StringComparer.Ordinal);
+            foreach (string id in ids)
+            {
+                for (int i = 0; i < plan[id]; i++) pot.Add(id);
             }
 
             return true;
@@ -192,7 +233,8 @@ namespace Cosmimera.Food
                 reserved[req.IngredientId] = alreadyReserved + req.Quantity;
             }
 
-            // Pass 2: category wildcard requirements, preferring lower tier first then deterministic id order.
+            // Pass 2: category wildcard requirements, preferring raw over processed goods (the player spent a skill on those),
+            // then lower tier, then deterministic catalog order.
             for (int i = 0; i < recipe.Requirements.Count; i++)
             {
                 RecipeIngredientRequirement req = recipe.Requirements[i];
@@ -204,12 +246,14 @@ namespace Cosmimera.Food
                 int needed = req.Quantity;
                 IReadOnlyList<IngredientSpec> all = catalog.Ingredients;
 
-                for (int tier = 1; tier <= 3 && needed > 0; tier++)
+                for (int sweep = 0; sweep < 6 && needed > 0; sweep++)
                 {
+                    bool processed = sweep >= 3;
+                    int tier = sweep % 3 + 1;
                     for (int j = 0; j < all.Count && needed > 0; j++)
                     {
                         IngredientSpec spec = all[j];
-                        if (spec.Category != req.Category || spec.Tier != tier)
+                        if (spec.Category != req.Category || spec.Tier != tier || spec.IsProcessed != processed)
                         {
                             continue;
                         }

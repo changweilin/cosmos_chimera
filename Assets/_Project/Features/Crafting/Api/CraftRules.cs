@@ -38,6 +38,26 @@ namespace Cosmimera.Crafting
             return inventory.TryExchange(recipe.Costs, recipe.Gains) ? CraftResult.Success : CraftResult.CapacityExceeded;
         }
 
+        /// <summary>Commits a recipe once and tags every crafted equipment copy as made on <paramref name="origin"/>.</summary>
+        /// <remarks>
+        /// REQ: docs/design/gear-looks.md#外觀與數值.
+        /// Pre: recipe, utilities, inventory and catalog non-null; origin constructed.
+        /// Post: as TryCraft; on success each gained copy whose catalog item has Equipment carries an ItemLook from origin.
+        /// Side effects: mutates inventory only on success.
+        /// </remarks>
+        public static CraftResult TryCraft(CraftRecipe recipe, IReadOnlyCollection<FieldUtility> utilities, CraftInventory inventory,
+            CraftCatalog catalog, GearOrigin origin)
+        {
+            Contract.Requires(catalog != null, "catalog required");
+            CraftResult result = CanCraft(recipe, utilities, inventory);
+            if (result != CraftResult.Success) return result;
+            var lookIds = new List<string>();
+            foreach (CraftStack gain in recipe.Gains)
+                if (catalog.TryGetItem(gain.Id, out CraftItem item) && item.Equipment != null) lookIds.Add(gain.Id);
+            return inventory.TryExchangeCrafted(recipe.Costs, recipe.Gains, lookIds, origin)
+                ? CraftResult.Success : CraftResult.CapacityExceeded;
+        }
+
         /// <summary>Consumes one unit of a consumable capture vessel from <paramref name="inventory"/>.</summary>
         /// <remarks>
         /// Pre: <paramref name="item"/> and <paramref name="inventory"/> non-null; <paramref name="item"/>.Category == "capture".
@@ -54,11 +74,8 @@ namespace Cosmimera.Crafting
                 : CraftResult.MissingMaterials;
         }
 
-        internal static bool HasUtility(IReadOnlyCollection<FieldUtility> utilities, FieldUtility required)
-        {
-            foreach (FieldUtility utility in utilities) if (utility == required) return true;
-            return false;
-        }
+        internal static bool HasUtility(IReadOnlyCollection<FieldUtility> utilities, FieldUtility required) =>
+            CraftingExpansionRules.SatisfiesSkill(utilities, required);
     }
 
     /// <summary>Run-scoped depletion of gathering nodes without changing scatter generation or meshes.</summary>

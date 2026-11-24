@@ -52,3 +52,5 @@ MonoBehaviour:
     actionSd: 2200
     min: 250
     max: 60000
+  trophicTier: 1
+  trophicGroup: 0

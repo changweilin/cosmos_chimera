@@ -300,7 +300,7 @@ namespace Cosmimera.WorldGen
 
         // Value noise on an integer lattice with smoothstep blending; stands in for the reference's sine sums because
         // float trigonometry is not bit-identical across platforms.
-        private static int ValueNoise(ulong key, int attr, int octave, long timeMs, int periodMs)
+        internal static int ValueNoise(ulong key, int attr, int octave, long timeMs, int periodMs)
         {
             long cell = timeMs / periodMs;
             int frac = (int)((timeMs % periodMs) * 1000 / periodMs);

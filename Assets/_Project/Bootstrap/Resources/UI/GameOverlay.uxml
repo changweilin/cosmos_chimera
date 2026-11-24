@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="CosmimeraTheme.uss" />
+    <ui:Style src="GameOverlay.uss" />
+    <ui:VisualElement name="backdrop" class="screen-backdrop hidden">
+        <ui:VisualElement name="shell" class="panel-shell overlay-shell">
+            <ui:VisualElement name="header" class="overlay-header">
+                <ui:Label name="titleLabel" text="宙獸紀 · COSMIMERA" class="title-xl" />
+                <ui:Button name="headerActionBtn" text="" class="btn hidden" />
+            </ui:VisualElement>
+            <ui:Label name="subtitleLabel" text="" class="body-text hidden" />
+            <ui:ScrollView name="bodyScroll" class="overlay-scroll" />
+            <ui:VisualElement name="footer" class="overlay-footer hidden" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

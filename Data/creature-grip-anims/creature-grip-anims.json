@@ -19,10 +19,12 @@
       }
     ],
     "pose_rules": {
-      "idle_stance": "雙前肢／雙側掛點共同承托重型雙手武器，斜舉於胸前或肩側，重心微沉。",
-      "locomotion_rule": "移動與奔跑維持雙掛點剛性／IK 約束，武器隨軀幹節奏擺動，不穿插身體網格。",
-      "guard_rule": "將雙手武器橫架於身前形成格擋面（基礎 35% 格擋值），受擊時整體後仰緩衝。",
-      "attack_rule": "雙手合力揮砍、突刺或重劈，前搖與收招較長以體現 +30% 雙手威力。"
+      "idle_stance": "重心微沉、雙肩穩健展開的蓄勢站姿，身體兩側預留足夠空間給獨立運作的雙手武器與虛擬大手動畫，本體不繪製武器。",
+      "locomotion_rule": "移動與奔跑維持沉穩流暢的軀幹律動，預留雙側掛點安全間距避免穿插獨立武器模型。",
+      "guard_rule": "雙前肢／軀幹微收後傾形成穩固防禦架勢（基礎 35% 格擋值），受擊時整體後仰緩衝。",
+      "attack_rule": "技能由宙獸本體發出；本體做出明顯蓄力、重壓與收招動作（體現 +35% 雙手型節奏），與獨立雙手武器動畫同步。",
+      "ranged_rule": "遠程技能由宙獸本體（口器／核心／前方發射點）發出；本體前傾瞄準、蓄能並隨發射出現沉穩後座力，不繪製弓杖。",
+      "virtual_hand_rule": "武器與盾牌由虛擬大手持握並執行另外設計的獨立對應動畫，技能仍由宙獸本體發出（Socket_Front／Socket_Mouth／Socket_Core_FX）；因此宙獸本體模型與骨架動畫不繪製、不包含任何武器、盾牌或虛擬大手。Socket_Weapon_R／Socket_Weapon_L 僅作為空掛點預留於身體兩側適當安全間距，宙獸本體仍依持有模式節奏做出相應的軀幹、頭頸與四肢／羽翼動作。"
     },
     "clips": [
       {
@@ -34,9 +36,13 @@
         "duration_ms": 2000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "2 秒呼吸循環；雙手維持握柄間距，武器隨呼吸微幅上下起伏。"
+        "motion_notes": "2 秒呼吸循環；本體重心沉穩隨呼吸微幅起伏，雙側掛點保持安全間距（不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "idle_long",
@@ -47,9 +53,13 @@
         "duration_ms": 4000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "4 秒長循環；重心微調、武器微微換肩或沉降再回位，首尾幀無縫閉合。"
+        "motion_notes": "4 秒長循環；重心微調、肩頸小幅舒展再回位，首尾幀無縫閉合（不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "walk",
@@ -60,12 +70,24 @@
         "duration_ms": 1067,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 8, "time_ms": 267 },
-          { "name": "ev_footstep", "frame": 24, "time_ms": 800 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 步行；雙掛點隨上身扭轉同步移動。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 8,
+            "time_ms": 267
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "in-place 沉穩步行；上身隨步伐微幅扭轉，預留雙側掛點空間。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "run",
@@ -76,12 +98,24 @@
         "duration_ms": 733,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 5, "time_ms": 167 },
-          { "name": "ev_footstep", "frame": 16, "time_ms": 533 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 衝刺；軀幹前傾，雙手武器斜向後收以減少風阻。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 5,
+            "time_ms": 167
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 16,
+            "time_ms": 533
+          }
+        ],
+        "motion_notes": "in-place 衝刺；軀幹前傾破風，保持掛點淨空。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block",
@@ -92,9 +126,13 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "雙手將武器橫舉於胸前（舉起→維持→放下）。"
+        "motion_notes": "雙肩內收、重心下沉做出橫架防禦身姿（舉起→維持→放下，不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block_hit",
@@ -105,11 +143,19 @@
         "duration_ms": 600,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 2, "time_ms": 67 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "武器震退回彈，重心向後壓低隨即回穩。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 2,
+            "time_ms": 67
+          }
+        ],
+        "motion_notes": "受擊微震後仰，重心向後壓低隨即回穩。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "perfect_block",
@@ -120,13 +166,29 @@
         "duration_ms": 800,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 4, "time_ms": 133 },
-          { "name": "ev_hit", "frame": 6, "time_ms": 200 },
-          { "name": "ev_end_lock", "frame": 18, "time_ms": 600 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "雙手猛推武器彈開來襲，產生震擊判定。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 4,
+            "time_ms": 133
+          },
+          {
+            "name": "ev_hit",
+            "frame": 6,
+            "time_ms": 200
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 18,
+            "time_ms": 600
+          }
+        ],
+        "motion_notes": "軀幹與前肢猛然前推做出彈反震擊身姿。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "guard_break",
@@ -137,9 +199,13 @@
         "duration_ms": 1500,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "武器被震偏至側後方，中門大開 1.5 秒後收回。"
+        "motion_notes": "被震開至側後方，中門大開硬直 1.5 秒後收回。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "atk_melee_front",
@@ -150,12 +216,24 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 14, "time_ms": 467 },
-          { "name": "ev_end_lock", "frame": 24, "time_ms": 800 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "明顯蓄力後雙手由上而下重劈或正前重刺。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "明顯蓄力後本體由上而下重壓或正前猛衝發招，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_sweep",
@@ -166,12 +244,24 @@
         "duration_ms": 1133,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 16, "time_ms": 533 },
-          { "name": "ev_end_lock", "frame": 27, "time_ms": 900 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "腰胯帶動雙手武器進行 180 度大弧度橫掃。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 16,
+            "time_ms": 533
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 27,
+            "time_ms": 900
+          }
+        ],
+        "motion_notes": "腰胯帶動上身進行 180 度大弧度橫掃身姿，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_burst",
@@ -182,13 +272,29 @@
         "duration_ms": 1267,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 18, "time_ms": 600 },
-          { "name": "ev_hit", "frame": 20, "time_ms": 667 },
-          { "name": "ev_end_lock", "frame": 31, "time_ms": 1033 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "高舉武器後雙手砸地，引發以自身為中心的衝擊。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 18,
+            "time_ms": 600
+          },
+          {
+            "name": "ev_hit",
+            "frame": 20,
+            "time_ms": 667
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 31,
+            "time_ms": 1033
+          }
+        ],
+        "motion_notes": "昂首蓄力後猛然重踏／下壓，自本體釋放周身衝擊。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_dash",
@@ -199,14 +305,157 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": true,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 14, "time_ms": 467 },
-          { "name": "ev_end_lock", "frame": 24, "time_ms": 800 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "root motion 向前突進，雙手前推武器貫穿路徑目標。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "root motion 向前直線突進，本體壓低前衝貫穿目標。",
+        "weapon_distance": "any"
+      },
+      {
+        "action_id": "atk_ranged_line",
+        "description": "雙手遠程：直線射擊／聚能發射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 30,
+        "duration_ms": 1000,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "本體前軀微壓瞄準正前方發射技能，發射瞬間出現後座回彈（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_cone",
+        "description": "雙手遠程：扇形齊射／散射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 30,
+        "duration_ms": 1000,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "本體胸肩與前肢隨扇面水平扭轉，自本體釋放扇形遠程技能（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_arc",
+        "description": "雙手遠程：拋物線仰射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 34,
+        "duration_ms": 1133,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 18,
+            "time_ms": 600
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 26,
+            "time_ms": 867
+          }
+        ],
+        "motion_notes": "本體抬頭挺胸蓄力仰射拋物線技能，隨釋放沉身回穩（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_burst_target",
+        "description": "雙手遠程：目標點爆破引導",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 34,
+        "duration_ms": 1133,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 16,
+            "time_ms": 533
+          },
+          {
+            "name": "ev_hit",
+            "frame": 18,
+            "time_ms": 600
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 26,
+            "time_ms": 867
+          }
+        ],
+        "motion_notes": "本體仰首凝視目標蓄能後前撲壓低重心引導爆破（不繪製武器）。"
       }
-    ]
+    ],
+    "weapon_types": {
+      "melee": [
+        "twinblade_staff",
+        "spear_halberd",
+        "greatsword",
+        "greataxe_hammer"
+      ],
+      "ranged": [
+        "repeater_bow",
+        "longbow",
+        "magic_staff",
+        "heavy_crossbow_cannon"
+      ]
+    }
   },
   {
     "id": "grip_anim_dual_wield",
@@ -228,10 +477,12 @@
       }
     ],
     "pose_rules": {
-      "idle_stance": "左右各自獨立持握單手武器，低重心微側身戒備，雙刃呈不對稱一前一後備戰姿。",
-      "locomotion_rule": "雙手可隨步頻獨立擺動，奔跑時武器順勢後掠，保持敏捷剪影。",
-      "guard_rule": "雙武器於身前交叉架設（基礎 35% 格擋值），完美格擋時雙刃同時向外撥彈。",
-      "attack_rule": "配合雙持 +15% 攻速與左右輪流機制（從右手開始），近戰與突進提供 _r / _l 交替節奏 clip，前搖更短。"
+      "idle_stance": "低重心微側身戒備姿態，左右肩部一前一後蓄勢，預留雙側獨立單手武器動畫空間，本體不繪製武器。",
+      "locomotion_rule": "敏捷輕盈的步伐與低俯疾跑姿態，身體兩側隨步頻自然擺動並保持掛點淨空。",
+      "guard_rule": "前軀微縮、雙前肢或雙翼交叉護於身前形成架勢（基礎 35% 格擋值），完美格擋時做出向外彈開的身形動作。",
+      "attack_rule": "技能由宙獸本體發出；配合雙持 +25% 攻速與左右輪流規則（從右手側開始），近戰與突進依 _r / _l 提供左右交替身形扭轉與前探節奏。",
+      "ranged_rule": "遠程技能由宙獸本體發出；依 _r / _l 交替進行左右側身甩動、前探與後座回彈，與獨立雙持遠程武器動畫同步，不繪製武器。",
+      "virtual_hand_rule": "武器與盾牌由虛擬大手持握並執行另外設計的獨立對應動畫，技能仍由宙獸本體發出（Socket_Front／Socket_Mouth／Socket_Core_FX）；因此宙獸本體模型與骨架動畫不繪製、不包含任何武器、盾牌或虛擬大手。Socket_Weapon_R／Socket_Weapon_L 僅作為空掛點預留於身體兩側適當安全間距，宙獸本體仍依持有模式節奏做出相應的軀幹、頭頸與四肢／羽翼動作。"
     },
     "clips": [
       {
@@ -243,9 +494,13 @@
         "duration_ms": 2000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "2 秒輕盈戒備呼吸；右手偏前、左手偏後蓄勢。"
+        "motion_notes": "2 秒輕盈戒備呼吸；右側身偏前、左側身偏後蓄勢（不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "idle_long",
@@ -256,9 +511,13 @@
         "duration_ms": 4000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "4 秒長循環；輕微轉腕或壓低重心再回位，首尾幀無縫閉合。"
+        "motion_notes": "4 秒長循環；輕微轉身或壓低重心再回位，首尾幀無縫閉合（不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "walk",
@@ -269,12 +528,24 @@
         "duration_ms": 1000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 7, "time_ms": 233 },
-          { "name": "ev_footstep", "frame": 22, "time_ms": 733 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 敏捷步行；左右武器隨步伐自然交錯擺動。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 7,
+            "time_ms": 233
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "in-place 敏捷步行；雙肩隨步伐自然交錯擺動。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "run",
@@ -285,12 +556,24 @@
         "duration_ms": 600,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 4, "time_ms": 133 },
-          { "name": "ev_footstep", "frame": 13, "time_ms": 433 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 疾跑；低俯身姿，雙武器向後掠開。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 4,
+            "time_ms": 133
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 13,
+            "time_ms": 433
+          }
+        ],
+        "motion_notes": "in-place 疾跑；低俯身姿，雙前肢／翼向後掠開。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block",
@@ -301,9 +584,13 @@
         "duration_ms": 933,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "雙手單手武器於胸前交叉成 X 字防禦。"
+        "motion_notes": "雙前肢／雙翼於胸前交叉做出防禦架勢（不繪製武器）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block_hit",
@@ -314,11 +601,19 @@
         "duration_ms": 500,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 2, "time_ms": 67 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "交叉雙刃受震微開後迅速回架。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 2,
+            "time_ms": 67
+          }
+        ],
+        "motion_notes": "交叉防禦姿態受震微開後迅速回架。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "perfect_block",
@@ -329,13 +624,29 @@
         "duration_ms": 667,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 3, "time_ms": 100 },
-          { "name": "ev_hit", "frame": 5, "time_ms": 167 },
-          { "name": "ev_end_lock", "frame": 14, "time_ms": 467 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "雙刃向外甩開彈反來襲，動作俐落短促。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 3,
+            "time_ms": 100
+          },
+          {
+            "name": "ev_hit",
+            "frame": 5,
+            "time_ms": 167
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 14,
+            "time_ms": 467
+          }
+        ],
+        "motion_notes": "雙側猛然向外甩開做出彈反身姿，動作俐落短促。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "guard_break",
@@ -346,9 +657,13 @@
         "duration_ms": 1500,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "雙手被震開至兩側，失去平衡 1.5 秒。"
+        "motion_notes": "雙側被震開，失去平衡硬直 1.5 秒。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "atk_melee_front_r",
@@ -359,12 +674,23 @@
         "duration_ms": 733,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R"],
-        "events": [
-          { "name": "ev_hit", "frame": 9, "time_ms": 300 },
-          { "name": "ev_end_lock", "frame": 16, "time_ms": 533 }
+        "active_sockets": [
+          "Socket_Weapon_R"
         ],
-        "motion_notes": "偶數次施招（從右手開始）；右手快速前刺或斜斬，左手後拉保持平衡。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 9,
+            "time_ms": 300
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 16,
+            "time_ms": 533
+          }
+        ],
+        "motion_notes": "偶數次施招（從右開始）；右肩前探快速發招，左肩後拉保持平衡，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_front_l",
@@ -375,12 +701,23 @@
         "duration_ms": 733,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 9, "time_ms": 300 },
-          { "name": "ev_end_lock", "frame": 16, "time_ms": 533 }
+        "active_sockets": [
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "奇數次施招；左手接續前刺或反手斜斬，右手後撤蓄勢。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 9,
+            "time_ms": 300
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 16,
+            "time_ms": 533
+          }
+        ],
+        "motion_notes": "奇數次施招；左肩接續前探發招，右肩後撤蓄勢，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_sweep_r",
@@ -391,12 +728,23 @@
         "duration_ms": 833,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R"],
-        "events": [
-          { "name": "ev_hit", "frame": 11, "time_ms": 367 },
-          { "name": "ev_end_lock", "frame": 19, "time_ms": 633 }
+        "active_sockets": [
+          "Socket_Weapon_R"
         ],
-        "motion_notes": "右手由外向內高速橫掃。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 11,
+            "time_ms": 367
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 19,
+            "time_ms": 633
+          }
+        ],
+        "motion_notes": "右肩帶動軀幹由外向內高速橫掃發招，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_sweep_l",
@@ -407,12 +755,23 @@
         "duration_ms": 833,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 11, "time_ms": 367 },
-          { "name": "ev_end_lock", "frame": 19, "time_ms": 633 }
+        "active_sockets": [
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "左手由外向內高速橫掃。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 11,
+            "time_ms": 367
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 19,
+            "time_ms": 633
+          }
+        ],
+        "motion_notes": "左肩帶動軀幹由外向內高速橫掃發招，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_burst",
@@ -423,13 +782,29 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 13, "time_ms": 433 },
-          { "name": "ev_hit", "frame": 15, "time_ms": 500 },
-          { "name": "ev_end_lock", "frame": 23, "time_ms": 767 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "雙武器張開同時旋轉或交錯斬出周身衝擊。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 13,
+            "time_ms": 433
+          },
+          {
+            "name": "ev_hit",
+            "frame": 15,
+            "time_ms": 500
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 23,
+            "time_ms": 767
+          }
+        ],
+        "motion_notes": "本體張開四肢／羽翼旋轉或交錯發力，釋放周身衝擊。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_dash_r",
@@ -440,12 +815,23 @@
         "duration_ms": 800,
         "loop": false,
         "root_motion": true,
-        "active_sockets": ["Socket_Weapon_R"],
-        "events": [
-          { "name": "ev_hit", "frame": 10, "time_ms": 333 },
-          { "name": "ev_end_lock", "frame": 18, "time_ms": 600 }
+        "active_sockets": [
+          "Socket_Weapon_R"
         ],
-        "motion_notes": "root motion 低身突進，右手武器直刺前方。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 10,
+            "time_ms": 333
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 18,
+            "time_ms": 600
+          }
+        ],
+        "motion_notes": "root motion 低身突進，右側前探發招。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "atk_dash_l",
@@ -456,14 +842,234 @@
         "duration_ms": 800,
         "loop": false,
         "root_motion": true,
-        "active_sockets": ["Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 10, "time_ms": 333 },
-          { "name": "ev_end_lock", "frame": 18, "time_ms": 600 }
+        "active_sockets": [
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "root motion 低身突進，左手武器直刺前方。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 10,
+            "time_ms": 333
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 18,
+            "time_ms": 600
+          }
+        ],
+        "motion_notes": "root motion 低身突進，左側前探發招。",
+        "weapon_distance": "any"
+      },
+      {
+        "action_id": "atk_ranged_line_r",
+        "description": "雙持遠程（右手）：直線射擊／擲射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 24,
+        "duration_ms": 800,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 11,
+            "time_ms": 367
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 18,
+            "time_ms": 600
+          }
+        ],
+        "motion_notes": "偶數次施招；右肩前探對準正前方發出遠程技能，左肩後收保持平衡（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_line_l",
+        "description": "雙持遠程（左手）：直線射擊／擲射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "left",
+        "frames": 24,
+        "duration_ms": 800,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 11,
+            "time_ms": 367
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 18,
+            "time_ms": 600
+          }
+        ],
+        "motion_notes": "奇數次施招；左肩前探接續發出遠程技能，右肩後撤蓄勢（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_cone_r",
+        "description": "雙持遠程（右手）：扇形散射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 26,
+        "duration_ms": 867,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 12,
+            "time_ms": 400
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 20,
+            "time_ms": 667
+          }
+        ],
+        "motion_notes": "右側帶動前肢／軀幹橫向擺動釋放扇形技能（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_cone_l",
+        "description": "雙持遠程（左手）：扇形散射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "left",
+        "frames": 26,
+        "duration_ms": 867,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 12,
+            "time_ms": 400
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 20,
+            "time_ms": 667
+          }
+        ],
+        "motion_notes": "左側帶動前肢／軀幹橫向擺動釋放扇形技能（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_arc_r",
+        "description": "雙持遠程（右手）：拋物線擲射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 28,
+        "duration_ms": 933,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "右側帶動軀幹仰首挺身蓄勢後前傾釋放拋物線技能（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_ranged_arc_l",
+        "description": "雙持遠程（左手）：拋物線擲射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "left",
+        "frames": 28,
+        "duration_ms": 933,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "左側帶動軀幹仰首挺身蓄勢後前傾釋放拋物線技能（不繪製武器）。"
+      },
+      {
+        "action_id": "atk_burst_target",
+        "description": "雙持遠程：目標點爆破引導",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 32,
+        "duration_ms": 1067,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 15,
+            "time_ms": 500
+          },
+          {
+            "name": "ev_hit",
+            "frame": 17,
+            "time_ms": 567
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 25,
+            "time_ms": 833
+          }
+        ],
+        "motion_notes": "本體低伏蓄力後猛然抬身展開，引導遠方目標點爆破（不繪製武器）。"
       }
-    ]
+    ],
+    "weapon_types": {
+      "melee": [
+        "dagger_claw",
+        "sword_1h",
+        "axe_1h",
+        "mace_1h"
+      ],
+      "ranged": [
+        "thrown_shuriken",
+        "hand_crossbow",
+        "wand_gun",
+        "javelin"
+      ]
+    }
   },
   {
     "id": "grip_anim_one_hand_shield",
@@ -485,10 +1091,12 @@
       }
     ],
     "pose_rules": {
-      "idle_stance": "左手掛點持盾護於前側，右手掛點持單手武器收於身側後方，穩健對峙。",
-      "locomotion_rule": "移動與奔跑時盾牌維持朝前防護角度，右手武器自然擺動。",
-      "guard_rule": "以左手盾牌正對來襲方向架起堅實防線（75% 持盾格擋值），完美格擋伴隨盾擊彈反。",
-      "attack_rule": "右手單手武器揮擊，左手盾牌同步壓低或微收保持重心與護身。"
+      "idle_stance": "左側微前傾護衛、右側收於身後蓄勢的穩健對峙姿態，預留左盾與右單手武器之獨立動畫空間，本體不繪製武器與盾牌。",
+      "locomotion_rule": "移動與奔跑時左側肩胸維持穩定向前、右側自然隨步頻擺動，保持雙側掛點淨空。",
+      "guard_rule": "以左側身形與前肢／肩部前頂形成堅實防線（配合獨立盾牌 75% 格擋值），完美格擋時做出前衝頂撞的反制身姿。",
+      "attack_rule": "技能由宙獸本體發出；本體向右前側俐落扭轉發力，同時左側維持穩固防禦重心，與獨立武器盾牌動畫協調。",
+      "ranged_rule": "遠程技能由宙獸本體發出；左側維持穩健防禦重心、右側微探發力並帶出射擊後座回彈，不繪製武器與盾牌。",
+      "virtual_hand_rule": "武器與盾牌由虛擬大手持握並執行另外設計的獨立對應動畫，技能仍由宙獸本體發出（Socket_Front／Socket_Mouth／Socket_Core_FX）；因此宙獸本體模型與骨架動畫不繪製、不包含任何武器、盾牌或虛擬大手。Socket_Weapon_R／Socket_Weapon_L 僅作為空掛點預留於身體兩側適當安全間距，宙獸本體仍依持有模式節奏做出相應的軀幹、頭頸與四肢／羽翼動作。"
     },
     "clips": [
       {
@@ -500,9 +1108,13 @@
         "duration_ms": 2000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "2 秒穩健呼吸；左盾微抬護胸，右武器垂於側方。"
+        "motion_notes": "2 秒穩健呼吸；左側微抬護胸、右側收於側後方蓄勢（不繪製武器與盾牌）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "idle_long",
@@ -513,9 +1125,13 @@
         "duration_ms": 4000,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
         "events": [],
-        "motion_notes": "4 秒長循環；盾牌微沉重整姿態後回位，首尾幀無縫閉合。"
+        "motion_notes": "4 秒長循環；左側微沉重整防禦姿態後回位，首尾幀無縫閉合（不繪製武器與盾牌）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "walk",
@@ -526,12 +1142,24 @@
         "duration_ms": 1067,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 8, "time_ms": 267 },
-          { "name": "ev_footstep", "frame": 24, "time_ms": 800 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 步進；左盾穩定朝前，右武器隨步頻小幅擺動。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 8,
+            "time_ms": 267
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "in-place 步進；左側穩定朝前，右側隨步頻小幅擺動。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "run",
@@ -542,12 +1170,24 @@
         "duration_ms": 667,
         "loop": true,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_footstep", "frame": 5, "time_ms": 167 },
-          { "name": "ev_footstep", "frame": 15, "time_ms": 500 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "in-place 奔跑；左盾置於身前破風，右武器向後帶出。"
+        "events": [
+          {
+            "name": "ev_footstep",
+            "frame": 5,
+            "time_ms": 167
+          },
+          {
+            "name": "ev_footstep",
+            "frame": 15,
+            "time_ms": 500
+          }
+        ],
+        "motion_notes": "in-place 奔跑；左側置前破風、右側向後帶出。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block",
@@ -558,9 +1198,13 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L", "Socket_Weapon_R"],
+        "active_sockets": [
+          "Socket_Weapon_L",
+          "Socket_Weapon_R"
+        ],
         "events": [],
-        "motion_notes": "左手將盾牌完全推至正面中心，右手武器後撤蓄力。"
+        "motion_notes": "左側完全推至正面中心防禦，右側後撤蓄力（不繪製盾牌）。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "block_hit",
@@ -571,11 +1215,18 @@
         "duration_ms": 533,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 2, "time_ms": 67 }
+        "active_sockets": [
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "盾面受力微震，重心穩住不失衡。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 2,
+            "time_ms": 67
+          }
+        ],
+        "motion_notes": "左側受力微震，重心穩住不失衡。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "perfect_block",
@@ -586,13 +1237,28 @@
         "duration_ms": 733,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 4, "time_ms": 133 },
-          { "name": "ev_hit", "frame": 6, "time_ms": 200 },
-          { "name": "ev_end_lock", "frame": 16, "time_ms": 533 }
+        "active_sockets": [
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "左手盾牌猛然前推盾擊，將攻擊震開。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 4,
+            "time_ms": 133
+          },
+          {
+            "name": "ev_hit",
+            "frame": 6,
+            "time_ms": 200
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 16,
+            "time_ms": 533
+          }
+        ],
+        "motion_notes": "左側猛然前推頂撞做出盾反身姿，將攻擊震開。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "guard_break",
@@ -603,9 +1269,13 @@
         "duration_ms": 1500,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_L", "Socket_Weapon_R"],
+        "active_sockets": [
+          "Socket_Weapon_L",
+          "Socket_Weapon_R"
+        ],
         "events": [],
-        "motion_notes": "盾牌被巨力震開至左後方，身體後仰硬直 1.5 秒。"
+        "motion_notes": "左側被巨力震開至左後方，身體後仰硬直 1.5 秒。",
+        "weapon_distance": "any"
       },
       {
         "action_id": "atk_melee_front",
@@ -616,12 +1286,24 @@
         "duration_ms": 867,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 12, "time_ms": 400 },
-          { "name": "ev_end_lock", "frame": 20, "time_ms": 667 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "右手單手武器俐落前刺或下劈，左手盾牌微收維持防線。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 12,
+            "time_ms": 400
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 20,
+            "time_ms": 667
+          }
+        ],
+        "motion_notes": "右側俐落前刺／下劈發力，左側微收維持防線，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_sweep",
@@ -632,12 +1314,24 @@
         "duration_ms": 1000,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_hit", "frame": 14, "time_ms": 467 },
-          { "name": "ev_end_lock", "frame": 24, "time_ms": 800 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "右手自右向左揮出橫掃弧線，左手盾牌後拉保持平衡。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "右側自右向左揮出橫掃弧線身姿，左側後拉保持平衡，技能由本體發出。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_melee_burst",
@@ -648,13 +1342,29 @@
         "duration_ms": 1133,
         "loop": false,
         "root_motion": false,
-        "active_sockets": ["Socket_Weapon_R", "Socket_Weapon_L"],
-        "events": [
-          { "name": "ev_spawn_fx", "frame": 16, "time_ms": 533 },
-          { "name": "ev_hit", "frame": 18, "time_ms": 600 },
-          { "name": "ev_end_lock", "frame": 27, "time_ms": 900 }
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
         ],
-        "motion_notes": "盾牌震地配合右手武器釋放周身擴散衝擊。"
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 16,
+            "time_ms": 533
+          },
+          {
+            "name": "ev_hit",
+            "frame": 18,
+            "time_ms": 600
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 27,
+            "time_ms": 900
+          }
+        ],
+        "motion_notes": "左側重壓配合右側發力，自本體釋放周身擴散衝擊。",
+        "weapon_distance": "melee"
       },
       {
         "action_id": "atk_dash",
@@ -665,13 +1375,164 @@
         "duration_ms": 933,
         "loop": false,
         "root_motion": true,
-        "active_sockets": ["Socket_Weapon_L", "Socket_Weapon_R"],
-        "events": [
-          { "name": "ev_hit", "frame": 12, "time_ms": 400 },
-          { "name": "ev_end_lock", "frame": 22, "time_ms": 733 }
+        "active_sockets": [
+          "Socket_Weapon_L",
+          "Socket_Weapon_R"
         ],
-        "motion_notes": "root motion 左盾頂前衝鋒，末段右手武器順勢補刺。"
+        "events": [
+          {
+            "name": "ev_hit",
+            "frame": 12,
+            "time_ms": 400
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "root motion 左側頂前衝鋒，末段右側順勢前探補擊。",
+        "weapon_distance": "any"
+      },
+      {
+        "action_id": "atk_ranged_line",
+        "description": "單手＋盾遠程：盾側直線射擊／擲射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 28,
+        "duration_ms": 933,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 13,
+            "time_ms": 433
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 21,
+            "time_ms": 700
+          }
+        ],
+        "motion_notes": "左側穩護於前、右側微探對準正前方發出遠程技能並帶出微幅後座（不繪製武器與盾牌）。"
+      },
+      {
+        "action_id": "atk_ranged_cone",
+        "description": "單手＋盾遠程：扇形散射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 30,
+        "duration_ms": 1000,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 14,
+            "time_ms": 467
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 22,
+            "time_ms": 733
+          }
+        ],
+        "motion_notes": "上身隨右側橫甩方向小幅扭轉釋放扇形技能，左側微收護胸（不繪製武器與盾牌）。"
+      },
+      {
+        "action_id": "atk_ranged_arc",
+        "description": "單手＋盾遠程：拋物線仰射",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "right",
+        "frames": 32,
+        "duration_ms": 1067,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 16,
+            "time_ms": 533
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 24,
+            "time_ms": 800
+          }
+        ],
+        "motion_notes": "本體抬頭仰身配合右側拋擲弧線發出拋物線技能，左側下壓平衡（不繪製武器與盾牌）。"
+      },
+      {
+        "action_id": "atk_burst_target",
+        "description": "單手＋盾遠程：目標點爆破引導",
+        "category": "ranged",
+        "weapon_distance": "ranged",
+        "hand": "both",
+        "frames": 34,
+        "duration_ms": 1133,
+        "loop": false,
+        "root_motion": false,
+        "active_sockets": [
+          "Socket_Weapon_R",
+          "Socket_Weapon_L"
+        ],
+        "events": [
+          {
+            "name": "ev_spawn_fx",
+            "frame": 16,
+            "time_ms": 533
+          },
+          {
+            "name": "ev_hit",
+            "frame": 18,
+            "time_ms": 600
+          },
+          {
+            "name": "ev_end_lock",
+            "frame": 26,
+            "time_ms": 867
+          }
+        ],
+        "motion_notes": "本體前壓定住重心，右側發力引導目標點爆破、左側穩固前護（不繪製武器與盾牌）。"
       }
-    ]
+    ],
+    "weapon_types": {
+      "melee": [
+        "dagger_claw",
+        "sword_1h",
+        "axe_1h",
+        "mace_1h"
+      ],
+      "ranged": [
+        "thrown_shuriken",
+        "hand_crossbow",
+        "wand_gun",
+        "javelin"
+      ],
+      "offhand": [
+        "round_shield",
+        "kite_shield",
+        "tower_shield",
+        "wooden_round_shield",
+        "rune_shield",
+        "plank_shield"
+      ]
+    }
   }
 ]

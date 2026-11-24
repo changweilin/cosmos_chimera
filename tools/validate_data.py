@@ -45,6 +45,7 @@ KINDS = {
     "craft-grips": "craft-grip",
     "creature-grip-anims": "creature-grip-anim",
     "niches": "niche",
+    "field-utilities": "field-utility",
 }
 ID_KINDS = ("creatures", "moves", "traits", "planet-types", "characters", "ingredients", "foods", "eggs", "craft-items", "craft-recipes", "niches", "encyclopedia", "creature-grip-anims")
 # Mirrors LandformSynth.KindIds (Assets/_Project/Features/WorldGen/Runtime/Model/LandformSynth.cs): every spawn point's
@@ -221,6 +222,7 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None,
     check_encyclopedia(records["encyclopedia"], findings, Finding)
     balance = json.loads((balance_path or REPO_ROOT / "Data" / "balance.json").read_text(encoding="utf-8"))
     _check_skill_stars(records, findings, balance["stat_budget"], validators)
+    _check_field_utilities(records, findings, validators, schemas, retired_ids_path)
     _check_niches(records, findings)
     _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
@@ -266,18 +268,133 @@ def _check_skill_stars(records: dict[str, list[Record]], findings: list[Finding]
         complete = isinstance(stats, dict) and all(isinstance(stats.get(k), int) for k in STAT_KEYS)
         if len(stars) != 2 or not complete or base is None:
             continue  # schema / dangling-ref findings already cover these
-        target = base * (100 - budget["per_extra_star_percent"] * (sum(stars) - 2)) / 100
+        target = base * (100 - budget["per_extra_star_percent"] * (sum(stars) - 2)) // 100
         total = sum(stats[k] for k in STAT_KEYS)
-        tol = target * budget["tolerance_percent"] / 100
-        if abs(total - target) > tol:
+        resist = c.get("resist")
+        mastery = c.get("mastery")
+        if not (isinstance(resist, dict) and len(resist) == 10 and all(isinstance(v, int) for v in resist.values())
+                and isinstance(mastery, dict) and mastery and all(isinstance(v, int) for v in mastery.values())):
+            continue
+
+        # REQ: docs/design/creatures.md#綜合值預算與三池交換
+        nonzero_mastery = [v for v in mastery.values() if v > 0]
+        if not (budget["element_nonzero_min"] <= len(nonzero_mastery) <= budget["element_nonzero_max"]):
+            findings.append(Finding("error", "mastery_count", r.file, f"/{r.index}/mastery",
+                                    f"expected {budget['element_nonzero_min']}..{budget['element_nonzero_max']} "
+                                    f"non-zero elements, got {len(nonzero_mastery)}"))
+        if max(mastery.values()) != budget["element_max"]:
+            findings.append(Finding("error", "mastery_max", r.file, f"/{r.index}/mastery",
+                                    f"at least one element must be at max {budget['element_max']}"))
+
+        resist_total = sum(resist.values())
+        resist_base = budget["resist_shares"] * budget["resist_points_per_share"]
+        mastery_total = sum(mastery.values())
+        elem_num = budget["element_points_numerator"]
+        elem_den = budget["element_points_denominator"]
+        elem_base = budget["element_shares"] * elem_num // elem_den
+
+        if (resist_total - resist_base) % budget["resist_points_per_share"] != 0:
+            findings.append(Finding("error", "resist_share_unit", r.file, f"/{r.index}/resist",
+                                    f"resist total {resist_total} must differ from {resist_base} by a multiple of "
+                                    f"{budget['resist_points_per_share']}"))
+            continue
+        if (mastery_total - elem_base) % elem_num != 0:
+            findings.append(Finding("error", "mastery_share_unit", r.file, f"/{r.index}/mastery",
+                                    f"mastery total {mastery_total} must differ from {elem_base} by a multiple of "
+                                    f"{elem_num} ({elem_den} shares)"))
+            continue
+
+        d_stats = total - target
+        d_resist = (resist_total - resist_base) // budget["resist_points_per_share"]
+        d_elem = ((mastery_total - elem_base) * elem_den) // elem_num
+        if d_stats + d_resist + d_elem != 0:
             findings.append(Finding("error", "stat_budget", r.file, f"/{r.index}/stats",
-                                    f"six-stat total {total} outside {target:g} ±{budget['tolerance_percent']}% "
-                                    f"({c.get('stage')}, skill stars {stars[0]}+{stars[1]})"))
+                                    f"share sum mismatch: stats Δ{d_stats:+d}, resist Δ{d_resist:+d}, "
+                                    f"mastery Δ{d_elem:+d} (must sum to 0; {c.get('stage')}, stars {stars[0]}+{stars[1]})"))
+        elif (abs(d_stats) + abs(d_resist) + abs(d_elem)) // 2 > budget["exchange_max_shares"]:
+            transferred = (abs(d_stats) + abs(d_resist) + abs(d_elem)) // 2
+            findings.append(Finding("error", "stat_exchange_limit", r.file, f"/{r.index}/stats",
+                                    f"cross-pool exchange {transferred} shares exceeds max {budget['exchange_max_shares']}"))
     for sid, lines in sorted(lines_by_skill.items()):
         if len(lines) > 1:
             r = skills[sid]
             findings.append(Finding("error", "unique_skill_shared", r.file, f"/{r.index}/star",
                                     f"★★★ skill '{sid}' is used by lines {sorted(map(str, lines))}; ★★★ is unique to one line"))
+
+
+def _check_field_utilities(
+    records: dict[str, list[Record]],
+    findings: list[Finding],
+    validators: dict[str, Draft202012Validator],
+    schemas: dict[str, dict],
+    retired_ids_path: Path | None,
+) -> None:
+    """REQ: docs/design/field-utilities-combat.md — 1:1 coverage of all non-none fieldUtility entries,
+    element alignment, unique non-retired combat skill IDs, and valid ★ downgraded versions."""
+    entries = records["field-utilities"]
+    if not entries:
+        return
+
+    all_utilities = [u for u in schemas["common"]["$defs"]["fieldUtility"]["enum"] if u != "none"]
+    seen_utilities: dict[str, Record] = {}
+    seen_ids: dict[str, Record] = {}
+    for kind in ID_KINDS:
+        for r in records[kind]:
+            rid = r.data.get("id")
+            if isinstance(rid, str):
+                seen_ids.setdefault(rid, r)
+    retired = _load_retired_ids(retired_ids_path)
+
+    for r in entries:
+        u = r.data.get("utility")
+        if isinstance(u, str):
+            if u in seen_utilities:
+                other = seen_utilities[u]
+                findings.append(Finding("error", "field_utility_duplicate", r.file, f"/{r.index}/utility",
+                                        f"utility '{u}' already defined in {other.file}/{other.index}"))
+            else:
+                seen_utilities[u] = r
+
+        kind = r.data.get("kind")
+        aligned = r.data.get("aligned_elements")
+        skill_key = "combat_move" if kind == "move" else "combat_trait" if kind == "trait" else None
+        skill = r.data.get(skill_key) if skill_key else None
+        if not isinstance(skill, dict):
+            continue
+
+        sid = skill.get("id")
+        if isinstance(sid, str):
+            if sid in seen_ids:
+                other = seen_ids[sid]
+                findings.append(Finding("error", "duplicate_id", r.file, f"/{r.index}/{skill_key}/id",
+                                        f"id '{sid}' already defined in {other.file}/{other.index}; ids are global"))
+            else:
+                seen_ids[sid] = r
+            if sid in retired:
+                findings.append(Finding("error", "retired_id", r.file, f"/{r.index}/{skill_key}/id",
+                                        f"id '{sid}' is retired (Data/retired-ids.txt); ids are never reused"))
+
+        if kind == "move" and isinstance(aligned, list):
+            el = skill.get("element")
+            if isinstance(el, str) and el not in aligned:
+                findings.append(Finding("error", "field_utility_element_mismatch", r.file, f"/{r.index}/combat_move/element",
+                                        f"move element '{el}' is not in aligned_elements {aligned}"))
+
+        down = skill.get("downgraded")
+        if isinstance(down, dict):
+            merged = {k: v for k, v in skill.items() if k != "downgraded"}
+            merged.update(down)
+            merged["star"] = 1
+            stem = "move" if kind == "move" else "trait"
+            for err in validators[stem].iter_errors([merged]):
+                for leaf in _leaf_errors(err):
+                    findings.append(Finding("error", "downgraded_invalid", r.file, f"/{r.index}/{skill_key}/downgraded",
+                                            f"★ version is not a valid {stem}: {_schema_message(leaf)}"))
+
+    missing = [u for u in all_utilities if u not in seen_utilities]
+    if missing:
+        findings.append(Finding("error", "field_utility_missing", entries[0].file, "",
+                                f"missing field_utility combat definitions: {missing}"))
 
 
 def _check_niches(records: dict[str, list[Record]], findings: list[Finding]) -> None:
@@ -542,9 +659,10 @@ def _warn_material_elements(r: Record, findings: list[Finding]) -> None:
         return
     for i, m in enumerate(materials):
         el = m.get("element") if isinstance(m, dict) else None
-        if isinstance(el, str) and el not in mastery:
+        if isinstance(el, str) and mastery.get(el, 0) <= 0:
             findings.append(Finding("error", "material_not_mastery", r.file, f"/{r.index}/evolution/materials/{i}/element",
-                                    f"'{el}' is not one of this creature's mastery elements {sorted(mastery)} (Q-C9)"))
+                                    f"'{el}' is not one of this creature's active mastery elements "
+                                    f"{sorted(k for k, v in mastery.items() if v > 0)} (Q-C9)"))
 
 
 def _check_env_materials(

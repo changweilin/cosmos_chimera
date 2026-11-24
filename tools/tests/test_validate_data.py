@@ -22,7 +22,7 @@ SCHEMAS = REPO / "Data" / "schemas"
 EXPECTED = {
     "creatures/dangling_signature_move.json": ("dangling_ref", "/0/signature_move"),
     "creatures/evolves_to_on_adult.json": ("schema", "/0/evolves_to"),
-    "creatures/mastery_too_many.json": ("schema", "/0/mastery"),
+    "creatures/mastery_too_many.json": ("mastery_count", "/0/mastery"),
     "creatures/missing_resist_key.json": ("schema", "/0/resist"),
     "moves/bad_id_case.json": ("schema", "/0/id"),
     "moves/field_missing_duration.json": ("schema", "/0"),
@@ -249,7 +249,7 @@ class CrossFileRules(unittest.TestCase):
             ("moves", ("power",), 100000),
             ("moves", ("cooldown_ms",), 2147483647),
             ("moves", ("base_range_mm",), 2147483647),
-            ("creatures", ("mastery", "fire"), 1000),
+            ("creatures", ("mastery", "fire"), 125),
             ("creatures", ("stats", "hp"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "tier"), 2147483647),
             ("creatures", ("evolution", "materials", 0, "qty"), 2147483647),
@@ -267,7 +267,7 @@ class CrossFileRules(unittest.TestCase):
                     parent[path[-1]] = value
                     # Representability only: an Int32-max stat is schema-valid but breaks the budget by design.
                     errors = [f for f in self._with_valid({relative: json.dumps(records)})
-                              if f.level == "error" and f.code != "stat_budget"]
+                              if f.level == "error" and f.code not in ("stat_budget", "stat_exchange_limit")]
                     self.assertEqual(valid, not errors, "\n".join(map(str, errors)))
 
     def test_evolution_level_bands_per_stage(self):
@@ -545,6 +545,7 @@ class CrossFileRules(unittest.TestCase):
         adult["evolution"] = None
         # REQ: creatures.md#綜合值預算 — overload base 720 vs adult 600.
         adult["stats"] = {k: v * 6 // 5 for k, v in adult["stats"].items()}
+        adult["stats"]["hp"] += 720 - sum(adult["stats"].values())
         return valid, adult
 
     def test_overload_form_valid(self):
@@ -552,6 +553,22 @@ class CrossFileRules(unittest.TestCase):
         valid.append(ov)
         findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
         self.assertEqual([], [str(f) for f in findings])
+
+    def test_cross_pool_50_share_exchange(self):
+        # 50 shares: -50 stats (+0), +20 shares resist (+100 pts), +30 shares mastery (+45 pts) -> valid.
+        valid = json.loads((SAMPLES / "valid/creatures/creatures.json").read_text(encoding="utf-8"))
+        c = valid[0]
+        c["stats"]["hp"] -= 50
+        c["resist"]["metal"] += 50
+        c["resist"]["earth"] += 50
+        c["mastery"]["metal"] += 45  # 75 -> 120 (still <= 125)
+        self.assertEqual([], [str(f) for f in self._with_valid({"creatures/creatures.json": json.dumps(valid)})])
+
+        # 52 shares (> 50 max) -> stat_exchange_limit.
+        c["stats"]["hp"] -= 2
+        c["resist"]["wind"] += 10
+        findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
+        self.assertIn("stat_exchange_limit", self.codes(findings))
 
     def test_overload_requires_overload_of(self):
         valid, ov = self._overload_entry()
@@ -578,6 +595,66 @@ class CrossFileRules(unittest.TestCase):
         valid[-1]["overload_of"] = "sample_fox_lord"
         findings = self._with_valid({"creatures/creatures.json": json.dumps(valid)})
         self.assertIn("schema", self.codes(findings))
+
+    def test_field_utilities_combat_data_and_checks(self):
+        fu_path = REPO / "Data/field-utilities/field-utilities.json"
+        entries = json.loads(fu_path.read_text(encoding="utf-8"))
+        self.assertEqual([], [str(f) for f in self._with_valid({"field-utilities/field-utilities.json": json.dumps(entries)})])
+
+        # Verify 36/36 split, 72:24:4 star ratio (52/17/3), and 8/8/8/8 quadrant parity.
+        moves = [e["combat_move"] for e in entries if e["kind"] == "move"]
+        traits = [e["combat_trait"] for e in entries if e["kind"] == "trait"]
+        self.assertEqual((36, 36), (len(moves), len(traits)))
+        stars = [s["star"] for s in moves + traits]
+        self.assertEqual((52, 17, 3), (stars.count(1), stars.count(2), stars.count(3)))
+        quads = {}
+        for m in moves:
+            if "polarity" in m:
+                key = (m["polarity"], "melee" if m["range_class"] == "melee" else "ranged")
+                quads[key] = quads.get(key, 0) + 1
+        self.assertEqual({("yang", "melee"): 8, ("yang", "ranged"): 8, ("yin", "melee"): 8, ("yin", "ranged"): 8}, quads)
+
+        # Verify range/geometry/utility eDPS hierarchy on 1★ pure-damage anchors.
+        by_u = {e["utility"]: e["combat_move"] for e in entries if e["kind"] == "move"}
+        def edps(m):
+            ticks = (m["field_duration_ms"] + 999) // 1000 if m["shape"] == "field" else 1
+            return (m["power"] * ticks) / (m["cooldown_ms"] / 1000.0) * (m["accuracy"] / 100.0)
+        self.assertGreater(edps(by_u["craft_carpentry_earth"]), edps(by_u["mount"]))               # melee front > melee dash
+        self.assertGreater(edps(by_u["mount"]), edps(by_u["craft_smelt_metal"]))                   # melee dash > burst(caster)
+        self.assertGreater(edps(by_u["craft_smelt_metal"]), edps(by_u["craft_carpentry_wind"]))    # melee burst > mid cone
+        self.assertGreater(edps(by_u["craft_carpentry_wind"]), edps(by_u["craft_jewelcraft_earth"])) # mid cone > mid burst(target)
+        self.assertGreater(edps(by_u["craft_jewelcraft_earth"]), edps(by_u["craft_weave_wind"]))   # mid burst > long line
+        self.assertGreater(edps(by_u["craft_carpentry_earth"]), edps(by_u["craft_tailor_shadow"])) # pure damage > soft debuff
+        self.assertGreater(edps(by_u["craft_tailor_shadow"]), edps(by_u["craft_smith_earth"]))     # soft debuff > ailment (same shape)
+
+        # Every one of the 10 elemental ailments must be applied by at least one active life skill.
+        ailments_covered = {
+            m["effect"]["params"]["ailment"]
+            for m in moves
+            if m.get("effect", {}).get("type") == "apply_ailment"
+        }
+        self.assertEqual(
+            {"sunder", "toxin", "soaked", "burn", "weighted", "frostbite", "turbulent", "shock", "dazzle", "eclipse"},
+            ailments_covered,
+        )
+
+        # Missing utility -> field_utility_missing.
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(entries[:-1])})
+        self.assertIn("field_utility_missing", self.codes(findings))
+
+        # Move element outside aligned_elements -> field_utility_element_mismatch.
+        bad_el = json.loads(json.dumps(entries))
+        move_entry = next(e for e in bad_el if e["kind"] == "move" and "metal" not in e["aligned_elements"])
+        move_entry["combat_move"]["element"] = "metal"
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(bad_el)})
+        self.assertIn("field_utility_element_mismatch", self.codes(findings))
+
+        # Invalid downgraded ★ version -> downgraded_invalid.
+        bad_down = json.loads(json.dumps(entries))
+        star2_trait = next(e for e in bad_down if e["kind"] == "trait" and e["combat_trait"]["star"] == 2 and e["combat_trait"]["trigger"]["type"] == "always")
+        star2_trait["combat_trait"]["downgraded"]["effects"] = [{"type": "heal_percent_max_hp", "params": {"percent": 10}}]
+        findings = self._with_valid({"field-utilities/field-utilities.json": json.dumps(bad_down)})
+        self.assertIn("downgraded_invalid", self.codes(findings))
 
 
 if __name__ == "__main__":

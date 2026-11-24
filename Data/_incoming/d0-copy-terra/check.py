@@ -74,5 +74,5 @@ print(f"PASS: {len(strings)} UI keys, naming and required items, capture placeho
 supplement = data["demo-ui-supplement.json"]
 assert not strings.keys() & supplement.keys()
 # Handbook enum labels and food catalog IDs extend the original six-screen namespaces.
-assert all(re.fullmatch(r"(?:(?:ui|planet|element|consume|cook|effect|food|gather|ingredient|quality|relation|shape|trigger|utility)(?:\.[A-Za-z0-9_]+)+|(?:food|ing)_[a-z0-9_]+)", key) for key in supplement)
+assert all(re.fullmatch(r"(?:(?:ui|planet|element|consume|cook|dex|dish|effect|food|gather|ingredient|process|quality|relation|shape|trigger|utility)(?:\.[A-Za-z0-9_]+)+|(?:food|ing)_[a-z0-9_]+)", key) for key in supplement)
 print(f"PASS: {len(supplement)} supplement keys; no base-key collisions")

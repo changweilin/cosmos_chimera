@@ -75,6 +75,32 @@ namespace Cosmimera.Planet.Tests
         }
 
         [Test]
+        public void River_mask_is_one_on_the_channel_and_zero_off_it()
+        {
+            // REQ: planet-world.md#河床 (P1-18) — the terrain paints riverbeds from the same mask that carves them.
+            const int n = 64;
+            const int column = 48;
+            var h = new ushort[n * n];
+            var w = new byte[n * n];
+            for (int y = 0; y < n; y++)
+            {
+                h[y * n + column] = 0;
+                w[y * n + column] = 2;
+            }
+
+            using PlanetTemplates t = PlanetTemplates.Create(Planet640, new[] { new TemplateSource("river", n, h, w, 0f, 100f) },
+                new[] { new TemplatePlacement(0, Center, 0f, 0.3f) });
+            float3 right = StampRight(t);
+            float tanHalf = math.tan(0.3f);
+            float3 At(float x) => math.normalize(Center + right * ((x / (n - 1) * 2f - 1f) * tanHalf));
+            Assert.That(t.View.River(At(column)), Is.GreaterThan(0.95f));
+            Assert.That(t.View.River(At(column + 0.5f)), Is.InRange(0.3f, 0.7f), "bilinear falloff across one cell");
+            Assert.That(t.View.River(At(column - 3f)), Is.EqualTo(0f));
+            Assert.That(t.View.River(-Center), Is.EqualTo(0f), "outside every stamp");
+            Assert.That(default(TemplateView).River(Center), Is.EqualTo(0f), "default view = no templates");
+        }
+
+        [Test]
         public void Max_contribution_bounds_the_offset()
         {
             using PlanetTemplates t = Make();

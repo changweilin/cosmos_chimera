@@ -5,7 +5,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_mineral_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "metal_winged_bull",
     "evolution": {
       "level": 26,
@@ -18,23 +31,33 @@
       ]
     },
     "resist": {
-      "metal": 20,
-      "wood": 0,
-      "water": 0,
-      "fire": -20,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 5,
-      "shadow": 0
+      "metal": 135,
+      "wood": 108,
+      "water": 107,
+      "fire": 84,
+      "earth": 127,
+      "ice": 107,
+      "wind": 107,
+      "thunder": 75,
+      "light": 123,
+      "shadow": 107
     },
     "mastery": {
-      "metal": 15
+      "metal": 125,
+      "earth": 91,
+      "light": 45
     },
-    "stats": {"hp": 99, "speed": 36, "yin_atk": 41, "yang_atk": 68, "yin_def": 78, "yang_def": 78},
+    "stats": {
+      "hp": 115,
+      "speed": 20,
+      "yin_atk": 29,
+      "yang_atk": 78,
+      "yin_def": 74,
+      "yang_def": 94
+    },
     "signature_move": "metal_corrosion_edge",
     "trait": "trait_metal_clockwork_precision",
+    "field_utility": "culinary_prep",
     "concept": {
       "base": "青銅鑄造守護幼牛 × 城門浮雕銅環與小巧摺疊羽翼",
       "stage_look": "四足短壯的青銅小牛，背脊嵌有迷你雙翼銅板與拱門紋章護額，踏步沉穩",
@@ -55,7 +78,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_mineral_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "metal_citadel_colossus",
     "evolution": {
       "level": 46,
@@ -68,21 +104,30 @@
       ]
     },
     "resist": {
-      "metal": 35,
-      "wood": 0,
-      "water": 0,
-      "fire": -30,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 10,
-      "shadow": 0
+      "metal": 140,
+      "wood": 108,
+      "water": 108,
+      "fire": 80,
+      "earth": 132,
+      "ice": 108,
+      "wind": 108,
+      "thunder": 71,
+      "light": 127,
+      "shadow": 108
     },
     "mastery": {
-      "metal": 25
+      "metal": 125,
+      "earth": 98,
+      "light": 32
     },
-    "stats": {"hp": 124, "speed": 45, "yin_atk": 51, "yang_atk": 84, "yin_def": 98, "yang_def": 98},
+    "stats": {
+      "hp": 143,
+      "speed": 26,
+      "yin_atk": 36,
+      "yang_atk": 102,
+      "yin_def": 87,
+      "yang_def": 118
+    },
     "signature_move": "metal_scrap_barrage",
     "trait": "trait_metal_clockwork_precision",
     "concept": {
@@ -106,26 +151,48 @@
     "stage": "adult",
     "size_class": "XL",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ground_grazer", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 50,
-      "wood": 0,
-      "water": 0,
-      "fire": -40,
-      "earth": 20,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 15,
-      "shadow": 0
+      "metal": 145,
+      "wood": 109,
+      "water": 109,
+      "fire": 76,
+      "earth": 137,
+      "ice": 109,
+      "wind": 108,
+      "thunder": 67,
+      "light": 132,
+      "shadow": 108
     },
     "mastery": {
-      "metal": 40,
-      "earth": 15
+      "metal": 125,
+      "earth": 74,
+      "light": 25,
+      "ice": 25
     },
-    "stats": {"hp": 148, "speed": 55, "yin_atk": 102, "yang_atk": 61, "yin_def": 117, "yang_def": 117},
+    "stats": {
+      "hp": 166,
+      "speed": 31,
+      "yin_atk": 43,
+      "yang_atk": 129,
+      "yin_def": 104,
+      "yang_def": 141
+    },
     "signature_move": "metal_anvil_drop",
     "trait": "trait_metal_clockwork_precision",
     "concept": {
@@ -149,7 +216,20 @@
     "stage": "juvenile",
     "size_class": "XS",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_understory_insectivore", "weight": 3}, {"niche": "niche_detritivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_detritivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wood_garland_serpent",
     "evolution": {
       "level": 22,
@@ -162,23 +242,33 @@
       ]
     },
     "resist": {
-      "metal": -20,
-      "wood": 20,
-      "water": 10,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 5,
-      "shadow": 0
+      "metal": 107,
+      "wood": 107,
+      "water": 141,
+      "fire": 49,
+      "earth": 107,
+      "ice": 72,
+      "wind": 107,
+      "thunder": 106,
+      "light": 130,
+      "shadow": 124
     },
     "mastery": {
-      "wood": 15
+      "wood": 125,
+      "water": 96,
+      "light": 64
     },
-    "stats": {"hp": 74, "speed": 51, "yin_atk": 41, "yang_atk": 68, "yin_def": 83, "yang_def": 83},
+    "stats": {
+      "hp": 92,
+      "speed": 36,
+      "yin_atk": 92,
+      "yang_atk": 32,
+      "yin_def": 92,
+      "yang_def": 56
+    },
     "signature_move": "wood_splinter_thrust",
     "trait": "trait_wood_spore_regeneration",
+    "field_utility": "harvest_crops",
     "concept": {
       "base": "掌心大小的嫩芽小水蛇 × 頭頂含苞檳榔花枝",
       "stage_look": "盤繞在枝條上的翡翠細蛇，頭頂綻開一束潔白檳榔小花與細絲飄帶",
@@ -199,7 +289,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "wood_lotus_wyrm",
     "evolution": {
       "level": 40,
@@ -212,21 +315,30 @@
       ]
     },
     "resist": {
-      "metal": -30,
-      "wood": 35,
-      "water": 15,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 10,
-      "shadow": 0
+      "metal": 104,
+      "wood": 104,
+      "water": 143,
+      "fire": 44,
+      "earth": 104,
+      "ice": 67,
+      "wind": 104,
+      "thunder": 104,
+      "light": 131,
+      "shadow": 125
     },
     "mastery": {
-      "wood": 25
+      "wood": 125,
+      "water": 117,
+      "light": 58
     },
-    "stats": {"hp": 93, "speed": 64, "yin_atk": 51, "yang_atk": 86, "yin_def": 103, "yang_def": 103},
+    "stats": {
+      "hp": 109,
+      "speed": 49,
+      "yin_atk": 119,
+      "yang_atk": 39,
+      "yin_def": 114,
+      "yang_def": 64
+    },
     "signature_move": "wood_thorn_snare",
     "trait": "trait_wood_spore_regeneration",
     "concept": {
@@ -249,26 +361,48 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": -40,
-      "wood": 50,
-      "water": 20,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 15,
-      "shadow": 0
+      "metal": 95,
+      "wood": 95,
+      "water": 136,
+      "fire": 36,
+      "earth": 95,
+      "ice": 83,
+      "wind": 95,
+      "thunder": 95,
+      "light": 123,
+      "shadow": 117
     },
     "mastery": {
-      "wood": 40,
-      "water": 15
+      "wood": 125,
+      "water": 90,
+      "light": 67,
+      "ice": 45
     },
-    "stats": {"hp": 111, "speed": 77, "yin_atk": 61, "yang_atk": 103, "yin_def": 124, "yang_def": 124},
+    "stats": {
+      "hp": 124,
+      "speed": 65,
+      "yin_atk": 147,
+      "yang_atk": 47,
+      "yin_def": 129,
+      "yang_def": 76
+    },
     "signature_move": "wood_timber_fall",
     "trait": "trait_wood_spore_regeneration",
     "concept": {
@@ -292,7 +426,16 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_detritivore", "weight": 3}, {"niche": "niche_opportunistic_omnivore", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_detritivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 2
+      }
+    ],
     "evolves_to": "water_harpoon_cetacean",
     "evolution": {
       "level": 24,
@@ -305,23 +448,33 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 0,
-      "water": 20,
-      "fire": 0,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": -20,
-      "light": 0,
-      "shadow": 0
+      "metal": 99,
+      "wood": 73,
+      "water": 135,
+      "fire": 99,
+      "earth": 99,
+      "ice": 119,
+      "wind": 99,
+      "thunder": 59,
+      "light": 99,
+      "shadow": 99
     },
     "mastery": {
-      "water": 15
+      "water": 125,
+      "ice": 111,
+      "metal": 37
     },
-    "stats": {"hp": 89, "speed": 47, "yin_atk": 50, "yang_atk": 84, "yin_def": 65, "yang_def": 65},
+    "stats": {
+      "hp": 114,
+      "speed": 59,
+      "yin_atk": 34,
+      "yang_atk": 101,
+      "yin_def": 42,
+      "yang_def": 72
+    },
     "signature_move": "water_cascade_jab",
     "trait": "trait_water_cleansing_tide",
+    "field_utility": "cast_net",
     "concept": {
       "base": "白膚抹香小鯨 × 背鰭插著一小截鈍化青銅魚叉",
       "stage_look": "圓潤雪白的小鯨魚，額頭有淡淡舊傷痕與小型水花噴孔，魚叉飾角閃爍微光",
@@ -341,7 +494,20 @@
     "stage": "adolescent",
     "size_class": "L",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambush_predator", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": "water_abyssal_leviathan",
     "evolution": {
       "level": 44,
@@ -354,21 +520,30 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 35,
-      "fire": 0,
-      "earth": 0,
-      "ice": 15,
-      "wind": 0,
-      "thunder": -30,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 68,
+      "water": 139,
+      "fire": 98,
+      "earth": 98,
+      "ice": 121,
+      "wind": 98,
+      "thunder": 54,
+      "light": 98,
+      "shadow": 98
     },
     "mastery": {
-      "water": 25
+      "water": 125,
+      "ice": 87,
+      "metal": 58
     },
-    "stats": {"hp": 111, "speed": 59, "yin_atk": 104, "yang_atk": 63, "yin_def": 82, "yang_def": 81},
+    "stats": {
+      "hp": 137,
+      "speed": 84,
+      "yin_atk": 42,
+      "yang_atk": 132,
+      "yin_def": 47,
+      "yang_def": 84
+    },
     "signature_move": "water_undertow_rush",
     "trait": "trait_water_cleansing_tide",
     "concept": {
@@ -391,25 +566,47 @@
     "stage": "adult",
     "size_class": "XL",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_apex_predator", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 15,
-      "wood": 0,
-      "water": 50,
-      "fire": 0,
-      "earth": 0,
-      "ice": 20,
-      "wind": 0,
-      "thunder": -40,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 63,
+      "water": 141,
+      "fire": 96,
+      "earth": 96,
+      "ice": 122,
+      "wind": 96,
+      "thunder": 50,
+      "light": 95,
+      "shadow": 95
     },
     "mastery": {
-      "water": 40
+      "water": 125,
+      "ice": 97,
+      "metal": 48
     },
-    "stats": {"hp": 133, "speed": 71, "yin_atk": 125, "yang_atk": 75, "yin_def": 98, "yang_def": 98},
+    "stats": {
+      "hp": 164,
+      "speed": 107,
+      "yin_atk": 50,
+      "yang_atk": 164,
+      "yin_def": 57,
+      "yang_def": 88
+    },
     "signature_move": "water_tsunami_charge",
     "trait": "trait_water_cleansing_tide",
     "concept": {
@@ -433,7 +630,16 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_opportunistic_omnivore", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 2
+      }
+    ],
     "evolves_to": "fire_ember_crocodilian",
     "evolution": {
       "level": 23,
@@ -446,23 +652,33 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": -20,
-      "fire": 20,
-      "earth": 5,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 97,
+      "water": 50,
+      "fire": 133,
+      "earth": 116,
+      "ice": 69,
+      "wind": 97,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "fire": 15
+      "fire": 125,
+      "wood": 105,
+      "earth": 70
     },
-    "stats": {"hp": 82, "speed": 54, "yin_atk": 46, "yang_atk": 76, "yin_def": 71, "yang_def": 71},
+    "stats": {
+      "hp": 86,
+      "speed": 41,
+      "yin_atk": 70,
+      "yang_atk": 86,
+      "yin_def": 49,
+      "yang_def": 78
+    },
     "signature_move": "fire_spark_jab",
     "trait": "trait_fire_cinder_screen",
+    "field_utility": "smoke_dry",
     "concept": {
       "base": "炭木鱗甲幼鱷 × 背上冒出暖紅火芽",
       "stage_look": "披著厚實木皮斑紋甲殼的小鱷魚，甲縫透出微弱紅火光澤與零星火星",
@@ -482,7 +698,16 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 4}, {"niche": "niche_carrion_scavenger", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 4
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
     "evolves_to": "fire_hearth_monolith",
     "evolution": {
       "level": 42,
@@ -495,23 +720,33 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": -30,
-      "fire": 35,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 96,
+      "wood": 96,
+      "water": 46,
+      "fire": 138,
+      "earth": 118,
+      "ice": 65,
+      "wind": 96,
+      "thunder": 95,
+      "light": 95,
+      "shadow": 95
     },
     "mastery": {
-      "fire": 25
+      "fire": 125,
+      "wood": 88,
+      "earth": 87
     },
-    "stats": {"hp": 102, "speed": 68, "yin_atk": 57, "yang_atk": 95, "yin_def": 89, "yang_def": 89},
+    "stats": {
+      "hp": 113,
+      "speed": 46,
+      "yin_atk": 87,
+      "yang_atk": 113,
+      "yin_def": 56,
+      "yang_def": 97
+    },
     "signature_move": "fire_cinder_slash",
     "trait": "trait_fire_cinder_screen",
+    "field_utility": "hunt_ground",
     "concept": {
       "base": "熔炭樹皮大顎鱷 × 背脊生出粗壯猴麵包樹瘤",
       "stage_look": "背甲呈現猴麵包樹般圓碩樹瘤，內部燃燒熾紅火脈，橫掃尾擊揚起灼熱灰燼",
@@ -532,25 +767,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_apex_predator", "weight": 2}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_apex_predator",
+        "weight": 2
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 20,
-      "water": -40,
-      "fire": 50,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 94,
+      "wood": 94,
+      "water": 42,
+      "fire": 142,
+      "earth": 121,
+      "ice": 61,
+      "wind": 94,
+      "thunder": 94,
+      "light": 94,
+      "shadow": 94
     },
     "mastery": {
-      "fire": 40
+      "fire": 125,
+      "wood": 100,
+      "earth": 75
     },
-    "stats": {"hp": 123, "speed": 82, "yin_atk": 114, "yang_atk": 69, "yin_def": 106, "yang_def": 106},
+    "stats": {
+      "hp": 141,
+      "speed": 49,
+      "yin_atk": 111,
+      "yang_atk": 135,
+      "yin_def": 68,
+      "yang_def": 110
+    },
     "signature_move": "fire_caldera_burst",
     "trait": "trait_fire_cinder_screen",
     "concept": {
@@ -574,7 +831,20 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_edge_browser", "weight": 3}, {"niche": "niche_ground_grazer", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_edge_browser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "earth_pillar_chimera",
     "evolution": {
       "level": 24,
@@ -587,23 +857,33 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 0,
-      "fire": 5,
-      "earth": 20,
-      "ice": 0,
-      "wind": -20,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 98,
+      "wood": 68,
+      "water": 63,
+      "fire": 98,
+      "earth": 119,
+      "ice": 98,
+      "wind": 98,
+      "thunder": 98,
+      "light": 123,
+      "shadow": 117
     },
     "mastery": {
-      "earth": 15
+      "earth": 125,
+      "metal": 105,
+      "fire": 70
     },
-    "stats": {"hp": 76, "speed": 59, "yin_atk": 92, "yang_atk": 55, "yin_def": 59, "yang_def": 59},
+    "stats": {
+      "hp": 69,
+      "speed": 81,
+      "yin_atk": 93,
+      "yang_atk": 36,
+      "yin_def": 48,
+      "yang_def": 77
+    },
     "signature_move": "earth_stone_skate",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "forage_fungi",
     "concept": {
       "base": "石雕幼獅 × 卷曲短象鼻與浮雕蓮瓣項圈",
       "stage_look": "灰褐砂岩雕塑般的小獅獸，鼻尖翹起小巧象牙，四爪踩踏碎石迅速滑步",
@@ -623,7 +903,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_edge_browser", "weight": 3}, {"niche": "niche_mineral_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_edge_browser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "earth_temple_tuskbeast",
     "evolution": {
       "level": 45,
@@ -636,23 +929,33 @@
       ]
     },
     "resist": {
-      "metal": 15,
-      "wood": 0,
-      "water": 0,
-      "fire": 10,
-      "earth": 35,
-      "ice": 0,
-      "wind": -30,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 97,
+      "wood": 64,
+      "water": 58,
+      "fire": 96,
+      "earth": 122,
+      "ice": 96,
+      "wind": 96,
+      "thunder": 96,
+      "light": 125,
+      "shadow": 120
     },
     "mastery": {
-      "earth": 25
+      "earth": 125,
+      "metal": 117,
+      "fire": 58
     },
-    "stats": {"hp": 94, "speed": 74, "yin_atk": 115, "yang_atk": 69, "yin_def": 74, "yang_def": 74},
+    "stats": {
+      "hp": 81,
+      "speed": 111,
+      "yin_atk": 121,
+      "yang_atk": 46,
+      "yin_def": 56,
+      "yang_def": 91
+    },
     "signature_move": "earth_fault_dash",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "set_trap",
     "concept": {
       "base": "浮雕石獅象獸 × 肩胛鑲嵌廊柱石墩與修長石牙",
       "stage_look": "雙肩扛著神廟石柱護甲，象鼻與利爪皆為硬質花崗岩構造，騰躍撲擊極具衝擊力",
@@ -673,27 +976,50 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_edge_browser", "weight": 3}, {"niche": "niche_mineral_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_edge_browser",
+        "weight": 3
+      },
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 20,
-      "wood": 0,
-      "water": 0,
-      "fire": 15,
-      "earth": 50,
-      "ice": 0,
-      "wind": -40,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 95,
+      "wood": 59,
+      "water": 53,
+      "fire": 95,
+      "earth": 124,
+      "ice": 95,
+      "wind": 95,
+      "thunder": 95,
+      "light": 127,
+      "shadow": 122
     },
     "mastery": {
-      "earth": 40
+      "earth": 125,
+      "metal": 100,
+      "fire": 75
     },
-    "stats": {"hp": 113, "speed": 89, "yin_atk": 137, "yang_atk": 83, "yin_def": 89, "yang_def": 89},
+    "stats": {
+      "hp": 97,
+      "speed": 140,
+      "yin_atk": 152,
+      "yang_atk": 55,
+      "yin_def": 61,
+      "yang_def": 103
+    },
     "signature_move": "earth_tectonic_lance",
     "trait": "trait_earth_landslide_charge",
+    "field_utility": "produce_milk",
     "concept": {
       "base": "神廟守護巨雕獅象 × 蓮座浮雕肩盾與岩柱重砲象鼻",
       "stage_look": "身披蓮座與神廟石柱雕刻的宏偉石獸，象牙如雙重岩槍向前延伸，能遠距貫穿岩脈",
@@ -715,7 +1041,20 @@
     "stage": "juvenile",
     "size_class": "XS",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "ice_hull_cutter",
     "evolution": {
       "level": 21,
@@ -728,23 +1067,33 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 5,
-      "water": 10,
-      "fire": 0,
-      "earth": -20,
-      "ice": 20,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 74,
+      "wood": 98,
+      "water": 115,
+      "fire": 55,
+      "earth": 98,
+      "ice": 131,
+      "wind": 98,
+      "thunder": 97,
+      "light": 97,
+      "shadow": 97
     },
     "mastery": {
-      "ice": 15
+      "ice": 125,
+      "water": 120,
+      "wood": 40
     },
-    "stats": {"hp": 63, "speed": 86, "yin_atk": 48, "yang_atk": 81, "yin_def": 61, "yang_def": 61},
+    "stats": {
+      "hp": 79,
+      "speed": 96,
+      "yin_atk": 92,
+      "yang_atk": 38,
+      "yin_def": 42,
+      "yang_def": 71
+    },
     "signature_move": "ice_glaze_slide",
     "trait": "trait_ice_frostbite_edge",
+    "field_utility": "freeze_prep",
     "concept": {
       "base": "微型極地木雪橇 × 懸掛深海採水瓶的浮冰探測儀",
       "stage_look": "手掌大小的雙橇冰滑裝置，中央玻璃採水瓶閃著冰藍結晶，貼地滑行無聲",
@@ -764,7 +1113,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "ice_polar_icebreaker",
     "evolution": {
       "level": 39,
@@ -777,23 +1139,33 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": 15,
-      "fire": 0,
-      "earth": -30,
-      "ice": 35,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 70,
+      "wood": 97,
+      "water": 118,
+      "fire": 50,
+      "earth": 96,
+      "ice": 135,
+      "wind": 96,
+      "thunder": 96,
+      "light": 96,
+      "shadow": 96
     },
     "mastery": {
-      "ice": 25
+      "ice": 125,
+      "water": 96,
+      "wood": 64
     },
-    "stats": {"hp": 79, "speed": 108, "yin_atk": 101, "yang_atk": 60, "yin_def": 76, "yang_def": 76},
+    "stats": {
+      "hp": 104,
+      "speed": 125,
+      "yin_atk": 114,
+      "yang_atk": 47,
+      "yin_def": 47,
+      "yang_def": 83
+    },
     "signature_move": "ice_floe_crash",
     "trait": "trait_ice_frostbite_edge",
+    "field_utility": "chill_brew",
     "concept": {
       "base": "抗冰圓底探險快艇 × 浮冰觀測儀與雙板滑冰龍骨",
       "stage_look": "弧形木甲船身覆滿冰晶裝甲，桅頂架設旋轉觀測銅儀，能乘浮冰衝撞敵陣",
@@ -814,25 +1186,47 @@
     "stage": "adult",
     "size_class": "XL",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_mineral_feeder", "weight": 2}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_mineral_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 20,
-      "fire": 0,
-      "earth": -40,
-      "ice": 50,
-      "wind": 0,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 64,
+      "wood": 94,
+      "water": 119,
+      "fire": 45,
+      "earth": 94,
+      "ice": 138,
+      "wind": 94,
+      "thunder": 94,
+      "light": 94,
+      "shadow": 94
     },
     "mastery": {
-      "ice": 40
+      "ice": 125,
+      "water": 107,
+      "wood": 53
     },
-    "stats": {"hp": 95, "speed": 130, "yin_atk": 121, "yang_atk": 72, "yin_def": 91, "yang_def": 91},
+    "stats": {
+      "hp": 131,
+      "speed": 156,
+      "yin_atk": 137,
+      "yang_atk": 56,
+      "yin_def": 56,
+      "yang_def": 88
+    },
     "signature_move": "ice_avalanche_charge",
     "trait": "trait_ice_frostbite_edge",
     "concept": {
@@ -856,7 +1250,16 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_ground_granivore", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_ground_granivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
     "evolves_to": "wind_bergglider_gull",
     "evolution": {
       "level": 20,
@@ -869,23 +1272,33 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 5,
-      "water": 10,
-      "fire": 0,
-      "earth": 0,
-      "ice": -20,
-      "wind": 20,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 93,
+      "wood": 93,
+      "water": 110,
+      "fire": 93,
+      "earth": 93,
+      "ice": 67,
+      "wind": 127,
+      "thunder": 58,
+      "light": 93,
+      "shadow": 93
     },
     "mastery": {
-      "wind": 15
+      "wind": 125,
+      "water": 116,
+      "wood": 77
     },
-    "stats": {"hp": 54, "speed": 103, "yin_atk": 73, "yang_atk": 44, "yin_def": 63, "yang_def": 63},
+    "stats": {
+      "hp": 48,
+      "speed": 109,
+      "yin_atk": 69,
+      "yang_atk": 77,
+      "yin_def": 48,
+      "yang_def": 53
+    },
     "signature_move": "wind_draft_step",
     "trait": "trait_wind_aloft_vigilance",
+    "field_utility": "hunt_sky",
     "concept": {
       "base": "海霧幼信天翁 × 翼緣帶著木質弩臂紋飾",
       "stage_look": "白灰絨毛小海鳥，翼梢刻有細緻木弓張弦紋路，順著海風疾速貼地竄行",
@@ -905,7 +1318,16 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_carrion_scavenger", "weight": 2}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 2
+      }
+    ],
     "evolves_to": "wind_pelagic_soarer",
     "evolution": {
       "level": 37,
@@ -918,21 +1340,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": 10,
-      "water": 15,
-      "fire": 0,
-      "earth": 0,
-      "ice": -30,
-      "wind": 35,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 91,
+      "wood": 91,
+      "water": 111,
+      "fire": 91,
+      "earth": 91,
+      "ice": 62,
+      "wind": 129,
+      "thunder": 52,
+      "light": 91,
+      "shadow": 91
     },
     "mastery": {
-      "wind": 25
+      "wind": 125,
+      "water": 114,
+      "wood": 85
     },
-    "stats": {"hp": 68, "speed": 129, "yin_atk": 54, "yang_atk": 91, "yin_def": 79, "yang_def": 79},
+    "stats": {
+      "hp": 55,
+      "speed": 146,
+      "yin_atk": 86,
+      "yang_atk": 101,
+      "yin_def": 55,
+      "yang_def": 61
+    },
     "signature_move": "wind_cyclone_dart",
     "trait": "trait_wind_aloft_vigilance",
     "concept": {
@@ -955,25 +1386,48 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 1}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": 15,
-      "water": 20,
-      "fire": 0,
-      "earth": 0,
-      "ice": -40,
-      "wind": 50,
-      "thunder": 0,
-      "light": 0,
-      "shadow": 0
+      "metal": 87,
+      "wood": 87,
+      "water": 109,
+      "fire": 87,
+      "earth": 87,
+      "ice": 56,
+      "wind": 129,
+      "thunder": 64,
+      "light": 87,
+      "shadow": 87
     },
     "mastery": {
-      "wind": 40
+      "wind": 125,
+      "water": 94,
+      "wood": 70,
+      "thunder": 47
     },
-    "stats": {"hp": 82, "speed": 154, "yin_atk": 109, "yang_atk": 65, "yin_def": 95, "yang_def": 95},
+    "stats": {
+      "hp": 60,
+      "speed": 186,
+      "yin_atk": 126,
+      "yang_atk": 102,
+      "yin_def": 66,
+      "yang_def": 60
+    },
     "signature_move": "wind_hurricane_sweep",
     "trait": "trait_wind_aloft_vigilance",
     "concept": {
@@ -997,7 +1451,20 @@
     "stage": "juvenile",
     "size_class": "XS",
     "ai_style": "flank",
-    "niches": [{"niche": "niche_detritivore", "weight": 3}, {"niche": "niche_understory_insectivore", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_detritivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "thunder_crimson_crawler",
     "evolution": {
       "level": 25,
@@ -1010,21 +1477,30 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": -20,
-      "water": 0,
-      "fire": 10,
-      "earth": 5,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 20,
-      "light": 0,
-      "shadow": 0
+      "metal": 92,
+      "wood": 92,
+      "water": 54,
+      "fire": 112,
+      "earth": 92,
+      "ice": 63,
+      "wind": 92,
+      "thunder": 129,
+      "light": 92,
+      "shadow": 92
     },
     "mastery": {
-      "thunder": 15
+      "thunder": 125,
+      "fire": 124,
+      "earth": 93
     },
-    "stats": {"hp": 74, "speed": 74, "yin_atk": 69, "yang_atk": 41, "yin_def": 71, "yang_def": 71},
+    "stats": {
+      "hp": 43,
+      "speed": 62,
+      "yin_atk": 125,
+      "yang_atk": 27,
+      "yin_def": 86,
+      "yang_def": 47
+    },
     "signature_move": "thunder_pulse_ring",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1046,7 +1522,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_understory_insectivore", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_understory_insectivore",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "thunder_gobi_voltwyrm",
     "evolution": {
       "level": 43,
@@ -1059,21 +1548,31 @@
       ]
     },
     "resist": {
-      "metal": 0,
-      "wood": -30,
-      "water": 0,
-      "fire": 15,
-      "earth": 10,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 35,
-      "light": 0,
-      "shadow": 0
+      "metal": 91,
+      "wood": 91,
+      "water": 49,
+      "fire": 114,
+      "earth": 91,
+      "ice": 58,
+      "wind": 91,
+      "thunder": 133,
+      "light": 91,
+      "shadow": 91
     },
     "mastery": {
-      "thunder": 25
+      "thunder": 125,
+      "fire": 99,
+      "earth": 74,
+      "wind": 50
     },
-    "stats": {"hp": 93, "speed": 93, "yin_atk": 85, "yang_atk": 51, "yin_def": 89, "yang_def": 89},
+    "stats": {
+      "hp": 54,
+      "speed": 73,
+      "yin_atk": 166,
+      "yang_atk": 34,
+      "yin_def": 107,
+      "yang_def": 54
+    },
     "signature_move": "thunder_arc_discharge",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1096,26 +1595,48 @@
     "stage": "adult",
     "size_class": "XL",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_ambush_predator", "weight": 3}, {"niche": "niche_ambient_energy_feeder", "weight": 2}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambush_predator",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 2
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 0,
-      "wood": -40,
-      "water": 0,
-      "fire": 20,
-      "earth": 15,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 50,
-      "light": 0,
-      "shadow": 0
+      "metal": 88,
+      "wood": 88,
+      "water": 44,
+      "fire": 114,
+      "earth": 87,
+      "ice": 75,
+      "wind": 87,
+      "thunder": 133,
+      "light": 87,
+      "shadow": 87
     },
     "mastery": {
-      "thunder": 40,
-      "fire": 15
+      "thunder": 125,
+      "fire": 114,
+      "earth": 69,
+      "ice": 46
     },
-    "stats": {"hp": 111, "speed": 111, "yin_atk": 103, "yang_atk": 61, "yin_def": 107, "yang_def": 107},
+    "stats": {
+      "hp": 59,
+      "speed": 82,
+      "yin_atk": 211,
+      "yang_atk": 41,
+      "yin_def": 129,
+      "yang_def": 64
+    },
     "signature_move": "thunder_plasma_rail",
     "trait": "trait_thunder_fulgur_reach",
     "concept": {
@@ -1139,7 +1660,16 @@
     "stage": "juvenile",
     "size_class": "XS",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "light_orbit_beacon",
     "evolution": {
       "level": 21,
@@ -1152,21 +1682,30 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 10,
-      "light": 20,
-      "shadow": -20
+      "metal": 89,
+      "wood": 89,
+      "water": 62,
+      "fire": 89,
+      "earth": 55,
+      "ice": 89,
+      "wind": 88,
+      "thunder": 106,
+      "light": 113,
+      "shadow": 120
     },
     "mastery": {
-      "light": 15
+      "light": 125,
+      "thunder": 124,
+      "metal": 99
     },
-    "stats": {"hp": 58, "speed": 53, "yin_atk": 49, "yang_atk": 82, "yin_def": 79, "yang_def": 79},
+    "stats": {
+      "hp": 39,
+      "speed": 78,
+      "yin_atk": 116,
+      "yang_atk": 31,
+      "yin_def": 85,
+      "yang_def": 39
+    },
     "signature_move": "light_glint_jab",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1188,7 +1727,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "hold",
-    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 4}, {"niche": "niche_nectar_visitor", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_nectar_visitor",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "light_radiant_cyclotron",
     "evolution": {
       "level": 41,
@@ -1201,21 +1753,30 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 15,
-      "light": 35,
-      "shadow": -30
+      "metal": 87,
+      "wood": 87,
+      "water": 57,
+      "fire": 87,
+      "earth": 51,
+      "ice": 87,
+      "wind": 87,
+      "thunder": 108,
+      "light": 115,
+      "shadow": 124
     },
     "mastery": {
-      "light": 25
+      "light": 125,
+      "thunder": 124,
+      "metal": 105
     },
-    "stats": {"hp": 73, "speed": 66, "yin_atk": 61, "yang_atk": 102, "yin_def": 99, "yang_def": 99},
+    "stats": {
+      "hp": 48,
+      "speed": 97,
+      "yin_atk": 151,
+      "yang_atk": 39,
+      "yin_def": 107,
+      "yang_def": 44
+    },
     "signature_move": "light_optic_lance",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1238,26 +1799,44 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "keep_distance",
-    "niches": [{"niche": "niche_ambient_energy_feeder", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ambient_energy_feeder",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 15,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 0,
-      "wind": 0,
-      "thunder": 20,
-      "light": 50,
-      "shadow": -40
+      "metal": 86,
+      "wood": 86,
+      "water": 53,
+      "fire": 86,
+      "earth": 46,
+      "ice": 86,
+      "wind": 85,
+      "thunder": 109,
+      "light": 116,
+      "shadow": 127
     },
     "mastery": {
-      "light": 40,
-      "thunder": 15
+      "light": 125,
+      "thunder": 118,
+      "metal": 70,
+      "fire": 47
     },
-    "stats": {"hp": 88, "speed": 79, "yin_atk": 123, "yang_atk": 74, "yin_def": 118, "yang_def": 118},
+    "stats": {
+      "hp": 52,
+      "speed": 123,
+      "yin_atk": 187,
+      "yang_atk": 47,
+      "yin_def": 123,
+      "yang_def": 52
+    },
     "signature_move": "light_chromatic_fan",
     "trait": "trait_light_halo_rebound",
     "concept": {
@@ -1281,7 +1860,16 @@
     "stage": "juvenile",
     "size_class": "S",
     "ai_style": "flank",
-    "niches": [{"niche": "niche_ground_grazer", "weight": 4}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 4
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "shadow_reverb_charger",
     "evolution": {
       "level": 27,
@@ -1294,23 +1882,33 @@
       ]
     },
     "resist": {
-      "metal": 5,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 10,
-      "wind": 0,
-      "thunder": 0,
-      "light": -20,
-      "shadow": 20
+      "metal": 112,
+      "wood": 96,
+      "water": 96,
+      "fire": 66,
+      "earth": 96,
+      "ice": 118,
+      "wind": 96,
+      "thunder": 96,
+      "light": 41,
+      "shadow": 133
     },
     "mastery": {
-      "shadow": 15
+      "shadow": 125,
+      "ice": 105,
+      "metal": 70
     },
-    "stats": {"hp": 69, "speed": 80, "yin_atk": 45, "yang_atk": 74, "yin_def": 66, "yang_def": 66},
+    "stats": {
+      "hp": 57,
+      "speed": 98,
+      "yin_atk": 70,
+      "yang_atk": 78,
+      "yin_def": 41,
+      "yang_def": 66
+    },
     "signature_move": "shadow_dusk_fang",
     "trait": "trait_shadow_fade_step",
+    "field_utility": "ferment_cure",
     "concept": {
       "base": "玄鐵色幼駒 × 頸繫迷你銀製口簧琴護符",
       "stage_look": "墨黑短毛覆著冷硬青灰鐵斑的小馬駒，奔跑時頸側發出低沉共鳴震音",
@@ -1330,7 +1928,20 @@
     "stage": "adolescent",
     "size_class": "M",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_ground_grazer", "weight": 3}, {"niche": "niche_patrol_hunter", "weight": 1}, {"niche": "niche_opportunistic_omnivore", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 3
+      },
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 1
+      },
+      {
+        "niche": "niche_opportunistic_omnivore",
+        "weight": 1
+      }
+    ],
     "evolves_to": "shadow_iron_cavalier",
     "evolution": {
       "level": 47,
@@ -1343,21 +1954,30 @@
       ]
     },
     "resist": {
-      "metal": 10,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 15,
-      "wind": 0,
-      "thunder": 0,
-      "light": -30,
-      "shadow": 35
+      "metal": 114,
+      "wood": 95,
+      "water": 95,
+      "fire": 60,
+      "earth": 95,
+      "ice": 119,
+      "wind": 95,
+      "thunder": 95,
+      "light": 36,
+      "shadow": 136
     },
     "mastery": {
-      "shadow": 25
+      "shadow": 125,
+      "ice": 117,
+      "metal": 58
     },
-    "stats": {"hp": 86, "speed": 100, "yin_atk": 93, "yang_atk": 56, "yin_def": 83, "yang_def": 82},
+    "stats": {
+      "hp": 72,
+      "speed": 128,
+      "yin_atk": 97,
+      "yang_atk": 92,
+      "yin_def": 46,
+      "yang_def": 77
+    },
     "signature_move": "shadow_twilight_phase",
     "trait": "trait_shadow_fade_step",
     "concept": {
@@ -1380,25 +2000,47 @@
     "stage": "adult",
     "size_class": "L",
     "ai_style": "charge",
-    "niches": [{"niche": "niche_patrol_hunter", "weight": 3}, {"niche": "niche_ground_grazer", "weight": 1}, {"niche": "niche_carrion_scavenger", "weight": 1}],
+    "niches": [
+      {
+        "niche": "niche_patrol_hunter",
+        "weight": 3
+      },
+      {
+        "niche": "niche_ground_grazer",
+        "weight": 1
+      },
+      {
+        "niche": "niche_carrion_scavenger",
+        "weight": 1
+      }
+    ],
     "evolves_to": null,
     "evolution": null,
     "resist": {
-      "metal": 15,
-      "wood": 0,
-      "water": 0,
-      "fire": 0,
-      "earth": 0,
-      "ice": 20,
-      "wind": 0,
-      "thunder": 0,
-      "light": -40,
-      "shadow": 50
+      "metal": 116,
+      "wood": 93,
+      "water": 93,
+      "fire": 56,
+      "earth": 93,
+      "ice": 121,
+      "wind": 93,
+      "thunder": 93,
+      "light": 32,
+      "shadow": 140
     },
     "mastery": {
-      "shadow": 40
+      "shadow": 125,
+      "ice": 100,
+      "metal": 75
     },
-    "stats": {"hp": 103, "speed": 120, "yin_atk": 112, "yang_atk": 67, "yin_def": 99, "yang_def": 99},
+    "stats": {
+      "hp": 80,
+      "speed": 160,
+      "yin_atk": 123,
+      "yang_atk": 110,
+      "yin_def": 55,
+      "yang_def": 86
+    },
     "signature_move": "shadow_wraith_charge",
     "trait": "trait_shadow_fade_step",
     "concept": {

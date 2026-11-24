@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -9,6 +10,8 @@ namespace Cosmimera.Bootstrap.Demo
     internal sealed class InputHints : IDisposable
     {
         private readonly InputActionMap[] _maps;
+        private readonly Dictionary<InputAction, string> _kbLabels = new Dictionary<InputAction, string>(16);
+        private readonly Dictionary<InputAction, string> _padLabels = new Dictionary<InputAction, string>(16);
         private InputDevice _lastDevice;
 
         internal InputHints(params InputActionMap[] maps)
@@ -16,14 +19,26 @@ namespace Cosmimera.Bootstrap.Demo
             _maps = maps;
             InputSystem.onEvent += ReadInput;
             InputSystem.onDeviceChange += DeviceChanged;
+            InputSystem.onActionChange += ActionChanged;
         }
 
         internal bool UsesGamepad => _lastDevice is Gamepad && _lastDevice.added && _lastDevice.enabled;
 
         internal void Inherit(InputHints previous) => _lastDevice = previous._lastDevice;
 
-        internal string BindingLabel(InputAction action) =>
-            action.GetBindingDisplayString(group: UsesGamepad ? "Gamepad" : "Keyboard&Mouse");
+        internal string BindingLabel(InputAction action)
+        {
+            if (action == null) return string.Empty;
+            bool pad = UsesGamepad;
+            Dictionary<InputAction, string> cache = pad ? _padLabels : _kbLabels;
+            if (!cache.TryGetValue(action, out string label))
+            {
+                label = action.GetBindingDisplayString(group: pad ? "Gamepad" : "Keyboard&Mouse");
+                cache[action] = label;
+            }
+
+            return label;
+        }
 
         private void ReadInput(InputEventPtr input, InputDevice device)
         {
@@ -66,12 +81,22 @@ namespace Cosmimera.Bootstrap.Demo
                 change == InputDeviceChange.Disconnected || change == InputDeviceChange.Disabled)) _lastDevice = null;
         }
 
+        private void ActionChanged(object obj, InputActionChange change)
+        {
+            if (change == InputActionChange.BoundControlsChanged)
+            {
+                _kbLabels.Clear();
+                _padLabels.Clear();
+            }
+        }
+
         /// <summary>Stops observing the owned session's actions.</summary>
         /// <remarks>Pre: none. Post: subsequent input cannot change hints. Side effects: removes input callbacks.</remarks>
         public void Dispose()
         {
             InputSystem.onEvent -= ReadInput;
             InputSystem.onDeviceChange -= DeviceChanged;
+            InputSystem.onActionChange -= ActionChanged;
         }
     }
 }

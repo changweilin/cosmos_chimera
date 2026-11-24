@@ -69,8 +69,25 @@ namespace Cosmimera.Creatures.Tests
             {
                 int b = (int)c["base"];
                 CreatureStats s = new CreatureStats(b, b, b, b, b, b).AtLevel((int)c["level"]);
+                Assert.AreEqual((int)c["value"], s.Speed, $"base {b} level {c["level"]}");
+                Assert.AreEqual(b, s.YangDef);
+            }
+        }
+
+        [Test]
+        public void Scaled_hp_follows_the_exponential_level_curve()
+        {
+            foreach (JToken c in Golden()["scaled_hp"])
+            {
+                int b = (int)c["base"];
+                CreatureStats s = new CreatureStats(b, b, b, b, b, b).AtLevel((int)c["level"]);
                 Assert.AreEqual((int)c["value"], s.Hp, $"base {b} level {c["level"]}");
-                Assert.AreEqual(s.Hp, s.YangDef);
+            }
+
+            JArray ppm = (JArray)Golden()["level_scale_ppm"];
+            for (int level = 1; level <= 100; level++)
+            {
+                Assert.AreEqual((int)ppm[level], LevelCurve.Ppm(level), $"level {level}");
             }
         }
 

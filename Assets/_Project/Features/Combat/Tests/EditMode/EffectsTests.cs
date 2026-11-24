@@ -347,8 +347,9 @@ namespace Cosmimera.Combat.Tests
             Assert.AreEqual(DamageModel.MaxMasteryPercent, EffectMath.EffectiveMastery(20, long.MaxValue / 2));
             Assert.Throws<ContractException>(() => EffectMath.EffectiveMastery(-1, 0));
 
-            Assert.AreEqual(100, EffectMath.EffectiveResist(90, 30));
-            Assert.AreEqual(-100, EffectMath.EffectiveResist(-90, -30));
+            Assert.AreEqual(DamageModel.ResistClamp, EffectMath.EffectiveResist(DamageModel.ResistClamp - 10, 30));
+            Assert.AreEqual(-DamageModel.ResistClamp, EffectMath.EffectiveResist(-DamageModel.ResistClamp + 10, -30));
+            Assert.AreEqual(120, EffectMath.EffectiveResist(90, 30));
             Assert.AreEqual(5, EffectMath.EffectiveResist(25, -20));
         }
 

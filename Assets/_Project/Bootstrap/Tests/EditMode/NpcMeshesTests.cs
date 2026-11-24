@@ -185,6 +185,74 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Heads_vary_within_a_race_while_its_silhouette_holds()
+        {
+            NpcRace[] featured =
+            {
+                NpcRace.Elf, NpcRace.Dwarf, NpcRace.Goblin, NpcRace.Orc, NpcRace.Avian, NpcRace.Merfolk, NpcRace.Lizardfolk,
+                NpcRace.Dragonkin, NpcRace.Zombie, NpcRace.Skeleton, NpcRace.Werewolf, NpcRace.Demon,
+            };
+            float humanBehind = -Build(Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian)).bounds.min.z;
+            float humanWidth = Build(Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian)).bounds.size.x;
+            foreach (NpcRace race in featured)
+            {
+                var heads = new HashSet<(int, int)>();
+                for (ulong seed = 1; seed <= 12; seed++)
+                {
+                    NpcSpec spec = Spec(race, NpcRole.None, ArchEra.Agrarian, seed: seed);
+                    Mesh mesh = Build(spec);
+                    AssertContracts(mesh, spec);
+                    // Top of the head region, to the centimetre: horns, crests, ears and hair all change it.
+                    heads.Add((mesh.vertexCount, Mathf.RoundToInt(mesh.bounds.max.y * 100f)));
+                    if (race == NpcRace.Lizardfolk)
+                    {
+                        Assert.That(-mesh.bounds.min.z, Is.GreaterThan(humanBehind + 0.3f), "every lizardfolk keeps its tail");
+                    }
+
+                    if (race == NpcRace.Demon)
+                    {
+                        Assert.That(mesh.bounds.size.x, Is.GreaterThan(humanWidth + 0.3f), "every demon keeps its wings");
+                    }
+                }
+
+                Assert.That(heads.Count, Is.GreaterThanOrEqualTo(5), $"{race} heads should not come from a single mould");
+            }
+        }
+
+        [Test]
+        public void Faces_and_builds_spread_around_the_race_mean_at_equal_height_and_weight()
+        {
+            // Same race, sex, age, height and weight: only the person's seed differs, so every difference below comes from
+            // the per-person normal draws of face shape and muscle/fat split.
+            var faces = new HashSet<int>();
+            var depths = new List<float>();
+            for (ulong seed = 1; seed <= 16; seed++)
+            {
+                NpcSpec spec = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian, seed: seed);
+                Mesh mesh = Build(spec);
+                AssertContracts(mesh, spec);
+                float neck = NpcMeshes.HeightM(spec) * 0.82f;
+                Vector3 lo = Vector3.positiveInfinity, hi = Vector3.negativeInfinity;
+                foreach (Vector3 v in mesh.vertices)
+                {
+                    if (v.y > neck && v.z > 0f)
+                    {
+                        lo = Vector3.Min(lo, v);
+                        hi = Vector3.Max(hi, v);
+                    }
+                }
+
+                // Front half of the head to the millimetre: chin, nose, cheeks and brows all move it.
+                faces.Add(Mathf.RoundToInt((hi.z - lo.z) * 1000f) * 1000 + Mathf.RoundToInt((neck - lo.y) * 1000f));
+                depths.Add(mesh.bounds.size.z);
+            }
+
+            Assert.That(faces.Count, Is.GreaterThanOrEqualTo(12), "faces of one people should not repeat");
+            depths.Sort();
+            Assert.That(depths[depths.Count - 1] - depths[0], Is.GreaterThan(0.02f), "equal weight still splits into different builds");
+        }
+
+        [Test]
         public void Age_health_and_build_show_in_the_figure()
         {
             NpcSpec adult = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian);
@@ -241,6 +309,306 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(total, Is.GreaterThan(100));
             Assert.That(third, Is.InRange(total * 15 / 100, total * 45 / 100), "about the tertiary share borrows from the third style");
             Assert.That(shareSum / total, Is.EqualTo(0.4f).Within(0.08f), "shares centre on the settlement's weight");
+        }
+
+        [Test]
+        public void A_settlement_shares_one_culture_and_another_settlement_has_its_own()
+        {
+            ArchMix mixed = new ArchMix(ArchRegion.Lava, ArchEra.Industrial, 0.4f, 0.4f, 0.1f);
+            var byHome = new Dictionary<int, ulong>();
+            foreach (RunResident r in SampleResidents())
+            {
+                ulong culture = NpcMeshes.SpecFor(r, ArchRegion.Ice, ArchEra.Agrarian, mixed).CultureSeed;
+                Assert.That(culture, Is.Not.Zero);
+                if (byHome.TryGetValue(r.Settlement, out ulong seen))
+                {
+                    Assert.That(culture, Is.EqualTo(seen), "neighbours share their town's culture");
+                }
+                else
+                {
+                    byHome[r.Settlement] = culture;
+                }
+            }
+
+            Assert.That(new HashSet<ulong>(byHome.Values).Count, Is.EqualTo(byHome.Count), "no two towns share a culture");
+        }
+
+        [Test]
+        public void A_culture_changes_the_crowd_but_keeps_the_mesh_contracts()
+        {
+            // One person, many towns: the same seed must still dress differently under different cultures.
+            var colours = new HashSet<Color32>();
+            var sizes = new HashSet<int>();
+            for (ulong culture = 1; culture <= 24; culture++)
+            {
+                NpcSpec baseSpec = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian);
+                var spec = new NpcSpec(baseSpec.Race, baseSpec.Role, baseSpec.Sex, baseSpec.Age01, baseSpec.Health01, baseSpec.StatureZ,
+                    baseSpec.BulkZ, baseSpec.Region, baseSpec.Era, baseSpec.BorrowRegion, baseSpec.BorrowEra, baseSpec.BorrowShare,
+                    baseSpec.Seed, 0.5f, culture);
+                Mesh mesh = Build(spec);
+                AssertContracts(mesh, spec);
+                Color mean = Color.clear;
+                foreach (Color c in mesh.colors)
+                {
+                    mean += c / mesh.vertexCount;
+                }
+
+                colours.Add(mean);
+                sizes.Add(mesh.vertexCount);
+            }
+
+            Assert.That(colours.Count, Is.GreaterThan(8), "dye shifts reach the cloth");
+            Assert.That(sizes.Count, Is.GreaterThan(3), "favoured cuts and hairstyles change the silhouette");
+        }
+
+        [Test]
+        public void Builds_vary_in_proportion_not_only_in_size()
+        {
+            // Same height: a heavy and a lean frame of one stature differ in width far more than ±1 σ of girth alone would.
+            NpcSpec lean = Spec(NpcRace.Human, NpcRole.Scholar, ArchEra.Agrarian, bulk: -1.5f);
+            NpcSpec heavy = Spec(NpcRace.Human, NpcRole.Scholar, ArchEra.Agrarian, bulk: 1.5f);
+            Assert.That(NpcMeshes.HeightM(heavy), Is.EqualTo(NpcMeshes.HeightM(lean)));
+            Assert.That(Build(heavy).bounds.size.z, Is.GreaterThan(Build(lean).bounds.size.z * 1.05f));
+        }
+
+        private static NpcSpec WithHeritage(in NpcSpec s, NpcHeritage heritage, ulong seed) =>
+            new NpcSpec(s.Race, s.Role, s.Sex, s.Age01, s.Health01, s.StatureZ, s.BulkZ, s.Region, s.Era, s.BorrowRegion, s.BorrowEra,
+                s.BorrowShare, seed, s.Textile01, s.CultureSeed, heritage);
+
+        [Test]
+        public void Heritage_grows_rarer_with_every_added_line_and_keeps_its_invariants()
+        {
+            const int N = 6000;
+            var blood = new int[NpcHeritage.MaxLines + 1];
+            var culture = new int[NpcHeritage.MaxLines + 1];
+            for (ulong seed = 0; seed < N; seed++)
+            {
+                NpcHeritage h = NpcMeshes.HeritageFor(NpcRace.Human, ArchRegion.Verdant, ArchEra.Agrarian, seed);
+                blood[h.BloodLines]++;
+                culture[h.CultureLines]++;
+                Assert.That(h.BloodShareTotal, Is.LessThanOrEqualTo(NpcHeritage.MaxBloodShare + 1e-5f));
+                Assert.That(h.CultureShareTotal, Is.LessThanOrEqualTo(NpcHeritage.MaxCultureShare + 1e-5f));
+                var races = new HashSet<NpcRace>();
+                for (int i = 0; i < h.BloodLines; i++)
+                {
+                    Assert.That(h.BloodShare(i), Is.GreaterThanOrEqualTo(1f / 16f - 1e-5f));
+                    Assert.That(i == 0 || h.BloodShare(i) <= h.BloodShare(i - 1), Is.True, "strongest line first");
+                    Assert.That(h.BloodRace(i), Is.Not.EqualTo(NpcRace.Human).And.Not.EqualTo(NpcRace.Zombie).And.Not.EqualTo(NpcRace.Skeleton));
+                    Assert.That(races.Add(h.BloodRace(i)), Is.True, "each blood line once");
+                }
+
+                for (int i = 0; i < h.CultureLines; i++)
+                {
+                    Assert.That(h.CultureEra(i), Is.Not.EqualTo(ArchEra.Ancient));
+                    Assert.That((h.CultureRegion(i), h.CultureEra(i)), Is.Not.EqualTo((ArchRegion.Verdant, ArchEra.Agrarian)));
+                }
+
+                Assert.That(NpcMeshes.HeritageFor(NpcRace.Skeleton, ArchRegion.Verdant, ArchEra.Agrarian, seed).BloodLines, Is.Zero,
+                    "the undead carry no blood");
+            }
+
+            Assert.That((N - blood[0]) / (float)N, Is.EqualTo(NpcMeshes.MixedBloodOdds).Within(0.02f));
+            Assert.That((N - culture[0]) / (float)N, Is.EqualTo(NpcMeshes.FamilyCultureOdds).Within(0.02f));
+            for (int k = 1; k < NpcHeritage.MaxLines; k++)
+            {
+                Assert.That(blood[k + 1], Is.LessThan(blood[k]), $"{k + 1} blood lines rarer than {k}");
+                Assert.That(culture[k + 1], Is.LessThan(culture[k]), $"{k + 1} family cultures rarer than {k}");
+            }
+
+            Assert.That(blood[NpcHeritage.MaxLines] + culture[NpcHeritage.MaxLines], Is.GreaterThan(0), "the rarest mixes still occur");
+            Assert.That(NpcMeshes.HeritageFor(NpcRace.Elf, ArchRegion.Ice, ArchEra.Future, 7),
+                Is.EqualTo(NpcMeshes.HeritageFor(NpcRace.Elf, ArchRegion.Ice, ArchEra.Future, 7)), "reproducible");
+        }
+
+        [Test]
+        public void Mixed_blood_blends_the_frame_and_keeps_the_mesh_contracts_for_every_pair()
+        {
+            NpcSpec human = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian);
+            NpcSpec halfDwarf = WithHeritage(human, NpcHeritage.Pure.WithBlood(NpcRace.Dwarf, 0.5f), human.Seed);
+            NpcSpec halfElf = WithHeritage(human, NpcHeritage.Pure.WithBlood(NpcRace.Elf, 0.5f), human.Seed);
+            float pure = NpcMeshes.HeightM(human);
+            Assert.That(NpcMeshes.HeightM(halfDwarf), Is.InRange(NpcMeshes.HeightM(Spec(NpcRace.Dwarf, NpcRole.None, ArchEra.Agrarian)), pure));
+            Assert.That(NpcMeshes.HeightM(halfElf), Is.GreaterThan(pure));
+            Assert.That(Build(halfElf).bounds, Is.Not.EqualTo(Build(human).bounds), "the elf line shows");
+
+            foreach (NpcRace own in Enum.GetValues(typeof(NpcRace)))
+            {
+                if (own == NpcRace.Zombie || own == NpcRace.Skeleton)
+                {
+                    continue;
+                }
+
+                foreach (NpcRace other in Enum.GetValues(typeof(NpcRace)))
+                {
+                    if (other == own || other == NpcRace.Zombie || other == NpcRace.Skeleton)
+                    {
+                        continue;
+                    }
+
+                    NpcSpec spec = WithHeritage(Spec(own, NpcRole.None, ArchEra.Mercantile, sex: (NpcSex)((int)other & 1)),
+                        NpcHeritage.Pure.WithBlood(other, 0.5f), (ulong)((int)own * 31 + (int)other));
+                    AssertContracts(Build(spec), spec);
+                }
+            }
+
+            NpcSpec three = WithHeritage(human, NpcHeritage.Pure.WithBlood(NpcRace.Orc, 0.25f).WithBlood(NpcRace.Avian, 0.15f)
+                .WithBlood(NpcRace.Angel, 0.1f).WithCulture(ArchRegion.Lava, ArchEra.Future, 0.3f), 99);
+            AssertContracts(Build(three), three);
+        }
+
+        [Test]
+        public void A_family_culture_dresses_some_garments_in_its_own_era()
+        {
+            // Future light bands are the one garment trace a primal village never makes on its own.
+            int lit = 0, plainLit = 0;
+            const int Count = 40;
+            for (ulong seed = 1; seed <= Count; seed++)
+            {
+                NpcSpec plain = Spec(NpcRace.Human, NpcRole.None, ArchEra.Primal, seed: seed);
+                NpcSpec family = WithHeritage(plain, NpcHeritage.Pure.WithCulture(ArchRegion.Crystal, ArchEra.Future, 0.6f), seed);
+                plainLit += Build(plain).GetTriangles(NpcMeshes.GlowSubMesh).Length > 0 ? 1 : 0;
+                lit += Build(family).GetTriangles(NpcMeshes.GlowSubMesh).Length > 0 ? 1 : 0;
+            }
+
+            Assert.That(plainLit, Is.Zero);
+            Assert.That(lit, Is.InRange(Count / 5, Count - 1), "some garments, not the whole wardrobe");
+        }
+
+        [Test]
+        public void All_six_face_shapes_occur_and_lean_with_sex_fat_and_race()
+        {
+            int Count(NpcRace race, NpcSex sex, float bulk, NpcMeshes.FaceShape shape)
+            {
+                int n = 0;
+                for (ulong seed = 0; seed < 400; seed++)
+                {
+                    n += NpcMeshes.ShapeOf(Spec(race, NpcRole.None, ArchEra.Agrarian, sex: sex, bulk: bulk, seed: seed)) == shape ? 1 : 0;
+                }
+
+                return n;
+            }
+
+            foreach (NpcMeshes.FaceShape shape in Enum.GetValues(typeof(NpcMeshes.FaceShape)))
+            {
+                Assert.That(Count(NpcRace.Human, NpcSex.Female, 0f, shape) + Count(NpcRace.Human, NpcSex.Male, 0f, shape), Is.GreaterThan(10),
+                    $"{shape} faces occur");
+            }
+
+            Assert.That(Count(NpcRace.Human, NpcSex.Male, 0f, NpcMeshes.FaceShape.Oval),
+                Is.GreaterThan(Count(NpcRace.Human, NpcSex.Male, 0f, NpcMeshes.FaceShape.Triangle)));
+            Assert.That(Count(NpcRace.Human, NpcSex.Male, 0f, NpcMeshes.FaceShape.Square),
+                Is.GreaterThan(Count(NpcRace.Human, NpcSex.Female, 0f, NpcMeshes.FaceShape.Square)));
+            Assert.That(Count(NpcRace.Human, NpcSex.Male, 3f, NpcMeshes.FaceShape.Round),
+                Is.GreaterThan(Count(NpcRace.Human, NpcSex.Male, -3f, NpcMeshes.FaceShape.Round)));
+            Assert.That(Count(NpcRace.Orc, NpcSex.Male, 0f, NpcMeshes.FaceShape.Square),
+                Is.GreaterThan(Count(NpcRace.Elf, NpcSex.Male, 0f, NpcMeshes.FaceShape.Square)));
+        }
+
+        [Test]
+        public void Face_shapes_are_the_heads_own_outline()
+        {
+            // Mean half widths (temple, cheekbone, jaw, chin) and chin-to-crown height per shape over many people: each
+            // shape must hold its defining proportion on average while individuals still vary around it.
+            var sum = new Dictionary<NpcMeshes.FaceShape, (int n, float temple, float cheek, float jaw, float chin, float height)>();
+            for (ulong seed = 0; seed < 1500; seed++)
+            {
+                var head = NpcMeshes.HeadOf(Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian, sex: (NpcSex)(seed & 1), seed: seed));
+                Assert.That(head.temple > 0f && head.cheek > 0f && head.jaw > 0f && head.chin > 0f, Is.True);
+                sum.TryGetValue(head.shape, out var s);
+                sum[head.shape] = (s.n + 1, s.temple + head.temple, s.cheek + head.cheek, s.jaw + head.jaw, s.chin + head.chin, s.height + head.height);
+            }
+
+            (float temple, float cheek, float jaw, float chin, float height) Mean(NpcMeshes.FaceShape shape)
+            {
+                var s = sum[shape];
+                return (s.temple / s.n, s.cheek / s.n, s.jaw / s.n, s.chin / s.n, s.height / s.n);
+            }
+
+            var oval = Mean(NpcMeshes.FaceShape.Oval);
+            var round = Mean(NpcMeshes.FaceShape.Round);
+            var longFace = Mean(NpcMeshes.FaceShape.Long);
+            var square = Mean(NpcMeshes.FaceShape.Square);
+            var triangle = Mean(NpcMeshes.FaceShape.Triangle);
+            var heart = Mean(NpcMeshes.FaceShape.InvertedTriangle);
+            Assert.That(longFace.height, Is.GreaterThan(oval.height * 1.08f), "long: taller face");
+            Assert.That(round.height, Is.LessThan(oval.height * 0.95f), "round: shorter face");
+            Assert.That(round.jaw / round.height, Is.GreaterThan(longFace.jaw / longFace.height * 1.2f), "round: wide for its length");
+            Assert.That(square.jaw / square.cheek, Is.GreaterThan(oval.jaw / oval.cheek * 1.12f), "square: the jaw keeps the cheek's width");
+            Assert.That(square.chin, Is.GreaterThan(oval.chin * 1.25f), "square: broad chin");
+            Assert.That(triangle.jaw, Is.GreaterThan(triangle.temple), "triangle: jaw wider than the brow");
+            Assert.That(heart.temple, Is.GreaterThan(heart.jaw * 1.3f), "inverted triangle: brow far wider than the jaw");
+            Assert.That(heart.chin, Is.LessThan(oval.chin * 0.75f), "inverted triangle: pointed chin");
+        }
+
+        [Test]
+        public void Eyes_sit_in_the_face_instead_of_standing_out_of_it()
+        {
+            // Whites and iris are told apart by hue ratio: facet shading scales a vertex colour, never its ratios.
+            static bool Like(Color c, int rgb)
+            {
+                float r = ((rgb >> 16) & 0xFF) / 255f, g = ((rgb >> 8) & 0xFF) / 255f, b = (rgb & 0xFF) / 255f;
+                return c.r > 1e-3f && math.abs(c.g / c.r - g / r) < 0.004f && math.abs(c.b / c.r - b / r) < 0.004f;
+            }
+
+            int[] iris = { 0x2A1A12, 0x3E2616, 0x5A4022, 0x3A5A7A, 0x3E6A44, 0x5A6066 };
+            for (ulong seed = 1; seed <= 8; seed++)
+            {
+                NpcSpec spec = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian, seed: seed);
+                Mesh mesh = Build(spec);
+                float h = NpcMeshes.HeightM(spec), whiteLo = float.MaxValue, whiteHi = float.MinValue, irisHi = float.MinValue;
+                Vector3[] v = mesh.vertices;
+                Color[] c = mesh.colors;
+                for (int i = 0; i < v.Length; i++)
+                {
+                    if (v[i].y < h * 0.82f || v[i].z <= 0f)
+                    {
+                        continue;
+                    }
+
+                    if (Like(c[i], 0xEEE2CF))
+                    {
+                        whiteLo = math.min(whiteLo, v[i].z);
+                        whiteHi = math.max(whiteHi, v[i].z);
+                    }
+                    else if (Array.Exists(iris, t => Like(c[i], t)))
+                    {
+                        irisHi = math.max(irisHi, v[i].z);
+                    }
+                }
+
+                Assert.That(whiteHi, Is.GreaterThan(whiteLo), "whites found");
+                Assert.That(irisHi, Is.GreaterThan(float.MinValue), "iris found");
+                Assert.That(irisHi - whiteHi, Is.InRange(-0.001f, 0.0025f), "the iris is painted on the eye, not a bead in front of it");
+                Assert.That(whiteHi - whiteLo, Is.LessThan(0.014f * h), "whites are shallow lenses, not marbles");
+            }
+        }
+
+        [Test]
+        public void Weight_and_fat_reshape_the_limbs_not_only_the_waist()
+        {
+            // Two people of one height: the heavier one's upper arms and thighs widen the figure more than its joints do.
+            NpcSpec lean = Spec(NpcRace.Human, NpcRole.Scholar, ArchEra.Primal, sex: NpcSex.Female, bulk: -2.5f, seed: 5);
+            NpcSpec heavy = Spec(NpcRace.Human, NpcRole.Scholar, ArchEra.Primal, sex: NpcSex.Female, bulk: 2.5f, seed: 5);
+            Mesh a = Build(lean), b = Build(heavy);
+            AssertContracts(a, lean);
+            AssertContracts(b, heavy);
+            Assert.That(b.bounds.size.x, Is.GreaterThan(a.bounds.size.x * 1.08f));
+            Assert.That(b.bounds.size.z, Is.GreaterThan(a.bounds.size.z * 1.05f));
+        }
+
+        [Test]
+        public void Heritage_contract_violations_throw()
+        {
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.WithBlood(NpcRace.Elf, 0.6f));
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.WithBlood(NpcRace.Elf, 0.2f).WithBlood(NpcRace.Elf, 0.1f));
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.WithBlood(NpcRace.Elf, 0f));
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.WithCulture(ArchRegion.Ice, ArchEra.Future, 0.7f));
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.WithBlood(NpcRace.Elf, 0.1f).WithBlood(NpcRace.Orc, 0.1f)
+                .WithBlood(NpcRace.Dwarf, 0.1f).WithBlood(NpcRace.Angel, 0.1f));
+            Assert.Throws<ContractException>(() => NpcHeritage.Pure.BloodRace(0));
+            NpcSpec human = Spec(NpcRace.Human, NpcRole.None, ArchEra.Agrarian);
+            Assert.Throws<ContractException>(() => WithHeritage(human, NpcHeritage.Pure.WithBlood(NpcRace.Human, 0.2f), 1));
+            Assert.Throws<ContractException>(() => NpcMeshes.HeritageFor((NpcRace)99, ArchRegion.Ice, ArchEra.Future, 1));
         }
 
         // Residents can only be made by the planner; the shipped database gives it a real planet type and wild pool.
@@ -329,6 +697,64 @@ namespace Cosmimera.Bootstrap.Tests
             }
 
             Assert.That(changed, Is.InRange(Count / 5, Count * 4 / 5), "about half the street borrows from the third style");
+        }
+
+        [Test]
+        public void SpecForTrainer_builds_deterministic_valid_meshes_across_all_professions()
+        {
+            var (p, pl, ly, pool) = MakeTrainerPlanet(987);
+            RunTrainers trainers = TrainerPlanner.Generate(p, pl, ly, pool, _ => "forest", null, 12, 24);
+            Assert.That(trainers.Trainers.Count, Is.GreaterThan(0));
+            foreach (RunTrainer t in trainers.Trainers)
+            {
+                NpcSpec a = NpcMeshes.SpecForTrainer(t, ArchRegion.Verdant, ArchEra.Agrarian, 987);
+                NpcSpec b = NpcMeshes.SpecForTrainer(t, ArchRegion.Verdant, ArchEra.Agrarian, 987);
+                Assert.That((a.Race, a.Role, a.Sex, a.Seed), Is.EqualTo((b.Race, b.Role, b.Sex, b.Seed)));
+                Assert.That(a.Role, Is.EqualTo(t.PropRole));
+                Mesh mesh = NpcMeshes.Build(a);
+                try
+                {
+                    Assert.That(mesh.vertexCount, Is.GreaterThan(0));
+                    Assert.That(NpcMeshes.HeightM(a), Is.GreaterThan(0.5f));
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(mesh);
+                }
+            }
+
+            Assert.Throws<ContractException>(() =>
+                NpcMeshes.SpecForTrainer(null, ArchRegion.Verdant, ArchEra.Agrarian, 1));
+        }
+
+        private static (PlanetConfig planet, RunPlan plan, RunLayout layout, List<CreatureDef> pool) MakeTrainerPlanet(ulong seed)
+        {
+            var db = UnityEditor.AssetDatabase.LoadAssetAtPath<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            Assert.That(db, Is.Not.Null);
+            var pool = new List<CreatureDef>();
+            PlanetTypeDef type = null;
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c && !c.LineId.StartsWith("starter_"))
+                {
+                    pool.Add(c);
+                }
+                else if (d is PlanetTypeDef t && (type == null || t.Id == "verdant_planet"))
+                {
+                    type = t;
+                }
+            }
+
+            Assert.That(pool.Count, Is.GreaterThan(0));
+            Assert.That(type, Is.Not.Null);
+            var planet = new PlanetConfig(640f, float3.zero);
+            var vocab = new RunPlanVocabulary(
+                new[] { "forest", "grassland", "river_valley", "plateau" },
+                new[] { "affix_a", "affix_b", "affix_c", "affix_d" },
+                new[] { "chain_a" });
+            RunPlan plan = RunPlanner.Generate(planet, seed, type, CreatureStage.Adult, pool, vocab, null);
+            RunLayout layout = SettlementPlanner.Generate(planet, plan, null);
+            return (planet, plan, layout, pool);
         }
     }
 }

@@ -1,0 +1,19 @@
+{
+    "name": "Cosmimera.Save.Editor",
+    "rootNamespace": "Cosmimera.Save.Editor",
+    "references": [
+        "Cosmimera.Save",
+        "Cosmimera.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

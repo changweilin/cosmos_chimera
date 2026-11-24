@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wood_betel_sprout
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wood_betel_sprout
+  lineId: line_wood_crownvine
+  stage: 0
+  sizeClass: 4
+  aiStyle: 3
+  niches:
+  - niche: {fileID: 11400000, guid: ef7eeb9258091344fa4e98200f1821aa, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 15ae3551e17c51b4e8ccac0140008d91, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 6e8d0904dcb776a4d889623b9de52816, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 11400000, guid: c282a1da31d9a3e47b1d5ddf5235a789, type: 2}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 22
+  evolutionMaterials:
+  - element: 1
+    tier: 1
+    qty: 3
+  resist: 6b0000006b0000008d000000310000006b000000480000006b0000006a000000820000007c000000
+  mastery:
+  - element: 1
+    value: 125
+  - element: 2
+    value: 96
+  - element: 8
+    value: 64
+  stats:
+    hp: 92
+    speed: 36
+    yinAtk: 92
+    yangAtk: 32
+    yinDef: 92
+    yangDef: 56
+  signatureMove: {fileID: 11400000, guid: cdceafc6c4259524a8567d1695a6fc28, type: 2}
+  trait: {fileID: 11400000, guid: d4ebe00692a4ede429094ca87d6a5282, type: 2}
+  fieldUtility: 36
+  conceptJson: "{\"base\":\"\u638C\u5FC3\u5927\u5C0F\u7684\u5AE9\u82BD\u5C0F\u6C34\u86C7
+    \xD7 \u982D\u9802\u542B\u82DE\u6AB3\u6994\u82B1\u679D\",\"stage_look\":\"\u76E4\u7E5E\u5728\u679D\u689D\u4E0A\u7684\u7FE1\u7FE0\u7D30\u86C7\uFF0C\u982D\u9802\u7DBB\u958B\u4E00\u675F\u6F54\u767D\u6AB3\u6994\u5C0F\u82B1\u8207\u7D30\u7D72\u98C4\u5E36\",\"archetype\":\"arch_neang_neak\",\"region\":\"\u6771\u5357\u4E9E\",\"motifs_used\":[\"\u4E03\u982D\u90A3\u4F3D\u51A0\u5195\",\"\u6AB3\u6994\u82B1\u679D\",\"\u7D72\u7DA2\u62AB\u80A9\"],\"role\":\"\u8FD1\u6230\u7E8C\u6230\uFF1A\u8CBC\u8EAB\u524D\u65B9\u6728\u523A\u6253\u64CA\uFF08\u65BD\u653E\u6728\u62DB\u56DE\u5FA9\u81EA\u8EAB\u751F\u547D\uFF09\",\"palette\":\"\u84BC\u7FE1\u7FE0\u3001\u5AE9\u82BD\u9EC3\u7DA0\u3001\u8C61\u7259\u767D\"}"
+  needsSensitivityReview: 0

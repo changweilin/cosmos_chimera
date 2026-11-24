@@ -16,11 +16,13 @@
 | P1-09 | 草/植被 GPU instancing + 風場 | SONNET | OPUS | 10 萬株草 60 fps | 🟨 |
 | P1-10 | 不同 R（320/640/1280）參數切換測試 | SONNET | — | 三種尺寸皆可繞行，地平線符合公式 | ✅ |
 | P1-11 | 地形材質混合＋程式生成筆觸貼圖（`design/vision.md#美術投資` 第 2 項）：`StrokeTexture`（r 筆觸／g 長紋／b 顆粒，可拼接）、`CosmiBiome.hlsl` 三平面取樣；草地雙色筆觸、沙紋、岩面鑿痕與裂紋、雪堆、草與岩之間的裸土帶 | FABLE | 人工 | 測試台截圖由使用者挑選；草與地面同一筆觸場；`_StrokeStrength` 0 時無筆觸 | 🟨 |
-| P1-12 | GPU instancing 植被：草海密度 ×10（第 1 項） | 待定 | OPUS | Steam Deck 800p ≥ 30 fps；截圖驗收 | ⬜ |
-| P1-13 | 水面：岸邊泡沫、折射、焦散（第 3 項） | 待定 | 人工 | 截圖驗收 | ⬜ |
+| P1-12 | GPU instancing 植被：草海密度 ×10（第 1 項）＋花海。已做（`GrassField`）：14 m 內加一圈密草（每格 16² 叢 × 30 葉，約 ×10 葉片／m²，只在近處花這個成本）；花海遮罩（約 80 m 一片、佔開闊草地約三分之一）內把基本草叢換成花叢、近圈草變稀，地形在同一遮罩上點染花色讓 30 m 外仍看得到花海；星球花色與強度依季節（`PlanetLook.Meadow`，春 1／夏 0.75／秋 0.3／冬 0）。未驗：Steam Deck 幀率（最壞約 2.5–3 M 草頂點） | Claude Opus | OPUS | Steam Deck 800p ≥ 30 fps；截圖驗收 | 🟨 |
+| P1-13 | 水面：岸邊泡沫、折射、焦散（第 3 項）；風浪與浪花（`design/planet-world.md#海浪`：浪向＝風向、浪高 ∝ 風²、白頭浪、岸邊碎浪） | Claude Opus | 人工 | 風浪＋浪花已完成：`SeaWavesTests`（浪高 ∝ 風²、深水波速順風、轉向不跳）；截圖 `Logs/sea-{calm,gale,gale-cliff}.png`（`SeaCaptureTests`，`COSMIMERA_CAPTURE=1`）；折射、焦散未做 | 🟨 |
 | P1-14 | 體積霧與光束（第 4 項） | 待定 | 人工 | 截圖驗收；Steam Deck ≥ 30 fps | ⬜ |
 | P1-15 | 遠景 LOD／impostor（第 5 項）：`FarScenery` 把 90 m 外到霧裡（≤ 260 m）的樹／大岩／石柱／晶簇合併成低面數輪廓分塊網格（`FarSceneryMeshes`，每物件 10–42 面，每幀最多建 2 塊），`ToonScenery` `_FarFade` 在近景範圍與外緣縮回地面；建築原本就全星球常駐（`SettlementView`） | FABLE | OPUS | 90 m 外仍看得到樹與建築輪廓；截圖驗收（`Logs/geology-*-far{,-before}.png`）；Steam Deck 幀率未量 | ✅ |
 | P1-16 | 匯入美術模型與貼圖取代程序網格（第 6 項；`design/art-asset-pipeline.md`，3D 工具選型已移交其他專案） | 待定 | 人工 | 逐類資產驗收 | ⬜ |
+| P1-17 | 程序化器物外觀（`design/gear-looks.md`）：a 規則層 `GearLooks.Sample`；b 背包逐件實例＋外觀 seed 存檔遷移；c 佔位網格（NPC 穿戴、紙娃娃、虛擬大手、場景擺設）；d 格擋護盾特徵與宙獸飾品掛飾；e 手工部件庫（隨 P1-16） | OPUS | SOL | a 同 seed 同結果且各軸可辨的 EditMode 測試；c 起截圖驗收 | 🟦 |
+| P1-18 | 程序化地形與場景物件打磨：岩石造型擴充、樹種擴充、懸崖岩面、河床（卵石、沙洲、濕岸）。已做：樹種（樺、柳、松、棕櫚）、岩石造型（岩堆、板岩片、砂岩層、卵石堆、溶溝），河床（`../design/planet-world.md#河床`）、懸崖岩面（`#懸崖`） | Claude Opus | 人工 | 同 seed 同結果；測試台截圖由使用者挑選 | 🟨 |
 
 ## 未收尾紀錄
 [log/phase-1.md](log/phase-1.md)（partial／blocked 才寫；舊紀錄為封存）。

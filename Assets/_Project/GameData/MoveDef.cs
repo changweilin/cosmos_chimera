@@ -91,8 +91,8 @@ namespace Cosmimera.GameData
         public EffectDef Effect => hasEffect ? effect : null;
 
         /// <summary>Whether <see cref="Effect"/> lasts for a window rather than resolving instantly.</summary>
-        /// <remarks>Pre: none. Post: true iff Effect is non-null and not HealPercentMaxHp. Side effects: none.</remarks>
-        public bool HasEffectDuration => hasEffect && effect.Type != EffectType.HealPercentMaxHp;
+        /// <remarks>Pre: none. Post: true iff Effect is non-null and neither HealPercentMaxHp nor ApplyAilment. Side effects: none.</remarks>
+        public bool HasEffectDuration => hasEffect && effect.Type != EffectType.HealPercentMaxHp && effect.Type != EffectType.ApplyAilment;
 
         /// <summary>How long the effect lasts on each target it lands on, in milliseconds.</summary>
         /// <remarks>

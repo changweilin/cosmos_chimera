@@ -4,10 +4,12 @@ Shader "Cosmimera/ToonOutlined"
     Properties
     {
         _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
+        _BaseMap ("Base Map", 2D) = "white" {}
         _Shadow ("Shadow Tint", Color) = (0.55, 0.6, 0.78, 1)
         _Bands ("Light Bands", Float) = 2
         _OutlineColor ("Outline Color", Color) = (0.08, 0.06, 0.1, 1)
         _OutlineWidth ("Outline Width (m)", Float) = 0.025
+        _OutlineDepthBias ("Outline Depth Bias (m)", Float) = 0
     }
 
     SubShader
@@ -19,12 +21,16 @@ Shader "Cosmimera/ToonOutlined"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
+            float4 _BaseMap_ST;
             half4 _Shadow;
             float _Bands;
             half4 _OutlineColor;
             float _OutlineWidth;
+            float _OutlineDepthBias;
         CBUFFER_END
-        struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
+        // Optional albedo texture (ACG character hair strands, irises); the default white leaves untextured users unchanged.
+        TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+        struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
         ENDHLSL
 
         Pass
@@ -37,8 +43,10 @@ Shader "Cosmimera/ToonOutlined"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #include "CosmiAtmosphere.hlsl"
-            struct Varyings { float4 positionCS : SV_POSITION; float3 normalWS : TEXCOORD0; float fog : TEXCOORD1; float3 positionWS : TEXCOORD2; };
+            struct Varyings { float4 positionCS : SV_POSITION; float3 normalWS : TEXCOORD0; float fog : TEXCOORD1; float3 positionWS : TEXCOORD2; float2 uv : TEXCOORD3; };
             Varyings Vert(Attributes i)
             {
                 Varyings o;
@@ -47,6 +55,7 @@ Shader "Cosmimera/ToonOutlined"
                 o.positionWS = p.positionWS;
                 o.normalWS = TransformObjectToWorldNormal(i.normalOS);
                 o.fog = ComputeFogFactor(p.positionCS.z);
+                o.uv = TRANSFORM_TEX(i.uv, _BaseMap);
                 return o;
             }
             half4 Frag(Varyings i) : SV_Target
@@ -55,8 +64,10 @@ Shader "Cosmimera/ToonOutlined"
                 Light light = GetMainLight(TransformWorldToShadowCoord(i.positionWS));
                 // Same light, cloud shadow and haze as the ground they stand on (CosmiAtmosphere.hlsl), so props and
                 // creatures sit in the scene instead of on top of it.
-                half3 lit = CosmiToon(_BaseColor.rgb, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
+                half3 albedo = _BaseColor.rgb * SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).rgb;
+                half3 lit = CosmiToon(albedo, n, i.positionWS, light.color, light.direction, light.shadowAttenuation,
                     _Shadow.rgb, _Bands, SampleSH(n));
+                lit += CosmiPointLights(albedo, n, i.positionWS, i.positionCS);
                 // Rim: a thin sky-coloured edge on the sunward side separates silhouettes from hazy backgrounds.
                 float3 view = normalize(_WorldSpaceCameraPos - i.positionWS);
                 float rim = smoothstep(0.62, 0.78, 1.0 - saturate(dot(n, view))) * saturate(dot(n, light.direction) + 0.3);
@@ -77,8 +88,16 @@ Shader "Cosmimera/ToonOutlined"
             #pragma fragment Frag
             float4 Vert(Attributes i) : SV_POSITION
             {
+                if (_OutlineWidth <= 0.0)
+                {
+                    return float4(0, 0, 0, 0);
+                }
+
                 float3 ws = TransformObjectToWorld(i.positionOS.xyz);
                 ws += TransformObjectToWorldNormal(i.normalOS) * _OutlineWidth;
+                // Pushed away from the camera, hull slivers inside concave folds (a bent knee or elbow) fall behind the
+                // surface and vanish, while the silhouette rim, with nothing in front of it, still draws.
+                ws += GetViewForwardDir() * _OutlineDepthBias;
                 return TransformWorldToHClip(ws);
             }
             half4 Frag() : SV_Target { return _OutlineColor; }

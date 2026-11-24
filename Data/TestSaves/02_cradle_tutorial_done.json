@@ -1,0 +1,99 @@
+{
+    "version": 17,
+    "next_instance_id": 3,
+    "starter_line": "starter_sun_line",
+    "party": [
+        1,
+        2
+    ],
+    "owned": [
+        {
+            "instance_id": 1,
+            "species_id": "sun_mirror_chick",
+            "vessel": 0,
+            "visual_vessel": 0,
+            "exp": 1200,
+            "niche_id": "",
+            "habit": 0
+        },
+        {
+            "instance_id": 2,
+            "species_id": "cr_aqua_slime_juvenile",
+            "vessel": 1,
+            "visual_vessel": 1,
+            "exp": 1100,
+            "niche_id": "",
+            "habit": 0
+        }
+    ],
+    "materials": [
+        {
+            "element": "wood",
+            "tier": 1,
+            "qty": 5
+        },
+        {
+            "element": "water",
+            "tier": 1,
+            "qty": 5
+        }
+    ],
+    "player_exp": 1200,
+    "partners": [],
+    "eggs": [],
+    "craft_stock": [],
+    "equipment": [],
+    "codex": [
+        {
+            "kind": 0,
+            "id": "cr_aqua_slime_juvenile",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "sun_mirror_chick",
+            "level": 2
+        },
+        {
+            "kind": 0,
+            "id": "ye_chengxi",
+            "level": 2
+        }
+    ],
+    "presets": [],
+    "last_planet": {
+        "planet": "cradle_planet",
+        "seed": 0
+    },
+    "character_id": "ye_chengxi",
+    "friend_id": "luo_en",
+    "rival_id": "yumori_sumiha",
+    "rival_starter_id": "moon_night_pup",
+    "friend_starter_id": "star_blaze_foal",
+    "tutorial_done": true,
+    "trainer_battles": [],
+    "completed_trials": [],
+    "discovered_recipes": [],
+    "food_quest_done": false,
+    "migratory_return_done": false,
+    "rival_quest_done": false,
+    "ng_plus_unlocked": false,
+    "has_checkpoint": true,
+    "active_checkpoint": {
+        "world_kind": 1,
+        "checkpoint_kind": 0,
+        "planet_seed": 5498686522774270001,
+        "planet_type_id": "verdant_planet",
+        "planet_size": 3,
+        "boss_stage": 2,
+        "dir_x": 0.0,
+        "dir_y": 1.0,
+        "dir_z": 0.0,
+        "beginner_quest_phase": 0,
+        "discovered_settlements": [
+            0
+        ],
+        "surface_boss_defeated": false,
+        "dungeon_boss_defeated": false
+    }
+}

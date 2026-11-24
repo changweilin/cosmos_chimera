@@ -162,5 +162,171 @@ namespace Cosmimera.Player.Tests
             Assert.IsTrue(_character.IsGrounded, "did not land");
             Assert.AreEqual(1.2f, apex, 0.25f, "jump apex");
         }
+
+        [UnityTest]
+        public IEnumerator Fly_stops_at_stratosphere_and_levitate_passes_it()
+        {
+            float3 dir = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(dir, new float3(0f, 0f, 1f));
+
+            _character.Teleport(_config.ToWorld(dir, _radius - 8f));
+
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 60; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, _radius + 0.1f, "Fly must stay within 1.0 R stratosphere");
+            }
+
+            Assert.Greater(_character.AltitudeM, _radius - 1f, "Fly did not climb to stratosphere");
+
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius * 1.6f, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.Greater(_character.AltitudeM, _radius + 5f, "Levitate must exceed 1.0 R stratosphere");
+            Assert.LessOrEqual(_character.AltitudeM, _radius * 1.6f + 0.1f, "Levitate stays within 1.6 R ceiling");
+        }
+
+        [UnityTest]
+        public IEnumerator Water_depth_gate_swim_surface_speed_and_dive_submersion()
+        {
+            float3 dir = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(dir, new float3(0f, 0f, 1f));
+            float seaLevel = _height.Sample(dir) + 3.5f;
+
+            // Without Swim or Dive, entry past 1 m water depth is blocked above SeaLevel - 1 m.
+            _character.Teleport(_config.ToWorld(dir, seaLevel - 1.5f));
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 0.8f, underwaterSpeedScale: 0f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 10; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+            Assert.GreaterOrEqual(_character.AltitudeM, seaLevel - 1.05f, "Without Dive, cannot stay deeper than 1 m");
+
+            // Swim moves faster at surface than Dive alone; neither submerges > 1 m with Swim alone.
+            float3 swimStart = dir;
+            _character.Teleport(_config.ToWorld(swimStart, seaLevel));
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: true, canDive: false, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1.15f, underwaterSpeedScale: 0f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(-1f);
+                yield return new WaitForFixedUpdate();
+            }
+            float swimArc = math.distance(_config.ToDirection(_character.transform.position), swimStart) * _radius;
+            Assert.GreaterOrEqual(_character.AltitudeM, seaLevel - 1.05f, "Swim must not submerge below 1 m");
+
+            float3 diveSurfStart = _config.ToDirection(_character.transform.position);
+            _character.Teleport(_config.ToWorld(diveSurfStart, seaLevel));
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: false, maxAltitudeM: 0f, airSpeedScale: 1f,
+                canSurfaceSwim: true, canDive: true, seaLevelM: seaLevel,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 0.85f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: true));
+            for (int i = 0; i < 40; i++)
+            {
+                _character.SetInput(new Vector2(0f, 1f), _character.Facing, false, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+            float diveSurfArc = math.distance(_config.ToDirection(_character.transform.position), diveSurfStart) * _radius;
+            Assert.Greater(swimArc, diveSurfArc, "Swim must move faster on water surface than Dive");
+
+            // With Dive holding descend, player submerges deeper than 1 m.
+            _character.Teleport(_config.ToWorld(dir, seaLevel - 0.5f));
+            for (int i = 0; i < 30; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, false, false);
+                _character.SetVerticalInput(-1f);
+                yield return new WaitForFixedUpdate();
+            }
+            Assert.Less(_character.AltitudeM, seaLevel - 1.2f, "Dive should submerge past 1 m");
+        }
+
+        [UnityTest]
+        public IEnumerator Ceiling_provider_caps_aerial_and_launch_height_and_blocks_high_altitude_entry()
+        {
+            float3 zoneCenter = math.normalize(new float3(0f, 1f, 0f));
+            yield return Spawn(zoneCenter, new float3(0f, 0f, 1f));
+            float ground = _height.Sample(zoneCenter);
+            float ceiling = ground + 6f;
+            float zoneDot = math.cos(12f / _radius);
+
+            _character.SetCeilingProvider(d => math.dot(d, zoneCenter) >= zoneDot ? ceiling : float.PositiveInfinity);
+
+            // 1. Aerial climb inside the capped zone stops at the ceiling.
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 60; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, true, false);
+                _character.SetVerticalInput(1f);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, ceiling + 0.1f, "Fly inside capped zone must not exceed ceiling");
+            }
+            Assert.Greater(_character.AltitudeM, ceiling - 1f, "Fly should reach near the ceiling");
+
+            // 2. Ground launch inside the capped zone is also capped at the ceiling.
+            _character.SetTraversalEnvelope(TraversalEnvelope.Default);
+            _character.Teleport(_config.ToWorld(zoneCenter, ground));
+            yield return new WaitForFixedUpdate();
+            _character.Launch(Vector3.zero, 20f);
+            for (int i = 0; i < 30; i++)
+            {
+                _character.SetInput(Vector2.zero, _character.Facing, false, false);
+                yield return new WaitForFixedUpdate();
+                Assert.LessOrEqual(_character.AltitudeM, ceiling + 0.1f, "Launch must not exceed ceiling");
+            }
+
+            // 3. Flying outside the capped zone above the ceiling cannot cross into it horizontally.
+            float3 outsideDir = math.normalize(zoneCenter + new float3(0f, 0f, 18f / _radius));
+            _character.Teleport(_config.ToWorld(outsideDir, ground + 20f));
+            _character.SetTraversalEnvelope(new TraversalEnvelope(
+                aerialActive: true, maxAltitudeM: _radius, airSpeedScale: 4f,
+                canSurfaceSwim: false, canDive: false, seaLevelM: -0.12f,
+                maxShallowDepthM: 1f, waterSurfaceSpeedScale: 1f, underwaterSpeedScale: 1f,
+                enforceWaterBoundary: false));
+            for (int i = 0; i < 40; i++)
+            {
+                float3 toCenter = math.normalize(zoneCenter - _config.ToDirection(_character.transform.position));
+                _character.SetInput(new Vector2(0f, 1f), toCenter, true, false);
+                _character.SetVerticalInput(0f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            float3 finalDir = _config.ToDirection(_character.transform.position);
+            Assert.Less(math.dot(finalDir, zoneCenter), zoneDot + 1e-4f,
+                "High-altitude flight outside must be blocked from entering the capped zone");
+            Assert.Greater(_character.AltitudeM, ceiling + 5f,
+                "Blocked high-altitude flyer must not be dropped down to the ceiling");
+        }
     }
 }

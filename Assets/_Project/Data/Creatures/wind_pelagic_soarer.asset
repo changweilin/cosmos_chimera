@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: wind_pelagic_soarer
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: wind_pelagic_soarer
+  lineId: line_wind_mistwing
+  stage: 2
+  sizeClass: 2
+  aiStyle: 0
+  niches:
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: 65ac6b9f9d5f4f64588f374de8b5b7c8, type: 2}
+    weight: 1
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 57000000570000006d00000057000000570000003800000081000000400000005700000057000000
+  mastery:
+  - element: 1
+    value: 70
+  - element: 2
+    value: 94
+  - element: 6
+    value: 125
+  - element: 7
+    value: 47
+  stats:
+    hp: 60
+    speed: 186
+    yinAtk: 126
+    yangAtk: 102
+    yinDef: 66
+    yangDef: 60
+  signatureMove: {fileID: 11400000, guid: 36060c8b8c11e394489836cb7c74f116, type: 2}
+  trait: {fileID: 11400000, guid: e8dc960e5384e804092600e2c3d3f587, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u9060\u6D0B\u5DE8\u7FFC\u4FE1\u5929\u7FC1 \xD7 \u53E4\u5E06\u8239\u96D9\u6845\u7FFC\u9AA8\u8207\u5341\u5B57\u5F29\u5C3E\u8235\",\"stage_look\":\"\u7FFC\u5C55\u853D\u5929\u3001\u7FBD\u68A2\u62D6\u8457\u5E7D\u6D77\u9727\u6C23\u8207\u7834\u51B0\u5E06\u5E03\u6D41\u8607\uFF0C\u632F\u7FFC\u5373\u53EF\u6380\u51FA\u9060\u8DDD\u6247\u5F62\u72C2\u98B6\",\"archetype\":\"arch_ancient_mariner_albatross\",\"region\":\"\u6975\u5730\",\"motifs_used\":[\"\u7A7F\u9727\u5DE8\u7FFC\u4FE1\u5929\u7FC1\",\"\u7FE0\u7DA0\u9AD8\u8073\u51B0\u5C71\",\"\u51B0\u5C01\u53E4\u5E06\u8239\",\"\u6728\u67C4\u5341\u5B57\u5F29\"],\"role\":\"\u5F8C\u6392\u63A7\u5834\u3001\u9AD8\u6A5F\u52D5\uFF1A\u9060\u8DDD\u6247\u5F62\u98B6\u98A8\u6A6B\u6383\uFF08\u9AD8\u8840\u91CF\u6642\u63D0\u9AD8\u9583\u907F\u7387\uFF09\",\"palette\":\"\u8584\u8377\u6DFA\u9752\u3001\u9752\u74F7\u7070\u7DA0\u3001\u6708\u83EF\u767D\u3001\u66AE\u96F2\u7070\u85CD\"}"
+  needsSensitivityReview: 0

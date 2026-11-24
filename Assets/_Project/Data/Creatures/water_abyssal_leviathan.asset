@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 547f3b69f9239a44fad764ad75816d84, type: 3}
+  m_Name: water_abyssal_leviathan
+  m_EditorClassIdentifier: Cosmimera.GameData::Cosmimera.GameData.CreatureDef
+  id: water_abyssal_leviathan
+  lineId: line_water_whalemaelstrom
+  stage: 2
+  sizeClass: 3
+  aiStyle: 2
+  niches:
+  - niche: {fileID: 11400000, guid: 5451e6421171ca84295dc28c1c201efd, type: 2}
+    weight: 3
+  - niche: {fileID: 11400000, guid: b2a8acbba631c7645a9702d3cb8661a4, type: 2}
+    weight: 2
+  - niche: {fileID: 11400000, guid: 9216dda9f0376f0458aa0e121efef433, type: 2}
+    weight: 1
+  evolvesTo: {fileID: 0}
+  overloadOf: {fileID: 0}
+  overloadForm: {fileID: 0}
+  evolutionLevel: 0
+  evolutionMaterials: []
+  resist: 600000003f0000008d00000060000000600000007a00000060000000320000005f0000005f000000
+  mastery:
+  - element: 0
+    value: 48
+  - element: 2
+    value: 125
+  - element: 5
+    value: 97
+  stats:
+    hp: 164
+    speed: 107
+    yinAtk: 50
+    yangAtk: 164
+    yinDef: 57
+    yangDef: 88
+  signatureMove: {fileID: 11400000, guid: 6a0ebd234662c234a9e6afd5f36249c6, type: 2}
+  trait: {fileID: 11400000, guid: fd5eda0f74eb90240ba41bdb08c57cfd, type: 2}
+  fieldUtility: 0
+  conceptJson: "{\"base\":\"\u5DE8\u7121\u9738\u767D\u9BE8\u6D77\u738B \xD7 \u6E26\u6D41\u7E5E\u8EAB\u8207\u6B98\u7834\u8266\u6845\u9435\u53C9\u51A0\",\"stage_look\":\"\u5DE8\u5C3E\u6380\u52D5\u5486\u54EE\u5927\u6F29\u6E26\uFF0C\u984D\u982D\u8207\u810A\u80CC\u6A6B\u659C\u8457\u6578\u652F\u92FC\u88FD\u65B7\u53C9\u8207\u8239\u6845\u6B98\u9AA8\uFF0C\u5A01\u58D3\u8FEB\u4EBA\",\"archetype\":\"arch_moby_dick\",\"region\":\"\u7F8E\u6D32\",\"motifs_used\":[\"\u50B7\u75D5\u767D\u62B9\u9999\u9BE8\",\"\u65B7\u88C2\u9B5A\u53C9\",\"\u6012\u6D77\u5927\u6F29\u6E26\",\"\u6355\u9BE8\u6728\u6845\"],\"role\":\"\u9577\u8DDD\u7A81\u9032\uFF1A\u9060\u8DDD\u5DE8\u6D6A\u76F4\u7DDA\u885D\u92D2\uFF08\u751F\u547D\u9996\u6B21\u8DCC\u7834\u9580\u6ABB\u6642\u56DE\u5FA9
+    12%\uFF09\",\"palette\":\"\u6708\u83EF\u767D\u3001\u6D77\u8ECD\u6DF1\u85CD\u3001\u7384\u9435\u9752\u9ED1\u3001\u934D\u9280\u92FC\u767D\"}"
+  needsSensitivityReview: 0

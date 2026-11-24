@@ -110,6 +110,12 @@ namespace Cosmimera.GameData
         Yin = 0, Yang = 1,
     }
 
+    /// <summary>The ten elemental status ailments. REQ: docs/design/status-ailments.md (order = common.schema.json).</summary>
+    public enum Ailment
+    {
+        Sunder = 0, Toxin = 1, Soaked = 2, Burn = 3, Weighted = 4, Frostbite = 5, Turbulent = 6, Shock = 7, Dazzle = 8, Eclipse = 9,
+    }
+
     /// <summary>What a trait effect or move effect does. REQ: common.schema.json#/$defs/effect (closed in P2-01).</summary>
     public enum EffectType
     {
@@ -118,6 +124,8 @@ namespace Cosmimera.GameData
         // Appended (serialized into imported .asset files). REQ: creatures.md#六大能力值, crafting.md#穿戴與數值 —
         // weapon / armor stats that only skills and equipment raise.
         AccuracyMod = 7, CritRateMod = 8, CritDamageMod = 9, StaggerCapacityModPercent = 10, BlockReductionMod = 11,
+        // Appended: elemental status ailments. REQ: docs/design/status-ailments.md.
+        ApplyAilment = 12, AilmentResistMod = 13,
     }
 
     /// <summary>Planet size class: asteroid / moon / planet / supergiant = 320 / 640 / 960 / 1280 m. Numeric radius is not stored here.</summary>
@@ -181,6 +189,41 @@ namespace Cosmimera.GameData
         CastNet = 35,
         HarvestCrops = 36,
         CulinaryPrep = 37,
+        GatherEssence = 38,
+        CraftSmeltFire = 39,
+        CraftSmeltMetal = 40,
+        CraftSmeltThunder = 41,
+        CraftWeaveWood = 42,
+        CraftWeaveWind = 43,
+        CraftWeaveShadow = 44,
+        CraftTailorWood = 45,
+        CraftTailorShadow = 46,
+        CraftTailorLight = 47,
+        CraftSmithMetal = 48,
+        CraftSmithFire = 49,
+        CraftSmithEarth = 50,
+        CraftCarpentryWood = 51,
+        CraftCarpentryEarth = 52,
+        CraftCarpentryWind = 53,
+        CraftJewelcraftLight = 54,
+        CraftJewelcraftEarth = 55,
+        CraftJewelcraftIce = 56,
+        CraftDyeWood = 57,
+        CraftDyeWater = 58,
+        CraftDyeLight = 59,
+        CraftEnchantLight = 60,
+        CraftEnchantFire = 61,
+        CraftEnchantShadow = 62,
+        Swim = 63,
+        FreezePrep = 64,
+        ForageFungi = 65,
+        FermentCure = 66,
+        SmokeDry = 67,
+        ChillBrew = 68,
+        IceStride = 69,
+        SenseTreasure = 70,
+        WeatherWard = 71,
+        CampBeacon = 72,
     }
 
     /// <summary>Life-skill methods for acquiring raw food ingredients.</summary>
@@ -195,6 +238,8 @@ namespace Cosmimera.GameData
         ForageBerries = 5,
         HarvestCrops = 6,
         ProduceMilk = 7,
+        // REQ: docs/design/cuisine.md#2-食材屬性每份原料加工品皆有 — appended; values are serialized.
+        ForageFungi = 8,
     }
 
     /// <summary>Culinary preparation methods for cooking ingredients into food.</summary>
@@ -208,6 +253,8 @@ namespace Cosmimera.GameData
         Steam = 4,
         ColdMix = 5,
         Grind = 6,
+        /// <summary>No-fire chilled drinks and smoothies (chill_brew).</summary>
+        ChillBrew = 7,
     }
 
     /// <summary>Broad culinary category of a raw food ingredient.</summary>
@@ -222,6 +269,8 @@ namespace Cosmimera.GameData
         Dairy = 5,
         SpiceOil = 6,
         Egg = 7,
+        Fungi = 8,
+        Critter = 9,
     }
 
     /// <summary>Who receives the healing and buff effects when a food item is eaten.</summary>

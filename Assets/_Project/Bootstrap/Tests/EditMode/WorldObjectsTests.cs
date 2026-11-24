@@ -71,7 +71,8 @@ namespace Cosmimera.Bootstrap.Tests
             var plan = new RunPlan(7, "verdant_planet", null, regions, 0, 1, new[] { 0, 1 }, new RunSpawn[0],
                 new RunQuestStep[0], VillageAt);
             var field = FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => true, d => false);
-            Assert.That(FieldSpecimen.GeneratorVersion, Is.EqualTo(3));
+            // Version 4 only added landform wildlife (terrainAt); without it the v3 replay holds.
+            Assert.That(FieldSpecimen.GeneratorVersion, Is.EqualTo(4));
             var snapshot = File.ReadAllLines(Path.Combine(Application.dataPath, "_Project/Bootstrap/Tests/Snapshots/field-culture-v3.txt"));
             Assert.That(field.ConvertAll(s => $"{s.Style},{s.Duty},{s.Age},{s.Damage}"), Is.EqualTo(snapshot));
             Assert.That(FieldSpecimen.Generate(Planet, layout, plan, plan.PlanetTypeId, 7, d => 1f, d => false, d => false), Is.Empty);
@@ -300,6 +301,54 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(r.Objects.IsBlocked(RuinAt, 0.3f), Is.True, "only that building");
         }
 
+        // REQ: planet-world.md#地城文化 (牆腳物件可破壞), ADR-0011 — indoor props exist only while the party is inside,
+        // and then nothing of the surface does; surface-maze props are ordinary surface objects.
+        [Test]
+        public void Dungeon_props_are_hit_and_block_on_their_own_side_and_stop_when_destroyed()
+        {
+            Rig r = Build();
+            float3 indoor = math.normalize(new float3(0.3f, 0.2f, 1f));
+            float3 maze = math.normalize(new float3(0.3f, -0.2f, 1f));
+            r.Objects.AttachDungeonProps(new[]
+            {
+                new WorldObjects.PropBody(indoor, 0f, 0.5f, 1f, "wood", 300, true, "ui.object.dungeon_crate"),
+                new WorldObjects.PropBody(maze, 0f, 0.4f, 0.9f, "kerosene", 250, false, "ui.object.dungeon_oil_drum"),
+            });
+            long indoorId = WorldObjects.DungeonPropIdBase, mazeId = WorldObjects.DungeonPropIdBase + 1;
+            var found = new List<DestructibleCandidate>();
+
+            r.Objects.Query(Planet.ToWorld(maze, 0.5f), 1f, found);
+            Assert.That(found.Exists(c => c.Id == mazeId), Is.True);
+            Assert.That(found.Exists(c => c.Id == indoorId), Is.False);
+            Assert.That(r.Objects.IsBlocked(maze, 0.3f), Is.True);
+            Assert.That(r.Objects.IsBlockedByDungeonProps(indoor, 0.3f, true), Is.True);
+
+            r.Objects.InsideDungeon = true;
+            found.Clear();
+            r.Objects.Query(Planet.ToWorld(indoor, 0.5f), 1f, found);
+            Assert.That(found.Count, Is.EqualTo(1));
+            Assert.That(found[0].Id, Is.EqualTo(indoorId));
+            Assert.That(found[0].Composition.Dominant.Id, Is.EqualTo("wood"));
+            Assert.That(r.Objects.NameKey(found[0]), Is.EqualTo("ui.object.dungeon_crate"));
+            Assert.That(r.Objects.CanBeShoved(indoorId), Is.True);
+            Assert.That(WorldObjects.IsDungeonProp(indoorId) && !WorldObjects.IsBuilding(indoorId), Is.True);
+            // Nothing of the surface answers while inside, even where a village stands at the same world point.
+            found.Clear();
+            r.Objects.Query(Planet.ToWorld(VillageAt, 1f), 8f, found);
+            Assert.That(found, Is.Empty);
+            Assert.That(r.Objects.HasGrassCover(VillageAt), Is.False);
+
+            Assert.That(r.Objects.TryGet(indoorId, out DestructibleCandidate c), Is.True);
+            int slot = r.Table.Register(indoorId, c.Composition, c.VolumeL, c.Center);
+            r.Table.ApplyHit(slot, Element.Earth, 100_000, 0, 0);
+            Assert.That(r.Objects.IsPropDestroyed(0), Is.True);
+            Assert.That(r.Objects.IsBlockedByDungeonProps(indoor, 0.3f, true), Is.False);
+            found.Clear();
+            r.Objects.Query(Planet.ToWorld(indoor, 0.5f), 1f, found);
+            Assert.That(found, Is.Empty);
+            Assert.That(r.Objects.TryGet(WorldObjects.DungeonPropIdBase + 2, out _), Is.False);
+        }
+
         [Test]
         public void Contract_violations_throw()
         {
@@ -325,6 +374,26 @@ namespace Cosmimera.Bootstrap.Tests
                     env.Ground(Element.Thunder), null, null }, env.GemSubstance);
             Assert.Throws<ContractException>(() =>
                 new WorldObjects(Planet, r.Scatter, layout, r.Clearance, _ => 0f, bare, new DestructibleTable(bare)));
+        }
+
+        [Test]
+        public void Roadside_wildlife_follows_the_land()
+        {
+            // REQ: planet-world.md#自然生物 緯度×海拔.
+            Assert.That(FieldSpecimen.Native("desert", 0.2f, 0f, 100), Is.EqualTo(FieldForm.Lizard));
+            Assert.That(FieldSpecimen.Native("swamp", 0.2f, 0f, 100), Is.EqualTo(FieldForm.Frog));
+            Assert.That(FieldSpecimen.Native("archipelago", 0.2f, 0f, 100), Is.EqualTo(FieldForm.Crab));
+            Assert.That(FieldSpecimen.Native("grassland", 0.8f, 0f, 100), Is.EqualTo(FieldForm.Fox), "polar latitude");
+            Assert.That(FieldSpecimen.Native("grassland", 0.3f, 0.02f, 100), Is.EqualTo(FieldForm.Goat), "highland");
+            Assert.That(FieldSpecimen.Native("forest", 0.3f, 0f, 100), Is.EqualTo(FieldForm.Deer));
+            for (int duty = 0; duty <= 1000; duty += 50)
+            {
+                foreach (string terrain in new[] { "grassland", "desert", "swamp", "tundra", "mountain", "fjord", null })
+                {
+                    FieldForm f = FieldSpecimen.Native(terrain, 0.4f, 0f, duty);
+                    Assert.That(f >= FieldForm.Hare && f != FieldForm.Fish, Is.True, terrain + " " + duty);
+                }
+            }
         }
     }
 }

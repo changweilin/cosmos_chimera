@@ -42,11 +42,32 @@ namespace Cosmimera.Bootstrap.Demo
         private TeamUtilityModifiers _utilityModifiers;
         private Pcg32 _foodRng;
         private bool _showLockedGathering;
+        private readonly List<string> _pot = new List<string>(PotCookingRules.MaxPotSize);
+        private CookingMethod _potMethod = CookingMethod.Grill;
 
         private EncounterUnit AddEquippedPartyCreature(int slot)
         {
             var moves = new List<MoveDef>();
             var traits = new List<TraitDef>();
+            var partnerFieldMoves = new List<MoveDef>();
+            var partnerFieldTraits = new List<TraitDef>();
+            MoveDef mainFieldMove = null;
+            TraitDef mainFieldTrait = null;
+            CreatureDef mainDef = _setup.Party[slot];
+            if (_setup.Database != null && mainDef.FieldUtility != FieldUtility.None)
+            {
+                if (FieldUtilityRules.GetKind(mainDef.FieldUtility) == FieldUtilityKind.Move
+                    && _setup.Database.TryGetFieldUtilityMove(mainDef.FieldUtility, out MoveDef fuMove))
+                {
+                    mainFieldMove = fuMove;
+                }
+                else if (FieldUtilityRules.GetKind(mainDef.FieldUtility) == FieldUtilityKind.Trait
+                    && _setup.Database.TryGetFieldUtilityTrait(mainDef.FieldUtility, out TraitDef fuTrait))
+                {
+                    mainFieldTrait = fuTrait;
+                }
+            }
+
             bool overload = false;
             if (_setup.Partners != null)
             {
@@ -56,19 +77,54 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     OwnedCreature sub = OwnedAtDeparture(subId);
                     CreatureDef def = RequireCreature(sub.SpeciesId);
-                    if (sub.Vessel == VesselKind.TalismanCard) moves.Add(def.SignatureMove);
-                    else if (sub.Vessel == VesselKind.GlassBead) traits.Add(def.Trait);
+                    if (sub.Vessel == VesselKind.TalismanCard)
+                    {
+                        moves.Add(def.SignatureMove);
+                        if (def.FieldUtility != FieldUtility.None
+                            && FieldUtilityRules.GetKind(def.FieldUtility) == FieldUtilityKind.Move
+                            && _setup.Database.TryGetFieldUtilityMove(def.FieldUtility, out MoveDef subFuMove))
+                        {
+                            partnerFieldMoves.Add(subFuMove);
+                        }
+                    }
+                    else if (sub.Vessel == VesselKind.GlassBead)
+                    {
+                        traits.Add(def.Trait);
+                        if (def.FieldUtility != FieldUtility.None
+                            && FieldUtilityRules.GetKind(def.FieldUtility) == FieldUtilityKind.Trait
+                            && _setup.Database.TryGetFieldUtilityTrait(def.FieldUtility, out TraitDef subFuTrait))
+                        {
+                            partnerFieldTraits.Add(subFuTrait);
+                        }
+                    }
                     else overload = true;
                 }
             }
-            EncounterUnit unit = _encounter.AddEquippedCreature(_setup.Party[slot], moves, traits, _plan.LandingDirection,
-                _progression.LevelOf(_partyExp[slot]));
+            EncounterUnit unit = _encounter.AddEquippedCreature(mainDef, moves, traits, _plan.LandingDirection,
+                _progression.LevelOf(_partyExp[slot]), mainFieldMove, partnerFieldMoves, mainFieldTrait, partnerFieldTraits);
             _encounter.SetHarvestUtilities(unit.Id, HarvestUtilitiesOf(slot));
             EquipmentModifiers equipment = EquipmentRules.Collect(_setup.PartyIds[slot],
                 _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog, GripsAtDeparture(_setup.PartyIds[slot]), _balance.Grips);
             var combinedEffects = new List<EffectSpec>(equipment.CreatureEffects);
+            var cubeFloors = new List<Element>();
             if (_setup.Partners != null)
             {
+                foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
+                {
+                    OwnedCreature cube = OwnedAtDeparture(subId);
+                    if (cube.Vessel != VesselKind.MagicCube) continue;
+                    // REQ: crafting.md#魔術方塊副手 — full-strength accessory-style grant from the sub's own specialties.
+                    CreatureDef cubeDef = RequireCreature(cube.SpeciesId);
+                    Core.Contracts.Contract.Requires(cubeDef.Mastery.Count > 0, "cube sub species has no mastery element");
+                    ElementValue strongest = cubeDef.Mastery[0];
+                    foreach (ElementValue m in cubeDef.Mastery) if (m.Value > strongest.Value) strongest = m;
+                    var resists = new int[10];
+                    for (int e = 0; e < 10; e++) resists[e] = cubeDef.GetResist((Element)e);
+                    IReadOnlyList<EffectSpec> grant = CraftingExpansionRules.CubePartnerEffects(strongest.Element, resists);
+                    if (combinedEffects.Count + grant.Count > 32) continue;
+                    combinedEffects.AddRange(grant);
+                    cubeFloors.Add(strongest.Element);
+                }
                 foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[slot]))
                 {
                     // REQ: crafting.md#穿戴與數值 — only the sub's effect rows reach the main; its weapons stay with it.
@@ -84,7 +140,12 @@ namespace Cosmimera.Bootstrap.Demo
                 }
             }
             unit.Combatant.Book.SetEquipmentEffects(combinedEffects);
+            foreach (Element floorElement in cubeFloors) unit.Combatant.SetElementMasteryFloor(floorElement, true);
             unit.Combatant.SetWeapons(equipment.Weapons);
+            if (_setup.PartyIds != null && slot < _setup.PartyIds.Count)
+            {
+                _unitSaveIds[unit.Id] = _setup.PartyIds[slot];
+            }
             if (overload) _overloadUnlocked.Add(unit.Id);
             return unit;
         }
@@ -108,6 +169,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void ConfigureJournal()
         {
             if (_setup.Codex != null) _outcome.Codex.Merge(_setup.Codex);
+            if (_setup.DiscoveredRecipes != null) _outcome.DiscoveredRecipes.UnionWith(_setup.DiscoveredRecipes);
             foreach (CreatureDef creature in _setup.Party) EncyclopediaCatalog.RecordOwned(_outcome.Codex, creature);
             if (_setup.Database != null && _setup.Owned != null)
                 foreach (OwnedCreature creature in _setup.Owned)
@@ -147,7 +209,8 @@ namespace Cosmimera.Bootstrap.Demo
                 if (utility != FieldUtility.Mount && utility != FieldUtility.Fly && utility != FieldUtility.Levitate &&
                     utility != FieldUtility.PartyStealth) _enabledUtilities.Add(utility);
             ApplyUtilities();
-            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits, _outcome.Codex);
+            if (_setup.Database != null) _codex = new CodexPanel(_setup.Database, _copy, OwnsSpecies, _setup.Portraits, _outcome.Codex,
+                _foodCatalog, _outcome.DiscoveredRecipes.Contains);
         }
 
         private bool OwnsSpecies(string species)
@@ -201,6 +264,7 @@ namespace Cosmimera.Bootstrap.Demo
         private void CloseJournal()
         {
             if (_journal == null) return;
+            _journal.Dispose();
             _journal = null;
             Time.timeScale = _previousTimeScale;
             Cursor.lockState = _previousCursorLock;
@@ -276,7 +340,7 @@ namespace Cosmimera.Bootstrap.Demo
                 int count = _foodInventory.CountFood(food.Id);
                 if (count == 0) continue;
                 anyFood = true;
-                ui.Label(_copy.Ui(food.Id) + $" ×{count} · " + FoodDescription(food));
+                ui.Label(FoodName(food) + $" ×{count} · " + FoodDescription(food));
                 if (ui.Button(_copy.Ui("ui.items.eat")))
                 { EatFood(food); GUIUtility.ExitGUI(); }
             }
@@ -292,6 +356,10 @@ namespace Cosmimera.Bootstrap.Demo
             Combatant main = _mainId >= 0 ? _encounter.Units[_mainId].Combatant : null;
             ConsumeRefusalReason reason = FoodConsumptionRules.TryEatRawIngredient(ingredient.Id, _foodCatalog,
                 _foodInventory, _vitals, main, _nowMs, out ConsumeOutcome outcome);
+            if (reason == ConsumeRefusalReason.None)
+            {
+                NotifyBeginnerHealUsed();
+            }
             ConsumptionMessage(reason, outcome);
         }
 
@@ -316,6 +384,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (qualities != null && qualities.Count > 0) qualities.Dequeue();
                 foreach (int id in before)
                     if (!_encounter.Units[id].Combatant.IsFainted) _team.TryClearRetired(id);
+                NotifyBeginnerHealUsed();
             }
             ConsumptionMessage(reason, outcome);
         }
@@ -480,43 +549,103 @@ namespace Cosmimera.Bootstrap.Demo
             foreach (FieldUtility utility in _utilities)
             {
                 ui.Label(_copy.Ui("utility." + utility) + " · " + _copy.Ui("utility.desc." + utility));
-                bool toggle = utility == FieldUtility.Mount || utility == FieldUtility.Levitate || utility == FieldUtility.PartyStealth;
+                bool toggle = utility == FieldUtility.Mount || utility == FieldUtility.Fly || utility == FieldUtility.Levitate ||
+                              utility == FieldUtility.Swim || utility == FieldUtility.Dive || utility == FieldUtility.PartyStealth;
                 if (toggle && ui.Button(_copy.Ui(_enabledUtilities.Contains(utility) ? "ui.skills.stop" : "ui.skills.use")))
                 {
                     if (!_enabledUtilities.Remove(utility)) _enabledUtilities.Add(utility);
                     ApplyUtilities();
                     GUIUtility.ExitGUI();
                 }
+                else if (utility == FieldUtility.ReturnVillage)
+                {
+                    if (_layout != null)
+                    {
+                        for (int sIdx = 0; sIdx < _layout.Settlements.Count; sIdx++)
+                        {
+                            if (!_discoveredSettlements.Contains(sIdx)) continue;
+                            RunSettlement target = _layout.Settlements[sIdx];
+                            string targetName = SettlementDisplayName(target);
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + targetName))
+                            {
+                                ui.Message = TryReturnToSettlement(sIdx, targetName);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                    }
+
+                    bool onCradle = _setup.PlanetType != null &&
+                        string.Equals(_setup.PlanetType.Id, "cradle_planet", StringComparison.Ordinal);
+                    bool canCrossPlanet = SpatialTraversalRules.CanReturnToCradleMoon(
+                        _utilityModifiers, _setup.TutorialDone || _setup.IsLobbyPlanet || onCradle).Allowed;
+                    if (canCrossPlanet)
+                    {
+                        if (!onCradle)
+                        {
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · " + _copy.Planet("cradle_planet")))
+                            {
+                                CloseJournal();
+                                _outcome.TravelToCradleMoon = true;
+                                End(true, false);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                        else if (!_setup.IsBeginnerQuest)
+                        {
+                            if (ui.Button(_copy.Ui("utility.ReturnVillage") + " · 主星球"))
+                            {
+                                CloseJournal();
+                                _outcome.TravelToLobbyPlanet = true;
+                                End(true, false);
+                                GUIUtility.ExitGUI();
+                            }
+                        }
+                    }
+                }
                 else if (utility == FieldUtility.QuickEscape && ui.Button(_copy.Ui("ui.skills.use"), CanQuickEscape()))
                 {
                     QuickEscape();
                     GUIUtility.ExitGUI();
                 }
-                else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
-                    && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl) ui.Label(_copy.Ui("ui.skills.unavailable"));
-                else if (FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
+                else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Move && !toggle && !IsGatheringOrCooking(utility)
+                    && utility != FieldUtility.QuickEscape && utility != FieldUtility.WeatherControl && utility != FieldUtility.ReturnVillage) ui.Label(_copy.Ui("ui.skills.unavailable"));
+                else if (utility < FieldUtility.GatherEssence && FieldUtilityRules.GetKind(utility) == FieldUtilityKind.Trait &&
                     utility != FieldUtility.CatchRateUp && utility != FieldUtility.DropRateUp &&
                     utility != FieldUtility.PreventEscape && utility != FieldUtility.MagnetPickupDouble &&
                     utility != FieldUtility.ForageBerries && utility != FieldUtility.ProduceMilk &&
                     utility != FieldUtility.CulinaryPrep) ui.Label(_copy.Ui("ui.skills.unavailable"));
             }
-            var cooking = new CookingContext(CookingStationKind.Field, _utilityModifiers, _partyElements);
+            CookingStationKind station = CookingStation();
+            var cooking = new CookingContext(station, _utilityModifiers, _partyElements);
+            if (station == CookingStationKind.Kitchen) ui.Label(_copy.Ui("ui.skills.kitchen"));
+            DrawProcessing(ui, cooking);
+            DrawPot(ui, cooking);
             ui.Heading(_copy.Ui("ui.skills.recipes"));
             foreach (RecipeSpec recipe in _foodCatalog.Recipes)
             {
+                // REQ: docs/design/cuisine.md#6 — undiscovered recipes show only their method and one ingredient category.
+                if (!_outcome.DiscoveredRecipes.Contains(recipe.Id))
+                {
+                    ui.Label(RecipeHintText(recipe));
+                    continue;
+                }
                 CookRefusalReason reason = CookingRules.CanCook(recipe, _foodCatalog, _foodInventory, cooking);
-                ui.Label(_copy.Ui(recipe.OutputFoodId) + " · " + _copy.Ui("cook." + reason));
+                ui.Label(_copy.Ui(recipe.OutputFoodId) + " · " + _copy.Ui("dish.method." + recipe.Method) + " · " + _copy.Ui("cook." + reason));
                 foreach (RecipeIngredientRequirement requirement in recipe.Requirements)
                     ui.Label("· " + (requirement.IsCategoryMatch ? _copy.Ui("ingredient.category." + requirement.Category)
                         : _copy.Ui(requirement.IngredientId)) + " ×" + requirement.Quantity);
+                if (ui.Button(_copy.Ui("ui.skills.recipe_fill")))
+                {
+                    if (_foodInventory.TryPlanRecipePot(recipe, _foodCatalog, _pot)) _potMethod = recipe.Method;
+                    else ui.Message = _copy.Ui("cook." + CookRefusalReason.MissingIngredients);
+                    GUIUtility.ExitGUI();
+                }
                 if (ui.Button(_copy.Ui("ui.skills.cook"), reason == CookRefusalReason.None))
                 {
                     reason = CookingRules.TryCook(recipe, _foodCatalog, _foodInventory, cooking, out CookOutcome outcome);
                     if (reason == CookRefusalReason.None)
                     {
-                        if (!_foodQualities.TryGetValue(outcome.Food.Id, out Queue<CookingQuality> qualities))
-                        { qualities = new Queue<CookingQuality>(); _foodQualities.Add(outcome.Food.Id, qualities); }
-                        for (int i = 0; i < outcome.QuantityProduced; i++) qualities.Enqueue(outcome.Quality);
+                        EnqueueQuality(outcome.Food.Id, outcome.QuantityProduced, outcome.Quality);
                         ui.Message = _copy.Ui(outcome.Food.Id) + " ×" + outcome.QuantityProduced + " · " + _copy.Ui("quality." + outcome.Quality);
                     }
                     else ui.Message = _copy.Ui("cook." + reason);
@@ -525,9 +654,126 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private string RecipeHintText(RecipeSpec recipe) => _copy.Ui("ui.skills.recipe_unknown")
+            .Replace("{method}", _copy.Ui("dish.method." + recipe.Method))
+            .Replace("{category}", _copy.Ui("ingredient.category." + CookingRules.RecipeHintCategory(recipe, _foodCatalog)));
+
+        private void EnqueueQuality(string foodId, int quantity, CookingQuality quality)
+        {
+            if (!_foodQualities.TryGetValue(foodId, out Queue<CookingQuality> qualities))
+            { qualities = new Queue<CookingQuality>(); _foodQualities.Add(foodId, qualities); }
+            for (int i = 0; i < quantity; i++) qualities.Enqueue(quality);
+        }
+
+        // REQ: docs/design/cuisine.md#1 — a discovered inhabited settlement doubles as a kitchen that unlocks every method and process.
+        private CookingStationKind CookingStation()
+        {
+            if (_layout == null) return CookingStationKind.Field;
+            float3 player = PlayerPosition();
+            foreach (int index in _discoveredSettlements)
+                if (IsWithinSettlement(_layout.Settlements[index], player)) return CookingStationKind.Kitchen;
+            return CookingStationKind.Field;
+        }
+
+        private void DrawProcessing(AdventurePanel ui, CookingContext cooking)
+        {
+            ui.Heading(_copy.Ui("ui.skills.processing"));
+            bool any = false;
+            foreach (ProcessSpec process in _foodCatalog.Processes)
+            {
+                int held = _foodInventory.CountIngredient(process.InputIngredientId);
+                ProcessRefusalReason reason = ProcessingRules.CanProcess(process, _foodInventory, cooking);
+                if ((held == 0 || reason == ProcessRefusalReason.MissingSkill) && !_showLockedGathering) continue;
+                any = true;
+                ui.Label(_copy.Ui("process.kind." + process.Kind) + " · " + _copy.Ui(process.InputIngredientId) + $" ×{held} → " +
+                         _copy.Ui(process.OutputIngredientId) + " · " + _copy.Ui("process.reason." + reason));
+                if (!ui.Button(_copy.Ui("ui.skills.process"), reason == ProcessRefusalReason.None)) continue;
+                reason = ProcessingRules.TryProcess(process, _foodInventory, cooking);
+                ui.Message = reason == ProcessRefusalReason.None
+                    ? _copy.Ui(process.OutputIngredientId) + " ×1"
+                    : _copy.Ui("process.reason." + reason);
+                GUIUtility.ExitGUI();
+            }
+            if (!any) ui.Label(_copy.Ui("ui.skills.processing_empty"));
+        }
+
+        private void DrawPot(AdventurePanel ui, CookingContext cooking)
+        {
+            ui.Heading(_copy.Ui("ui.skills.pot"));
+            foreach (CookingMethod method in Enum.GetValues(typeof(CookingMethod)))
+            {
+                bool unlocked = CookingRules.HasSkillForMethod(method, cooking);
+                if (!unlocked && !_showLockedGathering) continue;
+                if (!ui.Button((_potMethod == method ? "● " : "") + _copy.Ui("dish.method." + method), unlocked)) continue;
+                _potMethod = method;
+                GUIUtility.ExitGUI();
+            }
+            // Units can leave the bag elsewhere (eaten raw, processed); the pot only lists what is still held.
+            for (int i = _pot.Count - 1; i >= 0; i--)
+                if (CountInPot(_pot[i]) > _foodInventory.CountIngredient(_pot[i])) _pot.RemoveAt(i);
+            var contents = new List<string>(_pot.Count);
+            foreach (string id in _pot) contents.Add(_copy.Ui(id));
+            ui.Label(_pot.Count == 0 ? _copy.Ui("ui.skills.pot_empty") : string.Join(" + ", contents));
+            foreach (IngredientSpec ingredient in _foodCatalog.Ingredients)
+            {
+                int spare = _foodInventory.CountIngredient(ingredient.Id) - CountInPot(ingredient.Id);
+                if (spare <= 0) continue;
+                if (!ui.Button("+ " + _copy.Ui(ingredient.Id) + $" ×{spare}", _pot.Count < PotCookingRules.MaxPotSize)) continue;
+                _pot.Add(ingredient.Id);
+                GUIUtility.ExitGUI();
+            }
+            if (_pot.Count == 0) return;
+            if (ui.Button(_copy.Ui("ui.skills.pot_clear"))) { _pot.Clear(); GUIUtility.ExitGUI(); }
+            PotResolution preview = PotCookingRules.Resolve(_potMethod, _pot, _foodCatalog, cooking);
+            ui.Label(PotPreviewText(preview));
+            if (!ui.Button(_copy.Ui("ui.skills.cook"), preview.Refusal == CookRefusalReason.None)) return;
+            PotResolution cooked = PotCookingRules.TryCook(_potMethod, _pot, _foodCatalog, _foodInventory, cooking);
+            if (cooked.Refusal == CookRefusalReason.None)
+            {
+                EnqueueQuality(cooked.Food.Id, cooked.Quantity, cooked.Quality);
+                _pot.Clear();
+                ui.Message = FoodName(cooked.Food) + " ×" + cooked.Quantity + " · " + _copy.Ui("quality." + cooked.Quality);
+                // Only a free-form pot can discover a recipe: the recipe list shows undiscovered ones as hints without buttons.
+                if (cooked.Kind == PotDishKind.Signature && _outcome.DiscoveredRecipes.Add(cooked.Recipe.Id))
+                    ui.Message += " · " + _copy.Ui("ui.skills.recipe_new");
+            }
+            else ui.Message = _copy.Ui("cook." + cooked.Refusal);
+            GUIUtility.ExitGUI();
+        }
+
+        private int CountInPot(string ingredientId)
+        {
+            int count = 0;
+            foreach (string id in _pot) if (id == ingredientId) count++;
+            return count;
+        }
+
+        private string PotPreviewText(PotResolution preview)
+        {
+            if (preview.Refusal != CookRefusalReason.None) return _copy.Ui("cook." + preview.Refusal);
+            string key = preview.Kind == PotDishKind.Signature ? "ui.skills.pot_signature"
+                : preview.Kind == PotDishKind.Free ? "ui.skills.pot_free" : "ui.skills.pot_dubious";
+            return _copy.Ui(key).Replace("{dish}", FoodName(preview.Food)) + " · " + _copy.Ui("quality." + preview.Quality) +
+                   " · " + FoodDescription(preview.Food);
+        }
+
+        private string FoodName(FoodItemSpec food)
+        {
+            if (!food.FreeDish.HasValue) return _copy.Ui(food.Id);
+            FreeDishDescriptor dish = food.FreeDish.Value;
+            string family = dish.Family == FoodEffectFamily.None ? ""
+                : _copy.Ui("dish.family." + dish.Family).Replace("{element}", _copy.Element(dish.FamilyElement.ToString()));
+            string name = _copy.Ui("dish.free_name").Replace("{family}", family)
+                .Replace("{method}", _copy.Ui("dish.method." + dish.Method)).Replace("{theme}", _copy.Ui("dish.theme." + dish.Theme));
+            while (name.Contains("  ")) name = name.Replace("  ", " ");
+            name = name.Trim();
+            return dish.Level > 0 ? name + " Lv" + dish.Level : name;
+        }
+
         private static bool IsGatheringOrCooking(FieldUtility utility) => utility == FieldUtility.Fishing ||
             utility == FieldUtility.CookFire || utility == FieldUtility.HuntGround || utility == FieldUtility.HuntSky ||
-            utility == FieldUtility.SetTrap || utility == FieldUtility.CastNet || utility == FieldUtility.HarvestCrops;
+            utility == FieldUtility.SetTrap || utility == FieldUtility.CastNet || utility == FieldUtility.HarvestCrops ||
+            utility == FieldUtility.ChillBrew;
 
         private bool CanQuickEscape()
         {
@@ -540,6 +786,55 @@ namespace Cosmimera.Bootstrap.Demo
                 engaged = true;
             }
             return engaged;
+        }
+
+        private string SettlementDisplayName(RunSettlement settlement)
+        {
+            if (settlement.Index == 0) return _copy.Ui("ui.skills.return_start");
+            return settlement.Kind switch
+            {
+                SettlementKind.SkyTribe => _copy.Ui("ui.skills.return_sky"),
+                SettlementKind.DeepSeaCity => _copy.Ui("ui.skills.return_deep_sea"),
+                SettlementKind.IslandSettlement => _copy.Ui("ui.skills.return_island"),
+                _ => _copy.Ui("ui.skills.return_village").Replace("{index}", settlement.Index.ToString()),
+            };
+        }
+
+        private string TryReturnToSettlement(int settlementIndex, string targetName)
+        {
+            if (_layout == null || settlementIndex < 0 || settlementIndex >= _layout.Settlements.Count)
+            {
+                return _copy.Ui("ui.skills.unavailable");
+            }
+
+            RunSettlement target = _layout.Settlements[settlementIndex];
+            ReturnSettlementResult access = SpatialTraversalRules.CanReturnToSettlement(
+                _utilityModifiers, target.Domain, _discoveredSettlements.Contains(settlementIndex));
+            if (access.RequiresDive)
+            {
+                return _copy.Ui("ui.skills.return_needs_dive").Replace("{target}", targetName);
+            }
+
+            if (!access.Allowed)
+            {
+                return _copy.Ui("ui.skills.unavailable");
+            }
+
+            RelocatePlayerAndParty(target.Center, SettlementAltitudeAt(target) + 1f);
+            return _copy.Ui("ui.skills.returned").Replace("{target}", targetName);
+        }
+
+        private void RelocatePlayerAndParty(float3 destination, float altitudeM)
+        {
+            _encounter.ForceDisengageAllWild();
+            _encounter.RelocateParty(destination);
+            Vector3 position = _rig.Config.ToWorld(destination, altitudeM);
+            _rig.Character.Teleport(position);
+            _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
+            _lockedTarget = -1;
+            _lockedObjectId = -1;
+            _encounter.ClearObjectFocus();
+            UpdateEnvironment(position);
         }
 
         private void QuickEscape()
@@ -564,18 +859,7 @@ namespace Cosmimera.Bootstrap.Demo
                     { safe = false; break; }
                 }
                 if (!safe) continue;
-                _encounter.ForceDisengageAllWild();
-                _encounter.RelocateParty(destination);
-                var body = _rig.Character.GetComponent<Rigidbody>();
-                Vector3 position = _rig.Config.ToWorld(destination, _rig.SurfaceHeight(destination) + 1f);
-                body.position = position;
-                body.linearVelocity = Vector3.zero;
-                _rig.Character.transform.position = position;
-                _command = new AiCommand(AiCommandKind.Follow, CombatAi.NoTarget);
-                _lockedTarget = -1;
-                _lockedObjectId = -1;
-                _encounter.ClearObjectFocus();
-                UpdateEnvironment(position);
+                RelocatePlayerAndParty(destination, _rig.SurfaceHeight(destination) + 1f);
                 _journal.Message = _copy.Ui("ui.skills.escaped");
                 return;
             }

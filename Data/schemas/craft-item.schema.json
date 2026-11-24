@@ -25,8 +25,14 @@
           "capture",
           "trap",
           "tool",
-          "equipment"
+          "equipment",
+          "fashion"
         ]
+      },
+      "tier": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 3
       },
       "sources": {
         "type": "array",
@@ -173,6 +179,39 @@
                 "type": "integer",
                 "minimum": 100,
                 "maximum": 10000
+              },
+              "range": {
+                "enum": [
+                  "melee",
+                  "ranged"
+                ]
+              },
+              "polarity": {
+                "enum": [
+                  "balanced",
+                  "yin",
+                  "yang"
+                ]
+              },
+              "weapon_type": {
+                "enum": [
+                  "dagger_claw",
+                  "sword_1h",
+                  "axe_1h",
+                  "mace_1h",
+                  "twinblade_staff",
+                  "spear_halberd",
+                  "greatsword",
+                  "greataxe_hammer",
+                  "thrown_shuriken",
+                  "hand_crossbow",
+                  "wand_gun",
+                  "javelin",
+                  "repeater_bow",
+                  "longbow",
+                  "magic_staff",
+                  "heavy_crossbow_cannon"
+                ]
               }
             }
           }
