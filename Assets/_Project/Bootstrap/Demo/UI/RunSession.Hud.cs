@@ -14,6 +14,8 @@ namespace Cosmimera.Bootstrap.Demo
     {
         private GameHudView _hud;
         private readonly List<GameHudView.TeamMemberDisplay> _hudTeamBuffer = new List<GameHudView.TeamMemberDisplay>(6);
+        private readonly List<GameHudView.KeyPromptDisplay> _hudKeyPromptBuffer = new List<GameHudView.KeyPromptDisplay>(8);
+        private readonly List<GameHudView.KeyPromptDisplay> _hudTutorialKeyBuffer = new List<GameHudView.KeyPromptDisplay>(6);
         private int _lastInteractTargetHud = int.MinValue;
         private int _lastInteractChoiceHud = int.MinValue;
         private string _lastObserveTextHud;
@@ -21,6 +23,10 @@ namespace Cosmimera.Bootstrap.Demo
         private InputAction _hudJumpAction;
         private InputAction _hudToggleViewAction;
         private int _hudControlsGamepad = -1;
+        private int _hudKeyPromptMode = int.MinValue;
+        private int _hudTutorialStageKey = int.MinValue;
+        private int _hudTutorialStepKey = int.MinValue;
+        private int _hudTutorialGamepad = -1;
         private int _hudPlayerGamepad = -1;
         private int _hudPlayerHp = int.MinValue;
         private int _hudPlayerMaxHp = int.MinValue;
@@ -62,6 +68,8 @@ namespace Cosmimera.Bootstrap.Demo
         private string _hudQuestWeatherRef;
         private string _hudQuestMoveRef;
         private bool _hudQuestBeginner;
+        private BeginnerQuestStage _hudQuestBqStage;
+        private BeginnerFieldStep _hudQuestBqStep;
         private int _hudQuestStepIndex = int.MinValue;
         private int _hudQuestProgress = int.MinValue;
         private bool _hudQuestComplete;
@@ -106,6 +114,8 @@ namespace Cosmimera.Bootstrap.Demo
             SyncTeamHud();
             SyncPlayerHud();
             SyncControlsAndPromptsHud();
+            SyncTutorialHud();
+            SyncDialogueHud();
         }
 
         private void RefreshCachedWeatherStrings()
@@ -147,6 +157,8 @@ namespace Cosmimera.Bootstrap.Demo
         {
             RefreshCachedWeatherStrings();
             bool beginner = _setup.IsBeginnerQuest && _bqTracker != null;
+            BeginnerQuestStage bqStage = beginner ? _bqTracker.Stage : BeginnerQuestStage.PlanetGen;
+            BeginnerFieldStep bqStep = beginner ? _bqTracker.FieldStep : BeginnerFieldStep.AdventureControls;
             int stepIndex = _quest.StepIndex;
             int progress = _quest.Progress;
             bool complete = _quest.IsComplete;
@@ -158,7 +170,22 @@ namespace Cosmimera.Bootstrap.Demo
             int bearingKind = 0;
             int angleRounded = 0;
             float angleRaw = 0f;
-            if (!beginner && !complete && TryQuestTarget(_quest.Current, out float3 target))
+
+            if (beginner && bqStage == BeginnerQuestStage.FriendFieldTutorial &&
+                bqStep == BeginnerFieldStep.ReachBossLair && _bqBossDef != null)
+            {
+                hasTarget = true;
+                float3 here = _rig.Config.ToDirection(PlayerPosition());
+                float meters = math.acos(math.clamp(math.dot(here, _bqBossDirection), -1f, 1f)) * _rig.Config.Radius;
+                metersRounded = (int)Math.Round(meters, MidpointRounding.AwayFromZero);
+                hasBearing = DemoNavigation.TryBearing(here, _bqBossDirection, _rig.CameraRig.Heading, out angleRaw);
+                if (hasBearing)
+                {
+                    bearingKind = math.abs(angleRaw) < 10f ? 1 : (angleRaw < 0f ? 2 : 3);
+                    angleRounded = bearingKind >= 2 ? (int)Math.Round(math.abs(angleRaw), MidpointRounding.AwayFromZero) : 0;
+                }
+            }
+            else if (!beginner && !complete && TryQuestTarget(_quest.Current, out float3 target))
             {
                 hasTarget = true;
                 float3 here = _rig.Config.ToDirection(PlayerPosition());
@@ -175,6 +202,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (ReferenceEquals(_hudQuestWeatherRef, _hudWeatherStatusCached) &&
                 ReferenceEquals(_hudQuestMoveRef, _hudWeatherMoveCached) &&
                 _hudQuestBeginner == beginner &&
+                _hudQuestBqStage == bqStage &&
+                _hudQuestBqStep == bqStep &&
                 _hudQuestStepIndex == stepIndex &&
                 _hudQuestProgress == progress &&
                 _hudQuestComplete == complete &&
@@ -192,6 +221,8 @@ namespace Cosmimera.Bootstrap.Demo
             _hudQuestWeatherRef = _hudWeatherStatusCached;
             _hudQuestMoveRef = _hudWeatherMoveCached;
             _hudQuestBeginner = beginner;
+            _hudQuestBqStage = bqStage;
+            _hudQuestBqStep = bqStep;
             _hudQuestStepIndex = stepIndex;
             _hudQuestProgress = progress;
             _hudQuestComplete = complete;
@@ -203,48 +234,55 @@ namespace Cosmimera.Bootstrap.Demo
             _hudQuestBearingKind = bearingKind;
             _hudQuestAngle = angleRounded;
 
+            string tag = beginner
+                ? _copy.Ui("ui.beginner_quest.planet_tag").Trim('【', '】', '[', ']')
+                : _copy.Ui("ui.hud.quest_tracker");
             string title = _copy.ChainTitle(_plan.ChainId);
-            string body = _hudWeatherStatusCached;
-            if (!string.IsNullOrEmpty(_hudWeatherMoveCached))
-            {
-                body += "\n" + _hudWeatherMoveCached;
-            }
-
+            string objective;
             if (beginner)
             {
-                body += "\n" + _copy.Ui("ui.hud.quest_tracker") + "：新手教學進行中";
+                objective = _bqTracker.CurrentInstruction(_setup.FriendId ?? string.Empty, _setup.RivalId ?? string.Empty);
             }
             else if (!complete)
             {
                 RunQuestStep s = _quest.Current;
-                string stepText = _copy.Step(StepType(s.Kind), (int)(_plan.Seed % 3))
+                objective = _copy.Step(StepType(s.Kind), (int)(_plan.Seed % 3))
                     .Replace("{count}", (s.Count - progress).ToString())
                     .Replace("{element}", _copy.Element(s.Element.ToString()))
                     .Replace("{poi}", _copy.Theme(_plan.Regions[s.Region].ThemeId))
                     .Replace("{boss}", _copy.Name(_plan.Spawns[_plan.Quest[_plan.Quest.Count - 1].TargetSpawn].CreatureId));
-                body += "\n" + _copy.Ui("ui.hud.quest_tracker") + "：" + stepText;
-
-                if (hasTarget)
-                {
-                    string bearing = !hasBearing ? _copy.Ui("ui.hud.bearing_unavailable")
-                        : bearingKind == 1 ? _copy.Ui("ui.hud.bearing_ahead")
-                        : _copy.Ui(bearingKind == 2 ? "ui.hud.bearing_left" : "ui.hud.bearing_right")
-                            .Replace("{angle}", angleRounded.ToString());
-                    body += $"\n{bearing} · {metersRounded} m";
-                }
             }
             else
             {
-                body += "\n" + _copy.Ui("ui.hud.quest_complete").Replace("{capture}", BindingLabel(_captureAction));
+                objective = _copy.Ui("ui.hud.quest_complete").Replace("{capture}", BindingLabel(_captureAction));
             }
 
+            string compass = string.Empty;
+            if (hasTarget)
+            {
+                string bearing = !hasBearing ? _copy.Ui("ui.hud.bearing_unavailable")
+                    : bearingKind == 1 ? _copy.Ui("ui.hud.bearing_ahead")
+                    : _copy.Ui(bearingKind == 2 ? "ui.hud.bearing_left" : "ui.hud.bearing_right")
+                        .Replace("{angle}", angleRounded.ToString());
+                compass = $"{bearing} · {metersRounded} m";
+            }
+
+            string meta = string.Empty;
             if (_region >= 0)
             {
                 RunRegion r = _plan.Regions[_region];
-                body += "\n" + _copy.Theme(r.ThemeId) + (r.AffixId != null ? " · " + _copy.AffixName(r.AffixId) : string.Empty);
+                meta = _copy.Theme(r.ThemeId) + (r.AffixId != null ? " · " + _copy.AffixName(r.AffixId) : string.Empty);
+            }
+            if (!string.IsNullOrEmpty(_hudWeatherStatusCached))
+            {
+                meta = string.IsNullOrEmpty(meta) ? _hudWeatherStatusCached : meta + "\n" + _hudWeatherStatusCached;
+            }
+            if (!string.IsNullOrEmpty(_hudWeatherMoveCached))
+            {
+                meta = string.IsNullOrEmpty(meta) ? _hudWeatherMoveCached : meta + " · " + _hudWeatherMoveCached;
             }
 
-            _hud.SetQuest(title, body);
+            _hud.SetQuest(tag, title, objective, compass, meta, beginner || _setup.IsLobbyPlanet);
         }
 
         private void SyncBossHud()
@@ -464,7 +502,7 @@ namespace Cosmimera.Bootstrap.Demo
             _hudPlayerGamepad = usesGamepad;
             string rollText = _copy.Ui("ui.hud.roll_prompt").Replace("{key}", BindingLabel(_rollAction)) +
                 (rollCdLeft > 0 ? $" ({rollCdLeft / 1000f:0.0}s)" : $" {_copy.Ui("ui.hud.cd_ready")}");
-            _hud.SetPlayerStats($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}", rollText);
+            _hud.SetPlayerStats($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}", rollText, _vitals.Hp, _vitals.MaxHp);
         }
 
         private void SyncControlsAndPromptsHud()
@@ -487,11 +525,76 @@ namespace Cosmimera.Bootstrap.Demo
                 _hud.SetControlsHint(help);
             }
 
+            int capture = _interactTarget < 0 ? FindCaptureTarget(CaptureReachM) : -1;
+            bool inCombat = _team.InCombat;
+            bool directControl = IsDirectControlling;
+            bool interactMenuOpen = _interactTarget >= 0;
+            bool hasCapture = capture >= 0;
+            bool hasInteractable = _interactTarget < 0 && _interactable >= 0;
+
+            int keyMode = usesGamepad
+                | (inCombat ? 2 : 0)
+                | (directControl ? 4 : 0)
+                | (interactMenuOpen ? 8 : 0)
+                | (hasCapture ? 16 : 0)
+                | (hasInteractable ? 32 : 0);
+
+            if (_hudKeyPromptMode != keyMode)
+            {
+                _hudKeyPromptMode = keyMode;
+                _hudKeyPromptBuffer.Clear();
+                if (interactMenuOpen)
+                {
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_menuUp) + "/" + BindingLabel(_menuDown), "選擇"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_menuSubmit), "確認"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_menuCancel), _copy.Ui("ui.journal.close")));
+                }
+                else if (directControl)
+                {
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_castActions[0]), "招牌招"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_blockAction), "格擋"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_rollAction), "翻滾"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleTargetAction), "鎖定目標"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_switchAction), _copy.Ui("ui.hud.switch")));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_returnToPlayerAction), "回角色"));
+                }
+                else if (inCombat)
+                {
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_rollAction), "翻滾"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleTargetAction), "鎖定目標"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_focusAction), _copy.Ui("ui.hud.command_focus")));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_retreatAction), _copy.Ui("ui.hud.command_retreat")));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_switchAction), _copy.Ui("ui.hud.switch")));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_journalAction), _copy.Ui("ui.journal.open")));
+                }
+                else
+                {
+                    _hudJumpAction ??= _actions.FindAction("Player/Jump");
+                    if (hasCapture)
+                    {
+                        _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_captureAction), "投擲收服"));
+                        _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleVesselAction), "切器皿"));
+                    }
+                    else
+                    {
+                        _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_interactAction), hasInteractable ? "互動" : "近身互動"));
+                    }
+
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_hudJumpAction), "跳躍"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_rollAction), "翻滾"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleTargetAction), "鎖定目標"));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_journalAction), _copy.Ui("ui.journal.open")));
+                    _hudKeyPromptBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_codexAction), _copy.Ui("ui.journal.tab.Codex")));
+                }
+
+                _hud.SetKeyPrompts(_hudKeyPromptBuffer);
+            }
+
             _hud.SetToast(_nowMs < _toastUntilMs ? _toast : null);
 
-            if (_interactTarget >= 0)
+            if (interactMenuOpen)
             {
-                _hud.SetInteractPrompt(null);
+                _hud.SetInteractPrompt(null, null);
                 _hudPromptCaptureId = int.MinValue;
                 _hudPromptInteractableId = int.MinValue;
                 if (_lastInteractTargetHud != _interactTarget ||
@@ -525,8 +628,7 @@ namespace Cosmimera.Bootstrap.Demo
             _lastInteractTargetHud = int.MinValue;
             _hud.SetInteractMenu(false, null, null);
 
-            int capture = FindCaptureTarget(CaptureReachM);
-            if (capture >= 0)
+            if (hasCapture)
             {
                 float seconds = (KnockedOutWindowMs - (_nowMs - _wild[capture].KnockedOutAtMs)) / 1000f;
                 int tenths = (int)Math.Round(seconds * 10f, MidpointRounding.AwayFromZero);
@@ -536,11 +638,15 @@ namespace Cosmimera.Bootstrap.Demo
                     _hudPromptCaptureTenths = tenths;
                     _hudPromptInteractableId = int.MinValue;
                     _hudPromptGamepad = usesGamepad;
+                    string captureKey = BindingLabel(_captureAction);
                     string prompt = _copy.Ui("ui.hud.capture_available")
-                        .Replace("{capture}", BindingLabel(_captureAction)).Replace("{cycle}", BindingLabel(_cycleVesselAction))
+                        .Replace("[{capture}] ", string.Empty)
+                        .Replace("[{capture}]", string.Empty)
+                        .Replace("{capture}", captureKey)
+                        .Replace("{cycle}", BindingLabel(_cycleVesselAction))
                         .Replace("{name}", _copy.Name(_encounter.Units[capture].Def.Id))
                         .Replace("{seconds}", (tenths / 10f).ToString("0.0"));
-                    _hud.SetInteractPrompt(prompt);
+                    _hud.SetInteractPrompt(captureKey, prompt);
                 }
                 return;
             }
@@ -552,15 +658,113 @@ namespace Cosmimera.Bootstrap.Demo
                 {
                     _hudPromptInteractableId = _interactable;
                     _hudPromptGamepad = usesGamepad;
-                    string prompt = _copy.Ui("ui.hud.interact_prompt").Replace("{key}", BindingLabel(_interactAction))
+                    string interactKey = BindingLabel(_interactAction);
+                    string prompt = _copy.Ui("ui.hud.interact_prompt")
+                        .Replace("{key} ", string.Empty)
+                        .Replace("{key}", string.Empty)
                         .Replace("{target}", _copy.Name(_encounter.Units[_interactable].Def.Id));
-                    _hud.SetInteractPrompt(prompt);
+                    _hud.SetInteractPrompt(interactKey, prompt);
                 }
                 return;
             }
 
             _hudPromptInteractableId = int.MinValue;
-            _hud.SetInteractPrompt(null);
+            _hud.SetInteractPrompt(null, null);
+        }
+
+        private void SyncTutorialHud()
+        {
+            bool active = _setup.IsBeginnerQuest && _bqTracker != null &&
+                (_bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial ||
+                 _bqTracker.Stage == BeginnerQuestStage.FriendFieldTutorial ||
+                 _bqTracker.Stage == BeginnerQuestStage.BossAndRival2v2);
+            if (!active)
+            {
+                if (_hudTutorialStageKey != -1)
+                {
+                    _hudTutorialStageKey = -1;
+                    _hud.SetTutorial(false, null, null, null);
+                }
+                return;
+            }
+
+            int stageKey = (int)_bqTracker.Stage;
+            int stepKey = (int)_bqTracker.FieldStep;
+            int usesGamepad = _inputHints.UsesGamepad ? 1 : 0;
+            if (_hudTutorialStageKey == stageKey &&
+                _hudTutorialStepKey == stepKey &&
+                _hudTutorialGamepad == usesGamepad)
+            {
+                return;
+            }
+
+            _hudTutorialStageKey = stageKey;
+            _hudTutorialStepKey = stepKey;
+            _hudTutorialGamepad = usesGamepad;
+            _hudTutorialKeyBuffer.Clear();
+
+            string badge;
+            string title;
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial)
+            {
+                badge = "對戰教學";
+                title = "操控主控宙獸：出招、鎖定目標與格擋閃避";
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_castActions[0]), "招牌招"));
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_blockAction), "格擋"));
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_rollAction), "翻滾"));
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleTargetAction), "鎖定"));
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.BossAndRival2v2)
+            {
+                badge = "2vs2 試煉";
+                title = "與好友並肩作戰，擊倒幼年 BOSS 與宿敵宙獸";
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_castActions[0]), "出招"));
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_blockAction), "格擋"));
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_switchAction), _copy.Ui("ui.hud.switch")));
+            }
+            else
+            {
+                switch (_bqTracker.FieldStep)
+                {
+                    case BeginnerFieldStep.AdventureControls:
+                        badge = "教學 1/5";
+                        title = "翻滾閃避或靠近野生宙獸近身互動";
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_rollAction), "翻滾"));
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_interactAction), "近身互動"));
+                        break;
+                    case BeginnerFieldStep.WildOneVsOne:
+                        badge = "教學 2/5";
+                        title = "鎖定並擊倒 1 隻野生宙獸";
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleTargetAction), "鎖定目標"));
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_focusAction), _copy.Ui("ui.hud.command_focus")));
+                        break;
+                    case BeginnerFieldStep.CaptureItem:
+                        badge = "教學 3/5";
+                        title = "靠近倒地的野生宙獸並投擲收服器皿";
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_captureAction), "投擲收服"));
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_cycleVesselAction), "切換器皿"));
+                        break;
+                    case BeginnerFieldStep.HealItem:
+                        badge = "教學 4/5";
+                        title = "開啟冒險手冊「道具」使用治療道具";
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_journalAction), _copy.Ui("ui.journal.open")));
+                        break;
+                    default:
+                        badge = "教學 5/5";
+                        title = "依左上角羅盤前往 BOSS 巢穴";
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_switchAction), _copy.Ui("ui.hud.switch")));
+                        _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_journalAction), _copy.Ui("ui.journal.open")));
+                        break;
+                }
+            }
+
+            _hud.SetTutorial(true, badge, title, _hudTutorialKeyBuffer);
+        }
+
+        private void SyncDialogueHud()
+        {
+            bool visible = _nowMs < _dialogueUntilMs && !string.IsNullOrEmpty(_dialogueBody);
+            _hud.SetDialogue(visible, _dialogueSpeaker, _dialogueBody);
         }
 
         private void DisposeHud()

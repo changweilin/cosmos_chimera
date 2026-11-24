@@ -30,6 +30,9 @@ namespace Cosmimera.Bootstrap.Demo
         private float3 _bqBossDirection;
         private WildIndividual _bqBossIndividual;
         private int _bqTutorialVesselsRemaining;
+        private string _dialogueSpeaker = string.Empty;
+        private string _dialogueBody = string.Empty;
+        private long _dialogueUntilMs;
 
         private bool HasActiveBeginnerTrainerBattle =>
             _bqFriendBattleTrainerId >= 0 || _bqBossTrainerId >= 0;
@@ -91,7 +94,7 @@ namespace Cosmimera.Bootstrap.Demo
             List<DialogueLine> intro = BeginnerQuestRules.FriendBattleIntroDialogue(_setup.FriendId ?? string.Empty);
             if (intro.Count > 0)
             {
-                Toast($"{intro[0].Speaker}：{intro[0].FallbackText}");
+                ShowDialogue(intro[0].Speaker, ResolveBeginnerDialogue(intro[0]));
             }
         }
 
@@ -177,7 +180,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (intro.Count > 0)
             {
                 DialogueLine last = intro[intro.Count - 1];
-                Toast($"{last.Speaker}：{last.FallbackText}");
+                ShowDialogue(last.Speaker, ResolveBeginnerDialogue(last));
             }
         }
 
@@ -207,7 +210,7 @@ namespace Cosmimera.Bootstrap.Demo
                         _setup.FriendId ?? string.Empty, won);
                     if (lines.Count > 0)
                     {
-                        Toast($"{lines[0].Speaker}：{lines[0].FallbackText}");
+                        ShowDialogue(lines[0].Speaker, ResolveBeginnerDialogue(lines[0]));
                     }
 
                     return true;
@@ -235,7 +238,7 @@ namespace Cosmimera.Bootstrap.Demo
                     if (victory.Count > 0)
                     {
                         DialogueLine last = victory[victory.Count - 1];
-                        Toast($"{last.Speaker}：{last.FallbackText}");
+                        ShowDialogue(last.Speaker, ResolveBeginnerDialogue(last));
                     }
 
                     End(true, false);
@@ -273,7 +276,7 @@ namespace Cosmimera.Bootstrap.Demo
                     _setup.FriendId ?? string.Empty, false);
                 if (lines.Count > 0)
                 {
-                    Toast($"{lines[0].Speaker}：{lines[0].FallbackText}");
+                    ShowDialogue(lines[0].Speaker, ResolveBeginnerDialogue(lines[0]));
                 }
 
                 return true;
@@ -433,10 +436,17 @@ namespace Cosmimera.Bootstrap.Demo
             }
         }
 
+        private void ShowDialogue(string speaker, string body, long durationMs = 5500)
+        {
+            _dialogueSpeaker = speaker ?? string.Empty;
+            _dialogueBody = body ?? string.Empty;
+            _dialogueUntilMs = _nowMs + durationMs;
+        }
+
         private void ShowBeginnerStepToast(BeginnerFieldStep step)
         {
             DialogueLine line = BeginnerQuestRules.FieldStepDialogue(_setup.FriendId ?? string.Empty, step);
-            Toast($"{line.Speaker}：{ResolveBeginnerDialogue(line)}");
+            ShowDialogue(line.Speaker, ResolveBeginnerDialogue(line));
         }
 
         private string ResolveBeginnerDialogue(DialogueLine line)

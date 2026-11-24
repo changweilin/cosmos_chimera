@@ -1,91 +1,116 @@
-/* AdventureHandbook (Backpack / Partners / Skills / Codex) */
+/* AdventureHandbook (PLA Washi Scroll & Bookmark Tab Style) */
 
 .handbook-shell {
     width: 92%;
     max-width: 1120px;
     height: 88%;
     flex-direction: column;
+    background-color: rgb(243, 237, 224);
+    border-width: 2px;
+    border-color: rgb(156, 128, 78);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
 }
 
 .handbook-header {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    padding-bottom: 12px;
-    margin-bottom: 10px;
-    border-bottom-width: 1px;
-    border-bottom-color: rgb(51, 65, 85);
+    background-color: rgb(32, 37, 45);
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 12px;
+    padding-bottom: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(172, 142, 86);
 }
 
 .handbook-tabs {
     flex-direction: row;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
 }
 
 .tab-btn {
-    background-color: rgb(30, 41, 59);
-    border-width: 1px;
-    border-color: rgb(51, 65, 85);
-    border-radius: 8px;
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    margin-right: 8px;
-    color: rgb(203, 213, 225);
+    background-color: rgb(52, 60, 72);
+    border-top-width: 1px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 0;
+    border-color: rgba(198, 166, 102, 0.45);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    margin-right: 6px;
+    color: rgb(224, 218, 206);
     font-size: 14px;
     -unity-font-style: bold;
     transition-duration: 0.12s;
 }
 
 .tab-btn:hover {
-    background-color: rgb(51, 65, 85);
-    border-color: rgb(56, 189, 248);
-    color: rgb(255, 255, 255);
+    background-color: rgb(68, 78, 94);
+    border-color: rgb(232, 206, 148);
+    color: rgb(252, 248, 240);
 }
 
 .tab-btn-active {
-    background-color: rgb(2, 132, 199);
-    border-color: rgb(125, 211, 252);
-    color: rgb(255, 255, 255);
+    background-color: rgb(243, 237, 224);
+    border-top-width: 3px;
+    border-top-color: rgb(184, 58, 48);
+    border-left-color: rgb(172, 142, 86);
+    border-right-color: rgb(172, 142, 86);
+    color: rgb(36, 32, 28);
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 .handbook-close-btn {
-    margin-bottom: 0;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-
-.handbook-nav-hint {
     margin-bottom: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
 }
 
 .handbook-status {
-    background-color: rgb(12, 74, 110);
+    background-color: rgb(42, 66, 98);
     border-width: 1px;
-    border-color: rgb(56, 189, 248);
-    border-radius: 8px;
-    padding-left: 12px;
-    padding-right: 12px;
+    border-color: rgb(172, 142, 86);
+    border-radius: 6px;
+    padding-left: 14px;
+    padding-right: 14px;
     padding-top: 8px;
     padding-bottom: 8px;
-    margin-bottom: 10px;
-    color: rgb(224, 242, 254);
+    margin-left: 18px;
+    margin-right: 18px;
+    margin-top: 12px;
+    color: rgb(248, 244, 234);
     font-size: 14px;
     -unity-font-style: bold;
 }
 
 .handbook-scroll {
     flex-grow: 1;
-    padding-right: 6px;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 14px;
+    padding-bottom: 10px;
 }
 
 .handbook-section {
-    background-color: rgb(20, 29, 48);
+    background-color: rgb(251, 248, 240);
     border-width: 1px;
-    border-color: rgb(42, 56, 82);
-    border-radius: 10px;
+    border-color: rgb(212, 200, 176);
+    border-left-width: 4px;
+    border-left-color: rgb(56, 88, 126);
+    border-radius: 8px;
     padding: 14px;
     margin-bottom: 12px;
 }
@@ -98,10 +123,10 @@
 }
 
 .handbook-item-card {
-    background-color: rgb(30, 41, 59);
+    background-color: rgb(246, 240, 228);
     border-width: 1px;
-    border-color: rgb(51, 65, 85);
-    border-radius: 8px;
+    border-color: rgb(206, 194, 170);
+    border-radius: 6px;
     padding-left: 12px;
     padding-right: 12px;
     padding-top: 10px;
@@ -111,7 +136,7 @@
 
 .handbook-item-label {
     font-size: 14px;
-    color: rgb(226, 232, 240);
+    color: rgb(42, 36, 30);
     white-space: normal;
     margin-bottom: 4px;
 }
@@ -119,4 +144,85 @@
 .handbook-action-btn {
     align-self: flex-start;
     min-width: 180px;
+}
+
+.handbook-shell .heading-lg {
+    color: rgb(38, 60, 92);
+    margin-top: 2px;
+    margin-bottom: 8px;
+}
+
+.handbook-shell .body-text {
+    color: rgb(42, 36, 30);
+}
+
+.handbook-shell .muted-text {
+    color: rgb(108, 96, 82);
+}
+
+.handbook-shell .btn {
+    background-color: rgb(230, 222, 206);
+    border-color: rgb(186, 172, 148);
+    color: rgb(48, 42, 36);
+}
+
+.handbook-shell .btn-danger {
+    background-color: rgb(146, 44, 42);
+    border-color: rgb(212, 92, 82);
+    color: rgb(254, 236, 232);
+}
+
+.handbook-shell .btn-danger:hover {
+    background-color: rgb(174, 54, 50);
+}
+
+.handbook-shell .btn-primary {
+    background-color: rgb(238, 231, 214);
+    border-width: 1px;
+    border-color: rgb(172, 142, 86);
+    border-left-width: 3px;
+    border-left-color: rgb(56, 88, 126);
+    color: rgb(36, 32, 28);
+}
+
+.handbook-shell .btn-primary:hover {
+    background-color: rgb(248, 240, 222);
+    border-color: rgb(184, 58, 48);
+}
+
+.handbook-shell .btn-focused {
+    background-color: rgb(252, 240, 208);
+    border-width: 2px;
+    border-color: rgb(184, 58, 48);
+    border-left-width: 4px;
+    border-left-color: rgb(184, 58, 48);
+    color: rgb(28, 22, 18);
+}
+
+.handbook-shell .text-input > .unity-text-field__input {
+    background-color: rgb(255, 253, 248);
+    border-width: 1px;
+    border-color: rgb(172, 142, 86);
+    color: rgb(36, 32, 28);
+}
+
+.handbook-shell .text-input > .unity-text-field__input:focus {
+    border-width: 2px;
+    border-color: rgb(56, 88, 126);
+}
+
+.handbook-footer {
+    background-color: rgb(28, 32, 38);
+    border-top-width: 2px;
+    border-top-color: rgb(172, 142, 86);
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+.handbook-nav-hint {
+    font-size: 13px;
+    color: rgb(242, 236, 224);
+    white-space: normal;
 }

@@ -8,13 +8,27 @@
 
         <ui:VisualElement name="topRow" picking-mode="Ignore" class="hud-top-row">
             <ui:VisualElement name="leftCol" picking-mode="Ignore" class="hud-col-left">
-                <ui:VisualElement name="questCard" picking-mode="Ignore" class="hud-card">
-                    <ui:Label name="questTitle" text="" picking-mode="Ignore" class="hud-quest-title" />
-                    <ui:Label name="questBody" text="" picking-mode="Ignore" class="hud-quest-body" />
+                <ui:VisualElement name="questCard" picking-mode="Ignore" class="hud-quest-card">
+                    <ui:VisualElement name="questStripe" picking-mode="Ignore" class="hud-quest-stripe" />
+                    <ui:VisualElement picking-mode="Ignore" class="hud-quest-content">
+                        <ui:VisualElement picking-mode="Ignore" class="hud-quest-header">
+                            <ui:Label name="questTag" text="" picking-mode="Ignore" class="hud-quest-tag" />
+                            <ui:Label name="questCompass" text="" picking-mode="Ignore" class="hud-quest-compass hidden" />
+                        </ui:VisualElement>
+                        <ui:Label name="questTitle" text="" picking-mode="Ignore" class="hud-quest-title" />
+                        <ui:Label name="questBody" text="" picking-mode="Ignore" class="hud-quest-body" />
+                        <ui:Label name="questMeta" text="" picking-mode="Ignore" class="hud-quest-meta hidden" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="playerCombatCard" picking-mode="Ignore" class="hud-card hidden">
-                    <ui:Label name="playerCombatTitle" text="" picking-mode="Ignore" class="hud-member-name" />
-                    <ui:Label name="playerCombatDetail" text="" picking-mode="Ignore" class="muted-text" />
+
+                <ui:VisualElement name="playerCombatCard" picking-mode="Ignore" class="hud-player-card hidden">
+                    <ui:VisualElement picking-mode="Ignore" class="hud-player-header">
+                        <ui:Label name="playerCombatTitle" text="" picking-mode="Ignore" class="hud-member-name" />
+                        <ui:Label name="playerCombatDetail" text="" picking-mode="Ignore" class="hud-player-roll" />
+                    </ui:VisualElement>
+                    <ui:VisualElement picking-mode="Ignore" class="hud-player-track">
+                        <ui:VisualElement name="playerHpFill" picking-mode="Ignore" class="bar-fill-hp" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
 
@@ -26,13 +40,23 @@
                     </ui:VisualElement>
                     <ui:VisualElement picking-mode="Ignore" class="hud-boss-track">
                         <ui:VisualElement name="bossHpFill" picking-mode="Ignore" class="bar-fill-boss" />
+                        <ui:VisualElement picking-mode="Ignore" class="hud-boss-tick-33" />
+                        <ui:VisualElement picking-mode="Ignore" class="hud-boss-tick-66" />
                     </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="tutorialBanner" picking-mode="Ignore" class="hud-tutorial-banner hidden">
+                    <ui:VisualElement picking-mode="Ignore" class="hud-tutorial-header">
+                        <ui:Label name="tutorialStepBadge" text="" picking-mode="Ignore" class="hud-tutorial-badge" />
+                        <ui:Label name="tutorialTitle" text="" picking-mode="Ignore" class="hud-tutorial-title" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="tutorialKeys" picking-mode="Ignore" class="hud-tutorial-keys" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:VisualElement name="rightCol" picking-mode="Ignore" class="hud-col-right">
-                <ui:VisualElement class="hud-actions-row">
-                    <ui:Button name="journalBtn" text="背包 / 手冊 [I]" class="btn btn-primary hud-top-btn" />
+                <ui:VisualElement picking-mode="Ignore" class="hud-actions-row">
+                    <ui:Button name="journalBtn" text="冒險手冊 [I]" class="hud-journal-btn" />
                 </ui:VisualElement>
                 <ui:VisualElement name="teamList" picking-mode="Ignore" class="hud-team-list" />
             </ui:VisualElement>
@@ -40,15 +64,27 @@
 
         <ui:VisualElement name="centerPrompts" picking-mode="Ignore" class="hud-center-prompts">
             <ui:Label name="toastLabel" text="" picking-mode="Ignore" class="hud-toast hidden" />
+
             <ui:VisualElement name="interactMenu" class="hud-interact-menu hidden">
                 <ui:Label name="interactTitle" text="" class="heading-lg" />
                 <ui:VisualElement name="interactButtons" />
             </ui:VisualElement>
-            <ui:Label name="interactPrompt" text="" picking-mode="Ignore" class="hud-interact-pill hidden" />
+
+            <ui:VisualElement name="interactPrompt" picking-mode="Ignore" class="hud-interact-bubble hidden">
+                <ui:Label name="interactPromptKey" text="" picking-mode="Ignore" class="key-glyph hud-interact-key" />
+                <ui:Label name="interactPromptText" text="" picking-mode="Ignore" class="hud-interact-text" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="dialogueBox" picking-mode="Ignore" class="hud-dialogue-box hidden">
+                <ui:Label name="dialogueSpeaker" text="" picking-mode="Ignore" class="hud-dialogue-speaker" />
+                <ui:Label name="dialogueBody" text="" picking-mode="Ignore" class="hud-dialogue-body" />
+                <ui:Label name="dialogueAdvance" text="▼" picking-mode="Ignore" class="hud-dialogue-advance" />
+            </ui:VisualElement>
         </ui:VisualElement>
 
         <ui:VisualElement name="bottomRow" picking-mode="Ignore" class="hud-bottom-row">
-            <ui:VisualElement name="controlsCard" picking-mode="Ignore" class="hud-card hud-controls-card">
+            <ui:VisualElement name="keyPromptsRow" picking-mode="Ignore" class="hud-keybar" />
+            <ui:VisualElement name="controlsCard" picking-mode="Ignore" class="hud-card hud-controls-card hidden">
                 <ui:Label name="controlsText" text="" picking-mode="Ignore" class="muted-text" />
             </ui:VisualElement>
         </ui:VisualElement>

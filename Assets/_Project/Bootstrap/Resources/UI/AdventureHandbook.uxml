@@ -12,9 +12,11 @@
                 </ui:VisualElement>
                 <ui:Button name="closeButton" text="關閉 [Esc]" class="btn btn-danger handbook-close-btn" />
             </ui:VisualElement>
-            <ui:Label name="navHintLabel" text="" class="muted-text handbook-nav-hint" />
             <ui:Label name="messageBanner" text="" class="handbook-status hidden" />
             <ui:ScrollView name="contentScroll" class="handbook-scroll" />
+            <ui:VisualElement name="footer" class="handbook-footer">
+                <ui:Label name="navHintLabel" text="" class="handbook-nav-hint" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

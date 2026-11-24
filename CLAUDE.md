@@ -50,6 +50,7 @@ Batchmode 需要專案**沒有**在 Editor 中開啟（同一專案只能有一�
 | 角色設計概念、角色動作 | `docs/design/characters.md` |
 | 美術外包 prompt、驗收 `Art/_incoming/<task_id>` | `docs/design/art-asset-pipeline.md` + `tools/prompt-forge/README.md` |
 | 畫風、渲染、沉浸感 | `docs/design/vision.md` |
+| 主畫面 HUD、手冊選單、任務提示、教學與對話 UI | `docs/design/ui.md` |
 | 需求有歧義 | `docs/open-questions.html`（先查，沒有就新增並停下來問） |
 
 # 硬性規則
