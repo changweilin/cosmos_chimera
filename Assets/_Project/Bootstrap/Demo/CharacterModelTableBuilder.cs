@@ -54,8 +54,11 @@ namespace Cosmimera.Bootstrap.Demo
 
                 string assetDir = dir.Replace('\\', '/');
                 string glbPath = $"{assetDir}/Model/{charId}.glb";
+                string acgPath = $"{assetDir}/ACG/{charId}_acg.fbx";
                 string fbxPath = $"{assetDir}/Model/{charId}.fbx";
-                string modelPath = File.Exists(glbPath) ? glbPath : fbxPath;
+                string modelPath = File.Exists(glbPath) ? glbPath
+                    : File.Exists(acgPath) ? acgPath
+                    : fbxPath;
                 if (modelPath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
                 {
                     EnsureGltfMecanim(modelPath);
