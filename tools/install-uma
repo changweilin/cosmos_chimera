@@ -1,8 +1,14 @@
 #!/usr/bin/env sh
 # Downloads the pinned UMA release and imports it into Assets/UMA (gitignored, ADR-0012).
 # Usage: tools/install-uma            (Unity Editor must NOT have this project open)
+#        tools/install-uma --unpack-only   (extracts Assets/UMA without Unity; for CI)
 #        UNITY=/path/to/Unity.exe tools/install-uma
 set -eu
+
+UNPACK_ONLY=0
+if [ "${1:-}" = "--unpack-only" ]; then
+  UNPACK_ONLY=1
+fi
 
 UMA_TAG="V3.1.5"
 UMA_FILE="UMA31_f5.unitypackage"
@@ -14,7 +20,7 @@ CACHE="$ROOT/Library/UMA-cache"
 PKG="$CACHE/$UMA_FILE"
 UNITY="${UNITY:-C:/Program Files/Unity/Hub/Editor/6000.3.28f1/Editor/Unity.exe}"
 
-if [ ! -f "$UNITY" ]; then
+if [ "$UNPACK_ONLY" -eq 0 ] && [ ! -f "$UNITY" ]; then
   echo "error: Unity not found at $UNITY (set UNITY=...)" >&2
   exit 2
 fi
@@ -31,6 +37,47 @@ ACTUAL="$(sha256sum "$PKG" | cut -d' ' -f1)"
 if [ "$ACTUAL" != "$UMA_SHA256" ]; then
   echo "error: sha256 mismatch for $PKG (got $ACTUAL); delete it and retry" >&2
   exit 1
+fi
+
+if [ "$UNPACK_ONLY" -eq 1 ]; then
+  echo "unpacking $UMA_FILE into $ROOT/Assets/UMA"
+  PY="$(command -v python3 || command -v python)"
+  "$PY" - "$PKG" "$ROOT" <<'PYEOF'
+import os, sys, tarfile
+
+pkg, root = sys.argv[1], sys.argv[2]
+entries = {}
+with tarfile.open(pkg, "r:gz") as tf:
+    for m in tf:
+        if not m.isfile():
+            continue
+        parts = m.name.split("/")
+        if len(parts) != 2:
+            continue
+        guid, kind = parts
+        entries.setdefault(guid, {})[kind] = tf.extractfile(m).read()
+
+for data in entries.values():
+    raw_path = data.get("pathname")
+    if not raw_path:
+        continue
+    rel = raw_path.decode("utf-8").splitlines()[0].strip()
+    if not rel.startswith("Assets/UMA"):
+        raise ValueError(f"unexpected path in unitypackage: {rel}")
+    dst = os.path.join(root, rel)
+    if "asset" in data:
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst, "wb") as f:
+            f.write(data["asset"])
+    else:
+        os.makedirs(dst, exist_ok=True)
+    if "asset.meta" in data:
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        with open(dst + ".meta", "wb") as f:
+            f.write(data["asset.meta"])
+PYEOF
+  echo "done: UMA $UMA_TAG (unpacked)"
+  exit 0
 fi
 
 echo "importing $UMA_FILE into $ROOT (log: Logs/install-uma.log)"

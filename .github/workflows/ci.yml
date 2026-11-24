@@ -81,9 +81,22 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: Library
-          key: Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-${{ github.sha }}
+          key: Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt', 'tools/install-uma') }}-${{ github.sha }}
           restore-keys: |
+            Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt', 'tools/install-uma') }}-
             Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
+      - name: Cache UMA
+        id: uma-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Assets/UMA
+            Assets/UMA.meta
+          key: UMA-${{ hashFiles('tools/install-uma') }}
+      - name: Install UMA
+        if: steps.uma-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: tools/install-uma --unpack-only
       - name: Run EditMode tests
         id: unity
         uses: game-ci/unity-test-runner@v4.3.2

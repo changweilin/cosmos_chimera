@@ -33,6 +33,8 @@ namespace Cosmimera.Bootstrap.Tests
         [Test]
         public void EveryBaseHasARaceWithOneDnaPerChannel()
         {
+            Assume.That(Directory.Exists($"{Root}/Races"), Is.True,
+                "NPC UMA races not built; run tools/build-npc-races");
             var problems = new List<string>();
             foreach ((NpcRace race, NpcSex sex) in Bases())
             {
