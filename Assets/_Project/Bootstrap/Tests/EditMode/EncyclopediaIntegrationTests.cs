@@ -45,7 +45,10 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 path = Path.Combine(Application.dataPath, "../Data/_demo/creatures/p4-09-encyclopedia-01--drive-creatures.json");
             }
-            Assume.That(File.Exists(path), Is.True, "drive-creatures.json not present (gitignored _demo/_incoming)");
+            if (!File.Exists(path))
+            {
+                Assert.Ignore("drive-creatures.json not present (gitignored _demo/_incoming)");
+            }
             JArray forms = JArray.Parse(File.ReadAllText(path));
             Assert.That(forms.Count, Is.EqualTo(60));
             foreach (JObject form in forms)

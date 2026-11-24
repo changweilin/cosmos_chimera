@@ -33,8 +33,10 @@ namespace Cosmimera.Bootstrap.Tests
         [Test]
         public void EveryBaseHasARaceWithOneDnaPerChannel()
         {
-            Assume.That(Directory.Exists($"{Root}/Races"), Is.True,
-                "NPC UMA races not built; run tools/build-npc-races");
+            if (!Directory.Exists($"{Root}/Races"))
+            {
+                Assert.Ignore("NPC UMA races not built; run tools/build-npc-races");
+            }
             var problems = new List<string>();
             foreach ((NpcRace race, NpcSex sex) in Bases())
             {
@@ -71,7 +73,10 @@ namespace Cosmimera.Bootstrap.Tests
             {
                 string id = UmaRaceBaseTests.BaseId(race, sex);
                 RaceData data = RaceOf(id);
-                Assume.That(data, Is.Not.Null, id + ": no race; see EveryBaseHasARaceWithOneDnaPerChannel");
+                if (data == null)
+                {
+                    Assert.Ignore(id + ": no race; see EveryBaseHasARaceWithOneDnaPerChannel");
+                }
                 data.DNACollection.LoadDictionary();
                 var row = (JObject)bases[id];
                 var baked = (JObject)keys[id];
@@ -130,7 +135,10 @@ namespace Cosmimera.Bootstrap.Tests
         {
             string id = UmaRaceBaseTests.BaseId(race, sex);
             RaceData data = RaceOf(id);
-            Assume.That(data, Is.Not.Null, id + ": no race; see EveryBaseHasARaceWithOneDnaPerChannel");
+            if (data == null)
+            {
+                Assert.Ignore(id + ": no race; see EveryBaseHasARaceWithOneDnaPerChannel");
+            }
             var rng = new Pcg32(0x47454Eul, (ulong)race);
             NpcUmaRecipe resident = NpcMeshes.UmaRecipeOf(UmaRaceBaseTests.SpecOf(ref rng, race, sex, false));
             var go = new GameObject("npc race test");
