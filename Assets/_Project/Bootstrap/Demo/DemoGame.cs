@@ -16,17 +16,17 @@ using UnityEngine.Rendering;
 namespace Cosmimera.Bootstrap.Demo
 {
     /// <summary>
-    /// D0 composition root: Earth lobby → star selection → planet run → results, looping.
-    /// REQ: docs/roadmap/demo.md, docs/design/lobby-meta.md#循環.
+    /// D0 composition root: Character Select → Cradle Moon village / Main World → Star Rift runs → Results, looping.
+    /// REQ: docs/design/lobby-meta.md, docs/design/beginner-quest.md.
     /// </summary>
     /// <remarks>
     /// Pre: serialized references assigned by <c>Cosmimera/Create Demo Scene</c>. Post: one RunSession at a time.
-    /// Side effects: reads/writes the lobby save under Application.persistentDataPath.
-    /// UI is IMGUI on purpose for D0: it is throwaway until the P4 UI pass, and IMGUI needs no prefab/asset plumbing.
+    /// Side effects: reads/writes the persistent save under Application.persistentDataPath.
+    /// Standalone lobby screen removed: persistent Meta services run inside the Main World and Adventure Handbook.
     /// </remarks>
     public sealed partial class DemoGame : MonoBehaviour
     {
-        private enum Screen { Lobby, StarSelect, Running, Results, BeginnerQuest, MainStorySelect }
+        private enum Screen { CharacterSelect, Running, Results }
 
         private sealed class PlanetOption
         {
@@ -56,7 +56,6 @@ namespace Cosmimera.Bootstrap.Demo
         [SerializeField] private Shader _terrainShader;
         [SerializeField] private Shader _toonShader;
         [SerializeField] private Shader _starShader;
-        // Optional scenery layers: an unassigned one is skipped (RunSession), so older scenes still run.
         [SerializeField] private Shader _skyShader;
         [SerializeField] private Shader _grassShader;
         [SerializeField] private Shader _waterShader;
@@ -77,34 +76,37 @@ namespace Cosmimera.Bootstrap.Demo
         private LobbySave _save;
         private PlanetTypeDef _cradlePlanetCache;
         private string _savePath;
-        private Screen _screen = Screen.Lobby;
-        private readonly List<PlanetOption> _options = new List<PlanetOption>();
+        private Screen _screen = Screen.CharacterSelect;
         private readonly List<CreatureDef> _starters = new List<CreatureDef>();
         private readonly List<CreatureDef> _wildPool = new List<CreatureDef>();
         private RunSession _run;
         private RunOutcome _outcome;
-        // Non-null while the ended run's rewards are not yet in the lobby save (W-02): Results offers a retry and stays
-        // open, because leaving would drop rewards the player was shown.
         private string _settleError;
         private readonly List<string> _xpLines = new List<string>();
         private string _playerXpLine = string.Empty;
         private readonly List<int> _runPartyIds = new List<int>();
         private Pcg32 _menuRng;
-        private GUIStyle _title;
-        private GUIStyle _text;
         private Camera _lobbyCamera;
         private BgmPlayer _bgm;
-        private Vector2 _partyScroll;
         private string _partyMsg = string.Empty;
         private InputActionMap _menuInput;
         private InputHints _menuHints;
-        private readonly MenuFocus _menuFocus = new MenuFocus();
-        private int _menuButtonCount;
         private bool _confirmPending;
-        private bool _scrollToFocus;
-        private bool _insidePartyScroll;
         private GameOverlayView _overlay;
         private RunCheckpointSave _pendingResumeCheckpoint;
+        private MainWorldServices _services;
+        private int _riftRefreshEpoch;
+        private readonly HashSet<int> _clearedRiftIndices = new HashSet<int>();
+        private int _activeRiftIndex = -1;
+
+        internal LobbySave LiveSave => _save;
+        internal GameDatabase LiveDatabase => _database;
+        internal Progression LiveProgression => _progression;
+        internal CombatBalance LiveBalance => _combatBalance;
+        internal CraftCatalog LiveCraftCatalog => CraftCatalog;
+        internal DemoCopy LiveCopy => _copy;
+        internal string LiveLanguage => _language;
+        internal MainWorldServices Services => _services ??= new MainWorldServices(this);
 
         private void Awake()
         {
@@ -149,8 +151,8 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (!_save.TutorialDone)
             {
-                // REQ: docs/design/beginner-quest.md#流程 — new save skips lobby/menu and enters Cradle Moon directly.
-                EnterBeginnerQuest();
+                // REQ: docs/design/beginner-quest.md#流程 — new save skips lobby and opens Character Select directly.
+                EnterCharacterSelect();
                 return;
             }
 
@@ -179,7 +181,6 @@ namespace Cosmimera.Bootstrap.Demo
         {
             RebuildCopy();
             _combatBalance = CombatBalance.FromJson(_balance.text);
-            // Before the JsonUtility loaders below, which truncate/wrap non-integer numbers into int fields unseen.
             BalanceIntegerGuard.RequireIntegers(_balance.text, "materials", "progression");
             _progression = Progression.FromJson(_balance.text);
             _materialDrops = MaterialDrops.FromJson(_balance.text);
@@ -198,7 +199,13 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 Debug.LogException(migrateError);
             }
-            _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M'); // menu rolls only, never generation
+
+            if (!string.IsNullOrEmpty(_save.CharacterId))
+            {
+                SyncSelectedCharacterModel(_save.CharacterId);
+            }
+
+            _menuRng = new Pcg32((ulong)System.DateTime.UtcNow.Ticks, 'M');
 
             foreach (GameDef def in _database.All)
             {
@@ -235,6 +242,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDisable()
         {
+            _overlay?.Hide();
             _menuInput?.Disable();
             _confirmPending = false;
         }
@@ -270,79 +278,12 @@ namespace Cosmimera.Bootstrap.Demo
             if (_journal != null)
             {
                 if (_menuInput.FindAction("Cancel").WasPressedThisFrame()) CloseJournal();
-                else _journal.ReadInput(_menuInput);
-                return;
-            }
-
-            _menuFocus.SetCount(MenuButtonCount());
-            if (_menuInput.FindAction("Up").WasPressedThisFrame() || _menuInput.FindAction("Left").WasPressedThisFrame())
-            {
-                _menuFocus.Move(-1);
-                _scrollToFocus = true;
-            }
-            else if (_menuInput.FindAction("Down").WasPressedThisFrame() || _menuInput.FindAction("Right").WasPressedThisFrame())
-            {
-                _menuFocus.Move(1);
-                _scrollToFocus = true;
-            }
-
-            if (_menuInput.FindAction("Cancel").WasPressedThisFrame())
-            {
-                if (_screen == Screen.StarSelect || _screen == Screen.MainStorySelect ||
-                    (_screen == Screen.Results && _settleError == null))
-                {
-                    _screen = Screen.Lobby;
-                    _menuFocus.SetCount(0);
-                }
-                _confirmPending = false;
-            }
-            else if (_menuInput.FindAction("Submit").WasPressedThisFrame())
-            {
-                if (_screen == Screen.Lobby && _menuFocus.Index == 0)
-                {
-                    CycleLanguage();
-                }
                 else
                 {
-                    _confirmPending = true;
+                    _journal.ReadInput(_menuInput);
+                    _journal?.Draw(DrawJournal, CloseJournal);
                 }
             }
-        }
-
-        private int MenuButtonCount()
-        {
-            if (_screen == Screen.Results) return 1;  // return-to-lobby, or retry while unsettled
-            if (_screen == Screen.BeginnerQuest) return BeginnerQuestButtonCount();
-            if (_screen == Screen.MainStorySelect) return _mainStoryTracks.Count + 1;
-            if (_screen == Screen.StarSelect) return _options.Count + 1;
-            if (_save.StarterLine == null) return 1 + _starters.Count +
-                (_characterModels != null && _characterModels.Entries.Count > 0 ? 1 : 0);
-            int count = 1 + _save.Party.Count + System.Math.Max(0, _save.Party.Count - 1) + 6;
-            if (_characterModels != null && _characterModels.Entries.Count > 0) count++;
-            for (int i = 0; i < _save.Owned.Count; i++)
-            {
-                bool inParty = false;
-                for (int j = 0; j < _save.Party.Count; j++)
-                {
-                    if (_save.Party[j] == _save.Owned[i].InstanceId)
-                    {
-                        inParty = true;
-                        break;
-                    }
-                }
-                if (!inParty)
-                {
-                    count++;
-                }
-
-                // Same predicate EvolveButton draws with: a budget short of the drawn buttons strands focus before
-                // start-run on a gamepad (SOL r2 R2-03).
-                if (HasEvolveButton(_save.Owned[i]))
-                {
-                    count++;
-                }
-            }
-            return count;
         }
 
         private void CycleLanguage()
@@ -352,33 +293,75 @@ namespace Cosmimera.Bootstrap.Demo
             _partyMsg = string.Empty;
         }
 
-        private bool MenuButton(string label, params GUILayoutOption[] options)
+        internal DemoCopy CycleLanguageFromServices()
         {
-            bool selectable = GUI.enabled;
-            int index = selectable ? _menuButtonCount++ : -1;
-            bool focused = selectable && index == _menuFocus.Index;
-            Color oldColor = GUI.backgroundColor;
-            if (focused)
-            {
-                GUI.backgroundColor = new Color(0.55f, 0.85f, 1f);
-            }
-            bool clicked = GUILayout.Button((focused ? "> " : "") + label, options);
-            GUI.backgroundColor = oldColor;
-            if (focused && _insidePartyScroll && _scrollToFocus && Event.current.type == EventType.Repaint)
-            {
-                GUI.ScrollTo(GUILayoutUtility.GetLastRect());
-            }
-            bool confirmed = focused && _confirmPending && Event.current.type == EventType.Repaint;
-            if (clicked || confirmed)
-            {
-                _confirmPending = false;
-                return true;
-            }
-            return false;
+            CycleLanguage();
+            return _copy;
         }
 
-        // P3-10: `Cosmimera.exe -batchmode -reproProbe <file>` writes the probe report and quits, so the shipped player
-        // binary (Mono or IL2CPP) is what gets measured, not the Editor.
+        internal bool CommitFromServices(LobbySave candidate, out string error)
+        {
+            bool ok = CommitLobby(candidate);
+            error = ok ? string.Empty : _partyMsg;
+            if (ok)
+            {
+                SyncRunPartyIdsFromSave();
+            }
+            return ok;
+        }
+
+        internal void SyncRunPartyIdsFromSave()
+        {
+            if (_save == null) return;
+            _runPartyIds.Clear();
+            foreach (int id in _save.Party)
+            {
+                _runPartyIds.Add(id);
+            }
+        }
+
+        internal List<PlanetTypeDef> BuildSelectablePlanetTypes()
+        {
+            var list = new List<PlanetTypeDef>();
+            if (_database == null) return list;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t && t.Id != "cradle_planet")
+                {
+                    list.Add(t);
+                }
+            }
+            return list;
+        }
+
+        internal PlanetTypeDef FindPlanetTypeById(string planetTypeId)
+        {
+            if (_database == null || string.IsNullOrEmpty(planetTypeId)) return null;
+            foreach (GameDef def in _database.All)
+            {
+                if (def is PlanetTypeDef t && t.Id == planetTypeId)
+                {
+                    return t;
+                }
+            }
+            return null;
+        }
+
+        internal bool TryPayStarSelectCostFromServices(PlanetSize size, Element mainElement, out string error)
+        {
+            MaterialStack cost = StarSelectRules.LaunchCost(size, mainElement);
+            int held = _save.Materials.Count(cost.Key);
+            if (!TryPayStarSelectCost(size, mainElement))
+            {
+                error = $"元素素材不足：需要 {_copy.Material(cost.Key)} ×{cost.Qty}（目前持有 {held}）。";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        // P3-10: `Cosmimera.exe -batchmode -reproProbe <file>` writes the probe report and quits.
         private bool TryRunReproProbe()
         {
             string[] args = System.Environment.GetCommandLineArgs();
@@ -395,7 +378,6 @@ namespace Cosmimera.Bootstrap.Demo
                 return true;
             }
 
-            // A batchmode player that throws out of Awake never quits; the caller would hang instead of seeing a failure.
             try
             {
                 WriteReproReport(args[i + 1]);
@@ -410,7 +392,6 @@ namespace Cosmimera.Bootstrap.Demo
             return true;
         }
 
-        // The sample dump sits next to the report as <file>.samples; tools/repro/compare.py reads it when present.
         private void WriteReproReport(string path)
         {
             var samples = new System.Text.StringBuilder();
@@ -441,268 +422,7 @@ namespace Cosmimera.Bootstrap.Demo
             return ReproProbe.Report(types, _wildPool, vocab, RadiusFor, env, samples);
         }
 
-        private void OnGUI()
-        {
-            if (_screen == Screen.Running)
-            {
-                return;
-            }
-
-            _title ??= new GUIStyle(GUI.skin.label) { fontSize = 32, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            _text ??= new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
-            if (_journal != null)
-            {
-                _journal.Draw(DrawJournal, CloseJournal);
-                return;
-            }
-
-            var area = new Rect(UnityEngine.Screen.width / 2f - 320, 60, 640, UnityEngine.Screen.height - 120);
-            GUILayout.BeginArea(area);
-            _menuButtonCount = 0;
-            _insidePartyScroll = false;
-            if (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseUp)
-            {
-                _confirmPending = false;
-            }
-            Screen previousScreen = _screen;
-            switch (_screen)
-            {
-                case Screen.Lobby:
-                    DrawLobby();
-                    break;
-                case Screen.StarSelect:
-                    DrawStarSelect();
-                    break;
-                case Screen.Results:
-                    return;
-                case Screen.BeginnerQuest:
-                    DrawBeginnerQuest();
-                    break;
-                case Screen.MainStorySelect:
-                    DrawMainStorySelect();
-                    break;
-            }
-
-            GUILayout.EndArea();
-            if (Event.current.type == EventType.Repaint)
-            {
-                _confirmPending = false;
-                _scrollToFocus = false;
-                if (_screen != previousScreen)
-                {
-                    _menuFocus.SetCount(0);
-                }
-                else
-                {
-                    _menuFocus.SetCount(_menuButtonCount);
-                }
-            }
-        }
-
-        private void DrawLobby()
-        {
-            GUILayout.Label(_copy.Ui("ui.lobby.title"), _title, GUILayout.Height(60));
-            if (MenuButton(_copy.Ui("ui.lobby.language") + ": " + _language, GUILayout.Height(36)))
-            {
-                CycleLanguage();
-                GUIUtility.ExitGUI();
-            }
-
-            if (_characterModels != null && _characterModels.Entries.Count > 0)
-            {
-                Texture2D charPortrait = SelectedCharacterPortrait();
-                GUILayout.BeginHorizontal();
-                if (charPortrait != null)
-                {
-                    Rect r = GUILayoutUtility.GetRect(56f, 56f, GUILayout.ExpandWidth(false));
-                    GUI.DrawTexture(r, charPortrait, ScaleMode.ScaleToFit, true);
-                }
-
-                if (MenuButton(CharacterButtonLabel(), GUILayout.Height(56)))
-                {
-                    _selectedCharacterIndex = (_selectedCharacterIndex + 1) % (_characterModels.Entries.Count + 1);
-                    GUIUtility.ExitGUI();
-                }
-
-                GUILayout.EndHorizontal();
-            }
-            if (_save.Owned.Count <= 1)
-            {
-                GUILayout.Label(_copy.Ui("ui.beginner_quest.banner"), _text);
-                GUILayout.Label(_copy.Ui("ui.beginner_quest.hint_lobby"), _text);
-            }
-            if (_save.StarterLine == null)
-            {
-                GUILayout.Label(_copy.Ui("ui.lobby.choose_starter"), _text);
-                foreach (CreatureDef s in _starters)
-                {
-                    Texture2D starterPortrait = _portraits != null ? _portraits.FindCreature(s.LineId, s.Stage) : null;
-                    GUILayout.BeginHorizontal();
-                    if (starterPortrait != null)
-                    {
-                        Rect r = GUILayoutUtility.GetRect(48f, 48f, GUILayout.ExpandWidth(false));
-                        GUI.DrawTexture(r, starterPortrait, ScaleMode.ScaleToFit, true);
-                    }
-
-                    if (MenuButton(_copy.Name(s.Id) + "  —  " + _copy.Ui("ui.lobby.starter_confirm"), GUILayout.Height(48)))
-                    {
-                        LobbySave candidate = _save.Clone();
-                        int exp = _progression.XpThreshold(_progression.StarterLevel);
-                        if (s.Niches.Count > 0)
-                        {
-                            WildIndividual ind = WildIndividual.Draw(s, null, WildIndividual.KeyFor(0x53545254UL, 1UL));
-                            candidate.ChooseStarter(s.LineId, s.Id, exp, ind.Niche.Id, ind.Habit);
-                        }
-                        else
-                        {
-                            candidate.ChooseStarter(s.LineId, s.Id, exp);
-                        }
-                        CommitLobby(candidate);
-                        GUIUtility.ExitGUI();
-                    }
-
-                    GUILayout.EndHorizontal();
-                }
-
-                // The party editor that normally shows _partyMsg is not drawn before a starter exists (SOL r2 R2-02).
-                if (!string.IsNullOrEmpty(_partyMsg))
-                {
-                    GUILayout.Label(_partyMsg, _text);
-                }
-
-                return;
-            }
-
-            DrawPartyEditor();
-            DrawMaterials();
-            if (MenuButton(_copy.Ui("ui.lobby.equipment_paperdoll"), GUILayout.Height(40)))
-            {
-                OpenJournalAt(AdventurePanel.Page.Items);
-                GUIUtility.ExitGUI();
-            }
-            if (MenuButton(_copy.Ui("ui.journal.open"), GUILayout.Height(40)))
-            {
-                OpenJournal();
-                GUIUtility.ExitGUI();
-            }
-            GUILayout.Space(20);
-            if (MenuButton("探索固定大廳星球（主世界 R=2560 m · 8 城鎮 · 全地形 · 10 關主）", GUILayout.Height(52)))
-            {
-                LaunchLobbyPlanet();
-                GUIUtility.ExitGUI();
-            }
-
-            if (MenuButton(_copy.Ui("ui.lobby.start_run") + "（隨機世界 · 需元素素材）", GUILayout.Height(48)))
-            {
-                RollOptions();
-                _screen = Screen.StarSelect;
-                _menuFocus.SetCount(0);
-                GUIUtility.ExitGUI();
-            }
-
-            if (MenuButton("下一個主線劇情", GUILayout.Height(48)))
-            {
-                OpenMainStorySelect();
-                GUIUtility.ExitGUI();
-            }
-
-            if (MenuButton("開發者測試存檔 (Dev F9)", GUILayout.Height(36)))
-            {
-                OpenDevTestSavesOverlay();
-                GUIUtility.ExitGUI();
-            }
-
-            if (MenuButton(_copy.Ui("ui.lobby.quit"), GUILayout.Height(36)))
-            {
-                Application.Quit();
-                GUIUtility.ExitGUI();
-            }
-        }
-
-        private void DrawPartyEditor()
-        {
-            GUILayout.Label(PlayerLevelLabel(), _text);
-            GUILayout.Label($"{_copy.Ui("ui.lobby.team")} ({_save.Party.Count}/{LobbySave.MaxParty})", _text);
-            GUILayout.Label(_copy.Ui("ui.lobby.party_hint"), _text);
-            _insidePartyScroll = true;
-            _partyScroll = GUILayout.BeginScrollView(_partyScroll, GUILayout.Height(Mathf.Min(300, UnityEngine.Screen.height - 340)));
-            // Snapshot: mutating the save while iterating Party would break the foreach.
-            var party = new List<int>(_save.Party);
-            for (int i = 0; i < party.Count; i++)
-            {
-                OwnedCreature o = _save.Get(party[i]);
-                GUILayout.BeginHorizontal();
-                float labelW = DrawCreaturePortrait(o.SpeciesId, 28f) ? 298f : 330f;
-                GUILayout.Label((i == 0 ? "★ " : "· ") + PartyLabel(o), _text, GUILayout.Width(labelW));
-                GUI.enabled = i > 0;
-                if (MenuButton(_copy.Ui("ui.lobby.move_up"), GUILayout.Width(90)))
-                {
-                    (party[i - 1], party[i]) = (party[i], party[i - 1]);
-                    CommitParty(party);
-                    GUIUtility.ExitGUI();
-                }
-
-                GUI.enabled = true;
-                EvolveButton(o);
-                if (MenuButton(_copy.Ui("ui.lobby.remove_from_party"), GUILayout.Width(110)))
-                {
-                    if (party.Count <= 1)
-                    {
-                        _partyMsg = _copy.Ui("ui.lobby.party_min");
-                    }
-                    else
-                    {
-                        party.RemoveAt(i);
-                        CommitParty(party);
-                    }
-                    GUIUtility.ExitGUI();
-                }
-
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.Label(_copy.Ui("ui.lobby.reserve"), _text);
-            foreach (OwnedCreature o in _save.Owned)
-            {
-                if (party.Contains(o.InstanceId))
-                {
-                    continue;
-                }
-
-                GUILayout.BeginHorizontal();
-                float reserveW = DrawCreaturePortrait(o.SpeciesId, 28f) ? 298f : 330f;
-                GUILayout.Label("· " + PartyLabel(o), _text, GUILayout.Width(reserveW));
-                EvolveButton(o);
-                if (MenuButton(_copy.Ui("ui.lobby.add_to_party"), GUILayout.Width(110)))
-                {
-                    if (IsSub(o.InstanceId))
-                    {
-                        _partyMsg = _copy.Ui("ui.partner.reason.SubIsAMain");
-                    }
-                    else if (party.Count >= LobbySave.MaxParty)
-                    {
-                        _partyMsg = _copy.Ui("ui.lobby.party_full");
-                    }
-                    else
-                    {
-                        party.Add(o.InstanceId);
-                        CommitParty(party);
-                    }
-                    GUIUtility.ExitGUI();
-                }
-
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.EndScrollView();
-            _insidePartyScroll = false;
-            if (!string.IsNullOrEmpty(_partyMsg))
-            {
-                GUILayout.Label(_partyMsg, _text);
-            }
-        }
-
-        // W-01: lobby changes go to a clone first; the live save is replaced only after the file holds the clone.
+        // W-01: changes go to a clone first; the live save is replaced only after the file holds the clone.
         private bool CommitLobby(LobbySave candidate)
         {
             if (!LobbyTransactions.TryWrite(candidate, _savePath, out System.Exception error))
@@ -717,49 +437,8 @@ namespace Cosmimera.Bootstrap.Demo
             return true;
         }
 
-        // REQ: creatures.md#進化 — lobby only; level and every material shortfall are listed at once, nothing is consumed
-        // on refusal (EvolutionRules). A final form, or a species missing from the database, gets no button.
-        // Allocation-free (Update calls it through MenuButtonCount every frame, SOL r3 R3-01); FromDef is final exactly
-        // when EvolvesTo is null, so this is the same predicate EvolveButton draws with.
         private bool HasEvolveButton(OwnedCreature o) =>
             _database.TryGet(o.SpeciesId, out CreatureDef def) && def.EvolvesTo != null;
-
-        private void EvolveButton(OwnedCreature o)
-        {
-            if (!HasEvolveButton(o))
-            {
-                return;
-            }
-
-            _database.TryGet(o.SpeciesId, out CreatureDef def);
-            EvolutionRequirement req = EvolutionRequirement.FromDef(def);
-
-            if (!MenuButton(_copy.Ui("ui.lobby.evolve"), GUILayout.Width(90)))
-            {
-                return;
-            }
-
-            _database.TryGet(req.NextSpeciesId, out CreatureDef nextDef);
-            CommitStatus status = LobbyTransactions.Evolve(_save, o.InstanceId, req, _progression, _savePath,
-                out LobbySave next, out EvolutionResult r, out System.Exception error, nextDef);
-            if (status == CommitStatus.Committed)
-            {
-                _save = next;
-                _partyMsg = _copy.Ui("ui.lobby.evolve_success").Replace("{from}", _copy.Name(o.SpeciesId))
-                    .Replace("{to}", _copy.Name(r.Creature.SpeciesId));
-            }
-            else if (status == CommitStatus.Refused)
-            {
-                _partyMsg = DescribeRefusal(req, r.Check);
-            }
-            else
-            {
-                Debug.LogException(error);
-                _partyMsg = _copy.Ui("ui.lobby.save_failed");
-            }
-
-            GUIUtility.ExitGUI();
-        }
 
         private string DescribeRefusal(EvolutionRequirement req, EvolutionCheck check)
         {
@@ -789,33 +468,14 @@ namespace Cosmimera.Bootstrap.Demo
             return string.Join("\n", lines);
         }
 
-        private void DrawMaterials()
-        {
-            GUILayout.Label(_copy.Ui("ui.lobby.materials"), _text);
-            IReadOnlyList<MaterialStack> stock = _save.Materials.Snapshot();
-            if (stock.Count == 0)
-            {
-                GUILayout.Label("· " + _copy.Ui("ui.lobby.materials_empty"), _text);
-                return;
-            }
-
-            var parts = new List<string>(stock.Count);
-            foreach (MaterialStack m in stock)
-            {
-                parts.Add(_copy.Material(m.Key) + " ×" + m.Qty);
-            }
-
-            GUILayout.Label("· " + string.Join("  ", parts), _text);
-        }
-
         private string PartyLabel(OwnedCreature o) =>
             _copy.Name(o.SpeciesId) + " LV" + _progression.LevelOf(o.Exp) + "  (" + _copy.Ui("ui.vessel." + VesselKey(o.Vessel)) + ")";
 
-        private void CommitParty(List<int> party)
+        private bool CommitParty(List<int> party)
         {
             LobbySave candidate = _save.Clone();
             candidate.SetParty(party);
-            CommitLobby(candidate);
+            return CommitLobby(candidate);
         }
 
         private string PlayerLevelLabel()
@@ -825,60 +485,6 @@ namespace Cosmimera.Bootstrap.Demo
             string next = level < _progression.MaxLevel ? _progression.PlayerXpThreshold(level + 1).ToString(inv) : "-";
             return _copy.Ui("ui.lobby.player_level").Replace("{level}", level.ToString(inv))
                 .Replace("{exp}", _save.PlayerExp.ToString(inv)).Replace("{next}", next);
-        }
-
-        private void DrawStarSelect()
-        {
-            PlanetSize maxUnlocked = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
-            string unlockedLabel = _copy.Ui("ui.star_select.size_" + maxUnlocked.ToString().ToLowerInvariant());
-            GUILayout.Label(_copy.Ui("ui.star_select.title"), _title, GUILayout.Height(60));
-            GUILayout.Label(PlayerLevelLabel() +
-                $"\n主線已解鎖最大星球：{unlockedLabel}（完成地形試煉解鎖更大星球：{StarSelectRules.MoonUnlockTrials}/{StarSelectRules.PlanetUnlockTrials}/{StarSelectRules.SupergiantUnlockTrials}）",
-                _text);
-            if (!string.IsNullOrEmpty(_partyMsg))
-            {
-                GUILayout.Label(_partyMsg, _text);
-            }
-
-            foreach (PlanetOption o in _options)
-            {
-                PlanetSize planetSize = WorldGen.BossDraw.SizeFor(o.BossStage);
-                string size = _copy.Ui("ui.star_select.size_" + planetSize.ToString().ToLowerInvariant());
-                string boss = _copy.Ui("ui.star_select.boss_stage")
-                    .Replace("{stage}", _copy.Ui("ui.stage." + o.BossStage.ToString().ToLowerInvariant()));
-                string elementsLine = FormatPlanetElements(o.Elements);
-                string tag = o.IsBeginnerQuest ? _copy.Ui("ui.beginner_quest.planet_tag") + " " : string.Empty;
-                string planetName = _copy.PlanetName(o.Type.Id, o.Seed);
-                Element mainElement = o.Elements.Shares[0].Element;
-                MaterialStack cost = StarSelectRules.LaunchCost(planetSize, mainElement);
-                int held = _save.Materials.Count(cost.Key);
-                string costText = o.IsBeginnerQuest
-                    ? "免素材（新手任務）"
-                    : $"所需素材：{_copy.Material(cost.Key)} ×{cost.Qty}（持有：{held}）";
-                GUILayout.Label($"{tag}{planetName}（{_copy.Planet(o.Type.Id)}）   {boss}   {size} (R={o.Radius:0} m)\n" +
-                                $"{elementsLine}   {costText}   {_copy.Ui("ui.star_select.seed")}：{o.Seed}", _text);
-                if (MenuButton(_copy.Ui("ui.star_select.launch"), GUILayout.Height(44)))
-                {
-                    if (!o.IsBeginnerQuest && !TryPayStarSelectCost(planetSize, mainElement))
-                    {
-                        _partyMsg = $"元素素材不足：需要 {_copy.Material(cost.Key)} ×{cost.Qty}（目前持有 {held}），請先於大廳星球探索或戰鬥收集。";
-                        GUIUtility.ExitGUI();
-                        return;
-                    }
-
-                    Launch(o);
-                    GUIUtility.ExitGUI();
-                    return;
-                }
-
-                GUILayout.Space(12);
-            }
-
-            if (MenuButton(_copy.Ui("ui.star_select.reroll"), GUILayout.Height(36)))
-            {
-                RollOptions();
-                GUIUtility.ExitGUI();
-            }
         }
 
         private bool TryPayStarSelectCost(PlanetSize size, Element mainElement)
@@ -895,145 +501,6 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             return CommitLobby(candidate);
-        }
-
-        private string FormatPlanetElements(WorldGen.PlanetElements elements)
-        {
-            var mainParts = new List<string>(elements.MainCount);
-            var subParts = new List<string>(elements.SubCount);
-            foreach (WorldGen.PlanetElementShare share in elements.Shares)
-            {
-                string label = $"{_copy.Element(share.Element.ToString())} {share.Percent}%";
-                if (share.IsMain)
-                {
-                    mainParts.Add(label);
-                }
-                else
-                {
-                    subParts.Add(label);
-                }
-            }
-
-            string mainText = $"{_copy.Ui("ui.star_select.main_elements")}：{string.Join(" / ", mainParts)}";
-            if (subParts.Count == 0)
-            {
-                return mainText;
-            }
-
-            return $"{mainText}   {_copy.Ui("ui.star_select.sub_elements")}：{string.Join(" / ", subParts)}";
-        }
-
-        private void DrawResults()
-        {
-            string title = _outcome.Victory ? _copy.Ui("ui.results.victory") : _copy.Ui("ui.results.defeat");
-            GUILayout.Label(title, _title, GUILayout.Height(60));
-            GUILayout.Label(_copy.Ui("ui.results.captured_list"), _text);
-            foreach ((string speciesId, VesselKind vessel, int exp, _, _) in _outcome.Captured)
-            {
-                GUILayout.Label("· " + _copy.Name(speciesId) + " LV" + _progression.LevelOf(exp) + "  (" +
-                    _copy.Ui("ui.vessel." + VesselKey(vessel)) + ")", _text);
-            }
-
-            GUILayout.Space(10);
-            GUILayout.Label(_copy.Ui("ui.results.materials_list"), _text);
-            if (_outcome.Materials.Count == 0)
-            {
-                GUILayout.Label("· " + _copy.Ui("ui.results.materials_none"), _text);
-            }
-
-            foreach (MaterialStack m in _outcome.Materials)
-            {
-                GUILayout.Label("· " + _copy.Material(m.Key) + " ×" + m.Qty, _text);
-            }
-
-            GUILayout.Space(10);
-            GUILayout.Label(_playerXpLine, _text);
-            GUILayout.Label(_copy.Ui("ui.lobby.team"), _text);
-            foreach (string line in _xpLines)
-            {
-                GUILayout.Label("· " + line, _text);
-            }
-
-            GUILayout.Space(20);
-            if (_settleError != null)
-            {
-                GUILayout.Label(_settleError, _text);
-                if (MenuButton(_copy.Ui("ui.results.retry"), GUILayout.Height(52)))
-                {
-                    TrySettle();
-                    GUIUtility.ExitGUI();
-                }
-
-                return;
-            }
-
-            if (MenuButton(_copy.Ui("ui.results.return_lobby"), GUILayout.Height(52)))
-            {
-                _screen = Screen.Lobby;
-                _menuFocus.SetCount(0);
-                GUIUtility.ExitGUI();
-            }
-        }
-
-        private void RollOptions()
-        {
-            _options.Clear();
-            var types = new List<PlanetTypeDef>();
-            foreach (GameDef def in _database.All)
-            {
-                if (def is PlanetTypeDef t)
-                {
-                    types.Add(t);
-                }
-            }
-
-            // REQ: docs/roadmap/demo.md + phase-7.md#P7-02 — Demo serves as the beginner quest; slot 0 guarantees
-            // a deterministic starter-friendly verdant asteroid before the player's first wild capture.
-            int startIndex = 0;
-            if (_save.Owned.Count <= 1 && types.Count > 0)
-            {
-                (PlanetTypeDef bType, ulong bSeed, CreatureStage bStage, float bRadius, WorldGen.PlanetElements bElem) =
-                    BuildBeginnerOption(types);
-                _options.Add(new PlanetOption
-                {
-                    Type = bType, Seed = bSeed, BossStage = bStage, Radius = bRadius,
-                    Elements = bElem, IsBeginnerQuest = true,
-                });
-                startIndex = 1;
-            }
-
-            // REQ: beginner-quest.md#搖籃星 — cradle_planet is dedicated to the beginner quest and never appears in star selection.
-            var selectableTypes = new List<PlanetTypeDef>(types.Count);
-            for (int i = 0; i < types.Count; i++)
-            {
-                if (types[i].Id != "cradle_planet")
-                {
-                    selectableTypes.Add(types[i]);
-                }
-            }
-
-            if (selectableTypes.Count == 0)
-            {
-                selectableTypes.AddRange(types);
-            }
-
-            // REQ: lobby-meta.md#地球大廳 — initial random access is Asteroid only; larger sizes unlock along main-story trials.
-            PlanetSize maxUnlockedSize = StarSelectRules.MaxUnlockedSize(_save.TutorialDone, _save.CompletedTrialsSnapshot().Count);
-            CreatureStage storyCap = StarSelectRules.MaxBossStageForSize(maxUnlockedSize);
-            CreatureStage levelCap = _progression.MaxBossStage(_progression.PlayerLevelOf(_save.PlayerExp));
-            CreatureStage maxStage = storyCap < levelCap ? storyCap : levelCap;
-            for (int i = startIndex; i < 3 && selectableTypes.Count > 0; i++)
-            {
-                PlanetTypeDef t = selectableTypes[(int)_menuRng.NextUInt((uint)selectableTypes.Count)];
-                ulong seed = _menuRng.NextUInt();
-                CreatureStage stage = WorldGen.BossDraw.Stage(seed, maxStage);
-                PlanetSize size = WorldGen.BossDraw.SizeFor(stage);
-                _options.Add(new PlanetOption
-                {
-                    Type = t, Seed = seed, BossStage = stage, Radius = RadiusFor(size),
-                    Elements = WorldGen.PlanetElementDraw.Draw(seed, size, t.ElementBias),
-                });
-            }
         }
 
         private PlanetTypeDef ResolveCradlePlanetType()
@@ -1116,6 +583,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            _activeRiftIndex = -1;
             Launch(new PlanetOption
             {
                 Type = lobbyType,
@@ -1158,8 +626,7 @@ namespace Cosmimera.Bootstrap.Demo
                 WorldGen.PlanetElementDraw.Draw(BeginnerQuestSeed, size, chosen.ElementBias));
         }
 
-        // REQ: planet-world.md#星球尺度 (Q-D1 settled 2026-11-11: asteroids play at 320 m). Explicit per size so a
-        // tier never inherits the combat minimum by default (SOL Q-D1 B: Moon would silently fall to 320).
+        // REQ: planet-world.md#星球尺度
         internal static float RadiusFor(PlanetSize size)
         {
             switch (size)
@@ -1177,10 +644,11 @@ namespace Cosmimera.Bootstrap.Demo
         {
             if (!TryBuildPartners(out PartnerLoadout loadout))
             {
-                _screen = Screen.Lobby;
-                _partyMsg = _copy.Ui("ui.partner.repair");
+                Debug.LogWarning("DemoGame: invalid sub-partner loadout detected on launch; opening journal to repair.");
+                OpenJournalAt(AdventurePanel.Page.Partners);
                 return;
             }
+
             var party = new List<CreatureDef>();
             var partyExp = new List<int>();
             _runPartyIds.Clear();
@@ -1200,40 +668,65 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            _activeRunIsBeginnerQuest = o.IsBeginnerQuest;
             _menuInput.Disable();
             _confirmPending = false;
             _overlay?.Hide();
-            // REQ: gear-looks.md#外觀與數值 — lobby crafting styles gear after the last departed planet; persisted at settlement.
             _save.SetLastPlanet(new GearOrigin(o.Type.Id, o.Seed));
-            _lobbyCamera.gameObject.SetActive(false);
             RunCheckpointSave resumeCheckpoint = _pendingResumeCheckpoint;
             _pendingResumeCheckpoint = null;
+            StartRunSession(new RunSetup
+            {
+                PlanetType = o.Type,
+                Seed = o.Seed,
+                Radius = o.Radius,
+                BossStage = o.BossStage,
+                Party = party,
+                PlayerExp = _save.PlayerExp,
+                Codex = _save.Codex,
+                DiscoveredRecipes = _save.DiscoveredRecipesSnapshot(),
+                PartyIds = new List<int>(_runPartyIds),
+                PartyExp = partyExp,
+                Progression = _progression,
+                Materials = _materialDrops,
+                EnvMaterials = _env,
+                WeatherControlCooldownMs = _weatherControlCooldownMs,
+                CharacterModelPrefab = SelectedCharacterPrefab(),
+                Portraits = _portraits,
+                VolumeProfile = _volumeProfile,
+                Database = _database,
+                Owned = new List<OwnedCreature>(_save.Owned),
+                Partners = loadout,
+                CraftStock = _save.CraftStock.Snapshot(),
+                CraftLooks = _save.CraftStock.LookSnapshot(),
+                Equipment = _save.Equipment.Snapshot(),
+                TrialBadges = _save.CompletedTrialsSnapshot(),
+                IsLobbyPlanet = o.IsLobbyPlanet,
+                TutorialDone = _save.TutorialDone,
+                FriendId = _save.FriendId,
+                FriendStarter = FindCreatureById(_save.FriendStarterId),
+                RivalId = _save.RivalId,
+                RivalStarter = FindCreatureById(_save.RivalStarterId),
+                ResumeCheckpoint = resumeCheckpoint,
+                Services = Services,
+                RiftRefreshEpoch = _riftRefreshEpoch,
+                ClearedRiftIndices = new HashSet<int>(_clearedRiftIndices),
+            });
+        }
+
+        private void StartRunSession(RunSetup setup)
+        {
+            if (_run != null)
+            {
+                _run.CheckpointTriggered -= OnCheckpointTriggered;
+                Destroy(_run.gameObject);
+                _run = null;
+            }
+
+            _lobbyCamera.gameObject.SetActive(false);
             _run = new GameObject("Run").AddComponent<RunSession>();
-            _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial,
-                new RunSetup
-                {
-                    PlanetType = o.Type, Seed = o.Seed, Radius = o.Radius, BossStage = o.BossStage, Party = party,
-                    PlayerExp = _save.PlayerExp,
-                    Codex = _save.Codex,
-                    DiscoveredRecipes = _save.DiscoveredRecipesSnapshot(),
-                    PartyIds = new List<int>(_runPartyIds), PartyExp = partyExp, Progression = _progression,
-                    Materials = _materialDrops, EnvMaterials = _env,
-                    WeatherControlCooldownMs = _weatherControlCooldownMs,
-                    CharacterModelPrefab = SelectedCharacterPrefab(),
-                    Portraits = _portraits, VolumeProfile = _volumeProfile,
-                    Database = _database, Owned = new List<OwnedCreature>(_save.Owned), Partners = loadout,
-                    CraftStock = _save.CraftStock.Snapshot(),
-                    CraftLooks = _save.CraftStock.LookSnapshot(),
-                    Equipment = _save.Equipment.Snapshot(),
-                    TrialBadges = _save.CompletedTrialsSnapshot(),
-                    IsLobbyPlanet = o.IsLobbyPlanet,
-                    TutorialDone = _save.TutorialDone,
-                    FriendId = _save.FriendId,
-                    FriendStarter = FindCreatureById(_save.FriendStarterId),
-                    RivalId = _save.RivalId,
-                    RivalStarter = FindCreatureById(_save.RivalStarterId),
-                    ResumeCheckpoint = resumeCheckpoint,
-                }, _wildPool, OnRunEnded, _terrainShader, _toonShader, _starShader,
+            _run.Configure(_copy, _combatBalance, _actions, _terrainMaterial, setup, _wildPool, OnRunEnded,
+                _terrainShader, _toonShader, _starShader,
                 new SceneryShaders(_skyShader, _grassShader, _waterShader, _sceneryShader));
             _run.CheckpointTriggered += OnCheckpointTriggered;
             _run.Hints.Inherit(_menuHints);
@@ -1242,13 +735,13 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnRunEnded(RunOutcome outcome)
         {
-            // Q-M4: the run itself is never saved; only what it brought back is written to the lobby save.
             _xpLines.Clear();
             var inv = System.Globalization.CultureInfo.InvariantCulture;
             _playerXpLine = _copy.Ui("ui.results.player_exp")
                 .Replace("{exp}", (outcome.PlayerExp - _save.PlayerExp).ToString(inv))
                 .Replace("{level}", _progression.PlayerLevelOf(outcome.PlayerExp).ToString(inv));
-            for (int i = 0; i < _runPartyIds.Count; i++)
+            int count = System.Math.Min(_runPartyIds.Count, outcome.PartyExp.Count);
+            for (int i = 0; i < count; i++)
             {
                 OwnedCreature o = _save.Get(_runPartyIds[i]);
                 int after = outcome.PartyExp[i];
@@ -1256,8 +749,18 @@ namespace Cosmimera.Bootstrap.Demo
                     _progression.LevelOf(after) + "  (+" + (after - o.Exp) + " XP)");
             }
 
-            // The run is over whether or not banking succeeds (End is single-shot), so leave it first; a failed bank
-            // keeps Results open with a retry instead of stranding the player in Running (W-02).
+            if (outcome.NewRiftRefreshEpoch != _riftRefreshEpoch)
+            {
+                _riftRefreshEpoch = outcome.NewRiftRefreshEpoch;
+                _clearedRiftIndices.Clear();
+            }
+
+            if (_activeRiftIndex >= 0 && outcome.Victory && !outcome.Abandoned)
+            {
+                _clearedRiftIndices.Add(_activeRiftIndex);
+            }
+            _activeRiftIndex = -1;
+
             _outcome = outcome;
             _menuHints.Inherit(_run.Hints);
             Destroy(_run.gameObject);
@@ -1270,7 +773,6 @@ namespace Cosmimera.Bootstrap.Demo
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             _screen = Screen.Results;
-            _menuFocus.SetCount(0);
             if (isActiveAndEnabled && !_menuInput.enabled)
             {
                 _menuInput.Enable();
@@ -1285,17 +787,33 @@ namespace Cosmimera.Bootstrap.Demo
                     _save.AddGold(ShopAndRepairRules.QuestCompletionGold);
                     _save.Codex.Record(Codex.CodexEvent.Capture, _bqCharacterId);
                     TrySettle();
+                    ShowResultsOverlay();
                     return;
                 }
 
                 // REQ: beginner-quest.md#失敗與中斷 — failed/abandoned tutorial resets cleanly without saving.
                 _save = LobbySave.Load(_savePath, _progression,
                     id => _database.TryGet(id, out CreatureDef d) ? d.Stage : (CreatureStage?)null);
-                EnterBeginnerQuest();
+                EnterCharacterSelect();
                 return;
             }
 
             TrySettle();
+            if (_settleError == null && outcome.PendingStarRiftLaunch.HasValue && outcome.PendingStarRiftPlanetType != null)
+            {
+                StarRiftEntry rift = outcome.PendingStarRiftLaunch.Value;
+                _activeRiftIndex = rift.RiftIndex;
+                Launch(new PlanetOption
+                {
+                    Type = outcome.PendingStarRiftPlanetType,
+                    Seed = rift.Seed,
+                    Radius = RadiusFor(rift.Size),
+                    BossStage = rift.BossStage,
+                    Elements = rift.Elements,
+                });
+                return;
+            }
+
             if (_settleError == null && outcome.TravelToCradleMoon)
             {
                 LaunchCradleMoon();
@@ -1319,7 +837,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnCheckpointTriggered(RunCheckpointSave checkpoint)
         {
-            if (checkpoint == null || _save == null)
+            if (checkpoint == null || _save == null || (_activeRunIsBeginnerQuest && _save.Party.Count == 0))
             {
                 return;
             }
@@ -1346,6 +864,13 @@ namespace Cosmimera.Bootstrap.Demo
                 }
                 else
                 {
+                    if (_save.Party.Count == 0)
+                    {
+                        _pendingResumeCheckpoint = null;
+                        EnterCharacterSelect();
+                        return;
+                    }
+
                     PlanetTypeDef cradleType = ResolveCradlePlanetType();
                     _activeRunIsBeginnerQuest = true;
                     _bqCharacterId = _save.CharacterId;
@@ -1397,7 +922,7 @@ namespace Cosmimera.Bootstrap.Demo
             });
         }
 
-        private void OpenDevTestSavesOverlay()
+        internal void OpenDevTestSavesOverlay()
         {
             _overlay ??= new GameOverlayView(transform);
             _overlay.Show("開發者遊戲測試存檔 (Dev)", "選擇關鍵劇情節點一鍵套用並啟動");
@@ -1422,12 +947,31 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
+            if (_journal != null)
+            {
+                CloseJournal();
+            }
+
             _save = built;
+            _riftRefreshEpoch = 0;
+            _clearedRiftIndices.Clear();
+            _activeRiftIndex = -1;
+            if (!string.IsNullOrEmpty(_save.CharacterId))
+            {
+                SyncSelectedCharacterModel(_save.CharacterId);
+            }
+
             _overlay?.Hide();
             if (_run != null)
             {
                 Destroy(_run.gameObject);
                 _run = null;
+            }
+
+            if (!_save.TutorialDone && _save.ActiveCheckpoint == null)
+            {
+                EnterCharacterSelect();
+                return;
             }
 
             LaunchFromCheckpoint(_save.ActiveCheckpoint);
@@ -1484,7 +1028,7 @@ namespace Cosmimera.Bootstrap.Demo
                     LaunchFromCheckpoint(_save.ActiveCheckpoint);
                 }, primary: false);
             }
-            _overlay.AddFooterButton("再次出發", () =>
+            _overlay.AddFooterButton("返回主世界", () =>
             {
                 if (_save.ActiveCheckpoint != null && _save.ActiveCheckpoint.WorldKind == SaveWorldKind.RandomPlanet)
                 {
@@ -1518,18 +1062,6 @@ namespace Cosmimera.Bootstrap.Demo
             _settleError = _copy.Ui("ui.results.save_failed");
         }
 
-        private string CharacterButtonLabel()
-        {
-            if (_characterModels == null || _selectedCharacterIndex >= _characterModels.Entries.Count)
-            {
-                return "角色外觀: 佔位膠囊";
-            }
-
-            CharacterModelEntry entry = _characterModels.Entries[_selectedCharacterIndex];
-            string tag = entry.isProvisional ? " [暫時採用]" : string.Empty;
-            return $"角色外觀: {entry.displayName}{tag}";
-        }
-
         private GameObject SelectedCharacterPrefab()
         {
             if (_characterModels == null || _selectedCharacterIndex < 0 ||
@@ -1541,39 +1073,12 @@ namespace Cosmimera.Bootstrap.Demo
             return _characterModels.Entries[_selectedCharacterIndex].prefab;
         }
 
-        private Texture2D SelectedCharacterPortrait()
-        {
-            if (_portraits == null || _characterModels == null || _selectedCharacterIndex < 0 ||
-                _selectedCharacterIndex >= _characterModels.Entries.Count)
-            {
-                return null;
-            }
-
-            return _portraits.FindCharacter(_characterModels.Entries[_selectedCharacterIndex].id);
-        }
-
-        private bool DrawCreaturePortrait(string speciesId, float size)
-        {
-            if (_portraits == null || !_database.TryGet(speciesId, out CreatureDef def))
-            {
-                return false;
-            }
-
-            Texture2D tex = _portraits.FindCreature(def.LineId, def.Stage);
-            if (tex == null)
-            {
-                return false;
-            }
-
-            Rect r = GUILayoutUtility.GetRect(size, size, GUILayout.ExpandWidth(false));
-            GUI.DrawTexture(r, tex, ScaleMode.ScaleToFit, true);
-            return true;
-        }
-
         private static string VesselKey(VesselKind v) => v == VesselKind.TalismanCard ? "talisman_card"
             : v == VesselKind.GlassBead ? "glass_bead" : "magic_cube";
 
 #if UNITY_EDITOR
+        /// <summary>Creates and saves the Boot Demo scene with all serialized assets wired.</summary>
+        /// <remarks>Pre: Editor mode with imported data assets present. Post: Demo.unity saved and added to build scenes. Side effects: writes scene and asset files.</remarks>
         [UnityEditor.MenuItem("Cosmimera/Create Demo Scene")]
         public static void CreateScene()
         {
@@ -1630,11 +1135,7 @@ namespace Cosmimera.Bootstrap.Demo
         }
 
         /// <summary>Batchmode entry: <c>-executeMethod Cosmimera.Bootstrap.Demo.DemoGame.ReproProbeBatch -reproProbe &lt;file&gt;</c>.</summary>
-        /// <remarks>
-        /// Pre: batchmode; Demo.unity exists (CreateScene ran). Post: the Editor (Mono JIT) reference report and its
-        ///      .samples dump are written.
-        /// Side effects: opens Demo.unity; writes both files; exits the Editor with 0, or 1 on failure.
-        /// </remarks>
+        /// <remarks>Pre: batchmode; Demo.unity exists. Post: report and .samples written. Side effects: opens scene, writes files, exits Editor.</remarks>
         public static void ReproProbeBatch()
         {
             try
@@ -1643,7 +1144,7 @@ namespace Cosmimera.Bootstrap.Demo
                 int i = System.Array.IndexOf(args, "-reproProbe");
                 Core.Contracts.Contract.Requires(i >= 0 && i + 1 < args.Length, "-reproProbe <file> is required");
                 UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Bootstrap/Demo.unity");
-                DemoGame game = Object.FindAnyObjectByType<DemoGame>(); // Editor tooling only; runtime never looks up.
+                DemoGame game = Object.FindAnyObjectByType<DemoGame>();
                 game.LoadData();
                 game.WriteReproReport(args[i + 1]);
                 UnityEditor.EditorApplication.Exit(0);

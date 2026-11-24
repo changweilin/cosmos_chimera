@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Cosmimera.Bootstrap.Demo.UI;
 using Cosmimera.Combat;
 using Cosmimera.Creatures;
+using Cosmimera.Lobby;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -85,6 +86,7 @@ namespace Cosmimera.Bootstrap.Demo
         private int _hudPromptCaptureTenths = int.MinValue;
         private int _hudPromptInteractableId = int.MinValue;
         private int _hudPromptGamepad = -1;
+        private string _hudCustomPromptCached;
 
         private void LateUpdate() => SyncHud();
 
@@ -95,7 +97,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _hud = new GameHudView(() => OpenJournal(), transform);
             }
 
-            if (_rig == null || _ended || _journal != null)
+            if (_rig == null || _ended || _journal != null || _serviceOverlayOpen)
             {
                 _hud.SetVisible(false);
                 return;
@@ -346,8 +348,18 @@ namespace Cosmimera.Bootstrap.Demo
                 _hud.SetJournalButtonText(_copy.Ui("ui.journal.open") + " [" + BindingLabel(_journalAction) + "]");
             }
 
-            int poolCount = _team.Pool.Count;
+            int poolCount = _team != null ? _team.Pool.Count : 0;
             bool dirty = _hudTeamKeys.Count != poolCount;
+            if (_team == null)
+            {
+                if (dirty)
+                {
+                    _hudTeamKeys.Clear();
+                    _hudTeamBuffer.Clear();
+                    _hud.SetTeam(_hudTeamBuffer);
+                }
+                return;
+            }
             for (int i = 0; i < poolCount; i++)
             {
                 int id = _team.Pool[i];
@@ -526,11 +538,13 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             int capture = _interactTarget < 0 ? FindCaptureTarget(CaptureReachM) : -1;
-            bool inCombat = _team.InCombat;
+            bool inCombat = _team != null && _team.InCombat;
             bool directControl = IsDirectControlling;
             bool interactMenuOpen = _interactTarget >= 0;
             bool hasCapture = capture >= 0;
-            bool hasInteractable = _interactTarget < 0 && _interactable >= 0;
+            bool hasCustomInteract = _interactTarget < 0 &&
+                (HasBeginnerVillagePrompt() || _nearestMainWorldNpcIndex >= 0 || _nearestStarRiftIndex >= 0);
+            bool hasInteractable = _interactTarget < 0 && (_interactable >= 0 || hasCustomInteract);
 
             int keyMode = usesGamepad
                 | (inCombat ? 2 : 0)
@@ -652,6 +666,21 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _hudPromptCaptureId = int.MinValue;
+            string customPrompt = ResolveCustomInteractPrompt();
+            if (!string.IsNullOrEmpty(customPrompt))
+            {
+                if (!string.Equals(_hudCustomPromptCached, customPrompt, StringComparison.Ordinal) ||
+                    _hudPromptGamepad != usesGamepad)
+                {
+                    _hudCustomPromptCached = customPrompt;
+                    _hudPromptInteractableId = int.MinValue;
+                    _hudPromptGamepad = usesGamepad;
+                    _hud.SetInteractPrompt(BindingLabel(_interactAction), customPrompt);
+                }
+                return;
+            }
+            _hudCustomPromptCached = null;
+
             if (_interactable >= 0)
             {
                 if (_hudPromptInteractableId != _interactable || _hudPromptGamepad != usesGamepad)
@@ -672,10 +701,31 @@ namespace Cosmimera.Bootstrap.Demo
             _hud.SetInteractPrompt(null, null);
         }
 
+        private string ResolveCustomInteractPrompt()
+        {
+            string bq = BeginnerVillagePromptText();
+            if (!string.IsNullOrEmpty(bq)) return bq;
+
+            if (_nearestMainWorldNpcIndex >= 0 && _nearestMainWorldNpcIndex < _mainWorldNpcs.Count)
+            {
+                return NpcRoleTitle(_mainWorldNpcs[_nearestMainWorldNpcIndex].Placement.Role);
+            }
+
+            if (_nearestStarRiftIndex >= 0 && _nearestStarRiftIndex < _starRifts.Count)
+            {
+                int stars = StarRiftRules.StarRating(_starRifts[_nearestStarRiftIndex].Size);
+                return _copy.Ui("ui.star_rift.prompt").Replace("{stars}", stars.ToString());
+            }
+
+            return null;
+        }
+
         private void SyncTutorialHud()
         {
             bool active = _setup.IsBeginnerQuest && _bqTracker != null &&
-                (_bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial ||
+                (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro ||
+                 _bqTracker.Stage == BeginnerQuestStage.StarterSelect ||
+                 _bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial ||
                  _bqTracker.Stage == BeginnerQuestStage.FriendFieldTutorial ||
                  _bqTracker.Stage == BeginnerQuestStage.BossAndRival2v2);
             if (!active)
@@ -689,7 +739,9 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             int stageKey = (int)_bqTracker.Stage;
-            int stepKey = (int)_bqTracker.FieldStep;
+            int stepKey = _bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro
+                ? _bqTracker.VillageTourStep
+                : (int)_bqTracker.FieldStep;
             int usesGamepad = _inputHints.UsesGamepad ? 1 : 0;
             if (_hudTutorialStageKey == stageKey &&
                 _hudTutorialStepKey == stepKey &&
@@ -705,7 +757,19 @@ namespace Cosmimera.Bootstrap.Demo
 
             string badge;
             string title;
-            if (_bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial)
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro)
+            {
+                badge = "聚落導覽";
+                title = "跟著好友了解聚落與世界觀（期間不可離開聚落）";
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_interactAction), "與好友對話"));
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.StarterSelect)
+            {
+                badge = "選擇御三家";
+                title = "在廣場走近「日／月／星」御三家並按互動鍵擇一";
+                _hudTutorialKeyBuffer.Add(new GameHudView.KeyPromptDisplay(BindingLabel(_interactAction), "查看並選擇"));
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial)
             {
                 badge = "對戰教學";
                 title = "操控主控宙獸：出招、鎖定目標與格擋閃避";

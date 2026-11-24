@@ -7,6 +7,7 @@ using Cosmimera.Creatures;
 using Cosmimera.Crafting;
 using Cosmimera.Food;
 using Cosmimera.GameData;
+using Cosmimera.Save;
 using Cosmimera.WorldGen;
 using Unity.Mathematics;
 using UnityEngine;
@@ -223,6 +224,15 @@ namespace Cosmimera.Bootstrap.Demo
 
         private bool ReadJournalInput()
         {
+            if (_serviceOverlayOpen)
+            {
+                if (_menuCancel != null && _menuCancel.WasPressedThisFrame())
+                {
+                    CloseServiceOverlay();
+                }
+                return true;
+            }
+
             if (_journal != null)
             {
                 // The same D-pad now navigates the open journal; only keyboard shortcuts toggle it closed.
@@ -230,7 +240,11 @@ namespace Cosmimera.Bootstrap.Demo
                     (!_journal.EditingText &&
                         ((_journalAction.WasPressedThisFrame() && _journalAction.activeControl?.device is Keyboard) ||
                          (_codexAction.WasPressedThisFrame() && _codexAction.activeControl?.device is Keyboard)))) CloseJournal();
-                else _journal.ReadInput(_menuInput);
+                else
+                {
+                    _journal.ReadInput(_menuInput);
+                    _journal?.Draw(DrawJournal, CloseJournal);
+                }
                 return true;
             }
             if (_interactTarget < 0 && _journalAction != null)
@@ -243,7 +257,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OpenJournal(AdventurePanel.Page page = AdventurePanel.Page.Partners)
         {
-            if (_journal != null || !_started || _ended || _interactTarget >= 0) return;
+            if (_serviceOverlayOpen || _journal != null || !_started || _ended || _interactTarget >= 0) return;
             _journal = new AdventurePanel(_copy, page);
             _previousTimeScale = Time.timeScale;
             _previousPlayerInput = _rig.Input.enabled;
@@ -279,29 +293,103 @@ namespace Cosmimera.Bootstrap.Demo
             switch (ui.Current)
             {
                 case AdventurePanel.Page.Partners:
-                    ui.Heading(_copy.Ui("ui.journal.tab.Partners"));
-                    ui.Label(_copy.Ui("ui.partner.lobby_only"));
-                    for (int i = 0; i < _partyUnits.Count; i++)
+                    if (_setup.Services != null)
                     {
-                        EncounterUnit unit = _encounter.Units[_partyUnits[i]];
-                        ui.Heading(_copy.Name(unit.Def.Id));
-                        if (_setup.Partners == null) continue;
-                        foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[i]))
+                        bool allowEdit = (_team == null || !_team.InCombat) && !_setup.IsBeginnerQuest;
+                        _setup.Services.DrawPartnersTab(ui, allowEdit, RefreshLiveLoadoutFromSave);
+                    }
+                    else
+                    {
+                        ui.Heading(_copy.Ui("ui.journal.tab.Partners"));
+                        ui.Label(_copy.Ui("ui.partner.lobby_only"));
+                        for (int i = 0; i < _partyUnits.Count; i++)
                         {
-                            OwnedCreature sub = OwnedAtDeparture(subId);
-                            CreatureDef def = RequireCreature(sub.SpeciesId);
-                            ui.Label(_copy.Name(sub.SpeciesId) + " · " + _copy.Ui("ui.vessel." + VesselKey(sub.Vessel)) + " → " +
-                                (sub.Vessel == VesselKind.TalismanCard ? _copy.Name(def.SignatureMove.Id)
-                                : sub.Vessel == VesselKind.GlassBead ? _copy.Name(def.Trait.Id) : _copy.Ui("ui.partner.overload")));
+                            EncounterUnit unit = _encounter.Units[_partyUnits[i]];
+                            ui.Heading(_copy.Name(unit.Def.Id));
+                            if (_setup.Partners == null) continue;
+                            foreach (int subId in _setup.Partners.SubsOf(_setup.PartyIds[i]))
+                            {
+                                OwnedCreature sub = OwnedAtDeparture(subId);
+                                CreatureDef def = RequireCreature(sub.SpeciesId);
+                                ui.Label(_copy.Name(sub.SpeciesId) + " · " + _copy.Ui("ui.vessel." + VesselKey(sub.Vessel)) + " → " +
+                                    (sub.Vessel == VesselKind.TalismanCard ? _copy.Name(def.SignatureMove.Id)
+                                    : sub.Vessel == VesselKind.GlassBead ? _copy.Name(def.Trait.Id) : _copy.Ui("ui.partner.overload")));
+                            }
                         }
                     }
                     break;
-                case AdventurePanel.Page.Items: DrawItems(ui); break;
+                case AdventurePanel.Page.Items:
+                    DrawItems(ui);
+                    if (_setup.Services != null && !_setup.IsBeginnerQuest && (_team == null || !_team.InCombat))
+                    {
+                        _setup.Services.DrawEquipmentTab(ui, RefreshLiveLoadoutFromSave);
+                    }
+                    break;
                 case AdventurePanel.Page.Skills: DrawSkills(ui); break;
                 case AdventurePanel.Page.Codex:
                     if (_codex != null) _codex.Draw(ui);
                     else ui.Label(_copy.Ui("ui.journal.empty"));
                     break;
+                case AdventurePanel.Page.System:
+                    DrawSystemTab(ui);
+                    break;
+            }
+        }
+
+        private void DrawSystemTab(AdventurePanel ui)
+        {
+            ui.Heading(_copy.Ui("ui.journal.tab.System"));
+            if (_setup.Services != null)
+            {
+                if (ui.Button(_copy.Ui("ui.lobby.language") + ": " + _setup.Services.Language))
+                {
+                    _copy = _setup.Services.CycleLanguage();
+                    _hudControlsGamepad = -1;
+                    _hudJournalGamepad = -1;
+                    _hudKeyPromptMode = int.MinValue;
+                    _hudTutorialGamepad = -1;
+                    _cachedReadyDetail1 = _cachedReadyDetail2 = _cachedReadyDetail3 = _cachedReadyDetail4 = null;
+                    CloseJournal();
+                    OpenJournal(AdventurePanel.Page.System);
+                    return;
+                }
+
+                if (_setup.IsLobbyPlanet && (_team == null || !_team.InCombat))
+                {
+                    if (ui.Button("手動存檔"))
+                    {
+                        LobbySave candidate = _setup.Services.Save.Clone();
+                        candidate.CraftStock.CopyFrom(_craftInventory);
+                        bool ok = _setup.Services.CommitSave(candidate, out string err) &&
+                                  TryEmitCheckpoint(SaveCheckpointKind.OverworldAuto);
+                        ui.Message = ok ? "進度已儲存至主世界！" : (string.IsNullOrEmpty(err) ? "存檔失敗" : err);
+                        GUIUtility.ExitGUI();
+                    }
+                }
+
+                if (ui.Button("開發者測試存檔 (Dev F9)"))
+                {
+                    CloseJournal();
+                    _setup.Services.OpenDevTestSaves();
+                    return;
+                }
+            }
+
+            if (!_setup.IsLobbyPlanet && !_setup.IsBeginnerQuest)
+            {
+                if (ui.Button("返回主世界"))
+                {
+                    CloseJournal();
+                    _outcome.TravelToLobbyPlanet = true;
+                    End(true, false);
+                    return;
+                }
+            }
+
+            if (ui.Button(_copy.Ui("ui.lobby.quit")))
+            {
+                if (_setup.Services != null) _setup.Services.QuitGame();
+                else Application.Quit();
             }
         }
 
@@ -515,7 +603,8 @@ namespace Cosmimera.Bootstrap.Demo
             DrawWeatherDetails(ui);
             if (ui.Button(_copy.Ui(_showLockedGathering ? "ui.skills.hide_locked" : "ui.skills.show_locked")))
             { _showLockedGathering = !_showLockedGathering; GUIUtility.ExitGUI(); }
-            DrawCrafting(ui);
+            DrawFieldGathering(ui);
+            ui.Label("配方製作請於主世界聚落尋找「工匠師傅」NPC。");
             GatheringContext environment = GatheringEnvironment();
             foreach (FoodAcquisitionMethod method in Enum.GetValues(typeof(FoodAcquisitionMethod)))
             {
@@ -878,6 +967,132 @@ namespace Cosmimera.Bootstrap.Demo
             _utilityModifiers = FieldUtilityRules.ComputeTeamModifiers(_enabledUtilities);
             _encounter.SetExplorationUtilityModifiers(_utilityModifiers.WildDetectionPermille, _utilityModifiers.PreventsWildEscape);
             ApplyPlayerEnvironment();
+        }
+
+        private void RefreshLiveLoadoutFromSave()
+        {
+            if (_setup.Services == null || (_team != null && _team.InCombat) || _setup.IsBeginnerQuest)
+            {
+                return;
+            }
+
+            LobbySave save = _setup.Services.Save;
+            if (save == null) return;
+
+            var sessionExp = new Dictionary<int, int>();
+            if (_setup.PartyIds != null && _partyExp != null)
+            {
+                int n = Math.Min(_setup.PartyIds.Count, _partyExp.Length);
+                for (int i = 0; i < n; i++)
+                {
+                    sessionExp[_setup.PartyIds[i]] = _partyExp[i];
+                }
+            }
+
+            _craftInventory.CopyFrom(save.CraftStock);
+            _setup.Equipment = save.Equipment.Snapshot();
+            _setup.Owned = new List<OwnedCreature>(save.Owned);
+            _playerEquipment = EquipmentRules.Collect(0, _setup.Equipment ?? Array.Empty<EquippedItem>(), _craftCatalog,
+                EquipmentRules.PlayerGrips, _balance.Grips);
+
+            for (int i = 0; i < _partyUnits.Count; i++)
+            {
+                int uid = _partyUnits[i];
+                if (_lockedTarget == uid) _lockedTarget = -1;
+                if (_mainId == uid) _mainId = CombatAi.NoTarget;
+                _encounter.Remove(uid);
+                if (_views.TryGetValue(uid, out ICreatureView view))
+                {
+                    view.Dispose();
+                    _views.Remove(uid);
+                    _viewDefs.Remove(uid);
+                    _viewRoles.Remove(uid);
+                }
+                if (_blockShields.TryGetValue(uid, out GameObject shield))
+                {
+                    if (shield != null) Destroy(shield);
+                    _blockShields.Remove(uid);
+                }
+            }
+            _partyUnits.Clear();
+            _overloadUnlocked.Clear();
+            _utilities.Clear();
+            _partyElements.Clear();
+
+            var newParty = new List<CreatureDef>(save.Party.Count);
+            var newPartyIds = new List<int>(save.Party.Count);
+            var newPartyExp = new List<int>(save.Party.Count);
+            foreach (int id in save.Party)
+            {
+                OwnedCreature owned = save.Get(id);
+                if (_setup.Database != null && _setup.Database.TryGet(owned.SpeciesId, out CreatureDef def))
+                {
+                    newParty.Add(def);
+                    newPartyIds.Add(id);
+                    newPartyExp.Add(sessionExp.TryGetValue(id, out int xp) && xp > owned.Exp ? xp : owned.Exp);
+                }
+            }
+
+            if (newParty.Count == 0) return;
+
+            _setup.Party = newParty;
+            _setup.PartyIds = newPartyIds;
+            _setup.PartyExp = newPartyExp;
+            _partyExp = newPartyExp.ToArray();
+
+            var loadout = new PartnerLoadout(newPartyIds);
+            if (_setup.Database != null)
+            {
+                var graph = new GameDatabaseRelationGraph(_setup.Database);
+                var species = new GameDatabaseSpeciesLookup(_setup.Database);
+                foreach (PartnerPair pair in save.Partners)
+                {
+                    loadout.TryAssign(save.Get(pair.MainInstanceId), save.Get(pair.SubInstanceId), graph, species);
+                }
+            }
+            _setup.Partners = loadout;
+
+            var roster = new List<int>(newParty.Count);
+            for (int i = 0; i < newParty.Count; i++)
+            {
+                EncounterUnit u = AddEquippedPartyCreature(i);
+                roster.Add(u.Id);
+                _partyUnits.Add(u.Id);
+                CreateView(u, SpawnRole.Normal);
+            }
+
+            _team = new TeamState(roster, _balance.SwitchCooldownMs);
+            _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
+
+            foreach (CreatureDef creature in _setup.Party)
+            {
+                if (creature.FieldUtility != FieldUtility.None) _utilities.Add(creature.FieldUtility);
+                foreach (ElementValue mastery in creature.Mastery) _partyElements.Add(mastery.Element);
+            }
+            foreach (int main in loadout.Mains)
+            {
+                var subs = new List<OwnedCreature>();
+                foreach (int sub in loadout.SubsOf(main))
+                {
+                    OwnedCreature sc = OwnedAtDeparture(sub);
+                    subs.Add(sc);
+                    if (!_outcome.PartnerExp.ContainsKey(sub)) _outcome.PartnerExp[sub] = sc.Exp;
+                }
+                if (subs.Count > 0 && _setup.Database != null)
+                {
+                    _utilities.UnionWith(FieldUtilityRules.CollectTeamUtilities(new[] { OwnedAtDeparture(main) }, subs,
+                        new GameDatabaseSpeciesLookup(_setup.Database)));
+                }
+            }
+            foreach (FieldUtility u in _utilities)
+            {
+                if (u != FieldUtility.Mount && u != FieldUtility.Fly && u != FieldUtility.Levitate && u != FieldUtility.PartyStealth)
+                {
+                    _enabledUtilities.Add(u);
+                }
+            }
+            ApplyUtilities();
+            SummonOpening();
         }
     }
 }

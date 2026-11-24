@@ -12,6 +12,7 @@
         "Cosmimera.Food",
         "Cosmimera.Save",
         "Cosmimera.Capture",
+        "Cosmimera.Lobby",
         "Cosmimera.Bootstrap",
         "Cosmimera.Player",
         "Unity.Mathematics",

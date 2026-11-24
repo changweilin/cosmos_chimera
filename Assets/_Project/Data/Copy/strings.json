@@ -1004,6 +1004,11 @@
     "en": "Codex",
     "ja": "図鑑"
   },
+  "ui.journal.tab.System": {
+    "zh-TW": "系統設定",
+    "en": "System",
+    "ja": "システム"
+  },
   "ui.journal.navigation": {
     "zh-TW": "方向鍵／十字鍵選擇，Enter／右方按鈕確認，Esc／下方按鈕返回",
     "en": "Arrows / D-pad to select, Enter / right button to confirm, Esc / bottom button to close",
@@ -1055,9 +1060,9 @@
     "ja": "無効な組み合わせがあります。外して組み直してから出発してください。"
   },
   "ui.partner.lobby_only": {
-    "zh-TW": "探索中可查看配置；返回大廳後可更換副手。",
-    "en": "View your loadout here. Change sub-partners in the lobby.",
-    "ja": "ここでは装備を確認できます。変更はロビーで行います。"
+    "zh-TW": "戰鬥中僅供查看；非戰鬥狀態下可直接編輯隊伍與進化。",
+    "en": "View loadout in combat; edit party, partners, and evolution outside combat.",
+    "ja": "戦闘中は閲覧のみ。非戦闘時に編成・サブ・進化を変更できます。"
   },
   "ui.partner.reason.Ok": {
     "zh-TW": "可裝備",
@@ -3815,8 +3820,83 @@
     "ja": "ふん……2vs2 の連携は悪くないな。本番の星海では手加減しないぞ！"
   },
   "ui.bq.friend_complete": {
-    "zh-TW": "太好了！我們收服了幼年 BOSS，現在一起前往地球觀測站（主世界大廳）吧！",
-    "en": "We did it! We captured the juvenile BOSS—let's head to the Earth Observatory (Main World Lobby)!",
-    "ja": "やったね！幼年ボスも捕獲できたし、地球観測ステーション（メインロビー）へ行こう！"
+    "zh-TW": "太好了！我們收服了幼年 BOSS，現在一起降落母星球（主世界）1 號小鎮吧！",
+    "en": "We did it! We captured the juvenile BOSS—let's land on the Mother Planet (Main World) Town #1!",
+    "ja": "やったね！幼年ボスも捕獲できたし、母星（メインワールド）の1番タウンへ降り立とう！"
+  },
+  "ui.bq.village_tour_1": {
+    "zh-TW": "歡迎來到搖籃星聚落！這裡是我們在衛星上的家園，各聚落裡有商店、工匠與治療師協助冒險者。",
+    "en": "Welcome to the Cradle Moon village! Settlements across the stars offer merchants, craftsmen, and healers.",
+    "ja": "ゆりかご星の集落へようこそ！集落には冒険者を支える商人や職人、回復係がいるよ。"
+  },
+  "ui.bq.village_tour_2": {
+    "zh-TW": "星海深處散佈著由十種元素孕育的星球，我們能透過收服器皿與宙獸締結羈絆，也能在母星球調查星隙結晶！",
+    "en": "Ten elements shape the worlds across the star sea—bond with Cosmimera via vessels and inspect Star Rifts on the Mother Planet!",
+    "ja": "星海には十元素が育む星々が広がっている。器皿で宙獣と絆を結び、母星の星隙クリスタルを調べよう！"
+  },
+  "ui.bq.village_tour_3": {
+    "zh-TW": "在準備好出發前先留在聚落廣場吧！前方有三隻「日／月／星」御三家正等著你，走近選一隻後我們立刻切磋 1vs1！",
+    "en": "Stay inside the village plaza for now—three Sun/Moon/Star partners await ahead. Pick one and we'll battle 1vs1 right away!",
+    "ja": "出発の準備が整うまで集落の広場にいよう！前にいる太陽・月・星の御三家から1匹を選んだら、すぐ1vs1で勝負だ！"
+  },
+  "ui.npc.merchant": {
+    "zh-TW": "聚落商人",
+    "en": "Merchant",
+    "ja": "商人"
+  },
+  "ui.npc.craftsman": {
+    "zh-TW": "工匠師傅",
+    "en": "Craftsman",
+    "ja": "職人"
+  },
+  "ui.npc.hatchery": {
+    "zh-TW": "孵蛋管理員",
+    "en": "Hatchery Keeper",
+    "ja": "孵化係"
+  },
+  "ui.npc.vessel_converter": {
+    "zh-TW": "器皿轉換師",
+    "en": "Vessel Converter",
+    "ja": "器変換師"
+  },
+  "ui.npc.quest_guide": {
+    "zh-TW": "冒險引導員",
+    "en": "Quest Guide",
+    "ja": "冒険案内人"
+  },
+  "ui.npc.healer": {
+    "zh-TW": "醫療休息站",
+    "en": "Healer & Rest",
+    "ja": "回復・休憩係"
+  },
+  "ui.star_rift.prompt": {
+    "zh-TW": "調查星隙 ({stars}★)",
+    "en": "Inspect Star Rift ({stars}★)",
+    "ja": "星隙を調べる ({stars}★)"
+  },
+  "ui.star_rift.title": {
+    "zh-TW": "星隙結晶 · 星海傳送",
+    "en": "Star Rift Crystal",
+    "ja": "星隙クリスタル"
+  },
+  "ui.star_rift.launch": {
+    "zh-TW": "投入素材並進入星隙",
+    "en": "Spend Materials & Enter Rift",
+    "ja": "素材を消費して星隙へ出発"
+  },
+  "ui.star_rift.custom_seed": {
+    "zh-TW": "指定 Seed 座標",
+    "en": "Custom Seed Coordinates",
+    "ja": "カスタムシード指定"
+  },
+  "ui.char_select.title": {
+    "zh-TW": "選擇你的冒險者",
+    "en": "Choose Your Adventurer",
+    "ja": "主人公を選択"
+  },
+  "ui.char_select.subtitle": {
+    "zh-TW": "選擇主角後立即降落搖籃星；其餘兩位角色將分別成為你的好友與宿敵。",
+    "en": "Confirm to land on Cradle Moon; the other two become your Friend and Rival.",
+    "ja": "選択後すぐにゆりかご星へ降下します。残りの2人は親友とライバルになります。"
   }
 }

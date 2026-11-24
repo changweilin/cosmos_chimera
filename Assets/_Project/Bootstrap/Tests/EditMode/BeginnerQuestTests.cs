@@ -98,6 +98,38 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [Test]
+        public void Tracker_village_tour_locks_boundary_until_in_world_starter_is_chosen()
+        {
+            var tracker = new BeginnerQuestTracker(BeginnerQuestStage.FriendWorldIntro);
+            Assert.That(tracker.Stage, Is.EqualTo(BeginnerQuestStage.FriendWorldIntro));
+            Assert.That(tracker.IsVillageBoundaryLocked, Is.True);
+            Assert.That(tracker.VillageTourStep, Is.EqualTo(0));
+            Assert.That(tracker.OnStarterChosen(), Is.False);
+
+            List<DialogueLine> tour = BeginnerQuestRules.VillageTourDialogue("luo_en");
+            Assert.That(tour.Count, Is.EqualTo(3));
+
+            Assert.That(tracker.AdvanceVillageTour(tour.Count), Is.True);
+            Assert.That(tracker.Stage, Is.EqualTo(BeginnerQuestStage.FriendWorldIntro));
+            Assert.That(tracker.IsVillageBoundaryLocked, Is.True);
+
+            Assert.That(tracker.AdvanceVillageTour(tour.Count), Is.True);
+            Assert.That(tracker.Stage, Is.EqualTo(BeginnerQuestStage.FriendWorldIntro));
+
+            Assert.That(tracker.AdvanceVillageTour(tour.Count), Is.True);
+            Assert.That(tracker.Stage, Is.EqualTo(BeginnerQuestStage.StarterSelect));
+            Assert.That(tracker.IsVillageBoundaryLocked, Is.True);
+            Assert.That(tracker.AdvanceVillageTour(tour.Count), Is.False);
+
+            Assert.That(tracker.OnStarterChosen(), Is.True);
+            Assert.That(tracker.Stage, Is.EqualTo(BeginnerQuestStage.FriendBattleTutorial));
+            Assert.That(tracker.IsVillageBoundaryLocked, Is.False);
+
+            Assert.Throws<ContractException>(() => tracker.AdvanceVillageTour(0));
+            Assert.Throws<ContractException>(() => new BeginnerQuestTracker((BeginnerQuestStage)99));
+        }
+
+        [Test]
         public void Dialogue_builders_and_main_story_tracks_cover_all_stages()
         {
             List<DialogueLine> intro = BeginnerQuestRules.FriendIntroDialogue("luo_en");
@@ -223,6 +255,7 @@ namespace Cosmimera.Bootstrap.Tests
             string epithets = System.IO.File.ReadAllText(copyDir + "boss-epithets.json");
 
             var allLines = new List<DialogueLine>();
+            allLines.AddRange(BeginnerQuestRules.VillageTourDialogue("luo_en"));
             allLines.AddRange(BeginnerQuestRules.FriendIntroDialogue("luo_en"));
             allLines.AddRange(BeginnerQuestRules.FriendBattleIntroDialogue("luo_en"));
             allLines.AddRange(BeginnerQuestRules.FriendBattleOutcomeDialogue("luo_en", true));

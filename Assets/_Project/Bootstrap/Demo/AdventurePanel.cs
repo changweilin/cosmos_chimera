@@ -15,7 +15,7 @@ namespace Cosmimera.Bootstrap.Demo
     internal sealed class AdventurePanel : IDisposable
     {
         private static readonly string[] NavigationActions = { "Up", "Down", "Left", "Right" };
-        internal enum Page { Partners, Items, Skills, Codex }
+        internal enum Page { Partners, Items, Skills, Codex, System }
 
         private readonly DemoCopy _copy;
         private readonly MenuFocus _focus = new MenuFocus();
@@ -226,6 +226,7 @@ namespace Cosmimera.Bootstrap.Demo
                 _root.Q<Button>("tabItems"),
                 _root.Q<Button>("tabSkills"),
                 _root.Q<Button>("tabCodex"),
+                _root.Q<Button>("tabSystem"),
             };
 
             for (int i = 0; i < _tabButtons.Length; i++)
@@ -306,7 +307,7 @@ namespace Cosmimera.Bootstrap.Demo
             _rowContainer = null;
         }
 
-        internal void Image(Texture2D texture, float width, float height)
+        internal void Image(Texture texture, float width, float height)
         {
             if (texture == null) return;
             var img = new Image { image = texture, scaleMode = ScaleMode.ScaleToFit };

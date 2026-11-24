@@ -62,7 +62,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            _bqTracker = new BeginnerQuestTracker();
+            _bqTracker = new BeginnerQuestTracker(_setup.InitialBeginnerStage);
         }
 
         private void ReserveBeginnerBossSpawn(int spawnIndex, CreatureDef def, int level, float3 direction,
@@ -110,7 +110,7 @@ namespace Cosmimera.Bootstrap.Demo
                 return;
             }
 
-            if (_team.InCombat || _encounter.HasActiveTrainerBattle || _bqBossTrainerId >= 0)
+            if ((_team != null && _team.InCombat) || _encounter.HasActiveTrainerBattle || _bqBossTrainerId >= 0)
             {
                 return;
             }
@@ -337,7 +337,7 @@ namespace Cosmimera.Bootstrap.Demo
                 if (c.IsFainted)
                 {
                     c.ReviveByPercent(100, _nowMs);
-                    _team.TryClearRetired(id);
+                    _team?.TryClearRetired(id);
                 }
                 else
                 {
@@ -350,6 +350,11 @@ namespace Cosmimera.Bootstrap.Demo
 
         private bool AnyPartyPoolAlive()
         {
+            if (_team == null)
+            {
+                return true;
+            }
+
             foreach (int id in _team.Pool)
             {
                 if (!_encounter.Units[id].Combatant.IsFainted)
@@ -835,6 +840,392 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             return string.Empty;
+        }
+
+        private const float VillageBoundaryRadiusM = 28f;
+        private const float VillageInteractRadiusM = 4.5f;
+
+        private sealed class StarterStationVisual
+        {
+            public CreatureDef Def;
+            public float3 Dir;
+            public GameObject Root;
+            public readonly List<Object> Owned = new List<Object>();
+        }
+
+        private float3 _bqVillageCenterDir;
+        private float3 _bqFriendNpcDir;
+        private GameObject _bqFriendNpcRoot;
+        private readonly List<Object> _bqFriendNpcOwned = new List<Object>();
+        private readonly List<StarterStationVisual> _bqStarterStations = new List<StarterStationVisual>();
+        private int _nearestBeginnerTarget = -1; // 0 = Friend NPC, 1..3 = Starter station index + 1
+        private long _bqBoundaryToastCooldownMs;
+
+        internal int BeginnerStarterStationCountForTests => _bqStarterStations.Count;
+
+        internal bool AdvanceBeginnerVillageTourForTests()
+        {
+            if (_bqTracker == null || _bqTracker.Stage != BeginnerQuestStage.FriendWorldIntro)
+            {
+                return false;
+            }
+
+            AdvanceFriendVillageTour();
+            return true;
+        }
+
+        internal bool ConfirmBeginnerStarterForTests(CreatureDef chosen)
+        {
+            if (_bqTracker == null || _bqTracker.Stage != BeginnerQuestStage.StarterSelect || chosen == null)
+            {
+                return false;
+            }
+
+            ConfirmInWorldStarter(chosen);
+            return true;
+        }
+
+        private void ConfigureBeginnerVillage(Shader toonShader)
+        {
+            DisposeBeginnerVillage();
+            if (!_setup.IsBeginnerQuest || _bqTracker == null ||
+                _bqTracker.Stage >= BeginnerQuestStage.FriendBattleTutorial)
+            {
+                return;
+            }
+
+            _bqVillageCenterDir = _plan.LandingDirection;
+            PlanetFrame frame = PlanetFrame.FromUp(_bqVillageCenterDir);
+            _bqFriendNpcDir = math.normalize(_bqVillageCenterDir * _rig.Config.Radius + frame.North * 3.5f);
+
+            if (toonShader != null)
+            {
+                BuildVillageFriendNpc(toonShader, _bqFriendNpcDir, -frame.North);
+            }
+
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro)
+            {
+                List<DialogueLine> tour = BeginnerQuestRules.VillageTourDialogue(_setup.FriendId ?? string.Empty);
+                if (tour.Count > 0)
+                {
+                    ShowDialogue(tour[0].Speaker, ResolveBeginnerDialogue(tour[0]));
+                }
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.StarterSelect)
+            {
+                SpawnStarterStations(toonShader);
+            }
+        }
+
+        private void BuildVillageFriendNpc(Shader toonShader, float3 dir, float3 facing)
+        {
+            NpcSpec spec = NpcMeshes.SpecForTrialMaster(_setup.Seed ^ 0x46524E44UL);
+            var root = new GameObject("BeginnerVillage_Friend");
+            Mesh mesh = NpcMeshes.Build(spec, root.transform, out ResidentStride stride);
+            var renderer = root.AddComponent<SkinnedMeshRenderer>();
+            renderer.sharedMesh = mesh;
+            renderer.bones = stride.Bones;
+            renderer.rootBone = root.transform;
+            Color primary = new Color(0.28f, 0.72f, 0.92f);
+            Material body = PlanetLook.CreatureMaterial(toonShader, primary, 0.02f);
+            Material accent = PlanetLook.CreatureMaterial(toonShader, new Color(0.95f, 0.92f, 0.8f), 0f);
+            renderer.sharedMaterials = new[] { body, accent };
+
+            float3 world = _rig.Config.ToWorld(dir, _surface.GroundAltitude(dir) - 0.03f);
+            root.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                Quaternion.LookRotation((Vector3)facing, (Vector3)dir));
+
+            _bqFriendNpcOwned.Add(mesh);
+            _bqFriendNpcOwned.Add(body);
+            _bqFriendNpcOwned.Add(accent);
+            _bqFriendNpcRoot = root;
+        }
+
+        private void SpawnStarterStations(Shader toonShader)
+        {
+            if (_bqStarterStations.Count > 0 || _setup.StarterChoices == null || _setup.StarterChoices.Count == 0)
+            {
+                return;
+            }
+
+            PlanetFrame frame = PlanetFrame.FromUp(_bqVillageCenterDir);
+            int count = _setup.StarterChoices.Count;
+            for (int i = 0; i < count; i++)
+            {
+                CreatureDef def = _setup.StarterChoices[i];
+                float angle = (i - (count - 1) * 0.5f) * 0.65f;
+                float3 tangent = frame.East * math.sin(angle) + frame.North * math.cos(angle);
+                float3 dir = math.normalize(_bqVillageCenterDir * _rig.Config.Radius + tangent * 6.5f);
+                var station = new StarterStationVisual { Def = def, Dir = dir };
+
+                if (toonShader != null)
+                {
+                    PlanetFrame sf = PlanetFrame.FromUp(dir);
+                    float3 world = _rig.Config.ToWorld(dir, _surface.GroundAltitude(dir));
+                    var root = new GameObject($"StarterStation_{def.Id}");
+                    root.transform.SetPositionAndRotation(new Vector3(world.x, world.y, world.z),
+                        Quaternion.LookRotation((Vector3)(-sf.North), (Vector3)dir));
+
+                    Color c = StarterStationColor(def.LineId);
+                    Material mat = PlanetLook.CreatureMaterial(toonShader, c, 0.02f);
+                    GameObject pedestal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    Object.Destroy(pedestal.GetComponent<Collider>());
+                    pedestal.transform.SetParent(root.transform, false);
+                    pedestal.transform.localPosition = new Vector3(0f, 0.35f, 0f);
+                    pedestal.transform.localScale = new Vector3(1.1f, 0.35f, 1.1f);
+                    pedestal.GetComponent<Renderer>().sharedMaterial = mat;
+
+                    GameObject orb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    Object.Destroy(orb.GetComponent<Collider>());
+                    orb.transform.SetParent(root.transform, false);
+                    orb.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+                    orb.transform.localScale = Vector3.one * 0.85f;
+                    orb.GetComponent<Renderer>().sharedMaterial = mat;
+
+                    station.Owned.Add(mat);
+                    station.Root = root;
+                }
+
+                _bqStarterStations.Add(station);
+            }
+        }
+
+        private static Color StarterStationColor(string lineId) => lineId switch
+        {
+            "starter_sun" or "starter_sun_line" => new Color(0.95f, 0.58f, 0.18f),
+            "starter_moon" or "starter_moon_line" => new Color(0.45f, 0.62f, 0.96f),
+            "starter_star" or "starter_star_line" => new Color(0.96f, 0.88f, 0.28f),
+            _ => Color.white,
+        };
+
+        private void StepBeginnerVillage(float3 player)
+        {
+            _nearestBeginnerTarget = -1;
+            if (!_setup.IsBeginnerQuest || _bqTracker == null || !_bqTracker.IsVillageBoundaryLocked)
+            {
+                return;
+            }
+
+            float3 playerDir = _rig.Config.ToDirection(player);
+            float radius = _rig.Config.Radius;
+            float distFromVillage = math.distance(playerDir, _bqVillageCenterDir) * radius;
+
+            if (distFromVillage > VillageBoundaryRadiusM)
+            {
+                float3 radial = playerDir - _bqVillageCenterDir * math.dot(playerDir, _bqVillageCenterDir);
+                float3 tangent = math.lengthsq(radial) > 1e-8f
+                    ? math.normalize(radial)
+                    : PlanetFrame.FromUp(_bqVillageCenterDir).North;
+                float3 clampedDir = math.normalize(_bqVillageCenterDir * radius + tangent * (VillageBoundaryRadiusM - 2.5f));
+                if (_rig != null && _rig.Character != null)
+                {
+                    Vector3 worldPos = _rig.Config.ToWorld(clampedDir, _surface.GroundAltitude(clampedDir) + 0.1f);
+                    _rig.Character.Teleport(worldPos);
+                    UpdateEnvironment(worldPos);
+                    playerDir = clampedDir;
+                }
+
+                if (_nowMs >= _bqBoundaryToastCooldownMs)
+                {
+                    _bqBoundaryToastCooldownMs = _nowMs + 2500;
+                    string friend = BeginnerQuestRules.CharacterDisplayName(_setup.FriendId ?? string.Empty);
+                    ShowDialogue(friend, "聚落外還有野生宙獸出沒！先留在聚落聽我介紹並挑好御三家再出發吧！");
+                }
+            }
+
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro)
+            {
+                float d = math.distance(playerDir, _bqFriendNpcDir) * radius;
+                if (d <= VillageInteractRadiusM)
+                {
+                    _nearestBeginnerTarget = 0;
+                }
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.StarterSelect)
+            {
+                float best = VillageInteractRadiusM;
+                for (int i = 0; i < _bqStarterStations.Count; i++)
+                {
+                    float d = math.distance(playerDir, _bqStarterStations[i].Dir) * radius;
+                    if (d <= best)
+                    {
+                        best = d;
+                        _nearestBeginnerTarget = i + 1;
+                    }
+                }
+            }
+        }
+
+        private bool HasBeginnerVillagePrompt() => _nearestBeginnerTarget >= 0;
+
+        private string BeginnerVillagePromptText()
+        {
+            if (_nearestBeginnerTarget == 0)
+            {
+                string friend = BeginnerQuestRules.CharacterDisplayName(_setup.FriendId ?? string.Empty);
+                return $"與好友「{friend}」對話";
+            }
+
+            int idx = _nearestBeginnerTarget - 1;
+            if (idx >= 0 && idx < _bqStarterStations.Count)
+            {
+                return $"查看御三家「{_copy.Name(_bqStarterStations[idx].Def.Id)}」";
+            }
+
+            return null;
+        }
+
+        private bool TryBeginnerVillageInteract()
+        {
+            if (!_setup.IsBeginnerQuest || _bqTracker == null || !_bqTracker.IsVillageBoundaryLocked)
+            {
+                return false;
+            }
+
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro && _nearestBeginnerTarget == 0)
+            {
+                AdvanceFriendVillageTour();
+                return true;
+            }
+
+            if (_bqTracker.Stage == BeginnerQuestStage.StarterSelect && _nearestBeginnerTarget >= 1)
+            {
+                int idx = _nearestBeginnerTarget - 1;
+                if (idx >= 0 && idx < _bqStarterStations.Count)
+                {
+                    OpenStarterChoiceOverlay(_bqStarterStations[idx].Def);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void AdvanceFriendVillageTour()
+        {
+            List<DialogueLine> tour = BeginnerQuestRules.VillageTourDialogue(_setup.FriendId ?? string.Empty);
+            if (!_bqTracker.AdvanceVillageTour(tour.Count))
+            {
+                return;
+            }
+
+            if (_bqTracker.Stage == BeginnerQuestStage.FriendWorldIntro && _bqTracker.VillageTourStep < tour.Count)
+            {
+                DialogueLine line = tour[_bqTracker.VillageTourStep];
+                ShowDialogue(line.Speaker, ResolveBeginnerDialogue(line));
+            }
+            else if (_bqTracker.Stage == BeginnerQuestStage.StarterSelect)
+            {
+                SpawnStarterStations(_toonShader);
+                string friend = BeginnerQuestRules.CharacterDisplayName(_setup.FriendId ?? string.Empty);
+                ShowDialogue(friend, "好了，這三隻就是這次的新手御三家！走近看看並挑選你喜歡的夥伴吧！");
+            }
+        }
+
+        private void OpenStarterChoiceOverlay(CreatureDef def)
+        {
+            OpenServiceOverlay();
+            string name = _copy.Name(def.Id);
+            Texture2D portrait = _portraits != null ? _portraits.FindCreature(def.LineId, def.Stage) : null;
+            string elemText = def.Mastery.Count > 0 ? _copy.Element(def.Mastery[0].Element.ToString()) : string.Empty;
+            string friendName = BeginnerQuestRules.CharacterDisplayName(_setup.FriendId ?? string.Empty);
+
+            _serviceOverlay.Show("選擇你的初始夥伴", "選定後將立刻與好友展開 1vs1 對戰教學！");
+            _serviceOverlay.AddCardWithImage(
+                $"{name}（LV{_progression.StarterLevel}）",
+                $"主要屬性：{elemText}\n確定選擇「{name}」後，好友「{friendName}」會帶走被你剋制的御三家並立刻開戰。",
+                portrait,
+                $"決定就是 {name}！",
+                () =>
+                {
+                    CloseServiceOverlay();
+                    ConfirmInWorldStarter(def);
+                },
+                primary: true);
+            _serviceOverlay.AddFooterButton("再看看其他御三家", CloseServiceOverlay, false);
+        }
+
+        private void ConfirmInWorldStarter(CreatureDef chosen)
+        {
+            if (_bqTracker == null || _bqTracker.Stage != BeginnerQuestStage.StarterSelect)
+            {
+                return;
+            }
+
+            CreatureDef friendStarter = null;
+            CreatureDef rivalStarter = null;
+            int starterId = 1;
+
+            if (_setup.Services != null)
+            {
+                string charId = !string.IsNullOrEmpty(_setup.PlayerCharacterId)
+                    ? _setup.PlayerCharacterId
+                    : BeginnerQuestRules.CharacterRing[0];
+                _setup.Services.RecordStarterChoice(charId, chosen, out friendStarter, out rivalStarter, out starterId);
+            }
+            else if (_setup.StarterChoices != null)
+            {
+                (string rivalLine, string friendLine) = BeginnerQuestRules.AssignStarterLines(chosen.LineId);
+                for (int i = 0; i < _setup.StarterChoices.Count; i++)
+                {
+                    CreatureDef candidate = _setup.StarterChoices[i];
+                    if (candidate.LineId == rivalLine) rivalStarter = candidate;
+                    else if (candidate.LineId == friendLine) friendStarter = candidate;
+                }
+            }
+
+            friendStarter ??= chosen;
+            rivalStarter ??= chosen;
+
+            int starterExp = _progression.XpThreshold(_progression.StarterLevel);
+            _setup.Party = new List<CreatureDef> { chosen };
+            _setup.PartyIds = new List<int> { starterId };
+            _setup.PartyExp = new List<int> { starterExp };
+            _partyExp = new[] { starterExp };
+            _setup.FriendStarter = friendStarter;
+            _setup.RivalStarter = rivalStarter;
+
+            EncounterUnit unit = AddEquippedPartyCreature(0);
+            _partyUnits.Add(unit.Id);
+            CreateView(unit, SpawnRole.Normal);
+
+            var roster = new List<int> { unit.Id };
+            _team = new TeamState(roster, _balance.SwitchCooldownMs);
+            _team.SetPool(roster);
+
+            if (chosen.FieldUtility != FieldUtility.None) _utilities.Add(chosen.FieldUtility);
+            foreach (ElementValue mastery in chosen.Mastery) _partyElements.Add(mastery.Element);
+            ApplyUtilities();
+
+            DisposeBeginnerVillage();
+            _bqTracker.OnStarterChosen();
+            SummonOpening();
+        }
+
+        private void DisposeBeginnerVillage()
+        {
+            if (_bqFriendNpcRoot != null)
+            {
+                Destroy(_bqFriendNpcRoot);
+                _bqFriendNpcRoot = null;
+            }
+            for (int i = 0; i < _bqFriendNpcOwned.Count; i++)
+            {
+                if (_bqFriendNpcOwned[i] != null) Destroy(_bqFriendNpcOwned[i]);
+            }
+            _bqFriendNpcOwned.Clear();
+
+            for (int i = 0; i < _bqStarterStations.Count; i++)
+            {
+                StarterStationVisual s = _bqStarterStations[i];
+                if (s.Root != null) Destroy(s.Root);
+                for (int o = 0; o < s.Owned.Count; o++)
+                {
+                    if (s.Owned[o] != null) Destroy(s.Owned[o]);
+                }
+            }
+            _bqStarterStations.Clear();
+            _nearestBeginnerTarget = -1;
         }
 
         private void DisposeLobbyGatekeepers()

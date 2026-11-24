@@ -230,6 +230,99 @@ namespace Cosmimera.Bootstrap.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator Village_tour_locks_boundary_spawns_three_starters_and_starts_stage4_on_confirm()
+        {
+            RunOutcome outcome = null;
+            var db = Load<GameDatabase>("Assets/_Project/Data/GameDatabase.asset");
+            var copy = new DemoCopy("zh-TW", Load<TextAsset>(Copy + "strings.json").text,
+                Load<TextAsset>(Copy + "names.json").text, Load<TextAsset>(Copy + "affixes.json").text,
+                Load<TextAsset>(Copy + "region-themes.json").text, Load<TextAsset>(Copy + "quest-templates.json").text,
+                Load<TextAsset>(Copy + "boss-epithets.json").text);
+            CombatBalance balance = CombatBalance.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            Progression progression = Progression.FromJson(Load<TextAsset>(Copy + "balance.json").text);
+            var actions = Load<InputActionAsset>("Assets/_Project/Settings/Input/InputSystem_Actions.inputactions");
+
+            var wild = new List<CreatureDef>();
+            CreatureDef sun = null, moon = null, star = null;
+            PlanetTypeDef planetType = null;
+            foreach (GameDef d in db.All)
+            {
+                if (d is CreatureDef c)
+                {
+                    if (c.Stage == CreatureStage.Juvenile && c.LineId == "starter_sun_line") sun = c;
+                    else if (c.Stage == CreatureStage.Juvenile && c.LineId == "starter_moon_line") moon = c;
+                    else if (c.Stage == CreatureStage.Juvenile && c.LineId == "starter_star_line") star = c;
+                    else if (!c.LineId.StartsWith("starter_")) wild.Add(c);
+                }
+                else if (d is PlanetTypeDef t && (planetType == null || t.Id == "verdant_planet"))
+                {
+                    planetType = t;
+                }
+            }
+
+            var go = new GameObject("BeginnerVillageTourRun");
+            var session = go.AddComponent<RunSession>();
+            try
+            {
+                session.Configure(copy, balance, actions,
+                    Load<Material>("Assets/_Project/Bootstrap/SandboxTerrain.mat"),
+                    new RunSetup
+                    {
+                        PlanetType = planetType,
+                        Seed = DemoGame.BeginnerQuestSeed,
+                        Radius = 320f,
+                        BossStage = CreatureStage.Juvenile,
+                        Party = new List<CreatureDef>(),
+                        PartyIds = new List<int>(),
+                        PartyExp = new List<int>(),
+                        Progression = progression,
+                        Materials = MaterialDrops.FromJson(Load<TextAsset>(Copy + "balance.json").text),
+                        EnvMaterials = EnvMaterials.FromJson(Load<TextAsset>(Copy + "env-materials.json").text),
+                        IsBeginnerQuest = true,
+                        InitialBeginnerStage = BeginnerQuestStage.FriendWorldIntro,
+                        StarterChoices = new[] { sun, moon, star },
+                        PlayerCharacterId = "ye_chengxi",
+                        FriendId = "luo_en",
+                        RivalId = "yumori_sumiha",
+                        PlayerStarterVessel = VesselKind.GlassBead,
+                    }, wild, o => outcome = o,
+                    Load<Shader>("Assets/_Project/Art/Shaders/ToonTerrain.shader"),
+                    Load<Shader>("Assets/_Project/Art/Shaders/ToonOutlined.shader"),
+                    Load<Shader>("Assets/_Project/Art/Shaders/Stars.shader"));
+
+                float deadline = Time.realtimeSinceStartup + 60f;
+                while (!session.StartedForTests && Time.realtimeSinceStartup < deadline)
+                {
+                    yield return null;
+                }
+
+                Assert.That(session.StartedForTests, Is.True);
+                Assert.That(session.BeginnerTrackerForTests.Stage, Is.EqualTo(BeginnerQuestStage.FriendWorldIntro));
+                Assert.That(session.BeginnerTrackerForTests.IsVillageBoundaryLocked, Is.True);
+                Assert.That(session.PartyUnitsForTests.Count, Is.EqualTo(0));
+
+                // Advance all 3 Friend village tour stops -> transitions to StarterSelect and spawns 3 pedestals.
+                Assert.That(session.AdvanceBeginnerVillageTourForTests(), Is.True);
+                Assert.That(session.AdvanceBeginnerVillageTourForTests(), Is.True);
+                Assert.That(session.AdvanceBeginnerVillageTourForTests(), Is.True);
+                Assert.That(session.BeginnerTrackerForTests.Stage, Is.EqualTo(BeginnerQuestStage.StarterSelect));
+                Assert.That(session.BeginnerStarterStationCountForTests, Is.EqualTo(3));
+
+                // Confirming starter fields player's creature and launches Stage 4 friend 1vs1.
+                Assert.That(session.ConfirmBeginnerStarterForTests(sun), Is.True);
+                Assert.That(session.BeginnerTrackerForTests.Stage, Is.EqualTo(BeginnerQuestStage.FriendBattleTutorial));
+                Assert.That(session.BeginnerTrackerForTests.IsVillageBoundaryLocked, Is.False);
+                Assert.That(session.PartyUnitsForTests.Count, Is.EqualTo(1));
+                Assert.That(session.BeginnerFriendBattleTrainerIdForTests, Is.GreaterThanOrEqualTo(0));
+                Assert.That(session.BeginnerStarterStationCountForTests, Is.EqualTo(0));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
         private static void Kill(RunSession s, CombatBalance balance, int unitId)
         {
             long now = s.NowMsForTests;

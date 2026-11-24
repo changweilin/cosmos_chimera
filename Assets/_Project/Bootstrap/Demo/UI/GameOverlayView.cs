@@ -29,6 +29,8 @@ namespace Cosmimera.Bootstrap.Demo.UI
             _footer = root.Q<VisualElement>("footer");
         }
 
+        internal bool IsVisible => _backdrop != null && !_backdrop.ClassListContains("hidden");
+
         internal void Hide()
         {
             _backdrop.AddToClassList("hidden");
@@ -89,6 +91,135 @@ namespace Cosmimera.Bootstrap.Demo.UI
                 btn.AddToClassList(primary ? "btn-primary" : "btn-accent");
                 card.Add(btn);
             }
+            _bodyScroll.Add(card);
+        }
+
+        internal void AddCardWithImage(string heading, string body, Texture2D portrait, string buttonLabel = null,
+            Action onClick = null, bool primary = true, bool enabled = true)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("card");
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            if (portrait != null)
+            {
+                var img = new Image { image = portrait, scaleMode = ScaleMode.ScaleToFit };
+                img.style.width = 72f;
+                img.style.height = 72f;
+                img.style.marginRight = 12f;
+                row.Add(img);
+            }
+            var textCol = new VisualElement();
+            textCol.style.flexGrow = 1f;
+            if (!string.IsNullOrEmpty(heading))
+            {
+                var h = new Label(heading);
+                h.AddToClassList("card-title");
+                h.AddToClassList("heading-lg");
+                textCol.Add(h);
+            }
+            if (!string.IsNullOrEmpty(body))
+            {
+                var b = new Label(body);
+                b.AddToClassList("body-text");
+                textCol.Add(b);
+            }
+            row.Add(textCol);
+            card.Add(row);
+
+            if (!string.IsNullOrEmpty(buttonLabel))
+            {
+                var btn = new Button(() => onClick?.Invoke()) { text = buttonLabel };
+                btn.AddToClassList("btn");
+                btn.AddToClassList(primary ? "btn-primary" : "btn-accent");
+                btn.style.marginTop = 8f;
+                btn.SetEnabled(enabled);
+                card.Add(btn);
+            }
+            _bodyScroll.Add(card);
+        }
+
+        internal void AddActionCard(string heading, string body, params (string label, Action onClick, bool enabled, bool primary)[] actions)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("card");
+            if (!string.IsNullOrEmpty(heading))
+            {
+                var h = new Label(heading);
+                h.AddToClassList("heading-lg");
+                card.Add(h);
+            }
+            if (!string.IsNullOrEmpty(body))
+            {
+                var b = new Label(body);
+                b.AddToClassList("body-text");
+                card.Add(b);
+            }
+            if (actions != null && actions.Length > 0)
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.flexWrap = Wrap.Wrap;
+                row.style.marginTop = 8f;
+                for (int i = 0; i < actions.Length; i++)
+                {
+                    (string label, Action onClick, bool enabled, bool primary) act = actions[i];
+                    var btn = new Button(() => act.onClick?.Invoke()) { text = act.label };
+                    btn.AddToClassList("btn");
+                    btn.AddToClassList(act.primary ? "btn-primary" : "btn-accent");
+                    btn.style.marginRight = 8f;
+                    btn.SetEnabled(act.enabled);
+                    row.Add(btn);
+                }
+                card.Add(row);
+            }
+            _bodyScroll.Add(card);
+        }
+
+        internal void AddSeedInputCard(
+            string heading,
+            string body,
+            string seedValue,
+            Action<string> onSeedChanged,
+            string cyclePlanetLabel,
+            Action onCyclePlanet,
+            string launchLabel,
+            Action onLaunch)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("card-accent");
+            if (!string.IsNullOrEmpty(heading))
+            {
+                var h = new Label(heading);
+                h.AddToClassList("heading-lg");
+                card.Add(h);
+            }
+            if (!string.IsNullOrEmpty(body))
+            {
+                var b = new Label(body);
+                b.AddToClassList("body-text");
+                card.Add(b);
+            }
+            var tf = new TextField { value = seedValue ?? string.Empty };
+            tf.AddToClassList("text-input");
+            tf.RegisterValueChangedCallback(evt => onSeedChanged?.Invoke(evt.newValue));
+            card.Add(tf);
+
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.flexWrap = Wrap.Wrap;
+            var cycleBtn = new Button(() => onCyclePlanet?.Invoke()) { text = cyclePlanetLabel };
+            cycleBtn.AddToClassList("btn");
+            cycleBtn.style.marginRight = 8f;
+            row.Add(cycleBtn);
+
+            var launchBtn = new Button(() => onLaunch?.Invoke()) { text = launchLabel };
+            launchBtn.AddToClassList("btn");
+            launchBtn.AddToClassList("btn-primary");
+            row.Add(launchBtn);
+
+            card.Add(row);
             _bodyScroll.Add(card);
         }
 

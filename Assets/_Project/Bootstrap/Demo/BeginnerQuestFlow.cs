@@ -102,28 +102,39 @@ namespace Cosmimera.Bootstrap.Demo
     }
 
     /// <summary>
-    /// Pure runtime state machine for the in-planet stages (4..6) of the P7-02 beginner quest.
+    /// Pure runtime state machine for the in-planet stages (2..6) of the P7-02 beginner quest.
     /// REQ: docs/design/beginner-quest.md.
     /// </summary>
     /// <remarks>
-    /// Pre: created at the start of a beginner-quest run (Stage 4: FriendBattleTutorial).
-    /// Post: advances monotonically through Stages 4 → 5 (5 field steps) → 6 → 7, except wipeout in Stage 6 resets to
-    ///       Stage 5 ReachBossLair so the player can retry without losing field-tutorial progress.
+    /// Pre: created at the start of a beginner-quest run (defaults to Stage 4: FriendBattleTutorial for legacy callers,
+    ///      or Stage 2: FriendWorldIntro for the full village-tour + in-world starter flow).
+    /// Post: advances monotonically through Stages 2 → 3 → 4 → 5 (5 field steps) → 6 → 7, except wipeout in Stage 6
+    ///       resets to Stage 5 ReachBossLair so the player can retry without losing field-tutorial progress.
     /// Side effects: mutates only its own state fields.
     /// </remarks>
     public sealed class BeginnerQuestTracker
     {
-        /// <summary>Creates a tracker starting at Stage 4 (FriendBattleTutorial).</summary>
-        /// <remarks>Pre: none. Post: Stage == FriendBattleTutorial, FieldStep == AdventureControls. Side effects: none.</remarks>
-        public BeginnerQuestTracker()
+        /// <summary>Creates a tracker starting at <paramref name="initialStage"/> (default Stage 4: FriendBattleTutorial).</summary>
+        /// <remarks>Pre: initialStage is a defined BeginnerQuestStage. Post: Stage == initialStage, FieldStep == AdventureControls. Side effects: none.</remarks>
+        public BeginnerQuestTracker(BeginnerQuestStage initialStage = BeginnerQuestStage.FriendBattleTutorial)
         {
-            Stage = BeginnerQuestStage.FriendBattleTutorial;
+            Contract.Requires(Enum.IsDefined(typeof(BeginnerQuestStage), initialStage), "initialStage must be defined");
+            Stage = initialStage;
             FieldStep = BeginnerFieldStep.AdventureControls;
         }
 
-        /// <summary>Current beginner quest stage (4..7 during a run).</summary>
+        /// <summary>Current beginner quest stage (2..7 during a run).</summary>
         /// <remarks>Pre: none. Post: valid BeginnerQuestStage. Side effects: none.</remarks>
         public BeginnerQuestStage Stage { get; private set; }
+
+        /// <summary>Zero-based tour dialogue stop index while in Stage 2 (FriendWorldIntro).</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int VillageTourStep { get; private set; }
+
+        /// <summary>True while the player is restricted from leaving the Cradle Moon starter village (Stages 2–3).</summary>
+        /// <remarks>REQ: docs/design/beginner-quest.md#流程. Pre: none. Post: Stage == FriendWorldIntro || Stage == StarterSelect. Side effects: none.</remarks>
+        public bool IsVillageBoundaryLocked =>
+            Stage == BeginnerQuestStage.FriendWorldIntro || Stage == BeginnerQuestStage.StarterSelect;
 
         /// <summary>Current field tutorial sub-step while in Stage 5.</summary>
         /// <remarks>Pre: none. Post: valid BeginnerFieldStep. Side effects: none.</remarks>
@@ -140,6 +151,47 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Whether the Stage 6 Boss + Rival 2vs2 battle has been won.</summary>
         /// <remarks>Pre: none. Post: true iff Stage == MainWorldLobby. Side effects: none.</remarks>
         public bool BossAndRivalDefeated { get; private set; }
+
+        /// <summary>Advances the Stage 2 friend village-tour dialogue; transitions to StarterSelect after the final stop.</summary>
+        /// <remarks>
+        /// Pre: totalStops &gt;= 1.
+        /// Post: no-op (returns false) if Stage != FriendWorldIntro; otherwise increments VillageTourStep and transitions
+        ///       Stage to StarterSelect once VillageTourStep &gt;= totalStops.
+        /// Side effects: mutates VillageTourStep and possibly Stage.
+        /// </remarks>
+        public bool AdvanceVillageTour(int totalStops)
+        {
+            Contract.Requires(totalStops >= 1, "totalStops must be >= 1");
+            if (Stage != BeginnerQuestStage.FriendWorldIntro)
+            {
+                return false;
+            }
+
+            VillageTourStep++;
+            if (VillageTourStep >= totalStops)
+            {
+                Stage = BeginnerQuestStage.StarterSelect;
+            }
+
+            return true;
+        }
+
+        /// <summary>Records that the player confirmed an in-world starter in Stage 3, entering Stage 4.</summary>
+        /// <remarks>
+        /// Pre: none.
+        /// Post: if Stage == StarterSelect, transitions Stage to FriendBattleTutorial and returns true; else false.
+        /// Side effects: mutates Stage.
+        /// </remarks>
+        public bool OnStarterChosen()
+        {
+            if (Stage != BeginnerQuestStage.StarterSelect)
+            {
+                return false;
+            }
+
+            Stage = BeginnerQuestStage.FriendBattleTutorial;
+            return true;
+        }
 
         /// <summary>Records the end of the Stage 4 friend 1vs1 battle (win or loss both continue).</summary>
         /// <remarks>
@@ -308,6 +360,10 @@ namespace Cosmimera.Bootstrap.Demo
             string rival = BeginnerQuestRules.CharacterDisplayName(rivalId);
             return Stage switch
             {
+                BeginnerQuestStage.FriendWorldIntro =>
+                    $"階段 2/8：跟著好友「{friend}」了解搖籃星聚落與世界觀（{VillageTourStep}/3，期間不可離開聚落）",
+                BeginnerQuestStage.StarterSelect =>
+                    "階段 3/8：在聚落廣場靠近「日／月／星」御三家互動並選擇第一隻夥伴",
                 BeginnerQuestStage.FriendBattleTutorial =>
                     $"階段 4/8：與好友「{friend}」1vs1 對戰＋對戰教學（移動／出招／鎖定目標／格擋與閃避）",
                 BeginnerQuestStage.FriendFieldTutorial => FieldStep switch
@@ -402,6 +458,23 @@ namespace Cosmimera.Bootstrap.Demo
             _ => throw new ArgumentException("unknown starter line: " + playerStarterLine, nameof(playerStarterLine)),
         };
 
+        /// <summary>Builds the placeholder village tour + world-view intro dialogue for Stage 2 in Cradle Moon.</summary>
+        /// <remarks>Pre: friendId non-null. Post: 3-stop tour dialogue list. Side effects: allocates list.</remarks>
+        public static List<DialogueLine> VillageTourDialogue(string friendId)
+        {
+            Contract.Requires(friendId != null, "friendId is required");
+            string name = CharacterDisplayName(friendId);
+            return new List<DialogueLine>
+            {
+                new DialogueLine(name, "ui.bq.village_tour_1",
+                    "歡迎來到搖籃星聚落！這裡是我們在衛星上的家園，各聚落裡有商店、工匠與治療師協助冒險者。"),
+                new DialogueLine(name, "ui.bq.village_tour_2",
+                    "星海深處散佈著由十種元素孕育的星球，我們能透過收服器皿與宙獸締結羈絆，也能在母星球調查星隙結晶！"),
+                new DialogueLine(name, "ui.bq.village_tour_3",
+                    "在準備好出發前先留在聚落廣場吧！前方有三隻「日／月／星」御三家正等著你，走近選一隻後我們立刻切磋 1vs1！"),
+            };
+        }
+
         /// <summary>Builds the placeholder world-view intro dialogue for Stage 2.</summary>
         /// <remarks>Pre: friendId non-null. Post: non-empty list. Side effects: allocates list.</remarks>
         public static List<DialogueLine> FriendIntroDialogue(string friendId)
@@ -413,7 +486,7 @@ namespace Cosmimera.Bootstrap.Demo
                 new DialogueLine(name, "ui.bq.friend_intro_1",
                     "歡迎來到搖籃星！在星海深處，每顆星球都孕育著不同屬性的宙獸與地貌奇觀。"),
                 new DialogueLine(name, "ui.bq.friend_intro_2",
-                    "冒險者會透過收服器皿與宙獸締結羈絆，回到地球觀測站大廳後就能自由探索星海！"),
+                    "冒險者會透過收服器皿與宙獸締結羈絆，降落母星球（主世界）後就能調查星隙自由探索星海！"),
                 new DialogueLine(name, "ui.bq.friend_intro_3",
                     "出發前，先挑選你的第一隻御三家夥伴，我再陪你來場 1vs1 對戰教學吧！"),
             };
@@ -498,7 +571,7 @@ namespace Cosmimera.Bootstrap.Demo
                 new DialogueLine(rival, "ui.bq.rival_boss_defeated",
                     "哼……2vs2 配合得不錯嘛。到了真正的星海，我可不會再手下留情！"),
                 new DialogueLine(friend, "ui.bq.friend_complete",
-                    "太好了！我們收服了幼年 BOSS，現在一起前往地球觀測站（主世界大廳）吧！"),
+                    "太好了！我們收服了幼年 BOSS，現在一起降落母星球（主世界）的 1 號小鎮吧！"),
             };
         }
 

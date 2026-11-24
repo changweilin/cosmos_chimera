@@ -32,7 +32,7 @@ namespace Cosmimera.Bootstrap.Demo
             if (_setup.CraftLooks != null) _craftInventory.RestoreLooks(_setup.CraftLooks);
         }
 
-        private void DrawCrafting(AdventurePanel ui)
+        private void DrawFieldGathering(AdventurePanel ui)
         {
             ui.Heading(_copy.Ui("ui.craft.gather"));
             ui.Label(_copy.Ui("ui.craft.once"));
@@ -56,11 +56,6 @@ namespace Cosmimera.Bootstrap.Demo
                 GUIUtility.ExitGUI();
             }
             if (!any) ui.Label(_copy.Ui("ui.craft.no_nodes"));
-            CraftRecipe selected = CraftJournal.DrawRecipes(ui, _copy, _craftCatalog, _craftInventory, _enabledUtilities, _showLockedGathering);
-            if (selected == null) return;
-            ui.Message = _copy.Ui("craft.result." + CraftRules.TryCraft(selected, _enabledUtilities, _craftInventory,
-                _craftCatalog, new GearOrigin(_setup.PlanetType.Id, _setup.Seed)));
-            GUIUtility.ExitGUI();
         }
 
         private string SeasonId() => (_setup.Season ?? Seasons.For(_setup.Seed)).ToString().ToLowerInvariant();

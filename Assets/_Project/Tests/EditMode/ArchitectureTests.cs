@@ -29,7 +29,7 @@ namespace Cosmimera.Architecture.Tests
             ["Cosmimera.Creatures"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Combat"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Capture"] = new[] { "Cosmimera.Core", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
-            ["Cosmimera.Lobby"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
+            ["Cosmimera.Lobby"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.WorldGen", "Cosmimera.Planet", "Cosmimera.GameData" },
             ["Cosmimera.Codex"] = new[] { "Cosmimera.Core", "Cosmimera.Codex.Api", "Cosmimera.Combat", "Cosmimera.Capture", "Cosmimera.Creatures", "Cosmimera.GameData" },
             ["Cosmimera.Codex.Api"] = new[] { "Cosmimera.Core" },
             ["Cosmimera.Net"] = new[] { "Cosmimera.Core", "Cosmimera.Combat", "Cosmimera.Creatures", "Cosmimera.Planet", "Cosmimera.GameData" },

@@ -8,6 +8,7 @@ using Cosmimera.Core.Random;
 using Cosmimera.Creatures;
 using Cosmimera.Crafting;
 using Cosmimera.GameData;
+using Cosmimera.Lobby;
 using Cosmimera.Planet;
 using Cosmimera.Player;
 using Cosmimera.Save;
@@ -97,6 +98,18 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Gold earned during this run from trainer victories and quest milestones.</summary>
         /// <remarks>REQ: docs/design/crafting.md#製造擴充. Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
         public int GoldEarned;
+
+        /// <summary>Optional Star Rift chosen from the Main World to launch immediately after settlement.</summary>
+        /// <remarks>REQ: docs/design/lobby-meta.md. Pre: none. Post: null unless departing via Star Rift. Side effects: none.</remarks>
+        public StarRiftEntry? PendingStarRiftLaunch;
+
+        /// <summary>Planet type definition corresponding to <see cref="PendingStarRiftLaunch"/>.</summary>
+        /// <remarks>Pre: none. Post: non-null when PendingStarRiftLaunch is set. Side effects: none.</remarks>
+        public PlanetTypeDef PendingStarRiftPlanetType;
+
+        /// <summary>Main-world Star Rift refresh epoch active when this session ended.</summary>
+        /// <remarks>Pre: none. Post: &gt;= 0. Side effects: none.</remarks>
+        public int NewRiftRefreshEpoch;
 
         /// <summary>Records one completed battle (victory or defeat) against trainer profession <paramref name="professionId"/>.</summary>
         /// <remarks>Pre: professionId valid snake_case id. Post: TrainerBattles[professionId] incremented by 1. Side effects: mutates TrainerBattles.</remarks>
@@ -229,6 +242,10 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>True for a P7-02 beginner-quest run on a cradle asteroid (Clear weather, friend 1vs1 + 2vs2 boss).</summary>
         public bool IsBeginnerQuest;
 
+        /// <summary>Player character id selected for this run (when in beginner quest before save completion).</summary>
+        /// <remarks>Pre: null or valid character id. Post: none. Side effects: none.</remarks>
+        public string PlayerCharacterId;
+
         /// <summary>Assigned friend character id when <see cref="IsBeginnerQuest"/> is true.</summary>
         public string FriendId;
 
@@ -259,6 +276,26 @@ namespace Cosmimera.Bootstrap.Demo
         /// <summary>Optional checkpoint snapshot to resume from on session start.</summary>
         /// <remarks>REQ: docs/design/lobby-meta.md#進度保存. Pre: null or valid RunCheckpointSave. Post: none. Side effects: none.</remarks>
         public RunCheckpointSave ResumeCheckpoint;
+
+        /// <summary>Initial beginner-quest stage when entering Cradle Moon (defaults to Stage 4 for legacy callers).</summary>
+        /// <remarks>REQ: docs/design/beginner-quest.md. Pre: none. Post: valid BeginnerQuestStage. Side effects: none.</remarks>
+        public BeginnerQuestStage InitialBeginnerStage = BeginnerQuestStage.FriendBattleTutorial;
+
+        /// <summary>Available starter species for Stage 3 in-world selection on Cradle Moon.</summary>
+        /// <remarks>REQ: docs/design/beginner-quest.md. Pre: null or non-empty list. Post: none. Side effects: none.</remarks>
+        public IReadOnlyList<CreatureDef> StarterChoices;
+
+        /// <summary>Live persistent save &amp; Meta services bridge when hosted by DemoGame.</summary>
+        /// <remarks>Pre: null in isolated unit tests; non-null in full DemoGame runs. Post: none. Side effects: none.</remarks>
+        public MainWorldServices Services;
+
+        /// <summary>Current Star Rift refresh epoch when entering the Main World.</summary>
+        /// <remarks>Pre: &gt;= 0. Post: none. Side effects: none.</remarks>
+        public int RiftRefreshEpoch;
+
+        /// <summary>Rift indices already cleared in <see cref="RiftRefreshEpoch"/>.</summary>
+        /// <remarks>Pre: null or valid rift indices. Post: none. Side effects: none.</remarks>
+        public IReadOnlyCollection<int> ClearedRiftIndices;
     }
 
     /// <summary>
@@ -502,6 +539,7 @@ namespace Cosmimera.Bootstrap.Demo
         private EnvMaterials _envMaterials;
         private PlayerVitals _vitals;
         private TeamState _team;
+        private Shader _toonShader;
         private readonly List<int> _partyUnits = new List<int>();
         private readonly HashSet<int> _appeared = new HashSet<int>();
         private readonly List<GroundDrop> _pickupBuffer = new List<GroundDrop>(16);
@@ -715,8 +753,11 @@ namespace Cosmimera.Bootstrap.Demo
             Core.Contracts.Contract.Requires(copy != null && balance != null && setup != null && onEnd != null,
                 "copy, balance, setup and onEnd are required");
             InputActionMap runMap = RequireRunMap(actions);
-            Core.Contracts.Contract.Requires(setup.Party != null && setup.Party.Count >= 1 && setup.Party.Count <= 6,
-                "party must hold 1..6 forms");
+            bool deferredStarter = setup.IsBeginnerQuest &&
+                setup.InitialBeginnerStage < BeginnerQuestStage.FriendBattleTutorial;
+            Core.Contracts.Contract.Requires(setup.Party != null &&
+                (deferredStarter ? setup.Party.Count <= 6 : setup.Party.Count >= 1 && setup.Party.Count <= 6),
+                "party must hold 1..6 forms (or 0 before Stage 3 starter selection)");
             Core.Contracts.Contract.Requires(setup.Progression != null && setup.PartyIds != null && setup.PartyExp != null &&
                 setup.PartyIds.Count == setup.Party.Count && setup.PartyExp.Count == setup.Party.Count,
                 "progression, party ids and party exp are required, one per party slot");
@@ -724,6 +765,7 @@ namespace Cosmimera.Bootstrap.Demo
                 "player exp must be 0..PlayerMaxExp");
             Core.Contracts.Contract.Requires(setup.Materials != null, "material drop rules are required");
             _copy = copy;
+            _toonShader = toonShader;
             _progression = setup.Progression;
             _drops = setup.Materials;
             _wildPool = wildPool;
@@ -1190,12 +1232,18 @@ namespace Cosmimera.Bootstrap.Demo
                 CreateView(u, SpawnRole.Normal);
             }
 
-            _team = new TeamState(roster, balance.SwitchCooldownMs);
-            _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
+            if (roster.Count > 0)
+            {
+                _team = new TeamState(roster, balance.SwitchCooldownMs);
+                _team.SetPool(roster.GetRange(0, math.min(roster.Count, 4)));
+            }
             ConfigureJournal();
             ConfigureBeginnerQuest();
+            ConfigureBeginnerVillage(toonShader);
             ConfigureTrial(wildPool, terrainMaterial, toonShader, scenery?.Props);
             ConfigureLobbyGatekeepers(toonShader);
+            ConfigureMainWorldNpcs(toonShader);
+            ConfigureStarRifts(toonShader);
             if (_rig != null && _rig.Character != null)
             {
                 _rig.Character.SetCeilingProvider(surface.CeilingAltitude);
@@ -1272,6 +1320,12 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void SummonOpening()
         {
+            if (_team == null)
+            {
+                _mainId = CombatAi.NoTarget;
+                return;
+            }
+
             float3 player = PlayerPosition();
             for (int i = 0; i < _team.Pool.Count && _team.Active.Count < 2; i++)
             {
@@ -1283,7 +1337,7 @@ namespace Cosmimera.Bootstrap.Demo
             }
 
             _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
-            if (_setup.IsBeginnerQuest)
+            if (_setup.IsBeginnerQuest && _bqTracker != null && _bqTracker.Stage == BeginnerQuestStage.FriendBattleTutorial)
             {
                 StartBeginnerFriendBattle(player);
             }
@@ -1581,6 +1635,8 @@ namespace Cosmimera.Bootstrap.Demo
             RecordAppearances();
             UpdateRegion(player);
             StepLobbyGatekeepers(player);
+            StepMainWorldNpcs(player);
+            StepStarRifts(player);
             StepTrial(player);
             if (_nowMs >= _nextAffixMs)
             {
@@ -1637,7 +1693,8 @@ namespace Cosmimera.Bootstrap.Demo
             if (_overloadRequested)
             {
                 _overloadRequested = false;
-                if (_mainId >= 0 && _encounter.TryTriggerOverload(_mainId, _team.InCombat, _overloadUnlocked.Contains(_mainId)) == OverloadResult.Ok)
+                if (_team != null && _mainId >= 0 &&
+                    _encounter.TryTriggerOverload(_mainId, _team.InCombat, _overloadUnlocked.Contains(_mainId)) == OverloadResult.Ok)
                 {
                     EncounterUnit overloaded = _encounter.Units[_mainId];
                     float3 up = _rig.Config.ToDirection(overloaded.Position);
@@ -1652,7 +1709,7 @@ namespace Cosmimera.Bootstrap.Demo
             _populace?.Step(_nowMs, TickMs);
             if (_trainers != null)
             {
-                if (!_team.InCombat && !_encounter.HasActiveTrainerBattle && !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0 &&
+                if ((_team == null || !_team.InCombat) && !_encounter.HasActiveTrainerBattle && !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0 &&
                     !TrialInside)
                 {
                     _trainers.Step(_nowMs, TickMs);
@@ -1688,7 +1745,7 @@ namespace Cosmimera.Bootstrap.Demo
             ApplyPlayerPush();
             ValidateLock(player);
             UpdateInteraction(PlayerPosition());
-            bool engaged = AnyEngaged();
+            bool engaged = _team != null && AnyEngaged();
             if (engaged && !_team.InCombat)
             {
                 BeginCombat();
@@ -1729,7 +1786,7 @@ namespace Cosmimera.Bootstrap.Demo
             _injectedFaints.Clear();
 #endif
 
-            if (!engaged && _team.InCombat)
+            if (!engaged && _team != null && _team.InCombat)
             {
                 _team.EndCombat();
                 _encounter.EndCombatOverload();
@@ -1761,6 +1818,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             RefillField(player);
             ExpireKnockedOut();
+            StepBeginnerVillage(player);
             StepBeginnerQuest();
             CheckEnd();
         }
@@ -1770,7 +1828,7 @@ namespace Cosmimera.Bootstrap.Demo
             EncounterUnit u = _encounter.Units[unitId];
             // SOL P2-12 R1: a battle whose only enemy falls on its first tick is no longer "engaged" after Tick, so the
             // combat start above never ran; open it here or the knockout would be paid with the previous battle's record.
-            if (!_team.InCombat)
+            if (_team != null && !_team.InCombat)
             {
                 BeginCombat();
                 RecordAppearances();
@@ -1784,11 +1842,14 @@ namespace Cosmimera.Bootstrap.Demo
                     return;
                 }
 
-                _team.Faint(unitId);
+                if (_team != null)
+                {
+                    _team.Faint(unitId);
+                }
                 _encounter.Unfield(unitId);
                 if (_mainId == unitId)
                 {
-                    _mainId = _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
+                    _mainId = _team != null && _team.Active.Count > 0 ? _team.Active[0] : CombatAi.NoTarget;
                     UpdateDirectControlState();
                 }
 
@@ -1859,7 +1920,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void RefillField(float3 player)
         {
-            if (_returnedToPlayer || _team.Active.Count >= 2)
+            if (_team == null || _returnedToPlayer || _team.Active.Count >= 2)
             {
                 return;
             }
@@ -1914,9 +1975,12 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 TrainerBattleState state = _encounter.TrainerState(_activeEncounterTrainerId);
                 bool poolAlive = false;
-                foreach (int id in _team.Pool)
+                if (_team != null)
                 {
-                    poolAlive |= !_encounter.Units[id].Combatant.IsFainted;
+                    foreach (int id in _team.Pool)
+                    {
+                        poolAlive |= !_encounter.Units[id].Combatant.IsFainted;
+                    }
                 }
 
                 if (state == TrainerBattleState.Defeated || state == TrainerBattleState.Idle || !poolAlive)
@@ -1968,6 +2032,11 @@ namespace Cosmimera.Bootstrap.Demo
                     TryRecoverLobbyWipeout();
                 }
 
+                return;
+            }
+
+            if (_team == null)
+            {
                 return;
             }
 
@@ -2025,13 +2094,13 @@ namespace Cosmimera.Bootstrap.Demo
                 OpenInteract();
             }
 
-            if (_selectFirstAction.WasPressedThisFrame() && _team.Active.Count > 0)
+            if (_selectFirstAction.WasPressedThisFrame() && _team != null && _team.Active.Count > 0)
             {
                 _mainId = _team.Active[0];
                 UpdateDirectControlState();
             }
 
-            if (_selectSecondAction.WasPressedThisFrame() && _team.Active.Count > 1)
+            if (_selectSecondAction.WasPressedThisFrame() && _team != null && _team.Active.Count > 1)
             {
                 _mainId = _team.Active[1];
                 UpdateDirectControlState();
@@ -2075,7 +2144,7 @@ namespace Cosmimera.Bootstrap.Demo
 
             if (PressedWithoutCommand(_captureAction))
             {
-                if (_team.InCombat)
+                if (_team != null && _team.InCombat)
                 {
                     Toast("戰鬥中無法投擲收服，請先結束戰鬥或脫戰");
                 }
@@ -2245,7 +2314,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OpenInteract()
         {
-            if (TryTrialInteract())
+            if (TryBeginnerVillageInteract() || TryMainWorldNpcInteract() || TryStarRiftInteract() || TryTrialInteract())
             {
                 return;
             }
@@ -2253,7 +2322,7 @@ namespace Cosmimera.Bootstrap.Demo
             int id = _encounter.NearestInteractable(PlayerPosition());
             if (id < 0)
             {
-                if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                if (_trainers != null && (_team == null || !_team.InCombat) && !_encounter.HasActiveTrainerBattle &&
                     !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
                 {
                     int trainerIdx = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
@@ -2367,7 +2436,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void SwitchMain()
         {
-            if (_mainId == CombatAi.NoTarget)
+            if (_team == null || _mainId == CombatAi.NoTarget)
             {
                 return;
             }
@@ -2398,7 +2467,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void TryCapture()
         {
-            if (_team.InCombat)
+            if (_team != null && _team.InCombat)
             {
                 Toast("戰鬥中無法投擲收服，請先結束戰鬥或脫戰");
                 return;
@@ -2552,7 +2621,7 @@ namespace Cosmimera.Bootstrap.Demo
                 }
                 _quest.OnRegionEntered(region);
                 // No battle produced this step: use the battle in progress, if any (Q-C31: same record as a battle).
-                PayQuest(_team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
+                PayQuest(_team != null && _team.InCombat ? new HashSet<int>(_appeared) : new HashSet<int>());
                 if (_plan != null && region >= 0 && region < _plan.Regions.Count)
                 {
                     RunRegion nextRegion = _plan.Regions[region];
@@ -2634,7 +2703,7 @@ namespace Cosmimera.Bootstrap.Demo
                     _codexEncountered.Add(wild.Key);
                 }
             }
-            if (!_team.InCombat)
+            if (_team == null || !_team.InCombat)
             {
                 return;
             }
@@ -2691,7 +2760,7 @@ namespace Cosmimera.Bootstrap.Demo
         // for this run (it is not revived, D0-R1), but its XP still reaches the save.
         private void ApplyLevelUps()
         {
-            if (_team.InCombat)
+            if (_team == null || _team.InCombat)
             {
                 return;
             }
@@ -3042,6 +3111,7 @@ namespace Cosmimera.Bootstrap.Demo
             _outcome.PlayerExp = _playerExp;
             _outcome.Victory = victory;
             _outcome.Abandoned = abandoned;
+            _outcome.NewRiftRefreshEpoch = _riftRefreshEpoch;
             _outcome.CraftStock = _craftInventory.Snapshot();
             _outcome.CraftLooks = _craftInventory.LookSnapshot();
             _onEnd(_outcome);
@@ -3838,7 +3908,7 @@ namespace Cosmimera.Bootstrap.Demo
             {
                 if (_interactable < 0)
                 {
-                    if (_trainers != null && !_team.InCombat && !_encounter.HasActiveTrainerBattle &&
+                    if (_trainers != null && (_team == null || !_team.InCombat) && !_encounter.HasActiveTrainerBattle &&
                         !HasActiveBeginnerTrainerBattle && _activeEncounterTrainerId < 0)
                     {
                         int nearTrainer = _trainers.NearestInteractable(_rig.Config.ToDirection(PlayerPosition()),
@@ -4052,7 +4122,7 @@ namespace Cosmimera.Bootstrap.Demo
                 help,
                 new GUIStyle(_label) { fontSize = 14, wordWrap = true });
 
-            if (_team.InCombat)
+            if (_team == null || _team.InCombat)
             {
                 return;
             }
@@ -4087,52 +4157,55 @@ namespace Cosmimera.Bootstrap.Demo
                 (rollCdLeft > 0 ? $" ({rollCdLeft / 1000f:0.0}s)" : $" {_copy.Ui("ui.hud.cd_ready")}");
             GUILayout.Label($"◆ {_copy.Ui("ui.hud.hp")} {_vitals.Hp}/{_vitals.MaxHp}\n{rollText}",
                 new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(135));
-            foreach (int id in _team.Pool)
+            if (_team != null)
             {
-                EncounterUnit u = _encounter.Units[id];
-                bool active = In(_team.Active, id);
-                string mark = id == _mainId ? "★" : active ? "●" : "○";
-                string overloadTag = u.Combatant.IsOverloaded ? $" {_copy.Ui("ui.hud.overload_active")}" : string.Empty;
-                string cd = string.Empty;
-                if (active)
+                foreach (int id in _team.Pool)
                 {
-                    int slots = u.Combatant.Cooldowns.SlotCount;
-                    for (int s = 0; s < slots; s++)
+                    EncounterUnit u = _encounter.Units[id];
+                    bool active = In(_team.Active, id);
+                    string mark = id == _mainId ? "★" : active ? "●" : "○";
+                    string overloadTag = u.Combatant.IsOverloaded ? $" {_copy.Ui("ui.hud.overload_active")}" : string.Empty;
+                    string cd = string.Empty;
+                    if (active)
                     {
-                        if (s > 0)
+                        int slots = u.Combatant.Cooldowns.SlotCount;
+                        for (int s = 0; s < slots; s++)
                         {
-                            cd += " ";
+                            if (s > 0)
+                            {
+                                cd += " ";
+                            }
+
+                            cd += u.Combatant.Cooldowns.IsReady(s, _nowMs)
+                                ? $"S{s + 1}:{_copy.Ui("ui.hud.cd_ready")}"
+                                : $"S{s + 1}:{(u.Combatant.Cooldowns.ReadyAtMs(s) - _nowMs) / 1000f:0.0}s";
                         }
-
-                        cd += u.Combatant.Cooldowns.IsReady(s, _nowMs)
-                            ? $"S{s + 1}:{_copy.Ui("ui.hud.cd_ready")}"
-                            : $"S{s + 1}:{(u.Combatant.Cooldowns.ReadyAtMs(s) - _nowMs) / 1000f:0.0}s";
                     }
-                }
 
-                string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
-                string traitHint = id == _mainId && u.Def.Trait != null
-                    ? "\n" + _copy.Ui("ui.hud.trait_label").Replace("{trait}", _copy.Name(u.Def.Trait.Id))
-                    : string.Empty;
-                Texture2D portrait = _portraits != null ? _portraits.FindCreature(u.Def.LineId, u.Def.Stage) : null;
-                if (portrait != null)
-                {
-                    GUILayout.BeginHorizontal(GUILayout.Width(185));
-                    Rect iconRect = GUILayoutUtility.GetRect(36f, 36f, GUILayout.ExpandWidth(false));
-                    GUI.DrawTexture(iconRect, portrait, ScaleMode.ScaleToFit, true);
-                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
-                        new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(145));
-                    GUILayout.EndHorizontal();
-                }
-                else
-                {
-                    GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
-                        new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(155));
+                    string state = u.Combatant.IsFainted ? _copy.Ui("ui.hud.knocked_out") : $"{_copy.Ui("ui.hud.hp")} {u.Combatant.Hp}/{u.Combatant.MaxHp}";
+                    string traitHint = id == _mainId && u.Def.Trait != null
+                        ? "\n" + _copy.Ui("ui.hud.trait_label").Replace("{trait}", _copy.Name(u.Def.Trait.Id))
+                        : string.Empty;
+                    Texture2D portrait = _portraits != null ? _portraits.FindCreature(u.Def.LineId, u.Def.Stage) : null;
+                    if (portrait != null)
+                    {
+                        GUILayout.BeginHorizontal(GUILayout.Width(185));
+                        Rect iconRect = GUILayoutUtility.GetRect(36f, 36f, GUILayout.ExpandWidth(false));
+                        GUI.DrawTexture(iconRect, portrait, ScaleMode.ScaleToFit, true);
+                        GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
+                            new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(145));
+                        GUILayout.EndHorizontal();
+                    }
+                    else
+                    {
+                        GUILayout.Label($"{mark} {_copy.Name(u.Def.Id)} LV{u.Level}{overloadTag}\n{state}\n{cd}{traitHint}",
+                            new GUIStyle(_label) { fontSize = 13 }, GUILayout.Width(155));
+                    }
                 }
             }
 
             GUILayout.EndHorizontal();
-            long cdLeft = _team.SwitchCooldownRemainingMs(_nowMs);
+            long cdLeft = _team != null ? _team.SwitchCooldownRemainingMs(_nowMs) : 0L;
             string cmd = _command.Kind switch
             {
                 AiCommandKind.Focus => _copy.Ui("ui.hud.command_focus"),
@@ -4143,7 +4216,7 @@ namespace Cosmimera.Bootstrap.Demo
             string commands = _copy.Ui("ui.hud.command_bindings")
                 .Replace("{focus}", BindingLabel(_focusAction)).Replace("{free}", BindingLabel(_freeAction))
                 .Replace("{follow}", BindingLabel(_followAction)).Replace("{retreat}", BindingLabel(_retreatAction));
-            string overloadPrompt = _mainId >= 0 && _team.InCombat && _encounter.Units[_mainId].Def.Stage == CreatureStage.Adult
+            string overloadPrompt = _mainId >= 0 && _team != null && _team.InCombat && _encounter.Units[_mainId].Def.Stage == CreatureStage.Adult
                 && _overloadUnlocked.Contains(_mainId)
                 && !_encounter.Units[_mainId].Combatant.IsOverloaded && !_encounter.Units[_mainId].Combatant.IsFainted
                 ? "  " + _copy.Ui("ui.hud.overload_prompt").Replace("{key}", BindingLabel(_overloadAction))
@@ -4196,6 +4269,7 @@ namespace Cosmimera.Bootstrap.Demo
 
         private void OnDisable()
         {
+            CloseServiceOverlay();
             CloseJournal();
             _globalInput?.Disable();
             _runInput?.Disable();
@@ -4213,6 +4287,9 @@ namespace Cosmimera.Bootstrap.Demo
             _spray?.Dispose();
             _underwater?.Dispose();
             if (_sea != null) SeaWaves.Clear();
+            CloseServiceOverlay();
+            _serviceOverlay?.Dispose();
+            _serviceOverlay = null;
             CloseJournal();
             DisposeHud();
             _inputHints?.Dispose();
@@ -4224,6 +4301,9 @@ namespace Cosmimera.Bootstrap.Demo
             _hitFeel?.Dispose();
             DisposeTrial();
             DisposeLobbyGatekeepers();
+            DisposeMainWorldNpcs();
+            DisposeStarRifts();
+            DisposeBeginnerVillage();
             _rig?.Dispose();
             PlanetLook.ClearGeology();
             if (_terrainMaterial != null)
