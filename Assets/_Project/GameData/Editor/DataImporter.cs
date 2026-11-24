@@ -718,162 +718,197 @@ namespace Cosmimera.GameData.Editor
             int deleted = 0;
 
             EnsureFolder(outputFolder);
-            deleted += DeleteOrphans(outputFolder + "/" + MovesOut, moves.Select(m => m.Dto.Id));
-            deleted += DeleteOrphans(outputFolder + "/" + TraitsOut, traits.Select(t => t.Dto.Id));
-            deleted += DeleteOrphans(outputFolder + "/" + PlanetTypesOut, planets.Select(p => p.Dto.Id));
-            deleted += DeleteOrphans(outputFolder + "/" + CreaturesOut, creatures.Select(c => c.Dto.Id));
-            deleted += DeleteOrphans(outputFolder + "/" + NichesOut, niches.Select(n => n.Dto.Id));
-
-            // Create every asset before filling any, so cross references (creature → move) point at persisted objects.
-            var moveDefs = new Dictionary<string, MoveDef>(StringComparer.Ordinal);
-            var traitDefs = new Dictionary<string, TraitDef>(StringComparer.Ordinal);
-            var planetDefs = new Dictionary<string, PlanetTypeDef>(StringComparer.Ordinal);
-            var creatureDefs = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
-            var nicheDefs = new Dictionary<string, NicheDef>(StringComparer.Ordinal);
-            foreach (Sourced<NicheDto> n in niches)
+            if (niches.Count > 0)
             {
-                nicheDefs.Add(n.Dto.Id, GetOrCreate<NicheDef>(outputFolder + "/" + NichesOut, n.Dto.Id, ref created, ref updated));
+                EnsureFolder(outputFolder + "/" + NichesOut);
             }
 
-            foreach (Sourced<NicheDto> s in niches)
+            if (moves.Count > 0)
             {
-                NicheDto d = s.Dto;
-                List<HabitWeight> habits = d.HabitWeights
-                    .Select(kv => new HabitWeight(ParseEnum<Habit>(kv.Key), kv.Value))
-                    .OrderBy(h => h.Habit)
+                EnsureFolder(outputFolder + "/" + MovesOut);
+            }
+
+            if (traits.Count > 0)
+            {
+                EnsureFolder(outputFolder + "/" + TraitsOut);
+            }
+
+            if (planets.Count > 0)
+            {
+                EnsureFolder(outputFolder + "/" + PlanetTypesOut);
+            }
+
+            if (creatures.Count > 0)
+            {
+                EnsureFolder(outputFolder + "/" + CreaturesOut);
+            }
+
+            // Batch AssetDatabase mutations so Unity performs one asset-pipeline refresh instead of one per asset.
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                deleted += DeleteOrphans(outputFolder + "/" + MovesOut, moves.Select(m => m.Dto.Id));
+                deleted += DeleteOrphans(outputFolder + "/" + TraitsOut, traits.Select(t => t.Dto.Id));
+                deleted += DeleteOrphans(outputFolder + "/" + PlanetTypesOut, planets.Select(p => p.Dto.Id));
+                deleted += DeleteOrphans(outputFolder + "/" + CreaturesOut, creatures.Select(c => c.Dto.Id));
+                deleted += DeleteOrphans(outputFolder + "/" + NichesOut, niches.Select(n => n.Dto.Id));
+
+                // Create every asset before filling any, so cross references (creature → move) point at persisted objects.
+                var moveDefs = new Dictionary<string, MoveDef>(StringComparer.Ordinal);
+                var traitDefs = new Dictionary<string, TraitDef>(StringComparer.Ordinal);
+                var planetDefs = new Dictionary<string, PlanetTypeDef>(StringComparer.Ordinal);
+                var creatureDefs = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
+                var nicheDefs = new Dictionary<string, NicheDef>(StringComparer.Ordinal);
+                foreach (Sourced<NicheDto> n in niches)
+                {
+                    nicheDefs.Add(n.Dto.Id, GetOrCreate<NicheDef>(outputFolder + "/" + NichesOut, n.Dto.Id, ref created, ref updated));
+                }
+
+                foreach (Sourced<NicheDto> s in niches)
+                {
+                    NicheDto d = s.Dto;
+                    List<HabitWeight> habits = d.HabitWeights
+                        .Select(kv => new HabitWeight(ParseEnum<Habit>(kv.Key), kv.Value))
+                        .OrderBy(h => h.Habit)
+                        .ToList();
+                    nicheDefs[d.Id].Set(d.NameZh, new List<string>(d.HabitatKinds), habits, ParseEnum<WanderMode>(d.Wander.Mode),
+                        d.Wander.RadiusMm ?? 0, d.Wander.ExclusionRadiusMm ?? 0, ToDistribution(d.Wander.SpeedPermille),
+                        ToDistribution(d.Wander.MoveMs), ToDistribution(d.Wander.PauseMs),
+                        d.TrophicTier, ParseEnum<TrophicGroup>(d.TrophicGroup));
+                }
+
+                foreach (Sourced<MoveDto> m in moves)
+                {
+                    moveDefs.Add(m.Dto.Id, GetOrCreate<MoveDef>(outputFolder + "/" + MovesOut, m.Dto.Id, ref created, ref updated));
+                }
+
+                foreach (Sourced<TraitDto> t in traits)
+                {
+                    traitDefs.Add(t.Dto.Id, GetOrCreate<TraitDef>(outputFolder + "/" + TraitsOut, t.Dto.Id, ref created, ref updated));
+                }
+
+                foreach (Sourced<PlanetTypeDto> p in planets)
+                {
+                    planetDefs.Add(p.Dto.Id, GetOrCreate<PlanetTypeDef>(outputFolder + "/" + PlanetTypesOut, p.Dto.Id, ref created, ref updated));
+                }
+
+                foreach (Sourced<CreatureDto> c in creatures)
+                {
+                    creatureDefs.Add(c.Dto.Id, GetOrCreate<CreatureDef>(outputFolder + "/" + CreaturesOut, c.Dto.Id, ref created, ref updated));
+                }
+
+                foreach (Sourced<MoveDto> s in moves)
+                {
+                    MoveDto d = s.Dto;
+                    moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
+                        d.EffectDurationMs ?? 0, d.FieldDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
+                        d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
+                        d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
+                    moveDefs[d.Id].SetWindup(d.WindupMs);
+                    moveDefs[d.Id].SetSkill(d.Star, d.Polarity != null ? ParseEnum<Polarity>(d.Polarity) : default);
+                    if (d.Downgraded != null)
+                    {
+                        MoveDowngradedDto g = d.Downgraded;
+                        moveDefs[d.Id].SetDowngraded(g.Power ?? -1, g.CooldownMs ?? -1, g.Accuracy ?? -1,
+                            g.Effect != null ? ToEffect(g.Effect) : null, g.EffectDurationMs ?? -1);
+                    }
+                }
+
+                foreach (Sourced<TraitDto> s in traits)
+                {
+                    traitDefs[s.Dto.Id].Set(ToTrigger(s.Dto.Trigger), s.Dto.Effects.Select(ToEffect).ToList());
+                    traitDefs[s.Dto.Id].SetSkill(s.Dto.Star, s.Dto.Downgraded?.Effects.Select(ToEffect).ToList());
+                }
+
+                foreach (Sourced<PlanetTypeDto> s in planets)
+                {
+                    PlanetTypeDto d = s.Dto;
+                    planetDefs[d.Id].Set(new List<string>(d.TerrainTags),
+                        d.ElementBias.Select(ParseEnum<Element>).ToList());
+                }
+
+                var overloadFormByAdult = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
+                foreach (Sourced<CreatureDto> s in creatures)
+                {
+                    if (s.Dto.OverloadOf != null)
+                    {
+                        overloadFormByAdult[s.Dto.OverloadOf] = creatureDefs[s.Dto.Id];
+                    }
+                }
+
+                foreach (Sourced<CreatureDto> s in creatures)
+                {
+                    CreatureDto d = s.Dto;
+                    var resist = new int[Enum.GetValues(typeof(Element)).Length];
+                    foreach (KeyValuePair<string, int> kv in d.Resist)
+                    {
+                        resist[(int)ParseEnum<Element>(kv.Key)] = kv.Value;
+                    }
+
+                    // Sorted by element so asset YAML does not churn when JSON key order changes.
+                    List<ElementValue> mastery = d.Mastery
+                        .Select(kv => new ElementValue(ParseEnum<Element>(kv.Key), kv.Value))
+                        .OrderBy(ev => ev.Element)
+                        .ToList();
+                    List<EvolutionMaterial> materials = d.Evolution?.Materials
+                        .Select(m => new EvolutionMaterial(ParseEnum<Element>(m.Element), m.Tier, m.Qty))
+                        .ToList() ?? new List<EvolutionMaterial>();
+                    string sensitivity = (string)d.Concept["sensitivity"];
+
+                    TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
+                    FieldUtility fieldUtility = d.FieldUtility != null ? ParseEnum<FieldUtility>(d.FieldUtility) : FieldUtility.None;
+                    CreatureDef def = creatureDefs[d.Id];
+                    def.Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
+                        d.Niches.Select(nc => new NicheCandidate(nicheDefs[nc.Niche], nc.Weight)).ToList(),
+                        d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
+                        mastery, new CreatureStats(d.Stats.Hp, d.Stats.Speed, d.Stats.YinAtk, d.Stats.YangAtk, d.Stats.YinDef, d.Stats.YangDef),
+                        moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
+                        sensitivity == "review");
+                    def.SetOverloadLinks(
+                        d.OverloadOf != null ? creatureDefs[d.OverloadOf] : null,
+                        overloadFormByAdult.TryGetValue(d.Id, out CreatureDef ovForm) ? ovForm : null);
+                }
+
+                var allDefs = new List<GameDef>();
+                allDefs.AddRange(moveDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+                allDefs.AddRange(traitDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+                allDefs.AddRange(planetDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+                allDefs.AddRange(creatureDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+                allDefs.AddRange(nicheDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
+                foreach (GameDef def in allDefs)
+                {
+                    EditorUtility.SetDirty(def);
+                }
+
+                List<RelationEdge> relations = edges
+                    .Select(e => new RelationEdge(creatureDefs[e.Dto.A], creatureDefs[e.Dto.B],
+                        ParseEnum<RelationKind>(e.Dto.Kind), e.Dto.Note ?? string.Empty))
                     .ToList();
-                nicheDefs[d.Id].Set(d.NameZh, new List<string>(d.HabitatKinds), habits, ParseEnum<WanderMode>(d.Wander.Mode),
-                    d.Wander.RadiusMm ?? 0, d.Wander.ExclusionRadiusMm ?? 0, ToDistribution(d.Wander.SpeedPermille),
-                    ToDistribution(d.Wander.MoveMs), ToDistribution(d.Wander.PauseMs),
-                    d.TrophicTier, ParseEnum<TrophicGroup>(d.TrophicGroup));
-            }
 
-            foreach (Sourced<MoveDto> m in moves)
-            {
-                moveDefs.Add(m.Dto.Id, GetOrCreate<MoveDef>(outputFolder + "/" + MovesOut, m.Dto.Id, ref created, ref updated));
-            }
-
-            foreach (Sourced<TraitDto> t in traits)
-            {
-                traitDefs.Add(t.Dto.Id, GetOrCreate<TraitDef>(outputFolder + "/" + TraitsOut, t.Dto.Id, ref created, ref updated));
-            }
-
-            foreach (Sourced<PlanetTypeDto> p in planets)
-            {
-                planetDefs.Add(p.Dto.Id, GetOrCreate<PlanetTypeDef>(outputFolder + "/" + PlanetTypesOut, p.Dto.Id, ref created, ref updated));
-            }
-
-            foreach (Sourced<CreatureDto> c in creatures)
-            {
-                creatureDefs.Add(c.Dto.Id, GetOrCreate<CreatureDef>(outputFolder + "/" + CreaturesOut, c.Dto.Id, ref created, ref updated));
-            }
-
-            foreach (Sourced<MoveDto> s in moves)
-            {
-                MoveDto d = s.Dto;
-                moveDefs[d.Id].Set(ParseEnum<Element>(d.Element), ParseEnum<MoveKind>(d.Kind), d.Power, ToEffect(d.Effect),
-                    d.EffectDurationMs ?? 0, d.FieldDurationMs ?? 0, d.CooldownMs, d.Accuracy, ParseEnum<RangeClass>(d.RangeClass), ParseEnum<MoveShape>(d.Shape),
-                    d.BaseRangeMm, ParseEnum<MoveMovement>(d.Movement ?? "none"),
-                    d.Shape == "burst" ? ParseEnum<BurstOrigin>(d.Origin) : default);
-                moveDefs[d.Id].SetWindup(d.WindupMs);
-                moveDefs[d.Id].SetSkill(d.Star, d.Polarity != null ? ParseEnum<Polarity>(d.Polarity) : default);
-                if (d.Downgraded != null)
+                string dbPath = outputFolder + "/" + DatabaseFileName;
+                GameDatabase db = AssetDatabase.LoadAssetAtPath<GameDatabase>(dbPath);
+                if (db == null)
                 {
-                    MoveDowngradedDto g = d.Downgraded;
-                    moveDefs[d.Id].SetDowngraded(g.Power ?? -1, g.CooldownMs ?? -1, g.Accuracy ?? -1,
-                        g.Effect != null ? ToEffect(g.Effect) : null, g.EffectDurationMs ?? -1);
-                }
-            }
-
-            foreach (Sourced<TraitDto> s in traits)
-            {
-                traitDefs[s.Dto.Id].Set(ToTrigger(s.Dto.Trigger), s.Dto.Effects.Select(ToEffect).ToList());
-                traitDefs[s.Dto.Id].SetSkill(s.Dto.Star, s.Dto.Downgraded?.Effects.Select(ToEffect).ToList());
-            }
-
-            foreach (Sourced<PlanetTypeDto> s in planets)
-            {
-                PlanetTypeDto d = s.Dto;
-                planetDefs[d.Id].Set(new List<string>(d.TerrainTags),
-                    d.ElementBias.Select(ParseEnum<Element>).ToList());
-            }
-
-            var overloadFormByAdult = new Dictionary<string, CreatureDef>(StringComparer.Ordinal);
-            foreach (Sourced<CreatureDto> s in creatures)
-            {
-                if (s.Dto.OverloadOf != null)
-                {
-                    overloadFormByAdult[s.Dto.OverloadOf] = creatureDefs[s.Dto.Id];
-                }
-            }
-
-            foreach (Sourced<CreatureDto> s in creatures)
-            {
-                CreatureDto d = s.Dto;
-                var resist = new int[Enum.GetValues(typeof(Element)).Length];
-                foreach (KeyValuePair<string, int> kv in d.Resist)
-                {
-                    resist[(int)ParseEnum<Element>(kv.Key)] = kv.Value;
+                    db = ScriptableObject.CreateInstance<GameDatabase>();
+                    AssetDatabase.CreateAsset(db, dbPath);
                 }
 
-                // Sorted by element so asset YAML does not churn when JSON key order changes.
-                List<ElementValue> mastery = d.Mastery
-                    .Select(kv => new ElementValue(ParseEnum<Element>(kv.Key), kv.Value))
-                    .OrderBy(ev => ev.Element)
-                    .ToList();
-                List<EvolutionMaterial> materials = d.Evolution?.Materials
-                    .Select(m => new EvolutionMaterial(ParseEnum<Element>(m.Element), m.Tier, m.Qty))
-                    .ToList() ?? new List<EvolutionMaterial>();
-                string sensitivity = (string)d.Concept["sensitivity"];
+                var fuEntries = new List<FieldUtilityCombatEntry>(fieldUtilityBindings.Count);
+                foreach ((FieldUtility utility, string moveId, string traitId) in fieldUtilityBindings)
+                {
+                    fuEntries.Add(new FieldUtilityCombatEntry(utility,
+                        moveId != null ? moveDefs[moveId] : null,
+                        traitId != null ? traitDefs[traitId] : null));
+                }
 
-                TryParseSizeClass(d.SizeClass, out CreatureSizeClass sizeClass);
-                FieldUtility fieldUtility = d.FieldUtility != null ? ParseEnum<FieldUtility>(d.FieldUtility) : FieldUtility.None;
-                CreatureDef def = creatureDefs[d.Id];
-                def.Set(d.LineId, ParseEnum<CreatureStage>(d.Stage), sizeClass, ParseEnum<AiStyle>(d.AiStyle),
-                    d.Niches.Select(nc => new NicheCandidate(nicheDefs[nc.Niche], nc.Weight)).ToList(),
-                    d.EvolvesTo != null ? creatureDefs[d.EvolvesTo] : null, d.Evolution?.Level ?? 0, materials, resist,
-                    mastery, new CreatureStats(d.Stats.Hp, d.Stats.Speed, d.Stats.YinAtk, d.Stats.YangAtk, d.Stats.YinDef, d.Stats.YangDef),
-                    moveDefs[d.SignatureMove], traitDefs[d.Trait], fieldUtility, d.Concept.ToString(Formatting.None),
-                    sensitivity == "review");
-                def.SetOverloadLinks(
-                    d.OverloadOf != null ? creatureDefs[d.OverloadOf] : null,
-                    overloadFormByAdult.TryGetValue(d.Id, out CreatureDef ovForm) ? ovForm : null);
+                db.SetContents(allDefs, relations, fuEntries);
+                EditorUtility.SetDirty(db);
             }
-
-            var allDefs = new List<GameDef>();
-            allDefs.AddRange(moveDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
-            allDefs.AddRange(traitDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
-            allDefs.AddRange(planetDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
-            allDefs.AddRange(creatureDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
-            allDefs.AddRange(nicheDefs.Values.OrderBy(x => x.Id, StringComparer.Ordinal));
-            foreach (GameDef def in allDefs)
+            finally
             {
-                EditorUtility.SetDirty(def);
+                AssetDatabase.StopAssetEditing();
             }
 
-            List<RelationEdge> relations = edges
-                .Select(e => new RelationEdge(creatureDefs[e.Dto.A], creatureDefs[e.Dto.B],
-                    ParseEnum<RelationKind>(e.Dto.Kind), e.Dto.Note ?? string.Empty))
-                .ToList();
-
-            string dbPath = outputFolder + "/" + DatabaseFileName;
-            GameDatabase db = AssetDatabase.LoadAssetAtPath<GameDatabase>(dbPath);
-            if (db == null)
-            {
-                db = ScriptableObject.CreateInstance<GameDatabase>();
-                AssetDatabase.CreateAsset(db, dbPath);
-            }
-
-            var fuEntries = new List<FieldUtilityCombatEntry>(fieldUtilityBindings.Count);
-            foreach ((FieldUtility utility, string moveId, string traitId) in fieldUtilityBindings)
-            {
-                fuEntries.Add(new FieldUtilityCombatEntry(utility,
-                    moveId != null ? moveDefs[moveId] : null,
-                    traitId != null ? traitDefs[traitId] : null));
-            }
-
-            db.SetContents(allDefs, relations, fuEntries);
-            EditorUtility.SetDirty(db);
             AssetDatabase.SaveAssets();
             return new DataImportReport(created, updated, deleted);
         }

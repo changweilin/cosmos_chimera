@@ -36,6 +36,94 @@ jobs:
       - name: Test validator and sample fixtures
         run: python -m pytest tools/tests -v
 
+  ci-scope:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    timeout-minutes: 5
+    outputs:
+      needs_unity: ${{ steps.scope.outputs.needs_unity }}
+    steps:
+      # Fail-closed without checking out PR code: only pure-docs changes skip Unity tests.
+      - name: Determine whether Unity EditMode tests are required
+        id: scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, subprocess
+
+          DOCS_ONLY = re.compile(r"^(docs/[^\r\n]+|[^/\r\n]+\.md)$")
+
+          def is_doc_path(path: str) -> bool:
+              return bool(DOCS_ONLY.fullmatch(path)) and ".." not in path.split("/")
+
+          def emit(needs: bool, reason: str) -> None:
+              val = "true" if needs else "false"
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                  fh.write(f"needs_unity={val}\n")
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+                  fh.write(f"### CI 測試範圍\n\nneeds_unity: `{val}` — {reason}\n")
+
+          def gh_json(*args: str):
+              raw = subprocess.check_output(["gh", "api", *args], text=True)
+              return json.loads(raw)
+
+          try:
+              event = os.environ.get("EVENT_NAME", "")
+              repo = os.environ["GITHUB_REPOSITORY"]
+              if event == "pull_request":
+                  pr_num = os.environ.get("PR_NUMBER", "")
+                  if not pr_num:
+                      emit(True, "missing pull request number (fail-closed)")
+                      raise SystemExit(0)
+                  pr = gh_json(f"repos/{repo}/pulls/{pr_num}")
+                  changed_count = pr.get("changed_files")
+                  if not isinstance(changed_count, int) or changed_count <= 0 or changed_count >= 300:
+                      emit(True, f"changed_files={changed_count} (empty or >=300; fail-closed)")
+                      raise SystemExit(0)
+                  pages = gh_json("--paginate", "--slurp", f"repos/{repo}/pulls/{pr_num}/files?per_page=100")
+                  files = [item for page in pages for item in (page if isinstance(page, list) else [page])]
+                  if len(files) != changed_count:
+                      emit(True, f"file count mismatch ({len(files)} != {changed_count}; fail-closed)")
+                      raise SystemExit(0)
+              elif event == "push":
+                  before = os.environ.get("BEFORE_SHA", "")
+                  head = os.environ.get("HEAD_SHA", "")
+                  if not before or before == "0" * 40 or not head:
+                      emit(True, "initial or missing base SHA on push (fail-closed)")
+                      raise SystemExit(0)
+                  comp = gh_json(f"repos/{repo}/compare/{before}...{head}")
+                  files = comp.get("files") or []
+                  if not files or len(files) >= 300:
+                      emit(True, f"compare returned {len(files)} files (empty or >=300; fail-closed)")
+                      raise SystemExit(0)
+              else:
+                  emit(True, f"event '{event}' requires full Unity run")
+                  raise SystemExit(0)
+
+              non_docs = []
+              for entry in files:
+                  for key in ("filename", "previous_filename"):
+                      path = entry.get(key)
+                      if path and not is_doc_path(path):
+                          non_docs.append(path)
+
+              if non_docs:
+                  emit(True, f"{len(files)} changed file(s) include non-docs path(s), e.g. `{non_docs[0]}`")
+              else:
+                  emit(False, f"all {len(files)} changed file(s) are under docs/ or top-level *.md")
+          except Exception as exc:
+              emit(True, f"scope inspection failed ({type(exc).__name__}; fail-closed)")
+          PY
+
   unity-license:
     runs-on: ubuntu-latest
     permissions: {}
@@ -62,8 +150,8 @@ jobs:
           fi
 
   editmode-tests:
-    needs: unity-license
-    if: ${{ needs.unity-license.outputs.available == 'true' }}
+    needs: [ci-scope, unity-license]
+    if: ${{ needs.ci-scope.outputs.needs_unity == 'true' && needs.unity-license.outputs.available == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -85,6 +173,9 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt', 'tools/install-uma') }}-
             Library-${{ runner.os }}-editmode-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}-
+      - name: Remove legacy UMA installer cache from Library
+        shell: bash
+        run: rm -rf Library/UMA-cache
       - name: Cache UMA
         id: uma-cache
         uses: actions/cache@v4
@@ -96,6 +187,8 @@ jobs:
       - name: Install UMA
         if: steps.uma-cache.outputs.cache-hit != 'true'
         shell: bash
+        env:
+          UMA_CACHE_DIR: ${{ runner.temp }}/uma-cache
         run: tools/install-uma --unpack-only
       - name: Run EditMode tests
         id: unity
@@ -107,6 +200,7 @@ jobs:
         with:
           projectPath: .
           unityVersion: ${{ steps.version.outputs.unity }}
+          customImage: unityci/editor:ubuntu-${{ steps.version.outputs.unity }}-base-3
           testMode: editmode
           artifactsPath: artifacts/editmode
           customParameters: -testFilter Cosmimera
@@ -124,7 +218,7 @@ jobs:
   # GitHub accepts a skipped required job; require this explicit success gate instead.
   ci-required:
     if: ${{ always() }}
-    needs: [validate-data, unity-license, editmode-tests]
+    needs: [validate-data, ci-scope, unity-license, editmode-tests]
     runs-on: ubuntu-latest
     permissions: {}
     timeout-minutes: 5
@@ -133,11 +227,23 @@ jobs:
         shell: bash
         env:
           DATA_RESULT: ${{ needs.validate-data.result }}
+          SCOPE_RESULT: ${{ needs.ci-scope.result }}
+          NEEDS_UNITY: ${{ needs.ci-scope.outputs.needs_unity }}
           LICENSE_RESULT: ${{ needs.unity-license.result }}
           UNITY_RESULT: ${{ needs.editmode-tests.result }}
         run: |
-          printf '### CI 合併閘門\n\nvalidate-data: %s\nunity-license: %s\neditmode-tests: %s\n' "$DATA_RESULT" "$LICENSE_RESULT" "$UNITY_RESULT" >> "$GITHUB_STEP_SUMMARY"
-          if [[ "$DATA_RESULT" != success || "$LICENSE_RESULT" != success || "$UNITY_RESULT" != success ]]; then
+          printf '### CI 合併閘門\n\nvalidate-data: %s\nci-scope: %s (needs_unity=%s)\nunity-license: %s\neditmode-tests: %s\n' \
+            "$DATA_RESULT" "$SCOPE_RESULT" "${NEEDS_UNITY:-unknown}" "$LICENSE_RESULT" "$UNITY_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$DATA_RESULT" != success || "$SCOPE_RESULT" != success || "$LICENSE_RESULT" != success ]]; then
+            echo '::error::資料驗證、範圍判斷與授權檢查必須全部執行成功。'
+            exit 1
+          fi
+          if [[ "$NEEDS_UNITY" == false ]]; then
+            if [[ "$UNITY_RESULT" != skipped && "$UNITY_RESULT" != success ]]; then
+              echo "::error::純文件變更下 editmode-tests 狀態異常（$UNITY_RESULT）。"
+              exit 1
+            fi
+          elif [[ "$UNITY_RESULT" != success ]]; then
             echo '::error::資料驗證與 Unity 測試必須實際執行成功；skipped、failure、cancelled 都不滿足合併條件。'
             exit 1
           fi

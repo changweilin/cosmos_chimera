@@ -138,10 +138,20 @@ namespace Cosmimera.Planet.Tests
             int n = 1 << level;
             for (int f = 0; f < CubeSphere.FaceCount; f++)
             {
+                if (n == 1)
+                {
+                    yield return new ChunkId((CubeFace)f, level, 0, 0);
+                    continue;
+                }
+
                 for (int k = 0; k < n; k++)
                 {
                     yield return new ChunkId((CubeFace)f, level, 0, k);
                     yield return new ChunkId((CubeFace)f, level, n - 1, k);
+                }
+
+                for (int k = 1; k < n - 1; k++)
+                {
                     yield return new ChunkId((CubeFace)f, level, k, 0);
                     yield return new ChunkId((CubeFace)f, level, k, n - 1);
                 }
@@ -186,7 +196,9 @@ namespace Cosmimera.Planet.Tests
         [Test]
         public void Shared_vertices_are_bit_identical_across_faces_and_levels_managed()
         {
-            AssertSeams(BuildManaged, 2);
+            // Why: level 1 already exercises all 24 directed face seams, cube corners and 2:1 transitions on the
+            // managed path; Burst covers level 2 in Shared_vertices_are_bit_identical_across_faces_and_levels_burst.
+            AssertSeams(BuildManaged, 1);
         }
 
         [Test]

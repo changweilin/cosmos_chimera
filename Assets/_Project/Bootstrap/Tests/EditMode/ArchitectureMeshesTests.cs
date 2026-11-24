@@ -52,31 +52,36 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [TestCaseSource(nameof(Every))]
-        public void Same_spec_builds_the_same_mesh(BuildingKind kind, ArchRegion region, ArchEra era)
+        public void Every_spec_builds_deterministically_and_keeps_every_mesh_contract(BuildingKind kind, ArchRegion region, ArchEra era)
         {
-            Mesh a = Build(Spec(kind, region, era));
-            Mesh b = Build(Spec(kind, region, era));
-            Assert.That(b.vertices, Is.EqualTo(a.vertices));
-            Assert.That(b.normals, Is.EqualTo(a.normals));
-            Assert.That(b.colors, Is.EqualTo(a.colors));
-            for (int s = 0; s < a.subMeshCount; s++)
-            {
-                Assert.That(b.GetTriangles(s), Is.EqualTo(a.GetTriangles(s)));
-            }
-        }
+            ArchSpec spec = Spec(kind, region, era);
+            Mesh a = Build(spec);
+            Mesh b = Build(spec);
 
-        [TestCaseSource(nameof(Every))]
-        public void Mesh_is_well_formed_and_keeps_its_material_slots(BuildingKind kind, ArchRegion region, ArchEra era)
-        {
-            Mesh mesh = Build(Spec(kind, region, era));
-            Vector3[] vertices = mesh.vertices;
-            Vector3[] normals = mesh.normals;
-            Color[] colors = mesh.colors;
+            Vector3[] vertices = a.vertices;
+            Vector3[] normals = a.normals;
+            Color[] colors = a.colors;
+            int subMeshCount = a.subMeshCount;
+            var submeshTris = new int[subMeshCount][];
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                submeshTris[s] = a.GetTriangles(s);
+            }
+
+            Assert.That(b.vertices, Is.EqualTo(vertices));
+            Assert.That(b.normals, Is.EqualTo(normals));
+            Assert.That(b.colors, Is.EqualTo(colors));
+            Assert.That(b.subMeshCount, Is.EqualTo(subMeshCount));
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                Assert.That(b.GetTriangles(s), Is.EqualTo(submeshTris[s]));
+            }
+
             Assert.That(vertices.Length, Is.GreaterThan(0).And.LessThan(65536), "fits a 16-bit index buffer");
             Assert.That(normals.Length, Is.EqualTo(vertices.Length));
             Assert.That(colors.Length, Is.EqualTo(vertices.Length));
-            Assert.That(mesh.subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount));
-            Assert.That(mesh.GetTriangles(ArchitectureMeshes.WallSubMesh).Length, Is.GreaterThan(0), "every building has walls");
+            Assert.That(subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount));
+            Assert.That(submeshTris[ArchitectureMeshes.WallSubMesh].Length, Is.GreaterThan(0), "every building has walls");
             for (int i = 0; i < vertices.Length; i++)
             {
                 Assert.That(float.IsFinite(vertices[i].x + vertices[i].y + vertices[i].z), Is.True, $"vertex {i}");
@@ -84,20 +89,60 @@ namespace Cosmimera.Bootstrap.Tests
                 Assert.That(colors[i].a, Is.InRange(0f, 1f), $"weathering mask {i}");
                 Assert.That(colors[i].r, Is.InRange(0.2f, 1.3f), $"tone {i}");
             }
-        }
 
-        [TestCaseSource(nameof(Every))]
-        public void Mesh_stands_on_its_lot_and_covers_its_collider(BuildingKind kind, ArchRegion region, ArchEra era)
-        {
-            ArchSpec spec = Spec(kind, region, era, foundation: 1.4f);
-            Mesh mesh = Build(spec);
-            Vector3 body = ArchitectureMeshes.BodySize(spec);
-            Assert.That(body.x, Is.LessThanOrEqualTo(spec.WidthM), "never wider than the rule layer's footprint");
-            Assert.That(body.z, Is.LessThanOrEqualTo(spec.DepthM));
-            Assert.That(body.y, Is.GreaterThan(spec.FoundationM));
+            int total = 0;
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                int[] triangles = submeshTris[s];
+                for (int t = 0; t < triangles.Length; t += 3)
+                {
+                    Vector3 v0 = vertices[triangles[t]], v1 = vertices[triangles[t + 1]], v2 = vertices[triangles[t + 2]];
+                    Vector3 face = Vector3.Cross(v1 - v0, v2 - v0);
+                    Assert.That(face.sqrMagnitude, Is.GreaterThan(1e-12f), "no sliver triangles");
+                    Assert.That(Vector3.Dot(face, normals[triangles[t]]), Is.GreaterThan(0f), $"sub-mesh {s} triangle {t / 3}");
+                    total++;
+                }
+            }
+
+            Assert.That(total, Is.GreaterThan(20));
+
+            if (!ArchitectureMeshes.IsRuin(spec))
+            {
+                // An inside-out face is culled and leaves a hole. Walls far from the axis and well above the footing must
+                // look outward; trim, glow and roof undersides legitimately face every way, so only walls are judged.
+                int[] wallTriangles = submeshTris[ArchitectureMeshes.WallSubMesh];
+                int outward = 0, judged = 0;
+                for (int t = 0; t < wallTriangles.Length; t += 3)
+                {
+                    Vector3 v0 = vertices[wallTriangles[t]], v1 = vertices[wallTriangles[t + 1]], v2 = vertices[wallTriangles[t + 2]];
+                    Vector3 face = Vector3.Cross(v1 - v0, v2 - v0).normalized;
+                    Vector3 centroid = (v0 + v1 + v2) / 3f;
+                    var radial = new Vector3(centroid.x, 0f, centroid.z);
+                    if (Mathf.Abs(face.y) > 0.5f || radial.magnitude < 0.35f)
+                    {
+                        continue;
+                    }
+
+                    judged++;
+                    if (Vector3.Dot(face, radial.normalized) > -0.2f)
+                    {
+                        outward++;
+                    }
+                }
+
+                Assert.That(judged, Is.GreaterThan(4));
+                Assert.That(outward, Is.GreaterThanOrEqualTo(judged * 0.6f), "most upright wall faces look away from the axis");
+            }
+
+            ArchSpec tallSpec = Spec(kind, region, era, foundation: 1.4f);
+            Mesh tallMesh = Build(tallSpec);
+            Vector3 body = ArchitectureMeshes.BodySize(tallSpec);
+            Assert.That(body.x, Is.LessThanOrEqualTo(tallSpec.WidthM), "never wider than the rule layer's footprint");
+            Assert.That(body.z, Is.LessThanOrEqualTo(tallSpec.DepthM));
+            Assert.That(body.y, Is.GreaterThan(tallSpec.FoundationM));
 
             float minY = float.MaxValue, maxY = float.MinValue, reachX = 0f, reachZ = 0f;
-            foreach (Vector3 v in mesh.vertices)
+            foreach (Vector3 v in tallMesh.vertices)
             {
                 minY = Mathf.Min(minY, v.y);
                 maxY = Mathf.Max(maxY, v.y);
@@ -108,66 +153,9 @@ namespace Cosmimera.Bootstrap.Tests
             Assert.That(minY, Is.LessThan(0f), "walls start below the origin, so a slope never shows under them");
             Assert.That(minY, Is.GreaterThanOrEqualTo(-0.5f - 1e-3f));
             Assert.That(maxY, Is.GreaterThanOrEqualTo(body.y - 1e-3f), "nothing invisible blocks the character from above");
-            Assert.That(reachX, Is.LessThanOrEqualTo(spec.WidthM * 0.5f + ArchitectureMeshes.MaxOverhangM));
-            Assert.That(reachZ, Is.LessThanOrEqualTo(spec.DepthM * 0.5f + ArchitectureMeshes.MaxOverhangM));
-            Assert.That(reachX, Is.GreaterThan(spec.WidthM * 0.25f), "the mesh fills its lot");
-        }
-
-        [TestCaseSource(nameof(Every))]
-        public void Winding_agrees_with_the_shading_normal(BuildingKind kind, ArchRegion region, ArchEra era)
-        {
-            Mesh mesh = Build(Spec(kind, region, era));
-            Vector3[] vertices = mesh.vertices;
-            Vector3[] normals = mesh.normals;
-            int total = 0;
-            for (int s = 0; s < mesh.subMeshCount; s++)
-            {
-                int[] triangles = mesh.GetTriangles(s);
-                for (int t = 0; t < triangles.Length; t += 3)
-                {
-                    Vector3 a = vertices[triangles[t]], b = vertices[triangles[t + 1]], c = vertices[triangles[t + 2]];
-                    Vector3 face = Vector3.Cross(b - a, c - a);
-                    Assert.That(face.sqrMagnitude, Is.GreaterThan(1e-12f), "no sliver triangles");
-                    Assert.That(Vector3.Dot(face, normals[triangles[t]]), Is.GreaterThan(0f), $"sub-mesh {s} triangle {t / 3}");
-                    total++;
-                }
-            }
-
-            Assert.That(total, Is.GreaterThan(20));
-        }
-
-        [TestCaseSource(nameof(Every))]
-        public void Outer_shell_faces_away_from_the_building(BuildingKind kind, ArchRegion region, ArchEra era)
-        {
-            // An inside-out face is culled and leaves a hole. Walls far from the axis and well above the footing must
-            // look outward; trim, glow and roof undersides legitimately face every way, so only walls are judged.
-            ArchSpec spec = Spec(kind, region, era);
-            if (ArchitectureMeshes.IsRuin(spec))
-            {
-                Assert.Pass("a ruin's free-standing walls show their inner faces too");
-            }
-
-            Mesh mesh = Build(spec);
-            Vector3[] vertices = mesh.vertices;
-            int[] triangles = mesh.GetTriangles(ArchitectureMeshes.WallSubMesh);
-            int outward = 0, judged = 0;
-            for (int t = 0; t < triangles.Length; t += 3)
-            {
-                Vector3 a = vertices[triangles[t]], b = vertices[triangles[t + 1]], c = vertices[triangles[t + 2]];
-                Vector3 face = Vector3.Cross(b - a, c - a).normalized;
-                Vector3 centroid = (a + b + c) / 3f;
-                var radial = new Vector3(centroid.x, 0f, centroid.z);
-                if (Mathf.Abs(face.y) > 0.5f || radial.magnitude < 0.35f)
-                {
-                    continue;
-                }
-
-                judged++;
-                if (Vector3.Dot(face, radial.normalized) > -0.2f) outward++;
-            }
-
-            Assert.That(judged, Is.GreaterThan(4));
-            Assert.That(outward, Is.GreaterThanOrEqualTo(judged * 0.6f), "most upright wall faces look away from the axis");
+            Assert.That(reachX, Is.LessThanOrEqualTo(tallSpec.WidthM * 0.5f + ArchitectureMeshes.MaxOverhangM));
+            Assert.That(reachZ, Is.LessThanOrEqualTo(tallSpec.DepthM * 0.5f + ArchitectureMeshes.MaxOverhangM));
+            Assert.That(reachX, Is.GreaterThan(tallSpec.WidthM * 0.25f), "the mesh fills its lot");
         }
 
         [Test]

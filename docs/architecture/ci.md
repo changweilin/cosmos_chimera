@@ -1,15 +1,16 @@
 # CI：GitHub Actions + GameCI（P0-07）
 
-設定： [ci.yml](../../.github/workflows/ci.yml)。所有目標分支的 `pull_request`、推送至 `main` 都觸發；同一 PR／ref 的舊 run 會取消。沒有路徑過濾。
+設定： [ci.yml](../../.github/workflows/ci.yml)。所有目標分支的 `pull_request`、推送至 `main` 都觸發；同一 PR／ref 的舊 run 會取消。不使用 workflow 層 `paths-ignore`（避免 required check 根本不觸發而卡住合併），改由 `ci-scope` fail-closed 判斷是否需要跑 Unity。
 
 ## Job 與失敗語意
 
 | Job／check 名稱 | 工作與結果 |
 |---|---|
-| `validate-data` | Ubuntu、Python 3.12；`pip install -r tools/requirements.txt`，執行 `tools/validate-data` 與 `python -m unittest discover -s tools/tests -v`；任一非零退出即失敗。 |
+| `validate-data` | Ubuntu、Python 3.12；`pip install -r tools/requirements.txt`，執行 `tools/validate-data` 與 `python -m pytest tools/tests -v`；任一非零退出即失敗。 |
+| `ci-scope` | 不 checkout PR 程式碼，透過 GitHub API 檢查變更清單；僅當非空、`changed_files < 300` 且全部 `filename`／`previous_filename` 符合 `docs/.+` 或根目錄 `*.md` 時輸出 `needs_unity=false`，任何異常或非預期事件皆 fail-closed 設為 `true`。 |
 | `unity-license` | 不 checkout PR 程式碼，只輸出三個 secrets 是否齊全的布林值；fork PR／Dependabot 一律不放行。缺少時在 summary 說明 Unity 未執行。 |
-| `editmode-tests` | 僅憑證齊全且來源受信任才執行，否則 job 顯示 skipped。從 `ProjectSettings/ProjectVersion.txt` 讀版本（目前 `6000.3.28f1`），GameCI 執行 `editmode`；測試／啟用／容器失敗都保留失敗狀態。 |
-| `ci-required` | `always()` 匯總以上三者，只有全部 `success` 才成功；失敗、取消、skipped 都不放行。設為 required check，避免未測試也能合併。 |
+| `editmode-tests` | 僅 `needs_unity == 'true'` 且憑證齊全、來源受信任才執行，否則顯示 skipped。從 `ProjectSettings/ProjectVersion.txt` 讀版本（目前 `6000.3.28f1`），`UMA_CACHE_DIR` 指向 `runner.temp` 避免把 ~950 MB `.unitypackage` 重複塞進 `Library` cache（並清掉舊快取殘留的 `Library/UMA-cache`）；`tools/install-uma --unpack-only` 排除 `Assets/UMA` 內四個測試目錄（含 `[InitializeOnLoad]` 逐筆 `fsync` 磁碟的 `TestRunnerIntegration`）；GameCI 以 `-base-3` 映像執行 `-testFilter Cosmimera` EditMode 測試；測試／啟用／容器失敗皆保留失敗狀態。 |
+| `ci-required` | `always()` 匯總以上四者：`validate-data`、`ci-scope`、`unity-license` 皆須為 `success`；當 `needs_unity == 'false'` 時允許 `editmode-tests` 為 `skipped`（或 `success`），否則必須為 `success`。設為 required check，避免未測試或條件異常時放行合併。 |
 
 `tools/validate-data` 是 POSIX shell wrapper，轉交 `tools/validate_data.py`。預設 root 為 `Data`；只掃支援的資料種類目錄，不把 `_incoming` 的負例當成正式資料。支援 `--root`、`--schemas`、`--retired-ids`；退出碼 0＝無 error（允許 warning），1＝資料錯誤，2＝輸入／環境錯誤。
 
@@ -19,7 +20,7 @@ GameCI 釘選 [`v4.3.2`](https://github.com/game-ci/unity-test-runner/releases/t
 
 兩個 checkout 都啟用 LFS 並關閉 credential 持久化。Library cache key 包含 OS、模式、`Packages/manifest.json`、`Packages/packages-lock.json`、`ProjectSettings/ProjectVersion.txt` 雜湊與 commit SHA；restore 只接受同一套套件／Editor 版本，新的 SHA 可更新快取。測試失敗後仍嘗試上傳 `artifacts/editmode/` 與 `Logs/`，artifact 名為 `editmode-results`，保留 14 天；若啟動前已失敗，可能沒有檔案。
 
-權限僅 `contents: read`；無 checkout 的兩個 job 為 `permissions: {}`。不傳 GameCI 的 `githubToken`，不用額外建立 check 的寫入權限；測試結果由 job 狀態與 artifact 提供。[GameCI Test runner 文件](https://game.ci/docs/github/test-runner/)
+權限僅 `contents: read`（`ci-scope` 另含 `pull-requests: read` 且不 checkout 程式碼）；無 checkout 與無 API 查詢的 `unity-license`、`ci-required` 為 `permissions: {}`。不傳 GameCI 的 `githubToken`，不用額外建立 check 的寫入權限；測試結果由 job 狀態與 artifact 提供。[GameCI Test runner 文件](https://game.ci/docs/github/test-runner/)
 
 ## Unity 6 Personal 授權與 secrets
 
@@ -53,18 +54,16 @@ fork PR／Dependabot 仍跑資料驗證，但缺 Unity 測試就不能直接通�
 
 ## 已知限制與本機驗證
 
-- Unity job 未在本機執行，也尚未提交至 GitHub 實跑；對應 Editor Docker image 的存在、Linux 套件相容性、授權與 artifact 實際輸出皆未驗證。CI 的 EditMode 不替代 Windows／IL2CPP／Burst／PlayMode 測試。
+- 本機 EditMode 與 `validate-data`／`pytest` 皆可驗證，但調整後的 `ci-scope` 純文件略過邏輯、`UMA_CACHE_DIR` 遷移與 `unityci/editor:ubuntu-6000.3.28f1-base-3` 映像切換仍需在第一次 GitHub Actions run 上實測確認。CI 的 EditMode 不替代 Windows／IL2CPP／Burst／PlayMode 測試。
 - Unity batchmode 已知可能將 `PC_RPAsset.asset` 的 `k_AssetPreviousVersion` 由 12 改成 13；runner 工作目錄為暫時性，CI 不應 commit／push 資產遷移回 repository。本 workflow 沒有 commit 或 push 步驟。
-- 本機 CPython 3.12.14 可啟動，但缺 `jsonschema`。已嘗試執行 `tools/validate_data.py`（wrapper 的 Python 入口）與 `python -m unittest discover -s tools/tests -v`；前者退出 2，後者因依賴缺失於 import 階段失敗，**未取得資料／fixture 測試通過結果**。以 `uv pip install --target <暫存目錄> -r tools/requirements.txt pyyaml` 安裝時，sandbox 拒絕連線 PyPI（socket 10013）。
-- 本機無 actionlint；Python YAML 解析也因缺 PyYAML 而無法完成。`git diff --check`、三個多行 shell 區塊的 `bash -n` 與觸發器／閘門等靜態斷言通過；這些不能取代 workflow YAML／expression 驗證。解除環境限制後必須補跑 `actionlint .github/workflows/ci.yml`，或安裝 PyYAML 後以 Python 解析。PyYAML 1.1 預設可能將 `on` 讀成布林鍵，檢查觸發器時宜使用 `yaml.BaseLoader`。
 - 尚未支援 merge queue 的 `merge_group` 事件；啟用 merge queue 前需補該觸發器，否則 required check 不會出現。[GitHub merge queue 限制](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)
 
-可用環境的重跑指令（repository 根目錄）：
+可用環境的本機驗證指令（repository 根目錄）：
 
 ```sh
 pip install -r tools/requirements.txt
 tools/validate-data
-python -m unittest discover -s tools/tests -v
+python -m pytest tools/tests -v
 actionlint .github/workflows/ci.yml
 # 無 actionlint 時：pip install pyyaml，再執行
 python -c "import yaml; yaml.load(open('.github/workflows/ci.yml', encoding='utf-8'), Loader=yaml.BaseLoader)"

@@ -14,9 +14,27 @@ namespace Cosmimera.GameData.Tests
     public sealed class DataImporterTests
     {
         private const string OutputRoot = "Assets/__DataImporterTests";
+        private const string SharedOutput = OutputRoot + "/shared";
         private static int _run;
-        private string Output { get; set; }
-        private string _src;
+        private DataImportReport _sharedReport;
+        private string _output;
+        private string _srcDir;
+
+        private string Output => _output ?? (_output = OutputRoot + "/run" + ++_run);
+
+        private string Src
+        {
+            get
+            {
+                if (_srcDir == null)
+                {
+                    _srcDir = Path.Combine(Path.GetTempPath(), "cosmimera-import-" + System.Guid.NewGuid().ToString("N"));
+                    CopyDir(FixtureRoot, _srcDir);
+                }
+
+                return _srcDir;
+            }
+        }
 
         private static string FixtureRoot =>
             Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Data", "_incoming", "p0-05-samples", "valid"));
@@ -24,78 +42,87 @@ namespace Cosmimera.GameData.Tests
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            AssetDatabase.DeleteAsset(OutputRoot);
+            if (AssetDatabase.IsValidFolder(OutputRoot))
+            {
+                AssetDatabase.DeleteAsset(OutputRoot);
+            }
+
+            _sharedReport = DataImporter.Import(FixtureRoot, SharedOutput);
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            AssetDatabase.DeleteAsset(OutputRoot);
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
-            // FENCE: a fresh output folder per test instead of deleting and recreating one fixed folder · with
-            // Windows Defender real-time scanning on, the just-deleted Assets/__DataImporterTests.meta stays
-            // delete-pending while the scanner holds it, and the next test's CreateFolder failed with "Cannot open
-            // file ... .meta for write" (a different test each run) · still needed if reverting to a fixed path
-            // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/log/phase-2.md (2026-11-07 flake).
-            Output = OutputRoot + "/run" + ++_run;
-            _src = Path.Combine(Path.GetTempPath(), "cosmimera-import-" + System.Guid.NewGuid().ToString("N"));
-            CopyDir(FixtureRoot, _src);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            AssetDatabase.DeleteAsset(Output);
-            if (Directory.Exists(_src))
+            if (AssetDatabase.IsValidFolder(OutputRoot))
             {
-                Directory.Delete(_src, true);
+                AssetDatabase.DeleteAsset(OutputRoot);
             }
         }
 
+        // FENCE: a fresh output folder per test instead of deleting and recreating one fixed folder · with
+        // Windows Defender real-time scanning on, the just-deleted Assets/__DataImporterTests.meta stays
+        // delete-pending while the scanner holds it, and the next test's CreateFolder failed with "Cannot open
+        // file ... .meta for write" (a different test each run) · still needed if reverting to a fixed path
+        // makes a full EditMode run fail about 1 in 2 times · REF: docs/roadmap/log/phase-2.md (2026-11-07 flake).
+        [TearDown]
+        public void TearDown()
+        {
+            if (_output != null && AssetDatabase.IsValidFolder(_output))
+            {
+                AssetDatabase.DeleteAsset(_output);
+            }
+
+            _output = null;
+            if (_srcDir != null && Directory.Exists(_srcDir))
+            {
+                Directory.Delete(_srcDir, true);
+            }
+
+            _srcDir = null;
+        }
+
         private GameDatabase Db => AssetDatabase.LoadAssetAtPath<GameDatabase>(Output + "/" + DataImporter.DatabaseFileName);
+        private static GameDatabase SharedDb => AssetDatabase.LoadAssetAtPath<GameDatabase>(SharedOutput + "/" + DataImporter.DatabaseFileName);
 
         [Test]
         public void Import_registers_every_id_with_its_kind()
         {
-            DataImportReport report = DataImporter.Import(_src, Output);
+            DataImportReport report = _sharedReport;
+            GameDatabase db = SharedDb;
 
             Assert.AreEqual(12, report.Created); // 6 moves + 1 trait + 1 planet type + 3 creatures + 1 niche
-            Assert.AreEqual(12, Db.All.Count);
-            Assert.IsTrue(Db.TryGet("niche_sample_generalist", out NicheDef niche));
+            Assert.AreEqual(12, db.All.Count);
+            Assert.IsTrue(db.TryGet("niche_sample_generalist", out NicheDef niche));
             Assert.AreEqual(WanderMode.BoundedRandom, niche.Mode);
             Assert.AreEqual(5000, niche.RadiusMm);
             Assert.AreEqual(Habit.Tolerant, niche.Habits[0].Habit);
             Assert.AreEqual(24, niche.HabitatKinds.Count);
-            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.IsTrue(db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreSame(niche, cub.Niches[0].Niche, "creature niche candidates resolve to the imported asset");
             Assert.AreEqual(1, cub.Niches[0].Weight);
-            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+            Assert.IsTrue(db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.AreEqual(30, move.Power);
             Assert.AreEqual(MoveShape.Line, move.Shape);
             Assert.AreEqual(MoveMovement.Dash, move.Movement);
             Assert.AreEqual(2000, move.BaseRangeMm);
             Assert.Throws<ContractException>(() => _ = move.Origin);
             Assert.IsNull(move.Effect, "damage-only move has no effect");
-            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.IsTrue(db.TryGet("sample_trait_placeholder", out TraitDef trait));
             Assert.AreEqual(TriggerType.OnHpBelow, trait.Trigger.Type);
             Assert.AreEqual(30, trait.Trigger.Percent);
             Assert.AreEqual(EffectType.MasteryMod, trait.Effects[0].Type);
             Assert.AreEqual(Element.Fire, trait.Effects[0].Element);
             Assert.AreEqual(20, trait.Effects[0].Delta);
-            Assert.IsTrue(Db.TryGet("sample_lava_planet", out PlanetTypeDef planet));
+            Assert.IsTrue(db.TryGet("sample_lava_planet", out PlanetTypeDef planet));
             CollectionAssert.AreEqual(new[] { Element.Fire, Element.Earth }, planet.ElementBias);
         }
 
         [Test]
         public void Creature_references_resolve_to_imported_assets()
         {
-            DataImporter.Import(_src, Output);
+            GameDatabase db = SharedDb;
 
-            Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
+            Assert.IsTrue(db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(CreatureStage.Juvenile, cub.Stage);
             Assert.AreEqual(CreatureSizeClass.S, cub.SizeClass);
             Assert.AreEqual(CreatureSizeClass.M, cub.EvolvesTo.SizeClass);
@@ -116,11 +143,11 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Field_only_import_preserves_combat_data_and_omitted_utilities()
         {
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.That(Db.TryGet("sample_fox_cub", out CreatureDef cub), Is.True);
             string beforeMove = cub.SignatureMove.Id;
             int beforeHp = cub.Stats.Hp;
-            string path = Path.Combine(_src, "creatures/creatures.json");
+            string path = Path.Combine(Src, "creatures/creatures.json");
             JArray creatures = JArray.Parse(File.ReadAllText(path));
             foreach (JObject creature in creatures)
             {
@@ -130,13 +157,13 @@ namespace Cosmimera.GameData.Tests
                 creature["stats"]["hp"] = 999;
             }
             File.WriteAllText(path, creatures.ToString());
-            Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.EqualTo(1));
+            Assert.That(DataImporter.ImportFieldUtilities(Src, Output).Updated, Is.EqualTo(1));
             Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.CookFire));
             Assert.That(cub.SignatureMove.Id, Is.EqualTo(beforeMove));
             Assert.That(cub.Stats.Hp, Is.EqualTo(beforeHp));
             foreach (JObject creature in creatures) creature.Remove("field_utility");
             File.WriteAllText(path, creatures.ToString());
-            Assert.That(DataImporter.ImportFieldUtilities(_src, Output).Updated, Is.Zero);
+            Assert.That(DataImporter.ImportFieldUtilities(Src, Output).Updated, Is.Zero);
             Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.CookFire));
         }
 
@@ -144,50 +171,50 @@ namespace Cosmimera.GameData.Tests
         [TestCase("fishing", "missing_species")]
         public void Invalid_field_only_import_never_partially_updates(string utility, string secondId)
         {
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.That(Db.TryGet("sample_fox_cub", out CreatureDef cub), Is.True);
-            string path = Path.Combine(_src, "creatures/creatures.json");
+            string path = Path.Combine(Src, "creatures/creatures.json");
             File.WriteAllText(path, "[{\"id\":\"sample_fox_cub\",\"field_utility\":\"cook_fire\"}," +
                 "{\"id\":\"" + secondId + "\",\"field_utility\":\"" + utility + "\"}]");
-            Assert.Throws<DataImportException>(() => DataImporter.ImportFieldUtilities(_src, Output));
+            Assert.Throws<DataImportException>(() => DataImporter.ImportFieldUtilities(Src, Output));
             Assert.That(cub.FieldUtility, Is.EqualTo(FieldUtility.None));
             Assert.Throws<ContractException>(() => DataImporter.ImportFieldUtilities(null, Output));
-            Assert.Throws<ContractException>(() => DataImporter.ImportFieldUtilities(_src, "outside_assets"));
+            Assert.Throws<ContractException>(() => DataImporter.ImportFieldUtilities(Src, "outside_assets"));
         }
 
         [Test]
         public void TryGet_is_false_for_unknown_id_or_wrong_kind()
         {
-            DataImporter.Import(_src, Output);
+            GameDatabase db = SharedDb;
 
-            Assert.IsFalse(Db.TryGet("no_such_id", out GameDef none));
+            Assert.IsFalse(db.TryGet("no_such_id", out GameDef none));
             Assert.IsNull(none);
-            Assert.IsFalse(Db.TryGet("sample_fox_cub", out MoveDef wrongKind));
+            Assert.IsFalse(db.TryGet("sample_fox_cub", out MoveDef wrongKind));
             Assert.IsNull(wrongKind);
         }
 
         [Test]
         public void Relations_are_expanded_to_both_endpoints()
         {
-            DataImporter.Import(_src, Output);
+            GameDatabase db = SharedDb;
 
-            Assert.AreEqual(2, Db.GetRelations("sample_fox_beast").Count);
-            var cubLinks = Db.GetRelations("sample_fox_cub");
+            Assert.AreEqual(2, db.GetRelations("sample_fox_beast").Count);
+            var cubLinks = db.GetRelations("sample_fox_cub");
             Assert.AreEqual(1, cubLinks.Count);
             Assert.AreEqual("sample_fox_beast", cubLinks[0].Other.Id);
             Assert.AreEqual(RelationKind.EvolutionFamily, cubLinks[0].Kind);
-            Assert.IsEmpty(Db.GetRelations("no_such_id"));
+            Assert.IsEmpty(db.GetRelations("no_such_id"));
         }
 
         [Test]
         public void Reimport_after_json_edit_updates_the_same_asset()
         {
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             string path = Output + "/Moves/sample_ember_strike.asset";
             string guid = AssetDatabase.AssetPathToGUID(path);
 
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": 35,");
-            DataImportReport report = DataImporter.Import(_src, Output);
+            DataImportReport report = DataImporter.Import(Src, Output);
 
             Assert.AreEqual(0, report.Created);
             Assert.AreEqual(12, report.Updated);
@@ -199,10 +226,10 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Reimport_deletes_assets_whose_id_left_the_source()
         {
-            DataImporter.Import(_src, Output);
-            File.Delete(Path.Combine(_src, "planet-types", "planet-types.json"));
+            DataImporter.Import(Src, Output);
+            File.Delete(Path.Combine(Src, "planet-types", "planet-types.json"));
 
-            DataImportReport report = DataImporter.Import(_src, Output);
+            DataImportReport report = DataImporter.Import(Src, Output);
 
             Assert.AreEqual(1, report.Deleted);
             Assert.IsFalse(File.Exists(Output + "/PlanetTypes/sample_lava_planet.asset"));
@@ -212,11 +239,11 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Dangling_reference_aborts_without_writing()
         {
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": 35,");
             ReplaceInFile("creatures/creatures.json", "\"signature_move\": \"sample_ember_strike\"", "\"signature_move\": \"missing_move\"");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("missing_move", e.Message);
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
@@ -232,7 +259,7 @@ namespace Cosmimera.GameData.Tests
             string file = from.Contains("\"niche\":") ? "creatures/creatures.json" : "niches/niches.json";
             ReplaceInFile(file, from, to);
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains(mentioned, e.Message);
         }
@@ -243,7 +270,7 @@ namespace Cosmimera.GameData.Tests
             // Sol P2-05 review C2: each entry is schema-legal; EvolutionRequirement would throw when merging them.
             ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483647 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("summed qty", e.Message);
         }
@@ -253,7 +280,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("creatures/creatures.json", "\"qty\": 3", "\"qty\": 2147483646 }, { \"element\": \"fire\", \"tier\": 1, \"qty\": 1");
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(2, cub.EvolutionMaterials.Count, "the importer keeps entries; merging is EvolutionRequirement's job");
@@ -264,7 +291,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": 30.5,");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("float literal", e.Message);
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
@@ -275,7 +302,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": 30, \"powr\": 1,");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("powr", e.Message);
         }
@@ -285,7 +312,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("moves/moves.json", "\"shape\": \"line\"", "\"shape\": \"spiral\"");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("spiral", e.Message);
         }
@@ -295,7 +322,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("traits/traits.json", "\"type\": \"on_hp_below\"", "\"type\": \"on_full_moon\"");
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("on_full_moon", e.Message);
         }
@@ -308,7 +335,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("traits/traits.json", "{ \"element\": \"fire\", \"delta\": 20 }", effectParams);
 
-            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var e = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains(expected, e.Message);
         }
@@ -326,17 +353,17 @@ namespace Cosmimera.GameData.Tests
         [TestCase(Heal, ",\"effect_duration_ms\":5000", false)]
         public void Effect_duration_is_required_iff_the_effect_is_timed(string effect, string duration, bool valid)
         {
-            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
+            File.WriteAllText(Path.Combine(Src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
 
             if (!valid)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains("effect_duration_ms", error.Message);
                 Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
             Assert.AreEqual(effect == Haste, move.HasEffectDuration);
             if (effect == Haste)
@@ -356,17 +383,17 @@ namespace Cosmimera.GameData.Tests
         [TestCase("\"windup_ms\":-1", -1)]
         public void Windup_is_imported_within_its_bounds(string windup, int expected)
         {
-            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200", windup)
+            File.WriteAllText(Path.Combine(Src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200", windup)
                 + Haste + ",\"effect_duration_ms\":5000}]");
 
             if (expected < 0)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains("windup_ms", error.Message);
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
             Assert.AreEqual(expected, move.WindupMs);
         }
@@ -374,10 +401,10 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Windup_is_required()
         {
-            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200,", "")
+            File.WriteAllText(Path.Combine(Src, "moves/buff.json"), BuffMoveHead.Replace("\"windup_ms\":200,", "")
                 + Haste + ",\"effect_duration_ms\":5000}]");
 
-            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
             StringAssert.Contains("windup_ms", error.Message);
         }
 
@@ -392,16 +419,16 @@ namespace Cosmimera.GameData.Tests
         [TestCase(",\"shape\":\"line\",\"field_duration_ms\":6000", false)]
         public void Field_duration_is_required_iff_the_shape_is_field(string tail, bool valid)
         {
-            File.WriteAllText(Path.Combine(_src, "moves/field.json"), FieldMoveHead + tail + "}]");
+            File.WriteAllText(Path.Combine(Src, "moves/field.json"), FieldMoveHead + tail + "}]");
 
             if (!valid)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains("field_duration_ms", error.Message);
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_field", out MoveDef move));
             Assert.Greater(move.FieldDurationMs, 0);
         }
@@ -409,8 +436,7 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Non_field_move_has_no_field_duration()
         {
-            DataImporter.Import(_src, Output);
-            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+            Assert.IsTrue(SharedDb.TryGet("sample_ember_strike", out MoveDef move));
 
             Assert.Throws<ContractException>(() => _ = move.FieldDurationMs);
         }
@@ -424,16 +450,16 @@ namespace Cosmimera.GameData.Tests
         public void Max_stacks_defaults_to_one_and_is_bounded(string effect, string expectedError, int expectedStacks)
         {
             string duration = effect.Contains("heal_percent") ? "" : ",\"effect_duration_ms\":5000";
-            File.WriteAllText(Path.Combine(_src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
+            File.WriteAllText(Path.Combine(Src, "moves/buff.json"), BuffMoveHead + effect + duration + "}]");
 
             if (expectedError.Length > 0)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains(expectedError, error.Message);
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_buff", out MoveDef move));
             Assert.AreEqual(expectedStacks, move.Effect.MaxStacks);
         }
@@ -443,7 +469,7 @@ namespace Cosmimera.GameData.Tests
         {
             ReplaceInFile("traits/traits.json", "\"type\": \"on_hp_below\"", "\"max_stacks\": 2, \"type\": \"on_hp_below\"");
 
-            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("does not accept max_stacks", error.Message);
         }
@@ -451,11 +477,11 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Melee_target_point_burst_is_rejected()
         {
-            File.WriteAllText(Path.Combine(_src, "moves/blast.json"),
+            File.WriteAllText(Path.Combine(Src, "moves/blast.json"),
                 "[{\"id\":\"sample_blast\",\"star\":1,\"polarity\":\"yang\",\"element\":\"fire\",\"kind\":\"damage\",\"power\":30,\"cooldown_ms\":1000,\"windup_ms\":300,"
                 + "\"accuracy\":100,\"range_class\":\"melee\",\"shape\":\"burst\",\"origin\":\"target\",\"base_range_mm\":3000}]");
 
-            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains("target-point burst", error.Message);
         }
@@ -463,8 +489,7 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Damage_move_has_no_effect_duration()
         {
-            DataImporter.Import(_src, Output);
-            Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
+            Assert.IsTrue(SharedDb.TryGet("sample_ember_strike", out MoveDef move));
 
             Assert.IsFalse(move.HasEffectDuration);
             Assert.Throws<ContractException>(() => _ = move.EffectDurationMs);
@@ -473,8 +498,7 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Reading_a_param_the_rule_type_lacks_is_a_contract_violation()
         {
-            DataImporter.Import(_src, Output);
-            Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
+            Assert.IsTrue(SharedDb.TryGet("sample_trait_placeholder", out TraitDef trait));
 
             Assert.Throws<ContractException>(() => _ = trait.Trigger.DurationMs);
             Assert.Throws<ContractException>(() => _ = trait.Trigger.Element);
@@ -495,10 +519,10 @@ namespace Cosmimera.GameData.Tests
                 : "{\"type\":\"on_hp_below\",\"params\":{\"percent\":" + (parameter == "percent" ? value : "30") + "}}";
             string effect = "{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":"
                 + (parameter == "delta" ? value : "20") + "}}";
-            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+            File.WriteAllText(Path.Combine(Src, "traits/traits.json"),
                 "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger + ",\"effects\":[" + effect + "]}]");
 
-            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
 
             StringAssert.Contains(parameter, error.Message);
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
@@ -507,11 +531,11 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Hp_cross_below_imports_percent_and_duration()
         {
-            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+            File.WriteAllText(Path.Combine(Src, "traits/traits.json"),
                 "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":{\"type\":\"on_hp_cross_below\",\"params\":"
                 + "{\"percent\":25,\"duration_ms\":4000}},\"effects\":[{\"type\":\"heal_percent_max_hp\",\"params\":{\"percent\":12}}]}]");
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
             Assert.AreEqual(TriggerType.OnHpCrossBelow, trait.Trigger.Type);
@@ -541,18 +565,18 @@ namespace Cosmimera.GameData.Tests
                 effects.Add(effect);
             }
 
-            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+            File.WriteAllText(Path.Combine(Src, "traits/traits.json"),
                 "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger + ",\"effects\":[" + string.Join(",", effects) + "]}]");
 
             if (expectedError.Length > 0)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains(expectedError, error.Message);
                 Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
             Assert.AreEqual(count, trait.Effects.Count);
         }
@@ -562,19 +586,19 @@ namespace Cosmimera.GameData.Tests
         [TestCase("{\"type\":\"always\",\"params\":null}", false)]
         public void Always_trigger_accepts_omitted_or_empty_params_and_rejects_null(string trigger, bool valid)
         {
-            File.WriteAllText(Path.Combine(_src, "traits/traits.json"),
+            File.WriteAllText(Path.Combine(Src, "traits/traits.json"),
                 "[{\"id\":\"sample_trait_placeholder\",\"star\":1,\"trigger\":" + trigger
                 + ",\"effects\":[{\"type\":\"mastery_mod\",\"params\":{\"element\":\"fire\",\"delta\":20}}]}]");
 
             if (!valid)
             {
-                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+                var error = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
                 StringAssert.Contains("params", error.Message);
                 Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
                 return;
             }
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_trait_placeholder", out TraitDef trait));
             Assert.AreEqual(TriggerType.Always, trait.Trigger.Type);
         }
@@ -593,7 +617,7 @@ namespace Cosmimera.GameData.Tests
             ReplaceInFile("moves/moves.json", "\"power\": 30,", "\"power\": " + DamageModel.MaxPower + ",");
             ReplaceInFile("creatures/creatures.json", "\"fire\": 125", "\"fire\": 125");
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_ember_strike", out MoveDef move));
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
@@ -619,7 +643,7 @@ namespace Cosmimera.GameData.Tests
         [TestCase("field", MoveShape.Field)]
         public void Every_move_shape_survives_asset_reload(string shape, MoveShape expected)
         {
-            JObject move = (JObject)JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")))[0];
+            JObject move = (JObject)JArray.Parse(File.ReadAllText(Path.Combine(Src, "moves/moves.json")))[0];
             move["shape"] = shape;
             move["movement"] = "none";
             if (shape == "burst")
@@ -633,11 +657,11 @@ namespace Cosmimera.GameData.Tests
                 move["field_duration_ms"] = 6000; // Q-C17: required iff field
             }
 
-            JArray all = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
+            JArray all = JArray.Parse(File.ReadAllText(Path.Combine(Src, "moves/moves.json")));
             all[0] = move;
-            File.WriteAllText(Path.Combine(_src, "moves/moves.json"), all.ToString());
+            File.WriteAllText(Path.Combine(Src, "moves/moves.json"), all.ToString());
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             string path = Output + "/Moves/sample_ember_strike.asset";
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             var actual = AssetDatabase.LoadAssetAtPath<MoveDef>(path);
@@ -659,7 +683,7 @@ namespace Cosmimera.GameData.Tests
         public void Every_creature_size_survives_import(string size, CreatureSizeClass expected)
         {
             ReplaceInFile("creatures/creatures.json", "\"size_class\": \"S\"", "\"size_class\": \"" + size + "\"");
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(expected, cub.SizeClass);
         }
@@ -671,7 +695,7 @@ namespace Cosmimera.GameData.Tests
         public void Invalid_creature_size_aborts_without_writing(string size)
         {
             ReplaceInFile("creatures/creatures.json", "\"size_class\": \"S\"", "\"size_class\": \"" + size + "\"");
-            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
@@ -682,7 +706,7 @@ namespace Cosmimera.GameData.Tests
         public void Every_ai_style_survives_import(string style, AiStyle expected)
         {
             ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
             Assert.IsTrue(Db.TryGet("sample_fox_cub", out CreatureDef cub));
             Assert.AreEqual(expected, cub.AiStyle);
             Assert.AreEqual(AiStyle.Hold, cub.EvolvesTo.AiStyle);
@@ -695,7 +719,7 @@ namespace Cosmimera.GameData.Tests
         public void Invalid_ai_style_aborts_without_writing(string style)
         {
             ReplaceInFile("creatures/creatures.json", "\"ai_style\": \"charge\"", "\"ai_style\": \"" + style + "\"");
-            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
@@ -711,14 +735,14 @@ namespace Cosmimera.GameData.Tests
         [TestCase("line", "teleport", 2000, null)]
         public void Invalid_move_contract_aborts_without_writing(string shape, string movement, int range, string origin)
         {
-            JArray moves = JArray.Parse(File.ReadAllText(Path.Combine(_src, "moves/moves.json")));
+            JArray moves = JArray.Parse(File.ReadAllText(Path.Combine(Src, "moves/moves.json")));
             moves[0]["shape"] = shape;
             moves[0]["movement"] = movement;
             moves[0]["base_range_mm"] = range;
             if (origin != null) moves[0]["origin"] = origin;
-            File.WriteAllText(Path.Combine(_src, "moves/moves.json"), moves.ToString());
+            File.WriteAllText(Path.Combine(Src, "moves/moves.json"), moves.ToString());
 
-            Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
             Assert.IsFalse(AssetDatabase.IsValidFolder(Output));
         }
 
@@ -750,28 +774,28 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Import_requires_existing_source_root()
         {
-            Assert.Throws<ContractException>(() => DataImporter.Import(Path.Combine(_src, "nope"), Output));
+            Assert.Throws<ContractException>(() => DataImporter.Import(Path.Combine(Src, "nope"), Output));
         }
 
         [Test]
         public void Import_requires_output_under_assets()
         {
-            Assert.Throws<ContractException>(() => DataImporter.Import(_src, "Packages/foo"));
+            Assert.Throws<ContractException>(() => DataImporter.Import(Src, "Packages/foo"));
         }
 
         [Test]
         public void Database_queries_require_non_null_id()
         {
-            DataImporter.Import(_src, Output);
+            GameDatabase db = SharedDb;
 
-            Assert.Throws<ContractException>(() => Db.TryGet(null, out GameDef _));
-            Assert.Throws<ContractException>(() => Db.GetRelations(null));
+            Assert.Throws<ContractException>(() => db.TryGet(null, out GameDef _));
+            Assert.Throws<ContractException>(() => db.GetRelations(null));
         }
 
         [Test]
         public void Overload_form_imports_and_links_bidirectionally_with_adult()
         {
-            string path = Path.Combine(_src, "creatures/creatures.json");
+            string path = Path.Combine(Src, "creatures/creatures.json");
             JArray creatures = JArray.Parse(File.ReadAllText(path));
             var overload = (JObject)creatures[2].DeepClone();
             overload["id"] = "sample_fox_overload";
@@ -783,7 +807,7 @@ namespace Cosmimera.GameData.Tests
             creatures.Add(overload);
             File.WriteAllText(path, creatures.ToString());
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
 
             Assert.IsTrue(Db.TryGet("sample_fox_lord", out CreatureDef adult));
             Assert.IsTrue(Db.TryGet("sample_fox_overload", out CreatureDef ov));
@@ -797,7 +821,7 @@ namespace Cosmimera.GameData.Tests
         [Test]
         public void Overload_form_rejects_missing_or_invalid_target()
         {
-            string path = Path.Combine(_src, "creatures/creatures.json");
+            string path = Path.Combine(Src, "creatures/creatures.json");
             JArray creatures = JArray.Parse(File.ReadAllText(path));
             var overload = (JObject)creatures[2].DeepClone();
             overload["id"] = "sample_fox_overload";
@@ -808,7 +832,7 @@ namespace Cosmimera.GameData.Tests
             creatures.Add(overload);
             File.WriteAllText(path, creatures.ToString());
 
-            var ex = Assert.Throws<DataImportException>(() => DataImporter.Import(_src, Output));
+            var ex = Assert.Throws<DataImportException>(() => DataImporter.Import(Src, Output));
             StringAssert.Contains("must be an adult form", ex.Message);
         }
 
@@ -816,9 +840,9 @@ namespace Cosmimera.GameData.Tests
         public void Field_utilities_and_ailment_effects_import_into_database()
         {
             string realFu = Path.Combine(Application.dataPath, "..", "Data", "field-utilities");
-            CopyDir(realFu, Path.Combine(_src, "field-utilities"));
+            CopyDir(realFu, Path.Combine(Src, "field-utilities"));
 
-            DataImporter.Import(_src, Output);
+            DataImporter.Import(Src, Output);
 
             // All 36 moves and 36 traits from field-utilities.json are imported and indexed.
             Assert.IsTrue(Db.TryGetFieldUtilityMove(FieldUtility.CookFire, out MoveDef cookFire));
@@ -836,7 +860,7 @@ namespace Cosmimera.GameData.Tests
 
         private void ReplaceInFile(string relative, string from, string to)
         {
-            string path = Path.Combine(_src, relative);
+            string path = Path.Combine(Src, relative);
             string text = File.ReadAllText(path);
             Assert.IsTrue(text.Contains(from), $"fixture changed: '{from}' not found in {relative}");
             File.WriteAllText(path, text.Replace(from, to));

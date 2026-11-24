@@ -69,60 +69,50 @@ namespace Cosmimera.Bootstrap.Tests
         }
 
         [TestCaseSource(nameof(Every))]
-        public void Same_spec_builds_the_same_mesh(LandmarkKind kind, int variant, ArchEra era)
+        public void Every_spec_builds_deterministically_and_keeps_every_mesh_contract(LandmarkKind kind, int variant, ArchEra era)
         {
-            Mesh a = Build(Spec(kind, variant, era));
-            Mesh b = Build(Spec(kind, variant, era));
-            Assert.That(b.vertices, Is.EqualTo(a.vertices));
-            Assert.That(b.colors, Is.EqualTo(a.colors));
-            Assert.That(b.triangles, Is.EqualTo(a.triangles));
-        }
+            LandmarkSpec spec = Spec(kind, variant, era);
+            Mesh a = Build(spec);
+            Mesh b = Build(spec);
 
-        [TestCaseSource(nameof(Every))]
-        public void Mesh_is_well_formed_and_fills_the_shader_channels(LandmarkKind kind, int variant, ArchEra era)
-        {
-            Mesh mesh = Build(Spec(kind, variant, era));
-            Vector3[] vertices = mesh.vertices;
-            Vector3[] normals = mesh.normals;
-            Color[] colors = mesh.colors;
+            Vector3[] vertices = a.vertices;
+            Vector3[] normals = a.normals;
+            Color[] colors = a.colors;
+            Assert.That(b.vertices, Is.EqualTo(vertices));
+            Assert.That(b.colors, Is.EqualTo(colors));
+            Assert.That(b.triangles, Is.EqualTo(a.triangles));
+
             Assert.That(vertices.Length, Is.GreaterThan(0).And.LessThan(65536), "fits a 16-bit index buffer");
             Assert.That(normals.Length, Is.EqualTo(vertices.Length));
             Assert.That(colors.Length, Is.EqualTo(vertices.Length));
-            Assert.That(mesh.subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount));
-            Assert.That(mesh.GetTriangles(ArchitectureMeshes.GlowSubMesh).Length, Is.GreaterThan(0), "every wonder carries a light");
+            Assert.That(a.subMeshCount, Is.EqualTo(ArchitectureMeshes.SubMeshCount));
+            Assert.That(a.GetTriangles(ArchitectureMeshes.GlowSubMesh).Length, Is.GreaterThan(0), "every wonder carries a light");
             for (int i = 0; i < vertices.Length; i++)
             {
                 Assert.That(float.IsFinite(vertices[i].x + vertices[i].y + vertices[i].z), Is.True, $"vertex {i}");
                 Assert.That(normals[i].magnitude, Is.EqualTo(1f).Within(1e-3f), $"normal {i}");
                 Assert.That(colors[i].a, Is.InRange(0f, 1f), $"accent mask {i}");
             }
-        }
 
-        [TestCaseSource(nameof(Every))]
-        public void Solid_wonders_stand_on_their_footprint(LandmarkKind kind, int variant, ArchEra era)
-        {
-            if (kind == LandmarkKind.SkyIsland || kind == LandmarkKind.SpaceStation)
+            if (kind != LandmarkKind.SkyIsland && kind != LandmarkKind.SpaceStation)
             {
-                Assert.Pass("floating: no footprint to stand on");
-            }
-
-            LandmarkSpec spec = Spec(kind, variant, era);
-            float reachLow = 0f, top = float.MinValue, bottom = float.MaxValue;
-            foreach (Vector3 p in Build(spec).vertices)
-            {
-                top = Mathf.Max(top, p.y);
-                bottom = Mathf.Min(bottom, p.y);
-                if (p.y < 2f)
+                float reachLow = 0f, top = float.MinValue, bottom = float.MaxValue;
+                foreach (Vector3 p in vertices)
                 {
-                    reachLow = Mathf.Max(reachLow, new Vector2(p.x, p.z).magnitude);
+                    top = Mathf.Max(top, p.y);
+                    bottom = Mathf.Min(bottom, p.y);
+                    if (p.y < 2f)
+                    {
+                        reachLow = Mathf.Max(reachLow, new Vector2(p.x, p.z).magnitude);
+                    }
                 }
-            }
 
-            // Past the circle a wall would look solid where the character can walk; far short of it, the reverse.
-            Assert.That(reachLow, Is.InRange(spec.FootprintRadiusM * 0.85f, spec.FootprintRadiusM * 1.03f));
-            Assert.That(bottom, Is.EqualTo(-LandmarkMeshes.SinkM).Within(0.01f), "sunk base hides the foot on slopes");
-            Assert.That(top, Is.InRange(spec.HeightM * 0.6f, spec.HeightM + 4f));
-            Assert.That(LandmarkMeshes.BodyHeightM(spec), Is.GreaterThan(0f).And.LessThanOrEqualTo(spec.HeightM));
+                // Past the circle a wall would look solid where the character can walk; far short of it, the reverse.
+                Assert.That(reachLow, Is.InRange(spec.FootprintRadiusM * 0.85f, spec.FootprintRadiusM * 1.03f));
+                Assert.That(bottom, Is.EqualTo(-LandmarkMeshes.SinkM).Within(0.01f), "sunk base hides the foot on slopes");
+                Assert.That(top, Is.InRange(spec.HeightM * 0.6f, spec.HeightM + 4f));
+                Assert.That(LandmarkMeshes.BodyHeightM(spec), Is.GreaterThan(0f).And.LessThanOrEqualTo(spec.HeightM));
+            }
         }
 
         [Test]

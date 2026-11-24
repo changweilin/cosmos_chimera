@@ -14,14 +14,18 @@ namespace Cosmimera.WorldGen.Tests
         // its loop roads add gates, so the digest moved without a DungeonPlanner change).
         private const ulong SnapshotSeed12345V1 = 7404800088664272562UL;
 
+        private const int FloodRows = 500;
+        private const int FloodCols = 1000;
         private static readonly float[] Radii = { 320f, 640f, 960f };
+        private static readonly float3[] FloodDirs = BuildFloodDirs(FloodRows, FloodCols);
         private readonly List<Object> _created = new List<Object>();
+        private readonly Dictionary<(float Radius, ulong Seed), World> _landCache = new Dictionary<(float, ulong), World>();
         private PlanetTypeDef _type;
         private List<CreatureDef> _pool;
         private RunPlanVocabulary _vocab;
 
-        [SetUp]
-        public void SetUp()
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
             _type = ScriptableObject.CreateInstance<PlanetTypeDef>();
             _created.Add(_type);
@@ -49,9 +53,10 @@ namespace Cosmimera.WorldGen.Tests
                 new[] { "chain_a", "chain_b", "chain_c" });
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
+            _landCache.Clear();
             foreach (Object o in _created)
             {
                 Object.DestroyImmediate(o);
@@ -77,6 +82,18 @@ namespace Cosmimera.WorldGen.Tests
             return new World { Planet = planet, Plan = plan, Layout = layout, Dungeon = DungeonPlanner.Generate(planet, plan, layout, isLand) };
         }
 
+        private World GetLand(ulong seed, float radius)
+        {
+            var key = (radius, seed);
+            if (!_landCache.TryGetValue(key, out World world))
+            {
+                world = Build(seed, radius);
+                _landCache.Add(key, world);
+            }
+
+            return world;
+        }
+
         private static float3 BossSpawn(RunPlan plan)
         {
             foreach (RunSpawn s in plan.Spawns)
@@ -97,7 +114,7 @@ namespace Cosmimera.WorldGen.Tests
             {
                 for (ulong seed = 0; seed < 300; seed++)
                 {
-                    World w = Build(seed, radius);
+                    World w = GetLand(seed, radius);
                     int n = w.Plan.Regions.Count;
                     var seen = new bool[n];
                     var stack = new Stack<int>();
@@ -131,7 +148,7 @@ namespace Cosmimera.WorldGen.Tests
                 int locked = 0;
                 for (ulong seed = 0; seed < 300; seed++)
                 {
-                    World w = Build(seed, radius);
+                    World w = GetLand(seed, radius);
                     float3 boss = BossSpawn(w.Plan);
                     Assert.That(math.distance(w.Dungeon.ArenaCenter, boss), Is.LessThan(1e-6f), $"R {radius} seed {seed}");
                     Assert.That(w.Dungeon.HasLock, Is.EqualTo(w.Dungeon.KeySpawn >= 0));
@@ -178,7 +195,7 @@ namespace Cosmimera.WorldGen.Tests
             {
                 for (ulong seed = 0; seed < 300; seed++)
                 {
-                    World w = Build(seed, radius);
+                    World w = GetLand(seed, radius);
                     int n = w.Plan.Regions.Count;
                     int landings = 0, bosses = 0, treasures = 0;
                     for (int r = 0; r < n; r++)
@@ -217,7 +234,7 @@ namespace Cosmimera.WorldGen.Tests
             int withLoop = 0;
             for (ulong seed = 0; seed < 300; seed++)
             {
-                World w = Build(seed, 640f);
+                World w = GetLand(seed, 640f);
                 int shortcuts = 0;
                 var pairs = new HashSet<long>();
                 foreach (DungeonGate g in w.Dungeon.Gates)
@@ -257,7 +274,7 @@ namespace Cosmimera.WorldGen.Tests
             long lowLinks = 0, lowCount = 0, highLinks = 0, highCount = 0;
             for (ulong seed = 0; seed < 300; seed++)
             {
-                World w = Build(seed, 640f);
+                World w = GetLand(seed, 640f);
                 int o = w.Dungeon.OpennessPercent;
                 Assert.That(o, Is.InRange(0, 100));
                 min = math.min(min, o);
@@ -299,7 +316,7 @@ namespace Cosmimera.WorldGen.Tests
             {
                 for (ulong seed = 0; seed < 300; seed++)
                 {
-                    World w = Build(seed, radius);
+                    World w = GetLand(seed, radius);
                     using PlanetWalls walls = DungeonPlanner.BuildWalls(w.Planet, w.Plan, w.Dungeon);
                     WallView view = walls.View;
                     float body = 1f / radius;
@@ -328,7 +345,7 @@ namespace Cosmimera.WorldGen.Tests
             {
                 for (ulong seed = 0; seed < 100; seed++)
                 {
-                    World w = Build(seed, radius);
+                    World w = GetLand(seed, radius);
                     using PlanetWalls walls = DungeonPlanner.BuildWalls(w.Planet, w.Plan, w.Dungeon);
                     WallView view = walls.View;
                     float clearance = DungeonPlanner.SpawnBorderClearanceRad(w.Planet);
@@ -347,34 +364,55 @@ namespace Cosmimera.WorldGen.Tests
         public void Flooding_the_surface_reaches_every_room_but_the_boss_only_after_the_lock_opens()
         {
             const float Radius = 320f;
-            const int Rows = 500;
-            const int Cols = 1000;
+            int total = FloodRows * FloodCols;
+            var blocked = new bool[total];
+            var closed = new bool[total];
+            var opened = new bool[total];
+            var queue = new int[total];
             int checkedPlanets = 0;
             for (ulong seed = 0; seed < 12; seed++)
             {
-                World w = Build(seed, Radius);
+                World w = GetLand(seed, Radius);
                 using PlanetWalls walls = DungeonPlanner.BuildWalls(w.Planet, w.Plan, w.Dungeon);
                 WallView view = walls.View;
                 float3 boss = BossSpawn(w.Plan);
-                bool[] closed = Flood(view, w.Plan.LandingDirection, true, Rows, Cols);
-                bool[] opened = Flood(view, w.Plan.LandingDirection, false, Rows, Cols);
-                Assert.That(opened[Cell(boss, Rows, Cols)], Is.True, $"seed {seed}: boss unreachable with the lock open");
+                Flood(view, w.Plan.LandingDirection, true, blocked, closed, queue);
+                Flood(view, w.Plan.LandingDirection, false, blocked, opened, queue);
+                Assert.That(opened[Cell(boss, FloodRows, FloodCols)], Is.True, $"seed {seed}: boss unreachable with the lock open");
                 for (int r = 0; r < w.Plan.Regions.Count; r++)
                 {
                     if (r != w.Plan.BossRegion)
                     {
-                        Assert.That(closed[Cell(w.Plan.Regions[r].Center, Rows, Cols)], Is.True, $"seed {seed}: room {r} walled off");
+                        Assert.That(closed[Cell(w.Plan.Regions[r].Center, FloodRows, FloodCols)], Is.True, $"seed {seed}: room {r} walled off");
                     }
                 }
 
                 if (w.Dungeon.HasLock)
                 {
                     checkedPlanets++;
-                    Assert.That(closed[Cell(boss, Rows, Cols)], Is.False, $"seed {seed}: boss reachable past the closed lock");
+                    Assert.That(closed[Cell(boss, FloodRows, FloodCols)], Is.False, $"seed {seed}: boss reachable past the closed lock");
                 }
             }
 
             Assert.That(checkedPlanets, Is.GreaterThan(8));
+        }
+
+        private static float3[] BuildFloodDirs(int rows, int cols)
+        {
+            var dirs = new float3[rows * cols];
+            for (int row = 0; row < rows; row++)
+            {
+                float lat = ((row + 0.5f) / rows - 0.5f) * math.PI;
+                float cosLat = math.cos(lat);
+                float sinLat = math.sin(lat);
+                for (int col = 0; col < cols; col++)
+                {
+                    float lon = ((col + 0.5f) / cols - 0.5f) * 2f * math.PI;
+                    dirs[row * cols + col] = new float3(cosLat * math.cos(lon), sinLat, cosLat * math.sin(lon));
+                }
+            }
+
+            return dirs;
         }
 
         private static int Cell(float3 d, int rows, int cols)
@@ -386,33 +424,28 @@ namespace Cosmimera.WorldGen.Tests
             return row * cols + col;
         }
 
-        private static bool[] Flood(WallView view, float3 start, bool locksClosed, int rows, int cols)
+        private static void Flood(WallView view, float3 start, bool locksClosed, bool[] blocked, bool[] seen, int[] queue)
         {
-            var blocked = new bool[rows * cols];
-            for (int row = 0; row < rows; row++)
+            int total = FloodRows * FloodCols;
+            for (int i = 0; i < total; i++)
             {
-                float lat = ((row + 0.5f) / rows - 0.5f) * math.PI;
-                for (int col = 0; col < cols; col++)
-                {
-                    float lon = ((col + 0.5f) / cols - 0.5f) * 2f * math.PI;
-                    var d = new float3(math.cos(lat) * math.cos(lon), math.sin(lat), math.cos(lat) * math.sin(lon));
-                    blocked[row * cols + col] = view.IsBlocked(d, 0f, locksClosed);
-                }
+                blocked[i] = view.IsBlocked(FloodDirs[i], 0f, locksClosed);
             }
 
-            var seen = new bool[rows * cols];
-            var queue = new Queue<int>();
-            int s = Cell(start, rows, cols);
+            System.Array.Clear(seen, 0, total);
+            int head = 0;
+            int tail = 0;
+            int s = Cell(start, FloodRows, FloodCols);
             seen[s] = true;
-            queue.Enqueue(s);
-            while (queue.Count > 0)
+            queue[tail++] = s;
+            while (head < tail)
             {
-                int c = queue.Dequeue();
-                int row = c / cols;
-                int col = c % cols;
-                Visit(row, (col + 1) % cols);
-                Visit(row, (col + cols - 1) % cols);
-                if (row + 1 < rows)
+                int c = queue[head++];
+                int row = c / FloodCols;
+                int col = c % FloodCols;
+                Visit(row, (col + 1) % FloodCols);
+                Visit(row, (col + FloodCols - 1) % FloodCols);
+                if (row + 1 < FloodRows)
                 {
                     Visit(row + 1, col);
                 }
@@ -423,15 +456,13 @@ namespace Cosmimera.WorldGen.Tests
                 }
             }
 
-            return seen;
-
             void Visit(int row, int col)
             {
-                int i = row * cols + col;
+                int i = row * FloodCols + col;
                 if (!seen[i] && !blocked[i])
                 {
                     seen[i] = true;
-                    queue.Enqueue(i);
+                    queue[tail++] = i;
                 }
             }
         }
@@ -463,7 +494,7 @@ namespace Cosmimera.WorldGen.Tests
         {
             for (ulong seed = 0; seed < 50; seed++)
             {
-                World land = Build(seed, 640f);
+                World land = GetLand(seed, 640f);
                 World sea = Build(seed, 640f, _ => false);
                 int roadGates = 0;
                 foreach (DungeonGate g in sea.Dungeon.Gates)
@@ -486,7 +517,7 @@ namespace Cosmimera.WorldGen.Tests
         [Test]
         public void Preconditions_are_checked()
         {
-            World w = Build(1, 640f);
+            World w = GetLand(1, 640f);
             Assert.Throws<ContractException>(() => DungeonPlanner.Generate(default, w.Plan, w.Layout, null));
             Assert.Throws<ContractException>(() => DungeonPlanner.Generate(w.Planet, null, w.Layout, null));
             Assert.Throws<ContractException>(() => DungeonPlanner.Generate(w.Planet, w.Plan, null, null));

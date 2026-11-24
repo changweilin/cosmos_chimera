@@ -126,17 +126,38 @@ def _load_json(path: Path, rel: str, findings: list[Finding]):
     return doc
 
 
-def _registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
+_SCHEMA_CACHE: dict[tuple, tuple[Registry, dict[str, dict], dict[str, Draft202012Validator]]] = {}
+
+
+def _load_validators(schema_dir: Path) -> tuple[Registry, dict[str, dict], dict[str, Draft202012Validator]]:
+    schema_files = sorted(schema_dir.glob("*.schema.json"))
+    cache_key = (
+        schema_dir.resolve(),
+        tuple((p.name, p.stat().st_mtime_ns, p.stat().st_size) for p in schema_files),
+    )
+    cached = _SCHEMA_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
     schemas = {}
     resources = []
-    for p in sorted(schema_dir.glob("*.schema.json")):
+    for p in schema_files:
         doc = json.loads(p.read_text(encoding="utf-8"))
         Draft202012Validator.check_schema(doc)
         schemas[p.name[: -len(".schema.json")]] = doc
         res = Resource.from_contents(doc)
         resources.append((doc["$id"], res))
         resources.append((p.name, res))
-    return Registry().with_resources(resources), schemas
+    registry = Registry().with_resources(resources)
+    validators = {stem: Draft202012Validator(doc, registry=registry) for stem, doc in schemas.items()}
+    entry = (registry, schemas, validators)
+    _SCHEMA_CACHE[cache_key] = entry
+    return entry
+
+
+def _registry(schema_dir: Path) -> tuple[Registry, dict[str, dict]]:
+    registry, schemas, _ = _load_validators(schema_dir)
+    return registry, schemas
 
 
 def _schema_message(err) -> str:
@@ -195,13 +216,13 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None,
     Side effects: reads files only.
     """
     findings: list[Finding] = []
-    registry, schemas = _registry(schema_dir)
+    registry, schemas, all_validators = _load_validators(schema_dir)
     missing = [s for s in list(KINDS.values()) + [ENV_MATERIALS_SCHEMA] if s not in schemas]
     if missing:
         raise FileNotFoundError(f"missing schemas in {schema_dir}: {missing}")
 
     records: dict[str, list[Record]] = {k: [] for k in KINDS}
-    validators = {stem: Draft202012Validator(schemas[stem], registry=registry) for stem in KINDS.values()}
+    validators = {stem: all_validators[stem] for stem in KINDS.values()}
     for folder, stem in KINDS.items():
         validator = validators[stem]
         for path in sorted((root / folder).glob("*.json")):
@@ -224,7 +245,15 @@ def validate(root: Path, schema_dir: Path, retired_ids_path: Path | None = None,
     _check_skill_stars(records, findings, balance["stat_budget"], validators)
     _check_field_utilities(records, findings, validators, schemas, retired_ids_path)
     _check_niches(records, findings)
-    _check_env_materials(root, schemas[ENV_MATERIALS_SCHEMA], registry, records, findings, retired_ids_path)
+    _check_env_materials(
+        root,
+        schemas[ENV_MATERIALS_SCHEMA],
+        registry,
+        records,
+        findings,
+        retired_ids_path,
+        validator=all_validators[ENV_MATERIALS_SCHEMA],
+    )
     findings.sort(key=lambda f: (f.file, f.pointer, f.code))
     return findings
 
@@ -672,6 +701,7 @@ def _check_env_materials(
     records: dict[str, list[Record]],
     findings: list[Finding],
     retired_ids_path: Path | None,
+    validator: Draft202012Validator | None = None,
 ) -> None:
     folder = root / ENV_MATERIALS_FOLDER
     if not folder.is_dir():
@@ -694,7 +724,7 @@ def _check_env_materials(
     if doc is _INVALID_JSON:
         return
 
-    validator = Draft202012Validator(schema, registry=registry)
+    validator = validator or Draft202012Validator(schema, registry=registry)
     for err in sorted(validator.iter_errors(doc), key=lambda e: list(e.absolute_path)):
         for leaf in _leaf_errors(err):
             findings.append(Finding("error", "schema", rel, _pointer(leaf.absolute_path), _schema_message(leaf)))

@@ -16,7 +16,7 @@ UMA_SHA256="132247a2a7e338457d36a2d6470d80254a3f8d1fd6b6dc1bf597fc12f0821163"
 UMA_URL="https://github.com/umasteeringgroup/UMA/releases/download/${UMA_TAG}/${UMA_FILE}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CACHE="$ROOT/Library/UMA-cache"
+CACHE="${UMA_CACHE_DIR:-$ROOT/Library/UMA-cache}"
 PKG="$CACHE/$UMA_FILE"
 UNITY="${UNITY:-C:/Program Files/Unity/Hub/Editor/6000.3.28f1/Editor/Unity.exe}"
 
@@ -57,6 +57,14 @@ with tarfile.open(pkg, "r:gz") as tf:
         guid, kind = parts
         entries.setdefault(guid, {})[kind] = tf.extractfile(m).read()
 
+EXCLUDE_PREFIXES = (
+    # [InitializeOnLoad] TestRunnerIntegration fsyncs Logs/UMA-TestLog.xml on every test/suite event.
+    "Assets/UMA/Core/Editor/TestRunnerIntegration",
+    "Assets/UMA/Core/Editor/Tests",
+    "Assets/UMA/Core/Tests",
+    "Assets/UMA/UMA3/Tests",
+)
+
 for data in entries.values():
     raw_path = data.get("pathname")
     if not raw_path:
@@ -64,6 +72,8 @@ for data in entries.values():
     rel = raw_path.decode("utf-8").splitlines()[0].strip()
     if not rel.startswith("Assets/UMA"):
         raise ValueError(f"unexpected path in unitypackage: {rel}")
+    if any(rel == p or rel.startswith(p + "/") for p in EXCLUDE_PREFIXES):
+        continue
     dst = os.path.join(root, rel)
     if "asset" in data:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -83,6 +93,16 @@ fi
 echo "importing $UMA_FILE into $ROOT (log: Logs/install-uma.log)"
 "$UNITY" -batchmode -nographics -projectPath "$ROOT" \
   -importPackage "$PKG" -quit -logFile "$ROOT/Logs/install-uma.log"
+
+# Strip UMA test suites and TestRunnerIntegration (its [InitializeOnLoad] logger fsyncs every test event).
+for rel in \
+  "Assets/UMA/Core/Editor/TestRunnerIntegration" \
+  "Assets/UMA/Core/Editor/Tests" \
+  "Assets/UMA/Core/Tests" \
+  "Assets/UMA/UMA3/Tests"
+do
+  rm -rf "$ROOT/$rel" "$ROOT/$rel.meta"
+done
 
 # Separate run: the import must finish compiling UMA before the library rebuild can execute.
 echo "rebuilding UMA Global Library (log: Logs/install-uma-library.log)"
